@@ -1,0 +1,15 @@
+class Compiler {
+    static function compileFiles(files: [String]) throws CompilerError {
+
+        let compilationUnits: [String] = map(files, File.readToString)
+            catch _ (file, error) throw UnableToReadFile(file, error)
+            
+        let topLevelDeclarations: [TopLevelDeclaration] = map(compilationUnits, compileUnit)
+            catch _ (_, error) throw SyntaxError(error)
+    }
+    
+    static function compileUnit(text: String) -> TopLevelDeclaration throws ParserError {
+        parser = Parser(text)
+        parser.parseTopLevelDeclaration
+    }
+};

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CodeLite_Workspace Name="scaly" Database="">
+  <Project Name="scaly" Path="scaly/scaly.project" Active="No"/>
+  <Project Name="scalyc" Path="scalyc/scalyc.project" Active="Yes"/>
+  <BuildMatrix>
+    <WorkspaceConfiguration Name="Debug" Selected="yes">
+      <Project Name="scaly" ConfigName="Debug"/>
+      <Project Name="scalyc" ConfigName="Debug"/>
+    </WorkspaceConfiguration>
+    <WorkspaceConfiguration Name="Release" Selected="no">
+      <Project Name="scaly" ConfigName="Release"/>
+      <Project Name="scalyc" ConfigName="Release"/>
+    </WorkspaceConfiguration>
+  </BuildMatrix>
+</CodeLite_Workspace>

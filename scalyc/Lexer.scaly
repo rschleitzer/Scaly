@@ -1,0 +1,549 @@
+class Position {
+    let line: unsigned
+    let column: unsigned
+}
+
+class Token {
+}
+
+class EofToken : Token {
+}
+
+class InvalidToken : Token {
+}
+
+class Identifier : Token {
+    let identifier: String
+}
+
+class Literal : Token {
+}
+
+class StringLiteral : Literal {
+    let string: String
+}
+
+class NumericLiteral : Literal {
+    let value: String
+}
+
+class Punctuation : Token {
+    let sign: String
+}
+
+class Operator : Token {
+    let operation: String
+}
+
+class PrefixOperator : Operator {
+}
+
+class BinaryOperator : Operator {
+}
+
+class PostfixOperator : Operator {
+}
+
+class Lexer {
+
+    mutable token: Token?
+    mutable whitespaceSkipped: bool
+    let text: String
+    let length: unsigned
+    mutable position: unsigned
+    let end: unsigned
+    mutable previousLine: unsigned
+    mutable previousColumn: unsigned
+    mutable line: unsigned
+    mutable column: unsigned
+    
+    Lexer(text: String) {
+        token = 0
+        whitespaceSkipped = true
+        text = text
+        length = text.getLength()
+        position = 0
+        end = length
+        previousLine = 1
+        previousColumn = 0
+        line = 1
+        column = 0
+        advance()
+    }
+
+    function advance() {
+        skipWhitespace()
+        previousLine = line
+        previousColumn = column
+
+        if position == end {
+            token = EofToken()
+            return
+        }
+        
+        let c: character = text[position]
+        
+        if ((c >= "a") && (c <= "z")) || ((c >= "A") && (c <= "Z")) {
+            token = scanIdentifier()
+            return
+        }
+        
+        if (c >= "0") && (c <= "9") {
+            token = scanNumericLiteral()
+            return
+        }
+
+        switch c {
+            case "\"":
+                token = scanStringLiteral()
+                
+            case "_", "(", ")", "{", "}", "[", "]", "<", ">", ",", ":", ";", "@", "#", "`": {
+                token = Punctuation(String(text[position]))
+                position++ column++
+            }
+
+            case "/", "+", "*", "%", "&", "|", "^", "~":
+                token = scanOperator(false)
+            
+            case ".": {
+                position++ column++
+                if position == end
+                    token = InvalidToken()
+                else {
+                    if text[position] == "." {
+                        position-- column--
+                        token = scanOperator(true)
+                    }
+                    else
+                        token = Punctuation(String("."))
+                }
+            }
+            
+            case "-": {
+                position++ column++
+                if position == end
+                    token = InvalidToken()
+                else {
+                    if (text[position] != ">") {
+                        position-- column--
+                        token = scanOperator(true)
+                    }
+                    else {
+                        token = Punctuation(String("->"))
+                        position++ column++
+                    }
+                }
+            }
+
+            case "!": {
+                position++ column++
+                if position == end {
+                    token = PostfixOperator(String("!"))
+                }
+                else {
+                    switch (text[position]) {
+                        case "/", "=", "+", "!", "*", "%", "&", "|", "^", "~": {
+                            position-- column--
+                            token = scanOperator(true)
+                        }
+
+                        default: {
+                            if (whitespaceSkipped) {
+                                position-- column--
+                                token = scanOperator(true)
+                            }
+                            else
+                                token = Punctuation(String("!"))
+                        }
+                    } 
+                }
+            }
+
+            case "?": {
+                position++ column++
+                if position == end {
+                    token = PostfixOperator(String("?"))
+                }
+                else {
+                    switch (text[position]) {
+                        case "/", "=", "+", "!", "*", "%", "&", "|", "^", "~": {
+                            position-- column--
+                            token = scanOperator(true)
+                        }
+                        default: {
+                            if (whitespaceSkipped) {
+                                position-- column--
+                                token = scanOperator(true)
+                            }
+                            else
+                                token = Punctuation(String("?"))
+                        }
+                    } 
+                }
+            }
+
+            case "=": {
+                position++ column++
+                if position == end {
+                    token = InvalidToken()
+                }
+                else {
+                    switch text[position] {
+                        case "/", "=", "+", "!", "*", "%", "&", "|", "^", "~": {
+                            position-- column--
+                            token = scanOperator(true)
+                        }
+                        default:
+                            token = Punctuation(String("="))
+                    }
+                }
+            }
+ 
+            default:
+                token = InvalidToken()
+        }
+    }
+
+    function scanIdentifier() -> Identifier {
+        mutable name: String = String(text[position])
+
+        do {
+            position++ column++
+            
+            if position == end
+                return Identifier(name)
+            
+            let c: character = text[position]
+            if  ((c >= "a") && (c <= "z")) || 
+                ((c >= "A") && (c <= "Z")) || 
+                ((c >= "0") && (c <= "9")) || 
+                 (c == "_")
+                name += text[position]
+            else
+                return Identifier(name)
+        }            
+        while true
+    }
+
+    function scanOperator(includeDots: Bool) -> Operator {
+        mutable whitespaceSkippedBefore = whitespaceSkipped
+
+        if !whitespaceSkippedBefore && token is Punctuation
+            switch (token as Punctuation).sign
+                case "(", "[", "{", ",", ";", ":":
+                    whitespaceSkippedBefore = true
+                default:
+                    whitespaceSkippedBefore = false
+        
+        mutable operation: String = String(text[position])
+
+        do {
+            position++ column++
+            if position == end
+                if whitespaceSkippedBefore
+                    return BinaryOperator(operation)
+                else
+                    return PostfixOperator(operation)
+            
+            switch (text[position]) {
+                case "/", "=", "-", "+", "!", "*", "%", "<", "&", "|", "^", "~":
+                    operation += text[position]
+                
+                case ".":
+                    if !includeDots
+                        fallthrough
+                    else
+                        operation += text[position]
+                
+                default: {
+                    let lastPosition = position
+                    let lastLine = line
+                    let lastColumn = position
+                    skipWhitespace()
+                    position = lastPosition
+                    line = lastLine
+                    column = lastColumn
+                    mutable whitespaceSkippedAfter: bool = whitespaceSkipped
+
+                    if !whitespaceSkippedAfter
+                        switch text[position]
+                            case ")", "]", "}", ",", ";", ":", ".":
+                                whitespaceSkippedAfter = true
+                            default:
+                                whitespaceSkippedAfter = false
+
+                    if (whitespaceSkippedBefore &&  whitespaceSkippedAfter) || 
+                      (!whitespaceSkippedBefore && !whitespaceSkippedAfter)
+                        return BinaryOperator(operation)
+                        
+                    if (!whitespaceSkippedBefore && whitespaceSkippedAfter)
+                        return PostfixOperator(operation)
+                        
+                    if (whitespaceSkippedBefore && !whitespaceSkippedAfter)
+                        return PrefixOperator(operation)
+                }
+            }
+        } while true
+    }
+
+    function scanStringLiteral() -> Token {
+        mutable value: String = String("")
+
+        do {
+            position++ column++
+            if position == end
+                return InvalidToken()
+
+            switch text[position] {
+                case '\"': {
+                    position++ column++
+                    return StringLiteral(value)
+                }
+                case '\\': {
+                    position++ column++
+                    switch text[position]
+                        case "\"", "\\", "'": value += text[position]
+                        case "n": value += "\n"
+                        case "r": value += "\r"
+                        case "t": value += "\t"
+                        case "0": value += "\0"
+                        default: return InvalidToken()
+                }
+                default:
+                    value += text[position]
+            }
+        } while true
+    }
+
+    function scanNumericLiteral() -> NumericLiteral {    
+        mutable value: String = String(text[position])
+
+        do {
+            position++ column++
+            
+            if position == end
+                return NumericLiteral(value)
+            
+            let c: character = text[position]
+            if (c >= "0") && (c <= "9")
+                value += text[position]
+            else
+                return NumericLiteral(value)
+        } while true
+    }
+
+    function skipWhitespace() -> bool {
+        whitespaceSkipped = false
+        do {
+            if (position == end)
+                return true
+
+            switch text[position] {
+                case " ": {
+                    whitespaceSkipped = true
+                    position++ column++
+                    continue
+                }
+                case "\t": {
+                    whitespaceSkipped = true
+                    position++ column += 4
+                    continue
+                }
+                case "\r": {
+                    whitespaceSkipped = true
+                    position++
+                    continue
+                }
+                case "\n": {
+                    whitespaceSkipped = true
+                    position++ column = 1 line++
+                    continue
+                }
+                case "/": {
+                    position++ column++
+
+                    if position == end
+                        return whitespaceSkipped
+                        
+                    if text[position] == "/" { 
+                        whitespaceSkipped = true
+                        handleSingleLineComment()
+                    }
+                    else if text[position] == "*" { 
+                        whitespaceSkipped = true
+                        handleMultiLineComment()
+                    }
+                    else
+                        return whitespaceSkipped
+                }
+                default:
+                    return whitespaceSkipped
+            }
+        } 
+        while true
+    }
+
+    function handleSingleLineComment() {
+        do {
+            if position == end
+                return
+                
+            switch text[position] {
+                case "\t": {
+                    whitespaceSkipped = true
+                    position++ column += 4
+                    continue
+                }
+                case "\r": {
+                    whitespaceSkipped = true
+                    position++
+                    continue
+                }
+                case "\n": {
+                    whitespaceSkipped = true
+                    position++ column = 1 line++
+                    return
+                }
+                default: {
+                    position++ column++
+                    continue
+                }
+            }
+        }
+        while true
+    }
+
+    function handleMultiLineComment() {
+        do {
+            if position == end
+                return
+                
+            let character: character = text[position]
+            switch (character) {
+                case "/": {
+                    position++ column++
+                    if position == end
+                        return
+                    else if text[position] == "*"
+                        handleMultiLineComment()
+                    else
+                        return
+                }
+                case "*": {
+                    position++ column++
+
+                    if position == end
+                        return
+                    else if text[position] == '/' { 
+                        position++ column++
+                        return
+                    }
+                    else
+                        fallthrough
+                }
+                case "\t": {
+                    whitespaceSkipped = true
+                    position++ column += 4
+                    continue
+                }
+                case "\r": {
+                    whitespaceSkipped = true
+                    position++
+                    continue
+                }
+                case "\n": {
+                    whitespaceSkipped = true
+                    position++ column = 1 line++
+                    continue
+                }
+                default: {
+                    position++ column++
+                    continue
+                }
+            }
+        }
+        while true
+    }
+
+    function parseKeyword(fixedString: string) -> bool {
+        if !(token is Identifier)
+            return false
+
+        let identifier: Identifier = token as Identifier
+        return identifier.name == fixedString
+    }
+
+    function parseIdentifier() -> String? {
+        if !(token is Identifier)
+            return null
+
+        let identifier: Identifier = token as Identifier
+        return String(identifier.name)
+    }
+
+    function parsePunctuation(fixedString: string) -> bool {
+        if !(token is Punctuation)
+            return false
+
+        let punctuation: Punctuation = token as Punctuation
+        return punctuation.sign == fixedString
+    }
+
+    function parseOperator() -> String? {
+        if !(token is Operator)
+            return null
+
+        let op: Operator = token as Operator
+        return String(op.operation)
+    }
+
+    function parseLiteral() -> Literal? {
+        if !(token is Literal)
+            return null
+
+        return token as Literal
+    }
+
+    function parsePrefixOperator() -> String? {
+        if !(token is PrefixOperator)
+            return null
+
+        let op: Operator = token as Operator
+        return String(op.operation)
+    }
+
+    function parseBinaryOperator() -> String? {
+        if !(token is BinaryOperator) {
+            if (token is Punctuation) && ((token as Punctuation).sign == "<")) {
+                let op: Operator = token as Operator
+                return String(op.operation)
+            }
+
+            return null
+        }
+
+        let op = token as Operator
+        return String(op.operation)
+    }
+
+
+    function parsePostfixOperator() -> String? {
+        if !(token is PostfixOperator)
+            return null
+
+        let op: Operator = token as Operator
+        return String(op.operation)
+    }
+
+    function isAtEnd() -> bool {
+        return position == end
+    }
+
+    function getPosition() -> Position {
+        return Position(line, column)
+    }
+
+    fuction getPreviousPosition() -> Position {
+        return Position(previousLine, previousColumn)
+    }
+}

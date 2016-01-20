@@ -1,0 +1,92 @@
+#ifndef __scalyc__MyVisitor__
+#define __scalyc__MyVisitor__
+#include "scalyc.h"
+using namespace scaly;
+namespace scalyc {
+
+class MyVisitor : public SyntaxVisitor {
+    virtual void VisitTopLevelDeclaration(TopLevelDeclaration);
+    virtual void VisitStatementWithSemicolon(StatementWithSemicolon);
+    virtual void VisitStatement(Statement);
+    virtual void VisitDeclaration(Declaration);
+    virtual void VisitUseDeclaration(UseDeclaration);
+    virtual void VisitPathIdentifier(PathIdentifier);
+    virtual void VisitPathItem(PathItem);
+    virtual void VisitInitializer(Initializer);
+    virtual void VisitConstantDeclaration(ConstantDeclaration);
+    virtual void VisitPatternInitializer(PatternInitializer);
+    virtual void VisitVariableDeclaration(VariableDeclaration);
+    virtual void VisitFunctionDeclaration(FunctionDeclaration);
+    virtual void VisitModifier(Modifier);
+    virtual void VisitStatic(Static);
+    virtual void VisitFunctionName(FunctionName);
+    virtual void VisitIdentifierFunctionName(IdentifierFunctionName);
+    virtual void VisitFunctionSignature(FunctionSignature);
+    virtual void VisitFunctionResult(FunctionResult);
+    virtual void VisitParameterClause(ParameterClause);
+    virtual void VisitParameter(Parameter);
+    virtual void VisitThrowsClause(ThrowsClause);
+    virtual void VisitClassDeclaration(ClassDeclaration);
+    virtual void VisitGenericArgumentClause(GenericArgumentClause);
+    virtual void VisitGenericParameter(GenericParameter);
+    virtual void VisitClassBody(ClassBody);
+    virtual void VisitClassMember(ClassMember);
+    virtual void VisitExpression(Expression);
+    virtual void VisitCodeBlock(CodeBlock);
+    virtual void VisitSimpleExpression(SimpleExpression);
+    virtual void VisitPrefixExpression(PrefixExpression);
+    virtual void VisitPostfixExpression(PostfixExpression);
+    virtual void VisitBinaryOp(BinaryOp);
+    virtual void VisitBinaryExpression(BinaryExpression);
+    virtual void VisitAssignmentExpression(AssignmentExpression);
+    virtual void VisitCatchClause(CatchClause);
+    virtual void VisitCatchPattern(CatchPattern);
+    virtual void VisitWildCardCatchPattern(WildCardCatchPattern);
+    virtual void VisitPathItemCatchPattern(PathItemCatchPattern);
+    virtual void VisitPostfix(Postfix);
+    virtual void VisitOperatorPostfix(OperatorPostfix);
+    virtual void VisitFunctionCall(FunctionCall);
+    virtual void VisitExplicitMemberExpression(ExplicitMemberExpression);
+    virtual void VisitSubscript(Subscript);
+    virtual void VisitExpressionElement(ExpressionElement);
+    virtual void VisitMemberPostfix(MemberPostfix);
+    virtual void VisitNamedMemberPostfix(NamedMemberPostfix);
+    virtual void VisitPrimaryExpression(PrimaryExpression);
+    virtual void VisitParenthesizedExpression(ParenthesizedExpression);
+    virtual void VisitLiteralExpression(LiteralExpression);
+    virtual void VisitIdentifierExpression(IdentifierExpression);
+    virtual void VisitIfExpression(IfExpression);
+    virtual void VisitElseClause(ElseClause);
+    virtual void VisitSwitchExpression(SwitchExpression);
+    virtual void VisitSwitchBody(SwitchBody);
+    virtual void VisitCurliedSwitchBody(CurliedSwitchBody);
+    virtual void VisitNakedSwitchBody(NakedSwitchBody);
+    virtual void VisitSwitchCase(SwitchCase);
+    virtual void VisitCaseLabel(CaseLabel);
+    virtual void VisitItemCaseLabel(ItemCaseLabel);
+    virtual void VisitCaseItem(CaseItem);
+    virtual void VisitReturnExpression(ReturnExpression);
+    virtual void VisitThrowExpression(ThrowExpression);
+    virtual void VisitPattern(Pattern);
+    virtual void VisitWildcardPattern(WildcardPattern);
+    virtual void VisitIdentifierPattern(IdentifierPattern);
+    virtual void VisitTuplePattern(TuplePattern);
+    virtual void VisitTuplePatternElement(TuplePatternElement);
+    virtual void VisitExpressionPattern(ExpressionPattern);
+    virtual void VisitDefaultCaseLabel(DefaultCaseLabel);
+    virtual void VisitCaseContent(CaseContent);
+    virtual void VisitBlockCaseContent(BlockCaseContent);
+    virtual void VisitEmptyCaseContent(EmptyCaseContent);
+    virtual void VisitType(Type);
+    virtual void VisitTypeAnnotation(TypeAnnotation);
+    virtual void VisitTypeIdentifier(TypeIdentifier);
+    virtual void VisitSubtypeIdentifier(SubtypeIdentifier);
+    virtual void VisitTypePostfix(TypePostfix);
+    virtual void VisitArrayType(ArrayType);
+    virtual void VisitOptionalType(OptionalType);
+    virtual void VisitTypeInheritanceClause(TypeInheritanceClause);
+    virtual void VisitInheritance(Inheritance);
+};
+
+}
+#endif // __scalyc__MyVisitor__
