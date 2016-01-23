@@ -1178,14 +1178,14 @@ _Result<PrefixExpression, ParserError> Parser::parsePrefixExpression(_Page* _rp,
     {
         Position start = lexer.getPreviousPosition();
 
-        String* prefixOperator = lexer.parsePrefixOperator(_rp); 
+        String* prefixOperator = lexer.parsePrefixOperator(_rp);
         if (prefixOperator) {
             lexer.advance();
             if (!ret)
-                ret = new (_rp) PrefixExpression(start, lexer.getPosition()); 
+                ret = new(_rp) PrefixExpression(start, lexer.getPosition());
 
             ret->prefixOperator = prefixOperator;
-	    }
+        }
     }
     {
         Position start = lexer.getPreviousPosition();
@@ -1309,14 +1309,14 @@ _Result<BinaryOperation, ParserError> Parser::parseBinaryOperation(_Page* _rp, _
     {
         Position start = lexer.getPreviousPosition();
 
-        String* binaryOperator = lexer.parseBinaryOperator(_rp); 
+        String* binaryOperator = lexer.parseBinaryOperator(_rp);
         if (binaryOperator) {
             lexer.advance();
             if (!ret)
-                ret = new (_rp) BinaryOperation(start, lexer.getPosition()); 
+                ret = new(_rp) BinaryOperation(start, lexer.getPosition());
 
             ret->binaryOperator = binaryOperator;
-	    }
+        }
         else {
             return _Result<BinaryOperation, ParserError>(new(_ep) ParserError(*new(_ep) OperatorExpected(start)));
         }
@@ -1660,14 +1660,14 @@ _Result<OperatorPostfix, ParserError> Parser::parseOperatorPostfix(_Page* _rp, _
     {
         Position start = lexer.getPreviousPosition();
 
-        String* postfixOperator = lexer.parsePostfixOperator(_rp); 
+        String* postfixOperator = lexer.parsePostfixOperator(_rp);
         if (postfixOperator) {
             lexer.advance();
             if (!ret)
-                ret = new (_rp) OperatorPostfix(start, lexer.getPosition()); 
+                ret = new(_rp) OperatorPostfix(start, lexer.getPosition());
 
             ret->postfixOperator = postfixOperator;
-	    }
+        }
         else {
             return _Result<OperatorPostfix, ParserError>(new(_ep) ParserError(*new(_ep) OperatorExpected(start)));
         }
@@ -1989,7 +1989,7 @@ _Result<LiteralExpression, ParserError> Parser::parseLiteralExpression(_Page* _r
 
         Literal* literal = lexer.parseLiteral(_rp);
         if (literal) {
-        	lexer.advance();
+            lexer.advance();
             if (!ret)
                 ret = new(_rp) LiteralExpression(start, lexer.getPosition());
 

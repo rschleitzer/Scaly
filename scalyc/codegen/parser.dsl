@@ -127,37 +127,15 @@ _Result<"(id syntax)", ParserError> Parser::parse"(id syntax)"(_Page* _rp, _Page
                 ret = new(_rp) "(id syntax)"(start, lexer.getPosition());
         }
 "                       ))
-                        (("prefixoperator" "binaryoperator" "postfixoperator") ($
+                        (("prefixoperator" "binaryoperator" "postfixoperator" "identifier" "literal") ($
 "
-        String* "(property content)" = lexer.parse"(case (type content) (("prefixoperator") "Prefix") (("binaryoperator") "Binary") (("postfixoperator") "Postfix")(else "") )"Operator(_rp); 
-        if ("(property content)") {
-            lexer.advance();
-            if (!ret)
-                ret = new (_rp) "(id syntax)"(start, lexer.getPosition()); 
-
-            ret->"(property content)" = "(property content)";
-	    }
-"                       ))
-                        (("identifier") ($
-"
-        String* "(property content)" = lexer.parseIdentifier(_rp);
-        if (("(property content)") && (isIdentifier(*"(property content)"))) {
+        "(if (string=? "literal" (type content)) "Literal* literal" ($ "String* "(property content)))" = lexer.parse"(case (type content) (("prefixoperator") "PrefixOperator") (("binaryoperator") "BinaryOperator") (("postfixoperator") "PostfixOperator") (("identifier") "Identifier") (("literal") "Literal") (else "") )"(_rp);
+        if "(if (string=? "identifier" (type content)) ($ "(("(property content)") && (isIdentifier(*"(property content)")))")($"("(property content)")"))" {
             lexer.advance();
             if (!ret)
                 ret = new(_rp) "(id syntax)"(start, lexer.getPosition());
 
             ret->"(property content)" = "(property content)";
-        }
-"                       ))
-                        (("literal")    ($
-"
-        Literal* literal = lexer.parseLiteral(_rp);
-        if (literal) {
-        	lexer.advance();
-            if (!ret)
-                ret = new(_rp) "(id syntax)"(start, lexer.getPosition());
-
-            ret->"(property content)" = literal;
         }
 "                       ))
                         (else "")
