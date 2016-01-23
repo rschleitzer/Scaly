@@ -261,7 +261,6 @@ _Result<PathItem, ParserError> Parser::parsePathItem(_Page* _rp, _Page* _ep) {
     PathItem* ret = 0;
     {
         Position start = lexer.getPreviousPosition();
-
         String* name = lexer.parseIdentifier(_rp);
         if ((name) && (isIdentifier(*name))) {
             lexer.advance();
@@ -577,7 +576,6 @@ _Result<IdentifierFunctionName, ParserError> Parser::parseIdentifierFunctionName
     IdentifierFunctionName* ret = 0;
     {
         Position start = lexer.getPreviousPosition();
-
         String* name = lexer.parseIdentifier(_rp);
         if ((name) && (isIdentifier(*name))) {
             lexer.advance();
@@ -752,7 +750,6 @@ _Result<Parameter, ParserError> Parser::parseParameter(_Page* _rp, _Page* _ep) {
     Parameter* ret = 0;
     {
         Position start = lexer.getPreviousPosition();
-
         String* parameterName = lexer.parseIdentifier(_rp);
         if ((parameterName) && (isIdentifier(*parameterName))) {
             lexer.advance();
@@ -848,7 +845,6 @@ _Result<ClassDeclaration, ParserError> Parser::parseClassDeclaration(_Page* _rp,
     }
     {
         Position start = lexer.getPreviousPosition();
-
         String* name = lexer.parseIdentifier(_rp);
         if ((name) && (isIdentifier(*name))) {
             lexer.advance();
@@ -968,7 +964,6 @@ _Result<GenericParameter, ParserError> Parser::parseGenericParameter(_Page* _rp,
     GenericParameter* ret = 0;
     {
         Position start = lexer.getPreviousPosition();
-
         String* typeName = lexer.parseIdentifier(_rp);
         if ((typeName) && (isIdentifier(*typeName))) {
             lexer.advance();
@@ -1177,7 +1172,6 @@ _Result<PrefixExpression, ParserError> Parser::parsePrefixExpression(_Page* _rp,
     PrefixExpression* ret = 0;
     {
         Position start = lexer.getPreviousPosition();
-
         String* prefixOperator = lexer.parsePrefixOperator(_rp);
         if (prefixOperator) {
             lexer.advance();
@@ -1308,7 +1302,6 @@ _Result<BinaryOperation, ParserError> Parser::parseBinaryOperation(_Page* _rp, _
     BinaryOperation* ret = 0;
     {
         Position start = lexer.getPreviousPosition();
-
         String* binaryOperator = lexer.parseBinaryOperator(_rp);
         if (binaryOperator) {
             lexer.advance();
@@ -1659,7 +1652,6 @@ _Result<OperatorPostfix, ParserError> Parser::parseOperatorPostfix(_Page* _rp, _
     OperatorPostfix* ret = 0;
     {
         Position start = lexer.getPreviousPosition();
-
         String* postfixOperator = lexer.parsePostfixOperator(_rp);
         if (postfixOperator) {
             lexer.advance();
@@ -1986,7 +1978,6 @@ _Result<LiteralExpression, ParserError> Parser::parseLiteralExpression(_Page* _r
     LiteralExpression* ret = 0;
     {
         Position start = lexer.getPreviousPosition();
-
         Literal* literal = lexer.parseLiteral(_rp);
         if (literal) {
             lexer.advance();
@@ -2007,7 +1998,6 @@ _Result<IdentifierExpression, ParserError> Parser::parseIdentifierExpression(_Pa
     IdentifierExpression* ret = 0;
     {
         Position start = lexer.getPreviousPosition();
-
         String* name = lexer.parseIdentifier(_rp);
         if ((name) && (isIdentifier(*name))) {
             lexer.advance();
@@ -2545,7 +2535,6 @@ _Result<IdentifierPattern, ParserError> Parser::parseIdentifierPattern(_Page* _r
     IdentifierPattern* ret = 0;
     {
         Position start = lexer.getPreviousPosition();
-
         String* identifier = lexer.parseIdentifier(_rp);
         if ((identifier) && (isIdentifier(*identifier))) {
             lexer.advance();
@@ -2838,7 +2827,6 @@ _Result<TypeIdentifier, ParserError> Parser::parseTypeIdentifier(_Page* _rp, _Pa
     TypeIdentifier* ret = 0;
     {
         Position start = lexer.getPreviousPosition();
-
         String* name = lexer.parseIdentifier(_rp);
         if ((name) && (isIdentifier(*name))) {
             lexer.advance();

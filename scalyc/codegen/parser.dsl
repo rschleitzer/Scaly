@@ -114,33 +114,26 @@ _Result<"(id syntax)", ParserError> Parser::parse"(id syntax)"(_Page* _rp, _Page
                 return _Result<"(id syntax)", ParserError>(new(_ep) ParserError(*new(_ep) NotAtEnd(current)));
             }
 "                           )"")
-"            if (!ret)
-                ret = new(_rp) "(id syntax)"(start, lexer.getPosition());
-
-            ret->"(property content)" = result.getResult();
-        }
-"                       ))
+                       ))
                         (("keyword" "punctuation") ($
 "        if (lexer.parse"(if (string=? (type content) "keyword") "Keyword" "Punctuation")"("((if (string=? (type content) "keyword") name-of-link link) content)")) {
             lexer.advance();
-            if (!ret)
-                ret = new(_rp) "(id syntax)"(start, lexer.getPosition());
-        }
 "                       ))
                         (("prefixoperator" "binaryoperator" "postfixoperator" "identifier" "literal") ($
-"
-        "(if (string=? "literal" (type content)) "Literal* literal" ($ "String* "(property content)))" = lexer.parse"(case (type content) (("prefixoperator") "PrefixOperator") (("binaryoperator") "BinaryOperator") (("postfixoperator") "PostfixOperator") (("identifier") "Identifier") (("literal") "Literal") (else "") )"(_rp);
+"        "(if (string=? "literal" (type content)) "Literal* literal" ($ "String* "(property content)))" = lexer.parse"(case (type content) (("prefixoperator") "PrefixOperator") (("binaryoperator") "BinaryOperator") (("postfixoperator") "PostfixOperator") (("identifier") "Identifier") (("literal") "Literal") (else "") )"(_rp);
         if "(if (string=? "identifier" (type content)) ($ "(("(property content)") && (isIdentifier(*"(property content)")))")($"("(property content)")"))" {
             lexer.advance();
-            if (!ret)
-                ret = new(_rp) "(id syntax)"(start, lexer.getPosition());
-
-            ret->"(property content)" = "(property content)";
-        }
 "                       ))
                         (else "")
                     ) ; case
-                    (if (optional? content) "" ($
+"            if (!ret)
+                ret = new(_rp) "(id syntax)"(start, lexer.getPosition());
+"                   (if (property content) ($
+"
+            ret->"(property content)" = "(if (string=? "syntax" (type content)) "result.getResult()" (property content))";
+"                   )"")
+"        }
+"                    (if (optional? content) "" ($
 "        else {
             return _Result<"(id syntax)", ParserError>("(if (string=? (type content) "syntax") "result.getError()" ($ "new(_ep) ParserError(*new(_ep) "
                         (case (type content) 
