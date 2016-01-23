@@ -100,11 +100,11 @@ _Result<"(id syntax)", ParserError> Parser::parse"(id syntax)"(_Page* _rp, _Page
             ($
 "    "(id syntax)"* ret = 0;
 "                (apply-to-children-of syntax (lambda (content) ($
-                    (case (type content)
-                        (("keyword") ($
 "    {
         Position start = lexer.getPreviousPosition();
-        if (lexer.parseKeyword("(name-of-link content)")) {
+"                    (case (type content)
+                        (("keyword") ($
+"        if (lexer.parseKeyword("(name-of-link content)")) {
             lexer.advance(); 
             if (!ret)
                 ret = new(_rp) "(id syntax)"(start, lexer.getPosition());
@@ -123,8 +123,6 @@ _Result<"(id syntax)", ParserError> Parser::parse"(id syntax)"(_Page* _rp, _Page
 "                        ))
                         (("syntax") ($
 "
-    {
-        Position start = lexer.getPreviousPosition();
         _Result<"(if (multiple? content) "Array<" "")(link content)(if (multiple? content) ">" "")", ParserError> result = parse"(link content)(if (multiple? content) "List" "")"(_rp, _ep);
         if (result.succeeded()) {
 "
@@ -149,8 +147,6 @@ _Result<"(id syntax)", ParserError> Parser::parse"(id syntax)"(_Page* _rp, _Page
 "                       ))
                         (("punctuation") ($
 "
-    {
-        Position start = lexer.getPreviousPosition();
         if (lexer.parsePunctuation("(link content)")) {
             lexer.advance();
             if (!ret)
@@ -168,9 +164,7 @@ _Result<"(id syntax)", ParserError> Parser::parse"(id syntax)"(_Page* _rp, _Page
 "    }
 "                        ))
                         (("operator" "prefixoperator" "binaryoperator" "postfixoperator") ($
-"    {
-        Position start = lexer.getPreviousPosition();
-
+"
         String* "(property content)" = lexer.parse"             (case (type content) 
                                     (("prefixoperator") "Prefix")
                                     (("binaryoperator") "Binary") 
@@ -193,8 +187,6 @@ _Result<"(id syntax)", ParserError> Parser::parse"(id syntax)"(_Page* _rp, _Page
 "                        ))
                         (("identifier") ($
 "
-    {
-        Position start = lexer.getPreviousPosition();
         String* id"(property content)" = lexer.parseIdentifier(_rp);
         if ((id"(property content)") && (isIdentifier(*id"(property content)"))) {
             lexer.advance();
@@ -211,9 +203,7 @@ _Result<"(id syntax)", ParserError> Parser::parse"(id syntax)"(_Page* _rp, _Page
 "    }
 "                        ))
                         (("literal")    ($
-"    {
-        Position start = lexer.getPreviousPosition();
-
+"
         Literal* literal = lexer.parseLiteral(_rp);
         if (literal) {
         	lexer.advance();
