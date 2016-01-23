@@ -137,16 +137,26 @@
         <content link = Postfix        multiple optional    property = postfixes
 
     <syntax id = BinaryOp              abstract multiple
-        <content link = BinaryExpression
-        <content link = AssignmentExpression
+        <content link = BinaryOperation
+        <content link = Assignment
+        <content link = TypeQuery
+        <content link = TypeCast
 
-    <syntax id = BinaryExpression                           base = BinaryOp
+    <syntax id = BinaryOperation                            base = BinaryOp
         <content binaryoperator                             property = binaryOperator
         <content link = PrefixExpression                    property = expression
 
-    <syntax id = AssignmentExpression                       base = BinaryOp
+    <syntax id = Assignment                                 base = BinaryOp
         <content link = equal
         <content link = PrefixExpression                    property = expression
+
+    <syntax id = TypeQuery                                  base = BinaryOp
+        <content link = is
+        <content link = Type                                property = objectType
+
+    <syntax id = TypeCast                                   base = BinaryOp
+        <content link = as
+        <content link = Type                                property = objectType
 
     <syntax id = CatchClause                    multiple
         <content link = catch
@@ -360,6 +370,8 @@
     <keyword id = static
     <keyword id = let
     <keyword id = mutable
+    <keyword id = is
+    <keyword id = as
 
     <punctuation id = semicolon         value = ";"
     <punctuation id = equal             value = "="

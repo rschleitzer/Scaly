@@ -138,11 +138,19 @@ BinaryOp::BinaryOp(Position start, Position end)
 : SyntaxNode(start, end) {
 }
 
-BinaryExpression::BinaryExpression(Position start, Position end)
+BinaryOperation::BinaryOperation(Position start, Position end)
 : BinaryOp(start, end) {
 }
 
-AssignmentExpression::AssignmentExpression(Position start, Position end)
+Assignment::Assignment(Position start, Position end)
+: BinaryOp(start, end) {
+}
+
+TypeQuery::TypeQuery(Position start, Position end)
+: BinaryOp(start, end) {
+}
+
+TypeCast::TypeCast(Position start, Position end)
 : BinaryOp(start, end) {
 }
 

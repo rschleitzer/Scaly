@@ -99,10 +99,16 @@ void MyVisitor::VisitPostfixExpression(PostfixExpression) {
 void MyVisitor::VisitBinaryOp(BinaryOp) {
 }
 
-void MyVisitor::VisitBinaryExpression(BinaryExpression) {
+void MyVisitor::VisitBinaryOperation(BinaryOperation) {
 }
 
-void MyVisitor::VisitAssignmentExpression(AssignmentExpression) {
+void MyVisitor::VisitAssignment(Assignment) {
+}
+
+void MyVisitor::VisitTypeQuery(TypeQuery) {
+}
+
+void MyVisitor::VisitTypeCast(TypeCast) {
 }
 
 void MyVisitor::VisitCatchClause(CatchClause) {

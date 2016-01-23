@@ -81,9 +81,13 @@ public:
     _Result<Array<BinaryOp>, ParserError> parseBinaryOpList(_Page* _rp, _Page* _ep);
     _Result<BinaryOp, ParserError> parseBinaryOp(_Page* _rp, _Page* _ep);
 
-    _Result<BinaryExpression, ParserError> parseBinaryExpression(_Page* _rp, _Page* _ep);
+    _Result<BinaryOperation, ParserError> parseBinaryOperation(_Page* _rp, _Page* _ep);
 
-    _Result<AssignmentExpression, ParserError> parseAssignmentExpression(_Page* _rp, _Page* _ep);
+    _Result<Assignment, ParserError> parseAssignment(_Page* _rp, _Page* _ep);
+
+    _Result<TypeQuery, ParserError> parseTypeQuery(_Page* _rp, _Page* _ep);
+
+    _Result<TypeCast, ParserError> parseTypeCast(_Page* _rp, _Page* _ep);
 
     _Result<Array<CatchClause>, ParserError> parseCatchClauseList(_Page* _rp, _Page* _ep);
     _Result<CatchClause, ParserError> parseCatchClause(_Page* _rp, _Page* _ep);
@@ -208,6 +212,8 @@ private:
     const char* staticKeyword = "static";
     const char* letKeyword = "let";
     const char* mutableKeyword = "mutable";
+    const char* isKeyword = "is";
+    const char* asKeyword = "as";
     const char* semicolon = ";";
     const char* equal = "=";
     const char* leftAngular = "<";

@@ -37,8 +37,10 @@ class MyVisitor : public SyntaxVisitor {
     virtual void VisitPrefixExpression(PrefixExpression);
     virtual void VisitPostfixExpression(PostfixExpression);
     virtual void VisitBinaryOp(BinaryOp);
-    virtual void VisitBinaryExpression(BinaryExpression);
-    virtual void VisitAssignmentExpression(AssignmentExpression);
+    virtual void VisitBinaryOperation(BinaryOperation);
+    virtual void VisitAssignment(Assignment);
+    virtual void VisitTypeQuery(TypeQuery);
+    virtual void VisitTypeCast(TypeCast);
     virtual void VisitCatchClause(CatchClause);
     virtual void VisitCatchPattern(CatchPattern);
     virtual void VisitWildCardCatchPattern(WildCardCatchPattern);

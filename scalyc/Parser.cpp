@@ -1280,7 +1280,7 @@ _Result<BinaryOp, ParserError> Parser::parseBinaryOp(_Page* _rp, _Page* _ep) {
     {
         // Make a region for the current block and get the Page
         _Region _r; _Page* _p = _r.get();
-        _Result<BinaryExpression, ParserError> result = parseBinaryExpression(_rp, _p);
+        _Result<BinaryOperation, ParserError> result = parseBinaryOperation(_rp, _p);
         if (result.succeeded()) 
             return _Result<BinaryOp, ParserError>(result.getResult());
         else
@@ -1290,7 +1290,27 @@ _Result<BinaryOp, ParserError> Parser::parseBinaryOp(_Page* _rp, _Page* _ep) {
     {
         // Make a region for the current block and get the Page
         _Region _r; _Page* _p = _r.get();
-        _Result<AssignmentExpression, ParserError> result = parseAssignmentExpression(_rp, _p);
+        _Result<Assignment, ParserError> result = parseAssignment(_rp, _p);
+        if (result.succeeded()) 
+            return _Result<BinaryOp, ParserError>(result.getResult());
+        else
+            errors.append(result.getError());
+    }
+
+    {
+        // Make a region for the current block and get the Page
+        _Region _r; _Page* _p = _r.get();
+        _Result<TypeQuery, ParserError> result = parseTypeQuery(_rp, _p);
+        if (result.succeeded()) 
+            return _Result<BinaryOp, ParserError>(result.getResult());
+        else
+            errors.append(result.getError());
+    }
+
+    {
+        // Make a region for the current block and get the Page
+        _Region _r; _Page* _p = _r.get();
+        _Result<TypeCast, ParserError> result = parseTypeCast(_rp, _p);
         if (result.succeeded()) 
             return _Result<BinaryOp, ParserError>(result.getResult());
         else
@@ -1300,8 +1320,8 @@ _Result<BinaryOp, ParserError> Parser::parseBinaryOp(_Page* _rp, _Page* _ep) {
     return _Result<BinaryOp, ParserError>(new(_ep) ParserError(*new(_ep) UnableToParse(start, errors)));
 }
 
-_Result<BinaryExpression, ParserError> Parser::parseBinaryExpression(_Page* _rp, _Page* _ep) {
-    BinaryExpression* ret = 0;
+_Result<BinaryOperation, ParserError> Parser::parseBinaryOperation(_Page* _rp, _Page* _ep) {
+    BinaryOperation* ret = 0;
     {
         Position start = lexer.getPreviousPosition();
 
@@ -1309,12 +1329,12 @@ _Result<BinaryExpression, ParserError> Parser::parseBinaryExpression(_Page* _rp,
         if (binaryOperator) {
             lexer.advance();
             if (!ret)
-                ret = new (_rp) BinaryExpression(start, lexer.getPosition()); 
+                ret = new (_rp) BinaryOperation(start, lexer.getPosition()); 
 
             ret->binaryOperator = binaryOperator;
 	    }
         else {
-            return _Result<BinaryExpression, ParserError>(new(_ep) ParserError(*new(_ep) OperatorExpected(start)));
+            return _Result<BinaryOperation, ParserError>(new(_ep) ParserError(*new(_ep) OperatorExpected(start)));
         }
     }
 
@@ -1323,30 +1343,30 @@ _Result<BinaryExpression, ParserError> Parser::parseBinaryExpression(_Page* _rp,
         _Result<PrefixExpression, ParserError> result = parsePrefixExpression(_rp, _ep);
         if (result.succeeded()) {
             if (!ret)
-                ret = new(_rp) BinaryExpression(start, lexer.getPosition());
+                ret = new(_rp) BinaryOperation(start, lexer.getPosition());
 
             ret->expression = result.getResult();
         }
         else {
-            return _Result<BinaryExpression, ParserError>(result.getError());
+            return _Result<BinaryOperation, ParserError>(result.getError());
         }
     }
 
-    return _Result<BinaryExpression, ParserError>(ret);
+    return _Result<BinaryOperation, ParserError>(ret);
 }
 
-_Result<AssignmentExpression, ParserError> Parser::parseAssignmentExpression(_Page* _rp, _Page* _ep) {
-    AssignmentExpression* ret = 0;
+_Result<Assignment, ParserError> Parser::parseAssignment(_Page* _rp, _Page* _ep) {
+    Assignment* ret = 0;
 
     {
         Position start = lexer.getPreviousPosition();
         if (lexer.parsePunctuation(equal)) {
             lexer.advance();
             if (!ret)
-                ret = new(_rp) AssignmentExpression(start, lexer.getPosition());
+                ret = new(_rp) Assignment(start, lexer.getPosition());
         }
         else {
-            return _Result<AssignmentExpression, ParserError>(new(_ep) ParserError(*new(_ep) PunctuationExpected(start, *new(_ep) String(equal))));
+            return _Result<Assignment, ParserError>(new(_ep) ParserError(*new(_ep) PunctuationExpected(start, *new(_ep) String(equal))));
         }
     }
 
@@ -1355,16 +1375,78 @@ _Result<AssignmentExpression, ParserError> Parser::parseAssignmentExpression(_Pa
         _Result<PrefixExpression, ParserError> result = parsePrefixExpression(_rp, _ep);
         if (result.succeeded()) {
             if (!ret)
-                ret = new(_rp) AssignmentExpression(start, lexer.getPosition());
+                ret = new(_rp) Assignment(start, lexer.getPosition());
 
             ret->expression = result.getResult();
         }
         else {
-            return _Result<AssignmentExpression, ParserError>(result.getError());
+            return _Result<Assignment, ParserError>(result.getError());
         }
     }
 
-    return _Result<AssignmentExpression, ParserError>(ret);
+    return _Result<Assignment, ParserError>(ret);
+}
+
+_Result<TypeQuery, ParserError> Parser::parseTypeQuery(_Page* _rp, _Page* _ep) {
+    TypeQuery* ret = 0;
+    {
+        Position start = lexer.getPreviousPosition();
+        if (lexer.parseKeyword(isKeyword)) {
+            lexer.advance(); 
+            if (!ret)
+                ret = new(_rp) TypeQuery(start, lexer.getPosition());
+        }
+        else {
+            return _Result<TypeQuery, ParserError>(new(_ep) ParserError(*new(_ep) ShouldStartWithKeyword(start, *new(_ep) String(isKeyword))));
+        }
+    }
+
+    {
+        Position start = lexer.getPreviousPosition();
+        _Result<Type, ParserError> result = parseType(_rp, _ep);
+        if (result.succeeded()) {
+            if (!ret)
+                ret = new(_rp) TypeQuery(start, lexer.getPosition());
+
+            ret->objectType = result.getResult();
+        }
+        else {
+            return _Result<TypeQuery, ParserError>(result.getError());
+        }
+    }
+
+    return _Result<TypeQuery, ParserError>(ret);
+}
+
+_Result<TypeCast, ParserError> Parser::parseTypeCast(_Page* _rp, _Page* _ep) {
+    TypeCast* ret = 0;
+    {
+        Position start = lexer.getPreviousPosition();
+        if (lexer.parseKeyword(asKeyword)) {
+            lexer.advance(); 
+            if (!ret)
+                ret = new(_rp) TypeCast(start, lexer.getPosition());
+        }
+        else {
+            return _Result<TypeCast, ParserError>(new(_ep) ParserError(*new(_ep) ShouldStartWithKeyword(start, *new(_ep) String(asKeyword))));
+        }
+    }
+
+    {
+        Position start = lexer.getPreviousPosition();
+        _Result<Type, ParserError> result = parseType(_rp, _ep);
+        if (result.succeeded()) {
+            if (!ret)
+                ret = new(_rp) TypeCast(start, lexer.getPosition());
+
+            ret->objectType = result.getResult();
+        }
+        else {
+            return _Result<TypeCast, ParserError>(result.getError());
+        }
+    }
+
+    return _Result<TypeCast, ParserError>(ret);
 }
 
 _Result<Array<CatchClause>, ParserError> Parser::parseCatchClauseList(_Page* _rp, _Page* _ep) {
@@ -3099,6 +3181,12 @@ bool Parser::isIdentifier(String& id) {
         return false;
 
     if (id == mutableKeyword)
+        return false;
+
+    if (id == isKeyword)
+        return false;
+
+    if (id == asKeyword)
         return false;
 
     return true;

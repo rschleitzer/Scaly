@@ -43,8 +43,10 @@ class SimpleExpression;
 class PrefixExpression;
 class PostfixExpression;
 class BinaryOp;
-class BinaryExpression;
-class AssignmentExpression;
+class BinaryOperation;
+class Assignment;
+class TypeQuery;
+class TypeCast;
 class CatchClause;
 class CatchPattern;
 class WildCardCatchPattern;
@@ -324,19 +326,33 @@ public:
 
 };
 
-class BinaryExpression : public BinaryOp {
+class BinaryOperation : public BinaryOp {
 public:
-    BinaryExpression(Position start, Position end);
+    BinaryOperation(Position start, Position end);
 
     String* binaryOperator;
     PrefixExpression* expression;
 };
 
-class AssignmentExpression : public BinaryOp {
+class Assignment : public BinaryOp {
 public:
-    AssignmentExpression(Position start, Position end);
+    Assignment(Position start, Position end);
 
     PrefixExpression* expression;
+};
+
+class TypeQuery : public BinaryOp {
+public:
+    TypeQuery(Position start, Position end);
+
+    Type* objectType;
+};
+
+class TypeCast : public BinaryOp {
+public:
+    TypeCast(Position start, Position end);
+
+    Type* objectType;
 };
 
 class CatchClause : public SyntaxNode {
