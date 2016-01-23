@@ -1,7 +1,7 @@
 Scaly
 =====
 
-Welcome to [_Scaly_](https://scaly.io), the _self-scaling programming language_.
+Welcome to [_Scaly_](http://scaly.io), the _self-scaling programming language_.
 
 # scaly
 
