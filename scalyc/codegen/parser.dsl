@@ -113,8 +113,7 @@ _Result<"(id syntax)", ParserError> Parser::parse"(id syntax)"(_Page* _rp, _Page
                 Position current = lexer.getPreviousPosition();
                 return _Result<"(id syntax)", ParserError>(new(_ep) ParserError(*new(_ep) NotAtEnd(current)));
             }
-"
-                            )"")
+"                           )"")
 "            if (!ret)
                 ret = new(_rp) "(id syntax)"(start, lexer.getPosition());
 
@@ -125,8 +124,7 @@ _Result<"(id syntax)", ParserError> Parser::parse"(id syntax)"(_Page* _rp, _Page
             return _Result<"(id syntax)", ParserError>(result.getError());
         }
 "                           ))
-"    }
-"                       ))
+                        ))
                         (("keyword" "punctuation") ($
 "        if (lexer.parse"(if (string=? (type content) "keyword") "Keyword" "Punctuation")"("((if (string=? (type content) "keyword") name-of-link link) content)")) {
             lexer.advance();
@@ -140,19 +138,13 @@ _Result<"(id syntax)", ParserError> Parser::parse"(id syntax)"(_Page* _rp, _Page
 "        }
 "                           (if (optional? content) "" ($
 "        else {
-            return _Result<"(id syntax)", ParserError>(new(_ep) ParserError(*new(_ep) "(if (string=? (type content) "keyword") "ShouldStartWithKeyword" "PunctuationExpected")"(start, *new(_ep) String("((if (string=? (type content) "keyword") name-of-link link) content)"))));
+            return _Result<"(id syntax)", ParserError>(new(_ep) ParserError(*new(_ep) "(if (string=? (type content) "keyword") "Keyword" "Punctuation")"Expected(start, *new(_ep) String("((if (string=? (type content) "keyword") name-of-link link) content)"))));
         }
 "                           ))
-"    }
-"                       ))
+                       ))
                         (("operator" "prefixoperator" "binaryoperator" "postfixoperator") ($
 "
-        String* "(property content)" = lexer.parse"             (case (type content) 
-                                    (("prefixoperator") "Prefix")
-                                    (("binaryoperator") "Binary") 
-                                    (("postfixoperator") "Postfix")
-                                    (else "") )
-                                            "Operator(_rp); 
+        String* "(property content)" = lexer.parse"(case (type content) (("prefixoperator") "Prefix") (("binaryoperator") "Binary") (("postfixoperator") "Postfix")(else "") )"Operator(_rp); 
         if ("(property content)") {
             lexer.advance();
             if (!ret)
@@ -165,8 +157,7 @@ _Result<"(id syntax)", ParserError> Parser::parse"(id syntax)"(_Page* _rp, _Page
             return _Result<"(id syntax)", ParserError>(new(_ep) ParserError(*new(_ep) OperatorExpected(start)));
         }
 "                           ))
-"    }
-"                        ))
+                        ))
                         (("identifier") ($
 "
         String* id"(property content)" = lexer.parseIdentifier(_rp);
@@ -182,8 +173,7 @@ _Result<"(id syntax)", ParserError> Parser::parse"(id syntax)"(_Page* _rp, _Page
             return _Result<"(id syntax)", ParserError>(new(_ep) ParserError(*new(_ep) IdentifierExpected(start)));
         }
 "                           ))
-"    }
-"                        ))
+                        ))
                         (("literal")    ($
 "
         Literal* literal = lexer.parseLiteral(_rp);
@@ -199,11 +189,11 @@ _Result<"(id syntax)", ParserError> Parser::parse"(id syntax)"(_Page* _rp, _Page
             return _Result<"(id syntax)", ParserError>(new(_ep) ParserError(*new(_ep) LiteralExpected(start)));
         }
 "                           ))
-"	}
-"                       ))
+                       ))
                         (else "")
                     ) ; case
-                ))) ; apply to children of syntax
+"    }
+"                ))) ; apply to children of syntax
 "
     return _Result<"(id syntax)", ParserError>(ret);
 "

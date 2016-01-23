@@ -21,9 +21,9 @@ public:
     LiteralExpected(Position& position);
 };
 
-class ShouldStartWithKeyword: public ParserErrorInfo {
+class KeywordExpected: public ParserErrorInfo {
 public:
-    ShouldStartWithKeyword(Position& position, String& keyword);
+    KeywordExpected(Position& position, String& keyword);
     String& keyword; 
 };
 
@@ -69,8 +69,8 @@ public:
     ParserError(LiteralExpected& LiteralExpected)
     : errorCode(literalExpected), errorInfo(&LiteralExpected) {}
 
-    ParserError(ShouldStartWithKeyword& ShouldStartWithKeyword)
-    : errorCode(shouldStartWithKeyword), errorInfo(&ShouldStartWithKeyword) {}
+    ParserError(KeywordExpected& KeywordExpected)
+    : errorCode(shouldStartWithKeyword), errorInfo(&KeywordExpected) {}
 
     ParserError(PunctuationExpected& PunctuationExpected)
     : errorCode(punctuationExpected), errorInfo(&PunctuationExpected) {}
@@ -89,7 +89,7 @@ public:
     
     IdentifierExpected& getIdentifierExpected();
     LiteralExpected& getLiteralExpected();
-    ShouldStartWithKeyword& getShouldStartWithKeyword();
+    KeywordExpected& getShouldStartWithKeyword();
     PunctuationExpected& getPunctuationExpected();
     OperatorExpected& getOperatorExpected();
     UnableToParse& getUnableToParse();

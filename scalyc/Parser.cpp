@@ -173,7 +173,7 @@ _Result<UseDeclaration, ParserError> Parser::parseUseDeclaration(_Page* _rp, _Pa
                 ret = new(_rp) UseDeclaration(start, lexer.getPosition());
         }
         else {
-            return _Result<UseDeclaration, ParserError>(new(_ep) ParserError(*new(_ep) ShouldStartWithKeyword(start, *new(_ep) String(useKeyword))));
+            return _Result<UseDeclaration, ParserError>(new(_ep) ParserError(*new(_ep) KeywordExpected(start, *new(_ep) String(useKeyword))));
         }
     }
     {
@@ -319,7 +319,7 @@ _Result<ConstantDeclaration, ParserError> Parser::parseConstantDeclaration(_Page
                 ret = new(_rp) ConstantDeclaration(start, lexer.getPosition());
         }
         else {
-            return _Result<ConstantDeclaration, ParserError>(new(_ep) ParserError(*new(_ep) ShouldStartWithKeyword(start, *new(_ep) String(letKeyword))));
+            return _Result<ConstantDeclaration, ParserError>(new(_ep) ParserError(*new(_ep) KeywordExpected(start, *new(_ep) String(letKeyword))));
         }
     }
     {
@@ -410,7 +410,7 @@ _Result<VariableDeclaration, ParserError> Parser::parseVariableDeclaration(_Page
                 ret = new(_rp) VariableDeclaration(start, lexer.getPosition());
         }
         else {
-            return _Result<VariableDeclaration, ParserError>(new(_ep) ParserError(*new(_ep) ShouldStartWithKeyword(start, *new(_ep) String(mutableKeyword))));
+            return _Result<VariableDeclaration, ParserError>(new(_ep) ParserError(*new(_ep) KeywordExpected(start, *new(_ep) String(mutableKeyword))));
         }
     }
     {
@@ -452,7 +452,7 @@ _Result<FunctionDeclaration, ParserError> Parser::parseFunctionDeclaration(_Page
                 ret = new(_rp) FunctionDeclaration(start, lexer.getPosition());
         }
         else {
-            return _Result<FunctionDeclaration, ParserError>(new(_ep) ParserError(*new(_ep) ShouldStartWithKeyword(start, *new(_ep) String(functionKeyword))));
+            return _Result<FunctionDeclaration, ParserError>(new(_ep) ParserError(*new(_ep) KeywordExpected(start, *new(_ep) String(functionKeyword))));
         }
     }
     {
@@ -549,7 +549,7 @@ _Result<Static, ParserError> Parser::parseStatic(_Page* _rp, _Page* _ep) {
                 ret = new(_rp) Static(start, lexer.getPosition());
         }
         else {
-            return _Result<Static, ParserError>(new(_ep) ParserError(*new(_ep) ShouldStartWithKeyword(start, *new(_ep) String(staticKeyword))));
+            return _Result<Static, ParserError>(new(_ep) ParserError(*new(_ep) KeywordExpected(start, *new(_ep) String(staticKeyword))));
         }
     }
 
@@ -812,7 +812,7 @@ _Result<ThrowsClause, ParserError> Parser::parseThrowsClause(_Page* _rp, _Page* 
                 ret = new(_rp) ThrowsClause(start, lexer.getPosition());
         }
         else {
-            return _Result<ThrowsClause, ParserError>(new(_ep) ParserError(*new(_ep) ShouldStartWithKeyword(start, *new(_ep) String(throwsKeyword))));
+            return _Result<ThrowsClause, ParserError>(new(_ep) ParserError(*new(_ep) KeywordExpected(start, *new(_ep) String(throwsKeyword))));
         }
     }
     {
@@ -843,7 +843,7 @@ _Result<ClassDeclaration, ParserError> Parser::parseClassDeclaration(_Page* _rp,
                 ret = new(_rp) ClassDeclaration(start, lexer.getPosition());
         }
         else {
-            return _Result<ClassDeclaration, ParserError>(new(_ep) ParserError(*new(_ep) ShouldStartWithKeyword(start, *new(_ep) String(classKeyword))));
+            return _Result<ClassDeclaration, ParserError>(new(_ep) ParserError(*new(_ep) KeywordExpected(start, *new(_ep) String(classKeyword))));
         }
     }
     {
@@ -1380,7 +1380,7 @@ _Result<TypeQuery, ParserError> Parser::parseTypeQuery(_Page* _rp, _Page* _ep) {
                 ret = new(_rp) TypeQuery(start, lexer.getPosition());
         }
         else {
-            return _Result<TypeQuery, ParserError>(new(_ep) ParserError(*new(_ep) ShouldStartWithKeyword(start, *new(_ep) String(isKeyword))));
+            return _Result<TypeQuery, ParserError>(new(_ep) ParserError(*new(_ep) KeywordExpected(start, *new(_ep) String(isKeyword))));
         }
     }
     {
@@ -1411,7 +1411,7 @@ _Result<TypeCast, ParserError> Parser::parseTypeCast(_Page* _rp, _Page* _ep) {
                 ret = new(_rp) TypeCast(start, lexer.getPosition());
         }
         else {
-            return _Result<TypeCast, ParserError>(new(_ep) ParserError(*new(_ep) ShouldStartWithKeyword(start, *new(_ep) String(asKeyword))));
+            return _Result<TypeCast, ParserError>(new(_ep) ParserError(*new(_ep) KeywordExpected(start, *new(_ep) String(asKeyword))));
         }
     }
     {
@@ -1463,7 +1463,7 @@ _Result<CatchClause, ParserError> Parser::parseCatchClause(_Page* _rp, _Page* _e
                 ret = new(_rp) CatchClause(start, lexer.getPosition());
         }
         else {
-            return _Result<CatchClause, ParserError>(new(_ep) ParserError(*new(_ep) ShouldStartWithKeyword(start, *new(_ep) String(catchKeyword))));
+            return _Result<CatchClause, ParserError>(new(_ep) ParserError(*new(_ep) KeywordExpected(start, *new(_ep) String(catchKeyword))));
         }
     }
     {
@@ -1998,7 +1998,7 @@ _Result<LiteralExpression, ParserError> Parser::parseLiteralExpression(_Page* _r
         else {
             return _Result<LiteralExpression, ParserError>(new(_ep) ParserError(*new(_ep) LiteralExpected(start)));
         }
-	}
+    }
 
     return _Result<LiteralExpression, ParserError>(ret);
 }
@@ -2034,7 +2034,7 @@ _Result<IfExpression, ParserError> Parser::parseIfExpression(_Page* _rp, _Page* 
                 ret = new(_rp) IfExpression(start, lexer.getPosition());
         }
         else {
-            return _Result<IfExpression, ParserError>(new(_ep) ParserError(*new(_ep) ShouldStartWithKeyword(start, *new(_ep) String(ifKeyword))));
+            return _Result<IfExpression, ParserError>(new(_ep) ParserError(*new(_ep) KeywordExpected(start, *new(_ep) String(ifKeyword))));
         }
     }
     {
@@ -2090,7 +2090,7 @@ _Result<ElseClause, ParserError> Parser::parseElseClause(_Page* _rp, _Page* _ep)
                 ret = new(_rp) ElseClause(start, lexer.getPosition());
         }
         else {
-            return _Result<ElseClause, ParserError>(new(_ep) ParserError(*new(_ep) ShouldStartWithKeyword(start, *new(_ep) String(elseKeyword))));
+            return _Result<ElseClause, ParserError>(new(_ep) ParserError(*new(_ep) KeywordExpected(start, *new(_ep) String(elseKeyword))));
         }
     }
     {
@@ -2121,7 +2121,7 @@ _Result<SwitchExpression, ParserError> Parser::parseSwitchExpression(_Page* _rp,
                 ret = new(_rp) SwitchExpression(start, lexer.getPosition());
         }
         else {
-            return _Result<SwitchExpression, ParserError>(new(_ep) ParserError(*new(_ep) ShouldStartWithKeyword(start, *new(_ep) String(switchKeyword))));
+            return _Result<SwitchExpression, ParserError>(new(_ep) ParserError(*new(_ep) KeywordExpected(start, *new(_ep) String(switchKeyword))));
         }
     }
     {
@@ -2337,7 +2337,7 @@ _Result<ItemCaseLabel, ParserError> Parser::parseItemCaseLabel(_Page* _rp, _Page
                 ret = new(_rp) ItemCaseLabel(start, lexer.getPosition());
         }
         else {
-            return _Result<ItemCaseLabel, ParserError>(new(_ep) ParserError(*new(_ep) ShouldStartWithKeyword(start, *new(_ep) String(caseKeyword))));
+            return _Result<ItemCaseLabel, ParserError>(new(_ep) ParserError(*new(_ep) KeywordExpected(start, *new(_ep) String(caseKeyword))));
         }
     }
     {
@@ -2431,7 +2431,7 @@ _Result<ReturnExpression, ParserError> Parser::parseReturnExpression(_Page* _rp,
                 ret = new(_rp) ReturnExpression(start, lexer.getPosition());
         }
         else {
-            return _Result<ReturnExpression, ParserError>(new(_ep) ParserError(*new(_ep) ShouldStartWithKeyword(start, *new(_ep) String(returnKeyword))));
+            return _Result<ReturnExpression, ParserError>(new(_ep) ParserError(*new(_ep) KeywordExpected(start, *new(_ep) String(returnKeyword))));
         }
     }
     {
@@ -2459,7 +2459,7 @@ _Result<ThrowExpression, ParserError> Parser::parseThrowExpression(_Page* _rp, _
                 ret = new(_rp) ThrowExpression(start, lexer.getPosition());
         }
         else {
-            return _Result<ThrowExpression, ParserError>(new(_ep) ParserError(*new(_ep) ShouldStartWithKeyword(start, *new(_ep) String(throwKeyword))));
+            return _Result<ThrowExpression, ParserError>(new(_ep) ParserError(*new(_ep) KeywordExpected(start, *new(_ep) String(throwKeyword))));
         }
     }
     {
@@ -2694,7 +2694,7 @@ _Result<DefaultCaseLabel, ParserError> Parser::parseDefaultCaseLabel(_Page* _rp,
                 ret = new(_rp) DefaultCaseLabel(start, lexer.getPosition());
         }
         else {
-            return _Result<DefaultCaseLabel, ParserError>(new(_ep) ParserError(*new(_ep) ShouldStartWithKeyword(start, *new(_ep) String(defaultKeyword))));
+            return _Result<DefaultCaseLabel, ParserError>(new(_ep) ParserError(*new(_ep) KeywordExpected(start, *new(_ep) String(defaultKeyword))));
         }
     }
     {

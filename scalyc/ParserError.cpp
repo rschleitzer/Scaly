@@ -30,12 +30,12 @@ LiteralExpected& ParserError::getLiteralExpected(){
     return *(LiteralExpected*)errorInfo;
 }
 
-ShouldStartWithKeyword::ShouldStartWithKeyword(Position& position, String& keyword)
+KeywordExpected::KeywordExpected(Position& position, String& keyword)
 : ParserErrorInfo(position), keyword(keyword) {
 }
 
-ShouldStartWithKeyword& ParserError::getShouldStartWithKeyword(){
-    return *(ShouldStartWithKeyword*)errorInfo;
+KeywordExpected& ParserError::getShouldStartWithKeyword(){
+    return *(KeywordExpected*)errorInfo;
 }
 
 PunctuationExpected::PunctuationExpected(Position& position, String& punctuation)
