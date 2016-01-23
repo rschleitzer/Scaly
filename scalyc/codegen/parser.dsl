@@ -116,7 +116,8 @@ _Result<"(id syntax)", ParserError> Parser::parse"(id syntax)"(_Page* _rp, _Page
 "                           )"")
                        ))
                         (("keyword" "punctuation") ($
-"        if (lexer.parse"(if (string=? (type content) "keyword") "Keyword" "Punctuation")"("((if (string=? (type content) "keyword") name-of-link link) content)")) {
+"        bool success = lexer.parse"(if (string=? (type content) "keyword") "Keyword" "Punctuation")"("((if (string=? (type content) "keyword") name-of-link link) content)");
+        if (success) {
             lexer.advance();
 "                       ))
                         (("prefixoperator" "binaryoperator" "postfixoperator" "identifier" "literal") ($
