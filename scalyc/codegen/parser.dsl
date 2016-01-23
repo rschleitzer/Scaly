@@ -1,3 +1,133 @@
+(define (parser-scaly) ($
+
+"class Parser {
+    Parser(text: String) {
+        lexer = Lexer(text)
+    }
+"
+    (apply-to-selected-children "syntax" (lambda (syntax) ($
+        (if (multiple? syntax) ($
+"
+    function parse"(id syntax)"List() -> ["(id syntax)"] throws ParserError {
+        mutable ret: ["(id syntax)"]? = null
+
+        while true {
+            let node: "(id syntax)" = parse"(id syntax)"()
+                catch _ break
+            
+            if ret == null
+                ret = ["(id syntax)"]
+                
+            ret.append(node)
+        }
+
+        return ret
+    }
+"       )"")
+"
+    function parse("(id syntax)") -> "(id syntax)" throws ParserError {"
+        (if (abstract? syntax)
+            ($
+"        errors: [ParserError] = [ParserError]()
+        let start: Position = lexer.getPreviousPosition()
+"                (apply-to-children-of syntax (lambda (content) ($
+"
+        {
+            let node: "(link content)" = parse"(link content)"() catch _(error) {
+                errors.append(error)
+                break
+            }
+
+            return node
+        }
+"
+                )))
+"
+        throw ParserError.UnableToParse(start, errors)
+"
+            )
+            ($ ; non-abstract syntax
+"
+        mutable ret: "(id syntax)"? = null;
+"                (apply-to-children-of syntax (lambda (content) ($
+"        {
+            let start: Position = lexer.getPreviousPosition()
+"                   (if (string=? "syntax" (type content))
+
+                        ($ ; non-terminals
+"            let result: "(if (multiple? content) "[" "")(link content)(if (multiple? content) "]" "")" node = parse"(link content)(if (multiple? content) "List" "")"() catch _(error) {
+"
+                    (if (optional? content) 
+"                 null
+" 
+                        ($
+"                throw ("(if (string=? (type content) "syntax") "error" ($ "ParserError."
+                (case (type content) (("keyword") "Keyword") (("punctuation") "Punctuation")(("identifier") "Identifier")(("literal") "Literal")(("prefixoperator" "binaryoperator" "postfixoperator") "Operator"))
+                "Expected(start"(case (type content) (("keyword" "punctuation") ($ ", String("((if (string=? (type content) "keyword") name-of-link link) content)")"))(else ""))"))"))")
+"                       )
+                    )
+"            }
+"                           (if (top? syntax) ($
+"            if !isAtEnd() {
+                let current: Position = lexer.getPreviousPosition()
+                throw ParserError.NotAtEnd(current)
+            }
+"                           )"")
+                        )
+                        ($ ; terminals
+"            let "(case (type content) (("keyword" "punctuation") "success: bool")(("literal") "literal: Literal?")(else ($ (property content)": String?")))
+            " = lexer.parse"
+            (case (type content)(("prefixoperator") "PrefixOperator")(("binaryoperator") "BinaryOperator")(("postfixoperator") "PostfixOperator")(("identifier") "Identifier")(("literal") "Literal")(("keyword") "Keyword")(("punctuation") "Punctuation"))                            
+            "("(case (type content)(("keyword") (name-of-link content)) (("punctuation") (link content)) (else ""))")
+            if "(case (type content) (("keyword" "punctuation") "success")(("identifier") ($ "("(property content)" != null) && ("(property content)" is Identifier)")) (else ($ (property content)" != null")))" {
+            lexer.advance()
+"                       )
+                    ) ; syntax or terminal
+"
+            if ret == null
+                ret = "(id syntax)"(start, lexer.getPosition())
+"                   (if (property content) ($
+"
+            ret."(property content)" = "(if (string=? "syntax" (type content)) "node" (property content))"
+"                   )"")
+"        }
+"                ))) ; apply to children of syntax
+"
+        return ret
+"
+            ) ; $
+        ) ; abstract or not
+"    }
+"   )))
+"
+    function isAtEnd() -> bool {
+        lexer.isAtEnd()
+    }
+    
+    function isIdentifier(id: String) -> bool {"
+   (apply-to-selected-children "keyword" (lambda (keyword) ($
+"
+        if id == "(name keyword)"
+            return false
+"   )))
+"
+        true
+    }
+
+    mutable lexer: Lexer
+
+"   (apply-to-selected-children "keyword" (lambda (keyword) ($
+"    let "(name keyword)": string = \""(id keyword)"\"
+"   )))
+    (apply-to-selected-children "punctuation" (lambda (punctuation) ($
+"    let "(id punctuation)": string = \""(value punctuation)"\"
+"   )))
+"    }
+}
+"
+
+))
+
 (define (parser-h) ($
 
 "#ifndef __scalyc__Parser__

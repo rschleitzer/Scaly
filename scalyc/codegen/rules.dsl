@@ -21,4 +21,7 @@
 
         (create-file ($ "Parser.cpp" generated-extension)
             (output (parser-cpp)))
+
+        (create-file ($ "Parser.scaly" generated-extension)
+            (output (parser-scaly)))
 ))
