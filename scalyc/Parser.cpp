@@ -262,13 +262,13 @@ _Result<PathItem, ParserError> Parser::parsePathItem(_Page* _rp, _Page* _ep) {
     {
         Position start = lexer.getPreviousPosition();
 
-        String* idname = lexer.parseIdentifier(_rp);
-        if ((idname) && (isIdentifier(*idname))) {
+        String* name = lexer.parseIdentifier(_rp);
+        if ((name) && (isIdentifier(*name))) {
             lexer.advance();
             if (!ret)
                 ret = new(_rp) PathItem(start, lexer.getPosition());
 
-            ret->name = idname;
+            ret->name = name;
         }
         else {
             return _Result<PathItem, ParserError>(new(_ep) ParserError(*new(_ep) IdentifierExpected(start)));
@@ -578,13 +578,13 @@ _Result<IdentifierFunctionName, ParserError> Parser::parseIdentifierFunctionName
     {
         Position start = lexer.getPreviousPosition();
 
-        String* idname = lexer.parseIdentifier(_rp);
-        if ((idname) && (isIdentifier(*idname))) {
+        String* name = lexer.parseIdentifier(_rp);
+        if ((name) && (isIdentifier(*name))) {
             lexer.advance();
             if (!ret)
                 ret = new(_rp) IdentifierFunctionName(start, lexer.getPosition());
 
-            ret->name = idname;
+            ret->name = name;
         }
         else {
             return _Result<IdentifierFunctionName, ParserError>(new(_ep) ParserError(*new(_ep) IdentifierExpected(start)));
@@ -753,13 +753,13 @@ _Result<Parameter, ParserError> Parser::parseParameter(_Page* _rp, _Page* _ep) {
     {
         Position start = lexer.getPreviousPosition();
 
-        String* idparameterName = lexer.parseIdentifier(_rp);
-        if ((idparameterName) && (isIdentifier(*idparameterName))) {
+        String* parameterName = lexer.parseIdentifier(_rp);
+        if ((parameterName) && (isIdentifier(*parameterName))) {
             lexer.advance();
             if (!ret)
                 ret = new(_rp) Parameter(start, lexer.getPosition());
 
-            ret->parameterName = idparameterName;
+            ret->parameterName = parameterName;
         }
         else {
             return _Result<Parameter, ParserError>(new(_ep) ParserError(*new(_ep) IdentifierExpected(start)));
@@ -849,13 +849,13 @@ _Result<ClassDeclaration, ParserError> Parser::parseClassDeclaration(_Page* _rp,
     {
         Position start = lexer.getPreviousPosition();
 
-        String* idname = lexer.parseIdentifier(_rp);
-        if ((idname) && (isIdentifier(*idname))) {
+        String* name = lexer.parseIdentifier(_rp);
+        if ((name) && (isIdentifier(*name))) {
             lexer.advance();
             if (!ret)
                 ret = new(_rp) ClassDeclaration(start, lexer.getPosition());
 
-            ret->name = idname;
+            ret->name = name;
         }
         else {
             return _Result<ClassDeclaration, ParserError>(new(_ep) ParserError(*new(_ep) IdentifierExpected(start)));
@@ -969,13 +969,13 @@ _Result<GenericParameter, ParserError> Parser::parseGenericParameter(_Page* _rp,
     {
         Position start = lexer.getPreviousPosition();
 
-        String* idtypeName = lexer.parseIdentifier(_rp);
-        if ((idtypeName) && (isIdentifier(*idtypeName))) {
+        String* typeName = lexer.parseIdentifier(_rp);
+        if ((typeName) && (isIdentifier(*typeName))) {
             lexer.advance();
             if (!ret)
                 ret = new(_rp) GenericParameter(start, lexer.getPosition());
 
-            ret->typeName = idtypeName;
+            ret->typeName = typeName;
         }
         else {
             return _Result<GenericParameter, ParserError>(new(_ep) ParserError(*new(_ep) IdentifierExpected(start)));
@@ -2008,13 +2008,13 @@ _Result<IdentifierExpression, ParserError> Parser::parseIdentifierExpression(_Pa
     {
         Position start = lexer.getPreviousPosition();
 
-        String* idname = lexer.parseIdentifier(_rp);
-        if ((idname) && (isIdentifier(*idname))) {
+        String* name = lexer.parseIdentifier(_rp);
+        if ((name) && (isIdentifier(*name))) {
             lexer.advance();
             if (!ret)
                 ret = new(_rp) IdentifierExpression(start, lexer.getPosition());
 
-            ret->name = idname;
+            ret->name = name;
         }
         else {
             return _Result<IdentifierExpression, ParserError>(new(_ep) ParserError(*new(_ep) IdentifierExpected(start)));
@@ -2546,13 +2546,13 @@ _Result<IdentifierPattern, ParserError> Parser::parseIdentifierPattern(_Page* _r
     {
         Position start = lexer.getPreviousPosition();
 
-        String* ididentifier = lexer.parseIdentifier(_rp);
-        if ((ididentifier) && (isIdentifier(*ididentifier))) {
+        String* identifier = lexer.parseIdentifier(_rp);
+        if ((identifier) && (isIdentifier(*identifier))) {
             lexer.advance();
             if (!ret)
                 ret = new(_rp) IdentifierPattern(start, lexer.getPosition());
 
-            ret->identifier = ididentifier;
+            ret->identifier = identifier;
         }
         else {
             return _Result<IdentifierPattern, ParserError>(new(_ep) ParserError(*new(_ep) IdentifierExpected(start)));
@@ -2839,13 +2839,13 @@ _Result<TypeIdentifier, ParserError> Parser::parseTypeIdentifier(_Page* _rp, _Pa
     {
         Position start = lexer.getPreviousPosition();
 
-        String* idname = lexer.parseIdentifier(_rp);
-        if ((idname) && (isIdentifier(*idname))) {
+        String* name = lexer.parseIdentifier(_rp);
+        if ((name) && (isIdentifier(*name))) {
             lexer.advance();
             if (!ret)
                 ret = new(_rp) TypeIdentifier(start, lexer.getPosition());
 
-            ret->name = idname;
+            ret->name = name;
         }
         else {
             return _Result<TypeIdentifier, ParserError>(new(_ep) ParserError(*new(_ep) IdentifierExpected(start)));

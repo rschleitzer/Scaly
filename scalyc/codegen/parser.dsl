@@ -125,14 +125,9 @@ _Result<"(id syntax)", ParserError> Parser::parse"(id syntax)"(_Page* _rp, _Page
             lexer.advance();
             if (!ret)
                 ret = new(_rp) "(id syntax)"(start, lexer.getPosition());
-"
-                            (if (property content) ($
-"
-            ret->"(property content)" = true;"
-                            )"")
-"        }
+        }
 "                       ))
-                        (("operator" "prefixoperator" "binaryoperator" "postfixoperator") ($
+                        (("prefixoperator" "binaryoperator" "postfixoperator") ($
 "
         String* "(property content)" = lexer.parse"(case (type content) (("prefixoperator") "Prefix") (("binaryoperator") "Binary") (("postfixoperator") "Postfix")(else "") )"Operator(_rp); 
         if ("(property content)") {
@@ -145,13 +140,13 @@ _Result<"(id syntax)", ParserError> Parser::parse"(id syntax)"(_Page* _rp, _Page
 "                       ))
                         (("identifier") ($
 "
-        String* id"(property content)" = lexer.parseIdentifier(_rp);
-        if ((id"(property content)") && (isIdentifier(*id"(property content)"))) {
+        String* "(property content)" = lexer.parseIdentifier(_rp);
+        if (("(property content)") && (isIdentifier(*"(property content)"))) {
             lexer.advance();
             if (!ret)
                 ret = new(_rp) "(id syntax)"(start, lexer.getPosition());
 
-            ret->"(property content)" = id"(property content)";
+            ret->"(property content)" = "(property content)";
         }
 "                       ))
                         (("literal")    ($
@@ -175,7 +170,7 @@ _Result<"(id syntax)", ParserError> Parser::parse"(id syntax)"(_Page* _rp, _Page
                             (("punctuation") "Punctuation")
                             (("identifier") "Identifier")
                             (("literal") "Literal")
-                            (("operator" "prefixoperator" "binaryoperator" "postfixoperator") "Operator")
+                            (("prefixoperator" "binaryoperator" "postfixoperator") "Operator")
                             (else "")
                         )
                 "Expected(start"
