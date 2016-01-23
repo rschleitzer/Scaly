@@ -48,8 +48,7 @@ namespace scalyc {
 Parser::Parser(String& text)
 : lexer(text) {
 }
-"
-    (apply-to-selected-children "syntax" (lambda (syntax) ($
+"    (apply-to-selected-children "syntax" (lambda (syntax) ($
         (if (multiple? syntax) ($
 "
 _Result<""Array<"(id syntax)">, ParserError> Parser::parse"(id syntax)"List(_Page* _rp, _Page* _ep) {
@@ -97,36 +96,32 @@ _Result<"(id syntax)", ParserError> Parser::parse"(id syntax)"(_Page* _rp, _Page
     return _Result<"(id syntax)", ParserError>(new(_ep) ParserError(*new(_ep) UnableToParse(start, errors)));
 "
             )
-            ($
+            ($ ; non-abstract syntax
 "    "(id syntax)"* ret = 0;
 "                (apply-to-children-of syntax (lambda (content) ($
 "    {
         Position start = lexer.getPreviousPosition();
-"                    (case (type content)
-                        (("syntax") ($
-"
-        _Result<"(if (multiple? content) "Array<" "")(link content)(if (multiple? content) ">" "")", ParserError> result = parse"(link content)(if (multiple? content) "List" "")"(_rp, _ep);
+"                   (if (string=? "syntax" (type content))
+
+                        ($ ; non-terminals
+"        _Result<"(if (multiple? content) "Array<" "")(link content)(if (multiple? content) ">" "")", ParserError> result = parse"(link content)(if (multiple? content) "List" "")"(_rp, _ep);
         if (result.succeeded()) {
-"
-                            (if (top? syntax) ($
+"                           (if (top? syntax) ($
 "            if (!isAtEnd()) {
                 Position current = lexer.getPreviousPosition();
                 return _Result<"(id syntax)", ParserError>(new(_ep) ParserError(*new(_ep) NotAtEnd(current)));
             }
 "                           )"")
-                       ))
-                        (("keyword" "punctuation") ($
-"        bool success = lexer.parse"(if (string=? (type content) "keyword") "Keyword" "Punctuation")"("((if (string=? (type content) "keyword") name-of-link link) content)");
-        if (success) {
+                        )
+                        ($ ; terminals
+"        "(case (type content) (("keyword" "punctuation") "bool success")(("literal") "Literal* literal")(else ($ "String* "(property content))))
+        " = lexer.parse"
+        (case (type content)(("prefixoperator") "PrefixOperator")(("binaryoperator") "BinaryOperator")(("postfixoperator") "PostfixOperator")(("identifier") "Identifier")(("literal") "Literal")(("keyword") "Keyword")(("punctuation") "Punctuation"))                            
+        "("(case (type content)(("keyword") (name-of-link content)) (("punctuation") (link content)) (else "_rp"))");
+        if "(case (type content) (("keyword" "punctuation") "(success)")(("identifier") ($ "(("(property content)") && (isIdentifier(*"(property content)")))")) (else ($"("(property content)")")))" {
             lexer.advance();
-"                       ))
-                        (("prefixoperator" "binaryoperator" "postfixoperator" "identifier" "literal") ($
-"        "(if (string=? "literal" (type content)) "Literal* literal" ($ "String* "(property content)))" = lexer.parse"(case (type content) (("prefixoperator") "PrefixOperator") (("binaryoperator") "BinaryOperator") (("postfixoperator") "PostfixOperator") (("identifier") "Identifier") (("literal") "Literal") (else "") )"(_rp);
-        if "(if (string=? "identifier" (type content)) ($ "(("(property content)") && (isIdentifier(*"(property content)")))")($"("(property content)")"))" {
-            lexer.advance();
-"                       ))
-                        (else "")
-                    ) ; case
+"                       )
+                    ) ; syntax or terminal
 "            if (!ret)
                 ret = new(_rp) "(id syntax)"(start, lexer.getPosition());
 "                   (if (property content) ($
@@ -134,23 +129,11 @@ _Result<"(id syntax)", ParserError> Parser::parse"(id syntax)"(_Page* _rp, _Page
             ret->"(property content)" = "(if (string=? "syntax" (type content)) "result.getResult()" (property content))";
 "                   )"")
 "        }
-"                    (if (optional? content) "" ($
+"                   (if (optional? content) "" ($
 "        else {
             return _Result<"(id syntax)", ParserError>("(if (string=? (type content) "syntax") "result.getError()" ($ "new(_ep) ParserError(*new(_ep) "
-                        (case (type content) 
-                            (("keyword") "Keyword")
-                            (("punctuation") "Punctuation")
-                            (("identifier") "Identifier")
-                            (("literal") "Literal")
-                            (("prefixoperator" "binaryoperator" "postfixoperator") "Operator")
-                            (else "")
-                        )
-                "Expected(start"
-                        (case (type content) 
-                            (("keyword" "punctuation") ($ ", *new(_ep) String("((if (string=? (type content) "keyword") name-of-link link) content)")"))
-                            (else "")
-                        )
-                "))"))");
+            (case (type content) (("keyword") "Keyword") (("punctuation") "Punctuation")(("identifier") "Identifier")(("literal") "Literal")(("prefixoperator" "binaryoperator" "postfixoperator") "Operator"))
+            "Expected(start"(case (type content) (("keyword" "punctuation") ($ ", *new(_ep) String("((if (string=? (type content) "keyword") name-of-link link) content)")"))(else ""))"))"))");
         }
 "                   ))
 "    }
