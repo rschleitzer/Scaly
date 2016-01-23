@@ -69,7 +69,6 @@ _Result<StatementWithSemicolon, ParserError> Parser::parseStatementWithSemicolon
     }
     {
         Position start = lexer.getPreviousPosition();
-
         if (lexer.parsePunctuation(semicolon)) {
             lexer.advance();
             if (!ret)
@@ -169,7 +168,7 @@ _Result<UseDeclaration, ParserError> Parser::parseUseDeclaration(_Page* _rp, _Pa
     {
         Position start = lexer.getPreviousPosition();
         if (lexer.parseKeyword(useKeyword)) {
-            lexer.advance(); 
+            lexer.advance();
             if (!ret)
                 ret = new(_rp) UseDeclaration(start, lexer.getPosition());
         }
@@ -231,7 +230,6 @@ _Result<PathIdentifier, ParserError> Parser::parsePathIdentifier(_Page* _rp, _Pa
     PathIdentifier* ret = 0;
     {
         Position start = lexer.getPreviousPosition();
-
         if (lexer.parsePunctuation(dot)) {
             lexer.advance();
             if (!ret)
@@ -284,7 +282,6 @@ _Result<Initializer, ParserError> Parser::parseInitializer(_Page* _rp, _Page* _e
     Initializer* ret = 0;
     {
         Position start = lexer.getPreviousPosition();
-
         if (lexer.parsePunctuation(equal)) {
             lexer.advance();
             if (!ret)
@@ -317,7 +314,7 @@ _Result<ConstantDeclaration, ParserError> Parser::parseConstantDeclaration(_Page
     {
         Position start = lexer.getPreviousPosition();
         if (lexer.parseKeyword(letKeyword)) {
-            lexer.advance(); 
+            lexer.advance();
             if (!ret)
                 ret = new(_rp) ConstantDeclaration(start, lexer.getPosition());
         }
@@ -393,7 +390,6 @@ _Result<PatternInitializer, ParserError> Parser::parsePatternInitializer(_Page* 
     }
     {
         Position start = lexer.getPreviousPosition();
-
         if (lexer.parsePunctuation(comma)) {
             lexer.advance();
             if (!ret)
@@ -409,7 +405,7 @@ _Result<VariableDeclaration, ParserError> Parser::parseVariableDeclaration(_Page
     {
         Position start = lexer.getPreviousPosition();
         if (lexer.parseKeyword(mutableKeyword)) {
-            lexer.advance(); 
+            lexer.advance();
             if (!ret)
                 ret = new(_rp) VariableDeclaration(start, lexer.getPosition());
         }
@@ -451,7 +447,7 @@ _Result<FunctionDeclaration, ParserError> Parser::parseFunctionDeclaration(_Page
     {
         Position start = lexer.getPreviousPosition();
         if (lexer.parseKeyword(functionKeyword)) {
-            lexer.advance(); 
+            lexer.advance();
             if (!ret)
                 ret = new(_rp) FunctionDeclaration(start, lexer.getPosition());
         }
@@ -548,7 +544,7 @@ _Result<Static, ParserError> Parser::parseStatic(_Page* _rp, _Page* _ep) {
     {
         Position start = lexer.getPreviousPosition();
         if (lexer.parseKeyword(staticKeyword)) {
-            lexer.advance(); 
+            lexer.advance();
             if (!ret)
                 ret = new(_rp) Static(start, lexer.getPosition());
         }
@@ -644,7 +640,6 @@ _Result<FunctionResult, ParserError> Parser::parseFunctionResult(_Page* _rp, _Pa
     FunctionResult* ret = 0;
     {
         Position start = lexer.getPreviousPosition();
-
         if (lexer.parsePunctuation(evaluatesTo)) {
             lexer.advance();
             if (!ret)
@@ -697,7 +692,6 @@ _Result<ParameterClause, ParserError> Parser::parseParameterClause(_Page* _rp, _
     ParameterClause* ret = 0;
     {
         Position start = lexer.getPreviousPosition();
-
         if (lexer.parsePunctuation(leftParen)) {
             lexer.advance();
             if (!ret)
@@ -720,7 +714,6 @@ _Result<ParameterClause, ParserError> Parser::parseParameterClause(_Page* _rp, _
     }
     {
         Position start = lexer.getPreviousPosition();
-
         if (lexer.parsePunctuation(rightParen)) {
             lexer.advance();
             if (!ret)
@@ -774,7 +767,6 @@ _Result<Parameter, ParserError> Parser::parseParameter(_Page* _rp, _Page* _ep) {
     }
     {
         Position start = lexer.getPreviousPosition();
-
         if (lexer.parsePunctuation(colon)) {
             lexer.advance();
             if (!ret)
@@ -800,7 +792,6 @@ _Result<Parameter, ParserError> Parser::parseParameter(_Page* _rp, _Page* _ep) {
     }
     {
         Position start = lexer.getPreviousPosition();
-
         if (lexer.parsePunctuation(comma)) {
             lexer.advance();
             if (!ret)
@@ -816,7 +807,7 @@ _Result<ThrowsClause, ParserError> Parser::parseThrowsClause(_Page* _rp, _Page* 
     {
         Position start = lexer.getPreviousPosition();
         if (lexer.parseKeyword(throwsKeyword)) {
-            lexer.advance(); 
+            lexer.advance();
             if (!ret)
                 ret = new(_rp) ThrowsClause(start, lexer.getPosition());
         }
@@ -847,7 +838,7 @@ _Result<ClassDeclaration, ParserError> Parser::parseClassDeclaration(_Page* _rp,
     {
         Position start = lexer.getPreviousPosition();
         if (lexer.parseKeyword(classKeyword)) {
-            lexer.advance(); 
+            lexer.advance();
             if (!ret)
                 ret = new(_rp) ClassDeclaration(start, lexer.getPosition());
         }
@@ -914,7 +905,6 @@ _Result<GenericArgumentClause, ParserError> Parser::parseGenericArgumentClause(_
     GenericArgumentClause* ret = 0;
     {
         Position start = lexer.getPreviousPosition();
-
         if (lexer.parsePunctuation(leftAngular)) {
             lexer.advance();
             if (!ret)
@@ -940,7 +930,6 @@ _Result<GenericArgumentClause, ParserError> Parser::parseGenericArgumentClause(_
     }
     {
         Position start = lexer.getPreviousPosition();
-
         if (lexer.parsePunctuation(rightAngular)) {
             lexer.advance();
             if (!ret)
@@ -1000,7 +989,6 @@ _Result<ClassBody, ParserError> Parser::parseClassBody(_Page* _rp, _Page* _ep) {
     ClassBody* ret = 0;
     {
         Position start = lexer.getPreviousPosition();
-
         if (lexer.parsePunctuation(leftCurly)) {
             lexer.advance();
             if (!ret)
@@ -1023,7 +1011,6 @@ _Result<ClassBody, ParserError> Parser::parseClassBody(_Page* _rp, _Page* _ep) {
     }
     {
         Position start = lexer.getPreviousPosition();
-
         if (lexer.parsePunctuation(rightCurly)) {
             lexer.advance();
             if (!ret)
@@ -1076,7 +1063,6 @@ _Result<ClassMember, ParserError> Parser::parseClassMember(_Page* _rp, _Page* _e
     }
     {
         Position start = lexer.getPreviousPosition();
-
         if (lexer.parsePunctuation(semicolon)) {
             lexer.advance();
             if (!ret)
@@ -1118,7 +1104,6 @@ _Result<CodeBlock, ParserError> Parser::parseCodeBlock(_Page* _rp, _Page* _ep) {
     CodeBlock* ret = 0;
     {
         Position start = lexer.getPreviousPosition();
-
         if (lexer.parsePunctuation(leftCurly)) {
             lexer.advance();
             if (!ret)
@@ -1144,7 +1129,6 @@ _Result<CodeBlock, ParserError> Parser::parseCodeBlock(_Page* _rp, _Page* _ep) {
     }
     {
         Position start = lexer.getPreviousPosition();
-
         if (lexer.parsePunctuation(rightCurly)) {
             lexer.advance();
             if (!ret)
@@ -1359,7 +1343,6 @@ _Result<Assignment, ParserError> Parser::parseAssignment(_Page* _rp, _Page* _ep)
     Assignment* ret = 0;
     {
         Position start = lexer.getPreviousPosition();
-
         if (lexer.parsePunctuation(equal)) {
             lexer.advance();
             if (!ret)
@@ -1392,7 +1375,7 @@ _Result<TypeQuery, ParserError> Parser::parseTypeQuery(_Page* _rp, _Page* _ep) {
     {
         Position start = lexer.getPreviousPosition();
         if (lexer.parseKeyword(isKeyword)) {
-            lexer.advance(); 
+            lexer.advance();
             if (!ret)
                 ret = new(_rp) TypeQuery(start, lexer.getPosition());
         }
@@ -1423,7 +1406,7 @@ _Result<TypeCast, ParserError> Parser::parseTypeCast(_Page* _rp, _Page* _ep) {
     {
         Position start = lexer.getPreviousPosition();
         if (lexer.parseKeyword(asKeyword)) {
-            lexer.advance(); 
+            lexer.advance();
             if (!ret)
                 ret = new(_rp) TypeCast(start, lexer.getPosition());
         }
@@ -1475,7 +1458,7 @@ _Result<CatchClause, ParserError> Parser::parseCatchClause(_Page* _rp, _Page* _e
     {
         Position start = lexer.getPreviousPosition();
         if (lexer.parseKeyword(catchKeyword)) {
-            lexer.advance(); 
+            lexer.advance();
             if (!ret)
                 ret = new(_rp) CatchClause(start, lexer.getPosition());
         }
@@ -1728,7 +1711,6 @@ _Result<ExplicitMemberExpression, ParserError> Parser::parseExplicitMemberExpres
     ExplicitMemberExpression* ret = 0;
     {
         Position start = lexer.getPreviousPosition();
-
         if (lexer.parsePunctuation(dot)) {
             lexer.advance();
             if (!ret)
@@ -1760,7 +1742,6 @@ _Result<Subscript, ParserError> Parser::parseSubscript(_Page* _rp, _Page* _ep) {
     Subscript* ret = 0;
     {
         Position start = lexer.getPreviousPosition();
-
         if (lexer.parsePunctuation(leftBracket)) {
             lexer.advance();
             if (!ret)
@@ -1786,7 +1767,6 @@ _Result<Subscript, ParserError> Parser::parseSubscript(_Page* _rp, _Page* _ep) {
     }
     {
         Position start = lexer.getPreviousPosition();
-
         if (lexer.parsePunctuation(rightBracket)) {
             lexer.advance();
             if (!ret)
@@ -1839,7 +1819,6 @@ _Result<ExpressionElement, ParserError> Parser::parseExpressionElement(_Page* _r
     }
     {
         Position start = lexer.getPreviousPosition();
-
         if (lexer.parsePunctuation(comma)) {
             lexer.advance();
             if (!ret)
@@ -1968,7 +1947,6 @@ _Result<ParenthesizedExpression, ParserError> Parser::parseParenthesizedExpressi
     ParenthesizedExpression* ret = 0;
     {
         Position start = lexer.getPreviousPosition();
-
         if (lexer.parsePunctuation(leftParen)) {
             lexer.advance();
             if (!ret)
@@ -1991,7 +1969,6 @@ _Result<ParenthesizedExpression, ParserError> Parser::parseParenthesizedExpressi
     }
     {
         Position start = lexer.getPreviousPosition();
-
         if (lexer.parsePunctuation(rightParen)) {
             lexer.advance();
             if (!ret)
@@ -2052,7 +2029,7 @@ _Result<IfExpression, ParserError> Parser::parseIfExpression(_Page* _rp, _Page* 
     {
         Position start = lexer.getPreviousPosition();
         if (lexer.parseKeyword(ifKeyword)) {
-            lexer.advance(); 
+            lexer.advance();
             if (!ret)
                 ret = new(_rp) IfExpression(start, lexer.getPosition());
         }
@@ -2108,7 +2085,7 @@ _Result<ElseClause, ParserError> Parser::parseElseClause(_Page* _rp, _Page* _ep)
     {
         Position start = lexer.getPreviousPosition();
         if (lexer.parseKeyword(elseKeyword)) {
-            lexer.advance(); 
+            lexer.advance();
             if (!ret)
                 ret = new(_rp) ElseClause(start, lexer.getPosition());
         }
@@ -2139,7 +2116,7 @@ _Result<SwitchExpression, ParserError> Parser::parseSwitchExpression(_Page* _rp,
     {
         Position start = lexer.getPreviousPosition();
         if (lexer.parseKeyword(switchKeyword)) {
-            lexer.advance(); 
+            lexer.advance();
             if (!ret)
                 ret = new(_rp) SwitchExpression(start, lexer.getPosition());
         }
@@ -2210,7 +2187,6 @@ _Result<CurliedSwitchBody, ParserError> Parser::parseCurliedSwitchBody(_Page* _r
     CurliedSwitchBody* ret = 0;
     {
         Position start = lexer.getPreviousPosition();
-
         if (lexer.parsePunctuation(leftCurly)) {
             lexer.advance();
             if (!ret)
@@ -2236,7 +2212,6 @@ _Result<CurliedSwitchBody, ParserError> Parser::parseCurliedSwitchBody(_Page* _r
     }
     {
         Position start = lexer.getPreviousPosition();
-
         if (lexer.parsePunctuation(rightCurly)) {
             lexer.advance();
             if (!ret)
@@ -2357,7 +2332,7 @@ _Result<ItemCaseLabel, ParserError> Parser::parseItemCaseLabel(_Page* _rp, _Page
     {
         Position start = lexer.getPreviousPosition();
         if (lexer.parseKeyword(caseKeyword)) {
-            lexer.advance(); 
+            lexer.advance();
             if (!ret)
                 ret = new(_rp) ItemCaseLabel(start, lexer.getPosition());
         }
@@ -2381,7 +2356,6 @@ _Result<ItemCaseLabel, ParserError> Parser::parseItemCaseLabel(_Page* _rp, _Page
     }
     {
         Position start = lexer.getPreviousPosition();
-
         if (lexer.parsePunctuation(colon)) {
             lexer.advance();
             if (!ret)
@@ -2434,7 +2408,6 @@ _Result<CaseItem, ParserError> Parser::parseCaseItem(_Page* _rp, _Page* _ep) {
     }
     {
         Position start = lexer.getPreviousPosition();
-
         if (lexer.parsePunctuation(comma)) {
             lexer.advance();
             if (!ret)
@@ -2453,7 +2426,7 @@ _Result<ReturnExpression, ParserError> Parser::parseReturnExpression(_Page* _rp,
     {
         Position start = lexer.getPreviousPosition();
         if (lexer.parseKeyword(returnKeyword)) {
-            lexer.advance(); 
+            lexer.advance();
             if (!ret)
                 ret = new(_rp) ReturnExpression(start, lexer.getPosition());
         }
@@ -2481,7 +2454,7 @@ _Result<ThrowExpression, ParserError> Parser::parseThrowExpression(_Page* _rp, _
     {
         Position start = lexer.getPreviousPosition();
         if (lexer.parseKeyword(throwKeyword)) {
-            lexer.advance(); 
+            lexer.advance();
             if (!ret)
                 ret = new(_rp) ThrowExpression(start, lexer.getPosition());
         }
@@ -2555,7 +2528,6 @@ _Result<WildcardPattern, ParserError> Parser::parseWildcardPattern(_Page* _rp, _
     WildcardPattern* ret = 0;
     {
         Position start = lexer.getPreviousPosition();
-
         if (lexer.parsePunctuation(underscore)) {
             lexer.advance();
             if (!ret)
@@ -2605,7 +2577,6 @@ _Result<TuplePattern, ParserError> Parser::parseTuplePattern(_Page* _rp, _Page* 
     TuplePattern* ret = 0;
     {
         Position start = lexer.getPreviousPosition();
-
         if (lexer.parsePunctuation(leftParen)) {
             lexer.advance();
             if (!ret)
@@ -2631,7 +2602,6 @@ _Result<TuplePattern, ParserError> Parser::parseTuplePattern(_Page* _rp, _Page* 
     }
     {
         Position start = lexer.getPreviousPosition();
-
         if (lexer.parsePunctuation(rightParen)) {
             lexer.advance();
             if (!ret)
@@ -2684,7 +2654,6 @@ _Result<TuplePatternElement, ParserError> Parser::parseTuplePatternElement(_Page
     }
     {
         Position start = lexer.getPreviousPosition();
-
         if (lexer.parsePunctuation(comma)) {
             lexer.advance();
             if (!ret)
@@ -2720,7 +2689,7 @@ _Result<DefaultCaseLabel, ParserError> Parser::parseDefaultCaseLabel(_Page* _rp,
     {
         Position start = lexer.getPreviousPosition();
         if (lexer.parseKeyword(defaultKeyword)) {
-            lexer.advance(); 
+            lexer.advance();
             if (!ret)
                 ret = new(_rp) DefaultCaseLabel(start, lexer.getPosition());
         }
@@ -2730,7 +2699,6 @@ _Result<DefaultCaseLabel, ParserError> Parser::parseDefaultCaseLabel(_Page* _rp,
     }
     {
         Position start = lexer.getPreviousPosition();
-
         if (lexer.parsePunctuation(colon)) {
             lexer.advance();
             if (!ret)
@@ -2795,7 +2763,6 @@ _Result<EmptyCaseContent, ParserError> Parser::parseEmptyCaseContent(_Page* _rp,
     EmptyCaseContent* ret = 0;
     {
         Position start = lexer.getPreviousPosition();
-
         if (lexer.parsePunctuation(semicolon)) {
             lexer.advance();
             if (!ret)
@@ -2840,7 +2807,6 @@ _Result<TypeAnnotation, ParserError> Parser::parseTypeAnnotation(_Page* _rp, _Pa
     TypeAnnotation* ret = 0;
     {
         Position start = lexer.getPreviousPosition();
-
         if (lexer.parsePunctuation(colon)) {
             lexer.advance();
             if (!ret)
@@ -2915,7 +2881,6 @@ _Result<SubtypeIdentifier, ParserError> Parser::parseSubtypeIdentifier(_Page* _r
     SubtypeIdentifier* ret = 0;
     {
         Position start = lexer.getPreviousPosition();
-
         if (lexer.parsePunctuation(dot)) {
             lexer.advance();
             if (!ret)
@@ -2985,7 +2950,6 @@ _Result<ArrayType, ParserError> Parser::parseArrayType(_Page* _rp, _Page* _ep) {
     ArrayType* ret = 0;
     {
         Position start = lexer.getPreviousPosition();
-
         if (lexer.parsePunctuation(leftBracket)) {
             lexer.advance();
             if (!ret)
@@ -3011,7 +2975,6 @@ _Result<ArrayType, ParserError> Parser::parseArrayType(_Page* _rp, _Page* _ep) {
     }
     {
         Position start = lexer.getPreviousPosition();
-
         if (lexer.parsePunctuation(rightBracket)) {
             lexer.advance();
             if (!ret)
@@ -3040,7 +3003,6 @@ _Result<OptionalType, ParserError> Parser::parseOptionalType(_Page* _rp, _Page* 
     OptionalType* ret = 0;
     {
         Position start = lexer.getPreviousPosition();
-
         if (lexer.parsePunctuation(questionMark)) {
             lexer.advance();
             if (!ret)
@@ -3058,7 +3020,6 @@ _Result<TypeInheritanceClause, ParserError> Parser::parseTypeInheritanceClause(_
     TypeInheritanceClause* ret = 0;
     {
         Position start = lexer.getPreviousPosition();
-
         if (lexer.parsePunctuation(colon)) {
             lexer.advance();
             if (!ret)
@@ -3122,7 +3083,6 @@ _Result<Inheritance, ParserError> Parser::parseInheritance(_Page* _rp, _Page* _e
     }
     {
         Position start = lexer.getPreviousPosition();
-
         if (lexer.parsePunctuation(comma)) {
             lexer.advance();
             if (!ret)

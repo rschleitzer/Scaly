@@ -103,24 +103,6 @@ _Result<"(id syntax)", ParserError> Parser::parse"(id syntax)"(_Page* _rp, _Page
 "    {
         Position start = lexer.getPreviousPosition();
 "                    (case (type content)
-                        (("keyword") ($
-"        if (lexer.parseKeyword("(name-of-link content)")) {
-            lexer.advance(); 
-            if (!ret)
-                ret = new(_rp) "(id syntax)"(start, lexer.getPosition());
-"
-                            (if (property content) ($
-"
-            ret->"(property content)" = true;"
-                            )"")
-"        }
-"                           (if (optional? content) "" ($
-"        else {
-            return _Result<"(id syntax)", ParserError>(new(_ep) ParserError(*new(_ep) ShouldStartWithKeyword(start, *new(_ep) String("(name-of-link content)"))));
-        }
-"                           ))
-"    }
-"                        ))
                         (("syntax") ($
 "
         _Result<"(if (multiple? content) "Array<" "")(link content)(if (multiple? content) ">" "")", ParserError> result = parse"(link content)(if (multiple? content) "List" "")"(_rp, _ep);
@@ -145,24 +127,24 @@ _Result<"(id syntax)", ParserError> Parser::parse"(id syntax)"(_Page* _rp, _Page
 "                           ))
 "    }
 "                       ))
-                        (("punctuation") ($
-"
-        if (lexer.parsePunctuation("(link content)")) {
+                        (("keyword" "punctuation") ($
+"        if (lexer.parse"(if (string=? (type content) "keyword") "Keyword" "Punctuation")"("((if (string=? (type content) "keyword") name-of-link link) content)")) {
             lexer.advance();
             if (!ret)
                 ret = new(_rp) "(id syntax)"(start, lexer.getPosition());
-"                            (if (property content) ($
+"
+                            (if (property content) ($
 "
             ret->"(property content)" = true;"
-                             )"")
+                            )"")
 "        }
 "                           (if (optional? content) "" ($
 "        else {
-            return _Result<"(id syntax)", ParserError>(new(_ep) ParserError(*new(_ep) PunctuationExpected(start, *new(_ep) String("(link content)"))));
+            return _Result<"(id syntax)", ParserError>(new(_ep) ParserError(*new(_ep) "(if (string=? (type content) "keyword") "ShouldStartWithKeyword" "PunctuationExpected")"(start, *new(_ep) String("((if (string=? (type content) "keyword") name-of-link link) content)"))));
         }
 "                           ))
 "    }
-"                        ))
+"                       ))
                         (("operator" "prefixoperator" "binaryoperator" "postfixoperator") ($
 "
         String* "(property content)" = lexer.parse"             (case (type content) 
