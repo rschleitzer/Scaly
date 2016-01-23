@@ -148,7 +148,7 @@ class Lexer {
                         }
 
                         default: {
-                            if (whitespaceSkipped) {
+                            if (whitespaceSkipped) || ((token != null) && (token is Punctuation)) {
                                 position-- column--
                                 token = scanOperator(true)
                             }
@@ -295,11 +295,11 @@ class Lexer {
                 return InvalidToken()
 
             switch text[position] {
-                case '\"': {
+                case "\"": {
                     position++ column++
                     return StringLiteral(value)
                 }
-                case '\\': {
+                case "\\": {
                     position++ column++
                     switch text[position]
                         case "\"", "\\", "'": value += text[position]
@@ -434,7 +434,7 @@ class Lexer {
 
                     if position == end
                         return
-                    else if text[position] == '/' { 
+                    else if text[position] == "/" { 
                         position++ column++
                         return
                     }
@@ -514,7 +514,7 @@ class Lexer {
 
     function parseBinaryOperator() -> String? {
         if !(token is BinaryOperator) {
-            if (token is Punctuation) && ((token as Punctuation).sign == "<")) {
+            if (token is Punctuation) && ((token as Punctuation).sign == "<") {
                 let op: Operator = token as Operator
                 return String(op.operation)
             }
@@ -543,7 +543,7 @@ class Lexer {
         return Position(line, column)
     }
 
-    fuction getPreviousPosition() -> Position {
+    function getPreviousPosition() -> Position {
         return Position(previousLine, previousColumn)
     }
 }

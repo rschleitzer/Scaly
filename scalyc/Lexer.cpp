@@ -184,7 +184,7 @@ void Lexer::advance() {
                         break;
 
                     default:
-                        if (whitespaceSkipped) {
+                        if ((whitespaceSkipped) || (token && (token->_isPunctuation()))) {
                             position--; column--;
                             token = &scanOperator(getPage(), true);
                         }
