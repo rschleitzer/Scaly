@@ -1,3 +1,8 @@
+Scaly
+=====
+
+Welcome to [_Scaly_](https://scaly.io), the _self-scaling programming language_.
+
 # scaly
 
 Runtime support and standard library code for the [Scaly](http://scaly.io) programming language.
@@ -6,7 +11,7 @@ Runtime support and standard library code for the [Scaly](http://scaly.io) progr
 
 Goal is a self-hosted compiler for the [Scaly](http://scaly.io) programming language.
 
-# scaleway
+# scaly.io
 
-A thing which might eventually become an HTTP server as [Scaly](http://scaly.io) evolves.
+The static contents of the [Scaly](http://scaly.io) web site.
 
