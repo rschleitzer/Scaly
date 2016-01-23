@@ -119,12 +119,7 @@ _Result<"(id syntax)", ParserError> Parser::parse"(id syntax)"(_Page* _rp, _Page
 
             ret->"(property content)" = result.getResult();
         }
-"                           (if (optional? content) "" ($
-"        else {
-            return _Result<"(id syntax)", ParserError>(result.getError());
-        }
-"                           ))
-                        ))
+"                       ))
                         (("keyword" "punctuation") ($
 "        if (lexer.parse"(if (string=? (type content) "keyword") "Keyword" "Punctuation")"("((if (string=? (type content) "keyword") name-of-link link) content)")) {
             lexer.advance();
@@ -136,12 +131,7 @@ _Result<"(id syntax)", ParserError> Parser::parse"(id syntax)"(_Page* _rp, _Page
             ret->"(property content)" = true;"
                             )"")
 "        }
-"                           (if (optional? content) "" ($
-"        else {
-            return _Result<"(id syntax)", ParserError>(new(_ep) ParserError(*new(_ep) "(if (string=? (type content) "keyword") "Keyword" "Punctuation")"Expected(start, *new(_ep) String("((if (string=? (type content) "keyword") name-of-link link) content)"))));
-        }
-"                           ))
-                       ))
+"                       ))
                         (("operator" "prefixoperator" "binaryoperator" "postfixoperator") ($
 "
         String* "(property content)" = lexer.parse"(case (type content) (("prefixoperator") "Prefix") (("binaryoperator") "Binary") (("postfixoperator") "Postfix")(else "") )"Operator(_rp); 
@@ -152,12 +142,7 @@ _Result<"(id syntax)", ParserError> Parser::parse"(id syntax)"(_Page* _rp, _Page
 
             ret->"(property content)" = "(property content)";
 	    }
-"                           (if (optional? content) "" ($
-"        else {
-            return _Result<"(id syntax)", ParserError>(new(_ep) ParserError(*new(_ep) OperatorExpected(start)));
-        }
-"                           ))
-                        ))
+"                       ))
                         (("identifier") ($
 "
         String* id"(property content)" = lexer.parseIdentifier(_rp);
@@ -168,12 +153,7 @@ _Result<"(id syntax)", ParserError> Parser::parse"(id syntax)"(_Page* _rp, _Page
 
             ret->"(property content)" = id"(property content)";
         }
-"                           (if (optional? content) "" ($
-"        else {
-            return _Result<"(id syntax)", ParserError>(new(_ep) ParserError(*new(_ep) IdentifierExpected(start)));
-        }
-"                           ))
-                        ))
+"                       ))
                         (("literal")    ($
 "
         Literal* literal = lexer.parseLiteral(_rp);
@@ -184,14 +164,28 @@ _Result<"(id syntax)", ParserError> Parser::parse"(id syntax)"(_Page* _rp, _Page
 
             ret->"(property content)" = literal;
         }
-"                           (if (optional? content) "" ($
-"        else {
-            return _Result<"(id syntax)", ParserError>(new(_ep) ParserError(*new(_ep) LiteralExpected(start)));
-        }
-"                           ))
-                       ))
+"                       ))
                         (else "")
                     ) ; case
+                    (if (optional? content) "" ($
+"        else {
+            return _Result<"(id syntax)", ParserError>("(if (string=? (type content) "syntax") "result.getError()" ($ "new(_ep) ParserError(*new(_ep) "
+                        (case (type content) 
+                            (("keyword") "Keyword")
+                            (("punctuation") "Punctuation")
+                            (("identifier") "Identifier")
+                            (("literal") "Literal")
+                            (("operator" "prefixoperator" "binaryoperator" "postfixoperator") "Operator")
+                            (else "")
+                        )
+                "Expected(start"
+                        (case (type content) 
+                            (("keyword" "punctuation") ($ ", *new(_ep) String("((if (string=? (type content) "keyword") name-of-link link) content)")"))
+                            (else "")
+                        )
+                "))"))");
+        }
+"                   ))
 "    }
 "                ))) ; apply to children of syntax
 "
