@@ -7,6 +7,9 @@
         (create-file ($ "Syntax.cpp" generated-extension)
             (output (syntax-cpp)))
 
+        (create-file ($ "Syntax.scaly" generated-extension)
+            (output (syntax-scaly)))
+
         (create-file ($ "Visitor.h" generated-extension)
             (output (visitor-h #f)))
 

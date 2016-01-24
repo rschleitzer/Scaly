@@ -255,6 +255,45 @@ void MyVisitor::VisitEmptyCaseContent(EmptyCaseContent) {
 void MyVisitor::VisitInitializerCall(InitializerCall) {
 }
 
+void MyVisitor::VisitThisExpression(ThisExpression) {
+}
+
+void MyVisitor::VisitThisDot(ThisDot) {
+}
+
+void MyVisitor::VisitThisSubscript(ThisSubscript) {
+}
+
+void MyVisitor::VisitThis(This) {
+}
+
+void MyVisitor::VisitCommonThisMember(CommonThisMember) {
+}
+
+void MyVisitor::VisitThisInit(ThisInit) {
+}
+
+void MyVisitor::VisitThisMember(ThisMember) {
+}
+
+void MyVisitor::VisitSuperExpression(SuperExpression) {
+}
+
+void MyVisitor::VisitSuperDot(SuperDot) {
+}
+
+void MyVisitor::VisitSuperSubscript(SuperSubscript) {
+}
+
+void MyVisitor::VisitCommonSuperMember(CommonSuperMember) {
+}
+
+void MyVisitor::VisitSuperInit(SuperInit) {
+}
+
+void MyVisitor::VisitSuperMember(SuperMember) {
+}
+
 void MyVisitor::VisitType(Type) {
 }
 

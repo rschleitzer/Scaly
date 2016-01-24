@@ -2,10 +2,6 @@
 using namespace scaly;
 namespace scalyc {
 
-Position::Position(size_t line, size_t column)
-: line(line), column(column) {
-}
-
 SyntaxNode::SyntaxNode(Position start, Position end)
 : start(start), end(end) {
 }
@@ -344,6 +340,58 @@ EmptyCaseContent::EmptyCaseContent(Position start, Position end)
 
 InitializerCall::InitializerCall(Position start, Position end)
 : PrimaryExpression(start, end) {
+}
+
+ThisExpression::ThisExpression(Position start, Position end)
+: PrimaryExpression(start, end) {
+}
+
+ThisDot::ThisDot(Position start, Position end)
+: ThisExpression(start, end) {
+}
+
+ThisSubscript::ThisSubscript(Position start, Position end)
+: ThisExpression(start, end) {
+}
+
+This::This(Position start, Position end)
+: ThisExpression(start, end) {
+}
+
+CommonThisMember::CommonThisMember(Position start, Position end)
+: SyntaxNode(start, end) {
+}
+
+ThisInit::ThisInit(Position start, Position end)
+: CommonThisMember(start, end) {
+}
+
+ThisMember::ThisMember(Position start, Position end)
+: CommonThisMember(start, end) {
+}
+
+SuperExpression::SuperExpression(Position start, Position end)
+: PrimaryExpression(start, end) {
+}
+
+SuperDot::SuperDot(Position start, Position end)
+: SuperExpression(start, end) {
+}
+
+SuperSubscript::SuperSubscript(Position start, Position end)
+: SuperExpression(start, end) {
+}
+
+CommonSuperMember::CommonSuperMember(Position start, Position end)
+: SyntaxNode(start, end) {
+}
+
+SuperInit::SuperInit(Position start, Position end)
+: CommonSuperMember(start, end) {
+}
+
+SuperMember::SuperMember(Position start, Position end)
+: CommonSuperMember(start, end) {
 }
 
 Type::Type(Position start, Position end)

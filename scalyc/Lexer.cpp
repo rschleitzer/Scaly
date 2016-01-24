@@ -1,6 +1,10 @@
 #include "scalyc.h"
 using namespace scaly;
 namespace scalyc {
+
+Position::Position(size_t line, size_t column)
+: line(line), column(column) {
+}
     
 Identifier::Identifier(String& name)
 : name(name) {

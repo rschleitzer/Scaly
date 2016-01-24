@@ -95,6 +95,19 @@ class CaseContent;
 class BlockCaseContent;
 class EmptyCaseContent;
 class InitializerCall;
+class ThisExpression;
+class ThisDot;
+class ThisSubscript;
+class This;
+class CommonThisMember;
+class ThisInit;
+class ThisMember;
+class SuperExpression;
+class SuperDot;
+class SuperSubscript;
+class CommonSuperMember;
+class SuperInit;
+class SuperMember;
 class Type;
 class TypeAnnotation;
 class TypeIdentifier;
@@ -708,6 +721,90 @@ public:
     Type* typeToInitialize;
     ParenthesizedExpression* arguments;
     Array<CatchClause>* catchClauses;
+};
+
+class ThisExpression : public PrimaryExpression {
+public:
+    ThisExpression(Position start, Position end);
+
+};
+
+class ThisDot : public ThisExpression {
+public:
+    ThisDot(Position start, Position end);
+
+    CommonThisMember* member;
+};
+
+class ThisSubscript : public ThisExpression {
+public:
+    ThisSubscript(Position start, Position end);
+
+    Subscript* subscript;
+};
+
+class This : public ThisExpression {
+public:
+    This(Position start, Position end);
+
+};
+
+class CommonThisMember : public SyntaxNode {
+public:
+    CommonThisMember(Position start, Position end);
+
+};
+
+class ThisInit : public CommonThisMember {
+public:
+    ThisInit(Position start, Position end);
+
+};
+
+class ThisMember : public CommonThisMember {
+public:
+    ThisMember(Position start, Position end);
+
+    String* name;
+};
+
+class SuperExpression : public PrimaryExpression {
+public:
+    SuperExpression(Position start, Position end);
+
+};
+
+class SuperDot : public SuperExpression {
+public:
+    SuperDot(Position start, Position end);
+
+    CommonSuperMember* member;
+};
+
+class SuperSubscript : public SuperExpression {
+public:
+    SuperSubscript(Position start, Position end);
+
+    Subscript* subscript;
+};
+
+class CommonSuperMember : public SyntaxNode {
+public:
+    CommonSuperMember(Position start, Position end);
+
+};
+
+class SuperInit : public CommonSuperMember {
+public:
+    SuperInit(Position start, Position end);
+
+};
+
+class SuperMember : public CommonSuperMember {
+public:
+    SuperMember(Position start, Position end);
+
+    String* name;
 };
 
 class Type : public SyntaxNode {

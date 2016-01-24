@@ -195,6 +195,32 @@ public:
 
     _Result<InitializerCall, ParserError> parseInitializerCall(_Page* _rp, _Page* _ep);
 
+    _Result<ThisExpression, ParserError> parseThisExpression(_Page* _rp, _Page* _ep);
+
+    _Result<ThisDot, ParserError> parseThisDot(_Page* _rp, _Page* _ep);
+
+    _Result<ThisSubscript, ParserError> parseThisSubscript(_Page* _rp, _Page* _ep);
+
+    _Result<This, ParserError> parseThis(_Page* _rp, _Page* _ep);
+
+    _Result<CommonThisMember, ParserError> parseCommonThisMember(_Page* _rp, _Page* _ep);
+
+    _Result<ThisInit, ParserError> parseThisInit(_Page* _rp, _Page* _ep);
+
+    _Result<ThisMember, ParserError> parseThisMember(_Page* _rp, _Page* _ep);
+
+    _Result<SuperExpression, ParserError> parseSuperExpression(_Page* _rp, _Page* _ep);
+
+    _Result<SuperDot, ParserError> parseSuperDot(_Page* _rp, _Page* _ep);
+
+    _Result<SuperSubscript, ParserError> parseSuperSubscript(_Page* _rp, _Page* _ep);
+
+    _Result<CommonSuperMember, ParserError> parseCommonSuperMember(_Page* _rp, _Page* _ep);
+
+    _Result<SuperInit, ParserError> parseSuperInit(_Page* _rp, _Page* _ep);
+
+    _Result<SuperMember, ParserError> parseSuperMember(_Page* _rp, _Page* _ep);
+
     _Result<Type, ParserError> parseType(_Page* _rp, _Page* _ep);
 
     _Result<TypeAnnotation, ParserError> parseTypeAnnotation(_Page* _rp, _Page* _ep);
@@ -241,6 +267,8 @@ private:
     const char* asKeyword = "as";
     const char* initKeyword = "init";
     const char* enumKeyword = "enum";
+    const char* superKeyword = "super";
+    const char* thisKeyword = "this";
     const char* semicolon = ";";
     const char* equal = "=";
     const char* leftAngular = "<";

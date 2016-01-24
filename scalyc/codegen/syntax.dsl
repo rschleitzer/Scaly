@@ -1,3 +1,78 @@
+(define (syntax-scaly) ($
+
+"class SyntaxNode {
+
+    init(start: Position, end: Position) {
+        start = start
+        end = end
+    }
+    
+    let start: Position
+    let end: Position
+}
+"
+    (apply-to-selected-children "syntax" (lambda (syntax-node) ($
+"
+class "(id syntax-node)" : "(if (base syntax-node) (base syntax-node) "SyntaxNode")" {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+"
+"    "(if (base syntax-node) "override " "")"function Accept(mutable visitor: SyntaxVisitor) {
+        visitor.Visit"(id syntax-node)"(this)
+"
+        (apply-to-children-of syntax-node (lambda (content)
+            (case (type content)
+                (("syntax") ($
+                    (if (abstract? syntax-node) "" ($
+                        (if (optional? content) ($
+"        if "(property content)" != nil {
+    "
+                        )"")
+                        (if (multiple? content)
+                            ($
+"        for node in "(property content)"! {
+"(if (optional? content) "    " "")
+"            node.Accept(visitor)
+        }
+"
+                            )
+                            ($
+"        "(property content)"!.Accept(visitor)
+"
+                            )
+                        )
+                        (if (optional? content) "        }
+" ""                    )
+                   ))
+                ))
+                (else "")
+            )
+        ))
+"    }
+
+"
+        (apply-to-children-of syntax-node (lambda (content) ($
+            (if (property content) ($
+"    let "(property content)": "
+            (case (type content)
+                (("syntax") ($ (if (multiple? content)"[" "")(link content)(if (multiple? content)"]" "")))
+                (("identifier" "operator" "prefixoperator" "binaryoperator" "postfixoperator") "String")
+                (("literal") "Literal")
+                (("keyword" "punctuation") "bool")
+            )
+"?
+"           )"")
+        )))
+"}
+"   )))
+"
+}
+#endif // __scalyc__Syntax__
+"))
+
 (define (syntax-h) ($
 
 "#ifndef __scalyc__Syntax__
@@ -100,10 +175,6 @@ public:
 "#include \"scalyc.h\"
 using namespace scaly;
 namespace scalyc {
-
-Position::Position(size_t line, size_t column)
-: line(line), column(column) {
-}
 
 SyntaxNode::SyntaxNode(Position start, Position end)
 : start(start), end(end) {

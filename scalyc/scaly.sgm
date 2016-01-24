@@ -251,8 +251,8 @@
         <content link = IdentifierExpression                    property = identifier
 
     <syntax id = PrimaryExpression                  abstract
-        <content link = LiteralExpression
         <content link = IdentifierExpression
+        <content link = LiteralExpression
         <content link = IfExpression
         <content link = SwitchExpression
         <content link = ParenthesizedExpression
@@ -260,6 +260,8 @@
         <content link = ThrowExpression
         <content link = BreakExpression
         <content link = InitializerCall
+        <content link = ThisExpression
+        <content link = SuperExpression
 
     <syntax id = ParenthesizedExpression                        base = PrimaryExpression
         <content link = leftParen
@@ -373,6 +375,56 @@
         <content link = ParenthesizedExpression                 property = arguments
         <content link = CatchClause        multiple optional    property = catchClauses
 
+    <syntax id = ThisExpression                     abstract    base = PrimaryExpression
+        <content link = ThisDot
+        <content link = ThisSubscript
+        <content link = This
+
+    <syntax id = ThisDot                                        base = ThisExpression
+        <content link = this
+        <content link = dot
+        <content link = CommonThisMember                        property = member
+
+    <syntax id = ThisSubscript                                  base = ThisExpression
+        <content link = this
+        <content link = Subscript                               property = subscript
+
+    <syntax id = This                                           base = ThisExpression
+        <content link = this
+        
+    <syntax id = CommonThisMember                   abstract
+        <content link = ThisInit
+        <content link = ThisMember
+
+    <syntax id = ThisInit                                       base = CommonThisMember
+        <content link = init
+
+    <syntax id = ThisMember                                     base = CommonThisMember
+        <content identifier                                     property = name
+
+    <syntax id = SuperExpression                    abstract    base = PrimaryExpression
+        <content link = SuperDot
+        <content link = SuperSubscript
+
+    <syntax id = SuperDot                                       base = SuperExpression
+        <content link = super
+        <content link = dot
+        <content link = CommonSuperMember                       property = member
+
+    <syntax id = SuperSubscript                                 base = SuperExpression
+        <content link = super
+        <content link = Subscript                               property = subscript
+        
+    <syntax id = CommonSuperMember                  abstract
+        <content link = SuperInit
+        <content link = SuperMember
+
+    <syntax id = SuperInit                                      base = CommonSuperMember
+        <content link = init
+
+    <syntax id = SuperMember                                    base = CommonSuperMember
+        <content identifier                                     property = name
+
     <syntax id = Type                               abstract
         <content link = ArrayType
         <content link = TypeIdentifier
@@ -430,6 +482,8 @@
     <keyword id = as
     <keyword id = init
     <keyword id = enum
+    <keyword id = super
+    <keyword id = this
 
     <punctuation id = semicolon         value = ";"
     <punctuation id = equal             value = "="
