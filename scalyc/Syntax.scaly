@@ -1,0 +1,1613 @@
+class SyntaxNode {
+
+    init(start: Position, end: Position) {
+        start = start
+        end = end
+    }
+    
+    let start: Position
+    let end: Position
+}
+
+class TopLevelDeclaration : SyntaxNode {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    function Accept(mutable visitor: SyntaxVisitor) {
+        visitor.VisitTopLevelDeclaration(this)
+        for node in statements! {
+            node.Accept(visitor)
+        }
+    }
+
+    let statements: [StatementWithSemicolon]?
+}
+
+class StatementWithSemicolon : SyntaxNode {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    function Accept(mutable visitor: SyntaxVisitor) {
+        visitor.VisitStatementWithSemicolon(this)
+        statement!.Accept(visitor)
+    }
+
+    let statement: Statement?
+}
+
+class Statement : SyntaxNode {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    function Accept(mutable visitor: SyntaxVisitor) {
+        visitor.VisitStatement(this)
+    }
+
+}
+
+class Declaration : Statement {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    override function Accept(mutable visitor: SyntaxVisitor) {
+        visitor.VisitDeclaration(this)
+    }
+
+}
+
+class UseDeclaration : Declaration {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    override function Accept(mutable visitor: SyntaxVisitor) {
+        visitor.VisitUseDeclaration(this)
+        importModule!.Accept(visitor)
+        if importExtensions != nil {
+            for node in importExtensions! {
+                node.Accept(visitor)
+        }
+        }
+    }
+
+    let importModule: PathItem?
+    let importExtensions: [PathIdentifier]?
+}
+
+class PathIdentifier : SyntaxNode {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    function Accept(mutable visitor: SyntaxVisitor) {
+        visitor.VisitPathIdentifier(this)
+        extension!.Accept(visitor)
+    }
+
+    let extension: PathItem?
+}
+
+class PathItem : SyntaxNode {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    function Accept(mutable visitor: SyntaxVisitor) {
+        visitor.VisitPathItem(this)
+    }
+
+    let name: String?
+}
+
+class Initializer : SyntaxNode {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    function Accept(mutable visitor: SyntaxVisitor) {
+        visitor.VisitInitializer(this)
+        expression!.Accept(visitor)
+    }
+
+    let expression: Expression?
+}
+
+class ConstantDeclaration : Declaration {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    override function Accept(mutable visitor: SyntaxVisitor) {
+        visitor.VisitConstantDeclaration(this)
+        initializer!.Accept(visitor)
+    }
+
+    let initializer: BindingInitializer?
+}
+
+class VariableDeclaration : Declaration {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    override function Accept(mutable visitor: SyntaxVisitor) {
+        visitor.VisitVariableDeclaration(this)
+        initializer!.Accept(visitor)
+    }
+
+    let initializer: BindingInitializer?
+}
+
+class BindingInitializer : SyntaxNode {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    function Accept(mutable visitor: SyntaxVisitor) {
+        visitor.VisitBindingInitializer(this)
+        initializer!.Accept(visitor)
+        if additionalInitializers != nil {
+            for node in additionalInitializers! {
+                node.Accept(visitor)
+        }
+        }
+    }
+
+    let initializer: PatternInitializer?
+    let additionalInitializers: [AdditionalInitializer]?
+}
+
+class PatternInitializer : SyntaxNode {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    function Accept(mutable visitor: SyntaxVisitor) {
+        visitor.VisitPatternInitializer(this)
+        pattern!.Accept(visitor)
+        if initializer != nil {
+            initializer!.Accept(visitor)
+        }
+    }
+
+    let pattern: Pattern?
+    let initializer: Initializer?
+}
+
+class AdditionalInitializer : SyntaxNode {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    function Accept(mutable visitor: SyntaxVisitor) {
+        visitor.VisitAdditionalInitializer(this)
+        pattern!.Accept(visitor)
+    }
+
+    let pattern: PatternInitializer?
+}
+
+class FunctionDeclaration : Declaration {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    override function Accept(mutable visitor: SyntaxVisitor) {
+        visitor.VisitFunctionDeclaration(this)
+        if modifiers != nil {
+            for node in modifiers! {
+                node.Accept(visitor)
+        }
+        }
+        name!.Accept(visitor)
+        signature!.Accept(visitor)
+        body!.Accept(visitor)
+    }
+
+    let modifiers: [Modifier]?
+    let name: FunctionName?
+    let signature: FunctionSignature?
+    let body: Expression?
+}
+
+class InitializerDeclaration : Declaration {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    override function Accept(mutable visitor: SyntaxVisitor) {
+        visitor.VisitInitializerDeclaration(this)
+        if modifiers != nil {
+            for node in modifiers! {
+                node.Accept(visitor)
+        }
+        }
+        parameterClause!.Accept(visitor)
+        if throwsClause != nil {
+            throwsClause!.Accept(visitor)
+        }
+        body!.Accept(visitor)
+    }
+
+    let modifiers: [Modifier]?
+    let parameterClause: ParameterClause?
+    let throwsClause: ThrowsClause?
+    let body: Expression?
+}
+
+class Modifier : SyntaxNode {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    function Accept(mutable visitor: SyntaxVisitor) {
+        visitor.VisitModifier(this)
+    }
+
+}
+
+class Static : Modifier {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    override function Accept(mutable visitor: SyntaxVisitor) {
+        visitor.VisitStatic(this)
+    }
+
+}
+
+class FunctionName : SyntaxNode {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    function Accept(mutable visitor: SyntaxVisitor) {
+        visitor.VisitFunctionName(this)
+    }
+
+}
+
+class IdentifierFunctionName : FunctionName {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    override function Accept(mutable visitor: SyntaxVisitor) {
+        visitor.VisitIdentifierFunctionName(this)
+    }
+
+    let name: String?
+}
+
+class FunctionSignature : SyntaxNode {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    function Accept(mutable visitor: SyntaxVisitor) {
+        visitor.VisitFunctionSignature(this)
+        parameterClause!.Accept(visitor)
+        if result != nil {
+            result!.Accept(visitor)
+        }
+        if throwsClause != nil {
+            throwsClause!.Accept(visitor)
+        }
+    }
+
+    let parameterClause: ParameterClause?
+    let result: FunctionResult?
+    let throwsClause: ThrowsClause?
+}
+
+class FunctionResult : SyntaxNode {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    function Accept(mutable visitor: SyntaxVisitor) {
+        visitor.VisitFunctionResult(this)
+        resultType!.Accept(visitor)
+    }
+
+    let resultType: Type?
+}
+
+class ParameterClause : SyntaxNode {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    function Accept(mutable visitor: SyntaxVisitor) {
+        visitor.VisitParameterClause(this)
+        if parameters != nil {
+            for node in parameters! {
+                node.Accept(visitor)
+        }
+        }
+    }
+
+    let parameters: [Parameter]?
+}
+
+class Parameter : SyntaxNode {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    function Accept(mutable visitor: SyntaxVisitor) {
+        visitor.VisitParameter(this)
+        parameterType!.Accept(visitor)
+    }
+
+    let parameterName: String?
+    let parameterType: Type?
+}
+
+class ThrowsClause : SyntaxNode {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    function Accept(mutable visitor: SyntaxVisitor) {
+        visitor.VisitThrowsClause(this)
+        throwsType!.Accept(visitor)
+    }
+
+    let throwsType: Type?
+}
+
+class EnumDeclaration : Declaration {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    override function Accept(mutable visitor: SyntaxVisitor) {
+        visitor.VisitEnumDeclaration(this)
+        for node in members! {
+            node.Accept(visitor)
+        }
+    }
+
+    let name: String?
+    let members: [EnumMember]?
+}
+
+class EnumMember : SyntaxNode {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    function Accept(mutable visitor: SyntaxVisitor) {
+        visitor.VisitEnumMember(this)
+        enumCase!.Accept(visitor)
+        for node in additionalCases! {
+            node.Accept(visitor)
+        }
+        if tupleType != nil {
+            tupleType!.Accept(visitor)
+        }
+    }
+
+    let enumCase: EnumCase?
+    let additionalCases: [AdditionalCase]?
+    let tupleType: TupleType?
+}
+
+class TupleType : SyntaxNode {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    function Accept(mutable visitor: SyntaxVisitor) {
+        visitor.VisitTupleType(this)
+        tupleType!.Accept(visitor)
+        for node in additionalTypes! {
+            node.Accept(visitor)
+        }
+    }
+
+    let tupleType: Type?
+    let additionalTypes: [AdditionalType]?
+}
+
+class AdditionalType : SyntaxNode {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    function Accept(mutable visitor: SyntaxVisitor) {
+        visitor.VisitAdditionalType(this)
+        enumCase!.Accept(visitor)
+    }
+
+    let enumCase: Type?
+}
+
+class EnumCase : SyntaxNode {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    function Accept(mutable visitor: SyntaxVisitor) {
+        visitor.VisitEnumCase(this)
+    }
+
+    let name: String?
+}
+
+class AdditionalCase : SyntaxNode {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    function Accept(mutable visitor: SyntaxVisitor) {
+        visitor.VisitAdditionalCase(this)
+        enumCase!.Accept(visitor)
+    }
+
+    let enumCase: EnumCase?
+}
+
+class ClassDeclaration : Declaration {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    override function Accept(mutable visitor: SyntaxVisitor) {
+        visitor.VisitClassDeclaration(this)
+        if genericArgumentClause != nil {
+            genericArgumentClause!.Accept(visitor)
+        }
+        if typeInheritanceClause != nil {
+            typeInheritanceClause!.Accept(visitor)
+        }
+        if members != nil {
+            for node in members! {
+                node.Accept(visitor)
+        }
+        }
+    }
+
+    let name: String?
+    let genericArgumentClause: GenericArgumentClause?
+    let typeInheritanceClause: TypeInheritanceClause?
+    let members: [ClassMember]?
+}
+
+class GenericArgumentClause : SyntaxNode {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    function Accept(mutable visitor: SyntaxVisitor) {
+        visitor.VisitGenericArgumentClause(this)
+        for node in genericParameters! {
+            node.Accept(visitor)
+        }
+    }
+
+    let genericParameters: [GenericParameter]?
+}
+
+class GenericParameter : SyntaxNode {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    function Accept(mutable visitor: SyntaxVisitor) {
+        visitor.VisitGenericParameter(this)
+    }
+
+    let typeName: String?
+}
+
+class ClassMember : SyntaxNode {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    function Accept(mutable visitor: SyntaxVisitor) {
+        visitor.VisitClassMember(this)
+        declaration!.Accept(visitor)
+    }
+
+    let declaration: Declaration?
+}
+
+class Expression : Statement {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    override function Accept(mutable visitor: SyntaxVisitor) {
+        visitor.VisitExpression(this)
+    }
+
+}
+
+class CodeBlock : Expression {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    override function Accept(mutable visitor: SyntaxVisitor) {
+        visitor.VisitCodeBlock(this)
+        for node in statements! {
+            node.Accept(visitor)
+        }
+    }
+
+    let statements: [StatementWithSemicolon]?
+}
+
+class SimpleExpression : Expression {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    override function Accept(mutable visitor: SyntaxVisitor) {
+        visitor.VisitSimpleExpression(this)
+        prefixExpression!.Accept(visitor)
+        if binaryOps != nil {
+            for node in binaryOps! {
+                node.Accept(visitor)
+        }
+        }
+    }
+
+    let prefixExpression: PrefixExpression?
+    let binaryOps: [BinaryOp]?
+}
+
+class PrefixExpression : SyntaxNode {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    function Accept(mutable visitor: SyntaxVisitor) {
+        visitor.VisitPrefixExpression(this)
+        expression!.Accept(visitor)
+    }
+
+    let prefixOperator: String?
+    let expression: PostfixExpression?
+}
+
+class PostfixExpression : SyntaxNode {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    function Accept(mutable visitor: SyntaxVisitor) {
+        visitor.VisitPostfixExpression(this)
+        primaryExpression!.Accept(visitor)
+        if postfixes != nil {
+            for node in postfixes! {
+                node.Accept(visitor)
+        }
+        }
+    }
+
+    let primaryExpression: PrimaryExpression?
+    let postfixes: [Postfix]?
+}
+
+class BinaryOp : SyntaxNode {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    function Accept(mutable visitor: SyntaxVisitor) {
+        visitor.VisitBinaryOp(this)
+    }
+
+}
+
+class BinaryOperation : BinaryOp {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    override function Accept(mutable visitor: SyntaxVisitor) {
+        visitor.VisitBinaryOperation(this)
+        expression!.Accept(visitor)
+    }
+
+    let binaryOperator: String?
+    let expression: PrefixExpression?
+}
+
+class Assignment : BinaryOp {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    override function Accept(mutable visitor: SyntaxVisitor) {
+        visitor.VisitAssignment(this)
+        expression!.Accept(visitor)
+    }
+
+    let expression: PrefixExpression?
+}
+
+class TypeQuery : BinaryOp {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    override function Accept(mutable visitor: SyntaxVisitor) {
+        visitor.VisitTypeQuery(this)
+        objectType!.Accept(visitor)
+    }
+
+    let objectType: Type?
+}
+
+class TypeCast : BinaryOp {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    override function Accept(mutable visitor: SyntaxVisitor) {
+        visitor.VisitTypeCast(this)
+        objectType!.Accept(visitor)
+    }
+
+    let objectType: Type?
+}
+
+class CatchClause : SyntaxNode {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    function Accept(mutable visitor: SyntaxVisitor) {
+        visitor.VisitCatchClause(this)
+        catchPattern!.Accept(visitor)
+        if bindingPattern != nil {
+            bindingPattern!.Accept(visitor)
+        }
+        expression!.Accept(visitor)
+    }
+
+    let catchPattern: CatchPattern?
+    let bindingPattern: TuplePattern?
+    let expression: Expression?
+}
+
+class CatchPattern : SyntaxNode {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    function Accept(mutable visitor: SyntaxVisitor) {
+        visitor.VisitCatchPattern(this)
+    }
+
+}
+
+class WildCardCatchPattern : CatchPattern {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    override function Accept(mutable visitor: SyntaxVisitor) {
+        visitor.VisitWildCardCatchPattern(this)
+        pattern!.Accept(visitor)
+    }
+
+    let pattern: WildcardPattern?
+}
+
+class PathItemCatchPattern : CatchPattern {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    override function Accept(mutable visitor: SyntaxVisitor) {
+        visitor.VisitPathItemCatchPattern(this)
+        catchCase!.Accept(visitor)
+        if catchCaseExtensions != nil {
+            for node in catchCaseExtensions! {
+                node.Accept(visitor)
+        }
+        }
+    }
+
+    let catchCase: PathItem?
+    let catchCaseExtensions: [PathIdentifier]?
+}
+
+class Postfix : SyntaxNode {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    function Accept(mutable visitor: SyntaxVisitor) {
+        visitor.VisitPostfix(this)
+    }
+
+}
+
+class OperatorPostfix : Postfix {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    override function Accept(mutable visitor: SyntaxVisitor) {
+        visitor.VisitOperatorPostfix(this)
+    }
+
+    let postfixOperator: String?
+}
+
+class FunctionCall : Postfix {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    override function Accept(mutable visitor: SyntaxVisitor) {
+        visitor.VisitFunctionCall(this)
+        arguments!.Accept(visitor)
+        if catchClauses != nil {
+            for node in catchClauses! {
+                node.Accept(visitor)
+        }
+        }
+    }
+
+    let arguments: ParenthesizedExpression?
+    let catchClauses: [CatchClause]?
+}
+
+class ExplicitMemberExpression : Postfix {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    override function Accept(mutable visitor: SyntaxVisitor) {
+        visitor.VisitExplicitMemberExpression(this)
+        memberPostfix!.Accept(visitor)
+    }
+
+    let memberPostfix: MemberPostfix?
+}
+
+class Subscript : Postfix {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    override function Accept(mutable visitor: SyntaxVisitor) {
+        visitor.VisitSubscript(this)
+        for node in expressions! {
+            node.Accept(visitor)
+        }
+    }
+
+    let expressions: [ExpressionElement]?
+}
+
+class ExpressionElement : SyntaxNode {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    function Accept(mutable visitor: SyntaxVisitor) {
+        visitor.VisitExpressionElement(this)
+        expression!.Accept(visitor)
+    }
+
+    let expression: Expression?
+}
+
+class MemberPostfix : ExplicitMemberExpression {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    override function Accept(mutable visitor: SyntaxVisitor) {
+        visitor.VisitMemberPostfix(this)
+    }
+
+}
+
+class NamedMemberPostfix : MemberPostfix {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    override function Accept(mutable visitor: SyntaxVisitor) {
+        visitor.VisitNamedMemberPostfix(this)
+        identifier!.Accept(visitor)
+    }
+
+    let identifier: IdentifierExpression?
+}
+
+class PrimaryExpression : SyntaxNode {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    function Accept(mutable visitor: SyntaxVisitor) {
+        visitor.VisitPrimaryExpression(this)
+    }
+
+}
+
+class ParenthesizedExpression : PrimaryExpression {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    override function Accept(mutable visitor: SyntaxVisitor) {
+        visitor.VisitParenthesizedExpression(this)
+        if expressionElements != nil {
+            for node in expressionElements! {
+                node.Accept(visitor)
+        }
+        }
+    }
+
+    let expressionElements: [ExpressionElement]?
+}
+
+class LiteralExpression : PrimaryExpression {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    override function Accept(mutable visitor: SyntaxVisitor) {
+        visitor.VisitLiteralExpression(this)
+    }
+
+    let literal: Literal?
+}
+
+class IdentifierExpression : PrimaryExpression {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    override function Accept(mutable visitor: SyntaxVisitor) {
+        visitor.VisitIdentifierExpression(this)
+    }
+
+    let name: String?
+}
+
+class IfExpression : PrimaryExpression {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    override function Accept(mutable visitor: SyntaxVisitor) {
+        visitor.VisitIfExpression(this)
+        condition!.Accept(visitor)
+        consequent!.Accept(visitor)
+        if elseClause != nil {
+            elseClause!.Accept(visitor)
+        }
+    }
+
+    let condition: Expression?
+    let consequent: Expression?
+    let elseClause: ElseClause?
+}
+
+class ElseClause : SyntaxNode {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    function Accept(mutable visitor: SyntaxVisitor) {
+        visitor.VisitElseClause(this)
+        alternative!.Accept(visitor)
+    }
+
+    let alternative: Expression?
+}
+
+class SwitchExpression : PrimaryExpression {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    override function Accept(mutable visitor: SyntaxVisitor) {
+        visitor.VisitSwitchExpression(this)
+        expression!.Accept(visitor)
+        body!.Accept(visitor)
+    }
+
+    let expression: Expression?
+    let body: SwitchBody?
+}
+
+class SwitchBody : SyntaxNode {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    function Accept(mutable visitor: SyntaxVisitor) {
+        visitor.VisitSwitchBody(this)
+    }
+
+}
+
+class CurliedSwitchBody : SwitchBody {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    override function Accept(mutable visitor: SyntaxVisitor) {
+        visitor.VisitCurliedSwitchBody(this)
+        for node in cases! {
+            node.Accept(visitor)
+        }
+    }
+
+    let cases: [SwitchCase]?
+}
+
+class NakedSwitchBody : SwitchBody {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    override function Accept(mutable visitor: SyntaxVisitor) {
+        visitor.VisitNakedSwitchBody(this)
+        for node in cases! {
+            node.Accept(visitor)
+        }
+    }
+
+    let cases: [SwitchCase]?
+}
+
+class SwitchCase : SyntaxNode {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    function Accept(mutable visitor: SyntaxVisitor) {
+        visitor.VisitSwitchCase(this)
+        label!.Accept(visitor)
+        content!.Accept(visitor)
+    }
+
+    let label: CaseLabel?
+    let content: CaseContent?
+}
+
+class CaseLabel : SyntaxNode {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    function Accept(mutable visitor: SyntaxVisitor) {
+        visitor.VisitCaseLabel(this)
+    }
+
+}
+
+class ItemCaseLabel : CaseLabel {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    override function Accept(mutable visitor: SyntaxVisitor) {
+        visitor.VisitItemCaseLabel(this)
+        pattern!.Accept(visitor)
+        for node in additionalPatterns! {
+            node.Accept(visitor)
+        }
+    }
+
+    let pattern: Pattern?
+    let additionalPatterns: [CaseItem]?
+}
+
+class CaseItem : SyntaxNode {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    function Accept(mutable visitor: SyntaxVisitor) {
+        visitor.VisitCaseItem(this)
+        pattern!.Accept(visitor)
+    }
+
+    let pattern: Pattern?
+}
+
+class ReturnExpression : PrimaryExpression {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    override function Accept(mutable visitor: SyntaxVisitor) {
+        visitor.VisitReturnExpression(this)
+        if expression != nil {
+            expression!.Accept(visitor)
+        }
+    }
+
+    let expression: Expression?
+}
+
+class ThrowExpression : PrimaryExpression {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    override function Accept(mutable visitor: SyntaxVisitor) {
+        visitor.VisitThrowExpression(this)
+        if expression != nil {
+            expression!.Accept(visitor)
+        }
+    }
+
+    let expression: Expression?
+}
+
+class BreakExpression : PrimaryExpression {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    override function Accept(mutable visitor: SyntaxVisitor) {
+        visitor.VisitBreakExpression(this)
+        if expression != nil {
+            expression!.Accept(visitor)
+        }
+    }
+
+    let expression: Expression?
+}
+
+class Pattern : SyntaxNode {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    function Accept(mutable visitor: SyntaxVisitor) {
+        visitor.VisitPattern(this)
+    }
+
+}
+
+class WildcardPattern : Pattern {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    override function Accept(mutable visitor: SyntaxVisitor) {
+        visitor.VisitWildcardPattern(this)
+    }
+
+}
+
+class IdentifierPattern : Pattern {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    override function Accept(mutable visitor: SyntaxVisitor) {
+        visitor.VisitIdentifierPattern(this)
+        if typeAnnotation != nil {
+            typeAnnotation!.Accept(visitor)
+        }
+    }
+
+    let identifier: String?
+    let typeAnnotation: TypeAnnotation?
+}
+
+class TuplePattern : Pattern {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    override function Accept(mutable visitor: SyntaxVisitor) {
+        visitor.VisitTuplePattern(this)
+        for node in elements! {
+            node.Accept(visitor)
+        }
+    }
+
+    let elements: [TuplePatternElement]?
+}
+
+class TuplePatternElement : SyntaxNode {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    function Accept(mutable visitor: SyntaxVisitor) {
+        visitor.VisitTuplePatternElement(this)
+        pattern!.Accept(visitor)
+    }
+
+    let pattern: Pattern?
+}
+
+class ExpressionPattern : Pattern {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    override function Accept(mutable visitor: SyntaxVisitor) {
+        visitor.VisitExpressionPattern(this)
+        expression!.Accept(visitor)
+    }
+
+    let expression: Expression?
+}
+
+class DefaultCaseLabel : CaseLabel {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    override function Accept(mutable visitor: SyntaxVisitor) {
+        visitor.VisitDefaultCaseLabel(this)
+    }
+
+}
+
+class CaseContent : SyntaxNode {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    function Accept(mutable visitor: SyntaxVisitor) {
+        visitor.VisitCaseContent(this)
+    }
+
+}
+
+class BlockCaseContent : CaseContent {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    override function Accept(mutable visitor: SyntaxVisitor) {
+        visitor.VisitBlockCaseContent(this)
+        for node in statements! {
+            node.Accept(visitor)
+        }
+    }
+
+    let statements: [StatementWithSemicolon]?
+}
+
+class EmptyCaseContent : CaseContent {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    override function Accept(mutable visitor: SyntaxVisitor) {
+        visitor.VisitEmptyCaseContent(this)
+    }
+
+}
+
+class InitializerCall : PrimaryExpression {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    override function Accept(mutable visitor: SyntaxVisitor) {
+        visitor.VisitInitializerCall(this)
+        typeToInitialize!.Accept(visitor)
+        arguments!.Accept(visitor)
+        if catchClauses != nil {
+            for node in catchClauses! {
+                node.Accept(visitor)
+        }
+        }
+    }
+
+    let typeToInitialize: Type?
+    let arguments: ParenthesizedExpression?
+    let catchClauses: [CatchClause]?
+}
+
+class ThisExpression : PrimaryExpression {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    override function Accept(mutable visitor: SyntaxVisitor) {
+        visitor.VisitThisExpression(this)
+    }
+
+}
+
+class ThisDot : ThisExpression {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    override function Accept(mutable visitor: SyntaxVisitor) {
+        visitor.VisitThisDot(this)
+        member!.Accept(visitor)
+    }
+
+    let member: CommonThisMember?
+}
+
+class ThisSubscript : ThisExpression {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    override function Accept(mutable visitor: SyntaxVisitor) {
+        visitor.VisitThisSubscript(this)
+        subscript!.Accept(visitor)
+    }
+
+    let subscript: Subscript?
+}
+
+class This : ThisExpression {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    override function Accept(mutable visitor: SyntaxVisitor) {
+        visitor.VisitThis(this)
+    }
+
+}
+
+class CommonThisMember : SyntaxNode {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    function Accept(mutable visitor: SyntaxVisitor) {
+        visitor.VisitCommonThisMember(this)
+    }
+
+}
+
+class ThisInit : CommonThisMember {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    override function Accept(mutable visitor: SyntaxVisitor) {
+        visitor.VisitThisInit(this)
+    }
+
+}
+
+class ThisMember : CommonThisMember {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    override function Accept(mutable visitor: SyntaxVisitor) {
+        visitor.VisitThisMember(this)
+    }
+
+    let name: String?
+}
+
+class SuperExpression : PrimaryExpression {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    override function Accept(mutable visitor: SyntaxVisitor) {
+        visitor.VisitSuperExpression(this)
+    }
+
+}
+
+class SuperDot : SuperExpression {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    override function Accept(mutable visitor: SyntaxVisitor) {
+        visitor.VisitSuperDot(this)
+        member!.Accept(visitor)
+    }
+
+    let member: CommonSuperMember?
+}
+
+class SuperSubscript : SuperExpression {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    override function Accept(mutable visitor: SyntaxVisitor) {
+        visitor.VisitSuperSubscript(this)
+        subscript!.Accept(visitor)
+    }
+
+    let subscript: Subscript?
+}
+
+class CommonSuperMember : SyntaxNode {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    function Accept(mutable visitor: SyntaxVisitor) {
+        visitor.VisitCommonSuperMember(this)
+    }
+
+}
+
+class SuperInit : CommonSuperMember {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    override function Accept(mutable visitor: SyntaxVisitor) {
+        visitor.VisitSuperInit(this)
+    }
+
+}
+
+class SuperMember : CommonSuperMember {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    override function Accept(mutable visitor: SyntaxVisitor) {
+        visitor.VisitSuperMember(this)
+    }
+
+    let name: String?
+}
+
+class Type : SyntaxNode {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    function Accept(mutable visitor: SyntaxVisitor) {
+        visitor.VisitType(this)
+    }
+
+}
+
+class TypeAnnotation : SyntaxNode {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    function Accept(mutable visitor: SyntaxVisitor) {
+        visitor.VisitTypeAnnotation(this)
+        typeAnnotation!.Accept(visitor)
+    }
+
+    let typeAnnotation: Type?
+}
+
+class TypeIdentifier : Type {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    override function Accept(mutable visitor: SyntaxVisitor) {
+        visitor.VisitTypeIdentifier(this)
+        if subType != nil {
+            subType!.Accept(visitor)
+        }
+        if postfixes != nil {
+            for node in postfixes! {
+                node.Accept(visitor)
+        }
+        }
+    }
+
+    let name: String?
+    let subType: SubtypeIdentifier?
+    let postfixes: [TypePostfix]?
+}
+
+class SubtypeIdentifier : SyntaxNode {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    function Accept(mutable visitor: SyntaxVisitor) {
+        visitor.VisitSubtypeIdentifier(this)
+        typeIdentifier!.Accept(visitor)
+    }
+
+    let typeIdentifier: TypeIdentifier?
+}
+
+class TypePostfix : SyntaxNode {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    function Accept(mutable visitor: SyntaxVisitor) {
+        visitor.VisitTypePostfix(this)
+    }
+
+}
+
+class ArrayType : Type {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    override function Accept(mutable visitor: SyntaxVisitor) {
+        visitor.VisitArrayType(this)
+        elementType!.Accept(visitor)
+        if postfixes != nil {
+            for node in postfixes! {
+                node.Accept(visitor)
+        }
+        }
+    }
+
+    let elementType: Type?
+    let postfixes: [TypePostfix]?
+}
+
+class OptionalType : TypePostfix {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    override function Accept(mutable visitor: SyntaxVisitor) {
+        visitor.VisitOptionalType(this)
+    }
+
+}
+
+class TypeInheritanceClause : SyntaxNode {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    function Accept(mutable visitor: SyntaxVisitor) {
+        visitor.VisitTypeInheritanceClause(this)
+        if inheritances != nil {
+            for node in inheritances! {
+                node.Accept(visitor)
+        }
+        }
+    }
+
+    let inheritances: [Inheritance]?
+}
+
+class Inheritance : SyntaxNode {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    function Accept(mutable visitor: SyntaxVisitor) {
+        visitor.VisitInheritance(this)
+        name!.Accept(visitor)
+    }
+
+    let name: TypeIdentifier?
+}
+
+}
+#endif // __scalyc__Syntax__
