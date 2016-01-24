@@ -20,9 +20,12 @@ class PathIdentifier;
 class PathItem;
 class Initializer;
 class ConstantDeclaration;
-class PatternInitializer;
 class VariableDeclaration;
+class BindingInitializer;
+class PatternInitializer;
+class AdditionalInitializer;
 class FunctionDeclaration;
+class InitializerDeclaration;
 class Modifier;
 class Static;
 class FunctionName;
@@ -75,6 +78,7 @@ class ItemCaseLabel;
 class CaseItem;
 class ReturnExpression;
 class ThrowExpression;
+class BreakExpression;
 class Pattern;
 class WildcardPattern;
 class IdentifierPattern;
@@ -85,6 +89,7 @@ class DefaultCaseLabel;
 class CaseContent;
 class BlockCaseContent;
 class EmptyCaseContent;
+class InitializerCall;
 class Type;
 class TypeAnnotation;
 class TypeIdentifier;
@@ -154,7 +159,22 @@ class ConstantDeclaration : public Declaration {
 public:
     ConstantDeclaration(Position start, Position end);
 
-    Array<PatternInitializer>* patternInitializers;
+    BindingInitializer* initializer;
+};
+
+class VariableDeclaration : public Declaration {
+public:
+    VariableDeclaration(Position start, Position end);
+
+    BindingInitializer* initializer;
+};
+
+class BindingInitializer : public SyntaxNode {
+public:
+    BindingInitializer(Position start, Position end);
+
+    PatternInitializer* initializer;
+    Array<AdditionalInitializer>* additionalInitializers;
 };
 
 class PatternInitializer : public SyntaxNode {
@@ -165,11 +185,11 @@ public:
     Initializer* initializer;
 };
 
-class VariableDeclaration : public Declaration {
+class AdditionalInitializer : public SyntaxNode {
 public:
-    VariableDeclaration(Position start, Position end);
+    AdditionalInitializer(Position start, Position end);
 
-    Array<PatternInitializer>* patternInitializers;
+    PatternInitializer* pattern;
 };
 
 class FunctionDeclaration : public Declaration {
@@ -179,6 +199,16 @@ public:
     Array<Modifier>* modifiers;
     FunctionName* name;
     FunctionSignature* signature;
+    Expression* body;
+};
+
+class InitializerDeclaration : public Declaration {
+public:
+    InitializerDeclaration(Position start, Position end);
+
+    Array<Modifier>* modifiers;
+    ParameterClause* parameterClause;
+    ThrowsClause* throwsClause;
     Expression* body;
 };
 
@@ -402,7 +432,7 @@ class FunctionCall : public Postfix {
 public:
     FunctionCall(Position start, Position end);
 
-    ParenthesizedExpression* parenthesizedExpression;
+    ParenthesizedExpression* arguments;
     Array<CatchClause>* catchClauses;
 };
 
@@ -553,6 +583,13 @@ public:
     Expression* expression;
 };
 
+class BreakExpression : public PrimaryExpression {
+public:
+    BreakExpression(Position start, Position end);
+
+    Expression* expression;
+};
+
 class Pattern : public SyntaxNode {
 public:
     Pattern(Position start, Position end);
@@ -617,6 +654,15 @@ class EmptyCaseContent : public CaseContent {
 public:
     EmptyCaseContent(Position start, Position end);
 
+};
+
+class InitializerCall : public PrimaryExpression {
+public:
+    InitializerCall(Position start, Position end);
+
+    Type* typeToInitialize;
+    ParenthesizedExpression* arguments;
+    Array<CatchClause>* catchClauses;
 };
 
 class Type : public SyntaxNode {

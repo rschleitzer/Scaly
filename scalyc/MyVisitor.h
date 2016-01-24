@@ -14,9 +14,12 @@ class MyVisitor : public SyntaxVisitor {
     virtual void VisitPathItem(PathItem);
     virtual void VisitInitializer(Initializer);
     virtual void VisitConstantDeclaration(ConstantDeclaration);
-    virtual void VisitPatternInitializer(PatternInitializer);
     virtual void VisitVariableDeclaration(VariableDeclaration);
+    virtual void VisitBindingInitializer(BindingInitializer);
+    virtual void VisitPatternInitializer(PatternInitializer);
+    virtual void VisitAdditionalInitializer(AdditionalInitializer);
     virtual void VisitFunctionDeclaration(FunctionDeclaration);
+    virtual void VisitInitializerDeclaration(InitializerDeclaration);
     virtual void VisitModifier(Modifier);
     virtual void VisitStatic(Static);
     virtual void VisitFunctionName(FunctionName);
@@ -69,6 +72,7 @@ class MyVisitor : public SyntaxVisitor {
     virtual void VisitCaseItem(CaseItem);
     virtual void VisitReturnExpression(ReturnExpression);
     virtual void VisitThrowExpression(ThrowExpression);
+    virtual void VisitBreakExpression(BreakExpression);
     virtual void VisitPattern(Pattern);
     virtual void VisitWildcardPattern(WildcardPattern);
     virtual void VisitIdentifierPattern(IdentifierPattern);
@@ -79,6 +83,7 @@ class MyVisitor : public SyntaxVisitor {
     virtual void VisitCaseContent(CaseContent);
     virtual void VisitBlockCaseContent(BlockCaseContent);
     virtual void VisitEmptyCaseContent(EmptyCaseContent);
+    virtual void VisitInitializerCall(InitializerCall);
     virtual void VisitType(Type);
     virtual void VisitTypeAnnotation(TypeAnnotation);
     virtual void VisitTypeIdentifier(TypeIdentifier);

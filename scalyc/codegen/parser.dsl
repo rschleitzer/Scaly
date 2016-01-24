@@ -1,7 +1,7 @@
 (define (parser-scaly) ($
 
 "class Parser {
-    Parser(text: String) {
+    init(text: String) {
         lexer = Lexer(text)
     }
 "
@@ -25,10 +25,11 @@
     }
 "       )"")
 "
-    function parse("(id syntax)") -> "(id syntax)" throws ParserError {"
+    function parse"(id syntax)"() -> "(id syntax)" throws ParserError {"
         (if (abstract? syntax)
             ($
-"        errors: [ParserError] = [ParserError]()
+"
+        let errors: [ParserError] = [ParserError]()
         let start: Position = lexer.getPreviousPosition()
 "                (apply-to-children-of syntax (lambda (content) ($
 "
@@ -48,7 +49,7 @@
             )
             ($ ; non-abstract syntax
 "
-        mutable ret: "(id syntax)"? = null;
+        mutable ret: "(id syntax)"? = null
 "                (apply-to-children-of syntax (lambda (content) ($
 "        {
             let start: Position = lexer.getPreviousPosition()
@@ -79,8 +80,8 @@
             " = lexer.parse"
             (case (type content)(("prefixoperator") "PrefixOperator")(("binaryoperator") "BinaryOperator")(("postfixoperator") "PostfixOperator")(("identifier") "Identifier")(("literal") "Literal")(("keyword") "Keyword")(("punctuation") "Punctuation"))                            
             "("(case (type content)(("keyword") (name-of-link content)) (("punctuation") (link content)) (else ""))")
-            if "(case (type content) (("keyword" "punctuation") "success")(("identifier") ($ "("(property content)" != null) && ("(property content)" is Identifier)")) (else ($ (property content)" != null")))" {
-            lexer.advance()
+            if "(case (type content) (("keyword" "punctuation") "success")(("identifier") ($ "("(property content)" != null) && ("(property content)" is Identifier)")) (else ($ (property content)" != null")))"
+                lexer.advance()
 "                       )
                     ) ; syntax or terminal
 "
@@ -122,8 +123,7 @@
     (apply-to-selected-children "punctuation" (lambda (punctuation) ($
 "    let "(id punctuation)": string = \""(value punctuation)"\"
 "   )))
-"    }
-}
+"}
 "
 
 ))

@@ -14,9 +14,12 @@ class SyntaxVisitor {
     virtual void VisitPathItem(PathItem)= 0;
     virtual void VisitInitializer(Initializer)= 0;
     virtual void VisitConstantDeclaration(ConstantDeclaration)= 0;
-    virtual void VisitPatternInitializer(PatternInitializer)= 0;
     virtual void VisitVariableDeclaration(VariableDeclaration)= 0;
+    virtual void VisitBindingInitializer(BindingInitializer)= 0;
+    virtual void VisitPatternInitializer(PatternInitializer)= 0;
+    virtual void VisitAdditionalInitializer(AdditionalInitializer)= 0;
     virtual void VisitFunctionDeclaration(FunctionDeclaration)= 0;
+    virtual void VisitInitializerDeclaration(InitializerDeclaration)= 0;
     virtual void VisitModifier(Modifier)= 0;
     virtual void VisitStatic(Static)= 0;
     virtual void VisitFunctionName(FunctionName)= 0;
@@ -69,6 +72,7 @@ class SyntaxVisitor {
     virtual void VisitCaseItem(CaseItem)= 0;
     virtual void VisitReturnExpression(ReturnExpression)= 0;
     virtual void VisitThrowExpression(ThrowExpression)= 0;
+    virtual void VisitBreakExpression(BreakExpression)= 0;
     virtual void VisitPattern(Pattern)= 0;
     virtual void VisitWildcardPattern(WildcardPattern)= 0;
     virtual void VisitIdentifierPattern(IdentifierPattern)= 0;
@@ -79,6 +83,7 @@ class SyntaxVisitor {
     virtual void VisitCaseContent(CaseContent)= 0;
     virtual void VisitBlockCaseContent(BlockCaseContent)= 0;
     virtual void VisitEmptyCaseContent(EmptyCaseContent)= 0;
+    virtual void VisitInitializerCall(InitializerCall)= 0;
     virtual void VisitType(Type)= 0;
     virtual void VisitTypeAnnotation(TypeAnnotation)= 0;
     virtual void VisitTypeIdentifier(TypeIdentifier)= 0;

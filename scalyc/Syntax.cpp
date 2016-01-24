@@ -46,15 +46,27 @@ ConstantDeclaration::ConstantDeclaration(Position start, Position end)
 : Declaration(start, end) {
 }
 
-PatternInitializer::PatternInitializer(Position start, Position end)
-: SyntaxNode(start, end) {
-}
-
 VariableDeclaration::VariableDeclaration(Position start, Position end)
 : Declaration(start, end) {
 }
 
+BindingInitializer::BindingInitializer(Position start, Position end)
+: SyntaxNode(start, end) {
+}
+
+PatternInitializer::PatternInitializer(Position start, Position end)
+: SyntaxNode(start, end) {
+}
+
+AdditionalInitializer::AdditionalInitializer(Position start, Position end)
+: SyntaxNode(start, end) {
+}
+
 FunctionDeclaration::FunctionDeclaration(Position start, Position end)
+: Declaration(start, end) {
+}
+
+InitializerDeclaration::InitializerDeclaration(Position start, Position end)
 : Declaration(start, end) {
 }
 
@@ -266,6 +278,10 @@ ThrowExpression::ThrowExpression(Position start, Position end)
 : PrimaryExpression(start, end) {
 }
 
+BreakExpression::BreakExpression(Position start, Position end)
+: PrimaryExpression(start, end) {
+}
+
 Pattern::Pattern(Position start, Position end)
 : SyntaxNode(start, end) {
 }
@@ -304,6 +320,10 @@ BlockCaseContent::BlockCaseContent(Position start, Position end)
 
 EmptyCaseContent::EmptyCaseContent(Position start, Position end)
 : CaseContent(start, end) {
+}
+
+InitializerCall::InitializerCall(Position start, Position end)
+: PrimaryExpression(start, end) {
 }
 
 Type::Type(Position start, Position end)

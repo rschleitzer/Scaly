@@ -57,7 +57,7 @@ class Lexer {
     mutable line: unsigned
     mutable column: unsigned
     
-    Lexer(text: String) {
+    init(text: String) {
         token = 0
         whitespaceSkipped = true
         text = text

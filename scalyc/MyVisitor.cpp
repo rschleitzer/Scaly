@@ -30,13 +30,22 @@ void MyVisitor::VisitInitializer(Initializer) {
 void MyVisitor::VisitConstantDeclaration(ConstantDeclaration) {
 }
 
-void MyVisitor::VisitPatternInitializer(PatternInitializer) {
-}
-
 void MyVisitor::VisitVariableDeclaration(VariableDeclaration) {
 }
 
+void MyVisitor::VisitBindingInitializer(BindingInitializer) {
+}
+
+void MyVisitor::VisitPatternInitializer(PatternInitializer) {
+}
+
+void MyVisitor::VisitAdditionalInitializer(AdditionalInitializer) {
+}
+
 void MyVisitor::VisitFunctionDeclaration(FunctionDeclaration) {
+}
+
+void MyVisitor::VisitInitializerDeclaration(InitializerDeclaration) {
 }
 
 void MyVisitor::VisitModifier(Modifier) {
@@ -195,6 +204,9 @@ void MyVisitor::VisitReturnExpression(ReturnExpression) {
 void MyVisitor::VisitThrowExpression(ThrowExpression) {
 }
 
+void MyVisitor::VisitBreakExpression(BreakExpression) {
+}
+
 void MyVisitor::VisitPattern(Pattern) {
 }
 
@@ -223,6 +235,9 @@ void MyVisitor::VisitBlockCaseContent(BlockCaseContent) {
 }
 
 void MyVisitor::VisitEmptyCaseContent(EmptyCaseContent) {
+}
+
+void MyVisitor::VisitInitializerCall(InitializerCall) {
 }
 
 void MyVisitor::VisitType(Type) {

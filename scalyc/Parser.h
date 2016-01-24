@@ -28,12 +28,19 @@ public:
 
     _Result<ConstantDeclaration, ParserError> parseConstantDeclaration(_Page* _rp, _Page* _ep);
 
+    _Result<VariableDeclaration, ParserError> parseVariableDeclaration(_Page* _rp, _Page* _ep);
+
+    _Result<BindingInitializer, ParserError> parseBindingInitializer(_Page* _rp, _Page* _ep);
+
     _Result<Array<PatternInitializer>, ParserError> parsePatternInitializerList(_Page* _rp, _Page* _ep);
     _Result<PatternInitializer, ParserError> parsePatternInitializer(_Page* _rp, _Page* _ep);
 
-    _Result<VariableDeclaration, ParserError> parseVariableDeclaration(_Page* _rp, _Page* _ep);
+    _Result<Array<AdditionalInitializer>, ParserError> parseAdditionalInitializerList(_Page* _rp, _Page* _ep);
+    _Result<AdditionalInitializer, ParserError> parseAdditionalInitializer(_Page* _rp, _Page* _ep);
 
     _Result<FunctionDeclaration, ParserError> parseFunctionDeclaration(_Page* _rp, _Page* _ep);
+
+    _Result<InitializerDeclaration, ParserError> parseInitializerDeclaration(_Page* _rp, _Page* _ep);
 
     _Result<Array<Modifier>, ParserError> parseModifierList(_Page* _rp, _Page* _ep);
     _Result<Modifier, ParserError> parseModifier(_Page* _rp, _Page* _ep);
@@ -150,6 +157,8 @@ public:
 
     _Result<ThrowExpression, ParserError> parseThrowExpression(_Page* _rp, _Page* _ep);
 
+    _Result<BreakExpression, ParserError> parseBreakExpression(_Page* _rp, _Page* _ep);
+
     _Result<Pattern, ParserError> parsePattern(_Page* _rp, _Page* _ep);
 
     _Result<WildcardPattern, ParserError> parseWildcardPattern(_Page* _rp, _Page* _ep);
@@ -170,6 +179,8 @@ public:
     _Result<BlockCaseContent, ParserError> parseBlockCaseContent(_Page* _rp, _Page* _ep);
 
     _Result<EmptyCaseContent, ParserError> parseEmptyCaseContent(_Page* _rp, _Page* _ep);
+
+    _Result<InitializerCall, ParserError> parseInitializerCall(_Page* _rp, _Page* _ep);
 
     _Result<Type, ParserError> parseType(_Page* _rp, _Page* _ep);
 
@@ -208,12 +219,14 @@ private:
     const char* catchKeyword = "catch";
     const char* returnKeyword = "return";
     const char* throwKeyword = "throw";
+    const char* breakKeyword = "break";
     const char* throwsKeyword = "throws";
     const char* staticKeyword = "static";
     const char* letKeyword = "let";
     const char* mutableKeyword = "mutable";
     const char* isKeyword = "is";
     const char* asKeyword = "as";
+    const char* initKeyword = "init";
     const char* semicolon = ";";
     const char* equal = "=";
     const char* leftAngular = "<";
