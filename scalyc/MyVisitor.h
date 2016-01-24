@@ -29,10 +29,15 @@ class MyVisitor : public SyntaxVisitor {
     virtual void VisitParameterClause(ParameterClause);
     virtual void VisitParameter(Parameter);
     virtual void VisitThrowsClause(ThrowsClause);
+    virtual void VisitEnumDeclaration(EnumDeclaration);
+    virtual void VisitEnumMember(EnumMember);
+    virtual void VisitTupleType(TupleType);
+    virtual void VisitAdditionalType(AdditionalType);
+    virtual void VisitEnumCase(EnumCase);
+    virtual void VisitAdditionalCase(AdditionalCase);
     virtual void VisitClassDeclaration(ClassDeclaration);
     virtual void VisitGenericArgumentClause(GenericArgumentClause);
     virtual void VisitGenericParameter(GenericParameter);
-    virtual void VisitClassBody(ClassBody);
     virtual void VisitClassMember(ClassMember);
     virtual void VisitExpression(Expression);
     virtual void VisitCodeBlock(CodeBlock);

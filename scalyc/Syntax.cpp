@@ -106,6 +106,30 @@ ThrowsClause::ThrowsClause(Position start, Position end)
 : SyntaxNode(start, end) {
 }
 
+EnumDeclaration::EnumDeclaration(Position start, Position end)
+: Declaration(start, end) {
+}
+
+EnumMember::EnumMember(Position start, Position end)
+: SyntaxNode(start, end) {
+}
+
+TupleType::TupleType(Position start, Position end)
+: SyntaxNode(start, end) {
+}
+
+AdditionalType::AdditionalType(Position start, Position end)
+: SyntaxNode(start, end) {
+}
+
+EnumCase::EnumCase(Position start, Position end)
+: SyntaxNode(start, end) {
+}
+
+AdditionalCase::AdditionalCase(Position start, Position end)
+: SyntaxNode(start, end) {
+}
+
 ClassDeclaration::ClassDeclaration(Position start, Position end)
 : Declaration(start, end) {
 }
@@ -115,10 +139,6 @@ GenericArgumentClause::GenericArgumentClause(Position start, Position end)
 }
 
 GenericParameter::GenericParameter(Position start, Position end)
-: SyntaxNode(start, end) {
-}
-
-ClassBody::ClassBody(Position start, Position end)
 : SyntaxNode(start, end) {
 }
 

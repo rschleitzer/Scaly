@@ -17,6 +17,7 @@
         <content link = ConstantDeclaration
         <content link = VariableDeclaration
         <content link = FunctionDeclaration
+        <content link = EnumDeclaration
         <content link = ClassDeclaration
         <content link = InitializerDeclaration
 
@@ -106,12 +107,44 @@
         <content link = throws
         <content link = Type                                    property = throwsType
 
+    <syntax id = EnumDeclaration                                base = Declaration
+        <content link = enum
+        <content identifier                                     property = name
+        <content link = leftCurly
+        <content link = EnumMember         multiple             property = members
+        <content link = rightCurly
+
+    <syntax id = EnumMember                multiple
+        <content link = case
+        <content link = EnumCase                                property = enumCase
+        <content link = AdditionalCase     multiple             property = additionalCases
+        <content link = TupleType                   optional    property = tupleType
+
+    <syntax id = TupleType
+        <content link = leftParen
+        <content link = Type                                    property = tupleType
+        <content link = AdditionalType     multiple             property = additionalTypes
+        <content link = rightParen
+
+    <syntax id = AdditionalType            multiple
+        <content link = comma
+        <content link = Type                                    property = enumCase
+
+    <syntax id = EnumCase
+        <content identifier                                     property = name
+
+    <syntax id = AdditionalCase            multiple
+        <content link = comma
+        <content link = EnumCase                                property = enumCase
+
     <syntax id = ClassDeclaration                               base = Declaration
         <content link = class
         <content identifier                                     property = name
         <content link = GenericArgumentClause       optional    property = genericArgumentClause
         <content link = TypeInheritanceClause       optional    property = typeInheritanceClause
-        <content link = ClassBody                               property = body
+        <content link = leftCurly
+        <content link = ClassMember        multiple optional    property = members
+        <content link = rightCurly
 
     <syntax id = GenericArgumentClause
         <content link = leftAngular
@@ -120,11 +153,6 @@
 
     <syntax id = GenericParameter multiple
         <content identifier                                     property = typeName
-
-    <syntax id = ClassBody
-        <content link = leftCurly
-        <content link = ClassMember        multiple optional    property = declarations
-        <content link = rightCurly
 
     <syntax id = ClassMember               multiple
         <content link = Declaration                             property = declaration
@@ -281,12 +309,13 @@
 
     <syntax id = ItemCaseLabel                                  base = CaseLabel
         <content link = case
-        <content link = CaseItem           multiple             property = items
+        <content link = Pattern                                 property = pattern
+        <content link = CaseItem           multiple             property = additionalPatterns
         <content link = colon
 
     <syntax id = CaseItem                  multiple
-        <content link = Pattern                                 property = pattern
         <content link = comma
+        <content link = Pattern                                 property = pattern
 
     <syntax id = ReturnExpression                               base = PrimaryExpression
         <content link = return
@@ -400,6 +429,7 @@
     <keyword id = is
     <keyword id = as
     <keyword id = init
+    <keyword id = enum
 
     <punctuation id = semicolon         value = ";"
     <punctuation id = equal             value = "="

@@ -29,10 +29,15 @@ class SyntaxVisitor {
     virtual void VisitParameterClause(ParameterClause)= 0;
     virtual void VisitParameter(Parameter)= 0;
     virtual void VisitThrowsClause(ThrowsClause)= 0;
+    virtual void VisitEnumDeclaration(EnumDeclaration)= 0;
+    virtual void VisitEnumMember(EnumMember)= 0;
+    virtual void VisitTupleType(TupleType)= 0;
+    virtual void VisitAdditionalType(AdditionalType)= 0;
+    virtual void VisitEnumCase(EnumCase)= 0;
+    virtual void VisitAdditionalCase(AdditionalCase)= 0;
     virtual void VisitClassDeclaration(ClassDeclaration)= 0;
     virtual void VisitGenericArgumentClause(GenericArgumentClause)= 0;
     virtual void VisitGenericParameter(GenericParameter)= 0;
-    virtual void VisitClassBody(ClassBody)= 0;
     virtual void VisitClassMember(ClassMember)= 0;
     virtual void VisitExpression(Expression)= 0;
     virtual void VisitCodeBlock(CodeBlock)= 0;

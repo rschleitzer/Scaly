@@ -35,10 +35,15 @@ class FunctionResult;
 class ParameterClause;
 class Parameter;
 class ThrowsClause;
+class EnumDeclaration;
+class EnumMember;
+class TupleType;
+class AdditionalType;
+class EnumCase;
+class AdditionalCase;
 class ClassDeclaration;
 class GenericArgumentClause;
 class GenericParameter;
-class ClassBody;
 class ClassMember;
 class Expression;
 class CodeBlock;
@@ -275,6 +280,52 @@ public:
     Type* throwsType;
 };
 
+class EnumDeclaration : public Declaration {
+public:
+    EnumDeclaration(Position start, Position end);
+
+    String* name;
+    Array<EnumMember>* members;
+};
+
+class EnumMember : public SyntaxNode {
+public:
+    EnumMember(Position start, Position end);
+
+    EnumCase* enumCase;
+    Array<AdditionalCase>* additionalCases;
+    TupleType* tupleType;
+};
+
+class TupleType : public SyntaxNode {
+public:
+    TupleType(Position start, Position end);
+
+    Type* tupleType;
+    Array<AdditionalType>* additionalTypes;
+};
+
+class AdditionalType : public SyntaxNode {
+public:
+    AdditionalType(Position start, Position end);
+
+    Type* enumCase;
+};
+
+class EnumCase : public SyntaxNode {
+public:
+    EnumCase(Position start, Position end);
+
+    String* name;
+};
+
+class AdditionalCase : public SyntaxNode {
+public:
+    AdditionalCase(Position start, Position end);
+
+    EnumCase* enumCase;
+};
+
 class ClassDeclaration : public Declaration {
 public:
     ClassDeclaration(Position start, Position end);
@@ -282,7 +333,7 @@ public:
     String* name;
     GenericArgumentClause* genericArgumentClause;
     TypeInheritanceClause* typeInheritanceClause;
-    ClassBody* body;
+    Array<ClassMember>* members;
 };
 
 class GenericArgumentClause : public SyntaxNode {
@@ -297,13 +348,6 @@ public:
     GenericParameter(Position start, Position end);
 
     String* typeName;
-};
-
-class ClassBody : public SyntaxNode {
-public:
-    ClassBody(Position start, Position end);
-
-    Array<ClassMember>* declarations;
 };
 
 class ClassMember : public SyntaxNode {
@@ -559,7 +603,8 @@ class ItemCaseLabel : public CaseLabel {
 public:
     ItemCaseLabel(Position start, Position end);
 
-    Array<CaseItem>* items;
+    Pattern* pattern;
+    Array<CaseItem>* additionalPatterns;
 };
 
 class CaseItem : public SyntaxNode {

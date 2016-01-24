@@ -75,6 +75,24 @@ void MyVisitor::VisitParameter(Parameter) {
 void MyVisitor::VisitThrowsClause(ThrowsClause) {
 }
 
+void MyVisitor::VisitEnumDeclaration(EnumDeclaration) {
+}
+
+void MyVisitor::VisitEnumMember(EnumMember) {
+}
+
+void MyVisitor::VisitTupleType(TupleType) {
+}
+
+void MyVisitor::VisitAdditionalType(AdditionalType) {
+}
+
+void MyVisitor::VisitEnumCase(EnumCase) {
+}
+
+void MyVisitor::VisitAdditionalCase(AdditionalCase) {
+}
+
 void MyVisitor::VisitClassDeclaration(ClassDeclaration) {
 }
 
@@ -82,9 +100,6 @@ void MyVisitor::VisitGenericArgumentClause(GenericArgumentClause) {
 }
 
 void MyVisitor::VisitGenericParameter(GenericParameter) {
-}
-
-void MyVisitor::VisitClassBody(ClassBody) {
 }
 
 void MyVisitor::VisitClassMember(ClassMember) {

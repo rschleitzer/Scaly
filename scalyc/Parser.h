@@ -63,14 +63,27 @@ public:
 
     _Result<ThrowsClause, ParserError> parseThrowsClause(_Page* _rp, _Page* _ep);
 
+    _Result<EnumDeclaration, ParserError> parseEnumDeclaration(_Page* _rp, _Page* _ep);
+
+    _Result<Array<EnumMember>, ParserError> parseEnumMemberList(_Page* _rp, _Page* _ep);
+    _Result<EnumMember, ParserError> parseEnumMember(_Page* _rp, _Page* _ep);
+
+    _Result<TupleType, ParserError> parseTupleType(_Page* _rp, _Page* _ep);
+
+    _Result<Array<AdditionalType>, ParserError> parseAdditionalTypeList(_Page* _rp, _Page* _ep);
+    _Result<AdditionalType, ParserError> parseAdditionalType(_Page* _rp, _Page* _ep);
+
+    _Result<EnumCase, ParserError> parseEnumCase(_Page* _rp, _Page* _ep);
+
+    _Result<Array<AdditionalCase>, ParserError> parseAdditionalCaseList(_Page* _rp, _Page* _ep);
+    _Result<AdditionalCase, ParserError> parseAdditionalCase(_Page* _rp, _Page* _ep);
+
     _Result<ClassDeclaration, ParserError> parseClassDeclaration(_Page* _rp, _Page* _ep);
 
     _Result<GenericArgumentClause, ParserError> parseGenericArgumentClause(_Page* _rp, _Page* _ep);
 
     _Result<Array<GenericParameter>, ParserError> parseGenericParameterList(_Page* _rp, _Page* _ep);
     _Result<GenericParameter, ParserError> parseGenericParameter(_Page* _rp, _Page* _ep);
-
-    _Result<ClassBody, ParserError> parseClassBody(_Page* _rp, _Page* _ep);
 
     _Result<Array<ClassMember>, ParserError> parseClassMemberList(_Page* _rp, _Page* _ep);
     _Result<ClassMember, ParserError> parseClassMember(_Page* _rp, _Page* _ep);
@@ -227,6 +240,7 @@ private:
     const char* isKeyword = "is";
     const char* asKeyword = "as";
     const char* initKeyword = "init";
+    const char* enumKeyword = "enum";
     const char* semicolon = ";";
     const char* equal = "=";
     const char* leftAngular = "<";

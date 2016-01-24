@@ -132,6 +132,15 @@ class Parser {
         }
 
         {
+            let node: EnumDeclaration = parseEnumDeclaration() catch _(error) {
+                errors.append(error)
+                break
+            }
+
+            return node
+        }
+
+        {
             let node: ClassDeclaration = parseClassDeclaration() catch _(error) {
                 errors.append(error)
                 break
@@ -842,6 +851,272 @@ class Parser {
         return ret
     }
 
+    function parseEnumDeclaration() -> EnumDeclaration throws ParserError {
+        mutable ret: EnumDeclaration? = null
+        {
+            let start: Position = lexer.getPreviousPosition()
+            let success: bool = lexer.parseKeyword(enumKeyword)
+            if success
+                lexer.advance()
+
+            if ret == null
+                ret = EnumDeclaration(start, lexer.getPosition())
+        }
+        {
+            let start: Position = lexer.getPreviousPosition()
+            let name: String? = lexer.parseIdentifier()
+            if (name != null) && (name is Identifier)
+                lexer.advance()
+
+            if ret == null
+                ret = EnumDeclaration(start, lexer.getPosition())
+
+            ret.name = name
+        }
+        {
+            let start: Position = lexer.getPreviousPosition()
+            let success: bool = lexer.parsePunctuation(leftCurly)
+            if success
+                lexer.advance()
+
+            if ret == null
+                ret = EnumDeclaration(start, lexer.getPosition())
+        }
+        {
+            let start: Position = lexer.getPreviousPosition()
+            let result: [EnumMember] node = parseEnumMemberList() catch _(error) {
+                throw (error)
+            }
+
+            if ret == null
+                ret = EnumDeclaration(start, lexer.getPosition())
+
+            ret.members = node
+        }
+        {
+            let start: Position = lexer.getPreviousPosition()
+            let success: bool = lexer.parsePunctuation(rightCurly)
+            if success
+                lexer.advance()
+
+            if ret == null
+                ret = EnumDeclaration(start, lexer.getPosition())
+        }
+
+        return ret
+    }
+
+    function parseEnumMemberList() -> [EnumMember] throws ParserError {
+        mutable ret: [EnumMember]? = null
+
+        while true {
+            let node: EnumMember = parseEnumMember()
+                catch _ break
+            
+            if ret == null
+                ret = [EnumMember]
+                
+            ret.append(node)
+        }
+
+        return ret
+    }
+
+    function parseEnumMember() -> EnumMember throws ParserError {
+        mutable ret: EnumMember? = null
+        {
+            let start: Position = lexer.getPreviousPosition()
+            let success: bool = lexer.parseKeyword(caseKeyword)
+            if success
+                lexer.advance()
+
+            if ret == null
+                ret = EnumMember(start, lexer.getPosition())
+        }
+        {
+            let start: Position = lexer.getPreviousPosition()
+            let result: EnumCase node = parseEnumCase() catch _(error) {
+                throw (error)
+            }
+
+            if ret == null
+                ret = EnumMember(start, lexer.getPosition())
+
+            ret.enumCase = node
+        }
+        {
+            let start: Position = lexer.getPreviousPosition()
+            let result: [AdditionalCase] node = parseAdditionalCaseList() catch _(error) {
+                throw (error)
+            }
+
+            if ret == null
+                ret = EnumMember(start, lexer.getPosition())
+
+            ret.additionalCases = node
+        }
+        {
+            let start: Position = lexer.getPreviousPosition()
+            let result: TupleType node = parseTupleType() catch _(error) {
+                 null
+            }
+
+            if ret == null
+                ret = EnumMember(start, lexer.getPosition())
+
+            ret.tupleType = node
+        }
+
+        return ret
+    }
+
+    function parseTupleType() -> TupleType throws ParserError {
+        mutable ret: TupleType? = null
+        {
+            let start: Position = lexer.getPreviousPosition()
+            let success: bool = lexer.parsePunctuation(leftParen)
+            if success
+                lexer.advance()
+
+            if ret == null
+                ret = TupleType(start, lexer.getPosition())
+        }
+        {
+            let start: Position = lexer.getPreviousPosition()
+            let result: Type node = parseType() catch _(error) {
+                throw (error)
+            }
+
+            if ret == null
+                ret = TupleType(start, lexer.getPosition())
+
+            ret.tupleType = node
+        }
+        {
+            let start: Position = lexer.getPreviousPosition()
+            let result: [AdditionalType] node = parseAdditionalTypeList() catch _(error) {
+                throw (error)
+            }
+
+            if ret == null
+                ret = TupleType(start, lexer.getPosition())
+
+            ret.additionalTypes = node
+        }
+        {
+            let start: Position = lexer.getPreviousPosition()
+            let success: bool = lexer.parsePunctuation(rightParen)
+            if success
+                lexer.advance()
+
+            if ret == null
+                ret = TupleType(start, lexer.getPosition())
+        }
+
+        return ret
+    }
+
+    function parseAdditionalTypeList() -> [AdditionalType] throws ParserError {
+        mutable ret: [AdditionalType]? = null
+
+        while true {
+            let node: AdditionalType = parseAdditionalType()
+                catch _ break
+            
+            if ret == null
+                ret = [AdditionalType]
+                
+            ret.append(node)
+        }
+
+        return ret
+    }
+
+    function parseAdditionalType() -> AdditionalType throws ParserError {
+        mutable ret: AdditionalType? = null
+        {
+            let start: Position = lexer.getPreviousPosition()
+            let success: bool = lexer.parsePunctuation(comma)
+            if success
+                lexer.advance()
+
+            if ret == null
+                ret = AdditionalType(start, lexer.getPosition())
+        }
+        {
+            let start: Position = lexer.getPreviousPosition()
+            let result: Type node = parseType() catch _(error) {
+                throw (error)
+            }
+
+            if ret == null
+                ret = AdditionalType(start, lexer.getPosition())
+
+            ret.enumCase = node
+        }
+
+        return ret
+    }
+
+    function parseEnumCase() -> EnumCase throws ParserError {
+        mutable ret: EnumCase? = null
+        {
+            let start: Position = lexer.getPreviousPosition()
+            let name: String? = lexer.parseIdentifier()
+            if (name != null) && (name is Identifier)
+                lexer.advance()
+
+            if ret == null
+                ret = EnumCase(start, lexer.getPosition())
+
+            ret.name = name
+        }
+
+        return ret
+    }
+
+    function parseAdditionalCaseList() -> [AdditionalCase] throws ParserError {
+        mutable ret: [AdditionalCase]? = null
+
+        while true {
+            let node: AdditionalCase = parseAdditionalCase()
+                catch _ break
+            
+            if ret == null
+                ret = [AdditionalCase]
+                
+            ret.append(node)
+        }
+
+        return ret
+    }
+
+    function parseAdditionalCase() -> AdditionalCase throws ParserError {
+        mutable ret: AdditionalCase? = null
+        {
+            let start: Position = lexer.getPreviousPosition()
+            let success: bool = lexer.parsePunctuation(comma)
+            if success
+                lexer.advance()
+
+            if ret == null
+                ret = AdditionalCase(start, lexer.getPosition())
+        }
+        {
+            let start: Position = lexer.getPreviousPosition()
+            let result: EnumCase node = parseEnumCase() catch _(error) {
+                throw (error)
+            }
+
+            if ret == null
+                ret = AdditionalCase(start, lexer.getPosition())
+
+            ret.enumCase = node
+        }
+
+        return ret
+    }
+
     function parseClassDeclaration() -> ClassDeclaration throws ParserError {
         mutable ret: ClassDeclaration? = null
         {
@@ -888,14 +1163,32 @@ class Parser {
         }
         {
             let start: Position = lexer.getPreviousPosition()
-            let result: ClassBody node = parseClassBody() catch _(error) {
-                throw (error)
+            let success: bool = lexer.parsePunctuation(leftCurly)
+            if success
+                lexer.advance()
+
+            if ret == null
+                ret = ClassDeclaration(start, lexer.getPosition())
+        }
+        {
+            let start: Position = lexer.getPreviousPosition()
+            let result: [ClassMember] node = parseClassMemberList() catch _(error) {
+                 null
             }
 
             if ret == null
                 ret = ClassDeclaration(start, lexer.getPosition())
 
-            ret.body = node
+            ret.members = node
+        }
+        {
+            let start: Position = lexer.getPreviousPosition()
+            let success: bool = lexer.parsePunctuation(rightCurly)
+            if success
+                lexer.advance()
+
+            if ret == null
+                ret = ClassDeclaration(start, lexer.getPosition())
         }
 
         return ret
@@ -964,41 +1257,6 @@ class Parser {
                 ret = GenericParameter(start, lexer.getPosition())
 
             ret.typeName = typeName
-        }
-
-        return ret
-    }
-
-    function parseClassBody() -> ClassBody throws ParserError {
-        mutable ret: ClassBody? = null
-        {
-            let start: Position = lexer.getPreviousPosition()
-            let success: bool = lexer.parsePunctuation(leftCurly)
-            if success
-                lexer.advance()
-
-            if ret == null
-                ret = ClassBody(start, lexer.getPosition())
-        }
-        {
-            let start: Position = lexer.getPreviousPosition()
-            let result: [ClassMember] node = parseClassMemberList() catch _(error) {
-                 null
-            }
-
-            if ret == null
-                ret = ClassBody(start, lexer.getPosition())
-
-            ret.declarations = node
-        }
-        {
-            let start: Position = lexer.getPreviousPosition()
-            let success: bool = lexer.parsePunctuation(rightCurly)
-            if success
-                lexer.advance()
-
-            if ret == null
-                ret = ClassBody(start, lexer.getPosition())
         }
 
         return ret
@@ -2156,6 +2414,17 @@ class Parser {
         }
         {
             let start: Position = lexer.getPreviousPosition()
+            let result: Pattern node = parsePattern() catch _(error) {
+                throw (error)
+            }
+
+            if ret == null
+                ret = ItemCaseLabel(start, lexer.getPosition())
+
+            ret.pattern = node
+        }
+        {
+            let start: Position = lexer.getPreviousPosition()
             let result: [CaseItem] node = parseCaseItemList() catch _(error) {
                 throw (error)
             }
@@ -2163,7 +2432,7 @@ class Parser {
             if ret == null
                 ret = ItemCaseLabel(start, lexer.getPosition())
 
-            ret.items = node
+            ret.additionalPatterns = node
         }
         {
             let start: Position = lexer.getPreviousPosition()
@@ -2198,6 +2467,15 @@ class Parser {
         mutable ret: CaseItem? = null
         {
             let start: Position = lexer.getPreviousPosition()
+            let success: bool = lexer.parsePunctuation(comma)
+            if success
+                lexer.advance()
+
+            if ret == null
+                ret = CaseItem(start, lexer.getPosition())
+        }
+        {
+            let start: Position = lexer.getPreviousPosition()
             let result: Pattern node = parsePattern() catch _(error) {
                 throw (error)
             }
@@ -2206,15 +2484,6 @@ class Parser {
                 ret = CaseItem(start, lexer.getPosition())
 
             ret.pattern = node
-        }
-        {
-            let start: Position = lexer.getPreviousPosition()
-            let success: bool = lexer.parsePunctuation(comma)
-            if success
-                lexer.advance()
-
-            if ret == null
-                ret = CaseItem(start, lexer.getPosition())
         }
 
         return ret
@@ -2937,6 +3206,9 @@ class Parser {
         if id == initKeyword
             return false
 
+        if id == enumKeyword
+            return false
+
         true
     }
 
@@ -2961,6 +3233,7 @@ class Parser {
     let isKeyword: string = "is"
     let asKeyword: string = "as"
     let initKeyword: string = "init"
+    let enumKeyword: string = "enum"
     let semicolon: string = ";"
     let equal: string = "="
     let leftAngular: string = "<"
