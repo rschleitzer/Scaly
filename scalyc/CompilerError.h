@@ -36,7 +36,7 @@ public:
     long getErrorCode();
     void* getErrorInfo();
     
-    UnableToReadFile& getFileNotFound();
+    UnableToReadFile& getUnableToReadFile();
     SyntaxError& getSyntaxError();
 
 private:

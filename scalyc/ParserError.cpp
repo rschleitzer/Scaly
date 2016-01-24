@@ -34,7 +34,7 @@ KeywordExpected::KeywordExpected(Position& position, String& keyword)
 : ParserErrorInfo(position), keyword(keyword) {
 }
 
-KeywordExpected& ParserError::getShouldStartWithKeyword(){
+KeywordExpected& ParserError::getKeywordExpected(){
     return *(KeywordExpected*)errorInfo;
 }
 

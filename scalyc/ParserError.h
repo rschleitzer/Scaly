@@ -53,7 +53,7 @@ public:
 enum _ParserErrorCode {
     identifierExpected = 1,
     literalExpected,
-    shouldStartWithKeyword,
+    keywordExpected,
     punctuationExpected,
     operatorExpected,
     unableToParse,
@@ -70,7 +70,7 @@ public:
     : errorCode(literalExpected), errorInfo(&LiteralExpected) {}
 
     ParserError(KeywordExpected& KeywordExpected)
-    : errorCode(shouldStartWithKeyword), errorInfo(&KeywordExpected) {}
+    : errorCode(keywordExpected), errorInfo(&KeywordExpected) {}
 
     ParserError(PunctuationExpected& PunctuationExpected)
     : errorCode(punctuationExpected), errorInfo(&PunctuationExpected) {}
@@ -89,7 +89,7 @@ public:
     
     IdentifierExpected& getIdentifierExpected();
     LiteralExpected& getLiteralExpected();
-    KeywordExpected& getShouldStartWithKeyword();
+    KeywordExpected& getKeywordExpected();
     PunctuationExpected& getPunctuationExpected();
     OperatorExpected& getOperatorExpected();
     UnableToParse& getUnableToParse();

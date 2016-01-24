@@ -1,0 +1,9 @@
+enum ParserError {
+    case IdentifierExpected(Position)
+    case LiteralExpected(Position)
+    case KeywordExpected(Position, String)
+    case PunctuationExpected(Position, String)
+    case OperatorExpected(Position)
+    case UnableToParse(Position, [ParserError])
+    case NotAtEnd(Position)
+}

@@ -1,0 +1,4 @@
+enum CompilerError {
+    case UnableToReadFile(String, FileError)
+    case SyntaxError(ParserError)
+}

@@ -14,12 +14,16 @@ UnableToReadFile::UnableToReadFile(String& file, FileError& fileError)
 : file(file), fileError(fileError) {
 }
 
-UnableToReadFile& CompilerError::getFileNotFound(){
+UnableToReadFile& CompilerError::getUnableToReadFile(){
     return *(UnableToReadFile*)errorInfo;
 }
 
 SyntaxError::SyntaxError(ParserError& parserError)
 : parserError(parserError) {
+}
+
+SyntaxError& CompilerError::getSyntaxError(){
+    return *(SyntaxError*)errorInfo;
 }
 
 }
