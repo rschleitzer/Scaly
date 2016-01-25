@@ -36,7 +36,7 @@ class "(id syntax-node)" : "(if (base syntax-node) (base syntax-node) "SyntaxNod
 "        for node in "(property content)"! {
 "(if (optional? content) "    " "")
 "            node.Accept(visitor)
-        }
+            }
 "
                             )
                             ($
@@ -68,10 +68,7 @@ class "(id syntax-node)" : "(if (base syntax-node) (base syntax-node) "SyntaxNod
         )))
 "}
 "   )))
-"
-}
-#endif // __scalyc__Syntax__
-"))
+))
 
 (define (syntax-h) ($
 

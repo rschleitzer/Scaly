@@ -588,6 +588,15 @@ class Parser {
         let start: Position = lexer.getPreviousPosition()
 
         {
+            let node: Override = parseOverride() catch _(error) {
+                errors.append(error)
+                break
+            }
+
+            return node
+        }
+
+        {
             let node: Static = parseStatic() catch _(error) {
                 errors.append(error)
                 break
@@ -597,6 +606,21 @@ class Parser {
         }
 
         throw ParserError.UnableToParse(start, errors)
+    }
+
+    function parseOverride() -> Override throws ParserError {
+        mutable ret: Override? = null
+        {
+            let start: Position = lexer.getPreviousPosition()
+            let success: bool = lexer.parseKeyword(overrideKeyword)
+            if success
+                lexer.advance()
+
+            if ret == null
+                ret = Override(start, lexer.getPosition())
+        }
+
+        return ret
     }
 
     function parseStatic() -> Static throws ParserError {
@@ -780,7 +804,41 @@ class Parser {
     }
 
     function parseParameter() -> Parameter throws ParserError {
-        mutable ret: Parameter? = null
+        let errors: [ParserError] = [ParserError]()
+        let start: Position = lexer.getPreviousPosition()
+
+        {
+            let node: ConstParameter = parseConstParameter() catch _(error) {
+                errors.append(error)
+                break
+            }
+
+            return node
+        }
+
+        {
+            let node: VarParameter = parseVarParameter() catch _(error) {
+                errors.append(error)
+                break
+            }
+
+            return node
+        }
+
+        throw ParserError.UnableToParse(start, errors)
+    }
+
+    function parseConstParameter() -> ConstParameter throws ParserError {
+        mutable ret: ConstParameter? = null
+        {
+            let start: Position = lexer.getPreviousPosition()
+            let success: bool = lexer.parseKeyword(letKeyword)
+            if success
+                lexer.advance()
+
+            if ret == null
+                ret = ConstParameter(start, lexer.getPosition())
+        }
         {
             let start: Position = lexer.getPreviousPosition()
             let parameterName: String? = lexer.parseIdentifier()
@@ -788,7 +846,7 @@ class Parser {
                 lexer.advance()
 
             if ret == null
-                ret = Parameter(start, lexer.getPosition())
+                ret = ConstParameter(start, lexer.getPosition())
 
             ret.parameterName = parameterName
         }
@@ -799,7 +857,7 @@ class Parser {
                 lexer.advance()
 
             if ret == null
-                ret = Parameter(start, lexer.getPosition())
+                ret = ConstParameter(start, lexer.getPosition())
         }
         {
             let start: Position = lexer.getPreviousPosition()
@@ -808,7 +866,7 @@ class Parser {
             }
 
             if ret == null
-                ret = Parameter(start, lexer.getPosition())
+                ret = ConstParameter(start, lexer.getPosition())
 
             ret.parameterType = node
         }
@@ -819,7 +877,62 @@ class Parser {
                 lexer.advance()
 
             if ret == null
-                ret = Parameter(start, lexer.getPosition())
+                ret = ConstParameter(start, lexer.getPosition())
+        }
+
+        return ret
+    }
+
+    function parseVarParameter() -> VarParameter throws ParserError {
+        mutable ret: VarParameter? = null
+        {
+            let start: Position = lexer.getPreviousPosition()
+            let success: bool = lexer.parseKeyword(mutableKeyword)
+            if success
+                lexer.advance()
+
+            if ret == null
+                ret = VarParameter(start, lexer.getPosition())
+        }
+        {
+            let start: Position = lexer.getPreviousPosition()
+            let parameterName: String? = lexer.parseIdentifier()
+            if (parameterName != null) && (parameterName is Identifier)
+                lexer.advance()
+
+            if ret == null
+                ret = VarParameter(start, lexer.getPosition())
+
+            ret.parameterName = parameterName
+        }
+        {
+            let start: Position = lexer.getPreviousPosition()
+            let success: bool = lexer.parsePunctuation(colon)
+            if success
+                lexer.advance()
+
+            if ret == null
+                ret = VarParameter(start, lexer.getPosition())
+        }
+        {
+            let start: Position = lexer.getPreviousPosition()
+            let result: Type node = parseType() catch _(error) {
+                throw (error)
+            }
+
+            if ret == null
+                ret = VarParameter(start, lexer.getPosition())
+
+            ret.parameterType = node
+        }
+        {
+            let start: Position = lexer.getPreviousPosition()
+            let success: bool = lexer.parsePunctuation(comma)
+            if success
+                lexer.advance()
+
+            if ret == null
+                ret = VarParameter(start, lexer.getPosition())
         }
 
         return ret
@@ -2028,6 +2141,15 @@ class Parser {
         }
 
         {
+            let node: ForInExpression = parseForInExpression() catch _(error) {
+                errors.append(error)
+                break
+            }
+
+            return node
+        }
+
+        {
             let node: ParenthesizedExpression = parseParenthesizedExpression() catch _(error) {
                 errors.append(error)
                 break
@@ -2502,6 +2624,63 @@ class Parser {
                 ret = CaseItem(start, lexer.getPosition())
 
             ret.pattern = node
+        }
+
+        return ret
+    }
+
+    function parseForInExpression() -> ForInExpression throws ParserError {
+        mutable ret: ForInExpression? = null
+        {
+            let start: Position = lexer.getPreviousPosition()
+            let success: bool = lexer.parseKeyword(forKeyword)
+            if success
+                lexer.advance()
+
+            if ret == null
+                ret = ForInExpression(start, lexer.getPosition())
+        }
+        {
+            let start: Position = lexer.getPreviousPosition()
+            let result: Pattern node = parsePattern() catch _(error) {
+                throw (error)
+            }
+
+            if ret == null
+                ret = ForInExpression(start, lexer.getPosition())
+
+            ret.pattern = node
+        }
+        {
+            let start: Position = lexer.getPreviousPosition()
+            let success: bool = lexer.parseKeyword(inKeyword)
+            if success
+                lexer.advance()
+
+            if ret == null
+                ret = ForInExpression(start, lexer.getPosition())
+        }
+        {
+            let start: Position = lexer.getPreviousPosition()
+            let result: Expression node = parseExpression() catch _(error) {
+                 null
+            }
+
+            if ret == null
+                ret = ForInExpression(start, lexer.getPosition())
+
+            ret.expression = node
+        }
+        {
+            let start: Position = lexer.getPreviousPosition()
+            let result: Expression node = parseExpression() catch _(error) {
+                 null
+            }
+
+            if ret == null
+                ret = ForInExpression(start, lexer.getPosition())
+
+            ret.code = node
         }
 
         return ret
@@ -3504,6 +3683,12 @@ class Parser {
         if id == catchKeyword
             return false
 
+        if id == forKeyword
+            return false
+
+        if id == inKeyword
+            return false
+
         if id == returnKeyword
             return false
 
@@ -3514,6 +3699,9 @@ class Parser {
             return false
 
         if id == throwsKeyword
+            return false
+
+        if id == overrideKeyword
             return false
 
         if id == staticKeyword
@@ -3557,10 +3745,13 @@ class Parser {
     let caseKeyword: string = "case"
     let defaultKeyword: string = "default"
     let catchKeyword: string = "catch"
+    let forKeyword: string = "for"
+    let inKeyword: string = "in"
     let returnKeyword: string = "return"
     let throwKeyword: string = "throw"
     let breakKeyword: string = "break"
     let throwsKeyword: string = "throws"
+    let overrideKeyword: string = "override"
     let staticKeyword: string = "static"
     let letKeyword: string = "let"
     let mutableKeyword: string = "mutable"

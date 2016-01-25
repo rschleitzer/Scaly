@@ -27,6 +27,7 @@ class AdditionalInitializer;
 class FunctionDeclaration;
 class InitializerDeclaration;
 class Modifier;
+class Override;
 class Static;
 class FunctionName;
 class IdentifierFunctionName;
@@ -34,6 +35,8 @@ class FunctionSignature;
 class FunctionResult;
 class ParameterClause;
 class Parameter;
+class ConstParameter;
+class VarParameter;
 class ThrowsClause;
 class EnumDeclaration;
 class EnumMember;
@@ -81,6 +84,7 @@ class SwitchCase;
 class CaseLabel;
 class ItemCaseLabel;
 class CaseItem;
+class ForInExpression;
 class ReturnExpression;
 class ThrowExpression;
 class BreakExpression;
@@ -236,6 +240,12 @@ public:
 
 };
 
+class Override : public Modifier {
+public:
+    Override(Position start, Position end);
+
+};
+
 class Static : public Modifier {
 public:
     Static(Position start, Position end);
@@ -281,6 +291,20 @@ public:
 class Parameter : public SyntaxNode {
 public:
     Parameter(Position start, Position end);
+
+};
+
+class ConstParameter : public Parameter {
+public:
+    ConstParameter(Position start, Position end);
+
+    String* parameterName;
+    Type* parameterType;
+};
+
+class VarParameter : public Parameter {
+public:
+    VarParameter(Position start, Position end);
 
     String* parameterName;
     Type* parameterType;
@@ -625,6 +649,15 @@ public:
     CaseItem(Position start, Position end);
 
     Pattern* pattern;
+};
+
+class ForInExpression : public PrimaryExpression {
+public:
+    ForInExpression(Position start, Position end);
+
+    Pattern* pattern;
+    Expression* expression;
+    Expression* code;
 };
 
 class ReturnExpression : public PrimaryExpression {

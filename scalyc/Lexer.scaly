@@ -142,7 +142,7 @@ class Lexer {
                 }
                 else {
                     switch (text[position]) {
-                        case "/", "=", "+", "!", "*", "%", "&", "|", "^", "~": {
+                        case "/", "=", "+", "!", "*", "%", "&", "|", "^", "~" , ".", " ", "\t", "\r", "\n": {
                             position-- column--
                             token = scanOperator(true)
                         }

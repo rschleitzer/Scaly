@@ -72,7 +72,11 @@
         <content link = Expression                              property = body
 
     <syntax id = Modifier                  multiple abstract
+        <content link = Override
         <content link = Static
+        
+    <syntax id = Override                                         base = Modifier
+        <content link = override
         
     <syntax id = Static                                         base = Modifier
         <content link = static
@@ -97,7 +101,19 @@
         <content link = Parameter          multiple optional    property = parameters
         <content link = rightParen 
 
-    <syntax id = Parameter multiple
+    <syntax id = Parameter                 multiple abstract
+        <content link = ConstParameter
+        <content link = VarParameter
+
+    <syntax id = ConstParameter                                 base = Parameter
+        <content link = let                         optional
+        <content identifier                                     property = parameterName
+        <content link = colon
+        <content link = Type                                    property = parameterType
+        <content link = comma                       optional
+
+    <syntax id = VarParameter                                   base = Parameter
+        <content link = mutable
         <content identifier                                     property = parameterName
         <content link = colon
         <content link = Type                                    property = parameterType
@@ -255,6 +271,7 @@
         <content link = LiteralExpression
         <content link = IfExpression
         <content link = SwitchExpression
+        <content link = ForInExpression
         <content link = ParenthesizedExpression
         <content link = ReturnExpression
         <content link = ThrowExpression
@@ -318,6 +335,13 @@
     <syntax id = CaseItem                  multiple
         <content link = comma
         <content link = Pattern                                 property = pattern
+
+    <syntax id = ForInExpression                                base = PrimaryExpression
+        <content link = for
+        <content link = Pattern                                 property = pattern
+        <content link = in
+        <content link = Expression                  optional    property = expression
+        <content link = Expression                  optional    property = code
 
     <syntax id = ReturnExpression                               base = PrimaryExpression
         <content link = return
@@ -471,10 +495,13 @@
     <keyword id = case
     <keyword id = default
     <keyword id = catch
+    <keyword id = for
+    <keyword id = in
     <keyword id = return
     <keyword id = throw
     <keyword id = break
     <keyword id = throws
+    <keyword id = override
     <keyword id = static
     <keyword id = let
     <keyword id = mutable

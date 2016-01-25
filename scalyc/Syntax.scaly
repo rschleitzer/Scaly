@@ -19,7 +19,7 @@ class TopLevelDeclaration : SyntaxNode {
         visitor.VisitTopLevelDeclaration(this)
         for node in statements! {
             node.Accept(visitor)
-        }
+            }
     }
 
     let statements: [StatementWithSemicolon]?
@@ -75,7 +75,7 @@ class UseDeclaration : Declaration {
         if importExtensions != nil {
             for node in importExtensions! {
                 node.Accept(visitor)
-        }
+            }
         }
     }
 
@@ -164,7 +164,7 @@ class BindingInitializer : SyntaxNode {
         if additionalInitializers != nil {
             for node in additionalInitializers! {
                 node.Accept(visitor)
-        }
+            }
         }
     }
 
@@ -215,7 +215,7 @@ class FunctionDeclaration : Declaration {
         if modifiers != nil {
             for node in modifiers! {
                 node.Accept(visitor)
-        }
+            }
         }
         name!.Accept(visitor)
         signature!.Accept(visitor)
@@ -239,7 +239,7 @@ class InitializerDeclaration : Declaration {
         if modifiers != nil {
             for node in modifiers! {
                 node.Accept(visitor)
-        }
+            }
         }
         parameterClause!.Accept(visitor)
         if throwsClause != nil {
@@ -262,6 +262,18 @@ class Modifier : SyntaxNode {
 
     function Accept(mutable visitor: SyntaxVisitor) {
         visitor.VisitModifier(this)
+    }
+
+}
+
+class Override : Modifier {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    override function Accept(mutable visitor: SyntaxVisitor) {
+        visitor.VisitOverride(this)
     }
 
 }
@@ -350,7 +362,7 @@ class ParameterClause : SyntaxNode {
         if parameters != nil {
             for node in parameters! {
                 node.Accept(visitor)
-        }
+            }
         }
     }
 
@@ -365,6 +377,33 @@ class Parameter : SyntaxNode {
 
     function Accept(mutable visitor: SyntaxVisitor) {
         visitor.VisitParameter(this)
+    }
+
+}
+
+class ConstParameter : Parameter {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    override function Accept(mutable visitor: SyntaxVisitor) {
+        visitor.VisitConstParameter(this)
+        parameterType!.Accept(visitor)
+    }
+
+    let parameterName: String?
+    let parameterType: Type?
+}
+
+class VarParameter : Parameter {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    override function Accept(mutable visitor: SyntaxVisitor) {
+        visitor.VisitVarParameter(this)
         parameterType!.Accept(visitor)
     }
 
@@ -396,7 +435,7 @@ class EnumDeclaration : Declaration {
         visitor.VisitEnumDeclaration(this)
         for node in members! {
             node.Accept(visitor)
-        }
+            }
     }
 
     let name: String?
@@ -414,7 +453,7 @@ class EnumMember : SyntaxNode {
         enumCase!.Accept(visitor)
         for node in additionalCases! {
             node.Accept(visitor)
-        }
+            }
         if tupleType != nil {
             tupleType!.Accept(visitor)
         }
@@ -436,7 +475,7 @@ class TupleType : SyntaxNode {
         tupleType!.Accept(visitor)
         for node in additionalTypes! {
             node.Accept(visitor)
-        }
+            }
     }
 
     let tupleType: Type?
@@ -501,7 +540,7 @@ class ClassDeclaration : Declaration {
         if members != nil {
             for node in members! {
                 node.Accept(visitor)
-        }
+            }
         }
     }
 
@@ -521,7 +560,7 @@ class GenericArgumentClause : SyntaxNode {
         visitor.VisitGenericArgumentClause(this)
         for node in genericParameters! {
             node.Accept(visitor)
-        }
+            }
     }
 
     let genericParameters: [GenericParameter]?
@@ -576,7 +615,7 @@ class CodeBlock : Expression {
         visitor.VisitCodeBlock(this)
         for node in statements! {
             node.Accept(visitor)
-        }
+            }
     }
 
     let statements: [StatementWithSemicolon]?
@@ -594,7 +633,7 @@ class SimpleExpression : Expression {
         if binaryOps != nil {
             for node in binaryOps! {
                 node.Accept(visitor)
-        }
+            }
         }
     }
 
@@ -629,7 +668,7 @@ class PostfixExpression : SyntaxNode {
         if postfixes != nil {
             for node in postfixes! {
                 node.Accept(visitor)
-        }
+            }
         }
     }
 
@@ -764,7 +803,7 @@ class PathItemCatchPattern : CatchPattern {
         if catchCaseExtensions != nil {
             for node in catchCaseExtensions! {
                 node.Accept(visitor)
-        }
+            }
         }
     }
 
@@ -809,7 +848,7 @@ class FunctionCall : Postfix {
         if catchClauses != nil {
             for node in catchClauses! {
                 node.Accept(visitor)
-        }
+            }
         }
     }
 
@@ -841,7 +880,7 @@ class Subscript : Postfix {
         visitor.VisitSubscript(this)
         for node in expressions! {
             node.Accept(visitor)
-        }
+            }
     }
 
     let expressions: [ExpressionElement]?
@@ -910,7 +949,7 @@ class ParenthesizedExpression : PrimaryExpression {
         if expressionElements != nil {
             for node in expressionElements! {
                 node.Accept(visitor)
-        }
+            }
         }
     }
 
@@ -1015,7 +1054,7 @@ class CurliedSwitchBody : SwitchBody {
         visitor.VisitCurliedSwitchBody(this)
         for node in cases! {
             node.Accept(visitor)
-        }
+            }
     }
 
     let cases: [SwitchCase]?
@@ -1031,7 +1070,7 @@ class NakedSwitchBody : SwitchBody {
         visitor.VisitNakedSwitchBody(this)
         for node in cases! {
             node.Accept(visitor)
-        }
+            }
     }
 
     let cases: [SwitchCase]?
@@ -1076,7 +1115,7 @@ class ItemCaseLabel : CaseLabel {
         pattern!.Accept(visitor)
         for node in additionalPatterns! {
             node.Accept(visitor)
-        }
+            }
     }
 
     let pattern: Pattern?
@@ -1095,6 +1134,28 @@ class CaseItem : SyntaxNode {
     }
 
     let pattern: Pattern?
+}
+
+class ForInExpression : PrimaryExpression {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    override function Accept(mutable visitor: SyntaxVisitor) {
+        visitor.VisitForInExpression(this)
+        pattern!.Accept(visitor)
+        if expression != nil {
+            expression!.Accept(visitor)
+        }
+        if code != nil {
+            code!.Accept(visitor)
+        }
+    }
+
+    let pattern: Pattern?
+    let expression: Expression?
+    let code: Expression?
 }
 
 class ReturnExpression : PrimaryExpression {
@@ -1196,7 +1257,7 @@ class TuplePattern : Pattern {
         visitor.VisitTuplePattern(this)
         for node in elements! {
             node.Accept(visitor)
-        }
+            }
     }
 
     let elements: [TuplePatternElement]?
@@ -1264,7 +1325,7 @@ class BlockCaseContent : CaseContent {
         visitor.VisitBlockCaseContent(this)
         for node in statements! {
             node.Accept(visitor)
-        }
+            }
     }
 
     let statements: [StatementWithSemicolon]?
@@ -1295,7 +1356,7 @@ class InitializerCall : PrimaryExpression {
         if catchClauses != nil {
             for node in catchClauses! {
                 node.Accept(visitor)
-        }
+            }
         }
     }
 
@@ -1510,7 +1571,7 @@ class TypeIdentifier : Type {
         if postfixes != nil {
             for node in postfixes! {
                 node.Accept(visitor)
-        }
+            }
         }
     }
 
@@ -1557,7 +1618,7 @@ class ArrayType : Type {
         if postfixes != nil {
             for node in postfixes! {
                 node.Accept(visitor)
-        }
+            }
         }
     }
 
@@ -1588,7 +1649,7 @@ class TypeInheritanceClause : SyntaxNode {
         if inheritances != nil {
             for node in inheritances! {
                 node.Accept(visitor)
-        }
+            }
         }
     }
 
@@ -1608,6 +1669,3 @@ class Inheritance : SyntaxNode {
 
     let name: TypeIdentifier?
 }
-
-}
-#endif // __scalyc__Syntax__

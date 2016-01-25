@@ -70,6 +70,10 @@ Modifier::Modifier(Position start, Position end)
 : SyntaxNode(start, end) {
 }
 
+Override::Override(Position start, Position end)
+: Modifier(start, end) {
+}
+
 Static::Static(Position start, Position end)
 : Modifier(start, end) {
 }
@@ -96,6 +100,14 @@ ParameterClause::ParameterClause(Position start, Position end)
 
 Parameter::Parameter(Position start, Position end)
 : SyntaxNode(start, end) {
+}
+
+ConstParameter::ConstParameter(Position start, Position end)
+: Parameter(start, end) {
+}
+
+VarParameter::VarParameter(Position start, Position end)
+: Parameter(start, end) {
 }
 
 ThrowsClause::ThrowsClause(Position start, Position end)
@@ -284,6 +296,10 @@ ItemCaseLabel::ItemCaseLabel(Position start, Position end)
 
 CaseItem::CaseItem(Position start, Position end)
 : SyntaxNode(start, end) {
+}
+
+ForInExpression::ForInExpression(Position start, Position end)
+: PrimaryExpression(start, end) {
 }
 
 ReturnExpression::ReturnExpression(Position start, Position end)

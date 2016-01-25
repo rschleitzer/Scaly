@@ -45,6 +45,8 @@ public:
     _Result<Array<Modifier>, ParserError> parseModifierList(_Page* _rp, _Page* _ep);
     _Result<Modifier, ParserError> parseModifier(_Page* _rp, _Page* _ep);
 
+    _Result<Override, ParserError> parseOverride(_Page* _rp, _Page* _ep);
+
     _Result<Static, ParserError> parseStatic(_Page* _rp, _Page* _ep);
 
     _Result<FunctionName, ParserError> parseFunctionName(_Page* _rp, _Page* _ep);
@@ -60,6 +62,10 @@ public:
 
     _Result<Array<Parameter>, ParserError> parseParameterList(_Page* _rp, _Page* _ep);
     _Result<Parameter, ParserError> parseParameter(_Page* _rp, _Page* _ep);
+
+    _Result<ConstParameter, ParserError> parseConstParameter(_Page* _rp, _Page* _ep);
+
+    _Result<VarParameter, ParserError> parseVarParameter(_Page* _rp, _Page* _ep);
 
     _Result<ThrowsClause, ParserError> parseThrowsClause(_Page* _rp, _Page* _ep);
 
@@ -166,6 +172,8 @@ public:
     _Result<Array<CaseItem>, ParserError> parseCaseItemList(_Page* _rp, _Page* _ep);
     _Result<CaseItem, ParserError> parseCaseItem(_Page* _rp, _Page* _ep);
 
+    _Result<ForInExpression, ParserError> parseForInExpression(_Page* _rp, _Page* _ep);
+
     _Result<ReturnExpression, ParserError> parseReturnExpression(_Page* _rp, _Page* _ep);
 
     _Result<ThrowExpression, ParserError> parseThrowExpression(_Page* _rp, _Page* _ep);
@@ -256,10 +264,13 @@ private:
     const char* caseKeyword = "case";
     const char* defaultKeyword = "default";
     const char* catchKeyword = "catch";
+    const char* forKeyword = "for";
+    const char* inKeyword = "in";
     const char* returnKeyword = "return";
     const char* throwKeyword = "throw";
     const char* breakKeyword = "break";
     const char* throwsKeyword = "throws";
+    const char* overrideKeyword = "override";
     const char* staticKeyword = "static";
     const char* letKeyword = "let";
     const char* mutableKeyword = "mutable";

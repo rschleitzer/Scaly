@@ -182,10 +182,12 @@ void Lexer::advance() {
             }
             else {
                 switch (text[position]) {
-                    case '/': case '=': case '+': case '!': case'*': case '%': case '&': case '|': case '^': case '~':
+                    case '/': case '=': case '+': case '!': case'*': case '%': case '&': case '|': case '^': case '~': case '.':
+                    case ' ': case '\t': case '\r': case '\n': {
                         position--; column--;
                         token = &scanOperator(getPage(), true);
                         break;
+                    }
 
                     default:
                         if ((whitespaceSkipped) || (token && (token->_isPunctuation()))) {

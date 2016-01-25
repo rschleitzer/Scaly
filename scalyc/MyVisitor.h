@@ -21,6 +21,7 @@ class MyVisitor : public SyntaxVisitor {
     virtual void VisitFunctionDeclaration(FunctionDeclaration);
     virtual void VisitInitializerDeclaration(InitializerDeclaration);
     virtual void VisitModifier(Modifier);
+    virtual void VisitOverride(Override);
     virtual void VisitStatic(Static);
     virtual void VisitFunctionName(FunctionName);
     virtual void VisitIdentifierFunctionName(IdentifierFunctionName);
@@ -28,6 +29,8 @@ class MyVisitor : public SyntaxVisitor {
     virtual void VisitFunctionResult(FunctionResult);
     virtual void VisitParameterClause(ParameterClause);
     virtual void VisitParameter(Parameter);
+    virtual void VisitConstParameter(ConstParameter);
+    virtual void VisitVarParameter(VarParameter);
     virtual void VisitThrowsClause(ThrowsClause);
     virtual void VisitEnumDeclaration(EnumDeclaration);
     virtual void VisitEnumMember(EnumMember);
@@ -75,6 +78,7 @@ class MyVisitor : public SyntaxVisitor {
     virtual void VisitCaseLabel(CaseLabel);
     virtual void VisitItemCaseLabel(ItemCaseLabel);
     virtual void VisitCaseItem(CaseItem);
+    virtual void VisitForInExpression(ForInExpression);
     virtual void VisitReturnExpression(ReturnExpression);
     virtual void VisitThrowExpression(ThrowExpression);
     virtual void VisitBreakExpression(BreakExpression);

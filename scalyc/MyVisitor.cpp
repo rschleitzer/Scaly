@@ -51,6 +51,9 @@ void MyVisitor::VisitInitializerDeclaration(InitializerDeclaration) {
 void MyVisitor::VisitModifier(Modifier) {
 }
 
+void MyVisitor::VisitOverride(Override) {
+}
+
 void MyVisitor::VisitStatic(Static) {
 }
 
@@ -70,6 +73,12 @@ void MyVisitor::VisitParameterClause(ParameterClause) {
 }
 
 void MyVisitor::VisitParameter(Parameter) {
+}
+
+void MyVisitor::VisitConstParameter(ConstParameter) {
+}
+
+void MyVisitor::VisitVarParameter(VarParameter) {
 }
 
 void MyVisitor::VisitThrowsClause(ThrowsClause) {
@@ -211,6 +220,9 @@ void MyVisitor::VisitItemCaseLabel(ItemCaseLabel) {
 }
 
 void MyVisitor::VisitCaseItem(CaseItem) {
+}
+
+void MyVisitor::VisitForInExpression(ForInExpression) {
 }
 
 void MyVisitor::VisitReturnExpression(ReturnExpression) {
