@@ -52,7 +52,7 @@
         mutable ret: "(id syntax)"? = null
 "                (apply-to-children-of syntax (lambda (content) ($
 "        {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
 "                   (if (string=? "syntax" (type content))
 
                         ($ ; non-terminals
@@ -238,7 +238,7 @@ _Result<"(id syntax)", ParserError> Parser::parse"(id syntax)"(_Page* _rp, _Page
         if (result.succeeded()) {
 "                           (if (top? syntax) ($
 "            if (!isAtEnd()) {
-                Position current = lexer.getPreviousPosition();
+                Position current = lexer.getPosition();
                 return _Result<"(id syntax)", ParserError>(new(_ep) ParserError(*new(_ep) NotAtEnd(current)));
             }
 "                           )"")
@@ -290,6 +290,7 @@ bool Parser::isIdentifier(String& id) {"
     return true;
 }
 
-}"
+}
+"
 
 ))

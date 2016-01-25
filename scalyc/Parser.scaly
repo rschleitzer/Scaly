@@ -6,7 +6,7 @@ class Parser {
     function parseTopLevelDeclaration() -> TopLevelDeclaration throws ParserError {
         mutable ret: TopLevelDeclaration? = null
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let result: [StatementWithSemicolon] node = parseStatementWithSemicolonList() catch _(error) {
                 throw (error)
             }
@@ -43,7 +43,7 @@ class Parser {
     function parseStatementWithSemicolon() -> StatementWithSemicolon throws ParserError {
         mutable ret: StatementWithSemicolon? = null
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let result: Statement node = parseStatement() catch _(error) {
                 throw (error)
             }
@@ -54,7 +54,7 @@ class Parser {
             ret.statement = node
         }
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let success: bool = lexer.parsePunctuation(semicolon)
             if success
                 lexer.advance()
@@ -164,7 +164,7 @@ class Parser {
     function parseUseDeclaration() -> UseDeclaration throws ParserError {
         mutable ret: UseDeclaration? = null
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let success: bool = lexer.parseKeyword(useKeyword)
             if success
                 lexer.advance()
@@ -173,7 +173,7 @@ class Parser {
                 ret = UseDeclaration(start, lexer.getPosition())
         }
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let result: PathItem node = parsePathItem() catch _(error) {
                 throw (error)
             }
@@ -184,7 +184,7 @@ class Parser {
             ret.importModule = node
         }
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let result: [PathIdentifier] node = parsePathIdentifierList() catch _(error) {
                  null
             }
@@ -217,7 +217,7 @@ class Parser {
     function parsePathIdentifier() -> PathIdentifier throws ParserError {
         mutable ret: PathIdentifier? = null
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let success: bool = lexer.parsePunctuation(dot)
             if success
                 lexer.advance()
@@ -226,7 +226,7 @@ class Parser {
                 ret = PathIdentifier(start, lexer.getPosition())
         }
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let result: PathItem node = parsePathItem() catch _(error) {
                 throw (error)
             }
@@ -243,7 +243,7 @@ class Parser {
     function parsePathItem() -> PathItem throws ParserError {
         mutable ret: PathItem? = null
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let name: String? = lexer.parseIdentifier()
             if (name != null) && (name is Identifier)
                 lexer.advance()
@@ -260,7 +260,7 @@ class Parser {
     function parseInitializer() -> Initializer throws ParserError {
         mutable ret: Initializer? = null
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let success: bool = lexer.parsePunctuation(equal)
             if success
                 lexer.advance()
@@ -269,7 +269,7 @@ class Parser {
                 ret = Initializer(start, lexer.getPosition())
         }
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let result: Expression node = parseExpression() catch _(error) {
                 throw (error)
             }
@@ -286,7 +286,7 @@ class Parser {
     function parseConstantDeclaration() -> ConstantDeclaration throws ParserError {
         mutable ret: ConstantDeclaration? = null
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let success: bool = lexer.parseKeyword(letKeyword)
             if success
                 lexer.advance()
@@ -295,7 +295,7 @@ class Parser {
                 ret = ConstantDeclaration(start, lexer.getPosition())
         }
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let result: BindingInitializer node = parseBindingInitializer() catch _(error) {
                 throw (error)
             }
@@ -312,7 +312,7 @@ class Parser {
     function parseVariableDeclaration() -> VariableDeclaration throws ParserError {
         mutable ret: VariableDeclaration? = null
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let success: bool = lexer.parseKeyword(mutableKeyword)
             if success
                 lexer.advance()
@@ -321,7 +321,7 @@ class Parser {
                 ret = VariableDeclaration(start, lexer.getPosition())
         }
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let result: BindingInitializer node = parseBindingInitializer() catch _(error) {
                 throw (error)
             }
@@ -338,7 +338,7 @@ class Parser {
     function parseBindingInitializer() -> BindingInitializer throws ParserError {
         mutable ret: BindingInitializer? = null
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let result: PatternInitializer node = parsePatternInitializer() catch _(error) {
                 throw (error)
             }
@@ -349,7 +349,7 @@ class Parser {
             ret.initializer = node
         }
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let result: [AdditionalInitializer] node = parseAdditionalInitializerList() catch _(error) {
                  null
             }
@@ -382,7 +382,7 @@ class Parser {
     function parsePatternInitializer() -> PatternInitializer throws ParserError {
         mutable ret: PatternInitializer? = null
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let result: Pattern node = parsePattern() catch _(error) {
                 throw (error)
             }
@@ -393,7 +393,7 @@ class Parser {
             ret.pattern = node
         }
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let result: Initializer node = parseInitializer() catch _(error) {
                  null
             }
@@ -426,7 +426,7 @@ class Parser {
     function parseAdditionalInitializer() -> AdditionalInitializer throws ParserError {
         mutable ret: AdditionalInitializer? = null
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let success: bool = lexer.parsePunctuation(comma)
             if success
                 lexer.advance()
@@ -435,7 +435,7 @@ class Parser {
                 ret = AdditionalInitializer(start, lexer.getPosition())
         }
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let result: PatternInitializer node = parsePatternInitializer() catch _(error) {
                 throw (error)
             }
@@ -452,7 +452,7 @@ class Parser {
     function parseFunctionDeclaration() -> FunctionDeclaration throws ParserError {
         mutable ret: FunctionDeclaration? = null
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let result: [Modifier] node = parseModifierList() catch _(error) {
                  null
             }
@@ -463,7 +463,7 @@ class Parser {
             ret.modifiers = node
         }
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let success: bool = lexer.parseKeyword(functionKeyword)
             if success
                 lexer.advance()
@@ -472,7 +472,7 @@ class Parser {
                 ret = FunctionDeclaration(start, lexer.getPosition())
         }
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let result: FunctionName node = parseFunctionName() catch _(error) {
                 throw (error)
             }
@@ -483,7 +483,7 @@ class Parser {
             ret.name = node
         }
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let result: FunctionSignature node = parseFunctionSignature() catch _(error) {
                 throw (error)
             }
@@ -494,7 +494,7 @@ class Parser {
             ret.signature = node
         }
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let result: Expression node = parseExpression() catch _(error) {
                 throw (error)
             }
@@ -511,7 +511,7 @@ class Parser {
     function parseInitializerDeclaration() -> InitializerDeclaration throws ParserError {
         mutable ret: InitializerDeclaration? = null
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let result: [Modifier] node = parseModifierList() catch _(error) {
                  null
             }
@@ -522,7 +522,7 @@ class Parser {
             ret.modifiers = node
         }
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let success: bool = lexer.parseKeyword(initKeyword)
             if success
                 lexer.advance()
@@ -531,7 +531,7 @@ class Parser {
                 ret = InitializerDeclaration(start, lexer.getPosition())
         }
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let result: ParameterClause node = parseParameterClause() catch _(error) {
                 throw (error)
             }
@@ -542,7 +542,7 @@ class Parser {
             ret.parameterClause = node
         }
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let result: ThrowsClause node = parseThrowsClause() catch _(error) {
                  null
             }
@@ -553,7 +553,7 @@ class Parser {
             ret.throwsClause = node
         }
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let result: Expression node = parseExpression() catch _(error) {
                 throw (error)
             }
@@ -611,7 +611,7 @@ class Parser {
     function parseOverride() -> Override throws ParserError {
         mutable ret: Override? = null
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let success: bool = lexer.parseKeyword(overrideKeyword)
             if success
                 lexer.advance()
@@ -626,7 +626,7 @@ class Parser {
     function parseStatic() -> Static throws ParserError {
         mutable ret: Static? = null
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let success: bool = lexer.parseKeyword(staticKeyword)
             if success
                 lexer.advance()
@@ -657,7 +657,7 @@ class Parser {
     function parseIdentifierFunctionName() -> IdentifierFunctionName throws ParserError {
         mutable ret: IdentifierFunctionName? = null
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let name: String? = lexer.parseIdentifier()
             if (name != null) && (name is Identifier)
                 lexer.advance()
@@ -674,7 +674,7 @@ class Parser {
     function parseFunctionSignature() -> FunctionSignature throws ParserError {
         mutable ret: FunctionSignature? = null
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let result: ParameterClause node = parseParameterClause() catch _(error) {
                 throw (error)
             }
@@ -685,7 +685,7 @@ class Parser {
             ret.parameterClause = node
         }
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let result: FunctionResult node = parseFunctionResult() catch _(error) {
                  null
             }
@@ -696,7 +696,7 @@ class Parser {
             ret.result = node
         }
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let result: ThrowsClause node = parseThrowsClause() catch _(error) {
                  null
             }
@@ -713,7 +713,7 @@ class Parser {
     function parseFunctionResult() -> FunctionResult throws ParserError {
         mutable ret: FunctionResult? = null
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let success: bool = lexer.parsePunctuation(evaluatesTo)
             if success
                 lexer.advance()
@@ -722,7 +722,7 @@ class Parser {
                 ret = FunctionResult(start, lexer.getPosition())
         }
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let result: Type node = parseType() catch _(error) {
                 throw (error)
             }
@@ -755,7 +755,7 @@ class Parser {
     function parseParameterClause() -> ParameterClause throws ParserError {
         mutable ret: ParameterClause? = null
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let success: bool = lexer.parsePunctuation(leftParen)
             if success
                 lexer.advance()
@@ -764,7 +764,7 @@ class Parser {
                 ret = ParameterClause(start, lexer.getPosition())
         }
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let result: [Parameter] node = parseParameterList() catch _(error) {
                  null
             }
@@ -775,7 +775,7 @@ class Parser {
             ret.parameters = node
         }
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let success: bool = lexer.parsePunctuation(rightParen)
             if success
                 lexer.advance()
@@ -831,7 +831,7 @@ class Parser {
     function parseConstParameter() -> ConstParameter throws ParserError {
         mutable ret: ConstParameter? = null
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let success: bool = lexer.parseKeyword(letKeyword)
             if success
                 lexer.advance()
@@ -840,7 +840,7 @@ class Parser {
                 ret = ConstParameter(start, lexer.getPosition())
         }
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let parameterName: String? = lexer.parseIdentifier()
             if (parameterName != null) && (parameterName is Identifier)
                 lexer.advance()
@@ -851,7 +851,7 @@ class Parser {
             ret.parameterName = parameterName
         }
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let success: bool = lexer.parsePunctuation(colon)
             if success
                 lexer.advance()
@@ -860,7 +860,7 @@ class Parser {
                 ret = ConstParameter(start, lexer.getPosition())
         }
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let result: Type node = parseType() catch _(error) {
                 throw (error)
             }
@@ -871,7 +871,7 @@ class Parser {
             ret.parameterType = node
         }
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let success: bool = lexer.parsePunctuation(comma)
             if success
                 lexer.advance()
@@ -886,7 +886,7 @@ class Parser {
     function parseVarParameter() -> VarParameter throws ParserError {
         mutable ret: VarParameter? = null
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let success: bool = lexer.parseKeyword(mutableKeyword)
             if success
                 lexer.advance()
@@ -895,7 +895,7 @@ class Parser {
                 ret = VarParameter(start, lexer.getPosition())
         }
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let parameterName: String? = lexer.parseIdentifier()
             if (parameterName != null) && (parameterName is Identifier)
                 lexer.advance()
@@ -906,7 +906,7 @@ class Parser {
             ret.parameterName = parameterName
         }
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let success: bool = lexer.parsePunctuation(colon)
             if success
                 lexer.advance()
@@ -915,7 +915,7 @@ class Parser {
                 ret = VarParameter(start, lexer.getPosition())
         }
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let result: Type node = parseType() catch _(error) {
                 throw (error)
             }
@@ -926,7 +926,7 @@ class Parser {
             ret.parameterType = node
         }
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let success: bool = lexer.parsePunctuation(comma)
             if success
                 lexer.advance()
@@ -941,7 +941,7 @@ class Parser {
     function parseThrowsClause() -> ThrowsClause throws ParserError {
         mutable ret: ThrowsClause? = null
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let success: bool = lexer.parseKeyword(throwsKeyword)
             if success
                 lexer.advance()
@@ -950,7 +950,7 @@ class Parser {
                 ret = ThrowsClause(start, lexer.getPosition())
         }
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let result: Type node = parseType() catch _(error) {
                 throw (error)
             }
@@ -967,7 +967,7 @@ class Parser {
     function parseEnumDeclaration() -> EnumDeclaration throws ParserError {
         mutable ret: EnumDeclaration? = null
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let success: bool = lexer.parseKeyword(enumKeyword)
             if success
                 lexer.advance()
@@ -976,7 +976,7 @@ class Parser {
                 ret = EnumDeclaration(start, lexer.getPosition())
         }
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let name: String? = lexer.parseIdentifier()
             if (name != null) && (name is Identifier)
                 lexer.advance()
@@ -987,7 +987,7 @@ class Parser {
             ret.name = name
         }
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let success: bool = lexer.parsePunctuation(leftCurly)
             if success
                 lexer.advance()
@@ -996,7 +996,7 @@ class Parser {
                 ret = EnumDeclaration(start, lexer.getPosition())
         }
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let result: [EnumMember] node = parseEnumMemberList() catch _(error) {
                 throw (error)
             }
@@ -1007,7 +1007,7 @@ class Parser {
             ret.members = node
         }
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let success: bool = lexer.parsePunctuation(rightCurly)
             if success
                 lexer.advance()
@@ -1038,7 +1038,7 @@ class Parser {
     function parseEnumMember() -> EnumMember throws ParserError {
         mutable ret: EnumMember? = null
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let success: bool = lexer.parseKeyword(caseKeyword)
             if success
                 lexer.advance()
@@ -1047,7 +1047,7 @@ class Parser {
                 ret = EnumMember(start, lexer.getPosition())
         }
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let result: EnumCase node = parseEnumCase() catch _(error) {
                 throw (error)
             }
@@ -1058,7 +1058,7 @@ class Parser {
             ret.enumCase = node
         }
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let result: [AdditionalCase] node = parseAdditionalCaseList() catch _(error) {
                 throw (error)
             }
@@ -1069,7 +1069,7 @@ class Parser {
             ret.additionalCases = node
         }
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let result: TupleType node = parseTupleType() catch _(error) {
                  null
             }
@@ -1086,7 +1086,7 @@ class Parser {
     function parseTupleType() -> TupleType throws ParserError {
         mutable ret: TupleType? = null
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let success: bool = lexer.parsePunctuation(leftParen)
             if success
                 lexer.advance()
@@ -1095,7 +1095,7 @@ class Parser {
                 ret = TupleType(start, lexer.getPosition())
         }
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let result: Type node = parseType() catch _(error) {
                 throw (error)
             }
@@ -1106,7 +1106,7 @@ class Parser {
             ret.tupleType = node
         }
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let result: [AdditionalType] node = parseAdditionalTypeList() catch _(error) {
                 throw (error)
             }
@@ -1117,7 +1117,7 @@ class Parser {
             ret.additionalTypes = node
         }
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let success: bool = lexer.parsePunctuation(rightParen)
             if success
                 lexer.advance()
@@ -1148,7 +1148,7 @@ class Parser {
     function parseAdditionalType() -> AdditionalType throws ParserError {
         mutable ret: AdditionalType? = null
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let success: bool = lexer.parsePunctuation(comma)
             if success
                 lexer.advance()
@@ -1157,7 +1157,7 @@ class Parser {
                 ret = AdditionalType(start, lexer.getPosition())
         }
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let result: Type node = parseType() catch _(error) {
                 throw (error)
             }
@@ -1174,7 +1174,7 @@ class Parser {
     function parseEnumCase() -> EnumCase throws ParserError {
         mutable ret: EnumCase? = null
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let name: String? = lexer.parseIdentifier()
             if (name != null) && (name is Identifier)
                 lexer.advance()
@@ -1207,7 +1207,7 @@ class Parser {
     function parseAdditionalCase() -> AdditionalCase throws ParserError {
         mutable ret: AdditionalCase? = null
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let success: bool = lexer.parsePunctuation(comma)
             if success
                 lexer.advance()
@@ -1216,7 +1216,7 @@ class Parser {
                 ret = AdditionalCase(start, lexer.getPosition())
         }
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let result: EnumCase node = parseEnumCase() catch _(error) {
                 throw (error)
             }
@@ -1233,7 +1233,7 @@ class Parser {
     function parseClassDeclaration() -> ClassDeclaration throws ParserError {
         mutable ret: ClassDeclaration? = null
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let success: bool = lexer.parseKeyword(classKeyword)
             if success
                 lexer.advance()
@@ -1242,7 +1242,7 @@ class Parser {
                 ret = ClassDeclaration(start, lexer.getPosition())
         }
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let name: String? = lexer.parseIdentifier()
             if (name != null) && (name is Identifier)
                 lexer.advance()
@@ -1253,7 +1253,7 @@ class Parser {
             ret.name = name
         }
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let result: GenericArgumentClause node = parseGenericArgumentClause() catch _(error) {
                  null
             }
@@ -1264,7 +1264,7 @@ class Parser {
             ret.genericArgumentClause = node
         }
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let result: TypeInheritanceClause node = parseTypeInheritanceClause() catch _(error) {
                  null
             }
@@ -1275,7 +1275,7 @@ class Parser {
             ret.typeInheritanceClause = node
         }
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let success: bool = lexer.parsePunctuation(leftCurly)
             if success
                 lexer.advance()
@@ -1284,7 +1284,7 @@ class Parser {
                 ret = ClassDeclaration(start, lexer.getPosition())
         }
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let result: [ClassMember] node = parseClassMemberList() catch _(error) {
                  null
             }
@@ -1295,7 +1295,7 @@ class Parser {
             ret.members = node
         }
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let success: bool = lexer.parsePunctuation(rightCurly)
             if success
                 lexer.advance()
@@ -1310,7 +1310,7 @@ class Parser {
     function parseGenericArgumentClause() -> GenericArgumentClause throws ParserError {
         mutable ret: GenericArgumentClause? = null
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let success: bool = lexer.parsePunctuation(leftAngular)
             if success
                 lexer.advance()
@@ -1319,7 +1319,7 @@ class Parser {
                 ret = GenericArgumentClause(start, lexer.getPosition())
         }
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let result: [GenericParameter] node = parseGenericParameterList() catch _(error) {
                 throw (error)
             }
@@ -1330,7 +1330,7 @@ class Parser {
             ret.genericParameters = node
         }
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let success: bool = lexer.parsePunctuation(rightAngular)
             if success
                 lexer.advance()
@@ -1361,7 +1361,7 @@ class Parser {
     function parseGenericParameter() -> GenericParameter throws ParserError {
         mutable ret: GenericParameter? = null
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let typeName: String? = lexer.parseIdentifier()
             if (typeName != null) && (typeName is Identifier)
                 lexer.advance()
@@ -1394,7 +1394,7 @@ class Parser {
     function parseClassMember() -> ClassMember throws ParserError {
         mutable ret: ClassMember? = null
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let result: Declaration node = parseDeclaration() catch _(error) {
                 throw (error)
             }
@@ -1405,7 +1405,7 @@ class Parser {
             ret.declaration = node
         }
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let success: bool = lexer.parsePunctuation(semicolon)
             if success
                 lexer.advance()
@@ -1445,7 +1445,7 @@ class Parser {
     function parseCodeBlock() -> CodeBlock throws ParserError {
         mutable ret: CodeBlock? = null
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let success: bool = lexer.parsePunctuation(leftCurly)
             if success
                 lexer.advance()
@@ -1454,7 +1454,7 @@ class Parser {
                 ret = CodeBlock(start, lexer.getPosition())
         }
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let result: [StatementWithSemicolon] node = parseStatementWithSemicolonList() catch _(error) {
                 throw (error)
             }
@@ -1465,7 +1465,7 @@ class Parser {
             ret.statements = node
         }
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let success: bool = lexer.parsePunctuation(rightCurly)
             if success
                 lexer.advance()
@@ -1480,7 +1480,7 @@ class Parser {
     function parseSimpleExpression() -> SimpleExpression throws ParserError {
         mutable ret: SimpleExpression? = null
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let result: PrefixExpression node = parsePrefixExpression() catch _(error) {
                 throw (error)
             }
@@ -1491,7 +1491,7 @@ class Parser {
             ret.prefixExpression = node
         }
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let result: [BinaryOp] node = parseBinaryOpList() catch _(error) {
                  null
             }
@@ -1508,7 +1508,7 @@ class Parser {
     function parsePrefixExpression() -> PrefixExpression throws ParserError {
         mutable ret: PrefixExpression? = null
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let prefixOperator: String? = lexer.parsePrefixOperator()
             if prefixOperator != null
                 lexer.advance()
@@ -1519,7 +1519,7 @@ class Parser {
             ret.prefixOperator = prefixOperator
         }
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let result: PostfixExpression node = parsePostfixExpression() catch _(error) {
                 throw (error)
             }
@@ -1536,7 +1536,7 @@ class Parser {
     function parsePostfixExpression() -> PostfixExpression throws ParserError {
         mutable ret: PostfixExpression? = null
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let result: PrimaryExpression node = parsePrimaryExpression() catch _(error) {
                 throw (error)
             }
@@ -1547,7 +1547,7 @@ class Parser {
             ret.primaryExpression = node
         }
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let result: [Postfix] node = parsePostfixList() catch _(error) {
                  null
             }
@@ -1623,7 +1623,7 @@ class Parser {
     function parseBinaryOperation() -> BinaryOperation throws ParserError {
         mutable ret: BinaryOperation? = null
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let binaryOperator: String? = lexer.parseBinaryOperator()
             if binaryOperator != null
                 lexer.advance()
@@ -1634,7 +1634,7 @@ class Parser {
             ret.binaryOperator = binaryOperator
         }
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let result: PrefixExpression node = parsePrefixExpression() catch _(error) {
                 throw (error)
             }
@@ -1651,7 +1651,7 @@ class Parser {
     function parseAssignment() -> Assignment throws ParserError {
         mutable ret: Assignment? = null
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let success: bool = lexer.parsePunctuation(equal)
             if success
                 lexer.advance()
@@ -1660,7 +1660,7 @@ class Parser {
                 ret = Assignment(start, lexer.getPosition())
         }
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let result: PrefixExpression node = parsePrefixExpression() catch _(error) {
                 throw (error)
             }
@@ -1677,7 +1677,7 @@ class Parser {
     function parseTypeQuery() -> TypeQuery throws ParserError {
         mutable ret: TypeQuery? = null
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let success: bool = lexer.parseKeyword(isKeyword)
             if success
                 lexer.advance()
@@ -1686,7 +1686,7 @@ class Parser {
                 ret = TypeQuery(start, lexer.getPosition())
         }
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let result: Type node = parseType() catch _(error) {
                 throw (error)
             }
@@ -1703,7 +1703,7 @@ class Parser {
     function parseTypeCast() -> TypeCast throws ParserError {
         mutable ret: TypeCast? = null
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let success: bool = lexer.parseKeyword(asKeyword)
             if success
                 lexer.advance()
@@ -1712,7 +1712,7 @@ class Parser {
                 ret = TypeCast(start, lexer.getPosition())
         }
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let result: Type node = parseType() catch _(error) {
                 throw (error)
             }
@@ -1745,7 +1745,7 @@ class Parser {
     function parseCatchClause() -> CatchClause throws ParserError {
         mutable ret: CatchClause? = null
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let success: bool = lexer.parseKeyword(catchKeyword)
             if success
                 lexer.advance()
@@ -1754,7 +1754,7 @@ class Parser {
                 ret = CatchClause(start, lexer.getPosition())
         }
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let result: CatchPattern node = parseCatchPattern() catch _(error) {
                 throw (error)
             }
@@ -1765,7 +1765,7 @@ class Parser {
             ret.catchPattern = node
         }
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let result: TuplePattern node = parseTuplePattern() catch _(error) {
                  null
             }
@@ -1776,7 +1776,7 @@ class Parser {
             ret.bindingPattern = node
         }
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let result: Expression node = parseExpression() catch _(error) {
                 throw (error)
             }
@@ -1818,7 +1818,7 @@ class Parser {
     function parseWildCardCatchPattern() -> WildCardCatchPattern throws ParserError {
         mutable ret: WildCardCatchPattern? = null
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let result: WildcardPattern node = parseWildcardPattern() catch _(error) {
                 throw (error)
             }
@@ -1835,7 +1835,7 @@ class Parser {
     function parsePathItemCatchPattern() -> PathItemCatchPattern throws ParserError {
         mutable ret: PathItemCatchPattern? = null
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let result: PathItem node = parsePathItem() catch _(error) {
                 throw (error)
             }
@@ -1846,7 +1846,7 @@ class Parser {
             ret.catchCase = node
         }
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let result: [PathIdentifier] node = parsePathIdentifierList() catch _(error) {
                  null
             }
@@ -1922,7 +1922,7 @@ class Parser {
     function parseOperatorPostfix() -> OperatorPostfix throws ParserError {
         mutable ret: OperatorPostfix? = null
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let postfixOperator: String? = lexer.parsePostfixOperator()
             if postfixOperator != null
                 lexer.advance()
@@ -1939,7 +1939,7 @@ class Parser {
     function parseFunctionCall() -> FunctionCall throws ParserError {
         mutable ret: FunctionCall? = null
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let result: ParenthesizedExpression node = parseParenthesizedExpression() catch _(error) {
                 throw (error)
             }
@@ -1950,7 +1950,7 @@ class Parser {
             ret.arguments = node
         }
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let result: [CatchClause] node = parseCatchClauseList() catch _(error) {
                  null
             }
@@ -1967,7 +1967,7 @@ class Parser {
     function parseExplicitMemberExpression() -> ExplicitMemberExpression throws ParserError {
         mutable ret: ExplicitMemberExpression? = null
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let success: bool = lexer.parsePunctuation(dot)
             if success
                 lexer.advance()
@@ -1976,7 +1976,7 @@ class Parser {
                 ret = ExplicitMemberExpression(start, lexer.getPosition())
         }
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let result: MemberPostfix node = parseMemberPostfix() catch _(error) {
                 throw (error)
             }
@@ -1993,7 +1993,7 @@ class Parser {
     function parseSubscript() -> Subscript throws ParserError {
         mutable ret: Subscript? = null
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let success: bool = lexer.parsePunctuation(leftBracket)
             if success
                 lexer.advance()
@@ -2002,7 +2002,7 @@ class Parser {
                 ret = Subscript(start, lexer.getPosition())
         }
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let result: [ExpressionElement] node = parseExpressionElementList() catch _(error) {
                 throw (error)
             }
@@ -2013,7 +2013,7 @@ class Parser {
             ret.expressions = node
         }
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let success: bool = lexer.parsePunctuation(rightBracket)
             if success
                 lexer.advance()
@@ -2044,7 +2044,7 @@ class Parser {
     function parseExpressionElement() -> ExpressionElement throws ParserError {
         mutable ret: ExpressionElement? = null
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let result: Expression node = parseExpression() catch _(error) {
                 throw (error)
             }
@@ -2055,7 +2055,7 @@ class Parser {
             ret.expression = node
         }
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let success: bool = lexer.parsePunctuation(comma)
             if success
                 lexer.advance()
@@ -2086,7 +2086,7 @@ class Parser {
     function parseNamedMemberPostfix() -> NamedMemberPostfix throws ParserError {
         mutable ret: NamedMemberPostfix? = null
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let result: IdentifierExpression node = parseIdentifierExpression() catch _(error) {
                 throw (error)
             }
@@ -2218,7 +2218,7 @@ class Parser {
     function parseParenthesizedExpression() -> ParenthesizedExpression throws ParserError {
         mutable ret: ParenthesizedExpression? = null
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let success: bool = lexer.parsePunctuation(leftParen)
             if success
                 lexer.advance()
@@ -2227,7 +2227,7 @@ class Parser {
                 ret = ParenthesizedExpression(start, lexer.getPosition())
         }
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let result: [ExpressionElement] node = parseExpressionElementList() catch _(error) {
                  null
             }
@@ -2238,7 +2238,7 @@ class Parser {
             ret.expressionElements = node
         }
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let success: bool = lexer.parsePunctuation(rightParen)
             if success
                 lexer.advance()
@@ -2253,7 +2253,7 @@ class Parser {
     function parseLiteralExpression() -> LiteralExpression throws ParserError {
         mutable ret: LiteralExpression? = null
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let literal: Literal? = lexer.parseLiteral()
             if literal != null
                 lexer.advance()
@@ -2270,7 +2270,7 @@ class Parser {
     function parseIdentifierExpression() -> IdentifierExpression throws ParserError {
         mutable ret: IdentifierExpression? = null
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let name: String? = lexer.parseIdentifier()
             if (name != null) && (name is Identifier)
                 lexer.advance()
@@ -2287,7 +2287,7 @@ class Parser {
     function parseIfExpression() -> IfExpression throws ParserError {
         mutable ret: IfExpression? = null
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let success: bool = lexer.parseKeyword(ifKeyword)
             if success
                 lexer.advance()
@@ -2296,7 +2296,7 @@ class Parser {
                 ret = IfExpression(start, lexer.getPosition())
         }
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let result: Expression node = parseExpression() catch _(error) {
                 throw (error)
             }
@@ -2307,7 +2307,7 @@ class Parser {
             ret.condition = node
         }
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let result: Expression node = parseExpression() catch _(error) {
                 throw (error)
             }
@@ -2318,7 +2318,7 @@ class Parser {
             ret.consequent = node
         }
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let result: ElseClause node = parseElseClause() catch _(error) {
                  null
             }
@@ -2335,7 +2335,7 @@ class Parser {
     function parseElseClause() -> ElseClause throws ParserError {
         mutable ret: ElseClause? = null
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let success: bool = lexer.parseKeyword(elseKeyword)
             if success
                 lexer.advance()
@@ -2344,7 +2344,7 @@ class Parser {
                 ret = ElseClause(start, lexer.getPosition())
         }
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let result: Expression node = parseExpression() catch _(error) {
                 throw (error)
             }
@@ -2361,7 +2361,7 @@ class Parser {
     function parseSwitchExpression() -> SwitchExpression throws ParserError {
         mutable ret: SwitchExpression? = null
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let success: bool = lexer.parseKeyword(switchKeyword)
             if success
                 lexer.advance()
@@ -2370,7 +2370,7 @@ class Parser {
                 ret = SwitchExpression(start, lexer.getPosition())
         }
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let result: Expression node = parseExpression() catch _(error) {
                 throw (error)
             }
@@ -2381,7 +2381,7 @@ class Parser {
             ret.expression = node
         }
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let result: SwitchBody node = parseSwitchBody() catch _(error) {
                 throw (error)
             }
@@ -2423,7 +2423,7 @@ class Parser {
     function parseCurliedSwitchBody() -> CurliedSwitchBody throws ParserError {
         mutable ret: CurliedSwitchBody? = null
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let success: bool = lexer.parsePunctuation(leftCurly)
             if success
                 lexer.advance()
@@ -2432,7 +2432,7 @@ class Parser {
                 ret = CurliedSwitchBody(start, lexer.getPosition())
         }
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let result: [SwitchCase] node = parseSwitchCaseList() catch _(error) {
                 throw (error)
             }
@@ -2443,7 +2443,7 @@ class Parser {
             ret.cases = node
         }
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let success: bool = lexer.parsePunctuation(rightCurly)
             if success
                 lexer.advance()
@@ -2458,7 +2458,7 @@ class Parser {
     function parseNakedSwitchBody() -> NakedSwitchBody throws ParserError {
         mutable ret: NakedSwitchBody? = null
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let result: [SwitchCase] node = parseSwitchCaseList() catch _(error) {
                 throw (error)
             }
@@ -2491,7 +2491,7 @@ class Parser {
     function parseSwitchCase() -> SwitchCase throws ParserError {
         mutable ret: SwitchCase? = null
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let result: CaseLabel node = parseCaseLabel() catch _(error) {
                 throw (error)
             }
@@ -2502,7 +2502,7 @@ class Parser {
             ret.label = node
         }
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let result: CaseContent node = parseCaseContent() catch _(error) {
                 throw (error)
             }
@@ -2544,7 +2544,7 @@ class Parser {
     function parseItemCaseLabel() -> ItemCaseLabel throws ParserError {
         mutable ret: ItemCaseLabel? = null
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let success: bool = lexer.parseKeyword(caseKeyword)
             if success
                 lexer.advance()
@@ -2553,7 +2553,7 @@ class Parser {
                 ret = ItemCaseLabel(start, lexer.getPosition())
         }
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let result: Pattern node = parsePattern() catch _(error) {
                 throw (error)
             }
@@ -2564,7 +2564,7 @@ class Parser {
             ret.pattern = node
         }
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let result: [CaseItem] node = parseCaseItemList() catch _(error) {
                 throw (error)
             }
@@ -2575,7 +2575,7 @@ class Parser {
             ret.additionalPatterns = node
         }
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let success: bool = lexer.parsePunctuation(colon)
             if success
                 lexer.advance()
@@ -2606,7 +2606,7 @@ class Parser {
     function parseCaseItem() -> CaseItem throws ParserError {
         mutable ret: CaseItem? = null
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let success: bool = lexer.parsePunctuation(comma)
             if success
                 lexer.advance()
@@ -2615,7 +2615,7 @@ class Parser {
                 ret = CaseItem(start, lexer.getPosition())
         }
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let result: Pattern node = parsePattern() catch _(error) {
                 throw (error)
             }
@@ -2632,7 +2632,7 @@ class Parser {
     function parseForInExpression() -> ForInExpression throws ParserError {
         mutable ret: ForInExpression? = null
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let success: bool = lexer.parseKeyword(forKeyword)
             if success
                 lexer.advance()
@@ -2641,7 +2641,7 @@ class Parser {
                 ret = ForInExpression(start, lexer.getPosition())
         }
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let result: Pattern node = parsePattern() catch _(error) {
                 throw (error)
             }
@@ -2652,7 +2652,7 @@ class Parser {
             ret.pattern = node
         }
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let success: bool = lexer.parseKeyword(inKeyword)
             if success
                 lexer.advance()
@@ -2661,7 +2661,7 @@ class Parser {
                 ret = ForInExpression(start, lexer.getPosition())
         }
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let result: Expression node = parseExpression() catch _(error) {
                  null
             }
@@ -2672,7 +2672,7 @@ class Parser {
             ret.expression = node
         }
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let result: Expression node = parseExpression() catch _(error) {
                  null
             }
@@ -2689,7 +2689,7 @@ class Parser {
     function parseReturnExpression() -> ReturnExpression throws ParserError {
         mutable ret: ReturnExpression? = null
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let success: bool = lexer.parseKeyword(returnKeyword)
             if success
                 lexer.advance()
@@ -2698,7 +2698,7 @@ class Parser {
                 ret = ReturnExpression(start, lexer.getPosition())
         }
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let result: Expression node = parseExpression() catch _(error) {
                  null
             }
@@ -2715,7 +2715,7 @@ class Parser {
     function parseThrowExpression() -> ThrowExpression throws ParserError {
         mutable ret: ThrowExpression? = null
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let success: bool = lexer.parseKeyword(throwKeyword)
             if success
                 lexer.advance()
@@ -2724,7 +2724,7 @@ class Parser {
                 ret = ThrowExpression(start, lexer.getPosition())
         }
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let result: Expression node = parseExpression() catch _(error) {
                  null
             }
@@ -2741,7 +2741,7 @@ class Parser {
     function parseBreakExpression() -> BreakExpression throws ParserError {
         mutable ret: BreakExpression? = null
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let success: bool = lexer.parseKeyword(breakKeyword)
             if success
                 lexer.advance()
@@ -2750,7 +2750,7 @@ class Parser {
                 ret = BreakExpression(start, lexer.getPosition())
         }
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let result: Expression node = parseExpression() catch _(error) {
                  null
             }
@@ -2810,7 +2810,7 @@ class Parser {
     function parseWildcardPattern() -> WildcardPattern throws ParserError {
         mutable ret: WildcardPattern? = null
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let success: bool = lexer.parsePunctuation(underscore)
             if success
                 lexer.advance()
@@ -2825,7 +2825,7 @@ class Parser {
     function parseIdentifierPattern() -> IdentifierPattern throws ParserError {
         mutable ret: IdentifierPattern? = null
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let identifier: String? = lexer.parseIdentifier()
             if (identifier != null) && (identifier is Identifier)
                 lexer.advance()
@@ -2836,7 +2836,7 @@ class Parser {
             ret.identifier = identifier
         }
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let result: TypeAnnotation node = parseTypeAnnotation() catch _(error) {
                  null
             }
@@ -2853,7 +2853,7 @@ class Parser {
     function parseTuplePattern() -> TuplePattern throws ParserError {
         mutable ret: TuplePattern? = null
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let success: bool = lexer.parsePunctuation(leftParen)
             if success
                 lexer.advance()
@@ -2862,7 +2862,7 @@ class Parser {
                 ret = TuplePattern(start, lexer.getPosition())
         }
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let result: [TuplePatternElement] node = parseTuplePatternElementList() catch _(error) {
                 throw (error)
             }
@@ -2873,7 +2873,7 @@ class Parser {
             ret.elements = node
         }
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let success: bool = lexer.parsePunctuation(rightParen)
             if success
                 lexer.advance()
@@ -2904,7 +2904,7 @@ class Parser {
     function parseTuplePatternElement() -> TuplePatternElement throws ParserError {
         mutable ret: TuplePatternElement? = null
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let result: Pattern node = parsePattern() catch _(error) {
                 throw (error)
             }
@@ -2915,7 +2915,7 @@ class Parser {
             ret.pattern = node
         }
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let success: bool = lexer.parsePunctuation(comma)
             if success
                 lexer.advance()
@@ -2930,7 +2930,7 @@ class Parser {
     function parseExpressionPattern() -> ExpressionPattern throws ParserError {
         mutable ret: ExpressionPattern? = null
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let result: Expression node = parseExpression() catch _(error) {
                 throw (error)
             }
@@ -2947,7 +2947,7 @@ class Parser {
     function parseDefaultCaseLabel() -> DefaultCaseLabel throws ParserError {
         mutable ret: DefaultCaseLabel? = null
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let success: bool = lexer.parseKeyword(defaultKeyword)
             if success
                 lexer.advance()
@@ -2956,7 +2956,7 @@ class Parser {
                 ret = DefaultCaseLabel(start, lexer.getPosition())
         }
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let success: bool = lexer.parsePunctuation(colon)
             if success
                 lexer.advance()
@@ -2996,7 +2996,7 @@ class Parser {
     function parseBlockCaseContent() -> BlockCaseContent throws ParserError {
         mutable ret: BlockCaseContent? = null
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let result: [StatementWithSemicolon] node = parseStatementWithSemicolonList() catch _(error) {
                 throw (error)
             }
@@ -3013,7 +3013,7 @@ class Parser {
     function parseEmptyCaseContent() -> EmptyCaseContent throws ParserError {
         mutable ret: EmptyCaseContent? = null
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let success: bool = lexer.parsePunctuation(semicolon)
             if success
                 lexer.advance()
@@ -3028,7 +3028,7 @@ class Parser {
     function parseInitializerCall() -> InitializerCall throws ParserError {
         mutable ret: InitializerCall? = null
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let result: Type node = parseType() catch _(error) {
                 throw (error)
             }
@@ -3039,7 +3039,7 @@ class Parser {
             ret.typeToInitialize = node
         }
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let result: ParenthesizedExpression node = parseParenthesizedExpression() catch _(error) {
                 throw (error)
             }
@@ -3050,7 +3050,7 @@ class Parser {
             ret.arguments = node
         }
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let result: [CatchClause] node = parseCatchClauseList() catch _(error) {
                  null
             }
@@ -3101,7 +3101,7 @@ class Parser {
     function parseThisDot() -> ThisDot throws ParserError {
         mutable ret: ThisDot? = null
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let success: bool = lexer.parseKeyword(thisKeyword)
             if success
                 lexer.advance()
@@ -3110,7 +3110,7 @@ class Parser {
                 ret = ThisDot(start, lexer.getPosition())
         }
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let success: bool = lexer.parsePunctuation(dot)
             if success
                 lexer.advance()
@@ -3119,7 +3119,7 @@ class Parser {
                 ret = ThisDot(start, lexer.getPosition())
         }
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let result: CommonThisMember node = parseCommonThisMember() catch _(error) {
                 throw (error)
             }
@@ -3136,7 +3136,7 @@ class Parser {
     function parseThisSubscript() -> ThisSubscript throws ParserError {
         mutable ret: ThisSubscript? = null
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let success: bool = lexer.parseKeyword(thisKeyword)
             if success
                 lexer.advance()
@@ -3145,7 +3145,7 @@ class Parser {
                 ret = ThisSubscript(start, lexer.getPosition())
         }
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let result: Subscript node = parseSubscript() catch _(error) {
                 throw (error)
             }
@@ -3162,7 +3162,7 @@ class Parser {
     function parseThis() -> This throws ParserError {
         mutable ret: This? = null
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let success: bool = lexer.parseKeyword(thisKeyword)
             if success
                 lexer.advance()
@@ -3202,7 +3202,7 @@ class Parser {
     function parseThisInit() -> ThisInit throws ParserError {
         mutable ret: ThisInit? = null
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let success: bool = lexer.parseKeyword(initKeyword)
             if success
                 lexer.advance()
@@ -3217,7 +3217,7 @@ class Parser {
     function parseThisMember() -> ThisMember throws ParserError {
         mutable ret: ThisMember? = null
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let name: String? = lexer.parseIdentifier()
             if (name != null) && (name is Identifier)
                 lexer.advance()
@@ -3259,7 +3259,7 @@ class Parser {
     function parseSuperDot() -> SuperDot throws ParserError {
         mutable ret: SuperDot? = null
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let success: bool = lexer.parseKeyword(superKeyword)
             if success
                 lexer.advance()
@@ -3268,7 +3268,7 @@ class Parser {
                 ret = SuperDot(start, lexer.getPosition())
         }
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let success: bool = lexer.parsePunctuation(dot)
             if success
                 lexer.advance()
@@ -3277,7 +3277,7 @@ class Parser {
                 ret = SuperDot(start, lexer.getPosition())
         }
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let result: CommonSuperMember node = parseCommonSuperMember() catch _(error) {
                 throw (error)
             }
@@ -3294,7 +3294,7 @@ class Parser {
     function parseSuperSubscript() -> SuperSubscript throws ParserError {
         mutable ret: SuperSubscript? = null
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let success: bool = lexer.parseKeyword(superKeyword)
             if success
                 lexer.advance()
@@ -3303,7 +3303,7 @@ class Parser {
                 ret = SuperSubscript(start, lexer.getPosition())
         }
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let result: Subscript node = parseSubscript() catch _(error) {
                 throw (error)
             }
@@ -3345,7 +3345,7 @@ class Parser {
     function parseSuperInit() -> SuperInit throws ParserError {
         mutable ret: SuperInit? = null
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let success: bool = lexer.parseKeyword(initKeyword)
             if success
                 lexer.advance()
@@ -3360,7 +3360,7 @@ class Parser {
     function parseSuperMember() -> SuperMember throws ParserError {
         mutable ret: SuperMember? = null
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let name: String? = lexer.parseIdentifier()
             if (name != null) && (name is Identifier)
                 lexer.advance()
@@ -3402,7 +3402,7 @@ class Parser {
     function parseTypeAnnotation() -> TypeAnnotation throws ParserError {
         mutable ret: TypeAnnotation? = null
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let success: bool = lexer.parsePunctuation(colon)
             if success
                 lexer.advance()
@@ -3411,7 +3411,7 @@ class Parser {
                 ret = TypeAnnotation(start, lexer.getPosition())
         }
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let result: Type node = parseType() catch _(error) {
                 throw (error)
             }
@@ -3428,7 +3428,7 @@ class Parser {
     function parseTypeIdentifier() -> TypeIdentifier throws ParserError {
         mutable ret: TypeIdentifier? = null
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let name: String? = lexer.parseIdentifier()
             if (name != null) && (name is Identifier)
                 lexer.advance()
@@ -3439,7 +3439,7 @@ class Parser {
             ret.name = name
         }
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let result: SubtypeIdentifier node = parseSubtypeIdentifier() catch _(error) {
                  null
             }
@@ -3450,7 +3450,7 @@ class Parser {
             ret.subType = node
         }
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let result: [TypePostfix] node = parseTypePostfixList() catch _(error) {
                  null
             }
@@ -3467,7 +3467,7 @@ class Parser {
     function parseSubtypeIdentifier() -> SubtypeIdentifier throws ParserError {
         mutable ret: SubtypeIdentifier? = null
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let success: bool = lexer.parsePunctuation(dot)
             if success
                 lexer.advance()
@@ -3476,7 +3476,7 @@ class Parser {
                 ret = SubtypeIdentifier(start, lexer.getPosition())
         }
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let result: TypeIdentifier node = parseTypeIdentifier() catch _(error) {
                 throw (error)
             }
@@ -3525,7 +3525,7 @@ class Parser {
     function parseArrayType() -> ArrayType throws ParserError {
         mutable ret: ArrayType? = null
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let success: bool = lexer.parsePunctuation(leftBracket)
             if success
                 lexer.advance()
@@ -3534,7 +3534,7 @@ class Parser {
                 ret = ArrayType(start, lexer.getPosition())
         }
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let result: Type node = parseType() catch _(error) {
                 throw (error)
             }
@@ -3545,7 +3545,7 @@ class Parser {
             ret.elementType = node
         }
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let success: bool = lexer.parsePunctuation(rightBracket)
             if success
                 lexer.advance()
@@ -3554,7 +3554,7 @@ class Parser {
                 ret = ArrayType(start, lexer.getPosition())
         }
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let result: [TypePostfix] node = parseTypePostfixList() catch _(error) {
                  null
             }
@@ -3571,7 +3571,7 @@ class Parser {
     function parseOptionalType() -> OptionalType throws ParserError {
         mutable ret: OptionalType? = null
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let success: bool = lexer.parsePunctuation(questionMark)
             if success
                 lexer.advance()
@@ -3586,7 +3586,7 @@ class Parser {
     function parseTypeInheritanceClause() -> TypeInheritanceClause throws ParserError {
         mutable ret: TypeInheritanceClause? = null
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let success: bool = lexer.parsePunctuation(colon)
             if success
                 lexer.advance()
@@ -3595,7 +3595,7 @@ class Parser {
                 ret = TypeInheritanceClause(start, lexer.getPosition())
         }
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let result: [Inheritance] node = parseInheritanceList() catch _(error) {
                  null
             }
@@ -3628,7 +3628,7 @@ class Parser {
     function parseInheritance() -> Inheritance throws ParserError {
         mutable ret: Inheritance? = null
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let result: TypeIdentifier node = parseTypeIdentifier() catch _(error) {
                 throw (error)
             }
@@ -3639,7 +3639,7 @@ class Parser {
             ret.name = node
         }
         {
-            let start: Position = lexer.getPreviousPosition()
+            let start: Position = lexer.getPosition()
             let success: bool = lexer.parsePunctuation(comma)
             if success
                 lexer.advance()

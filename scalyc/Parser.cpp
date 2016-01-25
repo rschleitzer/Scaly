@@ -13,7 +13,7 @@ _Result<TopLevelDeclaration, ParserError> Parser::parseTopLevelDeclaration(_Page
         _Result<Array<StatementWithSemicolon>, ParserError> result = parseStatementWithSemicolonList(_rp, _ep);
         if (result.succeeded()) {
             if (!isAtEnd()) {
-                Position current = lexer.getPreviousPosition();
+                Position current = lexer.getPosition();
                 return _Result<TopLevelDeclaration, ParserError>(new(_ep) ParserError(*new(_ep) NotAtEnd(current)));
             }
             if (!ret)
