@@ -19,8 +19,7 @@ class "(id syntax-node)" : "(if (base syntax-node) (base syntax-node) "SyntaxNod
         super.init(start, end)
     }
 
-"
-"    "(if (base syntax-node) "override " "")"function Accept(mutable visitor: SyntaxVisitor) {
+    "(if (base syntax-node) "override " "")"function Accept(mutable visitor: SyntaxVisitor) {
         visitor.Visit"(id syntax-node)"(this)
 "
         (apply-to-children-of syntax-node (lambda (content)
@@ -83,12 +82,7 @@ public:
     Position start;
     Position end;
 };
-"
-    (apply-to-selected-children "syntax" (lambda (syntax-node) ($
-"
-class "(id syntax-node)";"
-    )))
-"
+
 "
     (apply-to-selected-children "syntax" (lambda (syntax-node) ($
 "
@@ -96,40 +90,8 @@ class "(id syntax-node)" : public "(if (base syntax-node) (base syntax-node) "Sy
 public:
     "(id syntax-node)"(Position start, Position end);
 
+    void Accept(SyntaxVisitor& visitor);
 "
-<!--"    "(if (base syntax-node) "override " "")"func Accept(var visitor:SyntaxVisitor) {
-        visitor.Visit"(id syntax-node)"(self)
-"
-        (apply-to-children-of syntax-node (lambda (content)
-            (case (type content)
-                (("syntax") ($
-                    (if (abstract? syntax-node) "" ($
-                        (if (optional? content) ($
-"        if "(property content)" != nil {
-    "
-                        )"")
-                        (if (multiple? content)
-                            ($
-"        for node in "(property content)"! {
-"(if (optional? content) "    " "")
-"            node.Accept(visitor) }
-"
-                            )
-                            ($
-"        "(property content)"!.Accept(visitor)
-"
-                            )
-                        )
-                        (if (optional? content) "        }
-" ""                    )
-                   ))
-                ))
-                (else "")
-            )
-        ))
-"    }
-"
--->
         (apply-to-children-of syntax-node (lambda (content) ($
             (case (type content)
                 (("syntax") ($
@@ -181,41 +143,44 @@ SyntaxNode::SyntaxNode(Position start, Position end)
 "(id syntax-node)"::"(id syntax-node)"(Position start, Position end)
 : "(if (base syntax-node) (base syntax-node) "SyntaxNode")"(start, end) {
 }
-"
-<!--
-"    "(if (base syntax-node) "override " "")"func Accept(var visitor:SyntaxVisitor) {
-        visitor.Visit"(id syntax-node)"(self)
+
+void "(id syntax-node)"::Accept(SyntaxVisitor& visitor) {
+    visitor.Visit"(id syntax-node)"(*this);
 "
         (apply-to-children-of syntax-node (lambda (content)
             (case (type content)
                 (("syntax") ($
                     (if (abstract? syntax-node) "" ($
                         (if (optional? content) ($
-"        if "(property content)" != nil {
-    "
+"    if ("(property content)") {
+"
                         )"")
                         (if (multiple? content)
                             ($
-"        for node in "(property content)"! {
-"(if (optional? content) "    " "")
-"            node.Accept(visitor) }
+(if (optional? content) "    " "")"    {
+"(if (optional? content) "    " "")"        "(link content)"* node = 0;
+"(if (optional? content) "    " "")"        size_t _alength = "(property content)"->length();
+"(if (optional? content) "    " "")"        for (size_t _a = 0; _a < _alength; _a++) {
+"(if (optional? content) "    " "")"            node = *(*"(property content)")[_a];
+"(if (optional? content) "    " "")"            node->Accept(visitor);
+"(if (optional? content) "    " "")"        }
+"(if (optional? content) "    " "")"    }
 "
                             )
                             ($
-"        "(property content)"!.Accept(visitor)
+(if (optional? content) "    " "")"    "(property content)"->Accept(visitor);
 "
                             )
                         )
-                        (if (optional? content) "        }
+                        (if (optional? content) "    }
 " ""                    )
                    ))
                 ))
                 (else "")
             )
         ))
-"    }
+"}
 "
--->
    )))
 "
 }

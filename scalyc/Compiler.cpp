@@ -26,12 +26,17 @@ CompilerError* Compiler::compileFiles(_Page* _ep, Array<String>& files) {
         topLevelDeclarations = new (_p) Array<TopLevelDeclaration>(_length);
         for (size_t _index = 0; _index < _length; _index++) {
             _Result<TopLevelDeclaration, ParserError> _compileUnitResult = compileUnit(_p, _ep, **((*compilationUnits)[_index]));
-            if (!_compileUnitResult.succeeded())
+            if (!_compileUnitResult.succeeded()) {
                 return new(_ep) CompilerError(*new(_ep) SyntaxError(*_compileUnitResult.getError()));
-                
-            else *(*topLevelDeclarations)[_index] = _compileUnitResult.getResult();
+            }
+            else {
+                *(*topLevelDeclarations)[_index] = _compileUnitResult.getResult();
+                MyVisitor visitor;
+                (**(*topLevelDeclarations)[_index]).Accept(visitor);
+            }
         }
     }
+    
 
     // Everything went fine
     return 0;

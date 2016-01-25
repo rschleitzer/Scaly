@@ -4,10 +4,19 @@
 #include \"scalyc.h\"
 using namespace scaly;
 namespace scalyc {
-
-class "(if concrete "MyVisitor : public " "")"SyntaxVisitor {"
+"
+    (if concrete "" ($
+        (apply-to-selected-children "syntax" (lambda (syntax-node) ($
+"
+class "(id syntax-node)";"
+        )))
+"
+"   ))
+"
+class "(if concrete "MyVisitor : public " "")"SyntaxVisitor {
+public:"
     (apply-to-selected-children "syntax" (lambda (syntax) ($ "
-    virtual void Visit"(id syntax)"("(id syntax)")"(if concrete "" "= 0")";"
+    virtual void Visit"(id syntax)"("(id syntax)"&)"(if concrete "" "= 0")";"
     )))
 "
 };
@@ -25,7 +34,7 @@ namespace scalyc {
 "
     (apply-to-selected-children "syntax" (lambda (syntax) ($
 "
-void MyVisitor::Visit"(id syntax)"("(id syntax)") {
+void MyVisitor::Visit"(id syntax)"("(id syntax)"&) {
 }
 "    )))
 "

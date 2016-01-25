@@ -3,8 +3,8 @@
 
 #include "Scaly.h"
 #include "Lexer.h"
-#include "Syntax.h"
 #include "Visitor.h"
+#include "Syntax.h"
 #include "MyVisitor.h"
 #include "ParserError.h"
 #include "Parser.h"
