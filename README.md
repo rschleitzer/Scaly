@@ -1,7 +1,7 @@
 Scaly
 =====
 
-Welcome to [_Scaly_](http://scaly.io), the _self-scaling programming language_.
+[_Scaly_](http://scaly.io), the _self-scaling programming language_.
 
 # scaly
 
@@ -9,9 +9,9 @@ Runtime support and standard library code for the [Scaly](http://scaly.io) progr
 
 # scalyc
 
-Goal is a self-hosted compiler for the [Scaly](http://scaly.io) programming language.
+Self-hosted compiler for the [Scaly](http://scaly.io) programming language.
 
 # scaly.io
 
-The static contents of the [Scaly](http://scaly.io) web site.
+The static contents of the [scaly.io](http://scaly.io) web site, the home page of Scaly.
 
