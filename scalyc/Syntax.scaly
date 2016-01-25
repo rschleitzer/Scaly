@@ -19,7 +19,7 @@ class TopLevelDeclaration : SyntaxNode {
         visitor.VisitTopLevelDeclaration(this)
         for node in statements! {
             node.Accept(visitor)
-            }
+        }
     }
 
     let statements: [StatementWithSemicolon]?
@@ -435,7 +435,7 @@ class EnumDeclaration : Declaration {
         visitor.VisitEnumDeclaration(this)
         for node in members! {
             node.Accept(visitor)
-            }
+        }
     }
 
     let name: String?
@@ -453,7 +453,7 @@ class EnumMember : SyntaxNode {
         enumCase!.Accept(visitor)
         for node in additionalCases! {
             node.Accept(visitor)
-            }
+        }
         if tupleType != nil {
             tupleType!.Accept(visitor)
         }
@@ -475,7 +475,7 @@ class TupleType : SyntaxNode {
         tupleType!.Accept(visitor)
         for node in additionalTypes! {
             node.Accept(visitor)
-            }
+        }
     }
 
     let tupleType: Type?
@@ -560,7 +560,7 @@ class GenericArgumentClause : SyntaxNode {
         visitor.VisitGenericArgumentClause(this)
         for node in genericParameters! {
             node.Accept(visitor)
-            }
+        }
     }
 
     let genericParameters: [GenericParameter]?
@@ -615,7 +615,7 @@ class CodeBlock : Expression {
         visitor.VisitCodeBlock(this)
         for node in statements! {
             node.Accept(visitor)
-            }
+        }
     }
 
     let statements: [StatementWithSemicolon]?
@@ -880,7 +880,7 @@ class Subscript : Postfix {
         visitor.VisitSubscript(this)
         for node in expressions! {
             node.Accept(visitor)
-            }
+        }
     }
 
     let expressions: [ExpressionElement]?
@@ -1054,7 +1054,7 @@ class CurliedSwitchBody : SwitchBody {
         visitor.VisitCurliedSwitchBody(this)
         for node in cases! {
             node.Accept(visitor)
-            }
+        }
     }
 
     let cases: [SwitchCase]?
@@ -1070,7 +1070,7 @@ class NakedSwitchBody : SwitchBody {
         visitor.VisitNakedSwitchBody(this)
         for node in cases! {
             node.Accept(visitor)
-            }
+        }
     }
 
     let cases: [SwitchCase]?
@@ -1115,7 +1115,7 @@ class ItemCaseLabel : CaseLabel {
         pattern!.Accept(visitor)
         for node in additionalPatterns! {
             node.Accept(visitor)
-            }
+        }
     }
 
     let pattern: Pattern?
@@ -1257,7 +1257,7 @@ class TuplePattern : Pattern {
         visitor.VisitTuplePattern(this)
         for node in elements! {
             node.Accept(visitor)
-            }
+        }
     }
 
     let elements: [TuplePatternElement]?
@@ -1325,7 +1325,7 @@ class BlockCaseContent : CaseContent {
         visitor.VisitBlockCaseContent(this)
         for node in statements! {
             node.Accept(visitor)
-            }
+        }
     }
 
     let statements: [StatementWithSemicolon]?

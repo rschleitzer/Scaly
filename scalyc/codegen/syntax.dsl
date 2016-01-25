@@ -29,18 +29,17 @@ class "(id syntax-node)" : "(if (base syntax-node) (base syntax-node) "SyntaxNod
                     (if (abstract? syntax-node) "" ($
                         (if (optional? content) ($
 "        if "(property content)" != nil {
-    "
+"
                         )"")
                         (if (multiple? content)
                             ($
-"        for node in "(property content)"! {
-"(if (optional? content) "    " "")
-"            node.Accept(visitor)
-            }
+(if (optional? content) "    " "")"        for node in "(property content)"! {
+"(if (optional? content) "    " "")"            node.Accept(visitor)
+"(if (optional? content) "    " "")"        }
 "
                             )
                             ($
-"        "(property content)"!.Accept(visitor)
+(if (optional? content) "    " "")"        "(property content)"!.Accept(visitor)
 "
                             )
                         )
