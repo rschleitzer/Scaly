@@ -334,12 +334,14 @@ EnumMember::EnumMember(Position start, Position end)
 void EnumMember::Accept(SyntaxVisitor& visitor) {
     visitor.VisitEnumMember(*this);
     enumCase->Accept(visitor);
-    {
-        AdditionalCase* node = 0;
-        size_t _alength = additionalCases->length();
-        for (size_t _a = 0; _a < _alength; _a++) {
-            node = *(*additionalCases)[_a];
-            node->Accept(visitor);
+    if (additionalCases) {
+        {
+            AdditionalCase* node = 0;
+            size_t _alength = additionalCases->length();
+            for (size_t _a = 0; _a < _alength; _a++) {
+                node = *(*additionalCases)[_a];
+                node->Accept(visitor);
+            }
         }
     }
     if (tupleType) {
@@ -354,12 +356,14 @@ TupleType::TupleType(Position start, Position end)
 void TupleType::Accept(SyntaxVisitor& visitor) {
     visitor.VisitTupleType(*this);
     tupleType->Accept(visitor);
-    {
-        AdditionalType* node = 0;
-        size_t _alength = additionalTypes->length();
-        for (size_t _a = 0; _a < _alength; _a++) {
-            node = *(*additionalTypes)[_a];
-            node->Accept(visitor);
+    if (additionalTypes) {
+        {
+            AdditionalType* node = 0;
+            size_t _alength = additionalTypes->length();
+            for (size_t _a = 0; _a < _alength; _a++) {
+                node = *(*additionalTypes)[_a];
+                node->Accept(visitor);
+            }
         }
     }
 }
@@ -836,12 +840,14 @@ ItemCaseLabel::ItemCaseLabel(Position start, Position end)
 void ItemCaseLabel::Accept(SyntaxVisitor& visitor) {
     visitor.VisitItemCaseLabel(*this);
     pattern->Accept(visitor);
-    {
-        CaseItem* node = 0;
-        size_t _alength = additionalPatterns->length();
-        for (size_t _a = 0; _a < _alength; _a++) {
-            node = *(*additionalPatterns)[_a];
-            node->Accept(visitor);
+    if (additionalPatterns) {
+        {
+            CaseItem* node = 0;
+            size_t _alength = additionalPatterns->length();
+            for (size_t _a = 0; _a < _alength; _a++) {
+                node = *(*additionalPatterns)[_a];
+                node->Accept(visitor);
+            }
         }
     }
 }

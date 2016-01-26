@@ -133,13 +133,13 @@
     <syntax id = EnumMember                multiple
         <content link = case
         <content link = EnumCase                                property = enumCase
-        <content link = AdditionalCase     multiple             property = additionalCases
+        <content link = AdditionalCase     multiple optional    property = additionalCases
         <content link = TupleType                   optional    property = tupleType
 
     <syntax id = TupleType
         <content link = leftParen
         <content link = Type                                    property = tupleType
-        <content link = AdditionalType     multiple             property = additionalTypes
+        <content link = AdditionalType     multiple optional    property = additionalTypes
         <content link = rightParen
 
     <syntax id = AdditionalType            multiple
@@ -329,7 +329,7 @@
     <syntax id = ItemCaseLabel                                  base = CaseLabel
         <content link = case
         <content link = Pattern                                 property = pattern
-        <content link = CaseItem           multiple             property = additionalPatterns
+        <content link = CaseItem           multiple optional    property = additionalPatterns
         <content link = colon
 
     <syntax id = CaseItem                  multiple

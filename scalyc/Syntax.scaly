@@ -451,8 +451,10 @@ class EnumMember : SyntaxNode {
     function Accept(mutable visitor: SyntaxVisitor) {
         visitor.VisitEnumMember(this)
         enumCase!.Accept(visitor)
-        for node in additionalCases! {
-            node.Accept(visitor)
+        if additionalCases != nil {
+            for node in additionalCases! {
+                node.Accept(visitor)
+            }
         }
         if tupleType != nil {
             tupleType!.Accept(visitor)
@@ -473,8 +475,10 @@ class TupleType : SyntaxNode {
     function Accept(mutable visitor: SyntaxVisitor) {
         visitor.VisitTupleType(this)
         tupleType!.Accept(visitor)
-        for node in additionalTypes! {
-            node.Accept(visitor)
+        if additionalTypes != nil {
+            for node in additionalTypes! {
+                node.Accept(visitor)
+            }
         }
     }
 
@@ -1113,8 +1117,10 @@ class ItemCaseLabel : CaseLabel {
     override function Accept(mutable visitor: SyntaxVisitor) {
         visitor.VisitItemCaseLabel(this)
         pattern!.Accept(visitor)
-        for node in additionalPatterns! {
-            node.Accept(visitor)
+        if additionalPatterns != nil {
+            for node in additionalPatterns! {
+                node.Accept(visitor)
+            }
         }
     }
 

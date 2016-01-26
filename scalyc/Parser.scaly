@@ -1060,7 +1060,7 @@ class Parser {
         {
             let start: Position = lexer.getPosition()
             let result: [AdditionalCase] node = parseAdditionalCaseList() catch _(error) {
-                throw (error)
+                 null
             }
 
             if ret == null
@@ -1108,7 +1108,7 @@ class Parser {
         {
             let start: Position = lexer.getPosition()
             let result: [AdditionalType] node = parseAdditionalTypeList() catch _(error) {
-                throw (error)
+                 null
             }
 
             if ret == null
@@ -2566,7 +2566,7 @@ class Parser {
         {
             let start: Position = lexer.getPosition()
             let result: [CaseItem] node = parseCaseItemList() catch _(error) {
-                throw (error)
+                 null
             }
 
             if ret == null

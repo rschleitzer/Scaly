@@ -1236,9 +1236,6 @@ _Result<EnumMember, ParserError> Parser::parseEnumMember(_Page* _rp, _Page* _ep)
 
             ret->additionalCases = result.getResult();
         }
-        else {
-            return _Result<EnumMember, ParserError>(result.getError());
-        }
     }
     {
         Position start = lexer.getPreviousPosition();
@@ -1289,9 +1286,6 @@ _Result<TupleType, ParserError> Parser::parseTupleType(_Page* _rp, _Page* _ep) {
                 ret = new(_rp) TupleType(start, lexer.getPosition());
 
             ret->additionalTypes = result.getResult();
-        }
-        else {
-            return _Result<TupleType, ParserError>(result.getError());
         }
     }
     {
@@ -2971,9 +2965,6 @@ _Result<ItemCaseLabel, ParserError> Parser::parseItemCaseLabel(_Page* _rp, _Page
                 ret = new(_rp) ItemCaseLabel(start, lexer.getPosition());
 
             ret->additionalPatterns = result.getResult();
-        }
-        else {
-            return _Result<ItemCaseLabel, ParserError>(result.getError());
         }
     }
     {
