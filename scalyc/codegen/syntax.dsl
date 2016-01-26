@@ -90,7 +90,7 @@ class "(id syntax-node)" : public "(if (base syntax-node) (base syntax-node) "Sy
 public:
     "(id syntax-node)"(Position start, Position end);
 
-    void Accept(SyntaxVisitor& visitor);
+    virtual void Accept(SyntaxVisitor& visitor);
 "
         (apply-to-children-of syntax-node (lambda (content) ($
             (case (type content)
