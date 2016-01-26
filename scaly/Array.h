@@ -26,15 +26,17 @@ public:
     
     // Append a value to the array
     void append(T* item) {
-        if (!_rawArray)
+        if (!_rawArray) {
+            _capacity = 1;
+            _size = 0;
             allocate();
-            
-        size_t oldCapacity = _capacity;
-        if (_size == oldCapacity)
-            reAllocate(oldCapacity * 2);
+        }
+        else {
+            if (_size == _capacity)
+                reAllocate(_capacity * 2);
+        }
 
-        *(_rawArray + oldCapacity) = item;
-
+        *(_rawArray + _size) = item;
         _size += 1;
     }
 
