@@ -2,9 +2,11 @@
 using namespace scaly;
 namespace scalyc {
 
-CompilerError* Compiler::compileFiles(_Page* _ep, Array<String>& files) {
+CompilerError* Compiler::compileFiles(_Page* _ep, Options& options) {
     _Region _region; _Page* _p = _region.get();
 
+    Array<String>& files = options.files;
+    
     // Map the files array to a file contents array
     Array<String>* sources = 0;
     {

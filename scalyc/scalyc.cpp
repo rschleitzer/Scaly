@@ -2,20 +2,38 @@
 namespace scalyc {
 
 int _main(Array<String>& args) {
-    // Make a region for the current block and get the page
-    _Region _region; _Page* _p = _region.get();
+_Region _region; _Page* _p = _region.get();
 
-    // If we don't get an argument then it is Error 1
-    if (args.length() < 1)
-        return 1;
+if (args.length() < 1) {
+    return 1;
+}
+else {
+    Options* options = 0;
+    _Result<Options, OptionsError> _result_options = Options::ParseArguments(_p, _p, args);
+    if (_result_options.succeeded()) {
+        options = _result_options.getResult();
+    }
+    else {
+        switch (_result_options.getErrorCode()) {
+            case invalidOption: {
+                return 2;
+            }
+            case noOutputOption: {
+                return 3;
+            }
+            case noFilesToCompile: {
+                return 4;
+            }
+        }
+    }
 
-    // If any error occurs then it is Error 2
-    CompilerError* compilerError = Compiler::compileFiles(_p, args);
+    CompilerError* compilerError = Compiler::compileFiles(_p, *options);
     if (compilerError) {
         return 2;
     }
+}
 
-    return 0;
+return 0;
 }
 
 }

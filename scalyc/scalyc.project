@@ -30,6 +30,8 @@
     <File Name="ParserError.cpp"/>
     <File Name="CompilerError.cpp"/>
     <File Name="CppVisitor.cpp"/>
+    <File Name="OptionsError.cpp"/>
+    <File Name="Options.cpp"/>
   </VirtualDirectory>
   <VirtualDirectory Name="include">
     <File Name="scalyc.h"/>
@@ -42,6 +44,8 @@
     <File Name="ParserError.h"/>
     <File Name="CompilerError.h"/>
     <File Name="CppVisitor.h"/>
+    <File Name="OptionsError.h"/>
+    <File Name="Options.h"/>
   </VirtualDirectory>
   <Settings Type="Executable">
     <GlobalSettings>

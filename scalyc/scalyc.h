@@ -9,6 +9,8 @@
 #include "CppVisitor.h"
 #include "ParserError.h"
 #include "Parser.h"
+#include "OptionsError.h"
+#include "Options.h"
 #include "CompilerError.h"
 #include "Compiler.h"
 

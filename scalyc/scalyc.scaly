@@ -1,7 +1,11 @@
-// If we don't get an argument then it is Error 1
-if args.length < 1
+if args.length < 1 {
     throw 1
+}
 else {
-    Compiler.compileFiles(args)
-        catch _ throw 2
+    let options: CompilerOptions = CompilerOptions.ParseArguments(args)
+        catch invalidOption throw 2
+        catch noOutputOption throw 3
+        catch noFilesToCompile throw 4
+
+    Compiler.compile(options) catch _ throw 5
 }
