@@ -11,8 +11,8 @@ class SyntaxNode {
 
 class Program : SyntaxNode {
 
-    init(start: Position, end: Position) {
-        super.init(start, end)
+    init() {
+        super.init(Position(0, 0), Position(0, 0))
     }
 
     function Accept(mutable visitor: SyntaxVisitor) {

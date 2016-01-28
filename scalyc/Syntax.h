@@ -14,7 +14,7 @@ public:
 
 class Program : public SyntaxNode {
 public:
-    Program(Position start, Position end);
+    Program();
 
     virtual void Accept(SyntaxVisitor& visitor);
     String* name;

@@ -1,11 +1,11 @@
 <!DOCTYPE language SYSTEM "language.dtd">
 <language>
 
-    <syntax id = Program
+    <syntax id = Program                                        program
         <content identifier                                     property = name
         <content link = CompilationUnit             multiple    property = compilationUnits
 
-    <syntax id = CompilationUnit                    multiple    top
+    <syntax id = CompilationUnit                                top
         <content link = StatementWithSemicolon      multiple    property = statements
 
     <syntax id = StatementWithSemicolon             multiple

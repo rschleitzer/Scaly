@@ -5,7 +5,7 @@
         lexer = Lexer(text)
     }
 "
-    (apply-to-selected-children "syntax" (lambda (syntax) ($
+    (apply-to-selected-children "syntax" (lambda (syntax) (if (program? syntax) "" ($
         (if (multiple? syntax) ($
 "
     function parse"(id syntax)"List() -> ["(id syntax)"] throws ParserError {
@@ -99,7 +99,7 @@
             ) ; $
         ) ; abstract or not
 "    }
-"   )))
+"   ))))
 "
     function isAtEnd() -> bool {
         lexer.isAtEnd()
@@ -140,13 +140,13 @@ class Parser : public Object {
 public:
     Parser(String& text);
 "
-    (apply-to-selected-children "syntax" (lambda (syntax) ($
+    (apply-to-selected-children "syntax" (lambda (syntax) (if (program? syntax) "" ($
 "
 "        (if (multiple? syntax) ($
 "    _Result<""Array<"(id syntax)">, ParserError> parse"(id syntax)"List(_Page* _rp, _Page* _ep);
 "       )"")
 "    _Result<"(id syntax)", ParserError> parse"(id syntax)"(_Page* _rp, _Page* _ep);
-"   )))
+"   ))))
 "
     bool isAtEnd();
     bool isIdentifier(String& id);
@@ -178,7 +178,7 @@ namespace scalyc {
 Parser::Parser(String& text)
 : lexer(text) {
 }
-"    (apply-to-selected-children "syntax" (lambda (syntax) ($
+"    (apply-to-selected-children "syntax" (lambda (syntax) (if (program? syntax) "" ($
         (if (multiple? syntax) ($
 "
 _Result<""Array<"(id syntax)">, ParserError> Parser::parse"(id syntax)"List(_Page* _rp, _Page* _ep) {
@@ -274,7 +274,7 @@ _Result<"(id syntax)", ParserError> Parser::parse"(id syntax)"(_Page* _rp, _Page
             ) ; $
         ) ; abstract or not
 "}
-"   )))
+"   ))))
 "
 bool Parser::isAtEnd() {
     return lexer.isAtEnd();

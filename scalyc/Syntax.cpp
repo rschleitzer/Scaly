@@ -6,8 +6,8 @@ SyntaxNode::SyntaxNode(Position start, Position end)
 : start(start), end(end) {
 }
 
-Program::Program(Position start, Position end)
-: SyntaxNode(start, end) {
+Program::Program()
+: SyntaxNode(Position(0, 0), Position(0, 0)) {
 }
 
 void Program::Accept(SyntaxVisitor& visitor) {

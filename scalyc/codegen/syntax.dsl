@@ -15,8 +15,8 @@
 "
 class "(id syntax-node)" : "(if (base syntax-node) (base syntax-node) "SyntaxNode")" {
 
-    init(start: Position, end: Position) {
-        super.init(start, end)
+    init("(if (program? syntax-node) "" "start: Position, end: Position")") {
+        super.init("(if (program? syntax-node) "Position(0, 0), Position(0, 0)" "start, end")")
     }
 
     "(if (base syntax-node) "override " "")"function Accept(mutable visitor: SyntaxVisitor) {
@@ -88,7 +88,7 @@ public:
 "
 class "(id syntax-node)" : public "(if (base syntax-node) (base syntax-node) "SyntaxNode")" {
 public:
-    "(id syntax-node)"(Position start, Position end);
+    "(id syntax-node)"("(if (program? syntax-node) "" "Position start, Position end")");
 
     virtual void Accept(SyntaxVisitor& visitor);
 "
@@ -140,8 +140,8 @@ SyntaxNode::SyntaxNode(Position start, Position end)
 "
     (apply-to-selected-children "syntax" (lambda (syntax-node) ($
 "
-"(id syntax-node)"::"(id syntax-node)"(Position start, Position end)
-: "(if (base syntax-node) (base syntax-node) "SyntaxNode")"(start, end) {
+"(id syntax-node)"::"(id syntax-node)"("(if (program? syntax-node) "" "Position start, Position end")")
+: "(if (base syntax-node) (base syntax-node) "SyntaxNode")"("(if (program? syntax-node) "Position(0, 0), Position(0, 0)" "start, end")") {
 }
 
 void "(id syntax-node)"::Accept(SyntaxVisitor& visitor) {

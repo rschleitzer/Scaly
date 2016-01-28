@@ -35,7 +35,7 @@ CompilerError* Compiler::compileFiles(_Page* _ep, Array<String>& files) {
         }
     }
     
-    Program& program = *new(_p) Program(Position(0, 0), Position(0, 0));
+    Program& program = *new(_p) Program();
     program.name = new(_p) String("scalyc");
     program.compilationUnits = compilationUnits;
     

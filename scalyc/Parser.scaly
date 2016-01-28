@@ -3,50 +3,6 @@ class Parser {
         lexer = Lexer(text)
     }
 
-    function parseProgram() -> Program throws ParserError {
-        mutable ret: Program? = null
-        {
-            let start: Position = lexer.getPosition()
-            let name: String? = lexer.parseIdentifier()
-            if (name != null) && (name is Identifier)
-                lexer.advance()
-
-            if ret == null
-                ret = Program(start, lexer.getPosition())
-
-            ret.name = name
-        }
-        {
-            let start: Position = lexer.getPosition()
-            let result: [CompilationUnit] node = parseCompilationUnitList() catch _(error) {
-                throw (error)
-            }
-
-            if ret == null
-                ret = Program(start, lexer.getPosition())
-
-            ret.compilationUnits = node
-        }
-
-        return ret
-    }
-
-    function parseCompilationUnitList() -> [CompilationUnit] throws ParserError {
-        mutable ret: [CompilationUnit]? = null
-
-        while true {
-            let node: CompilationUnit = parseCompilationUnit()
-                catch _ break
-            
-            if ret == null
-                ret = [CompilationUnit]
-                
-            ret.append(node)
-        }
-
-        return ret
-    }
-
     function parseCompilationUnit() -> CompilationUnit throws ParserError {
         mutable ret: CompilationUnit? = null
         {
