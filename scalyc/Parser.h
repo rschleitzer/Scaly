@@ -8,7 +8,10 @@ class Parser : public Object {
 public:
     Parser(String& text);
 
-    _Result<TopLevelDeclaration, ParserError> parseTopLevelDeclaration(_Page* _rp, _Page* _ep);
+    _Result<Program, ParserError> parseProgram(_Page* _rp, _Page* _ep);
+
+    _Result<Array<CompilationUnit>, ParserError> parseCompilationUnitList(_Page* _rp, _Page* _ep);
+    _Result<CompilationUnit, ParserError> parseCompilationUnit(_Page* _rp, _Page* _ep);
 
     _Result<Array<StatementWithSemicolon>, ParserError> parseStatementWithSemicolonList(_Page* _rp, _Page* _ep);
     _Result<StatementWithSemicolon, ParserError> parseStatementWithSemicolon(_Page* _rp, _Page* _ep);

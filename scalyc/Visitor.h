@@ -4,7 +4,8 @@
 using namespace scaly;
 namespace scalyc {
 
-class TopLevelDeclaration;
+class Program;
+class CompilationUnit;
 class StatementWithSemicolon;
 class Statement;
 class Declaration;
@@ -117,7 +118,8 @@ class Inheritance;
 
 class SyntaxVisitor {
 public:
-    virtual void VisitTopLevelDeclaration(TopLevelDeclaration&)= 0;
+    virtual void VisitProgram(Program&)= 0;
+    virtual void VisitCompilationUnit(CompilationUnit&)= 0;
     virtual void VisitStatementWithSemicolon(StatementWithSemicolon&)= 0;
     virtual void VisitStatement(Statement&)= 0;
     virtual void VisitDeclaration(Declaration&)= 0;

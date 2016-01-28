@@ -6,27 +6,81 @@ Parser::Parser(String& text)
 : lexer(text) {
 }
 
-_Result<TopLevelDeclaration, ParserError> Parser::parseTopLevelDeclaration(_Page* _rp, _Page* _ep) {
-    TopLevelDeclaration* ret = 0;
+_Result<Program, ParserError> Parser::parseProgram(_Page* _rp, _Page* _ep) {
+    Program* ret = 0;
+    {
+        Position start = lexer.getPreviousPosition();
+        String* name = lexer.parseIdentifier(_rp);
+        if ((name) && (isIdentifier(*name))) {
+            lexer.advance();
+            if (!ret)
+                ret = new(_rp) Program(start, lexer.getPosition());
+
+            ret->name = name;
+        }
+        else {
+            return _Result<Program, ParserError>(new(_ep) ParserError(*new(_ep) IdentifierExpected(start)));
+        }
+    }
+    {
+        Position start = lexer.getPreviousPosition();
+        _Result<Array<CompilationUnit>, ParserError> result = parseCompilationUnitList(_rp, _ep);
+        if (result.succeeded()) {
+            if (!ret)
+                ret = new(_rp) Program(start, lexer.getPosition());
+
+            ret->compilationUnits = result.getResult();
+        }
+        else {
+            return _Result<Program, ParserError>(result.getError());
+        }
+    }
+
+    return _Result<Program, ParserError>(ret);
+}
+
+_Result<Array<CompilationUnit>, ParserError> Parser::parseCompilationUnitList(_Page* _rp, _Page* _ep) {
+    // Make a region for the current block and get the Page
+    _Region _r; _Page* _p = _r.get();
+    Array<CompilationUnit>* ret = 0;
+
+    while (true) {
+        _Result<CompilationUnit, ParserError> nodeResult = parseCompilationUnit(_rp, _p);
+        if (nodeResult.succeeded()) {
+            if (!ret)
+                ret = new(_rp) Array<CompilationUnit>();
+
+            ret->append(nodeResult.getResult());
+        }
+        else {
+            break;
+        }
+    }
+
+    return _Result<Array<CompilationUnit>, ParserError>(ret);
+}
+
+_Result<CompilationUnit, ParserError> Parser::parseCompilationUnit(_Page* _rp, _Page* _ep) {
+    CompilationUnit* ret = 0;
     {
         Position start = lexer.getPreviousPosition();
         _Result<Array<StatementWithSemicolon>, ParserError> result = parseStatementWithSemicolonList(_rp, _ep);
         if (result.succeeded()) {
             if (!isAtEnd()) {
                 Position current = lexer.getPosition();
-                return _Result<TopLevelDeclaration, ParserError>(new(_ep) ParserError(*new(_ep) NotAtEnd(current)));
+                return _Result<CompilationUnit, ParserError>(new(_ep) ParserError(*new(_ep) NotAtEnd(current)));
             }
             if (!ret)
-                ret = new(_rp) TopLevelDeclaration(start, lexer.getPosition());
+                ret = new(_rp) CompilationUnit(start, lexer.getPosition());
 
             ret->statements = result.getResult();
         }
         else {
-            return _Result<TopLevelDeclaration, ParserError>(result.getError());
+            return _Result<CompilationUnit, ParserError>(result.getError());
         }
     }
 
-    return _Result<TopLevelDeclaration, ParserError>(ret);
+    return _Result<CompilationUnit, ParserError>(ret);
 }
 
 _Result<Array<StatementWithSemicolon>, ParserError> Parser::parseStatementWithSemicolonList(_Page* _rp, _Page* _ep) {

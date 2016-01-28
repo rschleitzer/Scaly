@@ -1,7 +1,11 @@
 <!DOCTYPE language SYSTEM "language.dtd">
 <language>
 
-    <syntax id = TopLevelDeclaration                top
+    <syntax id = Program
+        <content identifier                                     property = name
+        <content link = CompilationUnit             multiple    property = compilationUnits
+
+    <syntax id = CompilationUnit                    multiple    top
         <content link = StatementWithSemicolon      multiple    property = statements
 
     <syntax id = StatementWithSemicolon             multiple

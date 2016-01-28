@@ -12,9 +12,18 @@ public:
 };
 
 
-class TopLevelDeclaration : public SyntaxNode {
+class Program : public SyntaxNode {
 public:
-    TopLevelDeclaration(Position start, Position end);
+    Program(Position start, Position end);
+
+    virtual void Accept(SyntaxVisitor& visitor);
+    String* name;
+    Array<CompilationUnit>* compilationUnits;
+};
+
+class CompilationUnit : public SyntaxNode {
+public:
+    CompilationUnit(Position start, Position end);
 
     virtual void Accept(SyntaxVisitor& visitor);
     Array<StatementWithSemicolon>* statements;

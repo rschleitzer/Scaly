@@ -6,7 +6,8 @@ namespace scalyc {
 
 class CppVisitor : public SyntaxVisitor {
 public:
-    virtual void VisitTopLevelDeclaration(TopLevelDeclaration&);
+    virtual void VisitProgram(Program&);
+    virtual void VisitCompilationUnit(CompilationUnit&);
     virtual void VisitStatementWithSemicolon(StatementWithSemicolon&);
     virtual void VisitStatement(Statement&);
     virtual void VisitDeclaration(Declaration&);

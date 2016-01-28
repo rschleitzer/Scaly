@@ -6,12 +6,28 @@ SyntaxNode::SyntaxNode(Position start, Position end)
 : start(start), end(end) {
 }
 
-TopLevelDeclaration::TopLevelDeclaration(Position start, Position end)
+Program::Program(Position start, Position end)
 : SyntaxNode(start, end) {
 }
 
-void TopLevelDeclaration::Accept(SyntaxVisitor& visitor) {
-    visitor.VisitTopLevelDeclaration(*this);
+void Program::Accept(SyntaxVisitor& visitor) {
+    visitor.VisitProgram(*this);
+    {
+        CompilationUnit* node = 0;
+        size_t _alength = compilationUnits->length();
+        for (size_t _a = 0; _a < _alength; _a++) {
+            node = *(*compilationUnits)[_a];
+            node->Accept(visitor);
+        }
+    }
+}
+
+CompilationUnit::CompilationUnit(Position start, Position end)
+: SyntaxNode(start, end) {
+}
+
+void CompilationUnit::Accept(SyntaxVisitor& visitor) {
+    visitor.VisitCompilationUnit(*this);
     {
         StatementWithSemicolon* node = 0;
         size_t _alength = statements->length();

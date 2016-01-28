@@ -3,7 +3,10 @@ using namespace scaly;
 namespace scalyc {
 
 
-void MyVisitor::VisitTopLevelDeclaration(TopLevelDeclaration&) {
+void MyVisitor::VisitProgram(Program&) {
+}
+
+void MyVisitor::VisitCompilationUnit(CompilationUnit&) {
 }
 
 void MyVisitor::VisitStatementWithSemicolon(StatementWithSemicolon&) {

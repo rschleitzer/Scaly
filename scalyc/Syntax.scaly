@@ -9,14 +9,31 @@ class SyntaxNode {
     let end: Position
 }
 
-class TopLevelDeclaration : SyntaxNode {
+class Program : SyntaxNode {
 
     init(start: Position, end: Position) {
         super.init(start, end)
     }
 
     function Accept(mutable visitor: SyntaxVisitor) {
-        visitor.VisitTopLevelDeclaration(this)
+        visitor.VisitProgram(this)
+        for node in compilationUnits! {
+            node.Accept(visitor)
+        }
+    }
+
+    let name: String?
+    let compilationUnits: [CompilationUnit]?
+}
+
+class CompilationUnit : SyntaxNode {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    function Accept(mutable visitor: SyntaxVisitor) {
+        visitor.VisitCompilationUnit(this)
         for node in statements! {
             node.Accept(visitor)
         }

@@ -2,8 +2,10 @@
 using namespace scaly;
 namespace scalyc {
 
+void CppVisitor::VisitProgram(Program&) {
+}
 
-void CppVisitor::VisitTopLevelDeclaration(TopLevelDeclaration&) {
+void CppVisitor::VisitCompilationUnit(CompilationUnit&) {
 }
 
 void CppVisitor::VisitStatementWithSemicolon(StatementWithSemicolon&) {
