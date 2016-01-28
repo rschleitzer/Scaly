@@ -29,6 +29,7 @@
     <File Name="MyVisitor.cpp"/>
     <File Name="ParserError.cpp"/>
     <File Name="CompilerError.cpp"/>
+    <File Name="CppVisitor.cpp"/>
   </VirtualDirectory>
   <VirtualDirectory Name="include">
     <File Name="scalyc.h"/>
@@ -40,6 +41,7 @@
     <File Name="MyVisitor.h"/>
     <File Name="ParserError.h"/>
     <File Name="CompilerError.h"/>
+    <File Name="CppVisitor.h"/>
   </VirtualDirectory>
   <Settings Type="Executable">
     <GlobalSettings>

@@ -31,7 +31,7 @@ CompilerError* Compiler::compileFiles(_Page* _ep, Array<String>& files) {
             }
             else {
                 *(*topLevelDeclarations)[_index] = _compileUnitResult.getResult();
-                MyVisitor visitor;
+                CppVisitor visitor;
                 (**(*topLevelDeclarations)[_index]).Accept(visitor);
             }
         }
