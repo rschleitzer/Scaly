@@ -9,7 +9,7 @@ if (args.length() < 1) {
 }
 else {
     Options* options = 0;
-    _Result<Options, OptionsError> _result_options = Options::ParseArguments(_p, _p, args);
+    _Result<Options, OptionsError> _result_options = Options::parseArguments(_p, _p, args);
     if (_result_options.succeeded()) {
         options = _result_options.getResult();
     }

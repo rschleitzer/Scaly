@@ -6,7 +6,7 @@ Options::Options(Array<String>& files, String& outputName)
 :files(files), outputName(outputName) {}
 
 
-_Result<Options, OptionsError> Options::ParseArguments(_Page* _rp, _Page* _ep, Array<String>& args) {
+_Result<Options, OptionsError> Options::parseArguments(_Page* _rp, _Page* _ep, Array<String>& args) {
     if (!args.length())
         return _Result<Options, OptionsError>(new (_ep) OptionsError(noFilesToCompile));
     
