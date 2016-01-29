@@ -17,7 +17,7 @@ class Program : SyntaxNode {
 
     function Accept(mutable visitor: SyntaxVisitor) {
         visitor.VisitProgram(this)
-        for node in compilationUnits! {
+        foreach node in compilationUnits! {
             node.Accept(visitor)
         }
     }
@@ -34,7 +34,7 @@ class CompilationUnit : SyntaxNode {
 
     function Accept(mutable visitor: SyntaxVisitor) {
         visitor.VisitCompilationUnit(this)
-        for node in statements! {
+        foreach node in statements! {
             node.Accept(visitor)
         }
     }
@@ -90,7 +90,7 @@ class UseDeclaration : Declaration {
         visitor.VisitUseDeclaration(this)
         importModule!.Accept(visitor)
         if importExtensions != nil {
-            for node in importExtensions! {
+            foreach node in importExtensions! {
                 node.Accept(visitor)
             }
         }
@@ -179,7 +179,7 @@ class BindingInitializer : SyntaxNode {
         visitor.VisitBindingInitializer(this)
         initializer!.Accept(visitor)
         if additionalInitializers != nil {
-            for node in additionalInitializers! {
+            foreach node in additionalInitializers! {
                 node.Accept(visitor)
             }
         }
@@ -230,7 +230,7 @@ class FunctionDeclaration : Declaration {
     override function Accept(mutable visitor: SyntaxVisitor) {
         visitor.VisitFunctionDeclaration(this)
         if modifiers != nil {
-            for node in modifiers! {
+            foreach node in modifiers! {
                 node.Accept(visitor)
             }
         }
@@ -254,7 +254,7 @@ class InitializerDeclaration : Declaration {
     override function Accept(mutable visitor: SyntaxVisitor) {
         visitor.VisitInitializerDeclaration(this)
         if modifiers != nil {
-            for node in modifiers! {
+            foreach node in modifiers! {
                 node.Accept(visitor)
             }
         }
@@ -377,7 +377,7 @@ class ParameterClause : SyntaxNode {
     function Accept(mutable visitor: SyntaxVisitor) {
         visitor.VisitParameterClause(this)
         if parameters != nil {
-            for node in parameters! {
+            foreach node in parameters! {
                 node.Accept(visitor)
             }
         }
@@ -450,7 +450,7 @@ class EnumDeclaration : Declaration {
 
     override function Accept(mutable visitor: SyntaxVisitor) {
         visitor.VisitEnumDeclaration(this)
-        for node in members! {
+        foreach node in members! {
             node.Accept(visitor)
         }
     }
@@ -469,7 +469,7 @@ class EnumMember : SyntaxNode {
         visitor.VisitEnumMember(this)
         enumCase!.Accept(visitor)
         if additionalCases != nil {
-            for node in additionalCases! {
+            foreach node in additionalCases! {
                 node.Accept(visitor)
             }
         }
@@ -493,7 +493,7 @@ class TupleType : SyntaxNode {
         visitor.VisitTupleType(this)
         tupleType!.Accept(visitor)
         if additionalTypes != nil {
-            for node in additionalTypes! {
+            foreach node in additionalTypes! {
                 node.Accept(visitor)
             }
         }
@@ -559,7 +559,7 @@ class ClassDeclaration : Declaration {
             typeInheritanceClause!.Accept(visitor)
         }
         if members != nil {
-            for node in members! {
+            foreach node in members! {
                 node.Accept(visitor)
             }
         }
@@ -579,7 +579,7 @@ class GenericArgumentClause : SyntaxNode {
 
     function Accept(mutable visitor: SyntaxVisitor) {
         visitor.VisitGenericArgumentClause(this)
-        for node in genericParameters! {
+        foreach node in genericParameters! {
             node.Accept(visitor)
         }
     }
@@ -634,7 +634,7 @@ class CodeBlock : Expression {
 
     override function Accept(mutable visitor: SyntaxVisitor) {
         visitor.VisitCodeBlock(this)
-        for node in statements! {
+        foreach node in statements! {
             node.Accept(visitor)
         }
     }
@@ -652,7 +652,7 @@ class SimpleExpression : Expression {
         visitor.VisitSimpleExpression(this)
         prefixExpression!.Accept(visitor)
         if binaryOps != nil {
-            for node in binaryOps! {
+            foreach node in binaryOps! {
                 node.Accept(visitor)
             }
         }
@@ -687,7 +687,7 @@ class PostfixExpression : SyntaxNode {
         visitor.VisitPostfixExpression(this)
         primaryExpression!.Accept(visitor)
         if postfixes != nil {
-            for node in postfixes! {
+            foreach node in postfixes! {
                 node.Accept(visitor)
             }
         }
@@ -822,7 +822,7 @@ class PathItemCatchPattern : CatchPattern {
         visitor.VisitPathItemCatchPattern(this)
         catchCase!.Accept(visitor)
         if catchCaseExtensions != nil {
-            for node in catchCaseExtensions! {
+            foreach node in catchCaseExtensions! {
                 node.Accept(visitor)
             }
         }
@@ -867,7 +867,7 @@ class FunctionCall : Postfix {
         visitor.VisitFunctionCall(this)
         arguments!.Accept(visitor)
         if catchClauses != nil {
-            for node in catchClauses! {
+            foreach node in catchClauses! {
                 node.Accept(visitor)
             }
         }
@@ -899,7 +899,7 @@ class Subscript : Postfix {
 
     override function Accept(mutable visitor: SyntaxVisitor) {
         visitor.VisitSubscript(this)
-        for node in expressions! {
+        foreach node in expressions! {
             node.Accept(visitor)
         }
     }
@@ -968,7 +968,7 @@ class ParenthesizedExpression : PrimaryExpression {
     override function Accept(mutable visitor: SyntaxVisitor) {
         visitor.VisitParenthesizedExpression(this)
         if expressionElements != nil {
-            for node in expressionElements! {
+            foreach node in expressionElements! {
                 node.Accept(visitor)
             }
         }
@@ -1073,7 +1073,7 @@ class CurliedSwitchBody : SwitchBody {
 
     override function Accept(mutable visitor: SyntaxVisitor) {
         visitor.VisitCurliedSwitchBody(this)
-        for node in cases! {
+        foreach node in cases! {
             node.Accept(visitor)
         }
     }
@@ -1089,7 +1089,7 @@ class NakedSwitchBody : SwitchBody {
 
     override function Accept(mutable visitor: SyntaxVisitor) {
         visitor.VisitNakedSwitchBody(this)
-        for node in cases! {
+        foreach node in cases! {
             node.Accept(visitor)
         }
     }
@@ -1135,7 +1135,7 @@ class ItemCaseLabel : CaseLabel {
         visitor.VisitItemCaseLabel(this)
         pattern!.Accept(visitor)
         if additionalPatterns != nil {
-            for node in additionalPatterns! {
+            foreach node in additionalPatterns! {
                 node.Accept(visitor)
             }
         }
@@ -1159,14 +1159,14 @@ class CaseItem : SyntaxNode {
     let pattern: Pattern?
 }
 
-class ForInExpression : PrimaryExpression {
+class ForEachExpression : PrimaryExpression {
 
     init(start: Position, end: Position) {
         super.init(start, end)
     }
 
     override function Accept(mutable visitor: SyntaxVisitor) {
-        visitor.VisitForInExpression(this)
+        visitor.VisitForEachExpression(this)
         pattern!.Accept(visitor)
         if expression != nil {
             expression!.Accept(visitor)
@@ -1178,6 +1178,34 @@ class ForInExpression : PrimaryExpression {
 
     let pattern: Pattern?
     let expression: Expression?
+    let code: Expression?
+}
+
+class ForExpression : PrimaryExpression {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    override function Accept(mutable visitor: SyntaxVisitor) {
+        visitor.VisitForExpression(this)
+        if forInit != nil {
+            forInit!.Accept(visitor)
+        }
+        if forCheck != nil {
+            forCheck!.Accept(visitor)
+        }
+        if forNext != nil {
+            forNext!.Accept(visitor)
+        }
+        if code != nil {
+            code!.Accept(visitor)
+        }
+    }
+
+    let forInit: VariableDeclaration?
+    let forCheck: Expression?
+    let forNext: Expression?
     let code: Expression?
 }
 
@@ -1278,7 +1306,7 @@ class TuplePattern : Pattern {
 
     override function Accept(mutable visitor: SyntaxVisitor) {
         visitor.VisitTuplePattern(this)
-        for node in elements! {
+        foreach node in elements! {
             node.Accept(visitor)
         }
     }
@@ -1346,7 +1374,7 @@ class BlockCaseContent : CaseContent {
 
     override function Accept(mutable visitor: SyntaxVisitor) {
         visitor.VisitBlockCaseContent(this)
-        for node in statements! {
+        foreach node in statements! {
             node.Accept(visitor)
         }
     }
@@ -1377,7 +1405,7 @@ class InitializerCall : PrimaryExpression {
         typeToInitialize!.Accept(visitor)
         arguments!.Accept(visitor)
         if catchClauses != nil {
-            for node in catchClauses! {
+            foreach node in catchClauses! {
                 node.Accept(visitor)
             }
         }
@@ -1592,7 +1620,7 @@ class TypeIdentifier : Type {
             subType!.Accept(visitor)
         }
         if postfixes != nil {
-            for node in postfixes! {
+            foreach node in postfixes! {
                 node.Accept(visitor)
             }
         }
@@ -1639,7 +1667,7 @@ class ArrayType : Type {
         visitor.VisitArrayType(this)
         elementType!.Accept(visitor)
         if postfixes != nil {
-            for node in postfixes! {
+            foreach node in postfixes! {
                 node.Accept(visitor)
             }
         }
@@ -1670,7 +1698,7 @@ class TypeInheritanceClause : SyntaxNode {
     function Accept(mutable visitor: SyntaxVisitor) {
         visitor.VisitTypeInheritanceClause(this)
         if inheritances != nil {
-            for node in inheritances! {
+            foreach node in inheritances! {
                 node.Accept(visitor)
             }
         }

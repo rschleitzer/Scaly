@@ -2472,7 +2472,17 @@ _Result<PrimaryExpression, ParserError> Parser::parsePrimaryExpression(_Page* _r
     {
         // Make a region for the current block and get the Page
         _Region _r; _Page* _p = _r.get();
-        _Result<ForInExpression, ParserError> result = parseForInExpression(_rp, _p);
+        _Result<ForEachExpression, ParserError> result = parseForEachExpression(_rp, _p);
+        if (result.succeeded()) 
+            return _Result<PrimaryExpression, ParserError>(result.getResult());
+        else
+            errors.append(result.getError());
+    }
+
+    {
+        // Make a region for the current block and get the Page
+        _Region _r; _Page* _p = _r.get();
+        _Result<ForExpression, ParserError> result = parseForExpression(_rp, _p);
         if (result.succeeded()) 
             return _Result<PrimaryExpression, ParserError>(result.getResult());
         else
@@ -3035,18 +3045,18 @@ _Result<CaseItem, ParserError> Parser::parseCaseItem(_Page* _rp, _Page* _ep) {
     return _Result<CaseItem, ParserError>(ret);
 }
 
-_Result<ForInExpression, ParserError> Parser::parseForInExpression(_Page* _rp, _Page* _ep) {
-    ForInExpression* ret = 0;
+_Result<ForEachExpression, ParserError> Parser::parseForEachExpression(_Page* _rp, _Page* _ep) {
+    ForEachExpression* ret = 0;
     {
         Position start = lexer.getPreviousPosition();
-        bool success = lexer.parseKeyword(forKeyword);
+        bool success = lexer.parseKeyword(foreachKeyword);
         if (success) {
             lexer.advance();
             if (!ret)
-                ret = new(_rp) ForInExpression(start, lexer.getPosition());
+                ret = new(_rp) ForEachExpression(start, lexer.getPosition());
         }
         else {
-            return _Result<ForInExpression, ParserError>(new(_ep) ParserError(*new(_ep) KeywordExpected(start, *new(_ep) String(forKeyword))));
+            return _Result<ForEachExpression, ParserError>(new(_ep) ParserError(*new(_ep) KeywordExpected(start, *new(_ep) String(foreachKeyword))));
         }
     }
     {
@@ -3054,12 +3064,12 @@ _Result<ForInExpression, ParserError> Parser::parseForInExpression(_Page* _rp, _
         _Result<Pattern, ParserError> result = parsePattern(_rp, _ep);
         if (result.succeeded()) {
             if (!ret)
-                ret = new(_rp) ForInExpression(start, lexer.getPosition());
+                ret = new(_rp) ForEachExpression(start, lexer.getPosition());
 
             ret->pattern = result.getResult();
         }
         else {
-            return _Result<ForInExpression, ParserError>(result.getError());
+            return _Result<ForEachExpression, ParserError>(result.getError());
         }
     }
     {
@@ -3068,10 +3078,10 @@ _Result<ForInExpression, ParserError> Parser::parseForInExpression(_Page* _rp, _
         if (success) {
             lexer.advance();
             if (!ret)
-                ret = new(_rp) ForInExpression(start, lexer.getPosition());
+                ret = new(_rp) ForEachExpression(start, lexer.getPosition());
         }
         else {
-            return _Result<ForInExpression, ParserError>(new(_ep) ParserError(*new(_ep) KeywordExpected(start, *new(_ep) String(inKeyword))));
+            return _Result<ForEachExpression, ParserError>(new(_ep) ParserError(*new(_ep) KeywordExpected(start, *new(_ep) String(inKeyword))));
         }
     }
     {
@@ -3079,7 +3089,7 @@ _Result<ForInExpression, ParserError> Parser::parseForInExpression(_Page* _rp, _
         _Result<Expression, ParserError> result = parseExpression(_rp, _ep);
         if (result.succeeded()) {
             if (!ret)
-                ret = new(_rp) ForInExpression(start, lexer.getPosition());
+                ret = new(_rp) ForEachExpression(start, lexer.getPosition());
 
             ret->expression = result.getResult();
         }
@@ -3089,13 +3099,95 @@ _Result<ForInExpression, ParserError> Parser::parseForInExpression(_Page* _rp, _
         _Result<Expression, ParserError> result = parseExpression(_rp, _ep);
         if (result.succeeded()) {
             if (!ret)
-                ret = new(_rp) ForInExpression(start, lexer.getPosition());
+                ret = new(_rp) ForEachExpression(start, lexer.getPosition());
 
             ret->code = result.getResult();
         }
     }
 
-    return _Result<ForInExpression, ParserError>(ret);
+    return _Result<ForEachExpression, ParserError>(ret);
+}
+
+_Result<ForExpression, ParserError> Parser::parseForExpression(_Page* _rp, _Page* _ep) {
+    ForExpression* ret = 0;
+    {
+        Position start = lexer.getPreviousPosition();
+        bool success = lexer.parseKeyword(forKeyword);
+        if (success) {
+            lexer.advance();
+            if (!ret)
+                ret = new(_rp) ForExpression(start, lexer.getPosition());
+        }
+        else {
+            return _Result<ForExpression, ParserError>(new(_ep) ParserError(*new(_ep) KeywordExpected(start, *new(_ep) String(forKeyword))));
+        }
+    }
+    {
+        Position start = lexer.getPreviousPosition();
+        _Result<VariableDeclaration, ParserError> result = parseVariableDeclaration(_rp, _ep);
+        if (result.succeeded()) {
+            if (!ret)
+                ret = new(_rp) ForExpression(start, lexer.getPosition());
+
+            ret->forInit = result.getResult();
+        }
+    }
+    {
+        Position start = lexer.getPreviousPosition();
+        bool success = lexer.parsePunctuation(semicolon);
+        if (success) {
+            lexer.advance();
+            if (!ret)
+                ret = new(_rp) ForExpression(start, lexer.getPosition());
+        }
+        else {
+            return _Result<ForExpression, ParserError>(new(_ep) ParserError(*new(_ep) PunctuationExpected(start, *new(_ep) String(semicolon))));
+        }
+    }
+    {
+        Position start = lexer.getPreviousPosition();
+        _Result<Expression, ParserError> result = parseExpression(_rp, _ep);
+        if (result.succeeded()) {
+            if (!ret)
+                ret = new(_rp) ForExpression(start, lexer.getPosition());
+
+            ret->forCheck = result.getResult();
+        }
+    }
+    {
+        Position start = lexer.getPreviousPosition();
+        bool success = lexer.parsePunctuation(semicolon);
+        if (success) {
+            lexer.advance();
+            if (!ret)
+                ret = new(_rp) ForExpression(start, lexer.getPosition());
+        }
+        else {
+            return _Result<ForExpression, ParserError>(new(_ep) ParserError(*new(_ep) PunctuationExpected(start, *new(_ep) String(semicolon))));
+        }
+    }
+    {
+        Position start = lexer.getPreviousPosition();
+        _Result<Expression, ParserError> result = parseExpression(_rp, _ep);
+        if (result.succeeded()) {
+            if (!ret)
+                ret = new(_rp) ForExpression(start, lexer.getPosition());
+
+            ret->forNext = result.getResult();
+        }
+    }
+    {
+        Position start = lexer.getPreviousPosition();
+        _Result<Expression, ParserError> result = parseExpression(_rp, _ep);
+        if (result.succeeded()) {
+            if (!ret)
+                ret = new(_rp) ForExpression(start, lexer.getPosition());
+
+            ret->code = result.getResult();
+        }
+    }
+
+    return _Result<ForExpression, ParserError>(ret);
 }
 
 _Result<ReturnExpression, ParserError> Parser::parseReturnExpression(_Page* _rp, _Page* _ep) {
@@ -4229,6 +4321,9 @@ bool Parser::isIdentifier(String& id) {
         return false;
 
     if (id == catchKeyword)
+        return false;
+
+    if (id == foreachKeyword)
         return false;
 
     if (id == forKeyword)

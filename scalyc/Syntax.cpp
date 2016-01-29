@@ -877,15 +877,35 @@ void CaseItem::Accept(SyntaxVisitor& visitor) {
     pattern->Accept(visitor);
 }
 
-ForInExpression::ForInExpression(Position start, Position end)
+ForEachExpression::ForEachExpression(Position start, Position end)
 : PrimaryExpression(start, end) {
 }
 
-void ForInExpression::Accept(SyntaxVisitor& visitor) {
-    visitor.VisitForInExpression(*this);
+void ForEachExpression::Accept(SyntaxVisitor& visitor) {
+    visitor.VisitForEachExpression(*this);
     pattern->Accept(visitor);
     if (expression) {
         expression->Accept(visitor);
+    }
+    if (code) {
+        code->Accept(visitor);
+    }
+}
+
+ForExpression::ForExpression(Position start, Position end)
+: PrimaryExpression(start, end) {
+}
+
+void ForExpression::Accept(SyntaxVisitor& visitor) {
+    visitor.VisitForExpression(*this);
+    if (forInit) {
+        forInit->Accept(visitor);
+    }
+    if (forCheck) {
+        forCheck->Accept(visitor);
+    }
+    if (forNext) {
+        forNext->Accept(visitor);
     }
     if (code) {
         code->Accept(visitor);

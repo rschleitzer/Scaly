@@ -32,7 +32,7 @@ class "(id syntax-node)" : "(if (base syntax-node) (base syntax-node) "SyntaxNod
                         )"")
                         (if (multiple? content)
                             ($
-(if (optional? content) "    " "")"        for node in "(property content)"! {
+(if (optional? content) "    " "")"        foreach node in "(property content)"! {
 "(if (optional? content) "    " "")"            node.Accept(visitor)
 "(if (optional? content) "    " "")"        }
 "

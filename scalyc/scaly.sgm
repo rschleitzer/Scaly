@@ -275,7 +275,8 @@
         <content link = LiteralExpression
         <content link = IfExpression
         <content link = SwitchExpression
-        <content link = ForInExpression
+        <content link = ForEachExpression
+        <content link = ForExpression
         <content link = ParenthesizedExpression
         <content link = ReturnExpression
         <content link = ThrowExpression
@@ -340,11 +341,20 @@
         <content link = comma
         <content link = Pattern                                 property = pattern
 
-    <syntax id = ForInExpression                                base = PrimaryExpression
-        <content link = for
+    <syntax id = ForEachExpression                                base = PrimaryExpression
+        <content link = foreach
         <content link = Pattern                                 property = pattern
         <content link = in
         <content link = Expression                  optional    property = expression
+        <content link = Expression                  optional    property = code
+
+    <syntax id = ForExpression                                  base = PrimaryExpression
+        <content link = for
+        <content link = VariableDeclaration         optional    property = forInit
+        <content link = semicolon
+        <content link = Expression                  optional    property = forCheck
+        <content link = semicolon
+        <content link = Expression                  optional    property = forNext
         <content link = Expression                  optional    property = code
 
     <syntax id = ReturnExpression                               base = PrimaryExpression
@@ -499,6 +509,7 @@
     <keyword id = case
     <keyword id = default
     <keyword id = catch
+    <keyword id = foreach
     <keyword id = for
     <keyword id = in
     <keyword id = return

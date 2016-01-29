@@ -80,7 +80,8 @@ public:
     virtual void VisitCaseLabel(CaseLabel&);
     virtual void VisitItemCaseLabel(ItemCaseLabel&);
     virtual void VisitCaseItem(CaseItem&);
-    virtual void VisitForInExpression(ForInExpression&);
+    virtual void VisitForEachExpression(ForEachExpression&);
+    virtual void VisitForExpression(ForExpression&);
     virtual void VisitReturnExpression(ReturnExpression&);
     virtual void VisitThrowExpression(ThrowExpression&);
     virtual void VisitBreakExpression(BreakExpression&);

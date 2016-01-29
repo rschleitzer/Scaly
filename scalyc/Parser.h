@@ -172,7 +172,9 @@ public:
     _Result<Array<CaseItem>, ParserError> parseCaseItemList(_Page* _rp, _Page* _ep);
     _Result<CaseItem, ParserError> parseCaseItem(_Page* _rp, _Page* _ep);
 
-    _Result<ForInExpression, ParserError> parseForInExpression(_Page* _rp, _Page* _ep);
+    _Result<ForEachExpression, ParserError> parseForEachExpression(_Page* _rp, _Page* _ep);
+
+    _Result<ForExpression, ParserError> parseForExpression(_Page* _rp, _Page* _ep);
 
     _Result<ReturnExpression, ParserError> parseReturnExpression(_Page* _rp, _Page* _ep);
 
@@ -264,6 +266,7 @@ private:
     const char* caseKeyword = "case";
     const char* defaultKeyword = "default";
     const char* catchKeyword = "catch";
+    const char* foreachKeyword = "foreach";
     const char* forKeyword = "for";
     const char* inKeyword = "in";
     const char* returnKeyword = "return";

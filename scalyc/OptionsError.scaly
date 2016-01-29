@@ -1,5 +1,6 @@
 enum OptionsErrorCode {
     case invalidOption(String)
+    case unknownOption(String)
     case noOutputOption
     case noFilesToCompile
 }

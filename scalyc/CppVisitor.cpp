@@ -224,7 +224,10 @@ void CppVisitor::VisitItemCaseLabel(ItemCaseLabel&) {
 void CppVisitor::VisitCaseItem(CaseItem&) {
 }
 
-void CppVisitor::VisitForInExpression(ForInExpression&) {
+void CppVisitor::VisitForEachExpression(ForEachExpression&) {
+}
+
+void CppVisitor::VisitForExpression(ForExpression&) {
 }
 
 void CppVisitor::VisitReturnExpression(ReturnExpression&) {

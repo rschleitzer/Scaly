@@ -623,13 +623,24 @@ public:
     Pattern* pattern;
 };
 
-class ForInExpression : public PrimaryExpression {
+class ForEachExpression : public PrimaryExpression {
 public:
-    ForInExpression(Position start, Position end);
+    ForEachExpression(Position start, Position end);
 
     virtual void Accept(SyntaxVisitor& visitor);
     Pattern* pattern;
     Expression* expression;
+    Expression* code;
+};
+
+class ForExpression : public PrimaryExpression {
+public:
+    ForExpression(Position start, Position end);
+
+    virtual void Accept(SyntaxVisitor& visitor);
+    VariableDeclaration* forInit;
+    Expression* forCheck;
+    Expression* forNext;
     Expression* code;
 };
 
