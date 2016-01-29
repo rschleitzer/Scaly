@@ -1,6 +1,6 @@
 class Compiler {
-    static function compileFiles(files: [String]) throws CompilerError {
-
+    static function compileFiles(options: Options) throws CompilerError {
+        let files: [String] = options.files
         let sources: [String] = map(files, File.readToString)
             catch _ (file, error) throw UnableToReadFile(file, error)
             
@@ -8,7 +8,7 @@ class Compiler {
             catch _ (_, error) throw SyntaxError(error)
 
         mutable program: Program = Program()
-        program.name = String("scalyc")
+        program.name = options.outputName
         program.compilationUnits = compilationUnits
         
         mutable visitor: CppVisitor = CppVisitor()

@@ -4,10 +4,7 @@ namespace scalyc {
 
 CompilerError* Compiler::compileFiles(_Page* _ep, Options& options) {
     _Region _region; _Page* _p = _region.get();
-
     Array<String>& files = options.files;
-    
-    // Map the files array to a file contents array
     Array<String>* sources = 0;
     {
         size_t _length = files.length();
@@ -21,7 +18,6 @@ CompilerError* Compiler::compileFiles(_Page* _ep, Options& options) {
         }
     }
     
-    // Map compilationUnits to a tld array
     Array<CompilationUnit>* compilationUnits = 0;
     {
         size_t _length = sources->length();
@@ -38,7 +34,7 @@ CompilerError* Compiler::compileFiles(_Page* _ep, Options& options) {
     }
     
     Program& program = *new(_p) Program();
-    program.name = new(_p) String("scalyc");
+    program.name = &options.outputName;
     program.compilationUnits = compilationUnits;
     
     CppVisitor visitor;

@@ -1,0 +1,18 @@
+class Options {
+    init(files: [String], outputName: String) {
+        files = files
+        outputName = outputName
+    }
+
+    static function ParseArguments(args: [String]) -> Options throws OptionsError {
+        if args.length == 0
+            throw noFilesToCompile
+
+        outputName = String("scalyc")
+        return Options(args, outputName)
+    }
+    
+    let files: [String]
+    let outputName: String
+}
+
