@@ -77,12 +77,12 @@
 
     <syntax id = Modifier                  multiple abstract
         <content link = Override
-        <content link = Static
+        <content link = StaticWord
         
-    <syntax id = Override                                         base = Modifier
+    <syntax id = Override                                       base = Modifier
         <content link = override
         
-    <syntax id = Static                                         base = Modifier
+    <syntax id = StaticWord                                     base = Modifier
         <content link = static
         
     <syntax id = FunctionName                       abstract
@@ -421,7 +421,7 @@
     <syntax id = ThisExpression                     abstract    base = PrimaryExpression
         <content link = ThisDot
         <content link = ThisSubscript
-        <content link = This
+        <content link = ThisWord
 
     <syntax id = ThisDot                                        base = ThisExpression
         <content link = this
@@ -432,7 +432,7 @@
         <content link = this
         <content link = Subscript                               property = subscript
 
-    <syntax id = This                                           base = ThisExpression
+    <syntax id = ThisWord                                       base = ThisExpression
         <content link = this
         
     <syntax id = CommonThisMember                   abstract

@@ -597,7 +597,7 @@ class Parser {
         }
 
         {
-            let node: Static = parseStatic() catch _(error) {
+            let node: StaticWord = parseStaticWord() catch _(error) {
                 errors.append(error)
                 break
             }
@@ -623,8 +623,8 @@ class Parser {
         return ret
     }
 
-    function parseStatic() -> Static throws ParserError {
-        mutable ret: Static? = null
+    function parseStaticWord() -> StaticWord throws ParserError {
+        mutable ret: StaticWord? = null
         {
             let start: Position = lexer.getPosition()
             let success: bool = lexer.parseKeyword(staticKeyword)
@@ -632,7 +632,7 @@ class Parser {
                 lexer.advance()
 
             if ret == null
-                ret = Static(start, lexer.getPosition())
+                ret = StaticWord(start, lexer.getPosition())
         }
 
         return ret
@@ -3197,7 +3197,7 @@ class Parser {
         }
 
         {
-            let node: This = parseThis() catch _(error) {
+            let node: ThisWord = parseThisWord() catch _(error) {
                 errors.append(error)
                 break
             }
@@ -3269,8 +3269,8 @@ class Parser {
         return ret
     }
 
-    function parseThis() -> This throws ParserError {
-        mutable ret: This? = null
+    function parseThisWord() -> ThisWord throws ParserError {
+        mutable ret: ThisWord? = null
         {
             let start: Position = lexer.getPosition()
             let success: bool = lexer.parseKeyword(thisKeyword)
@@ -3278,7 +3278,7 @@ class Parser {
                 lexer.advance()
 
             if ret == null
-                ret = This(start, lexer.getPosition())
+                ret = ThisWord(start, lexer.getPosition())
         }
 
         return ret

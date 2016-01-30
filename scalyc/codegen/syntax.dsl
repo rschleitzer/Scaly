@@ -20,7 +20,7 @@ class "(id syntax-node)" : "(if (base syntax-node) (base syntax-node) "SyntaxNod
     }
 
     "(if (base syntax-node) "override " "")"function Accept(mutable visitor: SyntaxVisitor) {
-        visitor.Visit"(id syntax-node)"(this)
+        visitor.Open"(id syntax-node)"(this)
 "
         (apply-to-children-of syntax-node (lambda (content)
             (case (type content)
@@ -49,7 +49,8 @@ class "(id syntax-node)" : "(if (base syntax-node) (base syntax-node) "SyntaxNod
                 (else "")
             )
         ))
-"    }
+"        visitor.Close"(id syntax-node)"(this)
+    }
 
 "
         (apply-to-children-of syntax-node (lambda (content) ($
@@ -145,7 +146,7 @@ SyntaxNode::SyntaxNode(Position start, Position end)
 }
 
 void "(id syntax-node)"::Accept(SyntaxVisitor& visitor) {
-    visitor.Visit"(id syntax-node)"(*this);
+    visitor.Open"(id syntax-node)"(*this);
 "
         (apply-to-children-of syntax-node (lambda (content)
             (case (type content)
@@ -179,7 +180,8 @@ void "(id syntax-node)"::Accept(SyntaxVisitor& visitor) {
                 (else "")
             )
         ))
-"}
+"    visitor.Close"(id syntax-node)"(*this);
+}
 "
    )))
 "

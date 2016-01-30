@@ -16,10 +16,11 @@ class Program : SyntaxNode {
     }
 
     function Accept(mutable visitor: SyntaxVisitor) {
-        visitor.VisitProgram(this)
+        visitor.OpenProgram(this)
         for node in compilationUnits! {
             node.Accept(visitor)
         }
+        visitor.CloseProgram(this)
     }
 
     let name: String?
@@ -33,10 +34,11 @@ class CompilationUnit : SyntaxNode {
     }
 
     function Accept(mutable visitor: SyntaxVisitor) {
-        visitor.VisitCompilationUnit(this)
+        visitor.OpenCompilationUnit(this)
         for node in statements! {
             node.Accept(visitor)
         }
+        visitor.CloseCompilationUnit(this)
     }
 
     let statements: [StatementWithSemicolon]?
@@ -49,8 +51,9 @@ class StatementWithSemicolon : SyntaxNode {
     }
 
     function Accept(mutable visitor: SyntaxVisitor) {
-        visitor.VisitStatementWithSemicolon(this)
+        visitor.OpenStatementWithSemicolon(this)
         statement!.Accept(visitor)
+        visitor.CloseStatementWithSemicolon(this)
     }
 
     let statement: Statement?
@@ -63,7 +66,8 @@ class Statement : SyntaxNode {
     }
 
     function Accept(mutable visitor: SyntaxVisitor) {
-        visitor.VisitStatement(this)
+        visitor.OpenStatement(this)
+        visitor.CloseStatement(this)
     }
 
 }
@@ -75,7 +79,8 @@ class Declaration : Statement {
     }
 
     override function Accept(mutable visitor: SyntaxVisitor) {
-        visitor.VisitDeclaration(this)
+        visitor.OpenDeclaration(this)
+        visitor.CloseDeclaration(this)
     }
 
 }
@@ -87,13 +92,14 @@ class UseDeclaration : Declaration {
     }
 
     override function Accept(mutable visitor: SyntaxVisitor) {
-        visitor.VisitUseDeclaration(this)
+        visitor.OpenUseDeclaration(this)
         importModule!.Accept(visitor)
         if importExtensions != nil {
             for node in importExtensions! {
                 node.Accept(visitor)
             }
         }
+        visitor.CloseUseDeclaration(this)
     }
 
     let importModule: PathItem?
@@ -107,8 +113,9 @@ class PathIdentifier : SyntaxNode {
     }
 
     function Accept(mutable visitor: SyntaxVisitor) {
-        visitor.VisitPathIdentifier(this)
+        visitor.OpenPathIdentifier(this)
         extension!.Accept(visitor)
+        visitor.ClosePathIdentifier(this)
     }
 
     let extension: PathItem?
@@ -121,7 +128,8 @@ class PathItem : SyntaxNode {
     }
 
     function Accept(mutable visitor: SyntaxVisitor) {
-        visitor.VisitPathItem(this)
+        visitor.OpenPathItem(this)
+        visitor.ClosePathItem(this)
     }
 
     let name: String?
@@ -134,8 +142,9 @@ class Initializer : SyntaxNode {
     }
 
     function Accept(mutable visitor: SyntaxVisitor) {
-        visitor.VisitInitializer(this)
+        visitor.OpenInitializer(this)
         expression!.Accept(visitor)
+        visitor.CloseInitializer(this)
     }
 
     let expression: Expression?
@@ -148,8 +157,9 @@ class ConstantDeclaration : Declaration {
     }
 
     override function Accept(mutable visitor: SyntaxVisitor) {
-        visitor.VisitConstantDeclaration(this)
+        visitor.OpenConstantDeclaration(this)
         initializer!.Accept(visitor)
+        visitor.CloseConstantDeclaration(this)
     }
 
     let initializer: BindingInitializer?
@@ -162,8 +172,9 @@ class VariableDeclaration : Declaration {
     }
 
     override function Accept(mutable visitor: SyntaxVisitor) {
-        visitor.VisitVariableDeclaration(this)
+        visitor.OpenVariableDeclaration(this)
         initializer!.Accept(visitor)
+        visitor.CloseVariableDeclaration(this)
     }
 
     let initializer: BindingInitializer?
@@ -176,13 +187,14 @@ class BindingInitializer : SyntaxNode {
     }
 
     function Accept(mutable visitor: SyntaxVisitor) {
-        visitor.VisitBindingInitializer(this)
+        visitor.OpenBindingInitializer(this)
         initializer!.Accept(visitor)
         if additionalInitializers != nil {
             for node in additionalInitializers! {
                 node.Accept(visitor)
             }
         }
+        visitor.CloseBindingInitializer(this)
     }
 
     let initializer: PatternInitializer?
@@ -196,11 +208,12 @@ class PatternInitializer : SyntaxNode {
     }
 
     function Accept(mutable visitor: SyntaxVisitor) {
-        visitor.VisitPatternInitializer(this)
+        visitor.OpenPatternInitializer(this)
         pattern!.Accept(visitor)
         if initializer != nil {
             initializer!.Accept(visitor)
         }
+        visitor.ClosePatternInitializer(this)
     }
 
     let pattern: Pattern?
@@ -214,8 +227,9 @@ class AdditionalInitializer : SyntaxNode {
     }
 
     function Accept(mutable visitor: SyntaxVisitor) {
-        visitor.VisitAdditionalInitializer(this)
+        visitor.OpenAdditionalInitializer(this)
         pattern!.Accept(visitor)
+        visitor.CloseAdditionalInitializer(this)
     }
 
     let pattern: PatternInitializer?
@@ -228,7 +242,7 @@ class FunctionDeclaration : Declaration {
     }
 
     override function Accept(mutable visitor: SyntaxVisitor) {
-        visitor.VisitFunctionDeclaration(this)
+        visitor.OpenFunctionDeclaration(this)
         if modifiers != nil {
             for node in modifiers! {
                 node.Accept(visitor)
@@ -237,6 +251,7 @@ class FunctionDeclaration : Declaration {
         name!.Accept(visitor)
         signature!.Accept(visitor)
         body!.Accept(visitor)
+        visitor.CloseFunctionDeclaration(this)
     }
 
     let modifiers: [Modifier]?
@@ -252,7 +267,7 @@ class InitializerDeclaration : Declaration {
     }
 
     override function Accept(mutable visitor: SyntaxVisitor) {
-        visitor.VisitInitializerDeclaration(this)
+        visitor.OpenInitializerDeclaration(this)
         if modifiers != nil {
             for node in modifiers! {
                 node.Accept(visitor)
@@ -263,6 +278,7 @@ class InitializerDeclaration : Declaration {
             throwsClause!.Accept(visitor)
         }
         body!.Accept(visitor)
+        visitor.CloseInitializerDeclaration(this)
     }
 
     let modifiers: [Modifier]?
@@ -278,7 +294,8 @@ class Modifier : SyntaxNode {
     }
 
     function Accept(mutable visitor: SyntaxVisitor) {
-        visitor.VisitModifier(this)
+        visitor.OpenModifier(this)
+        visitor.CloseModifier(this)
     }
 
 }
@@ -290,19 +307,21 @@ class Override : Modifier {
     }
 
     override function Accept(mutable visitor: SyntaxVisitor) {
-        visitor.VisitOverride(this)
+        visitor.OpenOverride(this)
+        visitor.CloseOverride(this)
     }
 
 }
 
-class Static : Modifier {
+class StaticWord : Modifier {
 
     init(start: Position, end: Position) {
         super.init(start, end)
     }
 
     override function Accept(mutable visitor: SyntaxVisitor) {
-        visitor.VisitStatic(this)
+        visitor.OpenStaticWord(this)
+        visitor.CloseStaticWord(this)
     }
 
 }
@@ -314,7 +333,8 @@ class FunctionName : SyntaxNode {
     }
 
     function Accept(mutable visitor: SyntaxVisitor) {
-        visitor.VisitFunctionName(this)
+        visitor.OpenFunctionName(this)
+        visitor.CloseFunctionName(this)
     }
 
 }
@@ -326,7 +346,8 @@ class IdentifierFunctionName : FunctionName {
     }
 
     override function Accept(mutable visitor: SyntaxVisitor) {
-        visitor.VisitIdentifierFunctionName(this)
+        visitor.OpenIdentifierFunctionName(this)
+        visitor.CloseIdentifierFunctionName(this)
     }
 
     let name: String?
@@ -339,7 +360,7 @@ class FunctionSignature : SyntaxNode {
     }
 
     function Accept(mutable visitor: SyntaxVisitor) {
-        visitor.VisitFunctionSignature(this)
+        visitor.OpenFunctionSignature(this)
         parameterClause!.Accept(visitor)
         if result != nil {
             result!.Accept(visitor)
@@ -347,6 +368,7 @@ class FunctionSignature : SyntaxNode {
         if throwsClause != nil {
             throwsClause!.Accept(visitor)
         }
+        visitor.CloseFunctionSignature(this)
     }
 
     let parameterClause: ParameterClause?
@@ -361,8 +383,9 @@ class FunctionResult : SyntaxNode {
     }
 
     function Accept(mutable visitor: SyntaxVisitor) {
-        visitor.VisitFunctionResult(this)
+        visitor.OpenFunctionResult(this)
         resultType!.Accept(visitor)
+        visitor.CloseFunctionResult(this)
     }
 
     let resultType: Type?
@@ -375,12 +398,13 @@ class ParameterClause : SyntaxNode {
     }
 
     function Accept(mutable visitor: SyntaxVisitor) {
-        visitor.VisitParameterClause(this)
+        visitor.OpenParameterClause(this)
         if parameters != nil {
             for node in parameters! {
                 node.Accept(visitor)
             }
         }
+        visitor.CloseParameterClause(this)
     }
 
     let parameters: [Parameter]?
@@ -393,7 +417,8 @@ class Parameter : SyntaxNode {
     }
 
     function Accept(mutable visitor: SyntaxVisitor) {
-        visitor.VisitParameter(this)
+        visitor.OpenParameter(this)
+        visitor.CloseParameter(this)
     }
 
 }
@@ -405,8 +430,9 @@ class ConstParameter : Parameter {
     }
 
     override function Accept(mutable visitor: SyntaxVisitor) {
-        visitor.VisitConstParameter(this)
+        visitor.OpenConstParameter(this)
         parameterType!.Accept(visitor)
+        visitor.CloseConstParameter(this)
     }
 
     let parameterName: String?
@@ -420,8 +446,9 @@ class VarParameter : Parameter {
     }
 
     override function Accept(mutable visitor: SyntaxVisitor) {
-        visitor.VisitVarParameter(this)
+        visitor.OpenVarParameter(this)
         parameterType!.Accept(visitor)
+        visitor.CloseVarParameter(this)
     }
 
     let parameterName: String?
@@ -435,8 +462,9 @@ class ThrowsClause : SyntaxNode {
     }
 
     function Accept(mutable visitor: SyntaxVisitor) {
-        visitor.VisitThrowsClause(this)
+        visitor.OpenThrowsClause(this)
         throwsType!.Accept(visitor)
+        visitor.CloseThrowsClause(this)
     }
 
     let throwsType: Type?
@@ -449,10 +477,11 @@ class EnumDeclaration : Declaration {
     }
 
     override function Accept(mutable visitor: SyntaxVisitor) {
-        visitor.VisitEnumDeclaration(this)
+        visitor.OpenEnumDeclaration(this)
         for node in members! {
             node.Accept(visitor)
         }
+        visitor.CloseEnumDeclaration(this)
     }
 
     let name: String?
@@ -466,7 +495,7 @@ class EnumMember : SyntaxNode {
     }
 
     function Accept(mutable visitor: SyntaxVisitor) {
-        visitor.VisitEnumMember(this)
+        visitor.OpenEnumMember(this)
         enumCase!.Accept(visitor)
         if additionalCases != nil {
             for node in additionalCases! {
@@ -476,6 +505,7 @@ class EnumMember : SyntaxNode {
         if tupleType != nil {
             tupleType!.Accept(visitor)
         }
+        visitor.CloseEnumMember(this)
     }
 
     let enumCase: EnumCase?
@@ -490,13 +520,14 @@ class TupleType : SyntaxNode {
     }
 
     function Accept(mutable visitor: SyntaxVisitor) {
-        visitor.VisitTupleType(this)
+        visitor.OpenTupleType(this)
         tupleType!.Accept(visitor)
         if additionalTypes != nil {
             for node in additionalTypes! {
                 node.Accept(visitor)
             }
         }
+        visitor.CloseTupleType(this)
     }
 
     let tupleType: Type?
@@ -510,8 +541,9 @@ class AdditionalType : SyntaxNode {
     }
 
     function Accept(mutable visitor: SyntaxVisitor) {
-        visitor.VisitAdditionalType(this)
+        visitor.OpenAdditionalType(this)
         enumCase!.Accept(visitor)
+        visitor.CloseAdditionalType(this)
     }
 
     let enumCase: Type?
@@ -524,7 +556,8 @@ class EnumCase : SyntaxNode {
     }
 
     function Accept(mutable visitor: SyntaxVisitor) {
-        visitor.VisitEnumCase(this)
+        visitor.OpenEnumCase(this)
+        visitor.CloseEnumCase(this)
     }
 
     let name: String?
@@ -537,8 +570,9 @@ class AdditionalCase : SyntaxNode {
     }
 
     function Accept(mutable visitor: SyntaxVisitor) {
-        visitor.VisitAdditionalCase(this)
+        visitor.OpenAdditionalCase(this)
         enumCase!.Accept(visitor)
+        visitor.CloseAdditionalCase(this)
     }
 
     let enumCase: EnumCase?
@@ -551,7 +585,7 @@ class ClassDeclaration : Declaration {
     }
 
     override function Accept(mutable visitor: SyntaxVisitor) {
-        visitor.VisitClassDeclaration(this)
+        visitor.OpenClassDeclaration(this)
         if genericArgumentClause != nil {
             genericArgumentClause!.Accept(visitor)
         }
@@ -563,6 +597,7 @@ class ClassDeclaration : Declaration {
                 node.Accept(visitor)
             }
         }
+        visitor.CloseClassDeclaration(this)
     }
 
     let name: String?
@@ -578,10 +613,11 @@ class GenericArgumentClause : SyntaxNode {
     }
 
     function Accept(mutable visitor: SyntaxVisitor) {
-        visitor.VisitGenericArgumentClause(this)
+        visitor.OpenGenericArgumentClause(this)
         for node in genericParameters! {
             node.Accept(visitor)
         }
+        visitor.CloseGenericArgumentClause(this)
     }
 
     let genericParameters: [GenericParameter]?
@@ -594,7 +630,8 @@ class GenericParameter : SyntaxNode {
     }
 
     function Accept(mutable visitor: SyntaxVisitor) {
-        visitor.VisitGenericParameter(this)
+        visitor.OpenGenericParameter(this)
+        visitor.CloseGenericParameter(this)
     }
 
     let typeName: String?
@@ -607,8 +644,9 @@ class ClassMember : SyntaxNode {
     }
 
     function Accept(mutable visitor: SyntaxVisitor) {
-        visitor.VisitClassMember(this)
+        visitor.OpenClassMember(this)
         declaration!.Accept(visitor)
+        visitor.CloseClassMember(this)
     }
 
     let declaration: Declaration?
@@ -621,7 +659,8 @@ class Expression : Statement {
     }
 
     override function Accept(mutable visitor: SyntaxVisitor) {
-        visitor.VisitExpression(this)
+        visitor.OpenExpression(this)
+        visitor.CloseExpression(this)
     }
 
 }
@@ -633,10 +672,11 @@ class CodeBlock : Expression {
     }
 
     override function Accept(mutable visitor: SyntaxVisitor) {
-        visitor.VisitCodeBlock(this)
+        visitor.OpenCodeBlock(this)
         for node in statements! {
             node.Accept(visitor)
         }
+        visitor.CloseCodeBlock(this)
     }
 
     let statements: [StatementWithSemicolon]?
@@ -649,13 +689,14 @@ class SimpleExpression : Expression {
     }
 
     override function Accept(mutable visitor: SyntaxVisitor) {
-        visitor.VisitSimpleExpression(this)
+        visitor.OpenSimpleExpression(this)
         prefixExpression!.Accept(visitor)
         if binaryOps != nil {
             for node in binaryOps! {
                 node.Accept(visitor)
             }
         }
+        visitor.CloseSimpleExpression(this)
     }
 
     let prefixExpression: PrefixExpression?
@@ -669,8 +710,9 @@ class PrefixExpression : SyntaxNode {
     }
 
     function Accept(mutable visitor: SyntaxVisitor) {
-        visitor.VisitPrefixExpression(this)
+        visitor.OpenPrefixExpression(this)
         expression!.Accept(visitor)
+        visitor.ClosePrefixExpression(this)
     }
 
     let prefixOperator: String?
@@ -684,13 +726,14 @@ class PostfixExpression : SyntaxNode {
     }
 
     function Accept(mutable visitor: SyntaxVisitor) {
-        visitor.VisitPostfixExpression(this)
+        visitor.OpenPostfixExpression(this)
         primaryExpression!.Accept(visitor)
         if postfixes != nil {
             for node in postfixes! {
                 node.Accept(visitor)
             }
         }
+        visitor.ClosePostfixExpression(this)
     }
 
     let primaryExpression: PrimaryExpression?
@@ -704,7 +747,8 @@ class BinaryOp : SyntaxNode {
     }
 
     function Accept(mutable visitor: SyntaxVisitor) {
-        visitor.VisitBinaryOp(this)
+        visitor.OpenBinaryOp(this)
+        visitor.CloseBinaryOp(this)
     }
 
 }
@@ -716,8 +760,9 @@ class BinaryOperation : BinaryOp {
     }
 
     override function Accept(mutable visitor: SyntaxVisitor) {
-        visitor.VisitBinaryOperation(this)
+        visitor.OpenBinaryOperation(this)
         expression!.Accept(visitor)
+        visitor.CloseBinaryOperation(this)
     }
 
     let binaryOperator: String?
@@ -731,8 +776,9 @@ class Assignment : BinaryOp {
     }
 
     override function Accept(mutable visitor: SyntaxVisitor) {
-        visitor.VisitAssignment(this)
+        visitor.OpenAssignment(this)
         expression!.Accept(visitor)
+        visitor.CloseAssignment(this)
     }
 
     let expression: PrefixExpression?
@@ -745,8 +791,9 @@ class TypeQuery : BinaryOp {
     }
 
     override function Accept(mutable visitor: SyntaxVisitor) {
-        visitor.VisitTypeQuery(this)
+        visitor.OpenTypeQuery(this)
         objectType!.Accept(visitor)
+        visitor.CloseTypeQuery(this)
     }
 
     let objectType: Type?
@@ -759,8 +806,9 @@ class TypeCast : BinaryOp {
     }
 
     override function Accept(mutable visitor: SyntaxVisitor) {
-        visitor.VisitTypeCast(this)
+        visitor.OpenTypeCast(this)
         objectType!.Accept(visitor)
+        visitor.CloseTypeCast(this)
     }
 
     let objectType: Type?
@@ -773,12 +821,13 @@ class CatchClause : SyntaxNode {
     }
 
     function Accept(mutable visitor: SyntaxVisitor) {
-        visitor.VisitCatchClause(this)
+        visitor.OpenCatchClause(this)
         catchPattern!.Accept(visitor)
         if bindingPattern != nil {
             bindingPattern!.Accept(visitor)
         }
         expression!.Accept(visitor)
+        visitor.CloseCatchClause(this)
     }
 
     let catchPattern: CatchPattern?
@@ -793,7 +842,8 @@ class CatchPattern : SyntaxNode {
     }
 
     function Accept(mutable visitor: SyntaxVisitor) {
-        visitor.VisitCatchPattern(this)
+        visitor.OpenCatchPattern(this)
+        visitor.CloseCatchPattern(this)
     }
 
 }
@@ -805,8 +855,9 @@ class WildCardCatchPattern : CatchPattern {
     }
 
     override function Accept(mutable visitor: SyntaxVisitor) {
-        visitor.VisitWildCardCatchPattern(this)
+        visitor.OpenWildCardCatchPattern(this)
         pattern!.Accept(visitor)
+        visitor.CloseWildCardCatchPattern(this)
     }
 
     let pattern: WildcardPattern?
@@ -819,13 +870,14 @@ class PathItemCatchPattern : CatchPattern {
     }
 
     override function Accept(mutable visitor: SyntaxVisitor) {
-        visitor.VisitPathItemCatchPattern(this)
+        visitor.OpenPathItemCatchPattern(this)
         catchCase!.Accept(visitor)
         if catchCaseExtensions != nil {
             for node in catchCaseExtensions! {
                 node.Accept(visitor)
             }
         }
+        visitor.ClosePathItemCatchPattern(this)
     }
 
     let catchCase: PathItem?
@@ -839,7 +891,8 @@ class Postfix : SyntaxNode {
     }
 
     function Accept(mutable visitor: SyntaxVisitor) {
-        visitor.VisitPostfix(this)
+        visitor.OpenPostfix(this)
+        visitor.ClosePostfix(this)
     }
 
 }
@@ -851,7 +904,8 @@ class OperatorPostfix : Postfix {
     }
 
     override function Accept(mutable visitor: SyntaxVisitor) {
-        visitor.VisitOperatorPostfix(this)
+        visitor.OpenOperatorPostfix(this)
+        visitor.CloseOperatorPostfix(this)
     }
 
     let postfixOperator: String?
@@ -864,13 +918,14 @@ class FunctionCall : Postfix {
     }
 
     override function Accept(mutable visitor: SyntaxVisitor) {
-        visitor.VisitFunctionCall(this)
+        visitor.OpenFunctionCall(this)
         arguments!.Accept(visitor)
         if catchClauses != nil {
             for node in catchClauses! {
                 node.Accept(visitor)
             }
         }
+        visitor.CloseFunctionCall(this)
     }
 
     let arguments: ParenthesizedExpression?
@@ -884,8 +939,9 @@ class ExplicitMemberExpression : Postfix {
     }
 
     override function Accept(mutable visitor: SyntaxVisitor) {
-        visitor.VisitExplicitMemberExpression(this)
+        visitor.OpenExplicitMemberExpression(this)
         memberPostfix!.Accept(visitor)
+        visitor.CloseExplicitMemberExpression(this)
     }
 
     let memberPostfix: MemberPostfix?
@@ -898,10 +954,11 @@ class Subscript : Postfix {
     }
 
     override function Accept(mutable visitor: SyntaxVisitor) {
-        visitor.VisitSubscript(this)
+        visitor.OpenSubscript(this)
         for node in expressions! {
             node.Accept(visitor)
         }
+        visitor.CloseSubscript(this)
     }
 
     let expressions: [ExpressionElement]?
@@ -914,8 +971,9 @@ class ExpressionElement : SyntaxNode {
     }
 
     function Accept(mutable visitor: SyntaxVisitor) {
-        visitor.VisitExpressionElement(this)
+        visitor.OpenExpressionElement(this)
         expression!.Accept(visitor)
+        visitor.CloseExpressionElement(this)
     }
 
     let expression: Expression?
@@ -928,7 +986,8 @@ class MemberPostfix : ExplicitMemberExpression {
     }
 
     override function Accept(mutable visitor: SyntaxVisitor) {
-        visitor.VisitMemberPostfix(this)
+        visitor.OpenMemberPostfix(this)
+        visitor.CloseMemberPostfix(this)
     }
 
 }
@@ -940,8 +999,9 @@ class NamedMemberPostfix : MemberPostfix {
     }
 
     override function Accept(mutable visitor: SyntaxVisitor) {
-        visitor.VisitNamedMemberPostfix(this)
+        visitor.OpenNamedMemberPostfix(this)
         identifier!.Accept(visitor)
+        visitor.CloseNamedMemberPostfix(this)
     }
 
     let identifier: IdentifierExpression?
@@ -954,7 +1014,8 @@ class PrimaryExpression : SyntaxNode {
     }
 
     function Accept(mutable visitor: SyntaxVisitor) {
-        visitor.VisitPrimaryExpression(this)
+        visitor.OpenPrimaryExpression(this)
+        visitor.ClosePrimaryExpression(this)
     }
 
 }
@@ -966,12 +1027,13 @@ class ParenthesizedExpression : PrimaryExpression {
     }
 
     override function Accept(mutable visitor: SyntaxVisitor) {
-        visitor.VisitParenthesizedExpression(this)
+        visitor.OpenParenthesizedExpression(this)
         if expressionElements != nil {
             for node in expressionElements! {
                 node.Accept(visitor)
             }
         }
+        visitor.CloseParenthesizedExpression(this)
     }
 
     let expressionElements: [ExpressionElement]?
@@ -984,7 +1046,8 @@ class LiteralExpression : PrimaryExpression {
     }
 
     override function Accept(mutable visitor: SyntaxVisitor) {
-        visitor.VisitLiteralExpression(this)
+        visitor.OpenLiteralExpression(this)
+        visitor.CloseLiteralExpression(this)
     }
 
     let literal: Literal?
@@ -997,7 +1060,8 @@ class IdentifierExpression : PrimaryExpression {
     }
 
     override function Accept(mutable visitor: SyntaxVisitor) {
-        visitor.VisitIdentifierExpression(this)
+        visitor.OpenIdentifierExpression(this)
+        visitor.CloseIdentifierExpression(this)
     }
 
     let name: String?
@@ -1010,12 +1074,13 @@ class IfExpression : PrimaryExpression {
     }
 
     override function Accept(mutable visitor: SyntaxVisitor) {
-        visitor.VisitIfExpression(this)
+        visitor.OpenIfExpression(this)
         condition!.Accept(visitor)
         consequent!.Accept(visitor)
         if elseClause != nil {
             elseClause!.Accept(visitor)
         }
+        visitor.CloseIfExpression(this)
     }
 
     let condition: Expression?
@@ -1030,8 +1095,9 @@ class ElseClause : SyntaxNode {
     }
 
     function Accept(mutable visitor: SyntaxVisitor) {
-        visitor.VisitElseClause(this)
+        visitor.OpenElseClause(this)
         alternative!.Accept(visitor)
+        visitor.CloseElseClause(this)
     }
 
     let alternative: Expression?
@@ -1044,9 +1110,10 @@ class SwitchExpression : PrimaryExpression {
     }
 
     override function Accept(mutable visitor: SyntaxVisitor) {
-        visitor.VisitSwitchExpression(this)
+        visitor.OpenSwitchExpression(this)
         expression!.Accept(visitor)
         body!.Accept(visitor)
+        visitor.CloseSwitchExpression(this)
     }
 
     let expression: Expression?
@@ -1060,7 +1127,8 @@ class SwitchBody : SyntaxNode {
     }
 
     function Accept(mutable visitor: SyntaxVisitor) {
-        visitor.VisitSwitchBody(this)
+        visitor.OpenSwitchBody(this)
+        visitor.CloseSwitchBody(this)
     }
 
 }
@@ -1072,10 +1140,11 @@ class CurliedSwitchBody : SwitchBody {
     }
 
     override function Accept(mutable visitor: SyntaxVisitor) {
-        visitor.VisitCurliedSwitchBody(this)
+        visitor.OpenCurliedSwitchBody(this)
         for node in cases! {
             node.Accept(visitor)
         }
+        visitor.CloseCurliedSwitchBody(this)
     }
 
     let cases: [SwitchCase]?
@@ -1088,10 +1157,11 @@ class NakedSwitchBody : SwitchBody {
     }
 
     override function Accept(mutable visitor: SyntaxVisitor) {
-        visitor.VisitNakedSwitchBody(this)
+        visitor.OpenNakedSwitchBody(this)
         for node in cases! {
             node.Accept(visitor)
         }
+        visitor.CloseNakedSwitchBody(this)
     }
 
     let cases: [SwitchCase]?
@@ -1104,9 +1174,10 @@ class SwitchCase : SyntaxNode {
     }
 
     function Accept(mutable visitor: SyntaxVisitor) {
-        visitor.VisitSwitchCase(this)
+        visitor.OpenSwitchCase(this)
         label!.Accept(visitor)
         content!.Accept(visitor)
+        visitor.CloseSwitchCase(this)
     }
 
     let label: CaseLabel?
@@ -1120,7 +1191,8 @@ class CaseLabel : SyntaxNode {
     }
 
     function Accept(mutable visitor: SyntaxVisitor) {
-        visitor.VisitCaseLabel(this)
+        visitor.OpenCaseLabel(this)
+        visitor.CloseCaseLabel(this)
     }
 
 }
@@ -1132,13 +1204,14 @@ class ItemCaseLabel : CaseLabel {
     }
 
     override function Accept(mutable visitor: SyntaxVisitor) {
-        visitor.VisitItemCaseLabel(this)
+        visitor.OpenItemCaseLabel(this)
         pattern!.Accept(visitor)
         if additionalPatterns != nil {
             for node in additionalPatterns! {
                 node.Accept(visitor)
             }
         }
+        visitor.CloseItemCaseLabel(this)
     }
 
     let pattern: Pattern?
@@ -1152,8 +1225,9 @@ class CaseItem : SyntaxNode {
     }
 
     function Accept(mutable visitor: SyntaxVisitor) {
-        visitor.VisitCaseItem(this)
+        visitor.OpenCaseItem(this)
         pattern!.Accept(visitor)
+        visitor.CloseCaseItem(this)
     }
 
     let pattern: Pattern?
@@ -1166,8 +1240,9 @@ class ForExpression : PrimaryExpression {
     }
 
     override function Accept(mutable visitor: SyntaxVisitor) {
-        visitor.VisitForExpression(this)
+        visitor.OpenForExpression(this)
         loop!.Accept(visitor)
+        visitor.CloseForExpression(this)
     }
 
     let loop: ForLoop?
@@ -1180,7 +1255,8 @@ class ForLoop : SyntaxNode {
     }
 
     function Accept(mutable visitor: SyntaxVisitor) {
-        visitor.VisitForLoop(this)
+        visitor.OpenForLoop(this)
+        visitor.CloseForLoop(this)
     }
 
 }
@@ -1192,10 +1268,11 @@ class ForEach : ForLoop {
     }
 
     override function Accept(mutable visitor: SyntaxVisitor) {
-        visitor.VisitForEach(this)
+        visitor.OpenForEach(this)
         pattern!.Accept(visitor)
         expression!.Accept(visitor)
         code!.Accept(visitor)
+        visitor.CloseForEach(this)
     }
 
     let pattern: Pattern?
@@ -1210,7 +1287,7 @@ class PlainFor : ForLoop {
     }
 
     override function Accept(mutable visitor: SyntaxVisitor) {
-        visitor.VisitPlainFor(this)
+        visitor.OpenPlainFor(this)
         if forInit != nil {
             forInit!.Accept(visitor)
         }
@@ -1219,6 +1296,7 @@ class PlainFor : ForLoop {
         }
         forNext!.Accept(visitor)
         code!.Accept(visitor)
+        visitor.ClosePlainFor(this)
     }
 
     let forInit: VariableDeclaration?
@@ -1234,10 +1312,11 @@ class ReturnExpression : PrimaryExpression {
     }
 
     override function Accept(mutable visitor: SyntaxVisitor) {
-        visitor.VisitReturnExpression(this)
+        visitor.OpenReturnExpression(this)
         if expression != nil {
             expression!.Accept(visitor)
         }
+        visitor.CloseReturnExpression(this)
     }
 
     let expression: Expression?
@@ -1250,10 +1329,11 @@ class ThrowExpression : PrimaryExpression {
     }
 
     override function Accept(mutable visitor: SyntaxVisitor) {
-        visitor.VisitThrowExpression(this)
+        visitor.OpenThrowExpression(this)
         if expression != nil {
             expression!.Accept(visitor)
         }
+        visitor.CloseThrowExpression(this)
     }
 
     let expression: Expression?
@@ -1266,10 +1346,11 @@ class BreakExpression : PrimaryExpression {
     }
 
     override function Accept(mutable visitor: SyntaxVisitor) {
-        visitor.VisitBreakExpression(this)
+        visitor.OpenBreakExpression(this)
         if expression != nil {
             expression!.Accept(visitor)
         }
+        visitor.CloseBreakExpression(this)
     }
 
     let expression: Expression?
@@ -1282,7 +1363,8 @@ class Pattern : SyntaxNode {
     }
 
     function Accept(mutable visitor: SyntaxVisitor) {
-        visitor.VisitPattern(this)
+        visitor.OpenPattern(this)
+        visitor.ClosePattern(this)
     }
 
 }
@@ -1294,7 +1376,8 @@ class WildcardPattern : Pattern {
     }
 
     override function Accept(mutable visitor: SyntaxVisitor) {
-        visitor.VisitWildcardPattern(this)
+        visitor.OpenWildcardPattern(this)
+        visitor.CloseWildcardPattern(this)
     }
 
 }
@@ -1306,10 +1389,11 @@ class IdentifierPattern : Pattern {
     }
 
     override function Accept(mutable visitor: SyntaxVisitor) {
-        visitor.VisitIdentifierPattern(this)
+        visitor.OpenIdentifierPattern(this)
         if typeAnnotation != nil {
             typeAnnotation!.Accept(visitor)
         }
+        visitor.CloseIdentifierPattern(this)
     }
 
     let identifier: String?
@@ -1323,10 +1407,11 @@ class TuplePattern : Pattern {
     }
 
     override function Accept(mutable visitor: SyntaxVisitor) {
-        visitor.VisitTuplePattern(this)
+        visitor.OpenTuplePattern(this)
         for node in elements! {
             node.Accept(visitor)
         }
+        visitor.CloseTuplePattern(this)
     }
 
     let elements: [TuplePatternElement]?
@@ -1339,8 +1424,9 @@ class TuplePatternElement : SyntaxNode {
     }
 
     function Accept(mutable visitor: SyntaxVisitor) {
-        visitor.VisitTuplePatternElement(this)
+        visitor.OpenTuplePatternElement(this)
         pattern!.Accept(visitor)
+        visitor.CloseTuplePatternElement(this)
     }
 
     let pattern: Pattern?
@@ -1353,8 +1439,9 @@ class ExpressionPattern : Pattern {
     }
 
     override function Accept(mutable visitor: SyntaxVisitor) {
-        visitor.VisitExpressionPattern(this)
+        visitor.OpenExpressionPattern(this)
         expression!.Accept(visitor)
+        visitor.CloseExpressionPattern(this)
     }
 
     let expression: Expression?
@@ -1367,7 +1454,8 @@ class DefaultCaseLabel : CaseLabel {
     }
 
     override function Accept(mutable visitor: SyntaxVisitor) {
-        visitor.VisitDefaultCaseLabel(this)
+        visitor.OpenDefaultCaseLabel(this)
+        visitor.CloseDefaultCaseLabel(this)
     }
 
 }
@@ -1379,7 +1467,8 @@ class CaseContent : SyntaxNode {
     }
 
     function Accept(mutable visitor: SyntaxVisitor) {
-        visitor.VisitCaseContent(this)
+        visitor.OpenCaseContent(this)
+        visitor.CloseCaseContent(this)
     }
 
 }
@@ -1391,10 +1480,11 @@ class BlockCaseContent : CaseContent {
     }
 
     override function Accept(mutable visitor: SyntaxVisitor) {
-        visitor.VisitBlockCaseContent(this)
+        visitor.OpenBlockCaseContent(this)
         for node in statements! {
             node.Accept(visitor)
         }
+        visitor.CloseBlockCaseContent(this)
     }
 
     let statements: [StatementWithSemicolon]?
@@ -1407,7 +1497,8 @@ class EmptyCaseContent : CaseContent {
     }
 
     override function Accept(mutable visitor: SyntaxVisitor) {
-        visitor.VisitEmptyCaseContent(this)
+        visitor.OpenEmptyCaseContent(this)
+        visitor.CloseEmptyCaseContent(this)
     }
 
 }
@@ -1419,7 +1510,7 @@ class InitializerCall : PrimaryExpression {
     }
 
     override function Accept(mutable visitor: SyntaxVisitor) {
-        visitor.VisitInitializerCall(this)
+        visitor.OpenInitializerCall(this)
         typeToInitialize!.Accept(visitor)
         arguments!.Accept(visitor)
         if catchClauses != nil {
@@ -1427,6 +1518,7 @@ class InitializerCall : PrimaryExpression {
                 node.Accept(visitor)
             }
         }
+        visitor.CloseInitializerCall(this)
     }
 
     let typeToInitialize: Type?
@@ -1441,7 +1533,8 @@ class ThisExpression : PrimaryExpression {
     }
 
     override function Accept(mutable visitor: SyntaxVisitor) {
-        visitor.VisitThisExpression(this)
+        visitor.OpenThisExpression(this)
+        visitor.CloseThisExpression(this)
     }
 
 }
@@ -1453,8 +1546,9 @@ class ThisDot : ThisExpression {
     }
 
     override function Accept(mutable visitor: SyntaxVisitor) {
-        visitor.VisitThisDot(this)
+        visitor.OpenThisDot(this)
         member!.Accept(visitor)
+        visitor.CloseThisDot(this)
     }
 
     let member: CommonThisMember?
@@ -1467,21 +1561,23 @@ class ThisSubscript : ThisExpression {
     }
 
     override function Accept(mutable visitor: SyntaxVisitor) {
-        visitor.VisitThisSubscript(this)
+        visitor.OpenThisSubscript(this)
         subscript!.Accept(visitor)
+        visitor.CloseThisSubscript(this)
     }
 
     let subscript: Subscript?
 }
 
-class This : ThisExpression {
+class ThisWord : ThisExpression {
 
     init(start: Position, end: Position) {
         super.init(start, end)
     }
 
     override function Accept(mutable visitor: SyntaxVisitor) {
-        visitor.VisitThis(this)
+        visitor.OpenThisWord(this)
+        visitor.CloseThisWord(this)
     }
 
 }
@@ -1493,7 +1589,8 @@ class CommonThisMember : SyntaxNode {
     }
 
     function Accept(mutable visitor: SyntaxVisitor) {
-        visitor.VisitCommonThisMember(this)
+        visitor.OpenCommonThisMember(this)
+        visitor.CloseCommonThisMember(this)
     }
 
 }
@@ -1505,7 +1602,8 @@ class ThisInit : CommonThisMember {
     }
 
     override function Accept(mutable visitor: SyntaxVisitor) {
-        visitor.VisitThisInit(this)
+        visitor.OpenThisInit(this)
+        visitor.CloseThisInit(this)
     }
 
 }
@@ -1517,7 +1615,8 @@ class ThisMember : CommonThisMember {
     }
 
     override function Accept(mutable visitor: SyntaxVisitor) {
-        visitor.VisitThisMember(this)
+        visitor.OpenThisMember(this)
+        visitor.CloseThisMember(this)
     }
 
     let name: String?
@@ -1530,7 +1629,8 @@ class SuperExpression : PrimaryExpression {
     }
 
     override function Accept(mutable visitor: SyntaxVisitor) {
-        visitor.VisitSuperExpression(this)
+        visitor.OpenSuperExpression(this)
+        visitor.CloseSuperExpression(this)
     }
 
 }
@@ -1542,8 +1642,9 @@ class SuperDot : SuperExpression {
     }
 
     override function Accept(mutable visitor: SyntaxVisitor) {
-        visitor.VisitSuperDot(this)
+        visitor.OpenSuperDot(this)
         member!.Accept(visitor)
+        visitor.CloseSuperDot(this)
     }
 
     let member: CommonSuperMember?
@@ -1556,8 +1657,9 @@ class SuperSubscript : SuperExpression {
     }
 
     override function Accept(mutable visitor: SyntaxVisitor) {
-        visitor.VisitSuperSubscript(this)
+        visitor.OpenSuperSubscript(this)
         subscript!.Accept(visitor)
+        visitor.CloseSuperSubscript(this)
     }
 
     let subscript: Subscript?
@@ -1570,7 +1672,8 @@ class CommonSuperMember : SyntaxNode {
     }
 
     function Accept(mutable visitor: SyntaxVisitor) {
-        visitor.VisitCommonSuperMember(this)
+        visitor.OpenCommonSuperMember(this)
+        visitor.CloseCommonSuperMember(this)
     }
 
 }
@@ -1582,7 +1685,8 @@ class SuperInit : CommonSuperMember {
     }
 
     override function Accept(mutable visitor: SyntaxVisitor) {
-        visitor.VisitSuperInit(this)
+        visitor.OpenSuperInit(this)
+        visitor.CloseSuperInit(this)
     }
 
 }
@@ -1594,7 +1698,8 @@ class SuperMember : CommonSuperMember {
     }
 
     override function Accept(mutable visitor: SyntaxVisitor) {
-        visitor.VisitSuperMember(this)
+        visitor.OpenSuperMember(this)
+        visitor.CloseSuperMember(this)
     }
 
     let name: String?
@@ -1607,7 +1712,8 @@ class Type : SyntaxNode {
     }
 
     function Accept(mutable visitor: SyntaxVisitor) {
-        visitor.VisitType(this)
+        visitor.OpenType(this)
+        visitor.CloseType(this)
     }
 
 }
@@ -1619,8 +1725,9 @@ class TypeAnnotation : SyntaxNode {
     }
 
     function Accept(mutable visitor: SyntaxVisitor) {
-        visitor.VisitTypeAnnotation(this)
+        visitor.OpenTypeAnnotation(this)
         typeAnnotation!.Accept(visitor)
+        visitor.CloseTypeAnnotation(this)
     }
 
     let typeAnnotation: Type?
@@ -1633,7 +1740,7 @@ class TypeIdentifier : Type {
     }
 
     override function Accept(mutable visitor: SyntaxVisitor) {
-        visitor.VisitTypeIdentifier(this)
+        visitor.OpenTypeIdentifier(this)
         if subType != nil {
             subType!.Accept(visitor)
         }
@@ -1642,6 +1749,7 @@ class TypeIdentifier : Type {
                 node.Accept(visitor)
             }
         }
+        visitor.CloseTypeIdentifier(this)
     }
 
     let name: String?
@@ -1656,8 +1764,9 @@ class SubtypeIdentifier : SyntaxNode {
     }
 
     function Accept(mutable visitor: SyntaxVisitor) {
-        visitor.VisitSubtypeIdentifier(this)
+        visitor.OpenSubtypeIdentifier(this)
         typeIdentifier!.Accept(visitor)
+        visitor.CloseSubtypeIdentifier(this)
     }
 
     let typeIdentifier: TypeIdentifier?
@@ -1670,7 +1779,8 @@ class TypePostfix : SyntaxNode {
     }
 
     function Accept(mutable visitor: SyntaxVisitor) {
-        visitor.VisitTypePostfix(this)
+        visitor.OpenTypePostfix(this)
+        visitor.CloseTypePostfix(this)
     }
 
 }
@@ -1682,13 +1792,14 @@ class ArrayType : Type {
     }
 
     override function Accept(mutable visitor: SyntaxVisitor) {
-        visitor.VisitArrayType(this)
+        visitor.OpenArrayType(this)
         elementType!.Accept(visitor)
         if postfixes != nil {
             for node in postfixes! {
                 node.Accept(visitor)
             }
         }
+        visitor.CloseArrayType(this)
     }
 
     let elementType: Type?
@@ -1702,7 +1813,8 @@ class OptionalType : TypePostfix {
     }
 
     override function Accept(mutable visitor: SyntaxVisitor) {
-        visitor.VisitOptionalType(this)
+        visitor.OpenOptionalType(this)
+        visitor.CloseOptionalType(this)
     }
 
 }
@@ -1714,12 +1826,13 @@ class TypeInheritanceClause : SyntaxNode {
     }
 
     function Accept(mutable visitor: SyntaxVisitor) {
-        visitor.VisitTypeInheritanceClause(this)
+        visitor.OpenTypeInheritanceClause(this)
         if inheritances != nil {
             for node in inheritances! {
                 node.Accept(visitor)
             }
         }
+        visitor.CloseTypeInheritanceClause(this)
     }
 
     let inheritances: [Inheritance]?
@@ -1732,8 +1845,9 @@ class Inheritance : SyntaxNode {
     }
 
     function Accept(mutable visitor: SyntaxVisitor) {
-        visitor.VisitInheritance(this)
+        visitor.OpenInheritance(this)
         name!.Accept(visitor)
+        visitor.CloseInheritance(this)
     }
 
     let name: TypeIdentifier?

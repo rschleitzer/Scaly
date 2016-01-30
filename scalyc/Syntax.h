@@ -162,9 +162,9 @@ public:
     virtual void Accept(SyntaxVisitor& visitor);
 };
 
-class Static : public Modifier {
+class StaticWord : public Modifier {
 public:
-    Static(Position start, Position end);
+    StaticWord(Position start, Position end);
 
     virtual void Accept(SyntaxVisitor& visitor);
 };
@@ -792,9 +792,9 @@ public:
     Subscript* subscript;
 };
 
-class This : public ThisExpression {
+class ThisWord : public ThisExpression {
 public:
-    This(Position start, Position end);
+    ThisWord(Position start, Position end);
 
     virtual void Accept(SyntaxVisitor& visitor);
 };

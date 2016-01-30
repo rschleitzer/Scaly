@@ -688,7 +688,7 @@ _Result<Modifier, ParserError> Parser::parseModifier(_Page* _rp, _Page* _ep) {
     {
         // Make a region for the current block and get the Page
         _Region _r; _Page* _p = _r.get();
-        _Result<Static, ParserError> result = parseStatic(_rp, _p);
+        _Result<StaticWord, ParserError> result = parseStaticWord(_rp, _p);
         if (result.succeeded()) 
             return _Result<Modifier, ParserError>(result.getResult());
         else
@@ -716,22 +716,22 @@ _Result<Override, ParserError> Parser::parseOverride(_Page* _rp, _Page* _ep) {
     return _Result<Override, ParserError>(ret);
 }
 
-_Result<Static, ParserError> Parser::parseStatic(_Page* _rp, _Page* _ep) {
-    Static* ret = 0;
+_Result<StaticWord, ParserError> Parser::parseStaticWord(_Page* _rp, _Page* _ep) {
+    StaticWord* ret = 0;
     {
         Position start = lexer.getPreviousPosition();
         bool success = lexer.parseKeyword(staticKeyword);
         if (success) {
             lexer.advance();
             if (!ret)
-                ret = new(_rp) Static(start, lexer.getPosition());
+                ret = new(_rp) StaticWord(start, lexer.getPosition());
         }
         else {
-            return _Result<Static, ParserError>(new(_ep) ParserError(*new(_ep) KeywordExpected(start, *new(_ep) String(staticKeyword))));
+            return _Result<StaticWord, ParserError>(new(_ep) ParserError(*new(_ep) KeywordExpected(start, *new(_ep) String(staticKeyword))));
         }
     }
 
-    return _Result<Static, ParserError>(ret);
+    return _Result<StaticWord, ParserError>(ret);
 }
 
 _Result<FunctionName, ParserError> Parser::parseFunctionName(_Page* _rp, _Page* _ep) {
@@ -3679,7 +3679,7 @@ _Result<ThisExpression, ParserError> Parser::parseThisExpression(_Page* _rp, _Pa
     {
         // Make a region for the current block and get the Page
         _Region _r; _Page* _p = _r.get();
-        _Result<This, ParserError> result = parseThis(_rp, _p);
+        _Result<ThisWord, ParserError> result = parseThisWord(_rp, _p);
         if (result.succeeded()) 
             return _Result<ThisExpression, ParserError>(result.getResult());
         else
@@ -3763,22 +3763,22 @@ _Result<ThisSubscript, ParserError> Parser::parseThisSubscript(_Page* _rp, _Page
     return _Result<ThisSubscript, ParserError>(ret);
 }
 
-_Result<This, ParserError> Parser::parseThis(_Page* _rp, _Page* _ep) {
-    This* ret = 0;
+_Result<ThisWord, ParserError> Parser::parseThisWord(_Page* _rp, _Page* _ep) {
+    ThisWord* ret = 0;
     {
         Position start = lexer.getPreviousPosition();
         bool success = lexer.parseKeyword(thisKeyword);
         if (success) {
             lexer.advance();
             if (!ret)
-                ret = new(_rp) This(start, lexer.getPosition());
+                ret = new(_rp) ThisWord(start, lexer.getPosition());
         }
         else {
-            return _Result<This, ParserError>(new(_ep) ParserError(*new(_ep) KeywordExpected(start, *new(_ep) String(thisKeyword))));
+            return _Result<ThisWord, ParserError>(new(_ep) ParserError(*new(_ep) KeywordExpected(start, *new(_ep) String(thisKeyword))));
         }
     }
 
-    return _Result<This, ParserError>(ret);
+    return _Result<ThisWord, ParserError>(ret);
 }
 
 _Result<CommonThisMember, ParserError> Parser::parseCommonThisMember(_Page* _rp, _Page* _ep) {

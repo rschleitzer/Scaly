@@ -3,346 +3,688 @@ using namespace scaly;
 namespace scalyc {
 
 
-void MyVisitor::VisitProgram(Program&) {
+void MyVisitor::OpenProgram(Program& program) {
 }
 
-void MyVisitor::VisitCompilationUnit(CompilationUnit&) {
+void MyVisitor::CloseProgram(Program& program) {
 }
 
-void MyVisitor::VisitStatementWithSemicolon(StatementWithSemicolon&) {
+void MyVisitor::OpenCompilationUnit(CompilationUnit& compilationUnit) {
 }
 
-void MyVisitor::VisitStatement(Statement&) {
+void MyVisitor::CloseCompilationUnit(CompilationUnit& compilationUnit) {
 }
 
-void MyVisitor::VisitDeclaration(Declaration&) {
+void MyVisitor::OpenStatementWithSemicolon(StatementWithSemicolon& statementWithSemicolon) {
 }
 
-void MyVisitor::VisitUseDeclaration(UseDeclaration&) {
+void MyVisitor::CloseStatementWithSemicolon(StatementWithSemicolon& statementWithSemicolon) {
 }
 
-void MyVisitor::VisitPathIdentifier(PathIdentifier&) {
+void MyVisitor::OpenStatement(Statement& statement) {
 }
 
-void MyVisitor::VisitPathItem(PathItem&) {
+void MyVisitor::CloseStatement(Statement& statement) {
 }
 
-void MyVisitor::VisitInitializer(Initializer&) {
+void MyVisitor::OpenDeclaration(Declaration& declaration) {
 }
 
-void MyVisitor::VisitConstantDeclaration(ConstantDeclaration&) {
+void MyVisitor::CloseDeclaration(Declaration& declaration) {
 }
 
-void MyVisitor::VisitVariableDeclaration(VariableDeclaration&) {
+void MyVisitor::OpenUseDeclaration(UseDeclaration& useDeclaration) {
 }
 
-void MyVisitor::VisitBindingInitializer(BindingInitializer&) {
+void MyVisitor::CloseUseDeclaration(UseDeclaration& useDeclaration) {
 }
 
-void MyVisitor::VisitPatternInitializer(PatternInitializer&) {
+void MyVisitor::OpenPathIdentifier(PathIdentifier& pathIdentifier) {
 }
 
-void MyVisitor::VisitAdditionalInitializer(AdditionalInitializer&) {
+void MyVisitor::ClosePathIdentifier(PathIdentifier& pathIdentifier) {
 }
 
-void MyVisitor::VisitFunctionDeclaration(FunctionDeclaration&) {
+void MyVisitor::OpenPathItem(PathItem& pathItem) {
 }
 
-void MyVisitor::VisitInitializerDeclaration(InitializerDeclaration&) {
+void MyVisitor::ClosePathItem(PathItem& pathItem) {
 }
 
-void MyVisitor::VisitModifier(Modifier&) {
+void MyVisitor::OpenInitializer(Initializer& initializer) {
 }
 
-void MyVisitor::VisitOverride(Override&) {
+void MyVisitor::CloseInitializer(Initializer& initializer) {
 }
 
-void MyVisitor::VisitStatic(Static&) {
+void MyVisitor::OpenConstantDeclaration(ConstantDeclaration& constantDeclaration) {
 }
 
-void MyVisitor::VisitFunctionName(FunctionName&) {
+void MyVisitor::CloseConstantDeclaration(ConstantDeclaration& constantDeclaration) {
 }
 
-void MyVisitor::VisitIdentifierFunctionName(IdentifierFunctionName&) {
+void MyVisitor::OpenVariableDeclaration(VariableDeclaration& variableDeclaration) {
 }
 
-void MyVisitor::VisitFunctionSignature(FunctionSignature&) {
+void MyVisitor::CloseVariableDeclaration(VariableDeclaration& variableDeclaration) {
 }
 
-void MyVisitor::VisitFunctionResult(FunctionResult&) {
+void MyVisitor::OpenBindingInitializer(BindingInitializer& bindingInitializer) {
 }
 
-void MyVisitor::VisitParameterClause(ParameterClause&) {
+void MyVisitor::CloseBindingInitializer(BindingInitializer& bindingInitializer) {
 }
 
-void MyVisitor::VisitParameter(Parameter&) {
+void MyVisitor::OpenPatternInitializer(PatternInitializer& patternInitializer) {
 }
 
-void MyVisitor::VisitConstParameter(ConstParameter&) {
+void MyVisitor::ClosePatternInitializer(PatternInitializer& patternInitializer) {
 }
 
-void MyVisitor::VisitVarParameter(VarParameter&) {
+void MyVisitor::OpenAdditionalInitializer(AdditionalInitializer& additionalInitializer) {
 }
 
-void MyVisitor::VisitThrowsClause(ThrowsClause&) {
+void MyVisitor::CloseAdditionalInitializer(AdditionalInitializer& additionalInitializer) {
 }
 
-void MyVisitor::VisitEnumDeclaration(EnumDeclaration&) {
+void MyVisitor::OpenFunctionDeclaration(FunctionDeclaration& functionDeclaration) {
 }
 
-void MyVisitor::VisitEnumMember(EnumMember&) {
+void MyVisitor::CloseFunctionDeclaration(FunctionDeclaration& functionDeclaration) {
 }
 
-void MyVisitor::VisitTupleType(TupleType&) {
+void MyVisitor::OpenInitializerDeclaration(InitializerDeclaration& initializerDeclaration) {
 }
 
-void MyVisitor::VisitAdditionalType(AdditionalType&) {
+void MyVisitor::CloseInitializerDeclaration(InitializerDeclaration& initializerDeclaration) {
 }
 
-void MyVisitor::VisitEnumCase(EnumCase&) {
+void MyVisitor::OpenModifier(Modifier& modifier) {
 }
 
-void MyVisitor::VisitAdditionalCase(AdditionalCase&) {
+void MyVisitor::CloseModifier(Modifier& modifier) {
 }
 
-void MyVisitor::VisitClassDeclaration(ClassDeclaration&) {
+void MyVisitor::OpenOverride(Override& override) {
 }
 
-void MyVisitor::VisitGenericArgumentClause(GenericArgumentClause&) {
+void MyVisitor::CloseOverride(Override& override) {
 }
 
-void MyVisitor::VisitGenericParameter(GenericParameter&) {
+void MyVisitor::OpenStaticWord(StaticWord& staticWord) {
 }
 
-void MyVisitor::VisitClassMember(ClassMember&) {
+void MyVisitor::CloseStaticWord(StaticWord& staticWord) {
 }
 
-void MyVisitor::VisitExpression(Expression&) {
+void MyVisitor::OpenFunctionName(FunctionName& functionName) {
 }
 
-void MyVisitor::VisitCodeBlock(CodeBlock&) {
+void MyVisitor::CloseFunctionName(FunctionName& functionName) {
 }
 
-void MyVisitor::VisitSimpleExpression(SimpleExpression&) {
+void MyVisitor::OpenIdentifierFunctionName(IdentifierFunctionName& identifierFunctionName) {
 }
 
-void MyVisitor::VisitPrefixExpression(PrefixExpression&) {
+void MyVisitor::CloseIdentifierFunctionName(IdentifierFunctionName& identifierFunctionName) {
 }
 
-void MyVisitor::VisitPostfixExpression(PostfixExpression&) {
+void MyVisitor::OpenFunctionSignature(FunctionSignature& functionSignature) {
 }
 
-void MyVisitor::VisitBinaryOp(BinaryOp&) {
+void MyVisitor::CloseFunctionSignature(FunctionSignature& functionSignature) {
 }
 
-void MyVisitor::VisitBinaryOperation(BinaryOperation&) {
+void MyVisitor::OpenFunctionResult(FunctionResult& functionResult) {
 }
 
-void MyVisitor::VisitAssignment(Assignment&) {
+void MyVisitor::CloseFunctionResult(FunctionResult& functionResult) {
 }
 
-void MyVisitor::VisitTypeQuery(TypeQuery&) {
+void MyVisitor::OpenParameterClause(ParameterClause& parameterClause) {
 }
 
-void MyVisitor::VisitTypeCast(TypeCast&) {
+void MyVisitor::CloseParameterClause(ParameterClause& parameterClause) {
 }
 
-void MyVisitor::VisitCatchClause(CatchClause&) {
+void MyVisitor::OpenParameter(Parameter& parameter) {
 }
 
-void MyVisitor::VisitCatchPattern(CatchPattern&) {
+void MyVisitor::CloseParameter(Parameter& parameter) {
 }
 
-void MyVisitor::VisitWildCardCatchPattern(WildCardCatchPattern&) {
+void MyVisitor::OpenConstParameter(ConstParameter& constParameter) {
 }
 
-void MyVisitor::VisitPathItemCatchPattern(PathItemCatchPattern&) {
+void MyVisitor::CloseConstParameter(ConstParameter& constParameter) {
 }
 
-void MyVisitor::VisitPostfix(Postfix&) {
+void MyVisitor::OpenVarParameter(VarParameter& varParameter) {
 }
 
-void MyVisitor::VisitOperatorPostfix(OperatorPostfix&) {
+void MyVisitor::CloseVarParameter(VarParameter& varParameter) {
 }
 
-void MyVisitor::VisitFunctionCall(FunctionCall&) {
+void MyVisitor::OpenThrowsClause(ThrowsClause& throwsClause) {
 }
 
-void MyVisitor::VisitExplicitMemberExpression(ExplicitMemberExpression&) {
+void MyVisitor::CloseThrowsClause(ThrowsClause& throwsClause) {
 }
 
-void MyVisitor::VisitSubscript(Subscript&) {
+void MyVisitor::OpenEnumDeclaration(EnumDeclaration& enumDeclaration) {
 }
 
-void MyVisitor::VisitExpressionElement(ExpressionElement&) {
+void MyVisitor::CloseEnumDeclaration(EnumDeclaration& enumDeclaration) {
 }
 
-void MyVisitor::VisitMemberPostfix(MemberPostfix&) {
+void MyVisitor::OpenEnumMember(EnumMember& enumMember) {
 }
 
-void MyVisitor::VisitNamedMemberPostfix(NamedMemberPostfix&) {
+void MyVisitor::CloseEnumMember(EnumMember& enumMember) {
 }
 
-void MyVisitor::VisitPrimaryExpression(PrimaryExpression&) {
+void MyVisitor::OpenTupleType(TupleType& tupleType) {
 }
 
-void MyVisitor::VisitParenthesizedExpression(ParenthesizedExpression&) {
+void MyVisitor::CloseTupleType(TupleType& tupleType) {
 }
 
-void MyVisitor::VisitLiteralExpression(LiteralExpression&) {
+void MyVisitor::OpenAdditionalType(AdditionalType& additionalType) {
 }
 
-void MyVisitor::VisitIdentifierExpression(IdentifierExpression&) {
+void MyVisitor::CloseAdditionalType(AdditionalType& additionalType) {
 }
 
-void MyVisitor::VisitIfExpression(IfExpression&) {
+void MyVisitor::OpenEnumCase(EnumCase& enumCase) {
 }
 
-void MyVisitor::VisitElseClause(ElseClause&) {
+void MyVisitor::CloseEnumCase(EnumCase& enumCase) {
 }
 
-void MyVisitor::VisitSwitchExpression(SwitchExpression&) {
+void MyVisitor::OpenAdditionalCase(AdditionalCase& additionalCase) {
 }
 
-void MyVisitor::VisitSwitchBody(SwitchBody&) {
+void MyVisitor::CloseAdditionalCase(AdditionalCase& additionalCase) {
 }
 
-void MyVisitor::VisitCurliedSwitchBody(CurliedSwitchBody&) {
+void MyVisitor::OpenClassDeclaration(ClassDeclaration& classDeclaration) {
 }
 
-void MyVisitor::VisitNakedSwitchBody(NakedSwitchBody&) {
+void MyVisitor::CloseClassDeclaration(ClassDeclaration& classDeclaration) {
 }
 
-void MyVisitor::VisitSwitchCase(SwitchCase&) {
+void MyVisitor::OpenGenericArgumentClause(GenericArgumentClause& genericArgumentClause) {
 }
 
-void MyVisitor::VisitCaseLabel(CaseLabel&) {
+void MyVisitor::CloseGenericArgumentClause(GenericArgumentClause& genericArgumentClause) {
 }
 
-void MyVisitor::VisitItemCaseLabel(ItemCaseLabel&) {
+void MyVisitor::OpenGenericParameter(GenericParameter& genericParameter) {
 }
 
-void MyVisitor::VisitCaseItem(CaseItem&) {
+void MyVisitor::CloseGenericParameter(GenericParameter& genericParameter) {
 }
 
-void MyVisitor::VisitForExpression(ForExpression&) {
+void MyVisitor::OpenClassMember(ClassMember& classMember) {
 }
 
-void MyVisitor::VisitForLoop(ForLoop&) {
+void MyVisitor::CloseClassMember(ClassMember& classMember) {
 }
 
-void MyVisitor::VisitForEach(ForEach&) {
+void MyVisitor::OpenExpression(Expression& expression) {
 }
 
-void MyVisitor::VisitPlainFor(PlainFor&) {
+void MyVisitor::CloseExpression(Expression& expression) {
 }
 
-void MyVisitor::VisitReturnExpression(ReturnExpression&) {
+void MyVisitor::OpenCodeBlock(CodeBlock& codeBlock) {
 }
 
-void MyVisitor::VisitThrowExpression(ThrowExpression&) {
+void MyVisitor::CloseCodeBlock(CodeBlock& codeBlock) {
 }
 
-void MyVisitor::VisitBreakExpression(BreakExpression&) {
+void MyVisitor::OpenSimpleExpression(SimpleExpression& simpleExpression) {
 }
 
-void MyVisitor::VisitPattern(Pattern&) {
+void MyVisitor::CloseSimpleExpression(SimpleExpression& simpleExpression) {
 }
 
-void MyVisitor::VisitWildcardPattern(WildcardPattern&) {
+void MyVisitor::OpenPrefixExpression(PrefixExpression& prefixExpression) {
 }
 
-void MyVisitor::VisitIdentifierPattern(IdentifierPattern&) {
+void MyVisitor::ClosePrefixExpression(PrefixExpression& prefixExpression) {
 }
 
-void MyVisitor::VisitTuplePattern(TuplePattern&) {
+void MyVisitor::OpenPostfixExpression(PostfixExpression& postfixExpression) {
 }
 
-void MyVisitor::VisitTuplePatternElement(TuplePatternElement&) {
+void MyVisitor::ClosePostfixExpression(PostfixExpression& postfixExpression) {
 }
 
-void MyVisitor::VisitExpressionPattern(ExpressionPattern&) {
+void MyVisitor::OpenBinaryOp(BinaryOp& binaryOp) {
 }
 
-void MyVisitor::VisitDefaultCaseLabel(DefaultCaseLabel&) {
+void MyVisitor::CloseBinaryOp(BinaryOp& binaryOp) {
 }
 
-void MyVisitor::VisitCaseContent(CaseContent&) {
+void MyVisitor::OpenBinaryOperation(BinaryOperation& binaryOperation) {
 }
 
-void MyVisitor::VisitBlockCaseContent(BlockCaseContent&) {
+void MyVisitor::CloseBinaryOperation(BinaryOperation& binaryOperation) {
 }
 
-void MyVisitor::VisitEmptyCaseContent(EmptyCaseContent&) {
+void MyVisitor::OpenAssignment(Assignment& assignment) {
 }
 
-void MyVisitor::VisitInitializerCall(InitializerCall&) {
+void MyVisitor::CloseAssignment(Assignment& assignment) {
 }
 
-void MyVisitor::VisitThisExpression(ThisExpression&) {
+void MyVisitor::OpenTypeQuery(TypeQuery& typeQuery) {
 }
 
-void MyVisitor::VisitThisDot(ThisDot&) {
+void MyVisitor::CloseTypeQuery(TypeQuery& typeQuery) {
 }
 
-void MyVisitor::VisitThisSubscript(ThisSubscript&) {
+void MyVisitor::OpenTypeCast(TypeCast& typeCast) {
 }
 
-void MyVisitor::VisitThis(This&) {
+void MyVisitor::CloseTypeCast(TypeCast& typeCast) {
 }
 
-void MyVisitor::VisitCommonThisMember(CommonThisMember&) {
+void MyVisitor::OpenCatchClause(CatchClause& catchClause) {
 }
 
-void MyVisitor::VisitThisInit(ThisInit&) {
+void MyVisitor::CloseCatchClause(CatchClause& catchClause) {
 }
 
-void MyVisitor::VisitThisMember(ThisMember&) {
+void MyVisitor::OpenCatchPattern(CatchPattern& catchPattern) {
 }
 
-void MyVisitor::VisitSuperExpression(SuperExpression&) {
+void MyVisitor::CloseCatchPattern(CatchPattern& catchPattern) {
 }
 
-void MyVisitor::VisitSuperDot(SuperDot&) {
+void MyVisitor::OpenWildCardCatchPattern(WildCardCatchPattern& wildCardCatchPattern) {
 }
 
-void MyVisitor::VisitSuperSubscript(SuperSubscript&) {
+void MyVisitor::CloseWildCardCatchPattern(WildCardCatchPattern& wildCardCatchPattern) {
 }
 
-void MyVisitor::VisitCommonSuperMember(CommonSuperMember&) {
+void MyVisitor::OpenPathItemCatchPattern(PathItemCatchPattern& pathItemCatchPattern) {
 }
 
-void MyVisitor::VisitSuperInit(SuperInit&) {
+void MyVisitor::ClosePathItemCatchPattern(PathItemCatchPattern& pathItemCatchPattern) {
 }
 
-void MyVisitor::VisitSuperMember(SuperMember&) {
+void MyVisitor::OpenPostfix(Postfix& postfix) {
 }
 
-void MyVisitor::VisitType(Type&) {
+void MyVisitor::ClosePostfix(Postfix& postfix) {
 }
 
-void MyVisitor::VisitTypeAnnotation(TypeAnnotation&) {
+void MyVisitor::OpenOperatorPostfix(OperatorPostfix& operatorPostfix) {
 }
 
-void MyVisitor::VisitTypeIdentifier(TypeIdentifier&) {
+void MyVisitor::CloseOperatorPostfix(OperatorPostfix& operatorPostfix) {
 }
 
-void MyVisitor::VisitSubtypeIdentifier(SubtypeIdentifier&) {
+void MyVisitor::OpenFunctionCall(FunctionCall& functionCall) {
 }
 
-void MyVisitor::VisitTypePostfix(TypePostfix&) {
+void MyVisitor::CloseFunctionCall(FunctionCall& functionCall) {
 }
 
-void MyVisitor::VisitArrayType(ArrayType&) {
+void MyVisitor::OpenExplicitMemberExpression(ExplicitMemberExpression& explicitMemberExpression) {
 }
 
-void MyVisitor::VisitOptionalType(OptionalType&) {
+void MyVisitor::CloseExplicitMemberExpression(ExplicitMemberExpression& explicitMemberExpression) {
 }
 
-void MyVisitor::VisitTypeInheritanceClause(TypeInheritanceClause&) {
+void MyVisitor::OpenSubscript(Subscript& subscript) {
 }
 
-void MyVisitor::VisitInheritance(Inheritance&) {
+void MyVisitor::CloseSubscript(Subscript& subscript) {
+}
+
+void MyVisitor::OpenExpressionElement(ExpressionElement& expressionElement) {
+}
+
+void MyVisitor::CloseExpressionElement(ExpressionElement& expressionElement) {
+}
+
+void MyVisitor::OpenMemberPostfix(MemberPostfix& memberPostfix) {
+}
+
+void MyVisitor::CloseMemberPostfix(MemberPostfix& memberPostfix) {
+}
+
+void MyVisitor::OpenNamedMemberPostfix(NamedMemberPostfix& namedMemberPostfix) {
+}
+
+void MyVisitor::CloseNamedMemberPostfix(NamedMemberPostfix& namedMemberPostfix) {
+}
+
+void MyVisitor::OpenPrimaryExpression(PrimaryExpression& primaryExpression) {
+}
+
+void MyVisitor::ClosePrimaryExpression(PrimaryExpression& primaryExpression) {
+}
+
+void MyVisitor::OpenParenthesizedExpression(ParenthesizedExpression& parenthesizedExpression) {
+}
+
+void MyVisitor::CloseParenthesizedExpression(ParenthesizedExpression& parenthesizedExpression) {
+}
+
+void MyVisitor::OpenLiteralExpression(LiteralExpression& literalExpression) {
+}
+
+void MyVisitor::CloseLiteralExpression(LiteralExpression& literalExpression) {
+}
+
+void MyVisitor::OpenIdentifierExpression(IdentifierExpression& identifierExpression) {
+}
+
+void MyVisitor::CloseIdentifierExpression(IdentifierExpression& identifierExpression) {
+}
+
+void MyVisitor::OpenIfExpression(IfExpression& ifExpression) {
+}
+
+void MyVisitor::CloseIfExpression(IfExpression& ifExpression) {
+}
+
+void MyVisitor::OpenElseClause(ElseClause& elseClause) {
+}
+
+void MyVisitor::CloseElseClause(ElseClause& elseClause) {
+}
+
+void MyVisitor::OpenSwitchExpression(SwitchExpression& switchExpression) {
+}
+
+void MyVisitor::CloseSwitchExpression(SwitchExpression& switchExpression) {
+}
+
+void MyVisitor::OpenSwitchBody(SwitchBody& switchBody) {
+}
+
+void MyVisitor::CloseSwitchBody(SwitchBody& switchBody) {
+}
+
+void MyVisitor::OpenCurliedSwitchBody(CurliedSwitchBody& curliedSwitchBody) {
+}
+
+void MyVisitor::CloseCurliedSwitchBody(CurliedSwitchBody& curliedSwitchBody) {
+}
+
+void MyVisitor::OpenNakedSwitchBody(NakedSwitchBody& nakedSwitchBody) {
+}
+
+void MyVisitor::CloseNakedSwitchBody(NakedSwitchBody& nakedSwitchBody) {
+}
+
+void MyVisitor::OpenSwitchCase(SwitchCase& switchCase) {
+}
+
+void MyVisitor::CloseSwitchCase(SwitchCase& switchCase) {
+}
+
+void MyVisitor::OpenCaseLabel(CaseLabel& caseLabel) {
+}
+
+void MyVisitor::CloseCaseLabel(CaseLabel& caseLabel) {
+}
+
+void MyVisitor::OpenItemCaseLabel(ItemCaseLabel& itemCaseLabel) {
+}
+
+void MyVisitor::CloseItemCaseLabel(ItemCaseLabel& itemCaseLabel) {
+}
+
+void MyVisitor::OpenCaseItem(CaseItem& caseItem) {
+}
+
+void MyVisitor::CloseCaseItem(CaseItem& caseItem) {
+}
+
+void MyVisitor::OpenForExpression(ForExpression& forExpression) {
+}
+
+void MyVisitor::CloseForExpression(ForExpression& forExpression) {
+}
+
+void MyVisitor::OpenForLoop(ForLoop& forLoop) {
+}
+
+void MyVisitor::CloseForLoop(ForLoop& forLoop) {
+}
+
+void MyVisitor::OpenForEach(ForEach& forEach) {
+}
+
+void MyVisitor::CloseForEach(ForEach& forEach) {
+}
+
+void MyVisitor::OpenPlainFor(PlainFor& plainFor) {
+}
+
+void MyVisitor::ClosePlainFor(PlainFor& plainFor) {
+}
+
+void MyVisitor::OpenReturnExpression(ReturnExpression& returnExpression) {
+}
+
+void MyVisitor::CloseReturnExpression(ReturnExpression& returnExpression) {
+}
+
+void MyVisitor::OpenThrowExpression(ThrowExpression& throwExpression) {
+}
+
+void MyVisitor::CloseThrowExpression(ThrowExpression& throwExpression) {
+}
+
+void MyVisitor::OpenBreakExpression(BreakExpression& breakExpression) {
+}
+
+void MyVisitor::CloseBreakExpression(BreakExpression& breakExpression) {
+}
+
+void MyVisitor::OpenPattern(Pattern& pattern) {
+}
+
+void MyVisitor::ClosePattern(Pattern& pattern) {
+}
+
+void MyVisitor::OpenWildcardPattern(WildcardPattern& wildcardPattern) {
+}
+
+void MyVisitor::CloseWildcardPattern(WildcardPattern& wildcardPattern) {
+}
+
+void MyVisitor::OpenIdentifierPattern(IdentifierPattern& identifierPattern) {
+}
+
+void MyVisitor::CloseIdentifierPattern(IdentifierPattern& identifierPattern) {
+}
+
+void MyVisitor::OpenTuplePattern(TuplePattern& tuplePattern) {
+}
+
+void MyVisitor::CloseTuplePattern(TuplePattern& tuplePattern) {
+}
+
+void MyVisitor::OpenTuplePatternElement(TuplePatternElement& tuplePatternElement) {
+}
+
+void MyVisitor::CloseTuplePatternElement(TuplePatternElement& tuplePatternElement) {
+}
+
+void MyVisitor::OpenExpressionPattern(ExpressionPattern& expressionPattern) {
+}
+
+void MyVisitor::CloseExpressionPattern(ExpressionPattern& expressionPattern) {
+}
+
+void MyVisitor::OpenDefaultCaseLabel(DefaultCaseLabel& defaultCaseLabel) {
+}
+
+void MyVisitor::CloseDefaultCaseLabel(DefaultCaseLabel& defaultCaseLabel) {
+}
+
+void MyVisitor::OpenCaseContent(CaseContent& caseContent) {
+}
+
+void MyVisitor::CloseCaseContent(CaseContent& caseContent) {
+}
+
+void MyVisitor::OpenBlockCaseContent(BlockCaseContent& blockCaseContent) {
+}
+
+void MyVisitor::CloseBlockCaseContent(BlockCaseContent& blockCaseContent) {
+}
+
+void MyVisitor::OpenEmptyCaseContent(EmptyCaseContent& emptyCaseContent) {
+}
+
+void MyVisitor::CloseEmptyCaseContent(EmptyCaseContent& emptyCaseContent) {
+}
+
+void MyVisitor::OpenInitializerCall(InitializerCall& initializerCall) {
+}
+
+void MyVisitor::CloseInitializerCall(InitializerCall& initializerCall) {
+}
+
+void MyVisitor::OpenThisExpression(ThisExpression& thisExpression) {
+}
+
+void MyVisitor::CloseThisExpression(ThisExpression& thisExpression) {
+}
+
+void MyVisitor::OpenThisDot(ThisDot& thisDot) {
+}
+
+void MyVisitor::CloseThisDot(ThisDot& thisDot) {
+}
+
+void MyVisitor::OpenThisSubscript(ThisSubscript& thisSubscript) {
+}
+
+void MyVisitor::CloseThisSubscript(ThisSubscript& thisSubscript) {
+}
+
+void MyVisitor::OpenThisWord(ThisWord& thisWord) {
+}
+
+void MyVisitor::CloseThisWord(ThisWord& thisWord) {
+}
+
+void MyVisitor::OpenCommonThisMember(CommonThisMember& commonThisMember) {
+}
+
+void MyVisitor::CloseCommonThisMember(CommonThisMember& commonThisMember) {
+}
+
+void MyVisitor::OpenThisInit(ThisInit& thisInit) {
+}
+
+void MyVisitor::CloseThisInit(ThisInit& thisInit) {
+}
+
+void MyVisitor::OpenThisMember(ThisMember& thisMember) {
+}
+
+void MyVisitor::CloseThisMember(ThisMember& thisMember) {
+}
+
+void MyVisitor::OpenSuperExpression(SuperExpression& superExpression) {
+}
+
+void MyVisitor::CloseSuperExpression(SuperExpression& superExpression) {
+}
+
+void MyVisitor::OpenSuperDot(SuperDot& superDot) {
+}
+
+void MyVisitor::CloseSuperDot(SuperDot& superDot) {
+}
+
+void MyVisitor::OpenSuperSubscript(SuperSubscript& superSubscript) {
+}
+
+void MyVisitor::CloseSuperSubscript(SuperSubscript& superSubscript) {
+}
+
+void MyVisitor::OpenCommonSuperMember(CommonSuperMember& commonSuperMember) {
+}
+
+void MyVisitor::CloseCommonSuperMember(CommonSuperMember& commonSuperMember) {
+}
+
+void MyVisitor::OpenSuperInit(SuperInit& superInit) {
+}
+
+void MyVisitor::CloseSuperInit(SuperInit& superInit) {
+}
+
+void MyVisitor::OpenSuperMember(SuperMember& superMember) {
+}
+
+void MyVisitor::CloseSuperMember(SuperMember& superMember) {
+}
+
+void MyVisitor::OpenType(Type& type) {
+}
+
+void MyVisitor::CloseType(Type& type) {
+}
+
+void MyVisitor::OpenTypeAnnotation(TypeAnnotation& typeAnnotation) {
+}
+
+void MyVisitor::CloseTypeAnnotation(TypeAnnotation& typeAnnotation) {
+}
+
+void MyVisitor::OpenTypeIdentifier(TypeIdentifier& typeIdentifier) {
+}
+
+void MyVisitor::CloseTypeIdentifier(TypeIdentifier& typeIdentifier) {
+}
+
+void MyVisitor::OpenSubtypeIdentifier(SubtypeIdentifier& subtypeIdentifier) {
+}
+
+void MyVisitor::CloseSubtypeIdentifier(SubtypeIdentifier& subtypeIdentifier) {
+}
+
+void MyVisitor::OpenTypePostfix(TypePostfix& typePostfix) {
+}
+
+void MyVisitor::CloseTypePostfix(TypePostfix& typePostfix) {
+}
+
+void MyVisitor::OpenArrayType(ArrayType& arrayType) {
+}
+
+void MyVisitor::CloseArrayType(ArrayType& arrayType) {
+}
+
+void MyVisitor::OpenOptionalType(OptionalType& optionalType) {
+}
+
+void MyVisitor::CloseOptionalType(OptionalType& optionalType) {
+}
+
+void MyVisitor::OpenTypeInheritanceClause(TypeInheritanceClause& typeInheritanceClause) {
+}
+
+void MyVisitor::CloseTypeInheritanceClause(TypeInheritanceClause& typeInheritanceClause) {
+}
+
+void MyVisitor::OpenInheritance(Inheritance& inheritance) {
+}
+
+void MyVisitor::CloseInheritance(Inheritance& inheritance) {
 }
 
 }

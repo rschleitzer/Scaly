@@ -47,7 +47,7 @@ public:
 
     _Result<Override, ParserError> parseOverride(_Page* _rp, _Page* _ep);
 
-    _Result<Static, ParserError> parseStatic(_Page* _rp, _Page* _ep);
+    _Result<StaticWord, ParserError> parseStaticWord(_Page* _rp, _Page* _ep);
 
     _Result<FunctionName, ParserError> parseFunctionName(_Page* _rp, _Page* _ep);
 
@@ -215,7 +215,7 @@ public:
 
     _Result<ThisSubscript, ParserError> parseThisSubscript(_Page* _rp, _Page* _ep);
 
-    _Result<This, ParserError> parseThis(_Page* _rp, _Page* _ep);
+    _Result<ThisWord, ParserError> parseThisWord(_Page* _rp, _Page* _ep);
 
     _Result<CommonThisMember, ParserError> parseCommonThisMember(_Page* _rp, _Page* _ep);
 

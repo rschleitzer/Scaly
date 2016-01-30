@@ -1,3 +1,36 @@
+(define (string-downcase s)
+    (list->string
+        (map char-downcase-ascii
+            (string->list s))))
+
+(define (string-firstchar-downcase s)
+    (list->string
+        (let ((charlist (string->list s)))
+            (cons
+                (char-downcase-ascii (car charlist))
+                (cdr charlist)))))
+
+(define (char-downcase-ascii c)
+    (case c
+        ((#\A #\a) #\a) ((#\B #\b) #\b)
+        ((#\C #\c) #\c) ((#\D #\d) #\d)
+        ((#\E #\e) #\e) ((#\F #\f) #\f)
+        ((#\G #\g) #\g) ((#\H #\h) #\h)
+        ((#\I #\i) #\i) ((#\J #\j) #\j)
+        ((#\K #\k) #\k) ((#\L #\l) #\l)
+        ((#\M #\m) #\m) ((#\N #\n) #\n)
+        ((#\O #\o) #\o) ((#\P #\p) #\p)
+        ((#\Q #\q) #\q) ((#\R #\r) #\r)
+        ((#\S #\s) #\s) ((#\T #\t) #\t)
+        ((#\U #\u) #\u) ((#\V #\v) #\v)
+        ((#\W #\w) #\w) ((#\X #\x) #\x)
+        ((#\Y #\y) #\y) ((#\Z #\z) #\z)
+        (else c)
+    )
+)
+
+
+
 (define (create-file filename content)
     (make entity system-id: filename content))
 
