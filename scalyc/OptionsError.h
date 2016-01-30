@@ -12,8 +12,16 @@ public:
     String& option;
 };
 
+class _UnknownOption : public Object {
+public:
+    _UnknownOption(String& option);
+
+    String& option;
+};
+
 enum _OptionsErrorCode {
     invalidOption = 1,
+    unknownOption,
     noOutputOption,
     noFilesToCompile,
 };
@@ -24,13 +32,19 @@ public:
     OptionsError(_InvalidOption& _InvalidOption)
     : errorCode(invalidOption), errorInfo(&_InvalidOption) {}
 
+    _InvalidOption& getInvalidOption();
+
+    OptionsError(_UnknownOption& _UnknownOption)
+    : errorCode(unknownOption), errorInfo(&_UnknownOption) {}
+
+    _UnknownOption& getUnknownOption();
+
     OptionsError(_OptionsErrorCode code)
     : errorCode(code), errorInfo(0) {}
 
     long getErrorCode();
     void* getErrorInfo();
     
-    _InvalidOption& getInvalidOption();
 
 private:
     _OptionsErrorCode errorCode;

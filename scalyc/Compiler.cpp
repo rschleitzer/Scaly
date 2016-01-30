@@ -4,15 +4,15 @@ namespace scalyc {
 
 CompilerError* Compiler::compileFiles(_Page* _ep, Options& options) {
     _Region _region; _Page* _p = _region.get();
-    Array<String>& files = options.files;
+    Array<String>* files = options.files;
     Array<String>* sources = 0;
     {
-        size_t _length = files.length();
+        size_t _length = files->length();
         sources = new (_p) Array<String>(_length);
         for (size_t _index = 0; _index < _length; _index++) {
-            _Result<String, FileError> _readToStringResult = File::readToString(_p, _ep, **files[_index]);
+            _Result<String, FileError> _readToStringResult = File::readToString(_p, _ep, **(*files)[_index]);
             if (!_readToStringResult.succeeded())
-                return new(_ep) CompilerError(*new(_ep) UnableToReadFile(**files[_index], *_readToStringResult.getError()));
+                return new(_ep) CompilerError(*new(_ep) UnableToReadFile(**(*files)[_index], *_readToStringResult.getError()));
                 
             else *(*sources)[_index] = _readToStringResult.getResult();
         }
@@ -34,7 +34,7 @@ CompilerError* Compiler::compileFiles(_Page* _ep, Options& options) {
     }
     
     Program& program = *new(_p) Program();
-    program.name = &options.outputName;
+    program.name = options.outputName;
     program.compilationUnits = compilationUnits;
     
     CppVisitor visitor;

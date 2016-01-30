@@ -5,28 +5,28 @@ class Options {
         options.files = [String]()
         for mutable i: unsigned = 0; i < length; i++ {
 
-            if arg.length < 2 || arg[0] != "-" {
+            if length < 2 || args[i][0] != "-" {
                 options.files.append(arg)
                 continue
             }
-            switch arg[1] {
+            switch args[i][1] {
                 case "o": {
                     i++
                     if i == length
-                        throw invalidOption(arg)
+                        throw invalidOption(args[i])
                     else
-                        options.outputName = arg
+                        options.outputName = args[i]
                 }
                 default:
-                    throw unknowndOption(arg)
+                    throw unknownOption(args[i])
             } 
         }
         if options.outputName == null
-            throw noOutputFile
-        if optionss.files.length == 0
+            throw noOutputOption
+        if options.files.length == 0
             throw noFilesToCompile
 
-        return Options(files, outputName)
+        return options
     }
     
     let files: [String]

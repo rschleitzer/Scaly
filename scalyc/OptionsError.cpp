@@ -18,4 +18,12 @@ _InvalidOption& OptionsError::getInvalidOption(){
     return *(_InvalidOption*)errorInfo;
 }
 
+_UnknownOption::_UnknownOption(String& option)
+: option(option){
+}
+
+_UnknownOption& OptionsError::getUnknownOption(){
+    return *(_UnknownOption*)errorInfo;
+}
+
 }

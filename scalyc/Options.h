@@ -6,11 +6,11 @@ namespace scalyc {
 
 class Options : Object {
 public:
-    Options(Array<String>& files, String& outputName);
+    Options();
     static _Result<Options, OptionsError> parseArguments(_Page* _rp, _Page* _ep, Array<String>& args);
     
-    Array<String>& files;
-    String& outputName;
+    Array<String>* files;
+    String* outputName;
 };
 
 }
