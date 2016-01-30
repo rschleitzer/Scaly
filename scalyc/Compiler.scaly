@@ -4,7 +4,7 @@ class Compiler {
         let sources: [String] = map(files, File.readToString)
             catch _ (file, error) throw UnableToReadFile(file, error)
             
-        let compilationUnits: [CompilationUnit] = map(sources, compileUnit)
+        let compilationUnits: [CompilationUnit] = map(compileUnit, sources, files)
             catch _ (_, error) throw SyntaxError(error)
 
         mutable program: Program = Program()
@@ -16,7 +16,7 @@ class Compiler {
     }
     
     static function compileUnit(text: String) -> TopLevelDeclaration throws ParserError {
-        parser = Parser(text)
+        parser = Parser(fileName, text)
         parser.parseTopLevelDeclaration
     }
 };

@@ -1,7 +1,7 @@
 (define (parser-scaly) ($
 
 "class Parser {
-    init(text: String) {
+    init(fileName: String, text: String) {
         lexer = Lexer(text)
     }
 "
@@ -94,7 +94,11 @@
 "        }
 "                ))) ; apply to children of syntax
 "
-        return ret
+"               (if (top? syntax)
+"        ret.fileName = fileName;
+"
+                "")
+"        return ret
 "
             ) ; $
         ) ; abstract or not
@@ -138,7 +142,7 @@ namespace scalyc {
 
 class Parser : public Object {
 public:
-    Parser(String& text);
+    Parser(String* fileName, String& text);
 "
     (apply-to-selected-children "syntax" (lambda (syntax) (if (program? syntax) "" ($
 "
@@ -153,6 +157,7 @@ public:
 
 private:
     Lexer lexer;
+    String* fileName;
 
 "   (apply-to-selected-children "keyword" (lambda (keyword) ($
 "    const char* "(name keyword)" = \""(id keyword)"\";
@@ -175,8 +180,8 @@ private:
 using namespace scaly;
 namespace scalyc {
 
-Parser::Parser(String& text)
-: lexer(text) {
+Parser::Parser(String* fileName, String& text)
+: lexer(text), fileName(fileName) {
 }
 "    (apply-to-selected-children "syntax" (lambda (syntax) (if (program? syntax) "" ($
         (if (multiple? syntax) ($
@@ -268,6 +273,9 @@ _Result<"(id syntax)", ParserError> Parser::parse"(id syntax)"(_Page* _rp, _Page
 "                   ))
 "    }
 "                ))) ; apply to children of syntax
+                (if (top? syntax) ($
+"    ret->fileName = fileName;
+"               )"")
 "
     return _Result<"(id syntax)", ParserError>(ret);
 "

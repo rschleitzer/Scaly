@@ -2,8 +2,8 @@
 using namespace scaly;
 namespace scalyc {
 
-Parser::Parser(String& text)
-: lexer(text) {
+Parser::Parser(String* fileName, String& text)
+: lexer(text), fileName(fileName) {
 }
 
 _Result<CompilationUnit, ParserError> Parser::parseCompilationUnit(_Page* _rp, _Page* _ep) {
@@ -25,6 +25,7 @@ _Result<CompilationUnit, ParserError> Parser::parseCompilationUnit(_Page* _rp, _
             return _Result<CompilationUnit, ParserError>(result.getError());
         }
     }
+    ret->fileName = fileName;
 
     return _Result<CompilationUnit, ParserError>(ret);
 }

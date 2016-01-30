@@ -27,6 +27,7 @@ public:
 
     virtual void Accept(SyntaxVisitor& visitor);
     Array<StatementWithSemicolon>* statements;
+    String* fileName;
 };
 
 class StatementWithSemicolon : public SyntaxNode {

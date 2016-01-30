@@ -42,6 +42,7 @@ class CompilationUnit : SyntaxNode {
     }
 
     let statements: [StatementWithSemicolon]?
+    let fileName: String
 }
 
 class StatementWithSemicolon : SyntaxNode {

@@ -65,6 +65,10 @@ class "(id syntax-node)" : "(if (base syntax-node) (base syntax-node) "SyntaxNod
 "?
 "           )"")
         )))
+        (if (top? syntax-node)
+"    let fileName: String
+"
+        "")
 "}
 "   )))
 ))
@@ -121,6 +125,10 @@ public:
                 )""))
                 (else "")
             )
+            (if (top? syntax-node)
+"    String* fileName;
+"
+            "")
         )))
 "};
 "   )))
