@@ -877,39 +877,48 @@ void CaseItem::Accept(SyntaxVisitor& visitor) {
     pattern->Accept(visitor);
 }
 
-ForEachExpression::ForEachExpression(Position start, Position end)
-: PrimaryExpression(start, end) {
-}
-
-void ForEachExpression::Accept(SyntaxVisitor& visitor) {
-    visitor.VisitForEachExpression(*this);
-    pattern->Accept(visitor);
-    if (expression) {
-        expression->Accept(visitor);
-    }
-    if (code) {
-        code->Accept(visitor);
-    }
-}
-
 ForExpression::ForExpression(Position start, Position end)
 : PrimaryExpression(start, end) {
 }
 
 void ForExpression::Accept(SyntaxVisitor& visitor) {
     visitor.VisitForExpression(*this);
+    loop->Accept(visitor);
+}
+
+ForLoop::ForLoop(Position start, Position end)
+: SyntaxNode(start, end) {
+}
+
+void ForLoop::Accept(SyntaxVisitor& visitor) {
+    visitor.VisitForLoop(*this);
+}
+
+ForEach::ForEach(Position start, Position end)
+: ForLoop(start, end) {
+}
+
+void ForEach::Accept(SyntaxVisitor& visitor) {
+    visitor.VisitForEach(*this);
+    pattern->Accept(visitor);
+    expression->Accept(visitor);
+    code->Accept(visitor);
+}
+
+PlainFor::PlainFor(Position start, Position end)
+: ForLoop(start, end) {
+}
+
+void PlainFor::Accept(SyntaxVisitor& visitor) {
+    visitor.VisitPlainFor(*this);
     if (forInit) {
         forInit->Accept(visitor);
     }
     if (forCheck) {
         forCheck->Accept(visitor);
     }
-    if (forNext) {
-        forNext->Accept(visitor);
-    }
-    if (code) {
-        code->Accept(visitor);
-    }
+    forNext->Accept(visitor);
+    code->Accept(visitor);
 }
 
 ReturnExpression::ReturnExpression(Position start, Position end)

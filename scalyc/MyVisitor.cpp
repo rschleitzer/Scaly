@@ -225,10 +225,16 @@ void MyVisitor::VisitItemCaseLabel(ItemCaseLabel&) {
 void MyVisitor::VisitCaseItem(CaseItem&) {
 }
 
-void MyVisitor::VisitForEachExpression(ForEachExpression&) {
+void MyVisitor::VisitForExpression(ForExpression&) {
 }
 
-void MyVisitor::VisitForExpression(ForExpression&) {
+void MyVisitor::VisitForLoop(ForLoop&) {
+}
+
+void MyVisitor::VisitForEach(ForEach&) {
+}
+
+void MyVisitor::VisitPlainFor(PlainFor&) {
 }
 
 void MyVisitor::VisitReturnExpression(ReturnExpression&) {

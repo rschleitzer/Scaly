@@ -275,7 +275,6 @@
         <content link = LiteralExpression
         <content link = IfExpression
         <content link = SwitchExpression
-        <content link = ForEachExpression
         <content link = ForExpression
         <content link = ParenthesizedExpression
         <content link = ReturnExpression
@@ -341,21 +340,27 @@
         <content link = comma
         <content link = Pattern                                 property = pattern
 
-    <syntax id = ForEachExpression                                base = PrimaryExpression
-        <content link = foreach
-        <content link = Pattern                                 property = pattern
-        <content link = in
-        <content link = Expression                  optional    property = expression
-        <content link = Expression                  optional    property = code
-
     <syntax id = ForExpression                                  base = PrimaryExpression
         <content link = for
+        <content link = ForLoop                                 property = loop
+
+    <syntax id = ForLoop                            abstract
+        <content link = ForEach
+        <content link = PlainFor
+
+    <syntax id = ForEach                                        base = ForLoop
+        <content link = Pattern                                 property = pattern
+        <content link = in
+        <content link = Expression                              property = expression
+        <content link = Expression                              property = code
+
+    <syntax id = PlainFor                                       base = ForLoop
         <content link = VariableDeclaration         optional    property = forInit
         <content link = semicolon
         <content link = Expression                  optional    property = forCheck
         <content link = semicolon
-        <content link = Expression                  optional    property = forNext
-        <content link = Expression                  optional    property = code
+        <content link = Expression                              property = forNext
+        <content link = Expression                              property = code
 
     <syntax id = ReturnExpression                               base = PrimaryExpression
         <content link = return
@@ -509,7 +514,6 @@
     <keyword id = case
     <keyword id = default
     <keyword id = catch
-    <keyword id = foreach
     <keyword id = for
     <keyword id = in
     <keyword id = return

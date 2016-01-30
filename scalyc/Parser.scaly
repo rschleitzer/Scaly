@@ -2141,15 +2141,6 @@ class Parser {
         }
 
         {
-            let node: ForEachExpression = parseForEachExpression() catch _(error) {
-                errors.append(error)
-                break
-            }
-
-            return node
-        }
-
-        {
             let node: ForExpression = parseForExpression() catch _(error) {
                 errors.append(error)
                 break
@@ -2638,63 +2629,6 @@ class Parser {
         return ret
     }
 
-    function parseForEachExpression() -> ForEachExpression throws ParserError {
-        mutable ret: ForEachExpression? = null
-        {
-            let start: Position = lexer.getPosition()
-            let success: bool = lexer.parseKeyword(foreachKeyword)
-            if success
-                lexer.advance()
-
-            if ret == null
-                ret = ForEachExpression(start, lexer.getPosition())
-        }
-        {
-            let start: Position = lexer.getPosition()
-            let result: Pattern node = parsePattern() catch _(error) {
-                throw (error)
-            }
-
-            if ret == null
-                ret = ForEachExpression(start, lexer.getPosition())
-
-            ret.pattern = node
-        }
-        {
-            let start: Position = lexer.getPosition()
-            let success: bool = lexer.parseKeyword(inKeyword)
-            if success
-                lexer.advance()
-
-            if ret == null
-                ret = ForEachExpression(start, lexer.getPosition())
-        }
-        {
-            let start: Position = lexer.getPosition()
-            let result: Expression node = parseExpression() catch _(error) {
-                 null
-            }
-
-            if ret == null
-                ret = ForEachExpression(start, lexer.getPosition())
-
-            ret.expression = node
-        }
-        {
-            let start: Position = lexer.getPosition()
-            let result: Expression node = parseExpression() catch _(error) {
-                 null
-            }
-
-            if ret == null
-                ret = ForEachExpression(start, lexer.getPosition())
-
-            ret.code = node
-        }
-
-        return ret
-    }
-
     function parseForExpression() -> ForExpression throws ParserError {
         mutable ret: ForExpression? = null
         {
@@ -2708,12 +2642,102 @@ class Parser {
         }
         {
             let start: Position = lexer.getPosition()
+            let result: ForLoop node = parseForLoop() catch _(error) {
+                throw (error)
+            }
+
+            if ret == null
+                ret = ForExpression(start, lexer.getPosition())
+
+            ret.loop = node
+        }
+
+        return ret
+    }
+
+    function parseForLoop() -> ForLoop throws ParserError {
+        let errors: [ParserError] = [ParserError]()
+        let start: Position = lexer.getPreviousPosition()
+
+        {
+            let node: ForEach = parseForEach() catch _(error) {
+                errors.append(error)
+                break
+            }
+
+            return node
+        }
+
+        {
+            let node: PlainFor = parsePlainFor() catch _(error) {
+                errors.append(error)
+                break
+            }
+
+            return node
+        }
+
+        throw ParserError.UnableToParse(start, errors)
+    }
+
+    function parseForEach() -> ForEach throws ParserError {
+        mutable ret: ForEach? = null
+        {
+            let start: Position = lexer.getPosition()
+            let result: Pattern node = parsePattern() catch _(error) {
+                throw (error)
+            }
+
+            if ret == null
+                ret = ForEach(start, lexer.getPosition())
+
+            ret.pattern = node
+        }
+        {
+            let start: Position = lexer.getPosition()
+            let success: bool = lexer.parseKeyword(inKeyword)
+            if success
+                lexer.advance()
+
+            if ret == null
+                ret = ForEach(start, lexer.getPosition())
+        }
+        {
+            let start: Position = lexer.getPosition()
+            let result: Expression node = parseExpression() catch _(error) {
+                throw (error)
+            }
+
+            if ret == null
+                ret = ForEach(start, lexer.getPosition())
+
+            ret.expression = node
+        }
+        {
+            let start: Position = lexer.getPosition()
+            let result: Expression node = parseExpression() catch _(error) {
+                throw (error)
+            }
+
+            if ret == null
+                ret = ForEach(start, lexer.getPosition())
+
+            ret.code = node
+        }
+
+        return ret
+    }
+
+    function parsePlainFor() -> PlainFor throws ParserError {
+        mutable ret: PlainFor? = null
+        {
+            let start: Position = lexer.getPosition()
             let result: VariableDeclaration node = parseVariableDeclaration() catch _(error) {
                  null
             }
 
             if ret == null
-                ret = ForExpression(start, lexer.getPosition())
+                ret = PlainFor(start, lexer.getPosition())
 
             ret.forInit = node
         }
@@ -2724,7 +2748,7 @@ class Parser {
                 lexer.advance()
 
             if ret == null
-                ret = ForExpression(start, lexer.getPosition())
+                ret = PlainFor(start, lexer.getPosition())
         }
         {
             let start: Position = lexer.getPosition()
@@ -2733,7 +2757,7 @@ class Parser {
             }
 
             if ret == null
-                ret = ForExpression(start, lexer.getPosition())
+                ret = PlainFor(start, lexer.getPosition())
 
             ret.forCheck = node
         }
@@ -2744,27 +2768,27 @@ class Parser {
                 lexer.advance()
 
             if ret == null
-                ret = ForExpression(start, lexer.getPosition())
+                ret = PlainFor(start, lexer.getPosition())
         }
         {
             let start: Position = lexer.getPosition()
             let result: Expression node = parseExpression() catch _(error) {
-                 null
+                throw (error)
             }
 
             if ret == null
-                ret = ForExpression(start, lexer.getPosition())
+                ret = PlainFor(start, lexer.getPosition())
 
             ret.forNext = node
         }
         {
             let start: Position = lexer.getPosition()
             let result: Expression node = parseExpression() catch _(error) {
-                 null
+                throw (error)
             }
 
             if ret == null
-                ret = ForExpression(start, lexer.getPosition())
+                ret = PlainFor(start, lexer.getPosition())
 
             ret.code = node
         }
@@ -3769,9 +3793,6 @@ class Parser {
         if id == catchKeyword
             return false
 
-        if id == foreachKeyword
-            return false
-
         if id == forKeyword
             return false
 
@@ -3834,7 +3855,6 @@ class Parser {
     let caseKeyword: string = "case"
     let defaultKeyword: string = "default"
     let catchKeyword: string = "catch"
-    let foreachKeyword: string = "foreach"
     let forKeyword: string = "for"
     let inKeyword: string = "in"
     let returnKeyword: string = "return"

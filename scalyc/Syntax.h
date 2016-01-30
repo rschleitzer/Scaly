@@ -623,9 +623,24 @@ public:
     Pattern* pattern;
 };
 
-class ForEachExpression : public PrimaryExpression {
+class ForExpression : public PrimaryExpression {
 public:
-    ForEachExpression(Position start, Position end);
+    ForExpression(Position start, Position end);
+
+    virtual void Accept(SyntaxVisitor& visitor);
+    ForLoop* loop;
+};
+
+class ForLoop : public SyntaxNode {
+public:
+    ForLoop(Position start, Position end);
+
+    virtual void Accept(SyntaxVisitor& visitor);
+};
+
+class ForEach : public ForLoop {
+public:
+    ForEach(Position start, Position end);
 
     virtual void Accept(SyntaxVisitor& visitor);
     Pattern* pattern;
@@ -633,9 +648,9 @@ public:
     Expression* code;
 };
 
-class ForExpression : public PrimaryExpression {
+class PlainFor : public ForLoop {
 public:
-    ForExpression(Position start, Position end);
+    PlainFor(Position start, Position end);
 
     virtual void Accept(SyntaxVisitor& visitor);
     VariableDeclaration* forInit;
