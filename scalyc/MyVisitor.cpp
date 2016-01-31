@@ -21,18 +21,6 @@ void MyVisitor::OpenStatementWithSemicolon(StatementWithSemicolon& statementWith
 void MyVisitor::CloseStatementWithSemicolon(StatementWithSemicolon& statementWithSemicolon) {
 }
 
-void MyVisitor::OpenStatement(Statement& statement) {
-}
-
-void MyVisitor::CloseStatement(Statement& statement) {
-}
-
-void MyVisitor::OpenDeclaration(Declaration& declaration) {
-}
-
-void MyVisitor::CloseDeclaration(Declaration& declaration) {
-}
-
 void MyVisitor::OpenUseDeclaration(UseDeclaration& useDeclaration) {
 }
 
@@ -99,12 +87,6 @@ void MyVisitor::OpenInitializerDeclaration(InitializerDeclaration& initializerDe
 void MyVisitor::CloseInitializerDeclaration(InitializerDeclaration& initializerDeclaration) {
 }
 
-void MyVisitor::OpenModifier(Modifier& modifier) {
-}
-
-void MyVisitor::CloseModifier(Modifier& modifier) {
-}
-
 void MyVisitor::OpenOverride(Override& override) {
 }
 
@@ -115,12 +97,6 @@ void MyVisitor::OpenStaticWord(StaticWord& staticWord) {
 }
 
 void MyVisitor::CloseStaticWord(StaticWord& staticWord) {
-}
-
-void MyVisitor::OpenFunctionName(FunctionName& functionName) {
-}
-
-void MyVisitor::CloseFunctionName(FunctionName& functionName) {
 }
 
 void MyVisitor::OpenIdentifierFunctionName(IdentifierFunctionName& identifierFunctionName) {
@@ -145,12 +121,6 @@ void MyVisitor::OpenParameterClause(ParameterClause& parameterClause) {
 }
 
 void MyVisitor::CloseParameterClause(ParameterClause& parameterClause) {
-}
-
-void MyVisitor::OpenParameter(Parameter& parameter) {
-}
-
-void MyVisitor::CloseParameter(Parameter& parameter) {
 }
 
 void MyVisitor::OpenConstParameter(ConstParameter& constParameter) {
@@ -231,12 +201,6 @@ void MyVisitor::OpenClassMember(ClassMember& classMember) {
 void MyVisitor::CloseClassMember(ClassMember& classMember) {
 }
 
-void MyVisitor::OpenExpression(Expression& expression) {
-}
-
-void MyVisitor::CloseExpression(Expression& expression) {
-}
-
 void MyVisitor::OpenCodeBlock(CodeBlock& codeBlock) {
 }
 
@@ -259,12 +223,6 @@ void MyVisitor::OpenPostfixExpression(PostfixExpression& postfixExpression) {
 }
 
 void MyVisitor::ClosePostfixExpression(PostfixExpression& postfixExpression) {
-}
-
-void MyVisitor::OpenBinaryOp(BinaryOp& binaryOp) {
-}
-
-void MyVisitor::CloseBinaryOp(BinaryOp& binaryOp) {
 }
 
 void MyVisitor::OpenBinaryOperation(BinaryOperation& binaryOperation) {
@@ -297,12 +255,6 @@ void MyVisitor::OpenCatchClause(CatchClause& catchClause) {
 void MyVisitor::CloseCatchClause(CatchClause& catchClause) {
 }
 
-void MyVisitor::OpenCatchPattern(CatchPattern& catchPattern) {
-}
-
-void MyVisitor::CloseCatchPattern(CatchPattern& catchPattern) {
-}
-
 void MyVisitor::OpenWildCardCatchPattern(WildCardCatchPattern& wildCardCatchPattern) {
 }
 
@@ -313,12 +265,6 @@ void MyVisitor::OpenPathItemCatchPattern(PathItemCatchPattern& pathItemCatchPatt
 }
 
 void MyVisitor::ClosePathItemCatchPattern(PathItemCatchPattern& pathItemCatchPattern) {
-}
-
-void MyVisitor::OpenPostfix(Postfix& postfix) {
-}
-
-void MyVisitor::ClosePostfix(Postfix& postfix) {
 }
 
 void MyVisitor::OpenOperatorPostfix(OperatorPostfix& operatorPostfix) {
@@ -351,22 +297,10 @@ void MyVisitor::OpenExpressionElement(ExpressionElement& expressionElement) {
 void MyVisitor::CloseExpressionElement(ExpressionElement& expressionElement) {
 }
 
-void MyVisitor::OpenMemberPostfix(MemberPostfix& memberPostfix) {
-}
-
-void MyVisitor::CloseMemberPostfix(MemberPostfix& memberPostfix) {
-}
-
 void MyVisitor::OpenNamedMemberPostfix(NamedMemberPostfix& namedMemberPostfix) {
 }
 
 void MyVisitor::CloseNamedMemberPostfix(NamedMemberPostfix& namedMemberPostfix) {
-}
-
-void MyVisitor::OpenPrimaryExpression(PrimaryExpression& primaryExpression) {
-}
-
-void MyVisitor::ClosePrimaryExpression(PrimaryExpression& primaryExpression) {
 }
 
 void MyVisitor::OpenParenthesizedExpression(ParenthesizedExpression& parenthesizedExpression) {
@@ -405,12 +339,6 @@ void MyVisitor::OpenSwitchExpression(SwitchExpression& switchExpression) {
 void MyVisitor::CloseSwitchExpression(SwitchExpression& switchExpression) {
 }
 
-void MyVisitor::OpenSwitchBody(SwitchBody& switchBody) {
-}
-
-void MyVisitor::CloseSwitchBody(SwitchBody& switchBody) {
-}
-
 void MyVisitor::OpenCurliedSwitchBody(CurliedSwitchBody& curliedSwitchBody) {
 }
 
@@ -429,12 +357,6 @@ void MyVisitor::OpenSwitchCase(SwitchCase& switchCase) {
 void MyVisitor::CloseSwitchCase(SwitchCase& switchCase) {
 }
 
-void MyVisitor::OpenCaseLabel(CaseLabel& caseLabel) {
-}
-
-void MyVisitor::CloseCaseLabel(CaseLabel& caseLabel) {
-}
-
 void MyVisitor::OpenItemCaseLabel(ItemCaseLabel& itemCaseLabel) {
 }
 
@@ -451,12 +373,6 @@ void MyVisitor::OpenForExpression(ForExpression& forExpression) {
 }
 
 void MyVisitor::CloseForExpression(ForExpression& forExpression) {
-}
-
-void MyVisitor::OpenForLoop(ForLoop& forLoop) {
-}
-
-void MyVisitor::CloseForLoop(ForLoop& forLoop) {
 }
 
 void MyVisitor::OpenForEach(ForEach& forEach) {
@@ -487,12 +403,6 @@ void MyVisitor::OpenBreakExpression(BreakExpression& breakExpression) {
 }
 
 void MyVisitor::CloseBreakExpression(BreakExpression& breakExpression) {
-}
-
-void MyVisitor::OpenPattern(Pattern& pattern) {
-}
-
-void MyVisitor::ClosePattern(Pattern& pattern) {
 }
 
 void MyVisitor::OpenWildcardPattern(WildcardPattern& wildcardPattern) {
@@ -531,12 +441,6 @@ void MyVisitor::OpenDefaultCaseLabel(DefaultCaseLabel& defaultCaseLabel) {
 void MyVisitor::CloseDefaultCaseLabel(DefaultCaseLabel& defaultCaseLabel) {
 }
 
-void MyVisitor::OpenCaseContent(CaseContent& caseContent) {
-}
-
-void MyVisitor::CloseCaseContent(CaseContent& caseContent) {
-}
-
 void MyVisitor::OpenBlockCaseContent(BlockCaseContent& blockCaseContent) {
 }
 
@@ -553,12 +457,6 @@ void MyVisitor::OpenInitializerCall(InitializerCall& initializerCall) {
 }
 
 void MyVisitor::CloseInitializerCall(InitializerCall& initializerCall) {
-}
-
-void MyVisitor::OpenThisExpression(ThisExpression& thisExpression) {
-}
-
-void MyVisitor::CloseThisExpression(ThisExpression& thisExpression) {
 }
 
 void MyVisitor::OpenThisDot(ThisDot& thisDot) {
@@ -579,12 +477,6 @@ void MyVisitor::OpenThisWord(ThisWord& thisWord) {
 void MyVisitor::CloseThisWord(ThisWord& thisWord) {
 }
 
-void MyVisitor::OpenCommonThisMember(CommonThisMember& commonThisMember) {
-}
-
-void MyVisitor::CloseCommonThisMember(CommonThisMember& commonThisMember) {
-}
-
 void MyVisitor::OpenThisInit(ThisInit& thisInit) {
 }
 
@@ -595,12 +487,6 @@ void MyVisitor::OpenThisMember(ThisMember& thisMember) {
 }
 
 void MyVisitor::CloseThisMember(ThisMember& thisMember) {
-}
-
-void MyVisitor::OpenSuperExpression(SuperExpression& superExpression) {
-}
-
-void MyVisitor::CloseSuperExpression(SuperExpression& superExpression) {
 }
 
 void MyVisitor::OpenSuperDot(SuperDot& superDot) {
@@ -615,12 +501,6 @@ void MyVisitor::OpenSuperSubscript(SuperSubscript& superSubscript) {
 void MyVisitor::CloseSuperSubscript(SuperSubscript& superSubscript) {
 }
 
-void MyVisitor::OpenCommonSuperMember(CommonSuperMember& commonSuperMember) {
-}
-
-void MyVisitor::CloseCommonSuperMember(CommonSuperMember& commonSuperMember) {
-}
-
 void MyVisitor::OpenSuperInit(SuperInit& superInit) {
 }
 
@@ -631,12 +511,6 @@ void MyVisitor::OpenSuperMember(SuperMember& superMember) {
 }
 
 void MyVisitor::CloseSuperMember(SuperMember& superMember) {
-}
-
-void MyVisitor::OpenType(Type& type) {
-}
-
-void MyVisitor::CloseType(Type& type) {
 }
 
 void MyVisitor::OpenTypeAnnotation(TypeAnnotation& typeAnnotation) {
@@ -655,12 +529,6 @@ void MyVisitor::OpenSubtypeIdentifier(SubtypeIdentifier& subtypeIdentifier) {
 }
 
 void MyVisitor::CloseSubtypeIdentifier(SubtypeIdentifier& subtypeIdentifier) {
-}
-
-void MyVisitor::OpenTypePostfix(TypePostfix& typePostfix) {
-}
-
-void MyVisitor::CloseTypePostfix(TypePostfix& typePostfix) {
 }
 
 void MyVisitor::OpenArrayType(ArrayType& arrayType) {

@@ -21,18 +21,6 @@ void CppVisitor::OpenStatementWithSemicolon(StatementWithSemicolon& statementWit
 void CppVisitor::CloseStatementWithSemicolon(StatementWithSemicolon& statementWithSemicolon) {
 }
 
-void CppVisitor::OpenStatement(Statement& statement) {
-}
-
-void CppVisitor::CloseStatement(Statement& statement) {
-}
-
-void CppVisitor::OpenDeclaration(Declaration& declaration) {
-}
-
-void CppVisitor::CloseDeclaration(Declaration& declaration) {
-}
-
 void CppVisitor::OpenUseDeclaration(UseDeclaration& useDeclaration) {
 }
 
@@ -99,12 +87,6 @@ void CppVisitor::OpenInitializerDeclaration(InitializerDeclaration& initializerD
 void CppVisitor::CloseInitializerDeclaration(InitializerDeclaration& initializerDeclaration) {
 }
 
-void CppVisitor::OpenModifier(Modifier& modifier) {
-}
-
-void CppVisitor::CloseModifier(Modifier& modifier) {
-}
-
 void CppVisitor::OpenOverride(Override& override) {
 }
 
@@ -115,12 +97,6 @@ void CppVisitor::OpenStaticWord(StaticWord& staticWord) {
 }
 
 void CppVisitor::CloseStaticWord(StaticWord& staticWord) {
-}
-
-void CppVisitor::OpenFunctionName(FunctionName& functionName) {
-}
-
-void CppVisitor::CloseFunctionName(FunctionName& functionName) {
 }
 
 void CppVisitor::OpenIdentifierFunctionName(IdentifierFunctionName& identifierFunctionName) {
@@ -145,12 +121,6 @@ void CppVisitor::OpenParameterClause(ParameterClause& parameterClause) {
 }
 
 void CppVisitor::CloseParameterClause(ParameterClause& parameterClause) {
-}
-
-void CppVisitor::OpenParameter(Parameter& parameter) {
-}
-
-void CppVisitor::CloseParameter(Parameter& parameter) {
 }
 
 void CppVisitor::OpenConstParameter(ConstParameter& constParameter) {
@@ -231,12 +201,6 @@ void CppVisitor::OpenClassMember(ClassMember& classMember) {
 void CppVisitor::CloseClassMember(ClassMember& classMember) {
 }
 
-void CppVisitor::OpenExpression(Expression& expression) {
-}
-
-void CppVisitor::CloseExpression(Expression& expression) {
-}
-
 void CppVisitor::OpenCodeBlock(CodeBlock& codeBlock) {
 }
 
@@ -259,12 +223,6 @@ void CppVisitor::OpenPostfixExpression(PostfixExpression& postfixExpression) {
 }
 
 void CppVisitor::ClosePostfixExpression(PostfixExpression& postfixExpression) {
-}
-
-void CppVisitor::OpenBinaryOp(BinaryOp& binaryOp) {
-}
-
-void CppVisitor::CloseBinaryOp(BinaryOp& binaryOp) {
 }
 
 void CppVisitor::OpenBinaryOperation(BinaryOperation& binaryOperation) {
@@ -297,12 +255,6 @@ void CppVisitor::OpenCatchClause(CatchClause& catchClause) {
 void CppVisitor::CloseCatchClause(CatchClause& catchClause) {
 }
 
-void CppVisitor::OpenCatchPattern(CatchPattern& catchPattern) {
-}
-
-void CppVisitor::CloseCatchPattern(CatchPattern& catchPattern) {
-}
-
 void CppVisitor::OpenWildCardCatchPattern(WildCardCatchPattern& wildCardCatchPattern) {
 }
 
@@ -313,12 +265,6 @@ void CppVisitor::OpenPathItemCatchPattern(PathItemCatchPattern& pathItemCatchPat
 }
 
 void CppVisitor::ClosePathItemCatchPattern(PathItemCatchPattern& pathItemCatchPattern) {
-}
-
-void CppVisitor::OpenPostfix(Postfix& postfix) {
-}
-
-void CppVisitor::ClosePostfix(Postfix& postfix) {
 }
 
 void CppVisitor::OpenOperatorPostfix(OperatorPostfix& operatorPostfix) {
@@ -351,22 +297,10 @@ void CppVisitor::OpenExpressionElement(ExpressionElement& expressionElement) {
 void CppVisitor::CloseExpressionElement(ExpressionElement& expressionElement) {
 }
 
-void CppVisitor::OpenMemberPostfix(MemberPostfix& memberPostfix) {
-}
-
-void CppVisitor::CloseMemberPostfix(MemberPostfix& memberPostfix) {
-}
-
 void CppVisitor::OpenNamedMemberPostfix(NamedMemberPostfix& namedMemberPostfix) {
 }
 
 void CppVisitor::CloseNamedMemberPostfix(NamedMemberPostfix& namedMemberPostfix) {
-}
-
-void CppVisitor::OpenPrimaryExpression(PrimaryExpression& primaryExpression) {
-}
-
-void CppVisitor::ClosePrimaryExpression(PrimaryExpression& primaryExpression) {
 }
 
 void CppVisitor::OpenParenthesizedExpression(ParenthesizedExpression& parenthesizedExpression) {
@@ -405,12 +339,6 @@ void CppVisitor::OpenSwitchExpression(SwitchExpression& switchExpression) {
 void CppVisitor::CloseSwitchExpression(SwitchExpression& switchExpression) {
 }
 
-void CppVisitor::OpenSwitchBody(SwitchBody& switchBody) {
-}
-
-void CppVisitor::CloseSwitchBody(SwitchBody& switchBody) {
-}
-
 void CppVisitor::OpenCurliedSwitchBody(CurliedSwitchBody& curliedSwitchBody) {
 }
 
@@ -429,12 +357,6 @@ void CppVisitor::OpenSwitchCase(SwitchCase& switchCase) {
 void CppVisitor::CloseSwitchCase(SwitchCase& switchCase) {
 }
 
-void CppVisitor::OpenCaseLabel(CaseLabel& caseLabel) {
-}
-
-void CppVisitor::CloseCaseLabel(CaseLabel& caseLabel) {
-}
-
 void CppVisitor::OpenItemCaseLabel(ItemCaseLabel& itemCaseLabel) {
 }
 
@@ -451,12 +373,6 @@ void CppVisitor::OpenForExpression(ForExpression& forExpression) {
 }
 
 void CppVisitor::CloseForExpression(ForExpression& forExpression) {
-}
-
-void CppVisitor::OpenForLoop(ForLoop& forLoop) {
-}
-
-void CppVisitor::CloseForLoop(ForLoop& forLoop) {
 }
 
 void CppVisitor::OpenForEach(ForEach& forEach) {
@@ -487,12 +403,6 @@ void CppVisitor::OpenBreakExpression(BreakExpression& breakExpression) {
 }
 
 void CppVisitor::CloseBreakExpression(BreakExpression& breakExpression) {
-}
-
-void CppVisitor::OpenPattern(Pattern& pattern) {
-}
-
-void CppVisitor::ClosePattern(Pattern& pattern) {
 }
 
 void CppVisitor::OpenWildcardPattern(WildcardPattern& wildcardPattern) {
@@ -531,12 +441,6 @@ void CppVisitor::OpenDefaultCaseLabel(DefaultCaseLabel& defaultCaseLabel) {
 void CppVisitor::CloseDefaultCaseLabel(DefaultCaseLabel& defaultCaseLabel) {
 }
 
-void CppVisitor::OpenCaseContent(CaseContent& caseContent) {
-}
-
-void CppVisitor::CloseCaseContent(CaseContent& caseContent) {
-}
-
 void CppVisitor::OpenBlockCaseContent(BlockCaseContent& blockCaseContent) {
 }
 
@@ -553,12 +457,6 @@ void CppVisitor::OpenInitializerCall(InitializerCall& initializerCall) {
 }
 
 void CppVisitor::CloseInitializerCall(InitializerCall& initializerCall) {
-}
-
-void CppVisitor::OpenThisExpression(ThisExpression& thisExpression) {
-}
-
-void CppVisitor::CloseThisExpression(ThisExpression& thisExpression) {
 }
 
 void CppVisitor::OpenThisDot(ThisDot& thisDot) {
@@ -579,12 +477,6 @@ void CppVisitor::OpenThisWord(ThisWord& thisWord) {
 void CppVisitor::CloseThisWord(ThisWord& thisWord) {
 }
 
-void CppVisitor::OpenCommonThisMember(CommonThisMember& commonThisMember) {
-}
-
-void CppVisitor::CloseCommonThisMember(CommonThisMember& commonThisMember) {
-}
-
 void CppVisitor::OpenThisInit(ThisInit& thisInit) {
 }
 
@@ -595,12 +487,6 @@ void CppVisitor::OpenThisMember(ThisMember& thisMember) {
 }
 
 void CppVisitor::CloseThisMember(ThisMember& thisMember) {
-}
-
-void CppVisitor::OpenSuperExpression(SuperExpression& superExpression) {
-}
-
-void CppVisitor::CloseSuperExpression(SuperExpression& superExpression) {
 }
 
 void CppVisitor::OpenSuperDot(SuperDot& superDot) {
@@ -615,12 +501,6 @@ void CppVisitor::OpenSuperSubscript(SuperSubscript& superSubscript) {
 void CppVisitor::CloseSuperSubscript(SuperSubscript& superSubscript) {
 }
 
-void CppVisitor::OpenCommonSuperMember(CommonSuperMember& commonSuperMember) {
-}
-
-void CppVisitor::CloseCommonSuperMember(CommonSuperMember& commonSuperMember) {
-}
-
 void CppVisitor::OpenSuperInit(SuperInit& superInit) {
 }
 
@@ -631,12 +511,6 @@ void CppVisitor::OpenSuperMember(SuperMember& superMember) {
 }
 
 void CppVisitor::CloseSuperMember(SuperMember& superMember) {
-}
-
-void CppVisitor::OpenType(Type& type) {
-}
-
-void CppVisitor::CloseType(Type& type) {
 }
 
 void CppVisitor::OpenTypeAnnotation(TypeAnnotation& typeAnnotation) {
@@ -655,12 +529,6 @@ void CppVisitor::OpenSubtypeIdentifier(SubtypeIdentifier& subtypeIdentifier) {
 }
 
 void CppVisitor::CloseSubtypeIdentifier(SubtypeIdentifier& subtypeIdentifier) {
-}
-
-void CppVisitor::OpenTypePostfix(TypePostfix& typePostfix) {
-}
-
-void CppVisitor::CloseTypePostfix(TypePostfix& typePostfix) {
 }
 
 void CppVisitor::OpenArrayType(ArrayType& arrayType) {
