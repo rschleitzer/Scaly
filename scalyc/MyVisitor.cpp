@@ -84,16 +84,10 @@ void MyVisitor::OpenInitializerDeclaration(InitializerDeclaration& initializerDe
 void MyVisitor::CloseInitializerDeclaration(InitializerDeclaration& initializerDeclaration) {
 }
 
-void MyVisitor::OpenOverride(Override& override) {
+void MyVisitor::VisitOverride(Override& override) {
 }
 
-void MyVisitor::CloseOverride(Override& override) {
-}
-
-void MyVisitor::OpenStaticWord(StaticWord& staticWord) {
-}
-
-void MyVisitor::CloseStaticWord(StaticWord& staticWord) {
+void MyVisitor::VisitStaticWord(StaticWord& staticWord) {
 }
 
 void MyVisitor::VisitIdentifierFunctionName(IdentifierFunctionName& identifierFunctionName) {
@@ -384,10 +378,7 @@ void MyVisitor::OpenBreakExpression(BreakExpression& breakExpression) {
 void MyVisitor::CloseBreakExpression(BreakExpression& breakExpression) {
 }
 
-void MyVisitor::OpenWildcardPattern(WildcardPattern& wildcardPattern) {
-}
-
-void MyVisitor::CloseWildcardPattern(WildcardPattern& wildcardPattern) {
+void MyVisitor::VisitWildcardPattern(WildcardPattern& wildcardPattern) {
 }
 
 void MyVisitor::OpenIdentifierPattern(IdentifierPattern& identifierPattern) {
@@ -414,10 +405,7 @@ void MyVisitor::OpenExpressionPattern(ExpressionPattern& expressionPattern) {
 void MyVisitor::CloseExpressionPattern(ExpressionPattern& expressionPattern) {
 }
 
-void MyVisitor::OpenDefaultCaseLabel(DefaultCaseLabel& defaultCaseLabel) {
-}
-
-void MyVisitor::CloseDefaultCaseLabel(DefaultCaseLabel& defaultCaseLabel) {
+void MyVisitor::VisitDefaultCaseLabel(DefaultCaseLabel& defaultCaseLabel) {
 }
 
 void MyVisitor::OpenBlockCaseContent(BlockCaseContent& blockCaseContent) {
@@ -426,10 +414,7 @@ void MyVisitor::OpenBlockCaseContent(BlockCaseContent& blockCaseContent) {
 void MyVisitor::CloseBlockCaseContent(BlockCaseContent& blockCaseContent) {
 }
 
-void MyVisitor::OpenEmptyCaseContent(EmptyCaseContent& emptyCaseContent) {
-}
-
-void MyVisitor::CloseEmptyCaseContent(EmptyCaseContent& emptyCaseContent) {
+void MyVisitor::VisitEmptyCaseContent(EmptyCaseContent& emptyCaseContent) {
 }
 
 void MyVisitor::OpenInitializerCall(InitializerCall& initializerCall) {
@@ -450,16 +435,10 @@ void MyVisitor::OpenThisSubscript(ThisSubscript& thisSubscript) {
 void MyVisitor::CloseThisSubscript(ThisSubscript& thisSubscript) {
 }
 
-void MyVisitor::OpenThisWord(ThisWord& thisWord) {
+void MyVisitor::VisitThisWord(ThisWord& thisWord) {
 }
 
-void MyVisitor::CloseThisWord(ThisWord& thisWord) {
-}
-
-void MyVisitor::OpenThisInit(ThisInit& thisInit) {
-}
-
-void MyVisitor::CloseThisInit(ThisInit& thisInit) {
+void MyVisitor::VisitThisInit(ThisInit& thisInit) {
 }
 
 void MyVisitor::VisitThisMember(ThisMember& thisMember) {
@@ -477,10 +456,7 @@ void MyVisitor::OpenSuperSubscript(SuperSubscript& superSubscript) {
 void MyVisitor::CloseSuperSubscript(SuperSubscript& superSubscript) {
 }
 
-void MyVisitor::OpenSuperInit(SuperInit& superInit) {
-}
-
-void MyVisitor::CloseSuperInit(SuperInit& superInit) {
+void MyVisitor::VisitSuperInit(SuperInit& superInit) {
 }
 
 void MyVisitor::VisitSuperMember(SuperMember& superMember) {
@@ -510,10 +486,7 @@ void MyVisitor::OpenArrayType(ArrayType& arrayType) {
 void MyVisitor::CloseArrayType(ArrayType& arrayType) {
 }
 
-void MyVisitor::OpenOptionalType(OptionalType& optionalType) {
-}
-
-void MyVisitor::CloseOptionalType(OptionalType& optionalType) {
+void MyVisitor::VisitOptionalType(OptionalType& optionalType) {
 }
 
 void MyVisitor::OpenTypeInheritanceClause(TypeInheritanceClause& typeInheritanceClause) {

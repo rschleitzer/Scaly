@@ -84,16 +84,10 @@ void CppVisitor::OpenInitializerDeclaration(InitializerDeclaration& initializerD
 void CppVisitor::CloseInitializerDeclaration(InitializerDeclaration& initializerDeclaration) {
 }
 
-void CppVisitor::OpenOverride(Override& override) {
+void CppVisitor::VisitOverride(Override& override) {
 }
 
-void CppVisitor::CloseOverride(Override& override) {
-}
-
-void CppVisitor::OpenStaticWord(StaticWord& staticWord) {
-}
-
-void CppVisitor::CloseStaticWord(StaticWord& staticWord) {
+void CppVisitor::VisitStaticWord(StaticWord& staticWord) {
 }
 
 void CppVisitor::VisitIdentifierFunctionName(IdentifierFunctionName& identifierFunctionName) {
@@ -384,10 +378,7 @@ void CppVisitor::OpenBreakExpression(BreakExpression& breakExpression) {
 void CppVisitor::CloseBreakExpression(BreakExpression& breakExpression) {
 }
 
-void CppVisitor::OpenWildcardPattern(WildcardPattern& wildcardPattern) {
-}
-
-void CppVisitor::CloseWildcardPattern(WildcardPattern& wildcardPattern) {
+void CppVisitor::VisitWildcardPattern(WildcardPattern& wildcardPattern) {
 }
 
 void CppVisitor::OpenIdentifierPattern(IdentifierPattern& identifierPattern) {
@@ -414,10 +405,7 @@ void CppVisitor::OpenExpressionPattern(ExpressionPattern& expressionPattern) {
 void CppVisitor::CloseExpressionPattern(ExpressionPattern& expressionPattern) {
 }
 
-void CppVisitor::OpenDefaultCaseLabel(DefaultCaseLabel& defaultCaseLabel) {
-}
-
-void CppVisitor::CloseDefaultCaseLabel(DefaultCaseLabel& defaultCaseLabel) {
+void CppVisitor::VisitDefaultCaseLabel(DefaultCaseLabel& defaultCaseLabel) {
 }
 
 void CppVisitor::OpenBlockCaseContent(BlockCaseContent& blockCaseContent) {
@@ -426,10 +414,7 @@ void CppVisitor::OpenBlockCaseContent(BlockCaseContent& blockCaseContent) {
 void CppVisitor::CloseBlockCaseContent(BlockCaseContent& blockCaseContent) {
 }
 
-void CppVisitor::OpenEmptyCaseContent(EmptyCaseContent& emptyCaseContent) {
-}
-
-void CppVisitor::CloseEmptyCaseContent(EmptyCaseContent& emptyCaseContent) {
+void CppVisitor::VisitEmptyCaseContent(EmptyCaseContent& emptyCaseContent) {
 }
 
 void CppVisitor::OpenInitializerCall(InitializerCall& initializerCall) {
@@ -450,16 +435,10 @@ void CppVisitor::OpenThisSubscript(ThisSubscript& thisSubscript) {
 void CppVisitor::CloseThisSubscript(ThisSubscript& thisSubscript) {
 }
 
-void CppVisitor::OpenThisWord(ThisWord& thisWord) {
+void CppVisitor::VisitThisWord(ThisWord& thisWord) {
 }
 
-void CppVisitor::CloseThisWord(ThisWord& thisWord) {
-}
-
-void CppVisitor::OpenThisInit(ThisInit& thisInit) {
-}
-
-void CppVisitor::CloseThisInit(ThisInit& thisInit) {
+void CppVisitor::VisitThisInit(ThisInit& thisInit) {
 }
 
 void CppVisitor::VisitThisMember(ThisMember& thisMember) {
@@ -477,10 +456,7 @@ void CppVisitor::OpenSuperSubscript(SuperSubscript& superSubscript) {
 void CppVisitor::CloseSuperSubscript(SuperSubscript& superSubscript) {
 }
 
-void CppVisitor::OpenSuperInit(SuperInit& superInit) {
-}
-
-void CppVisitor::CloseSuperInit(SuperInit& superInit) {
+void CppVisitor::VisitSuperInit(SuperInit& superInit) {
 }
 
 void CppVisitor::VisitSuperMember(SuperMember& superMember) {
@@ -510,10 +486,7 @@ void CppVisitor::OpenArrayType(ArrayType& arrayType) {
 void CppVisitor::CloseArrayType(ArrayType& arrayType) {
 }
 
-void CppVisitor::OpenOptionalType(OptionalType& optionalType) {
-}
-
-void CppVisitor::CloseOptionalType(OptionalType& optionalType) {
+void CppVisitor::VisitOptionalType(OptionalType& optionalType) {
 }
 
 void CppVisitor::OpenTypeInheritanceClause(TypeInheritanceClause& typeInheritanceClause) {

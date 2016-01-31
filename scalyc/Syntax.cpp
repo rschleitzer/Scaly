@@ -224,8 +224,7 @@ Override::Override(Position start, Position end)
 }
 
 void Override::Accept(SyntaxVisitor& visitor) {
-    visitor.OpenOverride(*this);
-    visitor.CloseOverride(*this);
+    visitor.VisitOverride(*this);
 }
 
 StaticWord::StaticWord(Position start, Position end)
@@ -233,8 +232,7 @@ StaticWord::StaticWord(Position start, Position end)
 }
 
 void StaticWord::Accept(SyntaxVisitor& visitor) {
-    visitor.OpenStaticWord(*this);
-    visitor.CloseStaticWord(*this);
+    visitor.VisitStaticWord(*this);
 }
 
 FunctionName::FunctionName(Position start, Position end)
@@ -967,8 +965,7 @@ WildcardPattern::WildcardPattern(Position start, Position end)
 }
 
 void WildcardPattern::Accept(SyntaxVisitor& visitor) {
-    visitor.OpenWildcardPattern(*this);
-    visitor.CloseWildcardPattern(*this);
+    visitor.VisitWildcardPattern(*this);
 }
 
 IdentifierPattern::IdentifierPattern(Position start, Position end)
@@ -1025,8 +1022,7 @@ DefaultCaseLabel::DefaultCaseLabel(Position start, Position end)
 }
 
 void DefaultCaseLabel::Accept(SyntaxVisitor& visitor) {
-    visitor.OpenDefaultCaseLabel(*this);
-    visitor.CloseDefaultCaseLabel(*this);
+    visitor.VisitDefaultCaseLabel(*this);
 }
 
 CaseContent::CaseContent(Position start, Position end)
@@ -1055,8 +1051,7 @@ EmptyCaseContent::EmptyCaseContent(Position start, Position end)
 }
 
 void EmptyCaseContent::Accept(SyntaxVisitor& visitor) {
-    visitor.OpenEmptyCaseContent(*this);
-    visitor.CloseEmptyCaseContent(*this);
+    visitor.VisitEmptyCaseContent(*this);
 }
 
 InitializerCall::InitializerCall(Position start, Position end)
@@ -1109,8 +1104,7 @@ ThisWord::ThisWord(Position start, Position end)
 }
 
 void ThisWord::Accept(SyntaxVisitor& visitor) {
-    visitor.OpenThisWord(*this);
-    visitor.CloseThisWord(*this);
+    visitor.VisitThisWord(*this);
 }
 
 CommonThisMember::CommonThisMember(Position start, Position end)
@@ -1122,8 +1116,7 @@ ThisInit::ThisInit(Position start, Position end)
 }
 
 void ThisInit::Accept(SyntaxVisitor& visitor) {
-    visitor.OpenThisInit(*this);
-    visitor.CloseThisInit(*this);
+    visitor.VisitThisInit(*this);
 }
 
 ThisMember::ThisMember(Position start, Position end)
@@ -1167,8 +1160,7 @@ SuperInit::SuperInit(Position start, Position end)
 }
 
 void SuperInit::Accept(SyntaxVisitor& visitor) {
-    visitor.OpenSuperInit(*this);
-    visitor.CloseSuperInit(*this);
+    visitor.VisitSuperInit(*this);
 }
 
 SuperMember::SuperMember(Position start, Position end)
@@ -1254,8 +1246,7 @@ OptionalType::OptionalType(Position start, Position end)
 }
 
 void OptionalType::Accept(SyntaxVisitor& visitor) {
-    visitor.OpenOptionalType(*this);
-    visitor.CloseOptionalType(*this);
+    visitor.VisitOptionalType(*this);
 }
 
 TypeInheritanceClause::TypeInheritanceClause(Position start, Position end)

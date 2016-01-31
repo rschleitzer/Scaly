@@ -109,5 +109,5 @@
 
 (define (has-syntax-children? node)
     (not (node-list-empty?
-        (node-list-filter syntax?
+        (node-list-filter (lambda (snl) (and (syntax? snl) (string=? "syntax" (gi (element-with-id (attribute-string "link" snl))))))
             (children node)))))
