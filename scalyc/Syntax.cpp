@@ -54,18 +54,8 @@ Statement::Statement(Position start, Position end)
 : SyntaxNode(start, end) {
 }
 
-void Statement::Accept(SyntaxVisitor& visitor) {
-    visitor.OpenStatement(*this);
-    visitor.CloseStatement(*this);
-}
-
 Declaration::Declaration(Position start, Position end)
 : Statement(start, end) {
-}
-
-void Declaration::Accept(SyntaxVisitor& visitor) {
-    visitor.OpenDeclaration(*this);
-    visitor.CloseDeclaration(*this);
 }
 
 UseDeclaration::UseDeclaration(Position start, Position end)
@@ -230,11 +220,6 @@ Modifier::Modifier(Position start, Position end)
 : SyntaxNode(start, end) {
 }
 
-void Modifier::Accept(SyntaxVisitor& visitor) {
-    visitor.OpenModifier(*this);
-    visitor.CloseModifier(*this);
-}
-
 Override::Override(Position start, Position end)
 : Modifier(start, end) {
 }
@@ -255,11 +240,6 @@ void StaticWord::Accept(SyntaxVisitor& visitor) {
 
 FunctionName::FunctionName(Position start, Position end)
 : SyntaxNode(start, end) {
-}
-
-void FunctionName::Accept(SyntaxVisitor& visitor) {
-    visitor.OpenFunctionName(*this);
-    visitor.CloseFunctionName(*this);
 }
 
 IdentifierFunctionName::IdentifierFunctionName(Position start, Position end)
@@ -318,11 +298,6 @@ void ParameterClause::Accept(SyntaxVisitor& visitor) {
 
 Parameter::Parameter(Position start, Position end)
 : SyntaxNode(start, end) {
-}
-
-void Parameter::Accept(SyntaxVisitor& visitor) {
-    visitor.OpenParameter(*this);
-    visitor.CloseParameter(*this);
 }
 
 ConstParameter::ConstParameter(Position start, Position end)
@@ -509,11 +484,6 @@ Expression::Expression(Position start, Position end)
 : Statement(start, end) {
 }
 
-void Expression::Accept(SyntaxVisitor& visitor) {
-    visitor.OpenExpression(*this);
-    visitor.CloseExpression(*this);
-}
-
 CodeBlock::CodeBlock(Position start, Position end)
 : Expression(start, end) {
 }
@@ -585,11 +555,6 @@ BinaryOp::BinaryOp(Position start, Position end)
 : SyntaxNode(start, end) {
 }
 
-void BinaryOp::Accept(SyntaxVisitor& visitor) {
-    visitor.OpenBinaryOp(*this);
-    visitor.CloseBinaryOp(*this);
-}
-
 BinaryOperation::BinaryOperation(Position start, Position end)
 : BinaryOp(start, end) {
 }
@@ -648,11 +613,6 @@ CatchPattern::CatchPattern(Position start, Position end)
 : SyntaxNode(start, end) {
 }
 
-void CatchPattern::Accept(SyntaxVisitor& visitor) {
-    visitor.OpenCatchPattern(*this);
-    visitor.CloseCatchPattern(*this);
-}
-
 WildCardCatchPattern::WildCardCatchPattern(Position start, Position end)
 : CatchPattern(start, end) {
 }
@@ -685,11 +645,6 @@ void PathItemCatchPattern::Accept(SyntaxVisitor& visitor) {
 
 Postfix::Postfix(Position start, Position end)
 : SyntaxNode(start, end) {
-}
-
-void Postfix::Accept(SyntaxVisitor& visitor) {
-    visitor.OpenPostfix(*this);
-    visitor.ClosePostfix(*this);
 }
 
 OperatorPostfix::OperatorPostfix(Position start, Position end)
@@ -762,11 +717,6 @@ MemberPostfix::MemberPostfix(Position start, Position end)
 : ExplicitMemberExpression(start, end) {
 }
 
-void MemberPostfix::Accept(SyntaxVisitor& visitor) {
-    visitor.OpenMemberPostfix(*this);
-    visitor.CloseMemberPostfix(*this);
-}
-
 NamedMemberPostfix::NamedMemberPostfix(Position start, Position end)
 : MemberPostfix(start, end) {
 }
@@ -779,11 +729,6 @@ void NamedMemberPostfix::Accept(SyntaxVisitor& visitor) {
 
 PrimaryExpression::PrimaryExpression(Position start, Position end)
 : SyntaxNode(start, end) {
-}
-
-void PrimaryExpression::Accept(SyntaxVisitor& visitor) {
-    visitor.OpenPrimaryExpression(*this);
-    visitor.ClosePrimaryExpression(*this);
 }
 
 ParenthesizedExpression::ParenthesizedExpression(Position start, Position end)
@@ -862,11 +807,6 @@ SwitchBody::SwitchBody(Position start, Position end)
 : SyntaxNode(start, end) {
 }
 
-void SwitchBody::Accept(SyntaxVisitor& visitor) {
-    visitor.OpenSwitchBody(*this);
-    visitor.CloseSwitchBody(*this);
-}
-
 CurliedSwitchBody::CurliedSwitchBody(Position start, Position end)
 : SwitchBody(start, end) {
 }
@@ -916,11 +856,6 @@ CaseLabel::CaseLabel(Position start, Position end)
 : SyntaxNode(start, end) {
 }
 
-void CaseLabel::Accept(SyntaxVisitor& visitor) {
-    visitor.OpenCaseLabel(*this);
-    visitor.CloseCaseLabel(*this);
-}
-
 ItemCaseLabel::ItemCaseLabel(Position start, Position end)
 : CaseLabel(start, end) {
 }
@@ -963,11 +898,6 @@ void ForExpression::Accept(SyntaxVisitor& visitor) {
 
 ForLoop::ForLoop(Position start, Position end)
 : SyntaxNode(start, end) {
-}
-
-void ForLoop::Accept(SyntaxVisitor& visitor) {
-    visitor.OpenForLoop(*this);
-    visitor.CloseForLoop(*this);
 }
 
 ForEach::ForEach(Position start, Position end)
@@ -1037,11 +967,6 @@ void BreakExpression::Accept(SyntaxVisitor& visitor) {
 
 Pattern::Pattern(Position start, Position end)
 : SyntaxNode(start, end) {
-}
-
-void Pattern::Accept(SyntaxVisitor& visitor) {
-    visitor.OpenPattern(*this);
-    visitor.ClosePattern(*this);
 }
 
 WildcardPattern::WildcardPattern(Position start, Position end)
@@ -1115,11 +1040,6 @@ CaseContent::CaseContent(Position start, Position end)
 : SyntaxNode(start, end) {
 }
 
-void CaseContent::Accept(SyntaxVisitor& visitor) {
-    visitor.OpenCaseContent(*this);
-    visitor.CloseCaseContent(*this);
-}
-
 BlockCaseContent::BlockCaseContent(Position start, Position end)
 : CaseContent(start, end) {
 }
@@ -1171,11 +1091,6 @@ ThisExpression::ThisExpression(Position start, Position end)
 : PrimaryExpression(start, end) {
 }
 
-void ThisExpression::Accept(SyntaxVisitor& visitor) {
-    visitor.OpenThisExpression(*this);
-    visitor.CloseThisExpression(*this);
-}
-
 ThisDot::ThisDot(Position start, Position end)
 : ThisExpression(start, end) {
 }
@@ -1209,11 +1124,6 @@ CommonThisMember::CommonThisMember(Position start, Position end)
 : SyntaxNode(start, end) {
 }
 
-void CommonThisMember::Accept(SyntaxVisitor& visitor) {
-    visitor.OpenCommonThisMember(*this);
-    visitor.CloseCommonThisMember(*this);
-}
-
 ThisInit::ThisInit(Position start, Position end)
 : CommonThisMember(start, end) {
 }
@@ -1234,11 +1144,6 @@ void ThisMember::Accept(SyntaxVisitor& visitor) {
 
 SuperExpression::SuperExpression(Position start, Position end)
 : PrimaryExpression(start, end) {
-}
-
-void SuperExpression::Accept(SyntaxVisitor& visitor) {
-    visitor.OpenSuperExpression(*this);
-    visitor.CloseSuperExpression(*this);
 }
 
 SuperDot::SuperDot(Position start, Position end)
@@ -1265,11 +1170,6 @@ CommonSuperMember::CommonSuperMember(Position start, Position end)
 : SyntaxNode(start, end) {
 }
 
-void CommonSuperMember::Accept(SyntaxVisitor& visitor) {
-    visitor.OpenCommonSuperMember(*this);
-    visitor.CloseCommonSuperMember(*this);
-}
-
 SuperInit::SuperInit(Position start, Position end)
 : CommonSuperMember(start, end) {
 }
@@ -1290,11 +1190,6 @@ void SuperMember::Accept(SyntaxVisitor& visitor) {
 
 Type::Type(Position start, Position end)
 : SyntaxNode(start, end) {
-}
-
-void Type::Accept(SyntaxVisitor& visitor) {
-    visitor.OpenType(*this);
-    visitor.CloseType(*this);
 }
 
 TypeAnnotation::TypeAnnotation(Position start, Position end)
@@ -1341,11 +1236,6 @@ void SubtypeIdentifier::Accept(SyntaxVisitor& visitor) {
 
 TypePostfix::TypePostfix(Position start, Position end)
 : SyntaxNode(start, end) {
-}
-
-void TypePostfix::Accept(SyntaxVisitor& visitor) {
-    visitor.OpenTypePostfix(*this);
-    visitor.CloseTypePostfix(*this);
 }
 
 ArrayType::ArrayType(Position start, Position end)

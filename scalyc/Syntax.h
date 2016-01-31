@@ -42,14 +42,14 @@ class Statement : public SyntaxNode {
 public:
     Statement(Position start, Position end);
 
-    virtual void Accept(SyntaxVisitor& visitor);
+    virtual void Accept(SyntaxVisitor& visitor) = 0;
 };
 
 class Declaration : public Statement {
 public:
     Declaration(Position start, Position end);
 
-    virtual void Accept(SyntaxVisitor& visitor);
+    virtual void Accept(SyntaxVisitor& visitor) = 0;
 };
 
 class UseDeclaration : public Declaration {
@@ -153,7 +153,7 @@ class Modifier : public SyntaxNode {
 public:
     Modifier(Position start, Position end);
 
-    virtual void Accept(SyntaxVisitor& visitor);
+    virtual void Accept(SyntaxVisitor& visitor) = 0;
 };
 
 class Override : public Modifier {
@@ -174,7 +174,7 @@ class FunctionName : public SyntaxNode {
 public:
     FunctionName(Position start, Position end);
 
-    virtual void Accept(SyntaxVisitor& visitor);
+    virtual void Accept(SyntaxVisitor& visitor) = 0;
 };
 
 class IdentifierFunctionName : public FunctionName {
@@ -215,7 +215,7 @@ class Parameter : public SyntaxNode {
 public:
     Parameter(Position start, Position end);
 
-    virtual void Accept(SyntaxVisitor& visitor);
+    virtual void Accept(SyntaxVisitor& visitor) = 0;
 };
 
 class ConstParameter : public Parameter {
@@ -335,7 +335,7 @@ class Expression : public Statement {
 public:
     Expression(Position start, Position end);
 
-    virtual void Accept(SyntaxVisitor& visitor);
+    virtual void Accept(SyntaxVisitor& visitor) = 0;
 };
 
 class CodeBlock : public Expression {
@@ -377,7 +377,7 @@ class BinaryOp : public SyntaxNode {
 public:
     BinaryOp(Position start, Position end);
 
-    virtual void Accept(SyntaxVisitor& visitor);
+    virtual void Accept(SyntaxVisitor& visitor) = 0;
 };
 
 class BinaryOperation : public BinaryOp {
@@ -427,7 +427,7 @@ class CatchPattern : public SyntaxNode {
 public:
     CatchPattern(Position start, Position end);
 
-    virtual void Accept(SyntaxVisitor& visitor);
+    virtual void Accept(SyntaxVisitor& visitor) = 0;
 };
 
 class WildCardCatchPattern : public CatchPattern {
@@ -451,7 +451,7 @@ class Postfix : public SyntaxNode {
 public:
     Postfix(Position start, Position end);
 
-    virtual void Accept(SyntaxVisitor& visitor);
+    virtual void Accept(SyntaxVisitor& visitor) = 0;
 };
 
 class OperatorPostfix : public Postfix {
@@ -499,7 +499,7 @@ class MemberPostfix : public ExplicitMemberExpression {
 public:
     MemberPostfix(Position start, Position end);
 
-    virtual void Accept(SyntaxVisitor& visitor);
+    virtual void Accept(SyntaxVisitor& visitor) = 0;
 };
 
 class NamedMemberPostfix : public MemberPostfix {
@@ -514,7 +514,7 @@ class PrimaryExpression : public SyntaxNode {
 public:
     PrimaryExpression(Position start, Position end);
 
-    virtual void Accept(SyntaxVisitor& visitor);
+    virtual void Accept(SyntaxVisitor& visitor) = 0;
 };
 
 class ParenthesizedExpression : public PrimaryExpression {
@@ -572,7 +572,7 @@ class SwitchBody : public SyntaxNode {
 public:
     SwitchBody(Position start, Position end);
 
-    virtual void Accept(SyntaxVisitor& visitor);
+    virtual void Accept(SyntaxVisitor& visitor) = 0;
 };
 
 class CurliedSwitchBody : public SwitchBody {
@@ -604,7 +604,7 @@ class CaseLabel : public SyntaxNode {
 public:
     CaseLabel(Position start, Position end);
 
-    virtual void Accept(SyntaxVisitor& visitor);
+    virtual void Accept(SyntaxVisitor& visitor) = 0;
 };
 
 class ItemCaseLabel : public CaseLabel {
@@ -636,7 +636,7 @@ class ForLoop : public SyntaxNode {
 public:
     ForLoop(Position start, Position end);
 
-    virtual void Accept(SyntaxVisitor& visitor);
+    virtual void Accept(SyntaxVisitor& visitor) = 0;
 };
 
 class ForEach : public ForLoop {
@@ -688,7 +688,7 @@ class Pattern : public SyntaxNode {
 public:
     Pattern(Position start, Position end);
 
-    virtual void Accept(SyntaxVisitor& visitor);
+    virtual void Accept(SyntaxVisitor& visitor) = 0;
 };
 
 class WildcardPattern : public Pattern {
@@ -742,7 +742,7 @@ class CaseContent : public SyntaxNode {
 public:
     CaseContent(Position start, Position end);
 
-    virtual void Accept(SyntaxVisitor& visitor);
+    virtual void Accept(SyntaxVisitor& visitor) = 0;
 };
 
 class BlockCaseContent : public CaseContent {
@@ -774,7 +774,7 @@ class ThisExpression : public PrimaryExpression {
 public:
     ThisExpression(Position start, Position end);
 
-    virtual void Accept(SyntaxVisitor& visitor);
+    virtual void Accept(SyntaxVisitor& visitor) = 0;
 };
 
 class ThisDot : public ThisExpression {
@@ -804,7 +804,7 @@ class CommonThisMember : public SyntaxNode {
 public:
     CommonThisMember(Position start, Position end);
 
-    virtual void Accept(SyntaxVisitor& visitor);
+    virtual void Accept(SyntaxVisitor& visitor) = 0;
 };
 
 class ThisInit : public CommonThisMember {
@@ -826,7 +826,7 @@ class SuperExpression : public PrimaryExpression {
 public:
     SuperExpression(Position start, Position end);
 
-    virtual void Accept(SyntaxVisitor& visitor);
+    virtual void Accept(SyntaxVisitor& visitor) = 0;
 };
 
 class SuperDot : public SuperExpression {
@@ -849,7 +849,7 @@ class CommonSuperMember : public SyntaxNode {
 public:
     CommonSuperMember(Position start, Position end);
 
-    virtual void Accept(SyntaxVisitor& visitor);
+    virtual void Accept(SyntaxVisitor& visitor) = 0;
 };
 
 class SuperInit : public CommonSuperMember {
@@ -871,7 +871,7 @@ class Type : public SyntaxNode {
 public:
     Type(Position start, Position end);
 
-    virtual void Accept(SyntaxVisitor& visitor);
+    virtual void Accept(SyntaxVisitor& visitor) = 0;
 };
 
 class TypeAnnotation : public SyntaxNode {
@@ -904,7 +904,7 @@ class TypePostfix : public SyntaxNode {
 public:
     TypePostfix(Position start, Position end);
 
-    virtual void Accept(SyntaxVisitor& visitor);
+    virtual void Accept(SyntaxVisitor& visitor) = 0;
 };
 
 class ArrayType : public Type {

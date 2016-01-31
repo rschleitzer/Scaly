@@ -95,7 +95,7 @@ class "(id syntax-node)" : public "(if (base syntax-node) (base syntax-node) "Sy
 public:
     "(id syntax-node)"("(if (program? syntax-node) "" "Position start, Position end")");
 
-    virtual void Accept(SyntaxVisitor& visitor);
+    virtual void Accept(SyntaxVisitor& visitor)"(if (abstract? syntax-node) " = 0" "")";
 "
         (apply-to-children-of syntax-node (lambda (content) ($
             (case (type content)
@@ -152,7 +152,8 @@ SyntaxNode::SyntaxNode(Position start, Position end)
 "(id syntax-node)"::"(id syntax-node)"("(if (program? syntax-node) "" "Position start, Position end")")
 : "(if (base syntax-node) (base syntax-node) "SyntaxNode")"("(if (program? syntax-node) "Position(0, 0), Position(0, 0)" "start, end")") {
 }
-
+"       (if (abstract? syntax-node) "" ($
+"
 void "(id syntax-node)"::Accept(SyntaxVisitor& visitor) {
     visitor.Open"(id syntax-node)"(*this);
 "
@@ -190,7 +191,7 @@ void "(id syntax-node)"::Accept(SyntaxVisitor& visitor) {
         ))
 "    visitor.Close"(id syntax-node)"(*this);
 }
-"
+"       ))
    )))
 "
 }
