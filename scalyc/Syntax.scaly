@@ -24,6 +24,7 @@ class Program : SyntaxNode {
     }
 
     let name: String?
+    let directory: String?
     let compilationUnits: [CompilationUnit]?
 }
 

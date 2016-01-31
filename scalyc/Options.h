@@ -11,6 +11,7 @@ public:
     
     Array<String>* files;
     String* outputName;
+    String* directory;
 };
 
 }

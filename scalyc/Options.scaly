@@ -17,6 +17,13 @@ class Options {
                     else
                         options.outputName = args[i]
                 }
+                case "d": {
+                    i++
+                    if i == length
+                        throw invalidOption(args[i])
+                    else
+                        options.directory = args[i]
+                }
                 default:
                     throw unknownOption(args[i])
             } 
@@ -31,5 +38,6 @@ class Options {
     
     let files: [String]
     let outputName: String
+    let directory: String
 }
 

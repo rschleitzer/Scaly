@@ -18,6 +18,7 @@ public:
 
     virtual void Accept(SyntaxVisitor& visitor);
     String* name;
+    String* directory;
     Array<CompilationUnit>* compilationUnits;
 };
 

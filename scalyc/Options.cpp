@@ -27,6 +27,15 @@ _Result<Options, OptionsError> Options::parseArguments(_Page* _rp, _Page* _ep, A
                     
                 break;
             }
+            case 'd': {
+                i++;
+                if (i == length)
+                    return _Result<Options, OptionsError>(new(_ep) OptionsError(*new(_ep) _InvalidOption(**args[i])));
+                else
+                    options.directory = *args[i];
+                    
+                break;
+            }
             default:
                 return _Result<Options, OptionsError>(new(_ep) OptionsError(*new(_ep) _UnknownOption(**args[i])));
         }
