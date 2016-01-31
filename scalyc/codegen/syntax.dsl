@@ -165,19 +165,19 @@ void "(id syntax-node)"::Accept(SyntaxVisitor& visitor) {
                             (("syntax") ($
                                 (if (abstract? syntax-node) "" ($
                                     (if (optional? content) ($
-"    if ("(property content)") {
+"    if ("(property content)")
 "
                                     )"")
                                     (if (multiple? content)
                                         ($
-(if (optional? content) "    " "")"    {
-"(if (optional? content) "    " "")"        "(link content)"* node = 0;
-"(if (optional? content) "    " "")"        size_t _alength = "(property content)"->length();
-"(if (optional? content) "    " "")"        for (size_t _a = 0; _a < _alength; _a++) {
-"(if (optional? content) "    " "")"            node = *(*"(property content)")[_a];
-"(if (optional? content) "    " "")"            node->Accept(visitor);
-"(if (optional? content) "    " "")"        }
-"(if (optional? content) "    " "")"    }
+"    {
+        "(link content)"* node = 0;
+        size_t _alength = "(property content)"->length();
+        for (size_t _a = 0; _a < _alength; _a++) {
+            node = *(*"(property content)")[_a];
+            node->Accept(visitor);
+        }
+    }
 "
                                         )
                                         ($
@@ -185,8 +185,6 @@ void "(id syntax-node)"::Accept(SyntaxVisitor& visitor) {
 "
                                         )
                                     )
-                                    (if (optional? content) "    }
-" ""                                )
                                 ))
                             ))
                             (else "")
