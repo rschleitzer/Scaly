@@ -155,18 +155,21 @@ SyntaxNode::SyntaxNode(Position start, Position end)
 "       (if (abstract? syntax-node) "" ($
 "
 void "(id syntax-node)"::Accept(SyntaxVisitor& visitor) {
-    visitor.Open"(id syntax-node)"(*this);
 "
-        (apply-to-children-of syntax-node (lambda (content)
-            (case (type content)
-                (("syntax") ($
-                    (if (abstract? syntax-node) "" ($
-                        (if (optional? content) ($
+            (if (has-syntax-children? syntax-node)
+                ($
+"    visitor.Open"(id syntax-node)"(*this);
+"
+                    (apply-to-children-of syntax-node (lambda (content)
+                        (case (type content)
+                            (("syntax") ($
+                                (if (abstract? syntax-node) "" ($
+                                    (if (optional? content) ($
 "    if ("(property content)") {
 "
-                        )"")
-                        (if (multiple? content)
-                            ($
+                                    )"")
+                                    (if (multiple? content)
+                                        ($
 (if (optional? content) "    " "")"    {
 "(if (optional? content) "    " "")"        "(link content)"* node = 0;
 "(if (optional? content) "    " "")"        size_t _alength = "(property content)"->length();
@@ -176,21 +179,28 @@ void "(id syntax-node)"::Accept(SyntaxVisitor& visitor) {
 "(if (optional? content) "    " "")"        }
 "(if (optional? content) "    " "")"    }
 "
-                            )
-                            ($
+                                        )
+                                        ($
 (if (optional? content) "    " "")"    "(property content)"->Accept(visitor);
 "
-                            )
+                                        )
+                                    )
+                                    (if (optional? content) "    }
+" ""                                )
+                                ))
+                            ))
+                            (else "")
                         )
-                        (if (optional? content) "    }
-" ""                    )
-                   ))
-                ))
-                (else "")
-            )
-        ))
+                    ))
 "    visitor.Close"(id syntax-node)"(*this);
-}
+"
+                )
+                ($
+"    visitor.Visit"(id syntax-node)"(*this);
+"
+                )
+            )
+"}
 "       ))
    )))
 "

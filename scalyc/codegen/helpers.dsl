@@ -29,8 +29,6 @@
     )
 )
 
-
-
 (define (create-file filename content)
     (make entity system-id: filename content))
 
@@ -108,3 +106,8 @@
     (if (attribute-string "link" node)
         (gi (element-with-id (attribute-string "link" node)))
         (attribute-string "type" node)))
+
+(define (has-syntax-children? node)
+    (not (node-list-empty?
+        (node-list-filter syntax?
+            (children node)))))

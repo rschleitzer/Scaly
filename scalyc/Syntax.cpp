@@ -93,8 +93,7 @@ PathItem::PathItem(Position start, Position end)
 }
 
 void PathItem::Accept(SyntaxVisitor& visitor) {
-    visitor.OpenPathItem(*this);
-    visitor.ClosePathItem(*this);
+    visitor.VisitPathItem(*this);
 }
 
 Initializer::Initializer(Position start, Position end)
@@ -247,8 +246,7 @@ IdentifierFunctionName::IdentifierFunctionName(Position start, Position end)
 }
 
 void IdentifierFunctionName::Accept(SyntaxVisitor& visitor) {
-    visitor.OpenIdentifierFunctionName(*this);
-    visitor.CloseIdentifierFunctionName(*this);
+    visitor.VisitIdentifierFunctionName(*this);
 }
 
 FunctionSignature::FunctionSignature(Position start, Position end)
@@ -405,8 +403,7 @@ EnumCase::EnumCase(Position start, Position end)
 }
 
 void EnumCase::Accept(SyntaxVisitor& visitor) {
-    visitor.OpenEnumCase(*this);
-    visitor.CloseEnumCase(*this);
+    visitor.VisitEnumCase(*this);
 }
 
 AdditionalCase::AdditionalCase(Position start, Position end)
@@ -466,8 +463,7 @@ GenericParameter::GenericParameter(Position start, Position end)
 }
 
 void GenericParameter::Accept(SyntaxVisitor& visitor) {
-    visitor.OpenGenericParameter(*this);
-    visitor.CloseGenericParameter(*this);
+    visitor.VisitGenericParameter(*this);
 }
 
 ClassMember::ClassMember(Position start, Position end)
@@ -652,8 +648,7 @@ OperatorPostfix::OperatorPostfix(Position start, Position end)
 }
 
 void OperatorPostfix::Accept(SyntaxVisitor& visitor) {
-    visitor.OpenOperatorPostfix(*this);
-    visitor.CloseOperatorPostfix(*this);
+    visitor.VisitOperatorPostfix(*this);
 }
 
 FunctionCall::FunctionCall(Position start, Position end)
@@ -755,8 +750,7 @@ LiteralExpression::LiteralExpression(Position start, Position end)
 }
 
 void LiteralExpression::Accept(SyntaxVisitor& visitor) {
-    visitor.OpenLiteralExpression(*this);
-    visitor.CloseLiteralExpression(*this);
+    visitor.VisitLiteralExpression(*this);
 }
 
 IdentifierExpression::IdentifierExpression(Position start, Position end)
@@ -764,8 +758,7 @@ IdentifierExpression::IdentifierExpression(Position start, Position end)
 }
 
 void IdentifierExpression::Accept(SyntaxVisitor& visitor) {
-    visitor.OpenIdentifierExpression(*this);
-    visitor.CloseIdentifierExpression(*this);
+    visitor.VisitIdentifierExpression(*this);
 }
 
 IfExpression::IfExpression(Position start, Position end)
@@ -1138,8 +1131,7 @@ ThisMember::ThisMember(Position start, Position end)
 }
 
 void ThisMember::Accept(SyntaxVisitor& visitor) {
-    visitor.OpenThisMember(*this);
-    visitor.CloseThisMember(*this);
+    visitor.VisitThisMember(*this);
 }
 
 SuperExpression::SuperExpression(Position start, Position end)
@@ -1184,8 +1176,7 @@ SuperMember::SuperMember(Position start, Position end)
 }
 
 void SuperMember::Accept(SyntaxVisitor& visitor) {
-    visitor.OpenSuperMember(*this);
-    visitor.CloseSuperMember(*this);
+    visitor.VisitSuperMember(*this);
 }
 
 Type::Type(Position start, Position end)

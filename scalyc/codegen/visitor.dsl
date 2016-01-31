@@ -15,10 +15,17 @@ class "(id syntax-node)";"
 "
 class "(if concrete "MyVisitor : public " "")"SyntaxVisitor {
 public:"
-    (apply-to-selected-children "syntax" (lambda (syntax) (if (abstract? syntax) "" ($ "
+    (apply-to-selected-children "syntax" (lambda (syntax) (if (abstract? syntax) "" 
+        (if (has-syntax-children? syntax)
+            ($ "
     virtual void Open"(id syntax)"("(id syntax)"& "(string-firstchar-downcase (id syntax))")"(if concrete "" "= 0")";
     virtual void Close"(id syntax)"("(id syntax)"& "(string-firstchar-downcase (id syntax))")"(if concrete "" "= 0")";"
-    ))))
+            )
+            ($ "
+    virtual void Visit"(id syntax)"("(id syntax)"& "(string-firstchar-downcase (id syntax))")"(if concrete "" "= 0")";"
+            )
+        )
+    )))
 "
 };
 
@@ -33,14 +40,23 @@ using namespace scaly;
 namespace scalyc {
 
 "
-    (apply-to-selected-children "syntax" (lambda (syntax) (if (abstract? syntax) "" ($
+    (apply-to-selected-children "syntax" (lambda (syntax) (if (abstract? syntax) "" 
+        (if (has-syntax-children? syntax)
+            ($
 "
 void MyVisitor::Open"(id syntax)"("(id syntax)"& "(string-firstchar-downcase (id syntax))") {
 }
 
 void MyVisitor::Close"(id syntax)"("(id syntax)"& "(string-firstchar-downcase (id syntax))") {
 }
-"    ))))
+"           )
+            ($
+"
+void MyVisitor::Visit"(id syntax)"("(id syntax)"& "(string-firstchar-downcase (id syntax))") {
+}
+"           )
+        )
+    )))
 "
 }
 "

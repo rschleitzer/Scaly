@@ -33,10 +33,7 @@ void MyVisitor::OpenPathIdentifier(PathIdentifier& pathIdentifier) {
 void MyVisitor::ClosePathIdentifier(PathIdentifier& pathIdentifier) {
 }
 
-void MyVisitor::OpenPathItem(PathItem& pathItem) {
-}
-
-void MyVisitor::ClosePathItem(PathItem& pathItem) {
+void MyVisitor::VisitPathItem(PathItem& pathItem) {
 }
 
 void MyVisitor::OpenInitializer(Initializer& initializer) {
@@ -99,10 +96,7 @@ void MyVisitor::OpenStaticWord(StaticWord& staticWord) {
 void MyVisitor::CloseStaticWord(StaticWord& staticWord) {
 }
 
-void MyVisitor::OpenIdentifierFunctionName(IdentifierFunctionName& identifierFunctionName) {
-}
-
-void MyVisitor::CloseIdentifierFunctionName(IdentifierFunctionName& identifierFunctionName) {
+void MyVisitor::VisitIdentifierFunctionName(IdentifierFunctionName& identifierFunctionName) {
 }
 
 void MyVisitor::OpenFunctionSignature(FunctionSignature& functionSignature) {
@@ -165,10 +159,7 @@ void MyVisitor::OpenAdditionalType(AdditionalType& additionalType) {
 void MyVisitor::CloseAdditionalType(AdditionalType& additionalType) {
 }
 
-void MyVisitor::OpenEnumCase(EnumCase& enumCase) {
-}
-
-void MyVisitor::CloseEnumCase(EnumCase& enumCase) {
+void MyVisitor::VisitEnumCase(EnumCase& enumCase) {
 }
 
 void MyVisitor::OpenAdditionalCase(AdditionalCase& additionalCase) {
@@ -189,10 +180,7 @@ void MyVisitor::OpenGenericArgumentClause(GenericArgumentClause& genericArgument
 void MyVisitor::CloseGenericArgumentClause(GenericArgumentClause& genericArgumentClause) {
 }
 
-void MyVisitor::OpenGenericParameter(GenericParameter& genericParameter) {
-}
-
-void MyVisitor::CloseGenericParameter(GenericParameter& genericParameter) {
+void MyVisitor::VisitGenericParameter(GenericParameter& genericParameter) {
 }
 
 void MyVisitor::OpenClassMember(ClassMember& classMember) {
@@ -267,10 +255,7 @@ void MyVisitor::OpenPathItemCatchPattern(PathItemCatchPattern& pathItemCatchPatt
 void MyVisitor::ClosePathItemCatchPattern(PathItemCatchPattern& pathItemCatchPattern) {
 }
 
-void MyVisitor::OpenOperatorPostfix(OperatorPostfix& operatorPostfix) {
-}
-
-void MyVisitor::CloseOperatorPostfix(OperatorPostfix& operatorPostfix) {
+void MyVisitor::VisitOperatorPostfix(OperatorPostfix& operatorPostfix) {
 }
 
 void MyVisitor::OpenFunctionCall(FunctionCall& functionCall) {
@@ -309,16 +294,10 @@ void MyVisitor::OpenParenthesizedExpression(ParenthesizedExpression& parenthesiz
 void MyVisitor::CloseParenthesizedExpression(ParenthesizedExpression& parenthesizedExpression) {
 }
 
-void MyVisitor::OpenLiteralExpression(LiteralExpression& literalExpression) {
+void MyVisitor::VisitLiteralExpression(LiteralExpression& literalExpression) {
 }
 
-void MyVisitor::CloseLiteralExpression(LiteralExpression& literalExpression) {
-}
-
-void MyVisitor::OpenIdentifierExpression(IdentifierExpression& identifierExpression) {
-}
-
-void MyVisitor::CloseIdentifierExpression(IdentifierExpression& identifierExpression) {
+void MyVisitor::VisitIdentifierExpression(IdentifierExpression& identifierExpression) {
 }
 
 void MyVisitor::OpenIfExpression(IfExpression& ifExpression) {
@@ -483,10 +462,7 @@ void MyVisitor::OpenThisInit(ThisInit& thisInit) {
 void MyVisitor::CloseThisInit(ThisInit& thisInit) {
 }
 
-void MyVisitor::OpenThisMember(ThisMember& thisMember) {
-}
-
-void MyVisitor::CloseThisMember(ThisMember& thisMember) {
+void MyVisitor::VisitThisMember(ThisMember& thisMember) {
 }
 
 void MyVisitor::OpenSuperDot(SuperDot& superDot) {
@@ -507,10 +483,7 @@ void MyVisitor::OpenSuperInit(SuperInit& superInit) {
 void MyVisitor::CloseSuperInit(SuperInit& superInit) {
 }
 
-void MyVisitor::OpenSuperMember(SuperMember& superMember) {
-}
-
-void MyVisitor::CloseSuperMember(SuperMember& superMember) {
+void MyVisitor::VisitSuperMember(SuperMember& superMember) {
 }
 
 void MyVisitor::OpenTypeAnnotation(TypeAnnotation& typeAnnotation) {
