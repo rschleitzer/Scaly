@@ -1,14 +1,34 @@
-(define (string-downcase s)
-    (list->string
-        (map char-downcase-ascii
-            (string->list s))))
+(define (string-firstchar-upcase s)
+    (string-firstchar-case s char-upcase-ascii))
 
 (define (string-firstchar-downcase s)
+    (string-firstchar-case s char-downcase-ascii))
+
+(define (string-firstchar-case s func)
     (list->string
         (let ((charlist (string->list s)))
             (cons
-                (char-downcase-ascii (car charlist))
+                (func (car charlist))
                 (cdr charlist)))))
+
+(define (char-upcase-ascii c)
+    (case c
+        ((#\A #\a) #\A) ((#\B #\b) #\B)
+        ((#\C #\c) #\C) ((#\D #\d) #\D)
+        ((#\E #\e) #\E) ((#\F #\f) #\F)
+        ((#\G #\g) #\G) ((#\H #\h) #\H)
+        ((#\I #\i) #\I) ((#\J #\j) #\J)
+        ((#\K #\k) #\K) ((#\L #\l) #\L)
+        ((#\M #\m) #\M) ((#\N #\n) #\N)
+        ((#\O #\o) #\O) ((#\P #\p) #\P)
+        ((#\Q #\q) #\Q) ((#\R #\r) #\R)
+        ((#\S #\s) #\S) ((#\T #\t) #\T)
+        ((#\U #\u) #\U) ((#\V #\v) #\V)
+        ((#\W #\w) #\W) ((#\X #\x) #\X)
+        ((#\Y #\y) #\Y) ((#\Z #\z) #\Z)
+        (else c)
+    )
+)
 
 (define (char-downcase-ascii c)
     (case c
@@ -78,9 +98,12 @@
 
 (define (optional? node)
     (string=? "optional" (attribute-string "optional" node)))
-
+    
 (define (syntax? node)
-    (string=? "syntax" (attribute-string "type" node)))
+    (string=? "syntax" (type node)))
+
+(define (identifier? node)
+    (string=? "identifier" (type node)))
 
 (define (top? node)
     (string=? "top" (attribute-string "top" node)))

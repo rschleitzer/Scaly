@@ -178,9 +178,9 @@ public:
     virtual void Accept(SyntaxVisitor& visitor) = 0;
 };
 
-class IdentifierFunctionName : public FunctionName {
+class IdentifierFunction : public FunctionName {
 public:
-    IdentifierFunctionName(Position start, Position end);
+    IdentifierFunction(Position start, Position end);
 
     virtual void Accept(SyntaxVisitor& visitor);
     String* name;
@@ -224,8 +224,8 @@ public:
     ConstParameter(Position start, Position end);
 
     virtual void Accept(SyntaxVisitor& visitor);
-    String* parameterName;
-    Type* parameterType;
+    String* name;
+    Type* type;
 };
 
 class VarParameter : public Parameter {
@@ -233,7 +233,7 @@ public:
     VarParameter(Position start, Position end);
 
     virtual void Accept(SyntaxVisitor& visitor);
-    String* parameterName;
+    String* name;
     Type* parameterType;
 };
 

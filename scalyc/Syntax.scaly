@@ -341,15 +341,15 @@ class FunctionName : SyntaxNode {
 
 }
 
-class IdentifierFunctionName : FunctionName {
+class IdentifierFunction : FunctionName {
 
     init(start: Position, end: Position) {
         super.init(start, end)
     }
 
     override function Accept(mutable visitor: SyntaxVisitor) {
-        visitor.OpenIdentifierFunctionName(this)
-        visitor.CloseIdentifierFunctionName(this)
+        visitor.OpenIdentifierFunction(this)
+        visitor.CloseIdentifierFunction(this)
     }
 
     let name: String?
@@ -433,12 +433,12 @@ class ConstParameter : Parameter {
 
     override function Accept(mutable visitor: SyntaxVisitor) {
         visitor.OpenConstParameter(this)
-        parameterType!.Accept(visitor)
+        type!.Accept(visitor)
         visitor.CloseConstParameter(this)
     }
 
-    let parameterName: String?
-    let parameterType: Type?
+    let name: String?
+    let type: Type?
 }
 
 class VarParameter : Parameter {
@@ -453,7 +453,7 @@ class VarParameter : Parameter {
         visitor.CloseVarParameter(this)
     }
 
-    let parameterName: String?
+    let name: String?
     let parameterType: Type?
 }
 

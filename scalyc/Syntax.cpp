@@ -233,12 +233,12 @@ FunctionName::FunctionName(Position start, Position end)
 : SyntaxNode(start, end) {
 }
 
-IdentifierFunctionName::IdentifierFunctionName(Position start, Position end)
+IdentifierFunction::IdentifierFunction(Position start, Position end)
 : FunctionName(start, end) {
 }
 
-void IdentifierFunctionName::Accept(SyntaxVisitor& visitor) {
-    visitor.VisitIdentifierFunctionName(*this);
+void IdentifierFunction::Accept(SyntaxVisitor& visitor) {
+    visitor.VisitIdentifierFunction(*this);
 }
 
 FunctionSignature::FunctionSignature(Position start, Position end)
@@ -293,7 +293,7 @@ ConstParameter::ConstParameter(Position start, Position end)
 
 void ConstParameter::Accept(SyntaxVisitor& visitor) {
     visitor.OpenConstParameter(*this);
-    parameterType->Accept(visitor);
+    type->Accept(visitor);
     visitor.CloseConstParameter(*this);
 }
 

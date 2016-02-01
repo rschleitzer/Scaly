@@ -742,7 +742,7 @@ _Result<FunctionName, ParserError> Parser::parseFunctionName(_Page* _rp, _Page* 
     {
         // Make a region for the current block and get the Page
         _Region _r; _Page* _p = _r.get();
-        _Result<IdentifierFunctionName, ParserError> result = parseIdentifierFunctionName(_rp, _p);
+        _Result<IdentifierFunction, ParserError> result = parseIdentifierFunction(_rp, _p);
         if (result.succeeded()) 
             return _Result<FunctionName, ParserError>(result.getResult());
         else
@@ -752,24 +752,24 @@ _Result<FunctionName, ParserError> Parser::parseFunctionName(_Page* _rp, _Page* 
     return _Result<FunctionName, ParserError>(new(_ep) ParserError(*new(_ep) UnableToParse(start, errors)));
 }
 
-_Result<IdentifierFunctionName, ParserError> Parser::parseIdentifierFunctionName(_Page* _rp, _Page* _ep) {
-    IdentifierFunctionName* ret = 0;
+_Result<IdentifierFunction, ParserError> Parser::parseIdentifierFunction(_Page* _rp, _Page* _ep) {
+    IdentifierFunction* ret = 0;
     {
         Position start = lexer.getPreviousPosition();
         String* name = lexer.parseIdentifier(_rp);
         if ((name) && (isIdentifier(*name))) {
             lexer.advance();
             if (!ret)
-                ret = new(_rp) IdentifierFunctionName(start, lexer.getPosition());
+                ret = new(_rp) IdentifierFunction(start, lexer.getPosition());
 
             ret->name = name;
         }
         else {
-            return _Result<IdentifierFunctionName, ParserError>(new(_ep) ParserError(*new(_ep) IdentifierExpected(start)));
+            return _Result<IdentifierFunction, ParserError>(new(_ep) ParserError(*new(_ep) IdentifierExpected(start)));
         }
     }
 
-    return _Result<IdentifierFunctionName, ParserError>(ret);
+    return _Result<IdentifierFunction, ParserError>(ret);
 }
 
 _Result<FunctionSignature, ParserError> Parser::parseFunctionSignature(_Page* _rp, _Page* _ep) {
@@ -964,13 +964,13 @@ _Result<ConstParameter, ParserError> Parser::parseConstParameter(_Page* _rp, _Pa
     }
     {
         Position start = lexer.getPreviousPosition();
-        String* parameterName = lexer.parseIdentifier(_rp);
-        if ((parameterName) && (isIdentifier(*parameterName))) {
+        String* name = lexer.parseIdentifier(_rp);
+        if ((name) && (isIdentifier(*name))) {
             lexer.advance();
             if (!ret)
                 ret = new(_rp) ConstParameter(start, lexer.getPosition());
 
-            ret->parameterName = parameterName;
+            ret->name = name;
         }
         else {
             return _Result<ConstParameter, ParserError>(new(_ep) ParserError(*new(_ep) IdentifierExpected(start)));
@@ -995,7 +995,7 @@ _Result<ConstParameter, ParserError> Parser::parseConstParameter(_Page* _rp, _Pa
             if (!ret)
                 ret = new(_rp) ConstParameter(start, lexer.getPosition());
 
-            ret->parameterType = result.getResult();
+            ret->type = result.getResult();
         }
         else {
             return _Result<ConstParameter, ParserError>(result.getError());
@@ -1030,13 +1030,13 @@ _Result<VarParameter, ParserError> Parser::parseVarParameter(_Page* _rp, _Page* 
     }
     {
         Position start = lexer.getPreviousPosition();
-        String* parameterName = lexer.parseIdentifier(_rp);
-        if ((parameterName) && (isIdentifier(*parameterName))) {
+        String* name = lexer.parseIdentifier(_rp);
+        if ((name) && (isIdentifier(*name))) {
             lexer.advance();
             if (!ret)
                 ret = new(_rp) VarParameter(start, lexer.getPosition());
 
-            ret->parameterName = parameterName;
+            ret->name = name;
         }
         else {
             return _Result<VarParameter, ParserError>(new(_ep) ParserError(*new(_ep) IdentifierExpected(start)));

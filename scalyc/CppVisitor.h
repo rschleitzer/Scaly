@@ -8,6 +8,8 @@ class CppVisitor : public SyntaxVisitor {
 public:
     virtual void OpenProgram(Program& program);
     virtual void CloseProgram(Program& program);
+    String* programName;
+    String* programDirectory;
     virtual void OpenCompilationUnit(CompilationUnit& compilationUnit);
     virtual void CloseCompilationUnit(CompilationUnit& compilationUnit);
     virtual void OpenStatementWithSemicolon(StatementWithSemicolon& statementWithSemicolon);
@@ -17,6 +19,7 @@ public:
     virtual void OpenPathIdentifier(PathIdentifier& pathIdentifier);
     virtual void ClosePathIdentifier(PathIdentifier& pathIdentifier);
     virtual void VisitPathItem(PathItem& pathItem);
+    String* pathItemName;
     virtual void OpenInitializer(Initializer& initializer);
     virtual void CloseInitializer(Initializer& initializer);
     virtual void OpenConstantDeclaration(ConstantDeclaration& constantDeclaration);
@@ -35,7 +38,8 @@ public:
     virtual void CloseInitializerDeclaration(InitializerDeclaration& initializerDeclaration);
     virtual void VisitOverride(Override& override);
     virtual void VisitStaticWord(StaticWord& staticWord);
-    virtual void VisitIdentifierFunctionName(IdentifierFunctionName& identifierFunctionName);
+    virtual void VisitIdentifierFunction(IdentifierFunction& identifierFunction);
+    String* identifierFunctionName;
     virtual void OpenFunctionSignature(FunctionSignature& functionSignature);
     virtual void CloseFunctionSignature(FunctionSignature& functionSignature);
     virtual void OpenFunctionResult(FunctionResult& functionResult);
@@ -44,12 +48,15 @@ public:
     virtual void CloseParameterClause(ParameterClause& parameterClause);
     virtual void OpenConstParameter(ConstParameter& constParameter);
     virtual void CloseConstParameter(ConstParameter& constParameter);
+    String* constParameterName;
     virtual void OpenVarParameter(VarParameter& varParameter);
     virtual void CloseVarParameter(VarParameter& varParameter);
+    String* varParameterName;
     virtual void OpenThrowsClause(ThrowsClause& throwsClause);
     virtual void CloseThrowsClause(ThrowsClause& throwsClause);
     virtual void OpenEnumDeclaration(EnumDeclaration& enumDeclaration);
     virtual void CloseEnumDeclaration(EnumDeclaration& enumDeclaration);
+    String* enumDeclarationName;
     virtual void OpenEnumMember(EnumMember& enumMember);
     virtual void CloseEnumMember(EnumMember& enumMember);
     virtual void OpenTupleType(TupleType& tupleType);
@@ -57,13 +64,16 @@ public:
     virtual void OpenAdditionalType(AdditionalType& additionalType);
     virtual void CloseAdditionalType(AdditionalType& additionalType);
     virtual void VisitEnumCase(EnumCase& enumCase);
+    String* enumCaseName;
     virtual void OpenAdditionalCase(AdditionalCase& additionalCase);
     virtual void CloseAdditionalCase(AdditionalCase& additionalCase);
     virtual void OpenClassDeclaration(ClassDeclaration& classDeclaration);
     virtual void CloseClassDeclaration(ClassDeclaration& classDeclaration);
+    String* classDeclarationName;
     virtual void OpenGenericArgumentClause(GenericArgumentClause& genericArgumentClause);
     virtual void CloseGenericArgumentClause(GenericArgumentClause& genericArgumentClause);
     virtual void VisitGenericParameter(GenericParameter& genericParameter);
+    String* genericParameterTypeName;
     virtual void OpenClassMember(ClassMember& classMember);
     virtual void CloseClassMember(ClassMember& classMember);
     virtual void OpenCodeBlock(CodeBlock& codeBlock);
@@ -103,6 +113,7 @@ public:
     virtual void CloseParenthesizedExpression(ParenthesizedExpression& parenthesizedExpression);
     virtual void VisitLiteralExpression(LiteralExpression& literalExpression);
     virtual void VisitIdentifierExpression(IdentifierExpression& identifierExpression);
+    String* identifierExpressionName;
     virtual void OpenIfExpression(IfExpression& ifExpression);
     virtual void CloseIfExpression(IfExpression& ifExpression);
     virtual void OpenElseClause(ElseClause& elseClause);
@@ -134,6 +145,7 @@ public:
     virtual void VisitWildcardPattern(WildcardPattern& wildcardPattern);
     virtual void OpenIdentifierPattern(IdentifierPattern& identifierPattern);
     virtual void CloseIdentifierPattern(IdentifierPattern& identifierPattern);
+    String* identifierPatternIdentifier;
     virtual void OpenTuplePattern(TuplePattern& tuplePattern);
     virtual void CloseTuplePattern(TuplePattern& tuplePattern);
     virtual void OpenTuplePatternElement(TuplePatternElement& tuplePatternElement);
@@ -153,16 +165,19 @@ public:
     virtual void VisitThisWord(ThisWord& thisWord);
     virtual void VisitThisInit(ThisInit& thisInit);
     virtual void VisitThisMember(ThisMember& thisMember);
+    String* thisMemberName;
     virtual void OpenSuperDot(SuperDot& superDot);
     virtual void CloseSuperDot(SuperDot& superDot);
     virtual void OpenSuperSubscript(SuperSubscript& superSubscript);
     virtual void CloseSuperSubscript(SuperSubscript& superSubscript);
     virtual void VisitSuperInit(SuperInit& superInit);
     virtual void VisitSuperMember(SuperMember& superMember);
+    String* superMemberName;
     virtual void OpenTypeAnnotation(TypeAnnotation& typeAnnotation);
     virtual void CloseTypeAnnotation(TypeAnnotation& typeAnnotation);
     virtual void OpenTypeIdentifier(TypeIdentifier& typeIdentifier);
     virtual void CloseTypeIdentifier(TypeIdentifier& typeIdentifier);
+    String* typeIdentifierName;
     virtual void OpenSubtypeIdentifier(SubtypeIdentifier& subtypeIdentifier);
     virtual void CloseSubtypeIdentifier(SubtypeIdentifier& subtypeIdentifier);
     virtual void OpenArrayType(ArrayType& arrayType);

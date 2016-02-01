@@ -24,7 +24,7 @@ class Modifier;
 class Override;
 class StaticWord;
 class FunctionName;
-class IdentifierFunctionName;
+class IdentifierFunction;
 class FunctionSignature;
 class FunctionResult;
 class ParameterClause;
@@ -150,7 +150,7 @@ public:
     virtual void CloseInitializerDeclaration(InitializerDeclaration& initializerDeclaration)= 0;
     virtual void VisitOverride(Override& override)= 0;
     virtual void VisitStaticWord(StaticWord& staticWord)= 0;
-    virtual void VisitIdentifierFunctionName(IdentifierFunctionName& identifierFunctionName)= 0;
+    virtual void VisitIdentifierFunction(IdentifierFunction& identifierFunction)= 0;
     virtual void OpenFunctionSignature(FunctionSignature& functionSignature)= 0;
     virtual void CloseFunctionSignature(FunctionSignature& functionSignature)= 0;
     virtual void OpenFunctionResult(FunctionResult& functionResult)= 0;

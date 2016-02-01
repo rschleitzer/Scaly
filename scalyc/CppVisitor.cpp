@@ -4,9 +4,13 @@ namespace scalyc {
 
 
 void CppVisitor::OpenProgram(Program& program) {
+    programName = program.name;
+    programDirectory = program.directory;
 }
 
 void CppVisitor::CloseProgram(Program& program) {
+    programName = 0;
+    programDirectory = 0;
 }
 
 void CppVisitor::OpenCompilationUnit(CompilationUnit& compilationUnit) {
@@ -90,7 +94,7 @@ void CppVisitor::VisitOverride(Override& override) {
 void CppVisitor::VisitStaticWord(StaticWord& staticWord) {
 }
 
-void CppVisitor::VisitIdentifierFunctionName(IdentifierFunctionName& identifierFunctionName) {
+void CppVisitor::VisitIdentifierFunction(IdentifierFunction& identifierFunction) {
 }
 
 void CppVisitor::OpenFunctionSignature(FunctionSignature& functionSignature) {
@@ -112,15 +116,19 @@ void CppVisitor::CloseParameterClause(ParameterClause& parameterClause) {
 }
 
 void CppVisitor::OpenConstParameter(ConstParameter& constParameter) {
+    constParameterName = constParameter.name;
 }
 
 void CppVisitor::CloseConstParameter(ConstParameter& constParameter) {
+    constParameterName = 0;
 }
 
 void CppVisitor::OpenVarParameter(VarParameter& varParameter) {
+    varParameterName = varParameter.name;
 }
 
 void CppVisitor::CloseVarParameter(VarParameter& varParameter) {
+    varParameterName = 0;
 }
 
 void CppVisitor::OpenThrowsClause(ThrowsClause& throwsClause) {
@@ -130,9 +138,11 @@ void CppVisitor::CloseThrowsClause(ThrowsClause& throwsClause) {
 }
 
 void CppVisitor::OpenEnumDeclaration(EnumDeclaration& enumDeclaration) {
+    enumDeclarationName = enumDeclaration.name;
 }
 
 void CppVisitor::CloseEnumDeclaration(EnumDeclaration& enumDeclaration) {
+    enumDeclarationName = 0;
 }
 
 void CppVisitor::OpenEnumMember(EnumMember& enumMember) {
@@ -163,9 +173,11 @@ void CppVisitor::CloseAdditionalCase(AdditionalCase& additionalCase) {
 }
 
 void CppVisitor::OpenClassDeclaration(ClassDeclaration& classDeclaration) {
+    classDeclarationName = classDeclaration.name;
 }
 
 void CppVisitor::CloseClassDeclaration(ClassDeclaration& classDeclaration) {
+    classDeclarationName = 0;
 }
 
 void CppVisitor::OpenGenericArgumentClause(GenericArgumentClause& genericArgumentClause) {
@@ -382,9 +394,11 @@ void CppVisitor::VisitWildcardPattern(WildcardPattern& wildcardPattern) {
 }
 
 void CppVisitor::OpenIdentifierPattern(IdentifierPattern& identifierPattern) {
+    identifierPatternIdentifier = identifierPattern.identifier;
 }
 
 void CppVisitor::CloseIdentifierPattern(IdentifierPattern& identifierPattern) {
+    identifierPatternIdentifier = 0;
 }
 
 void CppVisitor::OpenTuplePattern(TuplePattern& tuplePattern) {
@@ -469,9 +483,11 @@ void CppVisitor::CloseTypeAnnotation(TypeAnnotation& typeAnnotation) {
 }
 
 void CppVisitor::OpenTypeIdentifier(TypeIdentifier& typeIdentifier) {
+    typeIdentifierName = typeIdentifier.name;
 }
 
 void CppVisitor::CloseTypeIdentifier(TypeIdentifier& typeIdentifier) {
+    typeIdentifierName = 0;
 }
 
 void CppVisitor::OpenSubtypeIdentifier(SubtypeIdentifier& subtypeIdentifier) {

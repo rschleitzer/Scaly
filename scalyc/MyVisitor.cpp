@@ -4,9 +4,13 @@ namespace scalyc {
 
 
 void MyVisitor::OpenProgram(Program& program) {
+    programName = program.name;
+    programDirectory = program.directory;
 }
 
 void MyVisitor::CloseProgram(Program& program) {
+    programName = 0;
+    programDirectory = 0;
 }
 
 void MyVisitor::OpenCompilationUnit(CompilationUnit& compilationUnit) {
@@ -90,7 +94,7 @@ void MyVisitor::VisitOverride(Override& override) {
 void MyVisitor::VisitStaticWord(StaticWord& staticWord) {
 }
 
-void MyVisitor::VisitIdentifierFunctionName(IdentifierFunctionName& identifierFunctionName) {
+void MyVisitor::VisitIdentifierFunction(IdentifierFunction& identifierFunction) {
 }
 
 void MyVisitor::OpenFunctionSignature(FunctionSignature& functionSignature) {
@@ -112,15 +116,19 @@ void MyVisitor::CloseParameterClause(ParameterClause& parameterClause) {
 }
 
 void MyVisitor::OpenConstParameter(ConstParameter& constParameter) {
+    constParameterName = constParameter.name;
 }
 
 void MyVisitor::CloseConstParameter(ConstParameter& constParameter) {
+    constParameterName = 0;
 }
 
 void MyVisitor::OpenVarParameter(VarParameter& varParameter) {
+    varParameterName = varParameter.name;
 }
 
 void MyVisitor::CloseVarParameter(VarParameter& varParameter) {
+    varParameterName = 0;
 }
 
 void MyVisitor::OpenThrowsClause(ThrowsClause& throwsClause) {
@@ -130,9 +138,11 @@ void MyVisitor::CloseThrowsClause(ThrowsClause& throwsClause) {
 }
 
 void MyVisitor::OpenEnumDeclaration(EnumDeclaration& enumDeclaration) {
+    enumDeclarationName = enumDeclaration.name;
 }
 
 void MyVisitor::CloseEnumDeclaration(EnumDeclaration& enumDeclaration) {
+    enumDeclarationName = 0;
 }
 
 void MyVisitor::OpenEnumMember(EnumMember& enumMember) {
@@ -163,9 +173,11 @@ void MyVisitor::CloseAdditionalCase(AdditionalCase& additionalCase) {
 }
 
 void MyVisitor::OpenClassDeclaration(ClassDeclaration& classDeclaration) {
+    classDeclarationName = classDeclaration.name;
 }
 
 void MyVisitor::CloseClassDeclaration(ClassDeclaration& classDeclaration) {
+    classDeclarationName = 0;
 }
 
 void MyVisitor::OpenGenericArgumentClause(GenericArgumentClause& genericArgumentClause) {
@@ -382,9 +394,11 @@ void MyVisitor::VisitWildcardPattern(WildcardPattern& wildcardPattern) {
 }
 
 void MyVisitor::OpenIdentifierPattern(IdentifierPattern& identifierPattern) {
+    identifierPatternIdentifier = identifierPattern.identifier;
 }
 
 void MyVisitor::CloseIdentifierPattern(IdentifierPattern& identifierPattern) {
+    identifierPatternIdentifier = 0;
 }
 
 void MyVisitor::OpenTuplePattern(TuplePattern& tuplePattern) {
@@ -469,9 +483,11 @@ void MyVisitor::CloseTypeAnnotation(TypeAnnotation& typeAnnotation) {
 }
 
 void MyVisitor::OpenTypeIdentifier(TypeIdentifier& typeIdentifier) {
+    typeIdentifierName = typeIdentifier.name;
 }
 
 void MyVisitor::CloseTypeIdentifier(TypeIdentifier& typeIdentifier) {
+    typeIdentifierName = 0;
 }
 
 void MyVisitor::OpenSubtypeIdentifier(SubtypeIdentifier& subtypeIdentifier) {

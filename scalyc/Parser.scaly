@@ -644,7 +644,7 @@ class Parser {
         let start: Position = lexer.getPreviousPosition()
 
         {
-            let node: IdentifierFunctionName = parseIdentifierFunctionName() catch _(error) {
+            let node: IdentifierFunction = parseIdentifierFunction() catch _(error) {
                 errors.append(error)
                 break
             }
@@ -655,8 +655,8 @@ class Parser {
         throw ParserError.UnableToParse(start, errors)
     }
 
-    function parseIdentifierFunctionName() -> IdentifierFunctionName throws ParserError {
-        mutable ret: IdentifierFunctionName? = null
+    function parseIdentifierFunction() -> IdentifierFunction throws ParserError {
+        mutable ret: IdentifierFunction? = null
         {
             let start: Position = lexer.getPosition()
             let name: String? = lexer.parseIdentifier()
@@ -664,7 +664,7 @@ class Parser {
                 lexer.advance()
 
             if ret == null
-                ret = IdentifierFunctionName(start, lexer.getPosition())
+                ret = IdentifierFunction(start, lexer.getPosition())
 
             ret.name = name
         }
@@ -842,14 +842,14 @@ class Parser {
         }
         {
             let start: Position = lexer.getPosition()
-            let parameterName: String? = lexer.parseIdentifier()
-            if (parameterName != null) && (parameterName is Identifier)
+            let name: String? = lexer.parseIdentifier()
+            if (name != null) && (name is Identifier)
                 lexer.advance()
 
             if ret == null
                 ret = ConstParameter(start, lexer.getPosition())
 
-            ret.parameterName = parameterName
+            ret.name = name
         }
         {
             let start: Position = lexer.getPosition()
@@ -869,7 +869,7 @@ class Parser {
             if ret == null
                 ret = ConstParameter(start, lexer.getPosition())
 
-            ret.parameterType = node
+            ret.type = node
         }
         {
             let start: Position = lexer.getPosition()
@@ -897,14 +897,14 @@ class Parser {
         }
         {
             let start: Position = lexer.getPosition()
-            let parameterName: String? = lexer.parseIdentifier()
-            if (parameterName != null) && (parameterName is Identifier)
+            let name: String? = lexer.parseIdentifier()
+            if (name != null) && (name is Identifier)
                 lexer.advance()
 
             if ret == null
                 ret = VarParameter(start, lexer.getPosition())
 
-            ret.parameterName = parameterName
+            ret.name = name
         }
         {
             let start: Position = lexer.getPosition()

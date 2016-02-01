@@ -87,9 +87,9 @@
         <content link = static
         
     <syntax id = FunctionName                       abstract
-        <content link = IdentifierFunctionName
+        <content link = IdentifierFunction
 
-    <syntax id = IdentifierFunctionName                         base = FunctionName
+    <syntax id = IdentifierFunction                             base = FunctionName
         <content identifier                                     property = name
 
     <syntax id = FunctionSignature
@@ -112,14 +112,14 @@
 
     <syntax id = ConstParameter                                 base = Parameter
         <content link = let                         optional
-        <content identifier                                     property = parameterName
+        <content identifier                                     property = name
         <content link = colon
-        <content link = Type                                    property = parameterType
+        <content link = Type                                    property = type
         <content link = comma                       optional
 
     <syntax id = VarParameter                                   base = Parameter
         <content link = mutable
-        <content identifier                                     property = parameterName
+        <content identifier                                     property = name
         <content link = colon
         <content link = Type                                    property = parameterType
         <content link = comma                       optional

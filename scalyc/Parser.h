@@ -51,7 +51,7 @@ public:
 
     _Result<FunctionName, ParserError> parseFunctionName(_Page* _rp, _Page* _ep);
 
-    _Result<IdentifierFunctionName, ParserError> parseIdentifierFunctionName(_Page* _rp, _Page* _ep);
+    _Result<IdentifierFunction, ParserError> parseIdentifierFunction(_Page* _rp, _Page* _ep);
 
     _Result<FunctionSignature, ParserError> parseFunctionSignature(_Page* _rp, _Page* _ep);
 
