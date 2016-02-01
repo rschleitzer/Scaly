@@ -26,6 +26,7 @@
     <File Name="ScalyString.cpp"/>
     <File Name="Region.cpp"/>
     <File Name="File.cpp"/>
+    <File Name="Directory.cpp"/>
   </VirtualDirectory>
   <VirtualDirectory Name="include">
     <File Name="Scaly.h"/>
@@ -36,6 +37,7 @@
     <File Name="Region.h"/>
     <File Name="File.h"/>
     <File Name="Result.h"/>
+    <File Name="Directory.h"/>
   </VirtualDirectory>
   <Settings Type="Static Library">
     <GlobalSettings>

@@ -6,6 +6,15 @@ namespace scalyc {
 void CppVisitor::OpenProgram(Program& program) {
     programName = program.name;
     programDirectory = program.directory;
+    
+    if (programDirectory == 0 || *programDirectory == "")
+        programDirectory = new(this->getPage()) String(".");
+        
+    {
+        if (!Directory::exists(*programDirectory)) {
+            //Directory::create(*programDirectory);
+        }
+    }
 }
 
 void CppVisitor::CloseProgram(Program& program) {

@@ -15,6 +15,7 @@
 #include "Array.h"
 #include "ScalyString.h"
 #include "File.h"
+#include "Directory.h"
 
 namespace scaly {
 
