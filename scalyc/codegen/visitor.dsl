@@ -13,7 +13,7 @@ class "(id syntax-node)";"
 "
 "   ))
 "
-class "(if concrete "MyVisitor : public " "")"SyntaxVisitor {
+class "(if concrete "MyVisitor : public " "")"SyntaxVisitor "(if concrete "" ": public Object")"{
 public:"
     (apply-to-selected-children "syntax" (lambda (syntax) (if (abstract? syntax) "" ($
         (if (has-syntax-children? syntax)
