@@ -1,6 +1,5 @@
 #ifndef __Scaly__File__
 #define __Scaly__File__
-#include <cstdio>
 namespace scaly {
     
 enum _FileErrorCode {

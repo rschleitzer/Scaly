@@ -1,4 +1,5 @@
 #include "Scaly.h"
+#include <cstdio>
 namespace scaly {
 
 long FileError::getErrorCode() {

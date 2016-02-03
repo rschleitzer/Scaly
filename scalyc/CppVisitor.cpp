@@ -10,9 +10,11 @@ bool CppVisitor::OpenProgram(Program& program) {
     if (programDirectory == 0 || *programDirectory == "")
         programDirectory = new(this->getPage()) String(".");
         
-//    if (!Directory::exists(programDirectory)) {
-//        Directory.create(programDirectory);
-//    }
+    if (!Directory::exists(*programDirectory)) {
+        _Region _region; _Page* _p = _region.get();
+        if (Directory::create(_p, *programDirectory))
+            return false;
+    }
     
     return true;
 }

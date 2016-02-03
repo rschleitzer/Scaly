@@ -1,6 +1,5 @@
 #ifndef __Scaly__Directory__
 #define __Scaly__Directory__
-#include <cstdio>
 namespace scaly {
     
 enum _DirectoryErrorCode {
