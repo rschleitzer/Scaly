@@ -20,18 +20,18 @@ public:
 };
 
 enum _CompilerErrorCode {
-    fileNotFound = 1,
-    syntaxError,
+    _CompilerError_fileNotFound = 1,
+    _CompilerError_syntaxError,
 };
 
 class CompilerError : public Object
 {
 public:
     CompilerError(UnableToReadFile& UnableToReadFile)
-    : errorCode(fileNotFound), errorInfo(&UnableToReadFile) {}
+    : errorCode(_CompilerError_fileNotFound), errorInfo(&UnableToReadFile) {}
 
     CompilerError(SyntaxError& SyntaxError)
-    : errorCode(syntaxError), errorInfo(&SyntaxError) {}
+    : errorCode(_CompilerError_syntaxError), errorInfo(&SyntaxError) {}
 
     long getErrorCode();
     void* getErrorInfo();

@@ -16,9 +16,9 @@ bool Directory::exists(const String& path) {
 DirectoryError* Directory::create(_Page* _ep, const String& path) {
     FILE* file = fopen(path.getNativeString(), "rb");
     if (!file) {
-        _DirectoryErrorCode fileErrorCode = unknownError2;
+        _DirectoryErrorCode fileErrorCode = _DirectoryError_unknownError;
         switch (errno) {
-            case ENOENT: fileErrorCode = noSuchDirectoryOrDirectory; break;
+            case ENOENT: fileErrorCode = _DirectoryError_noSuchDirectory; break;
         }
         return new(_ep) DirectoryError(fileErrorCode);
     }

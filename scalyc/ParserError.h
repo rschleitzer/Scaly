@@ -51,38 +51,38 @@ public:
 };
 
 enum _ParserErrorCode {
-    identifierExpected = 1,
-    literalExpected,
-    keywordExpected,
-    punctuationExpected,
-    operatorExpected,
-    unableToParse,
-    notAtEnd,
+    _ParserError_identifierExpected = 1,
+    _ParserError_literalExpected,
+    _ParserError_keywordExpected,
+    _ParserError_punctuationExpected,
+    _ParserError_operatorExpected,
+    _ParserError_unableToParse,
+    _ParserError_notAtEnd,
 };
 
 class ParserError : public Object
 {
 public:
     ParserError(IdentifierExpected& IdentifierExpected)
-    : errorCode(identifierExpected), errorInfo(&IdentifierExpected) {}
+    : errorCode(_ParserError_identifierExpected), errorInfo(&IdentifierExpected) {}
 
     ParserError(LiteralExpected& LiteralExpected)
-    : errorCode(literalExpected), errorInfo(&LiteralExpected) {}
+    : errorCode(_ParserError_literalExpected), errorInfo(&LiteralExpected) {}
 
     ParserError(KeywordExpected& KeywordExpected)
-    : errorCode(keywordExpected), errorInfo(&KeywordExpected) {}
+    : errorCode(_ParserError_keywordExpected), errorInfo(&KeywordExpected) {}
 
     ParserError(PunctuationExpected& PunctuationExpected)
-    : errorCode(punctuationExpected), errorInfo(&PunctuationExpected) {}
+    : errorCode(_ParserError_punctuationExpected), errorInfo(&PunctuationExpected) {}
 
     ParserError(OperatorExpected& OperatorExpected)
-    : errorCode(operatorExpected), errorInfo(&OperatorExpected) {}
+    : errorCode(_ParserError_operatorExpected), errorInfo(&OperatorExpected) {}
 
     ParserError(UnableToParse& UnableToParse)
-    : errorCode(unableToParse), errorInfo(&UnableToParse) {}
+    : errorCode(_ParserError_unableToParse), errorInfo(&UnableToParse) {}
 
     ParserError(NotAtEnd& NotAtEnd)
-    : errorCode(notAtEnd), errorInfo(&NotAtEnd) {}
+    : errorCode(_ParserError_notAtEnd), errorInfo(&NotAtEnd) {}
 
     long getErrorCode();
     void* getErrorInfo();

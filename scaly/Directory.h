@@ -4,8 +4,8 @@
 namespace scaly {
     
 enum _DirectoryErrorCode {
-    unknownError2 = 1,
-    noSuchDirectoryOrDirectory,
+    _DirectoryError_unknownError = 1,
+    _DirectoryError_noSuchDirectory,
 };
 
 class DirectoryError : public Object {
