@@ -18,7 +18,7 @@ public:"
     (apply-to-selected-children "syntax" (lambda (syntax) (if (abstract? syntax) "" ($
         (if (has-syntax-children? syntax)
             ($ "
-    virtual void Open"(id syntax)"("(id syntax)"& "(string-firstchar-downcase (id syntax))")"(if concrete "" "= 0")";
+    virtual bool Open"(id syntax)"("(id syntax)"& "(string-firstchar-downcase (id syntax))")"(if concrete "" "= 0")";
     virtual void Close"(id syntax)"("(id syntax)"& "(string-firstchar-downcase (id syntax))")"(if concrete "" "= 0")";"
             )
             ($ "
@@ -55,13 +55,14 @@ namespace scalyc {
         (if (has-syntax-children? syntax)
             ($
 "
-void MyVisitor::Open"(id syntax)"("(id syntax)"& "(string-firstchar-downcase (id syntax))") {
+bool MyVisitor::Open"(id syntax)"("(id syntax)"& "(string-firstchar-downcase (id syntax))") {
 "                (apply-to-children-of syntax (lambda (identifier)
                     (if (identifier? identifier) ($
 "    "(visitor-property syntax identifier)" = "(string-firstchar-downcase (id syntax))"."(property identifier)";
 "                   )"")
                 ))
-"}
+"    return true;
+}
 
 void MyVisitor::Close"(id syntax)"("(id syntax)"& "(string-firstchar-downcase (id syntax))") {
 "                (apply-to-children-of syntax (lambda (identifier)

@@ -11,7 +11,8 @@ Program::Program()
 }
 
 void Program::Accept(SyntaxVisitor& visitor) {
-    visitor.OpenProgram(*this);
+    if (!visitor.OpenProgram(*this))
+        return;
     {
         CompilationUnit* node = 0;
         size_t _alength = compilationUnits->length();
@@ -28,7 +29,8 @@ CompilationUnit::CompilationUnit(Position start, Position end)
 }
 
 void CompilationUnit::Accept(SyntaxVisitor& visitor) {
-    visitor.OpenCompilationUnit(*this);
+    if (!visitor.OpenCompilationUnit(*this))
+        return;
     {
         StatementWithSemicolon* node = 0;
         size_t _alength = statements->length();
@@ -45,7 +47,8 @@ StatementWithSemicolon::StatementWithSemicolon(Position start, Position end)
 }
 
 void StatementWithSemicolon::Accept(SyntaxVisitor& visitor) {
-    visitor.OpenStatementWithSemicolon(*this);
+    if (!visitor.OpenStatementWithSemicolon(*this))
+        return;
     statement->Accept(visitor);
     visitor.CloseStatementWithSemicolon(*this);
 }
@@ -63,7 +66,8 @@ UseDeclaration::UseDeclaration(Position start, Position end)
 }
 
 void UseDeclaration::Accept(SyntaxVisitor& visitor) {
-    visitor.OpenUseDeclaration(*this);
+    if (!visitor.OpenUseDeclaration(*this))
+        return;
     importModule->Accept(visitor);
     if (importExtensions)
     {
@@ -82,7 +86,8 @@ PathIdentifier::PathIdentifier(Position start, Position end)
 }
 
 void PathIdentifier::Accept(SyntaxVisitor& visitor) {
-    visitor.OpenPathIdentifier(*this);
+    if (!visitor.OpenPathIdentifier(*this))
+        return;
     extension->Accept(visitor);
     visitor.ClosePathIdentifier(*this);
 }
@@ -100,7 +105,8 @@ Initializer::Initializer(Position start, Position end)
 }
 
 void Initializer::Accept(SyntaxVisitor& visitor) {
-    visitor.OpenInitializer(*this);
+    if (!visitor.OpenInitializer(*this))
+        return;
     expression->Accept(visitor);
     visitor.CloseInitializer(*this);
 }
@@ -110,7 +116,8 @@ ConstantDeclaration::ConstantDeclaration(Position start, Position end)
 }
 
 void ConstantDeclaration::Accept(SyntaxVisitor& visitor) {
-    visitor.OpenConstantDeclaration(*this);
+    if (!visitor.OpenConstantDeclaration(*this))
+        return;
     initializer->Accept(visitor);
     visitor.CloseConstantDeclaration(*this);
 }
@@ -120,7 +127,8 @@ VariableDeclaration::VariableDeclaration(Position start, Position end)
 }
 
 void VariableDeclaration::Accept(SyntaxVisitor& visitor) {
-    visitor.OpenVariableDeclaration(*this);
+    if (!visitor.OpenVariableDeclaration(*this))
+        return;
     initializer->Accept(visitor);
     visitor.CloseVariableDeclaration(*this);
 }
@@ -130,7 +138,8 @@ BindingInitializer::BindingInitializer(Position start, Position end)
 }
 
 void BindingInitializer::Accept(SyntaxVisitor& visitor) {
-    visitor.OpenBindingInitializer(*this);
+    if (!visitor.OpenBindingInitializer(*this))
+        return;
     initializer->Accept(visitor);
     if (additionalInitializers)
     {
@@ -149,7 +158,8 @@ PatternInitializer::PatternInitializer(Position start, Position end)
 }
 
 void PatternInitializer::Accept(SyntaxVisitor& visitor) {
-    visitor.OpenPatternInitializer(*this);
+    if (!visitor.OpenPatternInitializer(*this))
+        return;
     pattern->Accept(visitor);
     if (initializer)
         initializer->Accept(visitor);
@@ -161,7 +171,8 @@ AdditionalInitializer::AdditionalInitializer(Position start, Position end)
 }
 
 void AdditionalInitializer::Accept(SyntaxVisitor& visitor) {
-    visitor.OpenAdditionalInitializer(*this);
+    if (!visitor.OpenAdditionalInitializer(*this))
+        return;
     pattern->Accept(visitor);
     visitor.CloseAdditionalInitializer(*this);
 }
@@ -171,7 +182,8 @@ FunctionDeclaration::FunctionDeclaration(Position start, Position end)
 }
 
 void FunctionDeclaration::Accept(SyntaxVisitor& visitor) {
-    visitor.OpenFunctionDeclaration(*this);
+    if (!visitor.OpenFunctionDeclaration(*this))
+        return;
     if (modifiers)
     {
         Modifier* node = 0;
@@ -192,7 +204,8 @@ InitializerDeclaration::InitializerDeclaration(Position start, Position end)
 }
 
 void InitializerDeclaration::Accept(SyntaxVisitor& visitor) {
-    visitor.OpenInitializerDeclaration(*this);
+    if (!visitor.OpenInitializerDeclaration(*this))
+        return;
     if (modifiers)
     {
         Modifier* node = 0;
@@ -246,7 +259,8 @@ FunctionSignature::FunctionSignature(Position start, Position end)
 }
 
 void FunctionSignature::Accept(SyntaxVisitor& visitor) {
-    visitor.OpenFunctionSignature(*this);
+    if (!visitor.OpenFunctionSignature(*this))
+        return;
     parameterClause->Accept(visitor);
     if (result)
         result->Accept(visitor);
@@ -260,7 +274,8 @@ FunctionResult::FunctionResult(Position start, Position end)
 }
 
 void FunctionResult::Accept(SyntaxVisitor& visitor) {
-    visitor.OpenFunctionResult(*this);
+    if (!visitor.OpenFunctionResult(*this))
+        return;
     resultType->Accept(visitor);
     visitor.CloseFunctionResult(*this);
 }
@@ -270,7 +285,8 @@ ParameterClause::ParameterClause(Position start, Position end)
 }
 
 void ParameterClause::Accept(SyntaxVisitor& visitor) {
-    visitor.OpenParameterClause(*this);
+    if (!visitor.OpenParameterClause(*this))
+        return;
     if (parameters)
     {
         Parameter* node = 0;
@@ -292,7 +308,8 @@ ConstParameter::ConstParameter(Position start, Position end)
 }
 
 void ConstParameter::Accept(SyntaxVisitor& visitor) {
-    visitor.OpenConstParameter(*this);
+    if (!visitor.OpenConstParameter(*this))
+        return;
     type->Accept(visitor);
     visitor.CloseConstParameter(*this);
 }
@@ -302,7 +319,8 @@ VarParameter::VarParameter(Position start, Position end)
 }
 
 void VarParameter::Accept(SyntaxVisitor& visitor) {
-    visitor.OpenVarParameter(*this);
+    if (!visitor.OpenVarParameter(*this))
+        return;
     parameterType->Accept(visitor);
     visitor.CloseVarParameter(*this);
 }
@@ -312,7 +330,8 @@ ThrowsClause::ThrowsClause(Position start, Position end)
 }
 
 void ThrowsClause::Accept(SyntaxVisitor& visitor) {
-    visitor.OpenThrowsClause(*this);
+    if (!visitor.OpenThrowsClause(*this))
+        return;
     throwsType->Accept(visitor);
     visitor.CloseThrowsClause(*this);
 }
@@ -322,7 +341,8 @@ EnumDeclaration::EnumDeclaration(Position start, Position end)
 }
 
 void EnumDeclaration::Accept(SyntaxVisitor& visitor) {
-    visitor.OpenEnumDeclaration(*this);
+    if (!visitor.OpenEnumDeclaration(*this))
+        return;
     {
         EnumMember* node = 0;
         size_t _alength = members->length();
@@ -339,7 +359,8 @@ EnumMember::EnumMember(Position start, Position end)
 }
 
 void EnumMember::Accept(SyntaxVisitor& visitor) {
-    visitor.OpenEnumMember(*this);
+    if (!visitor.OpenEnumMember(*this))
+        return;
     enumCase->Accept(visitor);
     if (additionalCases)
     {
@@ -360,7 +381,8 @@ TupleType::TupleType(Position start, Position end)
 }
 
 void TupleType::Accept(SyntaxVisitor& visitor) {
-    visitor.OpenTupleType(*this);
+    if (!visitor.OpenTupleType(*this))
+        return;
     tupleType->Accept(visitor);
     if (additionalTypes)
     {
@@ -379,7 +401,8 @@ AdditionalType::AdditionalType(Position start, Position end)
 }
 
 void AdditionalType::Accept(SyntaxVisitor& visitor) {
-    visitor.OpenAdditionalType(*this);
+    if (!visitor.OpenAdditionalType(*this))
+        return;
     enumCase->Accept(visitor);
     visitor.CloseAdditionalType(*this);
 }
@@ -397,7 +420,8 @@ AdditionalCase::AdditionalCase(Position start, Position end)
 }
 
 void AdditionalCase::Accept(SyntaxVisitor& visitor) {
-    visitor.OpenAdditionalCase(*this);
+    if (!visitor.OpenAdditionalCase(*this))
+        return;
     enumCase->Accept(visitor);
     visitor.CloseAdditionalCase(*this);
 }
@@ -407,7 +431,8 @@ ClassDeclaration::ClassDeclaration(Position start, Position end)
 }
 
 void ClassDeclaration::Accept(SyntaxVisitor& visitor) {
-    visitor.OpenClassDeclaration(*this);
+    if (!visitor.OpenClassDeclaration(*this))
+        return;
     if (genericArgumentClause)
         genericArgumentClause->Accept(visitor);
     if (typeInheritanceClause)
@@ -429,7 +454,8 @@ GenericArgumentClause::GenericArgumentClause(Position start, Position end)
 }
 
 void GenericArgumentClause::Accept(SyntaxVisitor& visitor) {
-    visitor.OpenGenericArgumentClause(*this);
+    if (!visitor.OpenGenericArgumentClause(*this))
+        return;
     {
         GenericParameter* node = 0;
         size_t _alength = genericParameters->length();
@@ -454,7 +480,8 @@ ClassMember::ClassMember(Position start, Position end)
 }
 
 void ClassMember::Accept(SyntaxVisitor& visitor) {
-    visitor.OpenClassMember(*this);
+    if (!visitor.OpenClassMember(*this))
+        return;
     declaration->Accept(visitor);
     visitor.CloseClassMember(*this);
 }
@@ -468,7 +495,8 @@ CodeBlock::CodeBlock(Position start, Position end)
 }
 
 void CodeBlock::Accept(SyntaxVisitor& visitor) {
-    visitor.OpenCodeBlock(*this);
+    if (!visitor.OpenCodeBlock(*this))
+        return;
     {
         StatementWithSemicolon* node = 0;
         size_t _alength = statements->length();
@@ -485,7 +513,8 @@ SimpleExpression::SimpleExpression(Position start, Position end)
 }
 
 void SimpleExpression::Accept(SyntaxVisitor& visitor) {
-    visitor.OpenSimpleExpression(*this);
+    if (!visitor.OpenSimpleExpression(*this))
+        return;
     prefixExpression->Accept(visitor);
     if (binaryOps)
     {
@@ -504,7 +533,8 @@ PrefixExpression::PrefixExpression(Position start, Position end)
 }
 
 void PrefixExpression::Accept(SyntaxVisitor& visitor) {
-    visitor.OpenPrefixExpression(*this);
+    if (!visitor.OpenPrefixExpression(*this))
+        return;
     expression->Accept(visitor);
     visitor.ClosePrefixExpression(*this);
 }
@@ -514,7 +544,8 @@ PostfixExpression::PostfixExpression(Position start, Position end)
 }
 
 void PostfixExpression::Accept(SyntaxVisitor& visitor) {
-    visitor.OpenPostfixExpression(*this);
+    if (!visitor.OpenPostfixExpression(*this))
+        return;
     primaryExpression->Accept(visitor);
     if (postfixes)
     {
@@ -537,7 +568,8 @@ BinaryOperation::BinaryOperation(Position start, Position end)
 }
 
 void BinaryOperation::Accept(SyntaxVisitor& visitor) {
-    visitor.OpenBinaryOperation(*this);
+    if (!visitor.OpenBinaryOperation(*this))
+        return;
     expression->Accept(visitor);
     visitor.CloseBinaryOperation(*this);
 }
@@ -547,7 +579,8 @@ Assignment::Assignment(Position start, Position end)
 }
 
 void Assignment::Accept(SyntaxVisitor& visitor) {
-    visitor.OpenAssignment(*this);
+    if (!visitor.OpenAssignment(*this))
+        return;
     expression->Accept(visitor);
     visitor.CloseAssignment(*this);
 }
@@ -557,7 +590,8 @@ TypeQuery::TypeQuery(Position start, Position end)
 }
 
 void TypeQuery::Accept(SyntaxVisitor& visitor) {
-    visitor.OpenTypeQuery(*this);
+    if (!visitor.OpenTypeQuery(*this))
+        return;
     objectType->Accept(visitor);
     visitor.CloseTypeQuery(*this);
 }
@@ -567,7 +601,8 @@ TypeCast::TypeCast(Position start, Position end)
 }
 
 void TypeCast::Accept(SyntaxVisitor& visitor) {
-    visitor.OpenTypeCast(*this);
+    if (!visitor.OpenTypeCast(*this))
+        return;
     objectType->Accept(visitor);
     visitor.CloseTypeCast(*this);
 }
@@ -577,7 +612,8 @@ CatchClause::CatchClause(Position start, Position end)
 }
 
 void CatchClause::Accept(SyntaxVisitor& visitor) {
-    visitor.OpenCatchClause(*this);
+    if (!visitor.OpenCatchClause(*this))
+        return;
     catchPattern->Accept(visitor);
     if (bindingPattern)
         bindingPattern->Accept(visitor);
@@ -594,7 +630,8 @@ WildCardCatchPattern::WildCardCatchPattern(Position start, Position end)
 }
 
 void WildCardCatchPattern::Accept(SyntaxVisitor& visitor) {
-    visitor.OpenWildCardCatchPattern(*this);
+    if (!visitor.OpenWildCardCatchPattern(*this))
+        return;
     pattern->Accept(visitor);
     visitor.CloseWildCardCatchPattern(*this);
 }
@@ -604,7 +641,8 @@ PathItemCatchPattern::PathItemCatchPattern(Position start, Position end)
 }
 
 void PathItemCatchPattern::Accept(SyntaxVisitor& visitor) {
-    visitor.OpenPathItemCatchPattern(*this);
+    if (!visitor.OpenPathItemCatchPattern(*this))
+        return;
     catchCase->Accept(visitor);
     if (catchCaseExtensions)
     {
@@ -635,7 +673,8 @@ FunctionCall::FunctionCall(Position start, Position end)
 }
 
 void FunctionCall::Accept(SyntaxVisitor& visitor) {
-    visitor.OpenFunctionCall(*this);
+    if (!visitor.OpenFunctionCall(*this))
+        return;
     arguments->Accept(visitor);
     if (catchClauses)
     {
@@ -654,7 +693,8 @@ ExplicitMemberExpression::ExplicitMemberExpression(Position start, Position end)
 }
 
 void ExplicitMemberExpression::Accept(SyntaxVisitor& visitor) {
-    visitor.OpenExplicitMemberExpression(*this);
+    if (!visitor.OpenExplicitMemberExpression(*this))
+        return;
     memberPostfix->Accept(visitor);
     visitor.CloseExplicitMemberExpression(*this);
 }
@@ -664,7 +704,8 @@ Subscript::Subscript(Position start, Position end)
 }
 
 void Subscript::Accept(SyntaxVisitor& visitor) {
-    visitor.OpenSubscript(*this);
+    if (!visitor.OpenSubscript(*this))
+        return;
     {
         ExpressionElement* node = 0;
         size_t _alength = expressions->length();
@@ -681,7 +722,8 @@ ExpressionElement::ExpressionElement(Position start, Position end)
 }
 
 void ExpressionElement::Accept(SyntaxVisitor& visitor) {
-    visitor.OpenExpressionElement(*this);
+    if (!visitor.OpenExpressionElement(*this))
+        return;
     expression->Accept(visitor);
     visitor.CloseExpressionElement(*this);
 }
@@ -695,7 +737,8 @@ NamedMemberPostfix::NamedMemberPostfix(Position start, Position end)
 }
 
 void NamedMemberPostfix::Accept(SyntaxVisitor& visitor) {
-    visitor.OpenNamedMemberPostfix(*this);
+    if (!visitor.OpenNamedMemberPostfix(*this))
+        return;
     identifier->Accept(visitor);
     visitor.CloseNamedMemberPostfix(*this);
 }
@@ -709,7 +752,8 @@ ParenthesizedExpression::ParenthesizedExpression(Position start, Position end)
 }
 
 void ParenthesizedExpression::Accept(SyntaxVisitor& visitor) {
-    visitor.OpenParenthesizedExpression(*this);
+    if (!visitor.OpenParenthesizedExpression(*this))
+        return;
     if (expressionElements)
     {
         ExpressionElement* node = 0;
@@ -743,7 +787,8 @@ IfExpression::IfExpression(Position start, Position end)
 }
 
 void IfExpression::Accept(SyntaxVisitor& visitor) {
-    visitor.OpenIfExpression(*this);
+    if (!visitor.OpenIfExpression(*this))
+        return;
     condition->Accept(visitor);
     consequent->Accept(visitor);
     if (elseClause)
@@ -756,7 +801,8 @@ ElseClause::ElseClause(Position start, Position end)
 }
 
 void ElseClause::Accept(SyntaxVisitor& visitor) {
-    visitor.OpenElseClause(*this);
+    if (!visitor.OpenElseClause(*this))
+        return;
     alternative->Accept(visitor);
     visitor.CloseElseClause(*this);
 }
@@ -766,7 +812,8 @@ SwitchExpression::SwitchExpression(Position start, Position end)
 }
 
 void SwitchExpression::Accept(SyntaxVisitor& visitor) {
-    visitor.OpenSwitchExpression(*this);
+    if (!visitor.OpenSwitchExpression(*this))
+        return;
     expression->Accept(visitor);
     body->Accept(visitor);
     visitor.CloseSwitchExpression(*this);
@@ -781,7 +828,8 @@ CurliedSwitchBody::CurliedSwitchBody(Position start, Position end)
 }
 
 void CurliedSwitchBody::Accept(SyntaxVisitor& visitor) {
-    visitor.OpenCurliedSwitchBody(*this);
+    if (!visitor.OpenCurliedSwitchBody(*this))
+        return;
     {
         SwitchCase* node = 0;
         size_t _alength = cases->length();
@@ -798,7 +846,8 @@ NakedSwitchBody::NakedSwitchBody(Position start, Position end)
 }
 
 void NakedSwitchBody::Accept(SyntaxVisitor& visitor) {
-    visitor.OpenNakedSwitchBody(*this);
+    if (!visitor.OpenNakedSwitchBody(*this))
+        return;
     {
         SwitchCase* node = 0;
         size_t _alength = cases->length();
@@ -815,7 +864,8 @@ SwitchCase::SwitchCase(Position start, Position end)
 }
 
 void SwitchCase::Accept(SyntaxVisitor& visitor) {
-    visitor.OpenSwitchCase(*this);
+    if (!visitor.OpenSwitchCase(*this))
+        return;
     label->Accept(visitor);
     content->Accept(visitor);
     visitor.CloseSwitchCase(*this);
@@ -830,7 +880,8 @@ ItemCaseLabel::ItemCaseLabel(Position start, Position end)
 }
 
 void ItemCaseLabel::Accept(SyntaxVisitor& visitor) {
-    visitor.OpenItemCaseLabel(*this);
+    if (!visitor.OpenItemCaseLabel(*this))
+        return;
     pattern->Accept(visitor);
     if (additionalPatterns)
     {
@@ -849,7 +900,8 @@ CaseItem::CaseItem(Position start, Position end)
 }
 
 void CaseItem::Accept(SyntaxVisitor& visitor) {
-    visitor.OpenCaseItem(*this);
+    if (!visitor.OpenCaseItem(*this))
+        return;
     pattern->Accept(visitor);
     visitor.CloseCaseItem(*this);
 }
@@ -859,7 +911,8 @@ ForExpression::ForExpression(Position start, Position end)
 }
 
 void ForExpression::Accept(SyntaxVisitor& visitor) {
-    visitor.OpenForExpression(*this);
+    if (!visitor.OpenForExpression(*this))
+        return;
     loop->Accept(visitor);
     visitor.CloseForExpression(*this);
 }
@@ -873,7 +926,8 @@ ForEach::ForEach(Position start, Position end)
 }
 
 void ForEach::Accept(SyntaxVisitor& visitor) {
-    visitor.OpenForEach(*this);
+    if (!visitor.OpenForEach(*this))
+        return;
     pattern->Accept(visitor);
     expression->Accept(visitor);
     code->Accept(visitor);
@@ -885,7 +939,8 @@ PlainFor::PlainFor(Position start, Position end)
 }
 
 void PlainFor::Accept(SyntaxVisitor& visitor) {
-    visitor.OpenPlainFor(*this);
+    if (!visitor.OpenPlainFor(*this))
+        return;
     if (forInit)
         forInit->Accept(visitor);
     if (forCheck)
@@ -900,7 +955,8 @@ ReturnExpression::ReturnExpression(Position start, Position end)
 }
 
 void ReturnExpression::Accept(SyntaxVisitor& visitor) {
-    visitor.OpenReturnExpression(*this);
+    if (!visitor.OpenReturnExpression(*this))
+        return;
     if (expression)
         expression->Accept(visitor);
     visitor.CloseReturnExpression(*this);
@@ -911,7 +967,8 @@ ThrowExpression::ThrowExpression(Position start, Position end)
 }
 
 void ThrowExpression::Accept(SyntaxVisitor& visitor) {
-    visitor.OpenThrowExpression(*this);
+    if (!visitor.OpenThrowExpression(*this))
+        return;
     if (expression)
         expression->Accept(visitor);
     visitor.CloseThrowExpression(*this);
@@ -922,7 +979,8 @@ BreakExpression::BreakExpression(Position start, Position end)
 }
 
 void BreakExpression::Accept(SyntaxVisitor& visitor) {
-    visitor.OpenBreakExpression(*this);
+    if (!visitor.OpenBreakExpression(*this))
+        return;
     if (expression)
         expression->Accept(visitor);
     visitor.CloseBreakExpression(*this);
@@ -945,7 +1003,8 @@ IdentifierPattern::IdentifierPattern(Position start, Position end)
 }
 
 void IdentifierPattern::Accept(SyntaxVisitor& visitor) {
-    visitor.OpenIdentifierPattern(*this);
+    if (!visitor.OpenIdentifierPattern(*this))
+        return;
     if (typeAnnotation)
         typeAnnotation->Accept(visitor);
     visitor.CloseIdentifierPattern(*this);
@@ -956,7 +1015,8 @@ TuplePattern::TuplePattern(Position start, Position end)
 }
 
 void TuplePattern::Accept(SyntaxVisitor& visitor) {
-    visitor.OpenTuplePattern(*this);
+    if (!visitor.OpenTuplePattern(*this))
+        return;
     {
         TuplePatternElement* node = 0;
         size_t _alength = elements->length();
@@ -973,7 +1033,8 @@ TuplePatternElement::TuplePatternElement(Position start, Position end)
 }
 
 void TuplePatternElement::Accept(SyntaxVisitor& visitor) {
-    visitor.OpenTuplePatternElement(*this);
+    if (!visitor.OpenTuplePatternElement(*this))
+        return;
     pattern->Accept(visitor);
     visitor.CloseTuplePatternElement(*this);
 }
@@ -983,7 +1044,8 @@ ExpressionPattern::ExpressionPattern(Position start, Position end)
 }
 
 void ExpressionPattern::Accept(SyntaxVisitor& visitor) {
-    visitor.OpenExpressionPattern(*this);
+    if (!visitor.OpenExpressionPattern(*this))
+        return;
     expression->Accept(visitor);
     visitor.CloseExpressionPattern(*this);
 }
@@ -1005,7 +1067,8 @@ BlockCaseContent::BlockCaseContent(Position start, Position end)
 }
 
 void BlockCaseContent::Accept(SyntaxVisitor& visitor) {
-    visitor.OpenBlockCaseContent(*this);
+    if (!visitor.OpenBlockCaseContent(*this))
+        return;
     {
         StatementWithSemicolon* node = 0;
         size_t _alength = statements->length();
@@ -1030,7 +1093,8 @@ InitializerCall::InitializerCall(Position start, Position end)
 }
 
 void InitializerCall::Accept(SyntaxVisitor& visitor) {
-    visitor.OpenInitializerCall(*this);
+    if (!visitor.OpenInitializerCall(*this))
+        return;
     typeToInitialize->Accept(visitor);
     arguments->Accept(visitor);
     if (catchClauses)
@@ -1054,7 +1118,8 @@ ThisDot::ThisDot(Position start, Position end)
 }
 
 void ThisDot::Accept(SyntaxVisitor& visitor) {
-    visitor.OpenThisDot(*this);
+    if (!visitor.OpenThisDot(*this))
+        return;
     member->Accept(visitor);
     visitor.CloseThisDot(*this);
 }
@@ -1064,7 +1129,8 @@ ThisSubscript::ThisSubscript(Position start, Position end)
 }
 
 void ThisSubscript::Accept(SyntaxVisitor& visitor) {
-    visitor.OpenThisSubscript(*this);
+    if (!visitor.OpenThisSubscript(*this))
+        return;
     subscript->Accept(visitor);
     visitor.CloseThisSubscript(*this);
 }
@@ -1106,7 +1172,8 @@ SuperDot::SuperDot(Position start, Position end)
 }
 
 void SuperDot::Accept(SyntaxVisitor& visitor) {
-    visitor.OpenSuperDot(*this);
+    if (!visitor.OpenSuperDot(*this))
+        return;
     member->Accept(visitor);
     visitor.CloseSuperDot(*this);
 }
@@ -1116,7 +1183,8 @@ SuperSubscript::SuperSubscript(Position start, Position end)
 }
 
 void SuperSubscript::Accept(SyntaxVisitor& visitor) {
-    visitor.OpenSuperSubscript(*this);
+    if (!visitor.OpenSuperSubscript(*this))
+        return;
     subscript->Accept(visitor);
     visitor.CloseSuperSubscript(*this);
 }
@@ -1150,7 +1218,8 @@ TypeAnnotation::TypeAnnotation(Position start, Position end)
 }
 
 void TypeAnnotation::Accept(SyntaxVisitor& visitor) {
-    visitor.OpenTypeAnnotation(*this);
+    if (!visitor.OpenTypeAnnotation(*this))
+        return;
     typeAnnotation->Accept(visitor);
     visitor.CloseTypeAnnotation(*this);
 }
@@ -1160,7 +1229,8 @@ TypeIdentifier::TypeIdentifier(Position start, Position end)
 }
 
 void TypeIdentifier::Accept(SyntaxVisitor& visitor) {
-    visitor.OpenTypeIdentifier(*this);
+    if (!visitor.OpenTypeIdentifier(*this))
+        return;
     if (subType)
         subType->Accept(visitor);
     if (postfixes)
@@ -1180,7 +1250,8 @@ SubtypeIdentifier::SubtypeIdentifier(Position start, Position end)
 }
 
 void SubtypeIdentifier::Accept(SyntaxVisitor& visitor) {
-    visitor.OpenSubtypeIdentifier(*this);
+    if (!visitor.OpenSubtypeIdentifier(*this))
+        return;
     typeIdentifier->Accept(visitor);
     visitor.CloseSubtypeIdentifier(*this);
 }
@@ -1194,7 +1265,8 @@ ArrayType::ArrayType(Position start, Position end)
 }
 
 void ArrayType::Accept(SyntaxVisitor& visitor) {
-    visitor.OpenArrayType(*this);
+    if (!visitor.OpenArrayType(*this))
+        return;
     elementType->Accept(visitor);
     if (postfixes)
     {
@@ -1221,7 +1293,8 @@ TypeInheritanceClause::TypeInheritanceClause(Position start, Position end)
 }
 
 void TypeInheritanceClause::Accept(SyntaxVisitor& visitor) {
-    visitor.OpenTypeInheritanceClause(*this);
+    if (!visitor.OpenTypeInheritanceClause(*this))
+        return;
     if (inheritances)
     {
         Inheritance* node = 0;
@@ -1239,7 +1312,8 @@ Inheritance::Inheritance(Position start, Position end)
 }
 
 void Inheritance::Accept(SyntaxVisitor& visitor) {
-    visitor.OpenInheritance(*this);
+    if (!visitor.OpenInheritance(*this))
+        return;
     name->Accept(visitor);
     visitor.CloseInheritance(*this);
 }

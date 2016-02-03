@@ -158,7 +158,8 @@ void "(id syntax-node)"::Accept(SyntaxVisitor& visitor) {
 "
             (if (has-syntax-children? syntax-node)
                 ($
-"    visitor.Open"(id syntax-node)"(*this);
+"    if (!visitor.Open"(id syntax-node)"(*this))
+        return;
 "
                     (apply-to-children-of syntax-node (lambda (content)
                         (case (type content)
