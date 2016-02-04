@@ -6,6 +6,11 @@ namespace scalyc {
 
 class CppVisitor : public SyntaxVisitor {
 public:
+    CppError* Execute(Program& program);
+private:
+    CppError* cppError;
+    
+public:
     virtual bool OpenProgram(Program& program);
     virtual void CloseProgram(Program& program);
     String* programName;

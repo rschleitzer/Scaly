@@ -39,8 +39,10 @@ CompilerError* Compiler::compileFiles(_Page* _ep, Options& options) {
     program.compilationUnits = compilationUnits;
     
     CppVisitor visitor;
-    program.Accept(visitor);
-
+    CppError* cppError = visitor.Execute(program);
+    if (cppError) {
+    }
+    
     // Everything went fine
     return 0;
 }

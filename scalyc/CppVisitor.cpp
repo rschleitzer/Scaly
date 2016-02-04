@@ -2,6 +2,10 @@
 using namespace scaly;
 namespace scalyc {
 
+CppError* CppVisitor::Execute(Program& program) {
+    program.Accept(*this);
+    return cppError;
+}
 
 bool CppVisitor::OpenProgram(Program& program) {
     programName = program.name;
