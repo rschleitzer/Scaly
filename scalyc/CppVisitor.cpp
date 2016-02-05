@@ -20,6 +20,63 @@ bool CppVisitor::OpenProgram(Program& program) {
             return false;
     }
     
+    projectFile = new(getPage()) String("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
+    (*projectFile) += "<CodeLite_Project Name=\"";
+    (*projectFile) +=  *programName;
+    (*projectFile) +=  "\" InternalType=\"Console\">\n  <Plugins>\n    <Plugin Name=\"qmake\">\n";
+    (*projectFile) +=  "      <![CDATA[00010001N0005Debug000000000000]]>\n    </Plugin>\n";
+    (*projectFile) +=  "    <Plugin Name=\"CMakePlugin\">\n      <![CDATA[[{\n";
+    (*projectFile) +=  "  \"name\": \"Debug\",\n  \"enabled\": false,\n  \"buildDirectory\": \"build\",\n";
+    (*projectFile) +=  "  \"sourceDirectory\": \"$(ProjectPath)\",  \"generator\": \"\",  \"buildType\": \"\",\n";
+    (*projectFile) +=  "  \"arguments\": [],  \"parentProject\": \"\"\n }]]]>\n    </Plugin>\n  </Plugins>\n";
+    (*projectFile) +=  "  <Description/>\n  <Dependencies/>\n";
+    (*projectFile) +=  "  <VirtualDirectory Name=\"src\">\n    <File Name=\"main.cpp\"/>\n    <File Name=\"";
+    (*projectFile) +=  *programName;
+    (*projectFile) +=  ".cpp\"/>\n";
+    size_t noOfCompilationUnits = program.compilationUnits->length();
+    for (size_t i = 0; i < noOfCompilationUnits; i++) {
+        (*projectFile) +=  "    <File Name=\"";
+        (*projectFile) +=  "main";
+        (*projectFile) +=  ".cpp\"/>\n";
+    }
+    (*projectFile) +=  "  </VirtualDirectory>\n  <VirtualDirectory Name=\"include\">\n";
+    (*projectFile) +=  "    <File Name=\"";
+    (*projectFile) +=  *programName;
+    (*projectFile) +=  ".h\"/>\n";
+    for (size_t i = 0; i < noOfCompilationUnits; i++) {
+        (*projectFile) +=  "    <File Name=\"";
+        (*projectFile) +=  "main";
+        (*projectFile) +=  ".h\"/>\n";
+    }
+    (*projectFile) +=  "  </VirtualDirectory>\n  <Settings Type=\"Executable\">\n    <GlobalSettings>\n";
+    (*projectFile) +=  "      <Compiler Options=\"\" C_Options=\"\" Assembler=\"\">\n";
+    (*projectFile) +=  "        <IncludePath Value=\".\"/>\n      </Compiler>\n      <Linker Options=\"\">\n";
+    (*projectFile) +=  "        <LibraryPath Value=\".\"/>\n      </Linker>\n      <ResourceCompiler Options=\"\"/>\n";
+    (*projectFile) +=  "      <General OutputFile=\"$(IntermediateDirectory)/$(ProjectName)\" IntermediateDirectory=\"../Debug\" ";
+    (*projectFile) +=  "Command=\"./$(ProjectName)\" CommandArguments=\"-o ";
+    (*projectFile) +=  *programName;
+    (*projectFile) +=  " -d output";
+    (*projectFile) +=  " ../"; (*projectFile) +=  *programName; (*projectFile) += "/"; (*projectFile) +=  *programName;  (*projectFile) += ".scaly";      
+    for (size_t i = 0; i < noOfCompilationUnits; i++) {
+        (*projectFile) +=  " ../"; (*projectFile) +=  *programName; (*projectFile) += "/";
+        (*projectFile) +=  "main";
+        (*projectFile) +=  ".scaly";
+    }
+    (*projectFile) += " UseSeparateDebugArgs=\"no\" DebugArguments=\"\" WorkingDirectory=\"$(IntermediateDirectory)\"";
+    (*projectFile) += " PauseExecWhenProcTerminates=\"yes\" IsGUIProgram=\"no\" IsEnabled=\"yes\"/>\n";
+    (*projectFile) += "      <Environment EnvVarSetName=\"&lt;Use Defaults&gt;\" DbgSetName=\"&lt;Use Defaults&gt;\">\n";
+    (*projectFile) += "        <![CDATA[]]>\n      </Environment>\n";
+    (*projectFile) += "      <Debugger IsRemote=\"no\" RemoteHostName=\"\" RemoteHostPort=\"\" DebuggerPath=\"\" IsExtended=\"yes\">\n";
+    (*projectFile) += "        <DebuggerSearchPaths/>\n        <PostConnectCommands/>\n        <StartupCommands/>\n      </Debugger>\n";
+    (*projectFile) += "      <PreBuild/>\n      <PostBuild/>\n      <CustomBuild Enabled=\"no\">\n        <RebuildCommand/>\n";
+    (*projectFile) += "        <CleanCommand/>\n        <BuildCommand/>\n        <PreprocessFileCommand/>\n        <SingleFileCommand/>\n";
+    (*projectFile) += "        <MakefileGenerationCommand/>\n        <ThirdPartyToolName>None</ThirdPartyToolName>\n";
+    (*projectFile) += "        <WorkingDirectory/>\n      </CustomBuild>\n      <AdditionalRules>\n";
+    (*projectFile) += "        <CustomPostBuild/>\n        <CustomPreBuild/>\n      </AdditionalRules>\n";
+    (*projectFile) += "      <Completion EnableCpp11=\"no\" EnableCpp14=\"no\">\n        <ClangCmpFlagsC/>\n        <ClangCmpFlags/>\n";
+    (*projectFile) += "        <ClangPP/>\n        <SearchPaths/>\n      </Completion>\n";
+    (*projectFile) += "    </Configuration>\n  </Settings>\n</CodeLite_Project>";
+    
     return true;
 }
 

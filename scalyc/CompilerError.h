@@ -22,6 +22,7 @@ public:
 enum _CompilerErrorCode {
     _CompilerError_fileNotFound = 1,
     _CompilerError_syntaxError,
+    _CompilerError_unableToCreateOutputDirectory
 };
 
 class CompilerError : public Object
@@ -33,11 +34,15 @@ public:
     CompilerError(SyntaxError& SyntaxError)
     : errorCode(_CompilerError_syntaxError), errorInfo(&SyntaxError) {}
 
+    CompilerError(UnableToCreateOutputDirectory& UnableToCreateOutputDirectory)
+    : errorCode(_CompilerError_unableToCreateOutputDirectory), errorInfo(&UnableToCreateOutputDirectory) {}
+
     long getErrorCode();
     void* getErrorInfo();
     
     UnableToReadFile& getUnableToReadFile();
     SyntaxError& getSyntaxError();
+    UnableToCreateOutputDirectory& getUnableToCreateOutputDirectory();
 
 private:
     _CompilerErrorCode errorCode;

@@ -60,10 +60,34 @@ String& String::operator += (char c) {
     return *this;
 }
 
+String& String::operator += (const char* theString) {
+    size_t stringLength = strlen(theString);
+    if (!string) {
+        // Allocate for the char itself and the trailing 0
+        allocate(stringLength + 1);
+    }
+    else {
+        if (!extend(stringLength))
+            reallocate(length + stringLength);
+    }
+
+    //*(string + length - 1) = c;
+    strcpy(string + length - stringLength, theString);
+    *(string + length) = 0;
+
+    return *this;
+}
+
+String& String::operator += (const String& theString) {
+    (*this) += theString.getNativeString();
+    
+    return *this;
+}
+
 bool String::extend(size_t size) {
     _Page& page = *_Page::getPage(string);
-    if (page.extend(string + length + 1, 1)) {
-        length++;
+    if (page.extend(string + length + 1, size)) {
+        length += size;
         return true;
     }
     else {

@@ -12,6 +12,8 @@ public:
     size_t getLength();
     char operator [](size_t i);
     String& operator += (char c);
+    String& operator += (const char* theString);
+    String& operator += (const String& theString);
     bool operator == (const char* theString);
 
 private:
