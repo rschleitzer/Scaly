@@ -80,6 +80,13 @@ bool CppVisitor::OpenProgram(Program& program) {
     (*projectFile) += "        <ClangPP/>\n        <SearchPaths/>\n      </Completion>\n";
     (*projectFile) += "    </Configuration>\n  </Settings>\n</CodeLite_Project>";
     
+    
+    {
+        _Region _region; _Page* _p = _region.get();
+        if (File::writeFromString(_p, *programDirectory + "/" + *programName + ".project" , *projectFile))
+            return false;
+    }
+    
     return true;
 }
 

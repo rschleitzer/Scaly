@@ -14,7 +14,9 @@ public:
     char operator [](size_t i);
     String& operator += (char c);
     String& operator += (const char* theString);
+    String& operator + (const char* theString);
     String& operator += (const String& theString);
+    String& operator + (const String& thestring);
     bool operator == (const char* theString);
     Array<String>& Split(_Page* _rp, char c);
 

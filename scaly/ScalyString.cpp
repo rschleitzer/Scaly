@@ -85,10 +85,18 @@ String& String::operator += (const char* theString) {
     return *this;
 }
 
+String& String::operator + (const char* theString) {
+    return *this += theString;
+}
+
 String& String::operator += (const String& theString) {
     (*this) += theString.getNativeString();
     
     return *this;
+}
+
+String& String::operator + (const String& theString) {
+    return *this += theString;
 }
 
 bool String::extend(size_t size) {
