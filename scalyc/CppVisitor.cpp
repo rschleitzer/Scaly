@@ -743,7 +743,7 @@ void CppVisitor::buildMainHeaderFileString(String& headerFile, Program& program)
     for (size_t i = 0; i < noOfCompilationUnits; i++) {
         _Region _region; _Page* _p = _region.get();
         headerFile +=  "#include \"";
-        headerFile += *Path::getFileNameWithoutExtension(_p, *(*(*program.compilationUnits)[i])->fileName) + ".h\n";
+        headerFile += *Path::getFileNameWithoutExtension(_p, *(*(*program.compilationUnits)[i])->fileName) + ".h\"\n";
     }
     headerFile += "\nusing namespace scaly;\nnamespace scalyc {\nint _main(Array<String>& arguments);\n}\n\n#endif // __scaly__scalyc__\n";
 }

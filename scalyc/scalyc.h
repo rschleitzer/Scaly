@@ -14,6 +14,7 @@
 #include "Options.h"
 #include "CompilerError.h"
 #include "Compiler.h"
+#include "scalyc.h"
 
 using namespace scaly;
 namespace scalyc {
