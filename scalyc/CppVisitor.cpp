@@ -3,11 +3,11 @@ using namespace scaly;
 namespace scalyc {
 
 CppError* CppVisitor::Execute(Program& program) {
-    program.Accept(*this);
+    program.accept(*this);
     return cppError;
 }
 
-bool CppVisitor::OpenProgram(Program& program) {
+bool CppVisitor::openProgram(Program& program) {
     programName = program.name;
     programDirectory = program.directory;
     
@@ -56,587 +56,587 @@ bool CppVisitor::OpenProgram(Program& program) {
     return true;
 }
 
-void CppVisitor::CloseProgram(Program& program) {
+void CppVisitor::closeProgram(Program& program) {
     programName = 0;
     programDirectory = 0;    
 }
 
 
-bool CppVisitor::OpenCompilationUnit(CompilationUnit& compilationUnit) {
+bool CppVisitor::openCompilationUnit(CompilationUnit& compilationUnit) {
     return true;
 }
 
-void CppVisitor::CloseCompilationUnit(CompilationUnit& compilationUnit) {
+void CppVisitor::closeCompilationUnit(CompilationUnit& compilationUnit) {
 }
 
-bool CppVisitor::OpenStatementWithSemicolon(StatementWithSemicolon& statementWithSemicolon) {
+bool CppVisitor::openStatementWithSemicolon(StatementWithSemicolon& statementWithSemicolon) {
     return true;
 }
 
-void CppVisitor::CloseStatementWithSemicolon(StatementWithSemicolon& statementWithSemicolon) {
+void CppVisitor::closeStatementWithSemicolon(StatementWithSemicolon& statementWithSemicolon) {
 }
 
-bool CppVisitor::OpenUseDeclaration(UseDeclaration& useDeclaration) {
+bool CppVisitor::openUseDeclaration(UseDeclaration& useDeclaration) {
     return true;
 }
 
-void CppVisitor::CloseUseDeclaration(UseDeclaration& useDeclaration) {
+void CppVisitor::closeUseDeclaration(UseDeclaration& useDeclaration) {
 }
 
-bool CppVisitor::OpenPathIdentifier(PathIdentifier& pathIdentifier) {
+bool CppVisitor::openPathIdentifier(PathIdentifier& pathIdentifier) {
     return true;
 }
 
-void CppVisitor::ClosePathIdentifier(PathIdentifier& pathIdentifier) {
+void CppVisitor::closePathIdentifier(PathIdentifier& pathIdentifier) {
 }
 
-void CppVisitor::VisitPathItem(PathItem& pathItem) {
+void CppVisitor::visitPathItem(PathItem& pathItem) {
 }
 
-bool CppVisitor::OpenInitializer(Initializer& initializer) {
+bool CppVisitor::openInitializer(Initializer& initializer) {
     return true;
 }
 
-void CppVisitor::CloseInitializer(Initializer& initializer) {
+void CppVisitor::closeInitializer(Initializer& initializer) {
 }
 
-bool CppVisitor::OpenConstantDeclaration(ConstantDeclaration& constantDeclaration) {
+bool CppVisitor::openConstantDeclaration(ConstantDeclaration& constantDeclaration) {
     return true;
 }
 
-void CppVisitor::CloseConstantDeclaration(ConstantDeclaration& constantDeclaration) {
+void CppVisitor::closeConstantDeclaration(ConstantDeclaration& constantDeclaration) {
 }
 
-bool CppVisitor::OpenVariableDeclaration(VariableDeclaration& variableDeclaration) {
+bool CppVisitor::openVariableDeclaration(VariableDeclaration& variableDeclaration) {
     return true;
 }
 
-void CppVisitor::CloseVariableDeclaration(VariableDeclaration& variableDeclaration) {
+void CppVisitor::closeVariableDeclaration(VariableDeclaration& variableDeclaration) {
 }
 
-bool CppVisitor::OpenBindingInitializer(BindingInitializer& bindingInitializer) {
+bool CppVisitor::openBindingInitializer(BindingInitializer& bindingInitializer) {
     return true;
 }
 
-void CppVisitor::CloseBindingInitializer(BindingInitializer& bindingInitializer) {
+void CppVisitor::closeBindingInitializer(BindingInitializer& bindingInitializer) {
 }
 
-bool CppVisitor::OpenPatternInitializer(PatternInitializer& patternInitializer) {
+bool CppVisitor::openPatternInitializer(PatternInitializer& patternInitializer) {
     return true;
 }
 
-void CppVisitor::ClosePatternInitializer(PatternInitializer& patternInitializer) {
+void CppVisitor::closePatternInitializer(PatternInitializer& patternInitializer) {
 }
 
-bool CppVisitor::OpenAdditionalInitializer(AdditionalInitializer& additionalInitializer) {
+bool CppVisitor::openAdditionalInitializer(AdditionalInitializer& additionalInitializer) {
     return true;
 }
 
-void CppVisitor::CloseAdditionalInitializer(AdditionalInitializer& additionalInitializer) {
+void CppVisitor::closeAdditionalInitializer(AdditionalInitializer& additionalInitializer) {
 }
 
-bool CppVisitor::OpenFunctionDeclaration(FunctionDeclaration& functionDeclaration) {
+bool CppVisitor::openFunctionDeclaration(FunctionDeclaration& functionDeclaration) {
     return true;
 }
 
-void CppVisitor::CloseFunctionDeclaration(FunctionDeclaration& functionDeclaration) {
+void CppVisitor::closeFunctionDeclaration(FunctionDeclaration& functionDeclaration) {
 }
 
-bool CppVisitor::OpenInitializerDeclaration(InitializerDeclaration& initializerDeclaration) {
+bool CppVisitor::openInitializerDeclaration(InitializerDeclaration& initializerDeclaration) {
     return true;
 }
 
-void CppVisitor::CloseInitializerDeclaration(InitializerDeclaration& initializerDeclaration) {
+void CppVisitor::closeInitializerDeclaration(InitializerDeclaration& initializerDeclaration) {
 }
 
-void CppVisitor::VisitOverride(Override& override) {
+void CppVisitor::visitOverride(Override& override) {
 }
 
-void CppVisitor::VisitStaticWord(StaticWord& staticWord) {
+void CppVisitor::visitStaticWord(StaticWord& staticWord) {
 }
 
-void CppVisitor::VisitIdentifierFunction(IdentifierFunction& identifierFunction) {
+void CppVisitor::visitIdentifierFunction(IdentifierFunction& identifierFunction) {
 }
 
-bool CppVisitor::OpenFunctionSignature(FunctionSignature& functionSignature) {
+bool CppVisitor::openFunctionSignature(FunctionSignature& functionSignature) {
     return true;
 }
 
-void CppVisitor::CloseFunctionSignature(FunctionSignature& functionSignature) {
+void CppVisitor::closeFunctionSignature(FunctionSignature& functionSignature) {
 }
 
-bool CppVisitor::OpenFunctionResult(FunctionResult& functionResult) {
+bool CppVisitor::openFunctionResult(FunctionResult& functionResult) {
     return true;
 }
 
-void CppVisitor::CloseFunctionResult(FunctionResult& functionResult) {
+void CppVisitor::closeFunctionResult(FunctionResult& functionResult) {
 }
 
-bool CppVisitor::OpenParameterClause(ParameterClause& parameterClause) {
+bool CppVisitor::openParameterClause(ParameterClause& parameterClause) {
     return true;
 }
 
-void CppVisitor::CloseParameterClause(ParameterClause& parameterClause) {
+void CppVisitor::closeParameterClause(ParameterClause& parameterClause) {
 }
 
-bool CppVisitor::OpenConstParameter(ConstParameter& constParameter) {
+bool CppVisitor::openConstParameter(ConstParameter& constParameter) {
     constParameterName = constParameter.name;
     return true;
 }
 
-void CppVisitor::CloseConstParameter(ConstParameter& constParameter) {
+void CppVisitor::closeConstParameter(ConstParameter& constParameter) {
     constParameterName = 0;
 }
 
-bool CppVisitor::OpenVarParameter(VarParameter& varParameter) {
+bool CppVisitor::openVarParameter(VarParameter& varParameter) {
     varParameterName = varParameter.name;
     return true;
 }
 
-void CppVisitor::CloseVarParameter(VarParameter& varParameter) {
+void CppVisitor::closeVarParameter(VarParameter& varParameter) {
     varParameterName = 0;
 }
 
-bool CppVisitor::OpenThrowsClause(ThrowsClause& throwsClause) {
+bool CppVisitor::openThrowsClause(ThrowsClause& throwsClause) {
     return true;
 }
 
-void CppVisitor::CloseThrowsClause(ThrowsClause& throwsClause) {
+void CppVisitor::closeThrowsClause(ThrowsClause& throwsClause) {
 }
 
-bool CppVisitor::OpenEnumDeclaration(EnumDeclaration& enumDeclaration) {
+bool CppVisitor::openEnumDeclaration(EnumDeclaration& enumDeclaration) {
     enumDeclarationName = enumDeclaration.name;
     return true;
 }
 
-void CppVisitor::CloseEnumDeclaration(EnumDeclaration& enumDeclaration) {
+void CppVisitor::closeEnumDeclaration(EnumDeclaration& enumDeclaration) {
     enumDeclarationName = 0;
 }
 
-bool CppVisitor::OpenEnumMember(EnumMember& enumMember) {
+bool CppVisitor::openEnumMember(EnumMember& enumMember) {
     return true;
 }
 
-void CppVisitor::CloseEnumMember(EnumMember& enumMember) {
+void CppVisitor::closeEnumMember(EnumMember& enumMember) {
 }
 
-bool CppVisitor::OpenTupleType(TupleType& tupleType) {
+bool CppVisitor::openTupleType(TupleType& tupleType) {
     return true;
 }
 
-void CppVisitor::CloseTupleType(TupleType& tupleType) {
+void CppVisitor::closeTupleType(TupleType& tupleType) {
 }
 
-bool CppVisitor::OpenAdditionalType(AdditionalType& additionalType) {
+bool CppVisitor::openAdditionalType(AdditionalType& additionalType) {
     return true;
 }
 
-void CppVisitor::CloseAdditionalType(AdditionalType& additionalType) {
+void CppVisitor::closeAdditionalType(AdditionalType& additionalType) {
 }
 
-void CppVisitor::VisitEnumCase(EnumCase& enumCase) {
+void CppVisitor::visitEnumCase(EnumCase& enumCase) {
 }
 
-bool CppVisitor::OpenAdditionalCase(AdditionalCase& additionalCase) {
+bool CppVisitor::openAdditionalCase(AdditionalCase& additionalCase) {
     return true;
 }
 
-void CppVisitor::CloseAdditionalCase(AdditionalCase& additionalCase) {
+void CppVisitor::closeAdditionalCase(AdditionalCase& additionalCase) {
 }
 
-bool CppVisitor::OpenClassDeclaration(ClassDeclaration& classDeclaration) {
+bool CppVisitor::openClassDeclaration(ClassDeclaration& classDeclaration) {
     classDeclarationName = classDeclaration.name;
     return true;
 }
 
-void CppVisitor::CloseClassDeclaration(ClassDeclaration& classDeclaration) {
+void CppVisitor::closeClassDeclaration(ClassDeclaration& classDeclaration) {
     classDeclarationName = 0;
 }
 
-bool CppVisitor::OpenGenericArgumentClause(GenericArgumentClause& genericArgumentClause) {
+bool CppVisitor::openGenericArgumentClause(GenericArgumentClause& genericArgumentClause) {
     return true;
 }
 
-void CppVisitor::CloseGenericArgumentClause(GenericArgumentClause& genericArgumentClause) {
+void CppVisitor::closeGenericArgumentClause(GenericArgumentClause& genericArgumentClause) {
 }
 
-void CppVisitor::VisitGenericParameter(GenericParameter& genericParameter) {
+void CppVisitor::visitGenericParameter(GenericParameter& genericParameter) {
 }
 
-bool CppVisitor::OpenClassMember(ClassMember& classMember) {
+bool CppVisitor::openClassMember(ClassMember& classMember) {
     return true;
 }
 
-void CppVisitor::CloseClassMember(ClassMember& classMember) {
+void CppVisitor::closeClassMember(ClassMember& classMember) {
 }
 
-bool CppVisitor::OpenCodeBlock(CodeBlock& codeBlock) {
+bool CppVisitor::openCodeBlock(CodeBlock& codeBlock) {
     return true;
 }
 
-void CppVisitor::CloseCodeBlock(CodeBlock& codeBlock) {
+void CppVisitor::closeCodeBlock(CodeBlock& codeBlock) {
 }
 
-bool CppVisitor::OpenSimpleExpression(SimpleExpression& simpleExpression) {
+bool CppVisitor::openSimpleExpression(SimpleExpression& simpleExpression) {
     return true;
 }
 
-void CppVisitor::CloseSimpleExpression(SimpleExpression& simpleExpression) {
+void CppVisitor::closeSimpleExpression(SimpleExpression& simpleExpression) {
 }
 
-bool CppVisitor::OpenPrefixExpression(PrefixExpression& prefixExpression) {
+bool CppVisitor::openPrefixExpression(PrefixExpression& prefixExpression) {
     return true;
 }
 
-void CppVisitor::ClosePrefixExpression(PrefixExpression& prefixExpression) {
+void CppVisitor::closePrefixExpression(PrefixExpression& prefixExpression) {
 }
 
-bool CppVisitor::OpenPostfixExpression(PostfixExpression& postfixExpression) {
+bool CppVisitor::openPostfixExpression(PostfixExpression& postfixExpression) {
     return true;
 }
 
-void CppVisitor::ClosePostfixExpression(PostfixExpression& postfixExpression) {
+void CppVisitor::closePostfixExpression(PostfixExpression& postfixExpression) {
 }
 
-bool CppVisitor::OpenBinaryOperation(BinaryOperation& binaryOperation) {
+bool CppVisitor::openBinaryOperation(BinaryOperation& binaryOperation) {
     return true;
 }
 
-void CppVisitor::CloseBinaryOperation(BinaryOperation& binaryOperation) {
+void CppVisitor::closeBinaryOperation(BinaryOperation& binaryOperation) {
 }
 
-bool CppVisitor::OpenAssignment(Assignment& assignment) {
+bool CppVisitor::openAssignment(Assignment& assignment) {
     return true;
 }
 
-void CppVisitor::CloseAssignment(Assignment& assignment) {
+void CppVisitor::closeAssignment(Assignment& assignment) {
 }
 
-bool CppVisitor::OpenTypeQuery(TypeQuery& typeQuery) {
+bool CppVisitor::openTypeQuery(TypeQuery& typeQuery) {
     return true;
 }
 
-void CppVisitor::CloseTypeQuery(TypeQuery& typeQuery) {
+void CppVisitor::closeTypeQuery(TypeQuery& typeQuery) {
 }
 
-bool CppVisitor::OpenTypeCast(TypeCast& typeCast) {
+bool CppVisitor::openTypeCast(TypeCast& typeCast) {
     return true;
 }
 
-void CppVisitor::CloseTypeCast(TypeCast& typeCast) {
+void CppVisitor::closeTypeCast(TypeCast& typeCast) {
 }
 
-bool CppVisitor::OpenCatchClause(CatchClause& catchClause) {
+bool CppVisitor::openCatchClause(CatchClause& catchClause) {
     return true;
 }
 
-void CppVisitor::CloseCatchClause(CatchClause& catchClause) {
+void CppVisitor::closeCatchClause(CatchClause& catchClause) {
 }
 
-bool CppVisitor::OpenWildCardCatchPattern(WildCardCatchPattern& wildCardCatchPattern) {
+bool CppVisitor::openWildCardCatchPattern(WildCardCatchPattern& wildCardCatchPattern) {
     return true;
 }
 
-void CppVisitor::CloseWildCardCatchPattern(WildCardCatchPattern& wildCardCatchPattern) {
+void CppVisitor::closeWildCardCatchPattern(WildCardCatchPattern& wildCardCatchPattern) {
 }
 
-bool CppVisitor::OpenPathItemCatchPattern(PathItemCatchPattern& pathItemCatchPattern) {
+bool CppVisitor::openPathItemCatchPattern(PathItemCatchPattern& pathItemCatchPattern) {
     return true;
 }
 
-void CppVisitor::ClosePathItemCatchPattern(PathItemCatchPattern& pathItemCatchPattern) {
+void CppVisitor::closePathItemCatchPattern(PathItemCatchPattern& pathItemCatchPattern) {
 }
 
-void CppVisitor::VisitOperatorPostfix(OperatorPostfix& operatorPostfix) {
+void CppVisitor::visitOperatorPostfix(OperatorPostfix& operatorPostfix) {
 }
 
-bool CppVisitor::OpenFunctionCall(FunctionCall& functionCall) {
+bool CppVisitor::openFunctionCall(FunctionCall& functionCall) {
     return true;
 }
 
-void CppVisitor::CloseFunctionCall(FunctionCall& functionCall) {
+void CppVisitor::closeFunctionCall(FunctionCall& functionCall) {
 }
 
-bool CppVisitor::OpenExplicitMemberExpression(ExplicitMemberExpression& explicitMemberExpression) {
+bool CppVisitor::openExplicitMemberExpression(ExplicitMemberExpression& explicitMemberExpression) {
     return true;
 }
 
-void CppVisitor::CloseExplicitMemberExpression(ExplicitMemberExpression& explicitMemberExpression) {
+void CppVisitor::closeExplicitMemberExpression(ExplicitMemberExpression& explicitMemberExpression) {
 }
 
-bool CppVisitor::OpenSubscript(Subscript& subscript) {
+bool CppVisitor::openSubscript(Subscript& subscript) {
     return true;
 }
 
-void CppVisitor::CloseSubscript(Subscript& subscript) {
+void CppVisitor::closeSubscript(Subscript& subscript) {
 }
 
-bool CppVisitor::OpenExpressionElement(ExpressionElement& expressionElement) {
+bool CppVisitor::openExpressionElement(ExpressionElement& expressionElement) {
     return true;
 }
 
-void CppVisitor::CloseExpressionElement(ExpressionElement& expressionElement) {
+void CppVisitor::closeExpressionElement(ExpressionElement& expressionElement) {
 }
 
-bool CppVisitor::OpenNamedMemberPostfix(NamedMemberPostfix& namedMemberPostfix) {
+bool CppVisitor::openNamedMemberPostfix(NamedMemberPostfix& namedMemberPostfix) {
     return true;
 }
 
-void CppVisitor::CloseNamedMemberPostfix(NamedMemberPostfix& namedMemberPostfix) {
+void CppVisitor::closeNamedMemberPostfix(NamedMemberPostfix& namedMemberPostfix) {
 }
 
-bool CppVisitor::OpenParenthesizedExpression(ParenthesizedExpression& parenthesizedExpression) {
+bool CppVisitor::openParenthesizedExpression(ParenthesizedExpression& parenthesizedExpression) {
     return true;
 }
 
-void CppVisitor::CloseParenthesizedExpression(ParenthesizedExpression& parenthesizedExpression) {
+void CppVisitor::closeParenthesizedExpression(ParenthesizedExpression& parenthesizedExpression) {
 }
 
-void CppVisitor::VisitLiteralExpression(LiteralExpression& literalExpression) {
+void CppVisitor::visitLiteralExpression(LiteralExpression& literalExpression) {
 }
 
-void CppVisitor::VisitIdentifierExpression(IdentifierExpression& identifierExpression) {
+void CppVisitor::visitIdentifierExpression(IdentifierExpression& identifierExpression) {
 }
 
-bool CppVisitor::OpenIfExpression(IfExpression& ifExpression) {
+bool CppVisitor::openIfExpression(IfExpression& ifExpression) {
     return true;
 }
 
-void CppVisitor::CloseIfExpression(IfExpression& ifExpression) {
+void CppVisitor::closeIfExpression(IfExpression& ifExpression) {
 }
 
-bool CppVisitor::OpenElseClause(ElseClause& elseClause) {
+bool CppVisitor::openElseClause(ElseClause& elseClause) {
     return true;
 }
 
-void CppVisitor::CloseElseClause(ElseClause& elseClause) {
+void CppVisitor::closeElseClause(ElseClause& elseClause) {
 }
 
-bool CppVisitor::OpenSwitchExpression(SwitchExpression& switchExpression) {
+bool CppVisitor::openSwitchExpression(SwitchExpression& switchExpression) {
     return true;
 }
 
-void CppVisitor::CloseSwitchExpression(SwitchExpression& switchExpression) {
+void CppVisitor::closeSwitchExpression(SwitchExpression& switchExpression) {
 }
 
-bool CppVisitor::OpenCurliedSwitchBody(CurliedSwitchBody& curliedSwitchBody) {
+bool CppVisitor::openCurliedSwitchBody(CurliedSwitchBody& curliedSwitchBody) {
     return true;
 }
 
-void CppVisitor::CloseCurliedSwitchBody(CurliedSwitchBody& curliedSwitchBody) {
+void CppVisitor::closeCurliedSwitchBody(CurliedSwitchBody& curliedSwitchBody) {
 }
 
-bool CppVisitor::OpenNakedSwitchBody(NakedSwitchBody& nakedSwitchBody) {
+bool CppVisitor::openNakedSwitchBody(NakedSwitchBody& nakedSwitchBody) {
     return true;
 }
 
-void CppVisitor::CloseNakedSwitchBody(NakedSwitchBody& nakedSwitchBody) {
+void CppVisitor::closeNakedSwitchBody(NakedSwitchBody& nakedSwitchBody) {
 }
 
-bool CppVisitor::OpenSwitchCase(SwitchCase& switchCase) {
+bool CppVisitor::openSwitchCase(SwitchCase& switchCase) {
     return true;
 }
 
-void CppVisitor::CloseSwitchCase(SwitchCase& switchCase) {
+void CppVisitor::closeSwitchCase(SwitchCase& switchCase) {
 }
 
-bool CppVisitor::OpenItemCaseLabel(ItemCaseLabel& itemCaseLabel) {
+bool CppVisitor::openItemCaseLabel(ItemCaseLabel& itemCaseLabel) {
     return true;
 }
 
-void CppVisitor::CloseItemCaseLabel(ItemCaseLabel& itemCaseLabel) {
+void CppVisitor::closeItemCaseLabel(ItemCaseLabel& itemCaseLabel) {
 }
 
-bool CppVisitor::OpenCaseItem(CaseItem& caseItem) {
+bool CppVisitor::openCaseItem(CaseItem& caseItem) {
     return true;
 }
 
-void CppVisitor::CloseCaseItem(CaseItem& caseItem) {
+void CppVisitor::closeCaseItem(CaseItem& caseItem) {
 }
 
-bool CppVisitor::OpenForExpression(ForExpression& forExpression) {
+bool CppVisitor::openForExpression(ForExpression& forExpression) {
     return true;
 }
 
-void CppVisitor::CloseForExpression(ForExpression& forExpression) {
+void CppVisitor::closeForExpression(ForExpression& forExpression) {
 }
 
-bool CppVisitor::OpenForEach(ForEach& forEach) {
+bool CppVisitor::openForEach(ForEach& forEach) {
     return true;
 }
 
-void CppVisitor::CloseForEach(ForEach& forEach) {
+void CppVisitor::closeForEach(ForEach& forEach) {
 }
 
-bool CppVisitor::OpenPlainFor(PlainFor& plainFor) {
+bool CppVisitor::openPlainFor(PlainFor& plainFor) {
     return true;
 }
 
-void CppVisitor::ClosePlainFor(PlainFor& plainFor) {
+void CppVisitor::closePlainFor(PlainFor& plainFor) {
 }
 
-bool CppVisitor::OpenReturnExpression(ReturnExpression& returnExpression) {
+bool CppVisitor::openReturnExpression(ReturnExpression& returnExpression) {
     return true;
 }
 
-void CppVisitor::CloseReturnExpression(ReturnExpression& returnExpression) {
+void CppVisitor::closeReturnExpression(ReturnExpression& returnExpression) {
 }
 
-bool CppVisitor::OpenThrowExpression(ThrowExpression& throwExpression) {
+bool CppVisitor::openThrowExpression(ThrowExpression& throwExpression) {
     return true;
 }
 
-void CppVisitor::CloseThrowExpression(ThrowExpression& throwExpression) {
+void CppVisitor::closeThrowExpression(ThrowExpression& throwExpression) {
 }
 
-bool CppVisitor::OpenBreakExpression(BreakExpression& breakExpression) {
+bool CppVisitor::openBreakExpression(BreakExpression& breakExpression) {
     return true;
 }
 
-void CppVisitor::CloseBreakExpression(BreakExpression& breakExpression) {
+void CppVisitor::closeBreakExpression(BreakExpression& breakExpression) {
 }
 
-void CppVisitor::VisitWildcardPattern(WildcardPattern& wildcardPattern) {
+void CppVisitor::visitWildcardPattern(WildcardPattern& wildcardPattern) {
 }
 
-bool CppVisitor::OpenIdentifierPattern(IdentifierPattern& identifierPattern) {
+bool CppVisitor::openIdentifierPattern(IdentifierPattern& identifierPattern) {
     identifierPatternIdentifier = identifierPattern.identifier;
     return true;
 }
 
-void CppVisitor::CloseIdentifierPattern(IdentifierPattern& identifierPattern) {
+void CppVisitor::closeIdentifierPattern(IdentifierPattern& identifierPattern) {
     identifierPatternIdentifier = 0;
 }
 
-bool CppVisitor::OpenTuplePattern(TuplePattern& tuplePattern) {
+bool CppVisitor::openTuplePattern(TuplePattern& tuplePattern) {
     return true;
 }
 
-void CppVisitor::CloseTuplePattern(TuplePattern& tuplePattern) {
+void CppVisitor::closeTuplePattern(TuplePattern& tuplePattern) {
 }
 
-bool CppVisitor::OpenTuplePatternElement(TuplePatternElement& tuplePatternElement) {
+bool CppVisitor::openTuplePatternElement(TuplePatternElement& tuplePatternElement) {
     return true;
 }
 
-void CppVisitor::CloseTuplePatternElement(TuplePatternElement& tuplePatternElement) {
+void CppVisitor::closeTuplePatternElement(TuplePatternElement& tuplePatternElement) {
 }
 
-bool CppVisitor::OpenExpressionPattern(ExpressionPattern& expressionPattern) {
+bool CppVisitor::openExpressionPattern(ExpressionPattern& expressionPattern) {
     return true;
 }
 
-void CppVisitor::CloseExpressionPattern(ExpressionPattern& expressionPattern) {
+void CppVisitor::closeExpressionPattern(ExpressionPattern& expressionPattern) {
 }
 
-void CppVisitor::VisitDefaultCaseLabel(DefaultCaseLabel& defaultCaseLabel) {
+void CppVisitor::visitDefaultCaseLabel(DefaultCaseLabel& defaultCaseLabel) {
 }
 
-bool CppVisitor::OpenBlockCaseContent(BlockCaseContent& blockCaseContent) {
+bool CppVisitor::openBlockCaseContent(BlockCaseContent& blockCaseContent) {
     return true;
 }
 
-void CppVisitor::CloseBlockCaseContent(BlockCaseContent& blockCaseContent) {
+void CppVisitor::closeBlockCaseContent(BlockCaseContent& blockCaseContent) {
 }
 
-void CppVisitor::VisitEmptyCaseContent(EmptyCaseContent& emptyCaseContent) {
+void CppVisitor::visitEmptyCaseContent(EmptyCaseContent& emptyCaseContent) {
 }
 
-bool CppVisitor::OpenInitializerCall(InitializerCall& initializerCall) {
+bool CppVisitor::openInitializerCall(InitializerCall& initializerCall) {
     return true;
 }
 
-void CppVisitor::CloseInitializerCall(InitializerCall& initializerCall) {
+void CppVisitor::closeInitializerCall(InitializerCall& initializerCall) {
 }
 
-bool CppVisitor::OpenThisDot(ThisDot& thisDot) {
+bool CppVisitor::openThisDot(ThisDot& thisDot) {
     return true;
 }
 
-void CppVisitor::CloseThisDot(ThisDot& thisDot) {
+void CppVisitor::closeThisDot(ThisDot& thisDot) {
 }
 
-bool CppVisitor::OpenThisSubscript(ThisSubscript& thisSubscript) {
+bool CppVisitor::openThisSubscript(ThisSubscript& thisSubscript) {
     return true;
 }
 
-void CppVisitor::CloseThisSubscript(ThisSubscript& thisSubscript) {
+void CppVisitor::closeThisSubscript(ThisSubscript& thisSubscript) {
 }
 
-void CppVisitor::VisitThisWord(ThisWord& thisWord) {
+void CppVisitor::visitThisWord(ThisWord& thisWord) {
 }
 
-void CppVisitor::VisitThisInit(ThisInit& thisInit) {
+void CppVisitor::visitThisInit(ThisInit& thisInit) {
 }
 
-void CppVisitor::VisitThisMember(ThisMember& thisMember) {
+void CppVisitor::visitThisMember(ThisMember& thisMember) {
 }
 
-bool CppVisitor::OpenSuperDot(SuperDot& superDot) {
+bool CppVisitor::openSuperDot(SuperDot& superDot) {
     return true;
 }
 
-void CppVisitor::CloseSuperDot(SuperDot& superDot) {
+void CppVisitor::closeSuperDot(SuperDot& superDot) {
 }
 
-bool CppVisitor::OpenSuperSubscript(SuperSubscript& superSubscript) {
+bool CppVisitor::openSuperSubscript(SuperSubscript& superSubscript) {
     return true;
 }
 
-void CppVisitor::CloseSuperSubscript(SuperSubscript& superSubscript) {
+void CppVisitor::closeSuperSubscript(SuperSubscript& superSubscript) {
 }
 
-void CppVisitor::VisitSuperInit(SuperInit& superInit) {
+void CppVisitor::visitSuperInit(SuperInit& superInit) {
 }
 
-void CppVisitor::VisitSuperMember(SuperMember& superMember) {
+void CppVisitor::visitSuperMember(SuperMember& superMember) {
 }
 
-bool CppVisitor::OpenTypeAnnotation(TypeAnnotation& typeAnnotation) {
+bool CppVisitor::openTypeAnnotation(TypeAnnotation& typeAnnotation) {
     return true;
 }
 
-void CppVisitor::CloseTypeAnnotation(TypeAnnotation& typeAnnotation) {
+void CppVisitor::closeTypeAnnotation(TypeAnnotation& typeAnnotation) {
 }
 
-bool CppVisitor::OpenTypeIdentifier(TypeIdentifier& typeIdentifier) {
+bool CppVisitor::openTypeIdentifier(TypeIdentifier& typeIdentifier) {
     typeIdentifierName = typeIdentifier.name;
     return true;
 }
 
-void CppVisitor::CloseTypeIdentifier(TypeIdentifier& typeIdentifier) {
+void CppVisitor::closeTypeIdentifier(TypeIdentifier& typeIdentifier) {
     typeIdentifierName = 0;
 }
 
-bool CppVisitor::OpenSubtypeIdentifier(SubtypeIdentifier& subtypeIdentifier) {
+bool CppVisitor::openSubtypeIdentifier(SubtypeIdentifier& subtypeIdentifier) {
     return true;
 }
 
-void CppVisitor::CloseSubtypeIdentifier(SubtypeIdentifier& subtypeIdentifier) {
+void CppVisitor::closeSubtypeIdentifier(SubtypeIdentifier& subtypeIdentifier) {
 }
 
-bool CppVisitor::OpenArrayType(ArrayType& arrayType) {
+bool CppVisitor::openArrayType(ArrayType& arrayType) {
     return true;
 }
 
-void CppVisitor::CloseArrayType(ArrayType& arrayType) {
+void CppVisitor::closeArrayType(ArrayType& arrayType) {
 }
 
-void CppVisitor::VisitOptionalType(OptionalType& optionalType) {
+void CppVisitor::visitOptionalType(OptionalType& optionalType) {
 }
 
-bool CppVisitor::OpenTypeInheritanceClause(TypeInheritanceClause& typeInheritanceClause) {
+bool CppVisitor::openTypeInheritanceClause(TypeInheritanceClause& typeInheritanceClause) {
     return true;
 }
 
-void CppVisitor::CloseTypeInheritanceClause(TypeInheritanceClause& typeInheritanceClause) {
+void CppVisitor::closeTypeInheritanceClause(TypeInheritanceClause& typeInheritanceClause) {
 }
 
-bool CppVisitor::OpenInheritance(Inheritance& inheritance) {
+bool CppVisitor::openInheritance(Inheritance& inheritance) {
     return true;
 }
 
-void CppVisitor::CloseInheritance(Inheritance& inheritance) {
+void CppVisitor::closeInheritance(Inheritance& inheritance) {
 }
 
 void CppVisitor::buildProjectFileString(String& projectFile, Program& program) {

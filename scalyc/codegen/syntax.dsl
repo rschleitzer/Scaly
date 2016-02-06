@@ -19,8 +19,8 @@ class "(id syntax-node)" : "(if (base syntax-node) (base syntax-node) "SyntaxNod
         super.init("(if (program? syntax-node) "Position(0, 0), Position(0, 0)" "start, end")")
     }
 
-    "(if (base syntax-node) "override " "")"function Accept(mutable visitor: SyntaxVisitor) {
-        visitor.Open"(id syntax-node)"(this)
+    "(if (base syntax-node) "override " "")"function accept(mutable visitor: SyntaxVisitor) {
+        visitor.open"(id syntax-node)"(this)
 "
         (apply-to-children-of syntax-node (lambda (content)
             (case (type content)
@@ -33,12 +33,12 @@ class "(id syntax-node)" : "(if (base syntax-node) (base syntax-node) "SyntaxNod
                         (if (multiple? content)
                             ($
 (if (optional? content) "    " "")"        for node in "(property content)"! {
-"(if (optional? content) "    " "")"            node.Accept(visitor)
+"(if (optional? content) "    " "")"            node.accept(visitor)
 "(if (optional? content) "    " "")"        }
 "
                             )
                             ($
-(if (optional? content) "    " "")"        "(property content)"!.Accept(visitor)
+(if (optional? content) "    " "")"        "(property content)"!.accept(visitor)
 "
                             )
                         )
@@ -49,7 +49,7 @@ class "(id syntax-node)" : "(if (base syntax-node) (base syntax-node) "SyntaxNod
                 (else "")
             )
         ))
-"        visitor.Close"(id syntax-node)"(this)
+"        visitor.close"(id syntax-node)"(this)
     }
 
 "
@@ -95,7 +95,7 @@ class "(id syntax-node)" : public "(if (base syntax-node) (base syntax-node) "Sy
 public:
     "(id syntax-node)"("(if (program? syntax-node) "" "Position start, Position end")");
 
-    virtual void Accept(SyntaxVisitor& visitor)"(if (abstract? syntax-node) " = 0" "")";
+    virtual void accept(SyntaxVisitor& visitor)"(if (abstract? syntax-node) " = 0" "")";
 "
         (apply-to-children-of syntax-node (lambda (content) ($
             (case (type content)
@@ -154,11 +154,11 @@ SyntaxNode::SyntaxNode(Position start, Position end)
 }
 "       (if (abstract? syntax-node) "" ($
 "
-void "(id syntax-node)"::Accept(SyntaxVisitor& visitor) {
+void "(id syntax-node)"::accept(SyntaxVisitor& visitor) {
 "
             (if (has-syntax-children? syntax-node)
                 ($
-"    if (!visitor.Open"(id syntax-node)"(*this))
+"    if (!visitor.open"(id syntax-node)"(*this))
         return;
 "
                     (apply-to-children-of syntax-node (lambda (content)
@@ -176,13 +176,13 @@ void "(id syntax-node)"::Accept(SyntaxVisitor& visitor) {
         size_t _alength = "(property content)"->length();
         for (size_t _a = 0; _a < _alength; _a++) {
             node = *(*"(property content)")[_a];
-            node->Accept(visitor);
+            node->accept(visitor);
         }
     }
 "
                                         )
                                         ($
-(if (optional? content) "    " "")"    "(property content)"->Accept(visitor);
+(if (optional? content) "    " "")"    "(property content)"->accept(visitor);
 "
                                         )
                                     )
@@ -191,11 +191,11 @@ void "(id syntax-node)"::Accept(SyntaxVisitor& visitor) {
                             (else "")
                         )
                     ))
-"    visitor.Close"(id syntax-node)"(*this);
+"    visitor.close"(id syntax-node)"(*this);
 "
                 )
                 ($
-"    visitor.Visit"(id syntax-node)"(*this);
+"    visitor.visit"(id syntax-node)"(*this);
 "
                 )
             )

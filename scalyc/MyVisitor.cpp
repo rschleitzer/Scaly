@@ -3,592 +3,592 @@ using namespace scaly;
 namespace scalyc {
 
 
-bool MyVisitor::OpenProgram(Program& program) {
+bool MyVisitor::openProgram(Program& program) {
     programName = program.name;
     programDirectory = program.directory;
     return true;
 }
 
-void MyVisitor::CloseProgram(Program& program) {
+void MyVisitor::closeProgram(Program& program) {
     programName = 0;
     programDirectory = 0;
 }
 
-bool MyVisitor::OpenCompilationUnit(CompilationUnit& compilationUnit) {
+bool MyVisitor::openCompilationUnit(CompilationUnit& compilationUnit) {
     return true;
 }
 
-void MyVisitor::CloseCompilationUnit(CompilationUnit& compilationUnit) {
+void MyVisitor::closeCompilationUnit(CompilationUnit& compilationUnit) {
 }
 
-bool MyVisitor::OpenStatementWithSemicolon(StatementWithSemicolon& statementWithSemicolon) {
+bool MyVisitor::openStatementWithSemicolon(StatementWithSemicolon& statementWithSemicolon) {
     return true;
 }
 
-void MyVisitor::CloseStatementWithSemicolon(StatementWithSemicolon& statementWithSemicolon) {
+void MyVisitor::closeStatementWithSemicolon(StatementWithSemicolon& statementWithSemicolon) {
 }
 
-bool MyVisitor::OpenUseDeclaration(UseDeclaration& useDeclaration) {
+bool MyVisitor::openUseDeclaration(UseDeclaration& useDeclaration) {
     return true;
 }
 
-void MyVisitor::CloseUseDeclaration(UseDeclaration& useDeclaration) {
+void MyVisitor::closeUseDeclaration(UseDeclaration& useDeclaration) {
 }
 
-bool MyVisitor::OpenPathIdentifier(PathIdentifier& pathIdentifier) {
+bool MyVisitor::openPathIdentifier(PathIdentifier& pathIdentifier) {
     return true;
 }
 
-void MyVisitor::ClosePathIdentifier(PathIdentifier& pathIdentifier) {
+void MyVisitor::closePathIdentifier(PathIdentifier& pathIdentifier) {
 }
 
-void MyVisitor::VisitPathItem(PathItem& pathItem) {
+void MyVisitor::visitPathItem(PathItem& pathItem) {
 }
 
-bool MyVisitor::OpenInitializer(Initializer& initializer) {
+bool MyVisitor::openInitializer(Initializer& initializer) {
     return true;
 }
 
-void MyVisitor::CloseInitializer(Initializer& initializer) {
+void MyVisitor::closeInitializer(Initializer& initializer) {
 }
 
-bool MyVisitor::OpenConstantDeclaration(ConstantDeclaration& constantDeclaration) {
+bool MyVisitor::openConstantDeclaration(ConstantDeclaration& constantDeclaration) {
     return true;
 }
 
-void MyVisitor::CloseConstantDeclaration(ConstantDeclaration& constantDeclaration) {
+void MyVisitor::closeConstantDeclaration(ConstantDeclaration& constantDeclaration) {
 }
 
-bool MyVisitor::OpenVariableDeclaration(VariableDeclaration& variableDeclaration) {
+bool MyVisitor::openVariableDeclaration(VariableDeclaration& variableDeclaration) {
     return true;
 }
 
-void MyVisitor::CloseVariableDeclaration(VariableDeclaration& variableDeclaration) {
+void MyVisitor::closeVariableDeclaration(VariableDeclaration& variableDeclaration) {
 }
 
-bool MyVisitor::OpenBindingInitializer(BindingInitializer& bindingInitializer) {
+bool MyVisitor::openBindingInitializer(BindingInitializer& bindingInitializer) {
     return true;
 }
 
-void MyVisitor::CloseBindingInitializer(BindingInitializer& bindingInitializer) {
+void MyVisitor::closeBindingInitializer(BindingInitializer& bindingInitializer) {
 }
 
-bool MyVisitor::OpenPatternInitializer(PatternInitializer& patternInitializer) {
+bool MyVisitor::openPatternInitializer(PatternInitializer& patternInitializer) {
     return true;
 }
 
-void MyVisitor::ClosePatternInitializer(PatternInitializer& patternInitializer) {
+void MyVisitor::closePatternInitializer(PatternInitializer& patternInitializer) {
 }
 
-bool MyVisitor::OpenAdditionalInitializer(AdditionalInitializer& additionalInitializer) {
+bool MyVisitor::openAdditionalInitializer(AdditionalInitializer& additionalInitializer) {
     return true;
 }
 
-void MyVisitor::CloseAdditionalInitializer(AdditionalInitializer& additionalInitializer) {
+void MyVisitor::closeAdditionalInitializer(AdditionalInitializer& additionalInitializer) {
 }
 
-bool MyVisitor::OpenFunctionDeclaration(FunctionDeclaration& functionDeclaration) {
+bool MyVisitor::openFunctionDeclaration(FunctionDeclaration& functionDeclaration) {
     return true;
 }
 
-void MyVisitor::CloseFunctionDeclaration(FunctionDeclaration& functionDeclaration) {
+void MyVisitor::closeFunctionDeclaration(FunctionDeclaration& functionDeclaration) {
 }
 
-bool MyVisitor::OpenInitializerDeclaration(InitializerDeclaration& initializerDeclaration) {
+bool MyVisitor::openInitializerDeclaration(InitializerDeclaration& initializerDeclaration) {
     return true;
 }
 
-void MyVisitor::CloseInitializerDeclaration(InitializerDeclaration& initializerDeclaration) {
+void MyVisitor::closeInitializerDeclaration(InitializerDeclaration& initializerDeclaration) {
 }
 
-void MyVisitor::VisitOverride(Override& override) {
+void MyVisitor::visitOverride(Override& override) {
 }
 
-void MyVisitor::VisitStaticWord(StaticWord& staticWord) {
+void MyVisitor::visitStaticWord(StaticWord& staticWord) {
 }
 
-void MyVisitor::VisitIdentifierFunction(IdentifierFunction& identifierFunction) {
+void MyVisitor::visitIdentifierFunction(IdentifierFunction& identifierFunction) {
 }
 
-bool MyVisitor::OpenFunctionSignature(FunctionSignature& functionSignature) {
+bool MyVisitor::openFunctionSignature(FunctionSignature& functionSignature) {
     return true;
 }
 
-void MyVisitor::CloseFunctionSignature(FunctionSignature& functionSignature) {
+void MyVisitor::closeFunctionSignature(FunctionSignature& functionSignature) {
 }
 
-bool MyVisitor::OpenFunctionResult(FunctionResult& functionResult) {
+bool MyVisitor::openFunctionResult(FunctionResult& functionResult) {
     return true;
 }
 
-void MyVisitor::CloseFunctionResult(FunctionResult& functionResult) {
+void MyVisitor::closeFunctionResult(FunctionResult& functionResult) {
 }
 
-bool MyVisitor::OpenParameterClause(ParameterClause& parameterClause) {
+bool MyVisitor::openParameterClause(ParameterClause& parameterClause) {
     return true;
 }
 
-void MyVisitor::CloseParameterClause(ParameterClause& parameterClause) {
+void MyVisitor::closeParameterClause(ParameterClause& parameterClause) {
 }
 
-bool MyVisitor::OpenConstParameter(ConstParameter& constParameter) {
+bool MyVisitor::openConstParameter(ConstParameter& constParameter) {
     constParameterName = constParameter.name;
     return true;
 }
 
-void MyVisitor::CloseConstParameter(ConstParameter& constParameter) {
+void MyVisitor::closeConstParameter(ConstParameter& constParameter) {
     constParameterName = 0;
 }
 
-bool MyVisitor::OpenVarParameter(VarParameter& varParameter) {
+bool MyVisitor::openVarParameter(VarParameter& varParameter) {
     varParameterName = varParameter.name;
     return true;
 }
 
-void MyVisitor::CloseVarParameter(VarParameter& varParameter) {
+void MyVisitor::closeVarParameter(VarParameter& varParameter) {
     varParameterName = 0;
 }
 
-bool MyVisitor::OpenThrowsClause(ThrowsClause& throwsClause) {
+bool MyVisitor::openThrowsClause(ThrowsClause& throwsClause) {
     return true;
 }
 
-void MyVisitor::CloseThrowsClause(ThrowsClause& throwsClause) {
+void MyVisitor::closeThrowsClause(ThrowsClause& throwsClause) {
 }
 
-bool MyVisitor::OpenEnumDeclaration(EnumDeclaration& enumDeclaration) {
+bool MyVisitor::openEnumDeclaration(EnumDeclaration& enumDeclaration) {
     enumDeclarationName = enumDeclaration.name;
     return true;
 }
 
-void MyVisitor::CloseEnumDeclaration(EnumDeclaration& enumDeclaration) {
+void MyVisitor::closeEnumDeclaration(EnumDeclaration& enumDeclaration) {
     enumDeclarationName = 0;
 }
 
-bool MyVisitor::OpenEnumMember(EnumMember& enumMember) {
+bool MyVisitor::openEnumMember(EnumMember& enumMember) {
     return true;
 }
 
-void MyVisitor::CloseEnumMember(EnumMember& enumMember) {
+void MyVisitor::closeEnumMember(EnumMember& enumMember) {
 }
 
-bool MyVisitor::OpenTupleType(TupleType& tupleType) {
+bool MyVisitor::openTupleType(TupleType& tupleType) {
     return true;
 }
 
-void MyVisitor::CloseTupleType(TupleType& tupleType) {
+void MyVisitor::closeTupleType(TupleType& tupleType) {
 }
 
-bool MyVisitor::OpenAdditionalType(AdditionalType& additionalType) {
+bool MyVisitor::openAdditionalType(AdditionalType& additionalType) {
     return true;
 }
 
-void MyVisitor::CloseAdditionalType(AdditionalType& additionalType) {
+void MyVisitor::closeAdditionalType(AdditionalType& additionalType) {
 }
 
-void MyVisitor::VisitEnumCase(EnumCase& enumCase) {
+void MyVisitor::visitEnumCase(EnumCase& enumCase) {
 }
 
-bool MyVisitor::OpenAdditionalCase(AdditionalCase& additionalCase) {
+bool MyVisitor::openAdditionalCase(AdditionalCase& additionalCase) {
     return true;
 }
 
-void MyVisitor::CloseAdditionalCase(AdditionalCase& additionalCase) {
+void MyVisitor::closeAdditionalCase(AdditionalCase& additionalCase) {
 }
 
-bool MyVisitor::OpenClassDeclaration(ClassDeclaration& classDeclaration) {
+bool MyVisitor::openClassDeclaration(ClassDeclaration& classDeclaration) {
     classDeclarationName = classDeclaration.name;
     return true;
 }
 
-void MyVisitor::CloseClassDeclaration(ClassDeclaration& classDeclaration) {
+void MyVisitor::closeClassDeclaration(ClassDeclaration& classDeclaration) {
     classDeclarationName = 0;
 }
 
-bool MyVisitor::OpenGenericArgumentClause(GenericArgumentClause& genericArgumentClause) {
+bool MyVisitor::openGenericArgumentClause(GenericArgumentClause& genericArgumentClause) {
     return true;
 }
 
-void MyVisitor::CloseGenericArgumentClause(GenericArgumentClause& genericArgumentClause) {
+void MyVisitor::closeGenericArgumentClause(GenericArgumentClause& genericArgumentClause) {
 }
 
-void MyVisitor::VisitGenericParameter(GenericParameter& genericParameter) {
+void MyVisitor::visitGenericParameter(GenericParameter& genericParameter) {
 }
 
-bool MyVisitor::OpenClassMember(ClassMember& classMember) {
+bool MyVisitor::openClassMember(ClassMember& classMember) {
     return true;
 }
 
-void MyVisitor::CloseClassMember(ClassMember& classMember) {
+void MyVisitor::closeClassMember(ClassMember& classMember) {
 }
 
-bool MyVisitor::OpenCodeBlock(CodeBlock& codeBlock) {
+bool MyVisitor::openCodeBlock(CodeBlock& codeBlock) {
     return true;
 }
 
-void MyVisitor::CloseCodeBlock(CodeBlock& codeBlock) {
+void MyVisitor::closeCodeBlock(CodeBlock& codeBlock) {
 }
 
-bool MyVisitor::OpenSimpleExpression(SimpleExpression& simpleExpression) {
+bool MyVisitor::openSimpleExpression(SimpleExpression& simpleExpression) {
     return true;
 }
 
-void MyVisitor::CloseSimpleExpression(SimpleExpression& simpleExpression) {
+void MyVisitor::closeSimpleExpression(SimpleExpression& simpleExpression) {
 }
 
-bool MyVisitor::OpenPrefixExpression(PrefixExpression& prefixExpression) {
+bool MyVisitor::openPrefixExpression(PrefixExpression& prefixExpression) {
     return true;
 }
 
-void MyVisitor::ClosePrefixExpression(PrefixExpression& prefixExpression) {
+void MyVisitor::closePrefixExpression(PrefixExpression& prefixExpression) {
 }
 
-bool MyVisitor::OpenPostfixExpression(PostfixExpression& postfixExpression) {
+bool MyVisitor::openPostfixExpression(PostfixExpression& postfixExpression) {
     return true;
 }
 
-void MyVisitor::ClosePostfixExpression(PostfixExpression& postfixExpression) {
+void MyVisitor::closePostfixExpression(PostfixExpression& postfixExpression) {
 }
 
-bool MyVisitor::OpenBinaryOperation(BinaryOperation& binaryOperation) {
+bool MyVisitor::openBinaryOperation(BinaryOperation& binaryOperation) {
     return true;
 }
 
-void MyVisitor::CloseBinaryOperation(BinaryOperation& binaryOperation) {
+void MyVisitor::closeBinaryOperation(BinaryOperation& binaryOperation) {
 }
 
-bool MyVisitor::OpenAssignment(Assignment& assignment) {
+bool MyVisitor::openAssignment(Assignment& assignment) {
     return true;
 }
 
-void MyVisitor::CloseAssignment(Assignment& assignment) {
+void MyVisitor::closeAssignment(Assignment& assignment) {
 }
 
-bool MyVisitor::OpenTypeQuery(TypeQuery& typeQuery) {
+bool MyVisitor::openTypeQuery(TypeQuery& typeQuery) {
     return true;
 }
 
-void MyVisitor::CloseTypeQuery(TypeQuery& typeQuery) {
+void MyVisitor::closeTypeQuery(TypeQuery& typeQuery) {
 }
 
-bool MyVisitor::OpenTypeCast(TypeCast& typeCast) {
+bool MyVisitor::openTypeCast(TypeCast& typeCast) {
     return true;
 }
 
-void MyVisitor::CloseTypeCast(TypeCast& typeCast) {
+void MyVisitor::closeTypeCast(TypeCast& typeCast) {
 }
 
-bool MyVisitor::OpenCatchClause(CatchClause& catchClause) {
+bool MyVisitor::openCatchClause(CatchClause& catchClause) {
     return true;
 }
 
-void MyVisitor::CloseCatchClause(CatchClause& catchClause) {
+void MyVisitor::closeCatchClause(CatchClause& catchClause) {
 }
 
-bool MyVisitor::OpenWildCardCatchPattern(WildCardCatchPattern& wildCardCatchPattern) {
+bool MyVisitor::openWildCardCatchPattern(WildCardCatchPattern& wildCardCatchPattern) {
     return true;
 }
 
-void MyVisitor::CloseWildCardCatchPattern(WildCardCatchPattern& wildCardCatchPattern) {
+void MyVisitor::closeWildCardCatchPattern(WildCardCatchPattern& wildCardCatchPattern) {
 }
 
-bool MyVisitor::OpenPathItemCatchPattern(PathItemCatchPattern& pathItemCatchPattern) {
+bool MyVisitor::openPathItemCatchPattern(PathItemCatchPattern& pathItemCatchPattern) {
     return true;
 }
 
-void MyVisitor::ClosePathItemCatchPattern(PathItemCatchPattern& pathItemCatchPattern) {
+void MyVisitor::closePathItemCatchPattern(PathItemCatchPattern& pathItemCatchPattern) {
 }
 
-void MyVisitor::VisitOperatorPostfix(OperatorPostfix& operatorPostfix) {
+void MyVisitor::visitOperatorPostfix(OperatorPostfix& operatorPostfix) {
 }
 
-bool MyVisitor::OpenFunctionCall(FunctionCall& functionCall) {
+bool MyVisitor::openFunctionCall(FunctionCall& functionCall) {
     return true;
 }
 
-void MyVisitor::CloseFunctionCall(FunctionCall& functionCall) {
+void MyVisitor::closeFunctionCall(FunctionCall& functionCall) {
 }
 
-bool MyVisitor::OpenExplicitMemberExpression(ExplicitMemberExpression& explicitMemberExpression) {
+bool MyVisitor::openExplicitMemberExpression(ExplicitMemberExpression& explicitMemberExpression) {
     return true;
 }
 
-void MyVisitor::CloseExplicitMemberExpression(ExplicitMemberExpression& explicitMemberExpression) {
+void MyVisitor::closeExplicitMemberExpression(ExplicitMemberExpression& explicitMemberExpression) {
 }
 
-bool MyVisitor::OpenSubscript(Subscript& subscript) {
+bool MyVisitor::openSubscript(Subscript& subscript) {
     return true;
 }
 
-void MyVisitor::CloseSubscript(Subscript& subscript) {
+void MyVisitor::closeSubscript(Subscript& subscript) {
 }
 
-bool MyVisitor::OpenExpressionElement(ExpressionElement& expressionElement) {
+bool MyVisitor::openExpressionElement(ExpressionElement& expressionElement) {
     return true;
 }
 
-void MyVisitor::CloseExpressionElement(ExpressionElement& expressionElement) {
+void MyVisitor::closeExpressionElement(ExpressionElement& expressionElement) {
 }
 
-bool MyVisitor::OpenNamedMemberPostfix(NamedMemberPostfix& namedMemberPostfix) {
+bool MyVisitor::openNamedMemberPostfix(NamedMemberPostfix& namedMemberPostfix) {
     return true;
 }
 
-void MyVisitor::CloseNamedMemberPostfix(NamedMemberPostfix& namedMemberPostfix) {
+void MyVisitor::closeNamedMemberPostfix(NamedMemberPostfix& namedMemberPostfix) {
 }
 
-bool MyVisitor::OpenParenthesizedExpression(ParenthesizedExpression& parenthesizedExpression) {
+bool MyVisitor::openParenthesizedExpression(ParenthesizedExpression& parenthesizedExpression) {
     return true;
 }
 
-void MyVisitor::CloseParenthesizedExpression(ParenthesizedExpression& parenthesizedExpression) {
+void MyVisitor::closeParenthesizedExpression(ParenthesizedExpression& parenthesizedExpression) {
 }
 
-void MyVisitor::VisitLiteralExpression(LiteralExpression& literalExpression) {
+void MyVisitor::visitLiteralExpression(LiteralExpression& literalExpression) {
 }
 
-void MyVisitor::VisitIdentifierExpression(IdentifierExpression& identifierExpression) {
+void MyVisitor::visitIdentifierExpression(IdentifierExpression& identifierExpression) {
 }
 
-bool MyVisitor::OpenIfExpression(IfExpression& ifExpression) {
+bool MyVisitor::openIfExpression(IfExpression& ifExpression) {
     return true;
 }
 
-void MyVisitor::CloseIfExpression(IfExpression& ifExpression) {
+void MyVisitor::closeIfExpression(IfExpression& ifExpression) {
 }
 
-bool MyVisitor::OpenElseClause(ElseClause& elseClause) {
+bool MyVisitor::openElseClause(ElseClause& elseClause) {
     return true;
 }
 
-void MyVisitor::CloseElseClause(ElseClause& elseClause) {
+void MyVisitor::closeElseClause(ElseClause& elseClause) {
 }
 
-bool MyVisitor::OpenSwitchExpression(SwitchExpression& switchExpression) {
+bool MyVisitor::openSwitchExpression(SwitchExpression& switchExpression) {
     return true;
 }
 
-void MyVisitor::CloseSwitchExpression(SwitchExpression& switchExpression) {
+void MyVisitor::closeSwitchExpression(SwitchExpression& switchExpression) {
 }
 
-bool MyVisitor::OpenCurliedSwitchBody(CurliedSwitchBody& curliedSwitchBody) {
+bool MyVisitor::openCurliedSwitchBody(CurliedSwitchBody& curliedSwitchBody) {
     return true;
 }
 
-void MyVisitor::CloseCurliedSwitchBody(CurliedSwitchBody& curliedSwitchBody) {
+void MyVisitor::closeCurliedSwitchBody(CurliedSwitchBody& curliedSwitchBody) {
 }
 
-bool MyVisitor::OpenNakedSwitchBody(NakedSwitchBody& nakedSwitchBody) {
+bool MyVisitor::openNakedSwitchBody(NakedSwitchBody& nakedSwitchBody) {
     return true;
 }
 
-void MyVisitor::CloseNakedSwitchBody(NakedSwitchBody& nakedSwitchBody) {
+void MyVisitor::closeNakedSwitchBody(NakedSwitchBody& nakedSwitchBody) {
 }
 
-bool MyVisitor::OpenSwitchCase(SwitchCase& switchCase) {
+bool MyVisitor::openSwitchCase(SwitchCase& switchCase) {
     return true;
 }
 
-void MyVisitor::CloseSwitchCase(SwitchCase& switchCase) {
+void MyVisitor::closeSwitchCase(SwitchCase& switchCase) {
 }
 
-bool MyVisitor::OpenItemCaseLabel(ItemCaseLabel& itemCaseLabel) {
+bool MyVisitor::openItemCaseLabel(ItemCaseLabel& itemCaseLabel) {
     return true;
 }
 
-void MyVisitor::CloseItemCaseLabel(ItemCaseLabel& itemCaseLabel) {
+void MyVisitor::closeItemCaseLabel(ItemCaseLabel& itemCaseLabel) {
 }
 
-bool MyVisitor::OpenCaseItem(CaseItem& caseItem) {
+bool MyVisitor::openCaseItem(CaseItem& caseItem) {
     return true;
 }
 
-void MyVisitor::CloseCaseItem(CaseItem& caseItem) {
+void MyVisitor::closeCaseItem(CaseItem& caseItem) {
 }
 
-bool MyVisitor::OpenForExpression(ForExpression& forExpression) {
+bool MyVisitor::openForExpression(ForExpression& forExpression) {
     return true;
 }
 
-void MyVisitor::CloseForExpression(ForExpression& forExpression) {
+void MyVisitor::closeForExpression(ForExpression& forExpression) {
 }
 
-bool MyVisitor::OpenForEach(ForEach& forEach) {
+bool MyVisitor::openForEach(ForEach& forEach) {
     return true;
 }
 
-void MyVisitor::CloseForEach(ForEach& forEach) {
+void MyVisitor::closeForEach(ForEach& forEach) {
 }
 
-bool MyVisitor::OpenPlainFor(PlainFor& plainFor) {
+bool MyVisitor::openPlainFor(PlainFor& plainFor) {
     return true;
 }
 
-void MyVisitor::ClosePlainFor(PlainFor& plainFor) {
+void MyVisitor::closePlainFor(PlainFor& plainFor) {
 }
 
-bool MyVisitor::OpenReturnExpression(ReturnExpression& returnExpression) {
+bool MyVisitor::openReturnExpression(ReturnExpression& returnExpression) {
     return true;
 }
 
-void MyVisitor::CloseReturnExpression(ReturnExpression& returnExpression) {
+void MyVisitor::closeReturnExpression(ReturnExpression& returnExpression) {
 }
 
-bool MyVisitor::OpenThrowExpression(ThrowExpression& throwExpression) {
+bool MyVisitor::openThrowExpression(ThrowExpression& throwExpression) {
     return true;
 }
 
-void MyVisitor::CloseThrowExpression(ThrowExpression& throwExpression) {
+void MyVisitor::closeThrowExpression(ThrowExpression& throwExpression) {
 }
 
-bool MyVisitor::OpenBreakExpression(BreakExpression& breakExpression) {
+bool MyVisitor::openBreakExpression(BreakExpression& breakExpression) {
     return true;
 }
 
-void MyVisitor::CloseBreakExpression(BreakExpression& breakExpression) {
+void MyVisitor::closeBreakExpression(BreakExpression& breakExpression) {
 }
 
-void MyVisitor::VisitWildcardPattern(WildcardPattern& wildcardPattern) {
+void MyVisitor::visitWildcardPattern(WildcardPattern& wildcardPattern) {
 }
 
-bool MyVisitor::OpenIdentifierPattern(IdentifierPattern& identifierPattern) {
+bool MyVisitor::openIdentifierPattern(IdentifierPattern& identifierPattern) {
     identifierPatternIdentifier = identifierPattern.identifier;
     return true;
 }
 
-void MyVisitor::CloseIdentifierPattern(IdentifierPattern& identifierPattern) {
+void MyVisitor::closeIdentifierPattern(IdentifierPattern& identifierPattern) {
     identifierPatternIdentifier = 0;
 }
 
-bool MyVisitor::OpenTuplePattern(TuplePattern& tuplePattern) {
+bool MyVisitor::openTuplePattern(TuplePattern& tuplePattern) {
     return true;
 }
 
-void MyVisitor::CloseTuplePattern(TuplePattern& tuplePattern) {
+void MyVisitor::closeTuplePattern(TuplePattern& tuplePattern) {
 }
 
-bool MyVisitor::OpenTuplePatternElement(TuplePatternElement& tuplePatternElement) {
+bool MyVisitor::openTuplePatternElement(TuplePatternElement& tuplePatternElement) {
     return true;
 }
 
-void MyVisitor::CloseTuplePatternElement(TuplePatternElement& tuplePatternElement) {
+void MyVisitor::closeTuplePatternElement(TuplePatternElement& tuplePatternElement) {
 }
 
-bool MyVisitor::OpenExpressionPattern(ExpressionPattern& expressionPattern) {
+bool MyVisitor::openExpressionPattern(ExpressionPattern& expressionPattern) {
     return true;
 }
 
-void MyVisitor::CloseExpressionPattern(ExpressionPattern& expressionPattern) {
+void MyVisitor::closeExpressionPattern(ExpressionPattern& expressionPattern) {
 }
 
-void MyVisitor::VisitDefaultCaseLabel(DefaultCaseLabel& defaultCaseLabel) {
+void MyVisitor::visitDefaultCaseLabel(DefaultCaseLabel& defaultCaseLabel) {
 }
 
-bool MyVisitor::OpenBlockCaseContent(BlockCaseContent& blockCaseContent) {
+bool MyVisitor::openBlockCaseContent(BlockCaseContent& blockCaseContent) {
     return true;
 }
 
-void MyVisitor::CloseBlockCaseContent(BlockCaseContent& blockCaseContent) {
+void MyVisitor::closeBlockCaseContent(BlockCaseContent& blockCaseContent) {
 }
 
-void MyVisitor::VisitEmptyCaseContent(EmptyCaseContent& emptyCaseContent) {
+void MyVisitor::visitEmptyCaseContent(EmptyCaseContent& emptyCaseContent) {
 }
 
-bool MyVisitor::OpenInitializerCall(InitializerCall& initializerCall) {
+bool MyVisitor::openInitializerCall(InitializerCall& initializerCall) {
     return true;
 }
 
-void MyVisitor::CloseInitializerCall(InitializerCall& initializerCall) {
+void MyVisitor::closeInitializerCall(InitializerCall& initializerCall) {
 }
 
-bool MyVisitor::OpenThisDot(ThisDot& thisDot) {
+bool MyVisitor::openThisDot(ThisDot& thisDot) {
     return true;
 }
 
-void MyVisitor::CloseThisDot(ThisDot& thisDot) {
+void MyVisitor::closeThisDot(ThisDot& thisDot) {
 }
 
-bool MyVisitor::OpenThisSubscript(ThisSubscript& thisSubscript) {
+bool MyVisitor::openThisSubscript(ThisSubscript& thisSubscript) {
     return true;
 }
 
-void MyVisitor::CloseThisSubscript(ThisSubscript& thisSubscript) {
+void MyVisitor::closeThisSubscript(ThisSubscript& thisSubscript) {
 }
 
-void MyVisitor::VisitThisWord(ThisWord& thisWord) {
+void MyVisitor::visitThisWord(ThisWord& thisWord) {
 }
 
-void MyVisitor::VisitThisInit(ThisInit& thisInit) {
+void MyVisitor::visitThisInit(ThisInit& thisInit) {
 }
 
-void MyVisitor::VisitThisMember(ThisMember& thisMember) {
+void MyVisitor::visitThisMember(ThisMember& thisMember) {
 }
 
-bool MyVisitor::OpenSuperDot(SuperDot& superDot) {
+bool MyVisitor::openSuperDot(SuperDot& superDot) {
     return true;
 }
 
-void MyVisitor::CloseSuperDot(SuperDot& superDot) {
+void MyVisitor::closeSuperDot(SuperDot& superDot) {
 }
 
-bool MyVisitor::OpenSuperSubscript(SuperSubscript& superSubscript) {
+bool MyVisitor::openSuperSubscript(SuperSubscript& superSubscript) {
     return true;
 }
 
-void MyVisitor::CloseSuperSubscript(SuperSubscript& superSubscript) {
+void MyVisitor::closeSuperSubscript(SuperSubscript& superSubscript) {
 }
 
-void MyVisitor::VisitSuperInit(SuperInit& superInit) {
+void MyVisitor::visitSuperInit(SuperInit& superInit) {
 }
 
-void MyVisitor::VisitSuperMember(SuperMember& superMember) {
+void MyVisitor::visitSuperMember(SuperMember& superMember) {
 }
 
-bool MyVisitor::OpenTypeAnnotation(TypeAnnotation& typeAnnotation) {
+bool MyVisitor::openTypeAnnotation(TypeAnnotation& typeAnnotation) {
     return true;
 }
 
-void MyVisitor::CloseTypeAnnotation(TypeAnnotation& typeAnnotation) {
+void MyVisitor::closeTypeAnnotation(TypeAnnotation& typeAnnotation) {
 }
 
-bool MyVisitor::OpenTypeIdentifier(TypeIdentifier& typeIdentifier) {
+bool MyVisitor::openTypeIdentifier(TypeIdentifier& typeIdentifier) {
     typeIdentifierName = typeIdentifier.name;
     return true;
 }
 
-void MyVisitor::CloseTypeIdentifier(TypeIdentifier& typeIdentifier) {
+void MyVisitor::closeTypeIdentifier(TypeIdentifier& typeIdentifier) {
     typeIdentifierName = 0;
 }
 
-bool MyVisitor::OpenSubtypeIdentifier(SubtypeIdentifier& subtypeIdentifier) {
+bool MyVisitor::openSubtypeIdentifier(SubtypeIdentifier& subtypeIdentifier) {
     return true;
 }
 
-void MyVisitor::CloseSubtypeIdentifier(SubtypeIdentifier& subtypeIdentifier) {
+void MyVisitor::closeSubtypeIdentifier(SubtypeIdentifier& subtypeIdentifier) {
 }
 
-bool MyVisitor::OpenArrayType(ArrayType& arrayType) {
+bool MyVisitor::openArrayType(ArrayType& arrayType) {
     return true;
 }
 
-void MyVisitor::CloseArrayType(ArrayType& arrayType) {
+void MyVisitor::closeArrayType(ArrayType& arrayType) {
 }
 
-void MyVisitor::VisitOptionalType(OptionalType& optionalType) {
+void MyVisitor::visitOptionalType(OptionalType& optionalType) {
 }
 
-bool MyVisitor::OpenTypeInheritanceClause(TypeInheritanceClause& typeInheritanceClause) {
+bool MyVisitor::openTypeInheritanceClause(TypeInheritanceClause& typeInheritanceClause) {
     return true;
 }
 
-void MyVisitor::CloseTypeInheritanceClause(TypeInheritanceClause& typeInheritanceClause) {
+void MyVisitor::closeTypeInheritanceClause(TypeInheritanceClause& typeInheritanceClause) {
 }
 
-bool MyVisitor::OpenInheritance(Inheritance& inheritance) {
+bool MyVisitor::openInheritance(Inheritance& inheritance) {
     return true;
 }
 
-void MyVisitor::CloseInheritance(Inheritance& inheritance) {
+void MyVisitor::closeInheritance(Inheritance& inheritance) {
 }
 
 }

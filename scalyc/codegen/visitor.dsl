@@ -18,11 +18,11 @@ public:"
     (apply-to-selected-children "syntax" (lambda (syntax) (if (abstract? syntax) "" ($
         (if (has-syntax-children? syntax)
             ($ "
-    virtual bool Open"(id syntax)"("(id syntax)"& "(string-firstchar-downcase (id syntax))")"(if concrete "" "= 0")";
-    virtual void Close"(id syntax)"("(id syntax)"& "(string-firstchar-downcase (id syntax))")"(if concrete "" "= 0")";"
+    virtual bool open"(id syntax)"("(id syntax)"& "(string-firstchar-downcase (id syntax))")"(if concrete "" "= 0")";
+    virtual void close"(id syntax)"("(id syntax)"& "(string-firstchar-downcase (id syntax))")"(if concrete "" "= 0")";"
             )
             ($ "
-    virtual void Visit"(id syntax)"("(id syntax)"& "(string-firstchar-downcase (id syntax))")"(if concrete "" "= 0")";"
+    virtual void visit"(id syntax)"("(id syntax)"& "(string-firstchar-downcase (id syntax))")"(if concrete "" "= 0")";"
             )
         )
         (if concrete
@@ -55,7 +55,7 @@ namespace scalyc {
         (if (has-syntax-children? syntax)
             ($
 "
-bool MyVisitor::Open"(id syntax)"("(id syntax)"& "(string-firstchar-downcase (id syntax))") {
+bool MyVisitor::open"(id syntax)"("(id syntax)"& "(string-firstchar-downcase (id syntax))") {
 "                (apply-to-children-of syntax (lambda (identifier)
                     (if (identifier? identifier) ($
 "    "(visitor-property syntax identifier)" = "(string-firstchar-downcase (id syntax))"."(property identifier)";
@@ -64,7 +64,7 @@ bool MyVisitor::Open"(id syntax)"("(id syntax)"& "(string-firstchar-downcase (id
 "    return true;
 }
 
-void MyVisitor::Close"(id syntax)"("(id syntax)"& "(string-firstchar-downcase (id syntax))") {
+void MyVisitor::close"(id syntax)"("(id syntax)"& "(string-firstchar-downcase (id syntax))") {
 "                (apply-to-children-of syntax (lambda (identifier)
                     (if (identifier? identifier) ($
 "    "(visitor-property syntax identifier)" = 0;
@@ -74,7 +74,7 @@ void MyVisitor::Close"(id syntax)"("(id syntax)"& "(string-firstchar-downcase (i
 "           )
             ($
 "
-void MyVisitor::Visit"(id syntax)"("(id syntax)"& "(string-firstchar-downcase (id syntax))") {
+void MyVisitor::visit"(id syntax)"("(id syntax)"& "(string-firstchar-downcase (id syntax))") {
 }
 "           )
         )
