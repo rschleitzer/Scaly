@@ -10,6 +10,7 @@ public:
 private:
     CppError* cppError;
     void buildProjectFileString(String& projectFile, Program& program);
+    void buildMainHeaderFileString(String& projectFile, Program& program);
     
 public:
     virtual bool OpenProgram(Program& program);

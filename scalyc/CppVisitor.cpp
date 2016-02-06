@@ -20,15 +20,36 @@ bool CppVisitor::OpenProgram(Program& program) {
             return false;
     }
     
-    // Build and write the project file
     {
         _Region _region; _Page* _p = _region.get();
-        String& projectFile = *new(_p) String();
-        buildProjectFileString(projectFile, program);
+        String& outputFilePath = *new(_p) String(*programDirectory);
+        outputFilePath += "/";
+        outputFilePath += *programName;
+        
+        // Build and write the project file
         {
             _Region _region; _Page* _p = _region.get();
-            if (File::writeFromString(_p, *programDirectory + "/" + *programName + ".project" , projectFile))
-                return false;
+            String& projectFile = *new(_p) String();
+            buildProjectFileString(projectFile, program);
+            {
+                _Region _region; _Page* _p = _region.get();
+                String& projectFilePath = *new(_p) String(outputFilePath) + ".project";
+                if (File::writeFromString(_p, projectFilePath , projectFile))
+                    return false;
+            }
+        }
+        
+        // Build and write the main header file
+        {
+            _Region _region; _Page* _p = _region.get();
+            String& headerFile = *new(_p) String();
+            buildMainHeaderFileString(headerFile, program);
+            {
+                _Region _region; _Page* _p = _region.get();
+                String& headerFilePath = *new(_p) String(outputFilePath) + ".h";
+                if (File::writeFromString(_p, headerFilePath, headerFile))
+                    return false;
+            }
         }
     }
     
@@ -714,6 +735,17 @@ void CppVisitor::buildProjectFileString(String& projectFile, Program& program) {
     projectFile += "        <CustomPreBuild/>\n      </AdditionalRules>\n      <Completion EnableCpp11=\"no\" EnableCpp14=\"no\">\n";
     projectFile += "        <ClangCmpFlagsC/>\n        <ClangCmpFlags/>\n        <ClangPP/>\n";
     projectFile += "        <SearchPaths/>\n      </Completion>\n    </Configuration>\n  </Settings>\n</CodeLite_Project>\n";    
+}
+
+void CppVisitor::buildMainHeaderFileString(String& headerFile, Program& program) {
+    headerFile += "#ifndef __scaly__scalyc__\n#define __scaly__scalyc__\n\n#include \"Scaly.h\"\n";
+    size_t noOfCompilationUnits = program.compilationUnits->length();
+    for (size_t i = 0; i < noOfCompilationUnits; i++) {
+        _Region _region; _Page* _p = _region.get();
+        headerFile +=  "#include \"";
+        headerFile += *Path::getFileNameWithoutExtension(_p, *(*(*program.compilationUnits)[i])->fileName) + ".h\n";
+    }
+    headerFile += "\nusing namespace scaly;\nnamespace scalyc {\nint _main(Array<String>& arguments);\n}\n\n#endif // __scaly__scalyc__\n";
 }
 
 }

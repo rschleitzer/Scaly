@@ -16,13 +16,8 @@
 #include "Compiler.h"
 
 using namespace scaly;
-
-namespace scalyc
-{
-
+namespace scalyc {
 int _main(Array<String>& arguments);
-int compileString(String& text);
-
 }
 
 #endif // __scaly__scalyc__
