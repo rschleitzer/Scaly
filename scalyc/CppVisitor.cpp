@@ -30,9 +30,7 @@ bool CppVisitor::OpenProgram(Program& program) {
     (*projectFile) +=  "  \"sourceDirectory\": \"$(ProjectPath)\",\n  \"generator\": \"\",\n  \"buildType\": \"\",\n";
     (*projectFile) +=  "  \"arguments\": [],\n  \"parentProject\": \"\"\n }]]]>\n    </Plugin>\n  </Plugins>\n";
     (*projectFile) +=  "  <Description/>\n  <Dependencies/>\n";
-    (*projectFile) +=  "  <VirtualDirectory Name=\"src\">\n    <File Name=\"main.cpp\"/>\n    <File Name=\"";
-    (*projectFile) +=  *programName;
-    (*projectFile) +=  ".cpp\"/>\n";
+    (*projectFile) +=  "  <VirtualDirectory Name=\"src\">\n    <File Name=\"main.cpp\"/>\n";
     size_t noOfCompilationUnits = program.compilationUnits->length();
     for (size_t i = 0; i < noOfCompilationUnits; i++) {
         _Region _region; _Page* _p = _region.get();

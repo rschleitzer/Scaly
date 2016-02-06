@@ -21,7 +21,6 @@
   <Dependencies/>
   <VirtualDirectory Name="src">
     <File Name="main.cpp"/>
-    <File Name="scalyc.cpp"/>
     <File Name="Lexer.cpp"/>
     <File Name="Visitor.cpp"/>
     <File Name="Syntax.cpp"/>
@@ -34,9 +33,9 @@
     <File Name="Options.cpp"/>
     <File Name="CompilerError.cpp"/>
     <File Name="Compiler.cpp"/>
+    <File Name="scalyc.cpp"/>
   </VirtualDirectory>
   <VirtualDirectory Name="include">
-    <File Name="scalyc.h"/>
     <File Name="Lexer.h"/>
     <File Name="Visitor.h"/>
     <File Name="Syntax.h"/>
@@ -49,6 +48,7 @@
     <File Name="Options.h"/>
     <File Name="CompilerError.h"/>
     <File Name="Compiler.h"/>
+    <File Name="scalyc.h"/>
   </VirtualDirectory>
   <Settings Type="Executable">
     <GlobalSettings>
