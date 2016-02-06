@@ -22,32 +22,33 @@
   <VirtualDirectory Name="src">
     <File Name="main.cpp"/>
     <File Name="scalyc.cpp"/>
-    <File Name="Compiler.cpp"/>
-    <File Name="Syntax.cpp"/>
-    <File Name="Parser.cpp"/>
     <File Name="Lexer.cpp"/>
+    <File Name="Visitor.cpp"/>
+    <File Name="Syntax.cpp"/>
     <File Name="MyVisitor.cpp"/>
-    <File Name="ParserError.cpp"/>
-    <File Name="CompilerError.cpp"/>
+    <File Name="CppError.cpp"/>
     <File Name="CppVisitor.cpp"/>
+    <File Name="ParserError.cpp"/>
+    <File Name="Parser.cpp"/>
     <File Name="OptionsError.cpp"/>
     <File Name="Options.cpp"/>
-    <File Name="CppError.cpp"/>
+    <File Name="CompilerError.cpp"/>
+    <File Name="Compiler.cpp"/>
   </VirtualDirectory>
   <VirtualDirectory Name="include">
     <File Name="scalyc.h"/>
-    <File Name="Compiler.h"/>
-    <File Name="Syntax.h"/>
-    <File Name="Parser.h"/>
     <File Name="Lexer.h"/>
     <File Name="Visitor.h"/>
+    <File Name="Syntax.h"/>
     <File Name="MyVisitor.h"/>
-    <File Name="ParserError.h"/>
-    <File Name="CompilerError.h"/>
+    <File Name="CppError.h"/>
     <File Name="CppVisitor.h"/>
+    <File Name="ParserError.h"/>
+    <File Name="Parser.h"/>
     <File Name="OptionsError.h"/>
     <File Name="Options.h"/>
-    <File Name="CppError.h"/>
+    <File Name="CompilerError.h"/>
+    <File Name="Compiler.h"/>
   </VirtualDirectory>
   <Settings Type="Executable">
     <GlobalSettings>
