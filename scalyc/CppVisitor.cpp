@@ -107,7 +107,7 @@ bool CppVisitor::OpenProgram(Program& program) {
     (*projectFile) += "        <LibraryPath Value=\"../Release\"/>\n        <Library Value=\"libscaly\"/>\n      </Linker>\n";
     (*projectFile) += "      <ResourceCompiler Options=\"\" Required=\"no\"/>\n";
     (*projectFile) += "      <General OutputFile=\"$(IntermediateDirectory)/$(ProjectName)\" IntermediateDirectory=\"../Release\"";
-    (*projectFile) += " Command=\"./$(ProjectName)\" CommandArguments=\"\" UseSeparateDebugArgs=\"no\" DebugArguments=\"../scalyc/Lexer.scaly ../scalyc/Compiler.scaly ../scalyc/scalyc.scaly\" WorkingDirectory=\"$(IntermediateDirectory)\" PauseExecWhenProcTerminates=\"yes\" IsGUIProgram=\"no\" IsEnabled=\"yes\"/>\n";
+    (*projectFile) += " Command=\"./$(ProjectName)\" CommandArguments=\"\" UseSeparateDebugArgs=\"no\" DebugArguments=\"\" WorkingDirectory=\"$(IntermediateDirectory)\" PauseExecWhenProcTerminates=\"yes\" IsGUIProgram=\"no\" IsEnabled=\"yes\"/>\n";
     (*projectFile) += "      <Environment EnvVarSetName=\"&lt;Use Defaults&gt;\" DbgSetName=\"&lt;Use Defaults&gt;\">\n";
     (*projectFile) += "        <![CDATA[]]>\n";
     (*projectFile) += "      </Environment>\n";
