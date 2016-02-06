@@ -9,6 +9,7 @@ public:
     CppError* Execute(Program& program);
 private:
     CppError* cppError;
+    void buildProjectFileString(String& projectFile, Program& program);
     
 public:
     virtual bool OpenProgram(Program& program);

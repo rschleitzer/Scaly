@@ -20,105 +20,16 @@ bool CppVisitor::OpenProgram(Program& program) {
             return false;
     }
     
-    String& projectFile = *new(getPage()) String("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
-    projectFile += "<CodeLite_Project Name=\"";
-    projectFile +=  *programName;
-    projectFile +=  "\" InternalType=\"Console\">\n  <Plugins>\n    <Plugin Name=\"qmake\">\n";
-    projectFile +=  "      <![CDATA[00020001N0005Debug0000000000000001N0007Release000000000000]]>\n    </Plugin>\n";
-    projectFile +=  "    <Plugin Name=\"CMakePlugin\">\n      <![CDATA[[{\n";
-    projectFile +=  "  \"name\": \"Debug\",\n  \"enabled\": false,\n  \"buildDirectory\": \"build\",\n";
-    projectFile +=  "  \"sourceDirectory\": \"$(ProjectPath)\",\n  \"generator\": \"\",\n  \"buildType\": \"\",\n";
-    projectFile +=  "  \"arguments\": [],\n  \"parentProject\": \"\"\n";
-    projectFile +=  " }, {\n";
-    projectFile +=  "  \"name\": \"Release\",\n";
-    projectFile +=  "  \"enabled\": false,\n";
-    projectFile +=  "  \"buildDirectory\": \"build\",\n";
-    projectFile +=  "  \"sourceDirectory\": \"$(ProjectPath)\",\n";
-    projectFile +=  "  \"generator\": \"\",\n";
-    projectFile +=  "  \"buildType\": \"\",\n";
-    projectFile +=  "  \"arguments\": [],\n";
-    projectFile +=  "  \"parentProject\": \"\"\n";
-    projectFile +=  " }]]]>\n    </Plugin>\n  </Plugins>\n";
-    projectFile +=  "  <Description/>\n  <Dependencies/>\n";
-    projectFile +=  "  <VirtualDirectory Name=\"src\">\n    <File Name=\"main.cpp\"/>\n";
-    size_t noOfCompilationUnits = program.compilationUnits->length();
-    for (size_t i = 0; i < noOfCompilationUnits; i++) {
-        _Region _region; _Page* _p = _region.get();
-        projectFile +=  "    <File Name=\"";
-        projectFile +=  *Path::getFileNameWithoutExtension(_p, *(*(*program.compilationUnits)[i])->fileName);
-        projectFile +=  ".cpp\"/>\n";
-    }
-    projectFile +=  "  </VirtualDirectory>\n  <VirtualDirectory Name=\"include\">\n";
-    for (size_t i = 0; i < noOfCompilationUnits; i++) {
-        _Region _region; _Page* _p = _region.get();
-        projectFile +=  "    <File Name=\"";
-        projectFile +=  *Path::getFileNameWithoutExtension(_p, *(*(*program.compilationUnits)[i])->fileName);
-        projectFile +=  ".h\"/>\n";
-    }
-    projectFile +=  "  </VirtualDirectory>\n  <Settings Type=\"Executable\">\n    <GlobalSettings>\n";
-    projectFile +=  "      <Compiler Options=\"\" C_Options=\"\" Assembler=\"\">\n";
-    projectFile +=  "        <IncludePath Value=\".\"/>\n      </Compiler>\n      <Linker Options=\"\">\n";
-    projectFile +=  "        <LibraryPath Value=\".\"/>\n      </Linker>\n      <ResourceCompiler Options=\"\"/>\n";
-    projectFile +=  "    </GlobalSettings>\n";
-    projectFile +=  "    <Configuration Name=\"Debug\" CompilerType=\"GCC\" DebuggerType=\"GNU gdb debugger\"";
-    projectFile +=  " Type=\"Executable\" BuildCmpWithGlobalSettings=\"append\" BuildLnkWithGlobalSettings=\"append\"";
-    projectFile +=  " BuildResWithGlobalSettings=\"append\">\n";
-    projectFile +=  "      <Compiler Options=\"-g;-O0;-std=c++11;-Wall\" C_Options=\"-g;-O0;-Wall\" Assembler=\"\"";
-    projectFile +=  " Required=\"yes\" PreCompiledHeader=\"\" PCHInCommandLine=\"no\" PCHFlags=\"\" PCHFlagsPolicy=\"0\">\n";
-    projectFile +=  "        <IncludePath Value=\".\"/>\n        <IncludePath Value=\"../scaly\"/>\n      </Compiler>\n";
-    projectFile +=  "      <Linker Options=\"\" Required=\"yes\">\n        <LibraryPath Value=\"../Debug\"/>\n";
-    projectFile +=  "        <Library Value=\"libscaly\"/>\n      </Linker>\n      <ResourceCompiler Options=\"\" Required=\"no\"/>\n";    
-    projectFile +=  "      <General OutputFile=\"$(IntermediateDirectory)/$(ProjectName)\" IntermediateDirectory=\"../Debug\" ";
-    projectFile +=  "Command=\"./$(ProjectName)\" CommandArguments=\"-o ";
-    projectFile +=  *programName;
-    projectFile +=  " -d output";
-    for (size_t i = 0; i < noOfCompilationUnits; i++) {
-        _Region _region; _Page* _p = _region.get();
-        projectFile +=  " ../"; projectFile +=  *programName; projectFile += "/";
-        projectFile +=  *Path::getFileNameWithoutExtension(_p, *(*(*program.compilationUnits)[i])->fileName);
-        projectFile +=  ".scaly";
-    }
-    projectFile += "\" UseSeparateDebugArgs=\"no\" DebugArguments=\"\" WorkingDirectory=\"$(IntermediateDirectory)\"";
-    projectFile += " PauseExecWhenProcTerminates=\"yes\" IsGUIProgram=\"no\" IsEnabled=\"yes\"/>\n";
-    projectFile += "      <Environment EnvVarSetName=\"&lt;Use Defaults&gt;\" DbgSetName=\"&lt;Use Defaults&gt;\">\n";
-    projectFile += "        <![CDATA[]]>\n      </Environment>\n";
-    projectFile += "      <Debugger IsRemote=\"no\" RemoteHostName=\"\" RemoteHostPort=\"\" DebuggerPath=\"\" IsExtended=\"yes\">\n";
-    projectFile += "        <DebuggerSearchPaths/>\n        <PostConnectCommands/>\n        <StartupCommands/>\n      </Debugger>\n";
-    projectFile += "      <PreBuild/>\n      <PostBuild/>\n      <CustomBuild Enabled=\"no\">\n        <RebuildCommand/>\n";
-    projectFile += "        <CleanCommand/>\n        <BuildCommand/>\n        <PreprocessFileCommand/>\n        <SingleFileCommand/>\n";
-    projectFile += "        <MakefileGenerationCommand/>\n        <ThirdPartyToolName>None</ThirdPartyToolName>\n";
-    projectFile += "        <WorkingDirectory/>\n      </CustomBuild>\n      <AdditionalRules>\n";
-    projectFile += "        <CustomPostBuild/>\n        <CustomPreBuild/>\n      </AdditionalRules>\n";
-    projectFile += "      <Completion EnableCpp11=\"no\" EnableCpp14=\"no\">\n        <ClangCmpFlagsC/>\n        <ClangCmpFlags/>\n";
-    projectFile += "        <ClangPP/>\n        <SearchPaths/>\n      </Completion>\n";
-    projectFile += "    </Configuration>\n";
-    projectFile += "    <Configuration Name=\"Release\" CompilerType=\"GCC\" DebuggerType=\"GNU gdb debugger\" Type=\"Executable\"";
-    projectFile += " BuildCmpWithGlobalSettings=\"append\" BuildLnkWithGlobalSettings=\"append\" BuildResWithGlobalSettings=\"append\">\n";
-    projectFile += "      <Compiler Options=\"-O2;-Wall\" C_Options=\"-O2;-Wall\" Assembler=\"\" Required=\"yes\" PreCompiledHeader=\"\"";
-    projectFile += " PCHInCommandLine=\"no\" PCHFlags=\"\" PCHFlagsPolicy=\"0\">\n";
-    projectFile += "        <IncludePath Value=\".\"/>\n        <Preprocessor Value=\"NDEBUG\"/>\n";
-    projectFile += "      </Compiler>\n      <Linker Options=\"\" Required=\"yes\">\n";
-    projectFile += "        <LibraryPath Value=\"../Release\"/>\n        <Library Value=\"libscaly\"/>\n      </Linker>\n";
-    projectFile += "      <ResourceCompiler Options=\"\" Required=\"no\"/>\n";
-    projectFile += "      <General OutputFile=\"$(IntermediateDirectory)/$(ProjectName)\" IntermediateDirectory=\"../Release\"";
-    projectFile += " Command=\"./$(ProjectName)\" CommandArguments=\"\" UseSeparateDebugArgs=\"no\" DebugArguments=\"\"";
-    projectFile += " WorkingDirectory=\"$(IntermediateDirectory)\" PauseExecWhenProcTerminates=\"yes\" IsGUIProgram=\"no\" IsEnabled=\"yes\"/>\n";
-    projectFile += "      <Environment EnvVarSetName=\"&lt;Use Defaults&gt;\" DbgSetName=\"&lt;Use Defaults&gt;\">\n";
-    projectFile += "        <![CDATA[]]>\n      </Environment>\n";
-    projectFile += "      <Debugger IsRemote=\"no\" RemoteHostName=\"\" RemoteHostPort=\"\" DebuggerPath=\"\" IsExtended=\"yes\">\n";
-    projectFile += "        <DebuggerSearchPaths/>\n        <PostConnectCommands/>\n        <StartupCommands/>\n";
-    projectFile += "      </Debugger>\n      <PreBuild/>\n      <PostBuild/>\n      <CustomBuild Enabled=\"no\">\n";
-    projectFile += "        <RebuildCommand/>\n        <CleanCommand/>\n        <BuildCommand/>\n        <PreprocessFileCommand/>\n";
-    projectFile += "        <SingleFileCommand/>\n        <MakefileGenerationCommand/>\n";
-    projectFile += "        <ThirdPartyToolName>None</ThirdPartyToolName>\n        <WorkingDirectory/>\n";
-    projectFile += "      </CustomBuild>\n      <AdditionalRules>\n        <CustomPostBuild/>\n";
-    projectFile += "        <CustomPreBuild/>\n      </AdditionalRules>\n      <Completion EnableCpp11=\"no\" EnableCpp14=\"no\">\n";
-    projectFile += "        <ClangCmpFlagsC/>\n        <ClangCmpFlags/>\n        <ClangPP/>\n";
-    projectFile += "        <SearchPaths/>\n      </Completion>\n    </Configuration>\n  </Settings>\n</CodeLite_Project>\n";    
+    // Build and write the project file
     {
         _Region _region; _Page* _p = _region.get();
-        if (File::writeFromString(_p, *programDirectory + "/" + *programName + ".project" , projectFile))
-            return false;
+        String& projectFile = *new(_p) String();
+        buildProjectFileString(projectFile, program);
+        {
+            _Region _region; _Page* _p = _region.get();
+            if (File::writeFromString(_p, *programDirectory + "/" + *programName + ".project" , projectFile))
+                return false;
+        }
     }
     
     return true;
@@ -705,6 +616,104 @@ bool CppVisitor::OpenInheritance(Inheritance& inheritance) {
 }
 
 void CppVisitor::CloseInheritance(Inheritance& inheritance) {
+}
+
+void CppVisitor::buildProjectFileString(String& projectFile, Program& program) {
+    projectFile += "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
+    projectFile += "<CodeLite_Project Name=\"";
+    projectFile +=  *programName;
+    projectFile +=  "\" InternalType=\"Console\">\n  <Plugins>\n    <Plugin Name=\"qmake\">\n";
+    projectFile +=  "      <![CDATA[00020001N0005Debug0000000000000001N0007Release000000000000]]>\n    </Plugin>\n";
+    projectFile +=  "    <Plugin Name=\"CMakePlugin\">\n      <![CDATA[[{\n";
+    projectFile +=  "  \"name\": \"Debug\",\n  \"enabled\": false,\n  \"buildDirectory\": \"build\",\n";
+    projectFile +=  "  \"sourceDirectory\": \"$(ProjectPath)\",\n  \"generator\": \"\",\n  \"buildType\": \"\",\n";
+    projectFile +=  "  \"arguments\": [],\n  \"parentProject\": \"\"\n";
+    projectFile +=  " }, {\n";
+    projectFile +=  "  \"name\": \"Release\",\n";
+    projectFile +=  "  \"enabled\": false,\n";
+    projectFile +=  "  \"buildDirectory\": \"build\",\n";
+    projectFile +=  "  \"sourceDirectory\": \"$(ProjectPath)\",\n";
+    projectFile +=  "  \"generator\": \"\",\n";
+    projectFile +=  "  \"buildType\": \"\",\n";
+    projectFile +=  "  \"arguments\": [],\n";
+    projectFile +=  "  \"parentProject\": \"\"\n";
+    projectFile +=  " }]]]>\n    </Plugin>\n  </Plugins>\n";
+    projectFile +=  "  <Description/>\n  <Dependencies/>\n";
+    projectFile +=  "  <VirtualDirectory Name=\"src\">\n    <File Name=\"main.cpp\"/>\n";
+    size_t noOfCompilationUnits = program.compilationUnits->length();
+    for (size_t i = 0; i < noOfCompilationUnits; i++) {
+        _Region _region; _Page* _p = _region.get();
+        projectFile +=  "    <File Name=\"";
+        projectFile +=  *Path::getFileNameWithoutExtension(_p, *(*(*program.compilationUnits)[i])->fileName);
+        projectFile +=  ".cpp\"/>\n";
+    }
+    projectFile +=  "  </VirtualDirectory>\n  <VirtualDirectory Name=\"include\">\n";
+    for (size_t i = 0; i < noOfCompilationUnits; i++) {
+        _Region _region; _Page* _p = _region.get();
+        projectFile +=  "    <File Name=\"";
+        projectFile +=  *Path::getFileNameWithoutExtension(_p, *(*(*program.compilationUnits)[i])->fileName);
+        projectFile +=  ".h\"/>\n";
+    }
+    projectFile +=  "  </VirtualDirectory>\n  <Settings Type=\"Executable\">\n    <GlobalSettings>\n";
+    projectFile +=  "      <Compiler Options=\"\" C_Options=\"\" Assembler=\"\">\n";
+    projectFile +=  "        <IncludePath Value=\".\"/>\n      </Compiler>\n      <Linker Options=\"\">\n";
+    projectFile +=  "        <LibraryPath Value=\".\"/>\n      </Linker>\n      <ResourceCompiler Options=\"\"/>\n";
+    projectFile +=  "    </GlobalSettings>\n";
+    projectFile +=  "    <Configuration Name=\"Debug\" CompilerType=\"GCC\" DebuggerType=\"GNU gdb debugger\"";
+    projectFile +=  " Type=\"Executable\" BuildCmpWithGlobalSettings=\"append\" BuildLnkWithGlobalSettings=\"append\"";
+    projectFile +=  " BuildResWithGlobalSettings=\"append\">\n";
+    projectFile +=  "      <Compiler Options=\"-g;-O0;-std=c++11;-Wall\" C_Options=\"-g;-O0;-Wall\" Assembler=\"\"";
+    projectFile +=  " Required=\"yes\" PreCompiledHeader=\"\" PCHInCommandLine=\"no\" PCHFlags=\"\" PCHFlagsPolicy=\"0\">\n";
+    projectFile +=  "        <IncludePath Value=\".\"/>\n        <IncludePath Value=\"../scaly\"/>\n      </Compiler>\n";
+    projectFile +=  "      <Linker Options=\"\" Required=\"yes\">\n        <LibraryPath Value=\"../Debug\"/>\n";
+    projectFile +=  "        <Library Value=\"libscaly\"/>\n      </Linker>\n      <ResourceCompiler Options=\"\" Required=\"no\"/>\n";    
+    projectFile +=  "      <General OutputFile=\"$(IntermediateDirectory)/$(ProjectName)\" IntermediateDirectory=\"../Debug\" ";
+    projectFile +=  "Command=\"./$(ProjectName)\" CommandArguments=\"-o ";
+    projectFile +=  *programName;
+    projectFile +=  " -d output";
+    for (size_t i = 0; i < noOfCompilationUnits; i++) {
+        _Region _region; _Page* _p = _region.get();
+        projectFile +=  " ../"; projectFile +=  *programName; projectFile += "/";
+        projectFile +=  *Path::getFileNameWithoutExtension(_p, *(*(*program.compilationUnits)[i])->fileName);
+        projectFile +=  ".scaly";
+    }
+    projectFile += "\" UseSeparateDebugArgs=\"no\" DebugArguments=\"\" WorkingDirectory=\"$(IntermediateDirectory)\"";
+    projectFile += " PauseExecWhenProcTerminates=\"yes\" IsGUIProgram=\"no\" IsEnabled=\"yes\"/>\n";
+    projectFile += "      <Environment EnvVarSetName=\"&lt;Use Defaults&gt;\" DbgSetName=\"&lt;Use Defaults&gt;\">\n";
+    projectFile += "        <![CDATA[]]>\n      </Environment>\n";
+    projectFile += "      <Debugger IsRemote=\"no\" RemoteHostName=\"\" RemoteHostPort=\"\" DebuggerPath=\"\" IsExtended=\"yes\">\n";
+    projectFile += "        <DebuggerSearchPaths/>\n        <PostConnectCommands/>\n        <StartupCommands/>\n      </Debugger>\n";
+    projectFile += "      <PreBuild/>\n      <PostBuild/>\n      <CustomBuild Enabled=\"no\">\n        <RebuildCommand/>\n";
+    projectFile += "        <CleanCommand/>\n        <BuildCommand/>\n        <PreprocessFileCommand/>\n        <SingleFileCommand/>\n";
+    projectFile += "        <MakefileGenerationCommand/>\n        <ThirdPartyToolName>None</ThirdPartyToolName>\n";
+    projectFile += "        <WorkingDirectory/>\n      </CustomBuild>\n      <AdditionalRules>\n";
+    projectFile += "        <CustomPostBuild/>\n        <CustomPreBuild/>\n      </AdditionalRules>\n";
+    projectFile += "      <Completion EnableCpp11=\"no\" EnableCpp14=\"no\">\n        <ClangCmpFlagsC/>\n        <ClangCmpFlags/>\n";
+    projectFile += "        <ClangPP/>\n        <SearchPaths/>\n      </Completion>\n";
+    projectFile += "    </Configuration>\n";
+    projectFile += "    <Configuration Name=\"Release\" CompilerType=\"GCC\" DebuggerType=\"GNU gdb debugger\" Type=\"Executable\"";
+    projectFile += " BuildCmpWithGlobalSettings=\"append\" BuildLnkWithGlobalSettings=\"append\" BuildResWithGlobalSettings=\"append\">\n";
+    projectFile += "      <Compiler Options=\"-O2;-Wall\" C_Options=\"-O2;-Wall\" Assembler=\"\" Required=\"yes\" PreCompiledHeader=\"\"";
+    projectFile += " PCHInCommandLine=\"no\" PCHFlags=\"\" PCHFlagsPolicy=\"0\">\n";
+    projectFile += "        <IncludePath Value=\".\"/>\n        <Preprocessor Value=\"NDEBUG\"/>\n";
+    projectFile += "      </Compiler>\n      <Linker Options=\"\" Required=\"yes\">\n";
+    projectFile += "        <LibraryPath Value=\"../Release\"/>\n        <Library Value=\"libscaly\"/>\n      </Linker>\n";
+    projectFile += "      <ResourceCompiler Options=\"\" Required=\"no\"/>\n";
+    projectFile += "      <General OutputFile=\"$(IntermediateDirectory)/$(ProjectName)\" IntermediateDirectory=\"../Release\"";
+    projectFile += " Command=\"./$(ProjectName)\" CommandArguments=\"\" UseSeparateDebugArgs=\"no\" DebugArguments=\"\"";
+    projectFile += " WorkingDirectory=\"$(IntermediateDirectory)\" PauseExecWhenProcTerminates=\"yes\" IsGUIProgram=\"no\" IsEnabled=\"yes\"/>\n";
+    projectFile += "      <Environment EnvVarSetName=\"&lt;Use Defaults&gt;\" DbgSetName=\"&lt;Use Defaults&gt;\">\n";
+    projectFile += "        <![CDATA[]]>\n      </Environment>\n";
+    projectFile += "      <Debugger IsRemote=\"no\" RemoteHostName=\"\" RemoteHostPort=\"\" DebuggerPath=\"\" IsExtended=\"yes\">\n";
+    projectFile += "        <DebuggerSearchPaths/>\n        <PostConnectCommands/>\n        <StartupCommands/>\n";
+    projectFile += "      </Debugger>\n      <PreBuild/>\n      <PostBuild/>\n      <CustomBuild Enabled=\"no\">\n";
+    projectFile += "        <RebuildCommand/>\n        <CleanCommand/>\n        <BuildCommand/>\n        <PreprocessFileCommand/>\n";
+    projectFile += "        <SingleFileCommand/>\n        <MakefileGenerationCommand/>\n";
+    projectFile += "        <ThirdPartyToolName>None</ThirdPartyToolName>\n        <WorkingDirectory/>\n";
+    projectFile += "      </CustomBuild>\n      <AdditionalRules>\n        <CustomPostBuild/>\n";
+    projectFile += "        <CustomPreBuild/>\n      </AdditionalRules>\n      <Completion EnableCpp11=\"no\" EnableCpp14=\"no\">\n";
+    projectFile += "        <ClangCmpFlagsC/>\n        <ClangCmpFlags/>\n        <ClangPP/>\n";
+    projectFile += "        <SearchPaths/>\n      </Completion>\n    </Configuration>\n  </Settings>\n</CodeLite_Project>\n";    
 }
 
 }
