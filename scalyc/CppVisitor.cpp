@@ -24,11 +24,21 @@ bool CppVisitor::OpenProgram(Program& program) {
     (*projectFile) += "<CodeLite_Project Name=\"";
     (*projectFile) +=  *programName;
     (*projectFile) +=  "\" InternalType=\"Console\">\n  <Plugins>\n    <Plugin Name=\"qmake\">\n";
-    (*projectFile) +=  "      <![CDATA[00010001N0005Debug000000000000]]>\n    </Plugin>\n";
+    (*projectFile) +=  "      <![CDATA[00020001N0005Debug0000000000000001N0007Release000000000000]]>\n    </Plugin>\n";
     (*projectFile) +=  "    <Plugin Name=\"CMakePlugin\">\n      <![CDATA[[{\n";
     (*projectFile) +=  "  \"name\": \"Debug\",\n  \"enabled\": false,\n  \"buildDirectory\": \"build\",\n";
     (*projectFile) +=  "  \"sourceDirectory\": \"$(ProjectPath)\",\n  \"generator\": \"\",\n  \"buildType\": \"\",\n";
-    (*projectFile) +=  "  \"arguments\": [],\n  \"parentProject\": \"\"\n }]]]>\n    </Plugin>\n  </Plugins>\n";
+    (*projectFile) +=  "  \"arguments\": [],\n  \"parentProject\": \"\"\n";
+    (*projectFile) +=  " }, {\n";
+    (*projectFile) +=  "  \"name\": \"Release\",\n";
+    (*projectFile) +=  "  \"enabled\": false,\n";
+    (*projectFile) +=  "  \"buildDirectory\": \"build\",\n";
+    (*projectFile) +=  "  \"sourceDirectory\": \"$(ProjectPath)\",\n";
+    (*projectFile) +=  "  \"generator\": \"\",\n";
+    (*projectFile) +=  "  \"buildType\": \"\",\n";
+    (*projectFile) +=  "  \"arguments\": [],\n";
+    (*projectFile) +=  "  \"parentProject\": \"\"\n";
+    (*projectFile) +=  " }]]]>\n    </Plugin>\n  </Plugins>\n";
     (*projectFile) +=  "  <Description/>\n  <Dependencies/>\n";
     (*projectFile) +=  "  <VirtualDirectory Name=\"src\">\n    <File Name=\"main.cpp\"/>\n";
     size_t noOfCompilationUnits = program.compilationUnits->length();
@@ -68,14 +78,13 @@ bool CppVisitor::OpenProgram(Program& program) {
     (*projectFile) +=  "Command=\"./$(ProjectName)\" CommandArguments=\"-o ";
     (*projectFile) +=  *programName;
     (*projectFile) +=  " -d output";
-    (*projectFile) +=  " ../"; (*projectFile) +=  *programName; (*projectFile) += "/"; (*projectFile) +=  *programName;  (*projectFile) += ".scaly";      
     for (size_t i = 0; i < noOfCompilationUnits; i++) {
         _Region _region; _Page* _p = _region.get();
         (*projectFile) +=  " ../"; (*projectFile) +=  *programName; (*projectFile) += "/";
         (*projectFile) +=  *Path::getFileNameWithoutExtension(_p, *(*(*program.compilationUnits)[i])->fileName);
         (*projectFile) +=  ".scaly";
     }
-    (*projectFile) += " UseSeparateDebugArgs=\"no\" DebugArguments=\"\" WorkingDirectory=\"$(IntermediateDirectory)\"";
+    (*projectFile) += "\" UseSeparateDebugArgs=\"no\" DebugArguments=\"\" WorkingDirectory=\"$(IntermediateDirectory)\"";
     (*projectFile) += " PauseExecWhenProcTerminates=\"yes\" IsGUIProgram=\"no\" IsEnabled=\"yes\"/>\n";
     (*projectFile) += "      <Environment EnvVarSetName=\"&lt;Use Defaults&gt;\" DbgSetName=\"&lt;Use Defaults&gt;\">\n";
     (*projectFile) += "        <![CDATA[]]>\n      </Environment>\n";
