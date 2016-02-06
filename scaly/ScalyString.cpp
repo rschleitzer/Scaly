@@ -1,6 +1,11 @@
 #include "Scaly.h"
 namespace scaly {
 
+String::String() {
+    length = 0;
+    string = 0;
+}
+
 String::String(const char* theString) {
     length = strlen(theString);
     string = (char*)getPage()->allocateObject(length + 1);
@@ -48,6 +53,7 @@ String& String::operator += (char c) {
     if (!string) {
         // Allocate for the char itself and the trailing 0
         allocate(2);
+        length = 1;
     }
     else {
         if (!extend(1))
@@ -65,6 +71,7 @@ String& String::operator += (const char* theString) {
     if (!string) {
         // Allocate for the char itself and the trailing 0
         allocate(stringLength + 1);
+        length = stringLength;
     }
     else {
         if (!extend(stringLength))
@@ -111,6 +118,29 @@ void String::allocate(size_t size) {
     string = (char*) getPage()->allocateObject(size);
 }
 
+Array<String>& String::Split(_Page* _rp, char c) {
+    Array<String>* ret = new(_rp) Array<String>();
+    String* part = 0;
+    for (size_t _i = 0; _i < length; _i++) {
+        char currentChar = (*this)[_i];
+        if (currentChar == c) {
+            if (part) {
+                ret->append(part);
+                part = 0;
+            }
+        }
+        else {
+            if (!part)
+                part = new(_rp) String();
+            *part += (*this)[_i];
+        }
+    }
+
+    if (part)
+        ret->append(part);
+    
+    return *ret;
+}
 
 
 

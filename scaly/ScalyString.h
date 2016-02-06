@@ -4,6 +4,7 @@ namespace scaly {
 
 class String : public Object {
 public:
+    String();
     String(const char* theString);
     String(const String& theString);
     String(size_t theLength);
@@ -15,6 +16,7 @@ public:
     String& operator += (const char* theString);
     String& operator += (const String& theString);
     bool operator == (const char* theString);
+    Array<String>& Split(_Page* _rp, char c);
 
 private:
     void reallocate(size_t newLength);

@@ -14,6 +14,7 @@
 #include "Result.h"
 #include "Array.h"
 #include "ScalyString.h"
+#include "Path.h"
 #include "File.h"
 #include "Directory.h"
 

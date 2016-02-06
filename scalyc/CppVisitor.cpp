@@ -35,8 +35,9 @@ bool CppVisitor::OpenProgram(Program& program) {
     (*projectFile) +=  ".cpp\"/>\n";
     size_t noOfCompilationUnits = program.compilationUnits->length();
     for (size_t i = 0; i < noOfCompilationUnits; i++) {
+        _Region _region; _Page* _p = _region.get();
         (*projectFile) +=  "    <File Name=\"";
-        (*projectFile) +=  "main";
+        (*projectFile) +=  *Path::getFileNameWithoutExtension(_p, *(*(*program.compilationUnits)[i])->fileName);
         (*projectFile) +=  ".cpp\"/>\n";
     }
     (*projectFile) +=  "  </VirtualDirectory>\n  <VirtualDirectory Name=\"include\">\n";
@@ -44,8 +45,9 @@ bool CppVisitor::OpenProgram(Program& program) {
     (*projectFile) +=  *programName;
     (*projectFile) +=  ".h\"/>\n";
     for (size_t i = 0; i < noOfCompilationUnits; i++) {
+        _Region _region; _Page* _p = _region.get();
         (*projectFile) +=  "    <File Name=\"";
-        (*projectFile) +=  "main";
+        (*projectFile) +=  *Path::getFileNameWithoutExtension(_p, *(*(*program.compilationUnits)[i])->fileName);
         (*projectFile) +=  ".h\"/>\n";
     }
     (*projectFile) +=  "  </VirtualDirectory>\n  <Settings Type=\"Executable\">\n    <GlobalSettings>\n";
@@ -58,8 +60,9 @@ bool CppVisitor::OpenProgram(Program& program) {
     (*projectFile) +=  " -d output";
     (*projectFile) +=  " ../"; (*projectFile) +=  *programName; (*projectFile) += "/"; (*projectFile) +=  *programName;  (*projectFile) += ".scaly";      
     for (size_t i = 0; i < noOfCompilationUnits; i++) {
+        _Region _region; _Page* _p = _region.get();
         (*projectFile) +=  " ../"; (*projectFile) +=  *programName; (*projectFile) += "/";
-        (*projectFile) +=  "main";
+        (*projectFile) +=  *Path::getFileNameWithoutExtension(_p, *(*(*program.compilationUnits)[i])->fileName);
         (*projectFile) +=  ".scaly";
     }
     (*projectFile) += " UseSeparateDebugArgs=\"no\" DebugArguments=\"\" WorkingDirectory=\"$(IntermediateDirectory)\"";
