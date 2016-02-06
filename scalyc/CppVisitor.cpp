@@ -41,9 +41,6 @@ bool CppVisitor::OpenProgram(Program& program) {
         (*projectFile) +=  ".cpp\"/>\n";
     }
     (*projectFile) +=  "  </VirtualDirectory>\n  <VirtualDirectory Name=\"include\">\n";
-    (*projectFile) +=  "    <File Name=\"";
-    (*projectFile) +=  *programName;
-    (*projectFile) +=  ".h\"/>\n";
     for (size_t i = 0; i < noOfCompilationUnits; i++) {
         _Region _region; _Page* _p = _region.get();
         (*projectFile) +=  "    <File Name=\"";
