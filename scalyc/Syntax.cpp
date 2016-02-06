@@ -31,6 +31,7 @@ CompilationUnit::CompilationUnit(Position start, Position end)
 void CompilationUnit::Accept(SyntaxVisitor& visitor) {
     if (!visitor.OpenCompilationUnit(*this))
         return;
+    if (statements)
     {
         StatementWithSemicolon* node = 0;
         size_t _alength = statements->length();

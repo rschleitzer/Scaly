@@ -27,8 +27,8 @@ bool CppVisitor::OpenProgram(Program& program) {
     (*projectFile) +=  "      <![CDATA[00010001N0005Debug000000000000]]>\n    </Plugin>\n";
     (*projectFile) +=  "    <Plugin Name=\"CMakePlugin\">\n      <![CDATA[[{\n";
     (*projectFile) +=  "  \"name\": \"Debug\",\n  \"enabled\": false,\n  \"buildDirectory\": \"build\",\n";
-    (*projectFile) +=  "  \"sourceDirectory\": \"$(ProjectPath)\",  \"generator\": \"\",  \"buildType\": \"\",\n";
-    (*projectFile) +=  "  \"arguments\": [],  \"parentProject\": \"\"\n }]]]>\n    </Plugin>\n  </Plugins>\n";
+    (*projectFile) +=  "  \"sourceDirectory\": \"$(ProjectPath)\",\n  \"generator\": \"\",\n  \"buildType\": \"\",\n";
+    (*projectFile) +=  "  \"arguments\": [],\n  \"parentProject\": \"\"\n }]]]>\n    </Plugin>\n  </Plugins>\n";
     (*projectFile) +=  "  <Description/>\n  <Dependencies/>\n";
     (*projectFile) +=  "  <VirtualDirectory Name=\"src\">\n    <File Name=\"main.cpp\"/>\n    <File Name=\"";
     (*projectFile) +=  *programName;

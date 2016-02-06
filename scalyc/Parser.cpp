@@ -21,9 +21,6 @@ _Result<CompilationUnit, ParserError> Parser::parseCompilationUnit(_Page* _rp, _
 
             ret->statements = result.getResult();
         }
-        else {
-            return _Result<CompilationUnit, ParserError>(result.getError());
-        }
     }
     ret->fileName = fileName;
 

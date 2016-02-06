@@ -36,8 +36,10 @@ class CompilationUnit : SyntaxNode {
 
     function Accept(mutable visitor: SyntaxVisitor) {
         visitor.OpenCompilationUnit(this)
-        for node in statements! {
-            node.Accept(visitor)
+        if statements != nil {
+            for node in statements! {
+                node.Accept(visitor)
+            }
         }
         visitor.CloseCompilationUnit(this)
     }

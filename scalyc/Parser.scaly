@@ -8,7 +8,7 @@ class Parser {
         {
             let start: Position = lexer.getPosition()
             let result: [StatementWithSemicolon] node = parseStatementWithSemicolonList() catch _(error) {
-                throw (error)
+                 null
             }
             if !isAtEnd() {
                 let current: Position = lexer.getPreviousPosition()
