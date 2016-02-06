@@ -39,7 +39,7 @@ CompilerError* Compiler::compileFiles(_Page* _ep, Options& options) {
     program.compilationUnits = compilationUnits;
     
     CppVisitor& visitor = *new(_p) CppVisitor();
-    CppError* cppError = visitor.Execute(program);
+    CppError* cppError = visitor.execute(program);
     if (cppError) {
         switch (cppError->getErrorCode()) {
             case _CppError_unableToCreateOutputDirectory:

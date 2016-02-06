@@ -2,7 +2,7 @@
 using namespace scaly;
 namespace scalyc {
 
-CppError* CppVisitor::Execute(Program& program) {
+CppError* CppVisitor::execute(Program& program) {
     program.accept(*this);
     return cppError;
 }

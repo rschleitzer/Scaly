@@ -6,7 +6,7 @@ namespace scalyc {
 
 class CppVisitor : public SyntaxVisitor {
 public:
-    CppError* Execute(Program& program);
+    CppError* execute(Program& program);
 private:
     CppError* cppError;
     void buildProjectFileString(String& projectFile, Program& program);
