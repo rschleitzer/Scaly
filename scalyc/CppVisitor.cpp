@@ -70,13 +70,18 @@ bool CppVisitor::openCompilationUnit(CompilationUnit& compilationUnit) {
     // Build and write the header file
     if (*moduleName != *programName) {
         headerFile = new(getPage()) String();
-        (*headerFile) += "#ifndef __scaly__";
+        (*headerFile) += "#ifndef __";
+        (*headerFile) += *programName;
+        (*headerFile) += "__";
         (*headerFile) += *moduleName;
         (*headerFile) += "__\n";
-        (*headerFile) += "#define __scaly__";
+        (*headerFile) += "#define __";
+        (*headerFile) += *programName;
+        (*headerFile) += "__";
         (*headerFile) += *moduleName;
-        (*headerFile) += "__\n#include \"Scaly.h\"\n";
-        (*headerFile) += "using namespace scaly;\nnamespace ";
+        (*headerFile) += "__\n#include \"";
+        (*headerFile) += *programName;
+        (*headerFile) += ".h\"\nusing namespace scaly;\nnamespace ";
         (*headerFile) += *programName;
         (*headerFile) += " {\n";
     }
