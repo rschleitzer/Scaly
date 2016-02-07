@@ -12,13 +12,11 @@ private:
     String* moduleName;
     String* sourceFile;
     String* headerFile;
+    size_t headerIndentLevel;
+    size_t sourceIndentLevel;
     
     void buildProjectFileString(String& projectFile, Program& program);
     void buildMainHeaderFileString(String& projectFile, Program& program);
-    void buildHeaderFileLeadIn(CompilationUnit& compilationUnit);
-    void buildHeaderFileLeadOut();
-    void buildSourceFileLeadIn();
-    void buildSourceFileLeadOut();
     
 public:
     virtual bool openProgram(Program& program);

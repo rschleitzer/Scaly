@@ -11,8 +11,7 @@ public:
     size_t column;
 };
 
-class Token  : public Object
-{
+class Token  : public Object {
 public:
     virtual bool _isPunctuation() = 0;
     virtual bool _isIdentifier() = 0;
@@ -23,8 +22,7 @@ public:
     virtual bool _isLiteral() = 0;
 };
 
-class EofToken : public Token
-{
+class EofToken : public Token {
 public:
     virtual bool _isPunctuation();
     virtual bool _isIdentifier();
@@ -35,8 +33,7 @@ public:
     virtual bool _isLiteral();
 };
 
-class InvalidToken : public Token
-{
+class InvalidToken : public Token {
 public:
     virtual bool _isPunctuation();
     virtual bool _isIdentifier();
@@ -47,8 +44,7 @@ public:
     virtual bool _isLiteral();
 };
 
-class Identifier : public Token
-{
+class Identifier : public Token {
 public:
     Identifier(String& name);
     String& name;
@@ -62,8 +58,7 @@ public:
     virtual bool _isLiteral();
 };
 
-class Literal : public Token
-{
+class Literal : public Token {
 public:
     virtual bool _isPunctuation();
     virtual bool _isIdentifier();
@@ -74,22 +69,19 @@ public:
     virtual bool _isLiteral();
 };
 
-class StringLiteral : public Literal
-{
+class StringLiteral : public Literal {
 public:
     StringLiteral(String& theString);
     String& string;
 };
 
-class NumericLiteral : public Literal
-{
+class NumericLiteral : public Literal {
 public:
     NumericLiteral(String& theValue);
     String& value;
 };
 
-class Punctuation : public Token
-{
+class Punctuation : public Token {
 public:
     Punctuation(String& theSign);
     String& sign;
@@ -103,8 +95,7 @@ public:
     virtual bool _isLiteral();
 };
 
-class Operator : public Token 
-{
+class Operator : public Token {
 public:
     Operator(String& theOperation);
     String& operation;
@@ -115,8 +106,7 @@ public:
     virtual bool _isLiteral();
 };
 
-class PrefixOperator : public Operator
-{
+class PrefixOperator : public Operator {
 public:
     PrefixOperator(String& theOperation);
 
@@ -125,8 +115,7 @@ public:
     virtual bool _isPostfixOperator();
 };
 
-class BinaryOperator : public Operator
-{
+class BinaryOperator : public Operator {
 public:
     BinaryOperator(String& theOperation);
 
@@ -135,8 +124,7 @@ public:
     virtual bool _isPostfixOperator();
 };
 
-class PostfixOperator : public Operator
-{
+class PostfixOperator : public Operator {
 public:
     PostfixOperator(String& theOperation);
 
@@ -145,8 +133,7 @@ public:
     virtual bool _isPostfixOperator();
 };
 
-class Lexer : public Object
-{
+class Lexer : public Object {
 public:
     Token* token;
     bool whitespaceSkipped;

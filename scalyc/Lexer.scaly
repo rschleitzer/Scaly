@@ -1,4 +1,8 @@
 class Position {
+    init(line: unsigned, column: unsigned) {
+        line = line
+        column = column
+    }
     let line: unsigned
     let column: unsigned
 }
