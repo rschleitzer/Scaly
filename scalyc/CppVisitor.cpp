@@ -63,10 +63,41 @@ void CppVisitor::closeProgram(Program& program) {
 
 
 bool CppVisitor::openCompilationUnit(CompilationUnit& compilationUnit) {
+    _Region _region; _Page* _p = _region.get();
+    String& outputFilePath = *new(_p) String(*programDirectory);
+    outputFilePath += "/";
+    String& moduleName = *Path::getFileNameWithoutExtension(_p, *compilationUnit.fileName);
+    outputFilePath += moduleName;
+    
+    // Build and write the header file
+    if (moduleName != *programName) {
+        _Region _region; _Page* _p = _region.get();
+        String& headerFile = *new(_p) String();
+        buildHeaderFileString(headerFile, compilationUnit);
+        {
+            _Region _region; _Page* _p = _region.get();
+            String& headerFilePath = *new(_p) String(outputFilePath) + ".h";
+            if (File::writeFromString(_p, headerFilePath, headerFile))
+                return false;
+        }
+    }
+    
+    // Begin cpp file
+    sourceFile = new(_p) String();
+    buildSourceFileLeadIn();
+    
     return true;
 }
 
 void CppVisitor::closeCompilationUnit(CompilationUnit& compilationUnit) {
+    // Close and write cpp file
+    _Region _region; _Page* _p = _region.get();
+    buildSourceFileLeadOut();
+    String& outputFilePath = *new(_p) String(*programDirectory);
+    outputFilePath += "/";
+    outputFilePath += *Path::getFileNameWithoutExtension(_p, *compilationUnit.fileName);
+    String& sourceFilePath = *new(_p) String(outputFilePath) + ".cpp";
+    File::writeFromString(_p, sourceFilePath , *sourceFile);
 }
 
 bool CppVisitor::openStatementWithSemicolon(StatementWithSemicolon& statementWithSemicolon) {
@@ -738,14 +769,49 @@ void CppVisitor::buildProjectFileString(String& projectFile, Program& program) {
 }
 
 void CppVisitor::buildMainHeaderFileString(String& headerFile, Program& program) {
-    headerFile += "#ifndef __scaly__scalyc__\n#define __scaly__scalyc__\n\n#include \"Scaly.h\"\n";
+    headerFile += "#ifndef __scaly__";
+    headerFile += *programName;
+    headerFile += "__\n#define __scaly__";
+    headerFile += *programName;
+    headerFile += "__\n\n#include \"Scaly.h\"\n";
     size_t noOfCompilationUnits = program.compilationUnits->length();
     for (size_t i = 0; i < noOfCompilationUnits; i++) {
         _Region _region; _Page* _p = _region.get();
         headerFile +=  "#include \"";
         headerFile += *Path::getFileNameWithoutExtension(_p, *(*(*program.compilationUnits)[i])->fileName) + ".h\"\n";
     }
-    headerFile += "\nusing namespace scaly;\nnamespace scalyc {\nint _main(Array<String>& arguments);\n}\n\n#endif // __scaly__scalyc__\n";
+    headerFile += "\nusing namespace scaly;\nnamespace ";
+    headerFile += *programName;
+    headerFile += " {\nint _main(Array<String>& arguments);\n}\n\n#endif // __scaly__scalyc__\n";
+}
+
+void CppVisitor::buildHeaderFileString(String& headerFile, CompilationUnit& compilationUnit) {
+    _Region _region; _Page* _p = _region.get();
+    String& moduleName = *Path::getFileNameWithoutExtension(_p, *compilationUnit.fileName);
+    headerFile += "#ifndef __scaly__";
+    headerFile += moduleName;
+    headerFile += "__\n";
+    headerFile += "#define __scaly__";
+    headerFile += moduleName;
+    headerFile += "__\n#include \"Scaly.h\"\n";
+    headerFile += "using namespace scaly;\nnamespace ";
+    headerFile += *programName;
+    headerFile += " {\n";
+    headerFile += "}\n#endif // __scaly__";
+    headerFile += moduleName;
+    headerFile += "__\n";
+}
+
+void CppVisitor::buildSourceFileLeadIn() {
+    (*sourceFile) += "#include \"";
+    (*sourceFile) += *programName;
+    (*sourceFile) += ".h\"\nusing namespace scaly;\nnamespace ";
+    (*sourceFile) += *programName;
+    (*sourceFile) += " {\n\n";
+}
+
+void CppVisitor::buildSourceFileLeadOut() {
+    (*sourceFile) += "}\n";
 }
 
 }

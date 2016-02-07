@@ -9,8 +9,13 @@ public:
     CppError* execute(Program& program);
 private:
     CppError* cppError;
+    String* sourceFile;
+    
     void buildProjectFileString(String& projectFile, Program& program);
     void buildMainHeaderFileString(String& projectFile, Program& program);
+    void buildHeaderFileString(String& projectFile, CompilationUnit& compilationUnit);
+    void buildSourceFileLeadIn();
+    void buildSourceFileLeadOut();
     
 public:
     virtual bool openProgram(Program& program);

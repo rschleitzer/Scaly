@@ -18,6 +18,9 @@ public:
     String& operator += (const String& theString);
     String& operator + (const String& thestring);
     bool operator == (const char* theString);
+    bool operator != (const char* theString);
+    bool operator == (const String& theString);
+    bool operator != (const String& theString);
     Array<String>& Split(_Page* _rp, char c);
 
 private:

@@ -42,6 +42,18 @@ bool String::operator == (const char* theString){
     return strcmp(string, theString) == 0;
 }
 
+bool String::operator != (const char* theString){
+    return strcmp(string, theString) != 0;
+}
+
+bool String::operator == (const String& theString){
+    return strcmp(string, theString.getNativeString()) == 0;
+}
+
+bool String::operator != (const String& theString){
+    return strcmp(string, theString.getNativeString()) != 0;
+}
+
 char String::operator [](size_t i) {
     if (i < length)
         return string[i];
