@@ -9,11 +9,14 @@ public:
     CppError* execute(Program& program);
 private:
     CppError* cppError;
+    String* moduleName;
     String* sourceFile;
+    String* headerFile;
     
     void buildProjectFileString(String& projectFile, Program& program);
     void buildMainHeaderFileString(String& projectFile, Program& program);
-    void buildHeaderFileString(String& projectFile, CompilationUnit& compilationUnit);
+    void buildHeaderFileLeadIn(CompilationUnit& compilationUnit);
+    void buildHeaderFileLeadOut();
     void buildSourceFileLeadIn();
     void buildSourceFileLeadOut();
     

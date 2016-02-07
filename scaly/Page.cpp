@@ -95,6 +95,25 @@ void* _Page::allocateLocal(size_t size) {
     return location;
 }
 
+bool _Page::extend(void* address, size_t size) {
+    if (!size)
+        size = 1;
+
+    void* nextLocation = align((char*) address + size);
+
+    if (nextLocation == (void*) nextObject)
+        return true;
+
+    if (nextLocation < nextObject)
+        return false;
+        
+    if (nextLocation >= (void*) nextExtensionPageLocation)
+        return false;
+
+    nextObject = nextLocation;
+    return true;
+}
+
 void _Page::deallocate() {
     // Find the end of the stack Page chain
     _Page* currentPage = this;
@@ -135,20 +154,6 @@ _Page* _Page::getPage(void* address) {
 
     & ~(intptr_t)(pageSize - 1));    
 }
-
-bool _Page::extend(void* address, size_t size) {
-    if (!size)
-        size = 1;
-
-    void* nextLocation = align((char*) address + size);
-
-    if (nextLocation >= (void*) nextExtensionPageLocation)
-        return false;
-
-    nextObject = nextLocation;
-    return true;
-}
-
 
 void _Page::freeExtensionPage(_Page* _page) {
     // Find the extension Page pointer
