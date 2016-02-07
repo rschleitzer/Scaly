@@ -166,9 +166,8 @@ void _Page::freeExtensionPage(_Page* _page) {
     }
 
     // Shift the remaining array one position up
-    _Page** lastExtensionPosition = getLastExtensionPageLocation();
     _Page** firstExtensionPosition =nextExtensionPageLocation;
-    for (_Page** shiftedPosition = extensionPosition; extensionPosition > firstExtensionPosition; extensionPosition--)
+    for (_Page** shiftedPosition = extensionPosition; shiftedPosition > firstExtensionPosition; shiftedPosition--)
         *shiftedPosition = *(shiftedPosition - 1);
         
     // Make room for one more extension
