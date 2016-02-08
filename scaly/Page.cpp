@@ -57,7 +57,7 @@ void _Page::reset() {
 }
 
 _Page* _Page::allocateExtensionPage(size_t size) {
-    size_t grossSize = size + sizeof(_Page) + sizeof(_Page**) + 2 * _alignment;
+    size_t grossSize = size + sizeof(_Page) + sizeof(_Page**) + _alignment;
     if (grossSize < pageSize)
         grossSize = pageSize;
 
@@ -166,8 +166,7 @@ void _Page::freeExtensionPage(_Page* _page) {
     }
 
     // Shift the remaining array one position up
-    _Page** firstExtensionPosition =nextExtensionPageLocation;
-    for (_Page** shiftedPosition = extensionPosition; shiftedPosition > firstExtensionPosition; shiftedPosition--)
+    for (_Page** shiftedPosition = extensionPosition; shiftedPosition > nextExtensionPageLocation; shiftedPosition--)
         *shiftedPosition = *(shiftedPosition - 1);
         
     // Make room for one more extension
