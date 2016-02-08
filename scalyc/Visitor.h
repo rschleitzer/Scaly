@@ -119,7 +119,7 @@ class OptionalType;
 class TypeInheritanceClause;
 class Inheritance;
 
-class SyntaxVisitor : public Object{
+class SyntaxVisitor : public Object {
 public:
     virtual bool openProgram(Program& program)= 0;
     virtual void closeProgram(Program& program)= 0;

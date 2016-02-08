@@ -4,6 +4,13 @@
 using namespace scaly;
 namespace scalyc {
 
+class Inherits : public Object {
+public:
+    Inherits(String& className);
+    String* name;
+    Array<String>* inheritors;
+};
+
 class CppVisitor : public SyntaxVisitor {
 public:
     CppError* execute(Program& program);
@@ -16,11 +23,13 @@ private:
     size_t sourceIndentLevel;
     bool firstParameter;
     bool firstBindingInitializer;
+    Array<Inherits>* inherits;
     
     void buildProjectFileString(String& projectFile, Program& program);
     void buildMainHeaderFileString(String& projectFile, Program& program);
+    void collectInheritances(Program& program);
+    void searchClassNamesInCompilationUnit(Array<String>& classNames, CompilationUnit& compilationUnit);
     const char* getCppType(String* typeIdentifierName);
-
     
 public:
     virtual bool openProgram(Program& program);

@@ -51,10 +51,41 @@ bool CppVisitor::openProgram(Program& program) {
                     return false;
             }
         }
+        
+        collectInheritances(program);
     }
     
     return true;
 }
+
+void CppVisitor::collectInheritances(Program& program) {
+    inherits = new(getPage()) Array<Inherits>();
+    Array<String>& classNames = *new(getPage()) Array<String>();
+    if (program.compilationUnits) {
+        Array<CompilationUnit>& compilationUnits = *program.compilationUnits;
+        size_t _compilationUnits_length = compilationUnits.length();
+        for (size_t _i = 0; _i < _compilationUnits_length; _i++) {
+            searchClassNamesInCompilationUnit(classNames, **compilationUnits[_i]);
+        }
+    }
+}
+
+void CppVisitor::searchClassNamesInCompilationUnit(Array<String>& classNames, CompilationUnit& compilationUnit) {
+    if (compilationUnit.statements) {
+        Array<StatementWithSemicolon>& statements = *compilationUnit.statements;
+        size_t _statements_length = statements.length();
+        for (size_t _i = 0; _i < _statements_length; _i++) {
+            StatementWithSemicolon& statementWithSemicolon = **statements[_i];
+            if (statementWithSemicolon.statement) {
+                if (statementWithSemicolon.statement->_isClassDeclaration()) {
+                    ClassDeclaration& classDeclaration = *(ClassDeclaration*)statementWithSemicolon.statement;
+                    classNames.append(classDeclaration.name);
+                }
+            }
+        }
+    }
+}
+
 
 void CppVisitor::closeProgram(Program& program) {
     programName = 0;
@@ -867,6 +898,11 @@ void CppVisitor::buildProjectFileString(String& projectFile, Program& program) {
     projectFile += "        <CustomPreBuild/>\n      </AdditionalRules>\n      <Completion EnableCpp11=\"no\" EnableCpp14=\"no\">\n";
     projectFile += "        <ClangCmpFlagsC/>\n        <ClangCmpFlags/>\n        <ClangPP/>\n";
     projectFile += "        <SearchPaths/>\n      </Completion>\n    </Configuration>\n  </Settings>\n</CodeLite_Project>\n";    
+}
+
+Inherits::Inherits(String& className) {
+    name = new(getPage()) String(className);
+    inheritors = new(getPage()) Array<String>();
 }
 
 }
