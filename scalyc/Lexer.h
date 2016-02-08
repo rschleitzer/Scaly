@@ -11,37 +11,49 @@ public:
     size_t column;
 };
 
-class Token  : public Object {
+class Token : public Object {
 public:
-    virtual bool _isPunctuation() = 0;
-    virtual bool _isIdentifier() = 0;
-    virtual bool _isOperator() = 0;
-    virtual bool _isPrefixOperator() = 0;
-    virtual bool _isBinaryOperator() = 0;
-    virtual bool _isPostfixOperator() = 0;
-    virtual bool _isLiteral() = 0;
+    virtual bool _isEofToken();
+    virtual bool _isInvalidToken();
+    virtual bool _isIdentifier();
+    virtual bool _isLiteral();
+    virtual bool _isStringLiteral();
+    virtual bool _isNumericLiteral();
+    virtual bool _isPunctuation();
+    virtual bool _isOperator();
+    virtual bool _isPrefixOperator();
+    virtual bool _isBinaryOperator();
+    virtual bool _isPostfixOperator();
 };
 
 class EofToken : public Token {
 public:
-    virtual bool _isPunctuation();
+    virtual bool _isEofToken();
+    virtual bool _isInvalidToken();
     virtual bool _isIdentifier();
+    virtual bool _isLiteral();
+    virtual bool _isStringLiteral();
+    virtual bool _isNumericLiteral();
+    virtual bool _isPunctuation();
     virtual bool _isOperator();
     virtual bool _isPrefixOperator();
     virtual bool _isBinaryOperator();
     virtual bool _isPostfixOperator();
-    virtual bool _isLiteral();
 };
 
 class InvalidToken : public Token {
 public:
-    virtual bool _isPunctuation();
+    virtual bool _isEofToken();
+    virtual bool _isInvalidToken();
     virtual bool _isIdentifier();
+    virtual bool _isLiteral();
+    virtual bool _isStringLiteral();
+    virtual bool _isNumericLiteral();
+    virtual bool _isPunctuation();
     virtual bool _isOperator();
     virtual bool _isPrefixOperator();
     virtual bool _isBinaryOperator();
     virtual bool _isPostfixOperator();
-    virtual bool _isLiteral();
 };
 
 class Identifier : public Token {
@@ -49,36 +61,66 @@ public:
     Identifier(String& name);
     String& name;
 
-    virtual bool _isPunctuation();
+    virtual bool _isEofToken();
+    virtual bool _isInvalidToken();
     virtual bool _isIdentifier();
+    virtual bool _isLiteral();
+    virtual bool _isStringLiteral();
+    virtual bool _isNumericLiteral();
+    virtual bool _isPunctuation();
     virtual bool _isOperator();
     virtual bool _isPrefixOperator();
     virtual bool _isBinaryOperator();
     virtual bool _isPostfixOperator();
-    virtual bool _isLiteral();
 };
 
 class Literal : public Token {
 public:
-    virtual bool _isPunctuation();
+    virtual bool _isEofToken();
+    virtual bool _isInvalidToken();
     virtual bool _isIdentifier();
+    virtual bool _isLiteral();
+    virtual bool _isStringLiteral();
+    virtual bool _isNumericLiteral();
+    virtual bool _isPunctuation();
     virtual bool _isOperator();
     virtual bool _isPrefixOperator();
     virtual bool _isBinaryOperator();
     virtual bool _isPostfixOperator();
-    virtual bool _isLiteral();
 };
 
 class StringLiteral : public Literal {
 public:
     StringLiteral(String& theString);
     String& string;
+
+    virtual bool _isEofToken();
+    virtual bool _isInvalidToken();
+    virtual bool _isIdentifier();
+    virtual bool _isStringLiteral();
+    virtual bool _isNumericLiteral();
+    virtual bool _isPunctuation();
+    virtual bool _isOperator();
+    virtual bool _isPrefixOperator();
+    virtual bool _isBinaryOperator();
+    virtual bool _isPostfixOperator();
 };
 
 class NumericLiteral : public Literal {
 public:
     NumericLiteral(String& theValue);
     String& value;
+
+    virtual bool _isEofToken();
+    virtual bool _isInvalidToken();
+    virtual bool _isIdentifier();
+    virtual bool _isStringLiteral();
+    virtual bool _isNumericLiteral();
+    virtual bool _isPunctuation();
+    virtual bool _isOperator();
+    virtual bool _isPrefixOperator();
+    virtual bool _isBinaryOperator();
+    virtual bool _isPostfixOperator();
 };
 
 class Punctuation : public Token {
@@ -86,13 +128,17 @@ public:
     Punctuation(String& theSign);
     String& sign;
     
-    virtual bool _isPunctuation();
+    virtual bool _isEofToken();
+    virtual bool _isInvalidToken();
     virtual bool _isIdentifier();
+    virtual bool _isLiteral();
+    virtual bool _isStringLiteral();
+    virtual bool _isNumericLiteral();
+    virtual bool _isPunctuation();
     virtual bool _isOperator();
     virtual bool _isPrefixOperator();
     virtual bool _isBinaryOperator();
     virtual bool _isPostfixOperator();
-    virtual bool _isLiteral();
 };
 
 class Operator : public Token {
@@ -100,16 +146,30 @@ public:
     Operator(String& theOperation);
     String& operation;
 
-    virtual bool _isPunctuation();
+    virtual bool _isEofToken();
+    virtual bool _isInvalidToken();
     virtual bool _isIdentifier();
-    virtual bool _isOperator();
     virtual bool _isLiteral();
+    virtual bool _isStringLiteral();
+    virtual bool _isNumericLiteral();
+    virtual bool _isPunctuation();
+    virtual bool _isOperator();
+    virtual bool _isPrefixOperator();
+    virtual bool _isBinaryOperator();
+    virtual bool _isPostfixOperator();
 };
 
 class PrefixOperator : public Operator {
 public:
     PrefixOperator(String& theOperation);
 
+    virtual bool _isEofToken();
+    virtual bool _isInvalidToken();
+    virtual bool _isIdentifier();
+    virtual bool _isLiteral();
+    virtual bool _isStringLiteral();
+    virtual bool _isNumericLiteral();
+    virtual bool _isPunctuation();
     virtual bool _isPrefixOperator();
     virtual bool _isBinaryOperator();
     virtual bool _isPostfixOperator();
@@ -119,6 +179,13 @@ class BinaryOperator : public Operator {
 public:
     BinaryOperator(String& theOperation);
 
+    virtual bool _isEofToken();
+    virtual bool _isInvalidToken();
+    virtual bool _isIdentifier();
+    virtual bool _isLiteral();
+    virtual bool _isStringLiteral();
+    virtual bool _isNumericLiteral();
+    virtual bool _isPunctuation();
     virtual bool _isPrefixOperator();
     virtual bool _isBinaryOperator();
     virtual bool _isPostfixOperator();
@@ -128,6 +195,13 @@ class PostfixOperator : public Operator {
 public:
     PostfixOperator(String& theOperation);
 
+    virtual bool _isEofToken();
+    virtual bool _isInvalidToken();
+    virtual bool _isIdentifier();
+    virtual bool _isLiteral();
+    virtual bool _isStringLiteral();
+    virtual bool _isNumericLiteral();
+    virtual bool _isPunctuation();
     virtual bool _isPrefixOperator();
     virtual bool _isBinaryOperator();
     virtual bool _isPostfixOperator();

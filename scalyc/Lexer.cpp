@@ -5,95 +5,177 @@ namespace scalyc {
 Position::Position(size_t line, size_t column)
 : line(line), column(column) {
 }
+
+bool Token::_isEofToken() { return false; }
+bool Token::_isInvalidToken() { return false; }
+bool Token::_isIdentifier() { return false; }
+bool Token::_isLiteral() { return false; }
+bool Token::_isStringLiteral() { return false; }
+bool Token::_isNumericLiteral() { return false; }
+bool Token::_isPunctuation() { return false; }
+bool Token::_isOperator() { return false; }
+bool Token::_isPrefixOperator() { return false; }
+bool Token::_isBinaryOperator() { return false; }
+bool Token::_isPostfixOperator() { return false; }
+
+bool EofToken::_isEofToken() { return true; }
+bool EofToken::_isInvalidToken() { return false; }
+bool EofToken::_isIdentifier() { return false; }
+bool EofToken::_isLiteral() { return false; }
+bool EofToken::_isStringLiteral() { return false; }
+bool EofToken::_isNumericLiteral() { return false; }
+bool EofToken::_isPunctuation() { return false; }
+bool EofToken::_isOperator() { return false; }
+bool EofToken::_isPrefixOperator() { return false; }
+bool EofToken::_isBinaryOperator() { return false; }
+bool EofToken::_isPostfixOperator() { return false; }
+
+bool InvalidToken::_isEofToken() { return false; }
+bool InvalidToken::_isInvalidToken() { return true; }
+bool InvalidToken::_isIdentifier() { return false; }
+bool InvalidToken::_isLiteral() { return false; }
+bool InvalidToken::_isStringLiteral() { return false; }
+bool InvalidToken::_isNumericLiteral() { return false; }
+bool InvalidToken::_isPunctuation() { return false; }
+bool InvalidToken::_isOperator() { return false; }
+bool InvalidToken::_isPrefixOperator() { return false; }
+bool InvalidToken::_isBinaryOperator() { return false; }
+bool InvalidToken::_isPostfixOperator() { return false; }
     
 Identifier::Identifier(String& name)
 : name(name) {
 }
 
-bool EofToken::_isPunctuation()     { return false; }
-bool EofToken::_isIdentifier()      { return false; }
-bool EofToken::_isOperator()        { return false; }
-bool EofToken::_isPrefixOperator()  { return false; }
-bool EofToken::_isBinaryOperator()  { return false; }
-bool EofToken::_isPostfixOperator() { return false; }
-bool EofToken::_isLiteral()         { return false; }
-
-bool InvalidToken::_isPunctuation()     { return false; }
-bool InvalidToken::_isIdentifier()      { return false; }
-bool InvalidToken::_isOperator()        { return false; }
-bool InvalidToken::_isPrefixOperator()  { return false; }
-bool InvalidToken::_isBinaryOperator()  { return false; }
-bool InvalidToken::_isPostfixOperator() { return false; }
-bool InvalidToken::_isLiteral()         { return false; }
-
-bool Identifier::_isPunctuation()     { return false; }
-bool Identifier::_isIdentifier()      { return true;  }
-bool Identifier::_isOperator()        { return false; }
-bool Identifier::_isPrefixOperator()  { return false; }
-bool Identifier::_isBinaryOperator()  { return false; }
+bool Identifier::_isEofToken() { return false; }
+bool Identifier::_isInvalidToken() { return false; }
+bool Identifier::_isIdentifier() { return true; }
+bool Identifier::_isLiteral() { return false; }
+bool Identifier::_isStringLiteral() { return false; }
+bool Identifier::_isNumericLiteral() { return false; }
+bool Identifier::_isPunctuation() { return false; }
+bool Identifier::_isOperator() { return false; }
+bool Identifier::_isPrefixOperator() { return false; }
+bool Identifier::_isBinaryOperator() { return false; }
 bool Identifier::_isPostfixOperator() { return false; }
-bool Identifier::_isLiteral()         { return false; }
 
-bool Literal::_isPunctuation()     { return false; }
-bool Literal::_isIdentifier()      { return false; }
-bool Literal::_isOperator()        { return false; }
-bool Literal::_isPrefixOperator()  { return false; }
-bool Literal::_isBinaryOperator()  { return false; }
+bool Literal::_isEofToken() { return false; }
+bool Literal::_isInvalidToken() { return false; }
+bool Literal::_isIdentifier() { return false; }
+bool Literal::_isLiteral() { return true; }
+bool Literal::_isStringLiteral() { return false; }
+bool Literal::_isNumericLiteral() { return false; }
+bool Literal::_isPunctuation() { return false; }
+bool Literal::_isOperator() { return false; }
+bool Literal::_isPrefixOperator() { return false; }
+bool Literal::_isBinaryOperator() { return false; }
 bool Literal::_isPostfixOperator() { return false; }
-bool Literal::_isLiteral()         { return true;  }
 
 StringLiteral::StringLiteral(String& literal)
 : string(literal) {
 }
 
+bool StringLiteral::_isEofToken() { return false; }
+bool StringLiteral::_isInvalidToken() { return false; }
+bool StringLiteral::_isIdentifier() { return false; }
+bool StringLiteral::_isStringLiteral() { return true; }
+bool StringLiteral::_isNumericLiteral() { return false; }
+bool StringLiteral::_isPunctuation() { return false; }
+bool StringLiteral::_isOperator() { return false; }
+bool StringLiteral::_isPrefixOperator() { return false; }
+bool StringLiteral::_isBinaryOperator() { return false; }
+bool StringLiteral::_isPostfixOperator() { return false; }
+
 NumericLiteral::NumericLiteral(String& value)
 : value(value) {
 }
+
+bool NumericLiteral::_isEofToken() { return false; }
+bool NumericLiteral::_isInvalidToken() { return false; }
+bool NumericLiteral::_isIdentifier() { return false; }
+bool NumericLiteral::_isStringLiteral() { return false; }
+bool NumericLiteral::_isNumericLiteral() { return true; }
+bool NumericLiteral::_isPunctuation() { return false; }
+bool NumericLiteral::_isOperator() { return false; }
+bool NumericLiteral::_isPrefixOperator() { return false; }
+bool NumericLiteral::_isBinaryOperator() { return false; }
+bool NumericLiteral::_isPostfixOperator() { return false; }
 
 Punctuation::Punctuation(String& theString)
 : sign(theString) {
 }
 
-bool Punctuation::_isPunctuation()     { return true;  }
-bool Punctuation::_isIdentifier()      { return false; }
-bool Punctuation::_isOperator()        { return false; }
-bool Punctuation::_isPrefixOperator()  { return false; }
-bool Punctuation::_isBinaryOperator()  { return false; }
+bool Punctuation::_isEofToken() { return false; }
+bool Punctuation::_isInvalidToken() { return false; }
+bool Punctuation::_isIdentifier() { return false; }
+bool Punctuation::_isLiteral() { return false; }
+bool Punctuation::_isStringLiteral() { return false; }
+bool Punctuation::_isNumericLiteral() { return false; }
+bool Punctuation::_isPunctuation() { return true; }
+bool Punctuation::_isOperator() { return false; }
+bool Punctuation::_isPrefixOperator() { return false; }
+bool Punctuation::_isBinaryOperator() { return false; }
 bool Punctuation::_isPostfixOperator() { return false; }
-bool Punctuation::_isLiteral()         { return false; }
 
 Operator::Operator(String& theOperation)
 : operation(theOperation) {
 }
 
-bool Operator::_isPunctuation()     { return false; }
-bool Operator::_isIdentifier()      { return false; }
-bool Operator::_isOperator()        { return true;  }
-bool Operator::_isLiteral()         { return false; }
+bool Operator::_isEofToken() { return false; }
+bool Operator::_isInvalidToken() { return false; }
+bool Operator::_isIdentifier() { return false; }
+bool Operator::_isLiteral() { return false; }
+bool Operator::_isStringLiteral() { return false; }
+bool Operator::_isNumericLiteral() { return false; }
+bool Operator::_isPunctuation() { return false; }
+bool Operator::_isOperator() { return true; }
+bool Operator::_isPrefixOperator() { return false; }
+bool Operator::_isBinaryOperator() { return false; }
+bool Operator::_isPostfixOperator() { return false; }
 
 PrefixOperator::PrefixOperator(String& theOperation)
 : Operator(theOperation) {
 }
 
-bool PrefixOperator::_isPrefixOperator()  { return true;  }
-bool PrefixOperator::_isBinaryOperator()  { return false; }
+bool PrefixOperator::_isEofToken() { return false; }
+bool PrefixOperator::_isInvalidToken() { return false; }
+bool PrefixOperator::_isIdentifier() { return false; }
+bool PrefixOperator::_isLiteral() { return false; }
+bool PrefixOperator::_isStringLiteral() { return false; }
+bool PrefixOperator::_isNumericLiteral() { return false; }
+bool PrefixOperator::_isPunctuation() { return false; }
+bool PrefixOperator::_isPrefixOperator() { return true; }
+bool PrefixOperator::_isBinaryOperator() { return false; }
 bool PrefixOperator::_isPostfixOperator() { return false; }
 
 BinaryOperator::BinaryOperator(String& theOperation)
 : Operator(theOperation) {
 }
 
-bool BinaryOperator::_isPrefixOperator()  { return false; }
-bool BinaryOperator::_isBinaryOperator()  { return true;  }
+bool BinaryOperator::_isEofToken() { return false; }
+bool BinaryOperator::_isInvalidToken() { return false; }
+bool BinaryOperator::_isIdentifier() { return false; }
+bool BinaryOperator::_isLiteral() { return false; }
+bool BinaryOperator::_isStringLiteral() { return false; }
+bool BinaryOperator::_isNumericLiteral() { return false; }
+bool BinaryOperator::_isPunctuation() { return false; }
+bool BinaryOperator::_isPrefixOperator() { return false; }
+bool BinaryOperator::_isBinaryOperator() { return true; }
 bool BinaryOperator::_isPostfixOperator() { return false; }
 
 PostfixOperator::PostfixOperator(String& theOperation)
 : Operator(theOperation) {
 }
 
-bool PostfixOperator::_isPrefixOperator()  { return false; }
-bool PostfixOperator::_isBinaryOperator()  { return false; }
-bool PostfixOperator::_isPostfixOperator() { return true;  }
+bool PostfixOperator::_isEofToken() { return false; }
+bool PostfixOperator::_isInvalidToken() { return false; }
+bool PostfixOperator::_isIdentifier() { return false; }
+bool PostfixOperator::_isLiteral() { return false; }
+bool PostfixOperator::_isStringLiteral() { return false; }
+bool PostfixOperator::_isNumericLiteral() { return false; }
+bool PostfixOperator::_isPunctuation() { return false; }
+bool PostfixOperator::_isPrefixOperator() { return false; }
+bool PostfixOperator::_isBinaryOperator() { return false; }
+bool PostfixOperator::_isPostfixOperator() { return true; }
 
 Lexer::Lexer(String& text)
 : token(0), whitespaceSkipped(true), text(text), length(text.getLength()),
