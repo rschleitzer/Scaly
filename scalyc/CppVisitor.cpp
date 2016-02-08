@@ -335,8 +335,7 @@ bool CppVisitor::openClassDeclaration(ClassDeclaration& classDeclaration) {
         (*headerFile) += "Object";
     }
     (*headerFile) += " {\n";
-    if (classDeclaration.members)
-        (*headerFile) += "public:\n";
+    (*headerFile) += "public:\n";
         
     headerIndentLevel++;
 
