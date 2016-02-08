@@ -167,6 +167,7 @@ void CppVisitor::closeVariableDeclaration(VariableDeclaration& variableDeclarati
 }
 
 bool CppVisitor::openBindingInitializer(BindingInitializer& bindingInitializer) {
+    firstBindingInitializer = true;
     return true;
 }
 
@@ -174,6 +175,11 @@ void CppVisitor::closeBindingInitializer(BindingInitializer& bindingInitializer)
 }
 
 bool CppVisitor::openPatternInitializer(PatternInitializer& patternInitializer) {
+    if (!firstBindingInitializer)
+        (*headerFile) += ", ";
+    else
+        firstBindingInitializer = false;
+        
     return true;
 }
 
@@ -227,6 +233,7 @@ void CppVisitor::closeFunctionResult(FunctionResult& functionResult) {
 
 bool CppVisitor::openParameterClause(ParameterClause& parameterClause) {
     (*headerFile) += "(";
+    firstParameter = true;
     return true;
 }
 
@@ -236,10 +243,20 @@ void CppVisitor::closeParameterClause(ParameterClause& parameterClause) {
 
 bool CppVisitor::openConstParameter(ConstParameter& constParameter) {
     constParameterName = constParameter.name;
-    return true;
+    if (!firstParameter)
+        (*headerFile) += ", ";
+    else
+        firstParameter = false;
+        
+    constParameter.type->accept(*this);
+    (*headerFile) += " ";
+    (*headerFile) += *constParameter.name;
+    
+    return false;
 }
 
 void CppVisitor::closeConstParameter(ConstParameter& constParameter) {
+    (*headerFile) += *constParameterName;
     constParameterName = 0;
 }
 
@@ -584,7 +601,12 @@ void CppVisitor::visitWildcardPattern(WildcardPattern& wildcardPattern) {
 
 bool CppVisitor::openIdentifierPattern(IdentifierPattern& identifierPattern) {
     identifierPatternIdentifier = identifierPattern.identifier;
-    return true;
+    if (identifierPattern.typeAnnotation) {
+        identifierPattern.typeAnnotation->accept(*this);
+        (*headerFile) += " ";
+    }
+    (*headerFile) += *identifierPattern.identifier;
+    return false;
 }
 
 void CppVisitor::closeIdentifierPattern(IdentifierPattern& identifierPattern) {
@@ -684,7 +706,18 @@ void CppVisitor::closeTypeAnnotation(TypeAnnotation& typeAnnotation) {
 
 bool CppVisitor::openTypeIdentifier(TypeIdentifier& typeIdentifier) {
     typeIdentifierName = typeIdentifier.name;
+    
+    (*headerFile) += getCppType(typeIdentifierName);
     return true;
+}
+
+const char* CppVisitor::getCppType(String* typeIdentifierName) {
+    const char* typeIdentifier = typeIdentifierName->getNativeString();
+    
+    if ((*typeIdentifierName) == "unsigned")
+        return "size_t";
+    
+    return typeIdentifier;
 }
 
 void CppVisitor::closeTypeIdentifier(TypeIdentifier& typeIdentifier) {

@@ -14,9 +14,13 @@ private:
     String* headerFile;
     size_t headerIndentLevel;
     size_t sourceIndentLevel;
+    bool firstParameter;
+    bool firstBindingInitializer;
     
     void buildProjectFileString(String& projectFile, Program& program);
     void buildMainHeaderFileString(String& projectFile, Program& program);
+    const char* getCppType(String* typeIdentifierName);
+
     
 public:
     virtual bool openProgram(Program& program);
