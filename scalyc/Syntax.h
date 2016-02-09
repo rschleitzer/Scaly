@@ -44,8 +44,6 @@ public:
     Statement(Position start, Position end);
 
     virtual void accept(SyntaxVisitor& visitor) = 0;
-    
-    virtual bool _isClassDeclaration();
 };
 
 class Declaration : public Statement {
@@ -308,8 +306,6 @@ public:
     GenericArgumentClause* genericArgumentClause;
     TypeInheritanceClause* typeInheritanceClause;
     Array<ClassMember>* members;
-
-    virtual bool _isClassDeclaration();
 };
 
 class GenericArgumentClause : public SyntaxNode {

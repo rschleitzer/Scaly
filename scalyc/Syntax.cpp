@@ -58,8 +58,6 @@ Statement::Statement(Position start, Position end)
 : SyntaxNode(start, end) {
 }
 
-bool Statement::_isClassDeclaration() { return false; }
-
 Declaration::Declaration(Position start, Position end)
 : Statement(start, end) {
 }
@@ -432,8 +430,6 @@ void AdditionalCase::accept(SyntaxVisitor& visitor) {
 ClassDeclaration::ClassDeclaration(Position start, Position end)
 : Declaration(start, end) {
 }
-
-bool ClassDeclaration::_isClassDeclaration() { return true; }
 
 void ClassDeclaration::accept(SyntaxVisitor& visitor) {
     if (!visitor.openClassDeclaration(*this))
