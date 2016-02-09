@@ -53,6 +53,7 @@ bool CppVisitor::openProgram(Program& program) {
         }
         
         inherits = new(getPage()) Array<Inherits>();
+        classes = new(getPage()) Array<String>();
         collectInheritances(program);
     }
     
@@ -79,6 +80,7 @@ void CppVisitor::collectInheritancesInCompilationUnit(CompilationUnit& compilati
             if (statementWithSemicolon.statement) {
                 if (statementWithSemicolon.statement->_isClassDeclaration()) {
                     ClassDeclaration& classDeclaration = *(ClassDeclaration*)statementWithSemicolon.statement;
+                    classes->append(classDeclaration.name);
                     if (classDeclaration.typeInheritanceClause) {
                         TypeInheritanceClause& inheritanceClause = *classDeclaration.typeInheritanceClause;
                         if (inheritanceClause.inheritances) {
@@ -306,8 +308,28 @@ bool CppVisitor::openConstParameter(ConstParameter& constParameter) {
         firstParameter = false;
         
     constParameter.type->accept(*this);
+    if (constParameter.type->_isTypeIdentifier()) {
+        TypeIdentifier& typeIdentifier = *(TypeIdentifier*)constParameter.type;
+        if (isClass(*typeIdentifier.name)) {
+            (*headerFile) += "&";
+        }
+    }
+        
     (*headerFile) += " ";
     (*headerFile) += *constParameter.name;
+    
+    return false;
+}
+
+bool CppVisitor::isClass(String& name) {
+    if (name == "String")
+        return true;
+        
+    size_t _classes_length = classes->length();
+    for (size_t _i = 0; _i < _classes_length; _i++) {
+        if (**(*classes)[_i] == name)
+            return true;
+    }
     
     return false;
 }

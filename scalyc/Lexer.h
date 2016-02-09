@@ -39,7 +39,7 @@ public:
 class Identifier : public Token {
 public:
     Identifier(String& name);
-    String& name;
+    String* name;
 
     virtual bool _isIdentifier();
 };

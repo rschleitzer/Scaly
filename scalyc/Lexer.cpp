@@ -22,8 +22,8 @@ bool EofToken::_isEofToken() { return true; }
 
 bool InvalidToken::_isInvalidToken() { return true; }
     
-Identifier::Identifier(String& name)
-: name(name) {
+Identifier::Identifier(String& name) {
+    this->name = new(getPage()) String(name);
 }
 
 bool Identifier::_isIdentifier() { return true; }
@@ -234,22 +234,25 @@ void Lexer::advance() {
 
 Identifier& Lexer::scanIdentifier(_Page* _rp) {    
     // Make a String taking the character at the current position
-    String& name = *new(_rp) String(text[position]);
+    {
+        _Region _region; _Page* _p = _region.get();
+        String& name = *new(_p) String(text[position]);
 
-    do {
-        position++; column++;
-        
-        if (position == end) {
-            return *new(_rp) Identifier(name);
-        }
-        
-        char c = text[position];
-        if (((c >= 'a') && (c <= 'z')) || ((c >= 'A') && (c <= 'Z')) || (c == '_'))
-            name += text[position];
-        else
-            return *new(_rp) Identifier(name);
-    }            
-    while (true);
+        do {
+            position++; column++;
+            
+            if (position == end) {
+                return *new(_rp) Identifier(name);
+            }
+            
+            char c = text[position];
+            if (((c >= 'a') && (c <= 'z')) || ((c >= 'A') && (c <= 'Z')) || (c == '_'))
+                name += text[position];
+            else
+                return *new(_rp) Identifier(name);
+        }            
+        while (true);
+    }
 }
 
 Operator& Lexer::scanOperator(_Page* _rp, bool includeDots) {
@@ -515,7 +518,7 @@ bool Lexer::parseKeyword(const char* fixedString) {
         return false;
 
     Identifier* identifier = (Identifier*)token;
-    return identifier->name == fixedString;
+    return *identifier->name == fixedString;
 }
 
 String* Lexer::parseIdentifier(_Page* _rp) {
@@ -523,7 +526,7 @@ String* Lexer::parseIdentifier(_Page* _rp) {
         return 0;
     
     Identifier* identifier = (Identifier*)token;
-    return new(_rp) String(identifier->name);
+    return new(_rp) String(*identifier->name);
 }
 
 bool Lexer::parsePunctuation(const char* fixedString) {
