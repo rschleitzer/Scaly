@@ -400,10 +400,47 @@ bool CppVisitor::openClassDeclaration(ClassDeclaration& classDeclaration) {
 }
 
 void CppVisitor::closeClassDeclaration(ClassDeclaration& classDeclaration) {
-    (*headerFile) += "};\n";
-    
+    if (classDeclaration.typeInheritanceClause) {
+        for (size_t j = 0; j < headerIndentLevel; j++)
+            (*headerFile) += "    ";
+        (*headerFile) += "virtual bool _is";
+        (*headerFile) += *classDeclarationName;
+        (*headerFile) += "();\n";
+    }
+    {
+        _Region _region; _Page* _p = _region.get();
+        Array<String>& derivedClasses = *new(_p) Array<String>();
+        collectDerivedClasses(derivedClasses, *classDeclarationName);
+        size_t _derivedClasses_length = derivedClasses.length();
+        for (size_t _i = 0; _i < _derivedClasses_length; _i++) {
+            for (size_t j = 0; j < headerIndentLevel; j++)
+                (*headerFile) += "    ";
+            (*headerFile) += "virtual bool _is";
+            (*headerFile) += **derivedClasses[_i];
+            (*headerFile) += "();\n";
+        }
+    }
+
     headerIndentLevel--;
     classDeclarationName = 0;
+    (*headerFile) += "};\n";
+}
+
+void CppVisitor::collectDerivedClasses(Array<String>& derivedClasses, String& className) {
+    size_t _inherits_length = inherits->length();
+    for (size_t _i = 0; _i < _inherits_length; _i++) {
+        if (*(*(*inherits)[_i])->name == className)
+            appendDerivedClasses(derivedClasses, *(*(*inherits)[_i])->inheritors);
+    }
+}
+
+void CppVisitor::appendDerivedClasses(Array<String>& derivedClasses, Array<String>& inheritors) {
+    size_t _inheritors_length = inheritors.length();
+    for (size_t _i = 0; _i < _inheritors_length; _i++) {
+        String& derivedClass = **inheritors[_i];
+        derivedClasses.append(&derivedClass);
+        collectDerivedClasses(derivedClasses, derivedClass);
+    }    
 }
 
 bool CppVisitor::openGenericArgumentClause(GenericArgumentClause& genericArgumentClause) {
@@ -805,7 +842,7 @@ void CppVisitor::closeTypeInheritanceClause(TypeInheritanceClause& typeInheritan
 }
 
 bool CppVisitor::openInheritance(Inheritance& inheritance) {
-    return true;
+    return false;
 }
 
 void CppVisitor::closeInheritance(Inheritance& inheritance) {

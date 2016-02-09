@@ -47,6 +47,8 @@ public:
 class Literal : public Token {
 public:
     virtual bool _isLiteral();
+    virtual bool _isStringLiteral();
+    virtual bool _isNumericLiteral();
 };
 
 class StringLiteral : public Literal {

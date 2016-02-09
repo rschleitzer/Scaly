@@ -30,6 +30,8 @@ private:
     void collectInheritances(Program& program);
     void collectInheritancesInCompilationUnit(CompilationUnit& compilationUnit);
     void registerInheritance(String& className, String& baseName);
+    void collectDerivedClasses(Array<String>& derivedClasses, String& className);
+    void appendDerivedClasses(Array<String>& derivedClasses, Array<String>& inheritors);
     const char* getCppType(String* typeIdentifierName);
     
 public:

@@ -29,6 +29,8 @@ Identifier::Identifier(String& name)
 bool Identifier::_isIdentifier() { return true; }
 
 bool Literal::_isLiteral() { return true; }
+bool Literal::_isStringLiteral() { return false; }
+bool Literal::_isNumericLiteral() { return false; }
 
 StringLiteral::StringLiteral(String& literal)
 : string(literal) {
