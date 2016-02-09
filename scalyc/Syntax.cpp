@@ -58,13 +58,30 @@ Statement::Statement(Position start, Position end)
 : SyntaxNode(start, end) {
 }
 
+bool Statement::_isDeclaration() { return false; }
+bool Statement::_isUseDeclaration() { return false; }
+bool Statement::_isConstantDeclaration() { return false; }
+bool Statement::_isVariableDeclaration() { return false; }
+bool Statement::_isFunctionDeclaration() { return false; }
+bool Statement::_isEnumDeclaration() { return false; }
+bool Statement::_isClassDeclaration() { return false; }
+bool Statement::_isInitializerDeclaration() { return false; }
+bool Statement::_isExpression() { return false; }
+bool Statement::_isSimpleExpression() { return false; }
+bool Statement::_isCodeBlock() { return false; }
+
+
 Declaration::Declaration(Position start, Position end)
 : Statement(start, end) {
 }
 
+bool Declaration::_isDeclaration() { return true; }
+
 UseDeclaration::UseDeclaration(Position start, Position end)
 : Declaration(start, end) {
 }
+
+bool UseDeclaration::_isUseDeclaration() { return true; }
 
 void UseDeclaration::accept(SyntaxVisitor& visitor) {
     if (!visitor.openUseDeclaration(*this))
@@ -116,6 +133,8 @@ ConstantDeclaration::ConstantDeclaration(Position start, Position end)
 : Declaration(start, end) {
 }
 
+bool ConstantDeclaration::_isConstantDeclaration() { return true; }
+
 void ConstantDeclaration::accept(SyntaxVisitor& visitor) {
     if (!visitor.openConstantDeclaration(*this))
         return;
@@ -126,6 +145,8 @@ void ConstantDeclaration::accept(SyntaxVisitor& visitor) {
 VariableDeclaration::VariableDeclaration(Position start, Position end)
 : Declaration(start, end) {
 }
+
+bool VariableDeclaration::_isVariableDeclaration() { return true; }
 
 void VariableDeclaration::accept(SyntaxVisitor& visitor) {
     if (!visitor.openVariableDeclaration(*this))
@@ -182,6 +203,8 @@ FunctionDeclaration::FunctionDeclaration(Position start, Position end)
 : Declaration(start, end) {
 }
 
+bool FunctionDeclaration::_isFunctionDeclaration() { return true; }
+
 void FunctionDeclaration::accept(SyntaxVisitor& visitor) {
     if (!visitor.openFunctionDeclaration(*this))
         return;
@@ -203,6 +226,8 @@ void FunctionDeclaration::accept(SyntaxVisitor& visitor) {
 InitializerDeclaration::InitializerDeclaration(Position start, Position end)
 : Declaration(start, end) {
 }
+
+bool InitializerDeclaration::_isInitializerDeclaration() { return true; }
 
 void InitializerDeclaration::accept(SyntaxVisitor& visitor) {
     if (!visitor.openInitializerDeclaration(*this))
@@ -341,6 +366,8 @@ EnumDeclaration::EnumDeclaration(Position start, Position end)
 : Declaration(start, end) {
 }
 
+bool EnumDeclaration::_isEnumDeclaration() { return true; }
+
 void EnumDeclaration::accept(SyntaxVisitor& visitor) {
     if (!visitor.openEnumDeclaration(*this))
         return;
@@ -431,6 +458,8 @@ ClassDeclaration::ClassDeclaration(Position start, Position end)
 : Declaration(start, end) {
 }
 
+bool ClassDeclaration::_isClassDeclaration() { return true; }
+
 void ClassDeclaration::accept(SyntaxVisitor& visitor) {
     if (!visitor.openClassDeclaration(*this))
         return;
@@ -491,9 +520,13 @@ Expression::Expression(Position start, Position end)
 : Statement(start, end) {
 }
 
+bool Expression::_isExpression() { return true; }
+
 CodeBlock::CodeBlock(Position start, Position end)
 : Expression(start, end) {
 }
+
+bool CodeBlock::_isCodeBlock() { return true; }
 
 void CodeBlock::accept(SyntaxVisitor& visitor) {
     if (!visitor.openCodeBlock(*this))
@@ -512,6 +545,8 @@ void CodeBlock::accept(SyntaxVisitor& visitor) {
 SimpleExpression::SimpleExpression(Position start, Position end)
 : Expression(start, end) {
 }
+
+bool SimpleExpression::_isSimpleExpression() { return true; }
 
 void SimpleExpression::accept(SyntaxVisitor& visitor) {
     if (!visitor.openSimpleExpression(*this))

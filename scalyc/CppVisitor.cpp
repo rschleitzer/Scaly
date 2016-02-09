@@ -77,10 +77,10 @@ void CppVisitor::searchClassNamesInCompilationUnit(Array<String>& classNames, Co
         for (size_t _i = 0; _i < _statements_length; _i++) {
             StatementWithSemicolon& statementWithSemicolon = **statements[_i];
             if (statementWithSemicolon.statement) {
-//                if (statementWithSemicolon.statement->_isClassDeclaration()) {
-//                    ClassDeclaration& classDeclaration = *(ClassDeclaration*)statementWithSemicolon.statement;
-//                    classNames.append(classDeclaration.name);
-//                }
+                if (statementWithSemicolon.statement->_isClassDeclaration()) {
+                    ClassDeclaration& classDeclaration = *(ClassDeclaration*)statementWithSemicolon.statement;
+                    classNames.append(classDeclaration.name);
+                }
             }
         }
     }

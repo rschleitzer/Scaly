@@ -44,6 +44,18 @@ public:
     Statement(Position start, Position end);
 
     virtual void accept(SyntaxVisitor& visitor) = 0;
+
+    virtual bool _isDeclaration();
+    virtual bool _isUseDeclaration();
+    virtual bool _isConstantDeclaration();
+    virtual bool _isVariableDeclaration();
+    virtual bool _isFunctionDeclaration();
+    virtual bool _isEnumDeclaration();
+    virtual bool _isClassDeclaration();
+    virtual bool _isInitializerDeclaration();
+    virtual bool _isExpression();
+    virtual bool _isSimpleExpression();
+    virtual bool _isCodeBlock();
 };
 
 class Declaration : public Statement {
@@ -51,6 +63,8 @@ public:
     Declaration(Position start, Position end);
 
     virtual void accept(SyntaxVisitor& visitor) = 0;
+
+    virtual bool _isDeclaration();
 };
 
 class UseDeclaration : public Declaration {
@@ -60,6 +74,8 @@ public:
     virtual void accept(SyntaxVisitor& visitor);
     PathItem* importModule;
     Array<PathIdentifier>* importExtensions;
+
+    virtual bool _isUseDeclaration();
 };
 
 class PathIdentifier : public SyntaxNode {
@@ -92,6 +108,8 @@ public:
 
     virtual void accept(SyntaxVisitor& visitor);
     BindingInitializer* initializer;
+
+    virtual bool _isConstantDeclaration();
 };
 
 class VariableDeclaration : public Declaration {
@@ -100,6 +118,8 @@ public:
 
     virtual void accept(SyntaxVisitor& visitor);
     BindingInitializer* initializer;
+
+    virtual bool _isVariableDeclaration();
 };
 
 class BindingInitializer : public SyntaxNode {
@@ -137,6 +157,8 @@ public:
     FunctionName* name;
     FunctionSignature* signature;
     Expression* body;
+
+    virtual bool _isFunctionDeclaration();
 };
 
 class InitializerDeclaration : public Declaration {
@@ -148,6 +170,8 @@ public:
     ParameterClause* parameterClause;
     ThrowsClause* throwsClause;
     Expression* body;
+
+    virtual bool _isInitializerDeclaration();
 };
 
 class Modifier : public SyntaxNode {
@@ -252,6 +276,8 @@ public:
     virtual void accept(SyntaxVisitor& visitor);
     String* name;
     Array<EnumMember>* members;
+
+    virtual bool _isEnumDeclaration();
 };
 
 class EnumMember : public SyntaxNode {
@@ -306,6 +332,8 @@ public:
     GenericArgumentClause* genericArgumentClause;
     TypeInheritanceClause* typeInheritanceClause;
     Array<ClassMember>* members;
+
+    virtual bool _isClassDeclaration();
 };
 
 class GenericArgumentClause : public SyntaxNode {
@@ -337,6 +365,8 @@ public:
     Expression(Position start, Position end);
 
     virtual void accept(SyntaxVisitor& visitor) = 0;
+
+    virtual bool _isExpression();
 };
 
 class CodeBlock : public Expression {
@@ -345,6 +375,8 @@ public:
 
     virtual void accept(SyntaxVisitor& visitor);
     Array<StatementWithSemicolon>* statements;
+
+    virtual bool _isCodeBlock();
 };
 
 class SimpleExpression : public Expression {
@@ -354,6 +386,8 @@ public:
     virtual void accept(SyntaxVisitor& visitor);
     PrefixExpression* prefixExpression;
     Array<BinaryOp>* binaryOps;
+
+    virtual bool _isSimpleExpression();
 };
 
 class PrefixExpression : public SyntaxNode {
