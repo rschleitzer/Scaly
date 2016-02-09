@@ -130,12 +130,36 @@ public:
 "
             "")
         )))
+        (if (abstract? syntax-node) ($
+"
+"           (apply-to-nodelist (inheritors syntax-node) (lambda (inheritor) ($
+"    virtual bool _is"(attribute-string "link" inheritor)"();
+"           )))
+        )"")
+        (if (base syntax-node) ($
+"
+    virtual bool _is"(id syntax-node)"();
+"       )"")
 "};
 "   )))
 "
 }
 #endif // __scalyc__Syntax__
 "))
+
+(define (inheritors node)
+    (if (abstract? node) (node-list-union
+        (children node)
+        (apply node-list-union 
+            (map inheritors
+                (node-list->list
+                    (node-list-map
+                        (lambda (content-node)
+                            (element-with-id (link content-node))
+                        )
+                        (children node)))))
+    )(empty-node-list))
+)
 
 (define (syntax-cpp) ($
 
@@ -152,7 +176,17 @@ SyntaxNode::SyntaxNode(Position start, Position end)
 "(id syntax-node)"::"(id syntax-node)"("(if (program? syntax-node) "" "Position start, Position end")")
 : "(if (base syntax-node) (base syntax-node) "SyntaxNode")"("(if (program? syntax-node) "Position(0, 0), Position(0, 0)" "start, end")") {
 }
-"       (if (abstract? syntax-node) "" ($
+"        (if (abstract? syntax-node) ($
+"
+"           (apply-to-nodelist (inheritors syntax-node) (lambda (inheritor) ($
+"bool "(id syntax-node)"::_is"(attribute-string "link" inheritor)"() { return false; }
+"           )))
+        )"")
+        (if (base syntax-node) ($
+"
+bool "(id syntax-node)"::_is"(id syntax-node)"() { return true; }
+"       )"")
+       (if (abstract? syntax-node) "" ($
 "
 void "(id syntax-node)"::accept(SyntaxVisitor& visitor) {
 "
