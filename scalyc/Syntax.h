@@ -1164,7 +1164,7 @@ public:
     Inheritance(Position start, Position end);
 
     virtual void accept(SyntaxVisitor& visitor);
-    TypeIdentifier* name;
+    TypeIdentifier* typeIdentifier;
 };
 
 }

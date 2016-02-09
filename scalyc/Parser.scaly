@@ -3747,7 +3747,7 @@ class Parser {
             if ret == null
                 ret = Inheritance(start, lexer.getPosition())
 
-            ret.name = node
+            ret.typeIdentifier = node
         }
         {
             let start: Position = lexer.getPosition()

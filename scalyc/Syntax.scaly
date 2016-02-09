@@ -1850,9 +1850,9 @@ class Inheritance : SyntaxNode {
 
     function accept(mutable visitor: SyntaxVisitor) {
         visitor.openInheritance(this)
-        name!.accept(visitor)
+        typeIdentifier!.accept(visitor)
         visitor.closeInheritance(this)
     }
 
-    let name: TypeIdentifier?
+    let typeIdentifier: TypeIdentifier?
 }

@@ -503,7 +503,7 @@
         <content link = Inheritance        multiple optional    property = inheritances
 
     <syntax id = Inheritance               multiple
-        <content link = TypeIdentifier                          property = name
+        <content link = TypeIdentifier                          property = typeIdentifier
         <content link = comma                       optional
 
     <keyword id = use

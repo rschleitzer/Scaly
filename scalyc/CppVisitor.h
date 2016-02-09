@@ -28,7 +28,8 @@ private:
     void buildProjectFileString(String& projectFile, Program& program);
     void buildMainHeaderFileString(String& projectFile, Program& program);
     void collectInheritances(Program& program);
-    void searchClassNamesInCompilationUnit(Array<String>& classNames, CompilationUnit& compilationUnit);
+    void collectInheritancesInCompilationUnit(CompilationUnit& compilationUnit);
+    void registerInheritance(String& className, String& baseName);
     const char* getCppType(String* typeIdentifierName);
     
 public:

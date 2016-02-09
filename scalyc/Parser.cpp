@@ -4306,7 +4306,7 @@ _Result<Inheritance, ParserError> Parser::parseInheritance(_Page* _rp, _Page* _e
             if (!ret)
                 ret = new(_rp) Inheritance(start, lexer.getPosition());
 
-            ret->name = result.getResult();
+            ret->typeIdentifier = result.getResult();
         }
         else {
             return _Result<Inheritance, ParserError>(result.getError());

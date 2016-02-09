@@ -1542,7 +1542,7 @@ Inheritance::Inheritance(Position start, Position end)
 void Inheritance::accept(SyntaxVisitor& visitor) {
     if (!visitor.openInheritance(*this))
         return;
-    name->accept(visitor);
+    typeIdentifier->accept(visitor);
     visitor.closeInheritance(*this);
 }
 

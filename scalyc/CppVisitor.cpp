@@ -52,6 +52,7 @@ bool CppVisitor::openProgram(Program& program) {
             }
         }
         
+        inherits = new(getPage()) Array<Inherits>();
         collectInheritances(program);
     }
     
@@ -60,17 +61,16 @@ bool CppVisitor::openProgram(Program& program) {
 
 void CppVisitor::collectInheritances(Program& program) {
     inherits = new(getPage()) Array<Inherits>();
-    Array<String>& classNames = *new(getPage()) Array<String>();
     if (program.compilationUnits) {
         Array<CompilationUnit>& compilationUnits = *program.compilationUnits;
         size_t _compilationUnits_length = compilationUnits.length();
         for (size_t _i = 0; _i < _compilationUnits_length; _i++) {
-            searchClassNamesInCompilationUnit(classNames, **compilationUnits[_i]);
+            collectInheritancesInCompilationUnit(**compilationUnits[_i]);
         }
     }
 }
 
-void CppVisitor::searchClassNamesInCompilationUnit(Array<String>& classNames, CompilationUnit& compilationUnit) {
+void CppVisitor::collectInheritancesInCompilationUnit(CompilationUnit& compilationUnit) {
     if (compilationUnit.statements) {
         Array<StatementWithSemicolon>& statements = *compilationUnit.statements;
         size_t _statements_length = statements.length();
@@ -79,11 +79,37 @@ void CppVisitor::searchClassNamesInCompilationUnit(Array<String>& classNames, Co
             if (statementWithSemicolon.statement) {
                 if (statementWithSemicolon.statement->_isClassDeclaration()) {
                     ClassDeclaration& classDeclaration = *(ClassDeclaration*)statementWithSemicolon.statement;
-                    classNames.append(classDeclaration.name);
+                    if (classDeclaration.typeInheritanceClause) {
+                        TypeInheritanceClause& inheritanceClause = *classDeclaration.typeInheritanceClause;
+                        if (inheritanceClause.inheritances) {
+                            Array<Inheritance>& inheritances = *inheritanceClause.inheritances;
+                            size_t _inheritances_length = inheritances.length();
+                            for (size_t _j = 0; _j < _inheritances_length; _j++) {
+                                Inheritance& inheritance = **inheritances[_j];
+                                registerInheritance(*classDeclaration.name, *inheritance.typeIdentifier->name);
+                            }
+                        }
+                    }
                 }
             }
         }
     }
+}
+
+void CppVisitor::registerInheritance(String& className, String& baseName) {
+    size_t _inherits_length = inherits->length();
+    Inherits* inherit = 0;
+    for (size_t _i = 0; _i < _inherits_length; _i++) {
+        Inherits* inh = *(*inherits)[_i];
+        if (*inh->name == baseName) {
+            inherit = inh;
+        }
+    }
+    if (!inherit) {
+        inherit = new(getPage()) Inherits(baseName);
+        inherits->append(inherit);
+    }
+    inherit->inheritors->append(&className);
 }
 
 
@@ -358,7 +384,7 @@ bool CppVisitor::openClassDeclaration(ClassDeclaration& classDeclaration) {
         for (size_t _i = 0; _i < noOfInheritanceClauses; _i++) {
             if (_i > 0)
                 (*headerFile) += ", ";
-            TypeIdentifier* typeIdentifier = (*(*classDeclaration.typeInheritanceClause->inheritances)[_i])->name;
+            TypeIdentifier* typeIdentifier = (*(*classDeclaration.typeInheritanceClause->inheritances)[_i])->typeIdentifier;
             (*headerFile) += *typeIdentifier->name;
         }
     }
