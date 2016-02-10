@@ -125,6 +125,8 @@ bool CppVisitor::openCompilationUnit(CompilationUnit& compilationUnit) {
     moduleName = Path::getFileNameWithoutExtension(getPage(), *compilationUnit.fileName);
     headerIndentLevel = 0;
     sourceIndentLevel = 0;
+    declaringClassMember = false;
+    inParameterClause = false;
     
     // Build and write the header file
     if (*moduleName != *programName) {
@@ -142,7 +144,7 @@ bool CppVisitor::openCompilationUnit(CompilationUnit& compilationUnit) {
         (*headerFile) += *programName;
         (*headerFile) += ".h\"\nusing namespace scaly;\nnamespace ";
         (*headerFile) += *programName;
-        (*headerFile) += " {\n";
+        (*headerFile) += " {";
     }
     
     // Begin cpp file
@@ -165,7 +167,7 @@ void CppVisitor::closeCompilationUnit(CompilationUnit& compilationUnit) {
     outputFilePath += *Path::getFileNameWithoutExtension(_p, *compilationUnit.fileName);
 
     if (*moduleName != *programName) {
-        (*headerFile) += "\n}\n#endif // __scaly__";
+        (*headerFile) += "\n\n}\n#endif // __scaly__";
         (*headerFile) += *moduleName;
         (*headerFile) += "__\n";
         String& headerFilePath = *new(_p) String(outputFilePath);
@@ -293,10 +295,12 @@ void CppVisitor::closeFunctionResult(FunctionResult& functionResult) {
 bool CppVisitor::openParameterClause(ParameterClause& parameterClause) {
     (*headerFile) += "(";
     firstParameter = true;
+    inParameterClause = true;
     return true;
 }
 
 void CppVisitor::closeParameterClause(ParameterClause& parameterClause) {
+    inParameterClause = false;
     (*headerFile) += ")";
 }
 
@@ -398,7 +402,7 @@ void CppVisitor::closeAdditionalCase(AdditionalCase& additionalCase) {
 bool CppVisitor::openClassDeclaration(ClassDeclaration& classDeclaration) {
     classDeclarationName = classDeclaration.name;
 
-    (*headerFile) += "\nclass ";
+    (*headerFile) += "\n\nclass ";
     (*headerFile) += *classDeclarationName;
     (*headerFile) += " : public ";
     if (classDeclaration.typeInheritanceClause) {
@@ -414,7 +418,7 @@ bool CppVisitor::openClassDeclaration(ClassDeclaration& classDeclaration) {
         (*headerFile) += "Object";
     }
     (*headerFile) += " {\n";
-    (*headerFile) += "public:\n";
+    (*headerFile) += "public:";
         
     headerIndentLevel++;
 
@@ -423,11 +427,7 @@ bool CppVisitor::openClassDeclaration(ClassDeclaration& classDeclaration) {
 
 void CppVisitor::closeClassDeclaration(ClassDeclaration& classDeclaration) {
     if (classDeclaration.typeInheritanceClause) {
-        for (size_t j = 0; j < headerIndentLevel; j++)
-            (*headerFile) += "    ";
-        (*headerFile) += "virtual bool _is";
-        (*headerFile) += *classDeclarationName;
-        (*headerFile) += "();\n";
+        (*headerFile) += "\n"; indentHeader(); (*headerFile) += "virtual bool _is"; (*headerFile) += *classDeclarationName; (*headerFile) += "();";
     }
     {
         _Region _region; _Page* _p = _region.get();
@@ -435,17 +435,18 @@ void CppVisitor::closeClassDeclaration(ClassDeclaration& classDeclaration) {
         collectDerivedClasses(derivedClasses, *classDeclarationName);
         size_t _derivedClasses_length = derivedClasses.length();
         for (size_t _i = 0; _i < _derivedClasses_length; _i++) {
-            for (size_t j = 0; j < headerIndentLevel; j++)
-                (*headerFile) += "    ";
-            (*headerFile) += "virtual bool _is";
-            (*headerFile) += **derivedClasses[_i];
-            (*headerFile) += "();\n";
+            (*headerFile) += "\n"; indentHeader(); (*headerFile) += "virtual bool _is"; (*headerFile) += **derivedClasses[_i]; (*headerFile) += "();";
         }
     }
 
     headerIndentLevel--;
     classDeclarationName = 0;
-    (*headerFile) += "};\n";
+    (*headerFile) += "\n};";
+}
+
+void CppVisitor::indentHeader() {
+    for (size_t i = 0; i < headerIndentLevel; i++)
+        (*headerFile) += "    ";
 }
 
 void CppVisitor::collectDerivedClasses(Array<String>& derivedClasses, String& className) {
@@ -476,13 +477,15 @@ void CppVisitor::visitGenericParameter(GenericParameter& genericParameter) {
 }
 
 bool CppVisitor::openClassMember(ClassMember& classMember) {
-    for (size_t i = 0; i < headerIndentLevel; i++)
-        (*headerFile) += "    ";
+    (*headerFile) += "\n";
+    indentHeader();
+    declaringClassMember = true;
     return true;
 }
 
 void CppVisitor::closeClassMember(ClassMember& classMember) {
-    (*headerFile) += ";\n";
+    (*headerFile) += ";";
+    declaringClassMember = false;
 }
 
 bool CppVisitor::openCodeBlock(CodeBlock& codeBlock) {
@@ -823,6 +826,9 @@ bool CppVisitor::openTypeIdentifier(TypeIdentifier& typeIdentifier) {
     typeIdentifierName = typeIdentifier.name;
     
     (*headerFile) += getCppType(typeIdentifierName);
+    if ((!inParameterClause) && (isClass(*typeIdentifierName))) {
+        (*headerFile) += "*";
+    }
     return true;
 }
 

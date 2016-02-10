@@ -25,6 +25,8 @@ private:
     bool firstBindingInitializer;
     Array<Inherits>* inherits;
     Array<String>* classes;
+    bool declaringClassMember;
+    bool inParameterClause;
     
     void buildProjectFileString(String& projectFile, Program& program);
     void buildMainHeaderFileString(String& projectFile, Program& program);
@@ -35,6 +37,7 @@ private:
     void appendDerivedClasses(Array<String>& derivedClasses, Array<String>& inheritors);
     const char* getCppType(String* typeIdentifierName);
     bool isClass(String& name);
+    void indentHeader();
     
 public:
     virtual bool openProgram(Program& program);

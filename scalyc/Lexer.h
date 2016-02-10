@@ -40,7 +40,6 @@ class Identifier : public Token {
 public:
     Identifier(String& name);
     String* name;
-
     virtual bool _isIdentifier();
 };
 
@@ -55,7 +54,6 @@ class StringLiteral : public Literal {
 public:
     StringLiteral(String& theString);
     String& string;
-
     virtual bool _isStringLiteral();
 };
 
@@ -63,7 +61,6 @@ class NumericLiteral : public Literal {
 public:
     NumericLiteral(String& theValue);
     String& value;
-
     virtual bool _isNumericLiteral();
 };
 
@@ -71,7 +68,6 @@ class Punctuation : public Token {
 public:
     Punctuation(String& theSign);
     String& sign;
-    
     virtual bool _isPunctuation();
 };
 
@@ -79,28 +75,24 @@ class Operator : public Token {
 public:
     Operator(String& theOperation);
     String& operation;
-
     virtual bool _isOperator();
 };
 
 class PrefixOperator : public Operator {
 public:
     PrefixOperator(String& theOperation);
-
     virtual bool _isPrefixOperator();
 };
 
 class BinaryOperator : public Operator {
 public:
     BinaryOperator(String& theOperation);
-
     virtual bool _isBinaryOperator();
 };
 
 class PostfixOperator : public Operator {
 public:
     PostfixOperator(String& theOperation);
-
     virtual bool _isPostfixOperator();
 };
 
