@@ -28,15 +28,33 @@ void* _Page::operator new(size_t size, void* location) {
 }
 
 void* _Page::allocateObject(size_t size) {
-    void* location = currentPage->allocateLocal(size);
+    if (this != currentPage)
+        return currentPage->allocateObject(size);
+        
+    if (!size)
+        size = 1;
+        
+    void* ret = allocateLocal(size);
+    if (ret)
+        return ret;
+            
+    _Page* page = allocateExtensionPage(size);
+    if (((_Page**)nextObject + 2) > nextExtensionPageLocation )
+        currentPage = page;
+        
+    return page->allocateObject(size);
+}
 
-    if (!location)
-    {
-        currentPage = allocateExtensionPage(size);
-        location = currentPage->allocateLocal(size);
+void* _Page::allocateLocal(size_t size) {
+    void* nextLocation = align((char*) nextObject + size);
+    if (nextLocation <= (void*) nextExtensionPageLocation) {
+        void* location = nextObject;
+        nextObject = nextLocation;
+        return location;
     }
-
-    return location;
+    else {
+        return 0;
+    }
 }
 
 _Page* _Page::allocateNextPage(_Page* previousPage) {
@@ -79,20 +97,6 @@ _Page* _Page::allocate(size_t size) {
         return 0;
     else
         return (_Page*)pageLocation;
-}
-
-void* _Page::allocateLocal(size_t size) {
-    if (!size)
-        size = 1;
-
-    void* nextLocation = align((char*) nextObject + size);
-
-    if (nextLocation >= (void*) nextExtensionPageLocation)
-        return 0;
-
-    void* location = nextObject;
-    nextObject = nextLocation;
-    return location;
 }
 
 bool _Page::extend(void* address, size_t size) {
