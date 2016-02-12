@@ -124,13 +124,12 @@ bool String::extend(size_t size) {
 
 void String::reallocate(size_t newLength) {
     char* oldString = string;
-    size_t oldLength = length;
     length = newLength;
     allocate(length + 1);
     memcpy(string, oldString, length + 1);
     
     // Reclaim the page if it was oversized, i.e., exclusively allocated
-    if (oldLength > _Page::pageSize)
+    if (((Object*)oldString)->getPage()->getSize() > _Page::pageSize)
         _Page::reclaimArray(oldString);
 }
 

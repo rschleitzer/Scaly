@@ -16,11 +16,11 @@ public:
     static void reclaimArray(void* address);
     static _Page* getPage(void* address);
     bool extend(void* address, size_t size);
+    size_t getSize();
 
     static const int pageSize = 0x2000;
 
 private:
-    void* allocateLocal(size_t size);
     void deallocatePageExtensions();
     _Page** getLastExtensionPageLocation();
     void freeExtensionPage(_Page* page);

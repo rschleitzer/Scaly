@@ -28,33 +28,70 @@ void* _Page::operator new(size_t size, void* location) {
 }
 
 void* _Page::allocateObject(size_t size) {
-    if (this != currentPage)
-        return currentPage->allocateObject(size);
-        
-    if (!size)
-        size = 1;
-        
-    void* ret = allocateLocal(size);
-    if (ret)
-        return ret;
-            
-    _Page* page = allocateExtensionPage(size);
-    if (((_Page**)nextObject + 2) > nextExtensionPageLocation )
-        currentPage = page;
-        
-    return page->allocateObject(size);
-}
+    if (this != currentPage) {
+        // We're already known to be full, so we delegate to the current page
+        void* newObject = currentPage->allocateObject(size);
 
-void* _Page::allocateLocal(size_t size) {
+        // Possibly our current page was also full so we propagate back the new current page
+        _Page* allocatingPage = ((Object*)newObject)->getPage();
+        if ((allocatingPage != currentPage) && (allocatingPage->getSize() == _Page::pageSize))
+            currentPage = allocatingPage;
+        
+        return newObject;
+    }
+
+    // Try to allocate from ourselves
     void* nextLocation = align((char*) nextObject + size);
     if (nextLocation <= (void*) nextExtensionPageLocation) {
         void* location = nextObject;
         nextObject = nextLocation;
         return location;
     }
-    else {
-        return 0;
+            
+    // So the space did not fit. 
+    
+    // Check first whether we need an ordinary extension
+    if ((_Page**)nextObject == nextExtensionPageLocation) {
+        // Allocate an extension page with default size
+        _Page* defaultExtensionPage = allocateExtensionPage(1);
+        // Make it our new current
+        currentPage = defaultExtensionPage;
+        // Try again with the new extension page
+        return defaultExtensionPage->allocateObject(size);
     }
+    
+    // Make the extension page with the desired size.
+    _Page* extensionPage = allocateExtensionPage(size);
+
+    // If it was not an oversize page
+    if (extensionPage->getSize() <= _Page::pageSize) {
+        // If we are pretty full, make it the new current page
+        if (((_Page**)nextObject) > nextExtensionPageLocation )
+            currentPage = extensionPage;
+    }
+    
+    return extensionPage->allocateObject(size);
+}
+
+_Page* _Page::allocateExtensionPage(size_t size) {
+    size_t grossSize = size + sizeof(_Page) + sizeof(_Page**);
+    if (grossSize < pageSize) {
+        grossSize = pageSize;
+    }
+    else if (grossSize > pageSize) {
+        grossSize += _alignment;
+        grossSize &= ~(_alignment - 1); 
+    }
+        
+    _Page* pageLocation = allocate(grossSize);
+    if (!pageLocation)
+        return 0;
+
+    *nextExtensionPageLocation = pageLocation;
+    nextExtensionPageLocation--;
+    _Page* extensionPage = new (pageLocation) _Page(grossSize);
+    extensionPage->extendingPage = this;
+    return extensionPage;
 }
 
 _Page* _Page::allocateNextPage(_Page* previousPage) {
@@ -72,22 +109,6 @@ void _Page::reset() {
     *nextExtensionPageLocation = 0;
     nextObject = align((char*) this + sizeof(_Page));
 
-}
-
-_Page* _Page::allocateExtensionPage(size_t size) {
-    size_t grossSize = size + sizeof(_Page) + sizeof(_Page**) + _alignment;
-    if (grossSize < pageSize)
-        grossSize = pageSize;
-
-    _Page* pageLocation = allocate(grossSize);
-    if (!pageLocation)
-        return 0;
-
-    *nextExtensionPageLocation = pageLocation;
-    nextExtensionPageLocation--;
-    _Page* extensionPage = new (pageLocation) _Page(grossSize);
-    extensionPage->extendingPage = this;
-    return extensionPage;
 }
 
 _Page* _Page::allocate(size_t size) {
@@ -120,19 +141,19 @@ bool _Page::extend(void* address, size_t size) {
 
 void _Page::deallocate() {
     // Find the end of the stack Page chain
-    _Page* currentPage = this;
-    while (currentPage)
-        if (currentPage->nextPage == 0)
+    _Page* page = this;
+    while (page)
+        if (page->nextPage == 0)
             break;
         else
-            currentPage = currentPage->nextPage;
+            page = page->nextPage;
 
     // Deallocate the chain starting from the end
-    while (currentPage) {
-        _Page* previousPage = currentPage->previousPage;
-        currentPage->deallocatePageExtensions();
-        free(currentPage);
-        currentPage = previousPage;
+    while (page) {
+        _Page* previousPage = page->previousPage;
+        page->deallocatePageExtensions();
+        free(page);
+        page = previousPage;
     }
 }
 
@@ -147,8 +168,8 @@ void _Page::deallocatePageExtensions() {
 }
 
 void _Page::reclaimArray(void* address) {
-    _Page* _Page = ((Object*)address)->getPage();
-    _Page->extendingPage->freeExtensionPage(_Page);
+    _Page* page = ((Object*)address)->getPage();
+    page->extendingPage->freeExtensionPage(page);
 }
 
 _Page* _Page::getPage(void* address) {
@@ -177,6 +198,10 @@ void _Page::freeExtensionPage(_Page* _page) {
     nextExtensionPageLocation++;
     
     _page->deallocate();
+}
+
+size_t _Page::getSize() {
+    return size;
 }
 
 } // namespace
