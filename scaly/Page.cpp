@@ -66,7 +66,7 @@ void* _Page::allocateObject(size_t size) {
     // If it was not an oversize page
     if (extensionPage->getSize() <= _Page::pageSize) {
         // If we are pretty full, make it the new current page
-        if (((_Page**)nextObject) > nextExtensionPageLocation )
+        if (((void*)nextObject) >= (void*)nextExtensionPageLocation )
             currentPage = extensionPage;
     }
     
