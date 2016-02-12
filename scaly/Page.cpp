@@ -1,5 +1,10 @@
 #include "Scaly.h"
 namespace scaly {
+    
+// Some statistics
+static int pagesAllocated;
+static int pagesDeallocated;
+static int bytesAllocated;
 
 _Page::_Page(size_t size)
 : currentPage(this), nextPage(0), previousPage(0), size(size), extendingPage(0) {
@@ -120,10 +125,14 @@ void _Page::reset() {
 _Page* _Page::allocate(size_t size) {
     void* pageLocation;
     
-    if (posix_memalign(&pageLocation, pageSize, size))
+    if (posix_memalign(&pageLocation, pageSize, size)) {
         return 0;
-    else
+    }
+    else {
+        pagesAllocated++;
+        bytesAllocated += size;
         return (_Page*)pageLocation;
+    }
 }
 
 bool _Page::extend(void* address, size_t size) {
@@ -163,6 +172,7 @@ void _Page::deallocate() {
         _Page* prevPage = page->previousPage;
         page->deallocatePageExtensions();
         free(page);
+        pagesDeallocated++;
         page = prevPage;
     }
 }
@@ -180,9 +190,10 @@ void _Page::deallocatePageExtensions() {
     while (page) {
         _Page* prevExtPage = page->extendingPage;
         // Deallocate the oversized pages        
-        for (_Page** ppPage = page->getLastExtensionPageLocation(); ppPage > page->nextExtensionPageLocation; ppPage--)
+        for (_Page** ppPage = page->getLastExtensionPageLocation(); ppPage > page->nextExtensionPageLocation; ppPage--) {
             free(*ppPage);
-
+            pagesDeallocated++;
+        }
         page = prevExtPage;
     }
 }
@@ -218,10 +229,17 @@ void _Page::freeExtensionPage(_Page* _page) {
     nextExtensionPageLocation++;
     
     free(_page);
+    pagesDeallocated++;
 }
 
 size_t _Page::getSize() {
     return size;
+}
+
+void _Page::initStatistics() {
+    pagesAllocated = 0;
+    pagesDeallocated = 0;
+    bytesAllocated = 0;
 }
 
 } // namespace

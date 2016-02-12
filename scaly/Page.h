@@ -17,6 +17,7 @@ public:
     static _Page* getPage(void* address);
     bool extend(void* address, size_t size);
     size_t getSize();
+    static void initStatistics();
 
     static const int pageSize = 0x2000;
 

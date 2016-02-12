@@ -7,6 +7,8 @@ extern __thread _Page* __CurrentPage;
 }
 
 int main(int argc, char** argv) {
+    _Page::initStatistics();
+    
     // Allocate the root page for the main thread
     __CurrentPage = _Page::allocateNextPage(0);
     if (!__CurrentPage)
