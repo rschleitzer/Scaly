@@ -9,6 +9,7 @@
 #include <iostream>
 
 #include "Page.h"
+#include "Task.h"
 #include "Region.h"
 #include "Object.h"
 #include "Result.h"

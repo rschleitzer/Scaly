@@ -28,6 +28,7 @@
     <File Name="File.cpp"/>
     <File Name="Directory.cpp"/>
     <File Name="Path.cpp"/>
+    <File Name="Task.cpp"/>
   </VirtualDirectory>
   <VirtualDirectory Name="include">
     <File Name="Scaly.h"/>
@@ -40,6 +41,7 @@
     <File Name="Result.h"/>
     <File Name="Directory.h"/>
     <File Name="Path.h"/>
+    <File Name="Task.h"/>
   </VirtualDirectory>
   <Settings Type="Static Library">
     <GlobalSettings>

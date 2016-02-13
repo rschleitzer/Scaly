@@ -20,12 +20,13 @@ public:
     size_t getSize();
     static void initStatistics();
 
-    static const int pageSize = 0x2000;
+    static const int pageSize = 0x1000;
 
 private:
     _Page** getLastExtensionPageLocation();
     void freeExtensionPage(_Page* page);
     static _Page* allocate(size_t size);
+    static void forget(_Page* page);
 
     _Page* currentPage;
     _Page* nextPage;

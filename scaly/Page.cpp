@@ -2,9 +2,14 @@
 namespace scaly {
     
 // Some statistics
-static int pagesAllocated;
-static int pagesDeallocated;
-static int bytesAllocated;
+static int oversizedPagesAllocated;
+static int oversizedBytesAllocated;
+static int oversizedPagesDeallocated;
+static int oversizedBytesDeallocated;
+static int pagesRecycled;
+static int pagesDisposed;
+
+extern __thread _Task* __CurrentTask;
 
 _Page::_Page(size_t size)
 : currentPage(this), nextPage(0), previousPage(0), size(size), extendingPage(0) {
@@ -125,14 +130,18 @@ void _Page::reset() {
 
 _Page* _Page::allocate(size_t size) {
     void* pageLocation;
-    
-    if (posix_memalign(&pageLocation, pageSize, size)) {
-        return 0;
+    if (size > _Page::pageSize) {
+        if (posix_memalign(&pageLocation, _Page::pageSize, size)) {
+            return 0;
+        }
+        else {
+            oversizedPagesAllocated++;
+            oversizedBytesAllocated += size;
+            return (_Page*)pageLocation;
+        }
     }
     else {
-        pagesAllocated++;
-        bytesAllocated += size;
-        return (_Page*)pageLocation;
+        return __CurrentTask->recycle();
     }
 }
 
@@ -171,8 +180,7 @@ void _Page::deallocate() {
     // Deallocate the chain starting from the end
     while (page) {
         _Page* prevPage = page->previousPage;
-        free(page);
-        pagesDeallocated++;
+        forget(page);
         page = prevPage;
     }
 }
@@ -192,17 +200,26 @@ void _Page::deallocatePageExtensions() {
 
         // Deallocate the standard extension page if applicable
         _Page** ppPage = page->getLastExtensionPageLocation();
-        if (*ppPage) {
-            free(*ppPage);
-            pagesDeallocated++;
-        }
+        if (*ppPage)
+            forget(*ppPage);
 
         // Deallocate the oversized pages        
-        for (ppPage--; ppPage > page->nextExtensionPageLocation; ppPage--) {
-            free(*ppPage);
-            pagesDeallocated++;
-        }
+        for (ppPage--; ppPage > page->nextExtensionPageLocation; ppPage--)
+            forget(*ppPage);
+
         page = prevExtPage;
+    }
+}
+
+void _Page::forget(_Page* page) {
+    if (page->size > pageSize) {
+        oversizedBytesDeallocated += page->size;
+        free(page);
+        oversizedPagesDeallocated++;
+    }
+    else {
+        __CurrentTask->dispose(page);
+        pagesDisposed++;
     }
 }
 
@@ -236,8 +253,7 @@ void _Page::freeExtensionPage(_Page* _page) {
     // Make room for one more extension
     nextExtensionPageLocation++;
     
-    free(_page);
-    pagesDeallocated++;
+    forget(_page);
 }
 
 size_t _Page::getSize() {
@@ -245,9 +261,9 @@ size_t _Page::getSize() {
 }
 
 void _Page::initStatistics() {
-    pagesAllocated = 0;
-    pagesDeallocated = 0;
-    bytesAllocated = 0;
+    pagesRecycled = 0;
+    pagesDisposed = 0;
+    oversizedBytesAllocated = 0;
 }
 
 } // namespace

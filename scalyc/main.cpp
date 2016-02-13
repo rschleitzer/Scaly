@@ -3,11 +3,17 @@ using namespace scaly;
 namespace scaly {
 
 extern __thread _Page* __CurrentPage;
+extern __thread _Task* __CurrentTask;
 
 }
 
 int main(int argc, char** argv) {
+
+    // Set up statistics counters
     _Page::initStatistics();
+
+    // Set up the root task
+    __CurrentTask = new _Task();
     
     // Allocate the root page for the main thread
     __CurrentPage = _Page::allocateNextPage(0);
@@ -24,6 +30,8 @@ int main(int argc, char** argv) {
 
     // Only for monitoring, debugging and stuff
     __CurrentPage->deallocate();
+    
+    delete(__CurrentTask);
     
     // Give back the return code of the top-level code
     return ret;
