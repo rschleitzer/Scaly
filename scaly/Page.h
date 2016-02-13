@@ -13,6 +13,7 @@ public:
     static _Page* allocateNextPage(_Page* previousPage);
     _Page* allocateExtensionPage(size_t size);
     void deallocate();
+    void deallocatePageExtensions();
     static void reclaimArray(void* address);
     static _Page* getPage(void* address);
     bool extend(void* address, size_t size);
@@ -22,7 +23,6 @@ public:
     static const int pageSize = 0x2000;
 
 private:
-    void deallocatePageExtensions();
     _Page** getLastExtensionPageLocation();
     void freeExtensionPage(_Page* page);
     static _Page* allocate(size_t size);

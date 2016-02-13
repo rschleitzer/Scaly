@@ -26,6 +26,7 @@ void Program::accept(SyntaxVisitor& visitor) {
 
 CompilationUnit::CompilationUnit(Position start, Position end)
 : SyntaxNode(start, end) {
+    statements = 0;
 }
 
 void CompilationUnit::accept(SyntaxVisitor& visitor) {
@@ -86,6 +87,7 @@ bool Declaration::_isDeclaration() { return true; }
 
 UseDeclaration::UseDeclaration(Position start, Position end)
 : Declaration(start, end) {
+    importExtensions = 0;
 }
 
 bool UseDeclaration::_isUseDeclaration() { return true; }
@@ -164,6 +166,7 @@ void VariableDeclaration::accept(SyntaxVisitor& visitor) {
 
 BindingInitializer::BindingInitializer(Position start, Position end)
 : SyntaxNode(start, end) {
+    additionalInitializers = 0;
 }
 
 void BindingInitializer::accept(SyntaxVisitor& visitor) {
@@ -184,6 +187,7 @@ void BindingInitializer::accept(SyntaxVisitor& visitor) {
 
 PatternInitializer::PatternInitializer(Position start, Position end)
 : SyntaxNode(start, end) {
+    initializer = 0;
 }
 
 void PatternInitializer::accept(SyntaxVisitor& visitor) {
@@ -208,6 +212,7 @@ void AdditionalInitializer::accept(SyntaxVisitor& visitor) {
 
 FunctionDeclaration::FunctionDeclaration(Position start, Position end)
 : Declaration(start, end) {
+    modifiers = 0;
 }
 
 bool FunctionDeclaration::_isFunctionDeclaration() { return true; }
@@ -232,6 +237,8 @@ void FunctionDeclaration::accept(SyntaxVisitor& visitor) {
 
 InitializerDeclaration::InitializerDeclaration(Position start, Position end)
 : Declaration(start, end) {
+    modifiers = 0;
+    throwsClause = 0;
 }
 
 bool InitializerDeclaration::_isInitializerDeclaration() { return true; }
@@ -300,6 +307,8 @@ void IdentifierFunction::accept(SyntaxVisitor& visitor) {
 
 FunctionSignature::FunctionSignature(Position start, Position end)
 : SyntaxNode(start, end) {
+    result = 0;
+    throwsClause = 0;
 }
 
 void FunctionSignature::accept(SyntaxVisitor& visitor) {
@@ -326,6 +335,7 @@ void FunctionResult::accept(SyntaxVisitor& visitor) {
 
 ParameterClause::ParameterClause(Position start, Position end)
 : SyntaxNode(start, end) {
+    parameters = 0;
 }
 
 void ParameterClause::accept(SyntaxVisitor& visitor) {
@@ -409,6 +419,8 @@ void EnumDeclaration::accept(SyntaxVisitor& visitor) {
 
 EnumMember::EnumMember(Position start, Position end)
 : SyntaxNode(start, end) {
+    additionalCases = 0;
+    tupleType = 0;
 }
 
 void EnumMember::accept(SyntaxVisitor& visitor) {
@@ -431,6 +443,7 @@ void EnumMember::accept(SyntaxVisitor& visitor) {
 
 TupleType::TupleType(Position start, Position end)
 : SyntaxNode(start, end) {
+    additionalTypes = 0;
 }
 
 void TupleType::accept(SyntaxVisitor& visitor) {
@@ -481,6 +494,9 @@ void AdditionalCase::accept(SyntaxVisitor& visitor) {
 
 ClassDeclaration::ClassDeclaration(Position start, Position end)
 : Declaration(start, end) {
+    genericArgumentClause = 0;
+    typeInheritanceClause = 0;
+    members = 0;
 }
 
 bool ClassDeclaration::_isClassDeclaration() { return true; }
@@ -572,6 +588,7 @@ void CodeBlock::accept(SyntaxVisitor& visitor) {
 
 SimpleExpression::SimpleExpression(Position start, Position end)
 : Expression(start, end) {
+    binaryOps = 0;
 }
 
 bool SimpleExpression::_isSimpleExpression() { return true; }
@@ -605,6 +622,7 @@ void PrefixExpression::accept(SyntaxVisitor& visitor) {
 
 PostfixExpression::PostfixExpression(Position start, Position end)
 : SyntaxNode(start, end) {
+    postfixes = 0;
 }
 
 void PostfixExpression::accept(SyntaxVisitor& visitor) {
@@ -686,6 +704,7 @@ void TypeCast::accept(SyntaxVisitor& visitor) {
 
 CatchClause::CatchClause(Position start, Position end)
 : SyntaxNode(start, end) {
+    bindingPattern = 0;
 }
 
 void CatchClause::accept(SyntaxVisitor& visitor) {
@@ -720,6 +739,7 @@ void WildCardCatchPattern::accept(SyntaxVisitor& visitor) {
 
 PathItemCatchPattern::PathItemCatchPattern(Position start, Position end)
 : CatchPattern(start, end) {
+    catchCaseExtensions = 0;
 }
 
 bool PathItemCatchPattern::_isPathItemCatchPattern() { return true; }
@@ -761,6 +781,7 @@ void OperatorPostfix::accept(SyntaxVisitor& visitor) {
 
 FunctionCall::FunctionCall(Position start, Position end)
 : Postfix(start, end) {
+    catchClauses = 0;
 }
 
 bool FunctionCall::_isFunctionCall() { return true; }
@@ -870,6 +891,7 @@ bool PrimaryExpression::_isSuperSubscript() { return false; }
 
 ParenthesizedExpression::ParenthesizedExpression(Position start, Position end)
 : PrimaryExpression(start, end) {
+    expressionElements = 0;
 }
 
 bool ParenthesizedExpression::_isParenthesizedExpression() { return true; }
@@ -911,6 +933,7 @@ void IdentifierExpression::accept(SyntaxVisitor& visitor) {
 
 IfExpression::IfExpression(Position start, Position end)
 : PrimaryExpression(start, end) {
+    elseClause = 0;
 }
 
 bool IfExpression::_isIfExpression() { return true; }
@@ -1018,6 +1041,7 @@ bool CaseLabel::_isDefaultCaseLabel() { return false; }
 
 ItemCaseLabel::ItemCaseLabel(Position start, Position end)
 : CaseLabel(start, end) {
+    additionalPatterns = 0;
 }
 
 bool ItemCaseLabel::_isItemCaseLabel() { return true; }
@@ -1086,6 +1110,8 @@ void ForEach::accept(SyntaxVisitor& visitor) {
 
 PlainFor::PlainFor(Position start, Position end)
 : ForLoop(start, end) {
+    forInit = 0;
+    forCheck = 0;
 }
 
 bool PlainFor::_isPlainFor() { return true; }
@@ -1104,6 +1130,7 @@ void PlainFor::accept(SyntaxVisitor& visitor) {
 
 ReturnExpression::ReturnExpression(Position start, Position end)
 : PrimaryExpression(start, end) {
+    expression = 0;
 }
 
 bool ReturnExpression::_isReturnExpression() { return true; }
@@ -1118,6 +1145,7 @@ void ReturnExpression::accept(SyntaxVisitor& visitor) {
 
 ThrowExpression::ThrowExpression(Position start, Position end)
 : PrimaryExpression(start, end) {
+    expression = 0;
 }
 
 bool ThrowExpression::_isThrowExpression() { return true; }
@@ -1132,6 +1160,7 @@ void ThrowExpression::accept(SyntaxVisitor& visitor) {
 
 BreakExpression::BreakExpression(Position start, Position end)
 : PrimaryExpression(start, end) {
+    expression = 0;
 }
 
 bool BreakExpression::_isBreakExpression() { return true; }
@@ -1165,6 +1194,7 @@ void WildcardPattern::accept(SyntaxVisitor& visitor) {
 
 IdentifierPattern::IdentifierPattern(Position start, Position end)
 : Pattern(start, end) {
+    typeAnnotation = 0;
 }
 
 bool IdentifierPattern::_isIdentifierPattern() { return true; }
@@ -1270,6 +1300,7 @@ void EmptyCaseContent::accept(SyntaxVisitor& visitor) {
 
 InitializerCall::InitializerCall(Position start, Position end)
 : PrimaryExpression(start, end) {
+    catchClauses = 0;
 }
 
 bool InitializerCall::_isInitializerCall() { return true; }
@@ -1446,6 +1477,8 @@ void TypeAnnotation::accept(SyntaxVisitor& visitor) {
 
 TypeIdentifier::TypeIdentifier(Position start, Position end)
 : Type(start, end) {
+    subType = 0;
+    postfixes = 0;
 }
 
 bool TypeIdentifier::_isTypeIdentifier() { return true; }
@@ -1486,6 +1519,7 @@ bool TypePostfix::_isOptionalType() { return false; }
 
 ArrayType::ArrayType(Position start, Position end)
 : Type(start, end) {
+    postfixes = 0;
 }
 
 bool ArrayType::_isArrayType() { return true; }
@@ -1518,6 +1552,7 @@ void OptionalType::accept(SyntaxVisitor& visitor) {
 
 TypeInheritanceClause::TypeInheritanceClause(Position start, Position end)
 : SyntaxNode(start, end) {
+    inheritances = 0;
 }
 
 void TypeInheritanceClause::accept(SyntaxVisitor& visitor) {

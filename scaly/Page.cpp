@@ -120,6 +120,7 @@ void _Page::reset() {
     nextExtensionPageLocation--;
     // Allocate space for the page itself
     nextObject = align((char*) this + sizeof(_Page));
+    currentPage = this;
 }
 
 _Page* _Page::allocate(size_t size) {
@@ -170,7 +171,6 @@ void _Page::deallocate() {
     // Deallocate the chain starting from the end
     while (page) {
         _Page* prevPage = page->previousPage;
-        page->deallocatePageExtensions();
         free(page);
         pagesDeallocated++;
         page = prevPage;
@@ -189,8 +189,16 @@ void _Page::deallocatePageExtensions() {
     // Deallocate the extension page chain starting from the end
     while (page) {
         _Page* prevExtPage = page->extendingPage;
+
+        // Deallocate the standard extension page if applicable
+        _Page** ppPage = page->getLastExtensionPageLocation();
+        if (*ppPage) {
+            free(*ppPage);
+            pagesDeallocated++;
+        }
+
         // Deallocate the oversized pages        
-        for (_Page** ppPage = page->getLastExtensionPageLocation(); ppPage > page->nextExtensionPageLocation; ppPage--) {
+        for (ppPage--; ppPage > page->nextExtensionPageLocation; ppPage--) {
             free(*ppPage);
             pagesDeallocated++;
         }

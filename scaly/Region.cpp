@@ -13,6 +13,7 @@ _Page* _Region::get() {
 
 _Region::~_Region() {
     _Page* previousPage = __CurrentPage->previous();
+    __CurrentPage->deallocatePageExtensions();
     __CurrentPage = previousPage;
 }
 

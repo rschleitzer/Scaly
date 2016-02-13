@@ -175,7 +175,13 @@ SyntaxNode::SyntaxNode(Position start, Position end)
 "
 "(id syntax-node)"::"(id syntax-node)"("(if (program? syntax-node) "" "Position start, Position end")")
 : "(if (base syntax-node) (base syntax-node) "SyntaxNode")"("(if (program? syntax-node) "Position(0, 0), Position(0, 0)" "start, end")") {
-}
+"
+        (apply-to-children-of syntax-node (lambda (content)
+            (if (and (syntax? content)(optional? content)) ($
+"    "(property content)" = 0;
+"           )"")       
+        ))
+"}
 "        (if (abstract? syntax-node) ($
 "
 "           (apply-to-nodelist (inheritors syntax-node) (lambda (inheritor) ($
