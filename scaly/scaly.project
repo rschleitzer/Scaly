@@ -23,25 +23,25 @@
     <File Name="Page.cpp"/>
     <File Name="Object.cpp"/>
     <File Name="Scaly.cpp"/>
-    <File Name="ScalyString.cpp"/>
     <File Name="Region.cpp"/>
     <File Name="File.cpp"/>
     <File Name="Directory.cpp"/>
     <File Name="Path.cpp"/>
     <File Name="Task.cpp"/>
+    <File Name="VarString.cpp"/>
   </VirtualDirectory>
   <VirtualDirectory Name="include">
     <File Name="Scaly.h"/>
     <File Name="Array.h"/>
     <File Name="Object.h"/>
     <File Name="Page.h"/>
-    <File Name="ScalyString.h"/>
     <File Name="Region.h"/>
     <File Name="File.h"/>
     <File Name="Result.h"/>
     <File Name="Directory.h"/>
     <File Name="Path.h"/>
     <File Name="Task.h"/>
+    <File Name="VarString.h"/>
   </VirtualDirectory>
   <Settings Type="Static Library">
     <GlobalSettings>
