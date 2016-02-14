@@ -54,7 +54,7 @@ OperatorExpected& ParserError::getOperatorExpected(){
     return *(OperatorExpected*)errorInfo;
 }
 
-UnableToParse::UnableToParse(Position& position, Array<ParserError>& errors)
+UnableToParse::UnableToParse(Position& position, _Array<ParserError>& errors)
 : ParserErrorInfo(position), errors(errors) {
 }
 

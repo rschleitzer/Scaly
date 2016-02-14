@@ -8,7 +8,7 @@ class Inherits : public Object {
 public:
     Inherits(String& className);
     String* name;
-    Array<String>* inheritors;
+    _Array<String>* inheritors;
 };
 
 class CppVisitor : public SyntaxVisitor {
@@ -23,8 +23,8 @@ private:
     size_t sourceIndentLevel;
     bool firstParameter;
     bool firstBindingInitializer;
-    Array<Inherits>* inherits;
-    Array<String>* classes;
+    _Array<Inherits>* inherits;
+    _Array<String>* classes;
     bool declaringClassMember;
     bool inParameterClause;
     
@@ -33,8 +33,8 @@ private:
     void collectInheritances(Program& program);
     void collectInheritancesInCompilationUnit(CompilationUnit& compilationUnit);
     void registerInheritance(String& className, String& baseName);
-    void collectDerivedClasses(Array<String>& derivedClasses, String& className);
-    void appendDerivedClasses(Array<String>& derivedClasses, Array<String>& inheritors);
+    void collectDerivedClasses(_Array<String>& derivedClasses, String& className);
+    void appendDerivedClasses(_Array<String>& derivedClasses, _Array<String>& inheritors);
     const char* getCppType(String* typeIdentifierName);
     bool isClass(String& name);
     void indentHeader();

@@ -1,15 +1,15 @@
-#ifndef __Scaly_Array__
-#define __Scaly_Array__
+#ifndef __Scaly__Array__
+#define __Scaly__Array__
 #include "Scaly.h"
 namespace scaly {
 
-template<class T> class Array : public Object {
+template<class T> class _Array : public Object {
 public:
-    Array<T>()
+    _Array<T>()
     :_size(0), _capacity(0), _rawArray(0) {}
 
-    Array<T>(size_t size)
-    : _size(size), _capacity(size) {
+    _Array<T>(size_t capacity)
+    : _size(0), _capacity(capacity) {
         allocate();
     }
 
@@ -25,7 +25,7 @@ public:
     }
     
     // Append a value to the array
-    void append(T* item) {
+    void push(T* item) {
         if (!_rawArray) {
             _capacity = 1;
             _size = 0;
@@ -38,6 +38,18 @@ public:
 
         *(_rawArray + _size) = item;
         _size += 1;
+    }
+    
+    // Take away a value from the array's end
+    T* pop() {
+        if (!_size) {
+            return 0;
+        }
+        else {
+            _Page* page = *(*this)[_size - 1];
+            _size--;
+            return page;
+        }
     }
 
 private:
@@ -55,8 +67,7 @@ private:
     }
 
     void allocate() {
-        size_t length = _capacity * sizeof(T*);
-        _rawArray = (T**) getPage()->allocateObject(length);
+        _rawArray = (T**) getPage()->allocateObject(_capacity * sizeof(T*));
     }
 
     size_t _size;

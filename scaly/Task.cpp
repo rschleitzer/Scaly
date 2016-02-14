@@ -7,9 +7,11 @@ static int pagesDeallocated;
 
 __thread _Task* __CurrentTask = 0;
     
-_Task::_Task(){}
+_Task::_Task()
+: pagePool (*new(getPage()) _Array<_Page>(64)) {
+}
 
-_Page* _Task::recycle() {
+_Page* _Task::allocatePage() {
     void* pageLocation;
     
     if (posix_memalign(&pageLocation, _Page::pageSize, _Page::pageSize)) {
@@ -21,12 +23,47 @@ _Page* _Task::recycle() {
     }
 }
 
-void _Task::dispose(_Page* page) {
-    free(page);
-    pagesDeallocated++;
+_Page* _Task::recyclePage() {
+    size_t length = pagePool.length();
+    if (length)
+        return pagePool.pop();
+    else
+        return allocatePage();
 }
 
-_Task::~_Task() {
+void _Task::disposePage(_Page* page) {
+    size_t length = pagePool.length();
+    if (length >= maxPagePoolSize) {
+        free(page);
+        pagesDeallocated++;
+    }
+    else {
+        pagePool.push(page);
+    }
+}
+
+void _Task::dispose() {
+
+    // Free the page pool
+    size_t _pagePool_length = pagePool.length();
+    for (size_t _i = 0; _i < _pagePool_length; _i++) {
+        free(pagePool.pop());
+        pagesDeallocated++;
+    }
+
+    // Since our own page might have extended itself...
+    getPage()->deallocatePageExtensions();
+    
+    // ...and the deallocated pages are pooled again
+    _pagePool_length = pagePool.length();
+    for (size_t _i = 0; _i < _pagePool_length; _i++) {
+        free(*pagePool[_i]);
+        pagesDeallocated++;
+    }
+    
+    // Free our root page and that's it
+    free(getPage());
+    pagesDeallocated++;
 }
 
 }

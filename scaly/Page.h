@@ -5,14 +5,13 @@ namespace scaly {
 class _Page {
 public:
     _Page(size_t size);
-    _Page* next();
     _Page* previous();
     void reset();
     void* operator new(size_t size, void* location);
     void* allocateObject(size_t size);
     static _Page* allocateNextPage(_Page* previousPage);
     _Page* allocateExtensionPage(size_t size);
-    void deallocate();
+    static void forget(_Page* page);
     void deallocatePageExtensions();
     static void reclaimArray(void* address);
     static _Page* getPage(void* address);
@@ -20,16 +19,14 @@ public:
     size_t getSize();
     static void initStatistics();
 
-    static const int pageSize = 0x1000;
+    static const size_t pageSize = 0x1000;
 
 private:
     _Page** getLastExtensionPageLocation();
     void freeExtensionPage(_Page* page);
     static _Page* allocate(size_t size);
-    static void forget(_Page* page);
 
     _Page* currentPage;
-    _Page* nextPage;
     _Page* previousPage;
     size_t size;
     _Page* extendingPage;

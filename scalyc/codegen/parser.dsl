@@ -18,7 +18,7 @@
             if ret == null
                 ret = ["(id syntax)"]
                 
-            ret.append(node)
+            ret.push(node)
         }
 
         return ret
@@ -35,7 +35,7 @@
 "
         {
             let node: "(link content)" = parse"(link content)"() catch _(error) {
-                errors.append(error)
+                errors.push(error)
                 break
             }
 
@@ -147,7 +147,7 @@ public:
     (apply-to-selected-children "syntax" (lambda (syntax) (if (program? syntax) "" ($
 "
 "        (if (multiple? syntax) ($
-"    _Result<""Array<"(id syntax)">, ParserError> parse"(id syntax)"List(_Page* _rp, _Page* _ep);
+"    _Result<""_Array<"(id syntax)">, ParserError> parse"(id syntax)"List(_Page* _rp, _Page* _ep);
 "       )"")
 "    _Result<"(id syntax)", ParserError> parse"(id syntax)"(_Page* _rp, _Page* _ep);
 "   ))))
@@ -186,25 +186,25 @@ Parser::Parser(String* fileName, String& text)
 "    (apply-to-selected-children "syntax" (lambda (syntax) (if (program? syntax) "" ($
         (if (multiple? syntax) ($
 "
-_Result<""Array<"(id syntax)">, ParserError> Parser::parse"(id syntax)"List(_Page* _rp, _Page* _ep) {
+_Result<""_Array<"(id syntax)">, ParserError> Parser::parse"(id syntax)"List(_Page* _rp, _Page* _ep) {
     // Make a region for the current block and get the Page
     _Region _r; _Page* _p = _r.get();
-    Array<"(id syntax)">* ret = 0;
+    _Array<"(id syntax)">* ret = 0;
 
     while (true) {
         _Result<"(id syntax)", ParserError> nodeResult = parse"(id syntax)"(_rp, _p);
         if (nodeResult.succeeded()) {
             if (!ret)
-                ret = new(_rp) Array<"(id syntax)">();
+                ret = new(_rp) _Array<"(id syntax)">();
 
-            ret->append(nodeResult.getResult());
+            ret->push(nodeResult.getResult());
         }
         else {
             break;
         }
     }
 
-    return _Result<""Array<"(id syntax)">, ParserError>(ret);
+    return _Result<""_Array<"(id syntax)">, ParserError>(ret);
 }
 "       )"")
 "
@@ -212,7 +212,7 @@ _Result<"(id syntax)", ParserError> Parser::parse"(id syntax)"(_Page* _rp, _Page
 "
         (if (abstract? syntax)
             ($
-"    Array<""ParserError>& errors = *new(_ep) Array<""ParserError>();
+"    _Array<""ParserError>& errors = *new(_ep) _Array<""ParserError>();
     Position start = lexer.getPreviousPosition();
 "                (apply-to-children-of syntax (lambda (content) ($
 "
@@ -223,7 +223,7 @@ _Result<"(id syntax)", ParserError> Parser::parse"(id syntax)"(_Page* _rp, _Page
         if (result.succeeded()) 
             return _Result<"(id syntax)", ParserError>(result.getResult());
         else
-            errors.append(result.getError());
+            errors.push(result.getError());
     }
 "
                 )))
@@ -239,7 +239,7 @@ _Result<"(id syntax)", ParserError> Parser::parse"(id syntax)"(_Page* _rp, _Page
 "                   (if (string=? "syntax" (type content))
 
                         ($ ; non-terminals
-"        _Result<"(if (multiple? content) "Array<" "")(link content)(if (multiple? content) ">" "")", ParserError> result = parse"(link content)(if (multiple? content) "List" "")"(_rp, _ep);
+"        _Result<"(if (multiple? content) "_Array<" "")(link content)(if (multiple? content) ">" "")", ParserError> result = parse"(link content)(if (multiple? content) "List" "")"(_rp, _ep);
         if (result.succeeded()) {
 "                           (if (top? syntax) ($
 "            if (!isAtEnd()) {

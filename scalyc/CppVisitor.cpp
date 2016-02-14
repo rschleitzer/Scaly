@@ -52,8 +52,8 @@ bool CppVisitor::openProgram(Program& program) {
             }
         }
         
-        inherits = new(getPage()) Array<Inherits>();
-        classes = new(getPage()) Array<String>();
+        inherits = new(getPage()) _Array<Inherits>();
+        classes = new(getPage()) _Array<String>();
         collectInheritances(program);
     }
     
@@ -61,9 +61,9 @@ bool CppVisitor::openProgram(Program& program) {
 }
 
 void CppVisitor::collectInheritances(Program& program) {
-    inherits = new(getPage()) Array<Inherits>();
+    inherits = new(getPage()) _Array<Inherits>();
     if (program.compilationUnits) {
-        Array<CompilationUnit>& compilationUnits = *program.compilationUnits;
+        _Array<CompilationUnit>& compilationUnits = *program.compilationUnits;
         size_t _compilationUnits_length = compilationUnits.length();
         for (size_t _i = 0; _i < _compilationUnits_length; _i++) {
             collectInheritancesInCompilationUnit(**compilationUnits[_i]);
@@ -73,18 +73,18 @@ void CppVisitor::collectInheritances(Program& program) {
 
 void CppVisitor::collectInheritancesInCompilationUnit(CompilationUnit& compilationUnit) {
     if (compilationUnit.statements) {
-        Array<StatementWithSemicolon>& statements = *compilationUnit.statements;
+        _Array<StatementWithSemicolon>& statements = *compilationUnit.statements;
         size_t _statements_length = statements.length();
         for (size_t _i = 0; _i < _statements_length; _i++) {
             StatementWithSemicolon& statementWithSemicolon = **statements[_i];
             if (statementWithSemicolon.statement) {
                 if (statementWithSemicolon.statement->_isClassDeclaration()) {
                     ClassDeclaration& classDeclaration = *(ClassDeclaration*)statementWithSemicolon.statement;
-                    classes->append(classDeclaration.name);
+                    classes->push(classDeclaration.name);
                     if (classDeclaration.typeInheritanceClause) {
                         TypeInheritanceClause& inheritanceClause = *classDeclaration.typeInheritanceClause;
                         if (inheritanceClause.inheritances) {
-                            Array<Inheritance>& inheritances = *inheritanceClause.inheritances;
+                            _Array<Inheritance>& inheritances = *inheritanceClause.inheritances;
                             size_t _inheritances_length = inheritances.length();
                             for (size_t _j = 0; _j < _inheritances_length; _j++) {
                                 Inheritance& inheritance = **inheritances[_j];
@@ -109,9 +109,9 @@ void CppVisitor::registerInheritance(String& className, String& baseName) {
     }
     if (!inherit) {
         inherit = new(getPage()) Inherits(baseName);
-        inherits->append(inherit);
+        inherits->push(inherit);
     }
-    inherit->inheritors->append(&className);
+    inherit->inheritors->push(&className);
 }
 
 
@@ -431,7 +431,7 @@ void CppVisitor::closeClassDeclaration(ClassDeclaration& classDeclaration) {
     }
     {
         _Region _region; _Page* _p = _region.get();
-        Array<String>& derivedClasses = *new(_p) Array<String>();
+        _Array<String>& derivedClasses = *new(_p) _Array<String>();
         collectDerivedClasses(derivedClasses, *classDeclarationName);
         size_t _derivedClasses_length = derivedClasses.length();
         for (size_t _i = 0; _i < _derivedClasses_length; _i++) {
@@ -449,7 +449,7 @@ void CppVisitor::indentHeader() {
         (*headerFile) += "    ";
 }
 
-void CppVisitor::collectDerivedClasses(Array<String>& derivedClasses, String& className) {
+void CppVisitor::collectDerivedClasses(_Array<String>& derivedClasses, String& className) {
     size_t _inherits_length = inherits->length();
     for (size_t _i = 0; _i < _inherits_length; _i++) {
         if (*(*(*inherits)[_i])->name == className)
@@ -457,11 +457,11 @@ void CppVisitor::collectDerivedClasses(Array<String>& derivedClasses, String& cl
     }
 }
 
-void CppVisitor::appendDerivedClasses(Array<String>& derivedClasses, Array<String>& inheritors) {
+void CppVisitor::appendDerivedClasses(_Array<String>& derivedClasses, _Array<String>& inheritors) {
     size_t _inheritors_length = inheritors.length();
     for (size_t _i = 0; _i < _inheritors_length; _i++) {
         String& derivedClass = **inheritors[_i];
-        derivedClasses.append(&derivedClass);
+        derivedClasses.push(&derivedClass);
         collectDerivedClasses(derivedClasses, derivedClass);
     }    
 }
@@ -890,7 +890,7 @@ void CppVisitor::buildMainHeaderFileString(String& mainHeaderFile, Program& prog
     }
     mainHeaderFile += "\nusing namespace scaly;\nnamespace ";
     mainHeaderFile += *programName;
-    mainHeaderFile += " {\nint _main(Array<String>& arguments);\n}\n\n#endif // __scaly__scalyc__\n";
+    mainHeaderFile += " {\nint _main(_Array<String>& arguments);\n}\n\n#endif // __scaly__scalyc__\n";
 }
 
 void CppVisitor::buildProjectFileString(String& projectFile, Program& program) {
@@ -935,8 +935,8 @@ void CppVisitor::buildProjectFileString(String& projectFile, Program& program) {
     projectFile +=  "        <LibraryPath Value=\".\"/>\n      </Linker>\n      <ResourceCompiler Options=\"\"/>\n";
     projectFile +=  "    </GlobalSettings>\n";
     projectFile +=  "    <Configuration Name=\"Debug\" CompilerType=\"GCC\" DebuggerType=\"GNU gdb debugger\"";
-    projectFile +=  " Type=\"Executable\" BuildCmpWithGlobalSettings=\"append\" BuildLnkWithGlobalSettings=\"append\"";
-    projectFile +=  " BuildResWithGlobalSettings=\"append\">\n";
+    projectFile +=  " Type=\"Executable\" BuildCmpWithGlobalSettings=\"push\" BuildLnkWithGlobalSettings=\"push\"";
+    projectFile +=  " BuildResWithGlobalSettings=\"push\">\n";
     projectFile +=  "      <Compiler Options=\"-g;-O0;-std=c++11;-Wall\" C_Options=\"-g;-O0;-Wall\" Assembler=\"\"";
     projectFile +=  " Required=\"yes\" PreCompiledHeader=\"\" PCHInCommandLine=\"no\" PCHFlags=\"\" PCHFlagsPolicy=\"0\">\n";
     projectFile +=  "        <IncludePath Value=\".\"/>\n        <IncludePath Value=\"../scaly\"/>\n      </Compiler>\n";
@@ -967,7 +967,7 @@ void CppVisitor::buildProjectFileString(String& projectFile, Program& program) {
     projectFile += "        <ClangPP/>\n        <SearchPaths/>\n      </Completion>\n";
     projectFile += "    </Configuration>\n";
     projectFile += "    <Configuration Name=\"Release\" CompilerType=\"GCC\" DebuggerType=\"GNU gdb debugger\" Type=\"Executable\"";
-    projectFile += " BuildCmpWithGlobalSettings=\"append\" BuildLnkWithGlobalSettings=\"append\" BuildResWithGlobalSettings=\"append\">\n";
+    projectFile += " BuildCmpWithGlobalSettings=\"push\" BuildLnkWithGlobalSettings=\"push\" BuildResWithGlobalSettings=\"push\">\n";
     projectFile += "      <Compiler Options=\"-O2;-Wall\" C_Options=\"-O2;-Wall\" Assembler=\"\" Required=\"yes\" PreCompiledHeader=\"\"";
     projectFile += " PCHInCommandLine=\"no\" PCHFlags=\"\" PCHFlagsPolicy=\"0\">\n";
     projectFile += "        <IncludePath Value=\".\"/>\n        <Preprocessor Value=\"NDEBUG\"/>\n";
@@ -993,7 +993,7 @@ void CppVisitor::buildProjectFileString(String& projectFile, Program& program) {
 
 Inherits::Inherits(String& className) {
     name = new(getPage()) String(className);
-    inheritors = new(getPage()) Array<String>();
+    inheritors = new(getPage()) _Array<String>();
 }
 
 }

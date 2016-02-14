@@ -18,7 +18,7 @@
 
 using namespace scaly;
 namespace scalyc {
-int _main(Array<String>& arguments);
+int _main(_Array<String>& arguments);
 }
 
 #endif // __scaly__scalyc__

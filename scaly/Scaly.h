@@ -9,11 +9,11 @@
 #include <iostream>
 
 #include "Page.h"
+#include "Object.h"
+#include "Array.h"
 #include "Task.h"
 #include "Region.h"
-#include "Object.h"
 #include "Result.h"
-#include "Array.h"
 #include "ScalyString.h"
 #include "Path.h"
 #include "File.h"

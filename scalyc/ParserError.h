@@ -41,8 +41,8 @@ public:
 class ParserError;
 class UnableToParse: public ParserErrorInfo {
 public:
-    UnableToParse(Position& position, Array<ParserError>& errors);
-    Array<ParserError>& errors; 
+    UnableToParse(Position& position, _Array<ParserError>& errors);
+    _Array<ParserError>& errors; 
 };
 
 class NotAtEnd : public ParserErrorInfo {

@@ -35,7 +35,7 @@ class Parser {
             if ret == null
                 ret = [StatementWithSemicolon]
                 
-            ret.append(node)
+            ret.push(node)
         }
 
         return ret
@@ -73,7 +73,7 @@ class Parser {
 
         {
             let node: Declaration = parseDeclaration() catch _(error) {
-                errors.append(error)
+                errors.push(error)
                 break
             }
 
@@ -82,7 +82,7 @@ class Parser {
 
         {
             let node: Expression = parseExpression() catch _(error) {
-                errors.append(error)
+                errors.push(error)
                 break
             }
 
@@ -98,7 +98,7 @@ class Parser {
 
         {
             let node: UseDeclaration = parseUseDeclaration() catch _(error) {
-                errors.append(error)
+                errors.push(error)
                 break
             }
 
@@ -107,7 +107,7 @@ class Parser {
 
         {
             let node: ConstantDeclaration = parseConstantDeclaration() catch _(error) {
-                errors.append(error)
+                errors.push(error)
                 break
             }
 
@@ -116,7 +116,7 @@ class Parser {
 
         {
             let node: VariableDeclaration = parseVariableDeclaration() catch _(error) {
-                errors.append(error)
+                errors.push(error)
                 break
             }
 
@@ -125,7 +125,7 @@ class Parser {
 
         {
             let node: FunctionDeclaration = parseFunctionDeclaration() catch _(error) {
-                errors.append(error)
+                errors.push(error)
                 break
             }
 
@@ -134,7 +134,7 @@ class Parser {
 
         {
             let node: EnumDeclaration = parseEnumDeclaration() catch _(error) {
-                errors.append(error)
+                errors.push(error)
                 break
             }
 
@@ -143,7 +143,7 @@ class Parser {
 
         {
             let node: ClassDeclaration = parseClassDeclaration() catch _(error) {
-                errors.append(error)
+                errors.push(error)
                 break
             }
 
@@ -152,7 +152,7 @@ class Parser {
 
         {
             let node: InitializerDeclaration = parseInitializerDeclaration() catch _(error) {
-                errors.append(error)
+                errors.push(error)
                 break
             }
 
@@ -209,7 +209,7 @@ class Parser {
             if ret == null
                 ret = [PathIdentifier]
                 
-            ret.append(node)
+            ret.push(node)
         }
 
         return ret
@@ -374,7 +374,7 @@ class Parser {
             if ret == null
                 ret = [PatternInitializer]
                 
-            ret.append(node)
+            ret.push(node)
         }
 
         return ret
@@ -418,7 +418,7 @@ class Parser {
             if ret == null
                 ret = [AdditionalInitializer]
                 
-            ret.append(node)
+            ret.push(node)
         }
 
         return ret
@@ -578,7 +578,7 @@ class Parser {
             if ret == null
                 ret = [Modifier]
                 
-            ret.append(node)
+            ret.push(node)
         }
 
         return ret
@@ -590,7 +590,7 @@ class Parser {
 
         {
             let node: Override = parseOverride() catch _(error) {
-                errors.append(error)
+                errors.push(error)
                 break
             }
 
@@ -599,7 +599,7 @@ class Parser {
 
         {
             let node: StaticWord = parseStaticWord() catch _(error) {
-                errors.append(error)
+                errors.push(error)
                 break
             }
 
@@ -645,7 +645,7 @@ class Parser {
 
         {
             let node: IdentifierFunction = parseIdentifierFunction() catch _(error) {
-                errors.append(error)
+                errors.push(error)
                 break
             }
 
@@ -747,7 +747,7 @@ class Parser {
             if ret == null
                 ret = [ParameterClause]
                 
-            ret.append(node)
+            ret.push(node)
         }
 
         return ret
@@ -798,7 +798,7 @@ class Parser {
             if ret == null
                 ret = [Parameter]
                 
-            ret.append(node)
+            ret.push(node)
         }
 
         return ret
@@ -810,7 +810,7 @@ class Parser {
 
         {
             let node: ConstParameter = parseConstParameter() catch _(error) {
-                errors.append(error)
+                errors.push(error)
                 break
             }
 
@@ -819,7 +819,7 @@ class Parser {
 
         {
             let node: VarParameter = parseVarParameter() catch _(error) {
-                errors.append(error)
+                errors.push(error)
                 break
             }
 
@@ -1030,7 +1030,7 @@ class Parser {
             if ret == null
                 ret = [EnumMember]
                 
-            ret.append(node)
+            ret.push(node)
         }
 
         return ret
@@ -1140,7 +1140,7 @@ class Parser {
             if ret == null
                 ret = [AdditionalType]
                 
-            ret.append(node)
+            ret.push(node)
         }
 
         return ret
@@ -1199,7 +1199,7 @@ class Parser {
             if ret == null
                 ret = [AdditionalCase]
                 
-            ret.append(node)
+            ret.push(node)
         }
 
         return ret
@@ -1353,7 +1353,7 @@ class Parser {
             if ret == null
                 ret = [GenericParameter]
                 
-            ret.append(node)
+            ret.push(node)
         }
 
         return ret
@@ -1386,7 +1386,7 @@ class Parser {
             if ret == null
                 ret = [ClassMember]
                 
-            ret.append(node)
+            ret.push(node)
         }
 
         return ret
@@ -1424,7 +1424,7 @@ class Parser {
 
         {
             let node: SimpleExpression = parseSimpleExpression() catch _(error) {
-                errors.append(error)
+                errors.push(error)
                 break
             }
 
@@ -1433,7 +1433,7 @@ class Parser {
 
         {
             let node: CodeBlock = parseCodeBlock() catch _(error) {
-                errors.append(error)
+                errors.push(error)
                 break
             }
 
@@ -1572,7 +1572,7 @@ class Parser {
             if ret == null
                 ret = [BinaryOp]
                 
-            ret.append(node)
+            ret.push(node)
         }
 
         return ret
@@ -1584,7 +1584,7 @@ class Parser {
 
         {
             let node: BinaryOperation = parseBinaryOperation() catch _(error) {
-                errors.append(error)
+                errors.push(error)
                 break
             }
 
@@ -1593,7 +1593,7 @@ class Parser {
 
         {
             let node: Assignment = parseAssignment() catch _(error) {
-                errors.append(error)
+                errors.push(error)
                 break
             }
 
@@ -1602,7 +1602,7 @@ class Parser {
 
         {
             let node: TypeQuery = parseTypeQuery() catch _(error) {
-                errors.append(error)
+                errors.push(error)
                 break
             }
 
@@ -1611,7 +1611,7 @@ class Parser {
 
         {
             let node: TypeCast = parseTypeCast() catch _(error) {
-                errors.append(error)
+                errors.push(error)
                 break
             }
 
@@ -1737,7 +1737,7 @@ class Parser {
             if ret == null
                 ret = [CatchClause]
                 
-            ret.append(node)
+            ret.push(node)
         }
 
         return ret
@@ -1797,7 +1797,7 @@ class Parser {
 
         {
             let node: WildCardCatchPattern = parseWildCardCatchPattern() catch _(error) {
-                errors.append(error)
+                errors.push(error)
                 break
             }
 
@@ -1806,7 +1806,7 @@ class Parser {
 
         {
             let node: PathItemCatchPattern = parsePathItemCatchPattern() catch _(error) {
-                errors.append(error)
+                errors.push(error)
                 break
             }
 
@@ -1871,7 +1871,7 @@ class Parser {
             if ret == null
                 ret = [Postfix]
                 
-            ret.append(node)
+            ret.push(node)
         }
 
         return ret
@@ -1883,7 +1883,7 @@ class Parser {
 
         {
             let node: OperatorPostfix = parseOperatorPostfix() catch _(error) {
-                errors.append(error)
+                errors.push(error)
                 break
             }
 
@@ -1892,7 +1892,7 @@ class Parser {
 
         {
             let node: FunctionCall = parseFunctionCall() catch _(error) {
-                errors.append(error)
+                errors.push(error)
                 break
             }
 
@@ -1901,7 +1901,7 @@ class Parser {
 
         {
             let node: ExplicitMemberExpression = parseExplicitMemberExpression() catch _(error) {
-                errors.append(error)
+                errors.push(error)
                 break
             }
 
@@ -1910,7 +1910,7 @@ class Parser {
 
         {
             let node: Subscript = parseSubscript() catch _(error) {
-                errors.append(error)
+                errors.push(error)
                 break
             }
 
@@ -2036,7 +2036,7 @@ class Parser {
             if ret == null
                 ret = [ExpressionElement]
                 
-            ret.append(node)
+            ret.push(node)
         }
 
         return ret
@@ -2074,7 +2074,7 @@ class Parser {
 
         {
             let node: NamedMemberPostfix = parseNamedMemberPostfix() catch _(error) {
-                errors.append(error)
+                errors.push(error)
                 break
             }
 
@@ -2107,7 +2107,7 @@ class Parser {
 
         {
             let node: IdentifierExpression = parseIdentifierExpression() catch _(error) {
-                errors.append(error)
+                errors.push(error)
                 break
             }
 
@@ -2116,7 +2116,7 @@ class Parser {
 
         {
             let node: LiteralExpression = parseLiteralExpression() catch _(error) {
-                errors.append(error)
+                errors.push(error)
                 break
             }
 
@@ -2125,7 +2125,7 @@ class Parser {
 
         {
             let node: IfExpression = parseIfExpression() catch _(error) {
-                errors.append(error)
+                errors.push(error)
                 break
             }
 
@@ -2134,7 +2134,7 @@ class Parser {
 
         {
             let node: SwitchExpression = parseSwitchExpression() catch _(error) {
-                errors.append(error)
+                errors.push(error)
                 break
             }
 
@@ -2143,7 +2143,7 @@ class Parser {
 
         {
             let node: ForExpression = parseForExpression() catch _(error) {
-                errors.append(error)
+                errors.push(error)
                 break
             }
 
@@ -2152,7 +2152,7 @@ class Parser {
 
         {
             let node: ParenthesizedExpression = parseParenthesizedExpression() catch _(error) {
-                errors.append(error)
+                errors.push(error)
                 break
             }
 
@@ -2161,7 +2161,7 @@ class Parser {
 
         {
             let node: ReturnExpression = parseReturnExpression() catch _(error) {
-                errors.append(error)
+                errors.push(error)
                 break
             }
 
@@ -2170,7 +2170,7 @@ class Parser {
 
         {
             let node: ThrowExpression = parseThrowExpression() catch _(error) {
-                errors.append(error)
+                errors.push(error)
                 break
             }
 
@@ -2179,7 +2179,7 @@ class Parser {
 
         {
             let node: BreakExpression = parseBreakExpression() catch _(error) {
-                errors.append(error)
+                errors.push(error)
                 break
             }
 
@@ -2188,7 +2188,7 @@ class Parser {
 
         {
             let node: InitializerCall = parseInitializerCall() catch _(error) {
-                errors.append(error)
+                errors.push(error)
                 break
             }
 
@@ -2197,7 +2197,7 @@ class Parser {
 
         {
             let node: ThisExpression = parseThisExpression() catch _(error) {
-                errors.append(error)
+                errors.push(error)
                 break
             }
 
@@ -2206,7 +2206,7 @@ class Parser {
 
         {
             let node: SuperExpression = parseSuperExpression() catch _(error) {
-                errors.append(error)
+                errors.push(error)
                 break
             }
 
@@ -2402,7 +2402,7 @@ class Parser {
 
         {
             let node: CurliedSwitchBody = parseCurliedSwitchBody() catch _(error) {
-                errors.append(error)
+                errors.push(error)
                 break
             }
 
@@ -2411,7 +2411,7 @@ class Parser {
 
         {
             let node: NakedSwitchBody = parseNakedSwitchBody() catch _(error) {
-                errors.append(error)
+                errors.push(error)
                 break
             }
 
@@ -2483,7 +2483,7 @@ class Parser {
             if ret == null
                 ret = [SwitchCase]
                 
-            ret.append(node)
+            ret.push(node)
         }
 
         return ret
@@ -2523,7 +2523,7 @@ class Parser {
 
         {
             let node: ItemCaseLabel = parseItemCaseLabel() catch _(error) {
-                errors.append(error)
+                errors.push(error)
                 break
             }
 
@@ -2532,7 +2532,7 @@ class Parser {
 
         {
             let node: DefaultCaseLabel = parseDefaultCaseLabel() catch _(error) {
-                errors.append(error)
+                errors.push(error)
                 break
             }
 
@@ -2598,7 +2598,7 @@ class Parser {
             if ret == null
                 ret = [CaseItem]
                 
-            ret.append(node)
+            ret.push(node)
         }
 
         return ret
@@ -2662,7 +2662,7 @@ class Parser {
 
         {
             let node: ForEach = parseForEach() catch _(error) {
-                errors.append(error)
+                errors.push(error)
                 break
             }
 
@@ -2671,7 +2671,7 @@ class Parser {
 
         {
             let node: PlainFor = parsePlainFor() catch _(error) {
-                errors.append(error)
+                errors.push(error)
                 break
             }
 
@@ -2881,7 +2881,7 @@ class Parser {
 
         {
             let node: WildcardPattern = parseWildcardPattern() catch _(error) {
-                errors.append(error)
+                errors.push(error)
                 break
             }
 
@@ -2890,7 +2890,7 @@ class Parser {
 
         {
             let node: IdentifierPattern = parseIdentifierPattern() catch _(error) {
-                errors.append(error)
+                errors.push(error)
                 break
             }
 
@@ -2899,7 +2899,7 @@ class Parser {
 
         {
             let node: TuplePattern = parseTuplePattern() catch _(error) {
-                errors.append(error)
+                errors.push(error)
                 break
             }
 
@@ -2908,7 +2908,7 @@ class Parser {
 
         {
             let node: ExpressionPattern = parseExpressionPattern() catch _(error) {
-                errors.append(error)
+                errors.push(error)
                 break
             }
 
@@ -3006,7 +3006,7 @@ class Parser {
             if ret == null
                 ret = [TuplePatternElement]
                 
-            ret.append(node)
+            ret.push(node)
         }
 
         return ret
@@ -3085,7 +3085,7 @@ class Parser {
 
         {
             let node: BlockCaseContent = parseBlockCaseContent() catch _(error) {
-                errors.append(error)
+                errors.push(error)
                 break
             }
 
@@ -3094,7 +3094,7 @@ class Parser {
 
         {
             let node: EmptyCaseContent = parseEmptyCaseContent() catch _(error) {
-                errors.append(error)
+                errors.push(error)
                 break
             }
 
@@ -3181,7 +3181,7 @@ class Parser {
 
         {
             let node: ThisDot = parseThisDot() catch _(error) {
-                errors.append(error)
+                errors.push(error)
                 break
             }
 
@@ -3190,7 +3190,7 @@ class Parser {
 
         {
             let node: ThisSubscript = parseThisSubscript() catch _(error) {
-                errors.append(error)
+                errors.push(error)
                 break
             }
 
@@ -3199,7 +3199,7 @@ class Parser {
 
         {
             let node: ThisWord = parseThisWord() catch _(error) {
-                errors.append(error)
+                errors.push(error)
                 break
             }
 
@@ -3291,7 +3291,7 @@ class Parser {
 
         {
             let node: ThisInit = parseThisInit() catch _(error) {
-                errors.append(error)
+                errors.push(error)
                 break
             }
 
@@ -3300,7 +3300,7 @@ class Parser {
 
         {
             let node: ThisMember = parseThisMember() catch _(error) {
-                errors.append(error)
+                errors.push(error)
                 break
             }
 
@@ -3348,7 +3348,7 @@ class Parser {
 
         {
             let node: SuperDot = parseSuperDot() catch _(error) {
-                errors.append(error)
+                errors.push(error)
                 break
             }
 
@@ -3357,7 +3357,7 @@ class Parser {
 
         {
             let node: SuperSubscript = parseSuperSubscript() catch _(error) {
-                errors.append(error)
+                errors.push(error)
                 break
             }
 
@@ -3434,7 +3434,7 @@ class Parser {
 
         {
             let node: SuperInit = parseSuperInit() catch _(error) {
-                errors.append(error)
+                errors.push(error)
                 break
             }
 
@@ -3443,7 +3443,7 @@ class Parser {
 
         {
             let node: SuperMember = parseSuperMember() catch _(error) {
-                errors.append(error)
+                errors.push(error)
                 break
             }
 
@@ -3491,7 +3491,7 @@ class Parser {
 
         {
             let node: ArrayType = parseArrayType() catch _(error) {
-                errors.append(error)
+                errors.push(error)
                 break
             }
 
@@ -3500,7 +3500,7 @@ class Parser {
 
         {
             let node: TypeIdentifier = parseTypeIdentifier() catch _(error) {
-                errors.append(error)
+                errors.push(error)
                 break
             }
 
@@ -3611,7 +3611,7 @@ class Parser {
             if ret == null
                 ret = [TypePostfix]
                 
-            ret.append(node)
+            ret.push(node)
         }
 
         return ret
@@ -3623,7 +3623,7 @@ class Parser {
 
         {
             let node: OptionalType = parseOptionalType() catch _(error) {
-                errors.append(error)
+                errors.push(error)
                 break
             }
 
@@ -3730,7 +3730,7 @@ class Parser {
             if ret == null
                 ret = [Inheritance]
                 
-            ret.append(node)
+            ret.push(node)
         }
 
         return ret

@@ -102,7 +102,7 @@ public:
                 (("syntax") ($
                     (if (abstract? syntax-node) "" ($
 "    "
-                        (if (multiple? content)"Array<" "")
+                        (if (multiple? content)"_Array<" "")
                         (link content)
                         (if (multiple? content)">" "")"*"
 " "(property content)";

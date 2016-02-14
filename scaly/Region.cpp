@@ -6,7 +6,7 @@ __thread _Page* __CurrentPage = 0;
 _Region::_Region(){}
 
 _Page* _Region::get() {
-    _Page* nextPage = __CurrentPage->next();
+    _Page* nextPage = _Page::allocateNextPage(__CurrentPage);
     __CurrentPage = nextPage;
     return nextPage;
 }
@@ -14,6 +14,7 @@ _Page* _Region::get() {
 _Region::~_Region() {
     _Page* previousPage = __CurrentPage->previous();
     __CurrentPage->deallocatePageExtensions();
+    _Page::forget(__CurrentPage);
     __CurrentPage = previousPage;
 }
 

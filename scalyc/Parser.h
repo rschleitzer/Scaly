@@ -10,7 +10,7 @@ public:
 
     _Result<CompilationUnit, ParserError> parseCompilationUnit(_Page* _rp, _Page* _ep);
 
-    _Result<Array<StatementWithSemicolon>, ParserError> parseStatementWithSemicolonList(_Page* _rp, _Page* _ep);
+    _Result<_Array<StatementWithSemicolon>, ParserError> parseStatementWithSemicolonList(_Page* _rp, _Page* _ep);
     _Result<StatementWithSemicolon, ParserError> parseStatementWithSemicolon(_Page* _rp, _Page* _ep);
 
     _Result<Statement, ParserError> parseStatement(_Page* _rp, _Page* _ep);
@@ -19,7 +19,7 @@ public:
 
     _Result<UseDeclaration, ParserError> parseUseDeclaration(_Page* _rp, _Page* _ep);
 
-    _Result<Array<PathIdentifier>, ParserError> parsePathIdentifierList(_Page* _rp, _Page* _ep);
+    _Result<_Array<PathIdentifier>, ParserError> parsePathIdentifierList(_Page* _rp, _Page* _ep);
     _Result<PathIdentifier, ParserError> parsePathIdentifier(_Page* _rp, _Page* _ep);
 
     _Result<PathItem, ParserError> parsePathItem(_Page* _rp, _Page* _ep);
@@ -32,17 +32,17 @@ public:
 
     _Result<BindingInitializer, ParserError> parseBindingInitializer(_Page* _rp, _Page* _ep);
 
-    _Result<Array<PatternInitializer>, ParserError> parsePatternInitializerList(_Page* _rp, _Page* _ep);
+    _Result<_Array<PatternInitializer>, ParserError> parsePatternInitializerList(_Page* _rp, _Page* _ep);
     _Result<PatternInitializer, ParserError> parsePatternInitializer(_Page* _rp, _Page* _ep);
 
-    _Result<Array<AdditionalInitializer>, ParserError> parseAdditionalInitializerList(_Page* _rp, _Page* _ep);
+    _Result<_Array<AdditionalInitializer>, ParserError> parseAdditionalInitializerList(_Page* _rp, _Page* _ep);
     _Result<AdditionalInitializer, ParserError> parseAdditionalInitializer(_Page* _rp, _Page* _ep);
 
     _Result<FunctionDeclaration, ParserError> parseFunctionDeclaration(_Page* _rp, _Page* _ep);
 
     _Result<InitializerDeclaration, ParserError> parseInitializerDeclaration(_Page* _rp, _Page* _ep);
 
-    _Result<Array<Modifier>, ParserError> parseModifierList(_Page* _rp, _Page* _ep);
+    _Result<_Array<Modifier>, ParserError> parseModifierList(_Page* _rp, _Page* _ep);
     _Result<Modifier, ParserError> parseModifier(_Page* _rp, _Page* _ep);
 
     _Result<Override, ParserError> parseOverride(_Page* _rp, _Page* _ep);
@@ -57,10 +57,10 @@ public:
 
     _Result<FunctionResult, ParserError> parseFunctionResult(_Page* _rp, _Page* _ep);
 
-    _Result<Array<ParameterClause>, ParserError> parseParameterClauseList(_Page* _rp, _Page* _ep);
+    _Result<_Array<ParameterClause>, ParserError> parseParameterClauseList(_Page* _rp, _Page* _ep);
     _Result<ParameterClause, ParserError> parseParameterClause(_Page* _rp, _Page* _ep);
 
-    _Result<Array<Parameter>, ParserError> parseParameterList(_Page* _rp, _Page* _ep);
+    _Result<_Array<Parameter>, ParserError> parseParameterList(_Page* _rp, _Page* _ep);
     _Result<Parameter, ParserError> parseParameter(_Page* _rp, _Page* _ep);
 
     _Result<ConstParameter, ParserError> parseConstParameter(_Page* _rp, _Page* _ep);
@@ -71,27 +71,27 @@ public:
 
     _Result<EnumDeclaration, ParserError> parseEnumDeclaration(_Page* _rp, _Page* _ep);
 
-    _Result<Array<EnumMember>, ParserError> parseEnumMemberList(_Page* _rp, _Page* _ep);
+    _Result<_Array<EnumMember>, ParserError> parseEnumMemberList(_Page* _rp, _Page* _ep);
     _Result<EnumMember, ParserError> parseEnumMember(_Page* _rp, _Page* _ep);
 
     _Result<TupleType, ParserError> parseTupleType(_Page* _rp, _Page* _ep);
 
-    _Result<Array<AdditionalType>, ParserError> parseAdditionalTypeList(_Page* _rp, _Page* _ep);
+    _Result<_Array<AdditionalType>, ParserError> parseAdditionalTypeList(_Page* _rp, _Page* _ep);
     _Result<AdditionalType, ParserError> parseAdditionalType(_Page* _rp, _Page* _ep);
 
     _Result<EnumCase, ParserError> parseEnumCase(_Page* _rp, _Page* _ep);
 
-    _Result<Array<AdditionalCase>, ParserError> parseAdditionalCaseList(_Page* _rp, _Page* _ep);
+    _Result<_Array<AdditionalCase>, ParserError> parseAdditionalCaseList(_Page* _rp, _Page* _ep);
     _Result<AdditionalCase, ParserError> parseAdditionalCase(_Page* _rp, _Page* _ep);
 
     _Result<ClassDeclaration, ParserError> parseClassDeclaration(_Page* _rp, _Page* _ep);
 
     _Result<GenericArgumentClause, ParserError> parseGenericArgumentClause(_Page* _rp, _Page* _ep);
 
-    _Result<Array<GenericParameter>, ParserError> parseGenericParameterList(_Page* _rp, _Page* _ep);
+    _Result<_Array<GenericParameter>, ParserError> parseGenericParameterList(_Page* _rp, _Page* _ep);
     _Result<GenericParameter, ParserError> parseGenericParameter(_Page* _rp, _Page* _ep);
 
-    _Result<Array<ClassMember>, ParserError> parseClassMemberList(_Page* _rp, _Page* _ep);
+    _Result<_Array<ClassMember>, ParserError> parseClassMemberList(_Page* _rp, _Page* _ep);
     _Result<ClassMember, ParserError> parseClassMember(_Page* _rp, _Page* _ep);
 
     _Result<Expression, ParserError> parseExpression(_Page* _rp, _Page* _ep);
@@ -104,7 +104,7 @@ public:
 
     _Result<PostfixExpression, ParserError> parsePostfixExpression(_Page* _rp, _Page* _ep);
 
-    _Result<Array<BinaryOp>, ParserError> parseBinaryOpList(_Page* _rp, _Page* _ep);
+    _Result<_Array<BinaryOp>, ParserError> parseBinaryOpList(_Page* _rp, _Page* _ep);
     _Result<BinaryOp, ParserError> parseBinaryOp(_Page* _rp, _Page* _ep);
 
     _Result<BinaryOperation, ParserError> parseBinaryOperation(_Page* _rp, _Page* _ep);
@@ -115,7 +115,7 @@ public:
 
     _Result<TypeCast, ParserError> parseTypeCast(_Page* _rp, _Page* _ep);
 
-    _Result<Array<CatchClause>, ParserError> parseCatchClauseList(_Page* _rp, _Page* _ep);
+    _Result<_Array<CatchClause>, ParserError> parseCatchClauseList(_Page* _rp, _Page* _ep);
     _Result<CatchClause, ParserError> parseCatchClause(_Page* _rp, _Page* _ep);
 
     _Result<CatchPattern, ParserError> parseCatchPattern(_Page* _rp, _Page* _ep);
@@ -124,7 +124,7 @@ public:
 
     _Result<PathItemCatchPattern, ParserError> parsePathItemCatchPattern(_Page* _rp, _Page* _ep);
 
-    _Result<Array<Postfix>, ParserError> parsePostfixList(_Page* _rp, _Page* _ep);
+    _Result<_Array<Postfix>, ParserError> parsePostfixList(_Page* _rp, _Page* _ep);
     _Result<Postfix, ParserError> parsePostfix(_Page* _rp, _Page* _ep);
 
     _Result<OperatorPostfix, ParserError> parseOperatorPostfix(_Page* _rp, _Page* _ep);
@@ -135,7 +135,7 @@ public:
 
     _Result<Subscript, ParserError> parseSubscript(_Page* _rp, _Page* _ep);
 
-    _Result<Array<ExpressionElement>, ParserError> parseExpressionElementList(_Page* _rp, _Page* _ep);
+    _Result<_Array<ExpressionElement>, ParserError> parseExpressionElementList(_Page* _rp, _Page* _ep);
     _Result<ExpressionElement, ParserError> parseExpressionElement(_Page* _rp, _Page* _ep);
 
     _Result<MemberPostfix, ParserError> parseMemberPostfix(_Page* _rp, _Page* _ep);
@@ -162,14 +162,14 @@ public:
 
     _Result<NakedSwitchBody, ParserError> parseNakedSwitchBody(_Page* _rp, _Page* _ep);
 
-    _Result<Array<SwitchCase>, ParserError> parseSwitchCaseList(_Page* _rp, _Page* _ep);
+    _Result<_Array<SwitchCase>, ParserError> parseSwitchCaseList(_Page* _rp, _Page* _ep);
     _Result<SwitchCase, ParserError> parseSwitchCase(_Page* _rp, _Page* _ep);
 
     _Result<CaseLabel, ParserError> parseCaseLabel(_Page* _rp, _Page* _ep);
 
     _Result<ItemCaseLabel, ParserError> parseItemCaseLabel(_Page* _rp, _Page* _ep);
 
-    _Result<Array<CaseItem>, ParserError> parseCaseItemList(_Page* _rp, _Page* _ep);
+    _Result<_Array<CaseItem>, ParserError> parseCaseItemList(_Page* _rp, _Page* _ep);
     _Result<CaseItem, ParserError> parseCaseItem(_Page* _rp, _Page* _ep);
 
     _Result<ForExpression, ParserError> parseForExpression(_Page* _rp, _Page* _ep);
@@ -194,7 +194,7 @@ public:
 
     _Result<TuplePattern, ParserError> parseTuplePattern(_Page* _rp, _Page* _ep);
 
-    _Result<Array<TuplePatternElement>, ParserError> parseTuplePatternElementList(_Page* _rp, _Page* _ep);
+    _Result<_Array<TuplePatternElement>, ParserError> parseTuplePatternElementList(_Page* _rp, _Page* _ep);
     _Result<TuplePatternElement, ParserError> parseTuplePatternElement(_Page* _rp, _Page* _ep);
 
     _Result<ExpressionPattern, ParserError> parseExpressionPattern(_Page* _rp, _Page* _ep);
@@ -243,7 +243,7 @@ public:
 
     _Result<SubtypeIdentifier, ParserError> parseSubtypeIdentifier(_Page* _rp, _Page* _ep);
 
-    _Result<Array<TypePostfix>, ParserError> parseTypePostfixList(_Page* _rp, _Page* _ep);
+    _Result<_Array<TypePostfix>, ParserError> parseTypePostfixList(_Page* _rp, _Page* _ep);
     _Result<TypePostfix, ParserError> parseTypePostfix(_Page* _rp, _Page* _ep);
 
     _Result<ArrayType, ParserError> parseArrayType(_Page* _rp, _Page* _ep);
@@ -252,7 +252,7 @@ public:
 
     _Result<TypeInheritanceClause, ParserError> parseTypeInheritanceClause(_Page* _rp, _Page* _ep);
 
-    _Result<Array<Inheritance>, ParserError> parseInheritanceList(_Page* _rp, _Page* _ep);
+    _Result<_Array<Inheritance>, ParserError> parseInheritanceList(_Page* _rp, _Page* _ep);
     _Result<Inheritance, ParserError> parseInheritance(_Page* _rp, _Page* _ep);
 
     bool isAtEnd();

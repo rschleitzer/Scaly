@@ -12,24 +12,13 @@ static int pagesDisposed;
 extern __thread _Task* __CurrentTask;
 
 _Page::_Page(size_t size)
-: currentPage(this), nextPage(0), previousPage(0), size(size), extendingPage(0) {
+: currentPage(this), previousPage(0), size(size), extendingPage(0) {
 	reset();
 }
 
 _Page** _Page::getLastExtensionPageLocation() {
     // Frome where the ordinary extension page is pointed to
     return ((_Page**) ((char*) this + size)) - 1;
-}
-
-_Page* _Page::next() {
-    if (nextPage == 0)
-        // This frame is new
-        nextPage = allocateNextPage(this);
-    else
-        // We've already been at that frame, we re-use it
-        nextPage->reset();
-
-    return nextPage;
 }
 
 _Page* _Page::previous() {
@@ -141,7 +130,7 @@ _Page* _Page::allocate(size_t size) {
         }
     }
     else {
-        return __CurrentTask->recycle();
+        return __CurrentTask->recyclePage();
     }
 }
 
@@ -166,23 +155,6 @@ bool _Page::extend(void* address, size_t size) {
     // Allocate the extension
     nextObject = nextLocation;
     return true;
-}
-
-void _Page::deallocate() {
-    // Find the end of the stack Page chain
-    _Page* page = this;
-    while (page)
-        if (page->nextPage == 0)
-            break;
-        else
-            page = page->nextPage;
-
-    // Deallocate the chain starting from the end
-    while (page) {
-        _Page* prevPage = page->previousPage;
-        forget(page);
-        page = prevPage;
-    }
 }
 
 void _Page::deallocatePageExtensions() {
@@ -218,7 +190,7 @@ void _Page::forget(_Page* page) {
         oversizedPagesDeallocated++;
     }
     else {
-        __CurrentTask->dispose(page);
+        __CurrentTask->disposePage(page);
         pagesDisposed++;
     }
 }

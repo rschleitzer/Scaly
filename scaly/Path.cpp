@@ -6,7 +6,7 @@ String* Path::getFileNameWithoutExtension(_Page* _rp, String& path) {
     if (!fileName)
         return 0;
     
-    Array<String>& fileNameComponents = fileName->Split(_rp, '.');
+    _Array<String>& fileNameComponents = fileName->Split(_rp, '.');
     size_t fileNameComponentsLength = fileNameComponents.length();
     if (fileNameComponentsLength == 1)
         return new(_rp) String(path);
@@ -23,7 +23,7 @@ String* Path::getFileName(_Page* _rp, String& path) {
         return 0;
     if (path[path.getLength() - 1] == '/')
         return 0;
-    Array<String>& pathComponents = path.Split(_rp, '/');
+    _Array<String>& pathComponents = path.Split(_rp, '/');
     return *pathComponents[pathComponents.length() - 1];
 }
 

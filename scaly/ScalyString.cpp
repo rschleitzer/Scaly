@@ -137,14 +137,14 @@ void String::allocate(size_t size) {
     string = (char*) getPage()->allocateObject(size);
 }
 
-Array<String>& String::Split(_Page* _rp, char c) {
-    Array<String>* ret = new(_rp) Array<String>();
+_Array<String>& String::Split(_Page* _rp, char c) {
+    _Array<String>* ret = new(_rp) _Array<String>();
     String* part = 0;
     for (size_t _i = 0; _i < length; _i++) {
         char currentChar = (*this)[_i];
         if (currentChar == c) {
             if (part) {
-                ret->append(part);
+                ret->push(part);
                 part = 0;
             }
         }
@@ -156,7 +156,7 @@ Array<String>& String::Split(_Page* _rp, char c) {
     }
 
     if (part)
-        ret->append(part);
+        ret->push(part);
     
     return *ret;
 }
