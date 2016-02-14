@@ -6,9 +6,9 @@ namespace scalyc {
 
 class Inherits : public Object {
 public:
-    Inherits(String& className);
-    String* name;
-    _Array<String>* inheritors;
+    Inherits(_VarString& className);
+    _VarString* name;
+    _Array<_VarString>* inheritors;
 };
 
 class CppVisitor : public SyntaxVisitor {
@@ -16,34 +16,34 @@ public:
     CppError* execute(Program& program);
 private:
     CppError* cppError;
-    String* moduleName;
-    String* sourceFile;
-    String* headerFile;
+    _VarString* moduleName;
+    _VarString* sourceFile;
+    _VarString* headerFile;
     size_t headerIndentLevel;
     size_t sourceIndentLevel;
     bool firstParameter;
     bool firstBindingInitializer;
     _Array<Inherits>* inherits;
-    _Array<String>* classes;
+    _Array<_VarString>* classes;
     bool declaringClassMember;
     bool inParameterClause;
     
-    void buildProjectFileString(String& projectFile, Program& program);
-    void buildMainHeaderFileString(String& projectFile, Program& program);
+    void buildProjectFileString(_VarString& projectFile, Program& program);
+    void buildMainHeaderFileString(_VarString& projectFile, Program& program);
     void collectInheritances(Program& program);
     void collectInheritancesInCompilationUnit(CompilationUnit& compilationUnit);
-    void registerInheritance(String& className, String& baseName);
-    void collectDerivedClasses(_Array<String>& derivedClasses, String& className);
-    void appendDerivedClasses(_Array<String>& derivedClasses, _Array<String>& inheritors);
-    const char* getCppType(String* typeIdentifierName);
-    bool isClass(String& name);
+    void registerInheritance(_VarString& className, _VarString& baseName);
+    void collectDerivedClasses(_Array<_VarString>& derivedClasses, _VarString& className);
+    void appendDerivedClasses(_Array<_VarString>& derivedClasses, _Array<_VarString>& inheritors);
+    const char* getCppType(_VarString* typeIdentifierName);
+    bool isClass(_VarString& name);
     void indentHeader();
     
 public:
     virtual bool openProgram(Program& program);
     virtual void closeProgram(Program& program);
-    String* programName;
-    String* programDirectory;
+    _VarString* programName;
+    _VarString* programDirectory;
     virtual bool openCompilationUnit(CompilationUnit& compilationUnit);
     virtual void closeCompilationUnit(CompilationUnit& compilationUnit);
     virtual bool openStatementWithSemicolon(StatementWithSemicolon& statementWithSemicolon);
@@ -53,7 +53,7 @@ public:
     virtual bool openPathIdentifier(PathIdentifier& pathIdentifier);
     virtual void closePathIdentifier(PathIdentifier& pathIdentifier);
     virtual void visitPathItem(PathItem& pathItem);
-    String* pathItemName;
+    _VarString* pathItemName;
     virtual bool openInitializer(Initializer& initializer);
     virtual void closeInitializer(Initializer& initializer);
     virtual bool openConstantDeclaration(ConstantDeclaration& constantDeclaration);
@@ -73,7 +73,7 @@ public:
     virtual void visitOverride(Override& override);
     virtual void visitStaticWord(StaticWord& staticWord);
     virtual void visitIdentifierFunction(IdentifierFunction& identifierFunction);
-    String* identifierFunctionName;
+    _VarString* identifierFunctionName;
     virtual bool openFunctionSignature(FunctionSignature& functionSignature);
     virtual void closeFunctionSignature(FunctionSignature& functionSignature);
     virtual bool openFunctionResult(FunctionResult& functionResult);
@@ -82,15 +82,15 @@ public:
     virtual void closeParameterClause(ParameterClause& parameterClause);
     virtual bool openConstParameter(ConstParameter& constParameter);
     virtual void closeConstParameter(ConstParameter& constParameter);
-    String* constParameterName;
+    _VarString* constParameterName;
     virtual bool openVarParameter(VarParameter& varParameter);
     virtual void closeVarParameter(VarParameter& varParameter);
-    String* varParameterName;
+    _VarString* varParameterName;
     virtual bool openThrowsClause(ThrowsClause& throwsClause);
     virtual void closeThrowsClause(ThrowsClause& throwsClause);
     virtual bool openEnumDeclaration(EnumDeclaration& enumDeclaration);
     virtual void closeEnumDeclaration(EnumDeclaration& enumDeclaration);
-    String* enumDeclarationName;
+    _VarString* enumDeclarationName;
     virtual bool openEnumMember(EnumMember& enumMember);
     virtual void closeEnumMember(EnumMember& enumMember);
     virtual bool openTupleType(TupleType& tupleType);
@@ -98,16 +98,16 @@ public:
     virtual bool openAdditionalType(AdditionalType& additionalType);
     virtual void closeAdditionalType(AdditionalType& additionalType);
     virtual void visitEnumCase(EnumCase& enumCase);
-    String* enumCaseName;
+    _VarString* enumCaseName;
     virtual bool openAdditionalCase(AdditionalCase& additionalCase);
     virtual void closeAdditionalCase(AdditionalCase& additionalCase);
     virtual bool openClassDeclaration(ClassDeclaration& classDeclaration);
     virtual void closeClassDeclaration(ClassDeclaration& classDeclaration);
-    String* classDeclarationName;
+    _VarString* classDeclarationName;
     virtual bool openGenericArgumentClause(GenericArgumentClause& genericArgumentClause);
     virtual void closeGenericArgumentClause(GenericArgumentClause& genericArgumentClause);
     virtual void visitGenericParameter(GenericParameter& genericParameter);
-    String* genericParameterTypeName;
+    _VarString* genericParameterTypeName;
     virtual bool openClassMember(ClassMember& classMember);
     virtual void closeClassMember(ClassMember& classMember);
     virtual bool openCodeBlock(CodeBlock& codeBlock);
@@ -147,7 +147,7 @@ public:
     virtual void closeParenthesizedExpression(ParenthesizedExpression& parenthesizedExpression);
     virtual void visitLiteralExpression(LiteralExpression& literalExpression);
     virtual void visitIdentifierExpression(IdentifierExpression& identifierExpression);
-    String* identifierExpressionName;
+    _VarString* identifierExpressionName;
     virtual bool openIfExpression(IfExpression& ifExpression);
     virtual void closeIfExpression(IfExpression& ifExpression);
     virtual bool openElseClause(ElseClause& elseClause);
@@ -179,7 +179,7 @@ public:
     virtual void visitWildcardPattern(WildcardPattern& wildcardPattern);
     virtual bool openIdentifierPattern(IdentifierPattern& identifierPattern);
     virtual void closeIdentifierPattern(IdentifierPattern& identifierPattern);
-    String* identifierPatternIdentifier;
+    _VarString* identifierPatternIdentifier;
     virtual bool openTuplePattern(TuplePattern& tuplePattern);
     virtual void closeTuplePattern(TuplePattern& tuplePattern);
     virtual bool openTuplePatternElement(TuplePatternElement& tuplePatternElement);
@@ -199,19 +199,19 @@ public:
     virtual void visitThisWord(ThisWord& thisWord);
     virtual void visitThisInit(ThisInit& thisInit);
     virtual void visitThisMember(ThisMember& thisMember);
-    String* thisMemberName;
+    _VarString* thisMemberName;
     virtual bool openSuperDot(SuperDot& superDot);
     virtual void closeSuperDot(SuperDot& superDot);
     virtual bool openSuperSubscript(SuperSubscript& superSubscript);
     virtual void closeSuperSubscript(SuperSubscript& superSubscript);
     virtual void visitSuperInit(SuperInit& superInit);
     virtual void visitSuperMember(SuperMember& superMember);
-    String* superMemberName;
+    _VarString* superMemberName;
     virtual bool openTypeAnnotation(TypeAnnotation& typeAnnotation);
     virtual void closeTypeAnnotation(TypeAnnotation& typeAnnotation);
     virtual bool openTypeIdentifier(TypeIdentifier& typeIdentifier);
     virtual void closeTypeIdentifier(TypeIdentifier& typeIdentifier);
-    String* typeIdentifierName;
+    _VarString* typeIdentifierName;
     virtual bool openSubtypeIdentifier(SubtypeIdentifier& subtypeIdentifier);
     virtual void closeSubtypeIdentifier(SubtypeIdentifier& subtypeIdentifier);
     virtual bool openArrayType(ArrayType& arrayType);

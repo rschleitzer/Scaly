@@ -2,7 +2,7 @@
 using namespace scaly;
 namespace scalyc {
 
-Parser::Parser(String* fileName, String& text)
+Parser::Parser(_VarString* fileName, _VarString& text)
 : lexer(text), fileName(fileName) {
 }
 
@@ -191,7 +191,7 @@ _Result<UseDeclaration, ParserError> Parser::parseUseDeclaration(_Page* _rp, _Pa
                 ret = new(_rp) UseDeclaration(start, lexer.getPosition());
         }
         else {
-            return _Result<UseDeclaration, ParserError>(new(_ep) ParserError(*new(_ep) KeywordExpected(start, *new(_ep) String(useKeyword))));
+            return _Result<UseDeclaration, ParserError>(new(_ep) ParserError(*new(_ep) KeywordExpected(start, *new(_ep) _VarString(useKeyword))));
         }
     }
     {
@@ -253,7 +253,7 @@ _Result<PathIdentifier, ParserError> Parser::parsePathIdentifier(_Page* _rp, _Pa
                 ret = new(_rp) PathIdentifier(start, lexer.getPosition());
         }
         else {
-            return _Result<PathIdentifier, ParserError>(new(_ep) ParserError(*new(_ep) PunctuationExpected(start, *new(_ep) String(dot))));
+            return _Result<PathIdentifier, ParserError>(new(_ep) ParserError(*new(_ep) PunctuationExpected(start, *new(_ep) _VarString(dot))));
         }
     }
     {
@@ -277,7 +277,7 @@ _Result<PathItem, ParserError> Parser::parsePathItem(_Page* _rp, _Page* _ep) {
     PathItem* ret = 0;
     {
         Position start = lexer.getPreviousPosition();
-        String* name = lexer.parseIdentifier(_rp);
+        _VarString* name = lexer.parseIdentifier(_rp);
         if ((name) && (isIdentifier(*name))) {
             lexer.advance();
             if (!ret)
@@ -304,7 +304,7 @@ _Result<Initializer, ParserError> Parser::parseInitializer(_Page* _rp, _Page* _e
                 ret = new(_rp) Initializer(start, lexer.getPosition());
         }
         else {
-            return _Result<Initializer, ParserError>(new(_ep) ParserError(*new(_ep) PunctuationExpected(start, *new(_ep) String(equal))));
+            return _Result<Initializer, ParserError>(new(_ep) ParserError(*new(_ep) PunctuationExpected(start, *new(_ep) _VarString(equal))));
         }
     }
     {
@@ -335,7 +335,7 @@ _Result<ConstantDeclaration, ParserError> Parser::parseConstantDeclaration(_Page
                 ret = new(_rp) ConstantDeclaration(start, lexer.getPosition());
         }
         else {
-            return _Result<ConstantDeclaration, ParserError>(new(_ep) ParserError(*new(_ep) KeywordExpected(start, *new(_ep) String(letKeyword))));
+            return _Result<ConstantDeclaration, ParserError>(new(_ep) ParserError(*new(_ep) KeywordExpected(start, *new(_ep) _VarString(letKeyword))));
         }
     }
     {
@@ -366,7 +366,7 @@ _Result<VariableDeclaration, ParserError> Parser::parseVariableDeclaration(_Page
                 ret = new(_rp) VariableDeclaration(start, lexer.getPosition());
         }
         else {
-            return _Result<VariableDeclaration, ParserError>(new(_ep) ParserError(*new(_ep) KeywordExpected(start, *new(_ep) String(mutableKeyword))));
+            return _Result<VariableDeclaration, ParserError>(new(_ep) ParserError(*new(_ep) KeywordExpected(start, *new(_ep) _VarString(mutableKeyword))));
         }
     }
     {
@@ -497,7 +497,7 @@ _Result<AdditionalInitializer, ParserError> Parser::parseAdditionalInitializer(_
                 ret = new(_rp) AdditionalInitializer(start, lexer.getPosition());
         }
         else {
-            return _Result<AdditionalInitializer, ParserError>(new(_ep) ParserError(*new(_ep) PunctuationExpected(start, *new(_ep) String(comma))));
+            return _Result<AdditionalInitializer, ParserError>(new(_ep) ParserError(*new(_ep) PunctuationExpected(start, *new(_ep) _VarString(comma))));
         }
     }
     {
@@ -538,7 +538,7 @@ _Result<FunctionDeclaration, ParserError> Parser::parseFunctionDeclaration(_Page
                 ret = new(_rp) FunctionDeclaration(start, lexer.getPosition());
         }
         else {
-            return _Result<FunctionDeclaration, ParserError>(new(_ep) ParserError(*new(_ep) KeywordExpected(start, *new(_ep) String(functionKeyword))));
+            return _Result<FunctionDeclaration, ParserError>(new(_ep) ParserError(*new(_ep) KeywordExpected(start, *new(_ep) _VarString(functionKeyword))));
         }
     }
     {
@@ -605,7 +605,7 @@ _Result<InitializerDeclaration, ParserError> Parser::parseInitializerDeclaration
                 ret = new(_rp) InitializerDeclaration(start, lexer.getPosition());
         }
         else {
-            return _Result<InitializerDeclaration, ParserError>(new(_ep) ParserError(*new(_ep) KeywordExpected(start, *new(_ep) String(initKeyword))));
+            return _Result<InitializerDeclaration, ParserError>(new(_ep) ParserError(*new(_ep) KeywordExpected(start, *new(_ep) _VarString(initKeyword))));
         }
     }
     {
@@ -707,7 +707,7 @@ _Result<Override, ParserError> Parser::parseOverride(_Page* _rp, _Page* _ep) {
                 ret = new(_rp) Override(start, lexer.getPosition());
         }
         else {
-            return _Result<Override, ParserError>(new(_ep) ParserError(*new(_ep) KeywordExpected(start, *new(_ep) String(overrideKeyword))));
+            return _Result<Override, ParserError>(new(_ep) ParserError(*new(_ep) KeywordExpected(start, *new(_ep) _VarString(overrideKeyword))));
         }
     }
 
@@ -725,7 +725,7 @@ _Result<StaticWord, ParserError> Parser::parseStaticWord(_Page* _rp, _Page* _ep)
                 ret = new(_rp) StaticWord(start, lexer.getPosition());
         }
         else {
-            return _Result<StaticWord, ParserError>(new(_ep) ParserError(*new(_ep) KeywordExpected(start, *new(_ep) String(staticKeyword))));
+            return _Result<StaticWord, ParserError>(new(_ep) ParserError(*new(_ep) KeywordExpected(start, *new(_ep) _VarString(staticKeyword))));
         }
     }
 
@@ -753,7 +753,7 @@ _Result<IdentifierFunction, ParserError> Parser::parseIdentifierFunction(_Page* 
     IdentifierFunction* ret = 0;
     {
         Position start = lexer.getPreviousPosition();
-        String* name = lexer.parseIdentifier(_rp);
+        _VarString* name = lexer.parseIdentifier(_rp);
         if ((name) && (isIdentifier(*name))) {
             lexer.advance();
             if (!ret)
@@ -819,7 +819,7 @@ _Result<FunctionResult, ParserError> Parser::parseFunctionResult(_Page* _rp, _Pa
                 ret = new(_rp) FunctionResult(start, lexer.getPosition());
         }
         else {
-            return _Result<FunctionResult, ParserError>(new(_ep) ParserError(*new(_ep) PunctuationExpected(start, *new(_ep) String(evaluatesTo))));
+            return _Result<FunctionResult, ParserError>(new(_ep) ParserError(*new(_ep) PunctuationExpected(start, *new(_ep) _VarString(evaluatesTo))));
         }
     }
     {
@@ -871,7 +871,7 @@ _Result<ParameterClause, ParserError> Parser::parseParameterClause(_Page* _rp, _
                 ret = new(_rp) ParameterClause(start, lexer.getPosition());
         }
         else {
-            return _Result<ParameterClause, ParserError>(new(_ep) ParserError(*new(_ep) PunctuationExpected(start, *new(_ep) String(leftParen))));
+            return _Result<ParameterClause, ParserError>(new(_ep) ParserError(*new(_ep) PunctuationExpected(start, *new(_ep) _VarString(leftParen))));
         }
     }
     {
@@ -893,7 +893,7 @@ _Result<ParameterClause, ParserError> Parser::parseParameterClause(_Page* _rp, _
                 ret = new(_rp) ParameterClause(start, lexer.getPosition());
         }
         else {
-            return _Result<ParameterClause, ParserError>(new(_ep) ParserError(*new(_ep) PunctuationExpected(start, *new(_ep) String(rightParen))));
+            return _Result<ParameterClause, ParserError>(new(_ep) ParserError(*new(_ep) PunctuationExpected(start, *new(_ep) _VarString(rightParen))));
         }
     }
 
@@ -961,7 +961,7 @@ _Result<ConstParameter, ParserError> Parser::parseConstParameter(_Page* _rp, _Pa
     }
     {
         Position start = lexer.getPreviousPosition();
-        String* name = lexer.parseIdentifier(_rp);
+        _VarString* name = lexer.parseIdentifier(_rp);
         if ((name) && (isIdentifier(*name))) {
             lexer.advance();
             if (!ret)
@@ -982,7 +982,7 @@ _Result<ConstParameter, ParserError> Parser::parseConstParameter(_Page* _rp, _Pa
                 ret = new(_rp) ConstParameter(start, lexer.getPosition());
         }
         else {
-            return _Result<ConstParameter, ParserError>(new(_ep) ParserError(*new(_ep) PunctuationExpected(start, *new(_ep) String(colon))));
+            return _Result<ConstParameter, ParserError>(new(_ep) ParserError(*new(_ep) PunctuationExpected(start, *new(_ep) _VarString(colon))));
         }
     }
     {
@@ -1022,12 +1022,12 @@ _Result<VarParameter, ParserError> Parser::parseVarParameter(_Page* _rp, _Page* 
                 ret = new(_rp) VarParameter(start, lexer.getPosition());
         }
         else {
-            return _Result<VarParameter, ParserError>(new(_ep) ParserError(*new(_ep) KeywordExpected(start, *new(_ep) String(mutableKeyword))));
+            return _Result<VarParameter, ParserError>(new(_ep) ParserError(*new(_ep) KeywordExpected(start, *new(_ep) _VarString(mutableKeyword))));
         }
     }
     {
         Position start = lexer.getPreviousPosition();
-        String* name = lexer.parseIdentifier(_rp);
+        _VarString* name = lexer.parseIdentifier(_rp);
         if ((name) && (isIdentifier(*name))) {
             lexer.advance();
             if (!ret)
@@ -1048,7 +1048,7 @@ _Result<VarParameter, ParserError> Parser::parseVarParameter(_Page* _rp, _Page* 
                 ret = new(_rp) VarParameter(start, lexer.getPosition());
         }
         else {
-            return _Result<VarParameter, ParserError>(new(_ep) ParserError(*new(_ep) PunctuationExpected(start, *new(_ep) String(colon))));
+            return _Result<VarParameter, ParserError>(new(_ep) ParserError(*new(_ep) PunctuationExpected(start, *new(_ep) _VarString(colon))));
         }
     }
     {
@@ -1088,7 +1088,7 @@ _Result<ThrowsClause, ParserError> Parser::parseThrowsClause(_Page* _rp, _Page* 
                 ret = new(_rp) ThrowsClause(start, lexer.getPosition());
         }
         else {
-            return _Result<ThrowsClause, ParserError>(new(_ep) ParserError(*new(_ep) KeywordExpected(start, *new(_ep) String(throwsKeyword))));
+            return _Result<ThrowsClause, ParserError>(new(_ep) ParserError(*new(_ep) KeywordExpected(start, *new(_ep) _VarString(throwsKeyword))));
         }
     }
     {
@@ -1119,12 +1119,12 @@ _Result<EnumDeclaration, ParserError> Parser::parseEnumDeclaration(_Page* _rp, _
                 ret = new(_rp) EnumDeclaration(start, lexer.getPosition());
         }
         else {
-            return _Result<EnumDeclaration, ParserError>(new(_ep) ParserError(*new(_ep) KeywordExpected(start, *new(_ep) String(enumKeyword))));
+            return _Result<EnumDeclaration, ParserError>(new(_ep) ParserError(*new(_ep) KeywordExpected(start, *new(_ep) _VarString(enumKeyword))));
         }
     }
     {
         Position start = lexer.getPreviousPosition();
-        String* name = lexer.parseIdentifier(_rp);
+        _VarString* name = lexer.parseIdentifier(_rp);
         if ((name) && (isIdentifier(*name))) {
             lexer.advance();
             if (!ret)
@@ -1145,7 +1145,7 @@ _Result<EnumDeclaration, ParserError> Parser::parseEnumDeclaration(_Page* _rp, _
                 ret = new(_rp) EnumDeclaration(start, lexer.getPosition());
         }
         else {
-            return _Result<EnumDeclaration, ParserError>(new(_ep) ParserError(*new(_ep) PunctuationExpected(start, *new(_ep) String(leftCurly))));
+            return _Result<EnumDeclaration, ParserError>(new(_ep) ParserError(*new(_ep) PunctuationExpected(start, *new(_ep) _VarString(leftCurly))));
         }
     }
     {
@@ -1170,7 +1170,7 @@ _Result<EnumDeclaration, ParserError> Parser::parseEnumDeclaration(_Page* _rp, _
                 ret = new(_rp) EnumDeclaration(start, lexer.getPosition());
         }
         else {
-            return _Result<EnumDeclaration, ParserError>(new(_ep) ParserError(*new(_ep) PunctuationExpected(start, *new(_ep) String(rightCurly))));
+            return _Result<EnumDeclaration, ParserError>(new(_ep) ParserError(*new(_ep) PunctuationExpected(start, *new(_ep) _VarString(rightCurly))));
         }
     }
 
@@ -1209,7 +1209,7 @@ _Result<EnumMember, ParserError> Parser::parseEnumMember(_Page* _rp, _Page* _ep)
                 ret = new(_rp) EnumMember(start, lexer.getPosition());
         }
         else {
-            return _Result<EnumMember, ParserError>(new(_ep) ParserError(*new(_ep) KeywordExpected(start, *new(_ep) String(caseKeyword))));
+            return _Result<EnumMember, ParserError>(new(_ep) ParserError(*new(_ep) KeywordExpected(start, *new(_ep) _VarString(caseKeyword))));
         }
     }
     {
@@ -1260,7 +1260,7 @@ _Result<TupleType, ParserError> Parser::parseTupleType(_Page* _rp, _Page* _ep) {
                 ret = new(_rp) TupleType(start, lexer.getPosition());
         }
         else {
-            return _Result<TupleType, ParserError>(new(_ep) ParserError(*new(_ep) PunctuationExpected(start, *new(_ep) String(leftParen))));
+            return _Result<TupleType, ParserError>(new(_ep) ParserError(*new(_ep) PunctuationExpected(start, *new(_ep) _VarString(leftParen))));
         }
     }
     {
@@ -1295,7 +1295,7 @@ _Result<TupleType, ParserError> Parser::parseTupleType(_Page* _rp, _Page* _ep) {
                 ret = new(_rp) TupleType(start, lexer.getPosition());
         }
         else {
-            return _Result<TupleType, ParserError>(new(_ep) ParserError(*new(_ep) PunctuationExpected(start, *new(_ep) String(rightParen))));
+            return _Result<TupleType, ParserError>(new(_ep) ParserError(*new(_ep) PunctuationExpected(start, *new(_ep) _VarString(rightParen))));
         }
     }
 
@@ -1334,7 +1334,7 @@ _Result<AdditionalType, ParserError> Parser::parseAdditionalType(_Page* _rp, _Pa
                 ret = new(_rp) AdditionalType(start, lexer.getPosition());
         }
         else {
-            return _Result<AdditionalType, ParserError>(new(_ep) ParserError(*new(_ep) PunctuationExpected(start, *new(_ep) String(comma))));
+            return _Result<AdditionalType, ParserError>(new(_ep) ParserError(*new(_ep) PunctuationExpected(start, *new(_ep) _VarString(comma))));
         }
     }
     {
@@ -1358,7 +1358,7 @@ _Result<EnumCase, ParserError> Parser::parseEnumCase(_Page* _rp, _Page* _ep) {
     EnumCase* ret = 0;
     {
         Position start = lexer.getPreviousPosition();
-        String* name = lexer.parseIdentifier(_rp);
+        _VarString* name = lexer.parseIdentifier(_rp);
         if ((name) && (isIdentifier(*name))) {
             lexer.advance();
             if (!ret)
@@ -1406,7 +1406,7 @@ _Result<AdditionalCase, ParserError> Parser::parseAdditionalCase(_Page* _rp, _Pa
                 ret = new(_rp) AdditionalCase(start, lexer.getPosition());
         }
         else {
-            return _Result<AdditionalCase, ParserError>(new(_ep) ParserError(*new(_ep) PunctuationExpected(start, *new(_ep) String(comma))));
+            return _Result<AdditionalCase, ParserError>(new(_ep) ParserError(*new(_ep) PunctuationExpected(start, *new(_ep) _VarString(comma))));
         }
     }
     {
@@ -1437,12 +1437,12 @@ _Result<ClassDeclaration, ParserError> Parser::parseClassDeclaration(_Page* _rp,
                 ret = new(_rp) ClassDeclaration(start, lexer.getPosition());
         }
         else {
-            return _Result<ClassDeclaration, ParserError>(new(_ep) ParserError(*new(_ep) KeywordExpected(start, *new(_ep) String(classKeyword))));
+            return _Result<ClassDeclaration, ParserError>(new(_ep) ParserError(*new(_ep) KeywordExpected(start, *new(_ep) _VarString(classKeyword))));
         }
     }
     {
         Position start = lexer.getPreviousPosition();
-        String* name = lexer.parseIdentifier(_rp);
+        _VarString* name = lexer.parseIdentifier(_rp);
         if ((name) && (isIdentifier(*name))) {
             lexer.advance();
             if (!ret)
@@ -1483,7 +1483,7 @@ _Result<ClassDeclaration, ParserError> Parser::parseClassDeclaration(_Page* _rp,
                 ret = new(_rp) ClassDeclaration(start, lexer.getPosition());
         }
         else {
-            return _Result<ClassDeclaration, ParserError>(new(_ep) ParserError(*new(_ep) PunctuationExpected(start, *new(_ep) String(leftCurly))));
+            return _Result<ClassDeclaration, ParserError>(new(_ep) ParserError(*new(_ep) PunctuationExpected(start, *new(_ep) _VarString(leftCurly))));
         }
     }
     {
@@ -1505,7 +1505,7 @@ _Result<ClassDeclaration, ParserError> Parser::parseClassDeclaration(_Page* _rp,
                 ret = new(_rp) ClassDeclaration(start, lexer.getPosition());
         }
         else {
-            return _Result<ClassDeclaration, ParserError>(new(_ep) ParserError(*new(_ep) PunctuationExpected(start, *new(_ep) String(rightCurly))));
+            return _Result<ClassDeclaration, ParserError>(new(_ep) ParserError(*new(_ep) PunctuationExpected(start, *new(_ep) _VarString(rightCurly))));
         }
     }
 
@@ -1523,7 +1523,7 @@ _Result<GenericArgumentClause, ParserError> Parser::parseGenericArgumentClause(_
                 ret = new(_rp) GenericArgumentClause(start, lexer.getPosition());
         }
         else {
-            return _Result<GenericArgumentClause, ParserError>(new(_ep) ParserError(*new(_ep) PunctuationExpected(start, *new(_ep) String(leftAngular))));
+            return _Result<GenericArgumentClause, ParserError>(new(_ep) ParserError(*new(_ep) PunctuationExpected(start, *new(_ep) _VarString(leftAngular))));
         }
     }
     {
@@ -1548,7 +1548,7 @@ _Result<GenericArgumentClause, ParserError> Parser::parseGenericArgumentClause(_
                 ret = new(_rp) GenericArgumentClause(start, lexer.getPosition());
         }
         else {
-            return _Result<GenericArgumentClause, ParserError>(new(_ep) ParserError(*new(_ep) PunctuationExpected(start, *new(_ep) String(rightAngular))));
+            return _Result<GenericArgumentClause, ParserError>(new(_ep) ParserError(*new(_ep) PunctuationExpected(start, *new(_ep) _VarString(rightAngular))));
         }
     }
 
@@ -1580,7 +1580,7 @@ _Result<GenericParameter, ParserError> Parser::parseGenericParameter(_Page* _rp,
     GenericParameter* ret = 0;
     {
         Position start = lexer.getPreviousPosition();
-        String* typeName = lexer.parseIdentifier(_rp);
+        _VarString* typeName = lexer.parseIdentifier(_rp);
         if ((typeName) && (isIdentifier(*typeName))) {
             lexer.advance();
             if (!ret)
@@ -1683,7 +1683,7 @@ _Result<CodeBlock, ParserError> Parser::parseCodeBlock(_Page* _rp, _Page* _ep) {
                 ret = new(_rp) CodeBlock(start, lexer.getPosition());
         }
         else {
-            return _Result<CodeBlock, ParserError>(new(_ep) ParserError(*new(_ep) PunctuationExpected(start, *new(_ep) String(leftCurly))));
+            return _Result<CodeBlock, ParserError>(new(_ep) ParserError(*new(_ep) PunctuationExpected(start, *new(_ep) _VarString(leftCurly))));
         }
     }
     {
@@ -1708,7 +1708,7 @@ _Result<CodeBlock, ParserError> Parser::parseCodeBlock(_Page* _rp, _Page* _ep) {
                 ret = new(_rp) CodeBlock(start, lexer.getPosition());
         }
         else {
-            return _Result<CodeBlock, ParserError>(new(_ep) ParserError(*new(_ep) PunctuationExpected(start, *new(_ep) String(rightCurly))));
+            return _Result<CodeBlock, ParserError>(new(_ep) ParserError(*new(_ep) PunctuationExpected(start, *new(_ep) _VarString(rightCurly))));
         }
     }
 
@@ -1748,7 +1748,7 @@ _Result<PrefixExpression, ParserError> Parser::parsePrefixExpression(_Page* _rp,
     PrefixExpression* ret = 0;
     {
         Position start = lexer.getPreviousPosition();
-        String* prefixOperator = lexer.parsePrefixOperator(_rp);
+        _VarString* prefixOperator = lexer.parsePrefixOperator(_rp);
         if (prefixOperator) {
             lexer.advance();
             if (!ret)
@@ -1875,7 +1875,7 @@ _Result<BinaryOperation, ParserError> Parser::parseBinaryOperation(_Page* _rp, _
     BinaryOperation* ret = 0;
     {
         Position start = lexer.getPreviousPosition();
-        String* binaryOperator = lexer.parseBinaryOperator(_rp);
+        _VarString* binaryOperator = lexer.parseBinaryOperator(_rp);
         if (binaryOperator) {
             lexer.advance();
             if (!ret)
@@ -1915,7 +1915,7 @@ _Result<Assignment, ParserError> Parser::parseAssignment(_Page* _rp, _Page* _ep)
                 ret = new(_rp) Assignment(start, lexer.getPosition());
         }
         else {
-            return _Result<Assignment, ParserError>(new(_ep) ParserError(*new(_ep) PunctuationExpected(start, *new(_ep) String(equal))));
+            return _Result<Assignment, ParserError>(new(_ep) ParserError(*new(_ep) PunctuationExpected(start, *new(_ep) _VarString(equal))));
         }
     }
     {
@@ -1946,7 +1946,7 @@ _Result<TypeQuery, ParserError> Parser::parseTypeQuery(_Page* _rp, _Page* _ep) {
                 ret = new(_rp) TypeQuery(start, lexer.getPosition());
         }
         else {
-            return _Result<TypeQuery, ParserError>(new(_ep) ParserError(*new(_ep) KeywordExpected(start, *new(_ep) String(isKeyword))));
+            return _Result<TypeQuery, ParserError>(new(_ep) ParserError(*new(_ep) KeywordExpected(start, *new(_ep) _VarString(isKeyword))));
         }
     }
     {
@@ -1977,7 +1977,7 @@ _Result<TypeCast, ParserError> Parser::parseTypeCast(_Page* _rp, _Page* _ep) {
                 ret = new(_rp) TypeCast(start, lexer.getPosition());
         }
         else {
-            return _Result<TypeCast, ParserError>(new(_ep) ParserError(*new(_ep) KeywordExpected(start, *new(_ep) String(asKeyword))));
+            return _Result<TypeCast, ParserError>(new(_ep) ParserError(*new(_ep) KeywordExpected(start, *new(_ep) _VarString(asKeyword))));
         }
     }
     {
@@ -2029,7 +2029,7 @@ _Result<CatchClause, ParserError> Parser::parseCatchClause(_Page* _rp, _Page* _e
                 ret = new(_rp) CatchClause(start, lexer.getPosition());
         }
         else {
-            return _Result<CatchClause, ParserError>(new(_ep) ParserError(*new(_ep) KeywordExpected(start, *new(_ep) String(catchKeyword))));
+            return _Result<CatchClause, ParserError>(new(_ep) ParserError(*new(_ep) KeywordExpected(start, *new(_ep) _VarString(catchKeyword))));
         }
     }
     {
@@ -2219,7 +2219,7 @@ _Result<OperatorPostfix, ParserError> Parser::parseOperatorPostfix(_Page* _rp, _
     OperatorPostfix* ret = 0;
     {
         Position start = lexer.getPreviousPosition();
-        String* postfixOperator = lexer.parsePostfixOperator(_rp);
+        _VarString* postfixOperator = lexer.parsePostfixOperator(_rp);
         if (postfixOperator) {
             lexer.advance();
             if (!ret)
@@ -2275,7 +2275,7 @@ _Result<ExplicitMemberExpression, ParserError> Parser::parseExplicitMemberExpres
                 ret = new(_rp) ExplicitMemberExpression(start, lexer.getPosition());
         }
         else {
-            return _Result<ExplicitMemberExpression, ParserError>(new(_ep) ParserError(*new(_ep) PunctuationExpected(start, *new(_ep) String(dot))));
+            return _Result<ExplicitMemberExpression, ParserError>(new(_ep) ParserError(*new(_ep) PunctuationExpected(start, *new(_ep) _VarString(dot))));
         }
     }
     {
@@ -2306,7 +2306,7 @@ _Result<Subscript, ParserError> Parser::parseSubscript(_Page* _rp, _Page* _ep) {
                 ret = new(_rp) Subscript(start, lexer.getPosition());
         }
         else {
-            return _Result<Subscript, ParserError>(new(_ep) ParserError(*new(_ep) PunctuationExpected(start, *new(_ep) String(leftBracket))));
+            return _Result<Subscript, ParserError>(new(_ep) ParserError(*new(_ep) PunctuationExpected(start, *new(_ep) _VarString(leftBracket))));
         }
     }
     {
@@ -2331,7 +2331,7 @@ _Result<Subscript, ParserError> Parser::parseSubscript(_Page* _rp, _Page* _ep) {
                 ret = new(_rp) Subscript(start, lexer.getPosition());
         }
         else {
-            return _Result<Subscript, ParserError>(new(_ep) ParserError(*new(_ep) PunctuationExpected(start, *new(_ep) String(rightBracket))));
+            return _Result<Subscript, ParserError>(new(_ep) ParserError(*new(_ep) PunctuationExpected(start, *new(_ep) _VarString(rightBracket))));
         }
     }
 
@@ -2561,7 +2561,7 @@ _Result<ParenthesizedExpression, ParserError> Parser::parseParenthesizedExpressi
                 ret = new(_rp) ParenthesizedExpression(start, lexer.getPosition());
         }
         else {
-            return _Result<ParenthesizedExpression, ParserError>(new(_ep) ParserError(*new(_ep) PunctuationExpected(start, *new(_ep) String(leftParen))));
+            return _Result<ParenthesizedExpression, ParserError>(new(_ep) ParserError(*new(_ep) PunctuationExpected(start, *new(_ep) _VarString(leftParen))));
         }
     }
     {
@@ -2583,7 +2583,7 @@ _Result<ParenthesizedExpression, ParserError> Parser::parseParenthesizedExpressi
                 ret = new(_rp) ParenthesizedExpression(start, lexer.getPosition());
         }
         else {
-            return _Result<ParenthesizedExpression, ParserError>(new(_ep) ParserError(*new(_ep) PunctuationExpected(start, *new(_ep) String(rightParen))));
+            return _Result<ParenthesizedExpression, ParserError>(new(_ep) ParserError(*new(_ep) PunctuationExpected(start, *new(_ep) _VarString(rightParen))));
         }
     }
 
@@ -2614,7 +2614,7 @@ _Result<IdentifierExpression, ParserError> Parser::parseIdentifierExpression(_Pa
     IdentifierExpression* ret = 0;
     {
         Position start = lexer.getPreviousPosition();
-        String* name = lexer.parseIdentifier(_rp);
+        _VarString* name = lexer.parseIdentifier(_rp);
         if ((name) && (isIdentifier(*name))) {
             lexer.advance();
             if (!ret)
@@ -2641,7 +2641,7 @@ _Result<IfExpression, ParserError> Parser::parseIfExpression(_Page* _rp, _Page* 
                 ret = new(_rp) IfExpression(start, lexer.getPosition());
         }
         else {
-            return _Result<IfExpression, ParserError>(new(_ep) ParserError(*new(_ep) KeywordExpected(start, *new(_ep) String(ifKeyword))));
+            return _Result<IfExpression, ParserError>(new(_ep) ParserError(*new(_ep) KeywordExpected(start, *new(_ep) _VarString(ifKeyword))));
         }
     }
     {
@@ -2695,7 +2695,7 @@ _Result<ElseClause, ParserError> Parser::parseElseClause(_Page* _rp, _Page* _ep)
                 ret = new(_rp) ElseClause(start, lexer.getPosition());
         }
         else {
-            return _Result<ElseClause, ParserError>(new(_ep) ParserError(*new(_ep) KeywordExpected(start, *new(_ep) String(elseKeyword))));
+            return _Result<ElseClause, ParserError>(new(_ep) ParserError(*new(_ep) KeywordExpected(start, *new(_ep) _VarString(elseKeyword))));
         }
     }
     {
@@ -2726,7 +2726,7 @@ _Result<SwitchExpression, ParserError> Parser::parseSwitchExpression(_Page* _rp,
                 ret = new(_rp) SwitchExpression(start, lexer.getPosition());
         }
         else {
-            return _Result<SwitchExpression, ParserError>(new(_ep) ParserError(*new(_ep) KeywordExpected(start, *new(_ep) String(switchKeyword))));
+            return _Result<SwitchExpression, ParserError>(new(_ep) ParserError(*new(_ep) KeywordExpected(start, *new(_ep) _VarString(switchKeyword))));
         }
     }
     {
@@ -2797,7 +2797,7 @@ _Result<CurliedSwitchBody, ParserError> Parser::parseCurliedSwitchBody(_Page* _r
                 ret = new(_rp) CurliedSwitchBody(start, lexer.getPosition());
         }
         else {
-            return _Result<CurliedSwitchBody, ParserError>(new(_ep) ParserError(*new(_ep) PunctuationExpected(start, *new(_ep) String(leftCurly))));
+            return _Result<CurliedSwitchBody, ParserError>(new(_ep) ParserError(*new(_ep) PunctuationExpected(start, *new(_ep) _VarString(leftCurly))));
         }
     }
     {
@@ -2822,7 +2822,7 @@ _Result<CurliedSwitchBody, ParserError> Parser::parseCurliedSwitchBody(_Page* _r
                 ret = new(_rp) CurliedSwitchBody(start, lexer.getPosition());
         }
         else {
-            return _Result<CurliedSwitchBody, ParserError>(new(_ep) ParserError(*new(_ep) PunctuationExpected(start, *new(_ep) String(rightCurly))));
+            return _Result<CurliedSwitchBody, ParserError>(new(_ep) ParserError(*new(_ep) PunctuationExpected(start, *new(_ep) _VarString(rightCurly))));
         }
     }
 
@@ -2939,7 +2939,7 @@ _Result<ItemCaseLabel, ParserError> Parser::parseItemCaseLabel(_Page* _rp, _Page
                 ret = new(_rp) ItemCaseLabel(start, lexer.getPosition());
         }
         else {
-            return _Result<ItemCaseLabel, ParserError>(new(_ep) ParserError(*new(_ep) KeywordExpected(start, *new(_ep) String(caseKeyword))));
+            return _Result<ItemCaseLabel, ParserError>(new(_ep) ParserError(*new(_ep) KeywordExpected(start, *new(_ep) _VarString(caseKeyword))));
         }
     }
     {
@@ -2974,7 +2974,7 @@ _Result<ItemCaseLabel, ParserError> Parser::parseItemCaseLabel(_Page* _rp, _Page
                 ret = new(_rp) ItemCaseLabel(start, lexer.getPosition());
         }
         else {
-            return _Result<ItemCaseLabel, ParserError>(new(_ep) ParserError(*new(_ep) PunctuationExpected(start, *new(_ep) String(colon))));
+            return _Result<ItemCaseLabel, ParserError>(new(_ep) ParserError(*new(_ep) PunctuationExpected(start, *new(_ep) _VarString(colon))));
         }
     }
 
@@ -3013,7 +3013,7 @@ _Result<CaseItem, ParserError> Parser::parseCaseItem(_Page* _rp, _Page* _ep) {
                 ret = new(_rp) CaseItem(start, lexer.getPosition());
         }
         else {
-            return _Result<CaseItem, ParserError>(new(_ep) ParserError(*new(_ep) PunctuationExpected(start, *new(_ep) String(comma))));
+            return _Result<CaseItem, ParserError>(new(_ep) ParserError(*new(_ep) PunctuationExpected(start, *new(_ep) _VarString(comma))));
         }
     }
     {
@@ -3044,7 +3044,7 @@ _Result<ForExpression, ParserError> Parser::parseForExpression(_Page* _rp, _Page
                 ret = new(_rp) ForExpression(start, lexer.getPosition());
         }
         else {
-            return _Result<ForExpression, ParserError>(new(_ep) ParserError(*new(_ep) KeywordExpected(start, *new(_ep) String(forKeyword))));
+            return _Result<ForExpression, ParserError>(new(_ep) ParserError(*new(_ep) KeywordExpected(start, *new(_ep) _VarString(forKeyword))));
         }
     }
     {
@@ -3115,7 +3115,7 @@ _Result<ForEach, ParserError> Parser::parseForEach(_Page* _rp, _Page* _ep) {
                 ret = new(_rp) ForEach(start, lexer.getPosition());
         }
         else {
-            return _Result<ForEach, ParserError>(new(_ep) ParserError(*new(_ep) KeywordExpected(start, *new(_ep) String(inKeyword))));
+            return _Result<ForEach, ParserError>(new(_ep) ParserError(*new(_ep) KeywordExpected(start, *new(_ep) _VarString(inKeyword))));
         }
     }
     {
@@ -3169,7 +3169,7 @@ _Result<PlainFor, ParserError> Parser::parsePlainFor(_Page* _rp, _Page* _ep) {
                 ret = new(_rp) PlainFor(start, lexer.getPosition());
         }
         else {
-            return _Result<PlainFor, ParserError>(new(_ep) ParserError(*new(_ep) PunctuationExpected(start, *new(_ep) String(semicolon))));
+            return _Result<PlainFor, ParserError>(new(_ep) ParserError(*new(_ep) PunctuationExpected(start, *new(_ep) _VarString(semicolon))));
         }
     }
     {
@@ -3191,7 +3191,7 @@ _Result<PlainFor, ParserError> Parser::parsePlainFor(_Page* _rp, _Page* _ep) {
                 ret = new(_rp) PlainFor(start, lexer.getPosition());
         }
         else {
-            return _Result<PlainFor, ParserError>(new(_ep) ParserError(*new(_ep) PunctuationExpected(start, *new(_ep) String(semicolon))));
+            return _Result<PlainFor, ParserError>(new(_ep) ParserError(*new(_ep) PunctuationExpected(start, *new(_ep) _VarString(semicolon))));
         }
     }
     {
@@ -3235,7 +3235,7 @@ _Result<ReturnExpression, ParserError> Parser::parseReturnExpression(_Page* _rp,
                 ret = new(_rp) ReturnExpression(start, lexer.getPosition());
         }
         else {
-            return _Result<ReturnExpression, ParserError>(new(_ep) ParserError(*new(_ep) KeywordExpected(start, *new(_ep) String(returnKeyword))));
+            return _Result<ReturnExpression, ParserError>(new(_ep) ParserError(*new(_ep) KeywordExpected(start, *new(_ep) _VarString(returnKeyword))));
         }
     }
     {
@@ -3263,7 +3263,7 @@ _Result<ThrowExpression, ParserError> Parser::parseThrowExpression(_Page* _rp, _
                 ret = new(_rp) ThrowExpression(start, lexer.getPosition());
         }
         else {
-            return _Result<ThrowExpression, ParserError>(new(_ep) ParserError(*new(_ep) KeywordExpected(start, *new(_ep) String(throwKeyword))));
+            return _Result<ThrowExpression, ParserError>(new(_ep) ParserError(*new(_ep) KeywordExpected(start, *new(_ep) _VarString(throwKeyword))));
         }
     }
     {
@@ -3291,7 +3291,7 @@ _Result<BreakExpression, ParserError> Parser::parseBreakExpression(_Page* _rp, _
                 ret = new(_rp) BreakExpression(start, lexer.getPosition());
         }
         else {
-            return _Result<BreakExpression, ParserError>(new(_ep) ParserError(*new(_ep) KeywordExpected(start, *new(_ep) String(breakKeyword))));
+            return _Result<BreakExpression, ParserError>(new(_ep) ParserError(*new(_ep) KeywordExpected(start, *new(_ep) _VarString(breakKeyword))));
         }
     }
     {
@@ -3366,7 +3366,7 @@ _Result<WildcardPattern, ParserError> Parser::parseWildcardPattern(_Page* _rp, _
                 ret = new(_rp) WildcardPattern(start, lexer.getPosition());
         }
         else {
-            return _Result<WildcardPattern, ParserError>(new(_ep) ParserError(*new(_ep) PunctuationExpected(start, *new(_ep) String(underscore))));
+            return _Result<WildcardPattern, ParserError>(new(_ep) ParserError(*new(_ep) PunctuationExpected(start, *new(_ep) _VarString(underscore))));
         }
     }
 
@@ -3377,7 +3377,7 @@ _Result<IdentifierPattern, ParserError> Parser::parseIdentifierPattern(_Page* _r
     IdentifierPattern* ret = 0;
     {
         Position start = lexer.getPreviousPosition();
-        String* identifier = lexer.parseIdentifier(_rp);
+        _VarString* identifier = lexer.parseIdentifier(_rp);
         if ((identifier) && (isIdentifier(*identifier))) {
             lexer.advance();
             if (!ret)
@@ -3414,7 +3414,7 @@ _Result<TuplePattern, ParserError> Parser::parseTuplePattern(_Page* _rp, _Page* 
                 ret = new(_rp) TuplePattern(start, lexer.getPosition());
         }
         else {
-            return _Result<TuplePattern, ParserError>(new(_ep) ParserError(*new(_ep) PunctuationExpected(start, *new(_ep) String(leftParen))));
+            return _Result<TuplePattern, ParserError>(new(_ep) ParserError(*new(_ep) PunctuationExpected(start, *new(_ep) _VarString(leftParen))));
         }
     }
     {
@@ -3439,7 +3439,7 @@ _Result<TuplePattern, ParserError> Parser::parseTuplePattern(_Page* _rp, _Page* 
                 ret = new(_rp) TuplePattern(start, lexer.getPosition());
         }
         else {
-            return _Result<TuplePattern, ParserError>(new(_ep) ParserError(*new(_ep) PunctuationExpected(start, *new(_ep) String(rightParen))));
+            return _Result<TuplePattern, ParserError>(new(_ep) ParserError(*new(_ep) PunctuationExpected(start, *new(_ep) _VarString(rightParen))));
         }
     }
 
@@ -3525,7 +3525,7 @@ _Result<DefaultCaseLabel, ParserError> Parser::parseDefaultCaseLabel(_Page* _rp,
                 ret = new(_rp) DefaultCaseLabel(start, lexer.getPosition());
         }
         else {
-            return _Result<DefaultCaseLabel, ParserError>(new(_ep) ParserError(*new(_ep) KeywordExpected(start, *new(_ep) String(defaultKeyword))));
+            return _Result<DefaultCaseLabel, ParserError>(new(_ep) ParserError(*new(_ep) KeywordExpected(start, *new(_ep) _VarString(defaultKeyword))));
         }
     }
     {
@@ -3537,7 +3537,7 @@ _Result<DefaultCaseLabel, ParserError> Parser::parseDefaultCaseLabel(_Page* _rp,
                 ret = new(_rp) DefaultCaseLabel(start, lexer.getPosition());
         }
         else {
-            return _Result<DefaultCaseLabel, ParserError>(new(_ep) ParserError(*new(_ep) PunctuationExpected(start, *new(_ep) String(colon))));
+            return _Result<DefaultCaseLabel, ParserError>(new(_ep) ParserError(*new(_ep) PunctuationExpected(start, *new(_ep) _VarString(colon))));
         }
     }
 
@@ -3601,7 +3601,7 @@ _Result<EmptyCaseContent, ParserError> Parser::parseEmptyCaseContent(_Page* _rp,
                 ret = new(_rp) EmptyCaseContent(start, lexer.getPosition());
         }
         else {
-            return _Result<EmptyCaseContent, ParserError>(new(_ep) ParserError(*new(_ep) PunctuationExpected(start, *new(_ep) String(semicolon))));
+            return _Result<EmptyCaseContent, ParserError>(new(_ep) ParserError(*new(_ep) PunctuationExpected(start, *new(_ep) _VarString(semicolon))));
         }
     }
 
@@ -3698,7 +3698,7 @@ _Result<ThisDot, ParserError> Parser::parseThisDot(_Page* _rp, _Page* _ep) {
                 ret = new(_rp) ThisDot(start, lexer.getPosition());
         }
         else {
-            return _Result<ThisDot, ParserError>(new(_ep) ParserError(*new(_ep) KeywordExpected(start, *new(_ep) String(thisKeyword))));
+            return _Result<ThisDot, ParserError>(new(_ep) ParserError(*new(_ep) KeywordExpected(start, *new(_ep) _VarString(thisKeyword))));
         }
     }
     {
@@ -3710,7 +3710,7 @@ _Result<ThisDot, ParserError> Parser::parseThisDot(_Page* _rp, _Page* _ep) {
                 ret = new(_rp) ThisDot(start, lexer.getPosition());
         }
         else {
-            return _Result<ThisDot, ParserError>(new(_ep) ParserError(*new(_ep) PunctuationExpected(start, *new(_ep) String(dot))));
+            return _Result<ThisDot, ParserError>(new(_ep) ParserError(*new(_ep) PunctuationExpected(start, *new(_ep) _VarString(dot))));
         }
     }
     {
@@ -3741,7 +3741,7 @@ _Result<ThisSubscript, ParserError> Parser::parseThisSubscript(_Page* _rp, _Page
                 ret = new(_rp) ThisSubscript(start, lexer.getPosition());
         }
         else {
-            return _Result<ThisSubscript, ParserError>(new(_ep) ParserError(*new(_ep) KeywordExpected(start, *new(_ep) String(thisKeyword))));
+            return _Result<ThisSubscript, ParserError>(new(_ep) ParserError(*new(_ep) KeywordExpected(start, *new(_ep) _VarString(thisKeyword))));
         }
     }
     {
@@ -3772,7 +3772,7 @@ _Result<ThisWord, ParserError> Parser::parseThisWord(_Page* _rp, _Page* _ep) {
                 ret = new(_rp) ThisWord(start, lexer.getPosition());
         }
         else {
-            return _Result<ThisWord, ParserError>(new(_ep) ParserError(*new(_ep) KeywordExpected(start, *new(_ep) String(thisKeyword))));
+            return _Result<ThisWord, ParserError>(new(_ep) ParserError(*new(_ep) KeywordExpected(start, *new(_ep) _VarString(thisKeyword))));
         }
     }
 
@@ -3817,7 +3817,7 @@ _Result<ThisInit, ParserError> Parser::parseThisInit(_Page* _rp, _Page* _ep) {
                 ret = new(_rp) ThisInit(start, lexer.getPosition());
         }
         else {
-            return _Result<ThisInit, ParserError>(new(_ep) ParserError(*new(_ep) KeywordExpected(start, *new(_ep) String(initKeyword))));
+            return _Result<ThisInit, ParserError>(new(_ep) ParserError(*new(_ep) KeywordExpected(start, *new(_ep) _VarString(initKeyword))));
         }
     }
 
@@ -3828,7 +3828,7 @@ _Result<ThisMember, ParserError> Parser::parseThisMember(_Page* _rp, _Page* _ep)
     ThisMember* ret = 0;
     {
         Position start = lexer.getPreviousPosition();
-        String* name = lexer.parseIdentifier(_rp);
+        _VarString* name = lexer.parseIdentifier(_rp);
         if ((name) && (isIdentifier(*name))) {
             lexer.advance();
             if (!ret)
@@ -3882,7 +3882,7 @@ _Result<SuperDot, ParserError> Parser::parseSuperDot(_Page* _rp, _Page* _ep) {
                 ret = new(_rp) SuperDot(start, lexer.getPosition());
         }
         else {
-            return _Result<SuperDot, ParserError>(new(_ep) ParserError(*new(_ep) KeywordExpected(start, *new(_ep) String(superKeyword))));
+            return _Result<SuperDot, ParserError>(new(_ep) ParserError(*new(_ep) KeywordExpected(start, *new(_ep) _VarString(superKeyword))));
         }
     }
     {
@@ -3894,7 +3894,7 @@ _Result<SuperDot, ParserError> Parser::parseSuperDot(_Page* _rp, _Page* _ep) {
                 ret = new(_rp) SuperDot(start, lexer.getPosition());
         }
         else {
-            return _Result<SuperDot, ParserError>(new(_ep) ParserError(*new(_ep) PunctuationExpected(start, *new(_ep) String(dot))));
+            return _Result<SuperDot, ParserError>(new(_ep) ParserError(*new(_ep) PunctuationExpected(start, *new(_ep) _VarString(dot))));
         }
     }
     {
@@ -3925,7 +3925,7 @@ _Result<SuperSubscript, ParserError> Parser::parseSuperSubscript(_Page* _rp, _Pa
                 ret = new(_rp) SuperSubscript(start, lexer.getPosition());
         }
         else {
-            return _Result<SuperSubscript, ParserError>(new(_ep) ParserError(*new(_ep) KeywordExpected(start, *new(_ep) String(superKeyword))));
+            return _Result<SuperSubscript, ParserError>(new(_ep) ParserError(*new(_ep) KeywordExpected(start, *new(_ep) _VarString(superKeyword))));
         }
     }
     {
@@ -3983,7 +3983,7 @@ _Result<SuperInit, ParserError> Parser::parseSuperInit(_Page* _rp, _Page* _ep) {
                 ret = new(_rp) SuperInit(start, lexer.getPosition());
         }
         else {
-            return _Result<SuperInit, ParserError>(new(_ep) ParserError(*new(_ep) KeywordExpected(start, *new(_ep) String(initKeyword))));
+            return _Result<SuperInit, ParserError>(new(_ep) ParserError(*new(_ep) KeywordExpected(start, *new(_ep) _VarString(initKeyword))));
         }
     }
 
@@ -3994,7 +3994,7 @@ _Result<SuperMember, ParserError> Parser::parseSuperMember(_Page* _rp, _Page* _e
     SuperMember* ret = 0;
     {
         Position start = lexer.getPreviousPosition();
-        String* name = lexer.parseIdentifier(_rp);
+        _VarString* name = lexer.parseIdentifier(_rp);
         if ((name) && (isIdentifier(*name))) {
             lexer.advance();
             if (!ret)
@@ -4048,7 +4048,7 @@ _Result<TypeAnnotation, ParserError> Parser::parseTypeAnnotation(_Page* _rp, _Pa
                 ret = new(_rp) TypeAnnotation(start, lexer.getPosition());
         }
         else {
-            return _Result<TypeAnnotation, ParserError>(new(_ep) ParserError(*new(_ep) PunctuationExpected(start, *new(_ep) String(colon))));
+            return _Result<TypeAnnotation, ParserError>(new(_ep) ParserError(*new(_ep) PunctuationExpected(start, *new(_ep) _VarString(colon))));
         }
     }
     {
@@ -4072,7 +4072,7 @@ _Result<TypeIdentifier, ParserError> Parser::parseTypeIdentifier(_Page* _rp, _Pa
     TypeIdentifier* ret = 0;
     {
         Position start = lexer.getPreviousPosition();
-        String* name = lexer.parseIdentifier(_rp);
+        _VarString* name = lexer.parseIdentifier(_rp);
         if ((name) && (isIdentifier(*name))) {
             lexer.advance();
             if (!ret)
@@ -4119,7 +4119,7 @@ _Result<SubtypeIdentifier, ParserError> Parser::parseSubtypeIdentifier(_Page* _r
                 ret = new(_rp) SubtypeIdentifier(start, lexer.getPosition());
         }
         else {
-            return _Result<SubtypeIdentifier, ParserError>(new(_ep) ParserError(*new(_ep) PunctuationExpected(start, *new(_ep) String(dot))));
+            return _Result<SubtypeIdentifier, ParserError>(new(_ep) ParserError(*new(_ep) PunctuationExpected(start, *new(_ep) _VarString(dot))));
         }
     }
     {
@@ -4188,7 +4188,7 @@ _Result<ArrayType, ParserError> Parser::parseArrayType(_Page* _rp, _Page* _ep) {
                 ret = new(_rp) ArrayType(start, lexer.getPosition());
         }
         else {
-            return _Result<ArrayType, ParserError>(new(_ep) ParserError(*new(_ep) PunctuationExpected(start, *new(_ep) String(leftBracket))));
+            return _Result<ArrayType, ParserError>(new(_ep) ParserError(*new(_ep) PunctuationExpected(start, *new(_ep) _VarString(leftBracket))));
         }
     }
     {
@@ -4213,7 +4213,7 @@ _Result<ArrayType, ParserError> Parser::parseArrayType(_Page* _rp, _Page* _ep) {
                 ret = new(_rp) ArrayType(start, lexer.getPosition());
         }
         else {
-            return _Result<ArrayType, ParserError>(new(_ep) ParserError(*new(_ep) PunctuationExpected(start, *new(_ep) String(rightBracket))));
+            return _Result<ArrayType, ParserError>(new(_ep) ParserError(*new(_ep) PunctuationExpected(start, *new(_ep) _VarString(rightBracket))));
         }
     }
     {
@@ -4241,7 +4241,7 @@ _Result<OptionalType, ParserError> Parser::parseOptionalType(_Page* _rp, _Page* 
                 ret = new(_rp) OptionalType(start, lexer.getPosition());
         }
         else {
-            return _Result<OptionalType, ParserError>(new(_ep) ParserError(*new(_ep) PunctuationExpected(start, *new(_ep) String(questionMark))));
+            return _Result<OptionalType, ParserError>(new(_ep) ParserError(*new(_ep) PunctuationExpected(start, *new(_ep) _VarString(questionMark))));
         }
     }
 
@@ -4259,7 +4259,7 @@ _Result<TypeInheritanceClause, ParserError> Parser::parseTypeInheritanceClause(_
                 ret = new(_rp) TypeInheritanceClause(start, lexer.getPosition());
         }
         else {
-            return _Result<TypeInheritanceClause, ParserError>(new(_ep) ParserError(*new(_ep) PunctuationExpected(start, *new(_ep) String(colon))));
+            return _Result<TypeInheritanceClause, ParserError>(new(_ep) ParserError(*new(_ep) PunctuationExpected(start, *new(_ep) _VarString(colon))));
         }
     }
     {
@@ -4329,7 +4329,7 @@ bool Parser::isAtEnd() {
     return lexer.isAtEnd();
 }
     
-bool Parser::isIdentifier(String& id) {
+bool Parser::isIdentifier(_VarString& id) {
     if (id == useKeyword)
         return false;
 

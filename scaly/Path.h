@@ -4,8 +4,8 @@ namespace scaly {
     
 class Path {
 public:
-    static String* getFileNameWithoutExtension(_Page* _rp, String& path);
-    static String* getFileName(_Page* _rp, String& path);
+    static _VarString* getFileNameWithoutExtension(_Page* _rp, _VarString& path);
+    static _VarString* getFileName(_Page* _rp, _VarString& path);
 };
 
 }

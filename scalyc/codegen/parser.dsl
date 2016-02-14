@@ -142,7 +142,7 @@ namespace scalyc {
 
 class Parser : public Object {
 public:
-    Parser(String* fileName, String& text);
+    Parser(_VarString* fileName, _VarString& text);
 "
     (apply-to-selected-children "syntax" (lambda (syntax) (if (program? syntax) "" ($
 "
@@ -153,11 +153,11 @@ public:
 "   ))))
 "
     bool isAtEnd();
-    bool isIdentifier(String& id);
+    bool isIdentifier(_VarString& id);
 
 private:
     Lexer lexer;
-    String* fileName;
+    _VarString* fileName;
 
 "   (apply-to-selected-children "keyword" (lambda (keyword) ($
 "    const char* "(name keyword)" = \""(id keyword)"\";
@@ -180,7 +180,7 @@ private:
 using namespace scaly;
 namespace scalyc {
 
-Parser::Parser(String* fileName, String& text)
+Parser::Parser(_VarString* fileName, _VarString& text)
 : lexer(text), fileName(fileName) {
 }
 "    (apply-to-selected-children "syntax" (lambda (syntax) (if (program? syntax) "" ($
@@ -249,7 +249,7 @@ _Result<"(id syntax)", ParserError> Parser::parse"(id syntax)"(_Page* _rp, _Page
 "                           )"")
                         )
                         ($ ; terminals
-"        "(case (type content) (("keyword" "punctuation") "bool success")(("literal") "Literal* literal")(else ($ "String* "(property content))))
+"        "(case (type content) (("keyword" "punctuation") "bool success")(("literal") "Literal* literal")(else ($ "_VarString* "(property content))))
         " = lexer.parse"
         (case (type content)(("prefixoperator") "PrefixOperator")(("binaryoperator") "BinaryOperator")(("postfixoperator") "PostfixOperator")(("identifier") "Identifier")(("literal") "Literal")(("keyword") "Keyword")(("punctuation") "Punctuation"))                            
         "("(case (type content)(("keyword") (name-of-link content)) (("punctuation") (link content)) (else "_rp"))");
@@ -268,7 +268,7 @@ _Result<"(id syntax)", ParserError> Parser::parse"(id syntax)"(_Page* _rp, _Page
 "        else {
             return _Result<"(id syntax)", ParserError>("(if (string=? (type content) "syntax") "result.getError()" ($ "new(_ep) ParserError(*new(_ep) "
             (case (type content) (("keyword") "Keyword") (("punctuation") "Punctuation")(("identifier") "Identifier")(("literal") "Literal")(("prefixoperator" "binaryoperator" "postfixoperator") "Operator"))
-            "Expected(start"(case (type content) (("keyword" "punctuation") ($ ", *new(_ep) String("((if (string=? (type content) "keyword") name-of-link link) content)")"))(else ""))"))"))");
+            "Expected(start"(case (type content) (("keyword" "punctuation") ($ ", *new(_ep) _VarString("((if (string=? (type content) "keyword") name-of-link link) content)")"))(else ""))"))"))");
         }
 "                   ))
 "    }
@@ -288,7 +288,7 @@ bool Parser::isAtEnd() {
     return lexer.isAtEnd();
 }
     
-bool Parser::isIdentifier(String& id) {"
+bool Parser::isIdentifier(_VarString& id) {"
    (apply-to-selected-children "keyword" (lambda (keyword) ($
 "
     if (id == "(name keyword)")

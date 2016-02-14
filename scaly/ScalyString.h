@@ -2,26 +2,26 @@
 #define __Scaly__SwipeString__
 namespace scaly {
 
-class String : public Object {
+class _VarString : public Object {
 public:
-    String();
-    String(const char* theString);
-    String(const String& theString);
-    String(size_t theLength);
-    String(char c);
+    _VarString();
+    _VarString(const char* theString);
+    _VarString(const _VarString& theString);
+    _VarString(size_t theLength);
+    _VarString(char c);
     char* getNativeString() const;
     size_t getLength();
     char operator [](size_t i);
-    String& operator += (char c);
-    String& operator += (const char* theString);
-    String& operator + (const char* theString);
-    String& operator += (const String& theString);
-    String& operator + (const String& thestring);
+    _VarString& operator += (char c);
+    _VarString& operator += (const char* theString);
+    _VarString& operator + (const char* theString);
+    _VarString& operator += (const _VarString& theString);
+    _VarString& operator + (const _VarString& thestring);
     bool operator == (const char* theString);
     bool operator != (const char* theString);
-    bool operator == (const String& theString);
-    bool operator != (const String& theString);
-    _Array<String>& Split(_Page* _rp, char c);
+    bool operator == (const _VarString& theString);
+    bool operator != (const _VarString& theString);
+    _Array<_VarString>& Split(_Page* _rp, char c);
 
 private:
     void reallocate(size_t newLength);

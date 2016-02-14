@@ -10,7 +10,7 @@ void* OptionsError::getErrorInfo() {
     return errorInfo;
 }
 
-_InvalidOption::_InvalidOption(String& option)
+_InvalidOption::_InvalidOption(_VarString& option)
 : option(option){
 }
 
@@ -18,7 +18,7 @@ _InvalidOption& OptionsError::getInvalidOption(){
     return *(_InvalidOption*)errorInfo;
 }
 
-_UnknownOption::_UnknownOption(String& option)
+_UnknownOption::_UnknownOption(_VarString& option)
 : option(option){
 }
 

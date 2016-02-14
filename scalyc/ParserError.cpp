@@ -30,7 +30,7 @@ LiteralExpected& ParserError::getLiteralExpected(){
     return *(LiteralExpected*)errorInfo;
 }
 
-KeywordExpected::KeywordExpected(Position& position, String& keyword)
+KeywordExpected::KeywordExpected(Position& position, _VarString& keyword)
 : ParserErrorInfo(position), keyword(keyword) {
 }
 
@@ -38,7 +38,7 @@ KeywordExpected& ParserError::getKeywordExpected(){
     return *(KeywordExpected*)errorInfo;
 }
 
-PunctuationExpected::PunctuationExpected(Position& position, String& punctuation)
+PunctuationExpected::PunctuationExpected(Position& position, _VarString& punctuation)
 : ParserErrorInfo(position), punctuation(punctuation) {
 }
 

@@ -6,7 +6,7 @@ namespace scalyc {
 
 class Parser : public Object {
 public:
-    Parser(String* fileName, String& text);
+    Parser(_VarString* fileName, _VarString& text);
 
     _Result<CompilationUnit, ParserError> parseCompilationUnit(_Page* _rp, _Page* _ep);
 
@@ -256,11 +256,11 @@ public:
     _Result<Inheritance, ParserError> parseInheritance(_Page* _rp, _Page* _ep);
 
     bool isAtEnd();
-    bool isIdentifier(String& id);
+    bool isIdentifier(_VarString& id);
 
 private:
     Lexer lexer;
-    String* fileName;
+    _VarString* fileName;
 
     const char* useKeyword = "use";
     const char* classKeyword = "class";

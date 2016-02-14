@@ -7,9 +7,9 @@ namespace scalyc
 
 class UnableToCreateOutputDirectory : public Object {
 public:
-    UnableToCreateOutputDirectory(String& outputDirectory, FileError& fileError);
+    UnableToCreateOutputDirectory(_VarString& outputDirectory, FileError& fileError);
 
-    String& outputDirectory;
+    _VarString& outputDirectory;
     FileError& fileError;
 };
 

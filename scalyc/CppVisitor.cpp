@@ -12,7 +12,7 @@ bool CppVisitor::openProgram(Program& program) {
     programDirectory = program.directory;
     
     if (programDirectory == 0 || *programDirectory == "")
-        programDirectory = new(this->getPage()) String(".");
+        programDirectory = new(this->getPage()) _VarString(".");
         
     if (!Directory::exists(*programDirectory)) {
         _Region _region; _Page* _p = _region.get();
@@ -22,18 +22,18 @@ bool CppVisitor::openProgram(Program& program) {
     
     {
         _Region _region; _Page* _p = _region.get();
-        String& outputFilePath = *new(_p) String(*programDirectory);
+        _VarString& outputFilePath = *new(_p) _VarString(*programDirectory);
         outputFilePath += "/";
         outputFilePath += *programName;
         
         // Build and write the project file
         {
             _Region _region; _Page* _p = _region.get();
-            String& projectFile = *new(_p) String();
+            _VarString& projectFile = *new(_p) _VarString();
             buildProjectFileString(projectFile, program);
             {
                 _Region _region; _Page* _p = _region.get();
-                String& projectFilePath = *new(_p) String(outputFilePath) + ".project";
+                _VarString& projectFilePath = *new(_p) _VarString(outputFilePath) + ".project";
                 if (File::writeFromString(_p, projectFilePath , projectFile))
                     return false;
             }
@@ -42,18 +42,18 @@ bool CppVisitor::openProgram(Program& program) {
         // Build and write the main header file
         {
             _Region _region; _Page* _p = _region.get();
-            String& headerFile = *new(_p) String();
+            _VarString& headerFile = *new(_p) _VarString();
             buildMainHeaderFileString(headerFile, program);
             {
                 _Region _region; _Page* _p = _region.get();
-                String& headerFilePath = *new(_p) String(outputFilePath) + ".h";
+                _VarString& headerFilePath = *new(_p) _VarString(outputFilePath) + ".h";
                 if (File::writeFromString(_p, headerFilePath, headerFile))
                     return false;
             }
         }
         
         inherits = new(getPage()) _Array<Inherits>();
-        classes = new(getPage()) _Array<String>();
+        classes = new(getPage()) _Array<_VarString>();
         collectInheritances(program);
     }
     
@@ -98,7 +98,7 @@ void CppVisitor::collectInheritancesInCompilationUnit(CompilationUnit& compilati
     }
 }
 
-void CppVisitor::registerInheritance(String& className, String& baseName) {
+void CppVisitor::registerInheritance(_VarString& className, _VarString& baseName) {
     size_t _inherits_length = inherits->length();
     Inherits* inherit = 0;
     for (size_t _i = 0; _i < _inherits_length; _i++) {
@@ -130,7 +130,7 @@ bool CppVisitor::openCompilationUnit(CompilationUnit& compilationUnit) {
     
     // Build and write the header file
     if (*moduleName != *programName) {
-        headerFile = new(getPage()) String();
+        headerFile = new(getPage()) _VarString();
         (*headerFile) += "#ifndef __";
         (*headerFile) += *programName;
         (*headerFile) += "__";
@@ -148,7 +148,7 @@ bool CppVisitor::openCompilationUnit(CompilationUnit& compilationUnit) {
     }
     
     // Begin cpp file
-    sourceFile = new(getPage()) String();
+    sourceFile = new(getPage()) _VarString();
     (*sourceFile) += "#include \"";
     (*sourceFile) += *programName;
     (*sourceFile) += ".h\"\nusing namespace scaly;\nnamespace ";
@@ -162,7 +162,7 @@ void CppVisitor::closeCompilationUnit(CompilationUnit& compilationUnit) {
     // Close and write cpp file
     _Region _region; _Page* _p = _region.get();
 
-    String& outputFilePath = *new(_p) String(*programDirectory);
+    _VarString& outputFilePath = *new(_p) _VarString(*programDirectory);
     outputFilePath += "/";
     outputFilePath += *Path::getFileNameWithoutExtension(_p, *compilationUnit.fileName);
 
@@ -170,13 +170,13 @@ void CppVisitor::closeCompilationUnit(CompilationUnit& compilationUnit) {
         (*headerFile) += "\n\n}\n#endif // __scaly__";
         (*headerFile) += *moduleName;
         (*headerFile) += "__\n";
-        String& headerFilePath = *new(_p) String(outputFilePath);
+        _VarString& headerFilePath = *new(_p) _VarString(outputFilePath);
         headerFilePath += ".h";
         File::writeFromString(_p, headerFilePath , *headerFile);
     }
 
     (*sourceFile) += "\n}\n";
-    String& sourceFilePath = *new(_p) String(outputFilePath);
+    _VarString& sourceFilePath = *new(_p) _VarString(outputFilePath);
     sourceFilePath += ".cpp";
     File::writeFromString(_p, sourceFilePath , *sourceFile);
 }
@@ -325,7 +325,7 @@ bool CppVisitor::openConstParameter(ConstParameter& constParameter) {
     return false;
 }
 
-bool CppVisitor::isClass(String& name) {
+bool CppVisitor::isClass(_VarString& name) {
     if (name == "String")
         return true;
         
@@ -431,7 +431,7 @@ void CppVisitor::closeClassDeclaration(ClassDeclaration& classDeclaration) {
     }
     {
         _Region _region; _Page* _p = _region.get();
-        _Array<String>& derivedClasses = *new(_p) _Array<String>();
+        _Array<_VarString>& derivedClasses = *new(_p) _Array<_VarString>();
         collectDerivedClasses(derivedClasses, *classDeclarationName);
         size_t _derivedClasses_length = derivedClasses.length();
         for (size_t _i = 0; _i < _derivedClasses_length; _i++) {
@@ -449,7 +449,7 @@ void CppVisitor::indentHeader() {
         (*headerFile) += "    ";
 }
 
-void CppVisitor::collectDerivedClasses(_Array<String>& derivedClasses, String& className) {
+void CppVisitor::collectDerivedClasses(_Array<_VarString>& derivedClasses, _VarString& className) {
     size_t _inherits_length = inherits->length();
     for (size_t _i = 0; _i < _inherits_length; _i++) {
         if (*(*(*inherits)[_i])->name == className)
@@ -457,10 +457,10 @@ void CppVisitor::collectDerivedClasses(_Array<String>& derivedClasses, String& c
     }
 }
 
-void CppVisitor::appendDerivedClasses(_Array<String>& derivedClasses, _Array<String>& inheritors) {
+void CppVisitor::appendDerivedClasses(_Array<_VarString>& derivedClasses, _Array<_VarString>& inheritors) {
     size_t _inheritors_length = inheritors.length();
     for (size_t _i = 0; _i < _inheritors_length; _i++) {
-        String& derivedClass = **inheritors[_i];
+        _VarString& derivedClass = **inheritors[_i];
         derivedClasses.push(&derivedClass);
         collectDerivedClasses(derivedClasses, derivedClass);
     }    
@@ -832,7 +832,7 @@ bool CppVisitor::openTypeIdentifier(TypeIdentifier& typeIdentifier) {
     return true;
 }
 
-const char* CppVisitor::getCppType(String* typeIdentifierName) {
+const char* CppVisitor::getCppType(_VarString* typeIdentifierName) {
     const char* typeIdentifier = typeIdentifierName->getNativeString();
     
     if ((*typeIdentifierName) == "unsigned")
@@ -876,7 +876,7 @@ bool CppVisitor::openInheritance(Inheritance& inheritance) {
 void CppVisitor::closeInheritance(Inheritance& inheritance) {
 }
 
-void CppVisitor::buildMainHeaderFileString(String& mainHeaderFile, Program& program) {
+void CppVisitor::buildMainHeaderFileString(_VarString& mainHeaderFile, Program& program) {
     mainHeaderFile += "#ifndef __scaly__";
     mainHeaderFile += *programName;
     mainHeaderFile += "__\n#define __scaly__";
@@ -893,7 +893,7 @@ void CppVisitor::buildMainHeaderFileString(String& mainHeaderFile, Program& prog
     mainHeaderFile += " {\nint _main(_Array<String>& arguments);\n}\n\n#endif // __scaly__scalyc__\n";
 }
 
-void CppVisitor::buildProjectFileString(String& projectFile, Program& program) {
+void CppVisitor::buildProjectFileString(_VarString& projectFile, Program& program) {
     projectFile += "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
     projectFile += "<CodeLite_Project Name=\"";
     projectFile +=  *programName;
@@ -991,9 +991,9 @@ void CppVisitor::buildProjectFileString(String& projectFile, Program& program) {
     projectFile += "        <SearchPaths/>\n      </Completion>\n    </Configuration>\n  </Settings>\n</CodeLite_Project>\n";    
 }
 
-Inherits::Inherits(String& className) {
-    name = new(getPage()) String(className);
-    inheritors = new(getPage()) _Array<String>();
+Inherits::Inherits(_VarString& className) {
+    name = new(getPage()) _VarString(className);
+    inheritors = new(getPage()) _Array<_VarString>();
 }
 
 }

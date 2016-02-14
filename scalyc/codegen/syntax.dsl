@@ -111,7 +111,7 @@ public:
                 ))
                 (("identifier" "operator" "prefixoperator" "binaryoperator" "postfixoperator")
                     (if (property content) ($
-"    String* "(property content)";
+"    _VarString* "(property content)";
 "
                     )"")
                 )
@@ -126,7 +126,7 @@ public:
                 (else "")
             )
             (if (top? syntax-node)
-"    String* fileName;
+"    _VarString* fileName;
 "
             "")
         )))

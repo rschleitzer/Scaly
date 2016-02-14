@@ -23,14 +23,14 @@ public:
 
 class KeywordExpected: public ParserErrorInfo {
 public:
-    KeywordExpected(Position& position, String& keyword);
-    String& keyword; 
+    KeywordExpected(Position& position, _VarString& keyword);
+    _VarString& keyword; 
 };
 
 class PunctuationExpected: public ParserErrorInfo {
 public:
-    PunctuationExpected(Position& position, String& punctuation);
-    String& punctuation; 
+    PunctuationExpected(Position& position, _VarString& punctuation);
+    _VarString& punctuation; 
 };
 
 class OperatorExpected : public ParserErrorInfo {

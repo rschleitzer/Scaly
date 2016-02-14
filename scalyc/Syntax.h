@@ -17,8 +17,8 @@ public:
     Program();
 
     virtual void accept(SyntaxVisitor& visitor);
-    String* name;
-    String* directory;
+    _VarString* name;
+    _VarString* directory;
     _Array<CompilationUnit>* compilationUnits;
 };
 
@@ -28,7 +28,7 @@ public:
 
     virtual void accept(SyntaxVisitor& visitor);
     _Array<StatementWithSemicolon>* statements;
-    String* fileName;
+    _VarString* fileName;
 };
 
 class StatementWithSemicolon : public SyntaxNode {
@@ -99,7 +99,7 @@ public:
     PathItem(Position start, Position end);
 
     virtual void accept(SyntaxVisitor& visitor);
-    String* name;
+    _VarString* name;
 };
 
 class Initializer : public SyntaxNode {
@@ -224,7 +224,7 @@ public:
     IdentifierFunction(Position start, Position end);
 
     virtual void accept(SyntaxVisitor& visitor);
-    String* name;
+    _VarString* name;
 
     virtual bool _isIdentifierFunction();
 };
@@ -270,7 +270,7 @@ public:
     ConstParameter(Position start, Position end);
 
     virtual void accept(SyntaxVisitor& visitor);
-    String* name;
+    _VarString* name;
     Type* type;
 
     virtual bool _isConstParameter();
@@ -281,7 +281,7 @@ public:
     VarParameter(Position start, Position end);
 
     virtual void accept(SyntaxVisitor& visitor);
-    String* name;
+    _VarString* name;
     Type* parameterType;
 
     virtual bool _isVarParameter();
@@ -300,7 +300,7 @@ public:
     EnumDeclaration(Position start, Position end);
 
     virtual void accept(SyntaxVisitor& visitor);
-    String* name;
+    _VarString* name;
     _Array<EnumMember>* members;
 
     virtual bool _isEnumDeclaration();
@@ -338,7 +338,7 @@ public:
     EnumCase(Position start, Position end);
 
     virtual void accept(SyntaxVisitor& visitor);
-    String* name;
+    _VarString* name;
 };
 
 class AdditionalCase : public SyntaxNode {
@@ -354,7 +354,7 @@ public:
     ClassDeclaration(Position start, Position end);
 
     virtual void accept(SyntaxVisitor& visitor);
-    String* name;
+    _VarString* name;
     GenericArgumentClause* genericArgumentClause;
     TypeInheritanceClause* typeInheritanceClause;
     _Array<ClassMember>* members;
@@ -375,7 +375,7 @@ public:
     GenericParameter(Position start, Position end);
 
     virtual void accept(SyntaxVisitor& visitor);
-    String* typeName;
+    _VarString* typeName;
 };
 
 class ClassMember : public SyntaxNode {
@@ -424,7 +424,7 @@ public:
     PrefixExpression(Position start, Position end);
 
     virtual void accept(SyntaxVisitor& visitor);
-    String* prefixOperator;
+    _VarString* prefixOperator;
     PostfixExpression* expression;
 };
 
@@ -454,7 +454,7 @@ public:
     BinaryOperation(Position start, Position end);
 
     virtual void accept(SyntaxVisitor& visitor);
-    String* binaryOperator;
+    _VarString* binaryOperator;
     PrefixExpression* expression;
 
     virtual bool _isBinaryOperation();
@@ -548,7 +548,7 @@ public:
     OperatorPostfix(Position start, Position end);
 
     virtual void accept(SyntaxVisitor& visitor);
-    String* postfixOperator;
+    _VarString* postfixOperator;
 
     virtual bool _isOperatorPostfix();
 };
@@ -663,7 +663,7 @@ public:
     IdentifierExpression(Position start, Position end);
 
     virtual void accept(SyntaxVisitor& visitor);
-    String* name;
+    _VarString* name;
 
     virtual bool _isIdentifierExpression();
 };
@@ -868,7 +868,7 @@ public:
     IdentifierPattern(Position start, Position end);
 
     virtual void accept(SyntaxVisitor& visitor);
-    String* identifier;
+    _VarString* identifier;
     TypeAnnotation* typeAnnotation;
 
     virtual bool _isIdentifierPattern();
@@ -1018,7 +1018,7 @@ public:
     ThisMember(Position start, Position end);
 
     virtual void accept(SyntaxVisitor& visitor);
-    String* name;
+    _VarString* name;
 
     virtual bool _isThisMember();
 };
@@ -1079,7 +1079,7 @@ public:
     SuperMember(Position start, Position end);
 
     virtual void accept(SyntaxVisitor& visitor);
-    String* name;
+    _VarString* name;
 
     virtual bool _isSuperMember();
 };
@@ -1107,7 +1107,7 @@ public:
     TypeIdentifier(Position start, Position end);
 
     virtual void accept(SyntaxVisitor& visitor);
-    String* name;
+    _VarString* name;
     SubtypeIdentifier* subType;
     _Array<TypePostfix>* postfixes;
 

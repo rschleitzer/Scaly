@@ -1,7 +1,7 @@
 #include "scalyc.h"
 namespace scalyc {
 
-int _main(_Array<String>& args) {
+int _main(_Array<_VarString>& args) {
 _Region _region; _Page* _p = _region.get();
 
 if (args.length() < 1) {

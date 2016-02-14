@@ -1,67 +1,67 @@
 #include "Scaly.h"
 namespace scaly {
 
-String::String() {
+_VarString::_VarString() {
     length = 0;
     string = 0;
 }
 
-String::String(const char* theString) {
+_VarString::_VarString(const char* theString) {
     length = strlen(theString);
     string = (char*)getPage()->allocateObject(length + 1);
     strcpy(string, theString);
 }
 
-String::String(const String& theString)
+_VarString::_VarString(const _VarString& theString)
 : length(theString.length) {
     string = (char*)getPage()->allocateObject(length + 1);
     strcpy(string, theString.string);
 }
 
-String::String(size_t theLength) {
+_VarString::_VarString(size_t theLength) {
     length = theLength;
     string = (char*)getPage()->allocateObject(length + 1);
 }
 
-String::String(char c) {
+_VarString::_VarString(char c) {
     length = 1;
     string = (char*)getPage()->allocateObject(length + 1);
     string[0] = c;
     string[1] = 0;
 }
 
-char* String::getNativeString() const {
+char* _VarString::getNativeString() const {
     return string;
 }
 
-size_t String::getLength() {
+size_t _VarString::getLength() {
     return length;
 }
 
-bool String::operator == (const char* theString){
+bool _VarString::operator == (const char* theString){
     return strcmp(string, theString) == 0;
 }
 
-bool String::operator != (const char* theString){
+bool _VarString::operator != (const char* theString){
     return strcmp(string, theString) != 0;
 }
 
-bool String::operator == (const String& theString){
+bool _VarString::operator == (const _VarString& theString){
     return strcmp(string, theString.getNativeString()) == 0;
 }
 
-bool String::operator != (const String& theString){
+bool _VarString::operator != (const _VarString& theString){
     return strcmp(string, theString.getNativeString()) != 0;
 }
 
-char String::operator [](size_t i) {
+char _VarString::operator [](size_t i) {
     if (i < length)
         return string[i];
 
     return -1;
 }
 
-String& String::operator += (char c) {
+_VarString& _VarString::operator += (char c) {
     if (!string) {
         // Allocate for the char itself and the trailing 0
         allocate(2);
@@ -78,7 +78,7 @@ String& String::operator += (char c) {
     return *this;
 }
 
-String& String::operator += (const char* theString) {
+_VarString& _VarString::operator += (const char* theString) {
     size_t stringLength = strlen(theString);
     if (!string) {
         // Allocate for the char itself and the trailing 0
@@ -97,21 +97,21 @@ String& String::operator += (const char* theString) {
     return *this;
 }
 
-String& String::operator + (const char* theString) {
+_VarString& _VarString::operator + (const char* theString) {
     return *this += theString;
 }
 
-String& String::operator += (const String& theString) {
+_VarString& _VarString::operator += (const _VarString& theString) {
     (*this) += theString.getNativeString();
     
     return *this;
 }
 
-String& String::operator + (const String& theString) {
+_VarString& _VarString::operator + (const _VarString& theString) {
     return *this += theString;
 }
 
-bool String::extend(size_t size) {
+bool _VarString::extend(size_t size) {
     _Page& page = *_Page::getPage(string);
     if (page.extend(string + length + 1, size)) {
         length += size;
@@ -122,7 +122,7 @@ bool String::extend(size_t size) {
     }
 }
 
-void String::reallocate(size_t newLength) {
+void _VarString::reallocate(size_t newLength) {
     char* oldString = string;
     length = newLength;
     allocate(length + 1);
@@ -133,13 +133,13 @@ void String::reallocate(size_t newLength) {
         _Page::reclaimArray(oldString);
 }
 
-void String::allocate(size_t size) {
+void _VarString::allocate(size_t size) {
     string = (char*) getPage()->allocateObject(size);
 }
 
-_Array<String>& String::Split(_Page* _rp, char c) {
-    _Array<String>* ret = new(_rp) _Array<String>();
-    String* part = 0;
+_Array<_VarString>& _VarString::Split(_Page* _rp, char c) {
+    _Array<_VarString>* ret = new(_rp) _Array<_VarString>();
+    _VarString* part = 0;
     for (size_t _i = 0; _i < length; _i++) {
         char currentChar = (*this)[_i];
         if (currentChar == c) {
@@ -150,7 +150,7 @@ _Array<String>& String::Split(_Page* _rp, char c) {
         }
         else {
             if (!part)
-                part = new(_rp) String();
+                part = new(_rp) _VarString();
             *part += (*this)[_i];
         }
     }

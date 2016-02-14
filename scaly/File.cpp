@@ -10,20 +10,20 @@ void* FileError::getErrorInfo() {
     return 0;
 }
 
-_Result<String, FileError> File::readToString(_Page* _rp, _Page* _ep, const String& path) {
+_Result<_VarString, FileError> File::readToString(_Page* _rp, _Page* _ep, const _VarString& path) {
     FILE* file = fopen(path.getNativeString(), "rb");
     if (!file) {
         _FileErrorCode fileErrorCode = _FileError_unknownError;
         switch (errno) {
             case ENOENT: fileErrorCode = _FileError_noSuchFileOrDirectory; break;
         }
-        return _Result<String, FileError>(new(_ep) FileError(fileErrorCode));
+        return _Result<_VarString, FileError>(new(_ep) FileError(fileErrorCode));
     }
     
     fseek(file, 0, SEEK_END);
     long size = ftell(file);
     rewind(file);
-    String* ret = (String*) new(_rp) String((size_t)size);
+    _VarString* ret = (_VarString*) new(_rp) _VarString((size_t)size);
     char* buffer = ret->getNativeString();
     fread (buffer, 1, size, file);
     fclose (file);
@@ -31,7 +31,7 @@ _Result<String, FileError> File::readToString(_Page* _rp, _Page* _ep, const Stri
     return ret;
 }
 
-FileError* File::writeFromString(_Page *_ep, String& path, String& contents) {
+FileError* File::writeFromString(_Page *_ep, _VarString& path, _VarString& contents) {
     FILE* file = fopen(path.getNativeString(), "wb");
     if (!file) {
         _FileErrorCode fileErrorCode = _FileError_unknownError;

@@ -21,9 +21,9 @@ int main(int argc, char** argv) {
     __CurrentTask = new(__CurrentPage) _Task();
 
     // Collect the arguments into a String Array
-    _Array<String>& arguments = *new (__CurrentPage) _Array<String>(argc - 1);
+    _Array<_VarString>& arguments = *new (__CurrentPage) _Array<_VarString>(argc - 1);
     for (int i = 1; i < argc; i++)
-        arguments.push(new(__CurrentPage) String(argv[i]));
+        arguments.push(new(__CurrentPage) _VarString(argv[i]));
 
     // Call Scaly's top-level code
     int ret = scalyc::_main(arguments);

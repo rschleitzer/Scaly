@@ -38,8 +38,8 @@ public:
 
 class Identifier : public Token {
 public:
-    Identifier(String& name);
-    String* name;
+    Identifier(_VarString& name);
+    _VarString* name;
     virtual bool _isIdentifier();
 };
 
@@ -52,47 +52,47 @@ public:
 
 class StringLiteral : public Literal {
 public:
-    StringLiteral(String& theString);
-    String& string;
+    StringLiteral(_VarString& theString);
+    _VarString& string;
     virtual bool _isStringLiteral();
 };
 
 class NumericLiteral : public Literal {
 public:
-    NumericLiteral(String& theValue);
-    String& value;
+    NumericLiteral(_VarString& theValue);
+    _VarString& value;
     virtual bool _isNumericLiteral();
 };
 
 class Punctuation : public Token {
 public:
-    Punctuation(String& theSign);
-    String& sign;
+    Punctuation(_VarString& theSign);
+    _VarString& sign;
     virtual bool _isPunctuation();
 };
 
 class Operator : public Token {
 public:
-    Operator(String& theOperation);
-    String& operation;
+    Operator(_VarString& theOperation);
+    _VarString& operation;
     virtual bool _isOperator();
 };
 
 class PrefixOperator : public Operator {
 public:
-    PrefixOperator(String& theOperation);
+    PrefixOperator(_VarString& theOperation);
     virtual bool _isPrefixOperator();
 };
 
 class BinaryOperator : public Operator {
 public:
-    BinaryOperator(String& theOperation);
+    BinaryOperator(_VarString& theOperation);
     virtual bool _isBinaryOperator();
 };
 
 class PostfixOperator : public Operator {
 public:
-    PostfixOperator(String& theOperation);
+    PostfixOperator(_VarString& theOperation);
     virtual bool _isPostfixOperator();
 };
 
@@ -100,7 +100,7 @@ class Lexer : public Object {
 public:
     Token* token;
     bool whitespaceSkipped;
-    String& text;
+    _VarString& text;
     size_t length;
     size_t position;
     size_t end;
@@ -109,19 +109,19 @@ public:
     size_t line;
     size_t column;
 
-    Lexer(String& text);
+    Lexer(_VarString& text);
     void advance();
     Identifier& scanIdentifier(_Page* _rp);
     Operator& scanOperator(_Page* _rp, bool includeDots);
     NumericLiteral* scanNumericLiteral(_Page* _rp);
     Token* scanStringLiteral(_Page* _rp);
     bool parseKeyword(const char* fixedString);
-    String* parseIdentifier(_Page* _rp);
+    _VarString* parseIdentifier(_Page* _rp);
     Literal* parseLiteral(_Page* _rp);
-    String* parseOperator(_Page* _rp);
-    String* parsePrefixOperator(_Page* _rp);
-    String* parseBinaryOperator(_Page* _rp);
-    String* parsePostfixOperator(_Page* _rp);
+    _VarString* parseOperator(_Page* _rp);
+    _VarString* parsePrefixOperator(_Page* _rp);
+    _VarString* parseBinaryOperator(_Page* _rp);
+    _VarString* parsePostfixOperator(_Page* _rp);
     bool skipWhitespace();
     bool parsePunctuation(const char* fixedString);
     bool isAtEnd();
