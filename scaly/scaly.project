@@ -29,6 +29,7 @@
     <File Name="Path.cpp"/>
     <File Name="Task.cpp"/>
     <File Name="VarString.cpp"/>
+    <File Name="LetString.cpp"/>
   </VirtualDirectory>
   <VirtualDirectory Name="include">
     <File Name="Scaly.h"/>
@@ -42,6 +43,7 @@
     <File Name="Path.h"/>
     <File Name="Task.h"/>
     <File Name="VarString.h"/>
+    <File Name="LetString.h"/>
   </VirtualDirectory>
   <Settings Type="Static Library">
     <GlobalSettings>

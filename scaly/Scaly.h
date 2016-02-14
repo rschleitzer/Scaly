@@ -14,6 +14,7 @@
 #include "Task.h"
 #include "Region.h"
 #include "Result.h"
+#include "LetString.h"
 #include "VarString.h"
 #include "Path.h"
 #include "File.h"

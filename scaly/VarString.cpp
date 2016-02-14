@@ -2,7 +2,7 @@
 namespace scaly {
 
 _VarString::_VarString()
-: string(0), length(0), capacity(0) {
+: _LetString(), capacity(0) {
 }
 
 _VarString::_VarString(const char* theString) {
@@ -13,57 +13,21 @@ _VarString::_VarString(const char* theString) {
 }
 
 _VarString::_VarString(const _VarString& theString)
-: length(theString.length), capacity(length) {
-    string = (char*)getPage()->allocateObject(length + 1);
-    strcpy(string, theString.string);
+: _LetString(theString), capacity(theString.capacity) {
 }
 
 _VarString::_VarString(size_t theLength)
-: length(theLength), capacity(length) {
-    string = (char*)getPage()->allocateObject(length + 1);
+: _LetString(theLength), capacity(length) {
 }
 
 _VarString::_VarString(size_t theLength, size_t theCapacity)
-: length(theLength), capacity(theCapacity) {
-    string = (char*)getPage()->allocateObject(capacity + 1);
+: _LetString(theCapacity), capacity(theCapacity) {
+    // Gotta set back the length
+    length = theLength;
 }
 
 _VarString::_VarString(char c)
-: length(1), capacity(length) {
-    string = (char*)getPage()->allocateObject(length + 1);
-    string[0] = c;
-    string[1] = 0;
-}
-
-char* _VarString::getNativeString() const {
-    return string;
-}
-
-size_t _VarString::getLength() {
-    return length;
-}
-
-bool _VarString::operator == (const char* theString){
-    return strcmp(string, theString) == 0;
-}
-
-bool _VarString::operator != (const char* theString){
-    return strcmp(string, theString) != 0;
-}
-
-bool _VarString::operator == (const _VarString& theString){
-    return strcmp(string, theString.getNativeString()) == 0;
-}
-
-bool _VarString::operator != (const _VarString& theString){
-    return strcmp(string, theString.getNativeString()) != 0;
-}
-
-char _VarString::operator [](size_t i) {
-    if (i < length)
-        return string[i];
-
-    return -1;
+: _LetString(c), capacity(length) {
 }
 
 _VarString& _VarString::operator += (char c) {
@@ -143,10 +107,6 @@ void _VarString::reallocate(size_t newLength) {
     // Reclaim the page if it was oversized, i.e., exclusively allocated
     if (((Object*)oldString)->getPage()->getSize() > _Page::pageSize)
         _Page::reclaimArray(oldString);
-}
-
-void _VarString::allocate(size_t size) {
-    string = (char*) getPage()->allocateObject(size);
 }
 
 _Array<_VarString>& _VarString::Split(_Page* _rp, char c) {
