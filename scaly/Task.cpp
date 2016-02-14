@@ -4,6 +4,8 @@ namespace scaly{
 // Some statistics
 static int pagesAllocated;
 static int pagesDeallocated;
+static int pagesCached;
+static int pagesFromCache;
 
 __thread _Task* __CurrentTask = 0;
     
@@ -25,10 +27,13 @@ _Page* _Task::allocatePage() {
 
 _Page* _Task::recyclePage() {
     size_t length = pagePool.length();
-    if (length)
+    if (length) {
+        pagesFromCache++;
         return pagePool.pop();
-    else
+    }
+    else {
         return allocatePage();
+    }
 }
 
 void _Task::disposePage(_Page* page) {
@@ -38,6 +43,7 @@ void _Task::disposePage(_Page* page) {
         pagesDeallocated++;
     }
     else {
+        pagesCached++;
         pagePool.push(page);
     }
 }

@@ -6,7 +6,6 @@ static int oversizedPagesAllocated;
 static int oversizedBytesAllocated;
 static int oversizedPagesDeallocated;
 static int oversizedBytesDeallocated;
-static int pagesRecycled;
 static int pagesDisposed;
 
 extern __thread _Task* __CurrentTask;
@@ -233,7 +232,6 @@ size_t _Page::getSize() {
 }
 
 void _Page::initStatistics() {
-    pagesRecycled = 0;
     pagesDisposed = 0;
     oversizedBytesAllocated = 0;
 }

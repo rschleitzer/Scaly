@@ -23,6 +23,11 @@ _VarString::_VarString(size_t theLength)
     string = (char*)getPage()->allocateObject(length + 1);
 }
 
+_VarString::_VarString(size_t theLength, size_t theCapacity)
+: length(theLength), capacity(theCapacity) {
+    string = (char*)getPage()->allocateObject(capacity + 1);
+}
+
 _VarString::_VarString(char c)
 : length(1), capacity(length) {
     string = (char*)getPage()->allocateObject(length + 1);

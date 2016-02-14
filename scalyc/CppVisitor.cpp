@@ -42,7 +42,7 @@ bool CppVisitor::openProgram(Program& program) {
         // Build and write the main header file
         {
             _Region _region; _Page* _p = _region.get();
-            _VarString& headerFile = *new(_p) _VarString();
+            _VarString& headerFile = *new(_p) _VarString(0, _Page::pageSize);
             buildMainHeaderFileString(headerFile, program);
             {
                 _Region _region; _Page* _p = _region.get();
@@ -130,7 +130,7 @@ bool CppVisitor::openCompilationUnit(CompilationUnit& compilationUnit) {
     
     // Build and write the header file
     if (*moduleName != *programName) {
-        headerFile = new(getPage()) _VarString();
+        headerFile = new(getPage()) _VarString(0, _Page::pageSize);
         (*headerFile) += "#ifndef __";
         (*headerFile) += *programName;
         (*headerFile) += "__";
@@ -148,7 +148,7 @@ bool CppVisitor::openCompilationUnit(CompilationUnit& compilationUnit) {
     }
     
     // Begin cpp file
-    sourceFile = new(getPage()) _VarString();
+    sourceFile = new(getPage()) _VarString(0, _Page::pageSize);
     (*sourceFile) += "#include \"";
     (*sourceFile) += *programName;
     (*sourceFile) += ".h\"\nusing namespace scaly;\nnamespace ";

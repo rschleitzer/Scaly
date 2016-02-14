@@ -8,6 +8,7 @@ public:
     _VarString(const char* theString);
     _VarString(const _VarString& theString);
     _VarString(size_t theLength);
+    _VarString(size_t theLength, size_t theCapacity);
     _VarString(char c);
     char* getNativeString() const;
     size_t getLength();
