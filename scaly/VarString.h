@@ -1,5 +1,5 @@
-#ifndef __Scaly__SwipeString__
-#define __Scaly__SwipeString__
+#ifndef __Scaly__VarString__
+#define __Scaly__VarString__
 namespace scaly {
 
 class _VarString : public Object {
@@ -30,6 +30,7 @@ private:
 
     char* string;
     size_t length;
+    size_t capacity;
 };
 
 }
