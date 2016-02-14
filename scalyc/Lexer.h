@@ -46,35 +46,33 @@ public:
 class Literal : public Token {
 public:
     virtual bool _isLiteral();
-    virtual bool _isStringLiteral();
-    virtual bool _isNumericLiteral();
 };
 
 class StringLiteral : public Literal {
 public:
     StringLiteral(_VarString& theString);
-    _VarString& string;
+    _VarString* string;
     virtual bool _isStringLiteral();
 };
 
 class NumericLiteral : public Literal {
 public:
     NumericLiteral(_VarString& theValue);
-    _VarString& value;
+    _VarString* value;
     virtual bool _isNumericLiteral();
 };
 
 class Punctuation : public Token {
 public:
     Punctuation(_VarString& theSign);
-    _VarString& sign;
+    _VarString* sign;
     virtual bool _isPunctuation();
 };
 
 class Operator : public Token {
 public:
     Operator(_VarString& theOperation);
-    _VarString& operation;
+    _VarString* operation;
     virtual bool _isOperator();
 };
 
@@ -100,7 +98,7 @@ class Lexer : public Object {
 public:
     Token* token;
     bool whitespaceSkipped;
-    _VarString& text;
+    _VarString* text;
     size_t length;
     size_t position;
     size_t end;
@@ -108,7 +106,6 @@ public:
     size_t previousColumn;
     size_t line;
     size_t column;
-
     Lexer(_VarString& text);
     void advance();
     Identifier& scanIdentifier(_Page* _rp);

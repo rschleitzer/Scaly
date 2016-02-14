@@ -27,31 +27,49 @@ class Literal : Token {
 }
 
 class StringLiteral : Literal {
-    init(string: String) {
-        string = string
+    init(theString: String) {
+        string = theString
     }
     let string: String
 }
 
 class NumericLiteral : Literal {
+    init(theValue: String) {
+        value = theValue
+    }
     let value: String
 }
 
 class Punctuation : Token {
+    init(theSign: String) {
+        sign = theString
+    }
     let sign: String
 }
 
 class Operator : Token {
+    init(theOperation: String) {
+        operation = theOperation
+    }
     let operation: String
 }
 
 class PrefixOperator : Operator {
+    init(theOperation: String) {
+        base(theOperation)
+    }
 }
 
 class BinaryOperator : Operator {
+    init(theOperation: String) {
+        base(theOperation)
+    }
 }
 
 class PostfixOperator : Operator {
+    init(theOperation: String) {
+        base(theOperation)
+    }
 }
 
 class Lexer {

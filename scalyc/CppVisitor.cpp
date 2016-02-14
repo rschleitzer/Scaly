@@ -429,7 +429,7 @@ void CppVisitor::closeClassDeclaration(ClassDeclaration& classDeclaration) {
     if (classDeclaration.typeInheritanceClause) {
         (*headerFile) += "\n"; indentHeader(); (*headerFile) += "virtual bool _is"; (*headerFile) += *classDeclarationName; (*headerFile) += "();";
     }
-    {
+    else {
         _Region _region; _Page* _p = _region.get();
         _Array<_VarString>& derivedClasses = *new(_p) _Array<_VarString>();
         collectDerivedClasses(derivedClasses, *classDeclarationName);
@@ -837,6 +837,8 @@ const char* CppVisitor::getCppType(_VarString* typeIdentifierName) {
     
     if ((*typeIdentifierName) == "unsigned")
         return "size_t";
+    else if ((*typeIdentifierName) == "String")
+        return "_VarString";
     
     return typeIdentifier;
 }
