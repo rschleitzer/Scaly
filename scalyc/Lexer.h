@@ -113,12 +113,12 @@ public:
     NumericLiteral* scanNumericLiteral(_Page* _rp);
     Token* scanStringLiteral(_Page* _rp);
     bool parseKeyword(const char* fixedString);
-    _VarString* parseIdentifier(_Page* _rp);
+    _LetString* parseIdentifier(_Page* _rp);
     Literal* parseLiteral(_Page* _rp);
-    _VarString* parseOperator(_Page* _rp);
-    _VarString* parsePrefixOperator(_Page* _rp);
-    _VarString* parseBinaryOperator(_Page* _rp);
-    _VarString* parsePostfixOperator(_Page* _rp);
+    _LetString* parseOperator(_Page* _rp);
+    _LetString* parsePrefixOperator(_Page* _rp);
+    _LetString* parseBinaryOperator(_Page* _rp);
+    _LetString* parsePostfixOperator(_Page* _rp);
     bool skipWhitespace();
     bool parsePunctuation(const char* fixedString);
     bool isAtEnd();

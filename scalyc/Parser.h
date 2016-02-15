@@ -256,7 +256,7 @@ public:
     _Result<Inheritance, ParserError> parseInheritance(_Page* _rp, _Page* _ep);
 
     bool isAtEnd();
-    bool isIdentifier(_VarString& id);
+    bool isIdentifier(_LetString& id);
 
 private:
     Lexer lexer;

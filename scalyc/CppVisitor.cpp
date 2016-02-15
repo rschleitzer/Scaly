@@ -53,7 +53,7 @@ bool CppVisitor::openProgram(Program& program) {
         }
         
         inherits = new(getPage()) _Array<Inherits>();
-        classes = new(getPage()) _Array<_VarString>();
+        classes = new(getPage()) _Array<_LetString>();
         collectInheritances(program);
     }
     
@@ -98,7 +98,7 @@ void CppVisitor::collectInheritancesInCompilationUnit(CompilationUnit& compilati
     }
 }
 
-void CppVisitor::registerInheritance(_VarString& className, _VarString& baseName) {
+void CppVisitor::registerInheritance(_LetString& className, _LetString& baseName) {
     size_t _inherits_length = inherits->length();
     Inherits* inherit = 0;
     for (size_t _i = 0; _i < _inherits_length; _i++) {
@@ -325,7 +325,7 @@ bool CppVisitor::openConstParameter(ConstParameter& constParameter) {
     return false;
 }
 
-bool CppVisitor::isClass(_VarString& name) {
+bool CppVisitor::isClass(_LetString& name) {
     if (name == "String")
         return true;
         
@@ -431,7 +431,7 @@ void CppVisitor::closeClassDeclaration(ClassDeclaration& classDeclaration) {
     }
     else {
         _Region _region; _Page* _p = _region.get();
-        _Array<_VarString>& derivedClasses = *new(_p) _Array<_VarString>();
+        _Array<_LetString>& derivedClasses = *new(_p) _Array<_LetString>();
         collectDerivedClasses(derivedClasses, *classDeclarationName);
         size_t _derivedClasses_length = derivedClasses.length();
         for (size_t _i = 0; _i < _derivedClasses_length; _i++) {
@@ -449,7 +449,7 @@ void CppVisitor::indentHeader() {
         (*headerFile) += "    ";
 }
 
-void CppVisitor::collectDerivedClasses(_Array<_VarString>& derivedClasses, _VarString& className) {
+void CppVisitor::collectDerivedClasses(_Array<_LetString>& derivedClasses, _LetString& className) {
     size_t _inherits_length = inherits->length();
     for (size_t _i = 0; _i < _inherits_length; _i++) {
         if (*(*(*inherits)[_i])->name == className)
@@ -457,10 +457,10 @@ void CppVisitor::collectDerivedClasses(_Array<_VarString>& derivedClasses, _VarS
     }
 }
 
-void CppVisitor::appendDerivedClasses(_Array<_VarString>& derivedClasses, _Array<_VarString>& inheritors) {
+void CppVisitor::appendDerivedClasses(_Array<_LetString>& derivedClasses, _Array<_LetString>& inheritors) {
     size_t _inheritors_length = inheritors.length();
     for (size_t _i = 0; _i < _inheritors_length; _i++) {
-        _VarString& derivedClass = **inheritors[_i];
+        _LetString& derivedClass = **inheritors[_i];
         derivedClasses.push(&derivedClass);
         collectDerivedClasses(derivedClasses, derivedClass);
     }    
@@ -832,13 +832,13 @@ bool CppVisitor::openTypeIdentifier(TypeIdentifier& typeIdentifier) {
     return true;
 }
 
-const char* CppVisitor::getCppType(_VarString* typeIdentifierName) {
+const char* CppVisitor::getCppType(_LetString* typeIdentifierName) {
     const char* typeIdentifier = typeIdentifierName->getNativeString();
     
     if ((*typeIdentifierName) == "unsigned")
         return "size_t";
     else if ((*typeIdentifierName) == "String")
-        return "_VarString";
+        return "_LetString";
     
     return typeIdentifier;
 }
@@ -993,9 +993,9 @@ void CppVisitor::buildProjectFileString(_VarString& projectFile, Program& progra
     projectFile += "        <SearchPaths/>\n      </Completion>\n    </Configuration>\n  </Settings>\n</CodeLite_Project>\n";    
 }
 
-Inherits::Inherits(_VarString& className) {
-    name = new(getPage()) _VarString(className);
-    inheritors = new(getPage()) _Array<_VarString>();
+Inherits::Inherits(_LetString& className) {
+    name = new(getPage()) _LetString(className);
+    inheritors = new(getPage()) _Array<_LetString>();
 }
 
 }

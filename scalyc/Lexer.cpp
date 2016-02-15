@@ -519,12 +519,12 @@ bool Lexer::parseKeyword(const char* fixedString) {
     return *identifier->name == fixedString;
 }
 
-_VarString* Lexer::parseIdentifier(_Page* _rp) {
+_LetString* Lexer::parseIdentifier(_Page* _rp) {
     if (!(token->_isIdentifier()))
         return 0;
     
     Identifier* identifier = (Identifier*)token;
-    return new(_rp) _VarString(*identifier->name);
+    return &_LetString::create(_rp, *identifier->name);
 }
 
 bool Lexer::parsePunctuation(const char* fixedString) {
@@ -535,12 +535,12 @@ bool Lexer::parsePunctuation(const char* fixedString) {
     return *punctuation->sign == fixedString;
 }
 
-_VarString* Lexer::parseOperator(_Page* _rp) {
+_LetString* Lexer::parseOperator(_Page* _rp) {
     if (!(token->_isOperator()))
         return 0;
 
     Operator* op = (Operator*)token;
-    return new(_rp) _VarString(*(op->operation));
+    return &_LetString::create(_rp, *(op->operation));
 }
 
 Literal* Lexer::parseLiteral(_Page* _rp) {
@@ -550,36 +550,36 @@ Literal* Lexer::parseLiteral(_Page* _rp) {
     return (Literal*)token;
 }
 
-_VarString* Lexer::parsePrefixOperator(_Page* _rp) {
+_LetString* Lexer::parsePrefixOperator(_Page* _rp) {
     if (!(token->_isPrefixOperator()))
         return 0;
 
     Operator* op = (Operator*)token;
 
-    return new(_rp) _VarString(*(op->operation));
+    return &_LetString::create(_rp, *(op->operation));
 }
 
-_VarString* Lexer::parseBinaryOperator(_Page* _rp) {
+_LetString* Lexer::parseBinaryOperator(_Page* _rp) {
     if (!(token->_isBinaryOperator())) {
         if ((token->_isPunctuation()) && (((*((Punctuation*)token)->sign == "<")) || (*((Punctuation*)token)->sign == ">"))) {
             Operator* op = (Operator*)token;
-            return new(_rp) _VarString(*(op->operation));
+            return &_LetString::create(_rp, *(op->operation));
         }
         
         return 0;
     }
 
     Operator* op = (Operator*)token;
-    return new(_rp) _VarString(*(op->operation));
+    return &_LetString::create(_rp, *(op->operation));
 }
 
 
-_VarString* Lexer::parsePostfixOperator(_Page* _rp){
+_LetString* Lexer::parsePostfixOperator(_Page* _rp){
     if (!(token->_isPostfixOperator()))
         return 0;
 
     Operator* op = (Operator*)token;
-    return new(_rp) _VarString(*(op->operation));
+    return &_LetString::create(_rp, *(op->operation));
 }
 
 bool Lexer::isAtEnd() {

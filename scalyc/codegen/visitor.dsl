@@ -29,7 +29,7 @@ public:"
             (apply-to-children-of syntax (lambda (identifier)
                 (if (identifier? identifier) ($
 "
-    _VarString* "(visitor-property syntax identifier)";"
+    _LetString* "(visitor-property syntax identifier)";"
                 )"")
             ))
         "")
