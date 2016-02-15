@@ -20,7 +20,7 @@ _LetString::_LetString(const _LetString& theString)
 _LetString::_LetString(_VarString& theString)
 : length(theString.getLength()) {
     string = (char*)getPage()->allocateObject(length + 1);
-    strcpy(string, theString.string);
+    strcpy(string, theString.getNativeString());
 }
 
 _LetString::_LetString(size_t theLength)
