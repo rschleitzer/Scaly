@@ -7,6 +7,7 @@ static int oversizedBytesAllocated;
 static int oversizedPagesDeallocated;
 static int oversizedBytesDeallocated;
 static int pagesDisposed;
+static int extensionPagesAllocated;
 
 extern __thread _Task* __CurrentTask;
 
@@ -89,6 +90,7 @@ _Page* _Page::allocateExtensionPage(size_t size) {
         nextExtensionPageLocation--;
     }
     else {
+        extensionPagesAllocated++;
         *getLastExtensionPageLocation() = pageLocation;
     }
     
