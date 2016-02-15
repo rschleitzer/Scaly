@@ -7,6 +7,7 @@ public:
     _VarString();
     _VarString(const char* theString);
     _VarString(const _VarString& theString);
+    _VarString(_LetString& theString);
     _VarString(size_t theLength);
     _VarString(size_t theLength, size_t theCapacity);
     _VarString(char c);
@@ -17,6 +18,7 @@ public:
     _VarString& operator += (const char* theString);
     _VarString& operator + (const char* theString);
     _VarString& operator += (const _VarString& theString);
+    _VarString& operator += (_LetString& theString);
     _VarString& operator + (const _VarString& thestring);
      bool operator == (const char* theString);
      bool operator != (const char* theString);

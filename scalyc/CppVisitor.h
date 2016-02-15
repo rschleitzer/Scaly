@@ -16,7 +16,7 @@ public:
     CppError* execute(Program& program);
 private:
     CppError* cppError;
-    _VarString* moduleName;
+    _LetString* moduleName;
     _VarString* sourceFile;
     _VarString* headerFile;
     size_t headerIndentLevel;
@@ -42,8 +42,8 @@ private:
 public:
     virtual bool openProgram(Program& program);
     virtual void closeProgram(Program& program);
-    _VarString* programName;
-    _VarString* programDirectory;
+    _LetString* programName;
+    _LetString* programDirectory;
     virtual bool openCompilationUnit(CompilationUnit& compilationUnit);
     virtual void closeCompilationUnit(CompilationUnit& compilationUnit);
     virtual bool openStatementWithSemicolon(StatementWithSemicolon& statementWithSemicolon);

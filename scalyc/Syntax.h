@@ -17,8 +17,8 @@ public:
     Program();
 
     virtual void accept(SyntaxVisitor& visitor);
-    _VarString* name;
-    _VarString* directory;
+    _LetString* name;
+    _LetString* directory;
     _Array<CompilationUnit>* compilationUnits;
 };
 
@@ -28,7 +28,7 @@ public:
 
     virtual void accept(SyntaxVisitor& visitor);
     _Array<StatementWithSemicolon>* statements;
-    _VarString* fileName;
+    _LetString* fileName;
 };
 
 class StatementWithSemicolon : public SyntaxNode {

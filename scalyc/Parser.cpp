@@ -2,7 +2,7 @@
 using namespace scaly;
 namespace scalyc {
 
-Parser::Parser(_VarString* fileName, _VarString& text)
+Parser::Parser(_LetString* fileName, _LetString& text)
 : lexer(text), fileName(fileName) {
 }
 

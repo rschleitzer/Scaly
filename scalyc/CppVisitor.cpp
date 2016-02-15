@@ -12,7 +12,7 @@ bool CppVisitor::openProgram(Program& program) {
     programDirectory = program.directory;
     
     if (programDirectory == 0 || *programDirectory == "")
-        programDirectory = new(this->getPage()) _VarString(".");
+        programDirectory = &_LetString::create(this->getPage(), ".");
         
     if (!Directory::exists(*programDirectory)) {
         _Region _region; _Page* _p = _region.get();
@@ -888,7 +888,7 @@ void CppVisitor::buildMainHeaderFileString(_VarString& mainHeaderFile, Program& 
     for (size_t i = 0; i < noOfCompilationUnits; i++) {
         _Region _region; _Page* _p = _region.get();
         mainHeaderFile +=  "#include \"";
-        mainHeaderFile += *Path::getFileNameWithoutExtension(_p, *(*(*program.compilationUnits)[i])->fileName) + ".h\"\n";
+        mainHeaderFile += *new(mainHeaderFile.getPage()) _VarString(*Path::getFileNameWithoutExtension(_p, *(*(*program.compilationUnits)[i])->fileName)) + ".h\"\n";
     }
     mainHeaderFile += "\nusing namespace scaly;\nnamespace ";
     mainHeaderFile += *programName;

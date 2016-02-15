@@ -7,11 +7,11 @@ namespace scalyc {
 class Options : Object {
 public:
     Options();
-    static _Result<Options, OptionsError> parseArguments(_Page* _rp, _Page* _ep, _Array<_VarString>& args);
+    static _Result<Options, OptionsError> parseArguments(_Page* _rp, _Page* _ep, _Array<_LetString>& args);
     
-    _Array<_VarString>* files;
-    _VarString* outputName;
-    _VarString* directory;
+    _Array<_LetString>* files;
+    _LetString* outputName;
+    _LetString* directory;
 };
 
 }

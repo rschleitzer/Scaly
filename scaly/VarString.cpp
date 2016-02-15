@@ -18,6 +18,12 @@ _VarString::_VarString(const _VarString& theString)
     strcpy(string, theString.string);
 }
 
+_VarString::_VarString(_LetString& theString)
+: length(theString.getLength()), capacity(length) {
+    string = (char*)getPage()->allocateObject(length + 1);
+    strcpy(string, theString.getNativeString());
+}
+
 _VarString::_VarString(size_t theLength)
 : length(theLength), capacity(length) {
     string = (char*)getPage()->allocateObject(length + 1);
@@ -108,6 +114,12 @@ _VarString& _VarString::operator + (const char* theString) {
 }
 
 _VarString& _VarString::operator += (const _VarString& theString) {
+    (*this) += theString.string;
+    
+    return *this;
+}
+
+_VarString& _VarString::operator += (_LetString& theString) {
     (*this) += theString.getNativeString();
     
     return *this;

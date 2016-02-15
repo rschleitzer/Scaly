@@ -6,10 +6,10 @@ Options::Options()
 :files(0), outputName() {}
 
 
-_Result<Options, OptionsError> Options::parseArguments(_Page* _rp, _Page* _ep, _Array<_VarString>& args) {
+_Result<Options, OptionsError> Options::parseArguments(_Page* _rp, _Page* _ep, _Array<_LetString>& args) {
     size_t length = args.length();
     Options& options = *new(_rp) Options();
-    options.files = new(options.getPage()) _Array<_VarString>();
+    options.files = new(options.getPage()) _Array<_LetString>();
     for (size_t i = 0; i < length; i++) {
 
         if (length < 2 || (**args[i])[0] != '-') {

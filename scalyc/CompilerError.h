@@ -7,9 +7,9 @@ namespace scalyc
 
 class UnableToReadFile : public Object {
 public:
-    UnableToReadFile(_VarString& file, FileError& fileError);
+    UnableToReadFile(_LetString& file, FileError& fileError);
 
-    _VarString& file;
+    _LetString& file;
     FileError& fileError;
 };
 

@@ -1,47 +1,53 @@
 #include "Scaly.h"
 namespace scaly {
 
-_LetString::_LetString()
-: string(0), length(0) {
+_LetString& _LetString::create(_Page* page) {
+    return createUninitialized(page, 0);
 }
 
-_LetString::_LetString(const char* theString) {
-    length = strlen(theString);
-    string = (char*)getPage()->allocateObject(length + 1);
-    strcpy(string, theString);
+_LetString& _LetString::create(_Page* page, const char* theString) {
+    size_t length = strlen(theString);
+    _LetString& string = createUninitialized(page, length);
+    char* pString = string.getNativeString();
+    strcpy(pString, theString);
+    return string;
 }
 
-_LetString::_LetString(const _LetString& theString)
-: length(theString.length) {
-    string = (char*)getPage()->allocateObject(length + 1);
-    strcpy(string, theString.string);
+_LetString& _LetString::create(_Page* page, const _LetString& theString) {
+    _LetString& string = createUninitialized(page, theString.length);
+    char* pString = string.getNativeString();
+    strcpy(pString, theString.getNativeString());
+    return string;
 }
 
-_LetString::_LetString(_VarString& theString)
-: length(theString.getLength()) {
-    string = (char*)getPage()->allocateObject(length + 1);
-    strcpy(string, theString.getNativeString());
+_LetString& _LetString::create(_Page* page, _VarString& theString) {
+    size_t length = theString.getLength();
+    _LetString& string = createUninitialized(page, length);
+    char* pString = string.getNativeString();
+    strcpy(pString, theString.getNativeString());
+    return string;
 }
 
-_LetString::_LetString(size_t theLength)
-: length(theLength) {
-    string = (char*)getPage()->allocateObject(length + 1);
+_LetString& _LetString::createUninitialized(_Page* page, size_t length)
+{
+    _LetString& string = *(_LetString*)page->allocateObject(sizeof(_LetString) + length + 1);
+    string.length = length;
+    return string;
 }
 
-_LetString::_LetString(size_t theLength, size_t theCapacity)
-: length(theLength) {
-    string = (char*)getPage()->allocateObject(length + 1);
-}
-
-_LetString::_LetString(char c)
-: length(1) {
-    string = (char*)getPage()->allocateObject(length + 1);
-    string[0] = c;
-    string[1] = 0;
+_LetString& _LetString::createFromChar(_Page* page, char c) {
+    _LetString& string = createUninitialized(page, 1);
+    char* pString = string.getNativeString();
+    *pString = c;
+    pString++;
+    *pString = 0;
+    return string;
 }
 
 char* _LetString::getNativeString() const {
-    return string;
+    const _LetString* ret = this;
+    ret++;
+    return (char*)ret;
 }
 
 size_t _LetString::getLength() {
@@ -49,30 +55,26 @@ size_t _LetString::getLength() {
 }
 
 bool _LetString::operator == (const char* theString){
-    return strcmp(string, theString) == 0;
+    return strcmp(getNativeString(), theString) == 0;
 }
 
 bool _LetString::operator != (const char* theString){
-    return strcmp(string, theString) != 0;
+    return strcmp(getNativeString(), theString) != 0;
 }
 
 bool _LetString::operator == (const _LetString& theString){
-    return strcmp(string, theString.getNativeString()) == 0;
+    return strcmp(getNativeString(), theString.getNativeString()) == 0;
 }
 
 bool _LetString::operator != (const _LetString& theString){
-    return strcmp(string, theString.getNativeString()) != 0;
+    return strcmp(getNativeString(), theString.getNativeString()) != 0;
 }
 
 char _LetString::operator [](size_t i) {
     if (i < length)
-        return string[i];
+        return getNativeString()[i];
 
     return -1;
-}
-
-void _LetString::allocate(size_t size) {
-    string = (char*) getPage()->allocateObject(size);
 }
 
 _Array<_LetString>& _LetString::Split(_Page* _rp, char c) {
@@ -82,7 +84,7 @@ _Array<_LetString>& _LetString::Split(_Page* _rp, char c) {
         char currentChar = (*this)[_i];
         if (currentChar == c) {
             if (part) {
-                ret->push(new(_rp) _LetString(*part));
+                ret->push(&create(_rp, *part));
                 part = 0;
             }
         }
@@ -94,7 +96,7 @@ _Array<_LetString>& _LetString::Split(_Page* _rp, char c) {
     }
 
     if (part)
-        ret->push(new(_rp) _LetString(*part));
+        ret->push(&create(_rp, *part));
     
     return *ret;
 }

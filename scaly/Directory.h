@@ -22,8 +22,8 @@ private:
 
 class Directory {
 public:
-    static bool exists(const _VarString& path);
-    static DirectoryError* create(_Page *_ep, const _VarString& path);
+    static bool exists(const _LetString& path);
+    static DirectoryError* create(_Page *_ep, const _LetString& path);
 };
 
 }

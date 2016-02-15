@@ -98,7 +98,7 @@ class Lexer : public Object {
 public:
     Token* token;
     bool whitespaceSkipped;
-    _VarString* text;
+    _LetString* text;
     size_t length;
     size_t position;
     size_t end;
@@ -106,7 +106,7 @@ public:
     size_t previousColumn;
     size_t line;
     size_t column;
-    Lexer(_VarString& text);
+    Lexer(_LetString& text);
     void advance();
     Identifier& scanIdentifier(_Page* _rp);
     Operator& scanOperator(_Page* _rp, bool includeDots);

@@ -72,7 +72,7 @@ PostfixOperator::PostfixOperator(_VarString& theOperation)
 
 bool PostfixOperator::_isPostfixOperator() { return true; }
 
-Lexer::Lexer(_VarString& text)
+Lexer::Lexer(_LetString& text)
 : token(0), whitespaceSkipped(true), text(&text), length(text.getLength()),
 position(0), end(length), previousLine(1), previousColumn(0), line(1), column(0) {
     advance();

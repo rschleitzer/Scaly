@@ -10,7 +10,7 @@ void* CompilerError::getErrorInfo() {
     return errorInfo;
 }
 
-UnableToReadFile::UnableToReadFile(_VarString& file, FileError& fileError)
+UnableToReadFile::UnableToReadFile(_LetString& file, FileError& fileError)
 : file(file), fileError(fileError) {
 }
 

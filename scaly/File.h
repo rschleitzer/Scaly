@@ -22,7 +22,7 @@ private:
 
 class File {
 public:
-    static _Result<_VarString, FileError> readToString(_Page* _rp, _Page *_ep, const _VarString& path);
+    static _Result<_LetString, FileError> readToString(_Page* _rp, _Page *_ep, const _LetString& path);
     static FileError* writeFromString(_Page *_ep, _VarString& path, _VarString& contents);
 };
 
