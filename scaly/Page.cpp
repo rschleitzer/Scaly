@@ -98,6 +98,32 @@ _Page* _Page::allocateExtensionPage(size_t size) {
     return extensionPage;
 }
 
+_Page* _Page::allocateExclusivePage() {
+    if (this != currentPage)
+        // We're already known to be full, so we delegate to the current page
+        return currentPage->allocateExclusivePage();
+
+    // Check first whether we need an ordinary extension
+    if ((_Page**)nextObject == getLastExtensionPageLocation()) {
+        // Allocate an extension page with default size
+        _Page* defaultExtensionPage = allocateExtensionPage(1);
+        // Make it our new current
+        currentPage = defaultExtensionPage;
+        // Try again with the new extension page
+        return defaultExtensionPage->allocateExclusivePage();
+    }
+
+    _Page* pageLocation = allocate(pageSize);
+    if (!pageLocation)
+        return 0;
+
+    _Page* exclusivePage = new (pageLocation) _Page(pageSize);
+    *nextExtensionPageLocation = pageLocation;
+    nextExtensionPageLocation--;
+    exclusivePage->extendingPage = this;
+    return exclusivePage;
+}
+
 _Page* _Page::allocateNextPage(_Page* previousPage) {
     void* pageLocation = allocate(pageSize);
     if (!pageLocation)
@@ -116,6 +142,27 @@ void _Page::reset() {
     // Allocate space for the page itself
     nextObject = align((char*) this + sizeof(_Page));
     currentPage = this;
+}
+
+void _Page::clear() {
+    _Page* page = findExtensionChainEnd();    
+    // Deallocate the extension page chain starting from the end, leaving the current page intact
+    while (page != this) {
+        _Page* prevExtPage = page->extendingPage;
+        deallocateExtensionsOfPage(page);
+        page = prevExtPage;
+    }
+    reset();
+}
+
+_Page* _Page::findExtensionChainEnd() {
+    _Page* page = this;
+    while (page)
+        if (*(page->getLastExtensionPageLocation()) == 0)
+            break;
+        else
+            page = *(page->getLastExtensionPageLocation());
+    return page;
 }
 
 _Page* _Page::allocate(size_t size) {
@@ -138,21 +185,16 @@ _Page* _Page::allocate(size_t size) {
 bool _Page::extend(void* address, size_t size) {
     if (!size)
         size = 1;
-
     void* nextLocation = align((char*) address + size);
-
     // If nextObject would not change because of the alignment, that's it
     if (nextLocation == (void*) nextObject)
         return true;
-
     // If nextObject is already higher, other objects were allocated in the meantime
     if (nextLocation < nextObject)
         return false;
-        
     // Now we still have to check whether we still would have space left
     if (nextLocation >= (void*) nextExtensionPageLocation)
         return false;
-
     // Allocate the extension
     nextObject = nextLocation;
     return true;
@@ -160,28 +202,23 @@ bool _Page::extend(void* address, size_t size) {
 
 void _Page::deallocatePageExtensions() {
     // Find the end of the extension Page chain
-    _Page* page = this;
-    while (page)
-        if (*(page->getLastExtensionPageLocation()) == 0)
-            break;
-        else
-            page = *(page->getLastExtensionPageLocation());
-    
+    _Page* page = findExtensionChainEnd();
     // Deallocate the extension page chain starting from the end
     while (page) {
         _Page* prevExtPage = page->extendingPage;
-
-        // Deallocate the standard extension page if applicable
-        _Page** ppPage = page->getLastExtensionPageLocation();
-        if (*ppPage)
-            forget(*ppPage);
-
-        // Deallocate the oversized pages        
-        for (ppPage--; ppPage > page->nextExtensionPageLocation; ppPage--)
-            forget(*ppPage);
-
+        deallocateExtensionsOfPage(page);
         page = prevExtPage;
     }
+}
+
+void _Page::deallocateExtensionsOfPage(_Page* page) {
+    // Deallocate the standard extension page if applicable
+    _Page** ppPage = page->getLastExtensionPageLocation();
+    if (*ppPage)
+        forget(*ppPage);
+    // Deallocate the oversized or exclusive pages        
+    for (ppPage--; ppPage > page->nextExtensionPageLocation; ppPage--)
+        forget(*ppPage);
 }
 
 void _Page::forget(_Page* page) {
@@ -215,17 +252,13 @@ void _Page::freeExtensionPage(_Page* _page) {
     while (extensionPosition > nextExtensionPageLocation) {
         if (*extensionPosition == _page)
             break;
-
         extensionPosition--;
     }
-
     // Shift the remaining array one position up
     for (_Page** shiftedPosition = extensionPosition; shiftedPosition > nextExtensionPageLocation; shiftedPosition--)
         *shiftedPosition = *(shiftedPosition - 1);
-        
     // Make room for one more extension
     nextExtensionPageLocation++;
-    
     forget(_page);
 }
 
