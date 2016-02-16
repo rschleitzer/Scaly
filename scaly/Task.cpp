@@ -10,7 +10,7 @@ static int pagesFromCache;
 __thread _Task* __CurrentTask = 0;
     
 _Task::_Task()
-: pagePool (*new(getPage()) _Array<_Page>(64)) {
+: pagePool (*new(getPage()) _Array<_Page>(256)) {
 }
 
 _Page* _Task::allocatePage() {
