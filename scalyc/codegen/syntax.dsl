@@ -6,7 +6,7 @@
         start = start
         end = end
     }
-    
+
     let start: Position
     let end: Position
 }
@@ -102,7 +102,7 @@ public:
                 (("syntax") ($
                     (if (abstract? syntax-node) "" ($
 "    "
-                        (if (multiple? content)"_Array<" "")
+                        (if (multiple? content)"_Vector<" "")
                         (link content)
                         (if (multiple? content)">" "")"*"
 " "(property content)";
@@ -150,7 +150,7 @@ public:
 (define (inheritors node)
     (if (abstract? node) (node-list-union
         (children node)
-        (apply node-list-union 
+        (apply node-list-union
             (map inheritors
                 (node-list->list
                     (node-list-map
@@ -179,7 +179,7 @@ SyntaxNode::SyntaxNode(Position start, Position end)
         (apply-to-children-of syntax-node (lambda (content)
             (if (and (syntax? content)(optional? content)) ($
 "    "(property content)" = 0;
-"           )"")       
+"           )"")
         ))
 "}
 "        (if (abstract? syntax-node) ($
@@ -205,19 +205,17 @@ void "(id syntax-node)"::accept(SyntaxVisitor& visitor) {
                         (case (type content)
                             (("syntax") ($
                                 (if (abstract? syntax-node) "" ($
-                                    (if (optional? content) ($
+                                    (if (and (optional? content) (not (multiple? content))) ($
 "    if ("(property content)")
 "
                                     )"")
                                     (if (multiple? content)
                                         ($
-"    {
-        "(link content)"* node = 0;
-        size_t _alength = "(property content)"->length();
-        for (size_t _a = 0; _a < _alength; _a++) {
-            node = *(*"(property content)")[_a];
-            node->accept(visitor);
-        }
+"    "(link content)"* node = 0;
+    size_t _alength = "(property content)"->length();
+    for (size_t _a = 0; _a < _alength; _a++) {
+        node = *(*"(property content)")[_a];
+        node->accept(visitor);
     }
 "
                                         )

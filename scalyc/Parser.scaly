@@ -31,10 +31,10 @@ class Parser {
         while true {
             let node: StatementWithSemicolon = parseStatementWithSemicolon()
                 catch _ break
-            
+
             if ret == null
                 ret = [StatementWithSemicolon]
-                
+
             ret.push(node)
         }
 
@@ -205,10 +205,10 @@ class Parser {
         while true {
             let node: PathIdentifier = parsePathIdentifier()
                 catch _ break
-            
+
             if ret == null
                 ret = [PathIdentifier]
-                
+
             ret.push(node)
         }
 
@@ -370,10 +370,10 @@ class Parser {
         while true {
             let node: PatternInitializer = parsePatternInitializer()
                 catch _ break
-            
+
             if ret == null
                 ret = [PatternInitializer]
-                
+
             ret.push(node)
         }
 
@@ -414,10 +414,10 @@ class Parser {
         while true {
             let node: AdditionalInitializer = parseAdditionalInitializer()
                 catch _ break
-            
+
             if ret == null
                 ret = [AdditionalInitializer]
-                
+
             ret.push(node)
         }
 
@@ -574,10 +574,10 @@ class Parser {
         while true {
             let node: Modifier = parseModifier()
                 catch _ break
-            
+
             if ret == null
                 ret = [Modifier]
-                
+
             ret.push(node)
         }
 
@@ -743,10 +743,10 @@ class Parser {
         while true {
             let node: ParameterClause = parseParameterClause()
                 catch _ break
-            
+
             if ret == null
                 ret = [ParameterClause]
-                
+
             ret.push(node)
         }
 
@@ -794,10 +794,10 @@ class Parser {
         while true {
             let node: Parameter = parseParameter()
                 catch _ break
-            
+
             if ret == null
                 ret = [Parameter]
-                
+
             ret.push(node)
         }
 
@@ -1026,10 +1026,10 @@ class Parser {
         while true {
             let node: EnumMember = parseEnumMember()
                 catch _ break
-            
+
             if ret == null
                 ret = [EnumMember]
-                
+
             ret.push(node)
         }
 
@@ -1136,10 +1136,10 @@ class Parser {
         while true {
             let node: AdditionalType = parseAdditionalType()
                 catch _ break
-            
+
             if ret == null
                 ret = [AdditionalType]
-                
+
             ret.push(node)
         }
 
@@ -1195,10 +1195,10 @@ class Parser {
         while true {
             let node: AdditionalCase = parseAdditionalCase()
                 catch _ break
-            
+
             if ret == null
                 ret = [AdditionalCase]
-                
+
             ret.push(node)
         }
 
@@ -1349,10 +1349,10 @@ class Parser {
         while true {
             let node: GenericParameter = parseGenericParameter()
                 catch _ break
-            
+
             if ret == null
                 ret = [GenericParameter]
-                
+
             ret.push(node)
         }
 
@@ -1382,10 +1382,10 @@ class Parser {
         while true {
             let node: ClassMember = parseClassMember()
                 catch _ break
-            
+
             if ret == null
                 ret = [ClassMember]
-                
+
             ret.push(node)
         }
 
@@ -1568,10 +1568,10 @@ class Parser {
         while true {
             let node: BinaryOp = parseBinaryOp()
                 catch _ break
-            
+
             if ret == null
                 ret = [BinaryOp]
-                
+
             ret.push(node)
         }
 
@@ -1733,10 +1733,10 @@ class Parser {
         while true {
             let node: CatchClause = parseCatchClause()
                 catch _ break
-            
+
             if ret == null
                 ret = [CatchClause]
-                
+
             ret.push(node)
         }
 
@@ -1867,10 +1867,10 @@ class Parser {
         while true {
             let node: Postfix = parsePostfix()
                 catch _ break
-            
+
             if ret == null
                 ret = [Postfix]
-                
+
             ret.push(node)
         }
 
@@ -2032,10 +2032,10 @@ class Parser {
         while true {
             let node: ExpressionElement = parseExpressionElement()
                 catch _ break
-            
+
             if ret == null
                 ret = [ExpressionElement]
-                
+
             ret.push(node)
         }
 
@@ -2479,10 +2479,10 @@ class Parser {
         while true {
             let node: SwitchCase = parseSwitchCase()
                 catch _ break
-            
+
             if ret == null
                 ret = [SwitchCase]
-                
+
             ret.push(node)
         }
 
@@ -2594,10 +2594,10 @@ class Parser {
         while true {
             let node: CaseItem = parseCaseItem()
                 catch _ break
-            
+
             if ret == null
                 ret = [CaseItem]
-                
+
             ret.push(node)
         }
 
@@ -3002,10 +3002,10 @@ class Parser {
         while true {
             let node: TuplePatternElement = parseTuplePatternElement()
                 catch _ break
-            
+
             if ret == null
                 ret = [TuplePatternElement]
-                
+
             ret.push(node)
         }
 
@@ -3607,10 +3607,10 @@ class Parser {
         while true {
             let node: TypePostfix = parseTypePostfix()
                 catch _ break
-            
+
             if ret == null
                 ret = [TypePostfix]
-                
+
             ret.push(node)
         }
 
@@ -3726,10 +3726,10 @@ class Parser {
         while true {
             let node: Inheritance = parseInheritance()
                 catch _ break
-            
+
             if ret == null
                 ret = [Inheritance]
-                
+
             ret.push(node)
         }
 
@@ -3765,7 +3765,7 @@ class Parser {
     function isAtEnd() -> bool {
         lexer.isAtEnd()
     }
-    
+
     function isIdentifier(id: String) -> bool {
         if id == useKeyword
             return false

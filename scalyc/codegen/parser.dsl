@@ -14,10 +14,10 @@
         while true {
             let node: "(id syntax)" = parse"(id syntax)"()
                 catch _ break
-            
+
             if ret == null
                 ret = ["(id syntax)"]
-                
+
             ret.push(node)
         }
 
@@ -58,9 +58,9 @@
                         ($ ; non-terminals
 "            let result: "(if (multiple? content) "[" "")(link content)(if (multiple? content) "]" "")" node = parse"(link content)(if (multiple? content) "List" "")"() catch _(error) {
 "
-                    (if (optional? content) 
+                    (if (optional? content)
 "                 null
-" 
+"
                         ($
 "                throw ("(if (string=? (type content) "syntax") "error" ($ "ParserError."
                 (case (type content) (("keyword") "Keyword") (("punctuation") "Punctuation")(("identifier") "Identifier")(("literal") "Literal")(("prefixoperator" "binaryoperator" "postfixoperator") "Operator"))
@@ -78,7 +78,7 @@
                         ($ ; terminals
 "            let "(case (type content) (("keyword" "punctuation") "success: bool")(("literal") "literal: Literal?")(else ($ (property content)": String?")))
             " = lexer.parse"
-            (case (type content)(("prefixoperator") "PrefixOperator")(("binaryoperator") "BinaryOperator")(("postfixoperator") "PostfixOperator")(("identifier") "Identifier")(("literal") "Literal")(("keyword") "Keyword")(("punctuation") "Punctuation"))                            
+            (case (type content)(("prefixoperator") "PrefixOperator")(("binaryoperator") "BinaryOperator")(("postfixoperator") "PostfixOperator")(("identifier") "Identifier")(("literal") "Literal")(("keyword") "Keyword")(("punctuation") "Punctuation"))
             "("(case (type content)(("keyword") (name-of-link content)) (("punctuation") (link content)) (else ""))")
             if "(case (type content) (("keyword" "punctuation") "success")(("identifier") ($ "("(property content)" != null) && ("(property content)" is Identifier)")) (else ($ (property content)" != null")))"
                 lexer.advance()
@@ -108,7 +108,7 @@
     function isAtEnd() -> bool {
         lexer.isAtEnd()
     }
-    
+
     function isIdentifier(id: String) -> bool {"
    (apply-to-selected-children "keyword" (lambda (keyword) ($
 "
@@ -147,7 +147,7 @@ public:
     (apply-to-selected-children "syntax" (lambda (syntax) (if (program? syntax) "" ($
 "
 "        (if (multiple? syntax) ($
-"    _Result<""_Array<"(id syntax)">, ParserError> parse"(id syntax)"List(_Page* _rp, _Page* _ep);
+"    _Result<""_Vector<"(id syntax)">, ParserError> parse"(id syntax)"List(_Page* _rp, _Page* _ep);
 "       )"")
 "    _Result<"(id syntax)", ParserError> parse"(id syntax)"(_Page* _rp, _Page* _ep);
 "   ))))
@@ -186,25 +186,19 @@ Parser::Parser(_LetString* fileName, _LetString& text)
 "    (apply-to-selected-children "syntax" (lambda (syntax) (if (program? syntax) "" ($
         (if (multiple? syntax) ($
 "
-_Result<""_Array<"(id syntax)">, ParserError> Parser::parse"(id syntax)"List(_Page* _rp, _Page* _ep) {
+_Result<""_Vector<"(id syntax)">, ParserError> Parser::parse"(id syntax)"List(_Page* _rp, _Page* _ep) {
     // Make a region for the current block and get the Page
     _Region _r; _Page* _p = _r.get();
-    _Array<"(id syntax)">* ret = 0;
-
+    _Array<"(id syntax)">* ret = new(_p) _Array<"(id syntax)">();
     while (true) {
         _Result<"(id syntax)", ParserError> nodeResult = parse"(id syntax)"(_rp, _p);
-        if (nodeResult.succeeded()) {
-            if (!ret)
-                ret = new(_rp) _Array<"(id syntax)">();
-
+        if (nodeResult.succeeded())
             ret->push(nodeResult.getResult());
-        }
-        else {
+        else
             break;
-        }
     }
 
-    return _Result<""_Array<"(id syntax)">, ParserError>(ret);
+    return _Result<""_Vector<"(id syntax)">, ParserError>(&_Vector<"(id syntax)">::create(_rp, *ret));
 }
 "       )"")
 "
@@ -220,7 +214,7 @@ _Result<"(id syntax)", ParserError> Parser::parse"(id syntax)"(_Page* _rp, _Page
         // Make a region for the current block and get the Page
         _Region _r; _Page* _p = _r.get();
         _Result<"(link content)", ParserError> result = parse"(link content)"(_rp, _p);
-        if (result.succeeded()) 
+        if (result.succeeded())
             return _Result<"(id syntax)", ParserError>(result.getResult());
         else
             errors.push(result.getError());
@@ -239,7 +233,7 @@ _Result<"(id syntax)", ParserError> Parser::parse"(id syntax)"(_Page* _rp, _Page
 "                   (if (string=? "syntax" (type content))
 
                         ($ ; non-terminals
-"        _Result<"(if (multiple? content) "_Array<" "")(link content)(if (multiple? content) ">" "")", ParserError> result = parse"(link content)(if (multiple? content) "List" "")"(_rp, _ep);
+"        _Result<"(if (multiple? content) "_Vector<" "")(link content)(if (multiple? content) ">" "")", ParserError> result = parse"(link content)(if (multiple? content) "List" "")"(_rp, _ep);
         if (result.succeeded()) {
 "                           (if (top? syntax) ($
 "            if (!isAtEnd()) {
@@ -251,7 +245,7 @@ _Result<"(id syntax)", ParserError> Parser::parse"(id syntax)"(_Page* _rp, _Page
                         ($ ; terminals
 "        "(case (type content) (("keyword" "punctuation") "bool success")(("literal") "Literal* literal")(else ($ "_LetString* "(property content))))
         " = lexer.parse"
-        (case (type content)(("prefixoperator") "PrefixOperator")(("binaryoperator") "BinaryOperator")(("postfixoperator") "PostfixOperator")(("identifier") "Identifier")(("literal") "Literal")(("keyword") "Keyword")(("punctuation") "Punctuation"))                            
+        (case (type content)(("prefixoperator") "PrefixOperator")(("binaryoperator") "BinaryOperator")(("postfixoperator") "PostfixOperator")(("identifier") "Identifier")(("literal") "Literal")(("keyword") "Keyword")(("punctuation") "Punctuation"))
         "("(case (type content)(("keyword") (name-of-link content)) (("punctuation") (link content)) (else "_rp"))");
         if "(case (type content) (("keyword" "punctuation") "(success)")(("identifier") ($ "(("(property content)") && (isIdentifier(*"(property content)")))")) (else ($"("(property content)")")))" {
             lexer.advance();
@@ -287,7 +281,7 @@ _Result<"(id syntax)", ParserError> Parser::parse"(id syntax)"(_Page* _rp, _Page
 bool Parser::isAtEnd() {
     return lexer.isAtEnd();
 }
-    
+
 bool Parser::isIdentifier(_LetString& id) {"
    (apply-to-selected-children "keyword" (lambda (keyword) ($
 "

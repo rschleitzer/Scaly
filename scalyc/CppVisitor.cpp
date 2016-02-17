@@ -10,22 +10,22 @@ CppError* CppVisitor::execute(Program& program) {
 bool CppVisitor::openProgram(Program& program) {
     programName = program.name;
     programDirectory = program.directory;
-    
+
     if (programDirectory == 0 || *programDirectory == "")
         programDirectory = &_LetString::create(this->getPage(), ".");
-        
+
     if (!Directory::exists(*programDirectory)) {
         _Region _region; _Page* _p = _region.get();
         if (Directory::create(_p, *programDirectory))
             return false;
     }
-    
+
     {
         _Region _region; _Page* _p = _region.get();
         _VarString& outputFilePath = *new(_p) _VarString(*programDirectory);
         outputFilePath += "/";
         outputFilePath += *programName;
-        
+
         // Build and write the project file
         {
             _Region _region; _Page* _p = _region.get();
@@ -38,7 +38,7 @@ bool CppVisitor::openProgram(Program& program) {
                     return false;
             }
         }
-        
+
         // Build and write the main header file
         {
             _Region _region; _Page* _p = _region.get();
@@ -51,19 +51,19 @@ bool CppVisitor::openProgram(Program& program) {
                     return false;
             }
         }
-        
+
         inherits = new(getPage()) _Array<Inherits>();
         classes = new(getPage()) _Array<_LetString>();
         collectInheritances(program);
     }
-    
+
     return true;
 }
 
 void CppVisitor::collectInheritances(Program& program) {
     inherits = new(getPage()) _Array<Inherits>();
     if (program.compilationUnits) {
-        _Array<CompilationUnit>& compilationUnits = *program.compilationUnits;
+        _Vector<CompilationUnit>& compilationUnits = *program.compilationUnits;
         size_t _compilationUnits_length = compilationUnits.length();
         for (size_t _i = 0; _i < _compilationUnits_length; _i++) {
             collectInheritancesInCompilationUnit(**compilationUnits[_i]);
@@ -73,7 +73,7 @@ void CppVisitor::collectInheritances(Program& program) {
 
 void CppVisitor::collectInheritancesInCompilationUnit(CompilationUnit& compilationUnit) {
     if (compilationUnit.statements) {
-        _Array<StatementWithSemicolon>& statements = *compilationUnit.statements;
+        _Vector<StatementWithSemicolon>& statements = *compilationUnit.statements;
         size_t _statements_length = statements.length();
         for (size_t _i = 0; _i < _statements_length; _i++) {
             StatementWithSemicolon& statementWithSemicolon = **statements[_i];
@@ -84,7 +84,7 @@ void CppVisitor::collectInheritancesInCompilationUnit(CompilationUnit& compilati
                     if (classDeclaration.typeInheritanceClause) {
                         TypeInheritanceClause& inheritanceClause = *classDeclaration.typeInheritanceClause;
                         if (inheritanceClause.inheritances) {
-                            _Array<Inheritance>& inheritances = *inheritanceClause.inheritances;
+                            _Vector<Inheritance>& inheritances = *inheritanceClause.inheritances;
                             size_t _inheritances_length = inheritances.length();
                             for (size_t _j = 0; _j < _inheritances_length; _j++) {
                                 Inheritance& inheritance = **inheritances[_j];
@@ -117,7 +117,7 @@ void CppVisitor::registerInheritance(_LetString& className, _LetString& baseName
 
 void CppVisitor::closeProgram(Program& program) {
     programName = 0;
-    programDirectory = 0;    
+    programDirectory = 0;
 }
 
 
@@ -127,7 +127,7 @@ bool CppVisitor::openCompilationUnit(CompilationUnit& compilationUnit) {
     sourceIndentLevel = 0;
     declaringClassMember = false;
     inParameterClause = false;
-    
+
     // Build and write the header file
     if (*moduleName != *programName) {
         headerFile = new(getPage()) _VarString(0, _Page::pageSize);
@@ -146,7 +146,7 @@ bool CppVisitor::openCompilationUnit(CompilationUnit& compilationUnit) {
         (*headerFile) += *programName;
         (*headerFile) += " {";
     }
-    
+
     // Begin cpp file
     sourceFile = new(getPage()) _VarString(0, _Page::pageSize);
     (*sourceFile) += "#include \"";
@@ -154,7 +154,7 @@ bool CppVisitor::openCompilationUnit(CompilationUnit& compilationUnit) {
     (*sourceFile) += ".h\"\nusing namespace scaly;\nnamespace ";
     (*sourceFile) += *programName;
     (*sourceFile) += " {\n\n";
-    
+
     return true;
 }
 
@@ -240,7 +240,7 @@ bool CppVisitor::openPatternInitializer(PatternInitializer& patternInitializer) 
         (*headerFile) += ", ";
     else
         firstBindingInitializer = false;
-        
+
     return true;
 }
 
@@ -310,7 +310,7 @@ bool CppVisitor::openConstParameter(ConstParameter& constParameter) {
         (*headerFile) += ", ";
     else
         firstParameter = false;
-        
+
     constParameter.type->accept(*this);
     if (constParameter.type->_isTypeIdentifier()) {
         TypeIdentifier& typeIdentifier = *(TypeIdentifier*)constParameter.type;
@@ -318,23 +318,23 @@ bool CppVisitor::openConstParameter(ConstParameter& constParameter) {
             (*headerFile) += "&";
         }
     }
-        
+
     (*headerFile) += " ";
     (*headerFile) += *constParameter.name;
-    
+
     return false;
 }
 
 bool CppVisitor::isClass(_LetString& name) {
     if (name == "String")
         return true;
-        
+
     size_t _classes_length = classes->length();
     for (size_t _i = 0; _i < _classes_length; _i++) {
         if (**(*classes)[_i] == name)
             return true;
     }
-    
+
     return false;
 }
 
@@ -419,7 +419,7 @@ bool CppVisitor::openClassDeclaration(ClassDeclaration& classDeclaration) {
     }
     (*headerFile) += " {\n";
     (*headerFile) += "public:";
-        
+
     headerIndentLevel++;
 
     return true;
@@ -463,7 +463,7 @@ void CppVisitor::appendDerivedClasses(_Array<_LetString>& derivedClasses, _Array
         _LetString& derivedClass = **inheritors[_i];
         derivedClasses.push(&derivedClass);
         collectDerivedClasses(derivedClasses, derivedClass);
-    }    
+    }
 }
 
 bool CppVisitor::openGenericArgumentClause(GenericArgumentClause& genericArgumentClause) {
@@ -824,7 +824,7 @@ void CppVisitor::closeTypeAnnotation(TypeAnnotation& typeAnnotation) {
 
 bool CppVisitor::openTypeIdentifier(TypeIdentifier& typeIdentifier) {
     typeIdentifierName = typeIdentifier.name;
-    
+
     (*headerFile) += getCppType(typeIdentifierName);
     if ((!inParameterClause) && (isClass(*typeIdentifierName))) {
         (*headerFile) += "*";
@@ -834,12 +834,12 @@ bool CppVisitor::openTypeIdentifier(TypeIdentifier& typeIdentifier) {
 
 const char* CppVisitor::getCppType(_LetString* typeIdentifierName) {
     const char* typeIdentifier = typeIdentifierName->getNativeString();
-    
+
     if ((*typeIdentifierName) == "unsigned")
         return "size_t";
     else if ((*typeIdentifierName) == "String")
         return "_LetString";
-    
+
     return typeIdentifier;
 }
 
@@ -943,7 +943,7 @@ void CppVisitor::buildProjectFileString(_VarString& projectFile, Program& progra
     projectFile +=  " Required=\"yes\" PreCompiledHeader=\"\" PCHInCommandLine=\"no\" PCHFlags=\"\" PCHFlagsPolicy=\"0\">\n";
     projectFile +=  "        <IncludePath Value=\".\"/>\n        <IncludePath Value=\"../scaly\"/>\n      </Compiler>\n";
     projectFile +=  "      <Linker Options=\"\" Required=\"yes\">\n        <LibraryPath Value=\"../Debug\"/>\n";
-    projectFile +=  "        <Library Value=\"libscaly\"/>\n      </Linker>\n      <ResourceCompiler Options=\"\" Required=\"no\"/>\n";    
+    projectFile +=  "        <Library Value=\"libscaly\"/>\n      </Linker>\n      <ResourceCompiler Options=\"\" Required=\"no\"/>\n";
     projectFile +=  "      <General OutputFile=\"$(IntermediateDirectory)/$(ProjectName)\" IntermediateDirectory=\"../Debug\" ";
     projectFile +=  "Command=\"./$(ProjectName)\" CommandArguments=\"-o ";
     projectFile +=  *programName;
@@ -990,7 +990,7 @@ void CppVisitor::buildProjectFileString(_VarString& projectFile, Program& progra
     projectFile += "      </CustomBuild>\n      <AdditionalRules>\n        <CustomPostBuild/>\n";
     projectFile += "        <CustomPreBuild/>\n      </AdditionalRules>\n      <Completion EnableCpp11=\"no\" EnableCpp14=\"no\">\n";
     projectFile += "        <ClangCmpFlagsC/>\n        <ClangCmpFlags/>\n        <ClangPP/>\n";
-    projectFile += "        <SearchPaths/>\n      </Completion>\n    </Configuration>\n  </Settings>\n</CodeLite_Project>\n";    
+    projectFile += "        <SearchPaths/>\n      </Completion>\n    </Configuration>\n  </Settings>\n</CodeLite_Project>\n";
 }
 
 Inherits::Inherits(_LetString& className) {
