@@ -4,7 +4,7 @@ namespace scalyc {
 
 CompilerError* Compiler::compileFiles(_Page* _ep, Options& options) {
     _Region _region; _Page* _p = _region.get();
-    _Array<_LetString>* files = options.files;
+    _Vector<_LetString>* files = options.files;
     _Array<_LetString>* sources = 0;
     {
         size_t _length = files->length();
@@ -13,11 +13,11 @@ CompilerError* Compiler::compileFiles(_Page* _ep, Options& options) {
             _Result<_LetString, FileError> _readToStringResult = File::readToString(_p, _ep, **(*files)[_index]);
             if (!_readToStringResult.succeeded())
                 return new(_ep) CompilerError(*new(_ep) UnableToReadFile(**(*files)[_index], *_readToStringResult.getError()));
-                
+
             else sources->push(_readToStringResult.getResult());
         }
     }
-    
+
     _Array<CompilationUnit>* compilationUnits = 0;
     {
         size_t _length = sources->length();
@@ -32,12 +32,12 @@ CompilerError* Compiler::compileFiles(_Page* _ep, Options& options) {
             }
         }
     }
-    
+
     Program& program = *new(_p) Program();
     program.name = options.outputName;
     program.directory = options.directory;
     program.compilationUnits = compilationUnits;
-    
+
     CppVisitor& visitor = *new(_p) CppVisitor();
     CppError* cppError = visitor.execute(program);
     if (cppError) {
@@ -46,7 +46,7 @@ CompilerError* Compiler::compileFiles(_Page* _ep, Options& options) {
                 return new (_ep) CompilerError(cppError->getUnableToCreateOutputDirectory());
         }
     }
-    
+
     // Everything went fine
     return 0;
 }

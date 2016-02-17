@@ -9,7 +9,7 @@ public:
     Options();
     static _Result<Options, OptionsError> parseArguments(_Page* _rp, _Page* _ep, _Vector<_LetString>& args);
 
-    _Array<_LetString>* files;
+    _Vector<_LetString>* files;
     _LetString* outputName;
     _LetString* directory;
 };

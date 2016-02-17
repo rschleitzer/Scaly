@@ -20,14 +20,13 @@ int main(int argc, char** argv) {
     // Set up the root task
     __CurrentTask = new(__CurrentPage) _Task();
 
-    // Collect the arguments into a String Array
-    _Array<_LetString>& arguments = *new (__CurrentPage) _Array<_LetString>(argc - 1);
+    // Collect the arguments into a String Vector
+    _Vector<_LetString>& arguments = _Vector<_LetString>::createUninitialized(__CurrentPage, argc - 1);
     for (int i = 1; i < argc; i++)
-        arguments.push(&_LetString::create(__CurrentPage, argv[i]));
+        *arguments[i - 1] = &_LetString::create(__CurrentPage, argv[i]);
 
     // Call Scaly's top-level code
-    _Vector<_LetString>& args = _Vector<_LetString>::create(__CurrentPage, arguments);
-    int ret = scalyc::_main(args);
+    int ret = scalyc::_main(arguments);
 
     // Only for monitoring, debugging and stuff
     __CurrentTask->dispose();
