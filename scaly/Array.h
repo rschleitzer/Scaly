@@ -23,7 +23,11 @@ public:
     int length() {
         return _size;
     }
-    
+
+    T** getRawArray() {
+        return _rawArray;
+    }
+
     // Append a value to the array
     void push(T* item) {
         if (!_rawArray) {
@@ -39,7 +43,7 @@ public:
         *(_rawArray + _size) = item;
         _size += 1;
     }
-    
+
     // Take away a value from the array's end
     T* pop() {
         if (!_size) {
@@ -60,7 +64,7 @@ private:
         _capacity = newCapacity;
         allocate();
         memcpy(_rawArray, oldArray, _size * sizeof(T*));
-        
+
         // Reclaim the page if it was oversized, i.e., exclusively allocated
         if (oldCapacity > _Page::pageSize)
             _Page::reclaimArray(oldArray);

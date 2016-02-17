@@ -11,7 +11,7 @@ int main(int argc, char** argv) {
 
     // Set up statistics counters
     _Page::initStatistics();
-    
+
     // Allocate the root page for the main thread
     __CurrentPage = new(_Task::allocatePage()) _Page(_Page::pageSize);
     if (!__CurrentPage)
@@ -26,11 +26,12 @@ int main(int argc, char** argv) {
         arguments.push(&_LetString::create(__CurrentPage, argv[i]));
 
     // Call Scaly's top-level code
-    int ret = scalyc::_main(arguments);
+    _Vector<_LetString>& args = _Vector<_LetString>::create(__CurrentPage, arguments);
+    int ret = scalyc::_main(args);
 
     // Only for monitoring, debugging and stuff
     __CurrentTask->dispose();
-    
+
     // Give back the return code of the top-level code
     return ret;
 }

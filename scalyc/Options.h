@@ -7,8 +7,8 @@ namespace scalyc {
 class Options : Object {
 public:
     Options();
-    static _Result<Options, OptionsError> parseArguments(_Page* _rp, _Page* _ep, _Array<_LetString>& args);
-    
+    static _Result<Options, OptionsError> parseArguments(_Page* _rp, _Page* _ep, _Vector<_LetString>& args);
+
     _Array<_LetString>* files;
     _LetString* outputName;
     _LetString* directory;

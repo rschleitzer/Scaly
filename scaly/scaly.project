@@ -44,6 +44,7 @@
     <File Name="Task.h"/>
     <File Name="VarString.h"/>
     <File Name="LetString.h"/>
+    <File Name="Vector.h"/>
   </VirtualDirectory>
   <Settings Type="Static Library">
     <GlobalSettings>

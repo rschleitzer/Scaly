@@ -6,7 +6,7 @@ Options::Options()
 :files(0), outputName() {}
 
 
-_Result<Options, OptionsError> Options::parseArguments(_Page* _rp, _Page* _ep, _Array<_LetString>& args) {
+_Result<Options, OptionsError> Options::parseArguments(_Page* _rp, _Page* _ep, _Vector<_LetString>& args) {
     size_t length = args.length();
     Options& options = *new(_rp) Options();
     options.files = new(options.getPage()) _Array<_LetString>();
@@ -24,7 +24,7 @@ _Result<Options, OptionsError> Options::parseArguments(_Page* _rp, _Page* _ep, _
                     return _Result<Options, OptionsError>(new(_ep) OptionsError(*new(_ep) _InvalidOption(**args[i])));
                 else
                     options.outputName = *args[i];
-                    
+
                 break;
             }
             case 'd': {
@@ -33,7 +33,7 @@ _Result<Options, OptionsError> Options::parseArguments(_Page* _rp, _Page* _ep, _
                     return _Result<Options, OptionsError>(new(_ep) OptionsError(*new(_ep) _InvalidOption(**args[i])));
                 else
                     options.directory = *args[i];
-                    
+
                 break;
             }
             default:
@@ -45,7 +45,7 @@ _Result<Options, OptionsError> Options::parseArguments(_Page* _rp, _Page* _ep, _
         return _Result<Options, OptionsError>(new(_ep) OptionsError(noOutputOption));
     if (options.files->length() == 0)
         return _Result<Options, OptionsError>(new(_ep) OptionsError(noFilesToCompile));
-    
+
     return _Result<Options, OptionsError>(&options);
 }
 
