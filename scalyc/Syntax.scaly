@@ -506,15 +506,15 @@ class EnumMember : SyntaxNode {
                 node.accept(visitor)
             }
         }
-        if tupleType != nil {
-            tupleType!.accept(visitor)
+        if typeOfTuple != nil {
+            typeOfTuple!.accept(visitor)
         }
         visitor.closeEnumMember(this)
     }
 
     let enumCase: EnumCase?
     let additionalCases: [AdditionalCase]?
-    let tupleType: TupleType?
+    let typeOfTuple: TupleType?
 }
 
 class TupleType : SyntaxNode {
@@ -525,7 +525,7 @@ class TupleType : SyntaxNode {
 
     function accept(mutable visitor: SyntaxVisitor) {
         visitor.openTupleType(this)
-        tupleType!.accept(visitor)
+        typeOfTuple!.accept(visitor)
         if additionalTypes != nil {
             for node in additionalTypes! {
                 node.accept(visitor)
@@ -534,7 +534,7 @@ class TupleType : SyntaxNode {
         visitor.closeTupleType(this)
     }
 
-    let tupleType: Type?
+    let typeOfTuple: Type?
     let additionalTypes: [AdditionalType]?
 }
 
@@ -1394,14 +1394,14 @@ class IdentifierPattern : Pattern {
 
     override function accept(mutable visitor: SyntaxVisitor) {
         visitor.openIdentifierPattern(this)
-        if typeAnnotation != nil {
-            typeAnnotation!.accept(visitor)
+        if annotationForType != nil {
+            annotationForType!.accept(visitor)
         }
         visitor.closeIdentifierPattern(this)
     }
 
     let identifier: String?
-    let typeAnnotation: TypeAnnotation?
+    let annotationForType: TypeAnnotation?
 }
 
 class TuplePattern : Pattern {
@@ -1730,11 +1730,11 @@ class TypeAnnotation : SyntaxNode {
 
     function accept(mutable visitor: SyntaxVisitor) {
         visitor.openTypeAnnotation(this)
-        typeAnnotation!.accept(visitor)
+        annotationForType!.accept(visitor)
         visitor.closeTypeAnnotation(this)
     }
 
-    let typeAnnotation: Type?
+    let annotationForType: Type?
 }
 
 class TypeIdentifier : Type {

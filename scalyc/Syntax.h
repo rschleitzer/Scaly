@@ -313,7 +313,7 @@ public:
     virtual void accept(SyntaxVisitor& visitor);
     EnumCase* enumCase;
     _Vector<AdditionalCase>* additionalCases;
-    TupleType* tupleType;
+    TupleType* typeOfTuple;
 };
 
 class TupleType : public SyntaxNode {
@@ -321,7 +321,7 @@ public:
     TupleType(Position start, Position end);
 
     virtual void accept(SyntaxVisitor& visitor);
-    Type* tupleType;
+    Type* typeOfTuple;
     _Vector<AdditionalType>* additionalTypes;
 };
 
@@ -869,7 +869,7 @@ public:
 
     virtual void accept(SyntaxVisitor& visitor);
     _LetString* identifier;
-    TypeAnnotation* typeAnnotation;
+    TypeAnnotation* annotationForType;
 
     virtual bool _isIdentifierPattern();
 };
@@ -1099,7 +1099,7 @@ public:
     TypeAnnotation(Position start, Position end);
 
     virtual void accept(SyntaxVisitor& visitor);
-    Type* typeAnnotation;
+    Type* annotationForType;
 };
 
 class TypeIdentifier : public Type {

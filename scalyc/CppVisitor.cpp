@@ -715,8 +715,8 @@ void CppVisitor::visitWildcardPattern(WildcardPattern& wildcardPattern) {
 
 bool CppVisitor::openIdentifierPattern(IdentifierPattern& identifierPattern) {
     identifierPatternIdentifier = identifierPattern.identifier;
-    if (identifierPattern.typeAnnotation) {
-        identifierPattern.typeAnnotation->accept(*this);
+    if (identifierPattern.annotationForType) {
+        identifierPattern.annotationForType->accept(*this);
         (*headerFile) += " ";
     }
     (*headerFile) += *identifierPattern.identifier;
@@ -811,11 +811,11 @@ void CppVisitor::visitSuperInit(SuperInit& superInit) {
 void CppVisitor::visitSuperMember(SuperMember& superMember) {
 }
 
-bool CppVisitor::openTypeAnnotation(TypeAnnotation& typeAnnotation) {
+bool CppVisitor::openTypeAnnotation(TypeAnnotation& annotationForType) {
     return true;
 }
 
-void CppVisitor::closeTypeAnnotation(TypeAnnotation& typeAnnotation) {
+void CppVisitor::closeTypeAnnotation(TypeAnnotation& annotationForType) {
 }
 
 bool CppVisitor::openTypeIdentifier(TypeIdentifier& typeIdentifier) {

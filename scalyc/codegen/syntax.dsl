@@ -211,11 +211,13 @@ void "(id syntax-node)"::accept(SyntaxVisitor& visitor) {
                                     )"")
                                     (if (multiple? content)
                                         ($
-"    "(link content)"* node = 0;
-    size_t _alength = "(property content)"->length();
-    for (size_t _a = 0; _a < _alength; _a++) {
-        node = *(*"(property content)")[_a];
-        node->accept(visitor);
+"    if ("(property content)") {
+        "(link content)"* node = 0;
+        size_t _alength = "(property content)"->length();
+        for (size_t _a = 0; _a < _alength; _a++) {
+            node = *(*"(property content)")[_a];
+            node->accept(visitor);
+        }
     }
 "
                                         )

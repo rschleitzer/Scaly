@@ -139,11 +139,11 @@
         <content link = case
         <content link = EnumCase                                property = enumCase
         <content link = AdditionalCase     multiple optional    property = additionalCases
-        <content link = TupleType                   optional    property = tupleType
+        <content link = TupleType                   optional    property = typeOfTuple
 
     <syntax id = TupleType
         <content link = leftParen
-        <content link = Type                                    property = tupleType
+        <content link = Type                                    property = typeOfTuple
         <content link = AdditionalType     multiple optional    property = additionalTypes
         <content link = rightParen
 
@@ -386,7 +386,7 @@
 
     <syntax id = IdentifierPattern                              base = Pattern
         <content identifier                                     property = identifier
-        <content link = TypeAnnotation              optional    property = typeAnnotation
+        <content link = TypeAnnotation              optional    property = annotationForType
 
     <syntax id = TuplePattern                                   base = Pattern
         <content link = leftParen
@@ -475,7 +475,7 @@
 
     <syntax id = TypeAnnotation
         <content link = colon
-        <content link = Type                                    property = typeAnnotation
+        <content link = Type                                    property = annotationForType
 
     <syntax id = TypeIdentifier                                 base = Type
         <content identifier                                     property = name

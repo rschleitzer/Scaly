@@ -9,19 +9,10 @@
         (if (multiple? syntax) ($
 "
     function parse"(id syntax)"List() -> ["(id syntax)"] throws ParserError {
-        mutable ret: ["(id syntax)"]? = null
-
-        while true {
-            let node: "(id syntax)" = parse"(id syntax)"()
-                catch _ break
-
-            if ret == null
-                ret = ["(id syntax)"]
-
-            ret.push(node)
-        }
-
-        return ret
+        mutable (string-firstchar-downcase "(string-firstchar-downcase (id syntax))"): ["(id syntax)"]? = ["(id syntax)"]()
+        while true
+            "(string-firstchar-downcase (id syntax))".push(parse"(id syntax)"() catch _ break)
+        return "(string-firstchar-downcase (id syntax))"
     }
 "       )"")
 "
@@ -49,7 +40,7 @@
             )
             ($ ; non-abstract syntax
 "
-        mutable ret: "(id syntax)"? = null
+        mutable "(string-firstchar-downcase (id syntax))": "(id syntax)"? = null
 "                (apply-to-children-of syntax (lambda (content) ($
 "        {
             let start: Position = lexer.getPosition()
@@ -85,20 +76,20 @@
 "                       )
                     ) ; syntax or terminal
 "
-            if ret == null
-                ret = "(id syntax)"(start, lexer.getPosition())
+            if "(string-firstchar-downcase (id syntax))" == null
+                "(string-firstchar-downcase (id syntax))" = "(id syntax)"(start, lexer.getPosition())
 "                   (if (property content) ($
 "
-            ret."(property content)" = "(if (string=? "syntax" (type content)) "node" (property content))"
+            "(string-firstchar-downcase (id syntax))"."(property content)" = "(if (string=? "syntax" (type content)) "node" (property content))"
 "                   )"")
 "        }
 "                ))) ; apply to children of syntax
 "
-"               (if (top? syntax)
-"        ret.fileName = fileName;
+"               (if (top? syntax) ($
+"        "(string-firstchar-downcase (id syntax))".fileName = fileName;
 "
-                "")
-"        return ret
+                )"")
+"        return "(string-firstchar-downcase (id syntax))"
 "
             ) ; $
         ) ; abstract or not
@@ -189,16 +180,19 @@ Parser::Parser(_LetString* fileName, _LetString& text)
 _Result<""_Vector<"(id syntax)">, ParserError> Parser::parse"(id syntax)"List(_Page* _rp, _Page* _ep) {
     // Make a region for the current block and get the Page
     _Region _r; _Page* _p = _r.get();
-    _Array<"(id syntax)">* ret = new(_p) _Array<"(id syntax)">();
+    _Array<"(id syntax)">* "(string-firstchar-downcase (id syntax))" = 0;
     while (true) {
         _Result<"(id syntax)", ParserError> nodeResult = parse"(id syntax)"(_rp, _p);
-        if (nodeResult.succeeded())
-            ret->push(nodeResult.getResult());
-        else
+        if (nodeResult.succeeded()) {
+            if (!"(string-firstchar-downcase (id syntax))")
+                "(string-firstchar-downcase (id syntax))" = new(_p) _Array<"(id syntax)">();
+            "(string-firstchar-downcase (id syntax))"->push(nodeResult.getResult());
+        }
+        else {
             break;
+        }
     }
-
-    return _Result<""_Vector<"(id syntax)">, ParserError>(&_Vector<"(id syntax)">::create(_rp, *ret));
+    return _Result<""_Vector<"(id syntax)">, ParserError>("(string-firstchar-downcase (id syntax))" ? &_Vector<"(id syntax)">::create(_rp, *"(string-firstchar-downcase (id syntax))") : 0);
 }
 "       )"")
 "
@@ -209,8 +203,7 @@ _Result<"(id syntax)", ParserError> Parser::parse"(id syntax)"(_Page* _rp, _Page
 "    _Array<""ParserError>& errors = *new(_ep) _Array<""ParserError>();
     Position start = lexer.getPreviousPosition();
 "                (apply-to-children-of syntax (lambda (content) ($
-"
-    {
+"    {
         // Make a region for the current block and get the Page
         _Region _r; _Page* _p = _r.get();
         _Result<"(link content)", ParserError> result = parse"(link content)"(_rp, _p);
@@ -221,57 +214,60 @@ _Result<"(id syntax)", ParserError> Parser::parse"(id syntax)"(_Page* _rp, _Page
     }
 "
                 )))
-"
-    return _Result<"(id syntax)", ParserError>(new(_ep) ParserError(*new(_ep) UnableToParse(start, errors)));
+"    return _Result<"(id syntax)", ParserError>(new(_ep) ParserError(*new(_ep) UnableToParse(start, errors)));
 "
             )
             ($ ; non-abstract syntax
-"    "(id syntax)"* ret = 0;
-"                (apply-to-children-of syntax (lambda (content) ($
-"    {
-        Position start = lexer.getPreviousPosition();
-"                   (if (string=? "syntax" (type content))
-
+"    Position start = lexer.getPreviousPosition();
+"               (apply-to-children-of syntax (lambda (content) ($
+                   (if (string=? "syntax" (type content))
                         ($ ; non-terminals
-"        _Result<"(if (multiple? content) "_Vector<" "")(link content)(if (multiple? content) ">" "")", ParserError> result = parse"(link content)(if (multiple? content) "List" "")"(_rp, _ep);
-        if (result.succeeded()) {
+"    _Result<"(if (multiple? content) "_Vector<" "")(link content)(if (multiple? content) ">" "")", ParserError> _result_"(property content)" = parse"(link content)(if (multiple? content) "List" "")"(_rp, _ep);
+"                   (if (property content) ($
+"    "(if (string=? "syntax" (type content)) ($ (if (multiple? content) "_Vector<" "")(link content)(if (multiple? content) ">" "") "* ") "")(property content)" = 0;
+"                  )"")
+"    if (_result_"(property content)".succeeded()) {
 "                           (if (top? syntax) ($
-"            if (!isAtEnd()) {
-                Position current = lexer.getPosition();
-                return _Result<"(id syntax)", ParserError>(new(_ep) ParserError(*new(_ep) NotAtEnd(current)));
-            }
+"        if (!isAtEnd()) {
+            Position current = lexer.getPosition();
+            return _Result<"(id syntax)", ParserError>(new(_ep) ParserError(*new(_ep) NotAtEnd(current)));
+        }
+"                           )"")
+                            (if (property content) ($
+"        "(property content)" = "(if (string=? "syntax" (type content)) ($ "_result_"(property content)".getResult()") (property content))";
 "                           )"")
                         )
                         ($ ; terminals
-"        "(case (type content) (("keyword" "punctuation") "bool success")(("literal") "Literal* literal")(else ($ "_LetString* "(property content))))
+                            (if (optional? content) "" ($
+"    Position start"(if (property content) (string-firstchar-upcase (property content)) ($ (string-firstchar-upcase (link content))(number->string (child-number content))))" = lexer.getPreviousPosition();
+"                           ))
+"    "(case (type content) (("keyword" "punctuation") ($ "bool success"(string-firstchar-upcase (link content))(number->string (child-number content))))(("literal") "Literal* literal")(else ($ "_LetString* "(property content))))
         " = lexer.parse"
         (case (type content)(("prefixoperator") "PrefixOperator")(("binaryoperator") "BinaryOperator")(("postfixoperator") "PostfixOperator")(("identifier") "Identifier")(("literal") "Literal")(("keyword") "Keyword")(("punctuation") "Punctuation"))
         "("(case (type content)(("keyword") (name-of-link content)) (("punctuation") (link content)) (else "_rp"))");
-        if "(case (type content) (("keyword" "punctuation") "(success)")(("identifier") ($ "(("(property content)") && (isIdentifier(*"(property content)")))")) (else ($"("(property content)")")))" {
-            lexer.advance();
+    if "(case (type content) (("keyword" "punctuation") ($ "("($ "success"(string-firstchar-upcase (link content))(number->string (child-number content)))")"))(("identifier") ($ "(("(property content)") && (isIdentifier(*"(property content)")))")) (else ($"("(property content)")")))" {
+        lexer.advance();
 "                       )
                     ) ; syntax or terminal
-"            if (!ret)
-                ret = new(_rp) "(id syntax)"(start, lexer.getPosition());
-"                   (if (property content) ($
-"
-            ret->"(property content)" = "(if (string=? "syntax" (type content)) "result.getResult()" (property content))";
-"                   )"")
-"        }
-"                   (if (optional? content) "" ($
-"        else {
-            return _Result<"(id syntax)", ParserError>("(if (string=? (type content) "syntax") "result.getError()" ($ "new(_ep) ParserError(*new(_ep) "
-            (case (type content) (("keyword") "Keyword") (("punctuation") "Punctuation")(("identifier") "Identifier")(("literal") "Literal")(("prefixoperator" "binaryoperator" "postfixoperator") "Operator"))
-            "Expected(start"(case (type content) (("keyword" "punctuation") ($ ", _LetString::create(_ep, "((if (string=? (type content) "keyword") name-of-link link) content)")"))(else ""))"))"))");
-        }
-"                   ))
 "    }
-"                ))) ; apply to children of syntax
+"                   (if (optional? content) "" ($
+"    else {
+        return _Result<"(id syntax)", ParserError>("(if (string=? (type content) "syntax") ($ "_result_"(property content)".getError()") ($ "new(_ep) ParserError(*new(_ep) "
+        (case (type content) (("keyword") "Keyword") (("punctuation") "Punctuation")(("identifier") "Identifier")(("literal") "Literal")(("prefixoperator" "binaryoperator" "postfixoperator") "Operator"))
+        "Expected(start"(if (property content) (string-firstchar-upcase (property content)) ($ (string-firstchar-upcase (link content))(number->string (child-number content))))(case (type content) (("keyword" "punctuation") ($ ", _LetString::create(_ep, "((if (string=? (type content) "keyword") name-of-link link) content)")"))(else ""))"))"))");
+    }
+"                   ))
+                ))) ; apply to children of syntax
+"    "(id syntax)"* "(string-firstchar-downcase (id syntax))" = new(_rp) "(id syntax)"(start, lexer.getPosition());
+"               (apply-to-children-of syntax (lambda (content)
+                    (if (property content) ($
+"    "(string-firstchar-downcase (id syntax))"->"(property content)" = "(property content)";
+"                    )"")
+                ))
                 (if (top? syntax) ($
-"    ret->fileName = fileName;
+"    "(string-firstchar-downcase (id syntax))"->fileName = fileName;
 "               )"")
-"
-    return _Result<"(id syntax)", ParserError>(ret);
+"    return _Result<"(id syntax)", ParserError>("(string-firstchar-downcase (id syntax))");
 "
             ) ; $
         ) ; abstract or not
