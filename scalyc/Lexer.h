@@ -3,7 +3,7 @@
 #include "scalyc.h"
 using namespace scaly;
 namespace scalyc {
- 
+
 class Position : public Object {
 public:
     Position(size_t line, size_t column);
@@ -39,7 +39,7 @@ public:
 class Identifier : public Token {
 public:
     Identifier(_VarString& name);
-    _VarString* name;
+    _LetString* name;
     virtual bool _isIdentifier();
 };
 
@@ -51,28 +51,28 @@ public:
 class StringLiteral : public Literal {
 public:
     StringLiteral(_VarString& theString);
-    _VarString* string;
+    _LetString* string;
     virtual bool _isStringLiteral();
 };
 
 class NumericLiteral : public Literal {
 public:
     NumericLiteral(_VarString& theValue);
-    _VarString* value;
+    _LetString* value;
     virtual bool _isNumericLiteral();
 };
 
 class Punctuation : public Token {
 public:
     Punctuation(_VarString& theSign);
-    _VarString* sign;
+    _LetString* sign;
     virtual bool _isPunctuation();
 };
 
 class Operator : public Token {
 public:
     Operator(_VarString& theOperation);
-    _VarString* operation;
+    _LetString* operation;
     virtual bool _isOperator();
 };
 

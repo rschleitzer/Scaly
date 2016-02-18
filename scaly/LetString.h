@@ -22,6 +22,9 @@ public:
     _Array<_LetString>& Split(_Page* _rp, char c);
 
 private:
+    // Disable default and copy constuctors
+    _LetString();
+    _LetString(const _LetString&);
     size_t length;
 };
 

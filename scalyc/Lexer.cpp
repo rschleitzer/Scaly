@@ -21,9 +21,9 @@ bool Token::_isPostfixOperator() { return false; }
 bool EofToken::_isEofToken() { return true; }
 
 bool InvalidToken::_isInvalidToken() { return true; }
-    
+
 Identifier::Identifier(_VarString& name) {
-    this->name = new(getPage()) _VarString(name);
+    this->name = &_LetString::create(getPage(), name);
 }
 
 bool Identifier::_isIdentifier() { return true; }
@@ -31,25 +31,25 @@ bool Identifier::_isIdentifier() { return true; }
 bool Literal::_isLiteral() { return true; }
 
 StringLiteral::StringLiteral(_VarString& literal) {
-    string = new(getPage()) _VarString(literal);
+    string = &_LetString::create(getPage(), literal);
 }
 
 bool StringLiteral::_isStringLiteral() { return true; }
 
 NumericLiteral::NumericLiteral(_VarString& theValue) {
-    value = new(getPage()) _VarString(theValue);
+    value = &_LetString::create(getPage(), theValue);
 }
 
 bool NumericLiteral::_isNumericLiteral() { return true; }
 
 Punctuation::Punctuation(_VarString& theSign) {
-    sign = new(getPage()) _VarString(theSign);
+    sign = &_LetString::create(getPage(), theSign);
 }
 
 bool Punctuation::_isPunctuation() { return true; }
 
 Operator::Operator(_VarString& theOperation) {
-    operation = new(getPage()) _VarString(theOperation);
+    operation = &_LetString::create(getPage(), theOperation);
 }
 
 bool Operator::_isOperator() { return true; }
@@ -78,7 +78,7 @@ position(0), end(length), previousLine(1), previousColumn(0), line(1), column(0)
     advance();
 }
 
-void Lexer::advance() {        
+void Lexer::advance() {
     skipWhitespace();
 
     previousLine = line;
@@ -89,15 +89,15 @@ void Lexer::advance() {
         token = new (token->getPage()) EofToken();
         return;
     }
-    
+
     char c = (*text)[position];
-    
+
     if (((c >= 'a') && (c <= 'z')) || ((c >= 'A') && (c <= 'Z'))) {
         token->getPage()->clear();
         token = &scanIdentifier(token->getPage());
         return;
     }
-    
+
     if ((c >= '0') && (c <= '9')) {
         token->getPage()->clear();
         token = scanNumericLiteral(token->getPage());
@@ -110,8 +110,8 @@ void Lexer::advance() {
             token = scanStringLiteral(token->getPage());
             break;
         }
-            
-        case '_': case '(': case ')': case '{': case '}': case '[': case ']': case '<': case '>': case ',': case ':': case ';':  case '@': case '#': case '`': {            
+
+        case '_': case '(': case ')': case '{': case '}': case '[': case ']': case '<': case '>': case ',': case ':': case ';':  case '@': case '#': case '`': {
             token->getPage()->clear();
             token = new (token->getPage()) Punctuation(*new(token->getPage()) _VarString((*text)[position]));
             position++; column++;
@@ -123,7 +123,7 @@ void Lexer::advance() {
             token = &scanOperator(token->getPage(), false);
             break;
         }
-        
+
         case '.': {
             position++; column++;
             if (position == end) {
@@ -143,7 +143,7 @@ void Lexer::advance() {
             }
             break;
         }
-        
+
         case '-': {
             position++; column++;
             if (position == end) {
@@ -164,7 +164,7 @@ void Lexer::advance() {
             }
             break;
         }
-        
+
         case '!': {
             position++; column++;
             if (position == end) {
@@ -191,11 +191,11 @@ void Lexer::advance() {
                             token->getPage()->clear();
                             token = new(getPage()) Punctuation(*new(token->getPage()) _VarString("!"));
                         }
-                } 
+                }
             }
             break;
         }
-        
+
         case '?': {
             position++; column++;
             if (position == end) {
@@ -221,7 +221,7 @@ void Lexer::advance() {
                             token = new(token->getPage()) Punctuation(*new(token->getPage()) _VarString("?"));
                         }
                     }
-                } 
+                }
             }
             break;
         }
@@ -255,7 +255,7 @@ void Lexer::advance() {
     }
 }
 
-Identifier& Lexer::scanIdentifier(_Page* _rp) {    
+Identifier& Lexer::scanIdentifier(_Page* _rp) {
     // Make a String taking the character at the current position
     {
         _Region _region; _Page* _p = _region.get();
@@ -263,17 +263,17 @@ Identifier& Lexer::scanIdentifier(_Page* _rp) {
 
         do {
             position++; column++;
-            
+
             if (position == end) {
                 return *new(_rp) Identifier(name);
             }
-            
+
             char c = (*text)[position];
             if (((c >= 'a') && (c <= 'z')) || ((c >= 'A') && (c <= 'Z')) || (c == '_'))
                 name += (*text)[position];
             else
                 return *new(_rp) Identifier(name);
-        }            
+        }
         while (true);
     }
 }
@@ -282,14 +282,14 @@ Operator& Lexer::scanOperator(_Page* _rp, bool includeDots) {
     bool whitespaceSkippedBefore = whitespaceSkipped;
     if (!whitespaceSkippedBefore) {
         if (token->_isPunctuation()) {
-            _VarString& sign = *((Punctuation*)token)->sign;
+            _LetString& sign = *((Punctuation*)token)->sign;
             if ((sign == "(") || (sign == "[") || (sign == "{") || (sign == ",") || (sign == ";") || (sign == ":"))
                 whitespaceSkippedBefore = true;
             else
                 whitespaceSkippedBefore = false;
         }
     }
-    
+
     // Make a String taking the character at the current position
     _VarString& operation = *new(_rp) _VarString((*text)[position]);
 
@@ -336,10 +336,10 @@ Operator& Lexer::scanOperator(_Page* _rp, bool includeDots) {
 
                 if ((whitespaceSkippedBefore && whitespaceSkippedAfter) || (!whitespaceSkippedBefore && !whitespaceSkippedAfter))
                     return *new(_rp) BinaryOperator(operation);
-                    
+
                 if ((!whitespaceSkippedBefore && whitespaceSkippedAfter))
                     return *new(_rp) PostfixOperator(operation);
-                    
+
                 if ((whitespaceSkippedBefore && !whitespaceSkippedAfter))
                     return *new(_rp) PrefixOperator(operation);
             }
@@ -380,29 +380,29 @@ Token* Lexer::scanStringLiteral(_Page* _rp) {
                 value += (*text)[position];
             }
         }
-    } 
+    }
     while (true);
 }
 
-NumericLiteral* Lexer::scanNumericLiteral(_Page* _rp) {    
+NumericLiteral* Lexer::scanNumericLiteral(_Page* _rp) {
     // Make a String taking the character at the current position
     _VarString& value = *new(_rp) _VarString((*text)[position]);
 
     do {
         position++; column++;
-        
+
         if (position == end)
             return new(_rp) NumericLiteral(value);
-        
+
         char c = (*text)[position];
         if ((c >= '0') && (c <= '9'))
             value += (*text)[position];
         else
             return new(_rp) NumericLiteral(value);
-    }            
+    }
     while (true);
 }
-        
+
 bool Lexer::skipWhitespace() {
     whitespaceSkipped = false;
     do {
@@ -434,11 +434,11 @@ bool Lexer::skipWhitespace() {
                 position++; column++;
                 if (position == end)
                     return whitespaceSkipped;
-                if ((*text)[position] == '/') { 
+                if ((*text)[position] == '/') {
                     whitespaceSkipped = true;
                     handleSingleLineComment();
                 }
-                else if ((*text)[position] == '*') { 
+                else if ((*text)[position] == '*') {
                     whitespaceSkipped = true;
                     handleMultiLineComment();
                 }
@@ -451,7 +451,7 @@ bool Lexer::skipWhitespace() {
                 return whitespaceSkipped;
             }
         }
-    } 
+    }
     while (true);
 }
 
@@ -459,7 +459,7 @@ void Lexer::handleSingleLineComment() {
     do {
         if (position == end)
             return;
-            
+
         switch ((*text)[position]) {
             case '\t': {
                 whitespaceSkipped = true;
@@ -489,7 +489,7 @@ void Lexer::handleMultiLineComment() {
     do {
         if (position == end)
             return;
-            
+
         char character = (*text)[position];
         switch (character) {
             case '/': {
@@ -506,7 +506,7 @@ void Lexer::handleMultiLineComment() {
                 position++; column++;
                 if (position == end)
                     return;
-                else if ((*text)[position] == '/') { 
+                else if ((*text)[position] == '/') {
                     position++; column++;
                     return;
                 }
@@ -547,7 +547,7 @@ bool Lexer::parseKeyword(const char* fixedString) {
 _LetString* Lexer::parseIdentifier(_Page* _rp) {
     if (!(token->_isIdentifier()))
         return 0;
-    
+
     Identifier* identifier = (Identifier*)token;
     return &_LetString::create(_rp, *identifier->name);
 }
@@ -571,7 +571,7 @@ _LetString* Lexer::parseOperator(_Page* _rp) {
 Literal* Lexer::parseLiteral(_Page* _rp) {
     if (!(token->_isLiteral()))
         return 0;
-    
+
     return (Literal*)token;
 }
 
@@ -590,7 +590,7 @@ _LetString* Lexer::parseBinaryOperator(_Page* _rp) {
             Operator* op = (Operator*)token;
             return &_LetString::create(_rp, *(op->operation));
         }
-        
+
         return 0;
     }
 

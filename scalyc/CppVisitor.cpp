@@ -62,12 +62,10 @@ bool CppVisitor::openProgram(Program& program) {
 
 void CppVisitor::collectInheritances(Program& program) {
     inherits = new(getPage()) _Array<Inherits>();
-    if (program.compilationUnits) {
-        _Vector<CompilationUnit>& compilationUnits = *program.compilationUnits;
-        size_t _compilationUnits_length = compilationUnits.length();
-        for (size_t _i = 0; _i < _compilationUnits_length; _i++) {
-            collectInheritancesInCompilationUnit(**compilationUnits[_i]);
-        }
+    _Vector<CompilationUnit>& compilationUnits = *program.compilationUnits;
+    size_t _compilationUnits_length = compilationUnits.length();
+    for (size_t _i = 0; _i < _compilationUnits_length; _i++) {
+        collectInheritancesInCompilationUnit(**compilationUnits[_i]);
     }
 }
 
@@ -83,13 +81,11 @@ void CppVisitor::collectInheritancesInCompilationUnit(CompilationUnit& compilati
                     classes->push(classDeclaration.name);
                     if (classDeclaration.typeInheritanceClause) {
                         TypeInheritanceClause& inheritanceClause = *classDeclaration.typeInheritanceClause;
-                        if (inheritanceClause.inheritances) {
-                            _Vector<Inheritance>& inheritances = *inheritanceClause.inheritances;
-                            size_t _inheritances_length = inheritances.length();
-                            for (size_t _j = 0; _j < _inheritances_length; _j++) {
-                                Inheritance& inheritance = **inheritances[_j];
-                                registerInheritance(*classDeclaration.name, *inheritance.typeIdentifier->name);
-                            }
+                        _Vector<Inheritance>& inheritances = *inheritanceClause.inheritances;
+                        size_t _inheritances_length = inheritances.length();
+                        for (size_t _j = 0; _j < _inheritances_length; _j++) {
+                            Inheritance& inheritance = **inheritances[_j];
+                            registerInheritance(*classDeclaration.name, *inheritance.typeIdentifier->name);
                         }
                     }
                 }
@@ -994,7 +990,7 @@ void CppVisitor::buildProjectFileString(_VarString& projectFile, Program& progra
 }
 
 Inherits::Inherits(_LetString& className) {
-    name = new(getPage()) _LetString(className);
+    name = &_LetString::create(getPage(), className);
     inheritors = new(getPage()) _Array<_LetString>();
 }
 
