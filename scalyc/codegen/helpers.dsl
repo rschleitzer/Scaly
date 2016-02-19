@@ -82,6 +82,10 @@
 (define (apply-to-selected-descendants element func)
     (apply-to-selected-descendants-of (current-node) element func))
 
+(define (apply-to-property-children-of node func)
+    (apply-to-nodelist (node-list-filter property (children node)) func)
+)
+
 (define $ string-append)
 
 (define (link node)
@@ -98,7 +102,7 @@
 
 (define (optional? node)
     (string=? "optional" (attribute-string "optional" node)))
-    
+
 (define (syntax? node)
     (string=? "syntax" (type node)))
 
