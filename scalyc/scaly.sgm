@@ -265,7 +265,7 @@
         <content link = Expression                              property = expression
         <content link = comma                       optional
 
-    <syntax id = MemberPostfix                      abstract    base = ExplicitMemberExpression
+    <syntax id = MemberPostfix                      abstract
         <content link = NamedMemberPostfix
 
     <syntax id = NamedMemberPostfix                             base = MemberPostfix

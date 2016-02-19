@@ -983,13 +983,13 @@ class ExpressionElement : SyntaxNode {
     let expression: Expression?
 }
 
-class MemberPostfix : ExplicitMemberExpression {
+class MemberPostfix : SyntaxNode {
 
     init(start: Position, end: Position) {
         super.init(start, end)
     }
 
-    override function accept(mutable visitor: SyntaxVisitor) {
+    function accept(mutable visitor: SyntaxVisitor) {
         visitor.openMemberPostfix(this)
         visitor.closeMemberPostfix(this)
     }

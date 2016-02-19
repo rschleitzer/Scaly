@@ -65,9 +65,7 @@ void CppVisitor::collectInheritances(Program& program) {
     _Vector<CompilationUnit>& compilationUnits = *program.compilationUnits;
     size_t _compilationUnits_length = compilationUnits.length();
     for (size_t _i = 0; _i < _compilationUnits_length; _i++) {
-        collectInheritancesInCompilationUnit(**compilationUnits[_i]);
-    }
-}
+        collectInheritancesInCompilationUnit(**compilationUnits[_i]);}}
 
 void CppVisitor::collectInheritancesInCompilationUnit(CompilationUnit& compilationUnit) {
     if (compilationUnit.statements) {
@@ -85,14 +83,7 @@ void CppVisitor::collectInheritancesInCompilationUnit(CompilationUnit& compilati
                         size_t _inheritances_length = inheritances.length();
                         for (size_t _j = 0; _j < _inheritances_length; _j++) {
                             Inheritance& inheritance = **inheritances[_j];
-                            registerInheritance(*classDeclaration.name, *inheritance.typeIdentifier->name);
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
+                            registerInheritance(*classDeclaration.name, *inheritance.typeIdentifier->name);}}}}}}}
 
 void CppVisitor::registerInheritance(_LetString& className, _LetString& baseName) {
     size_t _inherits_length = inherits->length();

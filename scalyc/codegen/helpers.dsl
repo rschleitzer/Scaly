@@ -83,8 +83,13 @@
     (apply-to-selected-descendants-of (current-node) element func))
 
 (define (apply-to-property-children-of node func)
-    (apply-to-nodelist (node-list-filter property (children node)) func)
-)
+    (apply-to-nodelist (properties node) func))
+
+(define (properties node)
+    (node-list-filter property (children node)))
+
+(define (properties-remaining? node syntax)
+    (not (node-list=? (node-list-last (properties syntax)) node)))
 
 (define $ string-append)
 

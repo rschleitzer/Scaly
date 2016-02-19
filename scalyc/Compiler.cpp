@@ -33,10 +33,7 @@ CompilerError* Compiler::compileFiles(_Page* _ep, Options& options) {
         }
     }
 
-    Program& program = *new(_p) Program();
-    program.name = options.outputName;
-    program.directory = options.directory;
-    program.compilationUnits = compilationUnits;
+    Program& program = *new(_p) Program(options.outputName, options.directory, compilationUnits);
 
     CppVisitor& visitor = *new(_p) CppVisitor();
     CppError* cppError = visitor.execute(program);

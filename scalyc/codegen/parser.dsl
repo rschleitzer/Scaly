@@ -258,13 +258,13 @@ _Result<"(id syntax)", ParserError> Parser::parse"(id syntax)"(_Page* _rp, _Page
     }
 "                   ))
                 ))) ; apply to children of syntax
-"    "(id syntax)"* "(string-firstchar-downcase (id syntax))" = new(_rp) "(id syntax)"(start, lexer.getPosition());
-"               (apply-to-children-of syntax (lambda (content)
-                    (if (property content) ($
-"    "(string-firstchar-downcase (id syntax))"->"(property content)" = "(property content)";
-"                    )"")
-                ))
-                (if (top? syntax) ($
+"    "(id syntax)"* "(string-firstchar-downcase (id syntax))" = new(_rp) "(id syntax)"("
+                (apply-to-property-children-of syntax (lambda (content) ($
+                    (property content)(if (properties-remaining? content syntax) ", " "")
+                )))
+                (if (node-list-empty? (properties syntax)) "" ", ")
+                "start, lexer.getPosition());
+"                (if (top? syntax) ($
 "    "(string-firstchar-downcase (id syntax))"->fileName = fileName;
 "               )"")
 "    return _Result<"(id syntax)", ParserError>("(string-firstchar-downcase (id syntax))");

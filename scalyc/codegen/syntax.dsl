@@ -93,7 +93,7 @@ public:
 "
 class "(id syntax-node)" : public "(if (base syntax-node) (base syntax-node) "SyntaxNode")" {
 public:
-    "(id syntax-node)"("(if (program? syntax-node) "" "Position start, Position end")");
+    "(id syntax-node)"("(constructor-parameters syntax-node)");
 
     virtual void accept(SyntaxVisitor& visitor)"(if (abstract? syntax-node) " = 0" "")";
 "
@@ -121,6 +121,13 @@ public:
 #endif // __scalyc__Syntax__
 "))
 
+(define (constructor-parameters syntax-node)
+    ($
+        (apply-to-property-children-of syntax-node (lambda (content) ($
+            (property-declaration content)(if (properties-remaining? content syntax-node) ", " "")
+        )))
+        (if (program? syntax-node) "" ($ (if (node-list-empty? (properties syntax-node)) "" ", ") "Position start, Position end"))))
+
 (define (property-declaration content)
     (case (type content)
         (("syntax") ($ (if (multiple? content)"_Vector<" "")(link content)(if (multiple? content)">" "")"* "(property content)))
@@ -142,6 +149,13 @@ public:
     )(empty-node-list))
 )
 
+(define (constructor-initializers syntax-node)
+    ($
+        (if (base syntax-node) (base syntax-node) "SyntaxNode") "(start, end)" (if (node-list-empty? (properties syntax-node)) "" ", ")
+        (apply-to-property-children-of syntax-node (lambda (content) ($
+            (property content)"("(property content)")"(if (properties-remaining? content syntax-node) ", " "")
+        )))))
+
 (define (syntax-cpp) ($
 
 "#include \"scalyc.h\"
@@ -154,15 +168,12 @@ SyntaxNode::SyntaxNode(Position start, Position end)
 "
     (apply-to-selected-children "syntax" (lambda (syntax-node) ($
 "
-"(id syntax-node)"::"(id syntax-node)"("(if (program? syntax-node) "" "Position start, Position end")")
-: "(if (base syntax-node) (base syntax-node) "SyntaxNode")"("(if (program? syntax-node) "Position(0, 0), Position(0, 0)" "start, end")") {
-"
-        (apply-to-children-of syntax-node (lambda (content)
-            (if (and (syntax? content)(optional? content)) ($
-"    "(property content)" = 0;
-"           )"")
-        ))
-"}
+"(id syntax-node)"::"(id syntax-node)"("(constructor-parameters syntax-node)")
+: "     (if (program? syntax-node)
+            "SyntaxNode(Position(0, 0), Position(0, 0)), name(name), directory(directory), compilationUnits(compilationUnits)"
+            (constructor-initializers syntax-node)
+        )
+" {}
 "        (if (abstract? syntax-node) ($
 "
 "           (apply-to-nodelist (inheritors syntax-node) (lambda (inheritor) ($
