@@ -12,14 +12,13 @@ public:
     _Page* allocateExtensionPage();
     _Page* allocateExclusivePage();
     static void forget(_Page* page);
-    void deallocatePageExtensions();
+    void deallocateExtensions();
     bool reclaimArray(void* address);
     static _Page* getPage(void* address);
     bool extend(void* address, size_t size);
 
 private:
     _Page** getLastExtensionPageLocation();
-    void deallocateExtensions();
     bool freeExtensionPage(_Page* page);
     void* getNextObject();
     void setNextObject(void* object);

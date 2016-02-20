@@ -15,7 +15,7 @@ _Page* _Region::get() {
 
 _Region::~_Region() {
     _Page* page = __CurrentPage;
-    page->deallocatePageExtensions();
+    page->deallocateExtensions();
     page = (_Page*)(((char*)page) - _pageSize);
     __CurrentPage = page; }
 

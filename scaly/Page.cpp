@@ -14,7 +14,7 @@ void _Page::reset() {
     currentPage = this; }
 
 void _Page::clear() {
-    deallocatePageExtensions();
+    deallocateExtensions();
     reset(); }
 
 _Page** _Page::getLastExtensionPageLocation() {
@@ -123,20 +123,17 @@ bool _Page::extend(void* address, size_t size) {
     setNextObject(nextLocation);
     return true; }
 
-void _Page::deallocatePageExtensions() {
+void _Page::deallocateExtensions() {
     for (_Page* page = this; page;) {
         _Page* nextExtensionPage = *page->getLastExtensionPageLocation();
-        page->deallocateExtensions();
+        // Deallocate oversized or exclusive pages
+        _Page** ppPage = page->getLastExtensionPageLocation() - 1;
+        for (int i = 0; i < page->extensions; i++) {
+            forget(*ppPage);
+            ppPage--; }
         if (page != this)
             forget(page);
         page = nextExtensionPage; } }
-
-void _Page::deallocateExtensions() {
-    // Deallocate the oversized or exclusive pages
-    _Page** ppPage = getLastExtensionPageLocation() - 1;
-    for (int i = 0; i < extensions; i++) {
-        forget(*ppPage);
-        ppPage--; } }
 
 void _Page::forget(_Page* page) {
     __CurrentTask->releaseExtensionPage(page); }
