@@ -18,6 +18,9 @@ private:
     size_t lowestBucket;
     size_t highestBucket;
     _Array<size_t>* extensionPages;
+
+    size_t pagesAllocated;
+    size_t pagesDeallocated;
 };
 
 }

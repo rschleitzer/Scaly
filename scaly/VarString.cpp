@@ -154,7 +154,7 @@ void _VarString::reallocate(size_t newLength) {
 
     // Reclaim the page if it was oversized, i.e., exclusively allocated
     if (((Object*)oldString)->getPage() == ((_Page*)oldString))
-        _Page::reclaimArray(oldString);
+        getPage()->reclaimArray(oldString);
 }
 
 void _VarString::allocate(size_t size) {

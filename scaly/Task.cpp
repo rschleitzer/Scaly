@@ -11,13 +11,17 @@ _Page* _Task::getExtensionPage() {
     _Page* page = allocatePage();
     if (!page)
         return 0;
-    return new(page) _Page(); }
+    pagesAllocated++;
+    return page; }
 
 _Page* _Task::allocatePage() {
     _Page* page = 0;
+    posix_memalign((void**)&page, _pageSize, _pageSize);
     return page; }
 
 void _Task::releaseExtensionPage(_Page* page) {
+    pagesDeallocated++;
+    free(page);
 }
 
 void _Task::dispose() {}

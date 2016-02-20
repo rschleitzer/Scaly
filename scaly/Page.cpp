@@ -12,7 +12,7 @@ static int extensionPagesAllocated;
 extern __thread _Task* __CurrentTask;
 
 _Page::_Page()
-: currentPage(this), extendingPage(0) {
+: currentPage(this) {
 	reset(); }
 
 _Page** _Page::getLastExtensionPageLocation() {
@@ -28,7 +28,7 @@ void* _Page::allocateObject(size_t size) {
         void* newObject = currentPage->allocateObject(size);
         // Possibly our current page was also full so we propagate back the new current page
         _Page* allocatingPage = ((Object*)newObject)->getPage();
-        if (allocatingPage != currentPage)
+        if ((allocatingPage != currentPage) && (newObject != allocatingPage))
             currentPage = allocatingPage;
         return newObject; }
 
@@ -41,26 +41,26 @@ void* _Page::allocateObject(size_t size) {
 
     // So the space did not fit.
 
-    if ((_Page**)nextObject == getLastExtensionPageLocation()) {
-        // Allocate an extension page with default size
-        _Page* defaultExtensionPage = allocateExtensionPage();
-        // Make it our new current
-        currentPage = defaultExtensionPage;
-        // Try again with the new extension page
-        return defaultExtensionPage->allocateObject(size); }
-
-    // Calculate gross size to decide whether we can use a page
+    // Calculate gross size to decide whether we're oversized
     size_t grossSize = sizeof(_Page) + size + sizeof(_Page**) + _alignment;
     if (grossSize > _pageSize) {
+        if ((_Page**)nextObject == getLastExtensionPageLocation()) {
+            // Allocate an extension page with default size
+            _Page* defaultExtensionPage = allocateExtensionPage();
+            // Make it our new current
+            currentPage = defaultExtensionPage;
+            // Try again with the new extension page
+            return defaultExtensionPage->allocateObject(size); }
+
         // We allocate and free oversized objects directly.
         void* object;
         posix_memalign(&object, _pageSize, size);
         *nextExtensionPageLocation = (_Page*)object;
         nextExtensionPageLocation--;
         return object; }
-
-    // Allocate the extension page.
+    // So we're not oversized. Allocate the standard extension page.
     _Page* extensionPage = allocateExtensionPage();
+    this->currentPage = extensionPage;
     // And allocate at last.
     return extensionPage->allocateObject(size); }
 
@@ -70,7 +70,6 @@ _Page* _Page::allocateExtensionPage() {
         return 0;
     _Page* extensionPage = new (pageLocation) _Page();
     *getLastExtensionPageLocation() = pageLocation;
-    extensionPage->extendingPage = this;
     return extensionPage; }
 
 _Page* _Page::allocateExclusivePage() {
@@ -87,14 +86,13 @@ _Page* _Page::allocateExclusivePage() {
         // Try again with the new extension page
         return defaultExtensionPage->allocateExclusivePage(); }
 
-    _Page* pageLocation = __CurrentTask->getPage();
+    _Page* pageLocation = __CurrentTask->getExtensionPage();
     if (!pageLocation)
         return 0;
 
     _Page* exclusivePage = new (pageLocation) _Page();
     *nextExtensionPageLocation = pageLocation;
     nextExtensionPageLocation--;
-    exclusivePage->extendingPage = this;
     return exclusivePage; }
 
 void _Page::reset() {
@@ -107,22 +105,8 @@ void _Page::reset() {
     currentPage = this; }
 
 void _Page::clear() {
-    _Page* page = findExtensionChainEnd();
-    // Deallocate the extension page chain starting from the end, leaving the current page intact
-    while (page != this) {
-        _Page* prevExtPage = page->extendingPage;
-        deallocateExtensionsOfPage(page);
-        page = prevExtPage; }
+    deallocatePageExtensions();
     reset(); }
-
-_Page* _Page::findExtensionChainEnd() {
-    _Page* page = this;
-    while (page)
-        if (*(page->getLastExtensionPageLocation()) == 0)
-            break;
-        else
-            page = *(page->getLastExtensionPageLocation());
-    return page; }
 
 bool _Page::extend(void* address, size_t size) {
     if (!size)
@@ -142,45 +126,47 @@ bool _Page::extend(void* address, size_t size) {
     return true; }
 
 void _Page::deallocatePageExtensions() {
-    // Find the end of the extension Page chain
-    _Page* page = findExtensionChainEnd();
-    // Deallocate the extension page chain starting from the end
-    while (page) {
-        _Page* prevExtPage = page->extendingPage;
+    for (_Page* page = this; page;) {
+        _Page* nextExtensionPage = *page->getLastExtensionPageLocation();
         deallocateExtensionsOfPage(page);
-        page = prevExtPage; } }
+        if (page != this)
+            forget(page);
+        page = nextExtensionPage; } }
 
 void _Page::deallocateExtensionsOfPage(_Page* page) {
-    // Deallocate the standard extension page if applicable
-    _Page** ppPage = page->getLastExtensionPageLocation();
-    if (*ppPage)
-        forget(*ppPage);
     // Deallocate the oversized or exclusive pages
-    for (ppPage--; ppPage > page->nextExtensionPageLocation; ppPage--)
+    for (_Page** ppPage = page->getLastExtensionPageLocation() - 1; ppPage > page->nextExtensionPageLocation; ppPage--)
         forget(*ppPage); }
 
 void _Page::forget(_Page* page) {
     __CurrentTask->releaseExtensionPage(page); }
 
-void _Page::reclaimArray(void* address) {
-    _Page* page = ((Object*)address)->getPage();
-    page->extendingPage->freeExtensionPage(page); }
+bool _Page::reclaimArray(void* address) {
+    if (currentPage->freeExtensionPage((_Page*)address))
+        return true;
+    for (_Page* page = this; page; page = *getLastExtensionPageLocation())
+        if (page->freeExtensionPage(page))
+            return true; }
 
 _Page* _Page::getPage(void* address) {
     return (_Page*) (((intptr_t)address) & ~(intptr_t)(_pageSize - 1)); }
 
-void _Page::freeExtensionPage(_Page* _page) {
+bool _Page::freeExtensionPage(_Page* _page) {
     // Find the extension Page pointer
     _Page** extensionPosition = getLastExtensionPageLocation() - 1;
     while (extensionPosition > nextExtensionPageLocation) {
         if (*extensionPosition == _page)
             break;
         extensionPosition--; }
+    if (extensionPosition == nextExtensionPageLocation)
+        return false;
+
     // Shift the remaining array one position up
     for (_Page** shiftedPosition = extensionPosition; shiftedPosition > nextExtensionPageLocation; shiftedPosition--)
         *shiftedPosition = *(shiftedPosition - 1);
     // Make room for one more extension
     nextExtensionPageLocation++;
-    forget(_page); }
+    forget(_page);
+    return true; }
 
 } // namespace

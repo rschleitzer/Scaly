@@ -60,14 +60,13 @@ private:
 
     void reAllocate(size_t newCapacity) {
         T** oldArray = _rawArray;
-        size_t oldCapacity = _capacity;
         _capacity = newCapacity;
         allocate();
         memcpy(_rawArray, oldArray, _size * sizeof(T*));
 
         // Reclaim the page if it was oversized, i.e., exclusively allocated
-        if (oldCapacity > _pageSize)
-            _Page::reclaimArray(oldArray);
+        if (((Object*)oldArray)->getPage() == ((_Page*)oldArray))
+            getPage()->reclaimArray(oldArray);
     }
 
     void allocate() {
