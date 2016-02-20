@@ -6,15 +6,18 @@ namespace scaly {
 class _Task : public Object {
 public:
     _Task();
-    static _Page* allocatePage();
-    _Page* recyclePage();
-    void disposePage(_Page* page);
+    _Page* getStackPage();
+    _Page* getExtensionPage();
+    _Page* releaseStackPage();
+    void releaseExtensionPage(_Page* page);
     void dispose();
 
-    static const size_t maxPagePoolSize = 0x100;
-    
 private:
-    _Array<_Page>& pagePool;
+    _Page* allocatePage();
+    void* extensionPagesBase;
+    size_t lowestBucket;
+    size_t highestBucket;
+    _Array<size_t>* extensionPages;
 };
 
 }

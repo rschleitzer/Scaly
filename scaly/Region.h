@@ -8,6 +8,8 @@ public:
     _Region();
     _Page* get();
     ~_Region();
+private:
+    _Page* page;
 };
 
 }

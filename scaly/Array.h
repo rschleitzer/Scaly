@@ -66,7 +66,7 @@ private:
         memcpy(_rawArray, oldArray, _size * sizeof(T*));
 
         // Reclaim the page if it was oversized, i.e., exclusively allocated
-        if (oldCapacity > _Page::pageSize)
+        if (oldCapacity > _pageSize)
             _Page::reclaimArray(oldArray);
     }
 

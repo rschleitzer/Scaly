@@ -8,17 +8,16 @@ extern __thread _Task* __CurrentTask;
 }
 
 int main(int argc, char** argv) {
-
-    // Set up statistics counters
-    _Page::initStatistics();
-
     // Allocate the root page for the main thread
-    __CurrentPage = new(_Task::allocatePage()) _Page(_Page::pageSize);
-    if (!__CurrentPage)
+    _Page* page;
+    posix_memalign((void**)&page, _pageSize, _pageSize * _maxStackPages);
+    if (!page)
         return -1;
+    new (page) _Page();
+    __CurrentPage = page;
 
-    // Set up the root task
-    __CurrentTask = new(__CurrentPage) _Task();
+    _Task* task = new(page) _Task();
+    __CurrentTask = task;
 
     // Collect the arguments into a String Vector
     _Vector<_LetString>& arguments = _Vector<_LetString>::createUninitialized(__CurrentPage, argc - 1);

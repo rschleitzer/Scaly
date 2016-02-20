@@ -8,6 +8,10 @@
 #include <new>
 #include <iostream>
 
+const int _alignment = 8;
+const size_t _pageSize = 0x200000;
+const size_t _maxStackPages = 0x100;
+
 #include "Page.h"
 #include "Object.h"
 #include "Vector.h"
@@ -22,8 +26,6 @@
 #include "Directory.h"
 
 namespace scaly {
-
-static const int _alignment = 8;
 char* align(char*);
 
 }

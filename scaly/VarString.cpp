@@ -115,13 +115,13 @@ _VarString& _VarString::operator + (const char* theString) {
 
 _VarString& _VarString::operator += (const _VarString& theString) {
     (*this) += theString.string;
-    
+
     return *this;
 }
 
 _VarString& _VarString::operator += (_LetString& theString) {
     (*this) += theString.getNativeString();
-    
+
     return *this;
 }
 
@@ -151,9 +151,9 @@ void _VarString::reallocate(size_t newLength) {
     capacity = newLength * 2;
     allocate(capacity + 1);
     memcpy(string, oldString, length + 1);
-    
+
     // Reclaim the page if it was oversized, i.e., exclusively allocated
-    if (((Object*)oldString)->getPage()->getSize() > _Page::pageSize)
+    if (((Object*)oldString)->getPage() == ((_Page*)oldString))
         _Page::reclaimArray(oldString);
 }
 
@@ -181,7 +181,7 @@ _Array<_VarString>& _VarString::Split(_Page* _rp, char c) {
 
     if (part)
         ret->push(part);
-    
+
     return *ret;
 }
 
