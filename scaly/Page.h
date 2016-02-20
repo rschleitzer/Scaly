@@ -19,7 +19,7 @@ public:
 
 private:
     _Page** getLastExtensionPageLocation();
-    static void deallocateExtensionsOfPage(_Page* page);
+    void deallocateExtensions();
     bool freeExtensionPage(_Page* page);
     void* getNextObject();
     void setNextObject(void* object);

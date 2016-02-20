@@ -126,15 +126,17 @@ bool _Page::extend(void* address, size_t size) {
 void _Page::deallocatePageExtensions() {
     for (_Page* page = this; page;) {
         _Page* nextExtensionPage = *page->getLastExtensionPageLocation();
-        deallocateExtensionsOfPage(page);
+        page->deallocateExtensions();
         if (page != this)
             forget(page);
         page = nextExtensionPage; } }
 
-void _Page::deallocateExtensionsOfPage(_Page* page) {
+void _Page::deallocateExtensions() {
     // Deallocate the oversized or exclusive pages
-    for (_Page** ppPage = page->getLastExtensionPageLocation() - 1; ppPage > page->getNextExtensionPageLocation(); ppPage--)
-        forget(*ppPage); }
+    _Page** ppPage = getLastExtensionPageLocation() - 1;
+    for (int i = 0; i < extensions; i++) {
+        forget(*ppPage);
+        ppPage--; } }
 
 void _Page::forget(_Page* page) {
     __CurrentTask->releaseExtensionPage(page); }
