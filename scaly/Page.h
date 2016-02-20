@@ -23,10 +23,12 @@ private:
     bool freeExtensionPage(_Page* page);
     void* getNextObject();
     void setNextObject(void* object);
+    _Page** getNextExtensionPageLocation();
+    void setNextExtensionPageLocation(_Page** ppPage);
 
     _Page* currentPage;
     int nextObjectOffset;
-    _Page** nextExtensionPageLocation;
+    _Page** nextExtension;
 };
 
 }

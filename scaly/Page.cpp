@@ -29,6 +29,14 @@ void _Page::setNextObject(void* object) {
     nextObjectOffset = (char*)object - (char*)this;
 }
 
+_Page** _Page::getNextExtensionPageLocation() {
+    return nextExtension;
+}
+
+void _Page::setNextExtensionPageLocation(_Page** ppPage) {
+    nextExtension = ppPage;
+}
+
 void* _Page::allocateObject(size_t size) {
     if (this != currentPage) {
         // We're already known to be full, so we delegate to the current page
@@ -41,7 +49,7 @@ void* _Page::allocateObject(size_t size) {
 
     // Try to allocate from ourselves
     void* nextLocation = align((char*)getNextObject() + size);
-    if (nextLocation <= (void*) nextExtensionPageLocation) {
+    if (nextLocation <= (void*) getNextExtensionPageLocation()) {
         void* location = getNextObject();
         setNextObject(nextLocation);
         return location; }
@@ -62,8 +70,8 @@ void* _Page::allocateObject(size_t size) {
         // We allocate and free oversized objects directly.
         void* object;
         posix_memalign(&object, _pageSize, size);
-        *nextExtensionPageLocation = (_Page*)object;
-        nextExtensionPageLocation--;
+        *getNextExtensionPageLocation() = (_Page*)object;
+        setNextExtensionPageLocation(getNextExtensionPageLocation() - 1);
         return object; }
     // So we're not oversized. Allocate the standard extension page.
     _Page* extensionPage = allocateExtensionPage();
@@ -98,15 +106,15 @@ _Page* _Page::allocateExclusivePage() {
         return 0;
 
     _Page* exclusivePage = new (pageLocation) _Page();
-    *nextExtensionPageLocation = pageLocation;
-    nextExtensionPageLocation--;
+    *getNextExtensionPageLocation() = pageLocation;
+    setNextExtensionPageLocation(getNextExtensionPageLocation() - 1);
     return exclusivePage; }
 
 void _Page::reset() {
     // Allocate default extension page pointer and initialize it to zero
-    nextExtensionPageLocation = getLastExtensionPageLocation();
-    *nextExtensionPageLocation = 0;
-    nextExtensionPageLocation--;
+    setNextExtensionPageLocation(getLastExtensionPageLocation());
+    *getNextExtensionPageLocation() = 0;
+    setNextExtensionPageLocation(getNextExtensionPageLocation() - 1);
     // Allocate space for the page itself
     setNextObject(align((char*) this + sizeof(_Page)));
     currentPage = this; }
@@ -126,7 +134,7 @@ bool _Page::extend(void* address, size_t size) {
     if (nextLocation < getNextObject())
         return false;
     // Now we still have to check whether we still would have space left
-    if (nextLocation >= (void*) nextExtensionPageLocation)
+    if (nextLocation >= (void*) getNextExtensionPageLocation())
         return false;
     // Allocate the extension
     setNextObject(nextLocation);
@@ -142,7 +150,7 @@ void _Page::deallocatePageExtensions() {
 
 void _Page::deallocateExtensionsOfPage(_Page* page) {
     // Deallocate the oversized or exclusive pages
-    for (_Page** ppPage = page->getLastExtensionPageLocation() - 1; ppPage > page->nextExtensionPageLocation; ppPage--)
+    for (_Page** ppPage = page->getLastExtensionPageLocation() - 1; ppPage > page->getNextExtensionPageLocation(); ppPage--)
         forget(*ppPage); }
 
 void _Page::forget(_Page* page) {
@@ -161,18 +169,18 @@ _Page* _Page::getPage(void* address) {
 bool _Page::freeExtensionPage(_Page* _page) {
     // Find the extension Page pointer
     _Page** extensionPosition = getLastExtensionPageLocation() - 1;
-    while (extensionPosition > nextExtensionPageLocation) {
+    while (extensionPosition > getNextExtensionPageLocation()) {
         if (*extensionPosition == _page)
             break;
         extensionPosition--; }
-    if (extensionPosition == nextExtensionPageLocation)
+    if (extensionPosition == getNextExtensionPageLocation())
         return false;
 
     // Shift the remaining array one position up
-    for (_Page** shiftedPosition = extensionPosition; shiftedPosition > nextExtensionPageLocation; shiftedPosition--)
+    for (_Page** shiftedPosition = extensionPosition; shiftedPosition > getNextExtensionPageLocation(); shiftedPosition--)
         *shiftedPosition = *(shiftedPosition - 1);
     // Make room for one more extension
-    nextExtensionPageLocation++;
+    setNextExtensionPageLocation(getNextExtensionPageLocation() + 1);
     forget(_page);
     return true; }
 
