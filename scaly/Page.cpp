@@ -1,14 +1,6 @@
 #include "Scaly.h"
 namespace scaly {
 
-// Some statistics
-static int oversizedPagesAllocated;
-static int oversizedBytesAllocated;
-static int oversizedPagesDeallocated;
-static int oversizedBytesDeallocated;
-static int pagesDisposed;
-static int extensionPagesAllocated;
-
 extern __thread _Task* __CurrentTask;
 
 _Page::_Page() {
@@ -18,8 +10,7 @@ void _Page::reset() {
     // Allocate default extension page pointer and initialize it to zero
     *getLastExtensionPageLocation() = 0;
     extensions = 0;
-    // Allocate space for the page itself
-    setNextObject(align((char*)this + sizeof(_Page)));
+    nextObjectOffset = sizeof(_Page);
     currentPage = this; }
 
 void _Page::clear() {
