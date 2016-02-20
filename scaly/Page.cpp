@@ -11,9 +11,20 @@ static int extensionPagesAllocated;
 
 extern __thread _Task* __CurrentTask;
 
-_Page::_Page()
-: currentPage(this) {
+_Page::_Page() {
 	reset(); }
+
+void _Page::reset() {
+    // Allocate default extension page pointer and initialize it to zero
+    *getLastExtensionPageLocation() = 0;
+    extensions = 0;
+    // Allocate space for the page itself
+    setNextObject(align((char*)this + sizeof(_Page)));
+    currentPage = this; }
+
+void _Page::clear() {
+    deallocatePageExtensions();
+    reset(); }
 
 _Page** _Page::getLastExtensionPageLocation() {
     // Frome where the ordinary extension page is pointed to
@@ -26,12 +37,10 @@ void* _Page::getNextObject() {
     return (char*)this + nextObjectOffset; }
 
 void _Page::setNextObject(void* object) {
-    nextObjectOffset = (char*)object - (char*)this;
-}
+    nextObjectOffset = (char*)object - (char*)this; }
 
 _Page** _Page::getNextExtensionPageLocation() {
-    return getLastExtensionPageLocation() - extensions - 1;
-}
+    return getLastExtensionPageLocation() - extensions - 1; }
 
 void* _Page::allocateObject(size_t size) {
     if (this != currentPage) {
@@ -105,18 +114,6 @@ _Page* _Page::allocateExclusivePage() {
     *getNextExtensionPageLocation() = pageLocation;
     extensions++;
     return exclusivePage; }
-
-void _Page::reset() {
-    // Allocate default extension page pointer and initialize it to zero
-    *getLastExtensionPageLocation() = 0;
-    extensions = 0;
-    // Allocate space for the page itself
-    setNextObject(align((char*) this + sizeof(_Page)));
-    currentPage = this; }
-
-void _Page::clear() {
-    deallocatePageExtensions();
-    reset(); }
 
 bool _Page::extend(void* address, size_t size) {
     if (!size)
