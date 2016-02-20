@@ -33,10 +33,6 @@ _Page** _Page::getNextExtensionPageLocation() {
     return getLastExtensionPageLocation() - extensions - 1;
 }
 
-void _Page::setNextExtensionPageLocation(_Page** ppPage) {
-    extensions = getLastExtensionPageLocation() - ppPage - 1;
-}
-
 void* _Page::allocateObject(size_t size) {
     if (this != currentPage) {
         // We're already known to be full, so we delegate to the current page
@@ -71,7 +67,7 @@ void* _Page::allocateObject(size_t size) {
         void* object;
         posix_memalign(&object, _pageSize, size);
         *getNextExtensionPageLocation() = (_Page*)object;
-        setNextExtensionPageLocation(getNextExtensionPageLocation() - 1);
+        extensions++;
         return object; }
     // So we're not oversized. Allocate the standard extension page.
     _Page* extensionPage = allocateExtensionPage();
@@ -107,14 +103,13 @@ _Page* _Page::allocateExclusivePage() {
 
     _Page* exclusivePage = new (pageLocation) _Page();
     *getNextExtensionPageLocation() = pageLocation;
-    setNextExtensionPageLocation(getNextExtensionPageLocation() - 1);
+    extensions++;
     return exclusivePage; }
 
 void _Page::reset() {
     // Allocate default extension page pointer and initialize it to zero
-    setNextExtensionPageLocation(getLastExtensionPageLocation());
-    *getNextExtensionPageLocation() = 0;
-    setNextExtensionPageLocation(getNextExtensionPageLocation() - 1);
+    *getLastExtensionPageLocation() = 0;
+    extensions = 0;
     // Allocate space for the page itself
     setNextObject(align((char*) this + sizeof(_Page)));
     currentPage = this; }
@@ -180,7 +175,7 @@ bool _Page::freeExtensionPage(_Page* _page) {
     for (_Page** shiftedPosition = extensionPosition; shiftedPosition > getNextExtensionPageLocation(); shiftedPosition--)
         *shiftedPosition = *(shiftedPosition - 1);
     // Make room for one more extension
-    setNextExtensionPageLocation(getNextExtensionPageLocation() + 1);
+    extensions--;
     forget(_page);
     return true; }
 
