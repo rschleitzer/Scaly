@@ -28,7 +28,7 @@ private:
 
     _Page* currentPage;
     int nextObjectOffset;
-    _Page** nextExtension;
+    int extensions;
 };
 
 }

@@ -30,11 +30,11 @@ void _Page::setNextObject(void* object) {
 }
 
 _Page** _Page::getNextExtensionPageLocation() {
-    return nextExtension;
+    return getLastExtensionPageLocation() - extensions - 1;
 }
 
 void _Page::setNextExtensionPageLocation(_Page** ppPage) {
-    nextExtension = ppPage;
+    extensions = getLastExtensionPageLocation() - ppPage - 1;
 }
 
 void* _Page::allocateObject(size_t size) {
