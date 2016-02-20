@@ -21,10 +21,12 @@ private:
     _Page** getLastExtensionPageLocation();
     static void deallocateExtensionsOfPage(_Page* page);
     bool freeExtensionPage(_Page* page);
+    void* getNextObject();
+    void setNextObject(void* object);
 
     _Page* currentPage;
+    int nextObjectOffset;
     _Page** nextExtensionPageLocation;
-    void* nextObject;
 };
 
 }

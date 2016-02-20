@@ -22,6 +22,13 @@ _Page** _Page::getLastExtensionPageLocation() {
 void* _Page::operator new(size_t size, void* location) {
     return location; }
 
+void* _Page::getNextObject() {
+    return (char*)this + nextObjectOffset; }
+
+void _Page::setNextObject(void* object) {
+    nextObjectOffset = (char*)object - (char*)this;
+}
+
 void* _Page::allocateObject(size_t size) {
     if (this != currentPage) {
         // We're already known to be full, so we delegate to the current page
@@ -33,10 +40,10 @@ void* _Page::allocateObject(size_t size) {
         return newObject; }
 
     // Try to allocate from ourselves
-    void* nextLocation = align((char*) nextObject + size);
+    void* nextLocation = align((char*)getNextObject() + size);
     if (nextLocation <= (void*) nextExtensionPageLocation) {
-        void* location = nextObject;
-        nextObject = nextLocation;
+        void* location = getNextObject();
+        setNextObject(nextLocation);
         return location; }
 
     // So the space did not fit.
@@ -44,7 +51,7 @@ void* _Page::allocateObject(size_t size) {
     // Calculate gross size to decide whether we're oversized
     size_t grossSize = sizeof(_Page) + size + sizeof(_Page**) + _alignment;
     if (grossSize > _pageSize) {
-        if ((_Page**)nextObject == getLastExtensionPageLocation()) {
+        if ((_Page**)getNextObject() == getLastExtensionPageLocation()) {
             // Allocate an extension page with default size
             _Page* defaultExtensionPage = allocateExtensionPage();
             // Make it our new current
@@ -78,7 +85,7 @@ _Page* _Page::allocateExclusivePage() {
         return currentPage->allocateExclusivePage();
 
     // Check first whether we need an ordinary extension
-    if ((_Page**)nextObject == getLastExtensionPageLocation()) {
+    if ((_Page**)getNextObject() == getLastExtensionPageLocation()) {
         // Allocate an extension page with default size
         _Page* defaultExtensionPage = allocateExtensionPage();
         // Make it our new current
@@ -101,7 +108,7 @@ void _Page::reset() {
     *nextExtensionPageLocation = 0;
     nextExtensionPageLocation--;
     // Allocate space for the page itself
-    nextObject = align((char*) this + sizeof(_Page));
+    setNextObject(align((char*) this + sizeof(_Page)));
     currentPage = this; }
 
 void _Page::clear() {
@@ -113,16 +120,16 @@ bool _Page::extend(void* address, size_t size) {
         size = 1;
     void* nextLocation = align((char*) address + size);
     // If nextObject would not change because of the alignment, that's it
-    if (nextLocation == (void*) nextObject)
+    if (nextLocation == (void*)getNextObject())
         return true;
     // If nextObject is already higher, other objects were allocated in the meantime
-    if (nextLocation < nextObject)
+    if (nextLocation < getNextObject())
         return false;
     // Now we still have to check whether we still would have space left
     if (nextLocation >= (void*) nextExtensionPageLocation)
         return false;
     // Allocate the extension
-    nextObject = nextLocation;
+    setNextObject(nextLocation);
     return true; }
 
 void _Page::deallocatePageExtensions() {
