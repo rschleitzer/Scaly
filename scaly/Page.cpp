@@ -150,17 +150,20 @@ _Page* _Page::getPage(void* address) {
 
 bool _Page::freeExtensionPage(_Page* _page) {
     // Find the extension Page pointer
-    _Page** extensionPosition = getLastExtensionPageLocation() - 1;
-    while (extensionPosition > getNextExtensionPageLocation()) {
-        if (*extensionPosition == _page)
+    _Page** ppPage = getLastExtensionPageLocation() - 1;
+    _Page** nextExtensionPageLocation = getNextExtensionPageLocation();
+    while (ppPage > nextExtensionPageLocation) {
+        if (*ppPage == _page)
             break;
-        extensionPosition--; }
-    if (extensionPosition == getNextExtensionPageLocation())
+        ppPage--; }
+
+    // Report if we could not find it
+    if (ppPage == nextExtensionPageLocation)
         return false;
 
     // Shift the remaining array one position up
-    for (_Page** shiftedPosition = extensionPosition; shiftedPosition > getNextExtensionPageLocation(); shiftedPosition--)
-        *shiftedPosition = *(shiftedPosition - 1);
+    for (; ppPage > nextExtensionPageLocation; ppPage--)
+        *ppPage = *(ppPage - 1);
     // Make room for one more extension
     extensions--;
     forget(_page);
