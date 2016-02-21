@@ -9,7 +9,7 @@
 #include <iostream>
 
 const int _alignment = 8;
-const size_t _pageSize = 0x1000;
+const size_t _pageSize = 0x200;
 const size_t _maxStackPages = 0x100;
 
 #include "Page.h"

@@ -11,9 +11,16 @@ public:
     void dispose();
 
 private:
-    const size_t numberOfPages = 8 * sizeof(size_t) * 4 * sizeof(size_t);
+    static size_t findLowestZeroBit64(size_t index);
+    static unsigned findLowestZeroBit32(unsigned index);
+    static unsigned short findLowestZeroBit16(unsigned short index);
+    static unsigned char findLowestZeroBit8(unsigned char index);
+
+    const size_t numberOfPagesInBucket = 8 * sizeof(size_t);
+    const size_t numberOfPages = numberOfPagesInBucket * numberOfPagesInBucket;
     char* chunkBase;
-    char* chunkPointer;
+    size_t* allocationMap;
+    size_t allocationIndex;
 };
 
 }
