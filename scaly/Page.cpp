@@ -139,10 +139,12 @@ void _Page::forget(_Page* page) {
     __CurrentTask->releaseExtensionPage(page); }
 
 bool _Page::reclaimArray(void* address) {
+    // Quick attempt to find it at tue current page
     if (currentPage->freeExtensionPage((_Page*)address))
         return true;
-    for (_Page* page = this; page; page = *getLastExtensionPageLocation())
-        if (page->freeExtensionPage(page))
+    // Second attempt scanning the rest of the chain
+    for (_Page* page = this; page != currentPage; page = *page->getLastExtensionPageLocation())
+        if (page->freeExtensionPage((_Page*)address))
             return true; }
 
 _Page* _Page::getPage(void* address) {
