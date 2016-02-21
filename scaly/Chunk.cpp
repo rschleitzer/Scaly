@@ -12,6 +12,9 @@ _Chunk::_Chunk() {
 _Page* _Chunk::allocatePage() {
     // Look up the page in the page index
     size_t bucket = 0;
+    if (allocationIndex == 0xFFFFFFFFFFFFFFFF)
+        return 0;
+
     bucket = findLowestZeroBit64(allocationIndex);
     // Get the map of the bucket
     size_t bucketMap = allocationMap[bucket];
@@ -52,25 +55,24 @@ unsigned _Chunk::findLowestZeroBit32(unsigned index) {
     return bucket; }
 
 unsigned short _Chunk::findLowestZeroBit16(unsigned short index) {
-    unsigned char bucket = 0;
-    unsigned char lowerHalf = index & 0xFF;
-    if (lowerHalf == 0xFF) {
-        // The lower half part is full so we have to look in the upper part
-        bucket = 8;
-        bucket += findLowestZeroBit8(index >> 8); }
+    if (index < 0xFF) {
+        if (!(index & 0x0001))  return 0;
+        if (!(index & 0x0002))  return 1;
+        if (!(index & 0x0004))  return 2;
+        if (!(index & 0x0008))  return 3;
+        if (!(index & 0x0010))  return 4;
+        if (!(index & 0x0020))  return 5;
+        if (!(index & 0x0040))  return 6;
+                                return 7; }
     else {
-        bucket = findLowestZeroBit8(lowerHalf); }
-    return bucket; }
-
-unsigned char _Chunk::findLowestZeroBit8(unsigned char index) {
-    if (!(index &  1)) return 0;
-    if (!(index &  2)) return 1;
-    if (!(index &  4)) return 2;
-    if (!(index &  8)) return 3;
-    if (!(index & 16)) return 4;
-    if (!(index & 32)) return 5;
-    if (!(index & 64)) return 6;
-                else return 7; }
+        if (!(index & 0x0100)) return  8;
+        if (!(index & 0x0200)) return  9;
+        if (!(index & 0x0400)) return 10;
+        if (!(index & 0x0800)) return 11;
+        if (!(index & 0x1000)) return 12;
+        if (!(index & 0x2000)) return 13;
+        if (!(index & 0x4000)) return 14;
+                               return 15; } }
 
 void _Chunk::deallocatePage(_Page* page) {
 }
