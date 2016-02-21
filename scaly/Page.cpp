@@ -3,6 +3,8 @@ namespace scaly {
 
 extern __thread _Task* __CurrentTask;
 
+extern size_t pagesAllocated;
+
 _Page::_Page() {
 	reset(); }
 
@@ -66,6 +68,7 @@ void* _Page::allocateObject(size_t size) {
         // We allocate and free oversized objects directly.
         void* object;
         posix_memalign(&object, _pageSize, size);
+        pagesAllocated++;
         *getNextExtensionPageLocation() = (_Page*)object;
         extensions++;
         return object; }

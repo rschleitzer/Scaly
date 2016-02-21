@@ -6,7 +6,6 @@ namespace scaly {
 class _Task : public Object {
 public:
     _Task();
-    _Page* getStackPage();
     _Page* getExtensionPage();
     _Page* releaseStackPage();
     void releaseExtensionPage(_Page* page);
@@ -14,13 +13,6 @@ public:
 
 private:
     _Page* allocatePage();
-    void* extensionPagesBase;
-    size_t lowestBucket;
-    size_t highestBucket;
-    _Array<size_t>* extensionPages;
-
-    size_t pagesAllocated;
-    size_t pagesDeallocated;
 };
 
 }
