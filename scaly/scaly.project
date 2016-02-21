@@ -30,6 +30,7 @@
     <File Name="Task.cpp"/>
     <File Name="VarString.cpp"/>
     <File Name="LetString.cpp"/>
+    <File Name="Chunk.cpp"/>
   </VirtualDirectory>
   <VirtualDirectory Name="include">
     <File Name="Scaly.h"/>
@@ -45,6 +46,7 @@
     <File Name="VarString.h"/>
     <File Name="LetString.h"/>
     <File Name="Vector.h"/>
+    <File Name="Chunk.h"/>
   </VirtualDirectory>
   <Settings Type="Static Library">
     <GlobalSettings>

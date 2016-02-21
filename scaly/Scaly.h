@@ -16,6 +16,7 @@ const size_t _maxStackPages = 0x100;
 #include "Object.h"
 #include "Vector.h"
 #include "Array.h"
+#include "Chunk.h"
 #include "Task.h"
 #include "Region.h"
 #include "Result.h"

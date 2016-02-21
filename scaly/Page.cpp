@@ -68,7 +68,6 @@ void* _Page::allocateObject(size_t size) {
         // We allocate and free oversized objects directly.
         void* object;
         posix_memalign(&object, _pageSize, size);
-        pagesAllocated++;
         *getNextExtensionPageLocation() = (_Page*)object;
         extensions++;
         return object; }

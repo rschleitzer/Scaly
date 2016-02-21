@@ -13,6 +13,8 @@ public:
 
 private:
     _Page* allocatePage();
+
+    _Chunk* chunk;
 };
 
 }
