@@ -11,11 +11,10 @@ _Chunk::_Chunk() {
 
 _Page* _Chunk::allocatePage() {
     // Look up the page in the page index
-    size_t bucket = 0;
     if (allocationIndex == 0xFFFFFFFFFFFFFFFF)
         return 0;
 
-    bucket = findLowestZeroBit64(allocationIndex);
+    size_t bucket = findLowestZeroBit64(allocationIndex);
     // Get the map of the bucket
     size_t bucketMap = allocationMap[bucket];
     // Look up the page in the bucket map
@@ -29,8 +28,8 @@ _Page* _Chunk::allocatePage() {
     if (allocationMap[bucket] == 0xFFFFFFFFFFFFFFFF)
         allocationIndex |= (size_t)1 << bucket;
     size_t chunkBaseOffset = pageIndex * _pageSize;
-    char* ret = chunkBase + chunkBaseOffset;
-    return (_Page*)ret; }
+    char* page = chunkBase + chunkBaseOffset;
+    return (_Page*)page; }
 
 size_t _Chunk::findLowestZeroBit64(size_t index) {
     size_t bucket = 0;
@@ -44,8 +43,9 @@ size_t _Chunk::findLowestZeroBit64(size_t index) {
     return bucket; }
 
 unsigned _Chunk::findLowestZeroBit32(unsigned index) {
-    if (index < 0xFFFF) {
-        if (index < 0xFF) {
+    if ((index & 0xFFFF) != 0xFFFF) {
+        index &= 0xFFFF;
+        if ((index & 0xFF) < 0xFF) {
             if (!(index & 0x0001))  return 0;
             if (!(index & 0x0002))  return 1;
             if (!(index & 0x0004))  return 2;
@@ -65,7 +65,7 @@ unsigned _Chunk::findLowestZeroBit32(unsigned index) {
                                    return 15; } }
     else {
         index >>= 16;
-        if (index < 0xFF) {
+        if ((index & 0xFF) < 0xFF) {
             if (!(index & 0x0001)) return 16;
             if (!(index & 0x0002)) return 17;
             if (!(index & 0x0004)) return 18;
@@ -84,7 +84,19 @@ unsigned _Chunk::findLowestZeroBit32(unsigned index) {
             if (!(index & 0x4000)) return 30;
                                    return 31; } } }
 
-void _Chunk::deallocatePage(_Page* page) {
+bool _Chunk::deallocatePage(_Page* page) {
+    // Check whether this page is from us
+    if (((char*)page < chunkBase) || (char*)page >= (chunkBase + _pageSize * numberOfPages))
+        return false;
+
+    size_t pageIndex = ((char*)page - chunkBase) / _pageSize;
+    size_t pagePositionInBucket = (pageIndex & ~(numberOfPagesInBucket)) % numberOfPagesInBucket;
+    size_t bucket = pageIndex / numberOfPagesInBucket;
+    // Clear the allocation bit in the map
+    allocationMap[bucket] &= ~((size_t)1 << pagePositionInBucket);
+    if (allocationMap[bucket] < 0xFFFFFFFFFFFFFFFF)
+        allocationIndex &= ~((size_t)1 << bucket);
+    return true;
 }
 
 void _Chunk::dispose() {

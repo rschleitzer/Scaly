@@ -7,7 +7,7 @@ class _Chunk : public Object {
 public:
     _Chunk();
     _Page* allocatePage();
-    void deallocatePage(_Page* page);
+    bool deallocatePage(_Page* page);
     void dispose();
 
 private:

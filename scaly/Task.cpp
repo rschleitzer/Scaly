@@ -13,7 +13,9 @@ _Page* _Task::getExtensionPage() {
     return page; }
 
 void _Task::releaseExtensionPage(_Page* page) {
-    chunk->deallocatePage(page); }
+    if (!chunk->deallocatePage(page))
+        // This is an oversized page which has to be free'd directly
+        free(page); }
 
 void _Task::dispose() {
     chunk->dispose(); }
