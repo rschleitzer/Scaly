@@ -6,7 +6,7 @@ namespace scalyc {
 
 class Parser : public Object {
 public:
-    Parser(_LetString* fileName, _LetString& text);
+    Parser(_LetString* fileName, _LetString* text);
 
     _Result<CompilationUnit, ParserError> parseCompilationUnit(_Page* _rp, _Page* _ep);
 

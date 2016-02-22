@@ -5,6 +5,14 @@ _LetString& _LetString::create(_Page* page) {
     return createUninitialized(page, 0);
 }
 
+_LetString& _LetString::create(_Page* page, char c) {
+    _LetString& string = createUninitialized(page, 1);
+    char* pString = string.getNativeString();
+    pString[0] = c;
+    pString[1] = 0;
+    return string;
+}
+
 _LetString& _LetString::create(_Page* page, const char* theString) {
     size_t length = strlen(theString);
     _LetString& string = createUninitialized(page, length);
@@ -97,7 +105,7 @@ _Array<_LetString>& _LetString::Split(_Page* _rp, char c) {
 
     if (part)
         ret->push(&create(_rp, *part));
-    
+
     return *ret;
 }
 

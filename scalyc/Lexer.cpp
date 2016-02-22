@@ -3,8 +3,7 @@ using namespace scaly;
 namespace scalyc {
 
 Position::Position(size_t line, size_t column)
-: line(line), column(column) {
-}
+: line(line), column(column) { }
 
 bool Token::_isEofToken() { return false; }
 bool Token::_isInvalidToken() { return false; }
@@ -22,58 +21,50 @@ bool EofToken::_isEofToken() { return true; }
 
 bool InvalidToken::_isInvalidToken() { return true; }
 
-Identifier::Identifier(_VarString& name) {
-    this->name = &_LetString::create(getPage(), name);
-}
+Identifier::Identifier(_LetString* name)
+: name(name) { }
 
 bool Identifier::_isIdentifier() { return true; }
 
 bool Literal::_isLiteral() { return true; }
 
-StringLiteral::StringLiteral(_VarString& literal) {
-    string = &_LetString::create(getPage(), literal);
-}
+StringLiteral::StringLiteral(_LetString* literal)
+: string(literal) { }
 
 bool StringLiteral::_isStringLiteral() { return true; }
 
-NumericLiteral::NumericLiteral(_VarString& theValue) {
-    value = &_LetString::create(getPage(), theValue);
-}
+NumericLiteral::NumericLiteral(_LetString* theValue)
+: value(theValue) { }
 
 bool NumericLiteral::_isNumericLiteral() { return true; }
 
-Punctuation::Punctuation(_VarString& theSign) {
-    sign = &_LetString::create(getPage(), theSign);
-}
+Punctuation::Punctuation(_LetString* theSign)
+: sign(theSign) { }
 
 bool Punctuation::_isPunctuation() { return true; }
 
-Operator::Operator(_VarString& theOperation) {
-    operation = &_LetString::create(getPage(), theOperation);
-}
+Operator::Operator(_LetString* theOperation)
+: operation(theOperation) { }
 
 bool Operator::_isOperator() { return true; }
 
-PrefixOperator::PrefixOperator(_VarString& theOperation)
-: Operator(theOperation) {
-}
+PrefixOperator::PrefixOperator(_LetString* theOperation)
+: Operator(theOperation) { }
 
 bool PrefixOperator::_isPrefixOperator() { return true; }
 
-BinaryOperator::BinaryOperator(_VarString& theOperation)
-: Operator(theOperation) {
-}
+BinaryOperator::BinaryOperator(_LetString* theOperation)
+: Operator(theOperation) { }
 
 bool BinaryOperator::_isBinaryOperator() { return true; }
 
-PostfixOperator::PostfixOperator(_VarString& theOperation)
-: Operator(theOperation) {
-}
+PostfixOperator::PostfixOperator(_LetString* theOperation)
+: Operator(theOperation) { }
 
 bool PostfixOperator::_isPostfixOperator() { return true; }
 
-Lexer::Lexer(_LetString& text)
-: token(new(getPage()->allocateExclusivePage()) InvalidToken()), whitespaceSkipped(true), text(&text), length(text.getLength()),
+Lexer::Lexer(_LetString* text)
+: token(new(getPage()->allocateExclusivePage()) InvalidToken()), whitespaceSkipped(true), text(text), length(text->getLength()),
 position(0), end(length), previousLine(1), previousColumn(0), line(1), column(0) {
     advance();
 }
@@ -113,7 +104,7 @@ void Lexer::advance() {
 
         case '_': case '(': case ')': case '{': case '}': case '[': case ']': case '<': case '>': case ',': case ':': case ';':  case '@': case '#': case '`': {
             token->getPage()->clear();
-            token = new (token->getPage()) Punctuation(*new(token->getPage()) _VarString((*text)[position]));
+            token = new (token->getPage()) Punctuation(&_LetString::create(token->getPage(), (*text)[position]));
             position++; column++;
             break;
         }
@@ -138,7 +129,7 @@ void Lexer::advance() {
                 }
                 else {
                     token->getPage()->clear();
-                    token = new (token->getPage()) Punctuation(*new(token->getPage()) _VarString('.'));
+                    token = new (token->getPage()) Punctuation(&_LetString::create(token->getPage(), '.'));
                 }
             }
             break;
@@ -158,7 +149,7 @@ void Lexer::advance() {
                 }
                 else {
                     token->getPage()->clear();
-                    token = new(token->getPage()) Punctuation(*new(token->getPage()) _VarString("->"));
+                    token = new(token->getPage()) Punctuation(&_LetString::create(token->getPage(), "->"));
                     position++; column++;
                 }
             }
@@ -169,7 +160,7 @@ void Lexer::advance() {
             position++; column++;
             if (position == end) {
                 token->getPage()->clear();
-                token = new(token->getPage()) PostfixOperator(*new(token->getPage()) _VarString("!"));
+                token = new(token->getPage()) PostfixOperator(&_LetString::create(token->getPage(), "!"));
             }
             else {
                 switch ((*text)[position]) {
@@ -189,7 +180,7 @@ void Lexer::advance() {
                         }
                         else {
                             token->getPage()->clear();
-                            token = new(getPage()) Punctuation(*new(token->getPage()) _VarString("!"));
+                            token = new(getPage()) Punctuation(&_LetString::create(token->getPage(), "!"));
                         }
                 }
             }
@@ -200,7 +191,7 @@ void Lexer::advance() {
             position++; column++;
             if (position == end) {
                 token->getPage()->clear();
-                token = new(token->getPage()) PostfixOperator(*new(token->getPage()) _VarString("?"));
+                token = new(token->getPage()) PostfixOperator(&_LetString::create(token->getPage(), "?"));
             }
             else {
                 switch ((*text)[position]) {
@@ -218,7 +209,7 @@ void Lexer::advance() {
                         }
                         else {
                             token->getPage()->clear();
-                            token = new(token->getPage()) Punctuation(*new(token->getPage()) _VarString("?"));
+                            token = new(token->getPage()) Punctuation(&_LetString::create(token->getPage(),"?"));
                         }
                     }
                 }
@@ -242,7 +233,7 @@ void Lexer::advance() {
                     }
                     default: {
                         token->getPage()->clear();
-                        token = new(token->getPage()) Punctuation(*new(token->getPage()) _VarString("="));
+                        token = new(token->getPage()) Punctuation(&_LetString::create(token->getPage(), "="));
                     }
                 }
             }
@@ -265,14 +256,14 @@ Identifier& Lexer::scanIdentifier(_Page* _rp) {
             position++; column++;
 
             if (position == end) {
-                return *new(_rp) Identifier(name);
+                return *new(_rp) Identifier(&_LetString::create(_rp, name));
             }
 
             char c = (*text)[position];
             if (((c >= 'a') && (c <= 'z')) || ((c >= 'A') && (c <= 'Z')) || (c == '_'))
                 name += (*text)[position];
             else
-                return *new(_rp) Identifier(name);
+                return *new(_rp) Identifier(&_LetString::create(_rp, name));
         }
         while (true);
     }
@@ -297,9 +288,9 @@ Operator& Lexer::scanOperator(_Page* _rp, bool includeDots) {
         position++; column++;
         if (position == end) {
             if (whitespaceSkippedBefore)
-                return *new(_rp) BinaryOperator(operation);
+                return *new(_rp) BinaryOperator(&_LetString::create(_rp, operation));
             else
-                return *new(_rp) PostfixOperator(operation);
+                return *new(_rp) PostfixOperator(&_LetString::create(_rp, operation));
         }
         switch ((*text)[position]) {
             case '/': case '=': case '-': case '+': case '!': case '*': case '%': case '<': case '&': case '|': case '^': case '~': {
@@ -335,13 +326,13 @@ Operator& Lexer::scanOperator(_Page* _rp, bool includeDots) {
                 }
 
                 if ((whitespaceSkippedBefore && whitespaceSkippedAfter) || (!whitespaceSkippedBefore && !whitespaceSkippedAfter))
-                    return *new(_rp) BinaryOperator(operation);
+                    return *new(_rp) BinaryOperator(&_LetString::create(_rp, operation));
 
                 if ((!whitespaceSkippedBefore && whitespaceSkippedAfter))
-                    return *new(_rp) PostfixOperator(operation);
+                    return *new(_rp) PostfixOperator(&_LetString::create(_rp, operation));
 
                 if ((whitespaceSkippedBefore && !whitespaceSkippedAfter))
-                    return *new(_rp) PrefixOperator(operation);
+                    return *new(_rp) PrefixOperator(&_LetString::create(_rp, operation));
             }
         }
     }
@@ -359,7 +350,7 @@ Token* Lexer::scanStringLiteral(_Page* _rp) {
         switch ((*text)[position]) {
             case '\"': {
                 position++; column++;
-                return new(_rp) StringLiteral(value);
+                return new(_rp) StringLiteral(&_LetString::create(_rp, value));
             }
             case '\\': {
                 position++; column++;
@@ -392,13 +383,13 @@ NumericLiteral* Lexer::scanNumericLiteral(_Page* _rp) {
         position++; column++;
 
         if (position == end)
-            return new(_rp) NumericLiteral(value);
+            return new(_rp) NumericLiteral(&_LetString::create(_rp, value));
 
         char c = (*text)[position];
         if ((c >= '0') && (c <= '9'))
             value += (*text)[position];
         else
-            return new(_rp) NumericLiteral(value);
+            return new(_rp) NumericLiteral(&_LetString::create(_rp, value));
     }
     while (true);
 }

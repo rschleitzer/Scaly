@@ -302,7 +302,7 @@ bool CppVisitor::openConstParameter(ConstParameter& constParameter) {
     if (constParameter.type->_isTypeIdentifier()) {
         TypeIdentifier& typeIdentifier = *(TypeIdentifier*)constParameter.type;
         if (isClass(*typeIdentifier.name)) {
-            (*headerFile) += "&";
+            (*headerFile) += "*";
         }
     }
 

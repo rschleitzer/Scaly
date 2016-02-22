@@ -23,7 +23,7 @@ CompilerError* Compiler::compileFiles(_Page* _ep, Options& options) {
         size_t _length = sources->length();
         compilationUnits = &_Vector<CompilationUnit>::createUninitialized(_p, _length);
         for (size_t _index = 0; _index < _length; _index++) {
-            _Result<CompilationUnit, ParserError> _compileUnitResult = compileUnit(_p, _ep, *(*files)[_index], **(*sources)[_index]);
+            _Result<CompilationUnit, ParserError> _compileUnitResult = compileUnit(_p, _ep, *(*files)[_index], *(*sources)[_index]);
             if (!_compileUnitResult.succeeded()) {
                 return new(_ep) CompilerError(*new(_ep) SyntaxError(*_compileUnitResult.getError()));
             }
@@ -48,7 +48,7 @@ CompilerError* Compiler::compileFiles(_Page* _ep, Options& options) {
     return 0;
 }
 
-_Result<CompilationUnit, ParserError> Compiler::compileUnit(_Page* _rp, _Page* _ep, _LetString* fileName, _LetString& text)
+_Result<CompilationUnit, ParserError> Compiler::compileUnit(_Page* _rp, _Page* _ep, _LetString* fileName, _LetString* text)
 {
     // Make a region for the current block and get the page
     _Region _region; _Page* _p = _region.get();

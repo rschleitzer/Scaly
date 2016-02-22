@@ -38,7 +38,7 @@ public:
 
 class Identifier : public Token {
 public:
-    Identifier(_VarString& name);
+    Identifier(_LetString* name);
     _LetString* name;
     virtual bool _isIdentifier();
 };
@@ -50,47 +50,47 @@ public:
 
 class StringLiteral : public Literal {
 public:
-    StringLiteral(_VarString& theString);
+    StringLiteral(_LetString* theString);
     _LetString* string;
     virtual bool _isStringLiteral();
 };
 
 class NumericLiteral : public Literal {
 public:
-    NumericLiteral(_VarString& theValue);
+    NumericLiteral(_LetString* theValue);
     _LetString* value;
     virtual bool _isNumericLiteral();
 };
 
 class Punctuation : public Token {
 public:
-    Punctuation(_VarString& theSign);
+    Punctuation(_LetString* theSign);
     _LetString* sign;
     virtual bool _isPunctuation();
 };
 
 class Operator : public Token {
 public:
-    Operator(_VarString& theOperation);
+    Operator(_LetString* theOperation);
     _LetString* operation;
     virtual bool _isOperator();
 };
 
 class PrefixOperator : public Operator {
 public:
-    PrefixOperator(_VarString& theOperation);
+    PrefixOperator(_LetString* theOperation);
     virtual bool _isPrefixOperator();
 };
 
 class BinaryOperator : public Operator {
 public:
-    BinaryOperator(_VarString& theOperation);
+    BinaryOperator(_LetString* theOperation);
     virtual bool _isBinaryOperator();
 };
 
 class PostfixOperator : public Operator {
 public:
-    PostfixOperator(_VarString& theOperation);
+    PostfixOperator(_LetString* theOperation);
     virtual bool _isPostfixOperator();
 };
 
@@ -106,7 +106,7 @@ public:
     size_t previousColumn;
     size_t line;
     size_t column;
-    Lexer(_LetString& text);
+    Lexer(_LetString* text);
     void advance();
     Identifier& scanIdentifier(_Page* _rp);
     Operator& scanOperator(_Page* _rp, bool includeDots);
