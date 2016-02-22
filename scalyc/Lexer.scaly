@@ -253,7 +253,7 @@ class Lexer {
         while true
     }
 
-    function scanOperator(includeDots: Bool) -> Operator {
+    function scanOperator(includeDots: bool) -> Operator {
         mutable whitespaceSkippedBefore = whitespaceSkipped
 
         if !whitespaceSkippedBefore && token is Punctuation

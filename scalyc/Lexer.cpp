@@ -85,7 +85,7 @@ void Lexer::advance() {
 
     if (((c >= 'a') && (c <= 'z')) || ((c >= 'A') && (c <= 'Z'))) {
         token->getPage()->clear();
-        token = &scanIdentifier(token->getPage());
+        token = scanIdentifier(token->getPage());
         return;
     }
 
@@ -111,7 +111,7 @@ void Lexer::advance() {
 
         case '/': case '+': case '*':  case '%': case '&': case '|': case '^': case '~': {
             token->getPage()->clear();
-            token = &scanOperator(token->getPage(), false);
+            token = scanOperator(token->getPage(), false);
             break;
         }
 
@@ -125,7 +125,7 @@ void Lexer::advance() {
                 if ((*text)[position] == '.') {
                     position--; column--;
                     token->getPage()->clear();
-                    token = &scanOperator(token->getPage(), true);
+                    token = scanOperator(token->getPage(), true);
                 }
                 else {
                     token->getPage()->clear();
@@ -145,7 +145,7 @@ void Lexer::advance() {
                 if ((*text)[position] != '>') {
                     position--; column--;
                     token->getPage()->clear();
-                    token = &scanOperator(token->getPage(), true);
+                    token = scanOperator(token->getPage(), true);
                 }
                 else {
                     token->getPage()->clear();
@@ -168,7 +168,7 @@ void Lexer::advance() {
                     case ' ': case '\t': case '\r': case '\n': {
                         position--; column--;
                         token->getPage()->clear();
-                        token = &scanOperator(token->getPage(), true);
+                        token = scanOperator(token->getPage(), true);
                         break;
                     }
 
@@ -176,7 +176,7 @@ void Lexer::advance() {
                         if ((whitespaceSkipped) || (token && (token->_isPunctuation()))) {
                             position--; column--;
                             token->getPage()->clear();
-                            token = &scanOperator(token->getPage(), true);
+                            token = scanOperator(token->getPage(), true);
                         }
                         else {
                             token->getPage()->clear();
@@ -198,14 +198,14 @@ void Lexer::advance() {
                     case '/': case '=': case '+': case '!': case '*': case '%': case '&': case '|': case '^': case '~': {
                         position--; column--;
                         token->getPage()->clear();
-                        token = &scanOperator(token->getPage(), true);
+                        token = scanOperator(token->getPage(), true);
                         break;
                     }
                     default: {
                         if (whitespaceSkipped) {
                             position--; column--;
                             token->getPage()->clear();
-                            token = &scanOperator(token->getPage(), true);
+                            token = scanOperator(token->getPage(), true);
                         }
                         else {
                             token->getPage()->clear();
@@ -228,7 +228,7 @@ void Lexer::advance() {
                     case '/': case '=': case '+': case '!': case '*': case '%': case '&': case '|': case '^': case '~': {
                         position--; column--;
                         token->getPage()->clear();
-                        token = &scanOperator(token->getPage(), true);
+                        token = scanOperator(token->getPage(), true);
                         break;
                     }
                     default: {
@@ -246,7 +246,7 @@ void Lexer::advance() {
     }
 }
 
-Identifier& Lexer::scanIdentifier(_Page* _rp) {
+Identifier* Lexer::scanIdentifier(_Page* _rp) {
     // Make a String taking the character at the current position
     {
         _Region _region; _Page* _p = _region.get();
@@ -256,20 +256,20 @@ Identifier& Lexer::scanIdentifier(_Page* _rp) {
             position++; column++;
 
             if (position == end) {
-                return *new(_rp) Identifier(&_LetString::create(_rp, name));
+                return new(_rp) Identifier(&_LetString::create(_rp, name));
             }
 
             char c = (*text)[position];
             if (((c >= 'a') && (c <= 'z')) || ((c >= 'A') && (c <= 'Z')) || (c == '_'))
                 name += (*text)[position];
             else
-                return *new(_rp) Identifier(&_LetString::create(_rp, name));
+                return new(_rp) Identifier(&_LetString::create(_rp, name));
         }
         while (true);
     }
 }
 
-Operator& Lexer::scanOperator(_Page* _rp, bool includeDots) {
+Operator* Lexer::scanOperator(_Page* _rp, bool includeDots) {
     bool whitespaceSkippedBefore = whitespaceSkipped;
     if (!whitespaceSkippedBefore) {
         if (token->_isPunctuation()) {
@@ -288,9 +288,9 @@ Operator& Lexer::scanOperator(_Page* _rp, bool includeDots) {
         position++; column++;
         if (position == end) {
             if (whitespaceSkippedBefore)
-                return *new(_rp) BinaryOperator(&_LetString::create(_rp, operation));
+                return new(_rp) BinaryOperator(&_LetString::create(_rp, operation));
             else
-                return *new(_rp) PostfixOperator(&_LetString::create(_rp, operation));
+                return new(_rp) PostfixOperator(&_LetString::create(_rp, operation));
         }
         switch ((*text)[position]) {
             case '/': case '=': case '-': case '+': case '!': case '*': case '%': case '<': case '&': case '|': case '^': case '~': {
@@ -326,13 +326,13 @@ Operator& Lexer::scanOperator(_Page* _rp, bool includeDots) {
                 }
 
                 if ((whitespaceSkippedBefore && whitespaceSkippedAfter) || (!whitespaceSkippedBefore && !whitespaceSkippedAfter))
-                    return *new(_rp) BinaryOperator(&_LetString::create(_rp, operation));
+                    return new(_rp) BinaryOperator(&_LetString::create(_rp, operation));
 
                 if ((!whitespaceSkippedBefore && whitespaceSkippedAfter))
-                    return *new(_rp) PostfixOperator(&_LetString::create(_rp, operation));
+                    return new(_rp) PostfixOperator(&_LetString::create(_rp, operation));
 
                 if ((whitespaceSkippedBefore && !whitespaceSkippedAfter))
-                    return *new(_rp) PrefixOperator(&_LetString::create(_rp, operation));
+                    return new(_rp) PrefixOperator(&_LetString::create(_rp, operation));
             }
         }
     }

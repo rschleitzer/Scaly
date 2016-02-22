@@ -27,7 +27,8 @@ private:
     _Array<_LetString>* classes;
     bool declaringClassMember;
     bool inParameterClause;
-    
+    int codeBlockLevel;
+
     void buildProjectFileString(_VarString& projectFile, Program& program);
     void buildMainHeaderFileString(_VarString& projectFile, Program& program);
     void collectInheritances(Program& program);
@@ -38,7 +39,7 @@ private:
     const char* getCppType(_LetString* typeIdentifierName);
     bool isClass(_LetString& name);
     void indentHeader();
-    
+
 public:
     virtual bool openProgram(Program& program);
     virtual void closeProgram(Program& program);

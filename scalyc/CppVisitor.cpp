@@ -268,6 +268,12 @@ void CppVisitor::visitIdentifierFunction(IdentifierFunction& identifierFunction)
 bool CppVisitor::openFunctionSignature(FunctionSignature& functionSignature) {
     if (!functionSignature.result)
         (*headerFile) += "void";
+    else {
+        if (functionSignature.result->resultType->_isTypeIdentifier()) {
+            TypeIdentifier* typeId = (TypeIdentifier*)functionSignature.result->resultType;
+            (*headerFile) += getCppType(typeId->name);
+            if (isClass(*typeId->name)) {
+                (*headerFile) += "*"; } } }
     (*headerFile) += " ";
     (*headerFile) += *identifierFunctionName;
     return true;
@@ -277,7 +283,7 @@ void CppVisitor::closeFunctionSignature(FunctionSignature& functionSignature) {
 }
 
 bool CppVisitor::openFunctionResult(FunctionResult& functionResult) {
-    return true;
+    return false;
 }
 
 void CppVisitor::closeFunctionResult(FunctionResult& functionResult) {
@@ -303,12 +309,6 @@ bool CppVisitor::openConstParameter(ConstParameter& constParameter) {
         firstParameter = false;
 
     constParameter.type->accept(*this);
-    if (constParameter.type->_isTypeIdentifier()) {
-        TypeIdentifier& typeIdentifier = *(TypeIdentifier*)constParameter.type;
-        if (isClass(*typeIdentifier.name)) {
-            (*headerFile) += "*";
-        }
-    }
 
     (*headerFile) += " ";
     (*headerFile) += *constParameter.name;
@@ -480,10 +480,12 @@ void CppVisitor::closeClassMember(ClassMember& classMember) {
 }
 
 bool CppVisitor::openCodeBlock(CodeBlock& codeBlock) {
+    codeBlockLevel++;
     return true;
 }
 
 void CppVisitor::closeCodeBlock(CodeBlock& codeBlock) {
+    codeBlockLevel--;
 }
 
 bool CppVisitor::openSimpleExpression(SimpleExpression& simpleExpression) {
@@ -709,14 +711,14 @@ void CppVisitor::visitWildcardPattern(WildcardPattern& wildcardPattern) {
 }
 
 bool CppVisitor::openIdentifierPattern(IdentifierPattern& identifierPattern) {
-    identifierPatternIdentifier = identifierPattern.identifier;
-    if (identifierPattern.annotationForType) {
-        identifierPattern.annotationForType->accept(*this);
-        (*headerFile) += " ";
-    }
-    (*headerFile) += *identifierPattern.identifier;
-    return false;
-}
+    if (!codeBlockLevel) {
+        identifierPatternIdentifier = identifierPattern.identifier;
+        if (identifierPattern.annotationForType) {
+            identifierPattern.annotationForType->accept(*this);
+            (*headerFile) += " ";
+        }
+        (*headerFile) += *identifierPattern.identifier; }
+    return false; }
 
 void CppVisitor::closeIdentifierPattern(IdentifierPattern& identifierPattern) {
     identifierPatternIdentifier = 0;
@@ -816,10 +818,10 @@ void CppVisitor::closeTypeAnnotation(TypeAnnotation& annotationForType) {
 bool CppVisitor::openTypeIdentifier(TypeIdentifier& typeIdentifier) {
     typeIdentifierName = typeIdentifier.name;
 
-    (*headerFile) += getCppType(typeIdentifierName);
-    if ((!inParameterClause) && (isClass(*typeIdentifierName))) {
-        (*headerFile) += "*";
-    }
+    if (!codeBlockLevel) {
+        (*headerFile) += getCppType(typeIdentifierName);
+        if (isClass(*typeIdentifierName)) {
+            (*headerFile) += "*"; } }
     return true;
 }
 

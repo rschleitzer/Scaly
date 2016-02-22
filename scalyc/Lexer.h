@@ -108,8 +108,8 @@ public:
     size_t column;
     Lexer(_LetString* text);
     void advance();
-    Identifier& scanIdentifier(_Page* _rp);
-    Operator& scanOperator(_Page* _rp, bool includeDots);
+    Identifier* scanIdentifier(_Page* _rp);
+    Operator* scanOperator(_Page* _rp, bool includeDots);
     NumericLiteral* scanNumericLiteral(_Page* _rp);
     Token* scanStringLiteral(_Page* _rp);
     bool parseKeyword(const char* fixedString);
