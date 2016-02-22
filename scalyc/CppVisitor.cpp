@@ -263,9 +263,13 @@ void CppVisitor::visitStaticWord(StaticWord& staticWord) {
 }
 
 void CppVisitor::visitIdentifierFunction(IdentifierFunction& identifierFunction) {
-}
+    this->identifierFunctionName = identifierFunction.name; }
 
 bool CppVisitor::openFunctionSignature(FunctionSignature& functionSignature) {
+    if (!functionSignature.result)
+        (*headerFile) += "void";
+    (*headerFile) += " ";
+    (*headerFile) += *identifierFunctionName;
     return true;
 }
 
