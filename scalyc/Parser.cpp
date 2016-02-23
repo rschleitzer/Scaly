@@ -28,8 +28,23 @@ Parser::Parser(_LetString* fileName, _LetString* text)
   initKeyword(&_LetString::create(getPage(), "init")),
   enumKeyword(&_LetString::create(getPage(), "enum")),
   superKeyword(&_LetString::create(getPage(), "super")),
-  thisKeyword(&_LetString::create(getPage(), "this"))
-{}
+  thisKeyword(&_LetString::create(getPage(), "this")),
+  semicolon(&_LetString::create(getPage(), ";")),
+  equal(&_LetString::create(getPage(), "=")),
+  leftAngular(&_LetString::create(getPage(), "<")),
+  rightAngular(&_LetString::create(getPage(), ">")),
+  comma(&_LetString::create(getPage(), ",")),
+  leftParen(&_LetString::create(getPage(), "(")),
+  rightParen(&_LetString::create(getPage(), ")")),
+  leftCurly(&_LetString::create(getPage(), "{")),
+  rightCurly(&_LetString::create(getPage(), "}")),
+  leftBracket(&_LetString::create(getPage(), "[")),
+  rightBracket(&_LetString::create(getPage(), "]")),
+  colon(&_LetString::create(getPage(), ":")),
+  dot(&_LetString::create(getPage(), ".")),
+  questionMark(&_LetString::create(getPage(), "?")),
+  underscore(&_LetString::create(getPage(), "_")),
+  evaluatesTo(&_LetString::create(getPage(), "->")) {}
 
 _Result<CompilationUnit, ParserError> Parser::parseCompilationUnit(_Page* _rp, _Page* _ep) {
     Position start = lexer.getPreviousPosition();

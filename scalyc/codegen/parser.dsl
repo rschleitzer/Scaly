@@ -154,7 +154,7 @@ private:
 "    _LetString* "(name keyword)";
 "   )))
     (apply-to-selected-children "punctuation" (lambda (punctuation) ($
-"    const char* "(id punctuation)" = \""(value punctuation)"\";
+"    _LetString* "(id punctuation)";
 "   )))
 "};
 
@@ -173,12 +173,15 @@ namespace scalyc {
 
 Parser::Parser(_LetString* fileName, _LetString* text)
 : lexer(text), fileName(fileName)"
-(apply-to-selected-children "keyword" (lambda (keyword) ($
+    (apply-to-selected-children "keyword" (lambda (keyword) ($
 ",
   "(name keyword)"(&_LetString::create(getPage(), \""(id keyword)"\"))"
-)))
-"
-{}
+    )))
+    (apply-to-selected-children "punctuation" (lambda (punctuation) ($
+",
+  "(id punctuation)"(&_LetString::create(getPage(), \""(value punctuation)"\"))"
+    )))
+" {}
 "    (apply-to-selected-children "syntax" (lambda (syntax) (if (program? syntax) "" ($
         (if (multiple? syntax) ($
 "

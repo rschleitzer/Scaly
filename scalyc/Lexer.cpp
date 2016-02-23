@@ -543,12 +543,12 @@ _LetString* Lexer::parseIdentifier(_Page* _rp) {
     return &_LetString::create(_rp, *identifier->name);
 }
 
-bool Lexer::parsePunctuation(const char* fixedString) {
+bool Lexer::parsePunctuation(_LetString* fixedString) {
     if (!(token->_isPunctuation()))
         return false;
 
     Punctuation* punctuation = (Punctuation*)token;
-    return *punctuation->sign == fixedString;
+    return *punctuation->sign == *fixedString;
 }
 
 _LetString* Lexer::parseOperator(_Page* _rp) {

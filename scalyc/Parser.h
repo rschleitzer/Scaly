@@ -287,22 +287,22 @@ private:
     _LetString* enumKeyword;
     _LetString* superKeyword;
     _LetString* thisKeyword;
-    const char* semicolon = ";";
-    const char* equal = "=";
-    const char* leftAngular = "<";
-    const char* rightAngular = ">";
-    const char* comma = ",";
-    const char* leftParen = "(";
-    const char* rightParen = ")";
-    const char* leftCurly = "{";
-    const char* rightCurly = "}";
-    const char* leftBracket = "[";
-    const char* rightBracket = "]";
-    const char* colon = ":";
-    const char* dot = ".";
-    const char* questionMark = "?";
-    const char* underscore = "_";
-    const char* evaluatesTo = "->";
+    _LetString* semicolon;
+    _LetString* equal;
+    _LetString* leftAngular;
+    _LetString* rightAngular;
+    _LetString* comma;
+    _LetString* leftParen;
+    _LetString* rightParen;
+    _LetString* leftCurly;
+    _LetString* rightCurly;
+    _LetString* leftBracket;
+    _LetString* rightBracket;
+    _LetString* colon;
+    _LetString* dot;
+    _LetString* questionMark;
+    _LetString* underscore;
+    _LetString* evaluatesTo;
 };
 
 }
