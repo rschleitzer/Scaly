@@ -461,7 +461,7 @@ class Parser {
         {
             let start: Position = lexer.getPosition()
             let result: Expression node = parseExpression() catch _(error) {
-                throw (error)
+                 null
             }
 
             if functionDeclaration == null
@@ -544,7 +544,7 @@ class Parser {
         let start: Position = lexer.getPreviousPosition()
 
         {
-            let node: Override = parseOverride() catch _(error) {
+            let node: OverrideWord = parseOverrideWord() catch _(error) {
                 errors.push(error)
                 break
             }
@@ -564,19 +564,19 @@ class Parser {
         throw ParserError.UnableToParse(start, errors)
     }
 
-    function parseOverride() -> Override throws ParserError {
-        mutable override: Override? = null
+    function parseOverrideWord() -> OverrideWord throws ParserError {
+        mutable overrideWord: OverrideWord? = null
         {
             let start: Position = lexer.getPosition()
             let success: bool = lexer.parseKeyword(overrideKeyword)
             if success
                 lexer.advance()
 
-            if override == null
-                override = Override(start, lexer.getPosition())
+            if overrideWord == null
+                overrideWord = OverrideWord(start, lexer.getPosition())
         }
 
-        return override
+        return overrideWord
     }
 
     function parseStaticWord() -> StaticWord throws ParserError {
@@ -1187,12 +1187,29 @@ class Parser {
         }
         {
             let start: Position = lexer.getPosition()
+            let result: ClassBody node = parseClassBody() catch _(error) {
+                 null
+            }
+
+            if classDeclaration == null
+                classDeclaration = ClassDeclaration(start, lexer.getPosition())
+
+            classDeclaration.body = node
+        }
+
+        return classDeclaration
+    }
+
+    function parseClassBody() -> ClassBody throws ParserError {
+        mutable classBody: ClassBody? = null
+        {
+            let start: Position = lexer.getPosition()
             let success: bool = lexer.parsePunctuation(leftCurly)
             if success
                 lexer.advance()
 
-            if classDeclaration == null
-                classDeclaration = ClassDeclaration(start, lexer.getPosition())
+            if classBody == null
+                classBody = ClassBody(start, lexer.getPosition())
         }
         {
             let start: Position = lexer.getPosition()
@@ -1200,10 +1217,10 @@ class Parser {
                  null
             }
 
-            if classDeclaration == null
-                classDeclaration = ClassDeclaration(start, lexer.getPosition())
+            if classBody == null
+                classBody = ClassBody(start, lexer.getPosition())
 
-            classDeclaration.members = node
+            classBody.members = node
         }
         {
             let start: Position = lexer.getPosition()
@@ -1211,11 +1228,11 @@ class Parser {
             if success
                 lexer.advance()
 
-            if classDeclaration == null
-                classDeclaration = ClassDeclaration(start, lexer.getPosition())
+            if classBody == null
+                classBody = ClassBody(start, lexer.getPosition())
         }
 
-        return classDeclaration
+        return classBody
     }
 
     function parseGenericArgumentClause() -> GenericArgumentClause throws ParserError {

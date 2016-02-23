@@ -188,17 +188,17 @@ public:
 
     virtual void accept(SyntaxVisitor& visitor) = 0;
 
-    virtual bool _isOverride();
+    virtual bool _isOverrideWord();
     virtual bool _isStaticWord();
 };
 
-class Override : public Modifier {
+class OverrideWord : public Modifier {
 public:
-    Override(Position* start, Position* end);
+    OverrideWord(Position* start, Position* end);
 
     virtual void accept(SyntaxVisitor& visitor);
 
-    virtual bool _isOverride();
+    virtual bool _isOverrideWord();
 };
 
 class StaticWord : public Modifier {
@@ -351,15 +351,23 @@ public:
 
 class ClassDeclaration : public Declaration {
 public:
-    ClassDeclaration(_LetString* name, GenericArgumentClause* genericArgumentClause, TypeInheritanceClause* typeInheritanceClause, _Vector<ClassMember>* members, Position* start, Position* end);
+    ClassDeclaration(_LetString* name, GenericArgumentClause* genericArgumentClause, TypeInheritanceClause* typeInheritanceClause, ClassBody* body, Position* start, Position* end);
 
     virtual void accept(SyntaxVisitor& visitor);
     _LetString* name;
     GenericArgumentClause* genericArgumentClause;
     TypeInheritanceClause* typeInheritanceClause;
-    _Vector<ClassMember>* members;
+    ClassBody* body;
 
     virtual bool _isClassDeclaration();
+};
+
+class ClassBody : public SyntaxNode {
+public:
+    ClassBody(_Vector<ClassMember>* members, Position* start, Position* end);
+
+    virtual void accept(SyntaxVisitor& visitor);
+    _Vector<ClassMember>* members;
 };
 
 class GenericArgumentClause : public SyntaxNode {

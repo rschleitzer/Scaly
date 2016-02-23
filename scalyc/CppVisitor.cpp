@@ -257,7 +257,7 @@ bool CppVisitor::openInitializerDeclaration(InitializerDeclaration& initializerD
 void CppVisitor::closeInitializerDeclaration(InitializerDeclaration& initializerDeclaration) {
 }
 
-void CppVisitor::visitOverride(Override& override) {
+void CppVisitor::visitOverrideWord(OverrideWord& overrideWord) {
 }
 
 void CppVisitor::visitStaticWord(StaticWord& staticWord) {
@@ -442,6 +442,13 @@ void CppVisitor::closeClassDeclaration(ClassDeclaration& classDeclaration) {
     headerIndentLevel--;
     classDeclarationName = 0;
     (*headerFile) += "\n};";
+}
+
+bool CppVisitor::openClassBody(ClassBody& classBody) {
+    return true;
+}
+
+void CppVisitor::closeClassBody(ClassBody& classBody) {
 }
 
 void CppVisitor::indentHeader() {

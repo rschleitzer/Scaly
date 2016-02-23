@@ -470,9 +470,6 @@ _Result<FunctionDeclaration, ParserError> Parser::parseFunctionDeclaration(_Page
     if (_result_body.succeeded()) {
         body = _result_body.getResult();
     }
-    else {
-        return _Result<FunctionDeclaration, ParserError>(_result_body.getError());
-    }
     FunctionDeclaration* functionDeclaration = new(_rp) FunctionDeclaration(modifiers, name, signature, body, start, lexer.getPosition(_rp));
     return _Result<FunctionDeclaration, ParserError>(functionDeclaration);
 }
@@ -541,7 +538,7 @@ _Result<Modifier, ParserError> Parser::parseModifier(_Page* _rp, _Page* _ep) {
     {
         // Make a region for the current block and get the Page
         _Region _r; _Page* _p = _r.get();
-        _Result<Override, ParserError> result = parseOverride(_rp, _p);
+        _Result<OverrideWord, ParserError> result = parseOverrideWord(_rp, _p);
         if (result.succeeded())
             return _Result<Modifier, ParserError>(result.getResult());
         else
@@ -559,7 +556,7 @@ _Result<Modifier, ParserError> Parser::parseModifier(_Page* _rp, _Page* _ep) {
     return _Result<Modifier, ParserError>(new(_ep) ParserError(new(_ep) UnableToParse(start, errors)));
 }
 
-_Result<Override, ParserError> Parser::parseOverride(_Page* _rp, _Page* _ep) {
+_Result<OverrideWord, ParserError> Parser::parseOverrideWord(_Page* _rp, _Page* _ep) {
     Position* start = lexer.getPreviousPosition(_rp);
     Position* startOverride1 = lexer.getPreviousPosition(_rp);
     bool successOverride1 = lexer.parseKeyword(overrideKeyword);
@@ -567,10 +564,10 @@ _Result<Override, ParserError> Parser::parseOverride(_Page* _rp, _Page* _ep) {
         lexer.advance();
     }
     else {
-        return _Result<Override, ParserError>(new(_ep) ParserError(new(_ep) KeywordExpected(startOverride1, &_LetString::create(_ep, *overrideKeyword))));
+        return _Result<OverrideWord, ParserError>(new(_ep) ParserError(new(_ep) KeywordExpected(startOverride1, &_LetString::create(_ep, *overrideKeyword))));
     }
-    Override* override = new(_rp) Override(start, lexer.getPosition(_rp));
-    return _Result<Override, ParserError>(override);
+    OverrideWord* overrideWord = new(_rp) OverrideWord(start, lexer.getPosition(_rp));
+    return _Result<OverrideWord, ParserError>(overrideWord);
 }
 
 _Result<StaticWord, ParserError> Parser::parseStaticWord(_Page* _rp, _Page* _ep) {
@@ -1104,29 +1101,40 @@ _Result<ClassDeclaration, ParserError> Parser::parseClassDeclaration(_Page* _rp,
     if (_result_typeInheritanceClause.succeeded()) {
         typeInheritanceClause = _result_typeInheritanceClause.getResult();
     }
-    Position* startLeftCurly5 = lexer.getPreviousPosition(_rp);
-    bool successLeftCurly5 = lexer.parsePunctuation(leftCurly);
-    if (successLeftCurly5) {
+    _Result<ClassBody, ParserError> _result_body = parseClassBody(_rp, _ep);
+    ClassBody* body = 0;
+    if (_result_body.succeeded()) {
+        body = _result_body.getResult();
+    }
+    ClassDeclaration* classDeclaration = new(_rp) ClassDeclaration(name, genericArgumentClause, typeInheritanceClause, body, start, lexer.getPosition(_rp));
+    return _Result<ClassDeclaration, ParserError>(classDeclaration);
+}
+
+_Result<ClassBody, ParserError> Parser::parseClassBody(_Page* _rp, _Page* _ep) {
+    Position* start = lexer.getPreviousPosition(_rp);
+    Position* startLeftCurly1 = lexer.getPreviousPosition(_rp);
+    bool successLeftCurly1 = lexer.parsePunctuation(leftCurly);
+    if (successLeftCurly1) {
         lexer.advance();
     }
     else {
-        return _Result<ClassDeclaration, ParserError>(new(_ep) ParserError(new(_ep) PunctuationExpected(startLeftCurly5, &_LetString::create(_ep, *leftCurly))));
+        return _Result<ClassBody, ParserError>(new(_ep) ParserError(new(_ep) PunctuationExpected(startLeftCurly1, &_LetString::create(_ep, *leftCurly))));
     }
     _Result<_Vector<ClassMember>, ParserError> _result_members = parseClassMemberList(_rp, _ep);
     _Vector<ClassMember>* members = 0;
     if (_result_members.succeeded()) {
         members = _result_members.getResult();
     }
-    Position* startRightCurly7 = lexer.getPreviousPosition(_rp);
-    bool successRightCurly7 = lexer.parsePunctuation(rightCurly);
-    if (successRightCurly7) {
+    Position* startRightCurly3 = lexer.getPreviousPosition(_rp);
+    bool successRightCurly3 = lexer.parsePunctuation(rightCurly);
+    if (successRightCurly3) {
         lexer.advance();
     }
     else {
-        return _Result<ClassDeclaration, ParserError>(new(_ep) ParserError(new(_ep) PunctuationExpected(startRightCurly7, &_LetString::create(_ep, *rightCurly))));
+        return _Result<ClassBody, ParserError>(new(_ep) ParserError(new(_ep) PunctuationExpected(startRightCurly3, &_LetString::create(_ep, *rightCurly))));
     }
-    ClassDeclaration* classDeclaration = new(_rp) ClassDeclaration(name, genericArgumentClause, typeInheritanceClause, members, start, lexer.getPosition(_rp));
-    return _Result<ClassDeclaration, ParserError>(classDeclaration);
+    ClassBody* classBody = new(_rp) ClassBody(members, start, lexer.getPosition(_rp));
+    return _Result<ClassBody, ParserError>(classBody);
 }
 
 _Result<GenericArgumentClause, ParserError> Parser::parseGenericArgumentClause(_Page* _rp, _Page* _ep) {

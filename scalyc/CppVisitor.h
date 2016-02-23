@@ -71,7 +71,7 @@ public:
     virtual void closeFunctionDeclaration(FunctionDeclaration& functionDeclaration);
     virtual bool openInitializerDeclaration(InitializerDeclaration& initializerDeclaration);
     virtual void closeInitializerDeclaration(InitializerDeclaration& initializerDeclaration);
-    virtual void visitOverride(Override& override);
+    virtual void visitOverrideWord(OverrideWord& overrideWord);
     virtual void visitStaticWord(StaticWord& staticWord);
     virtual void visitIdentifierFunction(IdentifierFunction& identifierFunction);
     _LetString* identifierFunctionName;
@@ -105,6 +105,8 @@ public:
     virtual bool openClassDeclaration(ClassDeclaration& classDeclaration);
     virtual void closeClassDeclaration(ClassDeclaration& classDeclaration);
     _LetString* classDeclarationName;
+    virtual bool openClassBody(ClassBody& classBody);
+    virtual void closeClassBody(ClassBody& classBody);
     virtual bool openGenericArgumentClause(GenericArgumentClause& genericArgumentClause);
     virtual void closeGenericArgumentClause(GenericArgumentClause& genericArgumentClause);
     virtual void visitGenericParameter(GenericParameter& genericParameter);

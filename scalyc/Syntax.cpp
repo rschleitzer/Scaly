@@ -207,7 +207,8 @@ void FunctionDeclaration::accept(SyntaxVisitor& visitor) {
     }
     name->accept(visitor);
     signature->accept(visitor);
-    body->accept(visitor);
+    if (body)
+        body->accept(visitor);
     visitor.closeFunctionDeclaration(*this);
 }
 
@@ -237,16 +238,16 @@ void InitializerDeclaration::accept(SyntaxVisitor& visitor) {
 Modifier::Modifier(Position* start, Position* end)
 : SyntaxNode(start, end) {}
 
-bool Modifier::_isOverride() { return false; }
+bool Modifier::_isOverrideWord() { return false; }
 bool Modifier::_isStaticWord() { return false; }
 
-Override::Override(Position* start, Position* end)
+OverrideWord::OverrideWord(Position* start, Position* end)
 : Modifier(start, end) {}
 
-bool Override::_isOverride() { return true; }
+bool OverrideWord::_isOverrideWord() { return true; }
 
-void Override::accept(SyntaxVisitor& visitor) {
-    visitor.visitOverride(*this);
+void OverrideWord::accept(SyntaxVisitor& visitor) {
+    visitor.visitOverrideWord(*this);
 }
 
 StaticWord::StaticWord(Position* start, Position* end)
@@ -437,8 +438,8 @@ void AdditionalCase::accept(SyntaxVisitor& visitor) {
     visitor.closeAdditionalCase(*this);
 }
 
-ClassDeclaration::ClassDeclaration(_LetString* name, GenericArgumentClause* genericArgumentClause, TypeInheritanceClause* typeInheritanceClause, _Vector<ClassMember>* members, Position* start, Position* end)
-: Declaration(start, end), name(name), genericArgumentClause(genericArgumentClause), typeInheritanceClause(typeInheritanceClause), members(members) {}
+ClassDeclaration::ClassDeclaration(_LetString* name, GenericArgumentClause* genericArgumentClause, TypeInheritanceClause* typeInheritanceClause, ClassBody* body, Position* start, Position* end)
+: Declaration(start, end), name(name), genericArgumentClause(genericArgumentClause), typeInheritanceClause(typeInheritanceClause), body(body) {}
 
 bool ClassDeclaration::_isClassDeclaration() { return true; }
 
@@ -449,6 +450,17 @@ void ClassDeclaration::accept(SyntaxVisitor& visitor) {
         genericArgumentClause->accept(visitor);
     if (typeInheritanceClause)
         typeInheritanceClause->accept(visitor);
+    if (body)
+        body->accept(visitor);
+    visitor.closeClassDeclaration(*this);
+}
+
+ClassBody::ClassBody(_Vector<ClassMember>* members, Position* start, Position* end)
+: SyntaxNode(start, end), members(members) {}
+
+void ClassBody::accept(SyntaxVisitor& visitor) {
+    if (!visitor.openClassBody(*this))
+        return;
     if (members) {
         ClassMember* node = 0;
         size_t _alength = members->length();
@@ -457,7 +469,7 @@ void ClassDeclaration::accept(SyntaxVisitor& visitor) {
             node->accept(visitor);
         }
     }
-    visitor.closeClassDeclaration(*this);
+    visitor.closeClassBody(*this);
 }
 
 GenericArgumentClause::GenericArgumentClause(_Vector<GenericParameter>* genericParameters, Position* start, Position* end)

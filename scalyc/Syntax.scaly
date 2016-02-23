@@ -254,7 +254,9 @@ class FunctionDeclaration : Declaration {
         }
         name!.accept(visitor)
         signature!.accept(visitor)
-        body!.accept(visitor)
+        if body != nil {
+            body!.accept(visitor)
+        }
         visitor.closeFunctionDeclaration(this)
     }
 
@@ -304,15 +306,15 @@ class Modifier : SyntaxNode {
 
 }
 
-class Override : Modifier {
+class OverrideWord : Modifier {
 
     init(start: Position, end: Position) {
         super.init(start, end)
     }
 
     override function accept(mutable visitor: SyntaxVisitor) {
-        visitor.openOverride(this)
-        visitor.closeOverride(this)
+        visitor.openOverrideWord(this)
+        visitor.closeOverrideWord(this)
     }
 
 }
@@ -596,10 +598,8 @@ class ClassDeclaration : Declaration {
         if typeInheritanceClause != nil {
             typeInheritanceClause!.accept(visitor)
         }
-        if members != nil {
-            for node in members! {
-                node.accept(visitor)
-            }
+        if body != nil {
+            body!.accept(visitor)
         }
         visitor.closeClassDeclaration(this)
     }
@@ -607,6 +607,25 @@ class ClassDeclaration : Declaration {
     let name: String?
     let genericArgumentClause: GenericArgumentClause?
     let typeInheritanceClause: TypeInheritanceClause?
+    let body: ClassBody?
+}
+
+class ClassBody : SyntaxNode {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    function accept(mutable visitor: SyntaxVisitor) {
+        visitor.openClassBody(this)
+        if members != nil {
+            for node in members! {
+                node.accept(visitor)
+            }
+        }
+        visitor.closeClassBody(this)
+    }
+
     let members: [ClassMember]?
 }
 

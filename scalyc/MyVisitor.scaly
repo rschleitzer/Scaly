@@ -87,7 +87,7 @@ class MyVisitor {
     function closeInitializerDeclaration(initializerDeclaration: InitializerDeclaration) { }
 
 
-    function visitOverride(override: Override) { }
+    function visitOverrideWord(overrideWord: OverrideWord) { }
 
 
     function visitStaticWord(staticWord: StaticWord) { }
@@ -184,6 +184,12 @@ class MyVisitor {
         classDeclarationName = null }
 
     String classDeclarationName;
+
+    function openClassBody(classBody: ClassBody) -> bool {
+        return true; }
+
+    function closeClassBody(classBody: ClassBody) { }
+
 
     function openGenericArgumentClause(genericArgumentClause: GenericArgumentClause) -> bool {
         return true; }

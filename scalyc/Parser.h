@@ -45,7 +45,7 @@ public:
     _Result<_Vector<Modifier>, ParserError> parseModifierList(_Page* _rp, _Page* _ep);
     _Result<Modifier, ParserError> parseModifier(_Page* _rp, _Page* _ep);
 
-    _Result<Override, ParserError> parseOverride(_Page* _rp, _Page* _ep);
+    _Result<OverrideWord, ParserError> parseOverrideWord(_Page* _rp, _Page* _ep);
 
     _Result<StaticWord, ParserError> parseStaticWord(_Page* _rp, _Page* _ep);
 
@@ -85,6 +85,8 @@ public:
     _Result<AdditionalCase, ParserError> parseAdditionalCase(_Page* _rp, _Page* _ep);
 
     _Result<ClassDeclaration, ParserError> parseClassDeclaration(_Page* _rp, _Page* _ep);
+
+    _Result<ClassBody, ParserError> parseClassBody(_Page* _rp, _Page* _ep);
 
     _Result<GenericArgumentClause, ParserError> parseGenericArgumentClause(_Page* _rp, _Page* _ep);
 

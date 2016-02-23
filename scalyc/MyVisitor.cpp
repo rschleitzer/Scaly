@@ -101,7 +101,7 @@ bool MyVisitor::openInitializerDeclaration(InitializerDeclaration& initializerDe
 void MyVisitor::closeInitializerDeclaration(InitializerDeclaration& initializerDeclaration) {
 }
 
-void MyVisitor::visitOverride(Override& override) {
+void MyVisitor::visitOverrideWord(OverrideWord& overrideWord) {
 }
 
 void MyVisitor::visitStaticWord(StaticWord& staticWord) {
@@ -203,6 +203,13 @@ bool MyVisitor::openClassDeclaration(ClassDeclaration& classDeclaration) {
 
 void MyVisitor::closeClassDeclaration(ClassDeclaration& classDeclaration) {
     classDeclarationName = 0;
+}
+
+bool MyVisitor::openClassBody(ClassBody& classBody) {
+    return true;
+}
+
+void MyVisitor::closeClassBody(ClassBody& classBody) {
 }
 
 bool MyVisitor::openGenericArgumentClause(GenericArgumentClause& genericArgumentClause) {
