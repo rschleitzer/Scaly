@@ -360,7 +360,7 @@ class Lexer {
         } while true
     }
 
-    function parseKeyword(fixedString: string) -> bool {
+    function parseKeyword(fixedString: String) -> bool {
         if !(token is Identifier)
             return false
 
@@ -383,7 +383,7 @@ class Lexer {
         return token as Literal
     }
 
-    function parsePunctuation(fixedString: string) -> bool {
+    function parsePunctuation(fixedString: String) -> bool {
         if !(token is Punctuation)
             return false
 
