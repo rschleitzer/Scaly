@@ -112,7 +112,7 @@ public:
     Operator* scanOperator(_Page* _rp, bool includeDots);
     NumericLiteral* scanNumericLiteral(_Page* _rp);
     Token* scanStringLiteral(_Page* _rp);
-    bool parseKeyword(const char* fixedString);
+    bool parseKeyword(_LetString* fixedString);
     _LetString* parseIdentifier(_Page* _rp);
     Literal* parseLiteral(_Page* _rp);
     bool parsePunctuation(const char* fixedString);
@@ -130,5 +130,4 @@ public:
 };
 
 }
-
 #endif // __scaly__Lexer__

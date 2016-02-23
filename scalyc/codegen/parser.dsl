@@ -133,7 +133,7 @@ namespace scalyc {
 
 class Parser : public Object {
 public:
-    Parser(_LetString* fileName, _LetString& text);
+    Parser(_LetString* fileName, _LetString* text);
 "
     (apply-to-selected-children "syntax" (lambda (syntax) (if (program? syntax) "" ($
 "
@@ -151,7 +151,7 @@ private:
     _LetString* fileName;
 
 "   (apply-to-selected-children "keyword" (lambda (keyword) ($
-"    const char* "(name keyword)" = \""(id keyword)"\";
+"    _LetString* "(name keyword)";
 "   )))
     (apply-to-selected-children "punctuation" (lambda (punctuation) ($
 "    const char* "(id punctuation)" = \""(value punctuation)"\";
@@ -171,9 +171,14 @@ private:
 using namespace scaly;
 namespace scalyc {
 
-Parser::Parser(_LetString* fileName, _LetString& text)
-: lexer(text), fileName(fileName) {
-}
+Parser::Parser(_LetString* fileName, _LetString* text)
+: lexer(text), fileName(fileName)"
+(apply-to-selected-children "keyword" (lambda (keyword) ($
+",
+  "(name keyword)"(&_LetString::create(getPage(), \""(id keyword)"\"))"
+)))
+"
+{}
 "    (apply-to-selected-children "syntax" (lambda (syntax) (if (program? syntax) "" ($
         (if (multiple? syntax) ($
 "
@@ -254,7 +259,7 @@ _Result<"(id syntax)", ParserError> Parser::parse"(id syntax)"(_Page* _rp, _Page
 "    else {
         return _Result<"(id syntax)", ParserError>("(if (string=? (type content) "syntax") ($ "_result_"(property content)".getError()") ($ "new(_ep) ParserError(*new(_ep) "
         (case (type content) (("keyword") "Keyword") (("punctuation") "Punctuation")(("identifier") "Identifier")(("literal") "Literal")(("prefixoperator" "binaryoperator" "postfixoperator") "Operator"))
-        "Expected(start"(if (property content) (string-firstchar-upcase (property content)) ($ (string-firstchar-upcase (link content))(number->string (child-number content))))(case (type content) (("keyword" "punctuation") ($ ", _LetString::create(_ep, "((if (string=? (type content) "keyword") name-of-link link) content)")"))(else ""))"))"))");
+        "Expected(start"(if (property content) (string-firstchar-upcase (property content)) ($ (string-firstchar-upcase (link content))(number->string (child-number content))))(case (type content) (("keyword" "punctuation") ($ ", _LetString::create(_ep, *"((if (string=? (type content) "keyword") name-of-link link) content)")"))(else ""))"))"))");
     }
 "                   ))
                 ))) ; apply to children of syntax
@@ -281,7 +286,7 @@ bool Parser::isAtEnd() {
 bool Parser::isIdentifier(_LetString& id) {"
    (apply-to-selected-children "keyword" (lambda (keyword) ($
 "
-    if (id == "(name keyword)")
+    if (id == *"(name keyword)")
         return false;
 "   )))
 "

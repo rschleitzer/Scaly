@@ -527,12 +527,12 @@ void Lexer::handleMultiLineComment() {
     while (true);
 }
 
-bool Lexer::parseKeyword(const char* fixedString) {
+bool Lexer::parseKeyword(_LetString* fixedString) {
     if (!(token->_isIdentifier()))
         return false;
 
     Identifier* identifier = (Identifier*)token;
-    return *identifier->name == fixedString;
+    return *identifier->name == *fixedString;
 }
 
 _LetString* Lexer::parseIdentifier(_Page* _rp) {
