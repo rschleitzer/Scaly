@@ -131,4 +131,4 @@ public:
 
 }
 
-#endif /* defined(__scalyc__Lexer__) */
+#endif // __scaly__Lexer__
