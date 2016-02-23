@@ -314,6 +314,23 @@ class Lexer {
         } while true
     }
 
+    function scanNumericLiteral() -> NumericLiteral {    
+        mutable value: String = String(text[position])
+
+        do {
+            position++ column++
+            
+            if position == end
+                return NumericLiteral(value)
+            
+            let c: character = text[position]
+            if (c >= "0") && (c <= "9")
+                value += text[position]
+            else
+                return NumericLiteral(value)
+        } while true
+    }
+
     function scanStringLiteral() -> Token {
         mutable value: String = String("")
 
@@ -343,21 +360,74 @@ class Lexer {
         } while true
     }
 
-    function scanNumericLiteral() -> NumericLiteral {    
-        mutable value: String = String(text[position])
+    function parseKeyword(fixedString: string) -> bool {
+        if !(token is Identifier)
+            return false
 
-        do {
-            position++ column++
-            
-            if position == end
-                return NumericLiteral(value)
-            
-            let c: character = text[position]
-            if (c >= "0") && (c <= "9")
-                value += text[position]
-            else
-                return NumericLiteral(value)
-        } while true
+        let identifier: Identifier = token as Identifier
+        return identifier.name == fixedString
+    }
+
+    function parseIdentifier() -> String? {
+        if !(token is Identifier)
+            return null
+
+        let identifier: Identifier = token as Identifier
+        return String(identifier.name)
+    }
+
+    function parseLiteral() -> Literal? {
+        if !(token is Literal)
+            return null
+
+        return token as Literal
+    }
+
+    function parsePunctuation(fixedString: string) -> bool {
+        if !(token is Punctuation)
+            return false
+
+        let punctuation: Punctuation = token as Punctuation
+        return punctuation.sign == fixedString
+    }
+
+    function parseOperator() -> String? {
+        if !(token is Operator)
+            return null
+
+        let op: Operator = token as Operator
+        return String(op.operation)
+    }
+
+    function parsePrefixOperator() -> String? {
+        if !(token is PrefixOperator)
+            return null
+
+        let op: Operator = token as Operator
+        return String(op.operation)
+    }
+
+    function parseBinaryOperator() -> String? {
+        if !(token is BinaryOperator) {
+            if (token is Punctuation) && ((token as Punctuation).sign == "<") {
+                let op: Operator = token as Operator
+                return String(op.operation)
+            }
+
+            return null
+        }
+
+        let op = token as Operator
+        return String(op.operation)
+    }
+
+
+    function parsePostfixOperator() -> String? {
+        if !(token is PostfixOperator)
+            return null
+
+        let op: Operator = token as Operator
+        return String(op.operation)
     }
 
     function skipWhitespace() -> bool {
@@ -409,6 +479,18 @@ class Lexer {
             }
         } 
         while true
+    }
+
+    function isAtEnd() -> bool {
+        return position == end
+    }
+
+    function getPosition() -> Position {
+        return Position(line, column)
+    }
+
+    function getPreviousPosition() -> Position {
+        return Position(previousLine, previousColumn)
     }
 
     function handleSingleLineComment() {
@@ -491,87 +573,5 @@ class Lexer {
             }
         }
         while true
-    }
-
-    function parseKeyword(fixedString: string) -> bool {
-        if !(token is Identifier)
-            return false
-
-        let identifier: Identifier = token as Identifier
-        return identifier.name == fixedString
-    }
-
-    function parseIdentifier() -> String? {
-        if !(token is Identifier)
-            return null
-
-        let identifier: Identifier = token as Identifier
-        return String(identifier.name)
-    }
-
-    function parsePunctuation(fixedString: string) -> bool {
-        if !(token is Punctuation)
-            return false
-
-        let punctuation: Punctuation = token as Punctuation
-        return punctuation.sign == fixedString
-    }
-
-    function parseOperator() -> String? {
-        if !(token is Operator)
-            return null
-
-        let op: Operator = token as Operator
-        return String(op.operation)
-    }
-
-    function parseLiteral() -> Literal? {
-        if !(token is Literal)
-            return null
-
-        return token as Literal
-    }
-
-    function parsePrefixOperator() -> String? {
-        if !(token is PrefixOperator)
-            return null
-
-        let op: Operator = token as Operator
-        return String(op.operation)
-    }
-
-    function parseBinaryOperator() -> String? {
-        if !(token is BinaryOperator) {
-            if (token is Punctuation) && ((token as Punctuation).sign == "<") {
-                let op: Operator = token as Operator
-                return String(op.operation)
-            }
-
-            return null
-        }
-
-        let op = token as Operator
-        return String(op.operation)
-    }
-
-
-    function parsePostfixOperator() -> String? {
-        if !(token is PostfixOperator)
-            return null
-
-        let op: Operator = token as Operator
-        return String(op.operation)
-    }
-
-    function isAtEnd() -> bool {
-        return position == end
-    }
-
-    function getPosition() -> Position {
-        return Position(line, column)
-    }
-
-    function getPreviousPosition() -> Position {
-        return Position(previousLine, previousColumn)
     }
 }

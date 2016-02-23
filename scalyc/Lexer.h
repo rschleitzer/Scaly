@@ -115,12 +115,12 @@ public:
     bool parseKeyword(const char* fixedString);
     _LetString* parseIdentifier(_Page* _rp);
     Literal* parseLiteral(_Page* _rp);
+    bool parsePunctuation(const char* fixedString);
     _LetString* parseOperator(_Page* _rp);
     _LetString* parsePrefixOperator(_Page* _rp);
     _LetString* parseBinaryOperator(_Page* _rp);
     _LetString* parsePostfixOperator(_Page* _rp);
     bool skipWhitespace();
-    bool parsePunctuation(const char* fixedString);
     bool isAtEnd();
     Position getPosition();
     Position getPreviousPosition();

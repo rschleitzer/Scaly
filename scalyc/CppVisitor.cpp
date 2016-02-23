@@ -250,6 +250,7 @@ void CppVisitor::closeFunctionDeclaration(FunctionDeclaration& functionDeclarati
 
 bool CppVisitor::openInitializerDeclaration(InitializerDeclaration& initializerDeclaration) {
     (*headerFile) += *classDeclarationName;
+    (*headerFile) += "(";
     return true;
 }
 
@@ -276,7 +277,16 @@ bool CppVisitor::openFunctionSignature(FunctionSignature& functionSignature) {
                 (*headerFile) += "*"; } } }
     (*headerFile) += " ";
     (*headerFile) += *identifierFunctionName;
-    return true;
+    (*headerFile) += "(";
+    if ((functionSignature.result) && (functionSignature.result->resultType->_isTypeIdentifier())) {
+        TypeIdentifier* typeId = (TypeIdentifier*)functionSignature.result->resultType;
+        if (isClass(*typeId->name)) {
+            (*headerFile) += "_Page* _rp";
+            if (functionSignature.parameterClause->parameters)
+                (*headerFile) += ", ";
+
+            } }
+   return true;
 }
 
 void CppVisitor::closeFunctionSignature(FunctionSignature& functionSignature) {
@@ -290,15 +300,14 @@ void CppVisitor::closeFunctionResult(FunctionResult& functionResult) {
 }
 
 bool CppVisitor::openParameterClause(ParameterClause& parameterClause) {
-    (*headerFile) += "(";
     firstParameter = true;
     inParameterClause = true;
     return true;
 }
 
 void CppVisitor::closeParameterClause(ParameterClause& parameterClause) {
-    inParameterClause = false;
     (*headerFile) += ")";
+    inParameterClause = false;
 }
 
 bool CppVisitor::openConstParameter(ConstParameter& constParameter) {
