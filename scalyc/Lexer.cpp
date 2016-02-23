@@ -602,12 +602,12 @@ bool Lexer::isAtEnd() {
     return position == end;
 }
 
-Position Lexer::getPosition() {
-    return Position(line, column);
+Position* Lexer::getPosition(_Page* _rp) {
+    return new(_rp) Position(line, column);
 }
 
-Position Lexer::getPreviousPosition() {
-    return Position(previousLine, previousColumn);
+Position* Lexer::getPreviousPosition(_Page* _rp) {
+    return new(_rp) Position(previousLine, previousColumn);
 }
 
 }

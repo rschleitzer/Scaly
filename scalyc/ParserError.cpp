@@ -1,8 +1,8 @@
 #include "scalyc.h"
 using namespace scaly;
 namespace scalyc {
-    
-ParserErrorInfo::ParserErrorInfo(Position& position)
+
+ParserErrorInfo::ParserErrorInfo(Position* position)
 : position(position) {
 }
 
@@ -14,60 +14,60 @@ void* ParserError::getErrorInfo() {
     return errorInfo;
 }
 
-IdentifierExpected::IdentifierExpected(Position& position)
+IdentifierExpected::IdentifierExpected(Position* position)
 : ParserErrorInfo(position) {
 }
 
-IdentifierExpected& ParserError::getIdentifierExpected(){
-    return *(IdentifierExpected*)errorInfo;
+IdentifierExpected* ParserError::getIdentifierExpected(){
+    return (IdentifierExpected*)errorInfo;
 }
 
-LiteralExpected::LiteralExpected(Position& position)
+LiteralExpected::LiteralExpected(Position* position)
 : ParserErrorInfo(position) {
 }
 
-LiteralExpected& ParserError::getLiteralExpected(){
-    return *(LiteralExpected*)errorInfo;
+LiteralExpected* ParserError::getLiteralExpected(){
+    return (LiteralExpected*)errorInfo;
 }
 
-KeywordExpected::KeywordExpected(Position& position, _LetString& keyword)
+KeywordExpected::KeywordExpected(Position* position, _LetString* keyword)
 : ParserErrorInfo(position), keyword(keyword) {
 }
 
-KeywordExpected& ParserError::getKeywordExpected(){
-    return *(KeywordExpected*)errorInfo;
+KeywordExpected* ParserError::getKeywordExpected(){
+    return (KeywordExpected*)errorInfo;
 }
 
-PunctuationExpected::PunctuationExpected(Position& position, _LetString& punctuation)
+PunctuationExpected::PunctuationExpected(Position* position, _LetString* punctuation)
 : ParserErrorInfo(position), punctuation(punctuation) {
 }
 
-PunctuationExpected& ParserError::getPunctuationExpected(){
-    return *(PunctuationExpected*)errorInfo;
+PunctuationExpected* ParserError::getPunctuationExpected(){
+    return (PunctuationExpected*)errorInfo;
 }
 
-OperatorExpected::OperatorExpected(Position& position)
+OperatorExpected::OperatorExpected(Position* position)
 : ParserErrorInfo(position) {
 }
 
-OperatorExpected& ParserError::getOperatorExpected(){
-    return *(OperatorExpected*)errorInfo;
+OperatorExpected* ParserError::getOperatorExpected(){
+    return (OperatorExpected*)errorInfo;
 }
 
-UnableToParse::UnableToParse(Position& position, _Array<ParserError>& errors)
+UnableToParse::UnableToParse(Position* position, _Array<ParserError>*errors)
 : ParserErrorInfo(position), errors(errors) {
 }
 
-UnableToParse& ParserError::getUnableToParse(){
-    return *(UnableToParse*)errorInfo;
+UnableToParse* ParserError::getUnableToParse(){
+    return (UnableToParse*)errorInfo;
 }
 
-NotAtEnd::NotAtEnd(Position& position)
+NotAtEnd::NotAtEnd(Position* position)
 : ParserErrorInfo(position) {
 }
 
-NotAtEnd& ParserError::getNotAtEnd(){
-    return *(NotAtEnd*)errorInfo;
+NotAtEnd* ParserError::getNotAtEnd(){
+    return (NotAtEnd*)errorInfo;
 }
 
 }

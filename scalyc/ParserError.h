@@ -7,47 +7,47 @@ namespace scalyc
 
 class ParserErrorInfo : public Object {
 public:
-    ParserErrorInfo(Position& position);
-    Position& position;
+    ParserErrorInfo(Position* position);
+    Position* position;
 };
 
 class IdentifierExpected : public ParserErrorInfo {
 public:
-    IdentifierExpected(Position& position);
+    IdentifierExpected(Position* position);
 };
 
 class LiteralExpected : public ParserErrorInfo {
 public:
-    LiteralExpected(Position& position);
+    LiteralExpected(Position* position);
 };
 
 class KeywordExpected: public ParserErrorInfo {
 public:
-    KeywordExpected(Position& position, _LetString& keyword);
-    _LetString& keyword; 
+    KeywordExpected(Position* position, _LetString* keyword);
+    _LetString* keyword;
 };
 
 class PunctuationExpected: public ParserErrorInfo {
 public:
-    PunctuationExpected(Position& position, _LetString& punctuation);
-    _LetString& punctuation; 
+    PunctuationExpected(Position* position, _LetString* punctuation);
+    _LetString* punctuation;
 };
 
 class OperatorExpected : public ParserErrorInfo {
 public:
-    OperatorExpected(Position& position);
+    OperatorExpected(Position* position);
 };
 
 class ParserError;
 class UnableToParse: public ParserErrorInfo {
 public:
-    UnableToParse(Position& position, _Array<ParserError>& errors);
-    _Array<ParserError>& errors; 
+    UnableToParse(Position* position, _Array<ParserError>* errors);
+    _Array<ParserError>* errors;
 };
 
 class NotAtEnd : public ParserErrorInfo {
 public:
-    NotAtEnd(Position& position);
+    NotAtEnd(Position* position);
 };
 
 enum _ParserErrorCode {
@@ -63,37 +63,37 @@ enum _ParserErrorCode {
 class ParserError : public Object
 {
 public:
-    ParserError(IdentifierExpected& IdentifierExpected)
-    : errorCode(_ParserError_identifierExpected), errorInfo(&IdentifierExpected) {}
+    ParserError(IdentifierExpected* IdentifierExpected)
+    : errorCode(_ParserError_identifierExpected), errorInfo(IdentifierExpected) {}
 
-    ParserError(LiteralExpected& LiteralExpected)
-    : errorCode(_ParserError_literalExpected), errorInfo(&LiteralExpected) {}
+    ParserError(LiteralExpected* LiteralExpected)
+    : errorCode(_ParserError_literalExpected), errorInfo(LiteralExpected) {}
 
-    ParserError(KeywordExpected& KeywordExpected)
-    : errorCode(_ParserError_keywordExpected), errorInfo(&KeywordExpected) {}
+    ParserError(KeywordExpected* KeywordExpected)
+    : errorCode(_ParserError_keywordExpected), errorInfo(KeywordExpected) {}
 
-    ParserError(PunctuationExpected& PunctuationExpected)
-    : errorCode(_ParserError_punctuationExpected), errorInfo(&PunctuationExpected) {}
+    ParserError(PunctuationExpected* PunctuationExpected)
+    : errorCode(_ParserError_punctuationExpected), errorInfo(PunctuationExpected) {}
 
-    ParserError(OperatorExpected& OperatorExpected)
-    : errorCode(_ParserError_operatorExpected), errorInfo(&OperatorExpected) {}
+    ParserError(OperatorExpected* OperatorExpected)
+    : errorCode(_ParserError_operatorExpected), errorInfo(OperatorExpected) {}
 
-    ParserError(UnableToParse& UnableToParse)
-    : errorCode(_ParserError_unableToParse), errorInfo(&UnableToParse) {}
+    ParserError(UnableToParse* UnableToParse)
+    : errorCode(_ParserError_unableToParse), errorInfo(UnableToParse) {}
 
-    ParserError(NotAtEnd& NotAtEnd)
-    : errorCode(_ParserError_notAtEnd), errorInfo(&NotAtEnd) {}
+    ParserError(NotAtEnd* NotAtEnd)
+    : errorCode(_ParserError_notAtEnd), errorInfo(NotAtEnd) {}
 
     long getErrorCode();
     void* getErrorInfo();
-    
-    IdentifierExpected& getIdentifierExpected();
-    LiteralExpected& getLiteralExpected();
-    KeywordExpected& getKeywordExpected();
-    PunctuationExpected& getPunctuationExpected();
-    OperatorExpected& getOperatorExpected();
-    UnableToParse& getUnableToParse();
-    NotAtEnd& getNotAtEnd();
+
+    IdentifierExpected* getIdentifierExpected();
+    LiteralExpected* getLiteralExpected();
+    KeywordExpected* getKeywordExpected();
+    PunctuationExpected* getPunctuationExpected();
+    OperatorExpected* getOperatorExpected();
+    UnableToParse* getUnableToParse();
+    NotAtEnd* getNotAtEnd();
 
 private:
     _ParserErrorCode errorCode;

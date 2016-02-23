@@ -122,9 +122,8 @@ public:
     _LetString* parsePostfixOperator(_Page* _rp);
     bool skipWhitespace();
     bool isAtEnd();
-    Position getPosition();
-    Position getPreviousPosition();
-
+    Position* getPosition(_Page* _rp);
+    Position* getPreviousPosition(_Page* _rp);
     void handleSingleLineComment();
     void handleMultiLineComment();
 };

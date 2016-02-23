@@ -83,9 +83,9 @@ namespace scalyc {
 
 class SyntaxNode : public Object {
 public:
-    SyntaxNode(Position start, Position end);
-    Position start;
-    Position end;
+    SyntaxNode(Position* start, Position* end);
+    Position* start;
+    Position* end;
 };
 
 "
@@ -126,7 +126,7 @@ public:
         (apply-to-property-children-of syntax-node (lambda (content) ($
             (property-declaration content)(if (properties-remaining? content syntax-node) ", " "")
         )))
-        (if (program? syntax-node) "" ($ (if (node-list-empty? (properties syntax-node)) "" ", ") "Position start, Position end"))))
+        (if (program? syntax-node) "" ($ (if (node-list-empty? (properties syntax-node)) "" ", ") "Position* start, Position* end"))))
 
 (define (property-declaration content)
     (case (type content)
@@ -162,7 +162,7 @@ public:
 using namespace scaly;
 namespace scalyc {
 
-SyntaxNode::SyntaxNode(Position start, Position end)
+SyntaxNode::SyntaxNode(Position* start, Position* end)
 : start(start), end(end) {
 }
 "
@@ -170,7 +170,7 @@ SyntaxNode::SyntaxNode(Position start, Position end)
 "
 "(id syntax-node)"::"(id syntax-node)"("(constructor-parameters syntax-node)")
 : "     (if (program? syntax-node)
-            "SyntaxNode(Position(0, 0), Position(0, 0)), name(name), directory(directory), compilationUnits(compilationUnits)"
+            "SyntaxNode(new(getPage()) Position(0, 0), new(getPage()) Position(0, 0)), name(name), directory(directory), compilationUnits(compilationUnits)"
             (constructor-initializers syntax-node)
         )
 " {}
