@@ -1,3 +1,63 @@
+(define (visitor-scaly concrete) ($
+    (if concrete "" ($
+        (apply-to-selected-children "syntax" (lambda (syntax-node) ($
+"class "(id syntax-node)";
+"
+        )))
+"
+"   ))
+
+"class "(if concrete "MyVisitor" "SyntaxVisitor")" {"
+    (apply-to-selected-children "syntax" (lambda (syntax) (if (abstract? syntax) "" ($
+        (if (has-syntax-children? syntax)
+            ($ "
+    function open"(id syntax)"("(string-firstchar-downcase (id syntax))": "(id syntax)") -> bool"
+                (if concrete
+                    ($ " {
+"                       (apply-to-children-of syntax (lambda (identifier)
+                            (if (identifier? identifier) ($
+"        "(visitor-property syntax identifier)" = "(string-firstchar-downcase (id syntax))"."(property identifier)"
+"                           )"")
+                        ))
+"        return true; }
+"              )
+                    ";"
+                )
+
+"
+    function close"(id syntax)"("(string-firstchar-downcase (id syntax))": "(id syntax)")"
+                (if concrete
+                    ($ " {"
+                        (apply-to-children-of syntax (lambda (identifier)
+                            (if (identifier? identifier) ($
+"
+        "(visitor-property syntax identifier)" = null"
+                            )"")
+                        ))
+" }"                 )
+                    ";"
+                )
+            )
+            ($ "
+    function visit"(id syntax)"("(string-firstchar-downcase (id syntax))": "(id syntax)")"
+                (if concrete " { }"                  ";"
+                )
+            )
+        )
+        (if concrete ($
+"
+"            (apply-to-children-of syntax (lambda (identifier)
+                (if (identifier? identifier) ($
+"
+    String "(visitor-property syntax identifier)";"
+                )"")
+             ))
+"
+"        )"")
+    ))))
+"}"
+))
+
 (define (visitor-h concrete) ($
 "#ifndef __scalyc__"(if concrete "My" "")"Visitor__
 #define __scalyc__"(if concrete "My" "")"Visitor__
@@ -51,7 +111,7 @@ using namespace scaly;
 namespace scalyc {
 
 "
-    (apply-to-selected-children "syntax" (lambda (syntax) (if (abstract? syntax) "" 
+    (apply-to-selected-children "syntax" (lambda (syntax) (if (abstract? syntax) ""
         (if (has-syntax-children? syntax)
             ($
 "

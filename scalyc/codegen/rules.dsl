@@ -19,6 +19,12 @@
         (create-file ($ "MyVisitor.cpp" generated-extension)
             (output (visitor-cpp)))
 
+        (create-file ($ "Visitor.scaly" generated-extension)
+            (output (visitor-scaly #f)))
+
+        (create-file ($ "MyVisitor.scaly" generated-extension)
+            (output (visitor-scaly #t)))
+
         (create-file ($ "Parser.h" generated-extension)
             (output (parser-h)))
 
