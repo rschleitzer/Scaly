@@ -3,7 +3,7 @@ using namespace scaly;
 namespace scalyc {
 
 CppError* CppVisitor::execute(Program* program) {
-    program->accept(*this);
+    program->accept(this);
     return cppError;
 }
 
@@ -331,7 +331,7 @@ void CppVisitor::writeParameter(_LetString* name, Type* parameterType) {
     else
         firstParameter = false;
 
-    parameterType->accept(*this);
+    parameterType->accept(this);
 
     (*headerFile) += " ";
     (*headerFile) += *name;
@@ -747,7 +747,7 @@ bool CppVisitor::openIdentifierPattern(IdentifierPattern* identifierPattern) {
     if (!codeBlockLevel) {
         identifierPatternIdentifier = identifierPattern->identifier;
         if (identifierPattern->annotationForType) {
-            identifierPattern->annotationForType->accept(*this);
+            identifierPattern->annotationForType->accept(this);
             (*headerFile) += " ";
         }
         (*headerFile) += *identifierPattern->identifier; }
@@ -885,7 +885,7 @@ bool CppVisitor::openArrayType(ArrayType* arrayType) {
     if (!codeBlockLevel) {
         (*headerFile) += "_Vector<";
         inArrayType = true;
-        arrayType->elementType->accept(*this);
+        arrayType->elementType->accept(this);
         inArrayType = false;
         (*headerFile) += ">*"; }
     return false;

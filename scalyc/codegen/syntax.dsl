@@ -96,7 +96,7 @@ public:
 class "(id syntax-node)" : public "(if (base syntax-node) (base syntax-node) "SyntaxNode")" {
 public:
     "(id syntax-node)"("(constructor-parameters syntax-node)");
-    virtual void accept(SyntaxVisitor& visitor)"(if (abstract? syntax-node) " = 0" "")";
+    virtual void accept(SyntaxVisitor* visitor)"(if (abstract? syntax-node) " = 0" "")";
 "
         (apply-to-property-children-of syntax-node (lambda (content) ($
 "    "(property-declaration content)";
@@ -204,11 +204,11 @@ bool "(id syntax-node)"::_is"(id syntax-node)"() { return true; }
 "       )"")
        (if (abstract? syntax-node) "" ($
 "
-void "(id syntax-node)"::accept(SyntaxVisitor& visitor) {
+void "(id syntax-node)"::accept(SyntaxVisitor* visitor) {
 "
             (if (has-syntax-children? syntax-node)
                 ($
-"    if (!visitor.open"(id syntax-node)"(this))
+"    if (!visitor->open"(id syntax-node)"(this))
         return;
 "
                     (apply-to-children-of syntax-node (lambda (content)
@@ -241,11 +241,11 @@ void "(id syntax-node)"::accept(SyntaxVisitor& visitor) {
                             (else "")
                         )
                     ))
-"    visitor.close"(id syntax-node)"(this);
+"    visitor->close"(id syntax-node)"(this);
 "
                 )
                 ($
-"    visitor.visit"(id syntax-node)"(this);
+"    visitor->visit"(id syntax-node)"(this);
 "
                 )
             )
