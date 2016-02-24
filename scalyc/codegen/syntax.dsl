@@ -105,12 +105,9 @@ public:
 "    _LetString* fileName;
 "
         "")
-        (if (abstract? syntax-node) ($
-"
-"           (apply-to-nodelist (inheritors syntax-node) (lambda (inheritor) ($
+       (apply-to-nodelist (inheritors syntax-node) (lambda (inheritor) ($
 "    virtual bool _is"(attribute-string "link" inheritor)"();
-"           )))
-        )"")
+"       )))
         (if (base syntax-node) ($
 "
     virtual bool _is"(id syntax-node)"();
@@ -192,15 +189,12 @@ SyntaxNode::SyntaxNode(Position* start, Position* end)
             (constructor-initializers syntax-node)
         )
 " {}
-"        (if (abstract? syntax-node) ($
-"
-"           (apply-to-nodelist (inheritors syntax-node) (lambda (inheritor) ($
+
+"       (apply-to-nodelist (inheritors syntax-node) (lambda (inheritor) ($
 "bool "(id syntax-node)"::_is"(attribute-string "link" inheritor)"() { return false; }
-"           )))
-        )"")
+"       )))
         (if (base syntax-node) ($
-"
-bool "(id syntax-node)"::_is"(id syntax-node)"() { return true; }
+"bool "(id syntax-node)"::_is"(id syntax-node)"() { return true; }
 "       )"")
        (if (abstract? syntax-node) "" ($
 "

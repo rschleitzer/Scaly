@@ -125,6 +125,7 @@ bool SyntaxNode::_isInheritance() { return false; }
 Program::Program(_LetString* name, _LetString* directory, _Vector<CompilationUnit>* compilationUnits)
 : SyntaxNode(new(getPage()) Position(0, 0), new(getPage()) Position(0, 0)), name(name), directory(directory), compilationUnits(compilationUnits) {}
 
+
 void Program::accept(SyntaxVisitor* visitor) {
     if (!visitor->openProgram(this))
         return;
@@ -142,6 +143,7 @@ void Program::accept(SyntaxVisitor* visitor) {
 CompilationUnit::CompilationUnit(_Vector<StatementWithSemicolon>* statements, Position* start, Position* end)
 : SyntaxNode(start, end), statements(statements) {}
 
+
 void CompilationUnit::accept(SyntaxVisitor* visitor) {
     if (!visitor->openCompilationUnit(this))
         return;
@@ -158,6 +160,7 @@ void CompilationUnit::accept(SyntaxVisitor* visitor) {
 
 StatementWithSemicolon::StatementWithSemicolon(Statement* statement, Position* start, Position* end)
 : SyntaxNode(start, end), statement(statement) {}
+
 
 void StatementWithSemicolon::accept(SyntaxVisitor* visitor) {
     if (!visitor->openStatementWithSemicolon(this))
@@ -191,7 +194,6 @@ bool Declaration::_isFunctionDeclaration() { return false; }
 bool Declaration::_isEnumDeclaration() { return false; }
 bool Declaration::_isClassDeclaration() { return false; }
 bool Declaration::_isInitializerDeclaration() { return false; }
-
 bool Declaration::_isDeclaration() { return true; }
 
 UseDeclaration::UseDeclaration(PathItem* importModule, _Vector<PathIdentifier>* importExtensions, Position* start, Position* end)
@@ -325,7 +327,6 @@ Expression::Expression(Position* start, Position* end)
 
 bool Expression::_isSimpleExpression() { return false; }
 bool Expression::_isCodeBlock() { return false; }
-
 bool Expression::_isExpression() { return true; }
 
 CodeBlock::CodeBlock(_Vector<StatementWithSemicolon>* statements, Position* start, Position* end)
@@ -370,6 +371,7 @@ void SimpleExpression::accept(SyntaxVisitor* visitor) {
 PathIdentifier::PathIdentifier(PathItem* extension, Position* start, Position* end)
 : SyntaxNode(start, end), extension(extension) {}
 
+
 void PathIdentifier::accept(SyntaxVisitor* visitor) {
     if (!visitor->openPathIdentifier(this))
         return;
@@ -380,12 +382,14 @@ void PathIdentifier::accept(SyntaxVisitor* visitor) {
 PathItem::PathItem(_LetString* name, Position* start, Position* end)
 : SyntaxNode(start, end), name(name) {}
 
+
 void PathItem::accept(SyntaxVisitor* visitor) {
     visitor->visitPathItem(this);
 }
 
 Initializer::Initializer(Expression* expression, Position* start, Position* end)
 : SyntaxNode(start, end), expression(expression) {}
+
 
 void Initializer::accept(SyntaxVisitor* visitor) {
     if (!visitor->openInitializer(this))
@@ -396,6 +400,7 @@ void Initializer::accept(SyntaxVisitor* visitor) {
 
 BindingInitializer::BindingInitializer(PatternInitializer* initializer, _Vector<AdditionalInitializer>* additionalInitializers, Position* start, Position* end)
 : SyntaxNode(start, end), initializer(initializer), additionalInitializers(additionalInitializers) {}
+
 
 void BindingInitializer::accept(SyntaxVisitor* visitor) {
     if (!visitor->openBindingInitializer(this))
@@ -415,6 +420,7 @@ void BindingInitializer::accept(SyntaxVisitor* visitor) {
 PatternInitializer::PatternInitializer(Pattern* pattern, Initializer* initializer, Position* start, Position* end)
 : SyntaxNode(start, end), pattern(pattern), initializer(initializer) {}
 
+
 void PatternInitializer::accept(SyntaxVisitor* visitor) {
     if (!visitor->openPatternInitializer(this))
         return;
@@ -426,6 +432,7 @@ void PatternInitializer::accept(SyntaxVisitor* visitor) {
 
 AdditionalInitializer::AdditionalInitializer(PatternInitializer* pattern, Position* start, Position* end)
 : SyntaxNode(start, end), pattern(pattern) {}
+
 
 void AdditionalInitializer::accept(SyntaxVisitor* visitor) {
     if (!visitor->openAdditionalInitializer(this))
@@ -475,6 +482,7 @@ void IdentifierFunction::accept(SyntaxVisitor* visitor) {
 FunctionSignature::FunctionSignature(ParameterClause* parameterClause, FunctionResult* result, ThrowsClause* throwsClause, Position* start, Position* end)
 : SyntaxNode(start, end), parameterClause(parameterClause), result(result), throwsClause(throwsClause) {}
 
+
 void FunctionSignature::accept(SyntaxVisitor* visitor) {
     if (!visitor->openFunctionSignature(this))
         return;
@@ -489,6 +497,7 @@ void FunctionSignature::accept(SyntaxVisitor* visitor) {
 FunctionResult::FunctionResult(Type* resultType, Position* start, Position* end)
 : SyntaxNode(start, end), resultType(resultType) {}
 
+
 void FunctionResult::accept(SyntaxVisitor* visitor) {
     if (!visitor->openFunctionResult(this))
         return;
@@ -498,6 +507,7 @@ void FunctionResult::accept(SyntaxVisitor* visitor) {
 
 ParameterClause::ParameterClause(_Vector<Parameter>* parameters, Position* start, Position* end)
 : SyntaxNode(start, end), parameters(parameters) {}
+
 
 void ParameterClause::accept(SyntaxVisitor* visitor) {
     if (!visitor->openParameterClause(this))
@@ -546,6 +556,7 @@ void VarParameter::accept(SyntaxVisitor* visitor) {
 ThrowsClause::ThrowsClause(Type* throwsType, Position* start, Position* end)
 : SyntaxNode(start, end), throwsType(throwsType) {}
 
+
 void ThrowsClause::accept(SyntaxVisitor* visitor) {
     if (!visitor->openThrowsClause(this))
         return;
@@ -555,6 +566,7 @@ void ThrowsClause::accept(SyntaxVisitor* visitor) {
 
 EnumMember::EnumMember(EnumCase* enumCase, _Vector<AdditionalCase>* additionalCases, TupleType* typeOfTuple, Position* start, Position* end)
 : SyntaxNode(start, end), enumCase(enumCase), additionalCases(additionalCases), typeOfTuple(typeOfTuple) {}
+
 
 void EnumMember::accept(SyntaxVisitor* visitor) {
     if (!visitor->openEnumMember(this))
@@ -576,6 +588,7 @@ void EnumMember::accept(SyntaxVisitor* visitor) {
 TupleType::TupleType(Type* typeOfTuple, _Vector<AdditionalType>* additionalTypes, Position* start, Position* end)
 : SyntaxNode(start, end), typeOfTuple(typeOfTuple), additionalTypes(additionalTypes) {}
 
+
 void TupleType::accept(SyntaxVisitor* visitor) {
     if (!visitor->openTupleType(this))
         return;
@@ -594,6 +607,7 @@ void TupleType::accept(SyntaxVisitor* visitor) {
 AdditionalType::AdditionalType(Type* enumCase, Position* start, Position* end)
 : SyntaxNode(start, end), enumCase(enumCase) {}
 
+
 void AdditionalType::accept(SyntaxVisitor* visitor) {
     if (!visitor->openAdditionalType(this))
         return;
@@ -604,12 +618,14 @@ void AdditionalType::accept(SyntaxVisitor* visitor) {
 EnumCase::EnumCase(_LetString* name, Position* start, Position* end)
 : SyntaxNode(start, end), name(name) {}
 
+
 void EnumCase::accept(SyntaxVisitor* visitor) {
     visitor->visitEnumCase(this);
 }
 
 AdditionalCase::AdditionalCase(EnumCase* enumCase, Position* start, Position* end)
 : SyntaxNode(start, end), enumCase(enumCase) {}
+
 
 void AdditionalCase::accept(SyntaxVisitor* visitor) {
     if (!visitor->openAdditionalCase(this))
@@ -620,6 +636,7 @@ void AdditionalCase::accept(SyntaxVisitor* visitor) {
 
 ClassBody::ClassBody(_Vector<ClassMember>* members, Position* start, Position* end)
 : SyntaxNode(start, end), members(members) {}
+
 
 void ClassBody::accept(SyntaxVisitor* visitor) {
     if (!visitor->openClassBody(this))
@@ -638,6 +655,7 @@ void ClassBody::accept(SyntaxVisitor* visitor) {
 GenericArgumentClause::GenericArgumentClause(_Vector<GenericParameter>* genericParameters, Position* start, Position* end)
 : SyntaxNode(start, end), genericParameters(genericParameters) {}
 
+
 void GenericArgumentClause::accept(SyntaxVisitor* visitor) {
     if (!visitor->openGenericArgumentClause(this))
         return;
@@ -655,12 +673,14 @@ void GenericArgumentClause::accept(SyntaxVisitor* visitor) {
 GenericParameter::GenericParameter(_LetString* typeName, Position* start, Position* end)
 : SyntaxNode(start, end), typeName(typeName) {}
 
+
 void GenericParameter::accept(SyntaxVisitor* visitor) {
     visitor->visitGenericParameter(this);
 }
 
 ClassMember::ClassMember(Declaration* declaration, Position* start, Position* end)
 : SyntaxNode(start, end), declaration(declaration) {}
+
 
 void ClassMember::accept(SyntaxVisitor* visitor) {
     if (!visitor->openClassMember(this))
@@ -672,6 +692,7 @@ void ClassMember::accept(SyntaxVisitor* visitor) {
 PrefixExpression::PrefixExpression(_LetString* prefixOperator, PostfixExpression* expression, Position* start, Position* end)
 : SyntaxNode(start, end), prefixOperator(prefixOperator), expression(expression) {}
 
+
 void PrefixExpression::accept(SyntaxVisitor* visitor) {
     if (!visitor->openPrefixExpression(this))
         return;
@@ -681,6 +702,7 @@ void PrefixExpression::accept(SyntaxVisitor* visitor) {
 
 PostfixExpression::PostfixExpression(PrimaryExpression* primaryExpression, _Vector<Postfix>* postfixes, Position* start, Position* end)
 : SyntaxNode(start, end), primaryExpression(primaryExpression), postfixes(postfixes) {}
+
 
 void PostfixExpression::accept(SyntaxVisitor* visitor) {
     if (!visitor->openPostfixExpression(this))
@@ -755,6 +777,7 @@ void TypeCast::accept(SyntaxVisitor* visitor) {
 
 CatchClause::CatchClause(CatchPattern* catchPattern, TuplePattern* bindingPattern, Expression* expression, Position* start, Position* end)
 : SyntaxNode(start, end), catchPattern(catchPattern), bindingPattern(bindingPattern), expression(expression) {}
+
 
 void CatchClause::accept(SyntaxVisitor* visitor) {
     if (!visitor->openCatchClause(this))
@@ -874,6 +897,7 @@ void Subscript::accept(SyntaxVisitor* visitor) {
 
 ExpressionElement::ExpressionElement(Expression* expression, Position* start, Position* end)
 : SyntaxNode(start, end), expression(expression) {}
+
 
 void ExpressionElement::accept(SyntaxVisitor* visitor) {
     if (!visitor->openExpressionElement(this))
@@ -1063,7 +1087,6 @@ ThisExpression::ThisExpression(Position* start, Position* end)
 bool ThisExpression::_isThisDot() { return false; }
 bool ThisExpression::_isThisSubscript() { return false; }
 bool ThisExpression::_isThisWord() { return false; }
-
 bool ThisExpression::_isThisExpression() { return true; }
 
 ThisDot::ThisDot(CommonThisMember* member, Position* start, Position* end)
@@ -1104,7 +1127,6 @@ SuperExpression::SuperExpression(Position* start, Position* end)
 
 bool SuperExpression::_isSuperDot() { return false; }
 bool SuperExpression::_isSuperSubscript() { return false; }
-
 bool SuperExpression::_isSuperExpression() { return true; }
 
 SuperDot::SuperDot(CommonSuperMember* member, Position* start, Position* end)
@@ -1133,6 +1155,7 @@ void SuperSubscript::accept(SyntaxVisitor* visitor) {
 
 ElseClause::ElseClause(Expression* alternative, Position* start, Position* end)
 : SyntaxNode(start, end), alternative(alternative) {}
+
 
 void ElseClause::accept(SyntaxVisitor* visitor) {
     if (!visitor->openElseClause(this))
@@ -1188,6 +1211,7 @@ void NakedSwitchBody::accept(SyntaxVisitor* visitor) {
 SwitchCase::SwitchCase(CaseLabel* label, CaseContent* content, Position* start, Position* end)
 : SyntaxNode(start, end), label(label), content(content) {}
 
+
 void SwitchCase::accept(SyntaxVisitor* visitor) {
     if (!visitor->openSwitchCase(this))
         return;
@@ -1233,6 +1257,7 @@ void DefaultCaseLabel::accept(SyntaxVisitor* visitor) {
 
 CaseItem::CaseItem(Pattern* pattern, Position* start, Position* end)
 : SyntaxNode(start, end), pattern(pattern) {}
+
 
 void CaseItem::accept(SyntaxVisitor* visitor) {
     if (!visitor->openCaseItem(this))
@@ -1341,6 +1366,7 @@ void ExpressionPattern::accept(SyntaxVisitor* visitor) {
 
 TuplePatternElement::TuplePatternElement(Pattern* pattern, Position* start, Position* end)
 : SyntaxNode(start, end), pattern(pattern) {}
+
 
 void TuplePatternElement::accept(SyntaxVisitor* visitor) {
     if (!visitor->openTuplePatternElement(this))
@@ -1481,6 +1507,7 @@ void ArrayType::accept(SyntaxVisitor* visitor) {
 TypeAnnotation::TypeAnnotation(Type* annotationForType, Position* start, Position* end)
 : SyntaxNode(start, end), annotationForType(annotationForType) {}
 
+
 void TypeAnnotation::accept(SyntaxVisitor* visitor) {
     if (!visitor->openTypeAnnotation(this))
         return;
@@ -1490,6 +1517,7 @@ void TypeAnnotation::accept(SyntaxVisitor* visitor) {
 
 SubtypeIdentifier::SubtypeIdentifier(TypeIdentifier* typeIdentifier, Position* start, Position* end)
 : SyntaxNode(start, end), typeIdentifier(typeIdentifier) {}
+
 
 void SubtypeIdentifier::accept(SyntaxVisitor* visitor) {
     if (!visitor->openSubtypeIdentifier(this))
@@ -1515,6 +1543,7 @@ void OptionalType::accept(SyntaxVisitor* visitor) {
 TypeInheritanceClause::TypeInheritanceClause(_Vector<Inheritance>* inheritances, Position* start, Position* end)
 : SyntaxNode(start, end), inheritances(inheritances) {}
 
+
 void TypeInheritanceClause::accept(SyntaxVisitor* visitor) {
     if (!visitor->openTypeInheritanceClause(this))
         return;
@@ -1531,6 +1560,7 @@ void TypeInheritanceClause::accept(SyntaxVisitor* visitor) {
 
 Inheritance::Inheritance(TypeIdentifier* typeIdentifier, Position* start, Position* end)
 : SyntaxNode(start, end), typeIdentifier(typeIdentifier) {}
+
 
 void Inheritance::accept(SyntaxVisitor* visitor) {
     if (!visitor->openInheritance(this))
