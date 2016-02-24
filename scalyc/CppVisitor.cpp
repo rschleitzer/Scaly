@@ -156,7 +156,7 @@ void CppVisitor::closeCompilationUnit(CompilationUnit* compilationUnit) {
     outputFilePath += *Path::getFileNameWithoutExtension(_p, *compilationUnit->fileName);
 
     if (*moduleName != *programName) {
-        (*headerFile) += "\n\n}\n#endif // __scaly__";
+        (*headerFile) += "\n\n}\n#endif // __scalyc__";
         (*headerFile) += *moduleName;
         (*headerFile) += "__\n";
         _VarString& headerFilePath = *new(_p) _VarString(outputFilePath);

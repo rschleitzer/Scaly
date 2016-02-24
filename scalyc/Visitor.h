@@ -407,4 +407,4 @@ public:
 };
 
 }
-#endif // __scaly__Visitor__
+#endif // __scalyc__Visitor__
