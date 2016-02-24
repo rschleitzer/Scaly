@@ -239,16 +239,16 @@ public:
 
     _Result<Type, ParserError> parseType(_Page* _rp, _Page* _ep);
 
-    _Result<TypeAnnotation, ParserError> parseTypeAnnotation(_Page* _rp, _Page* _ep);
-
     _Result<TypeIdentifier, ParserError> parseTypeIdentifier(_Page* _rp, _Page* _ep);
+
+    _Result<ArrayType, ParserError> parseArrayType(_Page* _rp, _Page* _ep);
+
+    _Result<TypeAnnotation, ParserError> parseTypeAnnotation(_Page* _rp, _Page* _ep);
 
     _Result<SubtypeIdentifier, ParserError> parseSubtypeIdentifier(_Page* _rp, _Page* _ep);
 
     _Result<_Vector<TypePostfix>, ParserError> parseTypePostfixList(_Page* _rp, _Page* _ep);
     _Result<TypePostfix, ParserError> parseTypePostfix(_Page* _rp, _Page* _ep);
-
-    _Result<ArrayType, ParserError> parseArrayType(_Page* _rp, _Page* _ep);
 
     _Result<OptionalType, ParserError> parseOptionalType(_Page* _rp, _Page* _ep);
 

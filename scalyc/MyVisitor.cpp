@@ -551,13 +551,6 @@ void MyVisitor::visitSuperInit(SuperInit* superInit) {
 void MyVisitor::visitSuperMember(SuperMember* superMember) {
 }
 
-bool MyVisitor::openTypeAnnotation(TypeAnnotation* typeAnnotation) {
-    return true;
-}
-
-void MyVisitor::closeTypeAnnotation(TypeAnnotation* typeAnnotation) {
-}
-
 bool MyVisitor::openTypeIdentifier(TypeIdentifier* typeIdentifier) {
     typeIdentifierName = typeIdentifier->name;
     return true;
@@ -567,18 +560,25 @@ void MyVisitor::closeTypeIdentifier(TypeIdentifier* typeIdentifier) {
     typeIdentifierName = 0;
 }
 
-bool MyVisitor::openSubtypeIdentifier(SubtypeIdentifier* subtypeIdentifier) {
-    return true;
-}
-
-void MyVisitor::closeSubtypeIdentifier(SubtypeIdentifier* subtypeIdentifier) {
-}
-
 bool MyVisitor::openArrayType(ArrayType* arrayType) {
     return true;
 }
 
 void MyVisitor::closeArrayType(ArrayType* arrayType) {
+}
+
+bool MyVisitor::openTypeAnnotation(TypeAnnotation* typeAnnotation) {
+    return true;
+}
+
+void MyVisitor::closeTypeAnnotation(TypeAnnotation* typeAnnotation) {
+}
+
+bool MyVisitor::openSubtypeIdentifier(SubtypeIdentifier* subtypeIdentifier) {
+    return true;
+}
+
+void MyVisitor::closeSubtypeIdentifier(SubtypeIdentifier* subtypeIdentifier) {
 }
 
 void MyVisitor::visitOptionalType(OptionalType* optionalType) {

@@ -476,14 +476,20 @@
         <content link = ArrayType
         <content link = TypeIdentifier
 
-    <syntax id = TypeAnnotation
-        <content link = colon
-        <content link = Type                                    property = annotationForType
-
     <syntax id = TypeIdentifier                                 base = Type
         <content identifier                                     property = name
         <content link = SubtypeIdentifier           optional    property = subType
         <content link = TypePostfix        multiple optional    property = postfixes
+
+    <syntax id = ArrayType                                      base = Type
+        <content link = leftBracket
+        <content link = Type                                    property = elementType
+        <content link = rightBracket
+        <content link = TypePostfix        multiple optional    property = postfixes
+
+    <syntax id = TypeAnnotation
+        <content link = colon
+        <content link = Type                                    property = annotationForType
 
     <syntax id = SubtypeIdentifier
         <content link = dot
@@ -491,12 +497,6 @@
 
     <syntax id = TypePostfix               multiple abstract
         <content link = OptionalType
-
-    <syntax id = ArrayType                                      base = Type
-        <content link = leftBracket
-        <content link = Type                                    property = elementType
-        <content link = rightBracket
-        <content link = TypePostfix        multiple optional    property = postfixes
 
     <syntax id = OptionalType                                   base = TypePostfix
         <content link = questionMark

@@ -116,11 +116,11 @@ public:
     virtual bool _isSuperInit();
     virtual bool _isSuperMember();
     virtual bool _isType();
-    virtual bool _isTypeAnnotation();
     virtual bool _isTypeIdentifier();
+    virtual bool _isArrayType();
+    virtual bool _isTypeAnnotation();
     virtual bool _isSubtypeIdentifier();
     virtual bool _isTypePostfix();
-    virtual bool _isArrayType();
     virtual bool _isOptionalType();
     virtual bool _isTypeInheritanceClause();
     virtual bool _isInheritance();
@@ -1215,14 +1215,6 @@ public:
     virtual bool _isTypeIdentifier();
 };
 
-class TypeAnnotation : public SyntaxNode {
-public:
-    TypeAnnotation(Type* annotationForType, Position* start, Position* end);
-
-    virtual void accept(SyntaxVisitor& visitor);
-    Type* annotationForType;
-};
-
 class TypeIdentifier : public Type {
 public:
     TypeIdentifier(_LetString* name, SubtypeIdentifier* subType, _Vector<TypePostfix>* postfixes, Position* start, Position* end);
@@ -1233,6 +1225,25 @@ public:
     _Vector<TypePostfix>* postfixes;
 
     virtual bool _isTypeIdentifier();
+};
+
+class ArrayType : public Type {
+public:
+    ArrayType(Type* elementType, _Vector<TypePostfix>* postfixes, Position* start, Position* end);
+
+    virtual void accept(SyntaxVisitor& visitor);
+    Type* elementType;
+    _Vector<TypePostfix>* postfixes;
+
+    virtual bool _isArrayType();
+};
+
+class TypeAnnotation : public SyntaxNode {
+public:
+    TypeAnnotation(Type* annotationForType, Position* start, Position* end);
+
+    virtual void accept(SyntaxVisitor& visitor);
+    Type* annotationForType;
 };
 
 class SubtypeIdentifier : public SyntaxNode {
@@ -1250,17 +1261,6 @@ public:
     virtual void accept(SyntaxVisitor& visitor) = 0;
 
     virtual bool _isOptionalType();
-};
-
-class ArrayType : public Type {
-public:
-    ArrayType(Type* elementType, _Vector<TypePostfix>* postfixes, Position* start, Position* end);
-
-    virtual void accept(SyntaxVisitor& visitor);
-    Type* elementType;
-    _Vector<TypePostfix>* postfixes;
-
-    virtual bool _isArrayType();
 };
 
 class OptionalType : public TypePostfix {

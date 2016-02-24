@@ -1741,21 +1741,6 @@ class Type : SyntaxNode {
 
 }
 
-class TypeAnnotation : SyntaxNode {
-
-    init(start: Position, end: Position) {
-        super.init(start, end)
-    }
-
-    function accept(mutable visitor: SyntaxVisitor) {
-        visitor.openTypeAnnotation(this)
-        annotationForType!.accept(visitor)
-        visitor.closeTypeAnnotation(this)
-    }
-
-    let annotationForType: Type?
-}
-
 class TypeIdentifier : Type {
 
     init(start: Position, end: Position) {
@@ -1778,6 +1763,42 @@ class TypeIdentifier : Type {
     let name: String?
     let subType: SubtypeIdentifier?
     let postfixes: [TypePostfix]?
+}
+
+class ArrayType : Type {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    override function accept(mutable visitor: SyntaxVisitor) {
+        visitor.openArrayType(this)
+        elementType!.accept(visitor)
+        if postfixes != nil {
+            for node in postfixes! {
+                node.accept(visitor)
+            }
+        }
+        visitor.closeArrayType(this)
+    }
+
+    let elementType: Type?
+    let postfixes: [TypePostfix]?
+}
+
+class TypeAnnotation : SyntaxNode {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    function accept(mutable visitor: SyntaxVisitor) {
+        visitor.openTypeAnnotation(this)
+        annotationForType!.accept(visitor)
+        visitor.closeTypeAnnotation(this)
+    }
+
+    let annotationForType: Type?
 }
 
 class SubtypeIdentifier : SyntaxNode {
@@ -1806,27 +1827,6 @@ class TypePostfix : SyntaxNode {
         visitor.closeTypePostfix(this)
     }
 
-}
-
-class ArrayType : Type {
-
-    init(start: Position, end: Position) {
-        super.init(start, end)
-    }
-
-    override function accept(mutable visitor: SyntaxVisitor) {
-        visitor.openArrayType(this)
-        elementType!.accept(visitor)
-        if postfixes != nil {
-            for node in postfixes! {
-                node.accept(visitor)
-            }
-        }
-        visitor.closeArrayType(this)
-    }
-
-    let elementType: Type?
-    let postfixes: [TypePostfix]?
 }
 
 class OptionalType : TypePostfix {

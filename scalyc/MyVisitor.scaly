@@ -492,12 +492,6 @@ class MyVisitor {
 
     String superMemberName;
 
-    function openTypeAnnotation(typeAnnotation: TypeAnnotation) -> bool {
-        return true; }
-
-    function closeTypeAnnotation(typeAnnotation: TypeAnnotation) { }
-
-
     function openTypeIdentifier(typeIdentifier: TypeIdentifier) -> bool {
         typeIdentifierName = typeIdentifier.name
         return true; }
@@ -507,16 +501,22 @@ class MyVisitor {
 
     String typeIdentifierName;
 
-    function openSubtypeIdentifier(subtypeIdentifier: SubtypeIdentifier) -> bool {
-        return true; }
-
-    function closeSubtypeIdentifier(subtypeIdentifier: SubtypeIdentifier) { }
-
-
     function openArrayType(arrayType: ArrayType) -> bool {
         return true; }
 
     function closeArrayType(arrayType: ArrayType) { }
+
+
+    function openTypeAnnotation(typeAnnotation: TypeAnnotation) -> bool {
+        return true; }
+
+    function closeTypeAnnotation(typeAnnotation: TypeAnnotation) { }
+
+
+    function openSubtypeIdentifier(subtypeIdentifier: SubtypeIdentifier) -> bool {
+        return true; }
+
+    function closeSubtypeIdentifier(subtypeIdentifier: SubtypeIdentifier) { }
 
 
     function visitOptionalType(optionalType: OptionalType) { }

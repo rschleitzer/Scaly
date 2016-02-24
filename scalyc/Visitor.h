@@ -218,15 +218,15 @@ class SuperMember;
 
 class Type;
 
-class TypeAnnotation;
-
 class TypeIdentifier;
+
+class ArrayType;
+
+class TypeAnnotation;
 
 class SubtypeIdentifier;
 
 class TypePostfix;
-
-class ArrayType;
 
 class OptionalType;
 
@@ -391,14 +391,14 @@ public:
     virtual void visitThisMember(ThisMember* thisMember) = 0;
     virtual void visitSuperInit(SuperInit* superInit) = 0;
     virtual void visitSuperMember(SuperMember* superMember) = 0;
-    virtual bool openTypeAnnotation(TypeAnnotation* typeAnnotation) = 0;
-    virtual void closeTypeAnnotation(TypeAnnotation* typeAnnotation) = 0;
     virtual bool openTypeIdentifier(TypeIdentifier* typeIdentifier) = 0;
     virtual void closeTypeIdentifier(TypeIdentifier* typeIdentifier) = 0;
-    virtual bool openSubtypeIdentifier(SubtypeIdentifier* subtypeIdentifier) = 0;
-    virtual void closeSubtypeIdentifier(SubtypeIdentifier* subtypeIdentifier) = 0;
     virtual bool openArrayType(ArrayType* arrayType) = 0;
     virtual void closeArrayType(ArrayType* arrayType) = 0;
+    virtual bool openTypeAnnotation(TypeAnnotation* typeAnnotation) = 0;
+    virtual void closeTypeAnnotation(TypeAnnotation* typeAnnotation) = 0;
+    virtual bool openSubtypeIdentifier(SubtypeIdentifier* subtypeIdentifier) = 0;
+    virtual void closeSubtypeIdentifier(SubtypeIdentifier* subtypeIdentifier) = 0;
     virtual void visitOptionalType(OptionalType* optionalType) = 0;
     virtual bool openTypeInheritanceClause(TypeInheritanceClause* typeInheritanceClause) = 0;
     virtual void closeTypeInheritanceClause(TypeInheritanceClause* typeInheritanceClause) = 0;

@@ -3356,32 +3356,6 @@ class Parser {
         throw ParserError.UnableToParse(start, errors)
     }
 
-    function parseTypeAnnotation() -> TypeAnnotation throws ParserError {
-        mutable typeAnnotation: TypeAnnotation? = null
-        {
-            let start: Position = lexer.getPosition()
-            let success: bool = lexer.parsePunctuation(colon)
-            if success
-                lexer.advance()
-
-            if typeAnnotation == null
-                typeAnnotation = TypeAnnotation(start, lexer.getPosition())
-        }
-        {
-            let start: Position = lexer.getPosition()
-            let result: Type node = parseType() catch _(error) {
-                throw (error)
-            }
-
-            if typeAnnotation == null
-                typeAnnotation = TypeAnnotation(start, lexer.getPosition())
-
-            typeAnnotation.annotationForType = node
-        }
-
-        return typeAnnotation
-    }
-
     function parseTypeIdentifier() -> TypeIdentifier throws ParserError {
         mutable typeIdentifier: TypeIdentifier? = null
         {
@@ -3419,6 +3393,78 @@ class Parser {
         }
 
         return typeIdentifier
+    }
+
+    function parseArrayType() -> ArrayType throws ParserError {
+        mutable arrayType: ArrayType? = null
+        {
+            let start: Position = lexer.getPosition()
+            let success: bool = lexer.parsePunctuation(leftBracket)
+            if success
+                lexer.advance()
+
+            if arrayType == null
+                arrayType = ArrayType(start, lexer.getPosition())
+        }
+        {
+            let start: Position = lexer.getPosition()
+            let result: Type node = parseType() catch _(error) {
+                throw (error)
+            }
+
+            if arrayType == null
+                arrayType = ArrayType(start, lexer.getPosition())
+
+            arrayType.elementType = node
+        }
+        {
+            let start: Position = lexer.getPosition()
+            let success: bool = lexer.parsePunctuation(rightBracket)
+            if success
+                lexer.advance()
+
+            if arrayType == null
+                arrayType = ArrayType(start, lexer.getPosition())
+        }
+        {
+            let start: Position = lexer.getPosition()
+            let result: [TypePostfix] node = parseTypePostfixList() catch _(error) {
+                 null
+            }
+
+            if arrayType == null
+                arrayType = ArrayType(start, lexer.getPosition())
+
+            arrayType.postfixes = node
+        }
+
+        return arrayType
+    }
+
+    function parseTypeAnnotation() -> TypeAnnotation throws ParserError {
+        mutable typeAnnotation: TypeAnnotation? = null
+        {
+            let start: Position = lexer.getPosition()
+            let success: bool = lexer.parsePunctuation(colon)
+            if success
+                lexer.advance()
+
+            if typeAnnotation == null
+                typeAnnotation = TypeAnnotation(start, lexer.getPosition())
+        }
+        {
+            let start: Position = lexer.getPosition()
+            let result: Type node = parseType() catch _(error) {
+                throw (error)
+            }
+
+            if typeAnnotation == null
+                typeAnnotation = TypeAnnotation(start, lexer.getPosition())
+
+            typeAnnotation.annotationForType = node
+        }
+
+        return typeAnnotation
     }
 
     function parseSubtypeIdentifier() -> SubtypeIdentifier throws ParserError {
@@ -3468,52 +3514,6 @@ class Parser {
         }
 
         throw ParserError.UnableToParse(start, errors)
-    }
-
-    function parseArrayType() -> ArrayType throws ParserError {
-        mutable arrayType: ArrayType? = null
-        {
-            let start: Position = lexer.getPosition()
-            let success: bool = lexer.parsePunctuation(leftBracket)
-            if success
-                lexer.advance()
-
-            if arrayType == null
-                arrayType = ArrayType(start, lexer.getPosition())
-        }
-        {
-            let start: Position = lexer.getPosition()
-            let result: Type node = parseType() catch _(error) {
-                throw (error)
-            }
-
-            if arrayType == null
-                arrayType = ArrayType(start, lexer.getPosition())
-
-            arrayType.elementType = node
-        }
-        {
-            let start: Position = lexer.getPosition()
-            let success: bool = lexer.parsePunctuation(rightBracket)
-            if success
-                lexer.advance()
-
-            if arrayType == null
-                arrayType = ArrayType(start, lexer.getPosition())
-        }
-        {
-            let start: Position = lexer.getPosition()
-            let result: [TypePostfix] node = parseTypePostfixList() catch _(error) {
-                 null
-            }
-
-            if arrayType == null
-                arrayType = ArrayType(start, lexer.getPosition())
-
-            arrayType.postfixes = node
-        }
-
-        return arrayType
     }
 
     function parseOptionalType() -> OptionalType throws ParserError {

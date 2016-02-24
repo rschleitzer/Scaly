@@ -3024,28 +3024,6 @@ _Result<Type, ParserError> Parser::parseType(_Page* _rp, _Page* _ep) {
     return _Result<Type, ParserError>(new(_ep) ParserError(new(_ep) UnableToParse(start, errors)));
 }
 
-_Result<TypeAnnotation, ParserError> Parser::parseTypeAnnotation(_Page* _rp, _Page* _ep) {
-    Position* start = lexer.getPreviousPosition(_rp);
-    Position* startColon1 = lexer.getPreviousPosition(_rp);
-    bool successColon1 = lexer.parsePunctuation(colon);
-    if (successColon1) {
-        lexer.advance();
-    }
-    else {
-        return _Result<TypeAnnotation, ParserError>(new(_ep) ParserError(new(_ep) PunctuationExpected(startColon1, &_LetString::create(_ep, *colon))));
-    }
-    _Result<Type, ParserError> _result_annotationForType = parseType(_rp, _ep);
-    Type* annotationForType = 0;
-    if (_result_annotationForType.succeeded()) {
-        annotationForType = _result_annotationForType.getResult();
-    }
-    else {
-        return _Result<TypeAnnotation, ParserError>(_result_annotationForType.getError());
-    }
-    TypeAnnotation* typeAnnotation = new(_rp) TypeAnnotation(annotationForType, start, lexer.getPosition(_rp));
-    return _Result<TypeAnnotation, ParserError>(typeAnnotation);
-}
-
 _Result<TypeIdentifier, ParserError> Parser::parseTypeIdentifier(_Page* _rp, _Page* _ep) {
     Position* start = lexer.getPreviousPosition(_rp);
     Position* startName = lexer.getPreviousPosition(_rp);
@@ -3068,6 +3046,63 @@ _Result<TypeIdentifier, ParserError> Parser::parseTypeIdentifier(_Page* _rp, _Pa
     }
     TypeIdentifier* typeIdentifier = new(_rp) TypeIdentifier(name, subType, postfixes, start, lexer.getPosition(_rp));
     return _Result<TypeIdentifier, ParserError>(typeIdentifier);
+}
+
+_Result<ArrayType, ParserError> Parser::parseArrayType(_Page* _rp, _Page* _ep) {
+    Position* start = lexer.getPreviousPosition(_rp);
+    Position* startLeftBracket1 = lexer.getPreviousPosition(_rp);
+    bool successLeftBracket1 = lexer.parsePunctuation(leftBracket);
+    if (successLeftBracket1) {
+        lexer.advance();
+    }
+    else {
+        return _Result<ArrayType, ParserError>(new(_ep) ParserError(new(_ep) PunctuationExpected(startLeftBracket1, &_LetString::create(_ep, *leftBracket))));
+    }
+    _Result<Type, ParserError> _result_elementType = parseType(_rp, _ep);
+    Type* elementType = 0;
+    if (_result_elementType.succeeded()) {
+        elementType = _result_elementType.getResult();
+    }
+    else {
+        return _Result<ArrayType, ParserError>(_result_elementType.getError());
+    }
+    Position* startRightBracket3 = lexer.getPreviousPosition(_rp);
+    bool successRightBracket3 = lexer.parsePunctuation(rightBracket);
+    if (successRightBracket3) {
+        lexer.advance();
+    }
+    else {
+        return _Result<ArrayType, ParserError>(new(_ep) ParserError(new(_ep) PunctuationExpected(startRightBracket3, &_LetString::create(_ep, *rightBracket))));
+    }
+    _Result<_Vector<TypePostfix>, ParserError> _result_postfixes = parseTypePostfixList(_rp, _ep);
+    _Vector<TypePostfix>* postfixes = 0;
+    if (_result_postfixes.succeeded()) {
+        postfixes = _result_postfixes.getResult();
+    }
+    ArrayType* arrayType = new(_rp) ArrayType(elementType, postfixes, start, lexer.getPosition(_rp));
+    return _Result<ArrayType, ParserError>(arrayType);
+}
+
+_Result<TypeAnnotation, ParserError> Parser::parseTypeAnnotation(_Page* _rp, _Page* _ep) {
+    Position* start = lexer.getPreviousPosition(_rp);
+    Position* startColon1 = lexer.getPreviousPosition(_rp);
+    bool successColon1 = lexer.parsePunctuation(colon);
+    if (successColon1) {
+        lexer.advance();
+    }
+    else {
+        return _Result<TypeAnnotation, ParserError>(new(_ep) ParserError(new(_ep) PunctuationExpected(startColon1, &_LetString::create(_ep, *colon))));
+    }
+    _Result<Type, ParserError> _result_annotationForType = parseType(_rp, _ep);
+    Type* annotationForType = 0;
+    if (_result_annotationForType.succeeded()) {
+        annotationForType = _result_annotationForType.getResult();
+    }
+    else {
+        return _Result<TypeAnnotation, ParserError>(_result_annotationForType.getError());
+    }
+    TypeAnnotation* typeAnnotation = new(_rp) TypeAnnotation(annotationForType, start, lexer.getPosition(_rp));
+    return _Result<TypeAnnotation, ParserError>(typeAnnotation);
 }
 
 _Result<SubtypeIdentifier, ParserError> Parser::parseSubtypeIdentifier(_Page* _rp, _Page* _ep) {
@@ -3123,41 +3158,6 @@ _Result<TypePostfix, ParserError> Parser::parseTypePostfix(_Page* _rp, _Page* _e
             errors->push(result.getError());
     }
     return _Result<TypePostfix, ParserError>(new(_ep) ParserError(new(_ep) UnableToParse(start, errors)));
-}
-
-_Result<ArrayType, ParserError> Parser::parseArrayType(_Page* _rp, _Page* _ep) {
-    Position* start = lexer.getPreviousPosition(_rp);
-    Position* startLeftBracket1 = lexer.getPreviousPosition(_rp);
-    bool successLeftBracket1 = lexer.parsePunctuation(leftBracket);
-    if (successLeftBracket1) {
-        lexer.advance();
-    }
-    else {
-        return _Result<ArrayType, ParserError>(new(_ep) ParserError(new(_ep) PunctuationExpected(startLeftBracket1, &_LetString::create(_ep, *leftBracket))));
-    }
-    _Result<Type, ParserError> _result_elementType = parseType(_rp, _ep);
-    Type* elementType = 0;
-    if (_result_elementType.succeeded()) {
-        elementType = _result_elementType.getResult();
-    }
-    else {
-        return _Result<ArrayType, ParserError>(_result_elementType.getError());
-    }
-    Position* startRightBracket3 = lexer.getPreviousPosition(_rp);
-    bool successRightBracket3 = lexer.parsePunctuation(rightBracket);
-    if (successRightBracket3) {
-        lexer.advance();
-    }
-    else {
-        return _Result<ArrayType, ParserError>(new(_ep) ParserError(new(_ep) PunctuationExpected(startRightBracket3, &_LetString::create(_ep, *rightBracket))));
-    }
-    _Result<_Vector<TypePostfix>, ParserError> _result_postfixes = parseTypePostfixList(_rp, _ep);
-    _Vector<TypePostfix>* postfixes = 0;
-    if (_result_postfixes.succeeded()) {
-        postfixes = _result_postfixes.getResult();
-    }
-    ArrayType* arrayType = new(_rp) ArrayType(elementType, postfixes, start, lexer.getPosition(_rp));
-    return _Result<ArrayType, ParserError>(arrayType);
 }
 
 _Result<OptionalType, ParserError> Parser::parseOptionalType(_Page* _rp, _Page* _ep) {

@@ -113,11 +113,11 @@ bool SyntaxNode::_isCommonSuperMember() { return false; }
 bool SyntaxNode::_isSuperInit() { return false; }
 bool SyntaxNode::_isSuperMember() { return false; }
 bool SyntaxNode::_isType() { return false; }
-bool SyntaxNode::_isTypeAnnotation() { return false; }
 bool SyntaxNode::_isTypeIdentifier() { return false; }
+bool SyntaxNode::_isArrayType() { return false; }
+bool SyntaxNode::_isTypeAnnotation() { return false; }
 bool SyntaxNode::_isSubtypeIdentifier() { return false; }
 bool SyntaxNode::_isTypePostfix() { return false; }
-bool SyntaxNode::_isArrayType() { return false; }
 bool SyntaxNode::_isOptionalType() { return false; }
 bool SyntaxNode::_isTypeInheritanceClause() { return false; }
 bool SyntaxNode::_isInheritance() { return false; }
@@ -1437,16 +1437,6 @@ Type::Type(Position* start, Position* end)
 bool Type::_isArrayType() { return false; }
 bool Type::_isTypeIdentifier() { return false; }
 
-TypeAnnotation::TypeAnnotation(Type* annotationForType, Position* start, Position* end)
-: SyntaxNode(start, end), annotationForType(annotationForType) {}
-
-void TypeAnnotation::accept(SyntaxVisitor& visitor) {
-    if (!visitor.openTypeAnnotation(this))
-        return;
-    annotationForType->accept(visitor);
-    visitor.closeTypeAnnotation(this);
-}
-
 TypeIdentifier::TypeIdentifier(_LetString* name, SubtypeIdentifier* subType, _Vector<TypePostfix>* postfixes, Position* start, Position* end)
 : Type(start, end), name(name), subType(subType), postfixes(postfixes) {}
 
@@ -1468,21 +1458,6 @@ void TypeIdentifier::accept(SyntaxVisitor& visitor) {
     visitor.closeTypeIdentifier(this);
 }
 
-SubtypeIdentifier::SubtypeIdentifier(TypeIdentifier* typeIdentifier, Position* start, Position* end)
-: SyntaxNode(start, end), typeIdentifier(typeIdentifier) {}
-
-void SubtypeIdentifier::accept(SyntaxVisitor& visitor) {
-    if (!visitor.openSubtypeIdentifier(this))
-        return;
-    typeIdentifier->accept(visitor);
-    visitor.closeSubtypeIdentifier(this);
-}
-
-TypePostfix::TypePostfix(Position* start, Position* end)
-: SyntaxNode(start, end) {}
-
-bool TypePostfix::_isOptionalType() { return false; }
-
 ArrayType::ArrayType(Type* elementType, _Vector<TypePostfix>* postfixes, Position* start, Position* end)
 : Type(start, end), elementType(elementType), postfixes(postfixes) {}
 
@@ -1502,6 +1477,31 @@ void ArrayType::accept(SyntaxVisitor& visitor) {
     }
     visitor.closeArrayType(this);
 }
+
+TypeAnnotation::TypeAnnotation(Type* annotationForType, Position* start, Position* end)
+: SyntaxNode(start, end), annotationForType(annotationForType) {}
+
+void TypeAnnotation::accept(SyntaxVisitor& visitor) {
+    if (!visitor.openTypeAnnotation(this))
+        return;
+    annotationForType->accept(visitor);
+    visitor.closeTypeAnnotation(this);
+}
+
+SubtypeIdentifier::SubtypeIdentifier(TypeIdentifier* typeIdentifier, Position* start, Position* end)
+: SyntaxNode(start, end), typeIdentifier(typeIdentifier) {}
+
+void SubtypeIdentifier::accept(SyntaxVisitor& visitor) {
+    if (!visitor.openSubtypeIdentifier(this))
+        return;
+    typeIdentifier->accept(visitor);
+    visitor.closeSubtypeIdentifier(this);
+}
+
+TypePostfix::TypePostfix(Position* start, Position* end)
+: SyntaxNode(start, end) {}
+
+bool TypePostfix::_isOptionalType() { return false; }
 
 OptionalType::OptionalType(Position* start, Position* end)
 : TypePostfix(start, end) {}
