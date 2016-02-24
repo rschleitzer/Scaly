@@ -35,6 +35,66 @@ bool MyVisitor::openUseDeclaration(UseDeclaration* useDeclaration) {
 void MyVisitor::closeUseDeclaration(UseDeclaration* useDeclaration) {
 }
 
+bool MyVisitor::openConstantDeclaration(ConstantDeclaration* constantDeclaration) {
+    return true;
+}
+
+void MyVisitor::closeConstantDeclaration(ConstantDeclaration* constantDeclaration) {
+}
+
+bool MyVisitor::openVariableDeclaration(VariableDeclaration* variableDeclaration) {
+    return true;
+}
+
+void MyVisitor::closeVariableDeclaration(VariableDeclaration* variableDeclaration) {
+}
+
+bool MyVisitor::openFunctionDeclaration(FunctionDeclaration* functionDeclaration) {
+    return true;
+}
+
+void MyVisitor::closeFunctionDeclaration(FunctionDeclaration* functionDeclaration) {
+}
+
+bool MyVisitor::openInitializerDeclaration(InitializerDeclaration* initializerDeclaration) {
+    return true;
+}
+
+void MyVisitor::closeInitializerDeclaration(InitializerDeclaration* initializerDeclaration) {
+}
+
+bool MyVisitor::openEnumDeclaration(EnumDeclaration* enumDeclaration) {
+    enumDeclarationName = enumDeclaration->name;
+    return true;
+}
+
+void MyVisitor::closeEnumDeclaration(EnumDeclaration* enumDeclaration) {
+    enumDeclarationName = 0;
+}
+
+bool MyVisitor::openClassDeclaration(ClassDeclaration* classDeclaration) {
+    classDeclarationName = classDeclaration->name;
+    return true;
+}
+
+void MyVisitor::closeClassDeclaration(ClassDeclaration* classDeclaration) {
+    classDeclarationName = 0;
+}
+
+bool MyVisitor::openCodeBlock(CodeBlock* codeBlock) {
+    return true;
+}
+
+void MyVisitor::closeCodeBlock(CodeBlock* codeBlock) {
+}
+
+bool MyVisitor::openSimpleExpression(SimpleExpression* simpleExpression) {
+    return true;
+}
+
+void MyVisitor::closeSimpleExpression(SimpleExpression* simpleExpression) {
+}
+
 bool MyVisitor::openPathIdentifier(PathIdentifier* pathIdentifier) {
     return true;
 }
@@ -50,20 +110,6 @@ bool MyVisitor::openInitializer(Initializer* initializer) {
 }
 
 void MyVisitor::closeInitializer(Initializer* initializer) {
-}
-
-bool MyVisitor::openConstantDeclaration(ConstantDeclaration* constantDeclaration) {
-    return true;
-}
-
-void MyVisitor::closeConstantDeclaration(ConstantDeclaration* constantDeclaration) {
-}
-
-bool MyVisitor::openVariableDeclaration(VariableDeclaration* variableDeclaration) {
-    return true;
-}
-
-void MyVisitor::closeVariableDeclaration(VariableDeclaration* variableDeclaration) {
 }
 
 bool MyVisitor::openBindingInitializer(BindingInitializer* bindingInitializer) {
@@ -85,20 +131,6 @@ bool MyVisitor::openAdditionalInitializer(AdditionalInitializer* additionalIniti
 }
 
 void MyVisitor::closeAdditionalInitializer(AdditionalInitializer* additionalInitializer) {
-}
-
-bool MyVisitor::openFunctionDeclaration(FunctionDeclaration* functionDeclaration) {
-    return true;
-}
-
-void MyVisitor::closeFunctionDeclaration(FunctionDeclaration* functionDeclaration) {
-}
-
-bool MyVisitor::openInitializerDeclaration(InitializerDeclaration* initializerDeclaration) {
-    return true;
-}
-
-void MyVisitor::closeInitializerDeclaration(InitializerDeclaration* initializerDeclaration) {
 }
 
 void MyVisitor::visitOverrideWord(OverrideWord* overrideWord) {
@@ -156,15 +188,6 @@ bool MyVisitor::openThrowsClause(ThrowsClause* throwsClause) {
 void MyVisitor::closeThrowsClause(ThrowsClause* throwsClause) {
 }
 
-bool MyVisitor::openEnumDeclaration(EnumDeclaration* enumDeclaration) {
-    enumDeclarationName = enumDeclaration->name;
-    return true;
-}
-
-void MyVisitor::closeEnumDeclaration(EnumDeclaration* enumDeclaration) {
-    enumDeclarationName = 0;
-}
-
 bool MyVisitor::openEnumMember(EnumMember* enumMember) {
     return true;
 }
@@ -196,15 +219,6 @@ bool MyVisitor::openAdditionalCase(AdditionalCase* additionalCase) {
 void MyVisitor::closeAdditionalCase(AdditionalCase* additionalCase) {
 }
 
-bool MyVisitor::openClassDeclaration(ClassDeclaration* classDeclaration) {
-    classDeclarationName = classDeclaration->name;
-    return true;
-}
-
-void MyVisitor::closeClassDeclaration(ClassDeclaration* classDeclaration) {
-    classDeclarationName = 0;
-}
-
 bool MyVisitor::openClassBody(ClassBody* classBody) {
     return true;
 }
@@ -227,20 +241,6 @@ bool MyVisitor::openClassMember(ClassMember* classMember) {
 }
 
 void MyVisitor::closeClassMember(ClassMember* classMember) {
-}
-
-bool MyVisitor::openCodeBlock(CodeBlock* codeBlock) {
-    return true;
-}
-
-void MyVisitor::closeCodeBlock(CodeBlock* codeBlock) {
-}
-
-bool MyVisitor::openSimpleExpression(SimpleExpression* simpleExpression) {
-    return true;
-}
-
-void MyVisitor::closeSimpleExpression(SimpleExpression* simpleExpression) {
 }
 
 bool MyVisitor::openPrefixExpression(PrefixExpression* prefixExpression) {

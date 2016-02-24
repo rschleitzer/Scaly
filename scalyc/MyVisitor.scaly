@@ -29,6 +29,60 @@ class MyVisitor {
     function closeUseDeclaration(useDeclaration: UseDeclaration) { }
 
 
+    function openConstantDeclaration(constantDeclaration: ConstantDeclaration) -> bool {
+        return true; }
+
+    function closeConstantDeclaration(constantDeclaration: ConstantDeclaration) { }
+
+
+    function openVariableDeclaration(variableDeclaration: VariableDeclaration) -> bool {
+        return true; }
+
+    function closeVariableDeclaration(variableDeclaration: VariableDeclaration) { }
+
+
+    function openFunctionDeclaration(functionDeclaration: FunctionDeclaration) -> bool {
+        return true; }
+
+    function closeFunctionDeclaration(functionDeclaration: FunctionDeclaration) { }
+
+
+    function openInitializerDeclaration(initializerDeclaration: InitializerDeclaration) -> bool {
+        return true; }
+
+    function closeInitializerDeclaration(initializerDeclaration: InitializerDeclaration) { }
+
+
+    function openEnumDeclaration(enumDeclaration: EnumDeclaration) -> bool {
+        enumDeclarationName = enumDeclaration.name
+        return true; }
+
+    function closeEnumDeclaration(enumDeclaration: EnumDeclaration) {
+        enumDeclarationName = null }
+
+    String enumDeclarationName;
+
+    function openClassDeclaration(classDeclaration: ClassDeclaration) -> bool {
+        classDeclarationName = classDeclaration.name
+        return true; }
+
+    function closeClassDeclaration(classDeclaration: ClassDeclaration) {
+        classDeclarationName = null }
+
+    String classDeclarationName;
+
+    function openCodeBlock(codeBlock: CodeBlock) -> bool {
+        return true; }
+
+    function closeCodeBlock(codeBlock: CodeBlock) { }
+
+
+    function openSimpleExpression(simpleExpression: SimpleExpression) -> bool {
+        return true; }
+
+    function closeSimpleExpression(simpleExpression: SimpleExpression) { }
+
+
     function openPathIdentifier(pathIdentifier: PathIdentifier) -> bool {
         return true; }
 
@@ -43,18 +97,6 @@ class MyVisitor {
         return true; }
 
     function closeInitializer(initializer: Initializer) { }
-
-
-    function openConstantDeclaration(constantDeclaration: ConstantDeclaration) -> bool {
-        return true; }
-
-    function closeConstantDeclaration(constantDeclaration: ConstantDeclaration) { }
-
-
-    function openVariableDeclaration(variableDeclaration: VariableDeclaration) -> bool {
-        return true; }
-
-    function closeVariableDeclaration(variableDeclaration: VariableDeclaration) { }
 
 
     function openBindingInitializer(bindingInitializer: BindingInitializer) -> bool {
@@ -73,18 +115,6 @@ class MyVisitor {
         return true; }
 
     function closeAdditionalInitializer(additionalInitializer: AdditionalInitializer) { }
-
-
-    function openFunctionDeclaration(functionDeclaration: FunctionDeclaration) -> bool {
-        return true; }
-
-    function closeFunctionDeclaration(functionDeclaration: FunctionDeclaration) { }
-
-
-    function openInitializerDeclaration(initializerDeclaration: InitializerDeclaration) -> bool {
-        return true; }
-
-    function closeInitializerDeclaration(initializerDeclaration: InitializerDeclaration) { }
 
 
     function visitOverrideWord(overrideWord: OverrideWord) { }
@@ -139,15 +169,6 @@ class MyVisitor {
     function closeThrowsClause(throwsClause: ThrowsClause) { }
 
 
-    function openEnumDeclaration(enumDeclaration: EnumDeclaration) -> bool {
-        enumDeclarationName = enumDeclaration.name
-        return true; }
-
-    function closeEnumDeclaration(enumDeclaration: EnumDeclaration) {
-        enumDeclarationName = null }
-
-    String enumDeclarationName;
-
     function openEnumMember(enumMember: EnumMember) -> bool {
         return true; }
 
@@ -176,15 +197,6 @@ class MyVisitor {
     function closeAdditionalCase(additionalCase: AdditionalCase) { }
 
 
-    function openClassDeclaration(classDeclaration: ClassDeclaration) -> bool {
-        classDeclarationName = classDeclaration.name
-        return true; }
-
-    function closeClassDeclaration(classDeclaration: ClassDeclaration) {
-        classDeclarationName = null }
-
-    String classDeclarationName;
-
     function openClassBody(classBody: ClassBody) -> bool {
         return true; }
 
@@ -205,18 +217,6 @@ class MyVisitor {
         return true; }
 
     function closeClassMember(classMember: ClassMember) { }
-
-
-    function openCodeBlock(codeBlock: CodeBlock) -> bool {
-        return true; }
-
-    function closeCodeBlock(codeBlock: CodeBlock) { }
-
-
-    function openSimpleExpression(simpleExpression: SimpleExpression) -> bool {
-        return true; }
-
-    function closeSimpleExpression(simpleExpression: SimpleExpression) { }
 
 
     function openPrefixExpression(prefixExpression: PrefixExpression) -> bool {

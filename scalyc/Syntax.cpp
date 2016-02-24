@@ -12,16 +12,21 @@ bool SyntaxNode::_isStatementWithSemicolon() { return false; }
 bool SyntaxNode::_isStatement() { return false; }
 bool SyntaxNode::_isDeclaration() { return false; }
 bool SyntaxNode::_isUseDeclaration() { return false; }
+bool SyntaxNode::_isConstantDeclaration() { return false; }
+bool SyntaxNode::_isVariableDeclaration() { return false; }
+bool SyntaxNode::_isFunctionDeclaration() { return false; }
+bool SyntaxNode::_isInitializerDeclaration() { return false; }
+bool SyntaxNode::_isEnumDeclaration() { return false; }
+bool SyntaxNode::_isClassDeclaration() { return false; }
+bool SyntaxNode::_isExpression() { return false; }
+bool SyntaxNode::_isCodeBlock() { return false; }
+bool SyntaxNode::_isSimpleExpression() { return false; }
 bool SyntaxNode::_isPathIdentifier() { return false; }
 bool SyntaxNode::_isPathItem() { return false; }
 bool SyntaxNode::_isInitializer() { return false; }
-bool SyntaxNode::_isConstantDeclaration() { return false; }
-bool SyntaxNode::_isVariableDeclaration() { return false; }
 bool SyntaxNode::_isBindingInitializer() { return false; }
 bool SyntaxNode::_isPatternInitializer() { return false; }
 bool SyntaxNode::_isAdditionalInitializer() { return false; }
-bool SyntaxNode::_isFunctionDeclaration() { return false; }
-bool SyntaxNode::_isInitializerDeclaration() { return false; }
 bool SyntaxNode::_isModifier() { return false; }
 bool SyntaxNode::_isOverrideWord() { return false; }
 bool SyntaxNode::_isStaticWord() { return false; }
@@ -34,20 +39,15 @@ bool SyntaxNode::_isParameter() { return false; }
 bool SyntaxNode::_isConstParameter() { return false; }
 bool SyntaxNode::_isVarParameter() { return false; }
 bool SyntaxNode::_isThrowsClause() { return false; }
-bool SyntaxNode::_isEnumDeclaration() { return false; }
 bool SyntaxNode::_isEnumMember() { return false; }
 bool SyntaxNode::_isTupleType() { return false; }
 bool SyntaxNode::_isAdditionalType() { return false; }
 bool SyntaxNode::_isEnumCase() { return false; }
 bool SyntaxNode::_isAdditionalCase() { return false; }
-bool SyntaxNode::_isClassDeclaration() { return false; }
 bool SyntaxNode::_isClassBody() { return false; }
 bool SyntaxNode::_isGenericArgumentClause() { return false; }
 bool SyntaxNode::_isGenericParameter() { return false; }
 bool SyntaxNode::_isClassMember() { return false; }
-bool SyntaxNode::_isExpression() { return false; }
-bool SyntaxNode::_isCodeBlock() { return false; }
-bool SyntaxNode::_isSimpleExpression() { return false; }
 bool SyntaxNode::_isPrefixExpression() { return false; }
 bool SyntaxNode::_isPostfixExpression() { return false; }
 bool SyntaxNode::_isBinaryOp() { return false; }
@@ -214,33 +214,6 @@ void UseDeclaration::accept(SyntaxVisitor& visitor) {
     visitor.closeUseDeclaration(this);
 }
 
-PathIdentifier::PathIdentifier(PathItem* extension, Position* start, Position* end)
-: SyntaxNode(start, end), extension(extension) {}
-
-void PathIdentifier::accept(SyntaxVisitor& visitor) {
-    if (!visitor.openPathIdentifier(this))
-        return;
-    extension->accept(visitor);
-    visitor.closePathIdentifier(this);
-}
-
-PathItem::PathItem(_LetString* name, Position* start, Position* end)
-: SyntaxNode(start, end), name(name) {}
-
-void PathItem::accept(SyntaxVisitor& visitor) {
-    visitor.visitPathItem(this);
-}
-
-Initializer::Initializer(Expression* expression, Position* start, Position* end)
-: SyntaxNode(start, end), expression(expression) {}
-
-void Initializer::accept(SyntaxVisitor& visitor) {
-    if (!visitor.openInitializer(this))
-        return;
-    expression->accept(visitor);
-    visitor.closeInitializer(this);
-}
-
 ConstantDeclaration::ConstantDeclaration(BindingInitializer* initializer, Position* start, Position* end)
 : Declaration(start, end), initializer(initializer) {}
 
@@ -263,46 +236,6 @@ void VariableDeclaration::accept(SyntaxVisitor& visitor) {
         return;
     initializer->accept(visitor);
     visitor.closeVariableDeclaration(this);
-}
-
-BindingInitializer::BindingInitializer(PatternInitializer* initializer, _Vector<AdditionalInitializer>* additionalInitializers, Position* start, Position* end)
-: SyntaxNode(start, end), initializer(initializer), additionalInitializers(additionalInitializers) {}
-
-void BindingInitializer::accept(SyntaxVisitor& visitor) {
-    if (!visitor.openBindingInitializer(this))
-        return;
-    initializer->accept(visitor);
-    if (additionalInitializers) {
-        AdditionalInitializer* node = 0;
-        size_t _alength = additionalInitializers->length();
-        for (size_t _a = 0; _a < _alength; _a++) {
-            node = *(*additionalInitializers)[_a];
-            node->accept(visitor);
-        }
-    }
-    visitor.closeBindingInitializer(this);
-}
-
-PatternInitializer::PatternInitializer(Pattern* pattern, Initializer* initializer, Position* start, Position* end)
-: SyntaxNode(start, end), pattern(pattern), initializer(initializer) {}
-
-void PatternInitializer::accept(SyntaxVisitor& visitor) {
-    if (!visitor.openPatternInitializer(this))
-        return;
-    pattern->accept(visitor);
-    if (initializer)
-        initializer->accept(visitor);
-    visitor.closePatternInitializer(this);
-}
-
-AdditionalInitializer::AdditionalInitializer(PatternInitializer* pattern, Position* start, Position* end)
-: SyntaxNode(start, end), pattern(pattern) {}
-
-void AdditionalInitializer::accept(SyntaxVisitor& visitor) {
-    if (!visitor.openAdditionalInitializer(this))
-        return;
-    pattern->accept(visitor);
-    visitor.closeAdditionalInitializer(this);
 }
 
 FunctionDeclaration::FunctionDeclaration(_Vector<Modifier>* modifiers, FunctionName* name, FunctionSignature* signature, Expression* body, Position* start, Position* end)
@@ -349,6 +282,156 @@ void InitializerDeclaration::accept(SyntaxVisitor& visitor) {
         throwsClause->accept(visitor);
     body->accept(visitor);
     visitor.closeInitializerDeclaration(this);
+}
+
+EnumDeclaration::EnumDeclaration(_LetString* name, _Vector<EnumMember>* members, Position* start, Position* end)
+: Declaration(start, end), name(name), members(members) {}
+
+bool EnumDeclaration::_isEnumDeclaration() { return true; }
+
+void EnumDeclaration::accept(SyntaxVisitor& visitor) {
+    if (!visitor.openEnumDeclaration(this))
+        return;
+    if (members) {
+        EnumMember* node = 0;
+        size_t _alength = members->length();
+        for (size_t _a = 0; _a < _alength; _a++) {
+            node = *(*members)[_a];
+            node->accept(visitor);
+        }
+    }
+    visitor.closeEnumDeclaration(this);
+}
+
+ClassDeclaration::ClassDeclaration(_LetString* name, GenericArgumentClause* genericArgumentClause, TypeInheritanceClause* typeInheritanceClause, ClassBody* body, Position* start, Position* end)
+: Declaration(start, end), name(name), genericArgumentClause(genericArgumentClause), typeInheritanceClause(typeInheritanceClause), body(body) {}
+
+bool ClassDeclaration::_isClassDeclaration() { return true; }
+
+void ClassDeclaration::accept(SyntaxVisitor& visitor) {
+    if (!visitor.openClassDeclaration(this))
+        return;
+    if (genericArgumentClause)
+        genericArgumentClause->accept(visitor);
+    if (typeInheritanceClause)
+        typeInheritanceClause->accept(visitor);
+    if (body)
+        body->accept(visitor);
+    visitor.closeClassDeclaration(this);
+}
+
+Expression::Expression(Position* start, Position* end)
+: Statement(start, end) {}
+
+bool Expression::_isSimpleExpression() { return false; }
+bool Expression::_isCodeBlock() { return false; }
+
+bool Expression::_isExpression() { return true; }
+
+CodeBlock::CodeBlock(_Vector<StatementWithSemicolon>* statements, Position* start, Position* end)
+: Expression(start, end), statements(statements) {}
+
+bool CodeBlock::_isCodeBlock() { return true; }
+
+void CodeBlock::accept(SyntaxVisitor& visitor) {
+    if (!visitor.openCodeBlock(this))
+        return;
+    if (statements) {
+        StatementWithSemicolon* node = 0;
+        size_t _alength = statements->length();
+        for (size_t _a = 0; _a < _alength; _a++) {
+            node = *(*statements)[_a];
+            node->accept(visitor);
+        }
+    }
+    visitor.closeCodeBlock(this);
+}
+
+SimpleExpression::SimpleExpression(PrefixExpression* prefixExpression, _Vector<BinaryOp>* binaryOps, Position* start, Position* end)
+: Expression(start, end), prefixExpression(prefixExpression), binaryOps(binaryOps) {}
+
+bool SimpleExpression::_isSimpleExpression() { return true; }
+
+void SimpleExpression::accept(SyntaxVisitor& visitor) {
+    if (!visitor.openSimpleExpression(this))
+        return;
+    prefixExpression->accept(visitor);
+    if (binaryOps) {
+        BinaryOp* node = 0;
+        size_t _alength = binaryOps->length();
+        for (size_t _a = 0; _a < _alength; _a++) {
+            node = *(*binaryOps)[_a];
+            node->accept(visitor);
+        }
+    }
+    visitor.closeSimpleExpression(this);
+}
+
+PathIdentifier::PathIdentifier(PathItem* extension, Position* start, Position* end)
+: SyntaxNode(start, end), extension(extension) {}
+
+void PathIdentifier::accept(SyntaxVisitor& visitor) {
+    if (!visitor.openPathIdentifier(this))
+        return;
+    extension->accept(visitor);
+    visitor.closePathIdentifier(this);
+}
+
+PathItem::PathItem(_LetString* name, Position* start, Position* end)
+: SyntaxNode(start, end), name(name) {}
+
+void PathItem::accept(SyntaxVisitor& visitor) {
+    visitor.visitPathItem(this);
+}
+
+Initializer::Initializer(Expression* expression, Position* start, Position* end)
+: SyntaxNode(start, end), expression(expression) {}
+
+void Initializer::accept(SyntaxVisitor& visitor) {
+    if (!visitor.openInitializer(this))
+        return;
+    expression->accept(visitor);
+    visitor.closeInitializer(this);
+}
+
+BindingInitializer::BindingInitializer(PatternInitializer* initializer, _Vector<AdditionalInitializer>* additionalInitializers, Position* start, Position* end)
+: SyntaxNode(start, end), initializer(initializer), additionalInitializers(additionalInitializers) {}
+
+void BindingInitializer::accept(SyntaxVisitor& visitor) {
+    if (!visitor.openBindingInitializer(this))
+        return;
+    initializer->accept(visitor);
+    if (additionalInitializers) {
+        AdditionalInitializer* node = 0;
+        size_t _alength = additionalInitializers->length();
+        for (size_t _a = 0; _a < _alength; _a++) {
+            node = *(*additionalInitializers)[_a];
+            node->accept(visitor);
+        }
+    }
+    visitor.closeBindingInitializer(this);
+}
+
+PatternInitializer::PatternInitializer(Pattern* pattern, Initializer* initializer, Position* start, Position* end)
+: SyntaxNode(start, end), pattern(pattern), initializer(initializer) {}
+
+void PatternInitializer::accept(SyntaxVisitor& visitor) {
+    if (!visitor.openPatternInitializer(this))
+        return;
+    pattern->accept(visitor);
+    if (initializer)
+        initializer->accept(visitor);
+    visitor.closePatternInitializer(this);
+}
+
+AdditionalInitializer::AdditionalInitializer(PatternInitializer* pattern, Position* start, Position* end)
+: SyntaxNode(start, end), pattern(pattern) {}
+
+void AdditionalInitializer::accept(SyntaxVisitor& visitor) {
+    if (!visitor.openAdditionalInitializer(this))
+        return;
+    pattern->accept(visitor);
+    visitor.closeAdditionalInitializer(this);
 }
 
 Modifier::Modifier(Position* start, Position* end)
@@ -470,25 +553,6 @@ void ThrowsClause::accept(SyntaxVisitor& visitor) {
     visitor.closeThrowsClause(this);
 }
 
-EnumDeclaration::EnumDeclaration(_LetString* name, _Vector<EnumMember>* members, Position* start, Position* end)
-: Declaration(start, end), name(name), members(members) {}
-
-bool EnumDeclaration::_isEnumDeclaration() { return true; }
-
-void EnumDeclaration::accept(SyntaxVisitor& visitor) {
-    if (!visitor.openEnumDeclaration(this))
-        return;
-    if (members) {
-        EnumMember* node = 0;
-        size_t _alength = members->length();
-        for (size_t _a = 0; _a < _alength; _a++) {
-            node = *(*members)[_a];
-            node->accept(visitor);
-        }
-    }
-    visitor.closeEnumDeclaration(this);
-}
-
 EnumMember::EnumMember(EnumCase* enumCase, _Vector<AdditionalCase>* additionalCases, TupleType* typeOfTuple, Position* start, Position* end)
 : SyntaxNode(start, end), enumCase(enumCase), additionalCases(additionalCases), typeOfTuple(typeOfTuple) {}
 
@@ -554,23 +618,6 @@ void AdditionalCase::accept(SyntaxVisitor& visitor) {
     visitor.closeAdditionalCase(this);
 }
 
-ClassDeclaration::ClassDeclaration(_LetString* name, GenericArgumentClause* genericArgumentClause, TypeInheritanceClause* typeInheritanceClause, ClassBody* body, Position* start, Position* end)
-: Declaration(start, end), name(name), genericArgumentClause(genericArgumentClause), typeInheritanceClause(typeInheritanceClause), body(body) {}
-
-bool ClassDeclaration::_isClassDeclaration() { return true; }
-
-void ClassDeclaration::accept(SyntaxVisitor& visitor) {
-    if (!visitor.openClassDeclaration(this))
-        return;
-    if (genericArgumentClause)
-        genericArgumentClause->accept(visitor);
-    if (typeInheritanceClause)
-        typeInheritanceClause->accept(visitor);
-    if (body)
-        body->accept(visitor);
-    visitor.closeClassDeclaration(this);
-}
-
 ClassBody::ClassBody(_Vector<ClassMember>* members, Position* start, Position* end)
 : SyntaxNode(start, end), members(members) {}
 
@@ -620,53 +667,6 @@ void ClassMember::accept(SyntaxVisitor& visitor) {
         return;
     declaration->accept(visitor);
     visitor.closeClassMember(this);
-}
-
-Expression::Expression(Position* start, Position* end)
-: Statement(start, end) {}
-
-bool Expression::_isSimpleExpression() { return false; }
-bool Expression::_isCodeBlock() { return false; }
-
-bool Expression::_isExpression() { return true; }
-
-CodeBlock::CodeBlock(_Vector<StatementWithSemicolon>* statements, Position* start, Position* end)
-: Expression(start, end), statements(statements) {}
-
-bool CodeBlock::_isCodeBlock() { return true; }
-
-void CodeBlock::accept(SyntaxVisitor& visitor) {
-    if (!visitor.openCodeBlock(this))
-        return;
-    if (statements) {
-        StatementWithSemicolon* node = 0;
-        size_t _alength = statements->length();
-        for (size_t _a = 0; _a < _alength; _a++) {
-            node = *(*statements)[_a];
-            node->accept(visitor);
-        }
-    }
-    visitor.closeCodeBlock(this);
-}
-
-SimpleExpression::SimpleExpression(PrefixExpression* prefixExpression, _Vector<BinaryOp>* binaryOps, Position* start, Position* end)
-: Expression(start, end), prefixExpression(prefixExpression), binaryOps(binaryOps) {}
-
-bool SimpleExpression::_isSimpleExpression() { return true; }
-
-void SimpleExpression::accept(SyntaxVisitor& visitor) {
-    if (!visitor.openSimpleExpression(this))
-        return;
-    prefixExpression->accept(visitor);
-    if (binaryOps) {
-        BinaryOp* node = 0;
-        size_t _alength = binaryOps->length();
-        for (size_t _a = 0; _a < _alength; _a++) {
-            node = *(*binaryOps)[_a];
-            node->accept(visitor);
-        }
-    }
-    visitor.closeSimpleExpression(this);
 }
 
 PrefixExpression::PrefixExpression(_LetString* prefixOperator, PostfixExpression* expression, Position* start, Position* end)

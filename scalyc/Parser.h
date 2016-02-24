@@ -19,16 +19,30 @@ public:
 
     _Result<UseDeclaration, ParserError> parseUseDeclaration(_Page* _rp, _Page* _ep);
 
+    _Result<ConstantDeclaration, ParserError> parseConstantDeclaration(_Page* _rp, _Page* _ep);
+
+    _Result<VariableDeclaration, ParserError> parseVariableDeclaration(_Page* _rp, _Page* _ep);
+
+    _Result<FunctionDeclaration, ParserError> parseFunctionDeclaration(_Page* _rp, _Page* _ep);
+
+    _Result<InitializerDeclaration, ParserError> parseInitializerDeclaration(_Page* _rp, _Page* _ep);
+
+    _Result<EnumDeclaration, ParserError> parseEnumDeclaration(_Page* _rp, _Page* _ep);
+
+    _Result<ClassDeclaration, ParserError> parseClassDeclaration(_Page* _rp, _Page* _ep);
+
+    _Result<Expression, ParserError> parseExpression(_Page* _rp, _Page* _ep);
+
+    _Result<CodeBlock, ParserError> parseCodeBlock(_Page* _rp, _Page* _ep);
+
+    _Result<SimpleExpression, ParserError> parseSimpleExpression(_Page* _rp, _Page* _ep);
+
     _Result<_Vector<PathIdentifier>, ParserError> parsePathIdentifierList(_Page* _rp, _Page* _ep);
     _Result<PathIdentifier, ParserError> parsePathIdentifier(_Page* _rp, _Page* _ep);
 
     _Result<PathItem, ParserError> parsePathItem(_Page* _rp, _Page* _ep);
 
     _Result<Initializer, ParserError> parseInitializer(_Page* _rp, _Page* _ep);
-
-    _Result<ConstantDeclaration, ParserError> parseConstantDeclaration(_Page* _rp, _Page* _ep);
-
-    _Result<VariableDeclaration, ParserError> parseVariableDeclaration(_Page* _rp, _Page* _ep);
 
     _Result<BindingInitializer, ParserError> parseBindingInitializer(_Page* _rp, _Page* _ep);
 
@@ -37,10 +51,6 @@ public:
 
     _Result<_Vector<AdditionalInitializer>, ParserError> parseAdditionalInitializerList(_Page* _rp, _Page* _ep);
     _Result<AdditionalInitializer, ParserError> parseAdditionalInitializer(_Page* _rp, _Page* _ep);
-
-    _Result<FunctionDeclaration, ParserError> parseFunctionDeclaration(_Page* _rp, _Page* _ep);
-
-    _Result<InitializerDeclaration, ParserError> parseInitializerDeclaration(_Page* _rp, _Page* _ep);
 
     _Result<_Vector<Modifier>, ParserError> parseModifierList(_Page* _rp, _Page* _ep);
     _Result<Modifier, ParserError> parseModifier(_Page* _rp, _Page* _ep);
@@ -69,8 +79,6 @@ public:
 
     _Result<ThrowsClause, ParserError> parseThrowsClause(_Page* _rp, _Page* _ep);
 
-    _Result<EnumDeclaration, ParserError> parseEnumDeclaration(_Page* _rp, _Page* _ep);
-
     _Result<_Vector<EnumMember>, ParserError> parseEnumMemberList(_Page* _rp, _Page* _ep);
     _Result<EnumMember, ParserError> parseEnumMember(_Page* _rp, _Page* _ep);
 
@@ -84,8 +92,6 @@ public:
     _Result<_Vector<AdditionalCase>, ParserError> parseAdditionalCaseList(_Page* _rp, _Page* _ep);
     _Result<AdditionalCase, ParserError> parseAdditionalCase(_Page* _rp, _Page* _ep);
 
-    _Result<ClassDeclaration, ParserError> parseClassDeclaration(_Page* _rp, _Page* _ep);
-
     _Result<ClassBody, ParserError> parseClassBody(_Page* _rp, _Page* _ep);
 
     _Result<GenericArgumentClause, ParserError> parseGenericArgumentClause(_Page* _rp, _Page* _ep);
@@ -95,12 +101,6 @@ public:
 
     _Result<_Vector<ClassMember>, ParserError> parseClassMemberList(_Page* _rp, _Page* _ep);
     _Result<ClassMember, ParserError> parseClassMember(_Page* _rp, _Page* _ep);
-
-    _Result<Expression, ParserError> parseExpression(_Page* _rp, _Page* _ep);
-
-    _Result<CodeBlock, ParserError> parseCodeBlock(_Page* _rp, _Page* _ep);
-
-    _Result<SimpleExpression, ParserError> parseSimpleExpression(_Page* _rp, _Page* _ep);
 
     _Result<PrefixExpression, ParserError> parsePrefixExpression(_Page* _rp, _Page* _ep);
 

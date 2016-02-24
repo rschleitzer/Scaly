@@ -16,25 +16,35 @@ class Declaration;
 
 class UseDeclaration;
 
+class ConstantDeclaration;
+
+class VariableDeclaration;
+
+class FunctionDeclaration;
+
+class InitializerDeclaration;
+
+class EnumDeclaration;
+
+class ClassDeclaration;
+
+class Expression;
+
+class CodeBlock;
+
+class SimpleExpression;
+
 class PathIdentifier;
 
 class PathItem;
 
 class Initializer;
 
-class ConstantDeclaration;
-
-class VariableDeclaration;
-
 class BindingInitializer;
 
 class PatternInitializer;
 
 class AdditionalInitializer;
-
-class FunctionDeclaration;
-
-class InitializerDeclaration;
 
 class Modifier;
 
@@ -60,8 +70,6 @@ class VarParameter;
 
 class ThrowsClause;
 
-class EnumDeclaration;
-
 class EnumMember;
 
 class TupleType;
@@ -72,8 +80,6 @@ class EnumCase;
 
 class AdditionalCase;
 
-class ClassDeclaration;
-
 class ClassBody;
 
 class GenericArgumentClause;
@@ -81,12 +87,6 @@ class GenericArgumentClause;
 class GenericParameter;
 
 class ClassMember;
-
-class Expression;
-
-class CodeBlock;
-
-class SimpleExpression;
 
 class PrefixExpression;
 
@@ -244,25 +244,33 @@ public:
     virtual void closeStatementWithSemicolon(StatementWithSemicolon* statementWithSemicolon) = 0;
     virtual bool openUseDeclaration(UseDeclaration* useDeclaration) = 0;
     virtual void closeUseDeclaration(UseDeclaration* useDeclaration) = 0;
+    virtual bool openConstantDeclaration(ConstantDeclaration* constantDeclaration) = 0;
+    virtual void closeConstantDeclaration(ConstantDeclaration* constantDeclaration) = 0;
+    virtual bool openVariableDeclaration(VariableDeclaration* variableDeclaration) = 0;
+    virtual void closeVariableDeclaration(VariableDeclaration* variableDeclaration) = 0;
+    virtual bool openFunctionDeclaration(FunctionDeclaration* functionDeclaration) = 0;
+    virtual void closeFunctionDeclaration(FunctionDeclaration* functionDeclaration) = 0;
+    virtual bool openInitializerDeclaration(InitializerDeclaration* initializerDeclaration) = 0;
+    virtual void closeInitializerDeclaration(InitializerDeclaration* initializerDeclaration) = 0;
+    virtual bool openEnumDeclaration(EnumDeclaration* enumDeclaration) = 0;
+    virtual void closeEnumDeclaration(EnumDeclaration* enumDeclaration) = 0;
+    virtual bool openClassDeclaration(ClassDeclaration* classDeclaration) = 0;
+    virtual void closeClassDeclaration(ClassDeclaration* classDeclaration) = 0;
+    virtual bool openCodeBlock(CodeBlock* codeBlock) = 0;
+    virtual void closeCodeBlock(CodeBlock* codeBlock) = 0;
+    virtual bool openSimpleExpression(SimpleExpression* simpleExpression) = 0;
+    virtual void closeSimpleExpression(SimpleExpression* simpleExpression) = 0;
     virtual bool openPathIdentifier(PathIdentifier* pathIdentifier) = 0;
     virtual void closePathIdentifier(PathIdentifier* pathIdentifier) = 0;
     virtual void visitPathItem(PathItem* pathItem) = 0;
     virtual bool openInitializer(Initializer* initializer) = 0;
     virtual void closeInitializer(Initializer* initializer) = 0;
-    virtual bool openConstantDeclaration(ConstantDeclaration* constantDeclaration) = 0;
-    virtual void closeConstantDeclaration(ConstantDeclaration* constantDeclaration) = 0;
-    virtual bool openVariableDeclaration(VariableDeclaration* variableDeclaration) = 0;
-    virtual void closeVariableDeclaration(VariableDeclaration* variableDeclaration) = 0;
     virtual bool openBindingInitializer(BindingInitializer* bindingInitializer) = 0;
     virtual void closeBindingInitializer(BindingInitializer* bindingInitializer) = 0;
     virtual bool openPatternInitializer(PatternInitializer* patternInitializer) = 0;
     virtual void closePatternInitializer(PatternInitializer* patternInitializer) = 0;
     virtual bool openAdditionalInitializer(AdditionalInitializer* additionalInitializer) = 0;
     virtual void closeAdditionalInitializer(AdditionalInitializer* additionalInitializer) = 0;
-    virtual bool openFunctionDeclaration(FunctionDeclaration* functionDeclaration) = 0;
-    virtual void closeFunctionDeclaration(FunctionDeclaration* functionDeclaration) = 0;
-    virtual bool openInitializerDeclaration(InitializerDeclaration* initializerDeclaration) = 0;
-    virtual void closeInitializerDeclaration(InitializerDeclaration* initializerDeclaration) = 0;
     virtual void visitOverrideWord(OverrideWord* overrideWord) = 0;
     virtual void visitStaticWord(StaticWord* staticWord) = 0;
     virtual void visitIdentifierFunction(IdentifierFunction* identifierFunction) = 0;
@@ -278,8 +286,6 @@ public:
     virtual void closeVarParameter(VarParameter* varParameter) = 0;
     virtual bool openThrowsClause(ThrowsClause* throwsClause) = 0;
     virtual void closeThrowsClause(ThrowsClause* throwsClause) = 0;
-    virtual bool openEnumDeclaration(EnumDeclaration* enumDeclaration) = 0;
-    virtual void closeEnumDeclaration(EnumDeclaration* enumDeclaration) = 0;
     virtual bool openEnumMember(EnumMember* enumMember) = 0;
     virtual void closeEnumMember(EnumMember* enumMember) = 0;
     virtual bool openTupleType(TupleType* tupleType) = 0;
@@ -289,8 +295,6 @@ public:
     virtual void visitEnumCase(EnumCase* enumCase) = 0;
     virtual bool openAdditionalCase(AdditionalCase* additionalCase) = 0;
     virtual void closeAdditionalCase(AdditionalCase* additionalCase) = 0;
-    virtual bool openClassDeclaration(ClassDeclaration* classDeclaration) = 0;
-    virtual void closeClassDeclaration(ClassDeclaration* classDeclaration) = 0;
     virtual bool openClassBody(ClassBody* classBody) = 0;
     virtual void closeClassBody(ClassBody* classBody) = 0;
     virtual bool openGenericArgumentClause(GenericArgumentClause* genericArgumentClause) = 0;
@@ -298,10 +302,6 @@ public:
     virtual void visitGenericParameter(GenericParameter* genericParameter) = 0;
     virtual bool openClassMember(ClassMember* classMember) = 0;
     virtual void closeClassMember(ClassMember* classMember) = 0;
-    virtual bool openCodeBlock(CodeBlock* codeBlock) = 0;
-    virtual void closeCodeBlock(CodeBlock* codeBlock) = 0;
-    virtual bool openSimpleExpression(SimpleExpression* simpleExpression) = 0;
-    virtual void closeSimpleExpression(SimpleExpression* simpleExpression) = 0;
     virtual bool openPrefixExpression(PrefixExpression* prefixExpression) = 0;
     virtual void closePrefixExpression(PrefixExpression* prefixExpression) = 0;
     virtual bool openPostfixExpression(PostfixExpression* postfixExpression) = 0;

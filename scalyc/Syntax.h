@@ -15,16 +15,21 @@ public:
     virtual bool _isStatement();
     virtual bool _isDeclaration();
     virtual bool _isUseDeclaration();
+    virtual bool _isConstantDeclaration();
+    virtual bool _isVariableDeclaration();
+    virtual bool _isFunctionDeclaration();
+    virtual bool _isInitializerDeclaration();
+    virtual bool _isEnumDeclaration();
+    virtual bool _isClassDeclaration();
+    virtual bool _isExpression();
+    virtual bool _isCodeBlock();
+    virtual bool _isSimpleExpression();
     virtual bool _isPathIdentifier();
     virtual bool _isPathItem();
     virtual bool _isInitializer();
-    virtual bool _isConstantDeclaration();
-    virtual bool _isVariableDeclaration();
     virtual bool _isBindingInitializer();
     virtual bool _isPatternInitializer();
     virtual bool _isAdditionalInitializer();
-    virtual bool _isFunctionDeclaration();
-    virtual bool _isInitializerDeclaration();
     virtual bool _isModifier();
     virtual bool _isOverrideWord();
     virtual bool _isStaticWord();
@@ -37,20 +42,15 @@ public:
     virtual bool _isConstParameter();
     virtual bool _isVarParameter();
     virtual bool _isThrowsClause();
-    virtual bool _isEnumDeclaration();
     virtual bool _isEnumMember();
     virtual bool _isTupleType();
     virtual bool _isAdditionalType();
     virtual bool _isEnumCase();
     virtual bool _isAdditionalCase();
-    virtual bool _isClassDeclaration();
     virtual bool _isClassBody();
     virtual bool _isGenericArgumentClause();
     virtual bool _isGenericParameter();
     virtual bool _isClassMember();
-    virtual bool _isExpression();
-    virtual bool _isCodeBlock();
-    virtual bool _isSimpleExpression();
     virtual bool _isPrefixExpression();
     virtual bool _isPostfixExpression();
     virtual bool _isBinaryOp();
@@ -201,30 +201,6 @@ public:
     virtual bool _isUseDeclaration();
 };
 
-class PathIdentifier : public SyntaxNode {
-public:
-    PathIdentifier(PathItem* extension, Position* start, Position* end);
-
-    virtual void accept(SyntaxVisitor& visitor);
-    PathItem* extension;
-};
-
-class PathItem : public SyntaxNode {
-public:
-    PathItem(_LetString* name, Position* start, Position* end);
-
-    virtual void accept(SyntaxVisitor& visitor);
-    _LetString* name;
-};
-
-class Initializer : public SyntaxNode {
-public:
-    Initializer(Expression* expression, Position* start, Position* end);
-
-    virtual void accept(SyntaxVisitor& visitor);
-    Expression* expression;
-};
-
 class ConstantDeclaration : public Declaration {
 public:
     ConstantDeclaration(BindingInitializer* initializer, Position* start, Position* end);
@@ -243,32 +219,6 @@ public:
     BindingInitializer* initializer;
 
     virtual bool _isVariableDeclaration();
-};
-
-class BindingInitializer : public SyntaxNode {
-public:
-    BindingInitializer(PatternInitializer* initializer, _Vector<AdditionalInitializer>* additionalInitializers, Position* start, Position* end);
-
-    virtual void accept(SyntaxVisitor& visitor);
-    PatternInitializer* initializer;
-    _Vector<AdditionalInitializer>* additionalInitializers;
-};
-
-class PatternInitializer : public SyntaxNode {
-public:
-    PatternInitializer(Pattern* pattern, Initializer* initializer, Position* start, Position* end);
-
-    virtual void accept(SyntaxVisitor& visitor);
-    Pattern* pattern;
-    Initializer* initializer;
-};
-
-class AdditionalInitializer : public SyntaxNode {
-public:
-    AdditionalInitializer(PatternInitializer* pattern, Position* start, Position* end);
-
-    virtual void accept(SyntaxVisitor& visitor);
-    PatternInitializer* pattern;
 };
 
 class FunctionDeclaration : public Declaration {
@@ -295,6 +245,113 @@ public:
     Expression* body;
 
     virtual bool _isInitializerDeclaration();
+};
+
+class EnumDeclaration : public Declaration {
+public:
+    EnumDeclaration(_LetString* name, _Vector<EnumMember>* members, Position* start, Position* end);
+
+    virtual void accept(SyntaxVisitor& visitor);
+    _LetString* name;
+    _Vector<EnumMember>* members;
+
+    virtual bool _isEnumDeclaration();
+};
+
+class ClassDeclaration : public Declaration {
+public:
+    ClassDeclaration(_LetString* name, GenericArgumentClause* genericArgumentClause, TypeInheritanceClause* typeInheritanceClause, ClassBody* body, Position* start, Position* end);
+
+    virtual void accept(SyntaxVisitor& visitor);
+    _LetString* name;
+    GenericArgumentClause* genericArgumentClause;
+    TypeInheritanceClause* typeInheritanceClause;
+    ClassBody* body;
+
+    virtual bool _isClassDeclaration();
+};
+
+class Expression : public Statement {
+public:
+    Expression(Position* start, Position* end);
+
+    virtual void accept(SyntaxVisitor& visitor) = 0;
+
+    virtual bool _isSimpleExpression();
+    virtual bool _isCodeBlock();
+
+    virtual bool _isExpression();
+};
+
+class CodeBlock : public Expression {
+public:
+    CodeBlock(_Vector<StatementWithSemicolon>* statements, Position* start, Position* end);
+
+    virtual void accept(SyntaxVisitor& visitor);
+    _Vector<StatementWithSemicolon>* statements;
+
+    virtual bool _isCodeBlock();
+};
+
+class SimpleExpression : public Expression {
+public:
+    SimpleExpression(PrefixExpression* prefixExpression, _Vector<BinaryOp>* binaryOps, Position* start, Position* end);
+
+    virtual void accept(SyntaxVisitor& visitor);
+    PrefixExpression* prefixExpression;
+    _Vector<BinaryOp>* binaryOps;
+
+    virtual bool _isSimpleExpression();
+};
+
+class PathIdentifier : public SyntaxNode {
+public:
+    PathIdentifier(PathItem* extension, Position* start, Position* end);
+
+    virtual void accept(SyntaxVisitor& visitor);
+    PathItem* extension;
+};
+
+class PathItem : public SyntaxNode {
+public:
+    PathItem(_LetString* name, Position* start, Position* end);
+
+    virtual void accept(SyntaxVisitor& visitor);
+    _LetString* name;
+};
+
+class Initializer : public SyntaxNode {
+public:
+    Initializer(Expression* expression, Position* start, Position* end);
+
+    virtual void accept(SyntaxVisitor& visitor);
+    Expression* expression;
+};
+
+class BindingInitializer : public SyntaxNode {
+public:
+    BindingInitializer(PatternInitializer* initializer, _Vector<AdditionalInitializer>* additionalInitializers, Position* start, Position* end);
+
+    virtual void accept(SyntaxVisitor& visitor);
+    PatternInitializer* initializer;
+    _Vector<AdditionalInitializer>* additionalInitializers;
+};
+
+class PatternInitializer : public SyntaxNode {
+public:
+    PatternInitializer(Pattern* pattern, Initializer* initializer, Position* start, Position* end);
+
+    virtual void accept(SyntaxVisitor& visitor);
+    Pattern* pattern;
+    Initializer* initializer;
+};
+
+class AdditionalInitializer : public SyntaxNode {
+public:
+    AdditionalInitializer(PatternInitializer* pattern, Position* start, Position* end);
+
+    virtual void accept(SyntaxVisitor& visitor);
+    PatternInitializer* pattern;
 };
 
 class Modifier : public SyntaxNode {
@@ -410,17 +467,6 @@ public:
     Type* throwsType;
 };
 
-class EnumDeclaration : public Declaration {
-public:
-    EnumDeclaration(_LetString* name, _Vector<EnumMember>* members, Position* start, Position* end);
-
-    virtual void accept(SyntaxVisitor& visitor);
-    _LetString* name;
-    _Vector<EnumMember>* members;
-
-    virtual bool _isEnumDeclaration();
-};
-
 class EnumMember : public SyntaxNode {
 public:
     EnumMember(EnumCase* enumCase, _Vector<AdditionalCase>* additionalCases, TupleType* typeOfTuple, Position* start, Position* end);
@@ -464,19 +510,6 @@ public:
     EnumCase* enumCase;
 };
 
-class ClassDeclaration : public Declaration {
-public:
-    ClassDeclaration(_LetString* name, GenericArgumentClause* genericArgumentClause, TypeInheritanceClause* typeInheritanceClause, ClassBody* body, Position* start, Position* end);
-
-    virtual void accept(SyntaxVisitor& visitor);
-    _LetString* name;
-    GenericArgumentClause* genericArgumentClause;
-    TypeInheritanceClause* typeInheritanceClause;
-    ClassBody* body;
-
-    virtual bool _isClassDeclaration();
-};
-
 class ClassBody : public SyntaxNode {
 public:
     ClassBody(_Vector<ClassMember>* members, Position* start, Position* end);
@@ -507,39 +540,6 @@ public:
 
     virtual void accept(SyntaxVisitor& visitor);
     Declaration* declaration;
-};
-
-class Expression : public Statement {
-public:
-    Expression(Position* start, Position* end);
-
-    virtual void accept(SyntaxVisitor& visitor) = 0;
-
-    virtual bool _isSimpleExpression();
-    virtual bool _isCodeBlock();
-
-    virtual bool _isExpression();
-};
-
-class CodeBlock : public Expression {
-public:
-    CodeBlock(_Vector<StatementWithSemicolon>* statements, Position* start, Position* end);
-
-    virtual void accept(SyntaxVisitor& visitor);
-    _Vector<StatementWithSemicolon>* statements;
-
-    virtual bool _isCodeBlock();
-};
-
-class SimpleExpression : public Expression {
-public:
-    SimpleExpression(PrefixExpression* prefixExpression, _Vector<BinaryOp>* binaryOps, Position* start, Position* end);
-
-    virtual void accept(SyntaxVisitor& visitor);
-    PrefixExpression* prefixExpression;
-    _Vector<BinaryOp>* binaryOps;
-
-    virtual bool _isSimpleExpression();
 };
 
 class PrefixExpression : public SyntaxNode {

@@ -31,17 +31,6 @@
         <content link = PathItem                                property = importModule
         <content link = PathIdentifier      multiple optional   property = importExtensions
 
-    <syntax id = PathIdentifier             multiple
-        <content link = dot
-        <content link = PathItem                                property = extension
-
-    <syntax id = PathItem
-        <content identifier                                     property = name
-
-    <syntax id = Initializer
-        <content link = equal
-        <content link = Expression                              property = expression
-
     <syntax id = ConstantDeclaration                            base = Declaration
         <content link = let
         <content link = BindingInitializer                      property = initializer
@@ -49,18 +38,6 @@
     <syntax id = VariableDeclaration                            base = Declaration
         <content link = mutable
         <content link = BindingInitializer                      property = initializer
-
-    <syntax id = BindingInitializer
-        <content link = PatternInitializer                      property = initializer
-        <content link = AdditionalInitializer multiple optional property = additionalInitializers
-
-    <syntax id = PatternInitializer        multiple
-        <content link = Pattern                                 property = pattern
-        <content link = Initializer                    optional property = initializer
-
-    <syntax id = AdditionalInitializer     multiple
-        <content link = comma
-        <content link = PatternInitializer                      property = pattern
 
     <syntax id = FunctionDeclaration                            base = Declaration
         <content link = Modifier           multiple optional    property = modifiers
@@ -75,6 +52,56 @@
         <content link = ParameterClause                         property = parameterClause
         <content link = ThrowsClause                optional    property = throwsClause
         <content link = Expression                              property = body
+
+    <syntax id = EnumDeclaration                                base = Declaration
+        <content link = enum
+        <content identifier                                     property = name
+        <content link = leftCurly
+        <content link = EnumMember         multiple             property = members
+        <content link = rightCurly
+
+    <syntax id = ClassDeclaration                               base = Declaration
+        <content link = class
+        <content identifier                                     property = name
+        <content link = GenericArgumentClause       optional    property = genericArgumentClause
+        <content link = TypeInheritanceClause       optional    property = typeInheritanceClause
+        <content link = ClassBody                   optional    property = body
+
+    <syntax id = Expression                         abstract    base = Statement
+        <content link = SimpleExpression
+        <content link = CodeBlock
+
+    <syntax id = CodeBlock                                      base = Expression
+        <content link = leftCurly
+        <content link = StatementWithSemicolon  multiple        property = statements
+        <content link = rightCurly
+
+    <syntax id = SimpleExpression                               base = Expression
+        <content link = PrefixExpression                        property = prefixExpression
+        <content link = BinaryOp           multiple optional    property = binaryOps
+
+    <syntax id = PathIdentifier             multiple
+        <content link = dot
+        <content link = PathItem                                property = extension
+
+    <syntax id = PathItem
+        <content identifier                                     property = name
+
+    <syntax id = Initializer
+        <content link = equal
+        <content link = Expression                              property = expression
+
+    <syntax id = BindingInitializer
+        <content link = PatternInitializer                      property = initializer
+        <content link = AdditionalInitializer multiple optional property = additionalInitializers
+
+    <syntax id = PatternInitializer        multiple
+        <content link = Pattern                                 property = pattern
+        <content link = Initializer                    optional property = initializer
+
+    <syntax id = AdditionalInitializer     multiple
+        <content link = comma
+        <content link = PatternInitializer                      property = pattern
 
     <syntax id = Modifier                  multiple abstract
         <content link = OverrideWord
@@ -128,13 +155,6 @@
         <content link = throws
         <content link = Type                                    property = throwsType
 
-    <syntax id = EnumDeclaration                                base = Declaration
-        <content link = enum
-        <content identifier                                     property = name
-        <content link = leftCurly
-        <content link = EnumMember         multiple             property = members
-        <content link = rightCurly
-
     <syntax id = EnumMember                multiple
         <content link = case
         <content link = EnumCase                                property = enumCase
@@ -158,13 +178,6 @@
         <content link = comma
         <content link = EnumCase                                property = enumCase
 
-    <syntax id = ClassDeclaration                               base = Declaration
-        <content link = class
-        <content identifier                                     property = name
-        <content link = GenericArgumentClause       optional    property = genericArgumentClause
-        <content link = TypeInheritanceClause       optional    property = typeInheritanceClause
-        <content link = ClassBody                   optional    property = body
-
     <syntax id = ClassBody
         <content link = leftCurly
         <content link = ClassMember        multiple optional    property = members
@@ -181,19 +194,6 @@
     <syntax id = ClassMember               multiple
         <content link = Declaration                             property = declaration
         <content link = semicolon                   optional
-
-    <syntax id = Expression                         abstract    base = Statement
-        <content link = SimpleExpression
-        <content link = CodeBlock
-
-    <syntax id = CodeBlock                                      base = Expression
-        <content link = leftCurly
-        <content link = StatementWithSemicolon  multiple        property = statements
-        <content link = rightCurly
-
-    <syntax id = SimpleExpression                               base = Expression
-        <content link = PrefixExpression                        property = prefixExpression
-        <content link = BinaryOp           multiple optional    property = binaryOps
 
     <syntax id = PrefixExpression
         <content prefixoperator                     optional    property = prefixOperator

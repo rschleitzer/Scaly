@@ -110,6 +110,185 @@ class UseDeclaration : Declaration {
     let importExtensions: [PathIdentifier]?
 }
 
+class ConstantDeclaration : Declaration {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    override function accept(mutable visitor: SyntaxVisitor) {
+        visitor.openConstantDeclaration(this)
+        initializer!.accept(visitor)
+        visitor.closeConstantDeclaration(this)
+    }
+
+    let initializer: BindingInitializer?
+}
+
+class VariableDeclaration : Declaration {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    override function accept(mutable visitor: SyntaxVisitor) {
+        visitor.openVariableDeclaration(this)
+        initializer!.accept(visitor)
+        visitor.closeVariableDeclaration(this)
+    }
+
+    let initializer: BindingInitializer?
+}
+
+class FunctionDeclaration : Declaration {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    override function accept(mutable visitor: SyntaxVisitor) {
+        visitor.openFunctionDeclaration(this)
+        if modifiers != nil {
+            for node in modifiers! {
+                node.accept(visitor)
+            }
+        }
+        name!.accept(visitor)
+        signature!.accept(visitor)
+        if body != nil {
+            body!.accept(visitor)
+        }
+        visitor.closeFunctionDeclaration(this)
+    }
+
+    let modifiers: [Modifier]?
+    let name: FunctionName?
+    let signature: FunctionSignature?
+    let body: Expression?
+}
+
+class InitializerDeclaration : Declaration {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    override function accept(mutable visitor: SyntaxVisitor) {
+        visitor.openInitializerDeclaration(this)
+        if modifiers != nil {
+            for node in modifiers! {
+                node.accept(visitor)
+            }
+        }
+        parameterClause!.accept(visitor)
+        if throwsClause != nil {
+            throwsClause!.accept(visitor)
+        }
+        body!.accept(visitor)
+        visitor.closeInitializerDeclaration(this)
+    }
+
+    let modifiers: [Modifier]?
+    let parameterClause: ParameterClause?
+    let throwsClause: ThrowsClause?
+    let body: Expression?
+}
+
+class EnumDeclaration : Declaration {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    override function accept(mutable visitor: SyntaxVisitor) {
+        visitor.openEnumDeclaration(this)
+        for node in members! {
+            node.accept(visitor)
+        }
+        visitor.closeEnumDeclaration(this)
+    }
+
+    let name: String?
+    let members: [EnumMember]?
+}
+
+class ClassDeclaration : Declaration {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    override function accept(mutable visitor: SyntaxVisitor) {
+        visitor.openClassDeclaration(this)
+        if genericArgumentClause != nil {
+            genericArgumentClause!.accept(visitor)
+        }
+        if typeInheritanceClause != nil {
+            typeInheritanceClause!.accept(visitor)
+        }
+        if body != nil {
+            body!.accept(visitor)
+        }
+        visitor.closeClassDeclaration(this)
+    }
+
+    let name: String?
+    let genericArgumentClause: GenericArgumentClause?
+    let typeInheritanceClause: TypeInheritanceClause?
+    let body: ClassBody?
+}
+
+class Expression : Statement {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    override function accept(mutable visitor: SyntaxVisitor) {
+        visitor.openExpression(this)
+        visitor.closeExpression(this)
+    }
+
+}
+
+class CodeBlock : Expression {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    override function accept(mutable visitor: SyntaxVisitor) {
+        visitor.openCodeBlock(this)
+        for node in statements! {
+            node.accept(visitor)
+        }
+        visitor.closeCodeBlock(this)
+    }
+
+    let statements: [StatementWithSemicolon]?
+}
+
+class SimpleExpression : Expression {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    override function accept(mutable visitor: SyntaxVisitor) {
+        visitor.openSimpleExpression(this)
+        prefixExpression!.accept(visitor)
+        if binaryOps != nil {
+            for node in binaryOps! {
+                node.accept(visitor)
+            }
+        }
+        visitor.closeSimpleExpression(this)
+    }
+
+    let prefixExpression: PrefixExpression?
+    let binaryOps: [BinaryOp]?
+}
+
 class PathIdentifier : SyntaxNode {
 
     init(start: Position, end: Position) {
@@ -152,36 +331,6 @@ class Initializer : SyntaxNode {
     }
 
     let expression: Expression?
-}
-
-class ConstantDeclaration : Declaration {
-
-    init(start: Position, end: Position) {
-        super.init(start, end)
-    }
-
-    override function accept(mutable visitor: SyntaxVisitor) {
-        visitor.openConstantDeclaration(this)
-        initializer!.accept(visitor)
-        visitor.closeConstantDeclaration(this)
-    }
-
-    let initializer: BindingInitializer?
-}
-
-class VariableDeclaration : Declaration {
-
-    init(start: Position, end: Position) {
-        super.init(start, end)
-    }
-
-    override function accept(mutable visitor: SyntaxVisitor) {
-        visitor.openVariableDeclaration(this)
-        initializer!.accept(visitor)
-        visitor.closeVariableDeclaration(this)
-    }
-
-    let initializer: BindingInitializer?
 }
 
 class BindingInitializer : SyntaxNode {
@@ -237,60 +386,6 @@ class AdditionalInitializer : SyntaxNode {
     }
 
     let pattern: PatternInitializer?
-}
-
-class FunctionDeclaration : Declaration {
-
-    init(start: Position, end: Position) {
-        super.init(start, end)
-    }
-
-    override function accept(mutable visitor: SyntaxVisitor) {
-        visitor.openFunctionDeclaration(this)
-        if modifiers != nil {
-            for node in modifiers! {
-                node.accept(visitor)
-            }
-        }
-        name!.accept(visitor)
-        signature!.accept(visitor)
-        if body != nil {
-            body!.accept(visitor)
-        }
-        visitor.closeFunctionDeclaration(this)
-    }
-
-    let modifiers: [Modifier]?
-    let name: FunctionName?
-    let signature: FunctionSignature?
-    let body: Expression?
-}
-
-class InitializerDeclaration : Declaration {
-
-    init(start: Position, end: Position) {
-        super.init(start, end)
-    }
-
-    override function accept(mutable visitor: SyntaxVisitor) {
-        visitor.openInitializerDeclaration(this)
-        if modifiers != nil {
-            for node in modifiers! {
-                node.accept(visitor)
-            }
-        }
-        parameterClause!.accept(visitor)
-        if throwsClause != nil {
-            throwsClause!.accept(visitor)
-        }
-        body!.accept(visitor)
-        visitor.closeInitializerDeclaration(this)
-    }
-
-    let modifiers: [Modifier]?
-    let parameterClause: ParameterClause?
-    let throwsClause: ThrowsClause?
-    let body: Expression?
 }
 
 class Modifier : SyntaxNode {
@@ -476,24 +571,6 @@ class ThrowsClause : SyntaxNode {
     let throwsType: Type?
 }
 
-class EnumDeclaration : Declaration {
-
-    init(start: Position, end: Position) {
-        super.init(start, end)
-    }
-
-    override function accept(mutable visitor: SyntaxVisitor) {
-        visitor.openEnumDeclaration(this)
-        for node in members! {
-            node.accept(visitor)
-        }
-        visitor.closeEnumDeclaration(this)
-    }
-
-    let name: String?
-    let members: [EnumMember]?
-}
-
 class EnumMember : SyntaxNode {
 
     init(start: Position, end: Position) {
@@ -584,32 +661,6 @@ class AdditionalCase : SyntaxNode {
     let enumCase: EnumCase?
 }
 
-class ClassDeclaration : Declaration {
-
-    init(start: Position, end: Position) {
-        super.init(start, end)
-    }
-
-    override function accept(mutable visitor: SyntaxVisitor) {
-        visitor.openClassDeclaration(this)
-        if genericArgumentClause != nil {
-            genericArgumentClause!.accept(visitor)
-        }
-        if typeInheritanceClause != nil {
-            typeInheritanceClause!.accept(visitor)
-        }
-        if body != nil {
-            body!.accept(visitor)
-        }
-        visitor.closeClassDeclaration(this)
-    }
-
-    let name: String?
-    let genericArgumentClause: GenericArgumentClause?
-    let typeInheritanceClause: TypeInheritanceClause?
-    let body: ClassBody?
-}
-
 class ClassBody : SyntaxNode {
 
     init(start: Position, end: Position) {
@@ -673,57 +724,6 @@ class ClassMember : SyntaxNode {
     }
 
     let declaration: Declaration?
-}
-
-class Expression : Statement {
-
-    init(start: Position, end: Position) {
-        super.init(start, end)
-    }
-
-    override function accept(mutable visitor: SyntaxVisitor) {
-        visitor.openExpression(this)
-        visitor.closeExpression(this)
-    }
-
-}
-
-class CodeBlock : Expression {
-
-    init(start: Position, end: Position) {
-        super.init(start, end)
-    }
-
-    override function accept(mutable visitor: SyntaxVisitor) {
-        visitor.openCodeBlock(this)
-        for node in statements! {
-            node.accept(visitor)
-        }
-        visitor.closeCodeBlock(this)
-    }
-
-    let statements: [StatementWithSemicolon]?
-}
-
-class SimpleExpression : Expression {
-
-    init(start: Position, end: Position) {
-        super.init(start, end)
-    }
-
-    override function accept(mutable visitor: SyntaxVisitor) {
-        visitor.openSimpleExpression(this)
-        prefixExpression!.accept(visitor)
-        if binaryOps != nil {
-            for node in binaryOps! {
-                node.accept(visitor)
-            }
-        }
-        visitor.closeSimpleExpression(this)
-    }
-
-    let prefixExpression: PrefixExpression?
-    let binaryOps: [BinaryOp]?
 }
 
 class PrefixExpression : SyntaxNode {
