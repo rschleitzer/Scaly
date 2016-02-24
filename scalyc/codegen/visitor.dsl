@@ -73,17 +73,16 @@ class "(id syntax-node)";
         )))
 "
 "   ))
-"
-class "(if concrete "MyVisitor : public " "")"SyntaxVisitor "(if concrete "" ": public Object ")"{
+"class "(if concrete "MyVisitor : public " "")"SyntaxVisitor "(if concrete "" ": public Object ")"{
 public:"
     (apply-to-selected-children "syntax" (lambda (syntax) (if (abstract? syntax) "" ($
         (if (has-syntax-children? syntax)
             ($ "
-    virtual bool open"(id syntax)"("(id syntax)"* "(string-firstchar-downcase (id syntax))")"(if concrete "" "= 0")";
-    virtual void close"(id syntax)"("(id syntax)"* "(string-firstchar-downcase (id syntax))")"(if concrete "" "= 0")";"
+    virtual bool open"(id syntax)"("(id syntax)"* "(string-firstchar-downcase (id syntax))")"(if concrete "" " = 0")";
+    virtual void close"(id syntax)"("(id syntax)"* "(string-firstchar-downcase (id syntax))")"(if concrete "" " = 0")";"
             )
             ($ "
-    virtual void visit"(id syntax)"("(id syntax)"* "(string-firstchar-downcase (id syntax))")"(if concrete "" "= 0")";"
+    virtual void visit"(id syntax)"("(id syntax)"* "(string-firstchar-downcase (id syntax))")"(if concrete "" " = 0")";"
             )
         )
         (if concrete

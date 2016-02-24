@@ -129,4 +129,4 @@ public:
 };
 
 }
-#endif // __scaly__Lexer__
+#endif // __scalyc__Lexer__
