@@ -15,7 +15,7 @@
 "
 class "(id syntax-node)" : "(if (base syntax-node) (base syntax-node) "SyntaxNode")" {
 
-    init("(if (program? syntax-node) "" "start: Position, end: Position")") {
+    init("(scaly-syntax-constructor-parameters syntax-node)") {
         super.init("(if (program? syntax-node) "Position(0, 0), Position(0, 0)" "start, end")")
     }
 
@@ -136,6 +136,20 @@ public:
         (("identifier" "operator" "prefixoperator" "binaryoperator" "postfixoperator") ($ "_LetString* "(property content)))
         (("literal") ($ "Literal* "(property content)))
         (("keyword" "punctuation") ($ "bool "(property content)))))
+
+(define (scaly-syntax-constructor-parameters syntax-node)
+    ($
+        (apply-to-property-children-of syntax-node (lambda (content) ($
+            (scaly-property-declaration content)(if (properties-remaining? content syntax-node) ", " "")
+        )))
+        (if (program? syntax-node) "" ($ (if (node-list-empty? (properties syntax-node)) "" ", ") "start: Position, end: Position"))))
+
+(define (scaly-property-declaration content)
+    (case (type content)
+        (("syntax") ($ (property content)": "(if (multiple? content)"[" "")(link content)(if (multiple? content)"]" "")))
+        (("identifier" "operator" "prefixoperator" "binaryoperator" "postfixoperator") ($ (property content)": String"))
+        (("literal") ($ (property content)": Literal"))
+        (("keyword" "punctuation") ($ (property content)": bool"))))
 
 (define (inheritors node)
     (if (abstract? node) (node-list-union

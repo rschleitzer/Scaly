@@ -11,7 +11,7 @@ class SyntaxNode {
 
 class Program : SyntaxNode {
 
-    init() {
+    init(name: String, directory: String, compilationUnits: [CompilationUnit]) {
         super.init(Position(0, 0), Position(0, 0))
     }
 
@@ -30,7 +30,7 @@ class Program : SyntaxNode {
 
 class CompilationUnit : SyntaxNode {
 
-    init(start: Position, end: Position) {
+    init(statements: [StatementWithSemicolon], start: Position, end: Position) {
         super.init(start, end)
     }
 
@@ -50,7 +50,7 @@ class CompilationUnit : SyntaxNode {
 
 class StatementWithSemicolon : SyntaxNode {
 
-    init(start: Position, end: Position) {
+    init(statement: Statement, start: Position, end: Position) {
         super.init(start, end)
     }
 
@@ -91,7 +91,7 @@ class Declaration : Statement {
 
 class UseDeclaration : Declaration {
 
-    init(start: Position, end: Position) {
+    init(importModule: PathItem, importExtensions: [PathIdentifier], start: Position, end: Position) {
         super.init(start, end)
     }
 
@@ -112,7 +112,7 @@ class UseDeclaration : Declaration {
 
 class ConstantDeclaration : Declaration {
 
-    init(start: Position, end: Position) {
+    init(initializer: BindingInitializer, start: Position, end: Position) {
         super.init(start, end)
     }
 
@@ -127,7 +127,7 @@ class ConstantDeclaration : Declaration {
 
 class VariableDeclaration : Declaration {
 
-    init(start: Position, end: Position) {
+    init(initializer: BindingInitializer, start: Position, end: Position) {
         super.init(start, end)
     }
 
@@ -142,7 +142,7 @@ class VariableDeclaration : Declaration {
 
 class FunctionDeclaration : Declaration {
 
-    init(start: Position, end: Position) {
+    init(modifiers: [Modifier], name: FunctionName, signature: FunctionSignature, body: Expression, start: Position, end: Position) {
         super.init(start, end)
     }
 
@@ -169,7 +169,7 @@ class FunctionDeclaration : Declaration {
 
 class InitializerDeclaration : Declaration {
 
-    init(start: Position, end: Position) {
+    init(modifiers: [Modifier], parameterClause: ParameterClause, throwsClause: ThrowsClause, body: Expression, start: Position, end: Position) {
         super.init(start, end)
     }
 
@@ -196,7 +196,7 @@ class InitializerDeclaration : Declaration {
 
 class EnumDeclaration : Declaration {
 
-    init(start: Position, end: Position) {
+    init(name: String, members: [EnumMember], start: Position, end: Position) {
         super.init(start, end)
     }
 
@@ -214,7 +214,7 @@ class EnumDeclaration : Declaration {
 
 class ClassDeclaration : Declaration {
 
-    init(start: Position, end: Position) {
+    init(name: String, genericArgumentClause: GenericArgumentClause, typeInheritanceClause: TypeInheritanceClause, body: ClassBody, start: Position, end: Position) {
         super.init(start, end)
     }
 
@@ -253,7 +253,7 @@ class Expression : Statement {
 
 class CodeBlock : Expression {
 
-    init(start: Position, end: Position) {
+    init(statements: [StatementWithSemicolon], start: Position, end: Position) {
         super.init(start, end)
     }
 
@@ -270,7 +270,7 @@ class CodeBlock : Expression {
 
 class SimpleExpression : Expression {
 
-    init(start: Position, end: Position) {
+    init(prefixExpression: PrefixExpression, binaryOps: [BinaryOp], start: Position, end: Position) {
         super.init(start, end)
     }
 
@@ -291,7 +291,7 @@ class SimpleExpression : Expression {
 
 class PathIdentifier : SyntaxNode {
 
-    init(start: Position, end: Position) {
+    init(extension: PathItem, start: Position, end: Position) {
         super.init(start, end)
     }
 
@@ -306,7 +306,7 @@ class PathIdentifier : SyntaxNode {
 
 class PathItem : SyntaxNode {
 
-    init(start: Position, end: Position) {
+    init(name: String, start: Position, end: Position) {
         super.init(start, end)
     }
 
@@ -320,7 +320,7 @@ class PathItem : SyntaxNode {
 
 class Initializer : SyntaxNode {
 
-    init(start: Position, end: Position) {
+    init(expression: Expression, start: Position, end: Position) {
         super.init(start, end)
     }
 
@@ -335,7 +335,7 @@ class Initializer : SyntaxNode {
 
 class BindingInitializer : SyntaxNode {
 
-    init(start: Position, end: Position) {
+    init(initializer: PatternInitializer, additionalInitializers: [AdditionalInitializer], start: Position, end: Position) {
         super.init(start, end)
     }
 
@@ -356,7 +356,7 @@ class BindingInitializer : SyntaxNode {
 
 class PatternInitializer : SyntaxNode {
 
-    init(start: Position, end: Position) {
+    init(pattern: Pattern, initializer: Initializer, start: Position, end: Position) {
         super.init(start, end)
     }
 
@@ -375,7 +375,7 @@ class PatternInitializer : SyntaxNode {
 
 class AdditionalInitializer : SyntaxNode {
 
-    init(start: Position, end: Position) {
+    init(pattern: PatternInitializer, start: Position, end: Position) {
         super.init(start, end)
     }
 
@@ -442,7 +442,7 @@ class FunctionName : SyntaxNode {
 
 class IdentifierFunction : FunctionName {
 
-    init(start: Position, end: Position) {
+    init(name: String, start: Position, end: Position) {
         super.init(start, end)
     }
 
@@ -456,7 +456,7 @@ class IdentifierFunction : FunctionName {
 
 class FunctionSignature : SyntaxNode {
 
-    init(start: Position, end: Position) {
+    init(parameterClause: ParameterClause, result: FunctionResult, throwsClause: ThrowsClause, start: Position, end: Position) {
         super.init(start, end)
     }
 
@@ -479,7 +479,7 @@ class FunctionSignature : SyntaxNode {
 
 class FunctionResult : SyntaxNode {
 
-    init(start: Position, end: Position) {
+    init(resultType: Type, start: Position, end: Position) {
         super.init(start, end)
     }
 
@@ -494,7 +494,7 @@ class FunctionResult : SyntaxNode {
 
 class ParameterClause : SyntaxNode {
 
-    init(start: Position, end: Position) {
+    init(parameters: [Parameter], start: Position, end: Position) {
         super.init(start, end)
     }
 
@@ -526,7 +526,7 @@ class Parameter : SyntaxNode {
 
 class ConstParameter : Parameter {
 
-    init(start: Position, end: Position) {
+    init(name: String, type: Type, start: Position, end: Position) {
         super.init(start, end)
     }
 
@@ -542,7 +542,7 @@ class ConstParameter : Parameter {
 
 class VarParameter : Parameter {
 
-    init(start: Position, end: Position) {
+    init(name: String, parameterType: Type, start: Position, end: Position) {
         super.init(start, end)
     }
 
@@ -558,7 +558,7 @@ class VarParameter : Parameter {
 
 class ThrowsClause : SyntaxNode {
 
-    init(start: Position, end: Position) {
+    init(throwsType: Type, start: Position, end: Position) {
         super.init(start, end)
     }
 
@@ -573,7 +573,7 @@ class ThrowsClause : SyntaxNode {
 
 class EnumMember : SyntaxNode {
 
-    init(start: Position, end: Position) {
+    init(enumCase: EnumCase, additionalCases: [AdditionalCase], typeOfTuple: TupleType, start: Position, end: Position) {
         super.init(start, end)
     }
 
@@ -598,7 +598,7 @@ class EnumMember : SyntaxNode {
 
 class TupleType : SyntaxNode {
 
-    init(start: Position, end: Position) {
+    init(typeOfTuple: Type, additionalTypes: [AdditionalType], start: Position, end: Position) {
         super.init(start, end)
     }
 
@@ -619,7 +619,7 @@ class TupleType : SyntaxNode {
 
 class AdditionalType : SyntaxNode {
 
-    init(start: Position, end: Position) {
+    init(enumCase: Type, start: Position, end: Position) {
         super.init(start, end)
     }
 
@@ -634,7 +634,7 @@ class AdditionalType : SyntaxNode {
 
 class EnumCase : SyntaxNode {
 
-    init(start: Position, end: Position) {
+    init(name: String, start: Position, end: Position) {
         super.init(start, end)
     }
 
@@ -648,7 +648,7 @@ class EnumCase : SyntaxNode {
 
 class AdditionalCase : SyntaxNode {
 
-    init(start: Position, end: Position) {
+    init(enumCase: EnumCase, start: Position, end: Position) {
         super.init(start, end)
     }
 
@@ -663,7 +663,7 @@ class AdditionalCase : SyntaxNode {
 
 class ClassBody : SyntaxNode {
 
-    init(start: Position, end: Position) {
+    init(members: [ClassMember], start: Position, end: Position) {
         super.init(start, end)
     }
 
@@ -682,7 +682,7 @@ class ClassBody : SyntaxNode {
 
 class GenericArgumentClause : SyntaxNode {
 
-    init(start: Position, end: Position) {
+    init(genericParameters: [GenericParameter], start: Position, end: Position) {
         super.init(start, end)
     }
 
@@ -699,7 +699,7 @@ class GenericArgumentClause : SyntaxNode {
 
 class GenericParameter : SyntaxNode {
 
-    init(start: Position, end: Position) {
+    init(typeName: String, start: Position, end: Position) {
         super.init(start, end)
     }
 
@@ -713,7 +713,7 @@ class GenericParameter : SyntaxNode {
 
 class ClassMember : SyntaxNode {
 
-    init(start: Position, end: Position) {
+    init(declaration: Declaration, start: Position, end: Position) {
         super.init(start, end)
     }
 
@@ -728,7 +728,7 @@ class ClassMember : SyntaxNode {
 
 class PrefixExpression : SyntaxNode {
 
-    init(start: Position, end: Position) {
+    init(prefixOperator: String, expression: PostfixExpression, start: Position, end: Position) {
         super.init(start, end)
     }
 
@@ -744,7 +744,7 @@ class PrefixExpression : SyntaxNode {
 
 class PostfixExpression : SyntaxNode {
 
-    init(start: Position, end: Position) {
+    init(primaryExpression: PrimaryExpression, postfixes: [Postfix], start: Position, end: Position) {
         super.init(start, end)
     }
 
@@ -778,7 +778,7 @@ class BinaryOp : SyntaxNode {
 
 class BinaryOperation : BinaryOp {
 
-    init(start: Position, end: Position) {
+    init(binaryOperator: String, expression: PrefixExpression, start: Position, end: Position) {
         super.init(start, end)
     }
 
@@ -794,7 +794,7 @@ class BinaryOperation : BinaryOp {
 
 class Assignment : BinaryOp {
 
-    init(start: Position, end: Position) {
+    init(expression: PrefixExpression, start: Position, end: Position) {
         super.init(start, end)
     }
 
@@ -809,7 +809,7 @@ class Assignment : BinaryOp {
 
 class TypeQuery : BinaryOp {
 
-    init(start: Position, end: Position) {
+    init(objectType: Type, start: Position, end: Position) {
         super.init(start, end)
     }
 
@@ -824,7 +824,7 @@ class TypeQuery : BinaryOp {
 
 class TypeCast : BinaryOp {
 
-    init(start: Position, end: Position) {
+    init(objectType: Type, start: Position, end: Position) {
         super.init(start, end)
     }
 
@@ -839,7 +839,7 @@ class TypeCast : BinaryOp {
 
 class CatchClause : SyntaxNode {
 
-    init(start: Position, end: Position) {
+    init(catchPattern: CatchPattern, bindingPattern: TuplePattern, expression: Expression, start: Position, end: Position) {
         super.init(start, end)
     }
 
@@ -873,7 +873,7 @@ class CatchPattern : SyntaxNode {
 
 class WildCardCatchPattern : CatchPattern {
 
-    init(start: Position, end: Position) {
+    init(pattern: WildcardPattern, start: Position, end: Position) {
         super.init(start, end)
     }
 
@@ -888,7 +888,7 @@ class WildCardCatchPattern : CatchPattern {
 
 class PathItemCatchPattern : CatchPattern {
 
-    init(start: Position, end: Position) {
+    init(catchCase: PathItem, catchCaseExtensions: [PathIdentifier], start: Position, end: Position) {
         super.init(start, end)
     }
 
@@ -922,7 +922,7 @@ class Postfix : SyntaxNode {
 
 class OperatorPostfix : Postfix {
 
-    init(start: Position, end: Position) {
+    init(postfixOperator: String, start: Position, end: Position) {
         super.init(start, end)
     }
 
@@ -936,7 +936,7 @@ class OperatorPostfix : Postfix {
 
 class FunctionCall : Postfix {
 
-    init(start: Position, end: Position) {
+    init(arguments: ParenthesizedExpression, catchClauses: [CatchClause], start: Position, end: Position) {
         super.init(start, end)
     }
 
@@ -957,7 +957,7 @@ class FunctionCall : Postfix {
 
 class ExplicitMemberExpression : Postfix {
 
-    init(start: Position, end: Position) {
+    init(memberPostfix: MemberPostfix, start: Position, end: Position) {
         super.init(start, end)
     }
 
@@ -972,7 +972,7 @@ class ExplicitMemberExpression : Postfix {
 
 class Subscript : Postfix {
 
-    init(start: Position, end: Position) {
+    init(expressions: [ExpressionElement], start: Position, end: Position) {
         super.init(start, end)
     }
 
@@ -989,7 +989,7 @@ class Subscript : Postfix {
 
 class ExpressionElement : SyntaxNode {
 
-    init(start: Position, end: Position) {
+    init(expression: Expression, start: Position, end: Position) {
         super.init(start, end)
     }
 
@@ -1017,7 +1017,7 @@ class MemberPostfix : SyntaxNode {
 
 class NamedMemberPostfix : MemberPostfix {
 
-    init(start: Position, end: Position) {
+    init(identifier: IdentifierExpression, start: Position, end: Position) {
         super.init(start, end)
     }
 
@@ -1045,7 +1045,7 @@ class PrimaryExpression : SyntaxNode {
 
 class ParenthesizedExpression : PrimaryExpression {
 
-    init(start: Position, end: Position) {
+    init(expressionElements: [ExpressionElement], start: Position, end: Position) {
         super.init(start, end)
     }
 
@@ -1064,7 +1064,7 @@ class ParenthesizedExpression : PrimaryExpression {
 
 class LiteralExpression : PrimaryExpression {
 
-    init(start: Position, end: Position) {
+    init(literal: Literal, start: Position, end: Position) {
         super.init(start, end)
     }
 
@@ -1078,7 +1078,7 @@ class LiteralExpression : PrimaryExpression {
 
 class IdentifierExpression : PrimaryExpression {
 
-    init(start: Position, end: Position) {
+    init(name: String, start: Position, end: Position) {
         super.init(start, end)
     }
 
@@ -1092,7 +1092,7 @@ class IdentifierExpression : PrimaryExpression {
 
 class IfExpression : PrimaryExpression {
 
-    init(start: Position, end: Position) {
+    init(condition: Expression, consequent: Expression, elseClause: ElseClause, start: Position, end: Position) {
         super.init(start, end)
     }
 
@@ -1113,7 +1113,7 @@ class IfExpression : PrimaryExpression {
 
 class SwitchExpression : PrimaryExpression {
 
-    init(start: Position, end: Position) {
+    init(expression: Expression, body: SwitchBody, start: Position, end: Position) {
         super.init(start, end)
     }
 
@@ -1130,7 +1130,7 @@ class SwitchExpression : PrimaryExpression {
 
 class ForExpression : PrimaryExpression {
 
-    init(start: Position, end: Position) {
+    init(loop: ForLoop, start: Position, end: Position) {
         super.init(start, end)
     }
 
@@ -1145,7 +1145,7 @@ class ForExpression : PrimaryExpression {
 
 class ReturnExpression : PrimaryExpression {
 
-    init(start: Position, end: Position) {
+    init(expression: Expression, start: Position, end: Position) {
         super.init(start, end)
     }
 
@@ -1162,7 +1162,7 @@ class ReturnExpression : PrimaryExpression {
 
 class ThrowExpression : PrimaryExpression {
 
-    init(start: Position, end: Position) {
+    init(expression: Expression, start: Position, end: Position) {
         super.init(start, end)
     }
 
@@ -1179,7 +1179,7 @@ class ThrowExpression : PrimaryExpression {
 
 class BreakExpression : PrimaryExpression {
 
-    init(start: Position, end: Position) {
+    init(expression: Expression, start: Position, end: Position) {
         super.init(start, end)
     }
 
@@ -1196,7 +1196,7 @@ class BreakExpression : PrimaryExpression {
 
 class InitializerCall : PrimaryExpression {
 
-    init(start: Position, end: Position) {
+    init(typeToInitialize: Type, arguments: ParenthesizedExpression, catchClauses: [CatchClause], start: Position, end: Position) {
         super.init(start, end)
     }
 
@@ -1232,7 +1232,7 @@ class ThisExpression : PrimaryExpression {
 
 class ThisDot : ThisExpression {
 
-    init(start: Position, end: Position) {
+    init(member: CommonThisMember, start: Position, end: Position) {
         super.init(start, end)
     }
 
@@ -1247,7 +1247,7 @@ class ThisDot : ThisExpression {
 
 class ThisSubscript : ThisExpression {
 
-    init(start: Position, end: Position) {
+    init(subscript: Subscript, start: Position, end: Position) {
         super.init(start, end)
     }
 
@@ -1288,7 +1288,7 @@ class SuperExpression : PrimaryExpression {
 
 class SuperDot : SuperExpression {
 
-    init(start: Position, end: Position) {
+    init(member: CommonSuperMember, start: Position, end: Position) {
         super.init(start, end)
     }
 
@@ -1303,7 +1303,7 @@ class SuperDot : SuperExpression {
 
 class SuperSubscript : SuperExpression {
 
-    init(start: Position, end: Position) {
+    init(subscript: Subscript, start: Position, end: Position) {
         super.init(start, end)
     }
 
@@ -1318,7 +1318,7 @@ class SuperSubscript : SuperExpression {
 
 class ElseClause : SyntaxNode {
 
-    init(start: Position, end: Position) {
+    init(alternative: Expression, start: Position, end: Position) {
         super.init(start, end)
     }
 
@@ -1346,7 +1346,7 @@ class SwitchBody : SyntaxNode {
 
 class CurliedSwitchBody : SwitchBody {
 
-    init(start: Position, end: Position) {
+    init(cases: [SwitchCase], start: Position, end: Position) {
         super.init(start, end)
     }
 
@@ -1363,7 +1363,7 @@ class CurliedSwitchBody : SwitchBody {
 
 class NakedSwitchBody : SwitchBody {
 
-    init(start: Position, end: Position) {
+    init(cases: [SwitchCase], start: Position, end: Position) {
         super.init(start, end)
     }
 
@@ -1380,7 +1380,7 @@ class NakedSwitchBody : SwitchBody {
 
 class SwitchCase : SyntaxNode {
 
-    init(start: Position, end: Position) {
+    init(label: CaseLabel, content: CaseContent, start: Position, end: Position) {
         super.init(start, end)
     }
 
@@ -1410,7 +1410,7 @@ class CaseLabel : SyntaxNode {
 
 class ItemCaseLabel : CaseLabel {
 
-    init(start: Position, end: Position) {
+    init(pattern: Pattern, additionalPatterns: [CaseItem], start: Position, end: Position) {
         super.init(start, end)
     }
 
@@ -1444,7 +1444,7 @@ class DefaultCaseLabel : CaseLabel {
 
 class CaseItem : SyntaxNode {
 
-    init(start: Position, end: Position) {
+    init(pattern: Pattern, start: Position, end: Position) {
         super.init(start, end)
     }
 
@@ -1472,7 +1472,7 @@ class ForLoop : SyntaxNode {
 
 class ForEach : ForLoop {
 
-    init(start: Position, end: Position) {
+    init(pattern: Pattern, expression: Expression, code: Expression, start: Position, end: Position) {
         super.init(start, end)
     }
 
@@ -1491,7 +1491,7 @@ class ForEach : ForLoop {
 
 class PlainFor : ForLoop {
 
-    init(start: Position, end: Position) {
+    init(forInit: VariableDeclaration, forCheck: Expression, forNext: Expression, code: Expression, start: Position, end: Position) {
         super.init(start, end)
     }
 
@@ -1542,7 +1542,7 @@ class WildcardPattern : Pattern {
 
 class IdentifierPattern : Pattern {
 
-    init(start: Position, end: Position) {
+    init(identifier: String, annotationForType: TypeAnnotation, start: Position, end: Position) {
         super.init(start, end)
     }
 
@@ -1560,7 +1560,7 @@ class IdentifierPattern : Pattern {
 
 class TuplePattern : Pattern {
 
-    init(start: Position, end: Position) {
+    init(elements: [TuplePatternElement], start: Position, end: Position) {
         super.init(start, end)
     }
 
@@ -1577,7 +1577,7 @@ class TuplePattern : Pattern {
 
 class ExpressionPattern : Pattern {
 
-    init(start: Position, end: Position) {
+    init(expression: Expression, start: Position, end: Position) {
         super.init(start, end)
     }
 
@@ -1592,7 +1592,7 @@ class ExpressionPattern : Pattern {
 
 class TuplePatternElement : SyntaxNode {
 
-    init(start: Position, end: Position) {
+    init(pattern: Pattern, start: Position, end: Position) {
         super.init(start, end)
     }
 
@@ -1620,7 +1620,7 @@ class CaseContent : SyntaxNode {
 
 class BlockCaseContent : CaseContent {
 
-    init(start: Position, end: Position) {
+    init(statements: [StatementWithSemicolon], start: Position, end: Position) {
         super.init(start, end)
     }
 
@@ -1676,7 +1676,7 @@ class ThisInit : CommonThisMember {
 
 class ThisMember : CommonThisMember {
 
-    init(start: Position, end: Position) {
+    init(name: String, start: Position, end: Position) {
         super.init(start, end)
     }
 
@@ -1716,7 +1716,7 @@ class SuperInit : CommonSuperMember {
 
 class SuperMember : CommonSuperMember {
 
-    init(start: Position, end: Position) {
+    init(name: String, start: Position, end: Position) {
         super.init(start, end)
     }
 
@@ -1743,7 +1743,7 @@ class Type : SyntaxNode {
 
 class TypeIdentifier : Type {
 
-    init(start: Position, end: Position) {
+    init(name: String, subType: SubtypeIdentifier, postfixes: [TypePostfix], start: Position, end: Position) {
         super.init(start, end)
     }
 
@@ -1767,7 +1767,7 @@ class TypeIdentifier : Type {
 
 class ArrayType : Type {
 
-    init(start: Position, end: Position) {
+    init(elementType: Type, postfixes: [TypePostfix], start: Position, end: Position) {
         super.init(start, end)
     }
 
@@ -1788,7 +1788,7 @@ class ArrayType : Type {
 
 class TypeAnnotation : SyntaxNode {
 
-    init(start: Position, end: Position) {
+    init(annotationForType: Type, start: Position, end: Position) {
         super.init(start, end)
     }
 
@@ -1803,7 +1803,7 @@ class TypeAnnotation : SyntaxNode {
 
 class SubtypeIdentifier : SyntaxNode {
 
-    init(start: Position, end: Position) {
+    init(typeIdentifier: TypeIdentifier, start: Position, end: Position) {
         super.init(start, end)
     }
 
@@ -1844,7 +1844,7 @@ class OptionalType : TypePostfix {
 
 class TypeInheritanceClause : SyntaxNode {
 
-    init(start: Position, end: Position) {
+    init(inheritances: [Inheritance], start: Position, end: Position) {
         super.init(start, end)
     }
 
@@ -1863,7 +1863,7 @@ class TypeInheritanceClause : SyntaxNode {
 
 class Inheritance : SyntaxNode {
 
-    init(start: Position, end: Position) {
+    init(typeIdentifier: TypeIdentifier, start: Position, end: Position) {
         super.init(start, end)
     }
 
