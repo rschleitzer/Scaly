@@ -245,16 +245,16 @@ void CppVisitor::closeAdditionalInitializer(AdditionalInitializer* additionalIni
 
 bool CppVisitor::openFunctionDeclaration(FunctionDeclaration* functionDeclaration) {
     if (!functionDeclaration->body)
-        virtualFunction = true;
+        abstractFunction = true;
     else
-        virtualFunction = false;
+        abstractFunction = false;
     return true;
 }
 
 void CppVisitor::closeFunctionDeclaration(FunctionDeclaration* functionDeclaration) {
-    if (virtualFunction) {
+    if (abstractFunction) {
         (*headerFile) += " = 0";
-        virtualFunction = false; } }
+        abstractFunction = false; } }
 
 bool CppVisitor::openInitializerDeclaration(InitializerDeclaration* initializerDeclaration) {
     (*headerFile) += *classDeclarationName;
@@ -275,8 +275,7 @@ void CppVisitor::visitIdentifierFunction(IdentifierFunction* identifierFunction)
     this->identifierFunctionName = identifierFunction->name; }
 
 bool CppVisitor::openFunctionSignature(FunctionSignature* functionSignature) {
-    if (virtualFunction)
-        (*headerFile) += "virtual ";
+    (*headerFile) += "virtual ";
     if (!functionSignature->result)
         (*headerFile) += "void";
     else {
@@ -838,6 +837,7 @@ void CppVisitor::visitSuperMember(SuperMember* superMember) {
 }
 
 bool CppVisitor::openTypeAnnotation(TypeAnnotation* annotationForType) {
+    inArrayType = false;
     return true;
 }
 
@@ -849,7 +849,7 @@ bool CppVisitor::openTypeIdentifier(TypeIdentifier* typeIdentifier) {
 
     if (!codeBlockLevel) {
         (*headerFile) += getCppType(typeIdentifierName);
-        if (isClass(typeIdentifierName)) {
+        if (isClass(typeIdentifierName) && (!inArrayType)) {
             (*headerFile) += "*"; } }
     return true;
 }
@@ -877,11 +877,16 @@ void CppVisitor::closeSubtypeIdentifier(SubtypeIdentifier* subtypeIdentifier) {
 }
 
 bool CppVisitor::openArrayType(ArrayType* arrayType) {
-    return true;
+    inArrayType = true;
+    if (!codeBlockLevel) {
+        (*headerFile) += "_Vector<";
+        arrayType->elementType->accept(*this);
+        (*headerFile) += ">*"; }
+    return false;
 }
 
 void CppVisitor::closeArrayType(ArrayType* arrayType) {
-}
+    inArrayType = false; }
 
 void CppVisitor::visitOptionalType(OptionalType* optionalType) {
 }

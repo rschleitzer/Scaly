@@ -96,7 +96,6 @@ public:
 class "(id syntax-node)" : public "(if (base syntax-node) (base syntax-node) "SyntaxNode")" {
 public:
     "(id syntax-node)"("(constructor-parameters syntax-node)");
-
     virtual void accept(SyntaxVisitor& visitor)"(if (abstract? syntax-node) " = 0" "")";
 "
         (apply-to-property-children-of syntax-node (lambda (content) ($

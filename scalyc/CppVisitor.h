@@ -28,7 +28,8 @@ private:
     bool declaringClassMember;
     bool inParameterClause;
     int codeBlockLevel;
-    bool virtualFunction;
+    bool abstractFunction;
+    bool inArrayType;
 
     void buildProjectFileString(_VarString* projectFile, Program* program);
     void buildMainHeaderFileString(_VarString* projectFile, Program* program);
