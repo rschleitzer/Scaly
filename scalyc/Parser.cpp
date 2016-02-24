@@ -924,19 +924,19 @@ _Result<ConstParameter, ParserError> Parser::parseConstParameter(_Page* _rp, _Pa
     else {
         return _Result<ConstParameter, ParserError>(new(_ep) ParserError(new(_ep) PunctuationExpected(startColon3, &_LetString::create(_ep, *colon))));
     }
-    _Result<Type, ParserError> _result_type = parseType(_rp, _ep);
-    Type* type = 0;
-    if (_result_type.succeeded()) {
-        type = _result_type.getResult();
+    _Result<Type, ParserError> _result_parameterType = parseType(_rp, _ep);
+    Type* parameterType = 0;
+    if (_result_parameterType.succeeded()) {
+        parameterType = _result_parameterType.getResult();
     }
     else {
-        return _Result<ConstParameter, ParserError>(_result_type.getError());
+        return _Result<ConstParameter, ParserError>(_result_parameterType.getError());
     }
     bool successComma5 = lexer.parsePunctuation(comma);
     if (successComma5) {
         lexer.advance();
     }
-    ConstParameter* constParameter = new(_rp) ConstParameter(name, type, start, lexer.getPosition(_rp));
+    ConstParameter* constParameter = new(_rp) ConstParameter(name, parameterType, start, lexer.getPosition(_rp));
     return _Result<ConstParameter, ParserError>(constParameter);
 }
 

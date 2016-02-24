@@ -526,18 +526,18 @@ class Parameter : SyntaxNode {
 
 class ConstParameter : Parameter {
 
-    init(name: String, type: Type, start: Position, end: Position) {
+    init(name: String, parameterType: Type, start: Position, end: Position) {
         super.init(start, end)
     }
 
     override function accept(mutable visitor: SyntaxVisitor) {
         visitor.openConstParameter(this)
-        type!.accept(visitor)
+        parameterType!.accept(visitor)
         visitor.closeConstParameter(this)
     }
 
     let name: String?
-    let type: Type?
+    let parameterType: Type?
 }
 
 class VarParameter : Parameter {

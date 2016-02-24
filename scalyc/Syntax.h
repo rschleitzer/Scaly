@@ -408,10 +408,10 @@ public:
 
 class ConstParameter : public Parameter {
 public:
-    ConstParameter(_LetString* name, Type* type, Position* start, Position* end);
+    ConstParameter(_LetString* name, Type* parameterType, Position* start, Position* end);
     virtual void accept(SyntaxVisitor& visitor);
     _LetString* name;
-    Type* type;
+    Type* parameterType;
 
     virtual bool _isConstParameter();
 };

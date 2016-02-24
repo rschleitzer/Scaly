@@ -1008,7 +1008,7 @@ class Parser {
             if constParameter == null
                 constParameter = ConstParameter(start, lexer.getPosition())
 
-            constParameter.type = node
+            constParameter.parameterType = node
         }
         {
             let start: Position = lexer.getPosition()

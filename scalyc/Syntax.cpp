@@ -519,15 +519,15 @@ Parameter::Parameter(Position* start, Position* end)
 bool Parameter::_isConstParameter() { return false; }
 bool Parameter::_isVarParameter() { return false; }
 
-ConstParameter::ConstParameter(_LetString* name, Type* type, Position* start, Position* end)
-: Parameter(start, end), name(name), type(type) {}
+ConstParameter::ConstParameter(_LetString* name, Type* parameterType, Position* start, Position* end)
+: Parameter(start, end), name(name), parameterType(parameterType) {}
 
 bool ConstParameter::_isConstParameter() { return true; }
 
 void ConstParameter::accept(SyntaxVisitor& visitor) {
     if (!visitor.openConstParameter(this))
         return;
-    type->accept(visitor);
+    parameterType->accept(visitor);
     visitor.closeConstParameter(this);
 }
 

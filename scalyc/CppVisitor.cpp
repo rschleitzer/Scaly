@@ -321,17 +321,20 @@ void CppVisitor::closeParameterClause(ParameterClause* parameterClause) {
 
 bool CppVisitor::openConstParameter(ConstParameter* constParameter) {
     constParameterName = constParameter->name;
+    writeParameter(constParameterName, constParameter->parameterType);
+    return false;
+}
+
+void CppVisitor::writeParameter(_LetString* name, Type* parameterType) {
     if (!firstParameter)
         (*headerFile) += ", ";
     else
         firstParameter = false;
 
-    constParameter->type->accept(*this);
+    parameterType->accept(*this);
 
     (*headerFile) += " ";
-    (*headerFile) += *constParameter->name;
-
-    return false;
+    (*headerFile) += *name;
 }
 
 bool CppVisitor::isClass(_LetString* name) {
@@ -354,10 +357,12 @@ void CppVisitor::closeConstParameter(ConstParameter* constParameter) {
 
 bool CppVisitor::openVarParameter(VarParameter* varParameter) {
     varParameterName = varParameter->name;
-    return true;
+    writeParameter(varParameterName, varParameter->parameterType);
+    return false;
 }
 
 void CppVisitor::closeVarParameter(VarParameter* varParameter) {
+    (*headerFile) += *varParameterName;
     varParameterName = 0;
 }
 
@@ -877,16 +882,17 @@ void CppVisitor::closeSubtypeIdentifier(SubtypeIdentifier* subtypeIdentifier) {
 }
 
 bool CppVisitor::openArrayType(ArrayType* arrayType) {
-    inArrayType = true;
     if (!codeBlockLevel) {
         (*headerFile) += "_Vector<";
+        inArrayType = true;
         arrayType->elementType->accept(*this);
+        inArrayType = false;
         (*headerFile) += ">*"; }
     return false;
 }
 
 void CppVisitor::closeArrayType(ArrayType* arrayType) {
-    inArrayType = false; }
+}
 
 void CppVisitor::visitOptionalType(OptionalType* optionalType) {
 }

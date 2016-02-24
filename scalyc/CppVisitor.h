@@ -41,6 +41,8 @@ private:
     const char* getCppType(_LetString* typeIdentifierName);
     bool isClass(_LetString* name);
     void indentHeader();
+    void writeParameter(_LetString* name, Type* parameterType);
+
 
 public:
     virtual bool openProgram(Program* program);
