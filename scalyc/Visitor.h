@@ -5,291 +5,406 @@ using namespace scaly;
 namespace scalyc {
 
 class Program;
+
 class CompilationUnit;
+
 class StatementWithSemicolon;
+
 class Statement;
+
 class Declaration;
+
 class UseDeclaration;
+
 class PathIdentifier;
+
 class PathItem;
+
 class Initializer;
+
 class ConstantDeclaration;
+
 class VariableDeclaration;
+
 class BindingInitializer;
+
 class PatternInitializer;
+
 class AdditionalInitializer;
+
 class FunctionDeclaration;
+
 class InitializerDeclaration;
+
 class Modifier;
+
 class OverrideWord;
+
 class StaticWord;
+
 class FunctionName;
+
 class IdentifierFunction;
+
 class FunctionSignature;
+
 class FunctionResult;
+
 class ParameterClause;
+
 class Parameter;
+
 class ConstParameter;
+
 class VarParameter;
+
 class ThrowsClause;
+
 class EnumDeclaration;
+
 class EnumMember;
+
 class TupleType;
+
 class AdditionalType;
+
 class EnumCase;
+
 class AdditionalCase;
+
 class ClassDeclaration;
+
 class ClassBody;
+
 class GenericArgumentClause;
+
 class GenericParameter;
+
 class ClassMember;
+
 class Expression;
+
 class CodeBlock;
+
 class SimpleExpression;
+
 class PrefixExpression;
+
 class PostfixExpression;
+
 class BinaryOp;
+
 class BinaryOperation;
+
 class Assignment;
+
 class TypeQuery;
+
 class TypeCast;
+
 class CatchClause;
+
 class CatchPattern;
+
 class WildCardCatchPattern;
+
 class PathItemCatchPattern;
+
 class Postfix;
+
 class OperatorPostfix;
+
 class FunctionCall;
+
 class ExplicitMemberExpression;
+
 class Subscript;
+
 class ExpressionElement;
+
 class MemberPostfix;
+
 class NamedMemberPostfix;
+
 class PrimaryExpression;
+
 class ParenthesizedExpression;
+
 class LiteralExpression;
+
 class IdentifierExpression;
+
 class IfExpression;
+
 class ElseClause;
+
 class SwitchExpression;
+
 class SwitchBody;
+
 class CurliedSwitchBody;
+
 class NakedSwitchBody;
+
 class SwitchCase;
+
 class CaseLabel;
+
 class ItemCaseLabel;
+
 class CaseItem;
+
 class ForExpression;
+
 class ForLoop;
+
 class ForEach;
+
 class PlainFor;
+
 class ReturnExpression;
+
 class ThrowExpression;
+
 class BreakExpression;
+
 class Pattern;
+
 class WildcardPattern;
+
 class IdentifierPattern;
+
 class TuplePattern;
+
 class TuplePatternElement;
+
 class ExpressionPattern;
+
 class DefaultCaseLabel;
+
 class CaseContent;
+
 class BlockCaseContent;
+
 class EmptyCaseContent;
+
 class InitializerCall;
+
 class ThisExpression;
+
 class ThisDot;
+
 class ThisSubscript;
+
 class ThisWord;
+
 class CommonThisMember;
+
 class ThisInit;
+
 class ThisMember;
+
 class SuperExpression;
+
 class SuperDot;
+
 class SuperSubscript;
+
 class CommonSuperMember;
+
 class SuperInit;
+
 class SuperMember;
+
 class Type;
+
 class TypeAnnotation;
+
 class TypeIdentifier;
+
 class SubtypeIdentifier;
+
 class TypePostfix;
+
 class ArrayType;
+
 class OptionalType;
+
 class TypeInheritanceClause;
+
 class Inheritance;
+
 
 class SyntaxVisitor : public Object {
 public:
-    virtual bool openProgram(Program& program)= 0;
-    virtual void closeProgram(Program& program)= 0;
-    virtual bool openCompilationUnit(CompilationUnit& compilationUnit)= 0;
-    virtual void closeCompilationUnit(CompilationUnit& compilationUnit)= 0;
-    virtual bool openStatementWithSemicolon(StatementWithSemicolon& statementWithSemicolon)= 0;
-    virtual void closeStatementWithSemicolon(StatementWithSemicolon& statementWithSemicolon)= 0;
-    virtual bool openUseDeclaration(UseDeclaration& useDeclaration)= 0;
-    virtual void closeUseDeclaration(UseDeclaration& useDeclaration)= 0;
-    virtual bool openPathIdentifier(PathIdentifier& pathIdentifier)= 0;
-    virtual void closePathIdentifier(PathIdentifier& pathIdentifier)= 0;
-    virtual void visitPathItem(PathItem& pathItem)= 0;
-    virtual bool openInitializer(Initializer& initializer)= 0;
-    virtual void closeInitializer(Initializer& initializer)= 0;
-    virtual bool openConstantDeclaration(ConstantDeclaration& constantDeclaration)= 0;
-    virtual void closeConstantDeclaration(ConstantDeclaration& constantDeclaration)= 0;
-    virtual bool openVariableDeclaration(VariableDeclaration& variableDeclaration)= 0;
-    virtual void closeVariableDeclaration(VariableDeclaration& variableDeclaration)= 0;
-    virtual bool openBindingInitializer(BindingInitializer& bindingInitializer)= 0;
-    virtual void closeBindingInitializer(BindingInitializer& bindingInitializer)= 0;
-    virtual bool openPatternInitializer(PatternInitializer& patternInitializer)= 0;
-    virtual void closePatternInitializer(PatternInitializer& patternInitializer)= 0;
-    virtual bool openAdditionalInitializer(AdditionalInitializer& additionalInitializer)= 0;
-    virtual void closeAdditionalInitializer(AdditionalInitializer& additionalInitializer)= 0;
-    virtual bool openFunctionDeclaration(FunctionDeclaration& functionDeclaration)= 0;
-    virtual void closeFunctionDeclaration(FunctionDeclaration& functionDeclaration)= 0;
-    virtual bool openInitializerDeclaration(InitializerDeclaration& initializerDeclaration)= 0;
-    virtual void closeInitializerDeclaration(InitializerDeclaration& initializerDeclaration)= 0;
-    virtual void visitOverrideWord(OverrideWord& overrideWord)= 0;
-    virtual void visitStaticWord(StaticWord& staticWord)= 0;
-    virtual void visitIdentifierFunction(IdentifierFunction& identifierFunction)= 0;
-    virtual bool openFunctionSignature(FunctionSignature& functionSignature)= 0;
-    virtual void closeFunctionSignature(FunctionSignature& functionSignature)= 0;
-    virtual bool openFunctionResult(FunctionResult& functionResult)= 0;
-    virtual void closeFunctionResult(FunctionResult& functionResult)= 0;
-    virtual bool openParameterClause(ParameterClause& parameterClause)= 0;
-    virtual void closeParameterClause(ParameterClause& parameterClause)= 0;
-    virtual bool openConstParameter(ConstParameter& constParameter)= 0;
-    virtual void closeConstParameter(ConstParameter& constParameter)= 0;
-    virtual bool openVarParameter(VarParameter& varParameter)= 0;
-    virtual void closeVarParameter(VarParameter& varParameter)= 0;
-    virtual bool openThrowsClause(ThrowsClause& throwsClause)= 0;
-    virtual void closeThrowsClause(ThrowsClause& throwsClause)= 0;
-    virtual bool openEnumDeclaration(EnumDeclaration& enumDeclaration)= 0;
-    virtual void closeEnumDeclaration(EnumDeclaration& enumDeclaration)= 0;
-    virtual bool openEnumMember(EnumMember& enumMember)= 0;
-    virtual void closeEnumMember(EnumMember& enumMember)= 0;
-    virtual bool openTupleType(TupleType& tupleType)= 0;
-    virtual void closeTupleType(TupleType& tupleType)= 0;
-    virtual bool openAdditionalType(AdditionalType& additionalType)= 0;
-    virtual void closeAdditionalType(AdditionalType& additionalType)= 0;
-    virtual void visitEnumCase(EnumCase& enumCase)= 0;
-    virtual bool openAdditionalCase(AdditionalCase& additionalCase)= 0;
-    virtual void closeAdditionalCase(AdditionalCase& additionalCase)= 0;
-    virtual bool openClassDeclaration(ClassDeclaration& classDeclaration)= 0;
-    virtual void closeClassDeclaration(ClassDeclaration& classDeclaration)= 0;
-    virtual bool openClassBody(ClassBody& classBody)= 0;
-    virtual void closeClassBody(ClassBody& classBody)= 0;
-    virtual bool openGenericArgumentClause(GenericArgumentClause& genericArgumentClause)= 0;
-    virtual void closeGenericArgumentClause(GenericArgumentClause& genericArgumentClause)= 0;
-    virtual void visitGenericParameter(GenericParameter& genericParameter)= 0;
-    virtual bool openClassMember(ClassMember& classMember)= 0;
-    virtual void closeClassMember(ClassMember& classMember)= 0;
-    virtual bool openCodeBlock(CodeBlock& codeBlock)= 0;
-    virtual void closeCodeBlock(CodeBlock& codeBlock)= 0;
-    virtual bool openSimpleExpression(SimpleExpression& simpleExpression)= 0;
-    virtual void closeSimpleExpression(SimpleExpression& simpleExpression)= 0;
-    virtual bool openPrefixExpression(PrefixExpression& prefixExpression)= 0;
-    virtual void closePrefixExpression(PrefixExpression& prefixExpression)= 0;
-    virtual bool openPostfixExpression(PostfixExpression& postfixExpression)= 0;
-    virtual void closePostfixExpression(PostfixExpression& postfixExpression)= 0;
-    virtual bool openBinaryOperation(BinaryOperation& binaryOperation)= 0;
-    virtual void closeBinaryOperation(BinaryOperation& binaryOperation)= 0;
-    virtual bool openAssignment(Assignment& assignment)= 0;
-    virtual void closeAssignment(Assignment& assignment)= 0;
-    virtual bool openTypeQuery(TypeQuery& typeQuery)= 0;
-    virtual void closeTypeQuery(TypeQuery& typeQuery)= 0;
-    virtual bool openTypeCast(TypeCast& typeCast)= 0;
-    virtual void closeTypeCast(TypeCast& typeCast)= 0;
-    virtual bool openCatchClause(CatchClause& catchClause)= 0;
-    virtual void closeCatchClause(CatchClause& catchClause)= 0;
-    virtual bool openWildCardCatchPattern(WildCardCatchPattern& wildCardCatchPattern)= 0;
-    virtual void closeWildCardCatchPattern(WildCardCatchPattern& wildCardCatchPattern)= 0;
-    virtual bool openPathItemCatchPattern(PathItemCatchPattern& pathItemCatchPattern)= 0;
-    virtual void closePathItemCatchPattern(PathItemCatchPattern& pathItemCatchPattern)= 0;
-    virtual void visitOperatorPostfix(OperatorPostfix& operatorPostfix)= 0;
-    virtual bool openFunctionCall(FunctionCall& functionCall)= 0;
-    virtual void closeFunctionCall(FunctionCall& functionCall)= 0;
-    virtual bool openExplicitMemberExpression(ExplicitMemberExpression& explicitMemberExpression)= 0;
-    virtual void closeExplicitMemberExpression(ExplicitMemberExpression& explicitMemberExpression)= 0;
-    virtual bool openSubscript(Subscript& subscript)= 0;
-    virtual void closeSubscript(Subscript& subscript)= 0;
-    virtual bool openExpressionElement(ExpressionElement& expressionElement)= 0;
-    virtual void closeExpressionElement(ExpressionElement& expressionElement)= 0;
-    virtual bool openNamedMemberPostfix(NamedMemberPostfix& namedMemberPostfix)= 0;
-    virtual void closeNamedMemberPostfix(NamedMemberPostfix& namedMemberPostfix)= 0;
-    virtual bool openParenthesizedExpression(ParenthesizedExpression& parenthesizedExpression)= 0;
-    virtual void closeParenthesizedExpression(ParenthesizedExpression& parenthesizedExpression)= 0;
-    virtual void visitLiteralExpression(LiteralExpression& literalExpression)= 0;
-    virtual void visitIdentifierExpression(IdentifierExpression& identifierExpression)= 0;
-    virtual bool openIfExpression(IfExpression& ifExpression)= 0;
-    virtual void closeIfExpression(IfExpression& ifExpression)= 0;
-    virtual bool openElseClause(ElseClause& elseClause)= 0;
-    virtual void closeElseClause(ElseClause& elseClause)= 0;
-    virtual bool openSwitchExpression(SwitchExpression& switchExpression)= 0;
-    virtual void closeSwitchExpression(SwitchExpression& switchExpression)= 0;
-    virtual bool openCurliedSwitchBody(CurliedSwitchBody& curliedSwitchBody)= 0;
-    virtual void closeCurliedSwitchBody(CurliedSwitchBody& curliedSwitchBody)= 0;
-    virtual bool openNakedSwitchBody(NakedSwitchBody& nakedSwitchBody)= 0;
-    virtual void closeNakedSwitchBody(NakedSwitchBody& nakedSwitchBody)= 0;
-    virtual bool openSwitchCase(SwitchCase& switchCase)= 0;
-    virtual void closeSwitchCase(SwitchCase& switchCase)= 0;
-    virtual bool openItemCaseLabel(ItemCaseLabel& itemCaseLabel)= 0;
-    virtual void closeItemCaseLabel(ItemCaseLabel& itemCaseLabel)= 0;
-    virtual bool openCaseItem(CaseItem& caseItem)= 0;
-    virtual void closeCaseItem(CaseItem& caseItem)= 0;
-    virtual bool openForExpression(ForExpression& forExpression)= 0;
-    virtual void closeForExpression(ForExpression& forExpression)= 0;
-    virtual bool openForEach(ForEach& forEach)= 0;
-    virtual void closeForEach(ForEach& forEach)= 0;
-    virtual bool openPlainFor(PlainFor& plainFor)= 0;
-    virtual void closePlainFor(PlainFor& plainFor)= 0;
-    virtual bool openReturnExpression(ReturnExpression& returnExpression)= 0;
-    virtual void closeReturnExpression(ReturnExpression& returnExpression)= 0;
-    virtual bool openThrowExpression(ThrowExpression& throwExpression)= 0;
-    virtual void closeThrowExpression(ThrowExpression& throwExpression)= 0;
-    virtual bool openBreakExpression(BreakExpression& breakExpression)= 0;
-    virtual void closeBreakExpression(BreakExpression& breakExpression)= 0;
-    virtual void visitWildcardPattern(WildcardPattern& wildcardPattern)= 0;
-    virtual bool openIdentifierPattern(IdentifierPattern& identifierPattern)= 0;
-    virtual void closeIdentifierPattern(IdentifierPattern& identifierPattern)= 0;
-    virtual bool openTuplePattern(TuplePattern& tuplePattern)= 0;
-    virtual void closeTuplePattern(TuplePattern& tuplePattern)= 0;
-    virtual bool openTuplePatternElement(TuplePatternElement& tuplePatternElement)= 0;
-    virtual void closeTuplePatternElement(TuplePatternElement& tuplePatternElement)= 0;
-    virtual bool openExpressionPattern(ExpressionPattern& expressionPattern)= 0;
-    virtual void closeExpressionPattern(ExpressionPattern& expressionPattern)= 0;
-    virtual void visitDefaultCaseLabel(DefaultCaseLabel& defaultCaseLabel)= 0;
-    virtual bool openBlockCaseContent(BlockCaseContent& blockCaseContent)= 0;
-    virtual void closeBlockCaseContent(BlockCaseContent& blockCaseContent)= 0;
-    virtual void visitEmptyCaseContent(EmptyCaseContent& emptyCaseContent)= 0;
-    virtual bool openInitializerCall(InitializerCall& initializerCall)= 0;
-    virtual void closeInitializerCall(InitializerCall& initializerCall)= 0;
-    virtual bool openThisDot(ThisDot& thisDot)= 0;
-    virtual void closeThisDot(ThisDot& thisDot)= 0;
-    virtual bool openThisSubscript(ThisSubscript& thisSubscript)= 0;
-    virtual void closeThisSubscript(ThisSubscript& thisSubscript)= 0;
-    virtual void visitThisWord(ThisWord& thisWord)= 0;
-    virtual void visitThisInit(ThisInit& thisInit)= 0;
-    virtual void visitThisMember(ThisMember& thisMember)= 0;
-    virtual bool openSuperDot(SuperDot& superDot)= 0;
-    virtual void closeSuperDot(SuperDot& superDot)= 0;
-    virtual bool openSuperSubscript(SuperSubscript& superSubscript)= 0;
-    virtual void closeSuperSubscript(SuperSubscript& superSubscript)= 0;
-    virtual void visitSuperInit(SuperInit& superInit)= 0;
-    virtual void visitSuperMember(SuperMember& superMember)= 0;
-    virtual bool openTypeAnnotation(TypeAnnotation& typeAnnotation)= 0;
-    virtual void closeTypeAnnotation(TypeAnnotation& typeAnnotation)= 0;
-    virtual bool openTypeIdentifier(TypeIdentifier& typeIdentifier)= 0;
-    virtual void closeTypeIdentifier(TypeIdentifier& typeIdentifier)= 0;
-    virtual bool openSubtypeIdentifier(SubtypeIdentifier& subtypeIdentifier)= 0;
-    virtual void closeSubtypeIdentifier(SubtypeIdentifier& subtypeIdentifier)= 0;
-    virtual bool openArrayType(ArrayType& arrayType)= 0;
-    virtual void closeArrayType(ArrayType& arrayType)= 0;
-    virtual void visitOptionalType(OptionalType& optionalType)= 0;
-    virtual bool openTypeInheritanceClause(TypeInheritanceClause& typeInheritanceClause)= 0;
-    virtual void closeTypeInheritanceClause(TypeInheritanceClause& typeInheritanceClause)= 0;
-    virtual bool openInheritance(Inheritance& inheritance)= 0;
-    virtual void closeInheritance(Inheritance& inheritance)= 0;
+    virtual bool openProgram(Program* program)= 0;
+    virtual void closeProgram(Program* program)= 0;
+    virtual bool openCompilationUnit(CompilationUnit* compilationUnit)= 0;
+    virtual void closeCompilationUnit(CompilationUnit* compilationUnit)= 0;
+    virtual bool openStatementWithSemicolon(StatementWithSemicolon* statementWithSemicolon)= 0;
+    virtual void closeStatementWithSemicolon(StatementWithSemicolon* statementWithSemicolon)= 0;
+    virtual bool openUseDeclaration(UseDeclaration* useDeclaration)= 0;
+    virtual void closeUseDeclaration(UseDeclaration* useDeclaration)= 0;
+    virtual bool openPathIdentifier(PathIdentifier* pathIdentifier)= 0;
+    virtual void closePathIdentifier(PathIdentifier* pathIdentifier)= 0;
+    virtual void visitPathItem(PathItem* pathItem)= 0;
+    virtual bool openInitializer(Initializer* initializer)= 0;
+    virtual void closeInitializer(Initializer* initializer)= 0;
+    virtual bool openConstantDeclaration(ConstantDeclaration* constantDeclaration)= 0;
+    virtual void closeConstantDeclaration(ConstantDeclaration* constantDeclaration)= 0;
+    virtual bool openVariableDeclaration(VariableDeclaration* variableDeclaration)= 0;
+    virtual void closeVariableDeclaration(VariableDeclaration* variableDeclaration)= 0;
+    virtual bool openBindingInitializer(BindingInitializer* bindingInitializer)= 0;
+    virtual void closeBindingInitializer(BindingInitializer* bindingInitializer)= 0;
+    virtual bool openPatternInitializer(PatternInitializer* patternInitializer)= 0;
+    virtual void closePatternInitializer(PatternInitializer* patternInitializer)= 0;
+    virtual bool openAdditionalInitializer(AdditionalInitializer* additionalInitializer)= 0;
+    virtual void closeAdditionalInitializer(AdditionalInitializer* additionalInitializer)= 0;
+    virtual bool openFunctionDeclaration(FunctionDeclaration* functionDeclaration)= 0;
+    virtual void closeFunctionDeclaration(FunctionDeclaration* functionDeclaration)= 0;
+    virtual bool openInitializerDeclaration(InitializerDeclaration* initializerDeclaration)= 0;
+    virtual void closeInitializerDeclaration(InitializerDeclaration* initializerDeclaration)= 0;
+    virtual void visitOverrideWord(OverrideWord* overrideWord)= 0;
+    virtual void visitStaticWord(StaticWord* staticWord)= 0;
+    virtual void visitIdentifierFunction(IdentifierFunction* identifierFunction)= 0;
+    virtual bool openFunctionSignature(FunctionSignature* functionSignature)= 0;
+    virtual void closeFunctionSignature(FunctionSignature* functionSignature)= 0;
+    virtual bool openFunctionResult(FunctionResult* functionResult)= 0;
+    virtual void closeFunctionResult(FunctionResult* functionResult)= 0;
+    virtual bool openParameterClause(ParameterClause* parameterClause)= 0;
+    virtual void closeParameterClause(ParameterClause* parameterClause)= 0;
+    virtual bool openConstParameter(ConstParameter* constParameter)= 0;
+    virtual void closeConstParameter(ConstParameter* constParameter)= 0;
+    virtual bool openVarParameter(VarParameter* varParameter)= 0;
+    virtual void closeVarParameter(VarParameter* varParameter)= 0;
+    virtual bool openThrowsClause(ThrowsClause* throwsClause)= 0;
+    virtual void closeThrowsClause(ThrowsClause* throwsClause)= 0;
+    virtual bool openEnumDeclaration(EnumDeclaration* enumDeclaration)= 0;
+    virtual void closeEnumDeclaration(EnumDeclaration* enumDeclaration)= 0;
+    virtual bool openEnumMember(EnumMember* enumMember)= 0;
+    virtual void closeEnumMember(EnumMember* enumMember)= 0;
+    virtual bool openTupleType(TupleType* tupleType)= 0;
+    virtual void closeTupleType(TupleType* tupleType)= 0;
+    virtual bool openAdditionalType(AdditionalType* additionalType)= 0;
+    virtual void closeAdditionalType(AdditionalType* additionalType)= 0;
+    virtual void visitEnumCase(EnumCase* enumCase)= 0;
+    virtual bool openAdditionalCase(AdditionalCase* additionalCase)= 0;
+    virtual void closeAdditionalCase(AdditionalCase* additionalCase)= 0;
+    virtual bool openClassDeclaration(ClassDeclaration* classDeclaration)= 0;
+    virtual void closeClassDeclaration(ClassDeclaration* classDeclaration)= 0;
+    virtual bool openClassBody(ClassBody* classBody)= 0;
+    virtual void closeClassBody(ClassBody* classBody)= 0;
+    virtual bool openGenericArgumentClause(GenericArgumentClause* genericArgumentClause)= 0;
+    virtual void closeGenericArgumentClause(GenericArgumentClause* genericArgumentClause)= 0;
+    virtual void visitGenericParameter(GenericParameter* genericParameter)= 0;
+    virtual bool openClassMember(ClassMember* classMember)= 0;
+    virtual void closeClassMember(ClassMember* classMember)= 0;
+    virtual bool openCodeBlock(CodeBlock* codeBlock)= 0;
+    virtual void closeCodeBlock(CodeBlock* codeBlock)= 0;
+    virtual bool openSimpleExpression(SimpleExpression* simpleExpression)= 0;
+    virtual void closeSimpleExpression(SimpleExpression* simpleExpression)= 0;
+    virtual bool openPrefixExpression(PrefixExpression* prefixExpression)= 0;
+    virtual void closePrefixExpression(PrefixExpression* prefixExpression)= 0;
+    virtual bool openPostfixExpression(PostfixExpression* postfixExpression)= 0;
+    virtual void closePostfixExpression(PostfixExpression* postfixExpression)= 0;
+    virtual bool openBinaryOperation(BinaryOperation* binaryOperation)= 0;
+    virtual void closeBinaryOperation(BinaryOperation* binaryOperation)= 0;
+    virtual bool openAssignment(Assignment* assignment)= 0;
+    virtual void closeAssignment(Assignment* assignment)= 0;
+    virtual bool openTypeQuery(TypeQuery* typeQuery)= 0;
+    virtual void closeTypeQuery(TypeQuery* typeQuery)= 0;
+    virtual bool openTypeCast(TypeCast* typeCast)= 0;
+    virtual void closeTypeCast(TypeCast* typeCast)= 0;
+    virtual bool openCatchClause(CatchClause* catchClause)= 0;
+    virtual void closeCatchClause(CatchClause* catchClause)= 0;
+    virtual bool openWildCardCatchPattern(WildCardCatchPattern* wildCardCatchPattern)= 0;
+    virtual void closeWildCardCatchPattern(WildCardCatchPattern* wildCardCatchPattern)= 0;
+    virtual bool openPathItemCatchPattern(PathItemCatchPattern* pathItemCatchPattern)= 0;
+    virtual void closePathItemCatchPattern(PathItemCatchPattern* pathItemCatchPattern)= 0;
+    virtual void visitOperatorPostfix(OperatorPostfix* operatorPostfix)= 0;
+    virtual bool openFunctionCall(FunctionCall* functionCall)= 0;
+    virtual void closeFunctionCall(FunctionCall* functionCall)= 0;
+    virtual bool openExplicitMemberExpression(ExplicitMemberExpression* explicitMemberExpression)= 0;
+    virtual void closeExplicitMemberExpression(ExplicitMemberExpression* explicitMemberExpression)= 0;
+    virtual bool openSubscript(Subscript* subscript)= 0;
+    virtual void closeSubscript(Subscript* subscript)= 0;
+    virtual bool openExpressionElement(ExpressionElement* expressionElement)= 0;
+    virtual void closeExpressionElement(ExpressionElement* expressionElement)= 0;
+    virtual bool openNamedMemberPostfix(NamedMemberPostfix* namedMemberPostfix)= 0;
+    virtual void closeNamedMemberPostfix(NamedMemberPostfix* namedMemberPostfix)= 0;
+    virtual bool openParenthesizedExpression(ParenthesizedExpression* parenthesizedExpression)= 0;
+    virtual void closeParenthesizedExpression(ParenthesizedExpression* parenthesizedExpression)= 0;
+    virtual void visitLiteralExpression(LiteralExpression* literalExpression)= 0;
+    virtual void visitIdentifierExpression(IdentifierExpression* identifierExpression)= 0;
+    virtual bool openIfExpression(IfExpression* ifExpression)= 0;
+    virtual void closeIfExpression(IfExpression* ifExpression)= 0;
+    virtual bool openElseClause(ElseClause* elseClause)= 0;
+    virtual void closeElseClause(ElseClause* elseClause)= 0;
+    virtual bool openSwitchExpression(SwitchExpression* switchExpression)= 0;
+    virtual void closeSwitchExpression(SwitchExpression* switchExpression)= 0;
+    virtual bool openCurliedSwitchBody(CurliedSwitchBody* curliedSwitchBody)= 0;
+    virtual void closeCurliedSwitchBody(CurliedSwitchBody* curliedSwitchBody)= 0;
+    virtual bool openNakedSwitchBody(NakedSwitchBody* nakedSwitchBody)= 0;
+    virtual void closeNakedSwitchBody(NakedSwitchBody* nakedSwitchBody)= 0;
+    virtual bool openSwitchCase(SwitchCase* switchCase)= 0;
+    virtual void closeSwitchCase(SwitchCase* switchCase)= 0;
+    virtual bool openItemCaseLabel(ItemCaseLabel* itemCaseLabel)= 0;
+    virtual void closeItemCaseLabel(ItemCaseLabel* itemCaseLabel)= 0;
+    virtual bool openCaseItem(CaseItem* caseItem)= 0;
+    virtual void closeCaseItem(CaseItem* caseItem)= 0;
+    virtual bool openForExpression(ForExpression* forExpression)= 0;
+    virtual void closeForExpression(ForExpression* forExpression)= 0;
+    virtual bool openForEach(ForEach* forEach)= 0;
+    virtual void closeForEach(ForEach* forEach)= 0;
+    virtual bool openPlainFor(PlainFor* plainFor)= 0;
+    virtual void closePlainFor(PlainFor* plainFor)= 0;
+    virtual bool openReturnExpression(ReturnExpression* returnExpression)= 0;
+    virtual void closeReturnExpression(ReturnExpression* returnExpression)= 0;
+    virtual bool openThrowExpression(ThrowExpression* throwExpression)= 0;
+    virtual void closeThrowExpression(ThrowExpression* throwExpression)= 0;
+    virtual bool openBreakExpression(BreakExpression* breakExpression)= 0;
+    virtual void closeBreakExpression(BreakExpression* breakExpression)= 0;
+    virtual void visitWildcardPattern(WildcardPattern* wildcardPattern)= 0;
+    virtual bool openIdentifierPattern(IdentifierPattern* identifierPattern)= 0;
+    virtual void closeIdentifierPattern(IdentifierPattern* identifierPattern)= 0;
+    virtual bool openTuplePattern(TuplePattern* tuplePattern)= 0;
+    virtual void closeTuplePattern(TuplePattern* tuplePattern)= 0;
+    virtual bool openTuplePatternElement(TuplePatternElement* tuplePatternElement)= 0;
+    virtual void closeTuplePatternElement(TuplePatternElement* tuplePatternElement)= 0;
+    virtual bool openExpressionPattern(ExpressionPattern* expressionPattern)= 0;
+    virtual void closeExpressionPattern(ExpressionPattern* expressionPattern)= 0;
+    virtual void visitDefaultCaseLabel(DefaultCaseLabel* defaultCaseLabel)= 0;
+    virtual bool openBlockCaseContent(BlockCaseContent* blockCaseContent)= 0;
+    virtual void closeBlockCaseContent(BlockCaseContent* blockCaseContent)= 0;
+    virtual void visitEmptyCaseContent(EmptyCaseContent* emptyCaseContent)= 0;
+    virtual bool openInitializerCall(InitializerCall* initializerCall)= 0;
+    virtual void closeInitializerCall(InitializerCall* initializerCall)= 0;
+    virtual bool openThisDot(ThisDot* thisDot)= 0;
+    virtual void closeThisDot(ThisDot* thisDot)= 0;
+    virtual bool openThisSubscript(ThisSubscript* thisSubscript)= 0;
+    virtual void closeThisSubscript(ThisSubscript* thisSubscript)= 0;
+    virtual void visitThisWord(ThisWord* thisWord)= 0;
+    virtual void visitThisInit(ThisInit* thisInit)= 0;
+    virtual void visitThisMember(ThisMember* thisMember)= 0;
+    virtual bool openSuperDot(SuperDot* superDot)= 0;
+    virtual void closeSuperDot(SuperDot* superDot)= 0;
+    virtual bool openSuperSubscript(SuperSubscript* superSubscript)= 0;
+    virtual void closeSuperSubscript(SuperSubscript* superSubscript)= 0;
+    virtual void visitSuperInit(SuperInit* superInit)= 0;
+    virtual void visitSuperMember(SuperMember* superMember)= 0;
+    virtual bool openTypeAnnotation(TypeAnnotation* typeAnnotation)= 0;
+    virtual void closeTypeAnnotation(TypeAnnotation* typeAnnotation)= 0;
+    virtual bool openTypeIdentifier(TypeIdentifier* typeIdentifier)= 0;
+    virtual void closeTypeIdentifier(TypeIdentifier* typeIdentifier)= 0;
+    virtual bool openSubtypeIdentifier(SubtypeIdentifier* subtypeIdentifier)= 0;
+    virtual void closeSubtypeIdentifier(SubtypeIdentifier* subtypeIdentifier)= 0;
+    virtual bool openArrayType(ArrayType* arrayType)= 0;
+    virtual void closeArrayType(ArrayType* arrayType)= 0;
+    virtual void visitOptionalType(OptionalType* optionalType)= 0;
+    virtual bool openTypeInheritanceClause(TypeInheritanceClause* typeInheritanceClause)= 0;
+    virtual void closeTypeInheritanceClause(TypeInheritanceClause* typeInheritanceClause)= 0;
+    virtual bool openInheritance(Inheritance* inheritance)= 0;
+    virtual void closeInheritance(Inheritance* inheritance)= 0;
 };
 
 }

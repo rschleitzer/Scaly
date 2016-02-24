@@ -190,7 +190,7 @@ void "(id syntax-node)"::accept(SyntaxVisitor& visitor) {
 "
             (if (has-syntax-children? syntax-node)
                 ($
-"    if (!visitor.open"(id syntax-node)"(*this))
+"    if (!visitor.open"(id syntax-node)"(this))
         return;
 "
                     (apply-to-children-of syntax-node (lambda (content)
@@ -223,11 +223,11 @@ void "(id syntax-node)"::accept(SyntaxVisitor& visitor) {
                             (else "")
                         )
                     ))
-"    visitor.close"(id syntax-node)"(*this);
+"    visitor.close"(id syntax-node)"(this);
 "
                 )
                 ($
-"    visitor.visit"(id syntax-node)"(*this);
+"    visitor.visit"(id syntax-node)"(this);
 "
                 )
             )
