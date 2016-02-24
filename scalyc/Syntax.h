@@ -126,7 +126,6 @@ public:
     virtual bool _isInheritance();
 };
 
-
 class Program : public SyntaxNode {
 public:
     Program(_LetString* name, _LetString* directory, _Vector<CompilationUnit>* compilationUnits);

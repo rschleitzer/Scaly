@@ -90,7 +90,6 @@ public:
 "    virtual bool _is"(id syntax-node)"();
 "   )))
 "};
-
 "
     (apply-to-selected-children "syntax" (lambda (syntax-node) ($
 "
