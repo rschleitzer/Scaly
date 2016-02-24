@@ -305,14 +305,65 @@
         <content link = Expression                              property = consequent
         <content link = ElseClause                  optional    property = elseClause
 
-    <syntax id = ElseClause
-        <content link = else
-        <content link = Expression                              property = alternative
-
     <syntax id = SwitchExpression                               base = PrimaryExpression
         <content link = switch
         <content link = Expression                              property = expression
         <content link = SwitchBody                              property = body
+
+    <syntax id = ForExpression                                  base = PrimaryExpression
+        <content link = for
+        <content link = ForLoop                                 property = loop
+
+    <syntax id = ReturnExpression                               base = PrimaryExpression
+        <content link = return
+        <content link = Expression                  optional    property = expression
+
+    <syntax id = ThrowExpression                                base = PrimaryExpression
+        <content link = throw
+        <content link = Expression                  optional    property = expression
+
+    <syntax id = BreakExpression                                base = PrimaryExpression
+        <content link = break
+        <content link = Expression                  optional    property = expression
+
+    <syntax id = InitializerCall                                base = PrimaryExpression
+        <content link = Type                                    property = typeToInitialize
+        <content link = ParenthesizedExpression                 property = arguments
+        <content link = CatchClause        multiple optional    property = catchClauses
+
+    <syntax id = ThisExpression                     abstract    base = PrimaryExpression
+        <content link = ThisDot
+        <content link = ThisSubscript
+        <content link = ThisWord
+
+    <syntax id = ThisDot                                        base = ThisExpression
+        <content link = this
+        <content link = dot
+        <content link = CommonThisMember                        property = member
+
+    <syntax id = ThisSubscript                                  base = ThisExpression
+        <content link = this
+        <content link = Subscript                               property = subscript
+
+    <syntax id = ThisWord                                       base = ThisExpression
+        <content link = this
+
+    <syntax id = SuperExpression                    abstract    base = PrimaryExpression
+        <content link = SuperDot
+        <content link = SuperSubscript
+
+    <syntax id = SuperDot                                       base = SuperExpression
+        <content link = super
+        <content link = dot
+        <content link = CommonSuperMember                       property = member
+
+    <syntax id = SuperSubscript                                 base = SuperExpression
+        <content link = super
+        <content link = Subscript                               property = subscript
+
+    <syntax id = ElseClause
+        <content link = else
+        <content link = Expression                              property = alternative
 
     <syntax id = SwitchBody                         abstract
         <content link = CurliedSwitchBody
@@ -340,13 +391,13 @@
         <content link = CaseItem           multiple optional    property = additionalPatterns
         <content link = colon
 
+    <syntax id = DefaultCaseLabel                               base = CaseLabel
+        <content link = default
+        <content link = colon
+
     <syntax id = CaseItem                  multiple
         <content link = comma
         <content link = Pattern                                 property = pattern
-
-    <syntax id = ForExpression                                  base = PrimaryExpression
-        <content link = for
-        <content link = ForLoop                                 property = loop
 
     <syntax id = ForLoop                            abstract
         <content link = ForEach
@@ -366,18 +417,6 @@
         <content link = Expression                              property = forNext
         <content link = Expression                              property = code
 
-    <syntax id = ReturnExpression                               base = PrimaryExpression
-        <content link = return
-        <content link = Expression                  optional    property = expression
-
-    <syntax id = ThrowExpression                                base = PrimaryExpression
-        <content link = throw
-        <content link = Expression                  optional    property = expression
-
-    <syntax id = BreakExpression                                base = PrimaryExpression
-        <content link = break
-        <content link = Expression                  optional    property = expression
-
    <syntax id = Pattern                             abstract
         <content link = WildcardPattern
         <content link = IdentifierPattern
@@ -396,16 +435,12 @@
         <content link = TuplePatternElement         multiple    property = elements
         <content link = rightParen
 
-    <syntax id = TuplePatternElement                multiple
-        <content link = Pattern                                 property = pattern
-        <content link = comma                       optional
-
     <syntax id = ExpressionPattern                              base = Pattern
         <content link = Expression                              property = expression
 
-    <syntax id = DefaultCaseLabel                               base = CaseLabel
-        <content link = default
-        <content link = colon
+    <syntax id = TuplePatternElement                multiple
+        <content link = Pattern                                 property = pattern
+        <content link = comma                       optional
 
     <syntax id = CaseContent                        abstract
         <content link = BlockCaseContent
@@ -417,28 +452,6 @@
     <syntax id = EmptyCaseContent                               base = CaseContent
         <content link = semicolon
 
-    <syntax id = InitializerCall                                base = PrimaryExpression
-        <content link = Type                                    property = typeToInitialize
-        <content link = ParenthesizedExpression                 property = arguments
-        <content link = CatchClause        multiple optional    property = catchClauses
-
-    <syntax id = ThisExpression                     abstract    base = PrimaryExpression
-        <content link = ThisDot
-        <content link = ThisSubscript
-        <content link = ThisWord
-
-    <syntax id = ThisDot                                        base = ThisExpression
-        <content link = this
-        <content link = dot
-        <content link = CommonThisMember                        property = member
-
-    <syntax id = ThisSubscript                                  base = ThisExpression
-        <content link = this
-        <content link = Subscript                               property = subscript
-
-    <syntax id = ThisWord                                       base = ThisExpression
-        <content link = this
-
     <syntax id = CommonThisMember                   abstract
         <content link = ThisInit
         <content link = ThisMember
@@ -448,19 +461,6 @@
 
     <syntax id = ThisMember                                     base = CommonThisMember
         <content identifier                                     property = name
-
-    <syntax id = SuperExpression                    abstract    base = PrimaryExpression
-        <content link = SuperDot
-        <content link = SuperSubscript
-
-    <syntax id = SuperDot                                       base = SuperExpression
-        <content link = super
-        <content link = dot
-        <content link = CommonSuperMember                       property = member
-
-    <syntax id = SuperSubscript                                 base = SuperExpression
-        <content link = super
-        <content link = Subscript                               property = subscript
 
     <syntax id = CommonSuperMember                  abstract
         <content link = SuperInit

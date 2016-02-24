@@ -75,43 +75,43 @@ public:
     virtual bool _isLiteralExpression();
     virtual bool _isIdentifierExpression();
     virtual bool _isIfExpression();
-    virtual bool _isElseClause();
     virtual bool _isSwitchExpression();
+    virtual bool _isForExpression();
+    virtual bool _isReturnExpression();
+    virtual bool _isThrowExpression();
+    virtual bool _isBreakExpression();
+    virtual bool _isInitializerCall();
+    virtual bool _isThisExpression();
+    virtual bool _isThisDot();
+    virtual bool _isThisSubscript();
+    virtual bool _isThisWord();
+    virtual bool _isSuperExpression();
+    virtual bool _isSuperDot();
+    virtual bool _isSuperSubscript();
+    virtual bool _isElseClause();
     virtual bool _isSwitchBody();
     virtual bool _isCurliedSwitchBody();
     virtual bool _isNakedSwitchBody();
     virtual bool _isSwitchCase();
     virtual bool _isCaseLabel();
     virtual bool _isItemCaseLabel();
+    virtual bool _isDefaultCaseLabel();
     virtual bool _isCaseItem();
-    virtual bool _isForExpression();
     virtual bool _isForLoop();
     virtual bool _isForEach();
     virtual bool _isPlainFor();
-    virtual bool _isReturnExpression();
-    virtual bool _isThrowExpression();
-    virtual bool _isBreakExpression();
     virtual bool _isPattern();
     virtual bool _isWildcardPattern();
     virtual bool _isIdentifierPattern();
     virtual bool _isTuplePattern();
-    virtual bool _isTuplePatternElement();
     virtual bool _isExpressionPattern();
-    virtual bool _isDefaultCaseLabel();
+    virtual bool _isTuplePatternElement();
     virtual bool _isCaseContent();
     virtual bool _isBlockCaseContent();
     virtual bool _isEmptyCaseContent();
-    virtual bool _isInitializerCall();
-    virtual bool _isThisExpression();
-    virtual bool _isThisDot();
-    virtual bool _isThisSubscript();
-    virtual bool _isThisWord();
     virtual bool _isCommonThisMember();
     virtual bool _isThisInit();
     virtual bool _isThisMember();
-    virtual bool _isSuperExpression();
-    virtual bool _isSuperDot();
-    virtual bool _isSuperSubscript();
     virtual bool _isCommonSuperMember();
     virtual bool _isSuperInit();
     virtual bool _isSuperMember();
@@ -801,14 +801,6 @@ public:
     virtual bool _isIfExpression();
 };
 
-class ElseClause : public SyntaxNode {
-public:
-    ElseClause(Expression* alternative, Position* start, Position* end);
-
-    virtual void accept(SyntaxVisitor& visitor);
-    Expression* alternative;
-};
-
 class SwitchExpression : public PrimaryExpression {
 public:
     SwitchExpression(Expression* expression, SwitchBody* body, Position* start, Position* end);
@@ -818,6 +810,140 @@ public:
     SwitchBody* body;
 
     virtual bool _isSwitchExpression();
+};
+
+class ForExpression : public PrimaryExpression {
+public:
+    ForExpression(ForLoop* loop, Position* start, Position* end);
+
+    virtual void accept(SyntaxVisitor& visitor);
+    ForLoop* loop;
+
+    virtual bool _isForExpression();
+};
+
+class ReturnExpression : public PrimaryExpression {
+public:
+    ReturnExpression(Expression* expression, Position* start, Position* end);
+
+    virtual void accept(SyntaxVisitor& visitor);
+    Expression* expression;
+
+    virtual bool _isReturnExpression();
+};
+
+class ThrowExpression : public PrimaryExpression {
+public:
+    ThrowExpression(Expression* expression, Position* start, Position* end);
+
+    virtual void accept(SyntaxVisitor& visitor);
+    Expression* expression;
+
+    virtual bool _isThrowExpression();
+};
+
+class BreakExpression : public PrimaryExpression {
+public:
+    BreakExpression(Expression* expression, Position* start, Position* end);
+
+    virtual void accept(SyntaxVisitor& visitor);
+    Expression* expression;
+
+    virtual bool _isBreakExpression();
+};
+
+class InitializerCall : public PrimaryExpression {
+public:
+    InitializerCall(Type* typeToInitialize, ParenthesizedExpression* arguments, _Vector<CatchClause>* catchClauses, Position* start, Position* end);
+
+    virtual void accept(SyntaxVisitor& visitor);
+    Type* typeToInitialize;
+    ParenthesizedExpression* arguments;
+    _Vector<CatchClause>* catchClauses;
+
+    virtual bool _isInitializerCall();
+};
+
+class ThisExpression : public PrimaryExpression {
+public:
+    ThisExpression(Position* start, Position* end);
+
+    virtual void accept(SyntaxVisitor& visitor) = 0;
+
+    virtual bool _isThisDot();
+    virtual bool _isThisSubscript();
+    virtual bool _isThisWord();
+
+    virtual bool _isThisExpression();
+};
+
+class ThisDot : public ThisExpression {
+public:
+    ThisDot(CommonThisMember* member, Position* start, Position* end);
+
+    virtual void accept(SyntaxVisitor& visitor);
+    CommonThisMember* member;
+
+    virtual bool _isThisDot();
+};
+
+class ThisSubscript : public ThisExpression {
+public:
+    ThisSubscript(Subscript* subscript, Position* start, Position* end);
+
+    virtual void accept(SyntaxVisitor& visitor);
+    Subscript* subscript;
+
+    virtual bool _isThisSubscript();
+};
+
+class ThisWord : public ThisExpression {
+public:
+    ThisWord(Position* start, Position* end);
+
+    virtual void accept(SyntaxVisitor& visitor);
+
+    virtual bool _isThisWord();
+};
+
+class SuperExpression : public PrimaryExpression {
+public:
+    SuperExpression(Position* start, Position* end);
+
+    virtual void accept(SyntaxVisitor& visitor) = 0;
+
+    virtual bool _isSuperDot();
+    virtual bool _isSuperSubscript();
+
+    virtual bool _isSuperExpression();
+};
+
+class SuperDot : public SuperExpression {
+public:
+    SuperDot(CommonSuperMember* member, Position* start, Position* end);
+
+    virtual void accept(SyntaxVisitor& visitor);
+    CommonSuperMember* member;
+
+    virtual bool _isSuperDot();
+};
+
+class SuperSubscript : public SuperExpression {
+public:
+    SuperSubscript(Subscript* subscript, Position* start, Position* end);
+
+    virtual void accept(SyntaxVisitor& visitor);
+    Subscript* subscript;
+
+    virtual bool _isSuperSubscript();
+};
+
+class ElseClause : public SyntaxNode {
+public:
+    ElseClause(Expression* alternative, Position* start, Position* end);
+
+    virtual void accept(SyntaxVisitor& visitor);
+    Expression* alternative;
 };
 
 class SwitchBody : public SyntaxNode {
@@ -880,22 +1006,21 @@ public:
     virtual bool _isItemCaseLabel();
 };
 
+class DefaultCaseLabel : public CaseLabel {
+public:
+    DefaultCaseLabel(Position* start, Position* end);
+
+    virtual void accept(SyntaxVisitor& visitor);
+
+    virtual bool _isDefaultCaseLabel();
+};
+
 class CaseItem : public SyntaxNode {
 public:
     CaseItem(Pattern* pattern, Position* start, Position* end);
 
     virtual void accept(SyntaxVisitor& visitor);
     Pattern* pattern;
-};
-
-class ForExpression : public PrimaryExpression {
-public:
-    ForExpression(ForLoop* loop, Position* start, Position* end);
-
-    virtual void accept(SyntaxVisitor& visitor);
-    ForLoop* loop;
-
-    virtual bool _isForExpression();
 };
 
 class ForLoop : public SyntaxNode {
@@ -931,36 +1056,6 @@ public:
     Expression* code;
 
     virtual bool _isPlainFor();
-};
-
-class ReturnExpression : public PrimaryExpression {
-public:
-    ReturnExpression(Expression* expression, Position* start, Position* end);
-
-    virtual void accept(SyntaxVisitor& visitor);
-    Expression* expression;
-
-    virtual bool _isReturnExpression();
-};
-
-class ThrowExpression : public PrimaryExpression {
-public:
-    ThrowExpression(Expression* expression, Position* start, Position* end);
-
-    virtual void accept(SyntaxVisitor& visitor);
-    Expression* expression;
-
-    virtual bool _isThrowExpression();
-};
-
-class BreakExpression : public PrimaryExpression {
-public:
-    BreakExpression(Expression* expression, Position* start, Position* end);
-
-    virtual void accept(SyntaxVisitor& visitor);
-    Expression* expression;
-
-    virtual bool _isBreakExpression();
 };
 
 class Pattern : public SyntaxNode {
@@ -1005,14 +1100,6 @@ public:
     virtual bool _isTuplePattern();
 };
 
-class TuplePatternElement : public SyntaxNode {
-public:
-    TuplePatternElement(Pattern* pattern, Position* start, Position* end);
-
-    virtual void accept(SyntaxVisitor& visitor);
-    Pattern* pattern;
-};
-
 class ExpressionPattern : public Pattern {
 public:
     ExpressionPattern(Expression* expression, Position* start, Position* end);
@@ -1023,13 +1110,12 @@ public:
     virtual bool _isExpressionPattern();
 };
 
-class DefaultCaseLabel : public CaseLabel {
+class TuplePatternElement : public SyntaxNode {
 public:
-    DefaultCaseLabel(Position* start, Position* end);
+    TuplePatternElement(Pattern* pattern, Position* start, Position* end);
 
     virtual void accept(SyntaxVisitor& visitor);
-
-    virtual bool _isDefaultCaseLabel();
+    Pattern* pattern;
 };
 
 class CaseContent : public SyntaxNode {
@@ -1061,60 +1147,6 @@ public:
     virtual bool _isEmptyCaseContent();
 };
 
-class InitializerCall : public PrimaryExpression {
-public:
-    InitializerCall(Type* typeToInitialize, ParenthesizedExpression* arguments, _Vector<CatchClause>* catchClauses, Position* start, Position* end);
-
-    virtual void accept(SyntaxVisitor& visitor);
-    Type* typeToInitialize;
-    ParenthesizedExpression* arguments;
-    _Vector<CatchClause>* catchClauses;
-
-    virtual bool _isInitializerCall();
-};
-
-class ThisExpression : public PrimaryExpression {
-public:
-    ThisExpression(Position* start, Position* end);
-
-    virtual void accept(SyntaxVisitor& visitor) = 0;
-
-    virtual bool _isThisDot();
-    virtual bool _isThisSubscript();
-    virtual bool _isThisWord();
-
-    virtual bool _isThisExpression();
-};
-
-class ThisDot : public ThisExpression {
-public:
-    ThisDot(CommonThisMember* member, Position* start, Position* end);
-
-    virtual void accept(SyntaxVisitor& visitor);
-    CommonThisMember* member;
-
-    virtual bool _isThisDot();
-};
-
-class ThisSubscript : public ThisExpression {
-public:
-    ThisSubscript(Subscript* subscript, Position* start, Position* end);
-
-    virtual void accept(SyntaxVisitor& visitor);
-    Subscript* subscript;
-
-    virtual bool _isThisSubscript();
-};
-
-class ThisWord : public ThisExpression {
-public:
-    ThisWord(Position* start, Position* end);
-
-    virtual void accept(SyntaxVisitor& visitor);
-
-    virtual bool _isThisWord();
-};
-
 class CommonThisMember : public SyntaxNode {
 public:
     CommonThisMember(Position* start, Position* end);
@@ -1142,38 +1174,6 @@ public:
     _LetString* name;
 
     virtual bool _isThisMember();
-};
-
-class SuperExpression : public PrimaryExpression {
-public:
-    SuperExpression(Position* start, Position* end);
-
-    virtual void accept(SyntaxVisitor& visitor) = 0;
-
-    virtual bool _isSuperDot();
-    virtual bool _isSuperSubscript();
-
-    virtual bool _isSuperExpression();
-};
-
-class SuperDot : public SuperExpression {
-public:
-    SuperDot(CommonSuperMember* member, Position* start, Position* end);
-
-    virtual void accept(SyntaxVisitor& visitor);
-    CommonSuperMember* member;
-
-    virtual bool _isSuperDot();
-};
-
-class SuperSubscript : public SuperExpression {
-public:
-    SuperSubscript(Subscript* subscript, Position* start, Position* end);
-
-    virtual void accept(SyntaxVisitor& visitor);
-    Subscript* subscript;
-
-    virtual bool _isSuperSubscript();
 };
 
 class CommonSuperMember : public SyntaxNode {

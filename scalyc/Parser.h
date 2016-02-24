@@ -154,9 +154,33 @@ public:
 
     _Result<IfExpression, ParserError> parseIfExpression(_Page* _rp, _Page* _ep);
 
-    _Result<ElseClause, ParserError> parseElseClause(_Page* _rp, _Page* _ep);
-
     _Result<SwitchExpression, ParserError> parseSwitchExpression(_Page* _rp, _Page* _ep);
+
+    _Result<ForExpression, ParserError> parseForExpression(_Page* _rp, _Page* _ep);
+
+    _Result<ReturnExpression, ParserError> parseReturnExpression(_Page* _rp, _Page* _ep);
+
+    _Result<ThrowExpression, ParserError> parseThrowExpression(_Page* _rp, _Page* _ep);
+
+    _Result<BreakExpression, ParserError> parseBreakExpression(_Page* _rp, _Page* _ep);
+
+    _Result<InitializerCall, ParserError> parseInitializerCall(_Page* _rp, _Page* _ep);
+
+    _Result<ThisExpression, ParserError> parseThisExpression(_Page* _rp, _Page* _ep);
+
+    _Result<ThisDot, ParserError> parseThisDot(_Page* _rp, _Page* _ep);
+
+    _Result<ThisSubscript, ParserError> parseThisSubscript(_Page* _rp, _Page* _ep);
+
+    _Result<ThisWord, ParserError> parseThisWord(_Page* _rp, _Page* _ep);
+
+    _Result<SuperExpression, ParserError> parseSuperExpression(_Page* _rp, _Page* _ep);
+
+    _Result<SuperDot, ParserError> parseSuperDot(_Page* _rp, _Page* _ep);
+
+    _Result<SuperSubscript, ParserError> parseSuperSubscript(_Page* _rp, _Page* _ep);
+
+    _Result<ElseClause, ParserError> parseElseClause(_Page* _rp, _Page* _ep);
 
     _Result<SwitchBody, ParserError> parseSwitchBody(_Page* _rp, _Page* _ep);
 
@@ -171,22 +195,16 @@ public:
 
     _Result<ItemCaseLabel, ParserError> parseItemCaseLabel(_Page* _rp, _Page* _ep);
 
+    _Result<DefaultCaseLabel, ParserError> parseDefaultCaseLabel(_Page* _rp, _Page* _ep);
+
     _Result<_Vector<CaseItem>, ParserError> parseCaseItemList(_Page* _rp, _Page* _ep);
     _Result<CaseItem, ParserError> parseCaseItem(_Page* _rp, _Page* _ep);
-
-    _Result<ForExpression, ParserError> parseForExpression(_Page* _rp, _Page* _ep);
 
     _Result<ForLoop, ParserError> parseForLoop(_Page* _rp, _Page* _ep);
 
     _Result<ForEach, ParserError> parseForEach(_Page* _rp, _Page* _ep);
 
     _Result<PlainFor, ParserError> parsePlainFor(_Page* _rp, _Page* _ep);
-
-    _Result<ReturnExpression, ParserError> parseReturnExpression(_Page* _rp, _Page* _ep);
-
-    _Result<ThrowExpression, ParserError> parseThrowExpression(_Page* _rp, _Page* _ep);
-
-    _Result<BreakExpression, ParserError> parseBreakExpression(_Page* _rp, _Page* _ep);
 
     _Result<Pattern, ParserError> parsePattern(_Page* _rp, _Page* _ep);
 
@@ -196,12 +214,10 @@ public:
 
     _Result<TuplePattern, ParserError> parseTuplePattern(_Page* _rp, _Page* _ep);
 
-    _Result<_Vector<TuplePatternElement>, ParserError> parseTuplePatternElementList(_Page* _rp, _Page* _ep);
-    _Result<TuplePatternElement, ParserError> parseTuplePatternElement(_Page* _rp, _Page* _ep);
-
     _Result<ExpressionPattern, ParserError> parseExpressionPattern(_Page* _rp, _Page* _ep);
 
-    _Result<DefaultCaseLabel, ParserError> parseDefaultCaseLabel(_Page* _rp, _Page* _ep);
+    _Result<_Vector<TuplePatternElement>, ParserError> parseTuplePatternElementList(_Page* _rp, _Page* _ep);
+    _Result<TuplePatternElement, ParserError> parseTuplePatternElement(_Page* _rp, _Page* _ep);
 
     _Result<CaseContent, ParserError> parseCaseContent(_Page* _rp, _Page* _ep);
 
@@ -209,27 +225,11 @@ public:
 
     _Result<EmptyCaseContent, ParserError> parseEmptyCaseContent(_Page* _rp, _Page* _ep);
 
-    _Result<InitializerCall, ParserError> parseInitializerCall(_Page* _rp, _Page* _ep);
-
-    _Result<ThisExpression, ParserError> parseThisExpression(_Page* _rp, _Page* _ep);
-
-    _Result<ThisDot, ParserError> parseThisDot(_Page* _rp, _Page* _ep);
-
-    _Result<ThisSubscript, ParserError> parseThisSubscript(_Page* _rp, _Page* _ep);
-
-    _Result<ThisWord, ParserError> parseThisWord(_Page* _rp, _Page* _ep);
-
     _Result<CommonThisMember, ParserError> parseCommonThisMember(_Page* _rp, _Page* _ep);
 
     _Result<ThisInit, ParserError> parseThisInit(_Page* _rp, _Page* _ep);
 
     _Result<ThisMember, ParserError> parseThisMember(_Page* _rp, _Page* _ep);
-
-    _Result<SuperExpression, ParserError> parseSuperExpression(_Page* _rp, _Page* _ep);
-
-    _Result<SuperDot, ParserError> parseSuperDot(_Page* _rp, _Page* _ep);
-
-    _Result<SuperSubscript, ParserError> parseSuperSubscript(_Page* _rp, _Page* _ep);
 
     _Result<CommonSuperMember, ParserError> parseCommonSuperMember(_Page* _rp, _Page* _ep);
 

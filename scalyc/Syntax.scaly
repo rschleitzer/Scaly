@@ -1111,21 +1111,6 @@ class IfExpression : PrimaryExpression {
     let elseClause: ElseClause?
 }
 
-class ElseClause : SyntaxNode {
-
-    init(start: Position, end: Position) {
-        super.init(start, end)
-    }
-
-    function accept(mutable visitor: SyntaxVisitor) {
-        visitor.openElseClause(this)
-        alternative!.accept(visitor)
-        visitor.closeElseClause(this)
-    }
-
-    let alternative: Expression?
-}
-
 class SwitchExpression : PrimaryExpression {
 
     init(start: Position, end: Position) {
@@ -1141,6 +1126,209 @@ class SwitchExpression : PrimaryExpression {
 
     let expression: Expression?
     let body: SwitchBody?
+}
+
+class ForExpression : PrimaryExpression {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    override function accept(mutable visitor: SyntaxVisitor) {
+        visitor.openForExpression(this)
+        loop!.accept(visitor)
+        visitor.closeForExpression(this)
+    }
+
+    let loop: ForLoop?
+}
+
+class ReturnExpression : PrimaryExpression {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    override function accept(mutable visitor: SyntaxVisitor) {
+        visitor.openReturnExpression(this)
+        if expression != nil {
+            expression!.accept(visitor)
+        }
+        visitor.closeReturnExpression(this)
+    }
+
+    let expression: Expression?
+}
+
+class ThrowExpression : PrimaryExpression {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    override function accept(mutable visitor: SyntaxVisitor) {
+        visitor.openThrowExpression(this)
+        if expression != nil {
+            expression!.accept(visitor)
+        }
+        visitor.closeThrowExpression(this)
+    }
+
+    let expression: Expression?
+}
+
+class BreakExpression : PrimaryExpression {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    override function accept(mutable visitor: SyntaxVisitor) {
+        visitor.openBreakExpression(this)
+        if expression != nil {
+            expression!.accept(visitor)
+        }
+        visitor.closeBreakExpression(this)
+    }
+
+    let expression: Expression?
+}
+
+class InitializerCall : PrimaryExpression {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    override function accept(mutable visitor: SyntaxVisitor) {
+        visitor.openInitializerCall(this)
+        typeToInitialize!.accept(visitor)
+        arguments!.accept(visitor)
+        if catchClauses != nil {
+            for node in catchClauses! {
+                node.accept(visitor)
+            }
+        }
+        visitor.closeInitializerCall(this)
+    }
+
+    let typeToInitialize: Type?
+    let arguments: ParenthesizedExpression?
+    let catchClauses: [CatchClause]?
+}
+
+class ThisExpression : PrimaryExpression {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    override function accept(mutable visitor: SyntaxVisitor) {
+        visitor.openThisExpression(this)
+        visitor.closeThisExpression(this)
+    }
+
+}
+
+class ThisDot : ThisExpression {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    override function accept(mutable visitor: SyntaxVisitor) {
+        visitor.openThisDot(this)
+        member!.accept(visitor)
+        visitor.closeThisDot(this)
+    }
+
+    let member: CommonThisMember?
+}
+
+class ThisSubscript : ThisExpression {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    override function accept(mutable visitor: SyntaxVisitor) {
+        visitor.openThisSubscript(this)
+        subscript!.accept(visitor)
+        visitor.closeThisSubscript(this)
+    }
+
+    let subscript: Subscript?
+}
+
+class ThisWord : ThisExpression {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    override function accept(mutable visitor: SyntaxVisitor) {
+        visitor.openThisWord(this)
+        visitor.closeThisWord(this)
+    }
+
+}
+
+class SuperExpression : PrimaryExpression {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    override function accept(mutable visitor: SyntaxVisitor) {
+        visitor.openSuperExpression(this)
+        visitor.closeSuperExpression(this)
+    }
+
+}
+
+class SuperDot : SuperExpression {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    override function accept(mutable visitor: SyntaxVisitor) {
+        visitor.openSuperDot(this)
+        member!.accept(visitor)
+        visitor.closeSuperDot(this)
+    }
+
+    let member: CommonSuperMember?
+}
+
+class SuperSubscript : SuperExpression {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    override function accept(mutable visitor: SyntaxVisitor) {
+        visitor.openSuperSubscript(this)
+        subscript!.accept(visitor)
+        visitor.closeSuperSubscript(this)
+    }
+
+    let subscript: Subscript?
+}
+
+class ElseClause : SyntaxNode {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    function accept(mutable visitor: SyntaxVisitor) {
+        visitor.openElseClause(this)
+        alternative!.accept(visitor)
+        visitor.closeElseClause(this)
+    }
+
+    let alternative: Expression?
 }
 
 class SwitchBody : SyntaxNode {
@@ -1241,6 +1429,19 @@ class ItemCaseLabel : CaseLabel {
     let additionalPatterns: [CaseItem]?
 }
 
+class DefaultCaseLabel : CaseLabel {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    override function accept(mutable visitor: SyntaxVisitor) {
+        visitor.openDefaultCaseLabel(this)
+        visitor.closeDefaultCaseLabel(this)
+    }
+
+}
+
 class CaseItem : SyntaxNode {
 
     init(start: Position, end: Position) {
@@ -1254,21 +1455,6 @@ class CaseItem : SyntaxNode {
     }
 
     let pattern: Pattern?
-}
-
-class ForExpression : PrimaryExpression {
-
-    init(start: Position, end: Position) {
-        super.init(start, end)
-    }
-
-    override function accept(mutable visitor: SyntaxVisitor) {
-        visitor.openForExpression(this)
-        loop!.accept(visitor)
-        visitor.closeForExpression(this)
-    }
-
-    let loop: ForLoop?
 }
 
 class ForLoop : SyntaxNode {
@@ -1326,57 +1512,6 @@ class PlainFor : ForLoop {
     let forCheck: Expression?
     let forNext: Expression?
     let code: Expression?
-}
-
-class ReturnExpression : PrimaryExpression {
-
-    init(start: Position, end: Position) {
-        super.init(start, end)
-    }
-
-    override function accept(mutable visitor: SyntaxVisitor) {
-        visitor.openReturnExpression(this)
-        if expression != nil {
-            expression!.accept(visitor)
-        }
-        visitor.closeReturnExpression(this)
-    }
-
-    let expression: Expression?
-}
-
-class ThrowExpression : PrimaryExpression {
-
-    init(start: Position, end: Position) {
-        super.init(start, end)
-    }
-
-    override function accept(mutable visitor: SyntaxVisitor) {
-        visitor.openThrowExpression(this)
-        if expression != nil {
-            expression!.accept(visitor)
-        }
-        visitor.closeThrowExpression(this)
-    }
-
-    let expression: Expression?
-}
-
-class BreakExpression : PrimaryExpression {
-
-    init(start: Position, end: Position) {
-        super.init(start, end)
-    }
-
-    override function accept(mutable visitor: SyntaxVisitor) {
-        visitor.openBreakExpression(this)
-        if expression != nil {
-            expression!.accept(visitor)
-        }
-        visitor.closeBreakExpression(this)
-    }
-
-    let expression: Expression?
 }
 
 class Pattern : SyntaxNode {
@@ -1440,21 +1575,6 @@ class TuplePattern : Pattern {
     let elements: [TuplePatternElement]?
 }
 
-class TuplePatternElement : SyntaxNode {
-
-    init(start: Position, end: Position) {
-        super.init(start, end)
-    }
-
-    function accept(mutable visitor: SyntaxVisitor) {
-        visitor.openTuplePatternElement(this)
-        pattern!.accept(visitor)
-        visitor.closeTuplePatternElement(this)
-    }
-
-    let pattern: Pattern?
-}
-
 class ExpressionPattern : Pattern {
 
     init(start: Position, end: Position) {
@@ -1470,17 +1590,19 @@ class ExpressionPattern : Pattern {
     let expression: Expression?
 }
 
-class DefaultCaseLabel : CaseLabel {
+class TuplePatternElement : SyntaxNode {
 
     init(start: Position, end: Position) {
         super.init(start, end)
     }
 
-    override function accept(mutable visitor: SyntaxVisitor) {
-        visitor.openDefaultCaseLabel(this)
-        visitor.closeDefaultCaseLabel(this)
+    function accept(mutable visitor: SyntaxVisitor) {
+        visitor.openTuplePatternElement(this)
+        pattern!.accept(visitor)
+        visitor.closeTuplePatternElement(this)
     }
 
+    let pattern: Pattern?
 }
 
 class CaseContent : SyntaxNode {
@@ -1526,85 +1648,6 @@ class EmptyCaseContent : CaseContent {
 
 }
 
-class InitializerCall : PrimaryExpression {
-
-    init(start: Position, end: Position) {
-        super.init(start, end)
-    }
-
-    override function accept(mutable visitor: SyntaxVisitor) {
-        visitor.openInitializerCall(this)
-        typeToInitialize!.accept(visitor)
-        arguments!.accept(visitor)
-        if catchClauses != nil {
-            for node in catchClauses! {
-                node.accept(visitor)
-            }
-        }
-        visitor.closeInitializerCall(this)
-    }
-
-    let typeToInitialize: Type?
-    let arguments: ParenthesizedExpression?
-    let catchClauses: [CatchClause]?
-}
-
-class ThisExpression : PrimaryExpression {
-
-    init(start: Position, end: Position) {
-        super.init(start, end)
-    }
-
-    override function accept(mutable visitor: SyntaxVisitor) {
-        visitor.openThisExpression(this)
-        visitor.closeThisExpression(this)
-    }
-
-}
-
-class ThisDot : ThisExpression {
-
-    init(start: Position, end: Position) {
-        super.init(start, end)
-    }
-
-    override function accept(mutable visitor: SyntaxVisitor) {
-        visitor.openThisDot(this)
-        member!.accept(visitor)
-        visitor.closeThisDot(this)
-    }
-
-    let member: CommonThisMember?
-}
-
-class ThisSubscript : ThisExpression {
-
-    init(start: Position, end: Position) {
-        super.init(start, end)
-    }
-
-    override function accept(mutable visitor: SyntaxVisitor) {
-        visitor.openThisSubscript(this)
-        subscript!.accept(visitor)
-        visitor.closeThisSubscript(this)
-    }
-
-    let subscript: Subscript?
-}
-
-class ThisWord : ThisExpression {
-
-    init(start: Position, end: Position) {
-        super.init(start, end)
-    }
-
-    override function accept(mutable visitor: SyntaxVisitor) {
-        visitor.openThisWord(this)
-        visitor.closeThisWord(this)
-    }
-
-}
-
 class CommonThisMember : SyntaxNode {
 
     init(start: Position, end: Position) {
@@ -1643,49 +1686,6 @@ class ThisMember : CommonThisMember {
     }
 
     let name: String?
-}
-
-class SuperExpression : PrimaryExpression {
-
-    init(start: Position, end: Position) {
-        super.init(start, end)
-    }
-
-    override function accept(mutable visitor: SyntaxVisitor) {
-        visitor.openSuperExpression(this)
-        visitor.closeSuperExpression(this)
-    }
-
-}
-
-class SuperDot : SuperExpression {
-
-    init(start: Position, end: Position) {
-        super.init(start, end)
-    }
-
-    override function accept(mutable visitor: SyntaxVisitor) {
-        visitor.openSuperDot(this)
-        member!.accept(visitor)
-        visitor.closeSuperDot(this)
-    }
-
-    let member: CommonSuperMember?
-}
-
-class SuperSubscript : SuperExpression {
-
-    init(start: Position, end: Position) {
-        super.init(start, end)
-    }
-
-    override function accept(mutable visitor: SyntaxVisitor) {
-        visitor.openSuperSubscript(this)
-        subscript!.accept(visitor)
-        visitor.closeSuperSubscript(this)
-    }
-
-    let subscript: Subscript?
 }
 
 class CommonSuperMember : SyntaxNode {

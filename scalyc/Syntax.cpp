@@ -72,43 +72,43 @@ bool SyntaxNode::_isParenthesizedExpression() { return false; }
 bool SyntaxNode::_isLiteralExpression() { return false; }
 bool SyntaxNode::_isIdentifierExpression() { return false; }
 bool SyntaxNode::_isIfExpression() { return false; }
-bool SyntaxNode::_isElseClause() { return false; }
 bool SyntaxNode::_isSwitchExpression() { return false; }
+bool SyntaxNode::_isForExpression() { return false; }
+bool SyntaxNode::_isReturnExpression() { return false; }
+bool SyntaxNode::_isThrowExpression() { return false; }
+bool SyntaxNode::_isBreakExpression() { return false; }
+bool SyntaxNode::_isInitializerCall() { return false; }
+bool SyntaxNode::_isThisExpression() { return false; }
+bool SyntaxNode::_isThisDot() { return false; }
+bool SyntaxNode::_isThisSubscript() { return false; }
+bool SyntaxNode::_isThisWord() { return false; }
+bool SyntaxNode::_isSuperExpression() { return false; }
+bool SyntaxNode::_isSuperDot() { return false; }
+bool SyntaxNode::_isSuperSubscript() { return false; }
+bool SyntaxNode::_isElseClause() { return false; }
 bool SyntaxNode::_isSwitchBody() { return false; }
 bool SyntaxNode::_isCurliedSwitchBody() { return false; }
 bool SyntaxNode::_isNakedSwitchBody() { return false; }
 bool SyntaxNode::_isSwitchCase() { return false; }
 bool SyntaxNode::_isCaseLabel() { return false; }
 bool SyntaxNode::_isItemCaseLabel() { return false; }
+bool SyntaxNode::_isDefaultCaseLabel() { return false; }
 bool SyntaxNode::_isCaseItem() { return false; }
-bool SyntaxNode::_isForExpression() { return false; }
 bool SyntaxNode::_isForLoop() { return false; }
 bool SyntaxNode::_isForEach() { return false; }
 bool SyntaxNode::_isPlainFor() { return false; }
-bool SyntaxNode::_isReturnExpression() { return false; }
-bool SyntaxNode::_isThrowExpression() { return false; }
-bool SyntaxNode::_isBreakExpression() { return false; }
 bool SyntaxNode::_isPattern() { return false; }
 bool SyntaxNode::_isWildcardPattern() { return false; }
 bool SyntaxNode::_isIdentifierPattern() { return false; }
 bool SyntaxNode::_isTuplePattern() { return false; }
-bool SyntaxNode::_isTuplePatternElement() { return false; }
 bool SyntaxNode::_isExpressionPattern() { return false; }
-bool SyntaxNode::_isDefaultCaseLabel() { return false; }
+bool SyntaxNode::_isTuplePatternElement() { return false; }
 bool SyntaxNode::_isCaseContent() { return false; }
 bool SyntaxNode::_isBlockCaseContent() { return false; }
 bool SyntaxNode::_isEmptyCaseContent() { return false; }
-bool SyntaxNode::_isInitializerCall() { return false; }
-bool SyntaxNode::_isThisExpression() { return false; }
-bool SyntaxNode::_isThisDot() { return false; }
-bool SyntaxNode::_isThisSubscript() { return false; }
-bool SyntaxNode::_isThisWord() { return false; }
 bool SyntaxNode::_isCommonThisMember() { return false; }
 bool SyntaxNode::_isThisInit() { return false; }
 bool SyntaxNode::_isThisMember() { return false; }
-bool SyntaxNode::_isSuperExpression() { return false; }
-bool SyntaxNode::_isSuperDot() { return false; }
-bool SyntaxNode::_isSuperSubscript() { return false; }
 bool SyntaxNode::_isCommonSuperMember() { return false; }
 bool SyntaxNode::_isSuperInit() { return false; }
 bool SyntaxNode::_isSuperMember() { return false; }
@@ -972,16 +972,6 @@ void IfExpression::accept(SyntaxVisitor& visitor) {
     visitor.closeIfExpression(this);
 }
 
-ElseClause::ElseClause(Expression* alternative, Position* start, Position* end)
-: SyntaxNode(start, end), alternative(alternative) {}
-
-void ElseClause::accept(SyntaxVisitor& visitor) {
-    if (!visitor.openElseClause(this))
-        return;
-    alternative->accept(visitor);
-    visitor.closeElseClause(this);
-}
-
 SwitchExpression::SwitchExpression(Expression* expression, SwitchBody* body, Position* start, Position* end)
 : PrimaryExpression(start, end), expression(expression), body(body) {}
 
@@ -993,6 +983,162 @@ void SwitchExpression::accept(SyntaxVisitor& visitor) {
     expression->accept(visitor);
     body->accept(visitor);
     visitor.closeSwitchExpression(this);
+}
+
+ForExpression::ForExpression(ForLoop* loop, Position* start, Position* end)
+: PrimaryExpression(start, end), loop(loop) {}
+
+bool ForExpression::_isForExpression() { return true; }
+
+void ForExpression::accept(SyntaxVisitor& visitor) {
+    if (!visitor.openForExpression(this))
+        return;
+    loop->accept(visitor);
+    visitor.closeForExpression(this);
+}
+
+ReturnExpression::ReturnExpression(Expression* expression, Position* start, Position* end)
+: PrimaryExpression(start, end), expression(expression) {}
+
+bool ReturnExpression::_isReturnExpression() { return true; }
+
+void ReturnExpression::accept(SyntaxVisitor& visitor) {
+    if (!visitor.openReturnExpression(this))
+        return;
+    if (expression)
+        expression->accept(visitor);
+    visitor.closeReturnExpression(this);
+}
+
+ThrowExpression::ThrowExpression(Expression* expression, Position* start, Position* end)
+: PrimaryExpression(start, end), expression(expression) {}
+
+bool ThrowExpression::_isThrowExpression() { return true; }
+
+void ThrowExpression::accept(SyntaxVisitor& visitor) {
+    if (!visitor.openThrowExpression(this))
+        return;
+    if (expression)
+        expression->accept(visitor);
+    visitor.closeThrowExpression(this);
+}
+
+BreakExpression::BreakExpression(Expression* expression, Position* start, Position* end)
+: PrimaryExpression(start, end), expression(expression) {}
+
+bool BreakExpression::_isBreakExpression() { return true; }
+
+void BreakExpression::accept(SyntaxVisitor& visitor) {
+    if (!visitor.openBreakExpression(this))
+        return;
+    if (expression)
+        expression->accept(visitor);
+    visitor.closeBreakExpression(this);
+}
+
+InitializerCall::InitializerCall(Type* typeToInitialize, ParenthesizedExpression* arguments, _Vector<CatchClause>* catchClauses, Position* start, Position* end)
+: PrimaryExpression(start, end), typeToInitialize(typeToInitialize), arguments(arguments), catchClauses(catchClauses) {}
+
+bool InitializerCall::_isInitializerCall() { return true; }
+
+void InitializerCall::accept(SyntaxVisitor& visitor) {
+    if (!visitor.openInitializerCall(this))
+        return;
+    typeToInitialize->accept(visitor);
+    arguments->accept(visitor);
+    if (catchClauses) {
+        CatchClause* node = 0;
+        size_t _alength = catchClauses->length();
+        for (size_t _a = 0; _a < _alength; _a++) {
+            node = *(*catchClauses)[_a];
+            node->accept(visitor);
+        }
+    }
+    visitor.closeInitializerCall(this);
+}
+
+ThisExpression::ThisExpression(Position* start, Position* end)
+: PrimaryExpression(start, end) {}
+
+bool ThisExpression::_isThisDot() { return false; }
+bool ThisExpression::_isThisSubscript() { return false; }
+bool ThisExpression::_isThisWord() { return false; }
+
+bool ThisExpression::_isThisExpression() { return true; }
+
+ThisDot::ThisDot(CommonThisMember* member, Position* start, Position* end)
+: ThisExpression(start, end), member(member) {}
+
+bool ThisDot::_isThisDot() { return true; }
+
+void ThisDot::accept(SyntaxVisitor& visitor) {
+    if (!visitor.openThisDot(this))
+        return;
+    member->accept(visitor);
+    visitor.closeThisDot(this);
+}
+
+ThisSubscript::ThisSubscript(Subscript* subscript, Position* start, Position* end)
+: ThisExpression(start, end), subscript(subscript) {}
+
+bool ThisSubscript::_isThisSubscript() { return true; }
+
+void ThisSubscript::accept(SyntaxVisitor& visitor) {
+    if (!visitor.openThisSubscript(this))
+        return;
+    subscript->accept(visitor);
+    visitor.closeThisSubscript(this);
+}
+
+ThisWord::ThisWord(Position* start, Position* end)
+: ThisExpression(start, end) {}
+
+bool ThisWord::_isThisWord() { return true; }
+
+void ThisWord::accept(SyntaxVisitor& visitor) {
+    visitor.visitThisWord(this);
+}
+
+SuperExpression::SuperExpression(Position* start, Position* end)
+: PrimaryExpression(start, end) {}
+
+bool SuperExpression::_isSuperDot() { return false; }
+bool SuperExpression::_isSuperSubscript() { return false; }
+
+bool SuperExpression::_isSuperExpression() { return true; }
+
+SuperDot::SuperDot(CommonSuperMember* member, Position* start, Position* end)
+: SuperExpression(start, end), member(member) {}
+
+bool SuperDot::_isSuperDot() { return true; }
+
+void SuperDot::accept(SyntaxVisitor& visitor) {
+    if (!visitor.openSuperDot(this))
+        return;
+    member->accept(visitor);
+    visitor.closeSuperDot(this);
+}
+
+SuperSubscript::SuperSubscript(Subscript* subscript, Position* start, Position* end)
+: SuperExpression(start, end), subscript(subscript) {}
+
+bool SuperSubscript::_isSuperSubscript() { return true; }
+
+void SuperSubscript::accept(SyntaxVisitor& visitor) {
+    if (!visitor.openSuperSubscript(this))
+        return;
+    subscript->accept(visitor);
+    visitor.closeSuperSubscript(this);
+}
+
+ElseClause::ElseClause(Expression* alternative, Position* start, Position* end)
+: SyntaxNode(start, end), alternative(alternative) {}
+
+void ElseClause::accept(SyntaxVisitor& visitor) {
+    if (!visitor.openElseClause(this))
+        return;
+    alternative->accept(visitor);
+    visitor.closeElseClause(this);
 }
 
 SwitchBody::SwitchBody(Position* start, Position* end)
@@ -1076,6 +1222,15 @@ void ItemCaseLabel::accept(SyntaxVisitor& visitor) {
     visitor.closeItemCaseLabel(this);
 }
 
+DefaultCaseLabel::DefaultCaseLabel(Position* start, Position* end)
+: CaseLabel(start, end) {}
+
+bool DefaultCaseLabel::_isDefaultCaseLabel() { return true; }
+
+void DefaultCaseLabel::accept(SyntaxVisitor& visitor) {
+    visitor.visitDefaultCaseLabel(this);
+}
+
 CaseItem::CaseItem(Pattern* pattern, Position* start, Position* end)
 : SyntaxNode(start, end), pattern(pattern) {}
 
@@ -1084,18 +1239,6 @@ void CaseItem::accept(SyntaxVisitor& visitor) {
         return;
     pattern->accept(visitor);
     visitor.closeCaseItem(this);
-}
-
-ForExpression::ForExpression(ForLoop* loop, Position* start, Position* end)
-: PrimaryExpression(start, end), loop(loop) {}
-
-bool ForExpression::_isForExpression() { return true; }
-
-void ForExpression::accept(SyntaxVisitor& visitor) {
-    if (!visitor.openForExpression(this))
-        return;
-    loop->accept(visitor);
-    visitor.closeForExpression(this);
 }
 
 ForLoop::ForLoop(Position* start, Position* end)
@@ -1133,45 +1276,6 @@ void PlainFor::accept(SyntaxVisitor& visitor) {
     forNext->accept(visitor);
     code->accept(visitor);
     visitor.closePlainFor(this);
-}
-
-ReturnExpression::ReturnExpression(Expression* expression, Position* start, Position* end)
-: PrimaryExpression(start, end), expression(expression) {}
-
-bool ReturnExpression::_isReturnExpression() { return true; }
-
-void ReturnExpression::accept(SyntaxVisitor& visitor) {
-    if (!visitor.openReturnExpression(this))
-        return;
-    if (expression)
-        expression->accept(visitor);
-    visitor.closeReturnExpression(this);
-}
-
-ThrowExpression::ThrowExpression(Expression* expression, Position* start, Position* end)
-: PrimaryExpression(start, end), expression(expression) {}
-
-bool ThrowExpression::_isThrowExpression() { return true; }
-
-void ThrowExpression::accept(SyntaxVisitor& visitor) {
-    if (!visitor.openThrowExpression(this))
-        return;
-    if (expression)
-        expression->accept(visitor);
-    visitor.closeThrowExpression(this);
-}
-
-BreakExpression::BreakExpression(Expression* expression, Position* start, Position* end)
-: PrimaryExpression(start, end), expression(expression) {}
-
-bool BreakExpression::_isBreakExpression() { return true; }
-
-void BreakExpression::accept(SyntaxVisitor& visitor) {
-    if (!visitor.openBreakExpression(this))
-        return;
-    if (expression)
-        expression->accept(visitor);
-    visitor.closeBreakExpression(this);
 }
 
 Pattern::Pattern(Position* start, Position* end)
@@ -1223,16 +1327,6 @@ void TuplePattern::accept(SyntaxVisitor& visitor) {
     visitor.closeTuplePattern(this);
 }
 
-TuplePatternElement::TuplePatternElement(Pattern* pattern, Position* start, Position* end)
-: SyntaxNode(start, end), pattern(pattern) {}
-
-void TuplePatternElement::accept(SyntaxVisitor& visitor) {
-    if (!visitor.openTuplePatternElement(this))
-        return;
-    pattern->accept(visitor);
-    visitor.closeTuplePatternElement(this);
-}
-
 ExpressionPattern::ExpressionPattern(Expression* expression, Position* start, Position* end)
 : Pattern(start, end), expression(expression) {}
 
@@ -1245,13 +1339,14 @@ void ExpressionPattern::accept(SyntaxVisitor& visitor) {
     visitor.closeExpressionPattern(this);
 }
 
-DefaultCaseLabel::DefaultCaseLabel(Position* start, Position* end)
-: CaseLabel(start, end) {}
+TuplePatternElement::TuplePatternElement(Pattern* pattern, Position* start, Position* end)
+: SyntaxNode(start, end), pattern(pattern) {}
 
-bool DefaultCaseLabel::_isDefaultCaseLabel() { return true; }
-
-void DefaultCaseLabel::accept(SyntaxVisitor& visitor) {
-    visitor.visitDefaultCaseLabel(this);
+void TuplePatternElement::accept(SyntaxVisitor& visitor) {
+    if (!visitor.openTuplePatternElement(this))
+        return;
+    pattern->accept(visitor);
+    visitor.closeTuplePatternElement(this);
 }
 
 CaseContent::CaseContent(Position* start, Position* end)
@@ -1288,69 +1383,6 @@ void EmptyCaseContent::accept(SyntaxVisitor& visitor) {
     visitor.visitEmptyCaseContent(this);
 }
 
-InitializerCall::InitializerCall(Type* typeToInitialize, ParenthesizedExpression* arguments, _Vector<CatchClause>* catchClauses, Position* start, Position* end)
-: PrimaryExpression(start, end), typeToInitialize(typeToInitialize), arguments(arguments), catchClauses(catchClauses) {}
-
-bool InitializerCall::_isInitializerCall() { return true; }
-
-void InitializerCall::accept(SyntaxVisitor& visitor) {
-    if (!visitor.openInitializerCall(this))
-        return;
-    typeToInitialize->accept(visitor);
-    arguments->accept(visitor);
-    if (catchClauses) {
-        CatchClause* node = 0;
-        size_t _alength = catchClauses->length();
-        for (size_t _a = 0; _a < _alength; _a++) {
-            node = *(*catchClauses)[_a];
-            node->accept(visitor);
-        }
-    }
-    visitor.closeInitializerCall(this);
-}
-
-ThisExpression::ThisExpression(Position* start, Position* end)
-: PrimaryExpression(start, end) {}
-
-bool ThisExpression::_isThisDot() { return false; }
-bool ThisExpression::_isThisSubscript() { return false; }
-bool ThisExpression::_isThisWord() { return false; }
-
-bool ThisExpression::_isThisExpression() { return true; }
-
-ThisDot::ThisDot(CommonThisMember* member, Position* start, Position* end)
-: ThisExpression(start, end), member(member) {}
-
-bool ThisDot::_isThisDot() { return true; }
-
-void ThisDot::accept(SyntaxVisitor& visitor) {
-    if (!visitor.openThisDot(this))
-        return;
-    member->accept(visitor);
-    visitor.closeThisDot(this);
-}
-
-ThisSubscript::ThisSubscript(Subscript* subscript, Position* start, Position* end)
-: ThisExpression(start, end), subscript(subscript) {}
-
-bool ThisSubscript::_isThisSubscript() { return true; }
-
-void ThisSubscript::accept(SyntaxVisitor& visitor) {
-    if (!visitor.openThisSubscript(this))
-        return;
-    subscript->accept(visitor);
-    visitor.closeThisSubscript(this);
-}
-
-ThisWord::ThisWord(Position* start, Position* end)
-: ThisExpression(start, end) {}
-
-bool ThisWord::_isThisWord() { return true; }
-
-void ThisWord::accept(SyntaxVisitor& visitor) {
-    visitor.visitThisWord(this);
-}
-
 CommonThisMember::CommonThisMember(Position* start, Position* end)
 : SyntaxNode(start, end) {}
 
@@ -1373,38 +1405,6 @@ bool ThisMember::_isThisMember() { return true; }
 
 void ThisMember::accept(SyntaxVisitor& visitor) {
     visitor.visitThisMember(this);
-}
-
-SuperExpression::SuperExpression(Position* start, Position* end)
-: PrimaryExpression(start, end) {}
-
-bool SuperExpression::_isSuperDot() { return false; }
-bool SuperExpression::_isSuperSubscript() { return false; }
-
-bool SuperExpression::_isSuperExpression() { return true; }
-
-SuperDot::SuperDot(CommonSuperMember* member, Position* start, Position* end)
-: SuperExpression(start, end), member(member) {}
-
-bool SuperDot::_isSuperDot() { return true; }
-
-void SuperDot::accept(SyntaxVisitor& visitor) {
-    if (!visitor.openSuperDot(this))
-        return;
-    member->accept(visitor);
-    visitor.closeSuperDot(this);
-}
-
-SuperSubscript::SuperSubscript(Subscript* subscript, Position* start, Position* end)
-: SuperExpression(start, end), subscript(subscript) {}
-
-bool SuperSubscript::_isSuperSubscript() { return true; }
-
-void SuperSubscript::accept(SyntaxVisitor& visitor) {
-    if (!visitor.openSuperSubscript(this))
-        return;
-    subscript->accept(visitor);
-    visitor.closeSuperSubscript(this);
 }
 
 CommonSuperMember::CommonSuperMember(Position* start, Position* end)

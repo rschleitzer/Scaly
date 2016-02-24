@@ -364,18 +364,84 @@ bool MyVisitor::openIfExpression(IfExpression* ifExpression) {
 void MyVisitor::closeIfExpression(IfExpression* ifExpression) {
 }
 
-bool MyVisitor::openElseClause(ElseClause* elseClause) {
-    return true;
-}
-
-void MyVisitor::closeElseClause(ElseClause* elseClause) {
-}
-
 bool MyVisitor::openSwitchExpression(SwitchExpression* switchExpression) {
     return true;
 }
 
 void MyVisitor::closeSwitchExpression(SwitchExpression* switchExpression) {
+}
+
+bool MyVisitor::openForExpression(ForExpression* forExpression) {
+    return true;
+}
+
+void MyVisitor::closeForExpression(ForExpression* forExpression) {
+}
+
+bool MyVisitor::openReturnExpression(ReturnExpression* returnExpression) {
+    return true;
+}
+
+void MyVisitor::closeReturnExpression(ReturnExpression* returnExpression) {
+}
+
+bool MyVisitor::openThrowExpression(ThrowExpression* throwExpression) {
+    return true;
+}
+
+void MyVisitor::closeThrowExpression(ThrowExpression* throwExpression) {
+}
+
+bool MyVisitor::openBreakExpression(BreakExpression* breakExpression) {
+    return true;
+}
+
+void MyVisitor::closeBreakExpression(BreakExpression* breakExpression) {
+}
+
+bool MyVisitor::openInitializerCall(InitializerCall* initializerCall) {
+    return true;
+}
+
+void MyVisitor::closeInitializerCall(InitializerCall* initializerCall) {
+}
+
+bool MyVisitor::openThisDot(ThisDot* thisDot) {
+    return true;
+}
+
+void MyVisitor::closeThisDot(ThisDot* thisDot) {
+}
+
+bool MyVisitor::openThisSubscript(ThisSubscript* thisSubscript) {
+    return true;
+}
+
+void MyVisitor::closeThisSubscript(ThisSubscript* thisSubscript) {
+}
+
+void MyVisitor::visitThisWord(ThisWord* thisWord) {
+}
+
+bool MyVisitor::openSuperDot(SuperDot* superDot) {
+    return true;
+}
+
+void MyVisitor::closeSuperDot(SuperDot* superDot) {
+}
+
+bool MyVisitor::openSuperSubscript(SuperSubscript* superSubscript) {
+    return true;
+}
+
+void MyVisitor::closeSuperSubscript(SuperSubscript* superSubscript) {
+}
+
+bool MyVisitor::openElseClause(ElseClause* elseClause) {
+    return true;
+}
+
+void MyVisitor::closeElseClause(ElseClause* elseClause) {
 }
 
 bool MyVisitor::openCurliedSwitchBody(CurliedSwitchBody* curliedSwitchBody) {
@@ -406,18 +472,14 @@ bool MyVisitor::openItemCaseLabel(ItemCaseLabel* itemCaseLabel) {
 void MyVisitor::closeItemCaseLabel(ItemCaseLabel* itemCaseLabel) {
 }
 
+void MyVisitor::visitDefaultCaseLabel(DefaultCaseLabel* defaultCaseLabel) {
+}
+
 bool MyVisitor::openCaseItem(CaseItem* caseItem) {
     return true;
 }
 
 void MyVisitor::closeCaseItem(CaseItem* caseItem) {
-}
-
-bool MyVisitor::openForExpression(ForExpression* forExpression) {
-    return true;
-}
-
-void MyVisitor::closeForExpression(ForExpression* forExpression) {
 }
 
 bool MyVisitor::openForEach(ForEach* forEach) {
@@ -432,27 +494,6 @@ bool MyVisitor::openPlainFor(PlainFor* plainFor) {
 }
 
 void MyVisitor::closePlainFor(PlainFor* plainFor) {
-}
-
-bool MyVisitor::openReturnExpression(ReturnExpression* returnExpression) {
-    return true;
-}
-
-void MyVisitor::closeReturnExpression(ReturnExpression* returnExpression) {
-}
-
-bool MyVisitor::openThrowExpression(ThrowExpression* throwExpression) {
-    return true;
-}
-
-void MyVisitor::closeThrowExpression(ThrowExpression* throwExpression) {
-}
-
-bool MyVisitor::openBreakExpression(BreakExpression* breakExpression) {
-    return true;
-}
-
-void MyVisitor::closeBreakExpression(BreakExpression* breakExpression) {
 }
 
 void MyVisitor::visitWildcardPattern(WildcardPattern* wildcardPattern) {
@@ -474,13 +515,6 @@ bool MyVisitor::openTuplePattern(TuplePattern* tuplePattern) {
 void MyVisitor::closeTuplePattern(TuplePattern* tuplePattern) {
 }
 
-bool MyVisitor::openTuplePatternElement(TuplePatternElement* tuplePatternElement) {
-    return true;
-}
-
-void MyVisitor::closeTuplePatternElement(TuplePatternElement* tuplePatternElement) {
-}
-
 bool MyVisitor::openExpressionPattern(ExpressionPattern* expressionPattern) {
     return true;
 }
@@ -488,7 +522,11 @@ bool MyVisitor::openExpressionPattern(ExpressionPattern* expressionPattern) {
 void MyVisitor::closeExpressionPattern(ExpressionPattern* expressionPattern) {
 }
 
-void MyVisitor::visitDefaultCaseLabel(DefaultCaseLabel* defaultCaseLabel) {
+bool MyVisitor::openTuplePatternElement(TuplePatternElement* tuplePatternElement) {
+    return true;
+}
+
+void MyVisitor::closeTuplePatternElement(TuplePatternElement* tuplePatternElement) {
 }
 
 bool MyVisitor::openBlockCaseContent(BlockCaseContent* blockCaseContent) {
@@ -501,48 +539,10 @@ void MyVisitor::closeBlockCaseContent(BlockCaseContent* blockCaseContent) {
 void MyVisitor::visitEmptyCaseContent(EmptyCaseContent* emptyCaseContent) {
 }
 
-bool MyVisitor::openInitializerCall(InitializerCall* initializerCall) {
-    return true;
-}
-
-void MyVisitor::closeInitializerCall(InitializerCall* initializerCall) {
-}
-
-bool MyVisitor::openThisDot(ThisDot* thisDot) {
-    return true;
-}
-
-void MyVisitor::closeThisDot(ThisDot* thisDot) {
-}
-
-bool MyVisitor::openThisSubscript(ThisSubscript* thisSubscript) {
-    return true;
-}
-
-void MyVisitor::closeThisSubscript(ThisSubscript* thisSubscript) {
-}
-
-void MyVisitor::visitThisWord(ThisWord* thisWord) {
-}
-
 void MyVisitor::visitThisInit(ThisInit* thisInit) {
 }
 
 void MyVisitor::visitThisMember(ThisMember* thisMember) {
-}
-
-bool MyVisitor::openSuperDot(SuperDot* superDot) {
-    return true;
-}
-
-void MyVisitor::closeSuperDot(SuperDot* superDot) {
-}
-
-bool MyVisitor::openSuperSubscript(SuperSubscript* superSubscript) {
-    return true;
-}
-
-void MyVisitor::closeSuperSubscript(SuperSubscript* superSubscript) {
 }
 
 void MyVisitor::visitSuperInit(SuperInit* superInit) {

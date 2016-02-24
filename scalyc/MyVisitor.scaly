@@ -325,16 +325,73 @@ class MyVisitor {
     function closeIfExpression(ifExpression: IfExpression) { }
 
 
-    function openElseClause(elseClause: ElseClause) -> bool {
-        return true; }
-
-    function closeElseClause(elseClause: ElseClause) { }
-
-
     function openSwitchExpression(switchExpression: SwitchExpression) -> bool {
         return true; }
 
     function closeSwitchExpression(switchExpression: SwitchExpression) { }
+
+
+    function openForExpression(forExpression: ForExpression) -> bool {
+        return true; }
+
+    function closeForExpression(forExpression: ForExpression) { }
+
+
+    function openReturnExpression(returnExpression: ReturnExpression) -> bool {
+        return true; }
+
+    function closeReturnExpression(returnExpression: ReturnExpression) { }
+
+
+    function openThrowExpression(throwExpression: ThrowExpression) -> bool {
+        return true; }
+
+    function closeThrowExpression(throwExpression: ThrowExpression) { }
+
+
+    function openBreakExpression(breakExpression: BreakExpression) -> bool {
+        return true; }
+
+    function closeBreakExpression(breakExpression: BreakExpression) { }
+
+
+    function openInitializerCall(initializerCall: InitializerCall) -> bool {
+        return true; }
+
+    function closeInitializerCall(initializerCall: InitializerCall) { }
+
+
+    function openThisDot(thisDot: ThisDot) -> bool {
+        return true; }
+
+    function closeThisDot(thisDot: ThisDot) { }
+
+
+    function openThisSubscript(thisSubscript: ThisSubscript) -> bool {
+        return true; }
+
+    function closeThisSubscript(thisSubscript: ThisSubscript) { }
+
+
+    function visitThisWord(thisWord: ThisWord) { }
+
+
+    function openSuperDot(superDot: SuperDot) -> bool {
+        return true; }
+
+    function closeSuperDot(superDot: SuperDot) { }
+
+
+    function openSuperSubscript(superSubscript: SuperSubscript) -> bool {
+        return true; }
+
+    function closeSuperSubscript(superSubscript: SuperSubscript) { }
+
+
+    function openElseClause(elseClause: ElseClause) -> bool {
+        return true; }
+
+    function closeElseClause(elseClause: ElseClause) { }
 
 
     function openCurliedSwitchBody(curliedSwitchBody: CurliedSwitchBody) -> bool {
@@ -361,16 +418,13 @@ class MyVisitor {
     function closeItemCaseLabel(itemCaseLabel: ItemCaseLabel) { }
 
 
+    function visitDefaultCaseLabel(defaultCaseLabel: DefaultCaseLabel) { }
+
+
     function openCaseItem(caseItem: CaseItem) -> bool {
         return true; }
 
     function closeCaseItem(caseItem: CaseItem) { }
-
-
-    function openForExpression(forExpression: ForExpression) -> bool {
-        return true; }
-
-    function closeForExpression(forExpression: ForExpression) { }
 
 
     function openForEach(forEach: ForEach) -> bool {
@@ -383,24 +437,6 @@ class MyVisitor {
         return true; }
 
     function closePlainFor(plainFor: PlainFor) { }
-
-
-    function openReturnExpression(returnExpression: ReturnExpression) -> bool {
-        return true; }
-
-    function closeReturnExpression(returnExpression: ReturnExpression) { }
-
-
-    function openThrowExpression(throwExpression: ThrowExpression) -> bool {
-        return true; }
-
-    function closeThrowExpression(throwExpression: ThrowExpression) { }
-
-
-    function openBreakExpression(breakExpression: BreakExpression) -> bool {
-        return true; }
-
-    function closeBreakExpression(breakExpression: BreakExpression) { }
 
 
     function visitWildcardPattern(wildcardPattern: WildcardPattern) { }
@@ -421,19 +457,16 @@ class MyVisitor {
     function closeTuplePattern(tuplePattern: TuplePattern) { }
 
 
-    function openTuplePatternElement(tuplePatternElement: TuplePatternElement) -> bool {
-        return true; }
-
-    function closeTuplePatternElement(tuplePatternElement: TuplePatternElement) { }
-
-
     function openExpressionPattern(expressionPattern: ExpressionPattern) -> bool {
         return true; }
 
     function closeExpressionPattern(expressionPattern: ExpressionPattern) { }
 
 
-    function visitDefaultCaseLabel(defaultCaseLabel: DefaultCaseLabel) { }
+    function openTuplePatternElement(tuplePatternElement: TuplePatternElement) -> bool {
+        return true; }
+
+    function closeTuplePatternElement(tuplePatternElement: TuplePatternElement) { }
 
 
     function openBlockCaseContent(blockCaseContent: BlockCaseContent) -> bool {
@@ -445,45 +478,12 @@ class MyVisitor {
     function visitEmptyCaseContent(emptyCaseContent: EmptyCaseContent) { }
 
 
-    function openInitializerCall(initializerCall: InitializerCall) -> bool {
-        return true; }
-
-    function closeInitializerCall(initializerCall: InitializerCall) { }
-
-
-    function openThisDot(thisDot: ThisDot) -> bool {
-        return true; }
-
-    function closeThisDot(thisDot: ThisDot) { }
-
-
-    function openThisSubscript(thisSubscript: ThisSubscript) -> bool {
-        return true; }
-
-    function closeThisSubscript(thisSubscript: ThisSubscript) { }
-
-
-    function visitThisWord(thisWord: ThisWord) { }
-
-
     function visitThisInit(thisInit: ThisInit) { }
 
 
     function visitThisMember(thisMember: ThisMember) { }
 
     String thisMemberName;
-
-    function openSuperDot(superDot: SuperDot) -> bool {
-        return true; }
-
-    function closeSuperDot(superDot: SuperDot) { }
-
-
-    function openSuperSubscript(superSubscript: SuperSubscript) -> bool {
-        return true; }
-
-    function closeSuperSubscript(superSubscript: SuperSubscript) { }
-
 
     function visitSuperInit(superInit: SuperInit) { }
 
