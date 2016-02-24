@@ -242,11 +242,17 @@ void CppVisitor::closeAdditionalInitializer(AdditionalInitializer& additionalIni
 }
 
 bool CppVisitor::openFunctionDeclaration(FunctionDeclaration& functionDeclaration) {
+    if (!functionDeclaration.body)
+        virtualFunction = true;
+    else
+        virtualFunction = false;
     return true;
 }
 
 void CppVisitor::closeFunctionDeclaration(FunctionDeclaration& functionDeclaration) {
-}
+    if (virtualFunction) {
+        (*headerFile) += " = 0";
+        virtualFunction = false; } }
 
 bool CppVisitor::openInitializerDeclaration(InitializerDeclaration& initializerDeclaration) {
     (*headerFile) += *classDeclarationName;
@@ -267,6 +273,8 @@ void CppVisitor::visitIdentifierFunction(IdentifierFunction& identifierFunction)
     this->identifierFunctionName = identifierFunction.name; }
 
 bool CppVisitor::openFunctionSignature(FunctionSignature& functionSignature) {
+    if (virtualFunction)
+        (*headerFile) += "virtual ";
     if (!functionSignature.result)
         (*headerFile) += "void";
     else {
@@ -404,6 +412,9 @@ bool CppVisitor::openClassDeclaration(ClassDeclaration& classDeclaration) {
 
     (*headerFile) += "\n\nclass ";
     (*headerFile) += *classDeclarationName;
+    if (!classDeclaration.body) {
+        (*headerFile) += ";";
+        return false; }
     (*headerFile) += " : public ";
     if (classDeclaration.typeInheritanceClause) {
         size_t noOfInheritanceClauses = classDeclaration.typeInheritanceClause->inheritances->length();

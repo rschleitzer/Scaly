@@ -28,6 +28,7 @@ private:
     bool declaringClassMember;
     bool inParameterClause;
     int codeBlockLevel;
+    bool virtualFunction;
 
     void buildProjectFileString(_VarString& projectFile, Program& program);
     void buildMainHeaderFileString(_VarString& projectFile, Program& program);
