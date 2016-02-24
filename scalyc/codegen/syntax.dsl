@@ -86,7 +86,10 @@ public:
     SyntaxNode(Position* start, Position* end);
     Position* start;
     Position* end;
-};
+"   (apply-to-selected-children "syntax" (lambda (syntax-node) ($
+"    virtual bool _is"(id syntax-node)"();
+"   )))
+"};
 
 "
     (apply-to-selected-children "syntax" (lambda (syntax-node) ($
@@ -165,7 +168,10 @@ namespace scalyc {
 SyntaxNode::SyntaxNode(Position* start, Position* end)
 : start(start), end(end) {
 }
-"
+
+"   (apply-to-selected-children "syntax" (lambda (syntax-node) ($
+"bool SyntaxNode::_is"(id syntax-node)"() { return false; }
+"   )))
     (apply-to-selected-children "syntax" (lambda (syntax-node) ($
 "
 "(id syntax-node)"::"(id syntax-node)"("(constructor-parameters syntax-node)")
