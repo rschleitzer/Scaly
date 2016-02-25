@@ -108,11 +108,8 @@ public:
        (apply-to-nodelist (inheritors syntax-node) (lambda (inheritor) ($
 "    virtual bool _is"(attribute-string "link" inheritor)"();
 "       )))
-        (if (base syntax-node) ($
-"
-    virtual bool _is"(id syntax-node)"();
-"       )"")
-"};
+"    virtual bool _is"(id syntax-node)"();
+};
 "   )))
 "
 }
@@ -193,10 +190,8 @@ SyntaxNode::SyntaxNode(Position* start, Position* end)
 "       (apply-to-nodelist (inheritors syntax-node) (lambda (inheritor) ($
 "bool "(id syntax-node)"::_is"(attribute-string "link" inheritor)"() { return false; }
 "       )))
-        (if (base syntax-node) ($
 "bool "(id syntax-node)"::_is"(id syntax-node)"() { return true; }
-"       )"")
-       (if (abstract? syntax-node) "" ($
+"       (if (abstract? syntax-node) "" ($
 "
 void "(id syntax-node)"::accept(SyntaxVisitor* visitor) {
 "

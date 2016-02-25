@@ -133,6 +133,7 @@ public:
     _LetString* name;
     _LetString* directory;
     _Vector<CompilationUnit>* compilationUnits;
+    virtual bool _isProgram();
 };
 
 class CompilationUnit : public SyntaxNode {
@@ -141,6 +142,7 @@ public:
     virtual void accept(SyntaxVisitor* visitor);
     _Vector<StatementWithSemicolon>* statements;
     _LetString* fileName;
+    virtual bool _isCompilationUnit();
 };
 
 class StatementWithSemicolon : public SyntaxNode {
@@ -148,6 +150,7 @@ public:
     StatementWithSemicolon(Statement* statement, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
     Statement* statement;
+    virtual bool _isStatementWithSemicolon();
 };
 
 class Statement : public SyntaxNode {
@@ -165,6 +168,7 @@ public:
     virtual bool _isInitializerDeclaration();
     virtual bool _isSimpleExpression();
     virtual bool _isCodeBlock();
+    virtual bool _isStatement();
 };
 
 class Declaration : public Statement {
@@ -178,7 +182,6 @@ public:
     virtual bool _isEnumDeclaration();
     virtual bool _isClassDeclaration();
     virtual bool _isInitializerDeclaration();
-
     virtual bool _isDeclaration();
 };
 
@@ -188,7 +191,6 @@ public:
     virtual void accept(SyntaxVisitor* visitor);
     PathItem* importModule;
     _Vector<PathIdentifier>* importExtensions;
-
     virtual bool _isUseDeclaration();
 };
 
@@ -197,7 +199,6 @@ public:
     ConstantDeclaration(BindingInitializer* initializer, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
     BindingInitializer* initializer;
-
     virtual bool _isConstantDeclaration();
 };
 
@@ -206,7 +207,6 @@ public:
     VariableDeclaration(BindingInitializer* initializer, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
     BindingInitializer* initializer;
-
     virtual bool _isVariableDeclaration();
 };
 
@@ -218,7 +218,6 @@ public:
     FunctionName* name;
     FunctionSignature* signature;
     Expression* body;
-
     virtual bool _isFunctionDeclaration();
 };
 
@@ -230,7 +229,6 @@ public:
     ParameterClause* parameterClause;
     ThrowsClause* throwsClause;
     Expression* body;
-
     virtual bool _isInitializerDeclaration();
 };
 
@@ -240,7 +238,6 @@ public:
     virtual void accept(SyntaxVisitor* visitor);
     _LetString* name;
     _Vector<EnumMember>* members;
-
     virtual bool _isEnumDeclaration();
 };
 
@@ -252,7 +249,6 @@ public:
     GenericArgumentClause* genericArgumentClause;
     TypeInheritanceClause* typeInheritanceClause;
     ClassBody* body;
-
     virtual bool _isClassDeclaration();
 };
 
@@ -262,7 +258,6 @@ public:
     virtual void accept(SyntaxVisitor* visitor) = 0;
     virtual bool _isSimpleExpression();
     virtual bool _isCodeBlock();
-
     virtual bool _isExpression();
 };
 
@@ -271,7 +266,6 @@ public:
     CodeBlock(_Vector<StatementWithSemicolon>* statements, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
     _Vector<StatementWithSemicolon>* statements;
-
     virtual bool _isCodeBlock();
 };
 
@@ -281,7 +275,6 @@ public:
     virtual void accept(SyntaxVisitor* visitor);
     PrefixExpression* prefixExpression;
     _Vector<BinaryOp>* binaryOps;
-
     virtual bool _isSimpleExpression();
 };
 
@@ -290,6 +283,7 @@ public:
     PathIdentifier(PathItem* extension, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
     PathItem* extension;
+    virtual bool _isPathIdentifier();
 };
 
 class PathItem : public SyntaxNode {
@@ -297,6 +291,7 @@ public:
     PathItem(_LetString* name, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
     _LetString* name;
+    virtual bool _isPathItem();
 };
 
 class Initializer : public SyntaxNode {
@@ -304,6 +299,7 @@ public:
     Initializer(Expression* expression, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
     Expression* expression;
+    virtual bool _isInitializer();
 };
 
 class BindingInitializer : public SyntaxNode {
@@ -312,6 +308,7 @@ public:
     virtual void accept(SyntaxVisitor* visitor);
     PatternInitializer* initializer;
     _Vector<AdditionalInitializer>* additionalInitializers;
+    virtual bool _isBindingInitializer();
 };
 
 class PatternInitializer : public SyntaxNode {
@@ -320,6 +317,7 @@ public:
     virtual void accept(SyntaxVisitor* visitor);
     Pattern* pattern;
     Initializer* initializer;
+    virtual bool _isPatternInitializer();
 };
 
 class AdditionalInitializer : public SyntaxNode {
@@ -327,6 +325,7 @@ public:
     AdditionalInitializer(PatternInitializer* pattern, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
     PatternInitializer* pattern;
+    virtual bool _isAdditionalInitializer();
 };
 
 class Modifier : public SyntaxNode {
@@ -335,13 +334,13 @@ public:
     virtual void accept(SyntaxVisitor* visitor) = 0;
     virtual bool _isOverrideWord();
     virtual bool _isStaticWord();
+    virtual bool _isModifier();
 };
 
 class OverrideWord : public Modifier {
 public:
     OverrideWord(Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
-
     virtual bool _isOverrideWord();
 };
 
@@ -349,7 +348,6 @@ class StaticWord : public Modifier {
 public:
     StaticWord(Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
-
     virtual bool _isStaticWord();
 };
 
@@ -358,6 +356,7 @@ public:
     FunctionName(Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor) = 0;
     virtual bool _isIdentifierFunction();
+    virtual bool _isFunctionName();
 };
 
 class IdentifierFunction : public FunctionName {
@@ -365,7 +364,6 @@ public:
     IdentifierFunction(_LetString* name, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
     _LetString* name;
-
     virtual bool _isIdentifierFunction();
 };
 
@@ -376,6 +374,7 @@ public:
     ParameterClause* parameterClause;
     FunctionResult* result;
     ThrowsClause* throwsClause;
+    virtual bool _isFunctionSignature();
 };
 
 class FunctionResult : public SyntaxNode {
@@ -383,6 +382,7 @@ public:
     FunctionResult(Type* resultType, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
     Type* resultType;
+    virtual bool _isFunctionResult();
 };
 
 class ParameterClause : public SyntaxNode {
@@ -390,6 +390,7 @@ public:
     ParameterClause(_Vector<Parameter>* parameters, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
     _Vector<Parameter>* parameters;
+    virtual bool _isParameterClause();
 };
 
 class Parameter : public SyntaxNode {
@@ -398,6 +399,7 @@ public:
     virtual void accept(SyntaxVisitor* visitor) = 0;
     virtual bool _isConstParameter();
     virtual bool _isVarParameter();
+    virtual bool _isParameter();
 };
 
 class ConstParameter : public Parameter {
@@ -406,7 +408,6 @@ public:
     virtual void accept(SyntaxVisitor* visitor);
     _LetString* name;
     Type* parameterType;
-
     virtual bool _isConstParameter();
 };
 
@@ -416,7 +417,6 @@ public:
     virtual void accept(SyntaxVisitor* visitor);
     _LetString* name;
     Type* parameterType;
-
     virtual bool _isVarParameter();
 };
 
@@ -425,6 +425,7 @@ public:
     ThrowsClause(Type* throwsType, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
     Type* throwsType;
+    virtual bool _isThrowsClause();
 };
 
 class EnumMember : public SyntaxNode {
@@ -434,6 +435,7 @@ public:
     EnumCase* enumCase;
     _Vector<AdditionalCase>* additionalCases;
     TupleType* typeOfTuple;
+    virtual bool _isEnumMember();
 };
 
 class TupleType : public SyntaxNode {
@@ -442,6 +444,7 @@ public:
     virtual void accept(SyntaxVisitor* visitor);
     Type* typeOfTuple;
     _Vector<AdditionalType>* additionalTypes;
+    virtual bool _isTupleType();
 };
 
 class AdditionalType : public SyntaxNode {
@@ -449,6 +452,7 @@ public:
     AdditionalType(Type* enumCase, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
     Type* enumCase;
+    virtual bool _isAdditionalType();
 };
 
 class EnumCase : public SyntaxNode {
@@ -456,6 +460,7 @@ public:
     EnumCase(_LetString* name, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
     _LetString* name;
+    virtual bool _isEnumCase();
 };
 
 class AdditionalCase : public SyntaxNode {
@@ -463,6 +468,7 @@ public:
     AdditionalCase(EnumCase* enumCase, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
     EnumCase* enumCase;
+    virtual bool _isAdditionalCase();
 };
 
 class ClassBody : public SyntaxNode {
@@ -470,6 +476,7 @@ public:
     ClassBody(_Vector<ClassMember>* members, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
     _Vector<ClassMember>* members;
+    virtual bool _isClassBody();
 };
 
 class GenericArgumentClause : public SyntaxNode {
@@ -477,6 +484,7 @@ public:
     GenericArgumentClause(_Vector<GenericParameter>* genericParameters, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
     _Vector<GenericParameter>* genericParameters;
+    virtual bool _isGenericArgumentClause();
 };
 
 class GenericParameter : public SyntaxNode {
@@ -484,6 +492,7 @@ public:
     GenericParameter(_LetString* typeName, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
     _LetString* typeName;
+    virtual bool _isGenericParameter();
 };
 
 class ClassMember : public SyntaxNode {
@@ -491,6 +500,7 @@ public:
     ClassMember(Declaration* declaration, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
     Declaration* declaration;
+    virtual bool _isClassMember();
 };
 
 class PrefixExpression : public SyntaxNode {
@@ -499,6 +509,7 @@ public:
     virtual void accept(SyntaxVisitor* visitor);
     _LetString* prefixOperator;
     PostfixExpression* expression;
+    virtual bool _isPrefixExpression();
 };
 
 class PostfixExpression : public SyntaxNode {
@@ -507,6 +518,7 @@ public:
     virtual void accept(SyntaxVisitor* visitor);
     PrimaryExpression* primaryExpression;
     _Vector<Postfix>* postfixes;
+    virtual bool _isPostfixExpression();
 };
 
 class BinaryOp : public SyntaxNode {
@@ -517,6 +529,7 @@ public:
     virtual bool _isAssignment();
     virtual bool _isTypeQuery();
     virtual bool _isTypeCast();
+    virtual bool _isBinaryOp();
 };
 
 class BinaryOperation : public BinaryOp {
@@ -525,7 +538,6 @@ public:
     virtual void accept(SyntaxVisitor* visitor);
     _LetString* binaryOperator;
     PrefixExpression* expression;
-
     virtual bool _isBinaryOperation();
 };
 
@@ -534,7 +546,6 @@ public:
     Assignment(PrefixExpression* expression, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
     PrefixExpression* expression;
-
     virtual bool _isAssignment();
 };
 
@@ -543,7 +554,6 @@ public:
     TypeQuery(Type* objectType, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
     Type* objectType;
-
     virtual bool _isTypeQuery();
 };
 
@@ -552,7 +562,6 @@ public:
     TypeCast(Type* objectType, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
     Type* objectType;
-
     virtual bool _isTypeCast();
 };
 
@@ -563,6 +572,7 @@ public:
     CatchPattern* catchPattern;
     TuplePattern* bindingPattern;
     Expression* expression;
+    virtual bool _isCatchClause();
 };
 
 class CatchPattern : public SyntaxNode {
@@ -571,6 +581,7 @@ public:
     virtual void accept(SyntaxVisitor* visitor) = 0;
     virtual bool _isWildCardCatchPattern();
     virtual bool _isPathItemCatchPattern();
+    virtual bool _isCatchPattern();
 };
 
 class WildCardCatchPattern : public CatchPattern {
@@ -578,7 +589,6 @@ public:
     WildCardCatchPattern(WildcardPattern* pattern, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
     WildcardPattern* pattern;
-
     virtual bool _isWildCardCatchPattern();
 };
 
@@ -588,7 +598,6 @@ public:
     virtual void accept(SyntaxVisitor* visitor);
     PathItem* catchCase;
     _Vector<PathIdentifier>* catchCaseExtensions;
-
     virtual bool _isPathItemCatchPattern();
 };
 
@@ -600,6 +609,7 @@ public:
     virtual bool _isFunctionCall();
     virtual bool _isExplicitMemberExpression();
     virtual bool _isSubscript();
+    virtual bool _isPostfix();
 };
 
 class OperatorPostfix : public Postfix {
@@ -607,7 +617,6 @@ public:
     OperatorPostfix(_LetString* postfixOperator, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
     _LetString* postfixOperator;
-
     virtual bool _isOperatorPostfix();
 };
 
@@ -617,7 +626,6 @@ public:
     virtual void accept(SyntaxVisitor* visitor);
     ParenthesizedExpression* arguments;
     _Vector<CatchClause>* catchClauses;
-
     virtual bool _isFunctionCall();
 };
 
@@ -626,7 +634,6 @@ public:
     ExplicitMemberExpression(MemberPostfix* memberPostfix, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
     MemberPostfix* memberPostfix;
-
     virtual bool _isExplicitMemberExpression();
 };
 
@@ -635,7 +642,6 @@ public:
     Subscript(_Vector<ExpressionElement>* expressions, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
     _Vector<ExpressionElement>* expressions;
-
     virtual bool _isSubscript();
 };
 
@@ -644,6 +650,7 @@ public:
     ExpressionElement(Expression* expression, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
     Expression* expression;
+    virtual bool _isExpressionElement();
 };
 
 class MemberPostfix : public SyntaxNode {
@@ -651,6 +658,7 @@ public:
     MemberPostfix(Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor) = 0;
     virtual bool _isNamedMemberPostfix();
+    virtual bool _isMemberPostfix();
 };
 
 class NamedMemberPostfix : public MemberPostfix {
@@ -658,7 +666,6 @@ public:
     NamedMemberPostfix(IdentifierExpression* identifier, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
     IdentifierExpression* identifier;
-
     virtual bool _isNamedMemberPostfix();
 };
 
@@ -683,6 +690,7 @@ public:
     virtual bool _isThisWord();
     virtual bool _isSuperDot();
     virtual bool _isSuperSubscript();
+    virtual bool _isPrimaryExpression();
 };
 
 class ParenthesizedExpression : public PrimaryExpression {
@@ -690,7 +698,6 @@ public:
     ParenthesizedExpression(_Vector<ExpressionElement>* expressionElements, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
     _Vector<ExpressionElement>* expressionElements;
-
     virtual bool _isParenthesizedExpression();
 };
 
@@ -699,7 +706,6 @@ public:
     LiteralExpression(Literal* literal, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
     Literal* literal;
-
     virtual bool _isLiteralExpression();
 };
 
@@ -708,7 +714,6 @@ public:
     IdentifierExpression(_LetString* name, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
     _LetString* name;
-
     virtual bool _isIdentifierExpression();
 };
 
@@ -719,7 +724,6 @@ public:
     Expression* condition;
     Expression* consequent;
     ElseClause* elseClause;
-
     virtual bool _isIfExpression();
 };
 
@@ -729,7 +733,6 @@ public:
     virtual void accept(SyntaxVisitor* visitor);
     Expression* expression;
     SwitchBody* body;
-
     virtual bool _isSwitchExpression();
 };
 
@@ -738,7 +741,6 @@ public:
     ForExpression(ForLoop* loop, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
     ForLoop* loop;
-
     virtual bool _isForExpression();
 };
 
@@ -747,7 +749,6 @@ public:
     ReturnExpression(Expression* expression, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
     Expression* expression;
-
     virtual bool _isReturnExpression();
 };
 
@@ -756,7 +757,6 @@ public:
     ThrowExpression(Expression* expression, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
     Expression* expression;
-
     virtual bool _isThrowExpression();
 };
 
@@ -765,7 +765,6 @@ public:
     BreakExpression(Expression* expression, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
     Expression* expression;
-
     virtual bool _isBreakExpression();
 };
 
@@ -776,7 +775,6 @@ public:
     Type* typeToInitialize;
     ParenthesizedExpression* arguments;
     _Vector<CatchClause>* catchClauses;
-
     virtual bool _isInitializerCall();
 };
 
@@ -787,7 +785,6 @@ public:
     virtual bool _isThisDot();
     virtual bool _isThisSubscript();
     virtual bool _isThisWord();
-
     virtual bool _isThisExpression();
 };
 
@@ -796,7 +793,6 @@ public:
     ThisDot(CommonThisMember* member, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
     CommonThisMember* member;
-
     virtual bool _isThisDot();
 };
 
@@ -805,7 +801,6 @@ public:
     ThisSubscript(Subscript* subscript, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
     Subscript* subscript;
-
     virtual bool _isThisSubscript();
 };
 
@@ -813,7 +808,6 @@ class ThisWord : public ThisExpression {
 public:
     ThisWord(Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
-
     virtual bool _isThisWord();
 };
 
@@ -823,7 +817,6 @@ public:
     virtual void accept(SyntaxVisitor* visitor) = 0;
     virtual bool _isSuperDot();
     virtual bool _isSuperSubscript();
-
     virtual bool _isSuperExpression();
 };
 
@@ -832,7 +825,6 @@ public:
     SuperDot(CommonSuperMember* member, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
     CommonSuperMember* member;
-
     virtual bool _isSuperDot();
 };
 
@@ -841,7 +833,6 @@ public:
     SuperSubscript(Subscript* subscript, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
     Subscript* subscript;
-
     virtual bool _isSuperSubscript();
 };
 
@@ -850,6 +841,7 @@ public:
     ElseClause(Expression* alternative, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
     Expression* alternative;
+    virtual bool _isElseClause();
 };
 
 class SwitchBody : public SyntaxNode {
@@ -858,6 +850,7 @@ public:
     virtual void accept(SyntaxVisitor* visitor) = 0;
     virtual bool _isCurliedSwitchBody();
     virtual bool _isNakedSwitchBody();
+    virtual bool _isSwitchBody();
 };
 
 class CurliedSwitchBody : public SwitchBody {
@@ -865,7 +858,6 @@ public:
     CurliedSwitchBody(_Vector<SwitchCase>* cases, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
     _Vector<SwitchCase>* cases;
-
     virtual bool _isCurliedSwitchBody();
 };
 
@@ -874,7 +866,6 @@ public:
     NakedSwitchBody(_Vector<SwitchCase>* cases, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
     _Vector<SwitchCase>* cases;
-
     virtual bool _isNakedSwitchBody();
 };
 
@@ -884,6 +875,7 @@ public:
     virtual void accept(SyntaxVisitor* visitor);
     CaseLabel* label;
     CaseContent* content;
+    virtual bool _isSwitchCase();
 };
 
 class CaseLabel : public SyntaxNode {
@@ -892,6 +884,7 @@ public:
     virtual void accept(SyntaxVisitor* visitor) = 0;
     virtual bool _isItemCaseLabel();
     virtual bool _isDefaultCaseLabel();
+    virtual bool _isCaseLabel();
 };
 
 class ItemCaseLabel : public CaseLabel {
@@ -900,7 +893,6 @@ public:
     virtual void accept(SyntaxVisitor* visitor);
     Pattern* pattern;
     _Vector<CaseItem>* additionalPatterns;
-
     virtual bool _isItemCaseLabel();
 };
 
@@ -908,7 +900,6 @@ class DefaultCaseLabel : public CaseLabel {
 public:
     DefaultCaseLabel(Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
-
     virtual bool _isDefaultCaseLabel();
 };
 
@@ -917,6 +908,7 @@ public:
     CaseItem(Pattern* pattern, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
     Pattern* pattern;
+    virtual bool _isCaseItem();
 };
 
 class ForLoop : public SyntaxNode {
@@ -925,6 +917,7 @@ public:
     virtual void accept(SyntaxVisitor* visitor) = 0;
     virtual bool _isForEach();
     virtual bool _isPlainFor();
+    virtual bool _isForLoop();
 };
 
 class ForEach : public ForLoop {
@@ -934,7 +927,6 @@ public:
     Pattern* pattern;
     Expression* expression;
     Expression* code;
-
     virtual bool _isForEach();
 };
 
@@ -946,7 +938,6 @@ public:
     Expression* forCheck;
     Expression* forNext;
     Expression* code;
-
     virtual bool _isPlainFor();
 };
 
@@ -958,13 +949,13 @@ public:
     virtual bool _isIdentifierPattern();
     virtual bool _isTuplePattern();
     virtual bool _isExpressionPattern();
+    virtual bool _isPattern();
 };
 
 class WildcardPattern : public Pattern {
 public:
     WildcardPattern(Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
-
     virtual bool _isWildcardPattern();
 };
 
@@ -974,7 +965,6 @@ public:
     virtual void accept(SyntaxVisitor* visitor);
     _LetString* identifier;
     TypeAnnotation* annotationForType;
-
     virtual bool _isIdentifierPattern();
 };
 
@@ -983,7 +973,6 @@ public:
     TuplePattern(_Vector<TuplePatternElement>* elements, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
     _Vector<TuplePatternElement>* elements;
-
     virtual bool _isTuplePattern();
 };
 
@@ -992,7 +981,6 @@ public:
     ExpressionPattern(Expression* expression, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
     Expression* expression;
-
     virtual bool _isExpressionPattern();
 };
 
@@ -1001,6 +989,7 @@ public:
     TuplePatternElement(Pattern* pattern, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
     Pattern* pattern;
+    virtual bool _isTuplePatternElement();
 };
 
 class CaseContent : public SyntaxNode {
@@ -1009,6 +998,7 @@ public:
     virtual void accept(SyntaxVisitor* visitor) = 0;
     virtual bool _isBlockCaseContent();
     virtual bool _isEmptyCaseContent();
+    virtual bool _isCaseContent();
 };
 
 class BlockCaseContent : public CaseContent {
@@ -1016,7 +1006,6 @@ public:
     BlockCaseContent(_Vector<StatementWithSemicolon>* statements, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
     _Vector<StatementWithSemicolon>* statements;
-
     virtual bool _isBlockCaseContent();
 };
 
@@ -1024,7 +1013,6 @@ class EmptyCaseContent : public CaseContent {
 public:
     EmptyCaseContent(Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
-
     virtual bool _isEmptyCaseContent();
 };
 
@@ -1034,13 +1022,13 @@ public:
     virtual void accept(SyntaxVisitor* visitor) = 0;
     virtual bool _isThisInit();
     virtual bool _isThisMember();
+    virtual bool _isCommonThisMember();
 };
 
 class ThisInit : public CommonThisMember {
 public:
     ThisInit(Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
-
     virtual bool _isThisInit();
 };
 
@@ -1049,7 +1037,6 @@ public:
     ThisMember(_LetString* name, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
     _LetString* name;
-
     virtual bool _isThisMember();
 };
 
@@ -1059,13 +1046,13 @@ public:
     virtual void accept(SyntaxVisitor* visitor) = 0;
     virtual bool _isSuperInit();
     virtual bool _isSuperMember();
+    virtual bool _isCommonSuperMember();
 };
 
 class SuperInit : public CommonSuperMember {
 public:
     SuperInit(Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
-
     virtual bool _isSuperInit();
 };
 
@@ -1074,7 +1061,6 @@ public:
     SuperMember(_LetString* name, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
     _LetString* name;
-
     virtual bool _isSuperMember();
 };
 
@@ -1084,6 +1070,7 @@ public:
     virtual void accept(SyntaxVisitor* visitor) = 0;
     virtual bool _isArrayType();
     virtual bool _isTypeIdentifier();
+    virtual bool _isType();
 };
 
 class TypeIdentifier : public Type {
@@ -1093,7 +1080,6 @@ public:
     _LetString* name;
     SubtypeIdentifier* subType;
     _Vector<TypePostfix>* postfixes;
-
     virtual bool _isTypeIdentifier();
 };
 
@@ -1103,7 +1089,6 @@ public:
     virtual void accept(SyntaxVisitor* visitor);
     Type* elementType;
     _Vector<TypePostfix>* postfixes;
-
     virtual bool _isArrayType();
 };
 
@@ -1112,6 +1097,7 @@ public:
     TypeAnnotation(Type* annotationForType, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
     Type* annotationForType;
+    virtual bool _isTypeAnnotation();
 };
 
 class SubtypeIdentifier : public SyntaxNode {
@@ -1119,6 +1105,7 @@ public:
     SubtypeIdentifier(TypeIdentifier* typeIdentifier, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
     TypeIdentifier* typeIdentifier;
+    virtual bool _isSubtypeIdentifier();
 };
 
 class TypePostfix : public SyntaxNode {
@@ -1126,13 +1113,13 @@ public:
     TypePostfix(Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor) = 0;
     virtual bool _isOptionalType();
+    virtual bool _isTypePostfix();
 };
 
 class OptionalType : public TypePostfix {
 public:
     OptionalType(Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
-
     virtual bool _isOptionalType();
 };
 
@@ -1141,6 +1128,7 @@ public:
     TypeInheritanceClause(_Vector<Inheritance>* inheritances, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
     _Vector<Inheritance>* inheritances;
+    virtual bool _isTypeInheritanceClause();
 };
 
 class Inheritance : public SyntaxNode {
@@ -1148,6 +1136,7 @@ public:
     Inheritance(TypeIdentifier* typeIdentifier, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
     TypeIdentifier* typeIdentifier;
+    virtual bool _isInheritance();
 };
 
 }
