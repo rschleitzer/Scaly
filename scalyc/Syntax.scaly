@@ -89,6 +89,19 @@ class Declaration : Statement {
 
 }
 
+class Expression : Statement {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    override function accept(mutable visitor: SyntaxVisitor) {
+        visitor.openExpression(this)
+        visitor.closeExpression(this)
+    }
+
+}
+
 class UseDeclaration : Declaration {
 
     init(importModule: PathItem, importExtensions: [PathIdentifier], start: Position, end: Position) {
@@ -236,19 +249,6 @@ class InitializerDeclaration : Declaration {
     let parameterClause: ParameterClause?
     let throwsClause: ThrowsClause?
     let body: Expression?
-}
-
-class Expression : Statement {
-
-    init(start: Position, end: Position) {
-        super.init(start, end)
-    }
-
-    override function accept(mutable visitor: SyntaxVisitor) {
-        visitor.openExpression(this)
-        visitor.closeExpression(this)
-    }
-
 }
 
 class CodeBlock : Expression {

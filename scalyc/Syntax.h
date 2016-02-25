@@ -15,6 +15,7 @@ public:
     virtual bool _isStatementWithSemicolon();
     virtual bool _isStatement();
     virtual bool _isDeclaration();
+    virtual bool _isExpression();
     virtual bool _isUseDeclaration();
     virtual bool _isConstantDeclaration();
     virtual bool _isVariableDeclaration();
@@ -22,7 +23,6 @@ public:
     virtual bool _isEnumDeclaration();
     virtual bool _isClassDeclaration();
     virtual bool _isInitializerDeclaration();
-    virtual bool _isExpression();
     virtual bool _isCodeBlock();
     virtual bool _isSimpleExpression();
     virtual bool _isPathIdentifier();
@@ -191,6 +191,16 @@ public:
     virtual bool _isInitializerDeclaration();
 };
 
+class Expression : public Statement {
+public:
+    Expression(Position* start, Position* end);
+    virtual void accept(SyntaxVisitor* visitor);
+
+    virtual bool _isExpression();
+    virtual bool _isCodeBlock();
+    virtual bool _isSimpleExpression();
+};
+
 class UseDeclaration : public Declaration {
 public:
     UseDeclaration(PathItem* importModule, _Vector<PathIdentifier>* importExtensions, Position* start, Position* end);
@@ -263,16 +273,6 @@ public:
     Expression* body;
 
     virtual bool _isInitializerDeclaration();
-};
-
-class Expression : public Statement {
-public:
-    Expression(Position* start, Position* end);
-    virtual void accept(SyntaxVisitor* visitor);
-
-    virtual bool _isExpression();
-    virtual bool _isCodeBlock();
-    virtual bool _isSimpleExpression();
 };
 
 class CodeBlock : public Expression {
