@@ -188,6 +188,7 @@ public:
     virtual void closeTypeInheritanceClause(TypeInheritanceClause* typeInheritanceClause);
     virtual bool openInheritance(Inheritance* inheritance);
     virtual void closeInheritance(Inheritance* inheritance);
+    virtual bool _isMyVisitor();
 };
 
 }

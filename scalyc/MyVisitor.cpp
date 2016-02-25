@@ -598,4 +598,6 @@ bool MyVisitor::openInheritance(Inheritance* inheritance) {
 void MyVisitor::closeInheritance(Inheritance* inheritance) {
 }
 
+    bool MyVisitor::_isMyVisitor() { return true; }
+    bool SyntaxVisitor::_isSyntaxVisitor() { return true; }
 }
