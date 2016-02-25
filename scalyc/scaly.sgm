@@ -26,6 +26,10 @@
         <content link = ClassDeclaration
         <content link = InitializerDeclaration
 
+    <syntax id = Expression                         abstract    base = Statement
+        <content link = SimpleExpression
+        <content link = CodeBlock
+
     <syntax id = UseDeclaration                                 base = Declaration
         <content link = use
         <content link = PathItem                                property = importModule
@@ -66,10 +70,6 @@
         <content link = GenericArgumentClause       optional    property = genericArgumentClause
         <content link = TypeInheritanceClause       optional    property = typeInheritanceClause
         <content link = ClassBody                   optional    property = body
-
-    <syntax id = Expression                         abstract    base = Statement
-        <content link = SimpleExpression
-        <content link = CodeBlock
 
     <syntax id = CodeBlock                                      base = Expression
         <content link = leftCurly

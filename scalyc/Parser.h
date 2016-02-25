@@ -17,6 +17,8 @@ public:
 
     _Result<Declaration, ParserError> parseDeclaration(_Page* _rp, _Page* _ep);
 
+    _Result<Expression, ParserError> parseExpression(_Page* _rp, _Page* _ep);
+
     _Result<UseDeclaration, ParserError> parseUseDeclaration(_Page* _rp, _Page* _ep);
 
     _Result<ConstantDeclaration, ParserError> parseConstantDeclaration(_Page* _rp, _Page* _ep);
@@ -30,8 +32,6 @@ public:
     _Result<EnumDeclaration, ParserError> parseEnumDeclaration(_Page* _rp, _Page* _ep);
 
     _Result<ClassDeclaration, ParserError> parseClassDeclaration(_Page* _rp, _Page* _ep);
-
-    _Result<Expression, ParserError> parseExpression(_Page* _rp, _Page* _ep);
 
     _Result<CodeBlock, ParserError> parseCodeBlock(_Page* _rp, _Page* _ep);
 

@@ -191,6 +191,30 @@ _Result<Declaration, ParserError> Parser::parseDeclaration(_Page* _rp, _Page* _e
     return _Result<Declaration, ParserError>(new(_ep) ParserError(new(_ep) UnableToParse(start, errors)));
 }
 
+_Result<Expression, ParserError> Parser::parseExpression(_Page* _rp, _Page* _ep) {
+    _Array<ParserError>* errors = new(_ep) _Array<ParserError>();
+    Position* start = lexer.getPreviousPosition(_rp);
+    {
+        // Make a region for the current block and get the Page
+        _Region _r; _Page* _p = _r.get();
+        _Result<SimpleExpression, ParserError> result = parseSimpleExpression(_rp, _p);
+        if (result.succeeded())
+            return _Result<Expression, ParserError>(result.getResult());
+        else
+            errors->push(result.getError());
+    }
+    {
+        // Make a region for the current block and get the Page
+        _Region _r; _Page* _p = _r.get();
+        _Result<CodeBlock, ParserError> result = parseCodeBlock(_rp, _p);
+        if (result.succeeded())
+            return _Result<Expression, ParserError>(result.getResult());
+        else
+            errors->push(result.getError());
+    }
+    return _Result<Expression, ParserError>(new(_ep) ParserError(new(_ep) UnableToParse(start, errors)));
+}
+
 _Result<UseDeclaration, ParserError> Parser::parseUseDeclaration(_Page* _rp, _Page* _ep) {
     Position* start = lexer.getPreviousPosition(_rp);
     Position* startUse1 = lexer.getPreviousPosition(_rp);
@@ -423,30 +447,6 @@ _Result<ClassDeclaration, ParserError> Parser::parseClassDeclaration(_Page* _rp,
     }
     ClassDeclaration* classDeclaration = new(_rp) ClassDeclaration(name, genericArgumentClause, typeInheritanceClause, body, start, lexer.getPosition(_rp));
     return _Result<ClassDeclaration, ParserError>(classDeclaration);
-}
-
-_Result<Expression, ParserError> Parser::parseExpression(_Page* _rp, _Page* _ep) {
-    _Array<ParserError>* errors = new(_ep) _Array<ParserError>();
-    Position* start = lexer.getPreviousPosition(_rp);
-    {
-        // Make a region for the current block and get the Page
-        _Region _r; _Page* _p = _r.get();
-        _Result<SimpleExpression, ParserError> result = parseSimpleExpression(_rp, _p);
-        if (result.succeeded())
-            return _Result<Expression, ParserError>(result.getResult());
-        else
-            errors->push(result.getError());
-    }
-    {
-        // Make a region for the current block and get the Page
-        _Region _r; _Page* _p = _r.get();
-        _Result<CodeBlock, ParserError> result = parseCodeBlock(_rp, _p);
-        if (result.succeeded())
-            return _Result<Expression, ParserError>(result.getResult());
-        else
-            errors->push(result.getError());
-    }
-    return _Result<Expression, ParserError>(new(_ep) ParserError(new(_ep) UnableToParse(start, errors)));
 }
 
 _Result<CodeBlock, ParserError> Parser::parseCodeBlock(_Page* _rp, _Page* _ep) {
