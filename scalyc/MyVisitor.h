@@ -3,6 +3,7 @@
 #include "scalyc.h"
 using namespace scaly;
 namespace scalyc {
+
 class MyVisitor : public SyntaxVisitor {
 public:
     virtual bool openProgram(Program* program);
