@@ -1,9 +1,8 @@
-#ifndef __scalyc_CppError__
-#define __scalyc_CppError__
+#ifndef __scalyc__CppError__
+#define __scalyc__CppError__
 #include "scalyc.h"
-
-namespace scalyc
-{
+using namespace scaly;
+namespace scalyc {
 
 class UnableToCreateOutputDirectory : public Object {
 public:
@@ -25,7 +24,7 @@ public:
 
     long getErrorCode();
     void* getErrorInfo();
-    
+
     UnableToCreateOutputDirectory& getUnableToCreateOutputDirectory();
 
 private:
@@ -34,4 +33,4 @@ private:
 };
 
 }
-#endif//__scalyc_CppError__
+#endif // __scalyc__CppError__
