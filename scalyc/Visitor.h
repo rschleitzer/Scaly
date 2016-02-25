@@ -14,8 +14,6 @@ class Statement;
 
 class Declaration;
 
-class Expression;
-
 class UseDeclaration;
 
 class ConstantDeclaration;
@@ -24,11 +22,13 @@ class VariableDeclaration;
 
 class FunctionDeclaration;
 
-class InitializerDeclaration;
-
 class EnumDeclaration;
 
 class ClassDeclaration;
+
+class InitializerDeclaration;
+
+class Expression;
 
 class CodeBlock;
 
@@ -250,12 +250,12 @@ public:
     virtual void closeVariableDeclaration(VariableDeclaration* variableDeclaration) = 0;
     virtual bool openFunctionDeclaration(FunctionDeclaration* functionDeclaration) = 0;
     virtual void closeFunctionDeclaration(FunctionDeclaration* functionDeclaration) = 0;
-    virtual bool openInitializerDeclaration(InitializerDeclaration* initializerDeclaration) = 0;
-    virtual void closeInitializerDeclaration(InitializerDeclaration* initializerDeclaration) = 0;
     virtual bool openEnumDeclaration(EnumDeclaration* enumDeclaration) = 0;
     virtual void closeEnumDeclaration(EnumDeclaration* enumDeclaration) = 0;
     virtual bool openClassDeclaration(ClassDeclaration* classDeclaration) = 0;
     virtual void closeClassDeclaration(ClassDeclaration* classDeclaration) = 0;
+    virtual bool openInitializerDeclaration(InitializerDeclaration* initializerDeclaration) = 0;
+    virtual void closeInitializerDeclaration(InitializerDeclaration* initializerDeclaration) = 0;
     virtual bool openCodeBlock(CodeBlock* codeBlock) = 0;
     virtual void closeCodeBlock(CodeBlock* codeBlock) = 0;
     virtual bool openSimpleExpression(SimpleExpression* simpleExpression) = 0;

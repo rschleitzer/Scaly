@@ -15,14 +15,14 @@ public:
     virtual bool _isStatementWithSemicolon();
     virtual bool _isStatement();
     virtual bool _isDeclaration();
-    virtual bool _isExpression();
     virtual bool _isUseDeclaration();
     virtual bool _isConstantDeclaration();
     virtual bool _isVariableDeclaration();
     virtual bool _isFunctionDeclaration();
-    virtual bool _isInitializerDeclaration();
     virtual bool _isEnumDeclaration();
     virtual bool _isClassDeclaration();
+    virtual bool _isInitializerDeclaration();
+    virtual bool _isExpression();
     virtual bool _isCodeBlock();
     virtual bool _isSimpleExpression();
     virtual bool _isPathIdentifier();
@@ -172,8 +172,8 @@ public:
     virtual bool _isEnumDeclaration();
     virtual bool _isClassDeclaration();
     virtual bool _isInitializerDeclaration();
-    virtual bool _isSimpleExpression();
     virtual bool _isCodeBlock();
+    virtual bool _isSimpleExpression();
 };
 
 class Declaration : public Statement {
@@ -189,16 +189,6 @@ public:
     virtual bool _isEnumDeclaration();
     virtual bool _isClassDeclaration();
     virtual bool _isInitializerDeclaration();
-};
-
-class Expression : public Statement {
-public:
-    Expression(Position* start, Position* end);
-    virtual void accept(SyntaxVisitor* visitor);
-
-    virtual bool _isExpression();
-    virtual bool _isSimpleExpression();
-    virtual bool _isCodeBlock();
 };
 
 class UseDeclaration : public Declaration {
@@ -241,18 +231,6 @@ public:
     virtual bool _isFunctionDeclaration();
 };
 
-class InitializerDeclaration : public Declaration {
-public:
-    InitializerDeclaration(_Vector<Modifier>* modifiers, ParameterClause* parameterClause, ThrowsClause* throwsClause, Expression* body, Position* start, Position* end);
-    virtual void accept(SyntaxVisitor* visitor);
-    _Vector<Modifier>* modifiers;
-    ParameterClause* parameterClause;
-    ThrowsClause* throwsClause;
-    Expression* body;
-
-    virtual bool _isInitializerDeclaration();
-};
-
 class EnumDeclaration : public Declaration {
 public:
     EnumDeclaration(_LetString* name, _Vector<EnumMember>* members, Position* start, Position* end);
@@ -273,6 +251,28 @@ public:
     ClassBody* body;
 
     virtual bool _isClassDeclaration();
+};
+
+class InitializerDeclaration : public Declaration {
+public:
+    InitializerDeclaration(_Vector<Modifier>* modifiers, ParameterClause* parameterClause, ThrowsClause* throwsClause, Expression* body, Position* start, Position* end);
+    virtual void accept(SyntaxVisitor* visitor);
+    _Vector<Modifier>* modifiers;
+    ParameterClause* parameterClause;
+    ThrowsClause* throwsClause;
+    Expression* body;
+
+    virtual bool _isInitializerDeclaration();
+};
+
+class Expression : public Statement {
+public:
+    Expression(Position* start, Position* end);
+    virtual void accept(SyntaxVisitor* visitor);
+
+    virtual bool _isExpression();
+    virtual bool _isCodeBlock();
+    virtual bool _isSimpleExpression();
 };
 
 class CodeBlock : public Expression {

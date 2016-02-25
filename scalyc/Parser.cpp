@@ -191,30 +191,6 @@ _Result<Declaration, ParserError> Parser::parseDeclaration(_Page* _rp, _Page* _e
     return _Result<Declaration, ParserError>(new(_ep) ParserError(new(_ep) UnableToParse(start, errors)));
 }
 
-_Result<Expression, ParserError> Parser::parseExpression(_Page* _rp, _Page* _ep) {
-    _Array<ParserError>* errors = new(_ep) _Array<ParserError>();
-    Position* start = lexer.getPreviousPosition(_rp);
-    {
-        // Make a region for the current block and get the Page
-        _Region _r; _Page* _p = _r.get();
-        _Result<SimpleExpression, ParserError> result = parseSimpleExpression(_rp, _p);
-        if (result.succeeded())
-            return _Result<Expression, ParserError>(result.getResult());
-        else
-            errors->push(result.getError());
-    }
-    {
-        // Make a region for the current block and get the Page
-        _Region _r; _Page* _p = _r.get();
-        _Result<CodeBlock, ParserError> result = parseCodeBlock(_rp, _p);
-        if (result.succeeded())
-            return _Result<Expression, ParserError>(result.getResult());
-        else
-            errors->push(result.getError());
-    }
-    return _Result<Expression, ParserError>(new(_ep) ParserError(new(_ep) UnableToParse(start, errors)));
-}
-
 _Result<UseDeclaration, ParserError> Parser::parseUseDeclaration(_Page* _rp, _Page* _ep) {
     Position* start = lexer.getPreviousPosition(_rp);
     Position* startUse1 = lexer.getPreviousPosition(_rp);
@@ -326,46 +302,6 @@ _Result<FunctionDeclaration, ParserError> Parser::parseFunctionDeclaration(_Page
     return _Result<FunctionDeclaration, ParserError>(functionDeclaration);
 }
 
-_Result<InitializerDeclaration, ParserError> Parser::parseInitializerDeclaration(_Page* _rp, _Page* _ep) {
-    Position* start = lexer.getPreviousPosition(_rp);
-    _Result<_Vector<Modifier>, ParserError> _result_modifiers = parseModifierList(_rp, _ep);
-    _Vector<Modifier>* modifiers = 0;
-    if (_result_modifiers.succeeded()) {
-        modifiers = _result_modifiers.getResult();
-    }
-    Position* startInit2 = lexer.getPreviousPosition(_rp);
-    bool successInit2 = lexer.parseKeyword(initKeyword);
-    if (successInit2) {
-        lexer.advance();
-    }
-    else {
-        return _Result<InitializerDeclaration, ParserError>(new(_ep) ParserError(new(_ep) KeywordExpected(startInit2, &_LetString::create(_ep, *initKeyword))));
-    }
-    _Result<ParameterClause, ParserError> _result_parameterClause = parseParameterClause(_rp, _ep);
-    ParameterClause* parameterClause = 0;
-    if (_result_parameterClause.succeeded()) {
-        parameterClause = _result_parameterClause.getResult();
-    }
-    else {
-        return _Result<InitializerDeclaration, ParserError>(_result_parameterClause.getError());
-    }
-    _Result<ThrowsClause, ParserError> _result_throwsClause = parseThrowsClause(_rp, _ep);
-    ThrowsClause* throwsClause = 0;
-    if (_result_throwsClause.succeeded()) {
-        throwsClause = _result_throwsClause.getResult();
-    }
-    _Result<Expression, ParserError> _result_body = parseExpression(_rp, _ep);
-    Expression* body = 0;
-    if (_result_body.succeeded()) {
-        body = _result_body.getResult();
-    }
-    else {
-        return _Result<InitializerDeclaration, ParserError>(_result_body.getError());
-    }
-    InitializerDeclaration* initializerDeclaration = new(_rp) InitializerDeclaration(modifiers, parameterClause, throwsClause, body, start, lexer.getPosition(_rp));
-    return _Result<InitializerDeclaration, ParserError>(initializerDeclaration);
-}
-
 _Result<EnumDeclaration, ParserError> Parser::parseEnumDeclaration(_Page* _rp, _Page* _ep) {
     Position* start = lexer.getPreviousPosition(_rp);
     Position* startEnum1 = lexer.getPreviousPosition(_rp);
@@ -447,6 +383,70 @@ _Result<ClassDeclaration, ParserError> Parser::parseClassDeclaration(_Page* _rp,
     }
     ClassDeclaration* classDeclaration = new(_rp) ClassDeclaration(name, genericArgumentClause, typeInheritanceClause, body, start, lexer.getPosition(_rp));
     return _Result<ClassDeclaration, ParserError>(classDeclaration);
+}
+
+_Result<InitializerDeclaration, ParserError> Parser::parseInitializerDeclaration(_Page* _rp, _Page* _ep) {
+    Position* start = lexer.getPreviousPosition(_rp);
+    _Result<_Vector<Modifier>, ParserError> _result_modifiers = parseModifierList(_rp, _ep);
+    _Vector<Modifier>* modifiers = 0;
+    if (_result_modifiers.succeeded()) {
+        modifiers = _result_modifiers.getResult();
+    }
+    Position* startInit2 = lexer.getPreviousPosition(_rp);
+    bool successInit2 = lexer.parseKeyword(initKeyword);
+    if (successInit2) {
+        lexer.advance();
+    }
+    else {
+        return _Result<InitializerDeclaration, ParserError>(new(_ep) ParserError(new(_ep) KeywordExpected(startInit2, &_LetString::create(_ep, *initKeyword))));
+    }
+    _Result<ParameterClause, ParserError> _result_parameterClause = parseParameterClause(_rp, _ep);
+    ParameterClause* parameterClause = 0;
+    if (_result_parameterClause.succeeded()) {
+        parameterClause = _result_parameterClause.getResult();
+    }
+    else {
+        return _Result<InitializerDeclaration, ParserError>(_result_parameterClause.getError());
+    }
+    _Result<ThrowsClause, ParserError> _result_throwsClause = parseThrowsClause(_rp, _ep);
+    ThrowsClause* throwsClause = 0;
+    if (_result_throwsClause.succeeded()) {
+        throwsClause = _result_throwsClause.getResult();
+    }
+    _Result<Expression, ParserError> _result_body = parseExpression(_rp, _ep);
+    Expression* body = 0;
+    if (_result_body.succeeded()) {
+        body = _result_body.getResult();
+    }
+    else {
+        return _Result<InitializerDeclaration, ParserError>(_result_body.getError());
+    }
+    InitializerDeclaration* initializerDeclaration = new(_rp) InitializerDeclaration(modifiers, parameterClause, throwsClause, body, start, lexer.getPosition(_rp));
+    return _Result<InitializerDeclaration, ParserError>(initializerDeclaration);
+}
+
+_Result<Expression, ParserError> Parser::parseExpression(_Page* _rp, _Page* _ep) {
+    _Array<ParserError>* errors = new(_ep) _Array<ParserError>();
+    Position* start = lexer.getPreviousPosition(_rp);
+    {
+        // Make a region for the current block and get the Page
+        _Region _r; _Page* _p = _r.get();
+        _Result<CodeBlock, ParserError> result = parseCodeBlock(_rp, _p);
+        if (result.succeeded())
+            return _Result<Expression, ParserError>(result.getResult());
+        else
+            errors->push(result.getError());
+    }
+    {
+        // Make a region for the current block and get the Page
+        _Region _r; _Page* _p = _r.get();
+        _Result<SimpleExpression, ParserError> result = parseSimpleExpression(_rp, _p);
+        if (result.succeeded())
+            return _Result<Expression, ParserError>(result.getResult());
+        else
+            errors->push(result.getError());
+    }
+    return _Result<Expression, ParserError>(new(_ep) ParserError(new(_ep) UnableToParse(start, errors)));
 }
 
 _Result<CodeBlock, ParserError> Parser::parseCodeBlock(_Page* _rp, _Page* _ep) {

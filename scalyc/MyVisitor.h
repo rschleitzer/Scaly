@@ -21,14 +21,14 @@ public:
     virtual void closeVariableDeclaration(VariableDeclaration* variableDeclaration);
     virtual bool openFunctionDeclaration(FunctionDeclaration* functionDeclaration);
     virtual void closeFunctionDeclaration(FunctionDeclaration* functionDeclaration);
-    virtual bool openInitializerDeclaration(InitializerDeclaration* initializerDeclaration);
-    virtual void closeInitializerDeclaration(InitializerDeclaration* initializerDeclaration);
     virtual bool openEnumDeclaration(EnumDeclaration* enumDeclaration);
     virtual void closeEnumDeclaration(EnumDeclaration* enumDeclaration);
     _LetString* enumDeclarationName;
     virtual bool openClassDeclaration(ClassDeclaration* classDeclaration);
     virtual void closeClassDeclaration(ClassDeclaration* classDeclaration);
     _LetString* classDeclarationName;
+    virtual bool openInitializerDeclaration(InitializerDeclaration* initializerDeclaration);
+    virtual void closeInitializerDeclaration(InitializerDeclaration* initializerDeclaration);
     virtual bool openCodeBlock(CodeBlock* codeBlock);
     virtual void closeCodeBlock(CodeBlock* codeBlock);
     virtual bool openSimpleExpression(SimpleExpression* simpleExpression);

@@ -26,10 +26,6 @@
         <content link = ClassDeclaration
         <content link = InitializerDeclaration
 
-    <syntax id = Expression                         abstract    base = Statement
-        <content link = SimpleExpression
-        <content link = CodeBlock
-
     <syntax id = UseDeclaration                                 base = Declaration
         <content link = use
         <content link = PathItem                                property = importModule
@@ -50,13 +46,6 @@
         <content link = FunctionSignature                       property = signature
         <content link = Expression                  optional    property = body
 
-    <syntax id = InitializerDeclaration                         base = Declaration
-        <content link = Modifier           multiple optional    property = modifiers
-        <content link = init
-        <content link = ParameterClause                         property = parameterClause
-        <content link = ThrowsClause                optional    property = throwsClause
-        <content link = Expression                              property = body
-
     <syntax id = EnumDeclaration                                base = Declaration
         <content link = enum
         <content identifier                                     property = name
@@ -70,6 +59,17 @@
         <content link = GenericArgumentClause       optional    property = genericArgumentClause
         <content link = TypeInheritanceClause       optional    property = typeInheritanceClause
         <content link = ClassBody                   optional    property = body
+
+    <syntax id = InitializerDeclaration                         base = Declaration
+        <content link = Modifier           multiple optional    property = modifiers
+        <content link = init
+        <content link = ParameterClause                         property = parameterClause
+        <content link = ThrowsClause                optional    property = throwsClause
+        <content link = Expression                              property = body
+
+    <syntax id = Expression                         abstract    base = Statement
+        <content link = CodeBlock
+        <content link = SimpleExpression
 
     <syntax id = CodeBlock                                      base = Expression
         <content link = leftCurly

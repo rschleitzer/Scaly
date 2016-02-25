@@ -153,31 +153,6 @@ class Parser {
         throw ParserError.UnableToParse(start, errors)
     }
 
-    function parseExpression() -> Expression throws ParserError {
-        let errors: [ParserError] = [ParserError]()
-        let start: Position = lexer.getPreviousPosition()
-
-        {
-            let node: SimpleExpression = parseSimpleExpression() catch _(error) {
-                errors.push(error)
-                break
-            }
-
-            return node
-        }
-
-        {
-            let node: CodeBlock = parseCodeBlock() catch _(error) {
-                errors.push(error)
-                break
-            }
-
-            return node
-        }
-
-        throw ParserError.UnableToParse(start, errors)
-    }
-
     function parseUseDeclaration() -> UseDeclaration throws ParserError {
         mutable useDeclaration: UseDeclaration? = null
         {
@@ -326,65 +301,6 @@ class Parser {
         return functionDeclaration
     }
 
-    function parseInitializerDeclaration() -> InitializerDeclaration throws ParserError {
-        mutable initializerDeclaration: InitializerDeclaration? = null
-        {
-            let start: Position = lexer.getPosition()
-            let result: [Modifier] node = parseModifierList() catch _(error) {
-                 null
-            }
-
-            if initializerDeclaration == null
-                initializerDeclaration = InitializerDeclaration(start, lexer.getPosition())
-
-            initializerDeclaration.modifiers = node
-        }
-        {
-            let start: Position = lexer.getPosition()
-            let success: bool = lexer.parseKeyword(initKeyword)
-            if success
-                lexer.advance()
-
-            if initializerDeclaration == null
-                initializerDeclaration = InitializerDeclaration(start, lexer.getPosition())
-        }
-        {
-            let start: Position = lexer.getPosition()
-            let result: ParameterClause node = parseParameterClause() catch _(error) {
-                throw (error)
-            }
-
-            if initializerDeclaration == null
-                initializerDeclaration = InitializerDeclaration(start, lexer.getPosition())
-
-            initializerDeclaration.parameterClause = node
-        }
-        {
-            let start: Position = lexer.getPosition()
-            let result: ThrowsClause node = parseThrowsClause() catch _(error) {
-                 null
-            }
-
-            if initializerDeclaration == null
-                initializerDeclaration = InitializerDeclaration(start, lexer.getPosition())
-
-            initializerDeclaration.throwsClause = node
-        }
-        {
-            let start: Position = lexer.getPosition()
-            let result: Expression node = parseExpression() catch _(error) {
-                throw (error)
-            }
-
-            if initializerDeclaration == null
-                initializerDeclaration = InitializerDeclaration(start, lexer.getPosition())
-
-            initializerDeclaration.body = node
-        }
-
-        return initializerDeclaration
-    }
-
     function parseEnumDeclaration() -> EnumDeclaration throws ParserError {
         mutable enumDeclaration: EnumDeclaration? = null
         {
@@ -497,6 +413,90 @@ class Parser {
         }
 
         return classDeclaration
+    }
+
+    function parseInitializerDeclaration() -> InitializerDeclaration throws ParserError {
+        mutable initializerDeclaration: InitializerDeclaration? = null
+        {
+            let start: Position = lexer.getPosition()
+            let result: [Modifier] node = parseModifierList() catch _(error) {
+                 null
+            }
+
+            if initializerDeclaration == null
+                initializerDeclaration = InitializerDeclaration(start, lexer.getPosition())
+
+            initializerDeclaration.modifiers = node
+        }
+        {
+            let start: Position = lexer.getPosition()
+            let success: bool = lexer.parseKeyword(initKeyword)
+            if success
+                lexer.advance()
+
+            if initializerDeclaration == null
+                initializerDeclaration = InitializerDeclaration(start, lexer.getPosition())
+        }
+        {
+            let start: Position = lexer.getPosition()
+            let result: ParameterClause node = parseParameterClause() catch _(error) {
+                throw (error)
+            }
+
+            if initializerDeclaration == null
+                initializerDeclaration = InitializerDeclaration(start, lexer.getPosition())
+
+            initializerDeclaration.parameterClause = node
+        }
+        {
+            let start: Position = lexer.getPosition()
+            let result: ThrowsClause node = parseThrowsClause() catch _(error) {
+                 null
+            }
+
+            if initializerDeclaration == null
+                initializerDeclaration = InitializerDeclaration(start, lexer.getPosition())
+
+            initializerDeclaration.throwsClause = node
+        }
+        {
+            let start: Position = lexer.getPosition()
+            let result: Expression node = parseExpression() catch _(error) {
+                throw (error)
+            }
+
+            if initializerDeclaration == null
+                initializerDeclaration = InitializerDeclaration(start, lexer.getPosition())
+
+            initializerDeclaration.body = node
+        }
+
+        return initializerDeclaration
+    }
+
+    function parseExpression() -> Expression throws ParserError {
+        let errors: [ParserError] = [ParserError]()
+        let start: Position = lexer.getPreviousPosition()
+
+        {
+            let node: CodeBlock = parseCodeBlock() catch _(error) {
+                errors.push(error)
+                break
+            }
+
+            return node
+        }
+
+        {
+            let node: SimpleExpression = parseSimpleExpression() catch _(error) {
+                errors.push(error)
+                break
+            }
+
+            return node
+        }
+
+        throw ParserError.UnableToParse(start, errors)
     }
 
     function parseCodeBlock() -> CodeBlock throws ParserError {

@@ -47,12 +47,6 @@ class MyVisitor {
     function closeFunctionDeclaration(functionDeclaration: FunctionDeclaration) { }
 
 
-    function openInitializerDeclaration(initializerDeclaration: InitializerDeclaration) -> bool {
-        return true; }
-
-    function closeInitializerDeclaration(initializerDeclaration: InitializerDeclaration) { }
-
-
     function openEnumDeclaration(enumDeclaration: EnumDeclaration) -> bool {
         enumDeclarationName = enumDeclaration.name
         return true; }
@@ -70,6 +64,12 @@ class MyVisitor {
         classDeclarationName = null }
 
     String classDeclarationName;
+
+    function openInitializerDeclaration(initializerDeclaration: InitializerDeclaration) -> bool {
+        return true; }
+
+    function closeInitializerDeclaration(initializerDeclaration: InitializerDeclaration) { }
+
 
     function openCodeBlock(codeBlock: CodeBlock) -> bool {
         return true; }

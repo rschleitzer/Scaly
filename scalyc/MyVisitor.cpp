@@ -56,13 +56,6 @@ bool MyVisitor::openFunctionDeclaration(FunctionDeclaration* functionDeclaration
 void MyVisitor::closeFunctionDeclaration(FunctionDeclaration* functionDeclaration) {
 }
 
-bool MyVisitor::openInitializerDeclaration(InitializerDeclaration* initializerDeclaration) {
-    return true;
-}
-
-void MyVisitor::closeInitializerDeclaration(InitializerDeclaration* initializerDeclaration) {
-}
-
 bool MyVisitor::openEnumDeclaration(EnumDeclaration* enumDeclaration) {
     enumDeclarationName = enumDeclaration->name;
     return true;
@@ -79,6 +72,13 @@ bool MyVisitor::openClassDeclaration(ClassDeclaration* classDeclaration) {
 
 void MyVisitor::closeClassDeclaration(ClassDeclaration* classDeclaration) {
     classDeclarationName = 0;
+}
+
+bool MyVisitor::openInitializerDeclaration(InitializerDeclaration* initializerDeclaration) {
+    return true;
+}
+
+void MyVisitor::closeInitializerDeclaration(InitializerDeclaration* initializerDeclaration) {
 }
 
 bool MyVisitor::openCodeBlock(CodeBlock* codeBlock) {

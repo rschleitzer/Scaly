@@ -89,19 +89,6 @@ class Declaration : Statement {
 
 }
 
-class Expression : Statement {
-
-    init(start: Position, end: Position) {
-        super.init(start, end)
-    }
-
-    override function accept(mutable visitor: SyntaxVisitor) {
-        visitor.openExpression(this)
-        visitor.closeExpression(this)
-    }
-
-}
-
 class UseDeclaration : Declaration {
 
     init(importModule: PathItem, importExtensions: [PathIdentifier], start: Position, end: Position) {
@@ -180,33 +167,6 @@ class FunctionDeclaration : Declaration {
     let body: Expression?
 }
 
-class InitializerDeclaration : Declaration {
-
-    init(modifiers: [Modifier], parameterClause: ParameterClause, throwsClause: ThrowsClause, body: Expression, start: Position, end: Position) {
-        super.init(start, end)
-    }
-
-    override function accept(mutable visitor: SyntaxVisitor) {
-        visitor.openInitializerDeclaration(this)
-        if modifiers != nil {
-            for node in modifiers! {
-                node.accept(visitor)
-            }
-        }
-        parameterClause!.accept(visitor)
-        if throwsClause != nil {
-            throwsClause!.accept(visitor)
-        }
-        body!.accept(visitor)
-        visitor.closeInitializerDeclaration(this)
-    }
-
-    let modifiers: [Modifier]?
-    let parameterClause: ParameterClause?
-    let throwsClause: ThrowsClause?
-    let body: Expression?
-}
-
 class EnumDeclaration : Declaration {
 
     init(name: String, members: [EnumMember], start: Position, end: Position) {
@@ -249,6 +209,46 @@ class ClassDeclaration : Declaration {
     let genericArgumentClause: GenericArgumentClause?
     let typeInheritanceClause: TypeInheritanceClause?
     let body: ClassBody?
+}
+
+class InitializerDeclaration : Declaration {
+
+    init(modifiers: [Modifier], parameterClause: ParameterClause, throwsClause: ThrowsClause, body: Expression, start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    override function accept(mutable visitor: SyntaxVisitor) {
+        visitor.openInitializerDeclaration(this)
+        if modifiers != nil {
+            for node in modifiers! {
+                node.accept(visitor)
+            }
+        }
+        parameterClause!.accept(visitor)
+        if throwsClause != nil {
+            throwsClause!.accept(visitor)
+        }
+        body!.accept(visitor)
+        visitor.closeInitializerDeclaration(this)
+    }
+
+    let modifiers: [Modifier]?
+    let parameterClause: ParameterClause?
+    let throwsClause: ThrowsClause?
+    let body: Expression?
+}
+
+class Expression : Statement {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    override function accept(mutable visitor: SyntaxVisitor) {
+        visitor.openExpression(this)
+        visitor.closeExpression(this)
+    }
+
 }
 
 class CodeBlock : Expression {
