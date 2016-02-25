@@ -443,10 +443,10 @@ bool CppVisitor::openClassDeclaration(ClassDeclaration* classDeclaration) {
 }
 
 void CppVisitor::closeClassDeclaration(ClassDeclaration* classDeclaration) {
-    if (classDeclaration->typeInheritanceClause) {
+    (*headerFile) += "\n";
+    if (classDeclaration->typeInheritanceClause)
         (*headerFile) += "\n"; indentHeader(); (*headerFile) += "virtual bool _is"; (*headerFile) += *classDeclarationName; (*headerFile) += "();";
-    }
-    else {
+    {
         _Region _region; _Page* _p = _region.get();
         _Array<_LetString>& derivedClasses = *new(_p) _Array<_LetString>();
         collectDerivedClasses(&derivedClasses, classDeclarationName);

@@ -9,6 +9,7 @@ public:
     SyntaxNode(Position* start, Position* end);
     Position* start;
     Position* end;
+    virtual bool _isSyntaxNode();
     virtual bool _isProgram();
     virtual bool _isCompilationUnit();
     virtual bool _isStatementWithSemicolon();

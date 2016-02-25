@@ -6,6 +6,7 @@ SyntaxNode::SyntaxNode(Position* start, Position* end)
 : start(start), end(end) {
 }
 
+bool SyntaxNode::_isSyntaxNode() { return true; }
 bool SyntaxNode::_isProgram() { return false; }
 bool SyntaxNode::_isCompilationUnit() { return false; }
 bool SyntaxNode::_isStatementWithSemicolon() { return false; }
