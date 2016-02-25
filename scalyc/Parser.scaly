@@ -2089,39 +2089,21 @@ class Parser {
         throw ParserError.UnableToParse(start, errors)
     }
 
-    function parseParenthesizedExpression() -> ParenthesizedExpression throws ParserError {
-        mutable parenthesizedExpression: ParenthesizedExpression? = null
+    function parseIdentifierExpression() -> IdentifierExpression throws ParserError {
+        mutable identifierExpression: IdentifierExpression? = null
         {
             let start: Position = lexer.getPosition()
-            let success: bool = lexer.parsePunctuation(leftParen)
-            if success
+            let name: String? = lexer.parseIdentifier()
+            if (name != null) && (name is Identifier)
                 lexer.advance()
 
-            if parenthesizedExpression == null
-                parenthesizedExpression = ParenthesizedExpression(start, lexer.getPosition())
-        }
-        {
-            let start: Position = lexer.getPosition()
-            let result: [ExpressionElement] node = parseExpressionElementList() catch _(error) {
-                 null
-            }
+            if identifierExpression == null
+                identifierExpression = IdentifierExpression(start, lexer.getPosition())
 
-            if parenthesizedExpression == null
-                parenthesizedExpression = ParenthesizedExpression(start, lexer.getPosition())
-
-            parenthesizedExpression.expressionElements = node
-        }
-        {
-            let start: Position = lexer.getPosition()
-            let success: bool = lexer.parsePunctuation(rightParen)
-            if success
-                lexer.advance()
-
-            if parenthesizedExpression == null
-                parenthesizedExpression = ParenthesizedExpression(start, lexer.getPosition())
+            identifierExpression.name = name
         }
 
-        return parenthesizedExpression
+        return identifierExpression
     }
 
     function parseLiteralExpression() -> LiteralExpression throws ParserError {
@@ -2139,23 +2121,6 @@ class Parser {
         }
 
         return literalExpression
-    }
-
-    function parseIdentifierExpression() -> IdentifierExpression throws ParserError {
-        mutable identifierExpression: IdentifierExpression? = null
-        {
-            let start: Position = lexer.getPosition()
-            let name: String? = lexer.parseIdentifier()
-            if (name != null) && (name is Identifier)
-                lexer.advance()
-
-            if identifierExpression == null
-                identifierExpression = IdentifierExpression(start, lexer.getPosition())
-
-            identifierExpression.name = name
-        }
-
-        return identifierExpression
     }
 
     function parseIfExpression() -> IfExpression throws ParserError {
@@ -2267,6 +2232,41 @@ class Parser {
         }
 
         return forExpression
+    }
+
+    function parseParenthesizedExpression() -> ParenthesizedExpression throws ParserError {
+        mutable parenthesizedExpression: ParenthesizedExpression? = null
+        {
+            let start: Position = lexer.getPosition()
+            let success: bool = lexer.parsePunctuation(leftParen)
+            if success
+                lexer.advance()
+
+            if parenthesizedExpression == null
+                parenthesizedExpression = ParenthesizedExpression(start, lexer.getPosition())
+        }
+        {
+            let start: Position = lexer.getPosition()
+            let result: [ExpressionElement] node = parseExpressionElementList() catch _(error) {
+                 null
+            }
+
+            if parenthesizedExpression == null
+                parenthesizedExpression = ParenthesizedExpression(start, lexer.getPosition())
+
+            parenthesizedExpression.expressionElements = node
+        }
+        {
+            let start: Position = lexer.getPosition()
+            let success: bool = lexer.parsePunctuation(rightParen)
+            if success
+                lexer.advance()
+
+            if parenthesizedExpression == null
+                parenthesizedExpression = ParenthesizedExpression(start, lexer.getPosition())
+        }
+
+        return parenthesizedExpression
     }
 
     function parseReturnExpression() -> ReturnExpression throws ParserError {

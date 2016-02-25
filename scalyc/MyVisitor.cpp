@@ -344,17 +344,10 @@ bool MyVisitor::openNamedMemberPostfix(NamedMemberPostfix* namedMemberPostfix) {
 void MyVisitor::closeNamedMemberPostfix(NamedMemberPostfix* namedMemberPostfix) {
 }
 
-bool MyVisitor::openParenthesizedExpression(ParenthesizedExpression* parenthesizedExpression) {
-    return true;
-}
-
-void MyVisitor::closeParenthesizedExpression(ParenthesizedExpression* parenthesizedExpression) {
+void MyVisitor::visitIdentifierExpression(IdentifierExpression* identifierExpression) {
 }
 
 void MyVisitor::visitLiteralExpression(LiteralExpression* literalExpression) {
-}
-
-void MyVisitor::visitIdentifierExpression(IdentifierExpression* identifierExpression) {
 }
 
 bool MyVisitor::openIfExpression(IfExpression* ifExpression) {
@@ -376,6 +369,13 @@ bool MyVisitor::openForExpression(ForExpression* forExpression) {
 }
 
 void MyVisitor::closeForExpression(ForExpression* forExpression) {
+}
+
+bool MyVisitor::openParenthesizedExpression(ParenthesizedExpression* parenthesizedExpression) {
+    return true;
+}
+
+void MyVisitor::closeParenthesizedExpression(ParenthesizedExpression* parenthesizedExpression) {
 }
 
 bool MyVisitor::openReturnExpression(ReturnExpression* returnExpression) {

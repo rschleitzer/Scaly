@@ -146,17 +146,17 @@ public:
 
     _Result<PrimaryExpression, ParserError> parsePrimaryExpression(_Page* _rp, _Page* _ep);
 
-    _Result<ParenthesizedExpression, ParserError> parseParenthesizedExpression(_Page* _rp, _Page* _ep);
+    _Result<IdentifierExpression, ParserError> parseIdentifierExpression(_Page* _rp, _Page* _ep);
 
     _Result<LiteralExpression, ParserError> parseLiteralExpression(_Page* _rp, _Page* _ep);
-
-    _Result<IdentifierExpression, ParserError> parseIdentifierExpression(_Page* _rp, _Page* _ep);
 
     _Result<IfExpression, ParserError> parseIfExpression(_Page* _rp, _Page* _ep);
 
     _Result<SwitchExpression, ParserError> parseSwitchExpression(_Page* _rp, _Page* _ep);
 
     _Result<ForExpression, ParserError> parseForExpression(_Page* _rp, _Page* _ep);
+
+    _Result<ParenthesizedExpression, ParserError> parseParenthesizedExpression(_Page* _rp, _Page* _ep);
 
     _Result<ReturnExpression, ParserError> parseReturnExpression(_Page* _rp, _Page* _ep);
 

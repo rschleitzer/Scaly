@@ -128,17 +128,17 @@ class NamedMemberPostfix;
 
 class PrimaryExpression;
 
-class ParenthesizedExpression;
+class IdentifierExpression;
 
 class LiteralExpression;
-
-class IdentifierExpression;
 
 class IfExpression;
 
 class SwitchExpression;
 
 class ForExpression;
+
+class ParenthesizedExpression;
 
 class ReturnExpression;
 
@@ -331,16 +331,16 @@ public:
     virtual void closeExpressionElement(ExpressionElement* expressionElement) = 0;
     virtual bool openNamedMemberPostfix(NamedMemberPostfix* namedMemberPostfix) = 0;
     virtual void closeNamedMemberPostfix(NamedMemberPostfix* namedMemberPostfix) = 0;
-    virtual bool openParenthesizedExpression(ParenthesizedExpression* parenthesizedExpression) = 0;
-    virtual void closeParenthesizedExpression(ParenthesizedExpression* parenthesizedExpression) = 0;
-    virtual void visitLiteralExpression(LiteralExpression* literalExpression) = 0;
     virtual void visitIdentifierExpression(IdentifierExpression* identifierExpression) = 0;
+    virtual void visitLiteralExpression(LiteralExpression* literalExpression) = 0;
     virtual bool openIfExpression(IfExpression* ifExpression) = 0;
     virtual void closeIfExpression(IfExpression* ifExpression) = 0;
     virtual bool openSwitchExpression(SwitchExpression* switchExpression) = 0;
     virtual void closeSwitchExpression(SwitchExpression* switchExpression) = 0;
     virtual bool openForExpression(ForExpression* forExpression) = 0;
     virtual void closeForExpression(ForExpression* forExpression) = 0;
+    virtual bool openParenthesizedExpression(ParenthesizedExpression* parenthesizedExpression) = 0;
+    virtual void closeParenthesizedExpression(ParenthesizedExpression* parenthesizedExpression) = 0;
     virtual bool openReturnExpression(ReturnExpression* returnExpression) = 0;
     virtual void closeReturnExpression(ReturnExpression* returnExpression) = 0;
     virtual bool openThrowExpression(ThrowExpression* throwExpression) = 0;

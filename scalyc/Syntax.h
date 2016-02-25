@@ -72,12 +72,12 @@ public:
     virtual bool _isMemberPostfix();
     virtual bool _isNamedMemberPostfix();
     virtual bool _isPrimaryExpression();
-    virtual bool _isParenthesizedExpression();
-    virtual bool _isLiteralExpression();
     virtual bool _isIdentifierExpression();
+    virtual bool _isLiteralExpression();
     virtual bool _isIfExpression();
     virtual bool _isSwitchExpression();
     virtual bool _isForExpression();
+    virtual bool _isParenthesizedExpression();
     virtual bool _isReturnExpression();
     virtual bool _isThrowExpression();
     virtual bool _isBreakExpression();
@@ -756,13 +756,13 @@ public:
     virtual bool _isSuperSubscript();
 };
 
-class ParenthesizedExpression : public PrimaryExpression {
+class IdentifierExpression : public PrimaryExpression {
 public:
-    ParenthesizedExpression(_Vector<ExpressionElement>* expressionElements, Position* start, Position* end);
+    IdentifierExpression(_LetString* name, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
-    _Vector<ExpressionElement>* expressionElements;
+    _LetString* name;
 
-    virtual bool _isParenthesizedExpression();
+    virtual bool _isIdentifierExpression();
 };
 
 class LiteralExpression : public PrimaryExpression {
@@ -772,15 +772,6 @@ public:
     Literal* literal;
 
     virtual bool _isLiteralExpression();
-};
-
-class IdentifierExpression : public PrimaryExpression {
-public:
-    IdentifierExpression(_LetString* name, Position* start, Position* end);
-    virtual void accept(SyntaxVisitor* visitor);
-    _LetString* name;
-
-    virtual bool _isIdentifierExpression();
 };
 
 class IfExpression : public PrimaryExpression {
@@ -811,6 +802,15 @@ public:
     ForLoop* loop;
 
     virtual bool _isForExpression();
+};
+
+class ParenthesizedExpression : public PrimaryExpression {
+public:
+    ParenthesizedExpression(_Vector<ExpressionElement>* expressionElements, Position* start, Position* end);
+    virtual void accept(SyntaxVisitor* visitor);
+    _Vector<ExpressionElement>* expressionElements;
+
+    virtual bool _isParenthesizedExpression();
 };
 
 class ReturnExpression : public PrimaryExpression {

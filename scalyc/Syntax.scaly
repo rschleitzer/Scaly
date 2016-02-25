@@ -1043,23 +1043,18 @@ class PrimaryExpression : SyntaxNode {
 
 }
 
-class ParenthesizedExpression : PrimaryExpression {
+class IdentifierExpression : PrimaryExpression {
 
-    init(expressionElements: [ExpressionElement], start: Position, end: Position) {
+    init(name: String, start: Position, end: Position) {
         super.init(start, end)
     }
 
     override function accept(mutable visitor: SyntaxVisitor) {
-        visitor.openParenthesizedExpression(this)
-        if expressionElements != nil {
-            for node in expressionElements! {
-                node.accept(visitor)
-            }
-        }
-        visitor.closeParenthesizedExpression(this)
+        visitor.openIdentifierExpression(this)
+        visitor.closeIdentifierExpression(this)
     }
 
-    let expressionElements: [ExpressionElement]?
+    let name: String?
 }
 
 class LiteralExpression : PrimaryExpression {
@@ -1074,20 +1069,6 @@ class LiteralExpression : PrimaryExpression {
     }
 
     let literal: Literal?
-}
-
-class IdentifierExpression : PrimaryExpression {
-
-    init(name: String, start: Position, end: Position) {
-        super.init(start, end)
-    }
-
-    override function accept(mutable visitor: SyntaxVisitor) {
-        visitor.openIdentifierExpression(this)
-        visitor.closeIdentifierExpression(this)
-    }
-
-    let name: String?
 }
 
 class IfExpression : PrimaryExpression {
@@ -1141,6 +1122,25 @@ class ForExpression : PrimaryExpression {
     }
 
     let loop: ForLoop?
+}
+
+class ParenthesizedExpression : PrimaryExpression {
+
+    init(expressionElements: [ExpressionElement], start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    override function accept(mutable visitor: SyntaxVisitor) {
+        visitor.openParenthesizedExpression(this)
+        if expressionElements != nil {
+            for node in expressionElements! {
+                node.accept(visitor)
+            }
+        }
+        visitor.closeParenthesizedExpression(this)
+    }
+
+    let expressionElements: [ExpressionElement]?
 }
 
 class ReturnExpression : PrimaryExpression {

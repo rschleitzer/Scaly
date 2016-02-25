@@ -288,16 +288,11 @@
         <content link = ThisExpression
         <content link = SuperExpression
 
-    <syntax id = ParenthesizedExpression                        base = PrimaryExpression
-        <content link = leftParen
-        <content link = ExpressionElement  multiple optional    property = expressionElements
-        <content link = rightParen
+    <syntax id = IdentifierExpression                           base = PrimaryExpression
+        <content identifier                                     property = name
 
     <syntax id = LiteralExpression                              base = PrimaryExpression
         <content literal                                        property = literal
-
-    <syntax id = IdentifierExpression                           base = PrimaryExpression
-        <content identifier                                     property = name
 
     <syntax id = IfExpression                                   base = PrimaryExpression
         <content link = if
@@ -313,6 +308,11 @@
     <syntax id = ForExpression                                  base = PrimaryExpression
         <content link = for
         <content link = ForLoop                                 property = loop
+
+    <syntax id = ParenthesizedExpression                        base = PrimaryExpression
+        <content link = leftParen
+        <content link = ExpressionElement  multiple optional    property = expressionElements
+        <content link = rightParen
 
     <syntax id = ReturnExpression                               base = PrimaryExpression
         <content link = return

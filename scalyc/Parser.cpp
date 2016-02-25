@@ -1927,31 +1927,18 @@ _Result<PrimaryExpression, ParserError> Parser::parsePrimaryExpression(_Page* _r
     return _Result<PrimaryExpression, ParserError>(new(_ep) ParserError(new(_ep) UnableToParse(start, errors)));
 }
 
-_Result<ParenthesizedExpression, ParserError> Parser::parseParenthesizedExpression(_Page* _rp, _Page* _ep) {
+_Result<IdentifierExpression, ParserError> Parser::parseIdentifierExpression(_Page* _rp, _Page* _ep) {
     Position* start = lexer.getPreviousPosition(_rp);
-    Position* startLeftParen1 = lexer.getPreviousPosition(_rp);
-    bool successLeftParen1 = lexer.parsePunctuation(leftParen);
-    if (successLeftParen1) {
+    Position* startName = lexer.getPreviousPosition(_rp);
+    _LetString* name = lexer.parseIdentifier(_rp);
+    if ((name) && (isIdentifier(*name))) {
         lexer.advance();
     }
     else {
-        return _Result<ParenthesizedExpression, ParserError>(new(_ep) ParserError(new(_ep) PunctuationExpected(startLeftParen1, &_LetString::create(_ep, *leftParen))));
+        return _Result<IdentifierExpression, ParserError>(new(_ep) ParserError(new(_ep) IdentifierExpected(startName)));
     }
-    _Result<_Vector<ExpressionElement>, ParserError> _result_expressionElements = parseExpressionElementList(_rp, _ep);
-    _Vector<ExpressionElement>* expressionElements = 0;
-    if (_result_expressionElements.succeeded()) {
-        expressionElements = _result_expressionElements.getResult();
-    }
-    Position* startRightParen3 = lexer.getPreviousPosition(_rp);
-    bool successRightParen3 = lexer.parsePunctuation(rightParen);
-    if (successRightParen3) {
-        lexer.advance();
-    }
-    else {
-        return _Result<ParenthesizedExpression, ParserError>(new(_ep) ParserError(new(_ep) PunctuationExpected(startRightParen3, &_LetString::create(_ep, *rightParen))));
-    }
-    ParenthesizedExpression* parenthesizedExpression = new(_rp) ParenthesizedExpression(expressionElements, start, lexer.getPosition(_rp));
-    return _Result<ParenthesizedExpression, ParserError>(parenthesizedExpression);
+    IdentifierExpression* identifierExpression = new(_rp) IdentifierExpression(name, start, lexer.getPosition(_rp));
+    return _Result<IdentifierExpression, ParserError>(identifierExpression);
 }
 
 _Result<LiteralExpression, ParserError> Parser::parseLiteralExpression(_Page* _rp, _Page* _ep) {
@@ -1966,20 +1953,6 @@ _Result<LiteralExpression, ParserError> Parser::parseLiteralExpression(_Page* _r
     }
     LiteralExpression* literalExpression = new(_rp) LiteralExpression(literal, start, lexer.getPosition(_rp));
     return _Result<LiteralExpression, ParserError>(literalExpression);
-}
-
-_Result<IdentifierExpression, ParserError> Parser::parseIdentifierExpression(_Page* _rp, _Page* _ep) {
-    Position* start = lexer.getPreviousPosition(_rp);
-    Position* startName = lexer.getPreviousPosition(_rp);
-    _LetString* name = lexer.parseIdentifier(_rp);
-    if ((name) && (isIdentifier(*name))) {
-        lexer.advance();
-    }
-    else {
-        return _Result<IdentifierExpression, ParserError>(new(_ep) ParserError(new(_ep) IdentifierExpected(startName)));
-    }
-    IdentifierExpression* identifierExpression = new(_rp) IdentifierExpression(name, start, lexer.getPosition(_rp));
-    return _Result<IdentifierExpression, ParserError>(identifierExpression);
 }
 
 _Result<IfExpression, ParserError> Parser::parseIfExpression(_Page* _rp, _Page* _ep) {
@@ -2067,6 +2040,33 @@ _Result<ForExpression, ParserError> Parser::parseForExpression(_Page* _rp, _Page
     }
     ForExpression* forExpression = new(_rp) ForExpression(loop, start, lexer.getPosition(_rp));
     return _Result<ForExpression, ParserError>(forExpression);
+}
+
+_Result<ParenthesizedExpression, ParserError> Parser::parseParenthesizedExpression(_Page* _rp, _Page* _ep) {
+    Position* start = lexer.getPreviousPosition(_rp);
+    Position* startLeftParen1 = lexer.getPreviousPosition(_rp);
+    bool successLeftParen1 = lexer.parsePunctuation(leftParen);
+    if (successLeftParen1) {
+        lexer.advance();
+    }
+    else {
+        return _Result<ParenthesizedExpression, ParserError>(new(_ep) ParserError(new(_ep) PunctuationExpected(startLeftParen1, &_LetString::create(_ep, *leftParen))));
+    }
+    _Result<_Vector<ExpressionElement>, ParserError> _result_expressionElements = parseExpressionElementList(_rp, _ep);
+    _Vector<ExpressionElement>* expressionElements = 0;
+    if (_result_expressionElements.succeeded()) {
+        expressionElements = _result_expressionElements.getResult();
+    }
+    Position* startRightParen3 = lexer.getPreviousPosition(_rp);
+    bool successRightParen3 = lexer.parsePunctuation(rightParen);
+    if (successRightParen3) {
+        lexer.advance();
+    }
+    else {
+        return _Result<ParenthesizedExpression, ParserError>(new(_ep) ParserError(new(_ep) PunctuationExpected(startRightParen3, &_LetString::create(_ep, *rightParen))));
+    }
+    ParenthesizedExpression* parenthesizedExpression = new(_rp) ParenthesizedExpression(expressionElements, start, lexer.getPosition(_rp));
+    return _Result<ParenthesizedExpression, ParserError>(parenthesizedExpression);
 }
 
 _Result<ReturnExpression, ParserError> Parser::parseReturnExpression(_Page* _rp, _Page* _ep) {

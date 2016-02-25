@@ -306,18 +306,12 @@ class MyVisitor {
     function closeNamedMemberPostfix(namedMemberPostfix: NamedMemberPostfix) { }
 
 
-    function openParenthesizedExpression(parenthesizedExpression: ParenthesizedExpression) -> bool {
-        return true; }
-
-    function closeParenthesizedExpression(parenthesizedExpression: ParenthesizedExpression) { }
-
-
-    function visitLiteralExpression(literalExpression: LiteralExpression) { }
-
-
     function visitIdentifierExpression(identifierExpression: IdentifierExpression) { }
 
     String identifierExpressionName;
+
+    function visitLiteralExpression(literalExpression: LiteralExpression) { }
+
 
     function openIfExpression(ifExpression: IfExpression) -> bool {
         return true; }
@@ -335,6 +329,12 @@ class MyVisitor {
         return true; }
 
     function closeForExpression(forExpression: ForExpression) { }
+
+
+    function openParenthesizedExpression(parenthesizedExpression: ParenthesizedExpression) -> bool {
+        return true; }
+
+    function closeParenthesizedExpression(parenthesizedExpression: ParenthesizedExpression) { }
 
 
     function openReturnExpression(returnExpression: ReturnExpression) -> bool {

@@ -69,12 +69,12 @@ bool SyntaxNode::_isExpressionElement() { return false; }
 bool SyntaxNode::_isMemberPostfix() { return false; }
 bool SyntaxNode::_isNamedMemberPostfix() { return false; }
 bool SyntaxNode::_isPrimaryExpression() { return false; }
-bool SyntaxNode::_isParenthesizedExpression() { return false; }
-bool SyntaxNode::_isLiteralExpression() { return false; }
 bool SyntaxNode::_isIdentifierExpression() { return false; }
+bool SyntaxNode::_isLiteralExpression() { return false; }
 bool SyntaxNode::_isIfExpression() { return false; }
 bool SyntaxNode::_isSwitchExpression() { return false; }
 bool SyntaxNode::_isForExpression() { return false; }
+bool SyntaxNode::_isParenthesizedExpression() { return false; }
 bool SyntaxNode::_isReturnExpression() { return false; }
 bool SyntaxNode::_isThrowExpression() { return false; }
 bool SyntaxNode::_isBreakExpression() { return false; }
@@ -1013,23 +1013,13 @@ bool PrimaryExpression::_isPrimaryExpression() { return true; }
 void PrimaryExpression::accept(SyntaxVisitor* visitor) {
 }
 
-ParenthesizedExpression::ParenthesizedExpression(_Vector<ExpressionElement>* expressionElements, Position* start, Position* end)
-: PrimaryExpression(start, end), expressionElements(expressionElements) {}
+IdentifierExpression::IdentifierExpression(_LetString* name, Position* start, Position* end)
+: PrimaryExpression(start, end), name(name) {}
 
-bool ParenthesizedExpression::_isParenthesizedExpression() { return true; }
+bool IdentifierExpression::_isIdentifierExpression() { return true; }
 
-void ParenthesizedExpression::accept(SyntaxVisitor* visitor) {
-    if (!visitor->openParenthesizedExpression(this))
-        return;
-    if (expressionElements) {
-        ExpressionElement* node = 0;
-        size_t _alength = expressionElements->length();
-        for (size_t _a = 0; _a < _alength; _a++) {
-            node = *(*expressionElements)[_a];
-            node->accept(visitor);
-        }
-    }
-    visitor->closeParenthesizedExpression(this);
+void IdentifierExpression::accept(SyntaxVisitor* visitor) {
+    visitor->visitIdentifierExpression(this);
 }
 
 LiteralExpression::LiteralExpression(Literal* literal, Position* start, Position* end)
@@ -1039,15 +1029,6 @@ bool LiteralExpression::_isLiteralExpression() { return true; }
 
 void LiteralExpression::accept(SyntaxVisitor* visitor) {
     visitor->visitLiteralExpression(this);
-}
-
-IdentifierExpression::IdentifierExpression(_LetString* name, Position* start, Position* end)
-: PrimaryExpression(start, end), name(name) {}
-
-bool IdentifierExpression::_isIdentifierExpression() { return true; }
-
-void IdentifierExpression::accept(SyntaxVisitor* visitor) {
-    visitor->visitIdentifierExpression(this);
 }
 
 IfExpression::IfExpression(Expression* condition, Expression* consequent, ElseClause* elseClause, Position* start, Position* end)
@@ -1088,6 +1069,25 @@ void ForExpression::accept(SyntaxVisitor* visitor) {
         return;
     loop->accept(visitor);
     visitor->closeForExpression(this);
+}
+
+ParenthesizedExpression::ParenthesizedExpression(_Vector<ExpressionElement>* expressionElements, Position* start, Position* end)
+: PrimaryExpression(start, end), expressionElements(expressionElements) {}
+
+bool ParenthesizedExpression::_isParenthesizedExpression() { return true; }
+
+void ParenthesizedExpression::accept(SyntaxVisitor* visitor) {
+    if (!visitor->openParenthesizedExpression(this))
+        return;
+    if (expressionElements) {
+        ExpressionElement* node = 0;
+        size_t _alength = expressionElements->length();
+        for (size_t _a = 0; _a < _alength; _a++) {
+            node = *(*expressionElements)[_a];
+            node->accept(visitor);
+        }
+    }
+    visitor->closeParenthesizedExpression(this);
 }
 
 ReturnExpression::ReturnExpression(Expression* expression, Position* start, Position* end)
