@@ -404,6 +404,7 @@ public:
     virtual void closeTypeInheritanceClause(TypeInheritanceClause* typeInheritanceClause) = 0;
     virtual bool openInheritance(Inheritance* inheritance) = 0;
     virtual void closeInheritance(Inheritance* inheritance) = 0;
+
     virtual bool _isSyntaxVisitor();
 };
 

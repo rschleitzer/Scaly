@@ -7,7 +7,7 @@
 "
 "   ))
 
-"class "(if concrete "MyVisitor" "SyntaxVisitor")" {"
+"class "(if concrete "MyVisitor : " "")"SyntaxVisitor {"
     (apply-to-selected-children "syntax" (lambda (syntax) (if (abstract? syntax) "" ($
         (if (has-syntax-children? syntax)
             ($ "
@@ -95,6 +95,7 @@ public:"
         "")
     ))))
 "
+
     virtual bool _is"(if concrete "MyVisitor" "SyntaxVisitor")"();
 };
 
