@@ -106,11 +106,12 @@ public:
 "    _LetString* fileName;
 "
         "")
-       (apply-to-nodelist (inheritors syntax-node) (lambda (inheritor) ($
+"
+    virtual bool _is"(id syntax-node)"();
+"       (apply-to-nodelist (inheritors syntax-node) (lambda (inheritor) ($
 "    virtual bool _is"(attribute-string "link" inheritor)"();
 "       )))
-"    virtual bool _is"(id syntax-node)"();
-};
+"};
 "   )))
 "
 }

@@ -40,7 +40,7 @@ CompilerError* Compiler::compileFiles(_Page* _ep, Options& options) {
     if (cppError) {
         switch (cppError->getErrorCode()) {
             case _CppError_unableToCreateOutputDirectory:
-                return new (_ep) CompilerError(cppError->getUnableToCreateOutputDirectory());
+                return new(_ep) CompilerError(cppError->getUnableToCreateOutputDirectory());
         }
     }
 
