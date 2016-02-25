@@ -5,6 +5,9 @@ namespace scalyc {
 Position::Position(size_t line, size_t column)
 : line(line), column(column) { }
 
+bool Position::_isPosition() { return true; }
+
+bool Token::_isToken() { return true; }
 bool Token::_isEofToken() { return false; }
 bool Token::_isInvalidToken() { return false; }
 bool Token::_isIdentifier() { return false; }
@@ -27,6 +30,8 @@ Identifier::Identifier(_LetString* name)
 bool Identifier::_isIdentifier() { return true; }
 
 bool Literal::_isLiteral() { return true; }
+bool Literal::_isStringLiteral() { return false; }
+bool Literal::_isNumericLiteral() { return false; }
 
 StringLiteral::StringLiteral(_LetString* literal)
 : string(literal) { }
@@ -47,6 +52,9 @@ Operator::Operator(_LetString* theOperation)
 : operation(theOperation) { }
 
 bool Operator::_isOperator() { return true; }
+bool Operator::_isPrefixOperator() { return false; }
+bool Operator::_isBinaryOperator() { return false; }
+bool Operator::_isPostfixOperator() { return false; }
 
 PrefixOperator::PrefixOperator(_LetString* theOperation)
 : Operator(theOperation) { }
@@ -609,5 +617,7 @@ Position* Lexer::getPosition(_Page* _rp) {
 Position* Lexer::getPreviousPosition(_Page* _rp) {
     return new(_rp) Position(previousLine, previousColumn);
 }
+
+bool Lexer::_isLexer() { return true; }
 
 }
