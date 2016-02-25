@@ -14,6 +14,8 @@ class Statement;
 
 class Declaration;
 
+class Expression;
+
 class UseDeclaration;
 
 class ConstantDeclaration;
@@ -27,8 +29,6 @@ class EnumDeclaration;
 class ClassDeclaration;
 
 class InitializerDeclaration;
-
-class Expression;
 
 class CodeBlock;
 
