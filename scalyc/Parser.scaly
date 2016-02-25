@@ -153,31 +153,6 @@ class Parser {
         throw ParserError.UnableToParse(start, errors)
     }
 
-    function parseExpression() -> Expression throws ParserError {
-        let errors: [ParserError] = [ParserError]()
-        let start: Position = lexer.getPreviousPosition()
-
-        {
-            let node: CodeBlock = parseCodeBlock() catch _(error) {
-                errors.push(error)
-                break
-            }
-
-            return node
-        }
-
-        {
-            let node: SimpleExpression = parseSimpleExpression() catch _(error) {
-                errors.push(error)
-                break
-            }
-
-            return node
-        }
-
-        throw ParserError.UnableToParse(start, errors)
-    }
-
     function parseUseDeclaration() -> UseDeclaration throws ParserError {
         mutable useDeclaration: UseDeclaration? = null
         {
@@ -497,6 +472,31 @@ class Parser {
         }
 
         return initializerDeclaration
+    }
+
+    function parseExpression() -> Expression throws ParserError {
+        let errors: [ParserError] = [ParserError]()
+        let start: Position = lexer.getPreviousPosition()
+
+        {
+            let node: CodeBlock = parseCodeBlock() catch _(error) {
+                errors.push(error)
+                break
+            }
+
+            return node
+        }
+
+        {
+            let node: SimpleExpression = parseSimpleExpression() catch _(error) {
+                errors.push(error)
+                break
+            }
+
+            return node
+        }
+
+        throw ParserError.UnableToParse(start, errors)
     }
 
     function parseCodeBlock() -> CodeBlock throws ParserError {

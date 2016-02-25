@@ -12,7 +12,6 @@ bool SyntaxNode::_isCompilationUnit() { return false; }
 bool SyntaxNode::_isStatementWithSemicolon() { return false; }
 bool SyntaxNode::_isStatement() { return false; }
 bool SyntaxNode::_isDeclaration() { return false; }
-bool SyntaxNode::_isExpression() { return false; }
 bool SyntaxNode::_isUseDeclaration() { return false; }
 bool SyntaxNode::_isConstantDeclaration() { return false; }
 bool SyntaxNode::_isVariableDeclaration() { return false; }
@@ -20,6 +19,7 @@ bool SyntaxNode::_isFunctionDeclaration() { return false; }
 bool SyntaxNode::_isEnumDeclaration() { return false; }
 bool SyntaxNode::_isClassDeclaration() { return false; }
 bool SyntaxNode::_isInitializerDeclaration() { return false; }
+bool SyntaxNode::_isExpression() { return false; }
 bool SyntaxNode::_isCodeBlock() { return false; }
 bool SyntaxNode::_isSimpleExpression() { return false; }
 bool SyntaxNode::_isPathIdentifier() { return false; }
@@ -207,16 +207,6 @@ bool Declaration::_isDeclaration() { return true; }
 void Declaration::accept(SyntaxVisitor* visitor) {
 }
 
-Expression::Expression(Position* start, Position* end)
-: Statement(start, end) {}
-
-bool Expression::_isCodeBlock() { return false; }
-bool Expression::_isSimpleExpression() { return false; }
-bool Expression::_isExpression() { return true; }
-
-void Expression::accept(SyntaxVisitor* visitor) {
-}
-
 UseDeclaration::UseDeclaration(PathItem* importModule, _Vector<PathIdentifier>* importExtensions, Position* start, Position* end)
 : Declaration(start, end), importModule(importModule), importExtensions(importExtensions) {}
 
@@ -341,6 +331,16 @@ void InitializerDeclaration::accept(SyntaxVisitor* visitor) {
         throwsClause->accept(visitor);
     body->accept(visitor);
     visitor->closeInitializerDeclaration(this);
+}
+
+Expression::Expression(Position* start, Position* end)
+: Statement(start, end) {}
+
+bool Expression::_isCodeBlock() { return false; }
+bool Expression::_isSimpleExpression() { return false; }
+bool Expression::_isExpression() { return true; }
+
+void Expression::accept(SyntaxVisitor* visitor) {
 }
 
 CodeBlock::CodeBlock(_Vector<StatementWithSemicolon>* statements, Position* start, Position* end)
