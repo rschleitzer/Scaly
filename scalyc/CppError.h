@@ -6,10 +6,10 @@ namespace scalyc {
 
 class UnableToCreateOutputDirectory : public Object {
 public:
-    UnableToCreateOutputDirectory(_VarString& outputDirectory, FileError& fileError);
+    UnableToCreateOutputDirectory(_VarString* outputDirectory, FileError* fileError);
 
-    _VarString& outputDirectory;
-    FileError& fileError;
+    _VarString* outputDirectory;
+    FileError* fileError;
 };
 
 enum _CppErrorCode {
@@ -19,13 +19,13 @@ enum _CppErrorCode {
 class CppError : public Object
 {
 public:
-    CppError(UnableToCreateOutputDirectory& UnableToCreateOutputDirectory)
-    : errorCode(_CppError_unableToCreateOutputDirectory), errorInfo(&UnableToCreateOutputDirectory) {}
+    CppError(UnableToCreateOutputDirectory* UnableToCreateOutputDirectory)
+    : errorCode(_CppError_unableToCreateOutputDirectory), errorInfo(UnableToCreateOutputDirectory) {}
 
     long getErrorCode();
     void* getErrorInfo();
 
-    UnableToCreateOutputDirectory& getUnableToCreateOutputDirectory();
+    UnableToCreateOutputDirectory* getUnableToCreateOutputDirectory();
 
 private:
     _CppErrorCode errorCode;

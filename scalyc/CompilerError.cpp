@@ -10,20 +10,20 @@ void* CompilerError::getErrorInfo() {
     return errorInfo;
 }
 
-UnableToReadFile::UnableToReadFile(_LetString& file, FileError& fileError)
+UnableToReadFile::UnableToReadFile(_LetString* file, FileError* fileError)
 : file(file), fileError(fileError) {
 }
 
-UnableToReadFile& CompilerError::getUnableToReadFile(){
-    return *(UnableToReadFile*)errorInfo;
+UnableToReadFile* CompilerError::getUnableToReadFile(){
+    return (UnableToReadFile*)errorInfo;
 }
 
-SyntaxError::SyntaxError(ParserError& parserError)
+SyntaxError::SyntaxError(ParserError* parserError)
 : parserError(parserError) {
 }
 
-SyntaxError& CompilerError::getSyntaxError(){
-    return *(SyntaxError*)errorInfo;
+SyntaxError* CompilerError::getSyntaxError(){
+    return (SyntaxError*)errorInfo;
 }
 
 }

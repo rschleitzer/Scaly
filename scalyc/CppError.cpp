@@ -10,12 +10,12 @@ void* CppError::getErrorInfo() {
     return errorInfo;
 }
 
-UnableToCreateOutputDirectory::UnableToCreateOutputDirectory(_VarString& outputDirectory, FileError& fileError)
+UnableToCreateOutputDirectory::UnableToCreateOutputDirectory(_VarString* outputDirectory, FileError* fileError)
 : outputDirectory(outputDirectory), fileError(fileError) {
 }
 
-UnableToCreateOutputDirectory& CppError::getUnableToCreateOutputDirectory(){
-    return *(UnableToCreateOutputDirectory*)errorInfo;
+UnableToCreateOutputDirectory* CppError::getUnableToCreateOutputDirectory(){
+    return (UnableToCreateOutputDirectory*)errorInfo;
 }
 
 }

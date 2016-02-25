@@ -7,16 +7,16 @@ namespace scalyc
 
 class UnableToReadFile : public Object {
 public:
-    UnableToReadFile(_LetString& file, FileError& fileError);
+    UnableToReadFile(_LetString* file, FileError* fileError);
 
-    _LetString& file;
-    FileError& fileError;
+    _LetString* file;
+    FileError* fileError;
 };
 
 class SyntaxError : public Object {
 public:
-    SyntaxError(ParserError& parserError);
-    ParserError& parserError;
+    SyntaxError(ParserError* parserError);
+    ParserError* parserError;
 };
 
 enum _CompilerErrorCode {
@@ -28,21 +28,21 @@ enum _CompilerErrorCode {
 class CompilerError : public Object
 {
 public:
-    CompilerError(UnableToReadFile& UnableToReadFile)
-    : errorCode(_CompilerError_fileNotFound), errorInfo(&UnableToReadFile) {}
+    CompilerError(UnableToReadFile* UnableToReadFile)
+    : errorCode(_CompilerError_fileNotFound), errorInfo(UnableToReadFile) {}
 
-    CompilerError(SyntaxError& SyntaxError)
-    : errorCode(_CompilerError_syntaxError), errorInfo(&SyntaxError) {}
+    CompilerError(SyntaxError* SyntaxError)
+    : errorCode(_CompilerError_syntaxError), errorInfo(SyntaxError) {}
 
-    CompilerError(UnableToCreateOutputDirectory& UnableToCreateOutputDirectory)
-    : errorCode(_CompilerError_unableToCreateOutputDirectory), errorInfo(&UnableToCreateOutputDirectory) {}
+    CompilerError(UnableToCreateOutputDirectory* UnableToCreateOutputDirectory)
+    : errorCode(_CompilerError_unableToCreateOutputDirectory), errorInfo(UnableToCreateOutputDirectory) {}
 
     long getErrorCode();
     void* getErrorInfo();
-    
-    UnableToReadFile& getUnableToReadFile();
-    SyntaxError& getSyntaxError();
-    UnableToCreateOutputDirectory& getUnableToCreateOutputDirectory();
+
+    UnableToReadFile* getUnableToReadFile();
+    SyntaxError* getSyntaxError();
+    UnableToCreateOutputDirectory* getUnableToCreateOutputDirectory();
 
 private:
     _CompilerErrorCode errorCode;

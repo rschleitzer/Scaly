@@ -7,16 +7,16 @@ namespace scalyc
 
 class _InvalidOption : public Object {
 public:
-    _InvalidOption(_LetString& option);
+    _InvalidOption(_LetString* option);
 
-    _LetString& option;
+    _LetString* option;
 };
 
 class _UnknownOption : public Object {
 public:
-    _UnknownOption(_LetString& option);
+    _UnknownOption(_LetString* option);
 
-    _LetString& option;
+    _LetString* option;
 };
 
 enum _OptionsErrorCode {
@@ -29,22 +29,22 @@ enum _OptionsErrorCode {
 class OptionsError : public Object
 {
 public:
-    OptionsError(_InvalidOption& _InvalidOption)
-    : errorCode(invalidOption), errorInfo(&_InvalidOption) {}
+    OptionsError(_InvalidOption* _InvalidOption)
+    : errorCode(invalidOption), errorInfo(_InvalidOption) {}
 
-    _InvalidOption& getInvalidOption();
+    _InvalidOption* getInvalidOption();
 
-    OptionsError(_UnknownOption& _UnknownOption)
-    : errorCode(unknownOption), errorInfo(&_UnknownOption) {}
+    OptionsError(_UnknownOption* _UnknownOption)
+    : errorCode(unknownOption), errorInfo(_UnknownOption) {}
 
-    _UnknownOption& getUnknownOption();
+    _UnknownOption* getUnknownOption();
 
     OptionsError(_OptionsErrorCode code)
     : errorCode(code), errorInfo(0) {}
 
     long getErrorCode();
     void* getErrorInfo();
-    
+
 
 private:
     _OptionsErrorCode errorCode;

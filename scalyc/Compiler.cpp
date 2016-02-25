@@ -12,7 +12,7 @@ CompilerError* Compiler::compileFiles(_Page* _ep, Options& options) {
         for (size_t _index = 0; _index < _length; _index++) {
             _Result<_LetString, FileError> _readToStringResult = File::readToString(_p, _ep, **(*files)[_index]);
             if (!_readToStringResult.succeeded())
-                return new(_ep) CompilerError(*new(_ep) UnableToReadFile(**(*files)[_index], *_readToStringResult.getError()));
+                return new(_ep) CompilerError(new(_ep) UnableToReadFile(*(*files)[_index], _readToStringResult.getError()));
 
             *(*sources)[_index] = _readToStringResult.getResult();
         }
@@ -25,7 +25,7 @@ CompilerError* Compiler::compileFiles(_Page* _ep, Options& options) {
         for (size_t _index = 0; _index < _length; _index++) {
             _Result<CompilationUnit, ParserError> _compileUnitResult = compileUnit(_p, _ep, *(*files)[_index], *(*sources)[_index]);
             if (!_compileUnitResult.succeeded()) {
-                return new(_ep) CompilerError(*new(_ep) SyntaxError(*_compileUnitResult.getError()));
+                return new(_ep) CompilerError(new(_ep) SyntaxError(_compileUnitResult.getError()));
             }
             else {
                 *(*compilationUnits)[_index] = _compileUnitResult.getResult();
