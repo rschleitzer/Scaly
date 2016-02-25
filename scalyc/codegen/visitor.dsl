@@ -49,7 +49,7 @@
 "            (apply-to-children-of syntax (lambda (identifier)
                 (if (identifier? identifier) ($
 "
-    String "(visitor-property syntax identifier)";"
+    mutable "(visitor-property syntax identifier)": String"
                 )"")
              ))
 "

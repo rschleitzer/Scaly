@@ -8,8 +8,8 @@ class MyVisitor {
         programName = null
         programDirectory = null }
 
-    String programName;
-    String programDirectory;
+    mutable programName: String
+    mutable programDirectory: String
 
     function openCompilationUnit(compilationUnit: CompilationUnit) -> bool {
         return true; }
@@ -54,7 +54,7 @@ class MyVisitor {
     function closeEnumDeclaration(enumDeclaration: EnumDeclaration) {
         enumDeclarationName = null }
 
-    String enumDeclarationName;
+    mutable enumDeclarationName: String
 
     function openClassDeclaration(classDeclaration: ClassDeclaration) -> bool {
         classDeclarationName = classDeclaration.name
@@ -63,7 +63,7 @@ class MyVisitor {
     function closeClassDeclaration(classDeclaration: ClassDeclaration) {
         classDeclarationName = null }
 
-    String classDeclarationName;
+    mutable classDeclarationName: String
 
     function openInitializerDeclaration(initializerDeclaration: InitializerDeclaration) -> bool {
         return true; }
@@ -91,7 +91,7 @@ class MyVisitor {
 
     function visitPathItem(pathItem: PathItem) { }
 
-    String pathItemName;
+    mutable pathItemName: String
 
     function openInitializer(initializer: Initializer) -> bool {
         return true; }
@@ -125,7 +125,7 @@ class MyVisitor {
 
     function visitIdentifierFunction(identifierFunction: IdentifierFunction) { }
 
-    String identifierFunctionName;
+    mutable identifierFunctionName: String
 
     function openFunctionSignature(functionSignature: FunctionSignature) -> bool {
         return true; }
@@ -152,7 +152,7 @@ class MyVisitor {
     function closeConstParameter(constParameter: ConstParameter) {
         constParameterName = null }
 
-    String constParameterName;
+    mutable constParameterName: String
 
     function openVarParameter(varParameter: VarParameter) -> bool {
         varParameterName = varParameter.name
@@ -161,7 +161,7 @@ class MyVisitor {
     function closeVarParameter(varParameter: VarParameter) {
         varParameterName = null }
 
-    String varParameterName;
+    mutable varParameterName: String
 
     function openThrowsClause(throwsClause: ThrowsClause) -> bool {
         return true; }
@@ -189,7 +189,7 @@ class MyVisitor {
 
     function visitEnumCase(enumCase: EnumCase) { }
 
-    String enumCaseName;
+    mutable enumCaseName: String
 
     function openAdditionalCase(additionalCase: AdditionalCase) -> bool {
         return true; }
@@ -211,7 +211,7 @@ class MyVisitor {
 
     function visitGenericParameter(genericParameter: GenericParameter) { }
 
-    String genericParameterTypeName;
+    mutable genericParameterTypeName: String
 
     function openClassMember(classMember: ClassMember) -> bool {
         return true; }
@@ -308,7 +308,7 @@ class MyVisitor {
 
     function visitIdentifierExpression(identifierExpression: IdentifierExpression) { }
 
-    String identifierExpressionName;
+    mutable identifierExpressionName: String
 
     function visitLiteralExpression(literalExpression: LiteralExpression) { }
 
@@ -449,7 +449,7 @@ class MyVisitor {
     function closeIdentifierPattern(identifierPattern: IdentifierPattern) {
         identifierPatternIdentifier = null }
 
-    String identifierPatternIdentifier;
+    mutable identifierPatternIdentifier: String
 
     function openTuplePattern(tuplePattern: TuplePattern) -> bool {
         return true; }
@@ -483,14 +483,14 @@ class MyVisitor {
 
     function visitThisMember(thisMember: ThisMember) { }
 
-    String thisMemberName;
+    mutable thisMemberName: String
 
     function visitSuperInit(superInit: SuperInit) { }
 
 
     function visitSuperMember(superMember: SuperMember) { }
 
-    String superMemberName;
+    mutable superMemberName: String
 
     function openTypeIdentifier(typeIdentifier: TypeIdentifier) -> bool {
         typeIdentifierName = typeIdentifier.name
@@ -499,7 +499,7 @@ class MyVisitor {
     function closeTypeIdentifier(typeIdentifier: TypeIdentifier) {
         typeIdentifierName = null }
 
-    String typeIdentifierName;
+    mutable typeIdentifierName: String
 
     function openArrayType(arrayType: ArrayType) -> bool {
         return true; }
