@@ -25,7 +25,7 @@ _Result<Options, OptionsError> Options::parseArguments(_Page* _rp, _Page* _ep, _
                 case 'o': {
                     i++;
                     if (i == length)
-                        return _Result<Options, OptionsError>(new(_ep) OptionsError(new(_ep) _InvalidOption(*args[i])));
+                        return _Result<Options, OptionsError>(new(_ep) OptionsError(new(_ep) _invalidOption(*args[i])));
                     else
                         options.outputName = *args[i];
 
@@ -34,21 +34,21 @@ _Result<Options, OptionsError> Options::parseArguments(_Page* _rp, _Page* _ep, _
                 case 'd': {
                     i++;
                     if (i == length)
-                        return _Result<Options, OptionsError>(new(_ep) OptionsError(new(_ep) _InvalidOption(*args[i])));
+                        return _Result<Options, OptionsError>(new(_ep) OptionsError(new(_ep) _invalidOption(*args[i])));
                     else
                         options.directory = *args[i];
 
                     break;
                 }
                 default:
-                    return _Result<Options, OptionsError>(new(_ep) OptionsError(new(_ep) _UnknownOption(*args[i])));
+                    return _Result<Options, OptionsError>(new(_ep) OptionsError(new(_ep) _unknownOption(*args[i])));
             }
         }
 
         if (!options.outputName)
-            return _Result<Options, OptionsError>(new(_ep) OptionsError(noOutputOption));
+            return _Result<Options, OptionsError>(new(_ep) OptionsError(_OptionsError_noOutputOption));
         if (files->length() == 0)
-            return _Result<Options, OptionsError>(new(_ep) OptionsError(noFilesToCompile));
+            return _Result<Options, OptionsError>(new(_ep) OptionsError(_OptionsError_noFilesToCompile));
 
         options.files = &_Vector<_LetString>::create(options.getPage(), *files);
     }

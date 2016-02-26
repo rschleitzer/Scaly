@@ -11,43 +11,43 @@ public:
     Position* position;
 };
 
-class IdentifierExpected : public ParserErrorInfo {
+class _identifierExpected : public ParserErrorInfo {
 public:
-    IdentifierExpected(Position* position);
+    _identifierExpected(Position* position);
 };
 
-class LiteralExpected : public ParserErrorInfo {
+class _literalExpected : public ParserErrorInfo {
 public:
-    LiteralExpected(Position* position);
+    _literalExpected(Position* position);
 };
 
-class KeywordExpected: public ParserErrorInfo {
+class _keywordExpected: public ParserErrorInfo {
 public:
-    KeywordExpected(Position* position, _LetString* keyword);
+    _keywordExpected(Position* position, _LetString* keyword);
     _LetString* keyword;
 };
 
-class PunctuationExpected: public ParserErrorInfo {
+class _punctuationExpected: public ParserErrorInfo {
 public:
-    PunctuationExpected(Position* position, _LetString* punctuation);
+    _punctuationExpected(Position* position, _LetString* punctuation);
     _LetString* punctuation;
 };
 
-class OperatorExpected : public ParserErrorInfo {
+class _operatorExpected : public ParserErrorInfo {
 public:
-    OperatorExpected(Position* position);
+    _operatorExpected(Position* position);
 };
 
 class ParserError;
-class UnableToParse: public ParserErrorInfo {
+class _unableToParse: public ParserErrorInfo {
 public:
-    UnableToParse(Position* position, _Array<ParserError>* errors);
+    _unableToParse(Position* position, _Array<ParserError>* errors);
     _Array<ParserError>* errors;
 };
 
-class NotAtEnd : public ParserErrorInfo {
+class _notAtEnd : public ParserErrorInfo {
 public:
-    NotAtEnd(Position* position);
+    _notAtEnd(Position* position);
 };
 
 enum _ParserErrorCode {
@@ -63,37 +63,37 @@ enum _ParserErrorCode {
 class ParserError : public Object
 {
 public:
-    ParserError(IdentifierExpected* IdentifierExpected)
-    : errorCode(_ParserError_identifierExpected), errorInfo(IdentifierExpected) {}
+    ParserError(_identifierExpected* identifierExpected)
+    : errorCode(_ParserError_identifierExpected), errorInfo(identifierExpected) {}
 
-    ParserError(LiteralExpected* LiteralExpected)
-    : errorCode(_ParserError_literalExpected), errorInfo(LiteralExpected) {}
+    ParserError(_literalExpected* literalExpected)
+    : errorCode(_ParserError_literalExpected), errorInfo(literalExpected) {}
 
-    ParserError(KeywordExpected* KeywordExpected)
-    : errorCode(_ParserError_keywordExpected), errorInfo(KeywordExpected) {}
+    ParserError(_keywordExpected* keywordExpected)
+    : errorCode(_ParserError_keywordExpected), errorInfo(keywordExpected) {}
 
-    ParserError(PunctuationExpected* PunctuationExpected)
-    : errorCode(_ParserError_punctuationExpected), errorInfo(PunctuationExpected) {}
+    ParserError(_punctuationExpected* punctuationExpected)
+    : errorCode(_ParserError_punctuationExpected), errorInfo(punctuationExpected) {}
 
-    ParserError(OperatorExpected* OperatorExpected)
-    : errorCode(_ParserError_operatorExpected), errorInfo(OperatorExpected) {}
+    ParserError(_operatorExpected* operatorExpected)
+    : errorCode(_ParserError_operatorExpected), errorInfo(operatorExpected) {}
 
-    ParserError(UnableToParse* UnableToParse)
-    : errorCode(_ParserError_unableToParse), errorInfo(UnableToParse) {}
+    ParserError(_unableToParse* unableToParse)
+    : errorCode(_ParserError_unableToParse), errorInfo(unableToParse) {}
 
-    ParserError(NotAtEnd* NotAtEnd)
-    : errorCode(_ParserError_notAtEnd), errorInfo(NotAtEnd) {}
+    ParserError(_notAtEnd* notAtEnd)
+    : errorCode(_ParserError_notAtEnd), errorInfo(notAtEnd) {}
 
     long getErrorCode();
     void* getErrorInfo();
 
-    IdentifierExpected* getIdentifierExpected();
-    LiteralExpected* getLiteralExpected();
-    KeywordExpected* getKeywordExpected();
-    PunctuationExpected* getPunctuationExpected();
-    OperatorExpected* getOperatorExpected();
-    UnableToParse* getUnableToParse();
-    NotAtEnd* getNotAtEnd();
+    _identifierExpected* get_identifierExpected();
+    _literalExpected* get_literalExpected();
+    _keywordExpected* get_keywordExpected();
+    _punctuationExpected* get_punctuationExpected();
+    _operatorExpected* get_operatorExpected();
+    _unableToParse* get_unableToParse();
+    _notAtEnd* get_notAtEnd();
 
 private:
     _ParserErrorCode errorCode;

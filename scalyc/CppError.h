@@ -4,9 +4,9 @@
 using namespace scaly;
 namespace scalyc {
 
-class UnableToCreateOutputDirectory : public Object {
+class _unableToCreateOutputDirectory : public Object {
 public:
-    UnableToCreateOutputDirectory(_LetString* directory, DirectoryError* error);
+    _unableToCreateOutputDirectory(_LetString* directory, DirectoryError* error);
 
     _LetString* directory;
     DirectoryError* error;
@@ -19,13 +19,13 @@ enum _CppErrorCode {
 class CppError : public Object
 {
 public:
-    CppError(UnableToCreateOutputDirectory* UnableToCreateOutputDirectory)
-    : errorCode(_CppError_unableToCreateOutputDirectory), errorInfo(UnableToCreateOutputDirectory) {}
+    CppError(_unableToCreateOutputDirectory* unableToCreateOutputDirectory)
+    : errorCode(_CppError_unableToCreateOutputDirectory), errorInfo(unableToCreateOutputDirectory) {}
 
     long getErrorCode();
     void* getErrorInfo();
 
-    UnableToCreateOutputDirectory* getUnableToCreateOutputDirectory();
+    _unableToCreateOutputDirectory* get_unableToCreateOutputDirectory();
 
 private:
     _CppErrorCode errorCode;

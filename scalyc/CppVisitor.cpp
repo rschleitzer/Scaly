@@ -17,7 +17,7 @@ bool CppVisitor::openProgram(Program* program) {
     if (!Directory::exists(*programDirectory)) {
         DirectoryError* dirError = Directory::create(getPage(), *programDirectory);
         if (dirError) {
-            cppError = new(getPage()) CppError(new(getPage()) UnableToCreateOutputDirectory(programDirectory, dirError));
+            cppError = new(getPage()) CppError(new(getPage()) _unableToCreateOutputDirectory(programDirectory, dirError));
             return false; } }
 
     {

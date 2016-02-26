@@ -10,20 +10,20 @@ void* OptionsError::getErrorInfo() {
     return errorInfo;
 }
 
-_InvalidOption::_InvalidOption(_LetString* option)
+_invalidOption::_invalidOption(_LetString* option)
 : option(option){
 }
 
-_InvalidOption* OptionsError::getInvalidOption(){
-    return (_InvalidOption*)errorInfo;
+_invalidOption* OptionsError::get_invalidOption(){
+    return (_invalidOption*)errorInfo;
 }
 
-_UnknownOption::_UnknownOption(_LetString* option)
+_unknownOption::_unknownOption(_LetString* option)
 : option(option){
 }
 
-_UnknownOption* OptionsError::getUnknownOption(){
-    return (_UnknownOption*)errorInfo;
+_unknownOption* OptionsError::get_unknownOption(){
+    return (_unknownOption*)errorInfo;
 }
 
 }

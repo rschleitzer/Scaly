@@ -15,13 +15,13 @@ else {
     }
     else {
         switch (_result_options.getErrorCode()) {
-            case invalidOption: {
+            case _OptionsError_invalidOption: {
                 return 2;
             }
-            case noOutputOption: {
+            case _OptionsError_noOutputOption: {
                 return 3;
             }
-            case noFilesToCompile: {
+            case _OptionsError_noFilesToCompile: {
                 return 4;
             }
         }

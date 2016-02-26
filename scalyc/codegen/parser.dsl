@@ -222,7 +222,7 @@ _Result<"(id syntax)", ParserError> Parser::parse"(id syntax)"(_Page* _rp, _Page
     }
 "
                 )))
-"    return _Result<"(id syntax)", ParserError>(new(_ep) ParserError(new(_ep) UnableToParse(start, errors)));
+"    return _Result<"(id syntax)", ParserError>(new(_ep) ParserError(new(_ep) _unableToParse(start, errors)));
 "
             )
             ($ ; non-abstract syntax
@@ -238,7 +238,7 @@ _Result<"(id syntax)", ParserError> Parser::parse"(id syntax)"(_Page* _rp, _Page
 "                           (if (top? syntax) ($
 "        if (!isAtEnd()) {
             Position* current = lexer.getPosition(_ep);
-            return _Result<"(id syntax)", ParserError>(new(_ep) ParserError(new(_ep) NotAtEnd(current)));
+            return _Result<"(id syntax)", ParserError>(new(_ep) ParserError(new(_ep) _notAtEnd(current)));
         }
 "                           )"")
                             (if (property content) ($
@@ -261,7 +261,7 @@ _Result<"(id syntax)", ParserError> Parser::parse"(id syntax)"(_Page* _rp, _Page
 "                   (if (optional? content) "" ($
 "    else {
         return _Result<"(id syntax)", ParserError>("(if (string=? (type content) "syntax") ($ "_result_"(property content)".getError()") ($ "new(_ep) ParserError(new(_ep) "
-        (case (type content) (("keyword") "Keyword") (("punctuation") "Punctuation")(("identifier") "Identifier")(("literal") "Literal")(("prefixoperator" "binaryoperator" "postfixoperator") "Operator"))
+        (case (type content) (("keyword") "_keyword") (("punctuation") "_punctuation")(("identifier") "_identifier")(("literal") "_literal")(("prefixoperator" "binaryoperator" "postfixoperator") "_operator"))
         "Expected(start"(if (property content) (string-firstchar-upcase (property content)) ($ (string-firstchar-upcase (link content))(number->string (child-number content))))(case (type content) (("keyword" "punctuation") ($ ", &_LetString::create(_ep, *"((if (string=? (type content) "keyword") name-of-link link) content)")"))(else ""))"))"))");
     }
 "                   ))

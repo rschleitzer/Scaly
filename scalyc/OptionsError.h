@@ -5,39 +5,39 @@
 namespace scalyc
 {
 
-class _InvalidOption : public Object {
+class _invalidOption : public Object {
 public:
-    _InvalidOption(_LetString* option);
+    _invalidOption(_LetString* option);
 
     _LetString* option;
 };
 
-class _UnknownOption : public Object {
+class _unknownOption : public Object {
 public:
-    _UnknownOption(_LetString* option);
+    _unknownOption(_LetString* option);
 
     _LetString* option;
 };
 
 enum _OptionsErrorCode {
-    invalidOption = 1,
-    unknownOption,
-    noOutputOption,
-    noFilesToCompile,
+    _OptionsError_invalidOption = 1,
+    _OptionsError_unknownOption,
+    _OptionsError_noOutputOption,
+    _OptionsError_noFilesToCompile,
 };
 
 class OptionsError : public Object
 {
 public:
-    OptionsError(_InvalidOption* _InvalidOption)
-    : errorCode(invalidOption), errorInfo(_InvalidOption) {}
+    OptionsError(_invalidOption* invalidOption)
+    : errorCode(_OptionsError_invalidOption), errorInfo(invalidOption) {}
 
-    _InvalidOption* getInvalidOption();
+    _invalidOption* get_invalidOption();
 
-    OptionsError(_UnknownOption* _UnknownOption)
-    : errorCode(unknownOption), errorInfo(_UnknownOption) {}
+    OptionsError(_unknownOption* unknownOption)
+    : errorCode(_OptionsError_unknownOption), errorInfo(unknownOption) {}
 
-    _UnknownOption* getUnknownOption();
+    _unknownOption* get_unknownOption();
 
     OptionsError(_OptionsErrorCode code)
     : errorCode(code), errorInfo(0) {}
