@@ -338,7 +338,9 @@ void CppVisitor::writeParameter(_LetString* name, Type* parameterType) {
 }
 
 bool CppVisitor::isClass(_LetString* name) {
-    if (*name == "String")
+    if (    (*name == "String")
+        ||  (*name == "DirectoryError")
+       )
         return true;
 
     size_t _classes_length = classes->length();
@@ -379,14 +381,96 @@ bool CppVisitor::openEnumDeclaration(EnumDeclaration* enumDeclaration) {
 }
 
 void CppVisitor::closeEnumDeclaration(EnumDeclaration* enumDeclaration) {
+    _Vector<EnumMember>* members = enumDeclaration->members;
+    if (members) {
+        (*headerFile) += "enum _";
+        (*headerFile) += *enumDeclarationName;
+        (*headerFile) += "Code {\n";
+        size_t _members_length = members->length();
+        for (size_t _i = 0; _i < _members_length; _i++) {
+            (*headerFile) += "    _";
+            (*headerFile) += *enumDeclarationName;
+            (*headerFile) += "_";
+            (*headerFile) += *(*(*members)[_i])->enumCase->name;
+            if (!_i)
+                (*headerFile) += " = 1";
+            (*headerFile) += ",\n";
+        }
+        (*headerFile) += "};\n\n";
+    }
+    (*headerFile) += "class ";
+    (*headerFile) += *enumDeclarationName;
+    (*headerFile) += " : public Object\n{\npublic:\n";
+    if (members) {
+        size_t _members_length = members->length();
+        for (size_t _i = 0; _i < _members_length; _i++) {
+            (*headerFile) += "    ";
+            (*headerFile) += *enumDeclarationName;
+            (*headerFile) += "(_";
+            (*headerFile) += *(*(*members)[_i])->enumCase->name;
+            (*headerFile) += "* ";
+            (*headerFile) += *(*(*members)[_i])->enumCase->name;
+            (*headerFile) += ")\n    : errorCode(_";
+            (*headerFile) += *enumDeclarationName;
+            (*headerFile) += "_";
+            (*headerFile) += *(*(*members)[_i])->enumCase->name;
+            (*headerFile) += "), errorInfo(";
+            (*headerFile) += *(*(*members)[_i])->enumCase->name;
+            (*headerFile) += ") {}\n\n";
+        }
+    }
+    (*headerFile) += "    long getErrorCode();\n    void* getErrorInfo();\n\n";
+    if (members) {
+        size_t _members_length = members->length();
+        for (size_t _i = 0; _i < _members_length; _i++) {
+            (*headerFile) += "    _";
+            (*headerFile) += *(*(*members)[_i])->enumCase->name;
+            (*headerFile) += "* get_";
+            (*headerFile) += *(*(*members)[_i])->enumCase->name;
+            (*headerFile) += "()\n";
+        }
+    }
+    (*headerFile) += "\nprivate:\n    _CppErrorCode errorCode;\n    void* errorInfo;\n};";
     enumDeclarationName = 0;
 }
 
 bool CppVisitor::openEnumMember(EnumMember* enumMember) {
+    if (enumMember->parameterClause) {
+        (*headerFile) += "\n\nclass _";
+        (*headerFile) += *enumMember->enumCase->name;
+        (*headerFile) += " : public Object {\npublic:\n    _";
+        (*headerFile) += *enumMember->enumCase->name;
+        (*headerFile) += "(";
+    }
     return true;
 }
 
 void CppVisitor::closeEnumMember(EnumMember* enumMember) {
+    if (enumMember->parameterClause) {
+        (*headerFile) += ";\n\n";
+        _Vector<Parameter>* parameters = enumMember->parameterClause->parameters;
+        if (parameters) {
+            size_t _parameters_length = parameters->length();
+            for (size_t _i = 0; _i < _parameters_length; _i++) {
+                Parameter* parameter = *(*parameters)[_i];
+                if (parameter->_isConstParameter()) {
+                    ConstParameter* constParameter = (ConstParameter*)parameter;
+                    if (constParameter->parameterType->_isTypeIdentifier()) {
+                        TypeIdentifier* typeId = (TypeIdentifier*)constParameter->parameterType;
+                        (*headerFile) += "    ";
+                        (*headerFile) += getCppType(typeId->name);
+                        if (isClass(typeId->name)) {
+                            (*headerFile) += "*"; }
+                        (*headerFile) += " ";
+                        (*headerFile) += *constParameter->name;
+                        (*headerFile) += ";\n";
+                    }
+                }
+            }
+        }
+        (*headerFile) += "};\n\n";
+    }
+
 }
 
 void CppVisitor::visitEnumCase(EnumCase* enumCase) {
