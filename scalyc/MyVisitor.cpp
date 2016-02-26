@@ -195,20 +195,6 @@ bool MyVisitor::openEnumMember(EnumMember* enumMember) {
 void MyVisitor::closeEnumMember(EnumMember* enumMember) {
 }
 
-bool MyVisitor::openTupleType(TupleType* tupleType) {
-    return true;
-}
-
-void MyVisitor::closeTupleType(TupleType* tupleType) {
-}
-
-bool MyVisitor::openAdditionalType(AdditionalType* additionalType) {
-    return true;
-}
-
-void MyVisitor::closeAdditionalType(AdditionalType* additionalType) {
-}
-
 void MyVisitor::visitEnumCase(EnumCase* enumCase) {
 }
 

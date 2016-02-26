@@ -41,8 +41,6 @@ bool SyntaxNode::_isConstParameter() { return false; }
 bool SyntaxNode::_isVarParameter() { return false; }
 bool SyntaxNode::_isThrowsClause() { return false; }
 bool SyntaxNode::_isEnumMember() { return false; }
-bool SyntaxNode::_isTupleType() { return false; }
-bool SyntaxNode::_isAdditionalType() { return false; }
 bool SyntaxNode::_isEnumCase() { return false; }
 bool SyntaxNode::_isAdditionalCase() { return false; }
 bool SyntaxNode::_isClassBody() { return false; }
@@ -600,8 +598,8 @@ void ThrowsClause::accept(SyntaxVisitor* visitor) {
     visitor->closeThrowsClause(this);
 }
 
-EnumMember::EnumMember(EnumCase* enumCase, _Vector<AdditionalCase>* additionalCases, TupleType* typeOfTuple, Position* start, Position* end)
-: SyntaxNode(start, end), enumCase(enumCase), additionalCases(additionalCases), typeOfTuple(typeOfTuple) {}
+EnumMember::EnumMember(EnumCase* enumCase, _Vector<AdditionalCase>* additionalCases, ParameterClause* parameterClause, Position* start, Position* end)
+: SyntaxNode(start, end), enumCase(enumCase), additionalCases(additionalCases), parameterClause(parameterClause) {}
 
 bool EnumMember::_isEnumMember() { return true; }
 
@@ -617,41 +615,9 @@ void EnumMember::accept(SyntaxVisitor* visitor) {
             node->accept(visitor);
         }
     }
-    if (typeOfTuple)
-        typeOfTuple->accept(visitor);
+    if (parameterClause)
+        parameterClause->accept(visitor);
     visitor->closeEnumMember(this);
-}
-
-TupleType::TupleType(Type* typeOfTuple, _Vector<AdditionalType>* additionalTypes, Position* start, Position* end)
-: SyntaxNode(start, end), typeOfTuple(typeOfTuple), additionalTypes(additionalTypes) {}
-
-bool TupleType::_isTupleType() { return true; }
-
-void TupleType::accept(SyntaxVisitor* visitor) {
-    if (!visitor->openTupleType(this))
-        return;
-    typeOfTuple->accept(visitor);
-    if (additionalTypes) {
-        AdditionalType* node = 0;
-        size_t _alength = additionalTypes->length();
-        for (size_t _a = 0; _a < _alength; _a++) {
-            node = *(*additionalTypes)[_a];
-            node->accept(visitor);
-        }
-    }
-    visitor->closeTupleType(this);
-}
-
-AdditionalType::AdditionalType(Type* enumCase, Position* start, Position* end)
-: SyntaxNode(start, end), enumCase(enumCase) {}
-
-bool AdditionalType::_isAdditionalType() { return true; }
-
-void AdditionalType::accept(SyntaxVisitor* visitor) {
-    if (!visitor->openAdditionalType(this))
-        return;
-    enumCase->accept(visitor);
-    visitor->closeAdditionalType(this);
 }
 
 EnumCase::EnumCase(_LetString* name, Position* start, Position* end)

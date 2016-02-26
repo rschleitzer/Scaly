@@ -44,8 +44,6 @@ public:
     virtual bool _isVarParameter();
     virtual bool _isThrowsClause();
     virtual bool _isEnumMember();
-    virtual bool _isTupleType();
-    virtual bool _isAdditionalType();
     virtual bool _isEnumCase();
     virtual bool _isAdditionalCase();
     virtual bool _isClassBody();
@@ -464,32 +462,13 @@ public:
 
 class EnumMember : public SyntaxNode {
 public:
-    EnumMember(EnumCase* enumCase, _Vector<AdditionalCase>* additionalCases, TupleType* typeOfTuple, Position* start, Position* end);
+    EnumMember(EnumCase* enumCase, _Vector<AdditionalCase>* additionalCases, ParameterClause* parameterClause, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
     EnumCase* enumCase;
     _Vector<AdditionalCase>* additionalCases;
-    TupleType* typeOfTuple;
+    ParameterClause* parameterClause;
 
     virtual bool _isEnumMember();
-};
-
-class TupleType : public SyntaxNode {
-public:
-    TupleType(Type* typeOfTuple, _Vector<AdditionalType>* additionalTypes, Position* start, Position* end);
-    virtual void accept(SyntaxVisitor* visitor);
-    Type* typeOfTuple;
-    _Vector<AdditionalType>* additionalTypes;
-
-    virtual bool _isTupleType();
-};
-
-class AdditionalType : public SyntaxNode {
-public:
-    AdditionalType(Type* enumCase, Position* start, Position* end);
-    virtual void accept(SyntaxVisitor* visitor);
-    Type* enumCase;
-
-    virtual bool _isAdditionalType();
 };
 
 class EnumCase : public SyntaxNode {

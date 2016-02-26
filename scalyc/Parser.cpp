@@ -1045,88 +1045,13 @@ _Result<EnumMember, ParserError> Parser::parseEnumMember(_Page* _rp, _Page* _ep)
     if (_result_additionalCases.succeeded()) {
         additionalCases = _result_additionalCases.getResult();
     }
-    _Result<TupleType, ParserError> _result_typeOfTuple = parseTupleType(_rp, _ep);
-    TupleType* typeOfTuple = 0;
-    if (_result_typeOfTuple.succeeded()) {
-        typeOfTuple = _result_typeOfTuple.getResult();
+    _Result<ParameterClause, ParserError> _result_parameterClause = parseParameterClause(_rp, _ep);
+    ParameterClause* parameterClause = 0;
+    if (_result_parameterClause.succeeded()) {
+        parameterClause = _result_parameterClause.getResult();
     }
-    EnumMember* enumMember = new(_rp) EnumMember(enumCase, additionalCases, typeOfTuple, start, lexer.getPosition(_rp));
+    EnumMember* enumMember = new(_rp) EnumMember(enumCase, additionalCases, parameterClause, start, lexer.getPosition(_rp));
     return _Result<EnumMember, ParserError>(enumMember);
-}
-
-_Result<TupleType, ParserError> Parser::parseTupleType(_Page* _rp, _Page* _ep) {
-    Position* start = lexer.getPreviousPosition(_rp);
-    Position* startLeftParen1 = lexer.getPreviousPosition(_rp);
-    bool successLeftParen1 = lexer.parsePunctuation(leftParen);
-    if (successLeftParen1) {
-        lexer.advance();
-    }
-    else {
-        return _Result<TupleType, ParserError>(new(_ep) ParserError(new(_ep) PunctuationExpected(startLeftParen1, &_LetString::create(_ep, *leftParen))));
-    }
-    _Result<Type, ParserError> _result_typeOfTuple = parseType(_rp, _ep);
-    Type* typeOfTuple = 0;
-    if (_result_typeOfTuple.succeeded()) {
-        typeOfTuple = _result_typeOfTuple.getResult();
-    }
-    else {
-        return _Result<TupleType, ParserError>(_result_typeOfTuple.getError());
-    }
-    _Result<_Vector<AdditionalType>, ParserError> _result_additionalTypes = parseAdditionalTypeList(_rp, _ep);
-    _Vector<AdditionalType>* additionalTypes = 0;
-    if (_result_additionalTypes.succeeded()) {
-        additionalTypes = _result_additionalTypes.getResult();
-    }
-    Position* startRightParen4 = lexer.getPreviousPosition(_rp);
-    bool successRightParen4 = lexer.parsePunctuation(rightParen);
-    if (successRightParen4) {
-        lexer.advance();
-    }
-    else {
-        return _Result<TupleType, ParserError>(new(_ep) ParserError(new(_ep) PunctuationExpected(startRightParen4, &_LetString::create(_ep, *rightParen))));
-    }
-    TupleType* tupleType = new(_rp) TupleType(typeOfTuple, additionalTypes, start, lexer.getPosition(_rp));
-    return _Result<TupleType, ParserError>(tupleType);
-}
-
-_Result<_Vector<AdditionalType>, ParserError> Parser::parseAdditionalTypeList(_Page* _rp, _Page* _ep) {
-    // Make a region for the current block and get the Page
-    _Region _r; _Page* _p = _r.get();
-    _Array<AdditionalType>* additionalType = 0;
-    while (true) {
-        _Result<AdditionalType, ParserError> nodeResult = parseAdditionalType(_rp, _p);
-        if (nodeResult.succeeded()) {
-            if (!additionalType)
-                additionalType = new(_p) _Array<AdditionalType>();
-            additionalType->push(nodeResult.getResult());
-        }
-        else {
-            break;
-        }
-    }
-    return _Result<_Vector<AdditionalType>, ParserError>(additionalType ? &_Vector<AdditionalType>::create(_rp, *additionalType) : 0);
-}
-
-_Result<AdditionalType, ParserError> Parser::parseAdditionalType(_Page* _rp, _Page* _ep) {
-    Position* start = lexer.getPreviousPosition(_rp);
-    Position* startComma1 = lexer.getPreviousPosition(_rp);
-    bool successComma1 = lexer.parsePunctuation(comma);
-    if (successComma1) {
-        lexer.advance();
-    }
-    else {
-        return _Result<AdditionalType, ParserError>(new(_ep) ParserError(new(_ep) PunctuationExpected(startComma1, &_LetString::create(_ep, *comma))));
-    }
-    _Result<Type, ParserError> _result_enumCase = parseType(_rp, _ep);
-    Type* enumCase = 0;
-    if (_result_enumCase.succeeded()) {
-        enumCase = _result_enumCase.getResult();
-    }
-    else {
-        return _Result<AdditionalType, ParserError>(_result_enumCase.getError());
-    }
-    AdditionalType* additionalType = new(_rp) AdditionalType(enumCase, start, lexer.getPosition(_rp));
-    return _Result<AdditionalType, ParserError>(additionalType);
 }
 
 _Result<EnumCase, ParserError> Parser::parseEnumCase(_Page* _rp, _Page* _ep) {

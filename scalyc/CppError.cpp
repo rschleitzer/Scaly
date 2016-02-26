@@ -3,19 +3,15 @@ using namespace scaly;
 namespace scalyc {
 
 long CppError::getErrorCode() {
-    return (long)errorCode;
-}
+    return (long)errorCode; }
 
 void* CppError::getErrorInfo() {
-    return errorInfo;
-}
+    return errorInfo; }
 
-UnableToCreateOutputDirectory::UnableToCreateOutputDirectory(_VarString* outputDirectory, FileError* fileError)
-: outputDirectory(outputDirectory), fileError(fileError) {
-}
+UnableToCreateOutputDirectory::UnableToCreateOutputDirectory(_LetString* directory, DirectoryError* error)
+: directory(directory), error(error) { }
 
-UnableToCreateOutputDirectory* CppError::getUnableToCreateOutputDirectory(){
-    return (UnableToCreateOutputDirectory*)errorInfo;
-}
+UnableToCreateOutputDirectory* CppError::getUnableToCreateOutputDirectory() {
+    return (UnableToCreateOutputDirectory*)errorInfo; }
 
 }

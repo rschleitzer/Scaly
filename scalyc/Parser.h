@@ -82,11 +82,6 @@ public:
     _Result<_Vector<EnumMember>, ParserError> parseEnumMemberList(_Page* _rp, _Page* _ep);
     _Result<EnumMember, ParserError> parseEnumMember(_Page* _rp, _Page* _ep);
 
-    _Result<TupleType, ParserError> parseTupleType(_Page* _rp, _Page* _ep);
-
-    _Result<_Vector<AdditionalType>, ParserError> parseAdditionalTypeList(_Page* _rp, _Page* _ep);
-    _Result<AdditionalType, ParserError> parseAdditionalType(_Page* _rp, _Page* _ep);
-
     _Result<EnumCase, ParserError> parseEnumCase(_Page* _rp, _Page* _ep);
 
     _Result<_Vector<AdditionalCase>, ParserError> parseAdditionalCaseList(_Page* _rp, _Page* _ep);

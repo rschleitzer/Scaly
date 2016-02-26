@@ -66,10 +66,6 @@ public:
     virtual void closeThrowsClause(ThrowsClause* throwsClause);
     virtual bool openEnumMember(EnumMember* enumMember);
     virtual void closeEnumMember(EnumMember* enumMember);
-    virtual bool openTupleType(TupleType* tupleType);
-    virtual void closeTupleType(TupleType* tupleType);
-    virtual bool openAdditionalType(AdditionalType* additionalType);
-    virtual void closeAdditionalType(AdditionalType* additionalType);
     virtual void visitEnumCase(EnumCase* enumCase);
     _LetString* enumCaseName;
     virtual bool openAdditionalCase(AdditionalCase* additionalCase);

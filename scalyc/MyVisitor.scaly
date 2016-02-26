@@ -175,18 +175,6 @@ class MyVisitor : SyntaxVisitor {
     function closeEnumMember(enumMember: EnumMember) { }
 
 
-    function openTupleType(tupleType: TupleType) -> bool {
-        return true; }
-
-    function closeTupleType(tupleType: TupleType) { }
-
-
-    function openAdditionalType(additionalType: AdditionalType) -> bool {
-        return true; }
-
-    function closeAdditionalType(additionalType: AdditionalType) { }
-
-
     function visitEnumCase(enumCase: EnumCase) { }
 
     mutable enumCaseName: String

@@ -1146,96 +1146,17 @@ class Parser {
         }
         {
             let start: Position = lexer.getPosition()
-            let result: TupleType node = parseTupleType() catch _(error) {
+            let result: ParameterClause node = parseParameterClause() catch _(error) {
                  null
             }
 
             if enumMember == null
                 enumMember = EnumMember(start, lexer.getPosition())
 
-            enumMember.typeOfTuple = node
+            enumMember.parameterClause = node
         }
 
         return enumMember
-    }
-
-    function parseTupleType() -> TupleType throws ParserError {
-        mutable tupleType: TupleType? = null
-        {
-            let start: Position = lexer.getPosition()
-            let success: bool = lexer.parsePunctuation(leftParen)
-            if success
-                lexer.advance()
-
-            if tupleType == null
-                tupleType = TupleType(start, lexer.getPosition())
-        }
-        {
-            let start: Position = lexer.getPosition()
-            let result: Type node = parseType() catch _(error) {
-                throw (error)
-            }
-
-            if tupleType == null
-                tupleType = TupleType(start, lexer.getPosition())
-
-            tupleType.typeOfTuple = node
-        }
-        {
-            let start: Position = lexer.getPosition()
-            let result: [AdditionalType] node = parseAdditionalTypeList() catch _(error) {
-                 null
-            }
-
-            if tupleType == null
-                tupleType = TupleType(start, lexer.getPosition())
-
-            tupleType.additionalTypes = node
-        }
-        {
-            let start: Position = lexer.getPosition()
-            let success: bool = lexer.parsePunctuation(rightParen)
-            if success
-                lexer.advance()
-
-            if tupleType == null
-                tupleType = TupleType(start, lexer.getPosition())
-        }
-
-        return tupleType
-    }
-
-    function parseAdditionalTypeList() -> [AdditionalType] throws ParserError {
-        mutable (string-firstchar-downcase additionalType): [AdditionalType]? = [AdditionalType]()
-        while true
-            additionalType.push(parseAdditionalType() catch _ break)
-        return additionalType
-    }
-
-    function parseAdditionalType() -> AdditionalType throws ParserError {
-        mutable additionalType: AdditionalType? = null
-        {
-            let start: Position = lexer.getPosition()
-            let success: bool = lexer.parsePunctuation(comma)
-            if success
-                lexer.advance()
-
-            if additionalType == null
-                additionalType = AdditionalType(start, lexer.getPosition())
-        }
-        {
-            let start: Position = lexer.getPosition()
-            let result: Type node = parseType() catch _(error) {
-                throw (error)
-            }
-
-            if additionalType == null
-                additionalType = AdditionalType(start, lexer.getPosition())
-
-            additionalType.enumCase = node
-        }
-
-        return additionalType
     }
 
     function parseEnumCase() -> EnumCase throws ParserError {

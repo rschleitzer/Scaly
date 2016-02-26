@@ -72,10 +72,6 @@ class ThrowsClause;
 
 class EnumMember;
 
-class TupleType;
-
-class AdditionalType;
-
 class EnumCase;
 
 class AdditionalCase;
@@ -288,10 +284,6 @@ public:
     virtual void closeThrowsClause(ThrowsClause* throwsClause) = 0;
     virtual bool openEnumMember(EnumMember* enumMember) = 0;
     virtual void closeEnumMember(EnumMember* enumMember) = 0;
-    virtual bool openTupleType(TupleType* tupleType) = 0;
-    virtual void closeTupleType(TupleType* tupleType) = 0;
-    virtual bool openAdditionalType(AdditionalType* additionalType) = 0;
-    virtual void closeAdditionalType(AdditionalType* additionalType) = 0;
     virtual void visitEnumCase(EnumCase* enumCase) = 0;
     virtual bool openAdditionalCase(AdditionalCase* additionalCase) = 0;
     virtual void closeAdditionalCase(AdditionalCase* additionalCase) = 0;

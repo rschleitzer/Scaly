@@ -15,10 +15,10 @@ bool CppVisitor::openProgram(Program* program) {
         programDirectory = &_LetString::create(this->getPage(), ".");
 
     if (!Directory::exists(*programDirectory)) {
-        _Region _region; _Page* _p = _region.get();
-        if (Directory::create(_p, *programDirectory))
-            return false;
-    }
+        DirectoryError* dirError = Directory::create(getPage(), *programDirectory);
+        if (dirError) {
+            cppError = new(getPage()) CppError(new(getPage()) UnableToCreateOutputDirectory(programDirectory, dirError));
+            return false; } }
 
     {
         _Region _region; _Page* _p = _region.get();
@@ -387,20 +387,6 @@ bool CppVisitor::openEnumMember(EnumMember* enumMember) {
 }
 
 void CppVisitor::closeEnumMember(EnumMember* enumMember) {
-}
-
-bool CppVisitor::openTupleType(TupleType* tupleType) {
-    return true;
-}
-
-void CppVisitor::closeTupleType(TupleType* tupleType) {
-}
-
-bool CppVisitor::openAdditionalType(AdditionalType* additionalType) {
-    return true;
-}
-
-void CppVisitor::closeAdditionalType(AdditionalType* additionalType) {
 }
 
 void CppVisitor::visitEnumCase(EnumCase* enumCase) {
@@ -1025,6 +1011,8 @@ void CppVisitor::buildProjectFileString(_VarString* projectFile, Program* progra
     (*projectFile) += "        <ClangCmpFlagsC/>\n        <ClangCmpFlags/>\n        <ClangPP/>\n";
     (*projectFile) += "        <SearchPaths/>\n      </Completion>\n    </Configuration>\n  </Settings>\n</CodeLite_Project>\n";
 }
+
+bool CppVisitor::_isCppVisitor() { return true; }
 
 Inherits::Inherits(_LetString* className) {
     name = &_LetString::create(getPage(), *className);

@@ -573,7 +573,7 @@ class ThrowsClause : SyntaxNode {
 
 class EnumMember : SyntaxNode {
 
-    init(enumCase: EnumCase, additionalCases: [AdditionalCase], typeOfTuple: TupleType, start: Position, end: Position) {
+    init(enumCase: EnumCase, additionalCases: [AdditionalCase], parameterClause: ParameterClause, start: Position, end: Position) {
         super.init(start, end)
     }
 
@@ -585,51 +585,15 @@ class EnumMember : SyntaxNode {
                 node.accept(visitor)
             }
         }
-        if typeOfTuple != nil {
-            typeOfTuple!.accept(visitor)
+        if parameterClause != nil {
+            parameterClause!.accept(visitor)
         }
         visitor.closeEnumMember(this)
     }
 
     let enumCase: EnumCase?
     let additionalCases: [AdditionalCase]?
-    let typeOfTuple: TupleType?
-}
-
-class TupleType : SyntaxNode {
-
-    init(typeOfTuple: Type, additionalTypes: [AdditionalType], start: Position, end: Position) {
-        super.init(start, end)
-    }
-
-    function accept(mutable visitor: SyntaxVisitor) {
-        visitor.openTupleType(this)
-        typeOfTuple!.accept(visitor)
-        if additionalTypes != nil {
-            for node in additionalTypes! {
-                node.accept(visitor)
-            }
-        }
-        visitor.closeTupleType(this)
-    }
-
-    let typeOfTuple: Type?
-    let additionalTypes: [AdditionalType]?
-}
-
-class AdditionalType : SyntaxNode {
-
-    init(enumCase: Type, start: Position, end: Position) {
-        super.init(start, end)
-    }
-
-    function accept(mutable visitor: SyntaxVisitor) {
-        visitor.openAdditionalType(this)
-        enumCase!.accept(visitor)
-        visitor.closeAdditionalType(this)
-    }
-
-    let enumCase: Type?
+    let parameterClause: ParameterClause?
 }
 
 class EnumCase : SyntaxNode {

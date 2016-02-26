@@ -7,16 +7,16 @@ namespace scalyc
 
 class UnableToReadFile : public Object {
 public:
-    UnableToReadFile(_LetString* file, FileError* fileError);
+    UnableToReadFile(_LetString* file, FileError* error);
 
     _LetString* file;
-    FileError* fileError;
+    FileError* error;
 };
 
 class SyntaxError : public Object {
 public:
-    SyntaxError(ParserError* parserError);
-    ParserError* parserError;
+    SyntaxError(ParserError* error);
+    ParserError* error;
 };
 
 enum _CompilerErrorCode {

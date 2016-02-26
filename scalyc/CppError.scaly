@@ -1,0 +1,3 @@
+enum CppError {
+    case unableToCreateOutputDirectory(directory: String, error: DirectoryError)
+}

@@ -159,17 +159,7 @@
         <content link = case
         <content link = EnumCase                                property = enumCase
         <content link = AdditionalCase     multiple optional    property = additionalCases
-        <content link = TupleType                   optional    property = typeOfTuple
-
-    <syntax id = TupleType
-        <content link = leftParen
-        <content link = Type                                    property = typeOfTuple
-        <content link = AdditionalType     multiple optional    property = additionalTypes
-        <content link = rightParen
-
-    <syntax id = AdditionalType            multiple
-        <content link = comma
-        <content link = Type                                    property = enumCase
+        <content link = ParameterClause             optional    property = parameterClause
 
     <syntax id = EnumCase
         <content identifier                                     property = name
