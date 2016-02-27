@@ -25,18 +25,18 @@ public:
 
 
 
-class _unableToCreateOutputDir : public Object {
+class _CompilerError_unableToCreateOutputDirectory : public Object {
 public:
-    _unableToCreateOutputDir(_LetString* directory, DirectoryError* error);
+    _CompilerError_unableToCreateOutputDirectory(_LetString* directory, DirectoryError* error);
 
     _LetString* directory;
     DirectoryError* error;
 };
 
 enum _CompilerErrorCode {
-    _CompilerError_unableToReadFile = 1,
-    _CompilerError_syntaxError,
-    _CompilerError_unableToCreateOutputDir,
+    _CompilerErrorCode_unableToReadFile = 1,
+    _CompilerErrorCode_syntaxError,
+    _CompilerErrorCode_unableToCreateOutputDirectory,
 };
 
 class CompilerError : public Object
@@ -46,20 +46,20 @@ public:
     : errorCode(errorCode), errorInfo(0) {}
 
     CompilerError(_unableToReadFile* unableToReadFile)
-    : errorCode(_CompilerError_unableToReadFile), errorInfo(unableToReadFile) {}
+    : errorCode(_CompilerErrorCode_unableToReadFile), errorInfo(unableToReadFile) {}
 
     CompilerError(_syntaxError* syntaxError)
-    : errorCode(_CompilerError_syntaxError), errorInfo(syntaxError) {}
+    : errorCode(_CompilerErrorCode_syntaxError), errorInfo(syntaxError) {}
 
-    CompilerError(_unableToCreateOutputDir* unableToCreateOutputDir)
-    : errorCode(_CompilerError_unableToCreateOutputDir), errorInfo(unableToCreateOutputDir) {}
+    CompilerError(_CompilerError_unableToCreateOutputDirectory* unableToCreateOutputDirectory)
+    : errorCode(_CompilerErrorCode_unableToCreateOutputDirectory), errorInfo(unableToCreateOutputDirectory) {}
 
     long getErrorCode();
     void* getErrorInfo();
 
     _unableToReadFile* get_unableToReadFile();
     _syntaxError* get_syntaxError();
-    _unableToCreateOutputDir* get_unableToCreateOutputDir();
+    _unableToCreateOutputDirectory* get_unableToCreateOutputDirectory();
 
 private:
     _CompilerErrorCode errorCode;

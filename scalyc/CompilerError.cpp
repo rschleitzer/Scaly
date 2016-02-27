@@ -14,7 +14,7 @@ _unableToReadFile::_unableToReadFile(_LetString* file, FileError* error)
 : file(file), error(error) {
 }
 
-_unableToCreateOutputDir::_unableToCreateOutputDir(_LetString* directory, DirectoryError* error)
+_CompilerError_unableToCreateOutputDirectory::_CompilerError_unableToCreateOutputDirectory(_LetString* directory, DirectoryError* error)
 : directory(directory), error(error) {
 }
 
