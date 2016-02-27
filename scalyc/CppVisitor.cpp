@@ -403,34 +403,44 @@ void CppVisitor::closeEnumDeclaration(EnumDeclaration* enumDeclaration) {
     }
     (*headerFile) += "class ";
     (*headerFile) += *enumDeclarationName;
-    (*headerFile) += " : public Object\n{\npublic:\n";
+    (*headerFile) += " : public Object\n{\npublic:\n    ";
+    (*headerFile) += *enumDeclarationName;
+    (*headerFile) += "(_";
+    (*headerFile) += *enumDeclarationName;
+    (*headerFile) += "Code errorCode)\n    : errorCode(errorCode), errorInfo(0) {}\n\n";
     if (members) {
         size_t _members_length = members->length();
         for (size_t _i = 0; _i < _members_length; _i++) {
-            (*headerFile) += "    ";
-            (*headerFile) += *enumDeclarationName;
-            (*headerFile) += "(_";
-            (*headerFile) += *(*(*members)[_i])->enumCase->name;
-            (*headerFile) += "* ";
-            (*headerFile) += *(*(*members)[_i])->enumCase->name;
-            (*headerFile) += ")\n    : errorCode(_";
-            (*headerFile) += *enumDeclarationName;
-            (*headerFile) += "_";
-            (*headerFile) += *(*(*members)[_i])->enumCase->name;
-            (*headerFile) += "), errorInfo(";
-            (*headerFile) += *(*(*members)[_i])->enumCase->name;
-            (*headerFile) += ") {}\n\n";
+            EnumMember* member = *(*members)[_i];
+            if (member->parameterClause) {
+                (*headerFile) += "    ";
+                (*headerFile) += *enumDeclarationName;
+                (*headerFile) += "(_";
+                (*headerFile) += *member->enumCase->name;
+                (*headerFile) += "* ";
+                (*headerFile) += *member->enumCase->name;
+                (*headerFile) += ")\n    : errorCode(_";
+                (*headerFile) += *enumDeclarationName;
+                (*headerFile) += "_";
+                (*headerFile) += *member->enumCase->name;
+                (*headerFile) += "), errorInfo(";
+                (*headerFile) += *member->enumCase->name;
+                (*headerFile) += ") {}\n\n";
+            }
         }
     }
     (*headerFile) += "    long getErrorCode();\n    void* getErrorInfo();\n\n";
     if (members) {
         size_t _members_length = members->length();
         for (size_t _i = 0; _i < _members_length; _i++) {
-            (*headerFile) += "    _";
-            (*headerFile) += *(*(*members)[_i])->enumCase->name;
-            (*headerFile) += "* get_";
-            (*headerFile) += *(*(*members)[_i])->enumCase->name;
-            (*headerFile) += "();\n";
+            EnumMember* member = *(*members)[_i];
+            if (member->parameterClause) {
+                (*headerFile) += "    _";
+                (*headerFile) += *member->enumCase->name;
+                (*headerFile) += "* get_";
+                (*headerFile) += *member->enumCase->name;
+                (*headerFile) += "();\n";
+            }
         }
     }
     (*headerFile) += "\nprivate:\n    _";

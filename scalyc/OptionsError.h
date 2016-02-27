@@ -1,9 +1,10 @@
-#ifndef __scalyc_OptionsError__
-#define __scalyc_OptionsError__
+#ifndef __scalyc__OptionsError__
+#define __scalyc__OptionsError__
 #include "scalyc.h"
+using namespace scaly;
+namespace scalyc {
 
-namespace scalyc
-{
+class OptionsError;
 
 class _invalidOption : public Object {
 public:
@@ -11,6 +12,8 @@ public:
 
     _LetString* option;
 };
+
+
 
 class _unknownOption : public Object {
 public:
@@ -29,22 +32,20 @@ enum _OptionsErrorCode {
 class OptionsError : public Object
 {
 public:
+    OptionsError(_OptionsErrorCode errorCode)
+    : errorCode(errorCode), errorInfo(0) {}
+
     OptionsError(_invalidOption* invalidOption)
     : errorCode(_OptionsError_invalidOption), errorInfo(invalidOption) {}
-
-    _invalidOption* get_invalidOption();
 
     OptionsError(_unknownOption* unknownOption)
     : errorCode(_OptionsError_unknownOption), errorInfo(unknownOption) {}
 
-    _unknownOption* get_unknownOption();
-
-    OptionsError(_OptionsErrorCode code)
-    : errorCode(code), errorInfo(0) {}
-
     long getErrorCode();
     void* getErrorInfo();
 
+    _invalidOption* get_invalidOption();
+    _unknownOption* get_unknownOption();
 
 private:
     _OptionsErrorCode errorCode;
@@ -52,4 +53,4 @@ private:
 };
 
 }
-#endif//__scalyc_OptionsError__
+#endif // __scalyc__OptionsError__
