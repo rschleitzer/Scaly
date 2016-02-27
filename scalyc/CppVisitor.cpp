@@ -470,6 +470,19 @@ void CppVisitor::closeEnumMember(EnumMember* enumMember) {
                         (*headerFile) += *constParameter->name;
                         (*headerFile) += ";\n";
                     }
+                    else if (constParameter->parameterType->_isArrayType()) {
+                        ArrayType* arrayType = (ArrayType*)constParameter->parameterType;
+                        (*headerFile) += "    ";
+                        Type* type = arrayType->elementType;
+                        if (type->_isTypeIdentifier()) {
+                            TypeIdentifier* typeId = (TypeIdentifier*)type;
+                            (*headerFile) += "_Vector<";
+                            (*headerFile) += getCppType(typeId->name);
+                            (*headerFile) += ">* ";
+                            (*headerFile) += *constParameter->name;
+                            (*headerFile) += ";\n";
+                        }
+                    }
                 }
             }
         }
