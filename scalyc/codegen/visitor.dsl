@@ -96,7 +96,8 @@ public:"
     ))))
 "
 
-    virtual bool _is"(if concrete "MyVisitor" "SyntaxVisitor")"();
+    virtual bool _isSyntaxVisitor();
+    virtual bool _isMyVisitor();
 };
 
 }
@@ -142,8 +143,10 @@ void MyVisitor::visit"(id syntax)"("(id syntax)"* "(string-firstchar-downcase (i
         )
     )))
 "
-    bool MyVisitor::_isMyVisitor() { return true; }
-    bool SyntaxVisitor::_isSyntaxVisitor() { return true; }
+bool SyntaxVisitor::_isSyntaxVisitor() { return true; }
+bool SyntaxVisitor::_isMyVisitor() { return true; }
+bool MyVisitor::_isSyntaxVisitor() { return true; }
+bool MyVisitor::_isMyVisitor() { return true; }
 }
 "
 ))

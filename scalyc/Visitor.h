@@ -398,6 +398,7 @@ public:
     virtual void closeInheritance(Inheritance* inheritance) = 0;
 
     virtual bool _isSyntaxVisitor();
+    virtual bool _isMyVisitor();
 };
 
 }

@@ -186,6 +186,7 @@ public:
     virtual bool openInheritance(Inheritance* inheritance);
     virtual void closeInheritance(Inheritance* inheritance);
 
+    virtual bool _isSyntaxVisitor();
     virtual bool _isMyVisitor();
 };
 
