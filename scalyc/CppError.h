@@ -4,6 +4,8 @@
 using namespace scaly;
 namespace scalyc {
 
+class CppError;
+
 class _unableToCreateOutputDirectory : public Object {
 public:
     _unableToCreateOutputDirectory(_LetString* directory, DirectoryError* error);

@@ -377,6 +377,9 @@ void CppVisitor::closeThrowsClause(ThrowsClause* throwsClause) {
 
 bool CppVisitor::openEnumDeclaration(EnumDeclaration* enumDeclaration) {
     enumDeclarationName = enumDeclaration->name;
+    (*headerFile) += "\n\nclass ";
+    (*headerFile) += *enumDeclarationName;
+    (*headerFile) += ";";
     return true;
 }
 
@@ -430,7 +433,9 @@ void CppVisitor::closeEnumDeclaration(EnumDeclaration* enumDeclaration) {
             (*headerFile) += "();\n";
         }
     }
-    (*headerFile) += "\nprivate:\n    _CppErrorCode errorCode;\n    void* errorInfo;\n};";
+    (*headerFile) += "\nprivate:\n    _";
+    (*headerFile) += *enumDeclarationName;
+    (*headerFile) +="Code errorCode;\n    void* errorInfo;\n};";
     enumDeclarationName = 0;
 }
 
