@@ -40,7 +40,8 @@ CompilerError* Compiler::compileFiles(_Page* _ep, Options& options) {
     if (cppError) {
         switch (cppError->getErrorCode()) {
             case _CppError_unableToCreateOutputDirectory:
-                return new(_ep) CompilerError(cppError->get_unableToCreateOutputDirectory());
+                _unableToCreateOutputDirectory* uTCOD = cppError->get_unableToCreateOutputDirectory();
+                return new(_ep) CompilerError(new(_ep) _unableToCreateOutputDir(uTCOD->directory, uTCOD->error));
         }
     }
 

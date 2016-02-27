@@ -340,6 +340,8 @@ void CppVisitor::writeParameter(_LetString* name, Type* parameterType) {
 bool CppVisitor::isClass(_LetString* name) {
     if (    (*name == "String")
         ||  (*name == "DirectoryError")
+        ||  (*name == "FileError")
+        ||  (*name == "ParserError")
        )
         return true;
 

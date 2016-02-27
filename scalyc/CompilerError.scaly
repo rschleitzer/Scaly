@@ -1,4 +1,5 @@
 enum CompilerError {
     case unableToReadFile(file: String, error: FileError)
     case syntaxError(error: ParserError)
+    case unableToCreateOutputDir(directory: String, error: DirectoryError)
 }

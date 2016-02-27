@@ -14,6 +14,10 @@ _unableToReadFile::_unableToReadFile(_LetString* file, FileError* error)
 : file(file), error(error) {
 }
 
+_unableToCreateOutputDir::_unableToCreateOutputDir(_LetString* directory, DirectoryError* error)
+: directory(directory), error(error) {
+}
+
 _unableToReadFile* CompilerError::get_unableToReadFile(){
     return (_unableToReadFile*)errorInfo;
 }
