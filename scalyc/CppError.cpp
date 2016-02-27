@@ -8,10 +8,10 @@ long CppError::getErrorCode() {
 void* CppError::getErrorInfo() {
     return errorInfo; }
 
-_unableToCreateOutputDirectory::_unableToCreateOutputDirectory(_LetString* directory, DirectoryError* error)
+_CppError_unableToCreateOutputDirectory::_CppError_unableToCreateOutputDirectory(_LetString* directory, DirectoryError* error)
 : directory(directory), error(error) { }
 
-_unableToCreateOutputDirectory* CppError::get_unableToCreateOutputDirectory() {
-    return (_unableToCreateOutputDirectory*)errorInfo; }
+_CppError_unableToCreateOutputDirectory* CppError::get_unableToCreateOutputDirectory() {
+    return (_CppError_unableToCreateOutputDirectory*)errorInfo; }
 
 }

@@ -17,7 +17,7 @@ bool CppVisitor::openProgram(Program* program) {
     if (!Directory::exists(*programDirectory)) {
         DirectoryError* dirError = Directory::create(getPage(), *programDirectory);
         if (dirError) {
-            cppError = new(getPage()) CppError(new(getPage()) _unableToCreateOutputDirectory(programDirectory, dirError));
+            cppError = new(getPage()) CppError(new(getPage()) _CppError_unableToCreateOutputDirectory(programDirectory, dirError));
             return false; } }
 
     {
@@ -381,7 +381,7 @@ bool CppVisitor::openEnumDeclaration(EnumDeclaration* enumDeclaration) {
     enumDeclarationName = enumDeclaration->name;
     (*headerFile) += "\n\nclass ";
     (*headerFile) += *enumDeclarationName;
-    (*headerFile) += ";";
+    (*headerFile) += ";\n";
     return true;
 }
 
@@ -395,7 +395,7 @@ void CppVisitor::closeEnumDeclaration(EnumDeclaration* enumDeclaration) {
         for (size_t _i = 0; _i < _members_length; _i++) {
             (*headerFile) += "    _";
             (*headerFile) += *enumDeclarationName;
-            (*headerFile) += "_";
+            (*headerFile) += "Code_";
             (*headerFile) += *(*(*members)[_i])->enumCase->name;
             if (!_i)
                 (*headerFile) += " = 1";
@@ -418,12 +418,14 @@ void CppVisitor::closeEnumDeclaration(EnumDeclaration* enumDeclaration) {
                 (*headerFile) += "    ";
                 (*headerFile) += *enumDeclarationName;
                 (*headerFile) += "(_";
+                (*headerFile) += *enumDeclarationName;
+                (*headerFile) += "_";
                 (*headerFile) += *member->enumCase->name;
                 (*headerFile) += "* ";
                 (*headerFile) += *member->enumCase->name;
                 (*headerFile) += ")\n    : errorCode(_";
                 (*headerFile) += *enumDeclarationName;
-                (*headerFile) += "_";
+                (*headerFile) += "Code_";
                 (*headerFile) += *member->enumCase->name;
                 (*headerFile) += "), errorInfo(";
                 (*headerFile) += *member->enumCase->name;
@@ -438,6 +440,8 @@ void CppVisitor::closeEnumDeclaration(EnumDeclaration* enumDeclaration) {
             EnumMember* member = *(*members)[_i];
             if (member->parameterClause) {
                 (*headerFile) += "    _";
+                (*headerFile) += *enumDeclarationName;
+                (*headerFile) += "_";
                 (*headerFile) += *member->enumCase->name;
                 (*headerFile) += "* get_";
                 (*headerFile) += *member->enumCase->name;
@@ -453,9 +457,13 @@ void CppVisitor::closeEnumDeclaration(EnumDeclaration* enumDeclaration) {
 
 bool CppVisitor::openEnumMember(EnumMember* enumMember) {
     if (enumMember->parameterClause) {
-        (*headerFile) += "\n\nclass _";
+        (*headerFile) += "\nclass _";
+        (*headerFile) += *enumDeclarationName;
+        (*headerFile) += "_";
         (*headerFile) += *enumMember->enumCase->name;
         (*headerFile) += " : public Object {\npublic:\n    _";
+        (*headerFile) += *enumDeclarationName;
+        (*headerFile) += "_";
         (*headerFile) += *enumMember->enumCase->name;
         (*headerFile) += "(";
     }
@@ -498,7 +506,7 @@ void CppVisitor::closeEnumMember(EnumMember* enumMember) {
                 }
             }
         }
-        (*headerFile) += "};\n\n";
+        (*headerFile) += "};\n";
     }
 
 }

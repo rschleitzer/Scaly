@@ -6,114 +6,104 @@ namespace scalyc {
 
 class ParserError;
 
-class _identifierExpected : public Object {
+class _ParserError_identifierExpected : public Object {
 public:
-    _identifierExpected(Position* position);
+    _ParserError_identifierExpected(Position* position);
 
     Position* position;
 };
 
-
-
-class _literalExpected : public Object {
+class _ParserError_literalExpected : public Object {
 public:
-    _literalExpected(Position* position);
+    _ParserError_literalExpected(Position* position);
 
     Position* position;
 };
 
-
-
-class _keywordExpected : public Object {
+class _ParserError_keywordExpected : public Object {
 public:
-    _keywordExpected(Position* position, _LetString* keyword);
+    _ParserError_keywordExpected(Position* position, _LetString* keyword);
 
     Position* position;
     _LetString* keyword;
 };
 
-
-
-class _punctuationExpected : public Object {
+class _ParserError_punctuationExpected : public Object {
 public:
-    _punctuationExpected(Position* position, _LetString* punctuation);
+    _ParserError_punctuationExpected(Position* position, _LetString* punctuation);
 
     Position* position;
     _LetString* punctuation;
 };
 
-
-
-class _operatorExpected : public Object {
+class _ParserError_operatorExpected : public Object {
 public:
-    _operatorExpected(Position* position);
+    _ParserError_operatorExpected(Position* position);
 
     Position* position;
 };
 
-
-
-class _unableToParse : public Object {
+class _ParserError_unableToParse : public Object {
 public:
-    _unableToParse(Position* position, _Vector<ParserError>* errors);
+    _ParserError_unableToParse(Position* position, _Vector<ParserError>* errors);
 
     Position* position;
     _Vector<ParserError>* errors;
 };
 
-
-
-class _notAtEnd : public Object {
+class _ParserError_notAtEnd : public Object {
 public:
-    _notAtEnd(Position* position);
+    _ParserError_notAtEnd(Position* position);
 
     Position* position;
 };
-
 enum _ParserErrorCode {
-    _ParserError_identifierExpected = 1,
-    _ParserError_literalExpected,
-    _ParserError_keywordExpected,
-    _ParserError_punctuationExpected,
-    _ParserError_operatorExpected,
-    _ParserError_unableToParse,
-    _ParserError_notAtEnd,
+    _ParserErrorCode_identifierExpected = 1,
+    _ParserErrorCode_literalExpected,
+    _ParserErrorCode_keywordExpected,
+    _ParserErrorCode_punctuationExpected,
+    _ParserErrorCode_operatorExpected,
+    _ParserErrorCode_unableToParse,
+    _ParserErrorCode_notAtEnd,
 };
 
 class ParserError : public Object
 {
 public:
-    ParserError(_identifierExpected* identifierExpected)
-    : errorCode(_ParserError_identifierExpected), errorInfo(identifierExpected) {}
+    ParserError(_ParserErrorCode errorCode)
+    : errorCode(errorCode), errorInfo(0) {}
 
-    ParserError(_literalExpected* literalExpected)
-    : errorCode(_ParserError_literalExpected), errorInfo(literalExpected) {}
+    ParserError(_ParserError_identifierExpected* identifierExpected)
+    : errorCode(_ParserErrorCode_identifierExpected), errorInfo(identifierExpected) {}
 
-    ParserError(_keywordExpected* keywordExpected)
-    : errorCode(_ParserError_keywordExpected), errorInfo(keywordExpected) {}
+    ParserError(_ParserError_literalExpected* literalExpected)
+    : errorCode(_ParserErrorCode_literalExpected), errorInfo(literalExpected) {}
 
-    ParserError(_punctuationExpected* punctuationExpected)
-    : errorCode(_ParserError_punctuationExpected), errorInfo(punctuationExpected) {}
+    ParserError(_ParserError_keywordExpected* keywordExpected)
+    : errorCode(_ParserErrorCode_keywordExpected), errorInfo(keywordExpected) {}
 
-    ParserError(_operatorExpected* operatorExpected)
-    : errorCode(_ParserError_operatorExpected), errorInfo(operatorExpected) {}
+    ParserError(_ParserError_punctuationExpected* punctuationExpected)
+    : errorCode(_ParserErrorCode_punctuationExpected), errorInfo(punctuationExpected) {}
 
-    ParserError(_unableToParse* unableToParse)
-    : errorCode(_ParserError_unableToParse), errorInfo(unableToParse) {}
+    ParserError(_ParserError_operatorExpected* operatorExpected)
+    : errorCode(_ParserErrorCode_operatorExpected), errorInfo(operatorExpected) {}
 
-    ParserError(_notAtEnd* notAtEnd)
-    : errorCode(_ParserError_notAtEnd), errorInfo(notAtEnd) {}
+    ParserError(_ParserError_unableToParse* unableToParse)
+    : errorCode(_ParserErrorCode_unableToParse), errorInfo(unableToParse) {}
+
+    ParserError(_ParserError_notAtEnd* notAtEnd)
+    : errorCode(_ParserErrorCode_notAtEnd), errorInfo(notAtEnd) {}
 
     long getErrorCode();
     void* getErrorInfo();
 
-    _identifierExpected* get_identifierExpected();
-    _literalExpected* get_literalExpected();
-    _keywordExpected* get_keywordExpected();
-    _punctuationExpected* get_punctuationExpected();
-    _operatorExpected* get_operatorExpected();
-    _unableToParse* get_unableToParse();
-    _notAtEnd* get_notAtEnd();
+    _ParserError_identifierExpected* get_identifierExpected();
+    _ParserError_literalExpected* get_literalExpected();
+    _ParserError_keywordExpected* get_keywordExpected();
+    _ParserError_punctuationExpected* get_punctuationExpected();
+    _ParserError_operatorExpected* get_operatorExpected();
+    _ParserError_unableToParse* get_unableToParse();
+    _ParserError_notAtEnd* get_notAtEnd();
 
 private:
     _ParserErrorCode errorCode;

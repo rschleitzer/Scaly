@@ -12,7 +12,7 @@ CompilerError* Compiler::compileFiles(_Page* _ep, Options& options) {
         for (size_t _index = 0; _index < _length; _index++) {
             _Result<_LetString, FileError> _readToStringResult = File::readToString(_p, _ep, **(*files)[_index]);
             if (!_readToStringResult.succeeded())
-                return new(_ep) CompilerError(new(_ep) _unableToReadFile(*(*files)[_index], _readToStringResult.getError()));
+                return new(_ep) CompilerError(new(_ep) _CompilerError_unableToReadFile(*(*files)[_index], _readToStringResult.getError()));
 
             *(*sources)[_index] = _readToStringResult.getResult();
         }
@@ -25,7 +25,7 @@ CompilerError* Compiler::compileFiles(_Page* _ep, Options& options) {
         for (size_t _index = 0; _index < _length; _index++) {
             _Result<CompilationUnit, ParserError> _compileUnitResult = compileUnit(_p, _ep, *(*files)[_index], *(*sources)[_index]);
             if (!_compileUnitResult.succeeded()) {
-                return new(_ep) CompilerError(new(_ep) _syntaxError(_compileUnitResult.getError()));
+                return new(_ep) CompilerError(new(_ep) _CompilerError_syntaxError(_compileUnitResult.getError()));
             }
             else {
                 *(*compilationUnits)[_index] = _compileUnitResult.getResult();
@@ -39,8 +39,8 @@ CompilerError* Compiler::compileFiles(_Page* _ep, Options& options) {
     CppError* cppError = visitor.execute(program);
     if (cppError) {
         switch (cppError->getErrorCode()) {
-            case _CppError_unableToCreateOutputDirectory:
-                _unableToCreateOutputDirectory* uTCOD = cppError->get_unableToCreateOutputDirectory();
+            case _CppErrorCode_unableToCreateOutputDirectory:
+                _CppError_unableToCreateOutputDirectory* uTCOD = cppError->get_unableToCreateOutputDirectory();
                 return new(_ep) CompilerError(new(_ep) _CompilerError_unableToCreateOutputDirectory(uTCOD->directory, uTCOD->error));
         }
     }

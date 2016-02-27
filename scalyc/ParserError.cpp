@@ -10,60 +10,60 @@ void* ParserError::getErrorInfo() {
     return errorInfo;
 }
 
-_identifierExpected::_identifierExpected(Position* position)
+_ParserError_identifierExpected::_ParserError_identifierExpected(Position* position)
 : position(position) {
 }
 
-_identifierExpected* ParserError::get_identifierExpected(){
-    return (_identifierExpected*)errorInfo;
+_ParserError_identifierExpected* ParserError::get_identifierExpected(){
+    return (_ParserError_identifierExpected*)errorInfo;
 }
 
-_literalExpected::_literalExpected(Position* position)
+_ParserError_literalExpected::_ParserError_literalExpected(Position* position)
 : position(position) {
 }
 
-_literalExpected* ParserError::get_literalExpected(){
-    return (_literalExpected*)errorInfo;
+_ParserError_literalExpected* ParserError::get_literalExpected(){
+    return (_ParserError_literalExpected*)errorInfo;
 }
 
-_keywordExpected::_keywordExpected(Position* position, _LetString* keyword)
+_ParserError_keywordExpected::_ParserError_keywordExpected(Position* position, _LetString* keyword)
 : position(position), keyword(keyword) {
 }
 
-_keywordExpected* ParserError::get_keywordExpected(){
-    return (_keywordExpected*)errorInfo;
+_ParserError_keywordExpected* ParserError::get_keywordExpected(){
+    return (_ParserError_keywordExpected*)errorInfo;
 }
 
-_punctuationExpected::_punctuationExpected(Position* position, _LetString* punctuation)
+_ParserError_punctuationExpected::_ParserError_punctuationExpected(Position* position, _LetString* punctuation)
 : position(position), punctuation(punctuation) {
 }
 
-_punctuationExpected* ParserError::get_punctuationExpected(){
-    return (_punctuationExpected*)errorInfo;
+_ParserError_punctuationExpected* ParserError::get_punctuationExpected(){
+    return (_ParserError_punctuationExpected*)errorInfo;
 }
 
-_operatorExpected::_operatorExpected(Position* position)
+_ParserError_operatorExpected::_ParserError_operatorExpected(Position* position)
 : position(position) {
 }
 
-_operatorExpected* ParserError::get_operatorExpected(){
-    return (_operatorExpected*)errorInfo;
+_ParserError_operatorExpected* ParserError::get_operatorExpected(){
+    return (_ParserError_operatorExpected*)errorInfo;
 }
 
-_unableToParse::_unableToParse(Position* position, _Vector<ParserError>* errors)
+_ParserError_unableToParse::_ParserError_unableToParse(Position* position, _Vector<ParserError>* errors)
 : position(position), errors(errors) {
 }
 
-_unableToParse* ParserError::get_unableToParse(){
-    return (_unableToParse*)errorInfo;
+_ParserError_unableToParse* ParserError::get_unableToParse(){
+    return (_ParserError_unableToParse*)errorInfo;
 }
 
-_notAtEnd::_notAtEnd(Position* position)
+_ParserError_notAtEnd::_ParserError_notAtEnd(Position* position)
 : position(position) {
 }
 
-_notAtEnd* ParserError::get_notAtEnd(){
-    return (_notAtEnd*)errorInfo;
+_ParserError_notAtEnd* ParserError::get_notAtEnd(){
+    return (_ParserError_notAtEnd*)errorInfo;
 }
 
 }

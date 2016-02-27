@@ -10,7 +10,7 @@ void* CompilerError::getErrorInfo() {
     return errorInfo;
 }
 
-_unableToReadFile::_unableToReadFile(_LetString* file, FileError* error)
+_CompilerError_unableToReadFile::_CompilerError_unableToReadFile(_LetString* file, FileError* error)
 : file(file), error(error) {
 }
 
@@ -18,16 +18,16 @@ _CompilerError_unableToCreateOutputDirectory::_CompilerError_unableToCreateOutpu
 : directory(directory), error(error) {
 }
 
-_unableToReadFile* CompilerError::get_unableToReadFile(){
-    return (_unableToReadFile*)errorInfo;
+_CompilerError_unableToReadFile* CompilerError::get_unableToReadFile(){
+    return (_CompilerError_unableToReadFile*)errorInfo;
 }
 
-_syntaxError::_syntaxError(ParserError* error)
+_CompilerError_syntaxError::_CompilerError_syntaxError(ParserError* error)
 : error(error) {
 }
 
-_syntaxError* CompilerError::get_syntaxError(){
-    return (_syntaxError*)errorInfo;
+_CompilerError_syntaxError* CompilerError::get_syntaxError(){
+    return (_CompilerError_syntaxError*)errorInfo;
 }
 
 }

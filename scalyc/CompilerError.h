@@ -6,24 +6,20 @@ namespace scalyc {
 
 class CompilerError;
 
-class _unableToReadFile : public Object {
+class _CompilerError_unableToReadFile : public Object {
 public:
-    _unableToReadFile(_LetString* file, FileError* error);
+    _CompilerError_unableToReadFile(_LetString* file, FileError* error);
 
     _LetString* file;
     FileError* error;
 };
 
-
-
-class _syntaxError : public Object {
+class _CompilerError_syntaxError : public Object {
 public:
-    _syntaxError(ParserError* error);
+    _CompilerError_syntaxError(ParserError* error);
 
     ParserError* error;
 };
-
-
 
 class _CompilerError_unableToCreateOutputDirectory : public Object {
 public:
@@ -32,7 +28,6 @@ public:
     _LetString* directory;
     DirectoryError* error;
 };
-
 enum _CompilerErrorCode {
     _CompilerErrorCode_unableToReadFile = 1,
     _CompilerErrorCode_syntaxError,
@@ -45,10 +40,10 @@ public:
     CompilerError(_CompilerErrorCode errorCode)
     : errorCode(errorCode), errorInfo(0) {}
 
-    CompilerError(_unableToReadFile* unableToReadFile)
+    CompilerError(_CompilerError_unableToReadFile* unableToReadFile)
     : errorCode(_CompilerErrorCode_unableToReadFile), errorInfo(unableToReadFile) {}
 
-    CompilerError(_syntaxError* syntaxError)
+    CompilerError(_CompilerError_syntaxError* syntaxError)
     : errorCode(_CompilerErrorCode_syntaxError), errorInfo(syntaxError) {}
 
     CompilerError(_CompilerError_unableToCreateOutputDirectory* unableToCreateOutputDirectory)
@@ -57,9 +52,9 @@ public:
     long getErrorCode();
     void* getErrorInfo();
 
-    _unableToReadFile* get_unableToReadFile();
-    _syntaxError* get_syntaxError();
-    _unableToCreateOutputDirectory* get_unableToCreateOutputDirectory();
+    _CompilerError_unableToReadFile* get_unableToReadFile();
+    _CompilerError_syntaxError* get_syntaxError();
+    _CompilerError_unableToCreateOutputDirectory* get_unableToCreateOutputDirectory();
 
 private:
     _CompilerErrorCode errorCode;

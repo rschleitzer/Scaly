@@ -6,27 +6,24 @@ namespace scalyc {
 
 class OptionsError;
 
-class _invalidOption : public Object {
+class _OptionsError_invalidOption : public Object {
 public:
-    _invalidOption(_LetString* option);
+    _OptionsError_invalidOption(_LetString* option);
 
     _LetString* option;
 };
 
-
-
-class _unknownOption : public Object {
+class _OptionsError_unknownOption : public Object {
 public:
-    _unknownOption(_LetString* option);
+    _OptionsError_unknownOption(_LetString* option);
 
     _LetString* option;
 };
-
 enum _OptionsErrorCode {
-    _OptionsError_invalidOption = 1,
-    _OptionsError_unknownOption,
-    _OptionsError_noOutputOption,
-    _OptionsError_noFilesToCompile,
+    _OptionsErrorCode_invalidOption = 1,
+    _OptionsErrorCode_unknownOption,
+    _OptionsErrorCode_noOutputOption,
+    _OptionsErrorCode_noFilesToCompile,
 };
 
 class OptionsError : public Object
@@ -35,17 +32,17 @@ public:
     OptionsError(_OptionsErrorCode errorCode)
     : errorCode(errorCode), errorInfo(0) {}
 
-    OptionsError(_invalidOption* invalidOption)
-    : errorCode(_OptionsError_invalidOption), errorInfo(invalidOption) {}
+    OptionsError(_OptionsError_invalidOption* invalidOption)
+    : errorCode(_OptionsErrorCode_invalidOption), errorInfo(invalidOption) {}
 
-    OptionsError(_unknownOption* unknownOption)
-    : errorCode(_OptionsError_unknownOption), errorInfo(unknownOption) {}
+    OptionsError(_OptionsError_unknownOption* unknownOption)
+    : errorCode(_OptionsErrorCode_unknownOption), errorInfo(unknownOption) {}
 
     long getErrorCode();
     void* getErrorInfo();
 
-    _invalidOption* get_invalidOption();
-    _unknownOption* get_unknownOption();
+    _OptionsError_invalidOption* get_invalidOption();
+    _OptionsError_unknownOption* get_unknownOption();
 
 private:
     _OptionsErrorCode errorCode;
