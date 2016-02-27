@@ -144,8 +144,7 @@ void MyVisitor::visit"(id syntax)"("(id syntax)"* "(string-firstchar-downcase (i
     )))
 "
 bool SyntaxVisitor::_isSyntaxVisitor() { return true; }
-bool SyntaxVisitor::_isMyVisitor() { return true; }
-bool MyVisitor::_isSyntaxVisitor() { return true; }
+bool SyntaxVisitor::_isMyVisitor() { return false; }
 bool MyVisitor::_isMyVisitor() { return true; }
 }
 "

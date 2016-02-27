@@ -586,6 +586,5 @@ void MyVisitor::closeInheritance(Inheritance* inheritance) {
 
 bool SyntaxVisitor::_isSyntaxVisitor() { return true; }
 bool SyntaxVisitor::_isMyVisitor() { return true; }
-bool MyVisitor::_isSyntaxVisitor() { return true; }
 bool MyVisitor::_isMyVisitor() { return true; }
 }
