@@ -427,7 +427,7 @@ void CppVisitor::closeEnumDeclaration(EnumDeclaration* enumDeclaration) {
             (*headerFile) += *(*(*members)[_i])->enumCase->name;
             (*headerFile) += "* get_";
             (*headerFile) += *(*(*members)[_i])->enumCase->name;
-            (*headerFile) += "()\n";
+            (*headerFile) += "();\n";
         }
     }
     (*headerFile) += "\nprivate:\n    _CppErrorCode errorCode;\n    void* errorInfo;\n};";
