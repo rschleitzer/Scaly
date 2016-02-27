@@ -222,7 +222,7 @@ _Result<"(id syntax)", ParserError> Parser::parse"(id syntax)"(_Page* _rp, _Page
     }
 "
                 )))
-"    return _Result<"(id syntax)", ParserError>(new(_ep) ParserError(new(_ep) _unableToParse(start, errors)));
+"    return _Result<"(id syntax)", ParserError>(new(_ep) ParserError(new(_ep) _unableToParse(start, &_Vector<""ParserError>::create(_ep, *errors))));
 "
             )
             ($ ; non-abstract syntax

@@ -1,53 +1,73 @@
-#ifndef __scalyc_ParserError__
-#define __scalyc_ParserError__
+#ifndef __scalyc__ParserError__
+#define __scalyc__ParserError__
 #include "scalyc.h"
+using namespace scaly;
+namespace scalyc {
 
-namespace scalyc
-{
+class ParserError;
 
-class ParserErrorInfo : public Object {
+class _identifierExpected : public Object {
 public:
-    ParserErrorInfo(Position* position);
+    _identifierExpected(Position* position);
+
     Position* position;
 };
 
-class _identifierExpected : public ParserErrorInfo {
-public:
-    _identifierExpected(Position* position);
-};
 
-class _literalExpected : public ParserErrorInfo {
+
+class _literalExpected : public Object {
 public:
     _literalExpected(Position* position);
+
+    Position* position;
 };
 
-class _keywordExpected: public ParserErrorInfo {
+
+
+class _keywordExpected : public Object {
 public:
     _keywordExpected(Position* position, _LetString* keyword);
+
+    Position* position;
     _LetString* keyword;
 };
 
-class _punctuationExpected: public ParserErrorInfo {
+
+
+class _punctuationExpected : public Object {
 public:
     _punctuationExpected(Position* position, _LetString* punctuation);
+
+    Position* position;
     _LetString* punctuation;
 };
 
-class _operatorExpected : public ParserErrorInfo {
+
+
+class _operatorExpected : public Object {
 public:
     _operatorExpected(Position* position);
+
+    Position* position;
 };
 
-class ParserError;
-class _unableToParse: public ParserErrorInfo {
+
+
+class _unableToParse : public Object {
 public:
-    _unableToParse(Position* position, _Array<ParserError>* errors);
-    _Array<ParserError>* errors;
+    _unableToParse(Position* position, _Vector<ParserError>* errors);
+
+    Position* position;
+    _Vector<ParserError>* errors;
 };
 
-class _notAtEnd : public ParserErrorInfo {
+
+
+class _notAtEnd : public Object {
 public:
     _notAtEnd(Position* position);
+
+    Position* position;
 };
 
 enum _ParserErrorCode {
@@ -101,4 +121,4 @@ private:
 };
 
 }
-#endif//__scalyc_ParserError__
+#endif // __scalyc__ParserError__
