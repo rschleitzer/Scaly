@@ -203,10 +203,12 @@ void CppVisitor::closeInitializer(Initializer* initializer) {
 }
 
 bool CppVisitor::openConstantDeclaration(ConstantDeclaration* constantDeclaration) {
+    constDeclaration = true;
     return true;
 }
 
 void CppVisitor::closeConstantDeclaration(ConstantDeclaration* constantDeclaration) {
+    constDeclaration = false;
 }
 
 bool CppVisitor::openVariableDeclaration(VariableDeclaration* variableDeclaration) {
@@ -276,12 +278,18 @@ void CppVisitor::visitIdentifierFunction(IdentifierFunction* identifierFunction)
 
 bool CppVisitor::openFunctionSignature(FunctionSignature* functionSignature) {
     (*headerFile) += "virtual ";
-    if (!functionSignature->result)
-        (*headerFile) += "void";
+    if (!functionSignature->result) {
+        if (!functionSignature->throwsClause) {
+            (*headerFile) += "void";
+        }
+        else {
+            appendCppType(headerFile, functionSignature->throwsClause->throwsType);
+        }
+    }
     else {
         if (functionSignature->result->resultType->_isTypeIdentifier()) {
             TypeIdentifier* typeId = (TypeIdentifier*)functionSignature->result->resultType;
-            (*headerFile) += getCppType(typeId->name);
+            (*headerFile) += getCppTypeName(typeId->name);
             if (isClass(typeId->name)) {
                 (*headerFile) += "*"; } } }
     (*headerFile) += " ";
@@ -321,7 +329,9 @@ void CppVisitor::closeParameterClause(ParameterClause* parameterClause) {
 
 bool CppVisitor::openConstParameter(ConstParameter* constParameter) {
     constParameterName = constParameter->name;
+    constDeclaration = true;
     writeParameter(constParameterName, constParameter->parameterType);
+    constDeclaration = false;
     return false;
 }
 
@@ -342,6 +352,7 @@ bool CppVisitor::isClass(_LetString* name) {
         ||  (*name == "DirectoryError")
         ||  (*name == "FileError")
         ||  (*name == "ParserError")
+        ||  (*name == "CppError")
        )
         return true;
 
@@ -371,7 +382,7 @@ void CppVisitor::closeVarParameter(VarParameter* varParameter) {
 }
 
 bool CppVisitor::openThrowsClause(ThrowsClause* throwsClause) {
-    return true;
+    return false;
 }
 
 void CppVisitor::closeThrowsClause(ThrowsClause* throwsClause) {
@@ -480,35 +491,36 @@ void CppVisitor::closeEnumMember(EnumMember* enumMember) {
                 Parameter* parameter = *(*parameters)[_i];
                 if (parameter->_isConstParameter()) {
                     ConstParameter* constParameter = (ConstParameter*)parameter;
-                    if (constParameter->parameterType->_isTypeIdentifier()) {
-                        TypeIdentifier* typeId = (TypeIdentifier*)constParameter->parameterType;
-                        (*headerFile) += "    ";
-                        (*headerFile) += getCppType(typeId->name);
-                        if (isClass(typeId->name)) {
-                            (*headerFile) += "*"; }
-                        (*headerFile) += " ";
-                        (*headerFile) += *constParameter->name;
-                        (*headerFile) += ";\n";
-                    }
-                    else if (constParameter->parameterType->_isArrayType()) {
-                        ArrayType* arrayType = (ArrayType*)constParameter->parameterType;
-                        (*headerFile) += "    ";
-                        Type* type = arrayType->elementType;
-                        if (type->_isTypeIdentifier()) {
-                            TypeIdentifier* typeId = (TypeIdentifier*)type;
-                            (*headerFile) += "_Vector<";
-                            (*headerFile) += getCppType(typeId->name);
-                            (*headerFile) += ">* ";
-                            (*headerFile) += *constParameter->name;
-                            (*headerFile) += ";\n";
-                        }
-                    }
+                    (*headerFile) += "    ";
+                    appendCppType(headerFile, constParameter->parameterType);
+                    (*headerFile) += " ";
+                    (*headerFile) += *constParameter->name;
+                    (*headerFile) += ";\n";
                 }
             }
         }
         (*headerFile) += "};\n";
     }
 
+}
+
+void CppVisitor::appendCppType(_VarString* s, Type* type) {
+    if (type->_isTypeIdentifier()) {
+        TypeIdentifier* typeId = (TypeIdentifier*)type;
+        (*s) += getCppTypeName(typeId->name);
+        if (isClass(typeId->name)) {
+            (*s) += "*"; }
+    }
+    else if (type->_isArrayType()) {
+        ArrayType* arrayType = (ArrayType*)type;
+        Type* type = arrayType->elementType;
+        if (type->_isTypeIdentifier()) {
+            TypeIdentifier* typeId = (TypeIdentifier*)type;
+            (*s) += "_Vector<";
+            (*s) += getCppTypeName(typeId->name);
+            (*s) += ">*";
+        }
+    }
 }
 
 void CppVisitor::visitEnumCase(EnumCase* enumCase) {
@@ -961,19 +973,25 @@ bool CppVisitor::openTypeIdentifier(TypeIdentifier* typeIdentifier) {
     typeIdentifierName = typeIdentifier->name;
 
     if (!codeBlockLevel) {
-        (*headerFile) += getCppType(typeIdentifierName);
+        (*headerFile) += getCppTypeName(typeIdentifierName);
         if (isClass(typeIdentifierName) && (!inArrayType)) {
             (*headerFile) += "*"; } }
     return true;
 }
 
-const char* CppVisitor::getCppType(_LetString* typeIdentifierName) {
+const char* CppVisitor::getCppTypeName(_LetString* typeIdentifierName) {
     const char* typeIdentifier = typeIdentifierName->getNativeString();
 
-    if ((*typeIdentifierName) == "unsigned")
-        return "size_t";
-    else if ((*typeIdentifierName) == "String")
-        return "_LetString";
+    if ((*typeIdentifierName) == "unsigned") {
+    return "size_t"; }
+    else {
+        if ((*typeIdentifierName) == "String") {
+            if ((constDeclaration)||(inArrayType))
+                return "_LetString";
+            else
+                return "_VarString";
+        }
+    }
 
     return typeIdentifier;
 }
@@ -991,7 +1009,10 @@ void CppVisitor::closeSubtypeIdentifier(SubtypeIdentifier* subtypeIdentifier) {
 
 bool CppVisitor::openArrayType(ArrayType* arrayType) {
     if (!codeBlockLevel) {
-        (*headerFile) += "_Vector<";
+        if (constDeclaration)
+            (*headerFile) += "_Vector<";
+        else
+            (*headerFile) += "_Array<";
         inArrayType = true;
         arrayType->elementType->accept(this);
         inArrayType = false;
@@ -1140,5 +1161,7 @@ Inherits::Inherits(_LetString* className) {
     name = &_LetString::create(getPage(), *className);
     inheritors = new(getPage()) _Array<_LetString>();
 }
+
+bool Inherits::_isInherits() { return true; }
 
 }

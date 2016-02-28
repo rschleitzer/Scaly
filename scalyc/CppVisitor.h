@@ -9,12 +9,12 @@ public:
     Inherits(_LetString* className);
     _LetString* name;
     _Array<_LetString>* inheritors;
+    virtual bool _isInherits();    
 };
 
 class CppVisitor : public SyntaxVisitor {
 public:
-    CppError* execute(Program* program);
-private:
+    virtual CppError* execute(Program* program);
     CppError* cppError;
     _LetString* moduleName;
     _VarString* sourceFile;
@@ -27,23 +27,22 @@ private:
     _Array<_LetString>* classes;
     bool declaringClassMember;
     bool inParameterClause;
-    int codeBlockLevel;
+    size_t codeBlockLevel;
     bool abstractFunction;
     bool inArrayType;
-
-    void buildProjectFileString(_VarString* projectFile, Program* program);
-    void buildMainHeaderFileString(_VarString* projectFile, Program* program);
-    void collectInheritances(Program* program);
-    void collectInheritancesInCompilationUnit(CompilationUnit* compilationUnit);
-    void registerInheritance(_LetString* className, _LetString* baseName);
-    void collectDerivedClasses(_Array<_LetString>* derivedClasses, _LetString* className);
-    void appendDerivedClasses(_Array<_LetString>* derivedClasses, _Array<_LetString>* inheritors);
-    const char* getCppType(_LetString* typeIdentifierName);
+    bool constDeclaration;
+    virtual void buildProjectFileString(_VarString* projectFile, Program* program);
+    virtual void buildMainHeaderFileString(_VarString* projectFile, Program* program);
+    virtual void collectInheritances(Program* program);
+    virtual void collectInheritancesInCompilationUnit(CompilationUnit* compilationUnit);
+    virtual void registerInheritance(_LetString* className, _LetString* baseName);
+    virtual void collectDerivedClasses(_Array<_LetString>* derivedClasses, _LetString* className);
+    virtual void appendDerivedClasses(_Array<_LetString>* derivedClasses, _Array<_LetString>* inheritors);
+    const char* getCppTypeName(_LetString* typeIdentifierName);
+    void appendCppType(_VarString* s, Type* type);
     bool isClass(_LetString* name);
     void indentHeader();
     void writeParameter(_LetString* name, Type* parameterType);
-
-public:
     virtual bool openProgram(Program* program);
     virtual void closeProgram(Program* program);
     _LetString* programName;
