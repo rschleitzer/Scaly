@@ -9,6 +9,8 @@ class Inherits {
 }
 
 class CppVisitor : SyntaxVisitor {
+    init() {}
+
     function execute(program: Program) throws CppError {
     }
 
