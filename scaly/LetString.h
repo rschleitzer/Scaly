@@ -20,6 +20,8 @@ public:
     bool operator != (const char* theString);
     bool operator == (const _LetString& theString);
     bool operator != (const _LetString& theString);
+    bool operator == (const _VarString& theString);
+    bool operator != (const _VarString& theString);
     _Array<_LetString>& Split(_Page* _rp, char c);
 
 private:

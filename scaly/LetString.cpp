@@ -78,6 +78,14 @@ bool _LetString::operator != (const _LetString& theString){
     return strcmp(getNativeString(), theString.getNativeString()) != 0;
 }
 
+bool _LetString::operator == (const _VarString& theString){
+    return strcmp(getNativeString(), theString.getNativeString()) == 0;
+}
+
+bool _LetString::operator != (const _VarString& theString){
+    return strcmp(getNativeString(), theString.getNativeString()) != 0;
+}
+
 char _LetString::operator [](size_t i) {
     if (i < length)
         return getNativeString()[i];
