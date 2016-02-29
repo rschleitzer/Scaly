@@ -44,7 +44,7 @@
                 )
             )
         )
-        (if concrete ($
+        (if (and concrete (has-syntax-children? syntax)) ($
 "
 "            (apply-to-children-of syntax (lambda (identifier)
                 (if (identifier? identifier) ($
@@ -85,7 +85,7 @@ public:"
     virtual void visit"(id syntax)"("(id syntax)"* "(string-firstchar-downcase (id syntax))")"(if concrete "" " = 0")";"
             )
         )
-        (if concrete
+        (if (and concrete (has-syntax-children? syntax))
             (apply-to-children-of syntax (lambda (identifier)
                 (if (identifier? identifier) ($
 "

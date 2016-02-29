@@ -75,7 +75,7 @@ public:
     virtual bool openPathIdentifier(PathIdentifier* pathIdentifier);
     virtual void closePathIdentifier(PathIdentifier* pathIdentifier);
     virtual void visitPathItem(PathItem* pathItem);
-    _LetString* pathItemName;
+    _VarString* pathItemName;
     virtual bool openInitializer(Initializer* initializer);
     virtual void closeInitializer(Initializer* initializer);
     virtual bool openBindingInitializer(BindingInitializer* bindingInitializer);
@@ -87,7 +87,7 @@ public:
     virtual void visitOverrideWord(OverrideWord* overrideWord);
     virtual void visitStaticWord(StaticWord* staticWord);
     virtual void visitIdentifierFunction(IdentifierFunction* identifierFunction);
-    _LetString* identifierFunctionName;
+    _VarString* identifierFunctionName;
     virtual bool openFunctionSignature(FunctionSignature* functionSignature);
     virtual void closeFunctionSignature(FunctionSignature* functionSignature);
     virtual bool openFunctionResult(FunctionResult* functionResult);

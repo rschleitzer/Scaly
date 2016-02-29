@@ -90,9 +90,6 @@ class MyVisitor : SyntaxVisitor {
 
 
     function visitPathItem(pathItem: PathItem) { }
-
-    mutable pathItemName: String
-
     function openInitializer(initializer: Initializer) -> bool {
         return true; }
 
@@ -118,15 +115,8 @@ class MyVisitor : SyntaxVisitor {
 
 
     function visitOverrideWord(overrideWord: OverrideWord) { }
-
-
     function visitStaticWord(staticWord: StaticWord) { }
-
-
     function visitIdentifierFunction(identifierFunction: IdentifierFunction) { }
-
-    mutable identifierFunctionName: String
-
     function openFunctionSignature(functionSignature: FunctionSignature) -> bool {
         return true; }
 
@@ -176,9 +166,6 @@ class MyVisitor : SyntaxVisitor {
 
 
     function visitEnumCase(enumCase: EnumCase) { }
-
-    mutable enumCaseName: String
-
     function openAdditionalCase(additionalCase: AdditionalCase) -> bool {
         return true; }
 
@@ -198,9 +185,6 @@ class MyVisitor : SyntaxVisitor {
 
 
     function visitGenericParameter(genericParameter: GenericParameter) { }
-
-    mutable genericParameterTypeName: String
-
     function openClassMember(classMember: ClassMember) -> bool {
         return true; }
 
@@ -262,8 +246,6 @@ class MyVisitor : SyntaxVisitor {
 
 
     function visitOperatorPostfix(operatorPostfix: OperatorPostfix) { }
-
-
     function openFunctionCall(functionCall: FunctionCall) -> bool {
         return true; }
 
@@ -295,12 +277,7 @@ class MyVisitor : SyntaxVisitor {
 
 
     function visitIdentifierExpression(identifierExpression: IdentifierExpression) { }
-
-    mutable identifierExpressionName: String
-
     function visitLiteralExpression(literalExpression: LiteralExpression) { }
-
-
     function openIfExpression(ifExpression: IfExpression) -> bool {
         return true; }
 
@@ -362,8 +339,6 @@ class MyVisitor : SyntaxVisitor {
 
 
     function visitThisWord(thisWord: ThisWord) { }
-
-
     function openSuperDot(superDot: SuperDot) -> bool {
         return true; }
 
@@ -407,8 +382,6 @@ class MyVisitor : SyntaxVisitor {
 
 
     function visitDefaultCaseLabel(defaultCaseLabel: DefaultCaseLabel) { }
-
-
     function openCaseItem(caseItem: CaseItem) -> bool {
         return true; }
 
@@ -428,8 +401,6 @@ class MyVisitor : SyntaxVisitor {
 
 
     function visitWildcardPattern(wildcardPattern: WildcardPattern) { }
-
-
     function openIdentifierPattern(identifierPattern: IdentifierPattern) -> bool {
         identifierPatternIdentifier = identifierPattern.identifier
         return true; }
@@ -464,22 +435,10 @@ class MyVisitor : SyntaxVisitor {
 
 
     function visitEmptyCaseContent(emptyCaseContent: EmptyCaseContent) { }
-
-
     function visitThisInit(thisInit: ThisInit) { }
-
-
     function visitThisMember(thisMember: ThisMember) { }
-
-    mutable thisMemberName: String
-
     function visitSuperInit(superInit: SuperInit) { }
-
-
     function visitSuperMember(superMember: SuperMember) { }
-
-    mutable superMemberName: String
-
     function openTypeIdentifier(typeIdentifier: TypeIdentifier) -> bool {
         typeIdentifierName = typeIdentifier.name
         return true; }
@@ -508,8 +467,6 @@ class MyVisitor : SyntaxVisitor {
 
 
     function visitOptionalType(optionalType: OptionalType) { }
-
-
     function openTypeInheritanceClause(typeInheritanceClause: TypeInheritanceClause) -> bool {
         return true; }
 

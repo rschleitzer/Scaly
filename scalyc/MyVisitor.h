@@ -37,7 +37,6 @@ public:
     virtual bool openPathIdentifier(PathIdentifier* pathIdentifier);
     virtual void closePathIdentifier(PathIdentifier* pathIdentifier);
     virtual void visitPathItem(PathItem* pathItem);
-    _VarString* pathItemName;
     virtual bool openInitializer(Initializer* initializer);
     virtual void closeInitializer(Initializer* initializer);
     virtual bool openBindingInitializer(BindingInitializer* bindingInitializer);
@@ -49,7 +48,6 @@ public:
     virtual void visitOverrideWord(OverrideWord* overrideWord);
     virtual void visitStaticWord(StaticWord* staticWord);
     virtual void visitIdentifierFunction(IdentifierFunction* identifierFunction);
-    _VarString* identifierFunctionName;
     virtual bool openFunctionSignature(FunctionSignature* functionSignature);
     virtual void closeFunctionSignature(FunctionSignature* functionSignature);
     virtual bool openFunctionResult(FunctionResult* functionResult);
@@ -67,7 +65,6 @@ public:
     virtual bool openEnumMember(EnumMember* enumMember);
     virtual void closeEnumMember(EnumMember* enumMember);
     virtual void visitEnumCase(EnumCase* enumCase);
-    _VarString* enumCaseName;
     virtual bool openAdditionalCase(AdditionalCase* additionalCase);
     virtual void closeAdditionalCase(AdditionalCase* additionalCase);
     virtual bool openClassBody(ClassBody* classBody);
@@ -75,7 +72,6 @@ public:
     virtual bool openGenericArgumentClause(GenericArgumentClause* genericArgumentClause);
     virtual void closeGenericArgumentClause(GenericArgumentClause* genericArgumentClause);
     virtual void visitGenericParameter(GenericParameter* genericParameter);
-    _VarString* genericParameterTypeName;
     virtual bool openClassMember(ClassMember* classMember);
     virtual void closeClassMember(ClassMember* classMember);
     virtual bool openPrefixExpression(PrefixExpression* prefixExpression);
@@ -108,7 +104,6 @@ public:
     virtual bool openNamedMemberPostfix(NamedMemberPostfix* namedMemberPostfix);
     virtual void closeNamedMemberPostfix(NamedMemberPostfix* namedMemberPostfix);
     virtual void visitIdentifierExpression(IdentifierExpression* identifierExpression);
-    _VarString* identifierExpressionName;
     virtual void visitLiteralExpression(LiteralExpression* literalExpression);
     virtual bool openIfExpression(IfExpression* ifExpression);
     virtual void closeIfExpression(IfExpression* ifExpression);
@@ -167,10 +162,8 @@ public:
     virtual void visitEmptyCaseContent(EmptyCaseContent* emptyCaseContent);
     virtual void visitThisInit(ThisInit* thisInit);
     virtual void visitThisMember(ThisMember* thisMember);
-    _VarString* thisMemberName;
     virtual void visitSuperInit(SuperInit* superInit);
     virtual void visitSuperMember(SuperMember* superMember);
-    _VarString* superMemberName;
     virtual bool openTypeIdentifier(TypeIdentifier* typeIdentifier);
     virtual void closeTypeIdentifier(TypeIdentifier* typeIdentifier);
     _VarString* typeIdentifierName;

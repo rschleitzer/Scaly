@@ -6,7 +6,8 @@ CppVisitor::CppVisitor()
   : programName(new(getPage()->allocateExclusivePage()) _VarString()),
     programDirectory(new(getPage()->allocateExclusivePage()) _VarString()),
     enumDeclarationName(new(getPage()->allocateExclusivePage()) _VarString()),
-    classDeclarationName(new(getPage()->allocateExclusivePage()) _VarString())
+    classDeclarationName(new(getPage()->allocateExclusivePage()) _VarString()),
+    identifierFunctionName(new(getPage()->allocateExclusivePage()) _VarString())
 {}
 
 CppError* CppVisitor::execute(Program* program) {
@@ -287,7 +288,9 @@ void CppVisitor::visitStaticWord(StaticWord* staticWord) {
 }
 
 void CppVisitor::visitIdentifierFunction(IdentifierFunction* identifierFunction) {
-    this->identifierFunctionName = identifierFunction->name; }
+    identifierFunctionName->getPage()->clear();
+    identifierFunctionName = new(identifierFunctionName->getPage()) _VarString(*identifierFunction->name);
+}
 
 bool CppVisitor::openFunctionSignature(FunctionSignature* functionSignature) {
     (*headerFile) += "virtual ";
