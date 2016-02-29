@@ -52,7 +52,7 @@ class CppVisitor : SyntaxVisitor {
     function appendDerivedClasses(mutable derivedClasses: [String], mutable inheritors: [String]) {
     }
 
-    function appendCppTypeName(mutable s: String, typeIdentifier: String) {
+    function appendCppTypeName(mutable s: String, typeIdentifierName: String) {
     }
 
     function appendCppType(mutable s: String, type: Type) {
@@ -64,7 +64,7 @@ class CppVisitor : SyntaxVisitor {
     function indentHeader() {
     }
 
-    function writeParamter(name: String, parameterType: Type) {
+    function writeParameter(name: String, parameterType: Type) {
     }
 
     function openProgram(program: Program) -> bool {
