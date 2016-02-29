@@ -52,6 +52,21 @@ class CppVisitor : SyntaxVisitor {
     function appendDerivedClasses(mutable derivedClasses: [String], mutable inheritors: [String]) {
     }
 
+    function appendCppTypeName(mutable s: String, typeIdentifier: String) {
+    }
+
+    function appendCppType(mutable s: String, type: Type) {
+    }
+
+    function isClass(name: String) -> bool {
+    }
+
+    function indentHeader() {
+    }
+
+    function writeParamter(name: String, parameterType: Type) {
+    }
+
     function openProgram(program: Program) -> bool {
         programName = program.name
         programDirectory = program.directory

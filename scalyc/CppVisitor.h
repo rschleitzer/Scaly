@@ -39,11 +39,11 @@ public:
     virtual void registerInheritance(_LetString* className, _LetString* baseName);
     virtual void collectDerivedClasses(_Array<_LetString>* derivedClasses, _LetString* className);
     virtual void appendDerivedClasses(_Array<_LetString>* derivedClasses, _Array<_LetString>* inheritors);
-    void appendCppTypeName(_VarString* s, _LetString* typeIdentifierName);
-    void appendCppType(_VarString* s, Type* type);
-    bool isClass(_LetString* name);
-    void indentHeader();
-    void writeParameter(_LetString* name, Type* parameterType);
+    virtual void appendCppTypeName(_VarString* s, _LetString* typeIdentifierName);
+    virtual void appendCppType(_VarString* s, Type* type);
+    virtual bool isClass(_LetString* name);
+    virtual void indentHeader();
+    virtual void writeParameter(_LetString* name, Type* parameterType);
     virtual bool openProgram(Program* program);
     virtual void closeProgram(Program* program);
     _VarString* programName;
