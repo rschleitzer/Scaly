@@ -7,7 +7,10 @@ CppVisitor::CppVisitor()
     programDirectory(new(getPage()->allocateExclusivePage()) _VarString()),
     enumDeclarationName(new(getPage()->allocateExclusivePage()) _VarString()),
     classDeclarationName(new(getPage()->allocateExclusivePage()) _VarString()),
-    identifierFunctionName(new(getPage()->allocateExclusivePage()) _VarString())
+    identifierFunctionName(new(getPage()->allocateExclusivePage()) _VarString()),
+    constParameterName(new(getPage()->allocateExclusivePage()) _VarString()),
+    varParameterName(new(getPage()->allocateExclusivePage()) _VarString()),
+    identifierPatternIdentifier(new(getPage()->allocateExclusivePage()) _VarString())
 {}
 
 CppError* CppVisitor::execute(Program* program) {
@@ -344,14 +347,15 @@ void CppVisitor::closeParameterClause(ParameterClause* parameterClause) {
 }
 
 bool CppVisitor::openConstParameter(ConstParameter* constParameter) {
-    constParameterName = constParameter->name;
+    constParameterName->getPage()->clear();
+    constParameterName = new(constParameterName->getPage()) _VarString(*constParameter->name);
     constDeclaration = true;
     writeParameter(constParameterName, constParameter->parameterType);
     constDeclaration = false;
     return false;
 }
 
-void CppVisitor::writeParameter(_LetString* name, Type* parameterType) {
+void CppVisitor::writeParameter(_VarString* name, Type* parameterType) {
     if (!firstParameter)
         (*headerFile) += ", ";
     else
@@ -383,18 +387,17 @@ bool CppVisitor::isClass(_LetString* name) {
 
 void CppVisitor::closeConstParameter(ConstParameter* constParameter) {
     (*headerFile) += *constParameterName;
-    constParameterName = 0;
 }
 
 bool CppVisitor::openVarParameter(VarParameter* varParameter) {
-    varParameterName = varParameter->name;
+    varParameterName->getPage()->clear();
+    varParameterName = new(varParameterName->getPage()) _VarString(*varParameter->name);
     writeParameter(varParameterName, varParameter->parameterType);
     return false;
 }
 
 void CppVisitor::closeVarParameter(VarParameter* varParameter) {
     (*headerFile) += *varParameterName;
-    varParameterName = 0;
 }
 
 bool CppVisitor::openThrowsClause(ThrowsClause* throwsClause) {
@@ -881,7 +884,8 @@ void CppVisitor::visitWildcardPattern(WildcardPattern* wildcardPattern) {
 
 bool CppVisitor::openIdentifierPattern(IdentifierPattern* identifierPattern) {
     if (!codeBlockLevel) {
-        identifierPatternIdentifier = identifierPattern->identifier;
+        identifierPatternIdentifier->getPage()->clear();
+        identifierPatternIdentifier = new(identifierPatternIdentifier->getPage()) _VarString(*identifierPattern->identifier);
         if (identifierPattern->annotationForType) {
             identifierPattern->annotationForType->accept(this);
             (*headerFile) += " ";
@@ -890,7 +894,6 @@ bool CppVisitor::openIdentifierPattern(IdentifierPattern* identifierPattern) {
     return false; }
 
 void CppVisitor::closeIdentifierPattern(IdentifierPattern* identifierPattern) {
-    identifierPatternIdentifier = 0;
 }
 
 bool CppVisitor::openTuplePattern(TuplePattern* tuplePattern) {
@@ -986,11 +989,9 @@ void CppVisitor::closeTypeAnnotation(TypeAnnotation* annotationForType) {
 }
 
 bool CppVisitor::openTypeIdentifier(TypeIdentifier* typeIdentifier) {
-    typeIdentifierName = typeIdentifier->name;
-
     if (!codeBlockLevel) {
-        appendCppTypeName(headerFile, typeIdentifierName);
-        if (isClass(typeIdentifierName) && (!inArrayType)) {
+        appendCppTypeName(headerFile, typeIdentifier->name);
+        if (isClass(typeIdentifier->name) && (!inArrayType)) {
             (*headerFile) += "*"; } }
     return true;
 }
@@ -1017,7 +1018,6 @@ void CppVisitor::appendCppTypeName(_VarString* s, _LetString* typeIdentifierName
 }
 
 void CppVisitor::closeTypeIdentifier(TypeIdentifier* typeIdentifier) {
-    typeIdentifierName = 0;
 }
 
 bool CppVisitor::openSubtypeIdentifier(SubtypeIdentifier* subtypeIdentifier) {

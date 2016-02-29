@@ -43,7 +43,7 @@ public:
     virtual void appendCppType(_VarString* s, Type* type);
     virtual bool isClass(_LetString* name);
     virtual void indentHeader();
-    virtual void writeParameter(_LetString* name, Type* parameterType);
+    virtual void writeParameter(_VarString* name, Type* parameterType);
     virtual bool openProgram(Program* program);
     virtual void closeProgram(Program* program);
     _VarString* programName;
@@ -96,16 +96,15 @@ public:
     virtual void closeParameterClause(ParameterClause* parameterClause);
     virtual bool openConstParameter(ConstParameter* constParameter);
     virtual void closeConstParameter(ConstParameter* constParameter);
-    _LetString* constParameterName;
+    _VarString* constParameterName;
     virtual bool openVarParameter(VarParameter* varParameter);
     virtual void closeVarParameter(VarParameter* varParameter);
-    _LetString* varParameterName;
+    _VarString* varParameterName;
     virtual bool openThrowsClause(ThrowsClause* throwsClause);
     virtual void closeThrowsClause(ThrowsClause* throwsClause);
     virtual bool openEnumMember(EnumMember* enumMember);
     virtual void closeEnumMember(EnumMember* enumMember);
     virtual void visitEnumCase(EnumCase* enumCase);
-    _LetString* enumCaseName;
     virtual bool openAdditionalCase(AdditionalCase* additionalCase);
     virtual void closeAdditionalCase(AdditionalCase* additionalCase);
     virtual bool openClassBody(ClassBody* classBody);
@@ -113,7 +112,6 @@ public:
     virtual bool openGenericArgumentClause(GenericArgumentClause* genericArgumentClause);
     virtual void closeGenericArgumentClause(GenericArgumentClause* genericArgumentClause);
     virtual void visitGenericParameter(GenericParameter* genericParameter);
-    _LetString* genericParameterTypeName;
     virtual bool openClassMember(ClassMember* classMember);
     virtual void closeClassMember(ClassMember* classMember);
     virtual bool openPrefixExpression(PrefixExpression* prefixExpression);
@@ -146,7 +144,6 @@ public:
     virtual bool openNamedMemberPostfix(NamedMemberPostfix* namedMemberPostfix);
     virtual void closeNamedMemberPostfix(NamedMemberPostfix* namedMemberPostfix);
     virtual void visitIdentifierExpression(IdentifierExpression* identifierExpression);
-    _LetString* identifierExpressionName;
     virtual void visitLiteralExpression(LiteralExpression* literalExpression);
     virtual bool openIfExpression(IfExpression* ifExpression);
     virtual void closeIfExpression(IfExpression* ifExpression);
@@ -193,7 +190,7 @@ public:
     virtual void visitWildcardPattern(WildcardPattern* wildcardPattern);
     virtual bool openIdentifierPattern(IdentifierPattern* identifierPattern);
     virtual void closeIdentifierPattern(IdentifierPattern* identifierPattern);
-    _LetString* identifierPatternIdentifier;
+    _VarString* identifierPatternIdentifier;
     virtual bool openTuplePattern(TuplePattern* tuplePattern);
     virtual void closeTuplePattern(TuplePattern* tuplePattern);
     virtual bool openExpressionPattern(ExpressionPattern* expressionPattern);
@@ -205,13 +202,10 @@ public:
     virtual void visitEmptyCaseContent(EmptyCaseContent* emptyCaseContent);
     virtual void visitThisInit(ThisInit* thisInit);
     virtual void visitThisMember(ThisMember* thisMember);
-    _LetString* thisMemberName;
     virtual void visitSuperInit(SuperInit* superInit);
     virtual void visitSuperMember(SuperMember* superMember);
-    _LetString* superMemberName;
     virtual bool openTypeIdentifier(TypeIdentifier* typeIdentifier);
     virtual void closeTypeIdentifier(TypeIdentifier* typeIdentifier);
-    _LetString* typeIdentifierName;
     virtual bool openArrayType(ArrayType* arrayType);
     virtual void closeArrayType(ArrayType* arrayType);
     virtual bool openTypeAnnotation(TypeAnnotation* typeAnnotation);
