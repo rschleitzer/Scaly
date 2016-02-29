@@ -9,7 +9,7 @@
         (if (multiple? syntax) ($
 "
     function parse"(id syntax)"List() -> ["(id syntax)"] throws ParserError {
-        mutable (string-firstchar-downcase "(string-firstchar-downcase (id syntax))"): ["(id syntax)"]? = ["(id syntax)"]()
+        mutable "(string-firstchar-downcase (string-firstchar-downcase (id syntax)))": ["(id syntax)"]? = ["(id syntax)"]()
         while true
             "(string-firstchar-downcase (id syntax))".push(parse"(id syntax)"() catch _ break)
         return "(string-firstchar-downcase (id syntax))"

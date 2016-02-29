@@ -409,7 +409,7 @@ void CppVisitor::closeThrowsClause(ThrowsClause* throwsClause) {
 
 bool CppVisitor::openEnumDeclaration(EnumDeclaration* enumDeclaration) {
     enumDeclarationName->getPage()->clear();
-    enumDeclarationName = new(getPage()) _VarString(*enumDeclaration->name);
+    enumDeclarationName = new(enumDeclarationName->getPage()) _VarString(*enumDeclaration->name);
     (*headerFile) += "\n\nclass ";
     (*headerFile) += *enumDeclarationName;
     (*headerFile) += ";\n";

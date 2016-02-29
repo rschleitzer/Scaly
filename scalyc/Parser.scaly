@@ -26,7 +26,7 @@ class Parser {
     }
 
     function parseStatementWithSemicolonList() -> [StatementWithSemicolon] throws ParserError {
-        mutable (string-firstchar-downcase statementWithSemicolon): [StatementWithSemicolon]? = [StatementWithSemicolon]()
+        mutable statementWithSemicolon: [StatementWithSemicolon]? = [StatementWithSemicolon]()
         while true
             statementWithSemicolon.push(parseStatementWithSemicolon() catch _ break)
         return statementWithSemicolon
@@ -563,7 +563,7 @@ class Parser {
     }
 
     function parsePathIdentifierList() -> [PathIdentifier] throws ParserError {
-        mutable (string-firstchar-downcase pathIdentifier): [PathIdentifier]? = [PathIdentifier]()
+        mutable pathIdentifier: [PathIdentifier]? = [PathIdentifier]()
         while true
             pathIdentifier.push(parsePathIdentifier() catch _ break)
         return pathIdentifier
@@ -667,7 +667,7 @@ class Parser {
     }
 
     function parsePatternInitializerList() -> [PatternInitializer] throws ParserError {
-        mutable (string-firstchar-downcase patternInitializer): [PatternInitializer]? = [PatternInitializer]()
+        mutable patternInitializer: [PatternInitializer]? = [PatternInitializer]()
         while true
             patternInitializer.push(parsePatternInitializer() catch _ break)
         return patternInitializer
@@ -702,7 +702,7 @@ class Parser {
     }
 
     function parseAdditionalInitializerList() -> [AdditionalInitializer] throws ParserError {
-        mutable (string-firstchar-downcase additionalInitializer): [AdditionalInitializer]? = [AdditionalInitializer]()
+        mutable additionalInitializer: [AdditionalInitializer]? = [AdditionalInitializer]()
         while true
             additionalInitializer.push(parseAdditionalInitializer() catch _ break)
         return additionalInitializer
@@ -735,7 +735,7 @@ class Parser {
     }
 
     function parseModifierList() -> [Modifier] throws ParserError {
-        mutable (string-firstchar-downcase modifier): [Modifier]? = [Modifier]()
+        mutable modifier: [Modifier]? = [Modifier]()
         while true
             modifier.push(parseModifier() catch _ break)
         return modifier
@@ -895,7 +895,7 @@ class Parser {
     }
 
     function parseParameterClauseList() -> [ParameterClause] throws ParserError {
-        mutable (string-firstchar-downcase parameterClause): [ParameterClause]? = [ParameterClause]()
+        mutable parameterClause: [ParameterClause]? = [ParameterClause]()
         while true
             parameterClause.push(parseParameterClause() catch _ break)
         return parameterClause
@@ -937,7 +937,7 @@ class Parser {
     }
 
     function parseParameterList() -> [Parameter] throws ParserError {
-        mutable (string-firstchar-downcase parameter): [Parameter]? = [Parameter]()
+        mutable parameter: [Parameter]? = [Parameter]()
         while true
             parameter.push(parseParameter() catch _ break)
         return parameter
@@ -1105,7 +1105,7 @@ class Parser {
     }
 
     function parseEnumMemberList() -> [EnumMember] throws ParserError {
-        mutable (string-firstchar-downcase enumMember): [EnumMember]? = [EnumMember]()
+        mutable enumMember: [EnumMember]? = [EnumMember]()
         while true
             enumMember.push(parseEnumMember() catch _ break)
         return enumMember
@@ -1177,7 +1177,7 @@ class Parser {
     }
 
     function parseAdditionalCaseList() -> [AdditionalCase] throws ParserError {
-        mutable (string-firstchar-downcase additionalCase): [AdditionalCase]? = [AdditionalCase]()
+        mutable additionalCase: [AdditionalCase]? = [AdditionalCase]()
         while true
             additionalCase.push(parseAdditionalCase() catch _ break)
         return additionalCase
@@ -1280,7 +1280,7 @@ class Parser {
     }
 
     function parseGenericParameterList() -> [GenericParameter] throws ParserError {
-        mutable (string-firstchar-downcase genericParameter): [GenericParameter]? = [GenericParameter]()
+        mutable genericParameter: [GenericParameter]? = [GenericParameter]()
         while true
             genericParameter.push(parseGenericParameter() catch _ break)
         return genericParameter
@@ -1304,7 +1304,7 @@ class Parser {
     }
 
     function parseClassMemberList() -> [ClassMember] throws ParserError {
-        mutable (string-firstchar-downcase classMember): [ClassMember]? = [ClassMember]()
+        mutable classMember: [ClassMember]? = [ClassMember]()
         while true
             classMember.push(parseClassMember() catch _ break)
         return classMember
@@ -1393,7 +1393,7 @@ class Parser {
     }
 
     function parseBinaryOpList() -> [BinaryOp] throws ParserError {
-        mutable (string-firstchar-downcase binaryOp): [BinaryOp]? = [BinaryOp]()
+        mutable binaryOp: [BinaryOp]? = [BinaryOp]()
         while true
             binaryOp.push(parseBinaryOp() catch _ break)
         return binaryOp
@@ -1549,7 +1549,7 @@ class Parser {
     }
 
     function parseCatchClauseList() -> [CatchClause] throws ParserError {
-        mutable (string-firstchar-downcase catchClause): [CatchClause]? = [CatchClause]()
+        mutable catchClause: [CatchClause]? = [CatchClause]()
         while true
             catchClause.push(parseCatchClause() catch _ break)
         return catchClause
@@ -1674,7 +1674,7 @@ class Parser {
     }
 
     function parsePostfixList() -> [Postfix] throws ParserError {
-        mutable (string-firstchar-downcase postfix): [Postfix]? = [Postfix]()
+        mutable postfix: [Postfix]? = [Postfix]()
         while true
             postfix.push(parsePostfix() catch _ break)
         return postfix
@@ -1830,7 +1830,7 @@ class Parser {
     }
 
     function parseExpressionElementList() -> [ExpressionElement] throws ParserError {
-        mutable (string-firstchar-downcase expressionElement): [ExpressionElement]? = [ExpressionElement]()
+        mutable expressionElement: [ExpressionElement]? = [ExpressionElement]()
         while true
             expressionElement.push(parseExpressionElement() catch _ break)
         return expressionElement
@@ -2607,7 +2607,7 @@ class Parser {
     }
 
     function parseSwitchCaseList() -> [SwitchCase] throws ParserError {
-        mutable (string-firstchar-downcase switchCase): [SwitchCase]? = [SwitchCase]()
+        mutable switchCase: [SwitchCase]? = [SwitchCase]()
         while true
             switchCase.push(parseSwitchCase() catch _ break)
         return switchCase
@@ -2737,7 +2737,7 @@ class Parser {
     }
 
     function parseCaseItemList() -> [CaseItem] throws ParserError {
-        mutable (string-firstchar-downcase caseItem): [CaseItem]? = [CaseItem]()
+        mutable caseItem: [CaseItem]? = [CaseItem]()
         while true
             caseItem.push(parseCaseItem() catch _ break)
         return caseItem
@@ -3049,7 +3049,7 @@ class Parser {
     }
 
     function parseTuplePatternElementList() -> [TuplePatternElement] throws ParserError {
-        mutable (string-firstchar-downcase tuplePatternElement): [TuplePatternElement]? = [TuplePatternElement]()
+        mutable tuplePatternElement: [TuplePatternElement]? = [TuplePatternElement]()
         while true
             tuplePatternElement.push(parseTuplePatternElement() catch _ break)
         return tuplePatternElement
@@ -3415,7 +3415,7 @@ class Parser {
     }
 
     function parseTypePostfixList() -> [TypePostfix] throws ParserError {
-        mutable (string-firstchar-downcase typePostfix): [TypePostfix]? = [TypePostfix]()
+        mutable typePostfix: [TypePostfix]? = [TypePostfix]()
         while true
             typePostfix.push(parseTypePostfix() catch _ break)
         return typePostfix
@@ -3479,7 +3479,7 @@ class Parser {
     }
 
     function parseInheritanceList() -> [Inheritance] throws ParserError {
-        mutable (string-firstchar-downcase inheritance): [Inheritance]? = [Inheritance]()
+        mutable inheritance: [Inheritance]? = [Inheritance]()
         while true
             inheritance.push(parseInheritance() catch _ break)
         return inheritance
