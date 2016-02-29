@@ -14,6 +14,7 @@ public:
 
 class CppVisitor : public SyntaxVisitor {
 public:
+    CppVisitor();
     virtual CppError* execute(Program* program);
     CppError* cppError;
     _LetString* moduleName;
@@ -45,8 +46,8 @@ public:
     void writeParameter(_LetString* name, Type* parameterType);
     virtual bool openProgram(Program* program);
     virtual void closeProgram(Program* program);
-    _LetString* programName;
-    _LetString* programDirectory;
+    _VarString* programName;
+    _VarString* programDirectory;
     virtual bool openCompilationUnit(CompilationUnit* compilationUnit);
     virtual void closeCompilationUnit(CompilationUnit* compilationUnit);
     virtual bool openStatementWithSemicolon(StatementWithSemicolon* statementWithSemicolon);

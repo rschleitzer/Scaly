@@ -2,23 +2,34 @@
 using namespace scaly;
 namespace scalyc {
 
+CppVisitor::CppVisitor()
+  : programName(new(getPage()->allocateExclusivePage()) _VarString()),
+    programDirectory(new(getPage()->allocateExclusivePage()) _VarString())
+{}
+
 CppError* CppVisitor::execute(Program* program) {
     program->accept(this);
     return cppError;
 }
 
 bool CppVisitor::openProgram(Program* program) {
-    programName = program->name;
-    programDirectory = program->directory;
+    programName->getPage()->clear();
+    programName = new(programName->getPage()) _VarString(*program->name);
+    programDirectory->getPage()->clear();
+    programDirectory = new(programDirectory->getPage()) _VarString(*program->directory);
 
-    if (programDirectory == 0 || *programDirectory == "")
-        programDirectory = &_LetString::create(this->getPage(), ".");
+    if (programDirectory == 0 || *programDirectory == "") {
+        programDirectory->getPage()->clear();
+        programDirectory = new(programDirectory->getPage()) _VarString(_LetString::create(this->getPage(), "."));
+    }
 
-    if (!Directory::exists(*programDirectory)) {
-        DirectoryError* dirError = Directory::create(getPage(), *programDirectory);
-        if (dirError) {
-            cppError = new(getPage()) CppError(new(getPage()) _CppError_unableToCreateOutputDirectory(programDirectory, dirError));
-            return false; } }
+    {
+        _Region _region; _Page* _p = _region.get();
+        if (!Directory::exists(_LetString::create(_p, *programDirectory))) {
+            DirectoryError* dirError = Directory::create(getPage(), _LetString::create(_p, *programDirectory));
+            if (dirError) {
+                cppError = new(getPage()) CppError(new(getPage()) _CppError_unableToCreateOutputDirectory(&_LetString::create(getPage(), *programDirectory), dirError));
+                return false; } } }
 
     {
         _Region _region; _Page* _p = _region.get();
