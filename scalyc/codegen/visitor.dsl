@@ -89,7 +89,7 @@ public:"
             (apply-to-children-of syntax (lambda (identifier)
                 (if (identifier? identifier) ($
 "
-    _LetString* "(visitor-property syntax identifier)";"
+    _VarString* "(visitor-property syntax identifier)";"
                 )"")
             ))
         "")
@@ -123,7 +123,7 @@ namespace scalyc {
 bool MyVisitor::open"(id syntax)"("(id syntax)"* "(string-firstchar-downcase (id syntax))") {
 "                (apply-to-children-of syntax (lambda (identifier)
                     (if (identifier? identifier) ($
-"    "(visitor-property syntax identifier)" = "(string-firstchar-downcase (id syntax))"->"(property identifier)";
+"    *"(visitor-property syntax identifier)" = *"(string-firstchar-downcase (id syntax))"->"(property identifier)";
 "                   )"")
                 ))
 "    return true;

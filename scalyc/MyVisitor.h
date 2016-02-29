@@ -8,8 +8,8 @@ class MyVisitor : public SyntaxVisitor {
 public:
     virtual bool openProgram(Program* program);
     virtual void closeProgram(Program* program);
-    _LetString* programName;
-    _LetString* programDirectory;
+    _VarString* programName;
+    _VarString* programDirectory;
     virtual bool openCompilationUnit(CompilationUnit* compilationUnit);
     virtual void closeCompilationUnit(CompilationUnit* compilationUnit);
     virtual bool openStatementWithSemicolon(StatementWithSemicolon* statementWithSemicolon);
@@ -24,10 +24,10 @@ public:
     virtual void closeFunctionDeclaration(FunctionDeclaration* functionDeclaration);
     virtual bool openEnumDeclaration(EnumDeclaration* enumDeclaration);
     virtual void closeEnumDeclaration(EnumDeclaration* enumDeclaration);
-    _LetString* enumDeclarationName;
+    _VarString* enumDeclarationName;
     virtual bool openClassDeclaration(ClassDeclaration* classDeclaration);
     virtual void closeClassDeclaration(ClassDeclaration* classDeclaration);
-    _LetString* classDeclarationName;
+    _VarString* classDeclarationName;
     virtual bool openInitializerDeclaration(InitializerDeclaration* initializerDeclaration);
     virtual void closeInitializerDeclaration(InitializerDeclaration* initializerDeclaration);
     virtual bool openCodeBlock(CodeBlock* codeBlock);
@@ -37,7 +37,7 @@ public:
     virtual bool openPathIdentifier(PathIdentifier* pathIdentifier);
     virtual void closePathIdentifier(PathIdentifier* pathIdentifier);
     virtual void visitPathItem(PathItem* pathItem);
-    _LetString* pathItemName;
+    _VarString* pathItemName;
     virtual bool openInitializer(Initializer* initializer);
     virtual void closeInitializer(Initializer* initializer);
     virtual bool openBindingInitializer(BindingInitializer* bindingInitializer);
@@ -49,7 +49,7 @@ public:
     virtual void visitOverrideWord(OverrideWord* overrideWord);
     virtual void visitStaticWord(StaticWord* staticWord);
     virtual void visitIdentifierFunction(IdentifierFunction* identifierFunction);
-    _LetString* identifierFunctionName;
+    _VarString* identifierFunctionName;
     virtual bool openFunctionSignature(FunctionSignature* functionSignature);
     virtual void closeFunctionSignature(FunctionSignature* functionSignature);
     virtual bool openFunctionResult(FunctionResult* functionResult);
@@ -58,16 +58,16 @@ public:
     virtual void closeParameterClause(ParameterClause* parameterClause);
     virtual bool openConstParameter(ConstParameter* constParameter);
     virtual void closeConstParameter(ConstParameter* constParameter);
-    _LetString* constParameterName;
+    _VarString* constParameterName;
     virtual bool openVarParameter(VarParameter* varParameter);
     virtual void closeVarParameter(VarParameter* varParameter);
-    _LetString* varParameterName;
+    _VarString* varParameterName;
     virtual bool openThrowsClause(ThrowsClause* throwsClause);
     virtual void closeThrowsClause(ThrowsClause* throwsClause);
     virtual bool openEnumMember(EnumMember* enumMember);
     virtual void closeEnumMember(EnumMember* enumMember);
     virtual void visitEnumCase(EnumCase* enumCase);
-    _LetString* enumCaseName;
+    _VarString* enumCaseName;
     virtual bool openAdditionalCase(AdditionalCase* additionalCase);
     virtual void closeAdditionalCase(AdditionalCase* additionalCase);
     virtual bool openClassBody(ClassBody* classBody);
@@ -75,7 +75,7 @@ public:
     virtual bool openGenericArgumentClause(GenericArgumentClause* genericArgumentClause);
     virtual void closeGenericArgumentClause(GenericArgumentClause* genericArgumentClause);
     virtual void visitGenericParameter(GenericParameter* genericParameter);
-    _LetString* genericParameterTypeName;
+    _VarString* genericParameterTypeName;
     virtual bool openClassMember(ClassMember* classMember);
     virtual void closeClassMember(ClassMember* classMember);
     virtual bool openPrefixExpression(PrefixExpression* prefixExpression);
@@ -108,7 +108,7 @@ public:
     virtual bool openNamedMemberPostfix(NamedMemberPostfix* namedMemberPostfix);
     virtual void closeNamedMemberPostfix(NamedMemberPostfix* namedMemberPostfix);
     virtual void visitIdentifierExpression(IdentifierExpression* identifierExpression);
-    _LetString* identifierExpressionName;
+    _VarString* identifierExpressionName;
     virtual void visitLiteralExpression(LiteralExpression* literalExpression);
     virtual bool openIfExpression(IfExpression* ifExpression);
     virtual void closeIfExpression(IfExpression* ifExpression);
@@ -155,7 +155,7 @@ public:
     virtual void visitWildcardPattern(WildcardPattern* wildcardPattern);
     virtual bool openIdentifierPattern(IdentifierPattern* identifierPattern);
     virtual void closeIdentifierPattern(IdentifierPattern* identifierPattern);
-    _LetString* identifierPatternIdentifier;
+    _VarString* identifierPatternIdentifier;
     virtual bool openTuplePattern(TuplePattern* tuplePattern);
     virtual void closeTuplePattern(TuplePattern* tuplePattern);
     virtual bool openExpressionPattern(ExpressionPattern* expressionPattern);
@@ -167,13 +167,13 @@ public:
     virtual void visitEmptyCaseContent(EmptyCaseContent* emptyCaseContent);
     virtual void visitThisInit(ThisInit* thisInit);
     virtual void visitThisMember(ThisMember* thisMember);
-    _LetString* thisMemberName;
+    _VarString* thisMemberName;
     virtual void visitSuperInit(SuperInit* superInit);
     virtual void visitSuperMember(SuperMember* superMember);
-    _LetString* superMemberName;
+    _VarString* superMemberName;
     virtual bool openTypeIdentifier(TypeIdentifier* typeIdentifier);
     virtual void closeTypeIdentifier(TypeIdentifier* typeIdentifier);
-    _LetString* typeIdentifierName;
+    _VarString* typeIdentifierName;
     virtual bool openArrayType(ArrayType* arrayType);
     virtual void closeArrayType(ArrayType* arrayType);
     virtual bool openTypeAnnotation(TypeAnnotation* typeAnnotation);

@@ -9,7 +9,7 @@ public:
     Inherits(_LetString* className);
     _LetString* name;
     _Array<_LetString>* inheritors;
-    virtual bool _isInherits();    
+    virtual bool _isInherits();
 };
 
 class CppVisitor : public SyntaxVisitor {

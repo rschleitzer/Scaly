@@ -18,7 +18,7 @@ class CppVisitor : SyntaxVisitor {
     mutable headerFile: String
     mutable headerIndentLevel: unsigned
     mutable sourceIndentLevel: unsigned
-    mutable firstparamerer: bool
+    mutable firstParameter: bool
     mutable firstBindingInitializer: bool
     mutable inherits: [Inherits]
     mutable classes: [String]
@@ -44,7 +44,7 @@ class CppVisitor : SyntaxVisitor {
     function registerInheritance(className: String, baseName: String) {
     }
 
-    function collectDerivedClasses(mutable derivedClasses: [String], mutable className: String) {
+    function collectDerivedClasses(mutable derivedClasses: [String], className: String) {
     }
 
     function appendDerivedClasses(mutable derivedClasses: [String], mutable inheritors: [String]) {

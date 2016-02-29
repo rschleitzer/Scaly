@@ -4,8 +4,8 @@ namespace scalyc {
 
 
 bool MyVisitor::openProgram(Program* program) {
-    programName = program->name;
-    programDirectory = program->directory;
+    *programName = *program->name;
+    *programDirectory = *program->directory;
     return true;
 }
 
@@ -57,7 +57,7 @@ void MyVisitor::closeFunctionDeclaration(FunctionDeclaration* functionDeclaratio
 }
 
 bool MyVisitor::openEnumDeclaration(EnumDeclaration* enumDeclaration) {
-    enumDeclarationName = enumDeclaration->name;
+    *enumDeclarationName = *enumDeclaration->name;
     return true;
 }
 
@@ -66,7 +66,7 @@ void MyVisitor::closeEnumDeclaration(EnumDeclaration* enumDeclaration) {
 }
 
 bool MyVisitor::openClassDeclaration(ClassDeclaration* classDeclaration) {
-    classDeclarationName = classDeclaration->name;
+    *classDeclarationName = *classDeclaration->name;
     return true;
 }
 
@@ -164,7 +164,7 @@ void MyVisitor::closeParameterClause(ParameterClause* parameterClause) {
 }
 
 bool MyVisitor::openConstParameter(ConstParameter* constParameter) {
-    constParameterName = constParameter->name;
+    *constParameterName = *constParameter->name;
     return true;
 }
 
@@ -173,7 +173,7 @@ void MyVisitor::closeConstParameter(ConstParameter* constParameter) {
 }
 
 bool MyVisitor::openVarParameter(VarParameter* varParameter) {
-    varParameterName = varParameter->name;
+    *varParameterName = *varParameter->name;
     return true;
 }
 
@@ -486,7 +486,7 @@ void MyVisitor::visitWildcardPattern(WildcardPattern* wildcardPattern) {
 }
 
 bool MyVisitor::openIdentifierPattern(IdentifierPattern* identifierPattern) {
-    identifierPatternIdentifier = identifierPattern->identifier;
+    *identifierPatternIdentifier = *identifierPattern->identifier;
     return true;
 }
 
@@ -538,7 +538,7 @@ void MyVisitor::visitSuperMember(SuperMember* superMember) {
 }
 
 bool MyVisitor::openTypeIdentifier(TypeIdentifier* typeIdentifier) {
-    typeIdentifierName = typeIdentifier->name;
+    *typeIdentifierName = *typeIdentifier->name;
     return true;
 }
 
