@@ -245,8 +245,6 @@ class CppVisitor : SyntaxVisitor {
 
     function visitEnumCase(enumCase: EnumCase) { }
 
-    mutable enumCaseName: String
-
     function openAdditionalCase(additionalCase: AdditionalCase) -> bool {
         return true; }
 
@@ -264,10 +262,7 @@ class CppVisitor : SyntaxVisitor {
 
     function closeGenericArgumentClause(genericArgumentClause: GenericArgumentClause) { }
 
-
     function visitGenericParameter(genericParameter: GenericParameter) { }
-
-    mutable genericParameterTypeName: String
 
     function openClassMember(classMember: ClassMember) -> bool {
         return true; }
@@ -363,8 +358,6 @@ class CppVisitor : SyntaxVisitor {
 
 
     function visitIdentifierExpression(identifierExpression: IdentifierExpression) { }
-
-    mutable identifierExpressionName: String
 
     function visitLiteralExpression(literalExpression: LiteralExpression) { }
 
@@ -539,14 +532,10 @@ class CppVisitor : SyntaxVisitor {
 
     function visitThisMember(thisMember: ThisMember) { }
 
-    mutable thisMemberName: String
-
     function visitSuperInit(superInit: SuperInit) { }
 
 
     function visitSuperMember(superMember: SuperMember) { }
-
-    mutable superMemberName: String
 
     function openTypeIdentifier(typeIdentifier: TypeIdentifier) -> bool {
         typeIdentifierName = typeIdentifier.name
@@ -554,8 +543,6 @@ class CppVisitor : SyntaxVisitor {
 
     function closeTypeIdentifier(typeIdentifier: TypeIdentifier) {
         typeIdentifierName = null }
-
-    mutable typeIdentifierName: String
 
     function openArrayType(arrayType: ArrayType) -> bool {
         return true; }
