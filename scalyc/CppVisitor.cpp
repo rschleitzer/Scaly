@@ -4,7 +4,8 @@ namespace scalyc {
 
 CppVisitor::CppVisitor()
   : programName(new(getPage()->allocateExclusivePage()) _VarString()),
-    programDirectory(new(getPage()->allocateExclusivePage()) _VarString())
+    programDirectory(new(getPage()->allocateExclusivePage()) _VarString()),
+    enumDeclarationName(new(getPage()->allocateExclusivePage()) _VarString())
 {}
 
 CppError* CppVisitor::execute(Program* program) {
@@ -400,7 +401,8 @@ void CppVisitor::closeThrowsClause(ThrowsClause* throwsClause) {
 }
 
 bool CppVisitor::openEnumDeclaration(EnumDeclaration* enumDeclaration) {
-    enumDeclarationName = enumDeclaration->name;
+    enumDeclarationName->getPage()->clear();
+    enumDeclarationName = new(getPage()) _VarString(*enumDeclaration->name);
     (*headerFile) += "\n\nclass ";
     (*headerFile) += *enumDeclarationName;
     (*headerFile) += ";\n";
@@ -474,7 +476,6 @@ void CppVisitor::closeEnumDeclaration(EnumDeclaration* enumDeclaration) {
     (*headerFile) += "\nprivate:\n    _";
     (*headerFile) += *enumDeclarationName;
     (*headerFile) +="Code errorCode;\n    void* errorInfo;\n};";
-    enumDeclarationName = 0;
 }
 
 bool CppVisitor::openEnumMember(EnumMember* enumMember) {

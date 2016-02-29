@@ -62,7 +62,7 @@ public:
     virtual void closeFunctionDeclaration(FunctionDeclaration* functionDeclaration);
     virtual bool openEnumDeclaration(EnumDeclaration* enumDeclaration);
     virtual void closeEnumDeclaration(EnumDeclaration* enumDeclaration);
-    _LetString* enumDeclarationName;
+    _VarString* enumDeclarationName;
     virtual bool openClassDeclaration(ClassDeclaration* classDeclaration);
     virtual void closeClassDeclaration(ClassDeclaration* classDeclaration);
     _LetString* classDeclarationName;
