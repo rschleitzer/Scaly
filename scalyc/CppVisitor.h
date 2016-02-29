@@ -39,7 +39,7 @@ public:
     virtual void registerInheritance(_LetString* className, _LetString* baseName);
     virtual void collectDerivedClasses(_Array<_LetString>* derivedClasses, _LetString* className);
     virtual void appendDerivedClasses(_Array<_LetString>* derivedClasses, _Array<_LetString>* inheritors);
-    const char* getCppTypeName(_LetString* typeIdentifierName);
+    void appendCppTypeName(_VarString* s, _LetString* typeIdentifierName);
     void appendCppType(_VarString* s, Type* type);
     bool isClass(_LetString* name);
     void indentHeader();

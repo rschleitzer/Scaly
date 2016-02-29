@@ -300,7 +300,7 @@ bool CppVisitor::openFunctionSignature(FunctionSignature* functionSignature) {
     else {
         if (functionSignature->result->resultType->_isTypeIdentifier()) {
             TypeIdentifier* typeId = (TypeIdentifier*)functionSignature->result->resultType;
-            (*headerFile) += getCppTypeName(typeId->name);
+            appendCppTypeName(headerFile, typeId->name);
             if (isClass(typeId->name)) {
                 (*headerFile) += "*"; } } }
     (*headerFile) += " ";
@@ -518,7 +518,7 @@ void CppVisitor::closeEnumMember(EnumMember* enumMember) {
 void CppVisitor::appendCppType(_VarString* s, Type* type) {
     if (type->_isTypeIdentifier()) {
         TypeIdentifier* typeId = (TypeIdentifier*)type;
-        (*s) += getCppTypeName(typeId->name);
+        appendCppTypeName(s, typeId->name);
         if (isClass(typeId->name)) {
             (*s) += "*"; }
     }
@@ -528,7 +528,7 @@ void CppVisitor::appendCppType(_VarString* s, Type* type) {
         if (type->_isTypeIdentifier()) {
             TypeIdentifier* typeId = (TypeIdentifier*)type;
             (*s) += "_Vector<";
-            (*s) += getCppTypeName(typeId->name);
+            appendCppTypeName(s, typeId->name);
             (*s) += ">*";
         }
     }
@@ -984,27 +984,31 @@ bool CppVisitor::openTypeIdentifier(TypeIdentifier* typeIdentifier) {
     typeIdentifierName = typeIdentifier->name;
 
     if (!codeBlockLevel) {
-        (*headerFile) += getCppTypeName(typeIdentifierName);
+        appendCppTypeName(headerFile, typeIdentifierName);
         if (isClass(typeIdentifierName) && (!inArrayType)) {
             (*headerFile) += "*"; } }
     return true;
 }
 
-const char* CppVisitor::getCppTypeName(_LetString* typeIdentifierName) {
-    const char* typeIdentifier = typeIdentifierName->getNativeString();
-
+void CppVisitor::appendCppTypeName(_VarString* s, _LetString* typeIdentifierName) {
     if ((*typeIdentifierName) == "unsigned") {
-    return "size_t"; }
+        (*s) += "size_t";
+        return;
+    }
     else {
         if ((*typeIdentifierName) == "String") {
-            if ((constDeclaration)||(inArrayType))
-                return "_LetString";
-            else
-                return "_VarString";
+            if ((constDeclaration)||(inArrayType)) {
+                (*s) += "_LetString";
+                return;
+            }
+            else {
+                (*s) += "_VarString";
+                return;
+            }
         }
     }
 
-    return typeIdentifier;
+    (*s) += *typeIdentifierName;
 }
 
 void CppVisitor::closeTypeIdentifier(TypeIdentifier* typeIdentifier) {
