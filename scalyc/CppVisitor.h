@@ -65,7 +65,7 @@ public:
     _VarString* enumDeclarationName;
     virtual bool openClassDeclaration(ClassDeclaration* classDeclaration);
     virtual void closeClassDeclaration(ClassDeclaration* classDeclaration);
-    _LetString* classDeclarationName;
+    _VarString* classDeclarationName;
     virtual bool openInitializerDeclaration(InitializerDeclaration* initializerDeclaration);
     virtual void closeInitializerDeclaration(InitializerDeclaration* initializerDeclaration);
     virtual bool openCodeBlock(CodeBlock* codeBlock);

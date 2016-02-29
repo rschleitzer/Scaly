@@ -5,7 +5,8 @@ namespace scalyc {
 CppVisitor::CppVisitor()
   : programName(new(getPage()->allocateExclusivePage()) _VarString()),
     programDirectory(new(getPage()->allocateExclusivePage()) _VarString()),
-    enumDeclarationName(new(getPage()->allocateExclusivePage()) _VarString())
+    enumDeclarationName(new(getPage()->allocateExclusivePage()) _VarString()),
+    classDeclarationName(new(getPage()->allocateExclusivePage()) _VarString())
 {}
 
 CppError* CppVisitor::execute(Program* program) {
@@ -546,7 +547,8 @@ void CppVisitor::closeAdditionalCase(AdditionalCase* additionalCase) {
 }
 
 bool CppVisitor::openClassDeclaration(ClassDeclaration* classDeclaration) {
-    classDeclarationName = classDeclaration->name;
+    classDeclarationName->getPage()->clear();
+    classDeclarationName = new(classDeclarationName->getPage()) _VarString(*classDeclaration->name);
 
     (*headerFile) += "\n\nclass ";
     (*headerFile) += *classDeclarationName;
@@ -581,7 +583,7 @@ void CppVisitor::closeClassDeclaration(ClassDeclaration* classDeclaration) {
     {
         _Region _region; _Page* _p = _region.get();
         _Array<_LetString>& derivedClasses = *new(_p) _Array<_LetString>();
-        collectDerivedClasses(&derivedClasses, classDeclarationName);
+        collectDerivedClasses(&derivedClasses, &_LetString::create(_p, *classDeclarationName));
         size_t _derivedClasses_length = derivedClasses.length();
         for (size_t _i = 0; _i < _derivedClasses_length; _i++) {
             (*headerFile) += "\n"; indentHeader(); (*headerFile) += "virtual bool _is"; (*headerFile) += **derivedClasses[_i]; (*headerFile) += "();";
@@ -589,7 +591,6 @@ void CppVisitor::closeClassDeclaration(ClassDeclaration* classDeclaration) {
     }
 
     headerIndentLevel--;
-    classDeclarationName = 0;
     (*headerFile) += "\n};";
 }
 
