@@ -31,6 +31,7 @@
     <File Name="VarString.cpp"/>
     <File Name="LetString.cpp"/>
     <File Name="Chunk.cpp"/>
+    <File Name="Pool.cpp"/>
   </VirtualDirectory>
   <VirtualDirectory Name="include">
     <File Name="Scaly.h"/>
@@ -47,6 +48,7 @@
     <File Name="LetString.h"/>
     <File Name="Vector.h"/>
     <File Name="Chunk.h"/>
+    <File Name="Pool.h"/>
   </VirtualDirectory>
   <Settings Type="Static Library">
     <GlobalSettings>

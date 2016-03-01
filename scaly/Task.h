@@ -14,7 +14,7 @@ public:
 private:
     _Page* allocatePage();
 
-    _Chunk* chunk;
+    _Pool* pool;
 };
 
 }
