@@ -3,7 +3,8 @@ using namespace scaly;
 namespace scalyc {
 
 CppVisitor::CppVisitor()
-  : programName(new(getPage()->allocateExclusivePage()) _VarString()),
+  : cppError(0),
+    programName(new(getPage()->allocateExclusivePage()) _VarString()),
     programDirectory(new(getPage()->allocateExclusivePage()) _VarString()),
     enumDeclarationName(new(getPage()->allocateExclusivePage()) _VarString()),
     classDeclarationName(new(getPage()->allocateExclusivePage()) _VarString()),

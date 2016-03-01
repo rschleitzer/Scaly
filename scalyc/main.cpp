@@ -9,7 +9,7 @@ extern __thread _Task* __CurrentTask;
 
 int main(int argc, char** argv) {
     // Allocate the root page for the main thread
-    _Page* page;
+    _Page* page = 0;
     posix_memalign((void**)&page, _pageSize, _pageSize * _maxStackPages);
     if (!page)
         return -1;
