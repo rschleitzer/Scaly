@@ -11,7 +11,8 @@ public:
     void dispose();
 
 private:
-    _Chunk* chunk;
+    _Chunk* getContainingChunk(_Page* page);
+    _Array<_Chunk>* chunks;
 };
 
 }

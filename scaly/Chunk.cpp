@@ -1,12 +1,33 @@
 #include "Scaly.h"
 namespace scaly{
 
+_Chunk* _Chunk::create() {
+    _Page* page = 0;
+    posix_memalign((void**)&page, _pageSize, _pageSize * numberOfPages);
+    if (!page)
+        return 0;
+    page->reset();
+    new(page) _Chunk();
+}
+
 _Chunk::_Chunk() {
-    posix_memalign((void**)&chunkBase, _pageSize, _pageSize * numberOfPages);
+    chunkBase = (char*) getPage();
     size_t numberOfBytesInMap = numberOfPagesInBucket * sizeof(size_t);
     allocationMap = (size_t*)getPage()->allocateObject(numberOfBytesInMap);
     memset(allocationMap, 0, numberOfBytesInMap);
+    // for our own page
+    allocationMap[0] = 1;
     allocationIndex = 0;
+ }
+
+ bool _Chunk::isEmpty() {
+    if (allocationMap[0] != 1)
+        return false;
+    for (int i = 1; i < 8 * sizeof(size_t); i++)
+        if (allocationMap[i])
+            return false;
+
+    return true;
  }
 
 _Page* _Chunk::allocatePage() {

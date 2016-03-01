@@ -50,9 +50,21 @@ public:
             return 0;
         }
         else {
-            _Page* page = *(*this)[_size - 1];
+            T* item = *(*this)[_size - 1];
             _size--;
-            return page;
+            return item;
+        }
+    }
+
+    // Remove a value from the array
+    void remove(T* t) {
+        for (size_t i = 0; i < _size; i++) {
+            if (*(*this)[i] == t) {
+                for (size_t j = i + 1; j < _size; j++)
+                    *(*this)[j - 1] = *(*this)[j];
+                _size--;
+                return;
+            }
         }
     }
 
