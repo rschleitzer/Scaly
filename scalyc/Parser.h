@@ -140,13 +140,10 @@ public:
     virtual _Result<_Vector<Inheritance>, ParserError> parseInheritanceList(_Page* _rp, _Page* _ep);
     virtual _Result<Inheritance, ParserError> parseInheritance(_Page* _rp, _Page* _ep);
 
-    bool isAtEnd();
-    bool isIdentifier(_LetString& id);
-
-private:
+    virtual bool isAtEnd();
+    virtual bool isIdentifier(_LetString& id);
     Lexer lexer;
     _LetString* fileName;
-
     _LetString* useKeyword;
     _LetString* classKeyword;
     _LetString* functionKeyword;

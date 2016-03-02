@@ -143,13 +143,10 @@ public:
 "    virtual _Result<"(id syntax)", ParserError> parse"(id syntax)"(_Page* _rp, _Page* _ep);
 "   ))))
 "
-    bool isAtEnd();
-    bool isIdentifier(_LetString& id);
-
-private:
+    virtual bool isAtEnd();
+    virtual bool isIdentifier(_LetString& id);
     Lexer lexer;
     _LetString* fileName;
-
 "   (apply-to-selected-children "keyword" (lambda (keyword) ($
 "    _LetString* "(name keyword)";
 "   )))
