@@ -559,6 +559,7 @@ bool CppVisitor::openEnumMember(EnumMember* enumMember) {
         (*headerFile) += *enumMember->enumCase->name;
         (*headerFile) += "(";
     }
+    inEnumMember = true;
     return true;
 }
 
@@ -582,7 +583,7 @@ void CppVisitor::closeEnumMember(EnumMember* enumMember) {
         }
         (*headerFile) += "};\n";
     }
-
+    inEnumMember = false;
 }
 
 void CppVisitor::appendCppType(_VarString* s, Type* type) {
@@ -1065,7 +1066,7 @@ void CppVisitor::appendCppTypeName(_VarString* s, _LetString* typeIdentifierName
     }
     else {
         if ((*typeIdentifierName) == "String") {
-            if ((constDeclaration)||(inArrayType)) {
+            if ((constDeclaration)||(inArrayType)||(inEnumMember)) {
                 (*s) += "_LetString";
                 return;
             }
