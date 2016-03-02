@@ -307,22 +307,67 @@ bool CppVisitor::openFunctionSignature(FunctionSignature* functionSignature) {
         }
     }
     else {
-        if (functionSignature->result->resultType->_isTypeIdentifier()) {
-            TypeIdentifier* typeId = (TypeIdentifier*)functionSignature->result->resultType;
-            appendCppTypeName(headerFile, typeId->name);
-            if (isClass(typeId->name)) {
-                (*headerFile) += "*"; } } }
+        if (functionSignature->throwsClause) {
+            (*headerFile) += "_Result<";
+            if (functionSignature->result->resultType->_isTypeIdentifier()) {
+                TypeIdentifier* typeId = (TypeIdentifier*)functionSignature->result->resultType;
+                appendCppTypeName(headerFile, typeId->name);
+            }
+            else if (functionSignature->result->resultType->_isArrayType()) {
+                ArrayType* arrayType = (ArrayType*)functionSignature->result->resultType;
+                if (arrayType->elementType->_isTypeIdentifier()) {
+                    (*headerFile) += "_Vector<";
+                    TypeIdentifier* typeId = (TypeIdentifier*)arrayType->elementType;
+                    appendCppTypeName(headerFile, typeId->name);
+                    (*headerFile) += ">";
+                }
+            }
+            (*headerFile) += ", ";
+            appendCppTypeName(headerFile, ((TypeIdentifier*)(functionSignature->throwsClause->throwsType))->name);
+            (*headerFile) += ">";
+        }
+        else {
+            if (functionSignature->result->resultType->_isTypeIdentifier()) {
+                TypeIdentifier* typeId = (TypeIdentifier*)functionSignature->result->resultType;
+                appendCppTypeName(headerFile, typeId->name);
+                if (isClass(typeId->name)) {
+                    (*headerFile) += "*";
+                }
+            }
+            else if (functionSignature->result->resultType->_isArrayType()) {
+                ArrayType* arrayType = (ArrayType*)functionSignature->result->resultType;
+                if (arrayType->elementType->_isTypeIdentifier()) {
+                    (*headerFile) += "_Vector<";
+                    TypeIdentifier* typeId = (TypeIdentifier*)arrayType->elementType;
+                    appendCppTypeName(headerFile, typeId->name);
+                    (*headerFile) += ">";
+                }
+            }
+        }
+    }
     (*headerFile) += " ";
     (*headerFile) += *identifierFunctionName;
     (*headerFile) += "(";
-    if ((functionSignature->result) && (functionSignature->result->resultType->_isTypeIdentifier())) {
-        TypeIdentifier* typeId = (TypeIdentifier*)functionSignature->result->resultType;
-        if (isClass(typeId->name)) {
+    if (functionSignature->result) {
+        if (functionSignature->result->resultType->_isTypeIdentifier()) {
+            TypeIdentifier* typeId = (TypeIdentifier*)functionSignature->result->resultType;
+            if (isClass(typeId->name)) {
+                (*headerFile) += "_Page* _rp";
+                if ((functionSignature->parameterClause->parameters) || (functionSignature->throwsClause))
+                    (*headerFile) += ", ";
+            }
+        }
+        else if (functionSignature->result->resultType->_isArrayType()) {
             (*headerFile) += "_Page* _rp";
             if (functionSignature->parameterClause->parameters)
                 (*headerFile) += ", ";
-
-            } }
+        }
+        if (functionSignature->throwsClause) {
+            (*headerFile) += "_Page* _ep";
+            if (functionSignature->parameterClause->parameters)
+                (*headerFile) += ", ";
+        }
+    }
    return true;
 }
 

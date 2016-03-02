@@ -138,9 +138,9 @@ public:
     (apply-to-selected-children "syntax" (lambda (syntax) (if (program? syntax) "" ($
 "
 "        (if (multiple? syntax) ($
-"    _Result<""_Vector<"(id syntax)">, ParserError> parse"(id syntax)"List(_Page* _rp, _Page* _ep);
+"    virtual _Result<""_Vector<"(id syntax)">, ParserError> parse"(id syntax)"List(_Page* _rp, _Page* _ep);
 "       )"")
-"    _Result<"(id syntax)", ParserError> parse"(id syntax)"(_Page* _rp, _Page* _ep);
+"    virtual _Result<"(id syntax)", ParserError> parse"(id syntax)"(_Page* _rp, _Page* _ep);
 "   ))))
 "
     bool isAtEnd();
