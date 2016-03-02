@@ -184,8 +184,9 @@ public:
     _LetString* questionMark;
     _LetString* underscore;
     _LetString* evaluatesTo;
+    virtual bool _isParser();
 };
 
 }
 
-#endif /* defined(__scalyc__Parser__) */
+#endif // __scalyc__Parser__

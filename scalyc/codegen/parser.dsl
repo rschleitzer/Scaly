@@ -152,11 +152,12 @@ public:
     (apply-to-selected-children "punctuation" (lambda (punctuation) ($
 "    _LetString* "(id punctuation)";
 "   )))
-"};
+"    virtual bool _isParser();
+};
 
 }
 
-#endif /* defined(__scalyc__Parser__) */
+#endif // __scalyc__Parser__
 "
 
 ))
@@ -291,6 +292,8 @@ bool Parser::isIdentifier(_LetString* id) {"
 "
     return true;
 }
+
+bool Parser::_isParser() { return true; }
 
 }
 "
