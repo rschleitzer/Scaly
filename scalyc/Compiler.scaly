@@ -3,19 +3,19 @@ class Compiler {
         let files: [String] = options.files
         let sources: [String] = map(files, File.readToString)
             catch _ (file, error) throw UnableToReadFile(file, error)
-            
+
         let compilationUnits: [CompilationUnit] = map(compileUnit, sources, files)
             catch _ (_, error) throw SyntaxError(error)
 
         mutable program: Program = Program()
         program.name = options.outputName
         program.compilationUnits = compilationUnits
-        
+
         mutable visitor: CppVisitor = CppVisitor()
         program.Accept(visitor)
     }
-    
-    static function compileUnit(text: String) -> CompilationUnit throws ParserError {
+
+    static function compileUnit(fileName: String, text: String) -> CompilationUnit throws ParserError {
         parser = Parser(fileName, text)
         parser.parseTopLevelDeclaration
     }

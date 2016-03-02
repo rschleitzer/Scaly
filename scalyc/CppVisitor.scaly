@@ -27,7 +27,8 @@ class CppVisitor : SyntaxVisitor {
     mutable declaringClassMember: bool
     mutable inParameterClause: bool
     mutable codeBlockLevel: unsigned
-    mutable abstractFunction: bool 
+    mutable abstractFunction: bool
+    mutable staticFunction: bool
     mutable inArrayType: bool
     mutable constDeclaration: bool
 

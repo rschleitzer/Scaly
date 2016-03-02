@@ -268,13 +268,24 @@ bool CppVisitor::openFunctionDeclaration(FunctionDeclaration* functionDeclaratio
         abstractFunction = true;
     else
         abstractFunction = false;
+    if (functionDeclaration->modifiers) {
+        size_t _modifiers_length = functionDeclaration->modifiers->length();
+        for (size_t _i = 0; _i < _modifiers_length; _i++) {
+            Modifier* modifier = *(*functionDeclaration->modifiers)[_i];
+            if (modifier->_isStaticWord())
+                staticFunction = true;
+        }
+    }
     return true;
 }
 
 void CppVisitor::closeFunctionDeclaration(FunctionDeclaration* functionDeclaration) {
     if (abstractFunction) {
         (*headerFile) += " = 0";
-        abstractFunction = false; } }
+        abstractFunction = false;
+    }
+    staticFunction = false;
+}
 
 bool CppVisitor::openInitializerDeclaration(InitializerDeclaration* initializerDeclaration) {
     (*headerFile) += *classDeclarationName;
@@ -297,7 +308,10 @@ void CppVisitor::visitIdentifierFunction(IdentifierFunction* identifierFunction)
 }
 
 bool CppVisitor::openFunctionSignature(FunctionSignature* functionSignature) {
-    (*headerFile) += "virtual ";
+    if (staticFunction)
+        (*headerFile) += "static ";
+    else
+        (*headerFile) += "virtual ";
     if (!functionSignature->result) {
         if (!functionSignature->throwsClause) {
             (*headerFile) += "void";

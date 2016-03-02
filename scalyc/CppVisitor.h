@@ -30,6 +30,7 @@ public:
     bool inParameterClause;
     size_t codeBlockLevel;
     bool abstractFunction;
+    bool staticFunction;
     bool inArrayType;
     bool constDeclaration;
     virtual void buildProjectFileString(_VarString* projectFile, Program* program);
