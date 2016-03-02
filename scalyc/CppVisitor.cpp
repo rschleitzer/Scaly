@@ -359,7 +359,7 @@ bool CppVisitor::openFunctionSignature(FunctionSignature* functionSignature) {
         }
         else if (functionSignature->result->resultType->_isArrayType()) {
             (*headerFile) += "_Page* _rp";
-            if (functionSignature->parameterClause->parameters)
+            if ((functionSignature->parameterClause->parameters) || (functionSignature->throwsClause))
                 (*headerFile) += ", ";
         }
         if (functionSignature->throwsClause) {
