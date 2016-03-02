@@ -312,6 +312,7 @@ bool CppVisitor::openFunctionSignature(FunctionSignature* functionSignature) {
         (*headerFile) += "static ";
     else
         (*headerFile) += "virtual ";
+    inFunctionReturn = true;
     if (!functionSignature->result) {
         if (!functionSignature->throwsClause) {
             (*headerFile) += "void";
@@ -359,6 +360,7 @@ bool CppVisitor::openFunctionSignature(FunctionSignature* functionSignature) {
             }
         }
     }
+    inFunctionReturn = false;
     (*headerFile) += " ";
     (*headerFile) += *identifierFunctionName;
     (*headerFile) += "(";
@@ -1066,7 +1068,7 @@ void CppVisitor::appendCppTypeName(_VarString* s, _LetString* typeIdentifierName
     }
     else {
         if ((*typeIdentifierName) == "String") {
-            if ((constDeclaration)||(inArrayType)||(inEnumMember)) {
+            if ((constDeclaration)||(inArrayType)||(inEnumMember)||(inFunctionReturn)) {
                 (*s) += "_LetString";
                 return;
             }

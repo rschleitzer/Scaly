@@ -33,6 +33,7 @@ public:
     bool staticFunction;
     bool inArrayType;
     bool inEnumMember;
+    bool inFunctionReturn;
     bool constDeclaration;
     virtual void buildProjectFileString(_VarString* projectFile, Program* program);
     virtual void buildMainHeaderFileString(_VarString* projectFile, Program* program);
