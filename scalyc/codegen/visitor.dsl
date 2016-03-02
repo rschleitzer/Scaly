@@ -94,11 +94,15 @@ public:"
             ))
         "")
     ))))
+       (if (not concrete)
 "
-"       (if (not concrete)
-"    virtual bool _isSyntaxVisitor();
+    virtual bool _isSyntaxVisitor();"
+       "")
+        (if concrete
+"
 "       "")
-"    virtual bool _isMyVisitor();
+"
+    virtual bool _isMyVisitor();
 "       (if (not concrete)
 "    virtual bool _isCppVisitor();
 "       "")
