@@ -36,7 +36,7 @@ CompilerError* Compiler::compileFiles(_Page* _ep, Options* options) {
     Program* program = new(_p) Program(options->outputName, options->directory, compilationUnits);
 
     CppVisitor& visitor = *new(_p) CppVisitor();
-    CppError* cppError = visitor.execute(program);
+    CppError* cppError = visitor.execute(_p, program);
     if (cppError) {
         switch (cppError->getErrorCode()) {
             case _CppErrorCode_unableToCreateOutputDirectory:

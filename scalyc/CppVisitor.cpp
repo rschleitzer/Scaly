@@ -14,7 +14,7 @@ CppVisitor::CppVisitor()
     identifierPatternIdentifier(new(getPage()->allocateExclusivePage()) _VarString())
 {}
 
-CppError* CppVisitor::execute(Program* program) {
+CppError* CppVisitor::execute(_Page* _rp, Program* program) {
     program->accept(this);
     return cppError;
 }

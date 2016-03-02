@@ -15,7 +15,7 @@ public:
 class CppVisitor : public SyntaxVisitor {
 public:
     CppVisitor();
-    virtual CppError* execute(Program* program);
+    virtual CppError* execute(_Page* _rp, Program* program);
     CppError* cppError;
     _LetString* moduleName;
     _VarString* sourceFile;

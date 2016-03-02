@@ -11,7 +11,7 @@ class Inherits {
 class CppVisitor : SyntaxVisitor {
     init() {}
 
-    function execute(program: Program) throws CppError {
+    function execute(program: Program) -> CppError {
     }
 
     mutable cppError: CppError
@@ -30,6 +30,7 @@ class CppVisitor : SyntaxVisitor {
     mutable abstractFunction: bool
     mutable staticFunction: bool
     mutable inArrayType: bool
+    mutable inEnumMember: bool
     mutable constDeclaration: bool
 
     function buildProjectFileString(mutable projectFile: String, program: Program) {
