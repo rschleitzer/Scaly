@@ -99,8 +99,10 @@ public:"
 "    virtual bool _isSyntaxVisitor();
 "       "")
 "    virtual bool _isMyVisitor();
-    virtual bool _isCppVisitor();
-};
+"       (if (not concrete)
+"    virtual bool _isCppVisitor();
+"       "")
+"};
 
 }
 #endif // __scalyc__"(if concrete "My" "")"Visitor__
@@ -149,7 +151,6 @@ bool SyntaxVisitor::_isSyntaxVisitor() { return true; }
 bool SyntaxVisitor::_isMyVisitor() { return false; }
 bool SyntaxVisitor::_isCppVisitor() { return false; }
 bool MyVisitor::_isMyVisitor() { return true; }
-bool MyVisitor::_isCppVisitor() { return false; }
 }
 "
 ))
