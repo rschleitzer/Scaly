@@ -113,10 +113,10 @@
     mutable lexer: Lexer
 
 "   (apply-to-selected-children "keyword" (lambda (keyword) ($
-"    let "(name keyword)": string = \""(id keyword)"\"
+"    let "(name keyword)": String = \""(id keyword)"\"
 "   )))
     (apply-to-selected-children "punctuation" (lambda (punctuation) ($
-"    let "(id punctuation)": string = \""(value punctuation)"\"
+"    let "(id punctuation)": String = \""(value punctuation)"\"
 "   )))
 "}
 "
@@ -136,8 +136,7 @@ public:
     Parser(_LetString* fileName, _LetString* text);
 "
     (apply-to-selected-children "syntax" (lambda (syntax) (if (program? syntax) "" ($
-"
-"        (if (multiple? syntax) ($
+        (if (multiple? syntax) ($
 "    virtual _Result<""_Vector<"(id syntax)">, ParserError> parse"(id syntax)"List(_Page* _rp, _Page* _ep);
 "       )"")
 "    virtual _Result<"(id syntax)", ParserError> parse"(id syntax)"(_Page* _rp, _Page* _ep);
