@@ -376,13 +376,14 @@ bool CppVisitor::openFunctionSignature(FunctionSignature* functionSignature) {
             if ((functionSignature->parameterClause->parameters) || (functionSignature->throwsClause))
                 (*headerFile) += ", ";
         }
-        if (functionSignature->throwsClause) {
-            (*headerFile) += "_Page* _ep";
-            if (functionSignature->parameterClause->parameters)
-                (*headerFile) += ", ";
-        }
     }
-   return true;
+    if (functionSignature->throwsClause) {
+        (*headerFile) += "_Page* _ep";
+        if (functionSignature->parameterClause->parameters)
+            (*headerFile) += ", ";
+    }
+
+    return true;
 }
 
 void CppVisitor::closeFunctionSignature(FunctionSignature* functionSignature) {
