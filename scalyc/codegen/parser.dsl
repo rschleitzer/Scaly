@@ -142,10 +142,9 @@ public:
 "       )"")
 "    virtual _Result<"(id syntax)", ParserError> parse"(id syntax)"(_Page* _rp, _Page* _ep);
 "   ))))
-"
-    virtual bool isAtEnd();
-    virtual bool isIdentifier(_LetString& id);
-    Lexer lexer;
+"    virtual bool isAtEnd();
+    virtual bool isIdentifier(_LetString* id);
+    Lexer* lexer;
     _LetString* fileName;
 "   (apply-to-selected-children "keyword" (lambda (keyword) ($
 "    _LetString* "(name keyword)";
@@ -169,7 +168,7 @@ using namespace scaly;
 namespace scalyc {
 
 Parser::Parser(_LetString* fileName, _LetString* text)
-: lexer(text), fileName(fileName)"
+: lexer(new(getPage()) Lexer(text)), fileName(fileName)"
     (apply-to-selected-children "keyword" (lambda (keyword) ($
 ",
   "(name keyword)"(&_LetString::create(getPage(), \""(id keyword)"\"))"
@@ -206,7 +205,7 @@ _Result<"(id syntax)", ParserError> Parser::parse"(id syntax)"(_Page* _rp, _Page
         (if (abstract? syntax)
             ($
 "    _Array<""ParserError>* errors = new(_ep) _Array<""ParserError>();
-    Position* start = lexer.getPreviousPosition(_rp);
+    Position* start = lexer->getPreviousPosition(_rp);
 "                (apply-to-children-of syntax (lambda (content) ($
 "    {
         // Make a region for the current block and get the Page
@@ -223,7 +222,7 @@ _Result<"(id syntax)", ParserError> Parser::parse"(id syntax)"(_Page* _rp, _Page
 "
             )
             ($ ; non-abstract syntax
-"    Position* start = lexer.getPreviousPosition(_rp);
+"    Position* start = lexer->getPreviousPosition(_rp);
 "               (apply-to-children-of syntax (lambda (content) ($
                    (if (string=? "syntax" (type content))
                         ($ ; non-terminals
@@ -234,7 +233,7 @@ _Result<"(id syntax)", ParserError> Parser::parse"(id syntax)"(_Page* _rp, _Page
 "    if (_result_"(property content)".succeeded()) {
 "                           (if (top? syntax) ($
 "        if (!isAtEnd()) {
-            Position* current = lexer.getPosition(_ep);
+            Position* current = lexer->getPosition(_ep);
             return _Result<"(id syntax)", ParserError>(new(_ep) ParserError(new(_ep) _ParserError_notAtEnd(current)));
         }
 "                           )"")
@@ -244,14 +243,14 @@ _Result<"(id syntax)", ParserError> Parser::parse"(id syntax)"(_Page* _rp, _Page
                         )
                         ($ ; terminals
                             (if (optional? content) "" ($
-"    Position* start"(if (property content) (string-firstchar-upcase (property content)) ($ (string-firstchar-upcase (link content))(number->string (child-number content))))" = lexer.getPreviousPosition(_rp);
+"    Position* start"(if (property content) (string-firstchar-upcase (property content)) ($ (string-firstchar-upcase (link content))(number->string (child-number content))))" = lexer->getPreviousPosition(_rp);
 "                           ))
 "    "(case (type content) (("keyword" "punctuation") ($ "bool success"(string-firstchar-upcase (link content))(number->string (child-number content))))(("literal") "Literal* literal")(else ($ "_LetString* "(property content))))
-        " = lexer.parse"
+        " = lexer->parse"
         (case (type content)(("prefixoperator") "PrefixOperator")(("binaryoperator") "BinaryOperator")(("postfixoperator") "PostfixOperator")(("identifier") "Identifier")(("literal") "Literal")(("keyword") "Keyword")(("punctuation") "Punctuation"))
         "("(case (type content)(("keyword") (name-of-link content)) (("punctuation") (link content)) (else "_rp"))");
-    if "(case (type content) (("keyword" "punctuation") ($ "("($ "success"(string-firstchar-upcase (link content))(number->string (child-number content)))")"))(("identifier") ($ "(("(property content)") && (isIdentifier(*"(property content)")))")) (else ($"("(property content)")")))" {
-        lexer.advance();
+    if "(case (type content) (("keyword" "punctuation") ($ "("($ "success"(string-firstchar-upcase (link content))(number->string (child-number content)))")"))(("identifier") ($ "(("(property content)") && (isIdentifier("(property content)")))")) (else ($"("(property content)")")))" {
+        lexer->advance();
 "                       )
                     ) ; syntax or terminal
 "    }
@@ -268,7 +267,7 @@ _Result<"(id syntax)", ParserError> Parser::parse"(id syntax)"(_Page* _rp, _Page
                     (property content)(if (properties-remaining? content syntax) ", " "")
                 )))
                 (if (node-list-empty? (properties syntax)) "" ", ")
-                "start, lexer.getPosition(_rp));
+                "start, lexer->getPosition(_rp));
 "                (if (top? syntax) ($
 "    "(string-firstchar-downcase (id syntax))"->fileName = fileName;
 "               )"")
@@ -280,13 +279,13 @@ _Result<"(id syntax)", ParserError> Parser::parse"(id syntax)"(_Page* _rp, _Page
 "   ))))
 "
 bool Parser::isAtEnd() {
-    return lexer.isAtEnd();
+    return lexer->isAtEnd();
 }
 
-bool Parser::isIdentifier(_LetString& id) {"
+bool Parser::isIdentifier(_LetString* id) {"
    (apply-to-selected-children "keyword" (lambda (keyword) ($
 "
-    if (id == *"(name keyword)")
+    if (*id == *"(name keyword)")
         return false;
 "   )))
 "
