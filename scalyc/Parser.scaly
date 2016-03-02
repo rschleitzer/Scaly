@@ -3595,6 +3595,7 @@ class Parser {
     }
 
     mutable lexer: Lexer
+    let fileName: String
 
     let useKeyword: String = "use"
     let classKeyword: String = "class"

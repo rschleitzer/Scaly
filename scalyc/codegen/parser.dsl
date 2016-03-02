@@ -111,6 +111,7 @@
     }
 
     mutable lexer: Lexer
+    let fileName: String
 
 "   (apply-to-selected-children "keyword" (lambda (keyword) ($
 "    let "(name keyword)": String = \""(id keyword)"\"
