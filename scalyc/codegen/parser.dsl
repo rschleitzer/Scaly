@@ -156,7 +156,6 @@ public:
 };
 
 }
-
 #endif // __scalyc__Parser__
 "
 
