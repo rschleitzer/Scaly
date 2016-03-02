@@ -1139,7 +1139,7 @@ void CppVisitor::buildMainHeaderFileString(_VarString* mainHeaderFile, Program* 
     }
     (*mainHeaderFile) += "\nusing namespace scaly;\nnamespace ";
     (*mainHeaderFile) += *programName;
-    (*mainHeaderFile) += " {\nint _main(_Array<String>& arguments);\n}\n\n#endif // __scaly__scalyc__\n";
+    (*mainHeaderFile) += " {\nint _main(_Vector<_LetString>* arguments);\n}\n\n#endif // __scaly__scalyc__\n";
 }
 
 void CppVisitor::buildProjectFileString(_VarString* projectFile, Program* program) {
