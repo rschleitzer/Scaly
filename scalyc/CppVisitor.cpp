@@ -419,6 +419,7 @@ bool CppVisitor::isClass(_LetString* name) {
         ||  (*name == "FileError")
         ||  (*name == "ParserError")
         ||  (*name == "CppError")
+        ||  (*name == "CompilerError")
        )
         return true;
 

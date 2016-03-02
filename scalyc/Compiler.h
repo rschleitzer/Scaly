@@ -4,12 +4,12 @@
 using namespace scaly;
 namespace scalyc {
 
-class Compiler {
+class Compiler : public Object {
 public:
-    static CompilerError* compileFiles(_Page* _ep, Options& options);
+    static CompilerError* compileFiles(_Page* _ep, Options* options);
     static _Result<CompilationUnit, ParserError> compileUnit(_Page* _rp, _Page* _ep, _LetString* fileName, _LetString* text);
+    virtual bool _isCompiler();
 };
 
 }
-
-#endif /* defined(__scalyc__Compiler__) */
+#endif // __scalyc__Compiler__

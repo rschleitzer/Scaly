@@ -27,7 +27,7 @@ else {
         }
     }
 
-    CompilerError* compilerError = Compiler::compileFiles(_p, *options);
+    CompilerError* compilerError = Compiler::compileFiles(_p, options);
     if (compilerError) {
         return 2;
     }

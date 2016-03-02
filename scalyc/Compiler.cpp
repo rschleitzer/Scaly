@@ -2,9 +2,9 @@
 using namespace scaly;
 namespace scalyc {
 
-CompilerError* Compiler::compileFiles(_Page* _ep, Options& options) {
+CompilerError* Compiler::compileFiles(_Page* _ep, Options* options) {
     _Region _region; _Page* _p = _region.get();
-    _Vector<_LetString>* files = options.files;
+    _Vector<_LetString>* files = options->files;
     _Vector<_LetString>* sources = 0;
     {
         size_t _length = files->length();
@@ -33,7 +33,7 @@ CompilerError* Compiler::compileFiles(_Page* _ep, Options& options) {
         }
     }
 
-    Program* program = new(_p) Program(options.outputName, options.directory, compilationUnits);
+    Program* program = new(_p) Program(options->outputName, options->directory, compilationUnits);
 
     CppVisitor& visitor = *new(_p) CppVisitor();
     CppError* cppError = visitor.execute(program);
@@ -57,5 +57,7 @@ _Result<CompilationUnit, ParserError> Compiler::compileUnit(_Page* _rp, _Page* _
     Parser& parser = *new(_p) Parser(fileName, text);
     return parser.parseCompilationUnit(_rp, _ep);
 }
+
+bool Compiler::_isCompiler() { return true; }
 
 }

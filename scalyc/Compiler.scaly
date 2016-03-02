@@ -15,7 +15,7 @@ class Compiler {
         program.Accept(visitor)
     }
     
-    static function compileUnit(text: String) -> TopLevelDeclaration throws ParserError {
+    static function compileUnit(text: String) -> CompilationUnit throws ParserError {
         parser = Parser(fileName, text)
         parser.parseTopLevelDeclaration
     }
