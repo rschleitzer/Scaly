@@ -20,9 +20,9 @@ int main(int argc, char** argv) {
     __CurrentTask = task;
 
     // Collect the arguments into a String Vector
-    _Vector<_LetString>& arguments = _Vector<_LetString>::createUninitialized(__CurrentPage, argc - 1);
+    _Vector<_LetString>* arguments = &_Vector<_LetString>::createUninitialized(__CurrentPage, argc - 1);
     for (int i = 1; i < argc; i++)
-        *arguments[i - 1] = &_LetString::create(__CurrentPage, argv[i]);
+        *(*arguments)[i - 1] = &_LetString::create(__CurrentPage, argv[i]);
 
     // Call Scaly's top-level code
     int ret = scalyc::_main(arguments);

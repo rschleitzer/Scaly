@@ -1,10 +1,10 @@
 #include "scalyc.h"
 namespace scalyc {
 
-int _main(_Vector<_LetString>& args) {
+int _main(_Vector<_LetString>* args) {
 _Region _region; _Page* _p = _region.get();
 
-if (args.length() < 1) {
+if (args->length() < 1) {
     return 1;
 }
 else {

@@ -1,5 +1,6 @@
 class Options {
-    static function ParseArguments(args: [String]) -> Options throws OptionsError {
+    init() {}
+    static function parseArguments(args: [String]) -> Options throws OptionsError {
         let length: unsigned = args.length
         mutable options: Options = Options()
         options.files = [String]()
@@ -26,7 +27,7 @@ class Options {
                 }
                 default:
                     throw unknownOption(args[i])
-            } 
+            }
         }
         if options.outputName == null
             throw noOutputOption
@@ -35,7 +36,7 @@ class Options {
 
         return options
     }
-    
+
     let files: [String]
     let outputName: String
     let directory: String

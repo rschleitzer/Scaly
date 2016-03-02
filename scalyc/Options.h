@@ -4,16 +4,15 @@
 using namespace scaly;
 namespace scalyc {
 
-class Options : Object {
+class Options : public Object {
 public:
     Options();
-    static _Result<Options, OptionsError> parseArguments(_Page* _rp, _Page* _ep, _Vector<_LetString>& args);
-
+    static _Result<Options, OptionsError> parseArguments(_Page* _rp, _Page* _ep, _Vector<_LetString>* args);
     _Vector<_LetString>* files;
     _LetString* outputName;
     _LetString* directory;
+    virtual bool _isOptions();
 };
 
 }
-
-#endif /* defined(__scalyc__Option__) */
+#endif // __scalyc__Options__
