@@ -17,11 +17,11 @@ where objects live on the stack. No heap is used, and therefore, neither garbage
 
 The following articles describe some aspects of Scaly:
 
-1. link:ProgramStructure.html[Some starter documentation about the _Program Structure_]
+1. link:documentation/ProgramStructure.html[Some starter documentation about the _Program Structure_]
 
-2. link:References.html[How _references_ are used in Scaly]
+2. link:documentation/References.html[How _references_ are used in Scaly]
 
-3. link:ObjectAge.html[How to deal with _object age_ if required]
+3. link:documentation/ObjectAge.html[How to deal with _object age_ if required]
 
 C++ is used to implement https://github.com/rschleitzer/Scaly/tree/master/scaly[runtime support and standard library code] as well as for https://en.wikipedia.org/wiki/Bootstrapping_%28compilers%29[bootstrapping] the evolving https://github.com/rschleitzer/Scaly/tree/master/scalyc[compiler] till the compiler can https://en.wikipedia.org/wiki/Self-hosting[host itself].
 
