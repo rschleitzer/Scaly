@@ -50,6 +50,7 @@ The arguments passed to the program are bound to one parameter which is visible 
 This expression actually consists of three parts: an item identified by the `arguments` identifier, the access of its `length` member via the dot, and calling that member as a function without arguments (which it actually is), indicated by the two parentheses.
 
 Code Blocks
+-----------
 
 In all but the simplest programs, you structure your code using blocks. Like in commonplace languages of C descent, a block starts with a left curly brace, followed by zero or more statements, and ends with a right curly brace. An example:
 
@@ -64,6 +65,9 @@ But there are important differences to C and friends:
 First, _code blocks are expressions_ - they may return a value. Because of this, if the last statement of a code block is an expression, the value which is returned by that statement is the value which the code block returns. Obviously, our example block returns a number whose value is `5`.
 
 Second, the statements of a block can be _executed in any order_ as far as data dependencies and the pureness of called functions allow. That is the main selling point of Scaly - it automatically schedules parallel and even distributed computation wherever possible. 
+
+Parallel Execution
+------------------
 
 Not only statements in a block are executed in parallel, but also _function arguments_ and _operands_, as long they are pure and do not depend on earlier computations in the block.
 
