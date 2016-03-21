@@ -1,0 +1,72 @@
+References
+==========
+
+In Scaly, objects are accessed through _references_. A reference can be held by an _item_. An item is a local variable or constant, a member of an object, an element of an array, or a dictionary value.
+
+An object is created by calling a constructor of its class. A constructor returns a reference to the new object. This reference can then be assigned to an item:
+
+  mutable p: Foo = new Foo(42)
+
+A reference item can be declared _mutable_, _immutable_, or _variable_. An immutable item is declared with the `let` keyword. Neither the object it references can be changed, nor the item itself:
+
+  let i: Foo = Foo(43)
+  // i.bar = 44 // The object cannot be changed
+  // i = Foo(44) // The item cannot be reassigned
+
+A mutable item is declared with the `mutable` keyword. A mutable item allows for changing the object to which its reference points, and for reassigning another reference to it:
+
+  mutable m: Foo = Foo(45)
+  m.bar = 46 // The object can be changed
+  m = Foo(47) // The item can be reassigned
+
+A variable item is declared with the `var` keyword. A variable item allows for reassigning another object, but _not_ for changing the object it references:
+
+  var v: Foo = Foo(48)
+  // v.bar = 49 // The object cannot be changed
+  v = Foo(49) // The item can be reassigned
+
+You can copy an immutable or variable reference by assigning it to another immutable item.
+
+  let a: Foo = i
+  let b: Foo = v
+  v = i
+
+A mutable references can be copied by assignment if the object it points to is _fresh_, i.e., was either created in the current function or is a fresh object created by a function:
+
+  mutable e: Foo = m // OK if m is fresh
+  // m = i // Can't assign an immutable to a mutable
+  // m = v // Variables cannot be assigned to a mutable as well
+
+Thus, the only ways to assign a reference to a mutable item is to create a new object or assign it from a provably fresh mutable variable:
+
+  mutable f: Foo = Foo(50) // Fresh objects can be assigned
+  mutable g: Foo = makeFoo() // Ok if makeFoo() returns a fresh mutable
+
+Scaly _forbids aliasing_ mutable data. Aliasing is to allow acess to the same data through different pathes. Scaly only allows aliasing immutable data. This way, Scaly avoids data races between tasks which run in parallel. Therefore, Scaly does not allow assigning a mutable item from a non-fresh object (parameter, member or array element, or dictionary value):
+
+  function alias(mutable e: Bar, mutable p: Foo) {
+      // e.foo = p // No assignment from a mutable parameter
+  }
+
+  // e.foo = f.foo // No assignment from member
+  // e.foo = f[42] // No assignment from array element
+  // e.foo = f[g] // No assignment from a dictionary value
+
+If a fresh object is assigned, it cannot be returned:
+
+  function assignAndReturn(mutable b: Bar) -> mutable Foo {
+      mutable m: Foo = Foo(51)
+      b.foo = m
+      // m // m is assigned, so returning it would lead to alias
+      Foo(51) // returning a reference to a fresh object is OK
+  }
+
+As such, mutable data must be strictly hierarchical. Since variables provide a shallow level of mutability, directed graphs in general can be built with variable references. An example:
+
+  function makeParentWithChild() -> var Bar {
+      var foo: Foo = Foo() // Create a child object
+      var r: Bar = Bar(foo) // The immutable object to be returned
+      foo.bar = r // Provide the child with a parent reference
+      r // return parent with child
+  }
+
