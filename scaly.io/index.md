@@ -1,31 +1,28 @@
 Scaly
 =====
 
-Welcome to [_Scaly_](https://github.com/rschleitzer/Scaly), the _self-scaling programming language_.
+Welcome to https://github.com/rschleitzer/Scaly[_Scaly_], the _self-scaling programming language_.
 
 Overview
 --------
 
-Scaly uses implicit [region-based memory management](https://en.wikipedia.org/wiki/Region-based_memory_management) 
-combined with [value semantics](https://en.wikipedia.org/wiki/Value_semantics) where objects conceptually live on the stack. 
-No heap, no garbage collection, no reference counting, not even pointers - although references to objects can be made 
-and used within well-defined constraints.
+Scaly uses implicit https://en.wikipedia.org/wiki/Region-based_memory_management[region-based memory management] 
+where objects conceptually live on the stack. 
+No heap, no garbage collection, no reference counting required. 
+Objects are accessed via references within well-defined constraints.
 
-C++ is used to implement [runtime support and standard library code](https://github.com/rschleitzer/Scaly/tree/master/scaly) 
-as well as for [bootstrapping](https://en.wikipedia.org/wiki/Bootstrapping_%28compilers%29) 
-the evolving [compiler](https://github.com/rschleitzer/Scaly/tree/master/scalyc) 
-till the compiler can [host itself](https://en.wikipedia.org/wiki/Self-hosting).
+C++ is used to implement https://github.com/rschleitzer/Scaly/tree/master/scaly[runtime support and standard library code] as well as for https://en.wikipedia.org/wiki/Bootstrapping_%28compilers%29[bootstrapping] the evolving https://github.com/rschleitzer/Scaly/tree/master/scalyc[compiler] till the compiler can https://en.wikipedia.org/wiki/Self-hosting[host itself].
 
 Building
 --------
 
 You can build Scaly taking the following steps:
 
-1. Install [CodeLite](http://codelite.org/) and run the Setup Wizard.
+1. Install http://codelite.org/[CodeLite] and run the Setup Wizard.
 
 2. Clone the github repository:
 
-        git clone https://github.com/rschleitzer/Scaly.git
+  git clone https://github.com/rschleitzer/Scaly.git
     
 3. Open `scaly.workspace` and build.
 
@@ -34,4 +31,4 @@ Currently, only Ubuntu 15.10 is known to build.
 License
 -------
 
-Scaly and the whole contents of the [scaly.io](http://scaly.io) web site is subject to the [MIT License](https://github.com/rschleitzer/Scaly/blob/master/LICENSE).
+Scaly and the whole contents of the http://scaly.io[scaly.io] web site is subject to the https://github.com/rschleitzer/Scaly/blob/master/LICENSE[MIT License].
