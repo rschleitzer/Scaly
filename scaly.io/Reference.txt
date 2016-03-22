@@ -1,0 +1,267 @@
+Reference
+=========
+
+Statements
+----------
+
+A Scaly program consists of _statements_. A statement is either an _expression_ which performs 
+computation work, or a _declaration_ which declares constructs like functions, classes, or enums 
+which can be used in expressions. The statements are written into one or more files each 
+containing a number of complete statements. A statement can be terminated by an optional semicolon.
+
+Expressions
+-----------
+
+_Expressions_ are the most fundamental building block of a Scaly program. 
+An expression performs actual computation work and usually returns a value 
+as a result of that work. There are numerous forms of expressions in Scaly like _literals_, 
+_function calls_, _operations_, and many more.
+
+Literals
+--------
+
+The most basic expressions in Scaly are _literals_. A literal simply returns a value 
+that is written literally into a program.
+
+Structures
+----------
+
+Structures are another way of organizing data. Like classes, structures can have members - 
+either primitive ones like strings or numbers, or other structures, or arrays of them. 
+Unlike classes, structures do not know the concept of a reference. So, a structure item 
+(be it mutable, immutable, or variable) is semantically no reference - instead, 
+it denotes the structure object itself. The cosequence is that, if you assign a structure object 
+to another mutable or variable item, the object is copied. 
+
+In addition to the simple assignment operator `=`, there is also a movement operator `=!` 
+which moves the object from the right hand side expression (which must be mutable or variable, 
+and optional) to the left hand item which must be mutable or variable either. 
+
+There is also a swap operator `<=>` which swaps the left hand item with the right hand item. 
+For swapping, the items must be either both variable, or both mutable.
+
+Structures, however, have no value semantics when passed as arguments to a function. 
+If you pass a mutable structure object to a function, and the function alters that object, 
+the changes are visible to the caller after the function returned. If you pass a variable 
+structure object to a function, that variable might contain another object 
+after the function returned.
+
+Structures have an important advantage over classes: Structures are self-contained data sets 
+which means that members of a structure cannot point to anything outside the 
+structure, and a structure cannot be pointed to by anything else but the owner 
+(if it is a structure member or an array element). In contrast, classes can can contain 
+references to other objects, and objects can be referenced by multiple items. 
+
+Since structures organize their data in a in a strictly hierarchical way, 
+they can be easily serialized to JSON, XML, or any other text-based or binary 
+hierarchical representation of the data they contain. Since structures are serializable, 
+their data can be transmitted over the network to other nodes if your program 
+runs on a supercomputer, or sent to powerful GPU hardware on your local machine. Thus, programs 
+using structures for passing data scale well in a distributed or heterogeneous environment.
+
+Because structures are so easily mapped to JSON or XML, building web services with Scaly 
+is a breeze - simply design a set of functions using structures for data transfer, and you are done.
+
+Thus, it is a good idea to prefer structures over classes when designing your program if possible.
+
+There will be cases however, in which you want to use classes, especially if your algorithm 
+uses directed graphs which cannot be expressed as structures, like doubly-linked lists 
+or trees in which the nodes contain references to parent nodes. Since class objects 
+cannot be serialized, they cannot be transmitted over the network or to a GPU. 
+This means that the parts of your program which use classes cannot be scaled up using a
+compute cluster or powerful GPU hardware. 
+
+However, if the data dependencies allow, an algorithm using classes might still be executed 
+in parallel by multiple local threads on the machine it is running on. 
+
+References
+----------
+
+In Scaly, objects are accessed through _references_. A reference can be held by an _item_. 
+An item is a local variable or constant, a member of an object, an element of an array, 
+or a dictionary value.
+
+An object is created by calling a constructor of its class. A constructor returns a reference 
+to the new object. This reference can then be assigned to an item:
+
+  mutable p: Foo = new Foo(42)
+
+A reference item can be declared _mutable_, _immutable_, or _variable_. 
+An immutable item is declared with the `let` keyword. Neither the object it references 
+can be changed, nor the item itself:
+
+  let i: Foo = Foo(43)
+  // i.bar = 44 // The object cannot be changed
+  // i = Foo(44) // The item cannot be reassigned
+
+A mutable item is declared with the `mutable` keyword. A mutable item allows for 
+changing the object to which its reference points, and for reassigning another reference to it:
+
+  mutable m: Foo = Foo(45)
+  m.bar = 46 // The object can be changed
+  m = Foo(47) // The item can be reassigned
+
+A variable item is declared with the `var` keyword. A variable item allows for reassigning 
+another object, but _not_ for changing the object it references:
+
+  var v: Foo = Foo(48)
+  // v.bar = 49 // The object cannot be changed
+  v = Foo(49) // The item can be reassigned
+
+You can copy an immutable or variable reference by assigning it to another immutable item.
+
+  let a: Foo = i
+  let b: Foo = v
+  v = i
+
+A mutable references can be copied by assignment if the object it points to is _fresh_, 
+i.e., was either created in the current function or is a fresh object created by a function:
+
+  mutable e: Foo = m // OK if m is fresh
+  // m = i // Can't assign an immutable to a mutable
+  // m = v // Variables cannot be assigned to a mutable as well
+
+Thus, the only ways to assign a reference to a mutable item is to create a new object 
+or assign it from a provably fresh mutable variable:
+
+  mutable f: Foo = Foo(50) // Fresh objects can be assigned
+  mutable g: Foo = makeFoo() // Ok if makeFoo() returns a fresh mutable
+
+Scaly _forbids aliasing_ mutable data. Aliasing is to allow acess to the same data 
+through different pathes. Scaly only allows aliasing immutable data. This way, Scaly avoids 
+data races between tasks which run in parallel. Therefore, Scaly does not allow assigning 
+a mutable item from a non-fresh object (parameter, member or array element, or dictionary value):
+
+  function alias(mutable e: Bar, mutable p: Foo) {
+      // e.foo = p // No assignment from a mutable parameter
+  }
+
+  // e.foo = f.foo // No assignment from member
+  // e.foo = f[42] // No assignment from array element
+  // e.foo = f[g] // No assignment from a dictionary value
+
+If a fresh object is assigned, it cannot be returned:
+
+  function assignAndReturn(mutable b: Bar) -> mutable Foo {
+      mutable m: Foo = Foo(51)
+      b.foo = m
+      // m // m is assigned, so returning it would lead to alias
+      Foo(51) // returning a reference to a fresh object is OK
+  }
+
+As such, mutable data must be strictly hierarchical. Since variables provide a shallow level 
+of mutability, directed graphs in general can be built with variable references. An example:
+
+  function makeParentWithChild() -> var Bar {
+      var foo: Foo = Foo() // Create a child object
+      var r: Bar = Bar(foo) // The immutable object to be returned
+      foo.bar = r // Provide the child with a parent reference
+      r // return parent with child
+  }
+
+Object age
+----------
+
+In Scaly, _objects live on the stack_, either referenced by local items, or by references 
+held by other objects, arrays, or dictionaries, which in turn live somewhere on the stack directly 
+or indirectly (held by other objects).
+
+If a block is left, the memory of all objects which were created in this block is recycled. 
+Therefore, a reference must not be held by an item that outlives the object it references:
+
+  let a: Foo
+  {
+      let b: Foo = Foo()
+      // a = b // If b goes out of scope, a would point to recycled memory
+  }
+
+To make `b` assignable to `a`, its declaration can be moved to the outer block:
+
+  let a: Foo
+  let b: Foo
+  {
+      b = Foo()
+      a = b
+  }
+
+The lifetime of an object is determined by the place where a reference to it is declared. 
+The older an object, the longer it lives. Since older data live at least as long as younger data, 
+it can never happen that references to dead data are accessible.
+
+The age of data depends on where it is declared. Items declared in a local block 
+are younger than items in the enclosing block. Parameters that are passed to a function 
+are older than its local items:
+
+  function f(a: Foo) {
+      let b: Bar = Bar()
+      {
+          let c: Caf = Caf()
+      }
+  }
+
+In this example, `a` is oldest, `b` is younger than `a`, and `c` is youngest.
+
+A reference returned by a function is assumed to be _fresh_ by default. 
+This means that the function creates the object (either by calling an object constructor 
+or another function which returns a reference to a fresh object). The caller of such a function 
+then assigns the returned reference to an item whose location determines the age of the object:
+
+  function g() -> Foo {
+      Foo(42) // Fresh object created and returned
+  }
+  
+  function h() {
+      let k: Foo = g() // The object lives here, accessible via k
+  }
+
+If a function is to return a reference to an object which is not fresh, the age 
+of such a returned reference must be made explicit by an _age tag_ which 
+is written after the type of the return value.
+
+An age tag starts with a single quote (`'`) and continues with digits which form 
+a nonnegative number. Leading zero digits are not allowed. `'0` is a valid age tag, 
+`'42` is a valid age tag as well, whereas `'01` is not a valid age tag.
+
+If a function without parameters returns a reference to an existing object, 
+it would be pointless to provide a value to its age tag. Therefore, the value is omitted 
+in this case, making the tag consist of a single quote:
+
+  function k() -> Foo' {
+     getSomeGlobalFoo()
+  }
+
+Such an _empty age tag_ denotes the age of immutable global data which is the oldest possible. 
+(In fact, this age is the only possible for a reference to a non-fresh object to be returned 
+by a function without parameters.)
+
+If there are parameters from which to take the returned reference in some way, 
+age tag numbers are used to express age relations between the parameters of a function. 
+The higher the age tag value is, the younger is the tagged reference:
+
+  function superiorFoo(fooOld: Foo'1, fooYoung: Foo'2) -> Foo'2 {
+      if fooOld.number > fooYoung
+          fooOld
+      else
+          fooYoung
+  }
+
+In this example, the returned refrerence can be taken from any of the two parameters, 
+and so its age must be that of the youngest parameter.
+
+The following example checks assignments for age validity:
+
+  function bar(mutable foo: Foo'1, mutable bar: Bar'2) {
+      bar.foo = foo // Valid because foo is declared older
+      // foo.bar = bar // Invalid because bar is younger
+  } 
+
+If age tags are omitted, the age of the parameters is irrelevant:
+
+  function baz(p: Foo, q: Foo) -> bool {
+      p.number > q
+  }
+
+The age of a member is assumed to be the same as the age of the object containing it 
+(even though the object it points to might be older). Similarly, the age of an array element 
+is assumed to be that of the array, and the age of a dictionary key or value 
+is assumed to be that of the dictionary.
