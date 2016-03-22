@@ -8,27 +8,31 @@ Overview
 
 Scaly is a safe parallel programming language with the following features:
 
-- code is executed in parallel where data dependencies allow
+- code can be executed safely in parallel where data dependencies allow
 - safety against program crashes, exploits, data races and concurrency problems
+- performance comparable to C/C++
 - easy programming like in common mainstream languages
 
 Scaly uses https://en.wikipedia.org/wiki/Region-based_memory_management[region-based memory management] 
-where objects live on the stack. No heap is used, and therefore, neither garbage collection nor reference counting is required. Objects are accessed via references within well-defined constraints which ensure safe parallel execution of the code.
+where objects live on the stack. No heap is used, and therefore, neither garbage collection 
+nor reference counting is required. Objects are accessed via references 
+within well-defined constraints which ensure safe parallel execution of the code.
 
-The following articles describe some aspects of Scaly:
+Documentation
+-------------
 
-1. link:documentation/ProgramStructure.html[Some starter documentation about the _Program Structure_]
-
-2. link:documentation/References.html[How _references_ are used in Scaly]
-
-3. link:documentation/ObjectAge.html[How to deal with _object age_ if required]
-
-4. link:documentation/Structures.html[_Structures_]
-
-C++ is used to implement https://github.com/rschleitzer/Scaly/tree/master/scaly[runtime support and standard library code] as well as for https://en.wikipedia.org/wiki/Bootstrapping_%28compilers%29[bootstrapping] the evolving https://github.com/rschleitzer/Scaly/tree/master/scalyc[compiler] till the compiler can https://en.wikipedia.org/wiki/Self-hosting[host itself].
+The link:documentation/ScalyBook.html[_Scaly book_] is your one-stop source 
+for learning how to write programs in Scaly and how to compile and run them 
+using the reference implementation.
 
 Building
 --------
+
+C++ is used to implement 
+https://github.com/rschleitzer/Scaly/tree/master/scaly[runtime support and standard library code] 
+as well as for https://en.wikipedia.org/wiki/Bootstrapping_%28compilers%29[bootstrapping] 
+the evolving https://github.com/rschleitzer/Scaly/tree/master/scalyc[compiler] 
+till the compiler can https://en.wikipedia.org/wiki/Self-hosting[host itself].
 
 You can build Scaly taking the following steps:
 
