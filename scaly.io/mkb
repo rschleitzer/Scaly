@@ -3,8 +3,11 @@ rm -rf book
 mkdir book
 asciidoc -b docbook -d book -o book/ScalyBook.xml ScalyBook.txt
 cd book
+xsltproc --stringparam use.id.as.filename 1 --stringparam callout.graphics 0 --stringparam navig.graphics 0 --stringparam admon.textlabel 1 --stringparam admon.graphics 0 --stringparam toc.section.depth 1 --stringparam chunk.section.depth 0 --stringparam html.stylesheet docbook-xsl.css --stringparam generate.toc "book toc" --output ScalyBook.html /usr/share/xml/docbook/stylesheet/docbook-xsl/html/docbook.xsl ScalyBook.xml
 xsltproc --stringparam use.id.as.filename 1 --stringparam callout.graphics 0 --stringparam navig.graphics 0 --stringparam admon.textlabel 1 --stringparam admon.graphics 0 --stringparam toc.section.depth 1 --stringparam chunk.section.depth 0 --stringparam chunk.fast 1 --stringparam html.stylesheet docbook-xsl.css /usr/share/xml/docbook/stylesheet/docbook-xsl/html/chunkfast.xsl ScalyBook.xml
 cp /etc/asciidoc/stylesheets/docbook-xsl.css ./docbook-xsl.css
+asciidoc -b docbook -d book -a "a2x-format=pdf" -o ScalyBook.xml ../ScalyBook.txt
+xsltproc --stringparam callout.graphics 0 --stringparam navig.graphics 0 --stringparam admon.textlabel 1 --stringparam admon.graphics 0 --output ScalyBook.fo /etc/asciidoc/docbook-xsl/fo.xsl ScalyBook.xml
+fop -fo ScalyBook.fo -pdf ScalyBook.pdf
+rm ScalyBook.fo
 rm ScalyBook.xml
-
-
