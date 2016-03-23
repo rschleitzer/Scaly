@@ -8,22 +8,17 @@ Overview
 
 Scaly is a safe parallel programming language with the following features:
 
-- code can be executed safely in parallel where data dependencies allow
+- enables implicit and safe parallel and distributed code execution where data dependencies allow
 - safety against program crashes, exploits, data races and concurrency problems
 - performance comparable to C/C++
 - easy programming like in common mainstream languages
-
-Scaly uses https://en.wikipedia.org/wiki/Region-based_memory_management[region-based memory management] 
-where objects live on the stack. No heap is used, and therefore, neither garbage collection 
-nor reference counting is required. Objects are accessed via references 
-within well-defined constraints which ensure safe parallel execution of the code.
 
 Documentation
 -------------
 
 The link:documentation/ScalyBook.html[_Scaly book_] is your one-stop source 
 for learning how to write programs in Scaly and how to compile and run them 
-using the reference implementation.
+using the reference implementation, and for understanding the main design points.
 
 Building
 --------
@@ -49,4 +44,5 @@ Currently, only Ubuntu 15.10 is known to build.
 License
 -------
 
-Scaly and the whole contents of the http://scaly.io[scaly.io] web site is subject to the https://github.com/rschleitzer/Scaly/blob/master/LICENSE[MIT License].
+Scaly and the whole contents of the http://scaly.io[scaly.io] web site is subject to the 
+https://github.com/rschleitzer/Scaly/blob/master/LICENSE[MIT License].

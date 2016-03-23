@@ -3,6 +3,5 @@ The Scaly Book
 :doctype: book
 
 include::Introduction.txt[tabsize=4]
-
 include::Reference.txt[tabsize=4]
-
+include::Design.txt[tabsize=4]

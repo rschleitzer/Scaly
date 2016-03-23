@@ -1,0 +1,11 @@
+Design
+======
+
+Memory Management
+-----------------
+
+Scaly uses 
+https://en.wikipedia.org/wiki/Region-based_memory_management[region-based memory management]
+where objects live on the stack. No heap is used, and therefore, neither garbage collection 
+nor reference counting is required. Objects are accessed via references 
+within well-defined constraints which ensure safe parallel execution of the code.
