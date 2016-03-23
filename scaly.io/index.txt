@@ -16,7 +16,7 @@ Scaly is a safe parallel programming language with the following features:
 Documentation
 -------------
 
-The link:book/ScalyBook.html[_Scaly book_] is your one-stop source 
+The link:book/index.html[_Scaly book_] is your one-stop source 
 for learning how to write programs in Scaly and how to compile and run them 
 using the reference implementation, and for understanding the main design points.
 
