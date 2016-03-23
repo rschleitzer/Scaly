@@ -1,3 +1,4 @@
+[[scalybook]]
 The Scaly Book
 ==============
 :doctype: book

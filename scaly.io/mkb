@@ -1,0 +1,10 @@
+#!/bin/bash
+rm -rf book
+mkdir book
+asciidoc -b docbook -d book -o book/ScalyBook.xml ScalyBook.txt
+cd book
+xsltproc --stringparam use.id.as.filename 1 --stringparam callout.graphics 0 --stringparam navig.graphics 0 --stringparam admon.textlabel 1 --stringparam admon.graphics 0 --stringparam toc.section.depth 1 --stringparam chunk.section.depth 0 --stringparam chunk.fast 1 --stringparam html.stylesheet docbook-xsl.css /usr/share/xml/docbook/stylesheet/docbook-xsl/html/chunkfast.xsl ScalyBook.xml
+cp /etc/asciidoc/stylesheets/docbook-xsl.css ./docbook-xsl.css
+rm ScalyBook.xml
+
+

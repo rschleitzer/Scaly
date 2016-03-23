@@ -1,6 +1,8 @@
+[[introduction]]
 Introduction
 ============
 
+[[firstprogram]]
 The First Program
 -----------------
 
@@ -23,6 +25,7 @@ running the program.
 There are also string literals like `"Hello World!"`, the two bool literals `true` and `false`, 
 and more.
 
+[[helloworld]]
 Hello World
 -----------
 
@@ -47,7 +50,7 @@ an escape sequence as well:
 
   printf("Hello World!\n")
 
-
+[[cmdlineargs]]
 Command line arguments
 ----------------------
 
@@ -68,7 +71,7 @@ This expression actually consists of three parts: an item identified by the `arg
 the access of its `length` member via the dot, and calling that member 
 as a function without arguments (which it actually is), indicated by the two parentheses.
 
-
+[[codeblocks]]
 Code Blocks
 -----------
 
@@ -93,6 +96,7 @@ Second, the statements of a block can be _executed in any order_ as far as data 
 and the pureness of called functions allow. That is the main selling point of Scaly - 
 it automatically schedules parallel and even distributed computation wherever possible. 
 
+[[parallelexecution]]
 Parallel Execution
 ------------------
 

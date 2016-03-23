@@ -1,6 +1,8 @@
+[[reference]]
 Reference
 =========
 
+[[statements]]
 Statements
 ----------
 
@@ -9,6 +11,7 @@ computation work, or a _declaration_ which declares constructs like functions, c
 which can be used in expressions. The statements are written into one or more files each 
 containing a number of complete statements. A statement can be terminated by an optional semicolon.
 
+[[expressions]]
 Expressions
 -----------
 
@@ -17,12 +20,14 @@ An expression performs actual computation work and usually returns a value
 as a result of that work. There are numerous forms of expressions in Scaly like _literals_, 
 _function calls_, _operations_, and many more.
 
+[[literals]]
 Literals
 --------
 
 The most basic expressions in Scaly are _literals_. A literal simply returns a value 
 that is written literally into a program.
 
+[[structures]]
 Structures
 ----------
 
@@ -74,8 +79,9 @@ compute cluster or powerful GPU hardware.
 However, if the data dependencies allow, an algorithm using classes might still be executed 
 in parallel by multiple local threads on the machine it is running on. 
 
-References
-----------
+[[references]]
+Object References
+-----------------
 
 In Scaly, objects are accessed through _references_. A reference can be held by an _item_. 
 An item is a local variable or constant, a member of an object, an element of an array, 
@@ -159,7 +165,8 @@ of mutability, directed graphs in general can be built with variable references.
       r // return parent with child
   }
 
-Object age
+[[objectage]]
+Object Age
 ----------
 
 In Scaly, _objects live on the stack_, either referenced by local items, or by references 
