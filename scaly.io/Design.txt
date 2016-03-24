@@ -2,6 +2,293 @@
 Design
 ======
 
+Why Scaly?
+----------
+
+It's a bit hard these days to justify developing a new programming language. 
+And yet, there seems to be a sweet spot for Scaly which wants to be a language 
+which is unique - a language which enables you to easily develop programs which run in parallel 
+in a heterogeneous and distributed environment with outstanding performance.
+
+In the following, the main design points of Scaly are explained and how it compares 
+to existing programming languages.
+
+If we consider where processor development has gone in the last ten years, 
+we see that the performance of a single processor core had not increased as it used to 
+in the decades before. Instead, the progress made in semiconductor industry was used to 
+increase the number of cores we find in processors used in servers, workstations, 
+laptops, tablets and even smartphones.
+
+Today's most popular programming languages, however, descend from the C programming language 
+which was not designed from the start with parallel and distributed computing in mind. 
+Even though some of these languages have mitigated some problems which plagued 
+legions of C and C\++ programmers, they do not support you by design in 
+writing programs which are free of concurrency bugs.
+
+Avoiding Data Races and Concurrency Problems
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+One big problem is that these languages permit code which accesses writable data 
+from more than one thread at the same time. Such code frequently suffers from _data races_. 
+A data race causes your code to depend on timing. 
+
+Often, bugs of this kind are likely to reveal themselves not before your code runs in production 
+at your customer's site or at server in the cloud runnning your customer's web app. 
+And to make things worse, the failures are typically unable to be reproduced 
+in your development environment. That's why you did not find these bugs in the first place 
+during development. And even if you _are_ able to reproduce the problem, you might not be able 
+to find the reason by stepping through your code or even by tracing, because data races 
+depend on timing - and the timing of code execution typically is different while debugging code, 
+or letting it write trace records.
+
+The only way to get rid of data races is to avoid accessing writable data 
+from more than one thread at the same time. There are two things that can be done about that:
+
+1. Synchronize accesses to writable data
+2. Forbid making writable data accessibie for more then one thread
+
+Without going into much detail, it can be said that trying to synchronize accesses 
+to writable data can lead to all kinds of locking problems - deadlocks cause two or more 
+of your threads to wait forever, making them fail to succeed in their computation, 
+livelocks make your threads burn your valuable CPU time without making any progress. 
+As with data races, these failures are hard to find, to reproduce and to debug. 
+
+Even in the absence of these problems, locking in general is an impediment to performance 
+because it lets your threads wait frequently for locks held by other threads to be released.
+
+A better way is the second - never making writable data accessible to more than one thread. 
+There are two ways to acheiving that goal:
+
+1. Make all data immutable
+2. Do not share mutable data among threads
+
+Functional Languages
+^^^^^^^^^^^^^^^^^^^^
+
+Programming languages which know only immutable data have been known now for decades. 
+Pure functional languages like Haskell do not offer a way to alter (or to mutate) a datum 
+after it has been created. 
+
+The price paid for this is pretty high, though. With a pure functional language, 
+you cannot use many coding patterns which are commonplace in the most popular 
+programming languages like variables which can be re-assigned or explicit loops. 
+Your data must be read-only. Loops have to be transformed into tail recursions (only to 
+end up as loops again on machine code level). Performing even simple I/O tasks 
+requires advanced concepts like monades. This might be the reason why this kind of 
+programming language never gained top popularity.
+
+Two languages have recently emerged which choose the second option - they allow mutable data 
+but ensure that they cannot be accessed at the same time.
+
+Rust
+^^^^
+
+The http://rust-lang.org[Rust programming language], sponsored by the Mozilla foundation, 
+avoids sharing mutable data by the concept of ownership and borrowing. This concept, 
+after some time needed getting used to it while fighting the borrow checker, 
+works perfectly with data which live on the stack.
+
+There are many problems, however, which are hard to solve relying on data which directly live 
+on the stack alone. Try to writa a compiler that way, for instance. When it comes to 
+more complex data structures like growable trees or directed graphs in general, 
+it turns out that this concept is of limited use. Nodes in such structures typically 
+cannot live on the stack directly. Instead, they have to expressed with helpers 
+like Box, Cell, or RefCell which hold them. These either forbid using the data they hold 
+from more than one location, or make use of hidden sychronization mechanisms 
+which might hamper performance by locking contention.
+
+And what's more, the Rust standard library allocates objects which cannot live on the stack 
+dynamically allocated from a heap. This in turn means that a mechanism is needed to release the 
+memory they use them when they are no longer needed. All of the mechanisms employed 
+eventually use the underlying allocation library to free each object individually. 
+Since big data structures usually are disposed as a whole, there is no need for de-allocating 
+each and every node of the structure individually. Here, Scaly can do much better, 
+as we will see now.
+
+Efficient Memory Management
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+All programming languages enjoying top popularity solve the problem of recycling the memory 
+of objects which are no longer used in one three ways:
+
+1. You are required to free the memory of heap-allocated objects by writing explicit code.
+2. You are offered to use reference counting
+3. The objects are garbage-collected when they are no longer used.
+
+The first option is the one used traditionally by C (free) and C\++ (delete) and leads notoriously 
+to problems like memory leaks (if you forget to release the memory of your objects 
+when they are no longer used), or worse, memory corruptions (if you release their memory too soon). 
+Especially the latter problem is likely to go undetected until your code is deployed 
+at your customer or at your cloud provider and crash the process which runs your code.
+
+Programs written in C\++ in a modern programming style, or programs written in Rust or Swift 
+make use of the second option. Each object is accompanied by a counter keeping track 
+of the number of references to that object, and if the counter reaches 0, 
+the object is de-allocated. (unique_ptr in C\++ and Box in Rust could be interpreted 
+as a special case where only one reference is possible.)
+
+Apart from the overhead which is caused by the reference counter which is needed for every 
+shared object, and the fact that special measures need to be taken for getting rid of objects 
+which take part in reference cycles, it is simply inefficient to release each and every object 
+taking part in a data structure which is disposed individually.
+
+That is why the third option, garbage collection, is used by many popular programming languages 
+like Java, C#, and JavaScript. Garbage collection works in the background, detecting objects 
+which are no longer accessible and recycling their memory. All the problems and difficulties 
+with the first two approaches are solved. And, since allocation is typically implemented by
+essentially advancing a pointer to a heap location, allocating an object is rather fast compared 
+to traditional heap allocation methods which at first have to find a suitable memory location 
+for the object.
+
+Unfortunately, garbage collection introduces two major problems: 
+
+1. When a garbage collection occurs, one or more threads are halted once or multiple times 
+   until the garbage collection is over. Since garbage collections can take many milliseconds, 
+   the responsiveness of your app can be impaired. Garbage collection times of many seconds 
+   have been reported.
+2. Through a garbage gollection, all objects are traversed for accessibility checks, 
+   and heaps need to be compacted to avoid fragmentation which involves shifting surviving objects. 
+   This way of churning the whole data (at least that of the youngest generation) defeats caching.
+
+The bad thing about these two phenomena is that they are not visible when dealing with 
+small amounts of data which entirely fit in first or second level caches, and whose data can be 
+garbage-collected in less than a few milliseconds.
+
+Then, when you have bought into the promise of getting memory management for free, you scale up 
+your code into serving hundreds of users simutaneously, allocating gigabytes per second, 
+growing the heaps of your process way beyond the size of your caches - then you run 
+into the problems described above. 
+
+If you are lucky, your customer is ready to buy more server machines, or your cloud business 
+cashflow allows for throwing in more expensive EC2 instances behind your load balancer 
+(hampering your or your customer's profit).
+
+If the problems, however, occur on some backbone service, or if the end-users of your code are 
+online gamers which are annoyed by latencies of a few hundred milliseconds, throwing in more 
+Intel power does not help, and the business which your code serves has a problem.
+
+Fortunately, garbage collection is not the last word here. 
+Scaly uses region-based memory management which avoids all problems 
+of the memory management strategies described above.
+
+The idea of region-based memory managenent is not new, and related concepts, 
+known as memory pools or arenas are used, for instance by the Apache web server. The Rust 
+standard library offers Arena and TypedArena which you can use. On deletion, however, the whole 
+arena is traversed in order to call `drop` on objects which implement `Drop`. As with a garbage 
+collection, this might defeat caching. Apart from that, arenas are still an unstable feature 
+of Rust's standard library, and whether they will enter the stable state or will be dropped 
+remains to be seen.
+
+Few languages are known where region-based memory management is an integral part of the design 
+and works for you behind the scenes. The Cyclone programming language 
+(which is no longer supported in favor of Rust) makes use of it, and, very recently, ParaSail.
+
+ParaSail
+^^^^^^^^
+
+The http://parasail-lang.org[ParaSail] is a new program language using 
+region based memory memory management, and, in fact, its objectives match most of Scaly's features.
+
+Departing from the traditional patterns comes at a price - and that price, of course, 
+depends on the way you go. Opting for Haskell, as an example, requires abandoning many 
+programming patterns commonly used in mainstream programming languages, and leaning new ways 
+of programming like using tail recursions and monads. That price is fairly high, 
+and the popularity of Haskell is still far behind that of the mainstream languages. 
+According to Google Trends, it actually stalled in the last years and is now challenged 
+by Rust's rapidly growing popularity.
+
+ParaSail, instead, takes another approach to safe parallel programming. When programming 
+in ParaSail, you can keep an imperative programming style. The price you pay for migrating 
+from a language like Java or C# is essentially the following:
+
+1. You cannot use global data.
+2. No pointers or references can be used, they are replaced by expandable objects.
+3. You cannot use run-time exceptions.
+
+ParaSail shares the avoidance of traditional run-time exceptions with Scaly, so we may focus 
+on the first two points.
+
+First, ParaSail does not allow global data. All data must be passed as parameters to your function. 
+
+Scaly allows global data as long as they are immutable. As an example, program configuration data, 
+command-line arguments, or user context information during a web request can be offered 
+for read-only access, avoiding the overhead of passing additional parameters or member accesses 
+of any context objects.
+
+Second, since ParaSail does not allow you to use explicit references, 
+only strictly hierarchcal data can be expressed directly, as is the case with Scaly's structures. 
+For using graphs in ParaSail, you have to make use of ParaSail's generalized indexing facility. 
+This effectively requires you to implement your graphs on top of numerically indexed arrays, 
+and to manage orphaned graph nodes manually - which does not support you avoiding memory leaks.
+
+In Scaly, in addition to structures you can use classes which are accessed through references. 
+You can build up a mutable graph (your code will not fork in that phase, continuing to be 
+executed by a single thread in respect to that graph), return it as immutable, and then using it 
+from multiple tasks.
+
+As an example, if you build a compiler, your code could parse hundreds of source code files, 
+working in parrallel with multiple tasks on them using mutable classes for building up 
+abstract syntax trees (AST) of the files. Then, the parse trees are bundled to a single 
+immutable AST of the whole program. Then you would perform semantic analysis which could 
+scale up by forking tasks, because the AST data are immutable now. (In fact, 
+the reference implementation of the Scaly programming language is designed that way.)
+
+The bottom line is, with Scaly you do not have to sacrifice programming with references 
+like with ParaSail when you write code targeting a multithreaded environment. 
+
+When it comes to heterogeneous and distributed environments, however, things are different. 
+Data have to be serialized and transmitted to a GPU or to peer nodes in a cluster or supercomputer. 
+Scaly's classes and references are no help here, because Scaly's class objects cannot be 
+serialized. But you can still use Scaly's structure objects then which scale well 
+in a heterogeneous or distributed environment.
+
+Safety Against Program Failures
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+When you write code in Scaly, you can be sure that your program will not suddenly terminate 
+because of a fatal error which makes continuing impossible. There are only three conditions 
+which cause your code to stop executing:
+
+1. The hardware, the operating system, or unsafe code crashes your process.
+2. Your program runs out of memory.
+3. Your program causes a stack overflow.
+
+As long as your program lives in a healthy environment, does not call buggy unsafe code, 
+is able to allocate memory and does not exhaust stack space, Scaly guarantees 
+that your program will never stop working unexpectedly. 
+That is a huge advantage over most mainstream programming languages!
+
+C and C\++ allow your program bugs to crash your process. C\++, Java, C#, JavaScript, 
+and Python programs are terminated if their code fails to catch an exception. Even a program 
+written in a language as new as Rust can panic, i.e., stop working because of a run-time error.
+
+Scaly does not know exeptions or run-time errors. To panic and quit is no option for Scaly. 
+If your code does fails to handle an error that can occur, Scaly won't compile it.
+
+Swift's error handling is a bit advanced. It requires you to handle errors 
+which are raised. Unfortunately, you can circumvent that noble principle by writing `try!` 
+before an expression that might throw, leading to a runtime error. Apart from that, 
+Swift cannot handle exceptions which were raised by Objective-C code 
+and which will be handled as run-time errors.
+
+Of all other languages mentioned so far, ParaSail is the only one which eliminates 
+run-time exceptions completely, replacing them with strong compile-time checking of preconditions.
+
+Conclusion
+~~~~~~~~~~
+
+To sum up everything that was said so far: Of all programming languages mentioned here, 
+only the approach of ParaSail comes close to Scaly's design principles. And yet, 
+omitting globals and assignable references completely is not necessary as long the globals 
+are immutable and if you accept that code portions which build up data structures using 
+classes do not spawn new tasks as long as the data are visible in a mutable way. Apart from that, 
+ParaSail is still at a very early stage, and whether implementations emerge which deliver on the 
+performance promises still remains to be seen.
+
+All other languages mentioned here do not offer the safety and ease of parallel and distributed 
+programming of Scaly.
+
+
 [[memorymanagement]]
 Memory Management
 -----------------
