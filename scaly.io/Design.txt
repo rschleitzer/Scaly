@@ -10,7 +10,7 @@ And yet, there seems to be a sweet spot for Scaly which wants to be a language
 which is unique - a language which enables you to easily develop programs which run in parallel 
 in a heterogeneous and distributed environment with outstanding performance.
 
-In the following, the main design points of Scaly are explained and how it compares 
+In the following, the main design points of Scaly are explained and how Scaly compares 
 to existing programming languages.
 
 If we consider where processor development has gone in the last ten years, 
@@ -22,7 +22,7 @@ laptops, tablets and even smartphones.
 Today's most popular programming languages, however, descend from the C programming language 
 which was not designed from the start with parallel and distributed computing in mind. 
 Even though some of these languages have mitigated some problems which plagued 
-legions of C and C\++ programmers, they do not support you by design in 
+legions of C and C++ programmers, they do not support you by design in 
 writing programs which are free of concurrency bugs.
 
 Avoiding Data Races and Concurrency Problems
@@ -33,19 +33,19 @@ from more than one thread at the same time. Such code frequently suffers from _d
 A data race causes your code to depend on timing. 
 
 Often, bugs of this kind are likely to reveal themselves not before your code runs in production 
-at your customer's site or at server in the cloud runnning your customer's web app. 
+at your customer's site or at a server in the cloud runnning your customer's web app. 
 And to make things worse, the failures are typically unable to be reproduced 
 in your development environment. That's why you did not find these bugs in the first place 
-during development. And even if you _are_ able to reproduce the problem, you might not be able 
-to find the reason by stepping through your code or even by tracing, because data races 
-depend on timing - and the timing of code execution typically is different while debugging code, 
-or letting it write trace records.
+while developing and testing your code. And even if you _are_ able to reproduce the problem, 
+you might not be able to find the reason by stepping through your code or even by tracing, 
+because data races depend on timing - and the timing of code execution 
+typically is different while debugging code, or when writing trace records.
 
 The only way to get rid of data races is to avoid accessing writable data 
 from more than one thread at the same time. There are two things that can be done about that:
 
 1. Synchronize accesses to writable data
-2. Forbid making writable data accessibie for more then one thread
+2. Forbid making writable data accessible for more then one thread
 
 Without going into much detail, it can be said that trying to synchronize accesses 
 to writable data can lead to all kinds of locking problems - deadlocks cause two or more 
@@ -65,35 +65,36 @@ There are two ways to acheiving that goal:
 Functional Languages
 ^^^^^^^^^^^^^^^^^^^^
 
-Programming languages which know only immutable data have been known now for decades. 
-Pure functional languages like Haskell do not offer a way to alter (or to mutate) a datum 
-after it has been created. 
+Programming languages which know only immutable data have been known for decades. 
+Pure functional languages like https://www.haskell.org/[Haskell] do not offer a way 
+to alter (or to mutate) a datum after it has been created. 
 
 The price paid for this is pretty high, though. With a pure functional language, 
 you cannot use many coding patterns which are commonplace in the most popular 
 programming languages like variables which can be re-assigned or explicit loops. 
-Your data must be read-only. Loops have to be transformed into tail recursions (only to 
+Your data must be read-only. Loops have to carefully be transformed into recursions (only to 
 end up as loops again on machine code level). Performing even simple I/O tasks 
 requires advanced concepts like monades. This might be the reason why this kind of 
 programming language never gained top popularity.
 
-Two languages have recently emerged which choose the second option - they allow mutable data 
-but ensure that they cannot be accessed at the same time.
+Two languages, http://rust-lang.org[Rust] and http://parasail-lang.org[ParaSail] 
+have recently emerged which choose the second option - they allow you to use mutable data 
+but ensure that mutable data cannot be accessed by more than one thread at the same time.
 
 Rust
 ^^^^
 
 The http://rust-lang.org[Rust programming language], sponsored by the Mozilla foundation, 
-avoids sharing mutable data by the concept of ownership and borrowing. This concept, 
+avoids sharing mutable data by using the concept of ownership and borrowing. This concept, 
 after some time needed getting used to it while fighting the borrow checker, 
 works perfectly with data which live on the stack.
 
 There are many problems, however, which are hard to solve relying on data which directly live 
-on the stack alone. Try to writa a compiler that way, for instance. When it comes to 
+on the stack alone. Try to write a a compiler that way, for instance. When it comes to 
 more complex data structures like growable trees or directed graphs in general, 
 it turns out that this concept is of limited use. Nodes in such structures typically 
 cannot live on the stack directly. Instead, they have to expressed with helpers 
-like Box, Cell, or RefCell which hold them. These either forbid using the data they hold 
+like `Box`, `Cell`, or `RefCell` which hold them. These either forbid using the data they hold 
 from more than one location, or make use of hidden sychronization mechanisms 
 which might hamper performance by locking contention.
 
@@ -111,21 +112,21 @@ Efficient Memory Management
 All programming languages enjoying top popularity solve the problem of recycling the memory 
 of objects which are no longer used in one three ways:
 
-1. You are required to free the memory of heap-allocated objects by writing explicit code.
+1. You are required to release the memory of heap-allocated objects by writing explicit code.
 2. You are offered to use reference counting
 3. The objects are garbage-collected when they are no longer used.
 
-The first option is the one used traditionally by C (free) and C\++ (delete) and leads notoriously 
+The first option is the one used traditionally by C (`free`) and C++ (`delete`) and leads notoriously 
 to problems like memory leaks (if you forget to release the memory of your objects 
 when they are no longer used), or worse, memory corruptions (if you release their memory too soon). 
 Especially the latter problem is likely to go undetected until your code is deployed 
 at your customer or at your cloud provider and crash the process which runs your code.
 
-Programs written in C\++ in a modern programming style, or programs written in Rust or Swift 
-make use of the second option. Each object is accompanied by a counter keeping track 
-of the number of references to that object, and if the counter reaches 0, 
-the object is de-allocated. (unique_ptr in C\++ and Box in Rust could be interpreted 
-as a special case where only one reference is possible.)
+Many programs written in C\++ in a modern programming style, or programs written in Rust or 
+https://developer.apple.com/swift/[Swift] make use of the second option. 
+Each object is accompanied by a counter keeping track of the number of references to that object, 
+and if the counter reaches `0`, the object is de-allocated. (`unique_ptr` in C++ and `Box` in Rust 
+could be interpreted as a special case where only one reference is possible.)
 
 Apart from the overhead which is caused by the reference counter which is needed for every 
 shared object, and the fact that special measures need to be taken for getting rid of objects 
@@ -165,23 +166,24 @@ cashflow allows for throwing in more expensive EC2 instances behind your load ba
 
 If the problems, however, occur on some backbone service, or if the end-users of your code are 
 online gamers which are annoyed by latencies of a few hundred milliseconds, throwing in more 
-Intel power does not help, and the business which your code serves has a problem.
+Intel power does not help, and the business which is backed by your code is in trouble.
 
 Fortunately, garbage collection is not the last word here. 
-Scaly uses region-based memory management which avoids all problems 
-of the memory management strategies described above.
+Scaly uses https://en.wikipedia.org/wiki/Region-based_memory_management[region-based 
+memory management] which avoids all problems of the memory management strategies described above.
 
 The idea of region-based memory managenent is not new, and related concepts, 
 known as memory pools or arenas are used, for instance by the Apache web server. The Rust 
-standard library offers Arena and TypedArena which you can use. On deletion, however, the whole 
-arena is traversed in order to call `drop` on objects which implement `Drop`. As with a garbage 
-collection, this might defeat caching. Apart from that, arenas are still an unstable feature 
-of Rust's standard library, and whether they will enter the stable state or will be dropped 
-remains to be seen.
+standard library offers `Arena` and `TypedArena` which you can use. On deletion, however, the whole 
+arena is traversed in order to call `drop` on objects which implement the `Drop` trait. 
+As with a garbage collection, this might defeat caching. Apart from that, 
+arenas are still an unstable feature of Rust's standard library, and whether they will enter 
+the stable state or will be dropped remains to be seen.
 
 Few languages are known where region-based memory management is an integral part of the design 
-and works for you behind the scenes. The Cyclone programming language 
-(which is no longer supported in favor of Rust) makes use of it, and, very recently, ParaSail.
+and works for you behind the scenes. The https://cyclone.thelanguage.org/[Cyclone] 
+programming language (which is no longer supported) makes use of it, 
+and, very recently, ParaSail.
 
 ParaSail
 ^^^^^^^^
@@ -192,7 +194,7 @@ region based memory memory management, and, in fact, its objectives match most o
 Departing from the traditional patterns comes at a price - and that price, of course, 
 depends on the way you go. Opting for Haskell, as an example, requires abandoning many 
 programming patterns commonly used in mainstream programming languages, and leaning new ways 
-of programming like using tail recursions and monads. That price is fairly high, 
+of programming like using recursions and monads. That price is fairly high, 
 and the popularity of Haskell is still far behind that of the mainstream languages. 
 According to Google Trends, it actually stalled in the last years and is now challenged 
 by Rust's rapidly growing popularity.
@@ -205,7 +207,7 @@ from a language like Java or C# is essentially the following:
 2. No pointers or references can be used, they are replaced by expandable objects.
 3. You cannot use run-time exceptions.
 
-ParaSail shares the avoidance of traditional run-time exceptions with Scaly, so we may focus 
+ParaSail shares the avoidance of traditional run-time exceptions with Scaly, so we can focus 
 on the first two points.
 
 First, ParaSail does not allow global data. All data must be passed as parameters to your function. 
@@ -258,7 +260,7 @@ is able to allocate memory and does not exhaust stack space, Scaly guarantees
 that your program will never stop working unexpectedly. 
 That is a huge advantage over most mainstream programming languages!
 
-C and C\++ allow your program bugs to crash your process. C\++, Java, C#, JavaScript, 
+C and C\++ allow your program bugs to crash your process. C++, Java, C#, JavaScript, 
 and Python programs are terminated if their code fails to catch an exception. Even a program 
 written in a language as new as Rust can panic, i.e., stop working because of a run-time error.
 

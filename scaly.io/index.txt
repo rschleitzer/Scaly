@@ -18,7 +18,7 @@ Documentation
 
 The link:book/[_Scaly Book_] is your one-stop source for learning how to write programs in Scaly 
 and how to compile and run them using the reference implementation, and for understanding 
-the main design points. The Scaly Book is also available as a 
+the main design points of Scaly. The Scaly Book is also available as a 
 link:book/ScalyBook.html[single page version] and in link:book/ScalyBook.pdf[PDF format].
 
 Building
