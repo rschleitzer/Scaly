@@ -302,6 +302,18 @@ class MyVisitor : SyntaxVisitor {
     function closeForExpression(forExpression: ForExpression) { }
 
 
+    function openWhileExpression(whileExpression: WhileExpression) -> bool {
+        return true; }
+
+    function closeWhileExpression(whileExpression: WhileExpression) { }
+
+
+    function openRepeatExpression(repeatExpression: RepeatExpression) -> bool {
+        return true; }
+
+    function closeRepeatExpression(repeatExpression: RepeatExpression) { }
+
+
     function openParenthesizedExpression(parenthesizedExpression: ParenthesizedExpression) -> bool {
         return true; }
 
@@ -392,18 +404,6 @@ class MyVisitor : SyntaxVisitor {
         return true; }
 
     function closeCaseItem(caseItem: CaseItem) { }
-
-
-    function openForEach(forEach: ForEach) -> bool {
-        return true; }
-
-    function closeForEach(forEach: ForEach) { }
-
-
-    function openPlainFor(plainFor: PlainFor) -> bool {
-        return true; }
-
-    function closePlainFor(plainFor: PlainFor) { }
 
 
     function visitWildcardPattern(wildcardPattern: WildcardPattern) { }

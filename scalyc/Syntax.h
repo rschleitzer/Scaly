@@ -77,6 +77,8 @@ public:
     virtual bool _isIfExpression();
     virtual bool _isSwitchExpression();
     virtual bool _isForExpression();
+    virtual bool _isWhileExpression();
+    virtual bool _isRepeatExpression();
     virtual bool _isParenthesizedExpression();
     virtual bool _isReturnExpression();
     virtual bool _isThrowExpression();
@@ -98,9 +100,6 @@ public:
     virtual bool _isItemCaseLabel();
     virtual bool _isDefaultCaseLabel();
     virtual bool _isCaseItem();
-    virtual bool _isForLoop();
-    virtual bool _isForEach();
-    virtual bool _isPlainFor();
     virtual bool _isPattern();
     virtual bool _isWildcardPattern();
     virtual bool _isIdentifierPattern();
@@ -734,6 +733,8 @@ public:
     virtual bool _isIfExpression();
     virtual bool _isSwitchExpression();
     virtual bool _isForExpression();
+    virtual bool _isWhileExpression();
+    virtual bool _isRepeatExpression();
     virtual bool _isParenthesizedExpression();
     virtual bool _isReturnExpression();
     virtual bool _isThrowExpression();
@@ -789,11 +790,33 @@ public:
 
 class ForExpression : public PrimaryExpression {
 public:
-    ForExpression(ForLoop* loop, Position* start, Position* end);
+    ForExpression(Pattern* pattern, Expression* expression, Expression* code, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
-    ForLoop* loop;
+    Pattern* pattern;
+    Expression* expression;
+    Expression* code;
 
     virtual bool _isForExpression();
+};
+
+class WhileExpression : public PrimaryExpression {
+public:
+    WhileExpression(Expression* condition, Expression* code, Position* start, Position* end);
+    virtual void accept(SyntaxVisitor* visitor);
+    Expression* condition;
+    Expression* code;
+
+    virtual bool _isWhileExpression();
+};
+
+class RepeatExpression : public PrimaryExpression {
+public:
+    RepeatExpression(Expression* condition, Expression* code, Position* start, Position* end);
+    virtual void accept(SyntaxVisitor* visitor);
+    Expression* condition;
+    Expression* code;
+
+    virtual bool _isRepeatExpression();
 };
 
 class ParenthesizedExpression : public PrimaryExpression {
@@ -990,39 +1013,6 @@ public:
     Pattern* pattern;
 
     virtual bool _isCaseItem();
-};
-
-class ForLoop : public SyntaxNode {
-public:
-    ForLoop(Position* start, Position* end);
-    virtual void accept(SyntaxVisitor* visitor);
-
-    virtual bool _isForLoop();
-    virtual bool _isForEach();
-    virtual bool _isPlainFor();
-};
-
-class ForEach : public ForLoop {
-public:
-    ForEach(Pattern* pattern, Expression* expression, Expression* code, Position* start, Position* end);
-    virtual void accept(SyntaxVisitor* visitor);
-    Pattern* pattern;
-    Expression* expression;
-    Expression* code;
-
-    virtual bool _isForEach();
-};
-
-class PlainFor : public ForLoop {
-public:
-    PlainFor(VariableDeclaration* forInit, Expression* forCheck, Expression* forNext, Expression* code, Position* start, Position* end);
-    virtual void accept(SyntaxVisitor* visitor);
-    VariableDeclaration* forInit;
-    Expression* forCheck;
-    Expression* forNext;
-    Expression* code;
-
-    virtual bool _isPlainFor();
 };
 
 class Pattern : public SyntaxNode {

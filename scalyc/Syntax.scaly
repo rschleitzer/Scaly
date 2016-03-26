@@ -1091,17 +1091,55 @@ class SwitchExpression : PrimaryExpression {
 
 class ForExpression : PrimaryExpression {
 
-    init(loop: ForLoop, start: Position, end: Position) {
+    init(pattern: Pattern, expression: Expression, code: Expression, start: Position, end: Position) {
         super.init(start, end)
     }
 
     override function accept(mutable visitor: SyntaxVisitor) {
         visitor.openForExpression(this)
-        loop!.accept(visitor)
+        pattern!.accept(visitor)
+        expression!.accept(visitor)
+        code!.accept(visitor)
         visitor.closeForExpression(this)
     }
 
-    let loop: ForLoop?
+    let pattern: Pattern?
+    let expression: Expression?
+    let code: Expression?
+}
+
+class WhileExpression : PrimaryExpression {
+
+    init(condition: Expression, code: Expression, start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    override function accept(mutable visitor: SyntaxVisitor) {
+        visitor.openWhileExpression(this)
+        condition!.accept(visitor)
+        code!.accept(visitor)
+        visitor.closeWhileExpression(this)
+    }
+
+    let condition: Expression?
+    let code: Expression?
+}
+
+class RepeatExpression : PrimaryExpression {
+
+    init(condition: Expression, code: Expression, start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    override function accept(mutable visitor: SyntaxVisitor) {
+        visitor.openRepeatExpression(this)
+        condition!.accept(visitor)
+        code!.accept(visitor)
+        visitor.closeRepeatExpression(this)
+    }
+
+    let condition: Expression?
+    let code: Expression?
 }
 
 class ParenthesizedExpression : PrimaryExpression {
@@ -1435,63 +1473,6 @@ class CaseItem : SyntaxNode {
     }
 
     let pattern: Pattern?
-}
-
-class ForLoop : SyntaxNode {
-
-    init(start: Position, end: Position) {
-        super.init(start, end)
-    }
-
-    function accept(mutable visitor: SyntaxVisitor) {
-        visitor.openForLoop(this)
-        visitor.closeForLoop(this)
-    }
-
-}
-
-class ForEach : ForLoop {
-
-    init(pattern: Pattern, expression: Expression, code: Expression, start: Position, end: Position) {
-        super.init(start, end)
-    }
-
-    override function accept(mutable visitor: SyntaxVisitor) {
-        visitor.openForEach(this)
-        pattern!.accept(visitor)
-        expression!.accept(visitor)
-        code!.accept(visitor)
-        visitor.closeForEach(this)
-    }
-
-    let pattern: Pattern?
-    let expression: Expression?
-    let code: Expression?
-}
-
-class PlainFor : ForLoop {
-
-    init(forInit: VariableDeclaration, forCheck: Expression, forNext: Expression, code: Expression, start: Position, end: Position) {
-        super.init(start, end)
-    }
-
-    override function accept(mutable visitor: SyntaxVisitor) {
-        visitor.openPlainFor(this)
-        if forInit != nil {
-            forInit!.accept(visitor)
-        }
-        if forCheck != nil {
-            forCheck!.accept(visitor)
-        }
-        forNext!.accept(visitor)
-        code!.accept(visitor)
-        visitor.closePlainFor(this)
-    }
-
-    let forInit: VariableDeclaration?
-    let forCheck: Expression?
-    let forNext: Expression?
-    let code: Expression?
 }
 
 class Pattern : SyntaxNode {

@@ -87,6 +87,8 @@ public:
     virtual _Result<IfExpression, ParserError> parseIfExpression(_Page* _rp, _Page* _ep);
     virtual _Result<SwitchExpression, ParserError> parseSwitchExpression(_Page* _rp, _Page* _ep);
     virtual _Result<ForExpression, ParserError> parseForExpression(_Page* _rp, _Page* _ep);
+    virtual _Result<WhileExpression, ParserError> parseWhileExpression(_Page* _rp, _Page* _ep);
+    virtual _Result<RepeatExpression, ParserError> parseRepeatExpression(_Page* _rp, _Page* _ep);
     virtual _Result<ParenthesizedExpression, ParserError> parseParenthesizedExpression(_Page* _rp, _Page* _ep);
     virtual _Result<ReturnExpression, ParserError> parseReturnExpression(_Page* _rp, _Page* _ep);
     virtual _Result<ThrowExpression, ParserError> parseThrowExpression(_Page* _rp, _Page* _ep);
@@ -110,9 +112,6 @@ public:
     virtual _Result<DefaultCaseLabel, ParserError> parseDefaultCaseLabel(_Page* _rp, _Page* _ep);
     virtual _Result<_Vector<CaseItem>, ParserError> parseCaseItemList(_Page* _rp, _Page* _ep);
     virtual _Result<CaseItem, ParserError> parseCaseItem(_Page* _rp, _Page* _ep);
-    virtual _Result<ForLoop, ParserError> parseForLoop(_Page* _rp, _Page* _ep);
-    virtual _Result<ForEach, ParserError> parseForEach(_Page* _rp, _Page* _ep);
-    virtual _Result<PlainFor, ParserError> parsePlainFor(_Page* _rp, _Page* _ep);
     virtual _Result<Pattern, ParserError> parsePattern(_Page* _rp, _Page* _ep);
     virtual _Result<WildcardPattern, ParserError> parseWildcardPattern(_Page* _rp, _Page* _ep);
     virtual _Result<IdentifierPattern, ParserError> parseIdentifierPattern(_Page* _rp, _Page* _ep);
@@ -155,6 +154,8 @@ public:
     _LetString* catchKeyword;
     _LetString* forKeyword;
     _LetString* inKeyword;
+    _LetString* whileKeyword;
+    _LetString* repeatKeyword;
     _LetString* returnKeyword;
     _LetString* throwKeyword;
     _LetString* breakKeyword;

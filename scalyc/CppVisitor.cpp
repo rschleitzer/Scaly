@@ -916,18 +916,18 @@ bool CppVisitor::openForExpression(ForExpression* forExpression) {
 void CppVisitor::closeForExpression(ForExpression* forExpression) {
 }
 
-bool CppVisitor::openForEach(ForEach* forEach) {
+bool CppVisitor::openWhileExpression(WhileExpression* whileExpression) {
     return true;
 }
 
-void CppVisitor::closeForEach(ForEach* forEach) {
+void CppVisitor::closeWhileExpression(WhileExpression* whileExpression) {
 }
 
-bool CppVisitor::openPlainFor(PlainFor* plainFor) {
+bool CppVisitor::openRepeatExpression(RepeatExpression* repeatExpression) {
     return true;
 }
 
-void CppVisitor::closePlainFor(PlainFor* plainFor) {
+void CppVisitor::closeRepeatExpression(RepeatExpression* repeatExpression) {
 }
 
 bool CppVisitor::openReturnExpression(ReturnExpression* returnExpression) {

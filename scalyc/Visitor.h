@@ -136,6 +136,10 @@ class SwitchExpression;
 
 class ForExpression;
 
+class WhileExpression;
+
+class RepeatExpression;
+
 class ParenthesizedExpression;
 
 class ReturnExpression;
@@ -177,12 +181,6 @@ class ItemCaseLabel;
 class DefaultCaseLabel;
 
 class CaseItem;
-
-class ForLoop;
-
-class ForEach;
-
-class PlainFor;
 
 class Pattern;
 
@@ -335,6 +333,10 @@ public:
     virtual void closeSwitchExpression(SwitchExpression* switchExpression) = 0;
     virtual bool openForExpression(ForExpression* forExpression) = 0;
     virtual void closeForExpression(ForExpression* forExpression) = 0;
+    virtual bool openWhileExpression(WhileExpression* whileExpression) = 0;
+    virtual void closeWhileExpression(WhileExpression* whileExpression) = 0;
+    virtual bool openRepeatExpression(RepeatExpression* repeatExpression) = 0;
+    virtual void closeRepeatExpression(RepeatExpression* repeatExpression) = 0;
     virtual bool openParenthesizedExpression(ParenthesizedExpression* parenthesizedExpression) = 0;
     virtual void closeParenthesizedExpression(ParenthesizedExpression* parenthesizedExpression) = 0;
     virtual bool openReturnExpression(ReturnExpression* returnExpression) = 0;
@@ -367,10 +369,6 @@ public:
     virtual void visitDefaultCaseLabel(DefaultCaseLabel* defaultCaseLabel) = 0;
     virtual bool openCaseItem(CaseItem* caseItem) = 0;
     virtual void closeCaseItem(CaseItem* caseItem) = 0;
-    virtual bool openForEach(ForEach* forEach) = 0;
-    virtual void closeForEach(ForEach* forEach) = 0;
-    virtual bool openPlainFor(PlainFor* plainFor) = 0;
-    virtual void closePlainFor(PlainFor* plainFor) = 0;
     virtual void visitWildcardPattern(WildcardPattern* wildcardPattern) = 0;
     virtual bool openIdentifierPattern(IdentifierPattern* identifierPattern) = 0;
     virtual void closeIdentifierPattern(IdentifierPattern* identifierPattern) = 0;

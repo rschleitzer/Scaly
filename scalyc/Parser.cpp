@@ -15,6 +15,8 @@ Parser::Parser(_LetString* fileName, _LetString* text)
   catchKeyword(&_LetString::create(getPage(), "catch")),
   forKeyword(&_LetString::create(getPage(), "for")),
   inKeyword(&_LetString::create(getPage(), "in")),
+  whileKeyword(&_LetString::create(getPage(), "while")),
+  repeatKeyword(&_LetString::create(getPage(), "repeat")),
   returnKeyword(&_LetString::create(getPage(), "return")),
   throwKeyword(&_LetString::create(getPage(), "throw")),
   breakKeyword(&_LetString::create(getPage(), "break")),
@@ -1958,6 +1960,24 @@ _Result<PrimaryExpression, ParserError> Parser::parsePrimaryExpression(_Page* _r
     {
         // Make a region for the current block and get the Page
         _Region _r; _Page* _p = _r.get();
+        _Result<WhileExpression, ParserError> result = parseWhileExpression(_rp, _p);
+        if (result.succeeded())
+            return _Result<PrimaryExpression, ParserError>(result.getResult());
+        else
+            errors->push(result.getError());
+    }
+    {
+        // Make a region for the current block and get the Page
+        _Region _r; _Page* _p = _r.get();
+        _Result<RepeatExpression, ParserError> result = parseRepeatExpression(_rp, _p);
+        if (result.succeeded())
+            return _Result<PrimaryExpression, ParserError>(result.getResult());
+        else
+            errors->push(result.getError());
+    }
+    {
+        // Make a region for the current block and get the Page
+        _Region _r; _Page* _p = _r.get();
         _Result<ParenthesizedExpression, ParserError> result = parseParenthesizedExpression(_rp, _p);
         if (result.succeeded())
             return _Result<PrimaryExpression, ParserError>(result.getResult());
@@ -2130,17 +2150,115 @@ _Result<ForExpression, ParserError> Parser::parseForExpression(_Page* _rp, _Page
     else {
         return _Result<ForExpression, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_keywordExpected(startFor1, &_LetString::create(_ep, *forKeyword))));
     }
-    _Result<ForLoop, ParserError> _result_loop = parseForLoop(_rp, _ep);
-    ForLoop* loop = 0;
-    if (_result_loop.succeeded()) {
-        loop = _result_loop.getResult();
+    _Result<Pattern, ParserError> _result_pattern = parsePattern(_rp, _ep);
+    Pattern* pattern = 0;
+    if (_result_pattern.succeeded()) {
+        pattern = _result_pattern.getResult();
     }
     else {
-        return _Result<ForExpression, ParserError>(_result_loop.getError());
+        return _Result<ForExpression, ParserError>(_result_pattern.getError());
     }
-    ForExpression* forExpression = new(_rp) ForExpression(loop, start, lexer->getPosition(_rp));
-    loop->parent = forExpression;
+    Position* startIn3 = lexer->getPreviousPosition(_rp);
+    bool successIn3 = lexer->parseKeyword(inKeyword);
+    if (successIn3) {
+        lexer->advance();
+    }
+    else {
+        return _Result<ForExpression, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_keywordExpected(startIn3, &_LetString::create(_ep, *inKeyword))));
+    }
+    _Result<Expression, ParserError> _result_expression = parseExpression(_rp, _ep);
+    Expression* expression = 0;
+    if (_result_expression.succeeded()) {
+        expression = _result_expression.getResult();
+    }
+    else {
+        return _Result<ForExpression, ParserError>(_result_expression.getError());
+    }
+    _Result<Expression, ParserError> _result_code = parseExpression(_rp, _ep);
+    Expression* code = 0;
+    if (_result_code.succeeded()) {
+        code = _result_code.getResult();
+    }
+    else {
+        return _Result<ForExpression, ParserError>(_result_code.getError());
+    }
+    ForExpression* forExpression = new(_rp) ForExpression(pattern, expression, code, start, lexer->getPosition(_rp));
+    pattern->parent = forExpression;
+    expression->parent = forExpression;
+    code->parent = forExpression;
     return _Result<ForExpression, ParserError>(forExpression);
+}
+
+_Result<WhileExpression, ParserError> Parser::parseWhileExpression(_Page* _rp, _Page* _ep) {
+    Position* start = lexer->getPreviousPosition(_rp);
+    Position* startWhile1 = lexer->getPreviousPosition(_rp);
+    bool successWhile1 = lexer->parseKeyword(whileKeyword);
+    if (successWhile1) {
+        lexer->advance();
+    }
+    else {
+        return _Result<WhileExpression, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_keywordExpected(startWhile1, &_LetString::create(_ep, *whileKeyword))));
+    }
+    _Result<Expression, ParserError> _result_condition = parseExpression(_rp, _ep);
+    Expression* condition = 0;
+    if (_result_condition.succeeded()) {
+        condition = _result_condition.getResult();
+    }
+    else {
+        return _Result<WhileExpression, ParserError>(_result_condition.getError());
+    }
+    _Result<Expression, ParserError> _result_code = parseExpression(_rp, _ep);
+    Expression* code = 0;
+    if (_result_code.succeeded()) {
+        code = _result_code.getResult();
+    }
+    else {
+        return _Result<WhileExpression, ParserError>(_result_code.getError());
+    }
+    WhileExpression* whileExpression = new(_rp) WhileExpression(condition, code, start, lexer->getPosition(_rp));
+    condition->parent = whileExpression;
+    code->parent = whileExpression;
+    return _Result<WhileExpression, ParserError>(whileExpression);
+}
+
+_Result<RepeatExpression, ParserError> Parser::parseRepeatExpression(_Page* _rp, _Page* _ep) {
+    Position* start = lexer->getPreviousPosition(_rp);
+    Position* startRepeat1 = lexer->getPreviousPosition(_rp);
+    bool successRepeat1 = lexer->parseKeyword(repeatKeyword);
+    if (successRepeat1) {
+        lexer->advance();
+    }
+    else {
+        return _Result<RepeatExpression, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_keywordExpected(startRepeat1, &_LetString::create(_ep, *repeatKeyword))));
+    }
+    _Result<Expression, ParserError> _result_condition = parseExpression(_rp, _ep);
+    Expression* condition = 0;
+    if (_result_condition.succeeded()) {
+        condition = _result_condition.getResult();
+    }
+    else {
+        return _Result<RepeatExpression, ParserError>(_result_condition.getError());
+    }
+    Position* startWhile3 = lexer->getPreviousPosition(_rp);
+    bool successWhile3 = lexer->parseKeyword(whileKeyword);
+    if (successWhile3) {
+        lexer->advance();
+    }
+    else {
+        return _Result<RepeatExpression, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_keywordExpected(startWhile3, &_LetString::create(_ep, *whileKeyword))));
+    }
+    _Result<Expression, ParserError> _result_code = parseExpression(_rp, _ep);
+    Expression* code = 0;
+    if (_result_code.succeeded()) {
+        code = _result_code.getResult();
+    }
+    else {
+        return _Result<RepeatExpression, ParserError>(_result_code.getError());
+    }
+    RepeatExpression* repeatExpression = new(_rp) RepeatExpression(condition, code, start, lexer->getPosition(_rp));
+    condition->parent = repeatExpression;
+    code->parent = repeatExpression;
+    return _Result<RepeatExpression, ParserError>(repeatExpression);
 }
 
 _Result<ParenthesizedExpression, ParserError> Parser::parseParenthesizedExpression(_Page* _rp, _Page* _ep) {
@@ -2720,125 +2838,6 @@ _Result<CaseItem, ParserError> Parser::parseCaseItem(_Page* _rp, _Page* _ep) {
     CaseItem* caseItem = new(_rp) CaseItem(pattern, start, lexer->getPosition(_rp));
     pattern->parent = caseItem;
     return _Result<CaseItem, ParserError>(caseItem);
-}
-
-_Result<ForLoop, ParserError> Parser::parseForLoop(_Page* _rp, _Page* _ep) {
-    _Array<ParserError>* errors = new(_ep) _Array<ParserError>();
-    Position* start = lexer->getPreviousPosition(_rp);
-    {
-        // Make a region for the current block and get the Page
-        _Region _r; _Page* _p = _r.get();
-        _Result<ForEach, ParserError> result = parseForEach(_rp, _p);
-        if (result.succeeded())
-            return _Result<ForLoop, ParserError>(result.getResult());
-        else
-            errors->push(result.getError());
-    }
-    {
-        // Make a region for the current block and get the Page
-        _Region _r; _Page* _p = _r.get();
-        _Result<PlainFor, ParserError> result = parsePlainFor(_rp, _p);
-        if (result.succeeded())
-            return _Result<ForLoop, ParserError>(result.getResult());
-        else
-            errors->push(result.getError());
-    }
-    return _Result<ForLoop, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_unableToParse(start, &_Vector<ParserError>::create(_ep, *errors))));
-}
-
-_Result<ForEach, ParserError> Parser::parseForEach(_Page* _rp, _Page* _ep) {
-    Position* start = lexer->getPreviousPosition(_rp);
-    _Result<Pattern, ParserError> _result_pattern = parsePattern(_rp, _ep);
-    Pattern* pattern = 0;
-    if (_result_pattern.succeeded()) {
-        pattern = _result_pattern.getResult();
-    }
-    else {
-        return _Result<ForEach, ParserError>(_result_pattern.getError());
-    }
-    Position* startIn2 = lexer->getPreviousPosition(_rp);
-    bool successIn2 = lexer->parseKeyword(inKeyword);
-    if (successIn2) {
-        lexer->advance();
-    }
-    else {
-        return _Result<ForEach, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_keywordExpected(startIn2, &_LetString::create(_ep, *inKeyword))));
-    }
-    _Result<Expression, ParserError> _result_expression = parseExpression(_rp, _ep);
-    Expression* expression = 0;
-    if (_result_expression.succeeded()) {
-        expression = _result_expression.getResult();
-    }
-    else {
-        return _Result<ForEach, ParserError>(_result_expression.getError());
-    }
-    _Result<Expression, ParserError> _result_code = parseExpression(_rp, _ep);
-    Expression* code = 0;
-    if (_result_code.succeeded()) {
-        code = _result_code.getResult();
-    }
-    else {
-        return _Result<ForEach, ParserError>(_result_code.getError());
-    }
-    ForEach* forEach = new(_rp) ForEach(pattern, expression, code, start, lexer->getPosition(_rp));
-    pattern->parent = forEach;
-    expression->parent = forEach;
-    code->parent = forEach;
-    return _Result<ForEach, ParserError>(forEach);
-}
-
-_Result<PlainFor, ParserError> Parser::parsePlainFor(_Page* _rp, _Page* _ep) {
-    Position* start = lexer->getPreviousPosition(_rp);
-    _Result<VariableDeclaration, ParserError> _result_forInit = parseVariableDeclaration(_rp, _ep);
-    VariableDeclaration* forInit = 0;
-    if (_result_forInit.succeeded()) {
-        forInit = _result_forInit.getResult();
-    }
-    Position* startSemicolon2 = lexer->getPreviousPosition(_rp);
-    bool successSemicolon2 = lexer->parsePunctuation(semicolon);
-    if (successSemicolon2) {
-        lexer->advance();
-    }
-    else {
-        return _Result<PlainFor, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_punctuationExpected(startSemicolon2, &_LetString::create(_ep, *semicolon))));
-    }
-    _Result<Expression, ParserError> _result_forCheck = parseExpression(_rp, _ep);
-    Expression* forCheck = 0;
-    if (_result_forCheck.succeeded()) {
-        forCheck = _result_forCheck.getResult();
-    }
-    Position* startSemicolon4 = lexer->getPreviousPosition(_rp);
-    bool successSemicolon4 = lexer->parsePunctuation(semicolon);
-    if (successSemicolon4) {
-        lexer->advance();
-    }
-    else {
-        return _Result<PlainFor, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_punctuationExpected(startSemicolon4, &_LetString::create(_ep, *semicolon))));
-    }
-    _Result<Expression, ParserError> _result_forNext = parseExpression(_rp, _ep);
-    Expression* forNext = 0;
-    if (_result_forNext.succeeded()) {
-        forNext = _result_forNext.getResult();
-    }
-    else {
-        return _Result<PlainFor, ParserError>(_result_forNext.getError());
-    }
-    _Result<Expression, ParserError> _result_code = parseExpression(_rp, _ep);
-    Expression* code = 0;
-    if (_result_code.succeeded()) {
-        code = _result_code.getResult();
-    }
-    else {
-        return _Result<PlainFor, ParserError>(_result_code.getError());
-    }
-    PlainFor* plainFor = new(_rp) PlainFor(forInit, forCheck, forNext, code, start, lexer->getPosition(_rp));
-    if (forInit)
-        forInit->parent = plainFor;
-    if (forCheck)
-        forCheck->parent = plainFor;
-    forNext->parent = plainFor;
-    code->parent = plainFor;
-    return _Result<PlainFor, ParserError>(plainFor);
 }
 
 _Result<Pattern, ParserError> Parser::parsePattern(_Page* _rp, _Page* _ep) {
@@ -3452,6 +3451,12 @@ bool Parser::isIdentifier(_LetString* id) {
         return false;
 
     if (*id == *inKeyword)
+        return false;
+
+    if (*id == *whileKeyword)
+        return false;
+
+    if (*id == *repeatKeyword)
         return false;
 
     if (*id == *returnKeyword)

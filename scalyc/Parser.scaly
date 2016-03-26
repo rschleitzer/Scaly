@@ -1980,6 +1980,24 @@ class Parser {
         }
 
         {
+            let node: WhileExpression = parseWhileExpression() catch _(error) {
+                errors.push(error)
+                break
+            }
+
+            return node
+        }
+
+        {
+            let node: RepeatExpression = parseRepeatExpression() catch _(error) {
+                errors.push(error)
+                break
+            }
+
+            return node
+        }
+
+        {
             let node: ParenthesizedExpression = parseParenthesizedExpression() catch _(error) {
                 errors.push(error)
                 break
@@ -2177,17 +2195,131 @@ class Parser {
         }
         {
             let start: Position = lexer.getPosition()
-            let result: ForLoop node = parseForLoop() catch _(error) {
+            let result: Pattern node = parsePattern() catch _(error) {
                 throw (error)
             }
 
             if forExpression == null
                 forExpression = ForExpression(start, lexer.getPosition())
 
-            forExpression.loop = node
+            forExpression.pattern = node
+        }
+        {
+            let start: Position = lexer.getPosition()
+            let success: bool = lexer.parseKeyword(inKeyword)
+            if success
+                lexer.advance()
+
+            if forExpression == null
+                forExpression = ForExpression(start, lexer.getPosition())
+        }
+        {
+            let start: Position = lexer.getPosition()
+            let result: Expression node = parseExpression() catch _(error) {
+                throw (error)
+            }
+
+            if forExpression == null
+                forExpression = ForExpression(start, lexer.getPosition())
+
+            forExpression.expression = node
+        }
+        {
+            let start: Position = lexer.getPosition()
+            let result: Expression node = parseExpression() catch _(error) {
+                throw (error)
+            }
+
+            if forExpression == null
+                forExpression = ForExpression(start, lexer.getPosition())
+
+            forExpression.code = node
         }
 
         return forExpression
+    }
+
+    function parseWhileExpression() -> WhileExpression throws ParserError {
+        mutable whileExpression: WhileExpression? = null
+        {
+            let start: Position = lexer.getPosition()
+            let success: bool = lexer.parseKeyword(whileKeyword)
+            if success
+                lexer.advance()
+
+            if whileExpression == null
+                whileExpression = WhileExpression(start, lexer.getPosition())
+        }
+        {
+            let start: Position = lexer.getPosition()
+            let result: Expression node = parseExpression() catch _(error) {
+                throw (error)
+            }
+
+            if whileExpression == null
+                whileExpression = WhileExpression(start, lexer.getPosition())
+
+            whileExpression.condition = node
+        }
+        {
+            let start: Position = lexer.getPosition()
+            let result: Expression node = parseExpression() catch _(error) {
+                throw (error)
+            }
+
+            if whileExpression == null
+                whileExpression = WhileExpression(start, lexer.getPosition())
+
+            whileExpression.code = node
+        }
+
+        return whileExpression
+    }
+
+    function parseRepeatExpression() -> RepeatExpression throws ParserError {
+        mutable repeatExpression: RepeatExpression? = null
+        {
+            let start: Position = lexer.getPosition()
+            let success: bool = lexer.parseKeyword(repeatKeyword)
+            if success
+                lexer.advance()
+
+            if repeatExpression == null
+                repeatExpression = RepeatExpression(start, lexer.getPosition())
+        }
+        {
+            let start: Position = lexer.getPosition()
+            let result: Expression node = parseExpression() catch _(error) {
+                throw (error)
+            }
+
+            if repeatExpression == null
+                repeatExpression = RepeatExpression(start, lexer.getPosition())
+
+            repeatExpression.condition = node
+        }
+        {
+            let start: Position = lexer.getPosition()
+            let success: bool = lexer.parseKeyword(whileKeyword)
+            if success
+                lexer.advance()
+
+            if repeatExpression == null
+                repeatExpression = RepeatExpression(start, lexer.getPosition())
+        }
+        {
+            let start: Position = lexer.getPosition()
+            let result: Expression node = parseExpression() catch _(error) {
+                throw (error)
+            }
+
+            if repeatExpression == null
+                repeatExpression = RepeatExpression(start, lexer.getPosition())
+
+            repeatExpression.code = node
+        }
+
+        return repeatExpression
     }
 
     function parseParenthesizedExpression() -> ParenthesizedExpression throws ParserError {
@@ -2802,147 +2934,6 @@ class Parser {
         }
 
         return caseItem
-    }
-
-    function parseForLoop() -> ForLoop throws ParserError {
-        let errors: [ParserError] = [ParserError]()
-        let start: Position = lexer.getPreviousPosition()
-
-        {
-            let node: ForEach = parseForEach() catch _(error) {
-                errors.push(error)
-                break
-            }
-
-            return node
-        }
-
-        {
-            let node: PlainFor = parsePlainFor() catch _(error) {
-                errors.push(error)
-                break
-            }
-
-            return node
-        }
-
-        throw ParserError.UnableToParse(start, errors)
-    }
-
-    function parseForEach() -> ForEach throws ParserError {
-        mutable forEach: ForEach? = null
-        {
-            let start: Position = lexer.getPosition()
-            let result: Pattern node = parsePattern() catch _(error) {
-                throw (error)
-            }
-
-            if forEach == null
-                forEach = ForEach(start, lexer.getPosition())
-
-            forEach.pattern = node
-        }
-        {
-            let start: Position = lexer.getPosition()
-            let success: bool = lexer.parseKeyword(inKeyword)
-            if success
-                lexer.advance()
-
-            if forEach == null
-                forEach = ForEach(start, lexer.getPosition())
-        }
-        {
-            let start: Position = lexer.getPosition()
-            let result: Expression node = parseExpression() catch _(error) {
-                throw (error)
-            }
-
-            if forEach == null
-                forEach = ForEach(start, lexer.getPosition())
-
-            forEach.expression = node
-        }
-        {
-            let start: Position = lexer.getPosition()
-            let result: Expression node = parseExpression() catch _(error) {
-                throw (error)
-            }
-
-            if forEach == null
-                forEach = ForEach(start, lexer.getPosition())
-
-            forEach.code = node
-        }
-
-        return forEach
-    }
-
-    function parsePlainFor() -> PlainFor throws ParserError {
-        mutable plainFor: PlainFor? = null
-        {
-            let start: Position = lexer.getPosition()
-            let result: VariableDeclaration node = parseVariableDeclaration() catch _(error) {
-                 null
-            }
-
-            if plainFor == null
-                plainFor = PlainFor(start, lexer.getPosition())
-
-            plainFor.forInit = node
-        }
-        {
-            let start: Position = lexer.getPosition()
-            let success: bool = lexer.parsePunctuation(semicolon)
-            if success
-                lexer.advance()
-
-            if plainFor == null
-                plainFor = PlainFor(start, lexer.getPosition())
-        }
-        {
-            let start: Position = lexer.getPosition()
-            let result: Expression node = parseExpression() catch _(error) {
-                 null
-            }
-
-            if plainFor == null
-                plainFor = PlainFor(start, lexer.getPosition())
-
-            plainFor.forCheck = node
-        }
-        {
-            let start: Position = lexer.getPosition()
-            let success: bool = lexer.parsePunctuation(semicolon)
-            if success
-                lexer.advance()
-
-            if plainFor == null
-                plainFor = PlainFor(start, lexer.getPosition())
-        }
-        {
-            let start: Position = lexer.getPosition()
-            let result: Expression node = parseExpression() catch _(error) {
-                throw (error)
-            }
-
-            if plainFor == null
-                plainFor = PlainFor(start, lexer.getPosition())
-
-            plainFor.forNext = node
-        }
-        {
-            let start: Position = lexer.getPosition()
-            let result: Expression node = parseExpression() catch _(error) {
-                throw (error)
-            }
-
-            if plainFor == null
-                plainFor = PlainFor(start, lexer.getPosition())
-
-            plainFor.code = node
-        }
-
-        return plainFor
     }
 
     function parsePattern() -> Pattern throws ParserError {
@@ -3584,6 +3575,12 @@ class Parser {
         if id == inKeyword
             return false
 
+        if id == whileKeyword
+            return false
+
+        if id == repeatKeyword
+            return false
+
         if id == returnKeyword
             return false
 
@@ -3646,6 +3643,8 @@ class Parser {
     let catchKeyword: String = "catch"
     let forKeyword: String = "for"
     let inKeyword: String = "in"
+    let whileKeyword: String = "while"
+    let repeatKeyword: String = "repeat"
     let returnKeyword: String = "return"
     let throwKeyword: String = "throw"
     let breakKeyword: String = "break"

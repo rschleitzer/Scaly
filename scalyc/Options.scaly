@@ -4,10 +4,12 @@ class Options {
         let length: unsigned = args.length
         mutable options: Options = Options()
         options.files = [String]()
-        for var i: unsigned = 0; i < length; i++ {
-
+        
+        mutable i: unsigned = 0;
+        repeat {
             if length < 2 || args[i][0] != "-" {
                 options.files.append(arg)
+                i++
                 continue
             }
             switch args[i][1] {
@@ -28,7 +30,8 @@ class Options {
                 default:
                     throw unknownOption(args[i])
             }
-        }
+            i++
+        } while i < length
         if options.outputName == null
             throw noOutputOption
         if options.files.length == 0

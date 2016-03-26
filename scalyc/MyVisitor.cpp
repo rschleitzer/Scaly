@@ -364,6 +364,20 @@ bool MyVisitor::openForExpression(ForExpression* forExpression) {
 void MyVisitor::closeForExpression(ForExpression* forExpression) {
 }
 
+bool MyVisitor::openWhileExpression(WhileExpression* whileExpression) {
+    return true;
+}
+
+void MyVisitor::closeWhileExpression(WhileExpression* whileExpression) {
+}
+
+bool MyVisitor::openRepeatExpression(RepeatExpression* repeatExpression) {
+    return true;
+}
+
+void MyVisitor::closeRepeatExpression(RepeatExpression* repeatExpression) {
+}
+
 bool MyVisitor::openParenthesizedExpression(ParenthesizedExpression* parenthesizedExpression) {
     return true;
 }
@@ -473,20 +487,6 @@ bool MyVisitor::openCaseItem(CaseItem* caseItem) {
 }
 
 void MyVisitor::closeCaseItem(CaseItem* caseItem) {
-}
-
-bool MyVisitor::openForEach(ForEach* forEach) {
-    return true;
-}
-
-void MyVisitor::closeForEach(ForEach* forEach) {
-}
-
-bool MyVisitor::openPlainFor(PlainFor* plainFor) {
-    return true;
-}
-
-void MyVisitor::closePlainFor(PlainFor* plainFor) {
 }
 
 void MyVisitor::visitWildcardPattern(WildcardPattern* wildcardPattern) {

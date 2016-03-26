@@ -113,6 +113,10 @@ public:
     virtual void closeSwitchExpression(SwitchExpression* switchExpression);
     virtual bool openForExpression(ForExpression* forExpression);
     virtual void closeForExpression(ForExpression* forExpression);
+    virtual bool openWhileExpression(WhileExpression* whileExpression);
+    virtual void closeWhileExpression(WhileExpression* whileExpression);
+    virtual bool openRepeatExpression(RepeatExpression* repeatExpression);
+    virtual void closeRepeatExpression(RepeatExpression* repeatExpression);
     virtual bool openParenthesizedExpression(ParenthesizedExpression* parenthesizedExpression);
     virtual void closeParenthesizedExpression(ParenthesizedExpression* parenthesizedExpression);
     virtual bool openReturnExpression(ReturnExpression* returnExpression);
@@ -145,10 +149,6 @@ public:
     virtual void visitDefaultCaseLabel(DefaultCaseLabel* defaultCaseLabel);
     virtual bool openCaseItem(CaseItem* caseItem);
     virtual void closeCaseItem(CaseItem* caseItem);
-    virtual bool openForEach(ForEach* forEach);
-    virtual void closeForEach(ForEach* forEach);
-    virtual bool openPlainFor(PlainFor* plainFor);
-    virtual void closePlainFor(PlainFor* plainFor);
     virtual void visitWildcardPattern(WildcardPattern* wildcardPattern);
     virtual bool openIdentifierPattern(IdentifierPattern* identifierPattern);
     virtual void closeIdentifierPattern(IdentifierPattern* identifierPattern);

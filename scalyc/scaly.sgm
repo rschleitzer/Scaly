@@ -275,6 +275,8 @@
         <content link = IfExpression
         <content link = SwitchExpression
         <content link = ForExpression
+        <content link = WhileExpression
+        <content link = RepeatExpression
         <content link = ParenthesizedExpression
         <content link = ReturnExpression
         <content link = ThrowExpression
@@ -302,7 +304,21 @@
 
     <syntax id = ForExpression                                  base = PrimaryExpression
         <content link = for
-        <content link = ForLoop                                 property = loop
+        <content link = Pattern                                 property = pattern
+        <content link = in
+        <content link = Expression                              property = expression
+        <content link = Expression                              property = code
+
+    <syntax id = WhileExpression                                base = PrimaryExpression
+        <content link = while
+        <content link = Expression                              property = condition
+        <content link = Expression                              property = code
+
+    <syntax id = RepeatExpression                               base = PrimaryExpression
+        <content link = repeat
+        <content link = Expression                              property = condition
+        <content link = while
+        <content link = Expression                              property = code
 
     <syntax id = ParenthesizedExpression                        base = PrimaryExpression
         <content link = leftParen
@@ -393,24 +409,6 @@
     <syntax id = CaseItem                  multiple
         <content link = comma
         <content link = Pattern                                 property = pattern
-
-    <syntax id = ForLoop                            abstract
-        <content link = ForEach
-        <content link = PlainFor
-
-    <syntax id = ForEach                                        base = ForLoop
-        <content link = Pattern                                 property = pattern
-        <content link = in
-        <content link = Expression                              property = expression
-        <content link = Expression                              property = code
-
-    <syntax id = PlainFor                                       base = ForLoop
-        <content link = VariableDeclaration         optional    property = forInit
-        <content link = semicolon
-        <content link = Expression                  optional    property = forCheck
-        <content link = semicolon
-        <content link = Expression                              property = forNext
-        <content link = Expression                              property = code
 
    <syntax id = Pattern                             abstract
         <content link = WildcardPattern
@@ -515,6 +513,8 @@
     <keyword id = catch
     <keyword id = for
     <keyword id = in
+    <keyword id = while
+    <keyword id = repeat
     <keyword id = return
     <keyword id = throw
     <keyword id = break

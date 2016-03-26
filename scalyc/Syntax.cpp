@@ -73,6 +73,8 @@ bool SyntaxNode::_isLiteralExpression() { return false; }
 bool SyntaxNode::_isIfExpression() { return false; }
 bool SyntaxNode::_isSwitchExpression() { return false; }
 bool SyntaxNode::_isForExpression() { return false; }
+bool SyntaxNode::_isWhileExpression() { return false; }
+bool SyntaxNode::_isRepeatExpression() { return false; }
 bool SyntaxNode::_isParenthesizedExpression() { return false; }
 bool SyntaxNode::_isReturnExpression() { return false; }
 bool SyntaxNode::_isThrowExpression() { return false; }
@@ -94,9 +96,6 @@ bool SyntaxNode::_isCaseLabel() { return false; }
 bool SyntaxNode::_isItemCaseLabel() { return false; }
 bool SyntaxNode::_isDefaultCaseLabel() { return false; }
 bool SyntaxNode::_isCaseItem() { return false; }
-bool SyntaxNode::_isForLoop() { return false; }
-bool SyntaxNode::_isForEach() { return false; }
-bool SyntaxNode::_isPlainFor() { return false; }
 bool SyntaxNode::_isPattern() { return false; }
 bool SyntaxNode::_isWildcardPattern() { return false; }
 bool SyntaxNode::_isIdentifierPattern() { return false; }
@@ -977,6 +976,8 @@ bool PrimaryExpression::_isLiteralExpression() { return false; }
 bool PrimaryExpression::_isIfExpression() { return false; }
 bool PrimaryExpression::_isSwitchExpression() { return false; }
 bool PrimaryExpression::_isForExpression() { return false; }
+bool PrimaryExpression::_isWhileExpression() { return false; }
+bool PrimaryExpression::_isRepeatExpression() { return false; }
 bool PrimaryExpression::_isParenthesizedExpression() { return false; }
 bool PrimaryExpression::_isReturnExpression() { return false; }
 bool PrimaryExpression::_isThrowExpression() { return false; }
@@ -1040,16 +1041,44 @@ void SwitchExpression::accept(SyntaxVisitor* visitor) {
     visitor->closeSwitchExpression(this);
 }
 
-ForExpression::ForExpression(ForLoop* loop, Position* start, Position* end)
-: PrimaryExpression(start, end), loop(loop) {}
+ForExpression::ForExpression(Pattern* pattern, Expression* expression, Expression* code, Position* start, Position* end)
+: PrimaryExpression(start, end), pattern(pattern), expression(expression), code(code) {}
 
 bool ForExpression::_isForExpression() { return true; }
 
 void ForExpression::accept(SyntaxVisitor* visitor) {
     if (!visitor->openForExpression(this))
         return;
-    loop->accept(visitor);
+    pattern->accept(visitor);
+    expression->accept(visitor);
+    code->accept(visitor);
     visitor->closeForExpression(this);
+}
+
+WhileExpression::WhileExpression(Expression* condition, Expression* code, Position* start, Position* end)
+: PrimaryExpression(start, end), condition(condition), code(code) {}
+
+bool WhileExpression::_isWhileExpression() { return true; }
+
+void WhileExpression::accept(SyntaxVisitor* visitor) {
+    if (!visitor->openWhileExpression(this))
+        return;
+    condition->accept(visitor);
+    code->accept(visitor);
+    visitor->closeWhileExpression(this);
+}
+
+RepeatExpression::RepeatExpression(Expression* condition, Expression* code, Position* start, Position* end)
+: PrimaryExpression(start, end), condition(condition), code(code) {}
+
+bool RepeatExpression::_isRepeatExpression() { return true; }
+
+void RepeatExpression::accept(SyntaxVisitor* visitor) {
+    if (!visitor->openRepeatExpression(this))
+        return;
+    condition->accept(visitor);
+    code->accept(visitor);
+    visitor->closeRepeatExpression(this);
 }
 
 ParenthesizedExpression::ParenthesizedExpression(_Vector<ExpressionElement>* expressionElements, Position* start, Position* end)
@@ -1331,47 +1360,6 @@ void CaseItem::accept(SyntaxVisitor* visitor) {
         return;
     pattern->accept(visitor);
     visitor->closeCaseItem(this);
-}
-
-ForLoop::ForLoop(Position* start, Position* end)
-: SyntaxNode(start, end) {}
-
-bool ForLoop::_isForEach() { return false; }
-bool ForLoop::_isPlainFor() { return false; }
-bool ForLoop::_isForLoop() { return true; }
-
-void ForLoop::accept(SyntaxVisitor* visitor) {
-}
-
-ForEach::ForEach(Pattern* pattern, Expression* expression, Expression* code, Position* start, Position* end)
-: ForLoop(start, end), pattern(pattern), expression(expression), code(code) {}
-
-bool ForEach::_isForEach() { return true; }
-
-void ForEach::accept(SyntaxVisitor* visitor) {
-    if (!visitor->openForEach(this))
-        return;
-    pattern->accept(visitor);
-    expression->accept(visitor);
-    code->accept(visitor);
-    visitor->closeForEach(this);
-}
-
-PlainFor::PlainFor(VariableDeclaration* forInit, Expression* forCheck, Expression* forNext, Expression* code, Position* start, Position* end)
-: ForLoop(start, end), forInit(forInit), forCheck(forCheck), forNext(forNext), code(code) {}
-
-bool PlainFor::_isPlainFor() { return true; }
-
-void PlainFor::accept(SyntaxVisitor* visitor) {
-    if (!visitor->openPlainFor(this))
-        return;
-    if (forInit)
-        forInit->accept(visitor);
-    if (forCheck)
-        forCheck->accept(visitor);
-    forNext->accept(visitor);
-    code->accept(visitor);
-    visitor->closePlainFor(this);
 }
 
 Pattern::Pattern(Position* start, Position* end)
