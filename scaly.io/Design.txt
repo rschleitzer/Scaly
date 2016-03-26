@@ -2,12 +2,13 @@
 Design
 ======
 
+[[whyscaly]]
 Why Scaly?
 ----------
 
 It's a bit hard these days to justify developing a new programming language. 
-And yet, there seems to be a sweet spot for Scaly which wants to be a language 
-which is unique - a language which enables you to easily develop programs which run in parallel 
+And yet, there seems to be a sweet spot for Scaly which wants to be a unique language - 
+a language which enables you to easily develop programs which run in parallel 
 in a heterogeneous and distributed environment with outstanding performance.
 
 In the following, the main design points of Scaly are explained and how Scaly compares 
@@ -214,8 +215,8 @@ First, ParaSail does not allow global data. All data must be passed as parameter
 
 Scaly allows global data as long as they are immutable. As an example, program configuration data, 
 command-line arguments, or user context information during a web request can be offered 
-for read-only access, avoiding the overhead of passing additional parameters or member accesses 
-of any context objects.
+for read-only access. If these data are accessible as immutable global data, they do not have 
+to be passed with the help of parameters to your function.
 
 Second, since ParaSail does not allow you to use explicit references, 
 only strictly hierarchcal data can be expressed directly, as is the case with Scaly's structures. 
