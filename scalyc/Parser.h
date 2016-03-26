@@ -16,6 +16,7 @@ public:
     virtual _Result<UseDeclaration, ParserError> parseUseDeclaration(_Page* _rp, _Page* _ep);
     virtual _Result<ConstantDeclaration, ParserError> parseConstantDeclaration(_Page* _rp, _Page* _ep);
     virtual _Result<VariableDeclaration, ParserError> parseVariableDeclaration(_Page* _rp, _Page* _ep);
+    virtual _Result<MutableDeclaration, ParserError> parseMutableDeclaration(_Page* _rp, _Page* _ep);
     virtual _Result<FunctionDeclaration, ParserError> parseFunctionDeclaration(_Page* _rp, _Page* _ep);
     virtual _Result<EnumDeclaration, ParserError> parseEnumDeclaration(_Page* _rp, _Page* _ep);
     virtual _Result<ClassDeclaration, ParserError> parseClassDeclaration(_Page* _rp, _Page* _ep);
@@ -161,6 +162,7 @@ public:
     _LetString* overrideKeyword;
     _LetString* staticKeyword;
     _LetString* letKeyword;
+    _LetString* varKeyword;
     _LetString* mutableKeyword;
     _LetString* isKeyword;
     _LetString* asKeyword;

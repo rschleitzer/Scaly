@@ -9,6 +9,7 @@ public:
     SyntaxNode(Position* start, Position* end);
     Position* start;
     Position* end;
+    SyntaxNode* parent;
     virtual bool _isSyntaxNode();
     virtual bool _isProgram();
     virtual bool _isCompilationUnit();
@@ -19,6 +20,7 @@ public:
     virtual bool _isUseDeclaration();
     virtual bool _isConstantDeclaration();
     virtual bool _isVariableDeclaration();
+    virtual bool _isMutableDeclaration();
     virtual bool _isFunctionDeclaration();
     virtual bool _isEnumDeclaration();
     virtual bool _isClassDeclaration();
@@ -166,6 +168,7 @@ public:
     virtual bool _isUseDeclaration();
     virtual bool _isConstantDeclaration();
     virtual bool _isVariableDeclaration();
+    virtual bool _isMutableDeclaration();
     virtual bool _isFunctionDeclaration();
     virtual bool _isEnumDeclaration();
     virtual bool _isClassDeclaration();
@@ -183,6 +186,7 @@ public:
     virtual bool _isUseDeclaration();
     virtual bool _isConstantDeclaration();
     virtual bool _isVariableDeclaration();
+    virtual bool _isMutableDeclaration();
     virtual bool _isFunctionDeclaration();
     virtual bool _isEnumDeclaration();
     virtual bool _isClassDeclaration();
@@ -225,6 +229,15 @@ public:
     BindingInitializer* initializer;
 
     virtual bool _isVariableDeclaration();
+};
+
+class MutableDeclaration : public Declaration {
+public:
+    MutableDeclaration(BindingInitializer* initializer, Position* start, Position* end);
+    virtual void accept(SyntaxVisitor* visitor);
+    BindingInitializer* initializer;
+
+    virtual bool _isMutableDeclaration();
 };
 
 class FunctionDeclaration : public Declaration {

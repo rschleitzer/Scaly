@@ -9,6 +9,7 @@
 
     let start: Position
     let end: Position
+    var parent: SyntaxNode
 }
 "
     (apply-to-selected-children "syntax" (lambda (syntax-node) ($
@@ -86,6 +87,7 @@ public:
     SyntaxNode(Position* start, Position* end);
     Position* start;
     Position* end;
+    SyntaxNode* parent;
     virtual bool _isSyntaxNode();
 "   (apply-to-selected-children "syntax" (lambda (syntax-node) ($
 "    virtual bool _is"(id syntax-node)"();

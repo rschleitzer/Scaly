@@ -7,6 +7,7 @@ class Expression;
 class UseDeclaration;
 class ConstantDeclaration;
 class VariableDeclaration;
+class MutableDeclaration;
 class FunctionDeclaration;
 class EnumDeclaration;
 class ClassDeclaration;
@@ -125,6 +126,8 @@ class SyntaxVisitor {
     function closeConstantDeclaration(constantDeclaration: ConstantDeclaration);
     function openVariableDeclaration(variableDeclaration: VariableDeclaration) -> bool;
     function closeVariableDeclaration(variableDeclaration: VariableDeclaration);
+    function openMutableDeclaration(mutableDeclaration: MutableDeclaration) -> bool;
+    function closeMutableDeclaration(mutableDeclaration: MutableDeclaration);
     function openFunctionDeclaration(functionDeclaration: FunctionDeclaration) -> bool;
     function closeFunctionDeclaration(functionDeclaration: FunctionDeclaration);
     function openEnumDeclaration(enumDeclaration: EnumDeclaration) -> bool;

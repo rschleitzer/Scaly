@@ -49,6 +49,13 @@ bool MyVisitor::openVariableDeclaration(VariableDeclaration* variableDeclaration
 void MyVisitor::closeVariableDeclaration(VariableDeclaration* variableDeclaration) {
 }
 
+bool MyVisitor::openMutableDeclaration(MutableDeclaration* mutableDeclaration) {
+    return true;
+}
+
+void MyVisitor::closeMutableDeclaration(MutableDeclaration* mutableDeclaration) {
+}
+
 bool MyVisitor::openFunctionDeclaration(FunctionDeclaration* functionDeclaration) {
     return true;
 }

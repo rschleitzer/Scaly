@@ -22,6 +22,8 @@ class ConstantDeclaration;
 
 class VariableDeclaration;
 
+class MutableDeclaration;
+
 class FunctionDeclaration;
 
 class EnumDeclaration;
@@ -244,6 +246,8 @@ public:
     virtual void closeConstantDeclaration(ConstantDeclaration* constantDeclaration) = 0;
     virtual bool openVariableDeclaration(VariableDeclaration* variableDeclaration) = 0;
     virtual void closeVariableDeclaration(VariableDeclaration* variableDeclaration) = 0;
+    virtual bool openMutableDeclaration(MutableDeclaration* mutableDeclaration) = 0;
+    virtual void closeMutableDeclaration(MutableDeclaration* mutableDeclaration) = 0;
     virtual bool openFunctionDeclaration(FunctionDeclaration* functionDeclaration) = 0;
     virtual void closeFunctionDeclaration(FunctionDeclaration* functionDeclaration) = 0;
     virtual bool openEnumDeclaration(EnumDeclaration* enumDeclaration) = 0;

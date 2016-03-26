@@ -16,6 +16,7 @@ bool SyntaxNode::_isExpression() { return false; }
 bool SyntaxNode::_isUseDeclaration() { return false; }
 bool SyntaxNode::_isConstantDeclaration() { return false; }
 bool SyntaxNode::_isVariableDeclaration() { return false; }
+bool SyntaxNode::_isMutableDeclaration() { return false; }
 bool SyntaxNode::_isFunctionDeclaration() { return false; }
 bool SyntaxNode::_isEnumDeclaration() { return false; }
 bool SyntaxNode::_isClassDeclaration() { return false; }
@@ -179,6 +180,7 @@ bool Statement::_isExpression() { return false; }
 bool Statement::_isUseDeclaration() { return false; }
 bool Statement::_isConstantDeclaration() { return false; }
 bool Statement::_isVariableDeclaration() { return false; }
+bool Statement::_isMutableDeclaration() { return false; }
 bool Statement::_isFunctionDeclaration() { return false; }
 bool Statement::_isEnumDeclaration() { return false; }
 bool Statement::_isClassDeclaration() { return false; }
@@ -196,6 +198,7 @@ Declaration::Declaration(Position* start, Position* end)
 bool Declaration::_isUseDeclaration() { return false; }
 bool Declaration::_isConstantDeclaration() { return false; }
 bool Declaration::_isVariableDeclaration() { return false; }
+bool Declaration::_isMutableDeclaration() { return false; }
 bool Declaration::_isFunctionDeclaration() { return false; }
 bool Declaration::_isEnumDeclaration() { return false; }
 bool Declaration::_isClassDeclaration() { return false; }
@@ -257,6 +260,18 @@ void VariableDeclaration::accept(SyntaxVisitor* visitor) {
         return;
     initializer->accept(visitor);
     visitor->closeVariableDeclaration(this);
+}
+
+MutableDeclaration::MutableDeclaration(BindingInitializer* initializer, Position* start, Position* end)
+: Declaration(start, end), initializer(initializer) {}
+
+bool MutableDeclaration::_isMutableDeclaration() { return true; }
+
+void MutableDeclaration::accept(SyntaxVisitor* visitor) {
+    if (!visitor->openMutableDeclaration(this))
+        return;
+    initializer->accept(visitor);
+    visitor->closeMutableDeclaration(this);
 }
 
 FunctionDeclaration::FunctionDeclaration(_Vector<Modifier>* modifiers, FunctionName* name, FunctionSignature* signature, Expression* body, Position* start, Position* end)

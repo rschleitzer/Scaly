@@ -7,6 +7,7 @@ class SyntaxNode {
 
     let start: Position
     let end: Position
+    var parent: SyntaxNode
 }
 
 class Program : SyntaxNode {
@@ -148,6 +149,21 @@ class VariableDeclaration : Declaration {
         visitor.openVariableDeclaration(this)
         initializer!.accept(visitor)
         visitor.closeVariableDeclaration(this)
+    }
+
+    let initializer: BindingInitializer?
+}
+
+class MutableDeclaration : Declaration {
+
+    init(initializer: BindingInitializer, start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    override function accept(mutable visitor: SyntaxVisitor) {
+        visitor.openMutableDeclaration(this)
+        initializer!.accept(visitor)
+        visitor.closeMutableDeclaration(this)
     }
 
     let initializer: BindingInitializer?

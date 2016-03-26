@@ -271,6 +271,23 @@ _Result<"(id syntax)", ParserError> Parser::parse"(id syntax)"(_Page* _rp, _Page
 "                (if (top? syntax) ($
 "    "(string-firstchar-downcase (id syntax))"->fileName = fileName;
 "               )"")
+                (apply-to-property-children-of syntax (lambda (content)
+                    (if (multiple? content)
+                        ($
+"    if ("(property content)") {
+        size_t _"(property content)"_length = "(property content)"->length();
+        for (size_t _i = 0; _i < _"(property content)"_length; _i++)
+            (*(*"(property content)")[_i])->parent = "(string-firstchar-downcase (id syntax))";
+    }
+"                       )
+                        (if (string=? "syntax" (type content)) ($
+                            (if (optional? content) ($
+"    if ("(property content)")
+    "                       )"")
+"    "(property content)"->parent = "(string-firstchar-downcase (id syntax))";
+"                       )"")
+                    )
+                ))
 "    return _Result<"(id syntax)", ParserError>("(string-firstchar-downcase (id syntax))");
 "
             ) ; $

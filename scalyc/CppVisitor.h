@@ -61,6 +61,8 @@ public:
     virtual void closeConstantDeclaration(ConstantDeclaration* constantDeclaration);
     virtual bool openVariableDeclaration(VariableDeclaration* variableDeclaration);
     virtual void closeVariableDeclaration(VariableDeclaration* variableDeclaration);
+    virtual bool openMutableDeclaration(MutableDeclaration* mutableDeclaration);
+    virtual void closeMutableDeclaration(MutableDeclaration* mutableDeclaration);
     virtual bool openFunctionDeclaration(FunctionDeclaration* functionDeclaration);
     virtual void closeFunctionDeclaration(FunctionDeclaration* functionDeclaration);
     virtual bool openEnumDeclaration(EnumDeclaration* enumDeclaration);

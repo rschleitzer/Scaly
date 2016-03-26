@@ -115,6 +115,15 @@ class Parser {
         }
 
         {
+            let node: MutableDeclaration = parseMutableDeclaration() catch _(error) {
+                errors.push(error)
+                break
+            }
+
+            return node
+        }
+
+        {
             let node: FunctionDeclaration = parseFunctionDeclaration() catch _(error) {
                 errors.push(error)
                 break
@@ -245,7 +254,7 @@ class Parser {
         mutable variableDeclaration: VariableDeclaration? = null
         {
             let start: Position = lexer.getPosition()
-            let success: bool = lexer.parseKeyword(mutableKeyword)
+            let success: bool = lexer.parseKeyword(varKeyword)
             if success
                 lexer.advance()
 
@@ -265,6 +274,32 @@ class Parser {
         }
 
         return variableDeclaration
+    }
+
+    function parseMutableDeclaration() -> MutableDeclaration throws ParserError {
+        mutable mutableDeclaration: MutableDeclaration? = null
+        {
+            let start: Position = lexer.getPosition()
+            let success: bool = lexer.parseKeyword(mutableKeyword)
+            if success
+                lexer.advance()
+
+            if mutableDeclaration == null
+                mutableDeclaration = MutableDeclaration(start, lexer.getPosition())
+        }
+        {
+            let start: Position = lexer.getPosition()
+            let result: BindingInitializer node = parseBindingInitializer() catch _(error) {
+                throw (error)
+            }
+
+            if mutableDeclaration == null
+                mutableDeclaration = MutableDeclaration(start, lexer.getPosition())
+
+            mutableDeclaration.initializer = node
+        }
+
+        return mutableDeclaration
     }
 
     function parseFunctionDeclaration() -> FunctionDeclaration throws ParserError {
@@ -3570,6 +3605,9 @@ class Parser {
         if id == letKeyword
             return false
 
+        if id == varKeyword
+            return false
+
         if id == mutableKeyword
             return false
 
@@ -3615,6 +3653,7 @@ class Parser {
     let overrideKeyword: String = "override"
     let staticKeyword: String = "static"
     let letKeyword: String = "let"
+    let varKeyword: String = "var"
     let mutableKeyword: String = "mutable"
     let isKeyword: String = "is"
     let asKeyword: String = "as"

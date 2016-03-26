@@ -236,6 +236,13 @@ bool CppVisitor::openVariableDeclaration(VariableDeclaration* variableDeclaratio
 void CppVisitor::closeVariableDeclaration(VariableDeclaration* variableDeclaration) {
 }
 
+bool CppVisitor::openMutableDeclaration(MutableDeclaration* mutableDeclaration) {
+    return true;
+}
+
+void CppVisitor::closeMutableDeclaration(MutableDeclaration* mutableDeclaration) {
+}
+
 bool CppVisitor::openBindingInitializer(BindingInitializer* bindingInitializer) {
     firstBindingInitializer = true;
     return true;

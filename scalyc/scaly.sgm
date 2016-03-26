@@ -21,6 +21,7 @@
         <content link = UseDeclaration
         <content link = ConstantDeclaration
         <content link = VariableDeclaration
+        <content link = MutableDeclaration
         <content link = FunctionDeclaration
         <content link = EnumDeclaration
         <content link = ClassDeclaration
@@ -40,6 +41,10 @@
         <content link = BindingInitializer                      property = initializer
 
     <syntax id = VariableDeclaration                            base = Declaration
+        <content link = var
+        <content link = BindingInitializer                      property = initializer
+
+    <syntax id = MutableDeclaration                            base = Declaration
         <content link = mutable
         <content link = BindingInitializer                      property = initializer
 
@@ -517,6 +522,7 @@
     <keyword id = override
     <keyword id = static
     <keyword id = let
+    <keyword id = var
     <keyword id = mutable
     <keyword id = is
     <keyword id = as
