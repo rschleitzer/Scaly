@@ -14,46 +14,28 @@
     function open"(id syntax)"("(string-firstchar-downcase (id syntax))": "(id syntax)") -> bool"
                 (if concrete
                     ($ " {
-"                       (apply-to-children-of syntax (lambda (identifier)
-                            (if (identifier? identifier) ($
-"        "(visitor-property syntax identifier)" = "(string-firstchar-downcase (id syntax))"."(property identifier)"
-"                           )"")
-                        ))
-"        return true; }
-"              )
+        return true;
+    }
+"                   )
                     ";"
                 )
 
 "
     function close"(id syntax)"("(string-firstchar-downcase (id syntax))": "(id syntax)")"
                 (if concrete
-                    ($ " {"
-                        (apply-to-children-of syntax (lambda (identifier)
-                            (if (identifier? identifier) ($
-"
-        "(visitor-property syntax identifier)" = null"
-                            )"")
-                        ))
-" }"                 )
+                    ($ " {
+    }
+"                   )
                     ";"
                 )
             )
             ($ "
     function visit"(id syntax)"("(string-firstchar-downcase (id syntax))": "(id syntax)")"
-                (if concrete " { }"                  ";"
+                (if concrete " {
+    }"                  ";"
                 )
             )
         )
-        (if (and concrete (has-syntax-children? syntax)) ($
-"
-"            (apply-to-children-of syntax (lambda (identifier)
-                (if (identifier? identifier) ($
-"
-    mutable "(visitor-property syntax identifier)": String"
-                )"")
-             ))
-"
-"        )"")
     ))))
 "}"
 ))
