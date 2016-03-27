@@ -293,10 +293,10 @@ void CppVisitor::closeFunctionDeclaration(FunctionDeclaration* functionDeclarati
 }
 
 bool CppVisitor::openInitializerDeclaration(InitializerDeclaration* initializerDeclaration) {
-    if (!initializerDeclaration->parent->_isClassDeclaration())
+    if (!initializerDeclaration->parent->parent->parent->_isClassDeclaration())
         return false;
 
-    _LetString* classDeclarationName = ((Program*)(initializerDeclaration->parent))->name;
+    _LetString* classDeclarationName = ((Program*)(initializerDeclaration->parent->parent->parent))->name;
     (*headerFile) += *classDeclarationName;
     (*headerFile) += "(";
     return true;
