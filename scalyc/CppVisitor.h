@@ -28,7 +28,6 @@ public:
     _Array<_LetString>* classes;
     bool declaringClassMember;
     bool inParameterClause;
-    size_t codeBlockLevel;
     bool abstractFunction;
     bool staticFunction;
     bool inArrayType;
