@@ -187,10 +187,14 @@ void CppVisitor::closeCompilationUnit(CompilationUnit* compilationUnit) {
 }
 
 bool CppVisitor::openStatementWithSemicolon(StatementWithSemicolon* statementWithSemicolon) {
+    this->indentSource();
     return true;
 }
 
 void CppVisitor::closeStatementWithSemicolon(StatementWithSemicolon* statementWithSemicolon) {
+    if (statementWithSemicolon->statement->_isClassDeclaration())
+        return;
+
     (*sourceFile) += ";\n";
 }
 
@@ -297,12 +301,20 @@ bool CppVisitor::openInitializerDeclaration(InitializerDeclaration* initializerD
         return false;
 
     _LetString* classDeclarationName = ((Program*)(initializerDeclaration->parent->parent->parent))->name;
+
     (*headerFile) += *classDeclarationName;
     (*headerFile) += "(";
+    
+    (*sourceFile) += *classDeclarationName;
+    (*sourceFile) += "::";
+    (*sourceFile) += *classDeclarationName;
+    (*sourceFile) += "(";
+    
     return true;
 }
 
 void CppVisitor::closeInitializerDeclaration(InitializerDeclaration* initializerDeclaration) {
+    (*sourceFile) += "\n";
 }
 
 void CppVisitor::visitOverrideWord(OverrideWord* overrideWord) {
@@ -422,6 +434,7 @@ bool CppVisitor::openParameterClause(ParameterClause* parameterClause) {
 
 void CppVisitor::closeParameterClause(ParameterClause* parameterClause) {
     (*headerFile) += ")";
+    (*sourceFile) += ")";
     inParameterClause = false;
 }
 
@@ -434,15 +447,19 @@ bool CppVisitor::openConstParameter(ConstParameter* constParameter) {
 }
 
 void CppVisitor::writeParameter(_LetString* name, Type* parameterType) {
-    if (!firstParameter)
+    if (!firstParameter) {
         (*headerFile) += ", ";
-    else
+        (*sourceFile) += ", ";
+    }
+    else {
         firstParameter = false;
+    }
 
     parameterType->accept(this);
-
     (*headerFile) += " ";
+    (*sourceFile) += " ";
     (*headerFile) += *name;
+    (*sourceFile) += *name;
 }
 
 bool CppVisitor::isClass(_LetString* name) {
@@ -692,6 +709,11 @@ void CppVisitor::indentHeader() {
         (*headerFile) += "    ";
 }
 
+void CppVisitor::indentSource() {
+    for (size_t i = 0; i < sourceIndentLevel; i++)
+        (*sourceFile) += "    ";
+}
+
 void CppVisitor::collectDerivedClasses(_Array<_LetString>* derivedClasses, _LetString* className) {
     size_t _inherits_length = inherits->length();
     for (size_t _i = 0; _i < _inherits_length; _i++) {
@@ -732,12 +754,15 @@ void CppVisitor::closeClassMember(ClassMember* classMember) {
 }
 
 bool CppVisitor::openCodeBlock(CodeBlock* codeBlock) {
-    codeBlockLevel++;
+    (*sourceFile) += " {\n";
+    sourceIndentLevel++;
     return true;
 }
 
 void CppVisitor::closeCodeBlock(CodeBlock* codeBlock) {
-    codeBlockLevel--;
+    sourceIndentLevel--;
+    indentSource();
+    (*sourceFile) += "}\n";
 }
 
 bool CppVisitor::openSimpleExpression(SimpleExpression* simpleExpression) {
@@ -769,6 +794,7 @@ void CppVisitor::closeBinaryOperation(BinaryOperation* binaryOperation) {
 }
 
 bool CppVisitor::openAssignment(Assignment* assignment) {
+    (*sourceFile) += " = ";
     return true;
 }
 
@@ -859,6 +885,7 @@ void CppVisitor::visitLiteralExpression(LiteralExpression* literalExpression) {
 }
 
 void CppVisitor::visitIdentifierExpression(IdentifierExpression* identifierExpression) {
+    (*sourceFile) += *identifierExpression->name;
 }
 
 bool CppVisitor::openIfExpression(IfExpression* ifExpression) {
@@ -963,13 +990,15 @@ void CppVisitor::visitWildcardPattern(WildcardPattern* wildcardPattern) {
 }
 
 bool CppVisitor::openIdentifierPattern(IdentifierPattern* identifierPattern) {
-    if (!codeBlockLevel) {
+    if (!sourceIndentLevel) {
         if (identifierPattern->annotationForType) {
             identifierPattern->annotationForType->accept(this);
             (*headerFile) += " ";
         }
-        (*headerFile) += *identifierPattern->identifier; }
-    return false; }
+        (*headerFile) += *identifierPattern->identifier;
+    }
+    return false;
+ }
 
 void CppVisitor::closeIdentifierPattern(IdentifierPattern* identifierPattern) {
 }
@@ -1016,6 +1045,11 @@ void CppVisitor::closeInitializerCall(InitializerCall* initializerCall) {
 }
 
 bool CppVisitor::openThisDot(ThisDot* thisDot) {
+    (*sourceFile) += "this->";
+    if(thisDot->member->_isThisMember()) {
+        ThisMember* thisMember = (ThisMember*)(thisDot->member);
+        (*sourceFile) += *thisMember->name;
+    }
     return true;
 }
 
@@ -1067,10 +1101,14 @@ void CppVisitor::closeTypeAnnotation(TypeAnnotation* annotationForType) {
 }
 
 bool CppVisitor::openTypeIdentifier(TypeIdentifier* typeIdentifier) {
-    if (!codeBlockLevel) {
+    if (!sourceIndentLevel) {
         appendCppTypeName(headerFile, typeIdentifier->name);
+        appendCppTypeName(sourceFile, typeIdentifier->name);
         if (isClass(typeIdentifier->name) && (!inArrayType)) {
-            (*headerFile) += "*"; } }
+            (*headerFile) += "*";
+            (*sourceFile) += "*";
+        }
+    }
     return true;
 }
 
@@ -1106,7 +1144,7 @@ void CppVisitor::closeSubtypeIdentifier(SubtypeIdentifier* subtypeIdentifier) {
 }
 
 bool CppVisitor::openArrayType(ArrayType* arrayType) {
-    if (!codeBlockLevel) {
+    if (!sourceIndentLevel) {
         if (constDeclaration)
             (*headerFile) += "_Vector<";
         else

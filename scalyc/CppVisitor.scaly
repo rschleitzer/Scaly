@@ -67,6 +67,9 @@ class CppVisitor : SyntaxVisitor {
     function indentHeader() {
     }
 
+    function indentSource() {
+    }
+
     function writeParameter(name: String, parameterType: Type) {
     }
 

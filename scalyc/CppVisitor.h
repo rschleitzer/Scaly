@@ -46,6 +46,7 @@ public:
     virtual void appendCppType(_VarString* s, Type* type);
     virtual bool isClass(_LetString* name);
     virtual void indentHeader();
+    virtual void indentSource();
     virtual void writeParameter(_LetString* name, Type* parameterType);
     virtual bool openProgram(Program* program);
     virtual void closeProgram(Program* program);

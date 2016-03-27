@@ -1,7 +1,7 @@
 class Position {
     init(line: unsigned, column: unsigned) {
-        line = line
-        column = column
+        this.line = line
+        this.column = column
     }
     let line: unsigned
     let column: unsigned
