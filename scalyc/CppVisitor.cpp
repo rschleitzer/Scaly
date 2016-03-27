@@ -3,16 +3,8 @@ using namespace scaly;
 namespace scalyc {
 
 CppVisitor::CppVisitor()
-  : cppError(0),
-    programName(new(getPage()->allocateExclusivePage()) _VarString()),
-    programDirectory(new(getPage()->allocateExclusivePage()) _VarString()),
-    enumDeclarationName(new(getPage()->allocateExclusivePage()) _VarString()),
-    classDeclarationName(new(getPage()->allocateExclusivePage()) _VarString()),
-    identifierFunctionName(new(getPage()->allocateExclusivePage()) _VarString()),
-    constParameterName(new(getPage()->allocateExclusivePage()) _VarString()),
-    varParameterName(new(getPage()->allocateExclusivePage()) _VarString()),
-    identifierPatternIdentifier(new(getPage()->allocateExclusivePage()) _VarString())
-{}
+  : cppError(0) {
+}
 
 CppError* CppVisitor::execute(_Page* _rp, Program* program) {
     program->accept(this);
@@ -20,10 +12,8 @@ CppError* CppVisitor::execute(_Page* _rp, Program* program) {
 }
 
 bool CppVisitor::openProgram(Program* program) {
-    programName->getPage()->clear();
-    programName = new(programName->getPage()) _VarString(*program->name);
-    programDirectory->getPage()->clear();
-    programDirectory = new(programDirectory->getPage()) _VarString(*program->directory);
+    _Region _region; _Page* _p = _region.get();
+    _VarString* programDirectory = new(_p) _VarString(*program->directory);
 
     if (programDirectory == 0 || *programDirectory == "") {
         programDirectory->getPage()->clear();
@@ -42,7 +32,7 @@ bool CppVisitor::openProgram(Program* program) {
         _Region _region; _Page* _p = _region.get();
         _VarString& outputFilePath = *new(_p) _VarString(*programDirectory);
         outputFilePath += "/";
-        outputFilePath += *programName;
+        outputFilePath += *program->name;
 
         // Build and write the project file
         {
@@ -123,8 +113,6 @@ void CppVisitor::registerInheritance(_LetString* className, _LetString* baseName
 
 
 void CppVisitor::closeProgram(Program* program) {
-    programName = 0;
-    programDirectory = 0;
 }
 
 
@@ -135,6 +123,10 @@ bool CppVisitor::openCompilationUnit(CompilationUnit* compilationUnit) {
     declaringClassMember = false;
     inParameterClause = false;
 
+    if (!compilationUnit->parent->_isProgram())
+        return false;
+
+    _LetString* programName = ((Program*)(compilationUnit->parent))->name;
     // Build and write the header file
     if (*moduleName != *programName) {
         headerFile = new(getPage()) _VarString(0, _pageSize);
@@ -166,6 +158,12 @@ bool CppVisitor::openCompilationUnit(CompilationUnit* compilationUnit) {
 }
 
 void CppVisitor::closeCompilationUnit(CompilationUnit* compilationUnit) {
+    if (!compilationUnit->parent->_isProgram())
+        return;
+
+    _LetString* programName = ((Program*)(compilationUnit->parent))->name;
+    _LetString* programDirectory = ((Program*)(compilationUnit->parent))->directory;
+
     // Close and write cpp file
     _Region _region; _Page* _p = _region.get();
 
@@ -295,6 +293,10 @@ void CppVisitor::closeFunctionDeclaration(FunctionDeclaration* functionDeclarati
 }
 
 bool CppVisitor::openInitializerDeclaration(InitializerDeclaration* initializerDeclaration) {
+    if (!initializerDeclaration->parent->_isClassDeclaration())
+        return false;
+
+    _LetString* classDeclarationName = ((Program*)(initializerDeclaration->parent))->name;
     (*headerFile) += *classDeclarationName;
     (*headerFile) += "(";
     return true;
@@ -310,11 +312,18 @@ void CppVisitor::visitStaticWord(StaticWord* staticWord) {
 }
 
 void CppVisitor::visitIdentifierFunction(IdentifierFunction* identifierFunction) {
-    identifierFunctionName->getPage()->clear();
-    identifierFunctionName = new(identifierFunctionName->getPage()) _VarString(*identifierFunction->name);
 }
 
 bool CppVisitor::openFunctionSignature(FunctionSignature* functionSignature) {
+    if (!functionSignature->parent->_isFunctionDeclaration())
+        return false;
+
+    FunctionName* functionName = ((FunctionDeclaration*)(functionSignature->parent))->name;
+    if (!functionName->_isIdentifierFunction())
+        return false;
+    
+    _LetString* identifierFunctionName = ((IdentifierFunction*)functionName)->name;
+        
     if (staticFunction)
         (*headerFile) += "static ";
     else
@@ -417,15 +426,14 @@ void CppVisitor::closeParameterClause(ParameterClause* parameterClause) {
 }
 
 bool CppVisitor::openConstParameter(ConstParameter* constParameter) {
-    constParameterName->getPage()->clear();
-    constParameterName = new(constParameterName->getPage()) _VarString(*constParameter->name);
+    _LetString* constParameterName = constParameter->name;
     constDeclaration = true;
     writeParameter(constParameterName, constParameter->parameterType);
     constDeclaration = false;
     return false;
 }
 
-void CppVisitor::writeParameter(_VarString* name, Type* parameterType) {
+void CppVisitor::writeParameter(_LetString* name, Type* parameterType) {
     if (!firstParameter)
         (*headerFile) += ", ";
     else
@@ -457,17 +465,16 @@ bool CppVisitor::isClass(_LetString* name) {
 }
 
 void CppVisitor::closeConstParameter(ConstParameter* constParameter) {
-    (*headerFile) += *constParameterName;
+    (*headerFile) += *constParameter->name;
 }
 
 bool CppVisitor::openVarParameter(VarParameter* varParameter) {
-    varParameterName->getPage()->clear();
-    varParameterName = new(varParameterName->getPage()) _VarString(*varParameter->name);
-    writeParameter(varParameterName, varParameter->parameterType);
+    writeParameter(varParameter->name, varParameter->parameterType);
     return false;
 }
 
 void CppVisitor::closeVarParameter(VarParameter* varParameter) {
+    _LetString* varParameterName = varParameter->name;
     (*headerFile) += *varParameterName;
 }
 
@@ -479,8 +486,7 @@ void CppVisitor::closeThrowsClause(ThrowsClause* throwsClause) {
 }
 
 bool CppVisitor::openEnumDeclaration(EnumDeclaration* enumDeclaration) {
-    enumDeclarationName->getPage()->clear();
-    enumDeclarationName = new(enumDeclarationName->getPage()) _VarString(*enumDeclaration->name);
+    _LetString* enumDeclarationName = enumDeclaration->name;
     (*headerFile) += "\n\nclass ";
     (*headerFile) += *enumDeclarationName;
     (*headerFile) += ";\n";
@@ -488,6 +494,7 @@ bool CppVisitor::openEnumDeclaration(EnumDeclaration* enumDeclaration) {
 }
 
 void CppVisitor::closeEnumDeclaration(EnumDeclaration* enumDeclaration) {
+    _LetString* enumDeclarationName = enumDeclaration->name;
     _Vector<EnumMember>* members = enumDeclaration->members;
     if (members) {
         (*headerFile) += "enum _";
@@ -557,6 +564,10 @@ void CppVisitor::closeEnumDeclaration(EnumDeclaration* enumDeclaration) {
 }
 
 bool CppVisitor::openEnumMember(EnumMember* enumMember) {
+    if (!enumMember->parent->_isEnumDeclaration())
+        return false;
+
+    _LetString* enumDeclarationName = ((EnumDeclaration*)(enumMember->parent))->name;
     if (enumMember->parameterClause) {
         (*headerFile) += "\nclass _";
         (*headerFile) += *enumDeclarationName;
@@ -625,11 +636,8 @@ void CppVisitor::closeAdditionalCase(AdditionalCase* additionalCase) {
 }
 
 bool CppVisitor::openClassDeclaration(ClassDeclaration* classDeclaration) {
-    classDeclarationName->getPage()->clear();
-    classDeclarationName = new(classDeclarationName->getPage()) _VarString(*classDeclaration->name);
-
     (*headerFile) += "\n\nclass ";
-    (*headerFile) += *classDeclarationName;
+    (*headerFile) += *classDeclaration->name;
     if (!classDeclaration->body) {
         (*headerFile) += ";";
         return false; }
@@ -657,11 +665,11 @@ bool CppVisitor::openClassDeclaration(ClassDeclaration* classDeclaration) {
 void CppVisitor::closeClassDeclaration(ClassDeclaration* classDeclaration) {
     (*headerFile) += "\n";
     if (classDeclaration->typeInheritanceClause)
-        (*headerFile) += "\n"; indentHeader(); (*headerFile) += "virtual bool _is"; (*headerFile) += *classDeclarationName; (*headerFile) += "();";
+        (*headerFile) += "\n"; indentHeader(); (*headerFile) += "virtual bool _is"; (*headerFile) += *classDeclaration->name; (*headerFile) += "();";
     {
         _Region _region; _Page* _p = _region.get();
         _Array<_LetString>& derivedClasses = *new(_p) _Array<_LetString>();
-        collectDerivedClasses(&derivedClasses, &_LetString::create(_p, *classDeclarationName));
+        collectDerivedClasses(&derivedClasses, &_LetString::create(_p, *classDeclaration->name));
         size_t _derivedClasses_length = derivedClasses.length();
         for (size_t _i = 0; _i < _derivedClasses_length; _i++) {
             (*headerFile) += "\n"; indentHeader(); (*headerFile) += "virtual bool _is"; (*headerFile) += **derivedClasses[_i]; (*headerFile) += "();";
@@ -956,8 +964,6 @@ void CppVisitor::visitWildcardPattern(WildcardPattern* wildcardPattern) {
 
 bool CppVisitor::openIdentifierPattern(IdentifierPattern* identifierPattern) {
     if (!codeBlockLevel) {
-        identifierPatternIdentifier->getPage()->clear();
-        identifierPatternIdentifier = new(identifierPatternIdentifier->getPage()) _VarString(*identifierPattern->identifier);
         if (identifierPattern->annotationForType) {
             identifierPattern->annotationForType->accept(this);
             (*headerFile) += " ";
@@ -1134,9 +1140,9 @@ void CppVisitor::closeInheritance(Inheritance* inheritance) {
 
 void CppVisitor::buildMainHeaderFileString(_VarString* mainHeaderFile, Program* program) {
     (*mainHeaderFile) += "#ifndef __scaly__";
-    (*mainHeaderFile) += *programName;
+    (*mainHeaderFile) += *program->name;
     (*mainHeaderFile) += "__\n#define __scaly__";
-    (*mainHeaderFile) += *programName;
+    (*mainHeaderFile) += *program->name;
     (*mainHeaderFile) += "__\n\n#include \"Scaly.h\"\n";
     size_t noOfCompilationUnits = program->compilationUnits->length();
     for (size_t i = 0; i < noOfCompilationUnits; i++) {
@@ -1145,14 +1151,14 @@ void CppVisitor::buildMainHeaderFileString(_VarString* mainHeaderFile, Program* 
         (*mainHeaderFile) += *new(mainHeaderFile->getPage()) _VarString(*Path::getFileNameWithoutExtension(_p, *(*(*program->compilationUnits)[i])->fileName)) + ".h\"\n";
     }
     (*mainHeaderFile) += "\nusing namespace scaly;\nnamespace ";
-    (*mainHeaderFile) += *programName;
+    (*mainHeaderFile) += *program->name;
     (*mainHeaderFile) += " {\nint _main(_Vector<_LetString>* arguments);\n}\n\n#endif // __scaly__scalyc__\n";
 }
 
 void CppVisitor::buildProjectFileString(_VarString* projectFile, Program* program) {
     (*projectFile) += "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
     (*projectFile) += "<CodeLite_Project Name=\"";
-    (*projectFile) +=  *programName;
+    (*projectFile) +=  *program->name;
     (*projectFile) +=  "\" InternalType=\"Console\">\n  <Plugins>\n    <Plugin Name=\"qmake\">\n";
     (*projectFile) +=  "      <![CDATA[00020001N0005Debug0000000000000001N0007Release000000000000]]>\n    </Plugin>\n";
     (*projectFile) +=  "    <Plugin Name=\"CMakePlugin\">\n      <![CDATA[[{\n";
@@ -1200,11 +1206,11 @@ void CppVisitor::buildProjectFileString(_VarString* projectFile, Program* progra
     (*projectFile) +=  "        <Library Value=\"libscaly\"/>\n      </Linker>\n      <ResourceCompiler Options=\"\" Required=\"no\"/>\n";
     (*projectFile) +=  "      <General OutputFile=\"$(IntermediateDirectory)/$(ProjectName)\" IntermediateDirectory=\"../Debug\" ";
     (*projectFile) +=  "Command=\"./$(ProjectName)\" CommandArguments=\"-o ";
-    (*projectFile) +=  *programName;
+    (*projectFile) +=  *program->name;
     (*projectFile) +=  " -d output";
     for (size_t i = 0; i < noOfCompilationUnits; i++) {
         _Region _region; _Page* _p = _region.get();
-        (*projectFile) +=  " ../"; (*projectFile) +=  *programName; (*projectFile) += "/";
+        (*projectFile) +=  " ../"; (*projectFile) +=  *program->name; (*projectFile) += "/";
         (*projectFile) +=  *Path::getFileNameWithoutExtension(_p, *(*(*program->compilationUnits)[i])->fileName);
         (*projectFile) +=  ".scaly";
     }

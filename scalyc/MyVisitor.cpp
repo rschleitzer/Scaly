@@ -4,14 +4,10 @@ namespace scalyc {
 
 
 bool MyVisitor::openProgram(Program* program) {
-    *programName = *program->name;
-    *programDirectory = *program->directory;
     return true;
 }
 
 void MyVisitor::closeProgram(Program* program) {
-    programName = 0;
-    programDirectory = 0;
 }
 
 bool MyVisitor::openCompilationUnit(CompilationUnit* compilationUnit) {
@@ -64,21 +60,17 @@ void MyVisitor::closeFunctionDeclaration(FunctionDeclaration* functionDeclaratio
 }
 
 bool MyVisitor::openEnumDeclaration(EnumDeclaration* enumDeclaration) {
-    *enumDeclarationName = *enumDeclaration->name;
     return true;
 }
 
 void MyVisitor::closeEnumDeclaration(EnumDeclaration* enumDeclaration) {
-    enumDeclarationName = 0;
 }
 
 bool MyVisitor::openClassDeclaration(ClassDeclaration* classDeclaration) {
-    *classDeclarationName = *classDeclaration->name;
     return true;
 }
 
 void MyVisitor::closeClassDeclaration(ClassDeclaration* classDeclaration) {
-    classDeclarationName = 0;
 }
 
 bool MyVisitor::openInitializerDeclaration(InitializerDeclaration* initializerDeclaration) {
@@ -171,21 +163,17 @@ void MyVisitor::closeParameterClause(ParameterClause* parameterClause) {
 }
 
 bool MyVisitor::openConstParameter(ConstParameter* constParameter) {
-    *constParameterName = *constParameter->name;
     return true;
 }
 
 void MyVisitor::closeConstParameter(ConstParameter* constParameter) {
-    constParameterName = 0;
 }
 
 bool MyVisitor::openVarParameter(VarParameter* varParameter) {
-    *varParameterName = *varParameter->name;
     return true;
 }
 
 void MyVisitor::closeVarParameter(VarParameter* varParameter) {
-    varParameterName = 0;
 }
 
 bool MyVisitor::openThrowsClause(ThrowsClause* throwsClause) {
@@ -493,12 +481,10 @@ void MyVisitor::visitWildcardPattern(WildcardPattern* wildcardPattern) {
 }
 
 bool MyVisitor::openIdentifierPattern(IdentifierPattern* identifierPattern) {
-    *identifierPatternIdentifier = *identifierPattern->identifier;
     return true;
 }
 
 void MyVisitor::closeIdentifierPattern(IdentifierPattern* identifierPattern) {
-    identifierPatternIdentifier = 0;
 }
 
 bool MyVisitor::openTuplePattern(TuplePattern* tuplePattern) {
@@ -545,12 +531,10 @@ void MyVisitor::visitSuperMember(SuperMember* superMember) {
 }
 
 bool MyVisitor::openTypeIdentifier(TypeIdentifier* typeIdentifier) {
-    *typeIdentifierName = *typeIdentifier->name;
     return true;
 }
 
 void MyVisitor::closeTypeIdentifier(TypeIdentifier* typeIdentifier) {
-    typeIdentifierName = 0;
 }
 
 bool MyVisitor::openArrayType(ArrayType* arrayType) {

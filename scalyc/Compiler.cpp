@@ -34,6 +34,11 @@ CompilerError* Compiler::compileFiles(_Page* _ep, Options* options) {
     }
 
     Program* program = new(_p) Program(options->outputName, options->directory, compilationUnits);
+    if (compilationUnits) {
+        size_t _compilationUnits_length = compilationUnits->length();
+        for (size_t _i = 0; _i < _compilationUnits_length; _i++)
+            (*(*compilationUnits)[_i])->parent = program;
+    }
 
     CppVisitor& visitor = *new(_p) CppVisitor();
     CppError* cppError = visitor.execute(_p, program);

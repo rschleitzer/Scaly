@@ -85,14 +85,6 @@ public:"
     virtual void visit"(id syntax)"("(id syntax)"* "(string-firstchar-downcase (id syntax))")"(if concrete "" " = 0")";"
             )
         )
-        (if (and concrete (has-syntax-children? syntax))
-            (apply-to-children-of syntax (lambda (identifier)
-                (if (identifier? identifier) ($
-"
-    _VarString* "(visitor-property syntax identifier)";"
-                )"")
-            ))
-        "")
     ))))
        (if (not concrete)
 "
@@ -127,21 +119,11 @@ namespace scalyc {
             ($
 "
 bool MyVisitor::open"(id syntax)"("(id syntax)"* "(string-firstchar-downcase (id syntax))") {
-"                (apply-to-children-of syntax (lambda (identifier)
-                    (if (identifier? identifier) ($
-"    *"(visitor-property syntax identifier)" = *"(string-firstchar-downcase (id syntax))"->"(property identifier)";
-"                   )"")
-                ))
-"    return true;
+    return true;
 }
 
 void MyVisitor::close"(id syntax)"("(id syntax)"* "(string-firstchar-downcase (id syntax))") {
-"                (apply-to-children-of syntax (lambda (identifier)
-                    (if (identifier? identifier) ($
-"    "(visitor-property syntax identifier)" = 0;
-"                   )"")
-                 ))
-"}
+}
 "           )
             ($
 "

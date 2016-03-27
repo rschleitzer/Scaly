@@ -8,8 +8,6 @@ class MyVisitor : public SyntaxVisitor {
 public:
     virtual bool openProgram(Program* program);
     virtual void closeProgram(Program* program);
-    _VarString* programName;
-    _VarString* programDirectory;
     virtual bool openCompilationUnit(CompilationUnit* compilationUnit);
     virtual void closeCompilationUnit(CompilationUnit* compilationUnit);
     virtual bool openStatementWithSemicolon(StatementWithSemicolon* statementWithSemicolon);
@@ -26,10 +24,8 @@ public:
     virtual void closeFunctionDeclaration(FunctionDeclaration* functionDeclaration);
     virtual bool openEnumDeclaration(EnumDeclaration* enumDeclaration);
     virtual void closeEnumDeclaration(EnumDeclaration* enumDeclaration);
-    _VarString* enumDeclarationName;
     virtual bool openClassDeclaration(ClassDeclaration* classDeclaration);
     virtual void closeClassDeclaration(ClassDeclaration* classDeclaration);
-    _VarString* classDeclarationName;
     virtual bool openInitializerDeclaration(InitializerDeclaration* initializerDeclaration);
     virtual void closeInitializerDeclaration(InitializerDeclaration* initializerDeclaration);
     virtual bool openCodeBlock(CodeBlock* codeBlock);
@@ -58,10 +54,8 @@ public:
     virtual void closeParameterClause(ParameterClause* parameterClause);
     virtual bool openConstParameter(ConstParameter* constParameter);
     virtual void closeConstParameter(ConstParameter* constParameter);
-    _VarString* constParameterName;
     virtual bool openVarParameter(VarParameter* varParameter);
     virtual void closeVarParameter(VarParameter* varParameter);
-    _VarString* varParameterName;
     virtual bool openThrowsClause(ThrowsClause* throwsClause);
     virtual void closeThrowsClause(ThrowsClause* throwsClause);
     virtual bool openEnumMember(EnumMember* enumMember);
@@ -152,7 +146,6 @@ public:
     virtual void visitWildcardPattern(WildcardPattern* wildcardPattern);
     virtual bool openIdentifierPattern(IdentifierPattern* identifierPattern);
     virtual void closeIdentifierPattern(IdentifierPattern* identifierPattern);
-    _VarString* identifierPatternIdentifier;
     virtual bool openTuplePattern(TuplePattern* tuplePattern);
     virtual void closeTuplePattern(TuplePattern* tuplePattern);
     virtual bool openExpressionPattern(ExpressionPattern* expressionPattern);
@@ -168,7 +161,6 @@ public:
     virtual void visitSuperMember(SuperMember* superMember);
     virtual bool openTypeIdentifier(TypeIdentifier* typeIdentifier);
     virtual void closeTypeIdentifier(TypeIdentifier* typeIdentifier);
-    _VarString* typeIdentifierName;
     virtual bool openArrayType(ArrayType* arrayType);
     virtual void closeArrayType(ArrayType* arrayType);
     virtual bool openTypeAnnotation(TypeAnnotation* typeAnnotation);

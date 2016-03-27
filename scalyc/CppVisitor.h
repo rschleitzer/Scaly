@@ -46,11 +46,9 @@ public:
     virtual void appendCppType(_VarString* s, Type* type);
     virtual bool isClass(_LetString* name);
     virtual void indentHeader();
-    virtual void writeParameter(_VarString* name, Type* parameterType);
+    virtual void writeParameter(_LetString* name, Type* parameterType);
     virtual bool openProgram(Program* program);
     virtual void closeProgram(Program* program);
-    _VarString* programName;
-    _VarString* programDirectory;
     virtual bool openCompilationUnit(CompilationUnit* compilationUnit);
     virtual void closeCompilationUnit(CompilationUnit* compilationUnit);
     virtual bool openStatementWithSemicolon(StatementWithSemicolon* statementWithSemicolon);
@@ -67,10 +65,8 @@ public:
     virtual void closeFunctionDeclaration(FunctionDeclaration* functionDeclaration);
     virtual bool openEnumDeclaration(EnumDeclaration* enumDeclaration);
     virtual void closeEnumDeclaration(EnumDeclaration* enumDeclaration);
-    _VarString* enumDeclarationName;
     virtual bool openClassDeclaration(ClassDeclaration* classDeclaration);
     virtual void closeClassDeclaration(ClassDeclaration* classDeclaration);
-    _VarString* classDeclarationName;
     virtual bool openInitializerDeclaration(InitializerDeclaration* initializerDeclaration);
     virtual void closeInitializerDeclaration(InitializerDeclaration* initializerDeclaration);
     virtual bool openCodeBlock(CodeBlock* codeBlock);
@@ -80,7 +76,6 @@ public:
     virtual bool openPathIdentifier(PathIdentifier* pathIdentifier);
     virtual void closePathIdentifier(PathIdentifier* pathIdentifier);
     virtual void visitPathItem(PathItem* pathItem);
-    _VarString* pathItemName;
     virtual bool openInitializer(Initializer* initializer);
     virtual void closeInitializer(Initializer* initializer);
     virtual bool openBindingInitializer(BindingInitializer* bindingInitializer);
@@ -92,7 +87,6 @@ public:
     virtual void visitOverrideWord(OverrideWord* overrideWord);
     virtual void visitStaticWord(StaticWord* staticWord);
     virtual void visitIdentifierFunction(IdentifierFunction* identifierFunction);
-    _VarString* identifierFunctionName;
     virtual bool openFunctionSignature(FunctionSignature* functionSignature);
     virtual void closeFunctionSignature(FunctionSignature* functionSignature);
     virtual bool openFunctionResult(FunctionResult* functionResult);
@@ -101,10 +95,8 @@ public:
     virtual void closeParameterClause(ParameterClause* parameterClause);
     virtual bool openConstParameter(ConstParameter* constParameter);
     virtual void closeConstParameter(ConstParameter* constParameter);
-    _VarString* constParameterName;
     virtual bool openVarParameter(VarParameter* varParameter);
     virtual void closeVarParameter(VarParameter* varParameter);
-    _VarString* varParameterName;
     virtual bool openThrowsClause(ThrowsClause* throwsClause);
     virtual void closeThrowsClause(ThrowsClause* throwsClause);
     virtual bool openEnumMember(EnumMember* enumMember);
@@ -195,7 +187,6 @@ public:
     virtual void visitWildcardPattern(WildcardPattern* wildcardPattern);
     virtual bool openIdentifierPattern(IdentifierPattern* identifierPattern);
     virtual void closeIdentifierPattern(IdentifierPattern* identifierPattern);
-    _VarString* identifierPatternIdentifier;
     virtual bool openTuplePattern(TuplePattern* tuplePattern);
     virtual void closeTuplePattern(TuplePattern* tuplePattern);
     virtual bool openExpressionPattern(ExpressionPattern* expressionPattern);
