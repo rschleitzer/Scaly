@@ -48,27 +48,24 @@ class Punctuation : Token {
 }
 
 class Operator : Token {
-    init(theOperation: String) {
-        operation = theOperation
-    }
     let operation: String
 }
 
 class PrefixOperator : Operator {
     init(theOperation: String) {
-        super.init(theOperation)
+        operation = theOperation;
     }
 }
 
 class BinaryOperator : Operator {
     init(theOperation: String) {
-        super.init(theOperation)
+        operation = theOperation;
     }
 }
 
 class PostfixOperator : Operator {
     init(theOperation: String) {
-        super.init(theOperation)
+        operation = theOperation;
     }
 }
 

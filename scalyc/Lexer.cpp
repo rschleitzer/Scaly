@@ -52,28 +52,27 @@ Punctuation::Punctuation(_LetString* theSign) {
 
 bool Punctuation::_isPunctuation() { return true; }
 
-Operator::Operator(_LetString* theOperation) {
-    operation = theOperation;
-}
-
 bool Operator::_isOperator() { return true; }
 
 bool Operator::_isPrefixOperator() { return false; }
 bool Operator::_isBinaryOperator() { return false; }
 bool Operator::_isPostfixOperator() { return false; }
 
-PrefixOperator::PrefixOperator(_LetString* theOperation)
-: Operator(theOperation) { }
+PrefixOperator::PrefixOperator(_LetString* theOperation) {
+    operation = theOperation;
+}
 
 bool PrefixOperator::_isPrefixOperator() { return true; }
 
-BinaryOperator::BinaryOperator(_LetString* theOperation)
-: Operator(theOperation) { }
+BinaryOperator::BinaryOperator(_LetString* theOperation) {
+    operation = theOperation;
+}
 
 bool BinaryOperator::_isBinaryOperator() { return true; }
 
-PostfixOperator::PostfixOperator(_LetString* theOperation)
-: Operator(theOperation) { }
+PostfixOperator::PostfixOperator(_LetString* theOperation) {
+    operation = theOperation;
+}
 
 bool PostfixOperator::_isPostfixOperator() { return true; }
 

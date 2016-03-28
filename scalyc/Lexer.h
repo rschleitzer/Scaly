@@ -82,7 +82,6 @@ public:
 
 class Operator : public Token {
 public:
-    Operator(_LetString* theOperation);
     _LetString* operation;
 
     virtual bool _isOperator();
