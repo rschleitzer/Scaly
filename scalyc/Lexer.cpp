@@ -23,34 +23,41 @@ bool EofToken::_isEofToken() { return true; }
 
 bool InvalidToken::_isInvalidToken() { return true; }
 
-Identifier::Identifier(_LetString* name)
-: name(name) { }
+Identifier::Identifier(_LetString* name) {
+    this->name = name;
+}
 
 bool Identifier::_isIdentifier() { return true; }
 
 bool Literal::_isLiteral() { return true; }
+
 bool Literal::_isStringLiteral() { return false; }
 bool Literal::_isNumericLiteral() { return false; }
 
-StringLiteral::StringLiteral(_LetString* literal)
-: string(literal) { }
+StringLiteral::StringLiteral(_LetString* theString) {
+    string = theString;
+}
 
 bool StringLiteral::_isStringLiteral() { return true; }
 
-NumericLiteral::NumericLiteral(_LetString* theValue)
-: value(theValue) { }
+NumericLiteral::NumericLiteral(_LetString* theValue) {
+    value = theValue;
+}
 
 bool NumericLiteral::_isNumericLiteral() { return true; }
 
-Punctuation::Punctuation(_LetString* theSign)
-: sign(theSign) { }
+Punctuation::Punctuation(_LetString* theSign) {
+    sign = theSign;
+}
 
 bool Punctuation::_isPunctuation() { return true; }
 
-Operator::Operator(_LetString* theOperation)
-: operation(theOperation) { }
+Operator::Operator(_LetString* theOperation) {
+    operation = theOperation;
+}
 
 bool Operator::_isOperator() { return true; }
+
 bool Operator::_isPrefixOperator() { return false; }
 bool Operator::_isBinaryOperator() { return false; }
 bool Operator::_isPostfixOperator() { return false; }

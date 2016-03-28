@@ -18,7 +18,7 @@ class InvalidToken : Token {
 
 class Identifier : Token {
     init(name: String) {
-        name = name
+        this.name = name
     }
     let name: String
 }
@@ -42,7 +42,7 @@ class NumericLiteral : Literal {
 
 class Punctuation : Token {
     init(theSign: String) {
-        sign = theString
+        sign = theSign
     }
     let sign: String
 }
