@@ -7,9 +7,6 @@ Position::Position(size_t line, size_t column) {
     this->column = column;
 }
 
-bool Position::_isPosition() { return true; }
-
-bool Token::_isToken() { return true; }
 bool Token::_isEofToken() { return false; }
 bool Token::_isInvalidToken() { return false; }
 bool Token::_isIdentifier() { return false; }
@@ -619,7 +616,5 @@ Position* Lexer::getPosition(_Page* _rp) {
 Position* Lexer::getPreviousPosition(_Page* _rp) {
     return new(_rp) Position(previousLine, previousColumn);
 }
-
-bool Lexer::_isLexer() { return true; }
 
 }

@@ -63,6 +63,4 @@ _Result<CompilationUnit, ParserError> Compiler::compileUnit(_Page* _rp, _Page* _
     return parser.parseCompilationUnit(_rp, _ep);
 }
 
-bool Compiler::_isCompiler() { return true; }
-
 }

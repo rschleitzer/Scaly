@@ -10,7 +10,7 @@ public:
     Position* start;
     Position* end;
     SyntaxNode* parent;
-    virtual bool _isSyntaxNode();
+
     virtual bool _isProgram();
     virtual bool _isCompilationUnit();
     virtual bool _isTerminatedStatement();

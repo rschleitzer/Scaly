@@ -11,7 +11,7 @@ public:
     _Vector<_LetString>* files;
     _LetString* outputName;
     _LetString* directory;
-    virtual bool _isOptions();
+
 };
 
 }

@@ -224,11 +224,14 @@ void CppVisitor::closeInitializer(Initializer* initializer) {
 
 bool CppVisitor::openConstantDeclaration(ConstantDeclaration* constantDeclaration) {
     constDeclaration = true;
+    if (constantDeclaration->parent->parent->parent->_isClassDeclaration())
+        suppressSource = true;
     return true;
 }
 
 void CppVisitor::closeConstantDeclaration(ConstantDeclaration* constantDeclaration) {
     constDeclaration = false;
+    suppressSource = false;
 }
 
 bool CppVisitor::openVariableDeclaration(VariableDeclaration* variableDeclaration) {
@@ -681,8 +684,14 @@ bool CppVisitor::openClassDeclaration(ClassDeclaration* classDeclaration) {
 
 void CppVisitor::closeClassDeclaration(ClassDeclaration* classDeclaration) {
     (*headerFile) += "\n";
-    if (classDeclaration->typeInheritanceClause)
+    if (classDeclaration->typeInheritanceClause) {
         (*headerFile) += "\n"; indentHeader(); (*headerFile) += "virtual bool _is"; (*headerFile) += *classDeclaration->name; (*headerFile) += "();";
+        (*sourceFile) += "bool "; 
+        (*sourceFile) += *classDeclaration->name; 
+        (*sourceFile) += "::_is"; 
+        (*sourceFile) += *classDeclaration->name; 
+        (*sourceFile) += "() { return true; }\n\n";
+    }
     {
         _Region _region; _Page* _p = _region.get();
         _Array<_LetString>& derivedClasses = *new(_p) _Array<_LetString>();
@@ -690,8 +699,16 @@ void CppVisitor::closeClassDeclaration(ClassDeclaration* classDeclaration) {
         size_t _derivedClasses_length = derivedClasses.length();
         for (size_t _i = 0; _i < _derivedClasses_length; _i++) {
             (*headerFile) += "\n"; indentHeader(); (*headerFile) += "virtual bool _is"; (*headerFile) += **derivedClasses[_i]; (*headerFile) += "();";
+            (*sourceFile) += "bool "; 
+            (*sourceFile) += *classDeclaration->name; 
+            (*sourceFile) += "::_is"; 
+            (*sourceFile) += **derivedClasses[_i]; 
+            (*sourceFile) += "() { return false; }\n";
         }
+        if (derivedClasses.length() > 0)
+            (*sourceFile) += "\n";
     }
+    
 
     headerIndentLevel--;
     (*headerFile) += "\n};";
@@ -1103,10 +1120,14 @@ void CppVisitor::closeTypeAnnotation(TypeAnnotation* annotationForType) {
 bool CppVisitor::openTypeIdentifier(TypeIdentifier* typeIdentifier) {
     if (!sourceIndentLevel) {
         appendCppTypeName(headerFile, typeIdentifier->name);
-        appendCppTypeName(sourceFile, typeIdentifier->name);
+        if (!suppressSource) {
+            appendCppTypeName(sourceFile, typeIdentifier->name);
+        }
         if (isClass(typeIdentifier->name) && (!inArrayType)) {
             (*headerFile) += "*";
-            (*sourceFile) += "*";
+            if (!suppressSource) {
+                (*sourceFile) += "*";
+            }
         }
     }
     return true;
@@ -1297,7 +1318,5 @@ Inherits::Inherits(_LetString* className) {
     name = &_LetString::create(getPage(), *className);
     inheritors = new(getPage()) _Array<_LetString>();
 }
-
-bool Inherits::_isInherits() { return true; }
 
 }

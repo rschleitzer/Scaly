@@ -575,7 +575,6 @@ bool MyVisitor::openInheritance(Inheritance* inheritance) {
 void MyVisitor::closeInheritance(Inheritance* inheritance) {
 }
 
-bool SyntaxVisitor::_isSyntaxVisitor() { return true; }
 bool SyntaxVisitor::_isMyVisitor() { return false; }
 bool SyntaxVisitor::_isCppVisitor() { return false; }
 bool MyVisitor::_isMyVisitor() { return true; }

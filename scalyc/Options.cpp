@@ -56,6 +56,4 @@ _Result<Options, OptionsError> Options::parseArguments(_Page* _rp, _Page* _ep, _
     return _Result<Options, OptionsError>(&options);
 }
 
-bool Options::_isOptions() { return true; }
-
 }

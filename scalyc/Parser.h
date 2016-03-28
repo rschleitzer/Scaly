@@ -187,7 +187,7 @@ public:
     _LetString* questionMark;
     _LetString* underscore;
     _LetString* evaluatesTo;
-    virtual bool _isParser();
+
 };
 
 }

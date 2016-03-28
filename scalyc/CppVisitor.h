@@ -9,7 +9,7 @@ public:
     Inherits(_LetString* className);
     _LetString* name;
     _Array<_LetString>* inheritors;
-    virtual bool _isInherits();
+
 };
 
 class CppVisitor : public SyntaxVisitor {
@@ -34,6 +34,7 @@ public:
     bool inEnumMember;
     bool inFunctionReturn;
     bool constDeclaration;
+    bool suppressSource;
     virtual void buildProjectFileString(_VarString* projectFile, Program* program);
     virtual void buildMainHeaderFileString(_VarString* projectFile, Program* program);
     virtual void collectInheritances(Program* program);

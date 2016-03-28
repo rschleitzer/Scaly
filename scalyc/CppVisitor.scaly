@@ -32,6 +32,7 @@ class CppVisitor : SyntaxVisitor {
     mutable inEnumMember: bool
     mutable inFunctionReturn: bool
     mutable constDeclaration: bool
+    mutable suppressSource: bool
 
     function buildProjectFileString(mutable projectFile: String, program: Program) {
     }

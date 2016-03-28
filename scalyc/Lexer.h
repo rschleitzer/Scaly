@@ -9,12 +9,12 @@ public:
     Position(size_t line, size_t column);
     size_t line;
     size_t column;
-    virtual bool _isPosition();
+
 };
 
 class Token : public Object {
 public:
-    virtual bool _isToken();
+
     virtual bool _isEofToken();
     virtual bool _isInvalidToken();
     virtual bool _isIdentifier();
@@ -144,7 +144,7 @@ public:
     virtual Position* getPreviousPosition(_Page* _rp);
     virtual void handleSingleLineComment();
     virtual void handleMultiLineComment();
-    virtual bool _isLexer();
+
 };
 
 }
