@@ -56,19 +56,19 @@ class Operator : Token {
 
 class PrefixOperator : Operator {
     init(theOperation: String) {
-        base(theOperation)
+        super.init(theOperation)
     }
 }
 
 class BinaryOperator : Operator {
     init(theOperation: String) {
-        base(theOperation)
+        super.init(theOperation)
     }
 }
 
 class PostfixOperator : Operator {
     init(theOperation: String) {
-        base(theOperation)
+        super.init(theOperation)
     }
 }
 
