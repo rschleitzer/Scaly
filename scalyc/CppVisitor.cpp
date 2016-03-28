@@ -2,8 +2,8 @@
 using namespace scaly;
 namespace scalyc {
 
-CppVisitor::CppVisitor()
-  : cppError(0) {
+CppVisitor::CppVisitor() {
+    this->cppError = 0;
 }
 
 CppError* CppVisitor::execute(_Page* _rp, Program* program) {
@@ -79,13 +79,13 @@ void CppVisitor::collectInheritances(Program* program) {
 
 void CppVisitor::collectInheritancesInCompilationUnit(CompilationUnit* compilationUnit) {
     if (compilationUnit->statements) {
-        _Vector<StatementWithSemicolon>& statements = *compilationUnit->statements;
+        _Vector<TerminatedStatement>& statements = *compilationUnit->statements;
         size_t _statements_length = statements.length();
         for (size_t _i = 0; _i < _statements_length; _i++) {
-            StatementWithSemicolon& statementWithSemicolon = **statements[_i];
-            if (statementWithSemicolon.statement) {
-                if (statementWithSemicolon.statement->_isClassDeclaration()) {
-                    ClassDeclaration& classDeclaration = *(ClassDeclaration*)statementWithSemicolon.statement;
+            TerminatedStatement& terminatedStatement = **statements[_i];
+            if (terminatedStatement.statement) {
+                if (terminatedStatement.statement->_isClassDeclaration()) {
+                    ClassDeclaration& classDeclaration = *(ClassDeclaration*)terminatedStatement.statement;
                     classes->push(classDeclaration.name);
                     if (classDeclaration.typeInheritanceClause) {
                         TypeInheritanceClause& inheritanceClause = *classDeclaration.typeInheritanceClause;
@@ -186,13 +186,13 @@ void CppVisitor::closeCompilationUnit(CompilationUnit* compilationUnit) {
     File::writeFromString(_p, sourceFilePath , *sourceFile);
 }
 
-bool CppVisitor::openStatementWithSemicolon(StatementWithSemicolon* statementWithSemicolon) {
+bool CppVisitor::openTerminatedStatement(TerminatedStatement* terminatedStatement) {
     this->indentSource();
     return true;
 }
 
-void CppVisitor::closeStatementWithSemicolon(StatementWithSemicolon* statementWithSemicolon) {
-    if (statementWithSemicolon->statement->_isClassDeclaration())
+void CppVisitor::closeTerminatedStatement(TerminatedStatement* terminatedStatement) {
+    if (terminatedStatement->statement->_isClassDeclaration())
         return;
 
     (*sourceFile) += ";\n";

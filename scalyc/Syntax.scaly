@@ -31,7 +31,7 @@ class Program : SyntaxNode {
 
 class CompilationUnit : SyntaxNode {
 
-    init(statements: [StatementWithSemicolon], start: Position, end: Position) {
+    init(statements: [TerminatedStatement], start: Position, end: Position) {
         super.init(start, end)
     }
 
@@ -45,20 +45,20 @@ class CompilationUnit : SyntaxNode {
         visitor.closeCompilationUnit(this)
     }
 
-    let statements: [StatementWithSemicolon]?
+    let statements: [TerminatedStatement]?
     let fileName: String
 }
 
-class StatementWithSemicolon : SyntaxNode {
+class TerminatedStatement : SyntaxNode {
 
     init(statement: Statement, start: Position, end: Position) {
         super.init(start, end)
     }
 
     function accept(mutable visitor: SyntaxVisitor) {
-        visitor.openStatementWithSemicolon(this)
+        visitor.openTerminatedStatement(this)
         statement!.accept(visitor)
-        visitor.closeStatementWithSemicolon(this)
+        visitor.closeTerminatedStatement(this)
     }
 
     let statement: Statement?
@@ -269,7 +269,7 @@ class InitializerDeclaration : Declaration {
 
 class CodeBlock : Expression {
 
-    init(statements: [StatementWithSemicolon], start: Position, end: Position) {
+    init(statements: [TerminatedStatement], start: Position, end: Position) {
         super.init(start, end)
     }
 
@@ -281,7 +281,7 @@ class CodeBlock : Expression {
         visitor.closeCodeBlock(this)
     }
 
-    let statements: [StatementWithSemicolon]?
+    let statements: [TerminatedStatement]?
 }
 
 class SimpleExpression : Expression {
@@ -1581,7 +1581,7 @@ class CaseContent : SyntaxNode {
 
 class BlockCaseContent : CaseContent {
 
-    init(statements: [StatementWithSemicolon], start: Position, end: Position) {
+    init(statements: [TerminatedStatement], start: Position, end: Position) {
         super.init(start, end)
     }
 
@@ -1593,7 +1593,7 @@ class BlockCaseContent : CaseContent {
         visitor.closeBlockCaseContent(this)
     }
 
-    let statements: [StatementWithSemicolon]?
+    let statements: [TerminatedStatement]?
 }
 
 class EmptyCaseContent : CaseContent {

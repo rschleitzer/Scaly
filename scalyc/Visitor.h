@@ -8,7 +8,7 @@ class Program;
 
 class CompilationUnit;
 
-class StatementWithSemicolon;
+class TerminatedStatement;
 
 class Statement;
 
@@ -236,8 +236,8 @@ public:
     virtual void closeProgram(Program* program) = 0;
     virtual bool openCompilationUnit(CompilationUnit* compilationUnit) = 0;
     virtual void closeCompilationUnit(CompilationUnit* compilationUnit) = 0;
-    virtual bool openStatementWithSemicolon(StatementWithSemicolon* statementWithSemicolon) = 0;
-    virtual void closeStatementWithSemicolon(StatementWithSemicolon* statementWithSemicolon) = 0;
+    virtual bool openTerminatedStatement(TerminatedStatement* terminatedStatement) = 0;
+    virtual void closeTerminatedStatement(TerminatedStatement* terminatedStatement) = 0;
     virtual bool openUseDeclaration(UseDeclaration* useDeclaration) = 0;
     virtual void closeUseDeclaration(UseDeclaration* useDeclaration) = 0;
     virtual bool openConstantDeclaration(ConstantDeclaration* constantDeclaration) = 0;

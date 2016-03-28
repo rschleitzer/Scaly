@@ -51,8 +51,8 @@ Parser::Parser(_LetString* fileName, _LetString* text)
 
 _Result<CompilationUnit, ParserError> Parser::parseCompilationUnit(_Page* _rp, _Page* _ep) {
     Position* start = lexer->getPreviousPosition(_rp);
-    _Result<_Vector<StatementWithSemicolon>, ParserError> _result_statements = parseStatementWithSemicolonList(_rp, _ep);
-    _Vector<StatementWithSemicolon>* statements = 0;
+    _Result<_Vector<TerminatedStatement>, ParserError> _result_statements = parseTerminatedStatementList(_rp, _ep);
+    _Vector<TerminatedStatement>* statements = 0;
     if (_result_statements.succeeded()) {
         if (!isAtEnd()) {
             Position* current = lexer->getPosition(_ep);
@@ -70,25 +70,25 @@ _Result<CompilationUnit, ParserError> Parser::parseCompilationUnit(_Page* _rp, _
     return _Result<CompilationUnit, ParserError>(compilationUnit);
 }
 
-_Result<_Vector<StatementWithSemicolon>, ParserError> Parser::parseStatementWithSemicolonList(_Page* _rp, _Page* _ep) {
+_Result<_Vector<TerminatedStatement>, ParserError> Parser::parseTerminatedStatementList(_Page* _rp, _Page* _ep) {
     // Make a region for the current block and get the Page
     _Region _r; _Page* _p = _r.get();
-    _Array<StatementWithSemicolon>* statementWithSemicolon = 0;
+    _Array<TerminatedStatement>* terminatedStatement = 0;
     while (true) {
-        _Result<StatementWithSemicolon, ParserError> nodeResult = parseStatementWithSemicolon(_rp, _p);
+        _Result<TerminatedStatement, ParserError> nodeResult = parseTerminatedStatement(_rp, _p);
         if (nodeResult.succeeded()) {
-            if (!statementWithSemicolon)
-                statementWithSemicolon = new(_p) _Array<StatementWithSemicolon>();
-            statementWithSemicolon->push(nodeResult.getResult());
+            if (!terminatedStatement)
+                terminatedStatement = new(_p) _Array<TerminatedStatement>();
+            terminatedStatement->push(nodeResult.getResult());
         }
         else {
             break;
         }
     }
-    return _Result<_Vector<StatementWithSemicolon>, ParserError>(statementWithSemicolon ? &_Vector<StatementWithSemicolon>::create(_rp, *statementWithSemicolon) : 0);
+    return _Result<_Vector<TerminatedStatement>, ParserError>(terminatedStatement ? &_Vector<TerminatedStatement>::create(_rp, *terminatedStatement) : 0);
 }
 
-_Result<StatementWithSemicolon, ParserError> Parser::parseStatementWithSemicolon(_Page* _rp, _Page* _ep) {
+_Result<TerminatedStatement, ParserError> Parser::parseTerminatedStatement(_Page* _rp, _Page* _ep) {
     Position* start = lexer->getPreviousPosition(_rp);
     _Result<Statement, ParserError> _result_statement = parseStatement(_rp, _ep);
     Statement* statement = 0;
@@ -96,15 +96,15 @@ _Result<StatementWithSemicolon, ParserError> Parser::parseStatementWithSemicolon
         statement = _result_statement.getResult();
     }
     else {
-        return _Result<StatementWithSemicolon, ParserError>(_result_statement.getError());
+        return _Result<TerminatedStatement, ParserError>(_result_statement.getError());
     }
     bool successSemicolon2 = lexer->parsePunctuation(semicolon);
     if (successSemicolon2) {
         lexer->advance();
     }
-    StatementWithSemicolon* statementWithSemicolon = new(_rp) StatementWithSemicolon(statement, start, lexer->getPosition(_rp));
-    statement->parent = statementWithSemicolon;
-    return _Result<StatementWithSemicolon, ParserError>(statementWithSemicolon);
+    TerminatedStatement* terminatedStatement = new(_rp) TerminatedStatement(statement, start, lexer->getPosition(_rp));
+    statement->parent = terminatedStatement;
+    return _Result<TerminatedStatement, ParserError>(terminatedStatement);
 }
 
 _Result<Statement, ParserError> Parser::parseStatement(_Page* _rp, _Page* _ep) {
@@ -537,8 +537,8 @@ _Result<CodeBlock, ParserError> Parser::parseCodeBlock(_Page* _rp, _Page* _ep) {
     else {
         return _Result<CodeBlock, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_punctuationExpected(startLeftCurly1, &_LetString::create(_ep, *leftCurly))));
     }
-    _Result<_Vector<StatementWithSemicolon>, ParserError> _result_statements = parseStatementWithSemicolonList(_rp, _ep);
-    _Vector<StatementWithSemicolon>* statements = 0;
+    _Result<_Vector<TerminatedStatement>, ParserError> _result_statements = parseTerminatedStatementList(_rp, _ep);
+    _Vector<TerminatedStatement>* statements = 0;
     if (_result_statements.succeeded()) {
         statements = _result_statements.getResult();
     }
@@ -3030,8 +3030,8 @@ _Result<CaseContent, ParserError> Parser::parseCaseContent(_Page* _rp, _Page* _e
 
 _Result<BlockCaseContent, ParserError> Parser::parseBlockCaseContent(_Page* _rp, _Page* _ep) {
     Position* start = lexer->getPreviousPosition(_rp);
-    _Result<_Vector<StatementWithSemicolon>, ParserError> _result_statements = parseStatementWithSemicolonList(_rp, _ep);
-    _Vector<StatementWithSemicolon>* statements = 0;
+    _Result<_Vector<TerminatedStatement>, ParserError> _result_statements = parseTerminatedStatementList(_rp, _ep);
+    _Vector<TerminatedStatement>* statements = 0;
     if (_result_statements.succeeded()) {
         statements = _result_statements.getResult();
     }

@@ -13,11 +13,11 @@ class MyVisitor : SyntaxVisitor {
     function closeCompilationUnit(compilationUnit: CompilationUnit) {
     }
 
-    function openStatementWithSemicolon(statementWithSemicolon: StatementWithSemicolon) -> bool {
+    function openTerminatedStatement(terminatedStatement: TerminatedStatement) -> bool {
         return true;
     }
 
-    function closeStatementWithSemicolon(statementWithSemicolon: StatementWithSemicolon) {
+    function closeTerminatedStatement(terminatedStatement: TerminatedStatement) {
     }
 
     function openUseDeclaration(useDeclaration: UseDeclaration) -> bool {

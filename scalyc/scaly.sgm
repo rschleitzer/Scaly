@@ -4,20 +4,20 @@
     <syntax id = Program                                        program
         <content identifier                                     property = name
         <content identifier                                     property = directory
-        <content link = CompilationUnit             multiple    property = compilationUnits
+        <content link = CompilationUnit       multiple          property = compilationUnits
 
     <syntax id = CompilationUnit                                top
-        <content link = StatementWithSemicolon multiple optional property = statements
+        <content link = TerminatedStatement   multiple optional property = statements
 
-    <syntax id = StatementWithSemicolon             multiple
+    <syntax id = TerminatedStatement          multiple
         <content link = Statement                               property = statement
-        <content link = semicolon                   optional
+        <content link = semicolon                      optional
 
-    <syntax id = Statement                          abstract
+    <syntax id = Statement                             abstract
         <content link = Declaration
         <content link = Expression
 
-    <syntax id = Declaration                        abstract    base = Statement
+    <syntax id = Declaration                           abstract base = Statement
         <content link = UseDeclaration
         <content link = ConstantDeclaration
         <content link = VariableDeclaration
@@ -27,14 +27,14 @@
         <content link = ClassDeclaration
         <content link = InitializerDeclaration
 
-    <syntax id = Expression                         abstract    base = Statement
+    <syntax id = Expression                            abstract base = Statement
         <content link = CodeBlock
         <content link = SimpleExpression
 
     <syntax id = UseDeclaration                                 base = Declaration
         <content link = use
         <content link = PathItem                                property = importModule
-        <content link = PathIdentifier      multiple optional   property = importExtensions
+        <content link = PathIdentifier        multiple optional property = importExtensions
 
     <syntax id = ConstantDeclaration                            base = Declaration
         <content link = let
@@ -44,48 +44,48 @@
         <content link = var
         <content link = BindingInitializer                      property = initializer
 
-    <syntax id = MutableDeclaration                            base = Declaration
+    <syntax id = MutableDeclaration                             base = Declaration
         <content link = mutable
         <content link = BindingInitializer                      property = initializer
 
     <syntax id = FunctionDeclaration                            base = Declaration
-        <content link = Modifier           multiple optional    property = modifiers
+        <content link = Modifier              multiple optional property = modifiers
         <content link = function
         <content link = FunctionName                            property = name
         <content link = FunctionSignature                       property = signature
-        <content link = Expression                  optional    property = body
+        <content link = Expression                     optional property = body
 
     <syntax id = EnumDeclaration                                base = Declaration
         <content link = enum
         <content identifier                                     property = name
         <content link = leftCurly
-        <content link = EnumMember         multiple             property = members
+        <content link = EnumMember            multiple          property = members
         <content link = rightCurly
 
     <syntax id = ClassDeclaration                               base = Declaration
         <content link = class
         <content identifier                                     property = name
-        <content link = GenericArgumentClause       optional    property = genericArgumentClause
-        <content link = TypeInheritanceClause       optional    property = typeInheritanceClause
-        <content link = ClassBody                   optional    property = body
+        <content link = GenericArgumentClause          optional property = genericArgumentClause
+        <content link = TypeInheritanceClause          optional property = typeInheritanceClause
+        <content link = ClassBody                      optional property = body
 
     <syntax id = InitializerDeclaration                         base = Declaration
-        <content link = Modifier           multiple optional    property = modifiers
+        <content link = Modifier              multiple optional property = modifiers
         <content link = init
         <content link = ParameterClause                         property = parameterClause
-        <content link = ThrowsClause                optional    property = throwsClause
+        <content link = ThrowsClause                   optional property = throwsClause
         <content link = Expression                              property = body
 
     <syntax id = CodeBlock                                      base = Expression
         <content link = leftCurly
-        <content link = StatementWithSemicolon  multiple        property = statements
+        <content link = TerminatedStatement   multiple             property = statements
         <content link = rightCurly
 
     <syntax id = SimpleExpression                               base = Expression
         <content link = PrefixExpression                        property = prefixExpression
-        <content link = BinaryOp           multiple optional    property = binaryOps
+        <content link = BinaryOp              multiple optional property = binaryOps
 
-    <syntax id = PathIdentifier             multiple
+    <syntax id = PathIdentifier               multiple
         <content link = dot
         <content link = PathItem                                property = extension
 
@@ -100,15 +100,15 @@
         <content link = PatternInitializer                      property = initializer
         <content link = AdditionalInitializer multiple optional property = additionalInitializers
 
-    <syntax id = PatternInitializer        multiple
+    <syntax id = PatternInitializer           multiple
         <content link = Pattern                                 property = pattern
         <content link = Initializer                    optional property = initializer
 
-    <syntax id = AdditionalInitializer     multiple
+    <syntax id = AdditionalInitializer        multiple
         <content link = comma
         <content link = PatternInitializer                      property = pattern
 
-    <syntax id = Modifier                  multiple abstract
+    <syntax id = Modifier                     multiple abstract
         <content link = OverrideWord
         <content link = StaticWord
 
@@ -118,7 +118,7 @@
     <syntax id = StaticWord                                     base = Modifier
         <content link = static
 
-    <syntax id = FunctionName                       abstract
+    <syntax id = FunctionName                          abstract
         <content link = IdentifierFunction
 
     <syntax id = IdentifierFunction                             base = FunctionName
@@ -126,79 +126,79 @@
 
     <syntax id = FunctionSignature
         <content link = ParameterClause                         property = parameterClause
-        <content link = FunctionResult              optional    property = result
-        <content link = ThrowsClause                optional    property = throwsClause
+        <content link = FunctionResult                 optional property = result
+        <content link = ThrowsClause                   optional property = throwsClause
 
     <syntax id = FunctionResult
         <content link = evaluatesTo
         <content link = Type                                    property = resultType
 
-    <syntax id = ParameterClause           multiple
+    <syntax id = ParameterClause              multiple
         <content link = leftParen
-        <content link = Parameter          multiple optional    property = parameters
+        <content link = Parameter             multiple optional property = parameters
         <content link = rightParen
 
-    <syntax id = Parameter                 multiple abstract
+    <syntax id = Parameter                    multiple abstract
         <content link = ConstParameter
         <content link = VarParameter
 
     <syntax id = ConstParameter                                 base = Parameter
-        <content link = let                         optional
+        <content link = let                            optional
         <content identifier                                     property = name
         <content link = colon
         <content link = Type                                    property = parameterType
-        <content link = comma                       optional
+        <content link = comma                          optional
 
     <syntax id = VarParameter                                   base = Parameter
         <content link = mutable
         <content identifier                                     property = name
         <content link = colon
         <content link = Type                                    property = parameterType
-        <content link = comma                       optional
+        <content link = comma                          optional
 
     <syntax id = ThrowsClause
         <content link = throws
         <content link = Type                                    property = throwsType
 
-    <syntax id = EnumMember                multiple
+    <syntax id = EnumMember                   multiple
         <content link = case
         <content link = EnumCase                                property = enumCase
-        <content link = AdditionalCase     multiple optional    property = additionalCases
-        <content link = ParameterClause             optional    property = parameterClause
+        <content link = AdditionalCase        multiple optional property = additionalCases
+        <content link = ParameterClause                optional property = parameterClause
 
     <syntax id = EnumCase
         <content identifier                                     property = name
 
-    <syntax id = AdditionalCase            multiple
+    <syntax id = AdditionalCase               multiple
         <content link = comma
         <content link = EnumCase                                property = enumCase
 
     <syntax id = ClassBody
         <content link = leftCurly
-        <content link = ClassMember        multiple optional    property = members
+        <content link = ClassMember           multiple optional property = members
         <content link = rightCurly
 
     <syntax id = GenericArgumentClause
         <content link = leftAngular
-        <content link = GenericParameter            multiple    property = genericParameters
+        <content link = GenericParameter      multiple          property = genericParameters
         <content link = rightAngular
 
     <syntax id = GenericParameter multiple
         <content identifier                                     property = typeName
 
-    <syntax id = ClassMember               multiple
+    <syntax id = ClassMember                  multiple
         <content link = Declaration                             property = declaration
-        <content link = semicolon                   optional
+        <content link = semicolon                      optional
 
     <syntax id = PrefixExpression
-        <content prefixoperator                     optional    property = prefixOperator
+        <content prefixoperator                        optional property = prefixOperator
         <content link = PostfixExpression                       property = expression
 
     <syntax id = PostfixExpression
         <content link = PrimaryExpression                       property = primaryExpression
-        <content link = Postfix            multiple optional    property = postfixes
+        <content link = Postfix               multiple optional property = postfixes
 
-    <syntax id = BinaryOp                  multiple abstract
+    <syntax id = BinaryOp                     multiple abstract
         <content link = BinaryOperation
         <content link = Assignment
         <content link = TypeQuery
@@ -220,13 +220,13 @@
         <content link = as
         <content link = Type                                    property = objectType
 
-    <syntax id = CatchClause               multiple
+    <syntax id = CatchClause                  multiple
         <content link = catch
         <content link = CatchPattern                            property = catchPattern
-        <content link = TuplePattern                optional    property = bindingPattern
+        <content link = TuplePattern                   optional property = bindingPattern
         <content link = Expression                              property = expression
 
-    <syntax id = CatchPattern                       abstract
+    <syntax id = CatchPattern                          abstract
         <content link = WildCardCatchPattern
         <content link = PathItemCatchPattern
 
@@ -235,9 +235,9 @@
 
     <syntax id = PathItemCatchPattern                           base = CatchPattern
         <content link = PathItem                                property = catchCase
-        <content link = PathIdentifier     multiple optional    property = catchCaseExtensions
+        <content link = PathIdentifier        multiple optional property = catchCaseExtensions
 
-    <syntax id = Postfix                   multiple abstract
+    <syntax id = Postfix                      multiple abstract
         <content link = OperatorPostfix
         <content link = FunctionCall
         <content link = ExplicitMemberExpression
@@ -248,7 +248,7 @@
 
     <syntax id = FunctionCall                                   base = Postfix
         <content link = ParenthesizedExpression                 property = arguments
-        <content link = CatchClause        multiple optional    property = catchClauses
+        <content link = CatchClause           multiple optional property = catchClauses
 
     <syntax id = ExplicitMemberExpression                       base = Postfix
         <content link = dot
@@ -256,20 +256,20 @@
 
     <syntax id = Subscript                                      base = Postfix
         <content link = leftBracket
-        <content link = ExpressionElement  multiple             property = expressions
+        <content link = ExpressionElement     multiple          property = expressions
         <content link = rightBracket
 
-    <syntax id = ExpressionElement         multiple
+    <syntax id = ExpressionElement            multiple
         <content link = Expression                              property = expression
-        <content link = comma                       optional
+        <content link = comma                          optional
 
-    <syntax id = MemberPostfix                      abstract
+    <syntax id = MemberPostfix                         abstract
         <content link = NamedMemberPostfix
 
     <syntax id = NamedMemberPostfix                             base = MemberPostfix
         <content link = IdentifierExpression                    property = identifier
 
-    <syntax id = PrimaryExpression                  abstract
+    <syntax id = PrimaryExpression                     abstract
         <content link = IdentifierExpression
         <content link = LiteralExpression
         <content link = IfExpression
@@ -295,7 +295,7 @@
         <content link = if
         <content link = Expression                              property = condition
         <content link = Expression                              property = consequent
-        <content link = ElseClause                  optional    property = elseClause
+        <content link = ElseClause                     optional property = elseClause
 
     <syntax id = SwitchExpression                               base = PrimaryExpression
         <content link = switch
@@ -322,27 +322,27 @@
 
     <syntax id = ParenthesizedExpression                        base = PrimaryExpression
         <content link = leftParen
-        <content link = ExpressionElement  multiple optional    property = expressionElements
+        <content link = ExpressionElement     multiple optional property = expressionElements
         <content link = rightParen
 
     <syntax id = ReturnExpression                               base = PrimaryExpression
         <content link = return
-        <content link = Expression                  optional    property = expression
+        <content link = Expression                     optional property = expression
 
     <syntax id = ThrowExpression                                base = PrimaryExpression
         <content link = throw
-        <content link = Expression                  optional    property = expression
+        <content link = Expression                     optional property = expression
 
     <syntax id = BreakExpression                                base = PrimaryExpression
         <content link = break
-        <content link = Expression                  optional    property = expression
+        <content link = Expression                     optional property = expression
 
     <syntax id = InitializerCall                                base = PrimaryExpression
         <content link = Type                                    property = typeToInitialize
         <content link = ParenthesizedExpression                 property = arguments
-        <content link = CatchClause        multiple optional    property = catchClauses
+        <content link = CatchClause           multiple optional property = catchClauses
 
-    <syntax id = ThisExpression                     abstract    base = PrimaryExpression
+    <syntax id = ThisExpression                        abstract base = PrimaryExpression
         <content link = ThisDot
         <content link = ThisSubscript
         <content link = ThisWord
@@ -359,7 +359,7 @@
     <syntax id = ThisWord                                       base = ThisExpression
         <content link = this
 
-    <syntax id = SuperExpression                    abstract    base = PrimaryExpression
+    <syntax id = SuperExpression                       abstract base = PrimaryExpression
         <content link = SuperDot
         <content link = SuperSubscript
 
@@ -376,41 +376,41 @@
         <content link = else
         <content link = Expression                              property = alternative
 
-    <syntax id = SwitchBody                         abstract
+    <syntax id = SwitchBody                            abstract
         <content link = CurliedSwitchBody
         <content link = NakedSwitchBody
 
     <syntax id = CurliedSwitchBody                              base = SwitchBody
         <content link = leftCurly
-        <content link = SwitchCase         multiple             property = cases
+        <content link = SwitchCase            multiple          property = cases
         <content link = rightCurly
 
     <syntax id = NakedSwitchBody                                base = SwitchBody
-        <content link = SwitchCase         multiple             property = cases
+        <content link = SwitchCase            multiple          property = cases
 
-    <syntax id = SwitchCase                multiple
+    <syntax id = SwitchCase                   multiple
         <content link = CaseLabel                               property = label
         <content link = CaseContent                             property = content
 
-    <syntax id = CaseLabel                          abstract
+    <syntax id = CaseLabel                    abstract
         <content link = ItemCaseLabel
         <content link = DefaultCaseLabel
 
     <syntax id = ItemCaseLabel                                  base = CaseLabel
         <content link = case
         <content link = Pattern                                 property = pattern
-        <content link = CaseItem           multiple optional    property = additionalPatterns
+        <content link = CaseItem              multiple optional property = additionalPatterns
         <content link = colon
 
     <syntax id = DefaultCaseLabel                               base = CaseLabel
         <content link = default
         <content link = colon
 
-    <syntax id = CaseItem                  multiple
+    <syntax id = CaseItem                     multiple
         <content link = comma
         <content link = Pattern                                 property = pattern
 
-   <syntax id = Pattern                             abstract
+   <syntax id = Pattern                                abstract
         <content link = WildcardPattern
         <content link = IdentifierPattern
         <content link = TuplePattern
@@ -421,31 +421,31 @@
 
     <syntax id = IdentifierPattern                              base = Pattern
         <content identifier                                     property = identifier
-        <content link = TypeAnnotation              optional    property = annotationForType
+        <content link = TypeAnnotation                 optional property = annotationForType
 
     <syntax id = TuplePattern                                   base = Pattern
         <content link = leftParen
-        <content link = TuplePatternElement         multiple    property = elements
+        <content link = TuplePatternElement   multiple          property = elements
         <content link = rightParen
 
     <syntax id = ExpressionPattern                              base = Pattern
         <content link = Expression                              property = expression
 
-    <syntax id = TuplePatternElement                multiple
+    <syntax id = TuplePatternElement          multiple
         <content link = Pattern                                 property = pattern
-        <content link = comma                       optional
+        <content link = comma                          optional
 
-    <syntax id = CaseContent                        abstract
+    <syntax id = CaseContent                           abstract
         <content link = BlockCaseContent
         <content link = EmptyCaseContent
 
     <syntax id = BlockCaseContent                               base = CaseContent
-        <content link = StatementWithSemicolon      multiple    property = statements
+        <content link = TerminatedStatement    multiple          property = statements
 
     <syntax id = EmptyCaseContent                               base = CaseContent
         <content link = semicolon
 
-    <syntax id = CommonThisMember                   abstract
+    <syntax id = CommonThisMember                      abstract
         <content link = ThisInit
         <content link = ThisMember
 
@@ -455,7 +455,7 @@
     <syntax id = ThisMember                                     base = CommonThisMember
         <content identifier                                     property = name
 
-    <syntax id = CommonSuperMember                  abstract
+    <syntax id = CommonSuperMember                     abstract
         <content link = SuperInit
         <content link = SuperMember
 
@@ -465,20 +465,20 @@
     <syntax id = SuperMember                                    base = CommonSuperMember
         <content identifier                                     property = name
 
-    <syntax id = Type                               abstract
+    <syntax id = Type                                  abstract
         <content link = ArrayType
         <content link = TypeIdentifier
 
     <syntax id = TypeIdentifier                                 base = Type
         <content identifier                                     property = name
-        <content link = SubtypeIdentifier           optional    property = subType
-        <content link = TypePostfix        multiple optional    property = postfixes
+        <content link = SubtypeIdentifier              optional property = subType
+        <content link = TypePostfix           multiple optional property = postfixes
 
     <syntax id = ArrayType                                      base = Type
         <content link = leftBracket
         <content link = Type                                    property = elementType
         <content link = rightBracket
-        <content link = TypePostfix        multiple optional    property = postfixes
+        <content link = TypePostfix           multiple optional property = postfixes
 
     <syntax id = TypeAnnotation
         <content link = colon
@@ -488,7 +488,7 @@
         <content link = dot
         <content link = TypeIdentifier                          property = typeIdentifier
 
-    <syntax id = TypePostfix               multiple abstract
+    <syntax id = TypePostfix                  multiple abstract
         <content link = OptionalType
 
     <syntax id = OptionalType                                   base = TypePostfix
@@ -496,11 +496,11 @@
 
     <syntax id = TypeInheritanceClause
         <content link = colon
-        <content link = Inheritance        multiple optional    property = inheritances
+        <content link = Inheritance           multiple optional property = inheritances
 
-    <syntax id = Inheritance               multiple
+    <syntax id = Inheritance                  multiple
         <content link = TypeIdentifier                          property = typeIdentifier
-        <content link = comma                       optional
+        <content link = comma                          optional
 
     <keyword id = use
     <keyword id = class

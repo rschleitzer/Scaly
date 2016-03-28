@@ -17,11 +17,11 @@ bool MyVisitor::openCompilationUnit(CompilationUnit* compilationUnit) {
 void MyVisitor::closeCompilationUnit(CompilationUnit* compilationUnit) {
 }
 
-bool MyVisitor::openStatementWithSemicolon(StatementWithSemicolon* statementWithSemicolon) {
+bool MyVisitor::openTerminatedStatement(TerminatedStatement* terminatedStatement) {
     return true;
 }
 
-void MyVisitor::closeStatementWithSemicolon(StatementWithSemicolon* statementWithSemicolon) {
+void MyVisitor::closeTerminatedStatement(TerminatedStatement* terminatedStatement) {
 }
 
 bool MyVisitor::openUseDeclaration(UseDeclaration* useDeclaration) {

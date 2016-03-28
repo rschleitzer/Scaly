@@ -8,8 +8,8 @@ class Parser : public Object {
 public:
     Parser(_LetString* fileName, _LetString* text);
     virtual _Result<CompilationUnit, ParserError> parseCompilationUnit(_Page* _rp, _Page* _ep);
-    virtual _Result<_Vector<StatementWithSemicolon>, ParserError> parseStatementWithSemicolonList(_Page* _rp, _Page* _ep);
-    virtual _Result<StatementWithSemicolon, ParserError> parseStatementWithSemicolon(_Page* _rp, _Page* _ep);
+    virtual _Result<_Vector<TerminatedStatement>, ParserError> parseTerminatedStatementList(_Page* _rp, _Page* _ep);
+    virtual _Result<TerminatedStatement, ParserError> parseTerminatedStatement(_Page* _rp, _Page* _ep);
     virtual _Result<Statement, ParserError> parseStatement(_Page* _rp, _Page* _ep);
     virtual _Result<Declaration, ParserError> parseDeclaration(_Page* _rp, _Page* _ep);
     virtual _Result<Expression, ParserError> parseExpression(_Page* _rp, _Page* _ep);

@@ -9,7 +9,7 @@ SyntaxNode::SyntaxNode(Position* start, Position* end)
 bool SyntaxNode::_isSyntaxNode() { return true; }
 bool SyntaxNode::_isProgram() { return false; }
 bool SyntaxNode::_isCompilationUnit() { return false; }
-bool SyntaxNode::_isStatementWithSemicolon() { return false; }
+bool SyntaxNode::_isTerminatedStatement() { return false; }
 bool SyntaxNode::_isStatement() { return false; }
 bool SyntaxNode::_isDeclaration() { return false; }
 bool SyntaxNode::_isExpression() { return false; }
@@ -140,7 +140,7 @@ void Program::accept(SyntaxVisitor* visitor) {
     visitor->closeProgram(this);
 }
 
-CompilationUnit::CompilationUnit(_Vector<StatementWithSemicolon>* statements, Position* start, Position* end)
+CompilationUnit::CompilationUnit(_Vector<TerminatedStatement>* statements, Position* start, Position* end)
 : SyntaxNode(start, end), statements(statements) {}
 
 bool CompilationUnit::_isCompilationUnit() { return true; }
@@ -149,7 +149,7 @@ void CompilationUnit::accept(SyntaxVisitor* visitor) {
     if (!visitor->openCompilationUnit(this))
         return;
     if (statements) {
-        StatementWithSemicolon* node = 0;
+        TerminatedStatement* node = 0;
         size_t _alength = statements->length();
         for (size_t _a = 0; _a < _alength; _a++) {
             node = *(*statements)[_a];
@@ -159,16 +159,16 @@ void CompilationUnit::accept(SyntaxVisitor* visitor) {
     visitor->closeCompilationUnit(this);
 }
 
-StatementWithSemicolon::StatementWithSemicolon(Statement* statement, Position* start, Position* end)
+TerminatedStatement::TerminatedStatement(Statement* statement, Position* start, Position* end)
 : SyntaxNode(start, end), statement(statement) {}
 
-bool StatementWithSemicolon::_isStatementWithSemicolon() { return true; }
+bool TerminatedStatement::_isTerminatedStatement() { return true; }
 
-void StatementWithSemicolon::accept(SyntaxVisitor* visitor) {
-    if (!visitor->openStatementWithSemicolon(this))
+void TerminatedStatement::accept(SyntaxVisitor* visitor) {
+    if (!visitor->openTerminatedStatement(this))
         return;
     statement->accept(visitor);
-    visitor->closeStatementWithSemicolon(this);
+    visitor->closeTerminatedStatement(this);
 }
 
 Statement::Statement(Position* start, Position* end)
@@ -355,7 +355,7 @@ void InitializerDeclaration::accept(SyntaxVisitor* visitor) {
     visitor->closeInitializerDeclaration(this);
 }
 
-CodeBlock::CodeBlock(_Vector<StatementWithSemicolon>* statements, Position* start, Position* end)
+CodeBlock::CodeBlock(_Vector<TerminatedStatement>* statements, Position* start, Position* end)
 : Expression(start, end), statements(statements) {}
 
 bool CodeBlock::_isCodeBlock() { return true; }
@@ -364,7 +364,7 @@ void CodeBlock::accept(SyntaxVisitor* visitor) {
     if (!visitor->openCodeBlock(this))
         return;
     if (statements) {
-        StatementWithSemicolon* node = 0;
+        TerminatedStatement* node = 0;
         size_t _alength = statements->length();
         for (size_t _a = 0; _a < _alength; _a++) {
             node = *(*statements)[_a];
@@ -1449,7 +1449,7 @@ bool CaseContent::_isCaseContent() { return true; }
 void CaseContent::accept(SyntaxVisitor* visitor) {
 }
 
-BlockCaseContent::BlockCaseContent(_Vector<StatementWithSemicolon>* statements, Position* start, Position* end)
+BlockCaseContent::BlockCaseContent(_Vector<TerminatedStatement>* statements, Position* start, Position* end)
 : CaseContent(start, end), statements(statements) {}
 
 bool BlockCaseContent::_isBlockCaseContent() { return true; }
@@ -1458,7 +1458,7 @@ void BlockCaseContent::accept(SyntaxVisitor* visitor) {
     if (!visitor->openBlockCaseContent(this))
         return;
     if (statements) {
-        StatementWithSemicolon* node = 0;
+        TerminatedStatement* node = 0;
         size_t _alength = statements->length();
         for (size_t _a = 0; _a < _alength; _a++) {
             node = *(*statements)[_a];

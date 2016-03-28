@@ -13,9 +13,10 @@ public:
     virtual bool _isSyntaxNode();
     virtual bool _isProgram();
     virtual bool _isCompilationUnit();
-    virtual bool _isStatementWithSemicolon();
+    virtual bool _isTerminatedStatement();
     virtual bool _isStatement();
     virtual bool _isDeclaration();
+    virtual bool _isExpression();
     virtual bool _isUseDeclaration();
     virtual bool _isConstantDeclaration();
     virtual bool _isVariableDeclaration();
@@ -24,7 +25,6 @@ public:
     virtual bool _isEnumDeclaration();
     virtual bool _isClassDeclaration();
     virtual bool _isInitializerDeclaration();
-    virtual bool _isExpression();
     virtual bool _isCodeBlock();
     virtual bool _isSimpleExpression();
     virtual bool _isPathIdentifier();
@@ -139,21 +139,21 @@ public:
 
 class CompilationUnit : public SyntaxNode {
 public:
-    CompilationUnit(_Vector<StatementWithSemicolon>* statements, Position* start, Position* end);
+    CompilationUnit(_Vector<TerminatedStatement>* statements, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
-    _Vector<StatementWithSemicolon>* statements;
+    _Vector<TerminatedStatement>* statements;
     _LetString* fileName;
 
     virtual bool _isCompilationUnit();
 };
 
-class StatementWithSemicolon : public SyntaxNode {
+class TerminatedStatement : public SyntaxNode {
 public:
-    StatementWithSemicolon(Statement* statement, Position* start, Position* end);
+    TerminatedStatement(Statement* statement, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
     Statement* statement;
 
-    virtual bool _isStatementWithSemicolon();
+    virtual bool _isTerminatedStatement();
 };
 
 class Statement : public SyntaxNode {
@@ -163,6 +163,7 @@ public:
 
     virtual bool _isStatement();
     virtual bool _isDeclaration();
+    virtual bool _isExpression();
     virtual bool _isUseDeclaration();
     virtual bool _isConstantDeclaration();
     virtual bool _isVariableDeclaration();
@@ -171,7 +172,6 @@ public:
     virtual bool _isEnumDeclaration();
     virtual bool _isClassDeclaration();
     virtual bool _isInitializerDeclaration();
-    virtual bool _isExpression();
     virtual bool _isCodeBlock();
     virtual bool _isSimpleExpression();
 };
@@ -287,9 +287,9 @@ public:
 
 class CodeBlock : public Expression {
 public:
-    CodeBlock(_Vector<StatementWithSemicolon>* statements, Position* start, Position* end);
+    CodeBlock(_Vector<TerminatedStatement>* statements, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
-    _Vector<StatementWithSemicolon>* statements;
+    _Vector<TerminatedStatement>* statements;
 
     virtual bool _isCodeBlock();
 };
@@ -741,10 +741,10 @@ public:
     virtual bool _isBreakExpression();
     virtual bool _isInitializerCall();
     virtual bool _isThisExpression();
+    virtual bool _isSuperExpression();
     virtual bool _isThisDot();
     virtual bool _isThisSubscript();
     virtual bool _isThisWord();
-    virtual bool _isSuperExpression();
     virtual bool _isSuperDot();
     virtual bool _isSuperSubscript();
 };
@@ -1084,9 +1084,9 @@ public:
 
 class BlockCaseContent : public CaseContent {
 public:
-    BlockCaseContent(_Vector<StatementWithSemicolon>* statements, Position* start, Position* end);
+    BlockCaseContent(_Vector<TerminatedStatement>* statements, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
-    _Vector<StatementWithSemicolon>* statements;
+    _Vector<TerminatedStatement>* statements;
 
     virtual bool _isBlockCaseContent();
 };
@@ -1159,8 +1159,8 @@ public:
     virtual void accept(SyntaxVisitor* visitor);
 
     virtual bool _isType();
-    virtual bool _isTypeIdentifier();
     virtual bool _isArrayType();
+    virtual bool _isTypeIdentifier();
 };
 
 class TypeIdentifier : public Type {

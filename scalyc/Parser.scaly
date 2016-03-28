@@ -7,7 +7,7 @@ class Parser {
         mutable compilationUnit: CompilationUnit? = null
         {
             let start: Position = lexer.getPosition()
-            let result: [StatementWithSemicolon] node = parseStatementWithSemicolonList() catch _(error) {
+            let result: [TerminatedStatement] node = parseTerminatedStatementList() catch _(error) {
                  null
             }
             if !isAtEnd() {
@@ -25,25 +25,25 @@ class Parser {
         return compilationUnit
     }
 
-    function parseStatementWithSemicolonList() -> [StatementWithSemicolon] throws ParserError {
-        mutable statementWithSemicolon: [StatementWithSemicolon]? = [StatementWithSemicolon]()
+    function parseTerminatedStatementList() -> [TerminatedStatement] throws ParserError {
+        mutable terminatedStatement: [TerminatedStatement]? = [TerminatedStatement]()
         while true
-            statementWithSemicolon.push(parseStatementWithSemicolon() catch _ break)
-        return statementWithSemicolon
+            terminatedStatement.push(parseTerminatedStatement() catch _ break)
+        return terminatedStatement
     }
 
-    function parseStatementWithSemicolon() -> StatementWithSemicolon throws ParserError {
-        mutable statementWithSemicolon: StatementWithSemicolon? = null
+    function parseTerminatedStatement() -> TerminatedStatement throws ParserError {
+        mutable terminatedStatement: TerminatedStatement? = null
         {
             let start: Position = lexer.getPosition()
             let result: Statement node = parseStatement() catch _(error) {
                 throw (error)
             }
 
-            if statementWithSemicolon == null
-                statementWithSemicolon = StatementWithSemicolon(start, lexer.getPosition())
+            if terminatedStatement == null
+                terminatedStatement = TerminatedStatement(start, lexer.getPosition())
 
-            statementWithSemicolon.statement = node
+            terminatedStatement.statement = node
         }
         {
             let start: Position = lexer.getPosition()
@@ -51,11 +51,11 @@ class Parser {
             if success
                 lexer.advance()
 
-            if statementWithSemicolon == null
-                statementWithSemicolon = StatementWithSemicolon(start, lexer.getPosition())
+            if terminatedStatement == null
+                terminatedStatement = TerminatedStatement(start, lexer.getPosition())
         }
 
-        return statementWithSemicolon
+        return terminatedStatement
     }
 
     function parseStatement() -> Statement throws ParserError {
@@ -547,7 +547,7 @@ class Parser {
         }
         {
             let start: Position = lexer.getPosition()
-            let result: [StatementWithSemicolon] node = parseStatementWithSemicolonList() catch _(error) {
+            let result: [TerminatedStatement] node = parseTerminatedStatementList() catch _(error) {
                 throw (error)
             }
 
@@ -3136,7 +3136,7 @@ class Parser {
         mutable blockCaseContent: BlockCaseContent? = null
         {
             let start: Position = lexer.getPosition()
-            let result: [StatementWithSemicolon] node = parseStatementWithSemicolonList() catch _(error) {
+            let result: [TerminatedStatement] node = parseTerminatedStatementList() catch _(error) {
                 throw (error)
             }
 

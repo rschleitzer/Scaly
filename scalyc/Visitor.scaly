@@ -1,6 +1,6 @@
 class Program;
 class CompilationUnit;
-class StatementWithSemicolon;
+class TerminatedStatement;
 class Statement;
 class Declaration;
 class Expression;
@@ -117,8 +117,8 @@ class SyntaxVisitor {
     function closeProgram(program: Program);
     function openCompilationUnit(compilationUnit: CompilationUnit) -> bool;
     function closeCompilationUnit(compilationUnit: CompilationUnit);
-    function openStatementWithSemicolon(statementWithSemicolon: StatementWithSemicolon) -> bool;
-    function closeStatementWithSemicolon(statementWithSemicolon: StatementWithSemicolon);
+    function openTerminatedStatement(terminatedStatement: TerminatedStatement) -> bool;
+    function closeTerminatedStatement(terminatedStatement: TerminatedStatement);
     function openUseDeclaration(useDeclaration: UseDeclaration) -> bool;
     function closeUseDeclaration(useDeclaration: UseDeclaration);
     function openConstantDeclaration(constantDeclaration: ConstantDeclaration) -> bool;

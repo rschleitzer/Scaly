@@ -10,8 +10,8 @@ public:
     virtual void closeProgram(Program* program);
     virtual bool openCompilationUnit(CompilationUnit* compilationUnit);
     virtual void closeCompilationUnit(CompilationUnit* compilationUnit);
-    virtual bool openStatementWithSemicolon(StatementWithSemicolon* statementWithSemicolon);
-    virtual void closeStatementWithSemicolon(StatementWithSemicolon* statementWithSemicolon);
+    virtual bool openTerminatedStatement(TerminatedStatement* terminatedStatement);
+    virtual void closeTerminatedStatement(TerminatedStatement* terminatedStatement);
     virtual bool openUseDeclaration(UseDeclaration* useDeclaration);
     virtual void closeUseDeclaration(UseDeclaration* useDeclaration);
     virtual bool openConstantDeclaration(ConstantDeclaration* constantDeclaration);
