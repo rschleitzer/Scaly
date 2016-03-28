@@ -90,7 +90,7 @@ class CppVisitor : SyntaxVisitor {
         return true;
     }
 
-    function closeTerminatedStatement(statementWithSemicolon: TerminatedStatement) {
+    function closeTerminatedStatement(terminatedStatement: TerminatedStatement) {
     }
 
     function openUseDeclaration(useDeclaration: UseDeclaration) -> bool {
