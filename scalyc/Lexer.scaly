@@ -74,7 +74,6 @@ class Lexer {
     mutable token: Token?
     mutable whitespaceSkipped: bool
     let text: String
-    let length: unsigned
     mutable position: unsigned
     let end: unsigned
     mutable previousLine: unsigned
@@ -82,13 +81,12 @@ class Lexer {
     mutable line: unsigned
     mutable column: unsigned
     
-    init(text: String) {
-        token = 0
+    init(theText: String) {
+        token = InvalidToken();
         whitespaceSkipped = true
-        text = text
-        length = text.getLength()
+        text = theText
+        end = text.getLength()
         position = 0
-        end = length
         previousLine = 1
         previousColumn = 0
         line = 1

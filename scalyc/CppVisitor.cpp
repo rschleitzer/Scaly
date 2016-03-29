@@ -235,17 +235,23 @@ void CppVisitor::closeConstantDeclaration(ConstantDeclaration* constantDeclarati
 }
 
 bool CppVisitor::openVariableDeclaration(VariableDeclaration* variableDeclaration) {
+    if (variableDeclaration->parent->parent->parent->_isClassDeclaration())
+        suppressSource = true;
     return true;
 }
 
 void CppVisitor::closeVariableDeclaration(VariableDeclaration* variableDeclaration) {
+    suppressSource = false;
 }
 
 bool CppVisitor::openMutableDeclaration(MutableDeclaration* mutableDeclaration) {
+    if (mutableDeclaration->parent->parent->parent->_isClassDeclaration())
+        suppressSource = true;
     return true;
 }
 
 void CppVisitor::closeMutableDeclaration(MutableDeclaration* mutableDeclaration) {
+    suppressSource = false;
 }
 
 bool CppVisitor::openBindingInitializer(BindingInitializer* bindingInitializer) {

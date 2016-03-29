@@ -76,9 +76,16 @@ PostfixOperator::PostfixOperator(_LetString* theOperation) {
 
 bool PostfixOperator::_isPostfixOperator() { return true; }
 
-Lexer::Lexer(_LetString* text)
-: token(new(getPage()->allocateExclusivePage()) InvalidToken()), whitespaceSkipped(true), text(text), length(text->getLength()),
-position(0), end(length), previousLine(1), previousColumn(0), line(1), column(0) {
+Lexer::Lexer(_LetString* theText) {
+    token = new(getPage()->allocateExclusivePage()) InvalidToken();
+    whitespaceSkipped = true;
+    text = theText;
+    end = text->getLength();
+    position = 0;
+    previousLine = 1;
+    previousColumn = 0;
+    line = 1;
+    column = 0;
     advance();
 }
 

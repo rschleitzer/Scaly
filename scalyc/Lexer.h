@@ -116,14 +116,13 @@ public:
     Token* token;
     bool whitespaceSkipped;
     _LetString* text;
-    size_t length;
     size_t position;
     size_t end;
     size_t previousLine;
     size_t previousColumn;
     size_t line;
     size_t column;
-    Lexer(_LetString* text);
+    Lexer(_LetString* theText);
     virtual void advance();
     virtual Identifier* scanIdentifier(_Page* _rp);
     virtual Operator* scanOperator(_Page* _rp, bool includeDots);
