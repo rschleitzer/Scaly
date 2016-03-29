@@ -818,7 +818,69 @@ void CppVisitor::closeBinaryOperation(BinaryOperation* binaryOperation) {
 
 bool CppVisitor::openAssignment(Assignment* assignment) {
     (*sourceFile) += " = ";
+    if (assignment->parent->parent->parent->parent->_isInitializerDeclaration()) {
+        if (assignment->expression->prefixOperator == 0) {
+            PostfixExpression* rightSide = assignment->expression->expression;
+            if (rightSide->primaryExpression->_isIdentifierExpression()) {
+                IdentifierExpression* classExpression = (IdentifierExpression*)(rightSide->primaryExpression);
+                _LetString* className = classExpression->name;
+                if (isClass(className)) {
+                    if (rightSide->postfixes->length() == 1) {
+                        if ((*(*rightSide->postfixes)[0])->_isFunctionCall()) {
+                            (*sourceFile) += "new(getPage()";
+                            if (assignment->parent->_isSimpleExpression()) {
+                                SimpleExpression* simpleExpression = (SimpleExpression*)(assignment->parent);
+                                if (simpleExpression->prefixExpression->prefixOperator == 0) {
+                                    PostfixExpression* leftSide = simpleExpression->prefixExpression->expression;
+                                    if (leftSide->postfixes == 0) {
+                                        if (leftSide->primaryExpression->_isIdentifierExpression()) {
+                                            IdentifierExpression* memberExpression = (IdentifierExpression*)(leftSide->primaryExpression);
+                                            _LetString* memberName = memberExpression->name;
+                                            if (assignment->parent->parent->parent->parent->parent->parent->parent->_isClassDeclaration()) {
+                                                ClassDeclaration* classDeclaration = (ClassDeclaration*)assignment->parent->parent->parent->parent->parent->parent->parent;
+                                                if (isVariableMember(memberName, classDeclaration))
+                                                    (*sourceFile) += "->allocateExclusivePage()";
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            (*sourceFile) += ") ";
+                        }
+                    }
+                }
+            }
+        }
+    }
     return true;
+}
+
+bool CppVisitor::isVariableMember(_LetString* memberName, ClassDeclaration* classDeclaration) {
+    _Vector<ClassMember>* classMembers = classDeclaration->body->members;
+    size_t _classMembers_length = classMembers->length();
+    for (size_t _i = 0; _i < _classMembers_length; _i++) {
+        BindingInitializer* bindingInitializer = 0;
+        if ((*(*classMembers)[_i])->declaration->_isMutableDeclaration()) {
+            MutableDeclaration* mutableDeclaration = (MutableDeclaration*)(*(*classMembers)[_i])->declaration;
+            bindingInitializer = mutableDeclaration->initializer;
+        }
+        if ((*(*classMembers)[_i])->declaration->_isVariableDeclaration()) {
+            VariableDeclaration* variableDeclaration = (VariableDeclaration*)(*(*classMembers)[_i])->declaration;
+            bindingInitializer = variableDeclaration->initializer;
+        }
+        
+        if (bindingInitializer == nullptr)
+            continue;
+            
+        PatternInitializer* patternInitializer = bindingInitializer->initializer;
+        if (patternInitializer->pattern->_isIdentifierPattern()) {
+            IdentifierPattern* identifierPattern = (IdentifierPattern*)patternInitializer->pattern;
+            if (*identifierPattern->identifier == *memberName)
+                return true;
+        }
+    }
+
+    return false;
 }
 
 void CppVisitor::closeAssignment(Assignment* assignment) {

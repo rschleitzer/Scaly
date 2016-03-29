@@ -119,6 +119,7 @@ public:
     virtual bool openBinaryOperation(BinaryOperation* binaryOperation);
     virtual void closeBinaryOperation(BinaryOperation* binaryOperation);
     virtual bool openAssignment(Assignment* assignment);
+    bool isVariableMember(_LetString* memberName, ClassDeclaration* classDeclaration);
     virtual void closeAssignment(Assignment* assignment);
     virtual bool openTypeQuery(TypeQuery* typeQuery);
     virtual void closeTypeQuery(TypeQuery* typeQuery);
