@@ -898,10 +898,12 @@ void CppVisitor::closeNamedMemberPostfix(NamedMemberPostfix* namedMemberPostfix)
 }
 
 bool CppVisitor::openParenthesizedExpression(ParenthesizedExpression* parenthesizedExpression) {
+    (*sourceFile) += "(";
     return true;
 }
 
 void CppVisitor::closeParenthesizedExpression(ParenthesizedExpression* parenthesizedExpression) {
+    (*sourceFile) += ")";
 }
 
 void CppVisitor::visitLiteralExpression(LiteralExpression* literalExpression) {
