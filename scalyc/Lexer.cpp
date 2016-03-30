@@ -583,7 +583,17 @@ Literal* Lexer::parseLiteral(_Page* _rp) {
     if (!(token->_isLiteral()))
         return 0;
 
-    return (Literal*)token;
+    if (token->_isStringLiteral()) {
+        StringLiteral* stringLiteral = (StringLiteral*)token;
+        return new(_rp) StringLiteral(&_LetString::create(_rp, *stringLiteral->string));
+    }
+
+    if (token->_isNumericLiteral()) {
+        NumericLiteral* numericLiteral = (NumericLiteral*)token;
+        return new(_rp) NumericLiteral(&_LetString::create(_rp, *numericLiteral->value));
+    }
+    
+    return 0;
 }
 
 _LetString* Lexer::parsePrefixOperator(_Page* _rp) {
