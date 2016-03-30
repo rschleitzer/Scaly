@@ -841,6 +841,9 @@ void CppVisitor::closePostfixExpression(PostfixExpression* postfixExpression) {
 }
 
 bool CppVisitor::openBinaryOperation(BinaryOperation* binaryOperation) {
+    (*sourceFile) += " ";
+    (*sourceFile) += *binaryOperation->binaryOperator;
+    (*sourceFile) += " ";
     return true;
 }
 
@@ -1013,7 +1016,14 @@ void CppVisitor::visitIdentifierExpression(IdentifierExpression* identifierExpre
 }
 
 bool CppVisitor::openIfExpression(IfExpression* ifExpression) {
-    return true;
+    (*sourceFile) += "if (";
+    ifExpression->condition->accept(this);
+    (*sourceFile) += ")";
+    ifExpression->consequent->accept(this);
+    if (ifExpression->elseClause)
+        ifExpression->elseClause->accept(this);
+
+    return false;
 }
 
 void CppVisitor::closeIfExpression(IfExpression* ifExpression) {
