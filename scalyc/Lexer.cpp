@@ -91,30 +91,24 @@ Lexer::Lexer(_LetString* theText) {
 
 void Lexer::advance() {
     skipWhitespace();
-
     previousLine = line;
     previousColumn = column;
-
     if (position == end) {
         token->getPage()->clear();
         token = new (token->getPage()) EofToken();
         return;
     }
-
     char c = (*text)[position];
-
     if (((c >= 'a') && (c <= 'z')) || ((c >= 'A') && (c <= 'Z'))) {
         token->getPage()->clear();
         token = scanIdentifier(token->getPage());
         return;
     }
-
     if ((c >= '0') && (c <= '9')) {
         token->getPage()->clear();
         token = scanNumericLiteral(token->getPage());
         return;
     }
-
     switch (c) {
         case '\"': {
             token->getPage()->clear();
