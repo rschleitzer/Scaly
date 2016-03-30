@@ -875,7 +875,7 @@ bool CppVisitor::openAssignment(Assignment* assignment) {
             _LetString* className = classExpression->name;
             if ((isClass(className) && (rightSide->postfixes->length() == 1))) {
                 if ((*(*rightSide->postfixes)[0])->_isFunctionCall()) {
-                    (*sourceFile) += "new(getPage()";
+                    (*sourceFile) += "new(";
                     if (assignment->parent->_isSimpleExpression()) {
                         SimpleExpression* simpleExpression = (SimpleExpression*)(assignment->parent);
                         if (simpleExpression->prefixExpression->prefixOperator == 0) {
@@ -883,10 +883,19 @@ bool CppVisitor::openAssignment(Assignment* assignment) {
                             if ((leftSide->postfixes == 0) && (leftSide->primaryExpression->_isIdentifierExpression())) {
                                 IdentifierExpression* memberExpression = (IdentifierExpression*)(leftSide->primaryExpression);
                                 _LetString* memberName = memberExpression->name;
-                                if (assignment->parent->parent->parent->parent->parent->parent->parent->_isClassDeclaration()) {
-                                    ClassDeclaration* classDeclaration = (ClassDeclaration*)assignment->parent->parent->parent->parent->parent->parent->parent;
-                                    if ((isVariableMember(memberName, classDeclaration)) && (assignment->parent->parent->parent->parent->_isInitializerDeclaration()))
-                                        (*sourceFile) += "->allocateExclusivePage()";
+                                ClassDeclaration* classDeclaration = getClassDeclaration(assignment);
+                                if (classDeclaration != nullptr) {
+                                    if (isVariableMember(memberName, classDeclaration)) {
+                                        if (!assignment->parent->parent->parent->parent->_isInitializerDeclaration()) {
+                                            (*sourceFile) += *memberName;
+                                            (*sourceFile) += "->";
+                                        }
+                                        (*sourceFile) += "getPage()";
+                                        if (assignment->parent->parent->parent->parent->_isInitializerDeclaration()) {
+                                            (*sourceFile) += "->allocateExclusivePage()";
+                                        }
+                                        
+                                    }
                                 }
                             }
                         }
@@ -897,6 +906,15 @@ bool CppVisitor::openAssignment(Assignment* assignment) {
         }
     }
     return true;
+}
+
+ClassDeclaration* CppVisitor::getClassDeclaration(SyntaxNode* node) {
+    if (node->_isClassDeclaration())
+        return (ClassDeclaration*)node;
+    if (node->parent != nullptr)
+        return getClassDeclaration(node->parent);
+    
+    return nullptr;
 }
 
 bool CppVisitor::isVariableMember(_LetString* memberName, ClassDeclaration* classDeclaration) {

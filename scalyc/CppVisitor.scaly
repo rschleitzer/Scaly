@@ -319,6 +319,12 @@ class CppVisitor : SyntaxVisitor {
         return true;
     }
 
+    function getClassDeclaration(node: SyntaxNode) -> ClassDeclaration {
+    }
+    
+    function isVariableMember(memberName: String, classDeclaration: ClassDeclaration) -> bool {
+    }
+
     function closeAssignment(assignment: Assignment) {
     }
 
