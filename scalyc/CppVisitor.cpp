@@ -852,36 +852,30 @@ void CppVisitor::closeBinaryOperation(BinaryOperation* binaryOperation) {
 
 bool CppVisitor::openAssignment(Assignment* assignment) {
     (*sourceFile) += " = ";
-    if (assignment->parent->parent->parent->parent->_isInitializerDeclaration()) {
-        if (assignment->expression->prefixOperator == 0) {
-            PostfixExpression* rightSide = assignment->expression->expression;
-            if (rightSide->primaryExpression->_isIdentifierExpression()) {
-                IdentifierExpression* classExpression = (IdentifierExpression*)(rightSide->primaryExpression);
-                _LetString* className = classExpression->name;
-                if (isClass(className)) {
-                    if (rightSide->postfixes->length() == 1) {
-                        if ((*(*rightSide->postfixes)[0])->_isFunctionCall()) {
-                            (*sourceFile) += "new(getPage()";
-                            if (assignment->parent->_isSimpleExpression()) {
-                                SimpleExpression* simpleExpression = (SimpleExpression*)(assignment->parent);
-                                if (simpleExpression->prefixExpression->prefixOperator == 0) {
-                                    PostfixExpression* leftSide = simpleExpression->prefixExpression->expression;
-                                    if (leftSide->postfixes == 0) {
-                                        if (leftSide->primaryExpression->_isIdentifierExpression()) {
-                                            IdentifierExpression* memberExpression = (IdentifierExpression*)(leftSide->primaryExpression);
-                                            _LetString* memberName = memberExpression->name;
-                                            if (assignment->parent->parent->parent->parent->parent->parent->parent->_isClassDeclaration()) {
-                                                ClassDeclaration* classDeclaration = (ClassDeclaration*)assignment->parent->parent->parent->parent->parent->parent->parent;
-                                                if (isVariableMember(memberName, classDeclaration))
-                                                    (*sourceFile) += "->allocateExclusivePage()";
-                                            }
-                                        }
-                                    }
+    if (assignment->expression->prefixOperator == 0) {
+        PostfixExpression* rightSide = assignment->expression->expression;
+        if (rightSide->primaryExpression->_isIdentifierExpression()) {
+            IdentifierExpression* classExpression = (IdentifierExpression*)(rightSide->primaryExpression);
+            _LetString* className = classExpression->name;
+            if ((isClass(className) && (rightSide->postfixes->length() == 1))) {
+                if ((*(*rightSide->postfixes)[0])->_isFunctionCall()) {
+                    (*sourceFile) += "new(getPage()";
+                    if (assignment->parent->_isSimpleExpression()) {
+                        SimpleExpression* simpleExpression = (SimpleExpression*)(assignment->parent);
+                        if (simpleExpression->prefixExpression->prefixOperator == 0) {
+                            PostfixExpression* leftSide = simpleExpression->prefixExpression->expression;
+                            if ((leftSide->postfixes == 0) && (leftSide->primaryExpression->_isIdentifierExpression())) {
+                                IdentifierExpression* memberExpression = (IdentifierExpression*)(leftSide->primaryExpression);
+                                _LetString* memberName = memberExpression->name;
+                                if (assignment->parent->parent->parent->parent->parent->parent->parent->_isClassDeclaration()) {
+                                    ClassDeclaration* classDeclaration = (ClassDeclaration*)assignment->parent->parent->parent->parent->parent->parent->parent;
+                                    if ((isVariableMember(memberName, classDeclaration)) && (assignment->parent->parent->parent->parent->_isInitializerDeclaration()))
+                                        (*sourceFile) += "->allocateExclusivePage()";
                                 }
                             }
-                            (*sourceFile) += ") ";
                         }
                     }
+                    (*sourceFile) += ") ";
                 }
             }
         }

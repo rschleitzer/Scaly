@@ -78,7 +78,7 @@
 
     <syntax id = CodeBlock                                      base = Expression
         <content link = leftCurly
-        <content link = TerminatedStatement   multiple             property = statements
+        <content link = TerminatedStatement   multiple          property = statements
         <content link = rightCurly
 
     <syntax id = SimpleExpression                               base = Expression
