@@ -932,6 +932,7 @@ void CppVisitor::closeFunctionCall(FunctionCall* functionCall) {
 }
 
 bool CppVisitor::openExplicitMemberExpression(ExplicitMemberExpression* explicitMemberExpression) {
+    (*sourceFile) += "->";
     return true;
 }
 
@@ -969,6 +970,11 @@ void CppVisitor::closeParenthesizedExpression(ParenthesizedExpression* parenthes
 }
 
 void CppVisitor::visitLiteralExpression(LiteralExpression* literalExpression) {
+/*    Literal* literal = literalExpression->literal;
+    if (literal->_isNumericLiteral()) {
+        NumericLiteral* numericLiteral = (NumericLiteral*)literal;
+        (*sourceFile) += *numericLiteral->value;
+    }*/
 }
 
 void CppVisitor::visitIdentifierExpression(IdentifierExpression* identifierExpression) {
