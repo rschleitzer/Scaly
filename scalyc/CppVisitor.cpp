@@ -188,6 +188,22 @@ void CppVisitor::closeCompilationUnit(CompilationUnit* compilationUnit) {
 
 bool CppVisitor::openTerminatedStatement(TerminatedStatement* terminatedStatement) {
     this->indentSource();
+    if (terminatedStatement->statement->_isSimpleExpression()) {
+        SimpleExpression* simpleExpression = (SimpleExpression*)terminatedStatement->statement;
+        if (simpleExpression->prefixExpression->expression->primaryExpression->_isIdentifierExpression()) {
+            _Vector<BinaryOp>* binaryOps = simpleExpression->binaryOps;
+            if (binaryOps != nullptr) {
+                if (binaryOps->length() == 1) {
+                    BinaryOp* binaryOp = *(*binaryOps)[0];
+                    if (binaryOp->_isAssignment()) {
+                        Assignment* assignment = (Assignment*)binaryOp;
+                        //(*sourceFile) += "heureka!\n";
+                        //this->indentSource();
+                    }
+                }
+            }
+        }
+    }
     return true;
 }
 
