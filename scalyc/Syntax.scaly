@@ -495,17 +495,34 @@ class FunctionSignature : SyntaxNode {
 
 class FunctionResult : SyntaxNode {
 
-    init(resultType: Type, start: Position, end: Position) {
+    init(existing: Existing, resultType: Type, start: Position, end: Position) {
         super.init(start, end)
     }
 
     function accept(mutable visitor: SyntaxVisitor) {
         visitor.openFunctionResult(this)
+        if existing != nil {
+            existing!.accept(visitor)
+        }
         resultType!.accept(visitor)
         visitor.closeFunctionResult(this)
     }
 
+    let existing: Existing?
     let resultType: Type?
+}
+
+class Existing : SyntaxNode {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    function accept(mutable visitor: SyntaxVisitor) {
+        visitor.openExisting(this)
+        visitor.closeExisting(this)
+    }
+
 }
 
 class ParameterClause : SyntaxNode {

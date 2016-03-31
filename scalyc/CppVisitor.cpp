@@ -440,12 +440,14 @@ bool CppVisitor::openFunctionSignature(FunctionSignature* functionSignature) {
     (*sourceFile) += *identifierFunctionName;
     (*headerFile) += "(";
     (*sourceFile) += "(";
-    if (functionSignature->result) {
+    if (functionSignature->result != nullptr) {
         if (functionSignature->result->resultType->_isTypeIdentifier()) {
             TypeIdentifier* typeId = (TypeIdentifier*)functionSignature->result->resultType;
             if (isClass(typeId->name)) {
-                (*headerFile) += "_Page* _rp";
-                (*sourceFile) += "_Page* _rp";
+                if (functionSignature->result->existing == nullptr) {
+                    (*headerFile) += "_Page* _rp";
+                    (*sourceFile) += "_Page* _rp";
+                }
                 if ((functionSignature->parameterClause->parameters) || (functionSignature->throwsClause)) {
                     (*headerFile) += ", ";
                     (*sourceFile) += ", ";
@@ -453,8 +455,10 @@ bool CppVisitor::openFunctionSignature(FunctionSignature* functionSignature) {
             }
         }
         else if (functionSignature->result->resultType->_isArrayType()) {
-            (*headerFile) += "_Page* _rp";
-            (*sourceFile) += "_Page* _rp";
+            if (functionSignature->result->existing == nullptr) {
+                (*headerFile) += "_Page* _rp";
+                (*sourceFile) += "_Page* _rp";
+            }
             if ((functionSignature->parameterClause->parameters) || (functionSignature->throwsClause)) {
                 (*headerFile) += ", ";
                 (*sourceFile) += ", ";
@@ -481,6 +485,9 @@ bool CppVisitor::openFunctionResult(FunctionResult* functionResult) {
 }
 
 void CppVisitor::closeFunctionResult(FunctionResult* functionResult) {
+}
+
+void CppVisitor::visitExisting(Existing* existing) {
 }
 
 bool CppVisitor::openParameterClause(ParameterClause* parameterClause) {

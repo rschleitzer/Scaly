@@ -151,6 +151,9 @@ class MyVisitor : SyntaxVisitor {
     function closeFunctionResult(functionResult: FunctionResult) {
     }
 
+    function visitExisting(existing: Existing) {
+    }
+
     function openParameterClause(parameterClause: ParameterClause) -> bool {
         return true;
     }

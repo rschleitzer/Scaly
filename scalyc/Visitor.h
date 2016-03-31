@@ -62,6 +62,8 @@ class FunctionSignature;
 
 class FunctionResult;
 
+class Existing;
+
 class ParameterClause;
 
 class Parameter;
@@ -276,6 +278,7 @@ public:
     virtual void closeFunctionSignature(FunctionSignature* functionSignature) = 0;
     virtual bool openFunctionResult(FunctionResult* functionResult) = 0;
     virtual void closeFunctionResult(FunctionResult* functionResult) = 0;
+    virtual void visitExisting(Existing* existing) = 0;
     virtual bool openParameterClause(ParameterClause* parameterClause) = 0;
     virtual void closeParameterClause(ParameterClause* parameterClause) = 0;
     virtual bool openConstParameter(ConstParameter* constParameter) = 0;
@@ -398,7 +401,7 @@ public:
     virtual void closeTypeInheritanceClause(TypeInheritanceClause* typeInheritanceClause) = 0;
     virtual bool openInheritance(Inheritance* inheritance) = 0;
     virtual void closeInheritance(Inheritance* inheritance) = 0;
-
+    virtual bool _isSyntaxVisitor();
     virtual bool _isMyVisitor();
     virtual bool _isCppVisitor();
 };

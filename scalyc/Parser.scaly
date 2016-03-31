@@ -916,6 +916,17 @@ class Parser {
         }
         {
             let start: Position = lexer.getPosition()
+            let result: Existing node = parseExisting() catch _(error) {
+                 null
+            }
+
+            if functionResult == null
+                functionResult = FunctionResult(start, lexer.getPosition())
+
+            functionResult.existing = node
+        }
+        {
+            let start: Position = lexer.getPosition()
             let result: Type node = parseType() catch _(error) {
                 throw (error)
             }
@@ -927,6 +938,21 @@ class Parser {
         }
 
         return functionResult
+    }
+
+    function parseExisting() -> Existing throws ParserError {
+        mutable existing: Existing? = null
+        {
+            let start: Position = lexer.getPosition()
+            let success: bool = lexer.parseKeyword(existingKeyword)
+            if success
+                lexer.advance()
+
+            if existing == null
+                existing = Existing(start, lexer.getPosition())
+        }
+
+        return existing
     }
 
     function parseParameterClauseList() -> [ParameterClause] throws ParserError {
@@ -3593,6 +3619,9 @@ class Parser {
         if id == throwsKeyword
             return false
 
+        if id == existingKeyword
+            return false
+
         if id == overrideKeyword
             return false
 
@@ -3649,6 +3678,7 @@ class Parser {
     let throwKeyword: String = "throw"
     let breakKeyword: String = "break"
     let throwsKeyword: String = "throws"
+    let existingKeyword: String = "existing"
     let overrideKeyword: String = "override"
     let staticKeyword: String = "static"
     let letKeyword: String = "let"

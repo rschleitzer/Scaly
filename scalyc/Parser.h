@@ -40,6 +40,7 @@ public:
     virtual _Result<IdentifierFunction, ParserError> parseIdentifierFunction(_Page* _rp, _Page* _ep);
     virtual _Result<FunctionSignature, ParserError> parseFunctionSignature(_Page* _rp, _Page* _ep);
     virtual _Result<FunctionResult, ParserError> parseFunctionResult(_Page* _rp, _Page* _ep);
+    virtual _Result<Existing, ParserError> parseExisting(_Page* _rp, _Page* _ep);
     virtual _Result<_Vector<ParameterClause>, ParserError> parseParameterClauseList(_Page* _rp, _Page* _ep);
     virtual _Result<ParameterClause, ParserError> parseParameterClause(_Page* _rp, _Page* _ep);
     virtual _Result<_Vector<Parameter>, ParserError> parseParameterList(_Page* _rp, _Page* _ep);
@@ -160,6 +161,7 @@ public:
     _LetString* throwKeyword;
     _LetString* breakKeyword;
     _LetString* throwsKeyword;
+    _LetString* existingKeyword;
     _LetString* overrideKeyword;
     _LetString* staticKeyword;
     _LetString* letKeyword;
@@ -187,7 +189,7 @@ public:
     _LetString* questionMark;
     _LetString* underscore;
     _LetString* evaluatesTo;
-
+    virtual bool _isParser();
 };
 
 }

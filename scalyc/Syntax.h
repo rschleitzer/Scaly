@@ -10,12 +10,13 @@ public:
     Position* start;
     Position* end;
     SyntaxNode* parent;
-
+    virtual bool _isSyntaxNode();
     virtual bool _isProgram();
     virtual bool _isCompilationUnit();
     virtual bool _isTerminatedStatement();
     virtual bool _isStatement();
     virtual bool _isDeclaration();
+    virtual bool _isExpression();
     virtual bool _isUseDeclaration();
     virtual bool _isConstantDeclaration();
     virtual bool _isVariableDeclaration();
@@ -24,7 +25,6 @@ public:
     virtual bool _isEnumDeclaration();
     virtual bool _isClassDeclaration();
     virtual bool _isInitializerDeclaration();
-    virtual bool _isExpression();
     virtual bool _isCodeBlock();
     virtual bool _isSimpleExpression();
     virtual bool _isPathIdentifier();
@@ -40,6 +40,7 @@ public:
     virtual bool _isIdentifierFunction();
     virtual bool _isFunctionSignature();
     virtual bool _isFunctionResult();
+    virtual bool _isExisting();
     virtual bool _isParameterClause();
     virtual bool _isParameter();
     virtual bool _isConstParameter();
@@ -163,6 +164,7 @@ public:
 
     virtual bool _isStatement();
     virtual bool _isDeclaration();
+    virtual bool _isExpression();
     virtual bool _isUseDeclaration();
     virtual bool _isConstantDeclaration();
     virtual bool _isVariableDeclaration();
@@ -171,7 +173,6 @@ public:
     virtual bool _isEnumDeclaration();
     virtual bool _isClassDeclaration();
     virtual bool _isInitializerDeclaration();
-    virtual bool _isExpression();
     virtual bool _isCodeBlock();
     virtual bool _isSimpleExpression();
 };
@@ -417,11 +418,20 @@ public:
 
 class FunctionResult : public SyntaxNode {
 public:
-    FunctionResult(Type* resultType, Position* start, Position* end);
+    FunctionResult(Existing* existing, Type* resultType, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
+    Existing* existing;
     Type* resultType;
 
     virtual bool _isFunctionResult();
+};
+
+class Existing : public SyntaxNode {
+public:
+    Existing(Position* start, Position* end);
+    virtual void accept(SyntaxVisitor* visitor);
+
+    virtual bool _isExisting();
 };
 
 class ParameterClause : public SyntaxNode {
@@ -741,10 +751,10 @@ public:
     virtual bool _isBreakExpression();
     virtual bool _isInitializerCall();
     virtual bool _isThisExpression();
+    virtual bool _isSuperExpression();
     virtual bool _isThisDot();
     virtual bool _isThisSubscript();
     virtual bool _isThisWord();
-    virtual bool _isSuperExpression();
     virtual bool _isSuperDot();
     virtual bool _isSuperSubscript();
 };
@@ -1159,8 +1169,8 @@ public:
     virtual void accept(SyntaxVisitor* visitor);
 
     virtual bool _isType();
-    virtual bool _isTypeIdentifier();
     virtual bool _isArrayType();
+    virtual bool _isTypeIdentifier();
 };
 
 class TypeIdentifier : public Type {
