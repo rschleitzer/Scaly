@@ -396,6 +396,7 @@ bool CppVisitor::openFunctionSignature(FunctionSignature* functionSignature) {
                     (*sourceFile) += ">";
                 }
             }
+            (*headerFile) += ", ";
             (*sourceFile) += ", ";
             appendCppTypeName(headerFile, ((TypeIdentifier*)(functionSignature->throwsClause->throwsType))->name);
             appendCppTypeName(sourceFile, ((TypeIdentifier*)(functionSignature->throwsClause->throwsType))->name);
