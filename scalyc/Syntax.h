@@ -10,13 +10,12 @@ public:
     Position* start;
     Position* end;
     SyntaxNode* parent;
-    virtual bool _isSyntaxNode();
+
     virtual bool _isProgram();
     virtual bool _isCompilationUnit();
     virtual bool _isTerminatedStatement();
     virtual bool _isStatement();
     virtual bool _isDeclaration();
-    virtual bool _isExpression();
     virtual bool _isUseDeclaration();
     virtual bool _isConstantDeclaration();
     virtual bool _isVariableDeclaration();
@@ -25,6 +24,7 @@ public:
     virtual bool _isEnumDeclaration();
     virtual bool _isClassDeclaration();
     virtual bool _isInitializerDeclaration();
+    virtual bool _isExpression();
     virtual bool _isCodeBlock();
     virtual bool _isSimpleExpression();
     virtual bool _isPathIdentifier();
@@ -164,7 +164,6 @@ public:
 
     virtual bool _isStatement();
     virtual bool _isDeclaration();
-    virtual bool _isExpression();
     virtual bool _isUseDeclaration();
     virtual bool _isConstantDeclaration();
     virtual bool _isVariableDeclaration();
@@ -173,6 +172,7 @@ public:
     virtual bool _isEnumDeclaration();
     virtual bool _isClassDeclaration();
     virtual bool _isInitializerDeclaration();
+    virtual bool _isExpression();
     virtual bool _isCodeBlock();
     virtual bool _isSimpleExpression();
 };
@@ -751,10 +751,10 @@ public:
     virtual bool _isBreakExpression();
     virtual bool _isInitializerCall();
     virtual bool _isThisExpression();
-    virtual bool _isSuperExpression();
     virtual bool _isThisDot();
     virtual bool _isThisSubscript();
     virtual bool _isThisWord();
+    virtual bool _isSuperExpression();
     virtual bool _isSuperDot();
     virtual bool _isSuperSubscript();
 };
@@ -1169,8 +1169,8 @@ public:
     virtual void accept(SyntaxVisitor* visitor);
 
     virtual bool _isType();
-    virtual bool _isArrayType();
     virtual bool _isTypeIdentifier();
+    virtual bool _isArrayType();
 };
 
 class TypeIdentifier : public Type {

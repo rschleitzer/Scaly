@@ -88,7 +88,6 @@ public:
     Position* start;
     Position* end;
     SyntaxNode* parent;
-    virtual bool _isSyntaxNode();
 "   (apply-to-selected-children "syntax" (lambda (syntax-node) ($
 "    virtual bool _is"(id syntax-node)"();
 "   )))
@@ -179,7 +178,6 @@ SyntaxNode::SyntaxNode(Position* start, Position* end)
 : start(start), end(end) {
 }
 
-bool SyntaxNode::_isSyntaxNode() { return true; }
 "   (apply-to-selected-children "syntax" (lambda (syntax-node) ($
 "bool SyntaxNode::_is"(id syntax-node)"() { return false; }
 "   )))

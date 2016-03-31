@@ -69,10 +69,6 @@ public:"
             )
         )
     ))))
-       (if (not concrete)
-"
-    virtual bool _isSyntaxVisitor();"
-       "")
         (if concrete
 "
 "       "")
@@ -116,7 +112,6 @@ void MyVisitor::visit"(id syntax)"("(id syntax)"* "(string-firstchar-downcase (i
         )
     )))
 "
-bool SyntaxVisitor::_isSyntaxVisitor() { return true; }
 bool SyntaxVisitor::_isMyVisitor() { return false; }
 bool SyntaxVisitor::_isCppVisitor() { return false; }
 bool MyVisitor::_isMyVisitor() { return true; }

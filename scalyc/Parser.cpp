@@ -3532,6 +3532,4 @@ bool Parser::isIdentifier(_LetString* id) {
     return true;
 }
 
-bool Parser::_isParser() { return true; }
-
 }
