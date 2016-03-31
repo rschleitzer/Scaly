@@ -910,10 +910,10 @@ _Result<FunctionResult, ParserError> Parser::parseFunctionResult(_Page* _rp, _Pa
     else {
         return _Result<FunctionResult, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_punctuationExpected(startEvaluatesTo1, &_LetString::create(_ep, *evaluatesTo))));
     }
-    _Result<Existing, ParserError> _result_existing = parseExisting(_rp, _ep);
-    Existing* existing = 0;
-    if (_result_existing.succeeded()) {
-        existing = _result_existing.getResult();
+    _Result<ExistingClause, ParserError> _result_existingObject = parseExistingClause(_rp, _ep);
+    ExistingClause* existingObject = 0;
+    if (_result_existingObject.succeeded()) {
+        existingObject = _result_existingObject.getResult();
     }
     _Result<Type, ParserError> _result_resultType = parseType(_rp, _ep);
     Type* resultType = 0;
@@ -923,14 +923,14 @@ _Result<FunctionResult, ParserError> Parser::parseFunctionResult(_Page* _rp, _Pa
     else {
         return _Result<FunctionResult, ParserError>(_result_resultType.getError());
     }
-    FunctionResult* functionResult = new(_rp) FunctionResult(existing, resultType, start, lexer->getPosition(_rp));
-    if (existing)
-        existing->parent = functionResult;
+    FunctionResult* functionResult = new(_rp) FunctionResult(existingObject, resultType, start, lexer->getPosition(_rp));
+    if (existingObject)
+        existingObject->parent = functionResult;
     resultType->parent = functionResult;
     return _Result<FunctionResult, ParserError>(functionResult);
 }
 
-_Result<Existing, ParserError> Parser::parseExisting(_Page* _rp, _Page* _ep) {
+_Result<ExistingClause, ParserError> Parser::parseExistingClause(_Page* _rp, _Page* _ep) {
     Position* start = lexer->getPreviousPosition(_rp);
     Position* startExisting1 = lexer->getPreviousPosition(_rp);
     bool successExisting1 = lexer->parseKeyword(existingKeyword);
@@ -938,10 +938,10 @@ _Result<Existing, ParserError> Parser::parseExisting(_Page* _rp, _Page* _ep) {
         lexer->advance();
     }
     else {
-        return _Result<Existing, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_keywordExpected(startExisting1, &_LetString::create(_ep, *existingKeyword))));
+        return _Result<ExistingClause, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_keywordExpected(startExisting1, &_LetString::create(_ep, *existingKeyword))));
     }
-    Existing* existing = new(_rp) Existing(start, lexer->getPosition(_rp));
-    return _Result<Existing, ParserError>(existing);
+    ExistingClause* existingClause = new(_rp) ExistingClause(start, lexer->getPosition(_rp));
+    return _Result<ExistingClause, ParserError>(existingClause);
 }
 
 _Result<_Vector<ParameterClause>, ParserError> Parser::parseParameterClauseList(_Page* _rp, _Page* _ep) {

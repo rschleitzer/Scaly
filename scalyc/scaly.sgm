@@ -131,10 +131,10 @@
 
     <syntax id = FunctionResult
         <content link = evaluatesTo
-        <content link = Existing                       optional property = existing
+        <content link = ExistingClause                 optional property = existingObject
         <content link = Type                                    property = resultType
 
-    <syntax id = Existing
+    <syntax id = ExistingClause
         <content link = existing>
 
     <syntax id = ParameterClause              multiple

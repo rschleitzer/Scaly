@@ -916,14 +916,14 @@ class Parser {
         }
         {
             let start: Position = lexer.getPosition()
-            let result: Existing node = parseExisting() catch _(error) {
+            let result: ExistingClause node = parseExistingClause() catch _(error) {
                  null
             }
 
             if functionResult == null
                 functionResult = FunctionResult(start, lexer.getPosition())
 
-            functionResult.existing = node
+            functionResult.existingObject = node
         }
         {
             let start: Position = lexer.getPosition()
@@ -940,19 +940,19 @@ class Parser {
         return functionResult
     }
 
-    function parseExisting() -> Existing throws ParserError {
-        mutable existing: Existing? = null
+    function parseExistingClause() -> ExistingClause throws ParserError {
+        mutable existingClause: ExistingClause? = null
         {
             let start: Position = lexer.getPosition()
             let success: bool = lexer.parseKeyword(existingKeyword)
             if success
                 lexer.advance()
 
-            if existing == null
-                existing = Existing(start, lexer.getPosition())
+            if existingClause == null
+                existingClause = ExistingClause(start, lexer.getPosition())
         }
 
-        return existing
+        return existingClause
     }
 
     function parseParameterClauseList() -> [ParameterClause] throws ParserError {

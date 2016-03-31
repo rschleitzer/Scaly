@@ -155,7 +155,7 @@ bool MyVisitor::openFunctionResult(FunctionResult* functionResult) {
 void MyVisitor::closeFunctionResult(FunctionResult* functionResult) {
 }
 
-void MyVisitor::visitExisting(Existing* existing) {
+void MyVisitor::visitExistingClause(ExistingClause* existingClause) {
 }
 
 bool MyVisitor::openParameterClause(ParameterClause* parameterClause) {

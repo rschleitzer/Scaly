@@ -36,7 +36,7 @@ bool SyntaxNode::_isFunctionName() { return false; }
 bool SyntaxNode::_isIdentifierFunction() { return false; }
 bool SyntaxNode::_isFunctionSignature() { return false; }
 bool SyntaxNode::_isFunctionResult() { return false; }
-bool SyntaxNode::_isExisting() { return false; }
+bool SyntaxNode::_isExistingClause() { return false; }
 bool SyntaxNode::_isParameterClause() { return false; }
 bool SyntaxNode::_isParameter() { return false; }
 bool SyntaxNode::_isConstParameter() { return false; }
@@ -536,27 +536,27 @@ void FunctionSignature::accept(SyntaxVisitor* visitor) {
     visitor->closeFunctionSignature(this);
 }
 
-FunctionResult::FunctionResult(Existing* existing, Type* resultType, Position* start, Position* end)
-: SyntaxNode(start, end), existing(existing), resultType(resultType) {}
+FunctionResult::FunctionResult(ExistingClause* existingObject, Type* resultType, Position* start, Position* end)
+: SyntaxNode(start, end), existingObject(existingObject), resultType(resultType) {}
 
 bool FunctionResult::_isFunctionResult() { return true; }
 
 void FunctionResult::accept(SyntaxVisitor* visitor) {
     if (!visitor->openFunctionResult(this))
         return;
-    if (existing)
-        existing->accept(visitor);
+    if (existingObject)
+        existingObject->accept(visitor);
     resultType->accept(visitor);
     visitor->closeFunctionResult(this);
 }
 
-Existing::Existing(Position* start, Position* end)
+ExistingClause::ExistingClause(Position* start, Position* end)
 : SyntaxNode(start, end) {}
 
-bool Existing::_isExisting() { return true; }
+bool ExistingClause::_isExistingClause() { return true; }
 
-void Existing::accept(SyntaxVisitor* visitor) {
-    visitor->visitExisting(this);
+void ExistingClause::accept(SyntaxVisitor* visitor) {
+    visitor->visitExistingClause(this);
 }
 
 ParameterClause::ParameterClause(_Vector<Parameter>* parameters, Position* start, Position* end)

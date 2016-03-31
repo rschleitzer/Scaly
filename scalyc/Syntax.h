@@ -40,7 +40,7 @@ public:
     virtual bool _isIdentifierFunction();
     virtual bool _isFunctionSignature();
     virtual bool _isFunctionResult();
-    virtual bool _isExisting();
+    virtual bool _isExistingClause();
     virtual bool _isParameterClause();
     virtual bool _isParameter();
     virtual bool _isConstParameter();
@@ -418,20 +418,20 @@ public:
 
 class FunctionResult : public SyntaxNode {
 public:
-    FunctionResult(Existing* existing, Type* resultType, Position* start, Position* end);
+    FunctionResult(ExistingClause* existingObject, Type* resultType, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
-    Existing* existing;
+    ExistingClause* existingObject;
     Type* resultType;
 
     virtual bool _isFunctionResult();
 };
 
-class Existing : public SyntaxNode {
+class ExistingClause : public SyntaxNode {
 public:
-    Existing(Position* start, Position* end);
+    ExistingClause(Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
 
-    virtual bool _isExisting();
+    virtual bool _isExistingClause();
 };
 
 class ParameterClause : public SyntaxNode {
