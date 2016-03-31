@@ -447,10 +447,10 @@ bool CppVisitor::openFunctionSignature(FunctionSignature* functionSignature) {
                 if (functionSignature->result->existingObject == nullptr) {
                     (*headerFile) += "_Page* _rp";
                     (*sourceFile) += "_Page* _rp";
-                }
-                if ((functionSignature->parameterClause->parameters) || (functionSignature->throwsClause)) {
-                    (*headerFile) += ", ";
-                    (*sourceFile) += ", ";
+                    if ((functionSignature->parameterClause->parameters) || (functionSignature->throwsClause)) {
+                        (*headerFile) += ", ";
+                        (*sourceFile) += ", ";
+                    }
                 }
             }
         }
@@ -458,10 +458,10 @@ bool CppVisitor::openFunctionSignature(FunctionSignature* functionSignature) {
             if (functionSignature->result->existingObject == nullptr) {
                 (*headerFile) += "_Page* _rp";
                 (*sourceFile) += "_Page* _rp";
-            }
-            if ((functionSignature->parameterClause->parameters) || (functionSignature->throwsClause)) {
-                (*headerFile) += ", ";
-                (*sourceFile) += ", ";
+                if ((functionSignature->parameterClause->parameters) || (functionSignature->throwsClause)) {
+                    (*headerFile) += ", ";
+                    (*sourceFile) += ", ";
+                }
             }
         }
     }
