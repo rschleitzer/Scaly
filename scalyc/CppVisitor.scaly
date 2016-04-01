@@ -321,6 +321,14 @@ class CppVisitor : SyntaxVisitor {
     function openAssignment(assignment: Assignment) -> bool {
         return true;
     }
+    
+    function assignmentIsInInitializer(assignment: Assignment) -> bool {
+        return false;
+    }
+
+    function getMemberIfConstructorCall(assignment: Assignment) -> existing String {
+        return false;
+    }
 
     function getClassDeclaration(node: SyntaxNode) -> existing ClassDeclaration {
     }

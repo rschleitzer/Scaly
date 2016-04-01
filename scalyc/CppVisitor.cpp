@@ -197,8 +197,12 @@ bool CppVisitor::openTerminatedStatement(TerminatedStatement* terminatedStatemen
                     BinaryOp* binaryOp = *(*binaryOps)[0];
                     if (binaryOp->_isAssignment()) {
                         Assignment* assignment = (Assignment*)binaryOp;
-                        //(*sourceFile) += "heureka!\n";
-                        //this->indentSource();
+                        _LetString* memberName = getMemberIfConstructorCall(assignment);
+                        if ((memberName != nullptr) && (!assignmentIsInInitializer(assignment))) {
+                            (*sourceFile) += *memberName;
+                            (*sourceFile) += "->getPage()->clear();\n";
+                            this->indentSource();
+                        }
                     }
                 }
             }
@@ -876,6 +880,36 @@ void CppVisitor::closeBinaryOperation(BinaryOperation* binaryOperation) {
 
 bool CppVisitor::openAssignment(Assignment* assignment) {
     (*sourceFile) += " = ";
+    _LetString* memberName = getMemberIfConstructorCall(assignment);
+    if (memberName != nullptr) {
+        (*sourceFile) += "new(";
+        ClassDeclaration* classDeclaration = getClassDeclaration(assignment);
+        if (isVariableMember(memberName, classDeclaration)) {
+            if (!assignmentIsInInitializer(assignment)) {
+                (*sourceFile) += *memberName;
+                (*sourceFile) += "->";
+            }
+            (*sourceFile) += "getPage()";
+            if (assignmentIsInInitializer(assignment)) {
+                (*sourceFile) += "->allocateExclusivePage()";
+            }
+        }
+        (*sourceFile) += ") ";
+    }
+
+    return true;
+}
+
+bool CppVisitor::assignmentIsInInitializer(Assignment* assignment) {
+    if (assignment->parent->parent->parent->parent->_isInitializerDeclaration()) {
+        return true;
+    }
+        
+    
+    return false;
+}
+
+_LetString* CppVisitor::getMemberIfConstructorCall(Assignment* assignment) {
     if (assignment->expression->prefixOperator == 0) {
         PostfixExpression* rightSide = assignment->expression->expression;
         if (rightSide->primaryExpression->_isIdentifierExpression()) {
@@ -892,28 +926,17 @@ bool CppVisitor::openAssignment(Assignment* assignment) {
                                 _LetString* memberName = memberExpression->name;
                                 ClassDeclaration* classDeclaration = getClassDeclaration(assignment);
                                 if (classDeclaration != nullptr) {
-                                    (*sourceFile) += "new(";
-                                    if (isVariableMember(memberName, classDeclaration)) {
-                                        if (!assignment->parent->parent->parent->parent->_isInitializerDeclaration()) {
-                                            (*sourceFile) += *memberName;
-                                            (*sourceFile) += "->";
-                                        }
-                                        (*sourceFile) += "getPage()";
-                                        if (assignment->parent->parent->parent->parent->_isInitializerDeclaration()) {
-                                            (*sourceFile) += "->allocateExclusivePage()";
-                                        }
-                                        
-                                    }
+                                    return memberName;
                                 }
                             }
                         }
                     }
-                    (*sourceFile) += ") ";
                 }
             }
         }
     }
-    return true;
+    
+    return nullptr;
 }
 
 ClassDeclaration* CppVisitor::getClassDeclaration(SyntaxNode* node) {

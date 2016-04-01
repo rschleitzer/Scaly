@@ -120,6 +120,8 @@ public:
     virtual bool openBinaryOperation(BinaryOperation* binaryOperation);
     virtual void closeBinaryOperation(BinaryOperation* binaryOperation);
     virtual bool openAssignment(Assignment* assignment);
+    virtual bool assignmentIsInInitializer(Assignment* assignment);
+    virtual _LetString* getMemberIfConstructorCall(Assignment* assignment);
     virtual ClassDeclaration* getClassDeclaration(SyntaxNode* node);
     virtual bool isVariableMember(_LetString* memberName, ClassDeclaration* classDeclaration);
     virtual void closeAssignment(Assignment* assignment);
