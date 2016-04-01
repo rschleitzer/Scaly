@@ -883,7 +883,6 @@ bool CppVisitor::openAssignment(Assignment* assignment) {
             _LetString* className = classExpression->name;
             if ((isClass(className) && (rightSide->postfixes->length() == 1))) {
                 if ((*(*rightSide->postfixes)[0])->_isFunctionCall()) {
-                    (*sourceFile) += "new(";
                     if (assignment->parent->_isSimpleExpression()) {
                         SimpleExpression* simpleExpression = (SimpleExpression*)(assignment->parent);
                         if (simpleExpression->prefixExpression->prefixOperator == 0) {
@@ -893,6 +892,7 @@ bool CppVisitor::openAssignment(Assignment* assignment) {
                                 _LetString* memberName = memberExpression->name;
                                 ClassDeclaration* classDeclaration = getClassDeclaration(assignment);
                                 if (classDeclaration != nullptr) {
+                                    (*sourceFile) += "new(";
                                     if (isVariableMember(memberName, classDeclaration)) {
                                         if (!assignment->parent->parent->parent->parent->_isInitializerDeclaration()) {
                                             (*sourceFile) += *memberName;

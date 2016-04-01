@@ -95,7 +95,7 @@ void Lexer::advance() {
     previousColumn = column;
     if (position == end) {
         token->getPage()->clear();
-        token = new (token->getPage()) EofToken();
+        token = new(token->getPage()) EofToken();
         return;
     }
     char c = (*text)[position];
