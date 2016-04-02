@@ -244,8 +244,12 @@ void CppVisitor::closeInitializer(Initializer* initializer) {
 
 bool CppVisitor::openConstantDeclaration(ConstantDeclaration* constantDeclaration) {
     constDeclaration = true;
-    if (constantDeclaration->parent->parent->parent->_isClassDeclaration())
+    if (constantDeclaration->parent->parent->parent->_isClassDeclaration()) {
         suppressSource = true;
+    }
+    else {
+        (*sourceFile) += "let ";
+    }
     return true;
 }
 
@@ -314,6 +318,7 @@ bool CppVisitor::openFunctionDeclaration(FunctionDeclaration* functionDeclaratio
                 staticFunction = true;
         }
     }
+    suppressHeader = true;
     return true;
 }
 
@@ -323,6 +328,7 @@ void CppVisitor::closeFunctionDeclaration(FunctionDeclaration* functionDeclarati
         abstractFunction = false;
     }
     staticFunction = false;
+    suppressHeader = false;
 }
 
 bool CppVisitor::openInitializerDeclaration(InitializerDeclaration* initializerDeclaration) {
@@ -1159,6 +1165,7 @@ void CppVisitor::closeRepeatExpression(RepeatExpression* repeatExpression) {
 }
 
 bool CppVisitor::openReturnExpression(ReturnExpression* returnExpression) {
+    (*sourceFile) += "return";
     return true;
 }
 
@@ -1183,7 +1190,7 @@ void CppVisitor::visitWildcardPattern(WildcardPattern* wildcardPattern) {
 }
 
 bool CppVisitor::openIdentifierPattern(IdentifierPattern* identifierPattern) {
-    if (!sourceIndentLevel) {
+    if (!suppressHeader) {
         if (identifierPattern->annotationForType) {
             identifierPattern->annotationForType->accept(this);
             (*headerFile) += " ";

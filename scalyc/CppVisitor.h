@@ -35,6 +35,7 @@ public:
     bool inFunctionReturn;
     bool constDeclaration;
     bool suppressSource;
+    bool suppressHeader;
     virtual void buildProjectFileString(_VarString* projectFile, Program* program);
     virtual void buildMainHeaderFileString(_VarString* projectFile, Program* program);
     virtual void collectInheritances(Program* program);
