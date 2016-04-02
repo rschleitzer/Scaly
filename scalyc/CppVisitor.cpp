@@ -245,6 +245,7 @@ void CppVisitor::visitPathItem(PathItem* pathItem) {
 }
 
 bool CppVisitor::openInitializer(Initializer* initializer) {
+    (*sourceFile) += " = ";
     return true;
 }
 
@@ -324,7 +325,6 @@ bool CppVisitor::openFunctionDeclaration(FunctionDeclaration* functionDeclaratio
                 staticFunction = true;
         }
     }
-    suppressHeader = true;
     return true;
 }
 
@@ -494,6 +494,7 @@ bool CppVisitor::openFunctionSignature(FunctionSignature* functionSignature) {
 }
 
 void CppVisitor::closeFunctionSignature(FunctionSignature* functionSignature) {
+    suppressHeader = true;
 }
 
 bool CppVisitor::openFunctionResult(FunctionResult* functionResult) {
@@ -1314,16 +1315,18 @@ void CppVisitor::closeTypeAnnotation(TypeAnnotation* annotationForType) {
 }
 
 bool CppVisitor::openTypeIdentifier(TypeIdentifier* typeIdentifier) {
-    if (!sourceIndentLevel) {
+    if (!suppressHeader) {
         appendCppTypeName(headerFile, typeIdentifier->name);
-        if (!suppressSource) {
-            appendCppTypeName(sourceFile, typeIdentifier->name);
-        }
-        if (isClass(typeIdentifier->name) && (!inArrayType)) {
+    }
+    if (!suppressSource) {
+        appendCppTypeName(sourceFile, typeIdentifier->name);
+    }
+    if (isClass(typeIdentifier->name) && (!inArrayType)) {
+        if (!suppressHeader) {
             (*headerFile) += "*";
-            if (!suppressSource) {
-                (*sourceFile) += "*";
-            }
+        }
+        if (!suppressSource) {
+            (*sourceFile) += "*";
         }
     }
     return true;
