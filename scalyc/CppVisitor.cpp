@@ -220,9 +220,6 @@ void CppVisitor::closeTerminatedStatement(TerminatedStatement* terminatedStateme
         if (expression->prefixExpression->expression->primaryExpression->_isIfExpression())
             return;
     }
-    else {
-        return;
-    }
         
     (*sourceFile) += ";\n";
 }
@@ -875,6 +872,11 @@ void CppVisitor::closePrefixExpression(PrefixExpression* prefixExpression) {
 }
 
 bool CppVisitor::openPostfixExpression(PostfixExpression* postfixExpression) {
+    if (postfixExpression->postfixes != nullptr) {
+        if ((*(*postfixExpression->postfixes)[0])->_isSubscript()) {
+            (*sourceFile) += "(*";
+        }
+    }
     return true;
 }
 
@@ -1046,10 +1048,12 @@ void CppVisitor::closeExplicitMemberExpression(ExplicitMemberExpression* explici
 }
 
 bool CppVisitor::openSubscript(Subscript* subscript) {
+    (*sourceFile) += "[";
     return true;
 }
 
 void CppVisitor::closeSubscript(Subscript* subscript) {
+    (*sourceFile) += "]";
 }
 
 bool CppVisitor::openExpressionElement(ExpressionElement* expressionElement) {
@@ -1085,6 +1089,14 @@ void CppVisitor::visitLiteralExpression(LiteralExpression* literalExpression) {
 
 void CppVisitor::visitIdentifierExpression(IdentifierExpression* identifierExpression) {
     (*sourceFile) += *identifierExpression->name;
+    if (identifierExpression->parent->_isPostfixExpression()) {
+        PostfixExpression* postfixExpression = (PostfixExpression*)identifierExpression->parent;
+        if (postfixExpression->postfixes != nullptr) {
+            if ((*(*postfixExpression->postfixes)[0])->_isSubscript()) {
+                (*sourceFile) += ")";
+            }
+        }
+    }
 }
 
 bool CppVisitor::openIfExpression(IfExpression* ifExpression) {
