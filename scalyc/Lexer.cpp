@@ -96,427 +96,542 @@ void Lexer::advance() {
     if (position == end) {
         token->getPage()->clear();
         token = new(token->getPage()) EofToken();
-        ;
+        return;
     }
-;
-    textposition;
-    if (((c = ) && (c = )) || ((c = ) && (c = ))) {
-        token = scanIdentifier();
-        ;
-    }
-;
-    if ((c = ) && (c = )) {
-        token = scanNumericLiteral();
-        ;
-    }
-;
-    c    token = scanStringLiteral();
-     {
+    char c = (*text)[position];
+    if (((c >= 'a') && (c <= 'z')) || ((c >= 'A') && (c <= 'Z'))) {
         token->getPage()->clear();
-        token = new(token->getPage()) Punctuation(String(textposition));
-        position;
-        column;
+        token = scanIdentifier(token->getPage());
+        return;
     }
-;
-    token = scanOperator(false);
-     {
-        position;
-        column;
-        if (position == end)token = new(token->getPage()) InvalidToken() {
-            if (textposition == ) {
-                position;
-                column;
-                token = scanOperator(true);
-            }
-token = new(token->getPage()) Punctuation(String());
+    if ((c >= '0') && (c <= '9')) {
+        token->getPage()->clear();
+        token = scanNumericLiteral(token->getPage());
+        return;
+    }
+    switch (c) {
+        case '\"': {
+            token->getPage()->clear();
+            token = scanStringLiteral(token->getPage());
+            break;
         }
-;
-    }
-;
-     {
-        position;
-        column;
-        if (position == end)token = new(token->getPage()) InvalidToken() {
-            if ((textposition != )) {
-                position;
-                column;
-                token = scanOperator(true);
-            }
- {
+
+        case '_': case '(': case ')': case '{': case '}': case '[': case ']': case '<': case '>': case ',': case ':': case ';':  case '@': case '#': case '`': {
+            token->getPage()->clear();
+            token = new (token->getPage()) Punctuation(&_LetString::create(token->getPage(), (*text)[position]));
+            position++; column++;
+            break;
+        }
+
+        case '/': case '+': case '*':  case '%': case '&': case '|': case '^': case '~': {
+            token->getPage()->clear();
+            token = scanOperator(token->getPage(), false);
+            break;
+        }
+
+        case '.': {
+            position++; column++;
+            if (position == end) {
                 token->getPage()->clear();
-                token = new(token->getPage()) Punctuation(String());
-                position;
-                column;
+                token = new (token->getPage()) InvalidToken();
             }
-;
-        }
-;
-    }
-;
-     {
-        position;
-        column;
-        if (position == end) {
-            token->getPage()->clear();
-            token = new(token->getPage()) PostfixOperator(String());
-        }
- {
-            (textposition)             {
-                position;
-                column;
-                token = scanOperator(true);
-            }
-;
-             {
-                if ((whitespaceSkipped) || ((token != null) && (token))) {
-                    position;
-                    column;
-                    token = scanOperator(true);
+            else {
+                if ((*text)[position] == '.') {
+                    position--; column--;
+                    token->getPage()->clear();
+                    token = scanOperator(token->getPage(), true);
                 }
-token = new(token->getPage()) Punctuation(String());
-            }
-;
-;
-        }
-;
-    }
-;
-     {
-        position;
-        column;
-        if (position == end) {
-            token->getPage()->clear();
-            token = new(token->getPage()) PostfixOperator(String());
-        }
- {
-            (textposition)             {
-                position;
-                column;
-                token = scanOperator(true);
-            }
-;
-             {
-                if ((whitespaceSkipped)) {
-                    position;
-                    column;
-                    token = scanOperator(true);
+                else {
+                    token->getPage()->clear();
+                    token = new (token->getPage()) Punctuation(&_LetString::create(token->getPage(), '.'));
                 }
-token = new(token->getPage()) Punctuation(String());
             }
-;
-;
+            break;
         }
-;
-    }
-;
-     {
-        position;
-        column;
-        if (position == end) {
+
+        case '-': {
+            position++; column++;
+            if (position == end) {
+                token->getPage()->clear();
+                token = new (token->getPage()) InvalidToken();
+            }
+            else {
+                if ((*text)[position] != '>') {
+                    position--; column--;
+                    token->getPage()->clear();
+                    token = scanOperator(token->getPage(), true);
+                }
+                else {
+                    token->getPage()->clear();
+                    token = new(token->getPage()) Punctuation(&_LetString::create(token->getPage(), "->"));
+                    position++; column++;
+                }
+            }
+            break;
+        }
+
+        case '!': {
+            position++; column++;
+            if (position == end) {
+                token->getPage()->clear();
+                token = new(token->getPage()) PostfixOperator(&_LetString::create(token->getPage(), "!"));
+            }
+            else {
+                switch ((*text)[position]) {
+                    case '/': case '=': case '+': case '!': case'*': case '%': case '&': case '|': case '^': case '~': case '.':
+                    case ' ': case '\t': case '\r': case '\n': {
+                        position--; column--;
+                        token->getPage()->clear();
+                        token = scanOperator(token->getPage(), true);
+                        break;
+                    }
+
+                    default:
+                        if ((whitespaceSkipped) || (token && (token->_isPunctuation()))) {
+                            position--; column--;
+                            token->getPage()->clear();
+                            token = scanOperator(token->getPage(), true);
+                        }
+                        else {
+                            token->getPage()->clear();
+                            token = new(getPage()) Punctuation(&_LetString::create(token->getPage(), "!"));
+                        }
+                }
+            }
+            break;
+        }
+
+        case '?': {
+            position++; column++;
+            if (position == end) {
+                token->getPage()->clear();
+                token = new(token->getPage()) PostfixOperator(&_LetString::create(token->getPage(), "?"));
+            }
+            else {
+                switch ((*text)[position]) {
+                    case '/': case '=': case '+': case '!': case '*': case '%': case '&': case '|': case '^': case '~': {
+                        position--; column--;
+                        token->getPage()->clear();
+                        token = scanOperator(token->getPage(), true);
+                        break;
+                    }
+                    default: {
+                        if (whitespaceSkipped) {
+                            position--; column--;
+                            token->getPage()->clear();
+                            token = scanOperator(token->getPage(), true);
+                        }
+                        else {
+                            token->getPage()->clear();
+                            token = new(token->getPage()) Punctuation(&_LetString::create(token->getPage(),"?"));
+                        }
+                    }
+                }
+            }
+            break;
+        }
+
+        case '=': {
+            position++; column++;
+            if (position == end) {
+                token->getPage()->clear();
+                token = new(token->getPage()) InvalidToken();
+            }
+            else {
+                switch ((*text)[position]) {
+                    case '/': case '=': case '+': case '!': case '*': case '%': case '&': case '|': case '^': case '~': {
+                        position--; column--;
+                        token->getPage()->clear();
+                        token = scanOperator(token->getPage(), true);
+                        break;
+                    }
+                    default: {
+                        token->getPage()->clear();
+                        token = new(token->getPage()) Punctuation(&_LetString::create(token->getPage(), "="));
+                    }
+                }
+            }
+            break;
+        }
+        default: {
             token->getPage()->clear();
             token = new(token->getPage()) InvalidToken();
         }
- {
-            textposition             {
-                position;
-                column;
-                token = scanOperator(true);
-            }
-;
-            token->getPage()->clear();
-            token = new(token->getPage()) Punctuation(String());
-;
-        }
-;
     }
-;
-    token->getPage()->clear();
-    token = new(token->getPage()) InvalidToken();
-;
 }
+
 Identifier* Lexer::scanIdentifier(_Page* _rp) {
-    String(textposition);
-    do;
-     {
-        position;
-        column;
-        if (position == end)Identifier(name);
-        textposition;
-        if (((c = ) && (c = )) || ((c = ) && (c = )) || ((c = ) && (c = )) || (c == ))name += textpositionIdentifier(name);
+    // Make a String taking the character at the current position
+    {
+        _Region _region; _Page* _p = _region.get();
+        _VarString& name = *new(_p) _VarString((*text)[position]);
+
+        do {
+            position++; column++;
+
+            if (position == end) {
+                return new(_rp) Identifier(&_LetString::create(_rp, name));
+            }
+
+            char c = (*text)[position];
+            if (((c >= 'a') && (c <= 'z')) || ((c >= 'A') && (c <= 'Z')) || (c == '_'))
+                name += (*text)[position];
+            else
+                return new(_rp) Identifier(&_LetString::create(_rp, name));
+        }
+        while (true);
     }
-;
 }
+
 Operator* Lexer::scanOperator(_Page* _rp, bool includeDots) {
-    whitespaceSkipped;
-    if (whitespaceSkippedBefore && token)(token)->sign    whitespaceSkippedBefore = true;
-    whitespaceSkippedBefore = false;
-    String(textposition);
-    do;
-     {
-        position;
-        column;
-        if (position == end)if (whitespaceSkippedBefore)BinaryOperator(operation)PostfixOperator(operation);
-        (textposition)        operation += textposition;
-        if (includeDots)fallthroughoperation += textposition;
-         {
-            position;
-            line;
-            position;
-            skipWhitespace();
-            position = lastPosition;
-            line = lastLine;
-            column = lastColumn;
-            whitespaceSkipped;
-            if (whitespaceSkippedAfter)textposition            whitespaceSkippedAfter = true;
-            whitespaceSkippedAfter = false;
-            if ((whitespaceSkippedBefore && whitespaceSkippedAfter) || (whitespaceSkippedBefore && whitespaceSkippedAfter))BinaryOperator(operation);
-            if ((whitespaceSkippedBefore && whitespaceSkippedAfter))PostfixOperator(operation);
-            if ((whitespaceSkippedBefore && whitespaceSkippedAfter))PrefixOperator(operation);
-;
+    bool whitespaceSkippedBefore = whitespaceSkipped;
+    if (!whitespaceSkippedBefore) {
+        if (token->_isPunctuation()) {
+            _LetString& sign = *((Punctuation*)token)->sign;
+            if ((sign == "(") || (sign == "[") || (sign == "{") || (sign == ",") || (sign == ";") || (sign == ":"))
+                whitespaceSkippedBefore = true;
+            else
+                whitespaceSkippedBefore = false;
         }
-;
-;
     }
-;
-;
-}
-NumericLiteral* Lexer::scanNumericLiteral(_Page* _rp) {
-    String(textposition);
-    do;
-     {
-        position;
-        column;
-        if (position == end)NumericLiteral(value);
-        textposition;
-        if ((c = ) && (c = ))value += textpositionNumericLiteral(value);
+
+    // Make a String taking the character at the current position
+    _VarString& operation = *new(_rp) _VarString((*text)[position]);
+
+    do {
+        position++; column++;
+        if (position == end) {
+            if (whitespaceSkippedBefore)
+                return new(_rp) BinaryOperator(&_LetString::create(_rp, operation));
+            else
+                return new(_rp) PostfixOperator(&_LetString::create(_rp, operation));
+        }
+        switch ((*text)[position]) {
+            case '/': case '=': case '-': case '+': case '!': case '*': case '%': case '<': case '&': case '|': case '^': case '~': {
+                operation += (*text)[position];
+                break;
+            }
+            case '.': {
+                if (includeDots) {
+                    operation += (*text)[position];
+                    break;
+                }
+                // else fallthrough
+            }
+            default: {
+                size_t lastPosition = position;
+                size_t lastLine = line;
+                size_t lastColumn = column;
+                skipWhitespace();
+                position = lastPosition;
+                line = lastLine;
+                column = lastColumn;
+                bool whitespaceSkippedAfter = whitespaceSkipped;
+                if (!whitespaceSkippedAfter) {
+                    switch ((*text)[position]) {
+                        case ')': case ']': case '}': case ',': case ';': case ':': case '.': {
+                            whitespaceSkippedAfter = true;
+                            break;
+                        }
+                        default: {
+                            whitespaceSkippedAfter = false;
+                        }
+                    }
+                }
+
+                if ((whitespaceSkippedBefore && whitespaceSkippedAfter) || (!whitespaceSkippedBefore && !whitespaceSkippedAfter))
+                    return new(_rp) BinaryOperator(&_LetString::create(_rp, operation));
+
+                if ((!whitespaceSkippedBefore && whitespaceSkippedAfter))
+                    return new(_rp) PostfixOperator(&_LetString::create(_rp, operation));
+
+                if ((whitespaceSkippedBefore && !whitespaceSkippedAfter))
+                    return new(_rp) PrefixOperator(&_LetString::create(_rp, operation));
+            }
+        }
     }
-;
+    while (true);
 }
+
 Token* Lexer::scanStringLiteral(_Page* _rp) {
-    String();
-    do;
-     {
-        position;
-        column;
-        if (position == end)InvalidToken();
-        textposition         {
-            position;
-            column;
-            StringLiteral(value);
+    // Make a String taking the character at the current position
+    _VarString& value = *new(_rp) _VarString("");
+
+    do {
+        position++; column++;
+        if (position == end)
+            return new(_rp) InvalidToken();
+        switch ((*text)[position]) {
+            case '\"': {
+                position++; column++;
+                return new(_rp) StringLiteral(&_LetString::create(_rp, value));
+            }
+            case '\\': {
+                position++; column++;
+                switch ((*text)[position]) {
+                    case '\"': case '\\': case '\'':
+                        value += (*text)[position];
+                        break;
+                    case 'n': value += '\n'; break;
+                    case 'r': value += '\r'; break;
+                    case 't': value += '\t'; break;
+                    case '0': value += '\0'; break;
+                    default:
+                        return new(_rp) InvalidToken();
+                }
+                break;
+            }
+            default: {
+                value += (*text)[position];
+            }
         }
-;
-         {
-            position;
-            column;
-            textposition            value += textposition;
-            value += ;
-            value += ;
-            value += ;
-            value += ;
-            InvalidToken();
-;
-        }
-;
-        value += textposition;
-;
     }
-;
+    while (true);
 }
-bool Lexer::parseKeyword(_LetString* fixedString) {
-    if ((token))false;
-    token;
-    identifier->name == fixedString;
-}
-_LetString* Lexer::parseIdentifier(_Page* _rp) {
-    if ((token))null;
-    token;
-    String(identifier->name);
-}
-Literal* Lexer::parseLiteral(_Page* _rp) {
-    if ((token))null;
-    token;
-}
-bool Lexer::parsePunctuation(_LetString* fixedString) {
-    if ((token))false;
-    token;
-    punctuation->sign == fixedString;
-}
-_LetString* Lexer::parseOperator(_Page* _rp) {
-    if ((token))null;
-    token;
-    String(op->operation);
-}
-_LetString* Lexer::parsePrefixOperator(_Page* _rp) {
-    if ((token))null;
-    token;
-    String(op->operation);
-}
-_LetString* Lexer::parseBinaryOperator(_Page* _rp) {
-    if ((token)) {
-        if ((token) && ((token)->sign == )) {
-            token;
-            String(op->operation);
-        }
-;
-        null;
+
+NumericLiteral* Lexer::scanNumericLiteral(_Page* _rp) {
+    // Make a String taking the character at the current position
+    _VarString& value = *new(_rp) _VarString((*text)[position]);
+
+    do {
+        position++; column++;
+
+        if (position == end)
+            return new(_rp) NumericLiteral(&_LetString::create(_rp, value));
+
+        char c = (*text)[position];
+        if ((c >= '0') && (c <= '9'))
+            value += (*text)[position];
+        else
+            return new(_rp) NumericLiteral(&_LetString::create(_rp, value));
     }
-;
-    token;
-    String(op->operation);
+    while (true);
 }
-_LetString* Lexer::parsePostfixOperator(_Page* _rp) {
-    if ((token))null;
-    token;
-    String(op->operation);
-}
+
 bool Lexer::skipWhitespace() {
     whitespaceSkipped = false;
-    do;
-     {
-        if ((position == end))true;
-        textposition         {
-            whitespaceSkipped = true;
-            position;
-            column;
-            continue;
-        }
-;
-         {
-            whitespaceSkipped = true;
-            position;
-            column += 4;
-            continue;
-        }
-;
-         {
-            whitespaceSkipped = true;
-            position;
-            continue;
-        }
-;
-         {
-            whitespaceSkipped = true;
-            position;
-            column = 1;
-            line;
-            continue;
-        }
-;
-         {
-            position;
-            column;
-            if (position == end)whitespaceSkipped;
-            if (textposition == ) {
+    do {
+        if (position == end)
+            return true;
+
+        switch ((*text)[position]) {
+            case ' ': {
                 whitespaceSkipped = true;
-                handleSingleLineComment();
+                position++; column++;
+                continue;
             }
-if (textposition == ) {
+            case '\t': {
                 whitespaceSkipped = true;
-                handleMultiLineComment();
+                position++; column+=4;
+                continue;
             }
-whitespaceSkipped;
+            case '\r': {
+                whitespaceSkipped = true;
+                position++;
+                continue;
+            }
+            case '\n': {
+                whitespaceSkipped = true;
+                position++; column = 1; line++;
+                continue;
+            }
+            case '/': {
+                position++; column++;
+                if (position == end)
+                    return whitespaceSkipped;
+                if ((*text)[position] == '/') {
+                    whitespaceSkipped = true;
+                    handleSingleLineComment();
+                }
+                else if ((*text)[position] == '*') {
+                    whitespaceSkipped = true;
+                    handleMultiLineComment();
+                }
+                else {
+                    return whitespaceSkipped;
+                }
+                break;
+            }
+            default: {
+                return whitespaceSkipped;
+            }
         }
-;
-        whitespaceSkipped;
-;
     }
-;
+    while (true);
 }
-bool Lexer::isAtEnd() {
-    position == end;
-}
-Position* Lexer::getPosition(_Page* _rp) {
-    Position(linecolumn);
-}
-Position* Lexer::getPreviousPosition(_Page* _rp) {
-    Position(previousLinepreviousColumn);
-}
+
 void Lexer::handleSingleLineComment() {
-    do;
-     {
-        if (position == end)textposition         {
-            whitespaceSkipped = true;
-            position;
-            column += 4;
-            continue;
-        }
-;
-         {
-            whitespaceSkipped = true;
-            position;
-            continue;
-        }
-;
-         {
-            whitespaceSkipped = true;
-            position;
-            column = 1;
-            line;
-            ;
-        }
-;
-         {
-            position;
-            column;
-            continue;
-        }
-;
-;
-    }
-;
-}
-void Lexer::handleMultiLineComment() {
-    do;
-     {
-        if (position == end);
-        textposition;
-        (character)         {
-            position;
-            column;
-            if (position == end)if (textposition == )handleMultiLineComment();
-        }
-;
-         {
-            position;
-            column;
-            if (position == end)if (textposition == ) {
-                position;
-                column;
-                ;
+    do {
+        if (position == end)
+            return;
+
+        switch ((*text)[position]) {
+            case '\t': {
+                whitespaceSkipped = true;
+                position++; column+=4;
+                continue;
             }
-fallthrough;
+            case '\r': {
+                whitespaceSkipped = true;
+                position++;
+                continue;
+            }
+            case '\n': {
+                whitespaceSkipped = true;
+                position++; column = 1; line++;
+                return;
+            }
+            default: {
+                position++; column++;
+                continue;
+            }
         }
-;
-         {
-            whitespaceSkipped = true;
-            position;
-            column += 4;
-            continue;
-        }
-;
-         {
-            whitespaceSkipped = true;
-            position;
-            continue;
-        }
-;
-         {
-            whitespaceSkipped = true;
-            position;
-            column = 1;
-            line;
-            continue;
-        }
-;
-         {
-            position;
-            column;
-            continue;
-        }
-;
-;
     }
-;
+    while (true);
+}
+
+void Lexer::handleMultiLineComment() {
+    do {
+        if (position == end)
+            return;
+
+        char character = (*text)[position];
+        switch (character) {
+            case '/': {
+                position++; column++;
+                if (position == end)
+                    return;
+                else if ((*text)[position] == '*')
+                    handleMultiLineComment();
+                else
+                    return;
+                break;
+            }
+            case '*': {
+                position++; column++;
+                if (position == end)
+                    return;
+                else if ((*text)[position] == '/') {
+                    position++; column++;
+                    return;
+                }
+                // else fallthrough
+            }
+            case '\t': {
+                whitespaceSkipped = true;
+                position++; column+=4;
+                continue;
+            }
+            case '\r': {
+                whitespaceSkipped = true;
+                position++;
+                continue;
+            }
+            case '\n': {
+                whitespaceSkipped = true;
+                position++; column = 1; line++;
+                continue;
+            }
+            default: {
+                position++; column++;
+                continue;
+            }
+        }
+    }
+    while (true);
+}
+
+bool Lexer::parseKeyword(_LetString* fixedString) {
+    if (!(token->_isIdentifier()))
+        return false;
+
+    Identifier* identifier = (Identifier*)token;
+    return *identifier->name == *fixedString;
+}
+
+_LetString* Lexer::parseIdentifier(_Page* _rp) {
+    if (!(token->_isIdentifier()))
+        return 0;
+
+    Identifier* identifier = (Identifier*)token;
+    return &_LetString::create(_rp, *identifier->name);
+}
+
+bool Lexer::parsePunctuation(_LetString* fixedString) {
+    if (!(token->_isPunctuation()))
+        return false;
+
+    Punctuation* punctuation = (Punctuation*)token;
+    return *punctuation->sign == *fixedString;
+}
+
+_LetString* Lexer::parseOperator(_Page* _rp) {
+    if (!(token->_isOperator()))
+        return 0;
+
+    Operator* op = (Operator*)token;
+    return &_LetString::create(_rp, *(op->operation));
+}
+
+Literal* Lexer::parseLiteral(_Page* _rp) {
+    if (!(token->_isLiteral()))
+        return 0;
+
+    if (token->_isStringLiteral()) {
+        StringLiteral* stringLiteral = (StringLiteral*)token;
+        return new(_rp) StringLiteral(&_LetString::create(_rp, *stringLiteral->string));
+    }
+
+    if (token->_isNumericLiteral()) {
+        NumericLiteral* numericLiteral = (NumericLiteral*)token;
+        return new(_rp) NumericLiteral(&_LetString::create(_rp, *numericLiteral->value));
+    }
+    
+    return 0;
+}
+
+_LetString* Lexer::parsePrefixOperator(_Page* _rp) {
+    if (!(token->_isPrefixOperator()))
+        return 0;
+
+    Operator* op = (Operator*)token;
+
+    return &_LetString::create(_rp, *(op->operation));
+}
+
+_LetString* Lexer::parseBinaryOperator(_Page* _rp) {
+    if (!(token->_isBinaryOperator())) {
+        if ((token->_isPunctuation()) && (((*((Punctuation*)token)->sign == "<")) || (*((Punctuation*)token)->sign == ">"))) {
+            Operator* op = (Operator*)token;
+            return &_LetString::create(_rp, *(op->operation));
+        }
+
+        return 0;
+    }
+
+    Operator* op = (Operator*)token;
+    return &_LetString::create(_rp, *(op->operation));
+}
+
+
+_LetString* Lexer::parsePostfixOperator(_Page* _rp){
+    if (!(token->_isPostfixOperator()))
+        return 0;
+
+    Operator* op = (Operator*)token;
+    return &_LetString::create(_rp, *(op->operation));
+}
+
+bool Lexer::isAtEnd() {
+    return position == end;
+}
+
+Position* Lexer::getPosition(_Page* _rp) {
+    return new(_rp) Position(line, column);
+}
+
+Position* Lexer::getPreviousPosition(_Page* _rp) {
+    return new(_rp) Position(previousLine, previousColumn);
 }
 
 }
