@@ -215,6 +215,15 @@ void CppVisitor::closeTerminatedStatement(TerminatedStatement* terminatedStateme
     if (terminatedStatement->statement->_isClassDeclaration())
         return;
 
+    if (terminatedStatement->statement->_isSimpleExpression()) {
+        SimpleExpression* expression = (SimpleExpression*) terminatedStatement->statement;
+        if (expression->prefixExpression->expression->primaryExpression->_isIfExpression())
+            return;
+    }
+    else {
+        return;
+    }
+        
     (*sourceFile) += ";\n";
 }
 
@@ -246,9 +255,6 @@ bool CppVisitor::openConstantDeclaration(ConstantDeclaration* constantDeclaratio
     constDeclaration = true;
     if (constantDeclaration->parent->parent->parent->_isClassDeclaration()) {
         suppressSource = true;
-    }
-    else {
-        (*sourceFile) += "let ";
     }
     return true;
 }
@@ -1190,12 +1196,19 @@ void CppVisitor::visitWildcardPattern(WildcardPattern* wildcardPattern) {
 }
 
 bool CppVisitor::openIdentifierPattern(IdentifierPattern* identifierPattern) {
-    if (!suppressHeader) {
-        if (identifierPattern->annotationForType) {
-            identifierPattern->annotationForType->accept(this);
+    if (identifierPattern->annotationForType) {
+        identifierPattern->annotationForType->accept(this);
+        if (!suppressHeader) {
             (*headerFile) += " ";
         }
+        if (!suppressSource)
+            (*sourceFile) += " ";
+    }
+    if (!suppressHeader) {
         (*headerFile) += *identifierPattern->identifier;
+    }
+    if (!suppressSource) {
+        (*sourceFile) += *identifierPattern->identifier;
     }
     return false;
  }
@@ -1319,6 +1332,10 @@ bool CppVisitor::openTypeIdentifier(TypeIdentifier* typeIdentifier) {
 void CppVisitor::appendCppTypeName(_VarString* s, _LetString* typeIdentifierName) {
     if ((*typeIdentifierName) == "unsigned") {
         (*s) += "size_t";
+        return;
+    }
+    else if ((*typeIdentifierName) == "character") {
+        (*s) += "char";
         return;
     }
     else {
