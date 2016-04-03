@@ -1085,6 +1085,12 @@ void CppVisitor::visitLiteralExpression(LiteralExpression* literalExpression) {
         NumericLiteral* numericLiteral = (NumericLiteral*)literal;
         (*sourceFile) += *numericLiteral->value;
     }
+    else if (literal->_isStringLiteral()) {
+        StringLiteral* stringLiteral = (StringLiteral*)literal;
+        (*sourceFile) += "\"";
+        (*sourceFile) += *stringLiteral->string;
+        (*sourceFile) += "\"";
+    }
 }
 
 void CppVisitor::visitIdentifierExpression(IdentifierExpression* identifierExpression) {
