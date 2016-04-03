@@ -20,6 +20,7 @@ public:
     virtual bool _isIdentifier();
     virtual bool _isLiteral();
     virtual bool _isStringLiteral();
+    virtual bool _isCharacterLiteral();
     virtual bool _isNumericLiteral();
     virtual bool _isPunctuation();
     virtual bool _isOperator();
@@ -62,6 +63,14 @@ public:
     _LetString* string;
 
     virtual bool _isStringLiteral();
+};
+
+class CharacterLiteral : public Literal {
+public:
+    CharacterLiteral(_LetString* theString);
+    _LetString* value;
+
+    virtual bool _isCharacterLiteral();
 };
 
 class NumericLiteral : public Literal {
@@ -128,6 +137,7 @@ public:
     virtual Operator* scanOperator(_Page* _rp, bool includeDots);
     virtual NumericLiteral* scanNumericLiteral(_Page* _rp);
     virtual Token* scanStringLiteral(_Page* _rp);
+    virtual Token* scanCharacterLiteral(_Page* _rp);
     virtual bool parseKeyword(_LetString* fixedString);
     virtual _LetString* parseIdentifier(_Page* _rp);
     virtual Literal* parseLiteral(_Page* _rp);

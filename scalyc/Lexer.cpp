@@ -12,6 +12,7 @@ bool Token::_isInvalidToken() { return false; }
 bool Token::_isIdentifier() { return false; }
 bool Token::_isLiteral() { return false; }
 bool Token::_isStringLiteral() { return false; }
+bool Token::_isCharacterLiteral() { return false; }
 bool Token::_isNumericLiteral() { return false; }
 bool Token::_isPunctuation() { return false; }
 bool Token::_isOperator() { return false; }
@@ -39,6 +40,12 @@ StringLiteral::StringLiteral(_LetString* theString) {
 }
 
 bool StringLiteral::_isStringLiteral() { return true; }
+
+CharacterLiteral::CharacterLiteral(_LetString* theString) {
+    value = theString;
+}
+
+bool CharacterLiteral::_isCharacterLiteral() { return true; }
 
 NumericLiteral::NumericLiteral(_LetString* theValue) {
     value = theValue;
@@ -113,6 +120,12 @@ void Lexer::advance() {
         case '\"': {
             token->getPage()->clear();
             token = scanStringLiteral(token->getPage());
+            break;
+        }
+
+        case '\'': {
+            token->getPage()->clear();
+            token = scanCharacterLiteral(token->getPage());
             break;
         }
 
@@ -412,6 +425,26 @@ Token* Lexer::scanStringLiteral(_Page* _rp) {
     while (true);
 }
 
+Token* Lexer::scanCharacterLiteral(_Page* _rp) {
+    // Make a String taking the character at the current position
+    _VarString& value = *new(_rp) _VarString("");
+
+    do {
+        position++; column++;
+        if (position == end)
+            return new(_rp) InvalidToken();
+
+        if ((*text)[position] == '\'') {
+            position++; column++;
+            return new(_rp) CharacterLiteral(&_LetString::create(_rp, value));
+        }
+        else {
+            value += (*text)[position];
+        }
+    }
+    while (true);
+}
+
 NumericLiteral* Lexer::scanNumericLiteral(_Page* _rp) {
     // Make a String taking the character at the current position
     _VarString& value = *new(_rp) _VarString((*text)[position]);
@@ -605,6 +638,10 @@ Literal* Lexer::parseLiteral(_Page* _rp) {
         return new(_rp) StringLiteral(&_LetString::create(_rp, *stringLiteral->string));
     }
 
+    if (token->_isCharacterLiteral()) {
+        CharacterLiteral* characterLiteral = (CharacterLiteral*)token;
+        return new(_rp) CharacterLiteral(&_LetString::create(_rp, *characterLiteral->value));
+    }
     if (token->_isNumericLiteral()) {
         NumericLiteral* numericLiteral = (NumericLiteral*)token;
         return new(_rp) NumericLiteral(&_LetString::create(_rp, *numericLiteral->value));

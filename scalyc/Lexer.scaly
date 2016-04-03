@@ -33,6 +33,13 @@ class StringLiteral : Literal {
     let string: String
 }
 
+class CharacterLiteral : Literal {
+    init(theString: String) {
+        value = theString
+    }
+    let value: String
+}
+
 class NumericLiteral : Literal {
     init(theValue: String) {
         value = theValue
@@ -106,7 +113,7 @@ class Lexer {
         
         let c: character = text[position]
         
-        if ((c >= "a") && (c <= "z")) || ((c >= "A") && (c <= "Z")) {
+        if ((c >= 'a') && (c <= 'z')) || ((c >= 'A') && (c <= 'Z')) {
             token = scanIdentifier()
             return
         }

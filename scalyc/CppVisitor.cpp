@@ -1091,6 +1091,12 @@ void CppVisitor::visitLiteralExpression(LiteralExpression* literalExpression) {
         (*sourceFile) += *stringLiteral->string;
         (*sourceFile) += "\"";
     }
+    else if (literal->_isCharacterLiteral()) {
+        CharacterLiteral* characterLiteral = (CharacterLiteral*)literal;
+        (*sourceFile) += "\'";
+        (*sourceFile) += *characterLiteral->value;
+        (*sourceFile) += "\'";
+    }
 }
 
 void CppVisitor::visitIdentifierExpression(IdentifierExpression* identifierExpression) {
