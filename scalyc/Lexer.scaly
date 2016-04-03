@@ -118,43 +118,43 @@ class Lexer {
             return
         }
         
-        if (c >= "0") && (c <= "9") {
+        if (c >= '0') && (c <= '9') {
             token = scanNumericLiteral()
             return
         }
 
         switch c {
-            case "\"":
+            case '\"':
                 token = scanStringLiteral()
                 
-            case "_", "(", ")", "{", "}", "[", "]", "<", ">", ",", ":", ";", "@", "#", "`": {
+            case '_', '(', ')', '{', '}', '[', ']', '<', '>', ',', ':', ';', '@', '#', '`': {
                 token = Punctuation(String(text[position]))
                 position++ column++
             }
 
-            case "/", "+", "*", "%", "&", "|", "^", "~":
+            case '/', '+', '*', '%', '&', '|', '^', '~':
                 token = scanOperator(false)
             
-            case ".": {
+            case '.': {
                 position++ column++
                 if position == end
                     token = InvalidToken()
                 else {
-                    if text[position] == "." {
+                    if text[position] == '.' {
                         position-- column--
                         token = scanOperator(true)
                     }
                     else
-                        token = Punctuation(String("."))
+                        token = Punctuation(String('.'))
                 }
             }
             
-            case "-": {
+            case '-': {
                 position++ column++
                 if position == end
                     token = InvalidToken()
                 else {
-                    if (text[position] != ">") {
+                    if (text[position] != '>') {
                         position-- column--
                         token = scanOperator(true)
                     }
@@ -165,14 +165,14 @@ class Lexer {
                 }
             }
 
-            case "!": {
+            case '!': {
                 position++ column++
                 if position == end {
                     token = PostfixOperator(String("!"))
                 }
                 else {
                     switch (text[position]) {
-                        case "/", "=", "+", "!", "*", "%", "&", "|", "^", "~" , ".", " ", "\t", "\r", "\n": {
+                        case '/', '=', '+', '!', '*', '%', '&', '|', '^', '~' , '.', ' ', '\t', '\r', '\n': {
                             position-- column--
                             token = scanOperator(true)
                         }
@@ -196,7 +196,7 @@ class Lexer {
                 }
                 else {
                     switch (text[position]) {
-                        case "/", "=", "+", "!", "*", "%", "&", "|", "^", "~": {
+                        case '/', '=', '+', '!', '*', '%', '&', '|', '^', '~': {
                             position-- column--
                             token = scanOperator(true)
                         }
@@ -212,14 +212,14 @@ class Lexer {
                 }
             }
 
-            case "=": {
+            case '=': {
                 position++ column++
                 if position == end {
                     token = InvalidToken()
                 }
                 else {
                     switch text[position] {
-                        case "/", "=", "+", "!", "*", "%", "&", "|", "^", "~": {
+                        case '/', '=', '+', '!', '*', '%', '&', '|', '^', '~': {
                             position-- column--
                             token = scanOperator(true)
                         }
@@ -244,10 +244,10 @@ class Lexer {
                 return Identifier(name)
             
             let c: character = text[position]
-            if  ((c >= "a") && (c <= "z")) || 
-                ((c >= "A") && (c <= "Z")) || 
-                ((c >= "0") && (c <= "9")) || 
-                 (c == "_")
+            if  ((c >= 'a') && (c <= 'z')) || 
+                ((c >= 'A') && (c <= 'Z')) || 
+                ((c >= '0') && (c <= '9')) || 
+                 (c == '_')
                 name += text[position]
             else
                 return Identifier(name)
@@ -260,7 +260,7 @@ class Lexer {
 
         if !whitespaceSkippedBefore && token is Punctuation
             switch (token as Punctuation).sign
-                case "(", "[", "{", ",", ";", ":":
+                case '(', '[', '{', ',', ';', ':':
                     whitespaceSkippedBefore = true
                 default:
                     whitespaceSkippedBefore = false
@@ -276,10 +276,10 @@ class Lexer {
                     return PostfixOperator(operation)
             
             switch (text[position]) {
-                case "/", "=", "-", "+", "!", "*", "%", "<", "&", "|", "^", "~":
+                case '/', '=', '-', '+', '!', '*', '%', '<', '&', '|', '^', '~':
                     operation += text[position]
                 
-                case ".":
+                case '.':
                     if !includeDots
                         fallthrough
                     else
@@ -297,7 +297,7 @@ class Lexer {
 
                     if !whitespaceSkippedAfter
                         switch text[position]
-                            case ")", "]", "}", ",", ";", ":", ".":
+                            case ')', ']', '}', ',', ';', ':', '.':
                                 whitespaceSkippedAfter = true
                             default:
                                 whitespaceSkippedAfter = false
@@ -326,7 +326,7 @@ class Lexer {
                 return NumericLiteral(value)
             
             let c: character = text[position]
-            if (c >= "0") && (c <= "9")
+            if (c >= '0') && (c <= '9')
                 value += text[position]
             else
                 return NumericLiteral(value)
@@ -342,18 +342,18 @@ class Lexer {
                 return InvalidToken()
 
             switch text[position] {
-                case "\"": {
+                case '\"': {
                     position++ column++
                     return StringLiteral(value)
                 }
-                case "\\": {
+                case '\\': {
                     position++ column++
                     switch text[position]
-                        case "\"", "\\", "'": value += text[position]
-                        case "n": value += "\n"
-                        case "r": value += "\r"
-                        case "t": value += "\t"
-                        case "0": value += "\0"
+                        case '\"', '\\': value += text[position]
+                        case 'n': value += "\n"
+                        case 'r': value += "\r"
+                        case 't': value += "\t"
+                        case '0': value += "\0"
                         default: return InvalidToken()
                 }
                 default:
@@ -442,37 +442,37 @@ class Lexer {
                 return true
 
             switch text[position] {
-                case " ": {
+                case ' ': {
                     whitespaceSkipped = true
                     position++ column++
                     continue
                 }
-                case "\t": {
+                case '\t': {
                     whitespaceSkipped = true
                     position++ column += 4
                     continue
                 }
-                case "\r": {
+                case '\r': {
                     whitespaceSkipped = true
                     position++
                     continue
                 }
-                case "\n": {
+                case '\n': {
                     whitespaceSkipped = true
                     position++ column = 1 line++
                     continue
                 }
-                case "/": {
+                case '/': {
                     position++ column++
 
                     if position == end
                         return whitespaceSkipped
                         
-                    if text[position] == "/" { 
+                    if text[position] == '/' { 
                         whitespaceSkipped = true
                         handleSingleLineComment()
                     }
-                    else if text[position] == "*" { 
+                    else if text[position] == '*' { 
                         whitespaceSkipped = true
                         handleMultiLineComment()
                     }
@@ -504,17 +504,17 @@ class Lexer {
                 return
                 
             switch text[position] {
-                case "\t": {
+                case '\t': {
                     whitespaceSkipped = true
                     position++ column += 4
                     continue
                 }
-                case "\r": {
+                case '\r': {
                     whitespaceSkipped = true
                     position++
                     continue
                 }
-                case "\n": {
+                case '\n': {
                     whitespaceSkipped = true
                     position++ column = 1 line++
                     return
@@ -535,7 +535,7 @@ class Lexer {
                 
             let character: character = text[position]
             switch (character) {
-                case "/": {
+                case '/': {
                     position++ column++
                     if position == end
                         return
@@ -544,29 +544,29 @@ class Lexer {
                     else
                         return
                 }
-                case "*": {
+                case '*': {
                     position++ column++
 
                     if position == end
                         return
-                    else if text[position] == "/" { 
+                    else if text[position] == '/' { 
                         position++ column++
                         return
                     }
                     else
                         fallthrough
                 }
-                case "\t": {
+                case '\t': {
                     whitespaceSkipped = true
                     position++ column += 4
                     continue
                 }
-                case "\r": {
+                case '\r': {
                     whitespaceSkipped = true
                     position++
                     continue
                 }
-                case "\n": {
+                case '\n': {
                     whitespaceSkipped = true
                     position++ column = 1 line++
                     continue
