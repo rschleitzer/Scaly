@@ -54,6 +54,7 @@ public:
 
     virtual bool _isLiteral();
     virtual bool _isStringLiteral();
+    virtual bool _isCharacterLiteral();
     virtual bool _isNumericLiteral();
 };
 
