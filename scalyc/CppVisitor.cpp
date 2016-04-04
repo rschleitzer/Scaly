@@ -197,7 +197,7 @@ bool CppVisitor::openTerminatedStatement(TerminatedStatement* terminatedStatemen
                     BinaryOp* binaryOp = *(*binaryOps)[0];
                     if (binaryOp->_isAssignment()) {
                         Assignment* assignment = (Assignment*)binaryOp;
-                        _LetString* memberName = getMemberIfConstructorCall(assignment);
+                        _LetString* memberName = getMemberIfCreatingObject(assignment);
                         if ((memberName != nullptr) && (!assignmentIsInInitializer(assignment))) {
                             (*sourceFile) += *memberName;
                             (*sourceFile) += "->getPage()->clear();\n";
@@ -895,21 +895,23 @@ void CppVisitor::closeBinaryOperation(BinaryOperation* binaryOperation) {
 
 bool CppVisitor::openAssignment(Assignment* assignment) {
     (*sourceFile) += " = ";
-    _LetString* memberName = getMemberIfConstructorCall(assignment);
+    _LetString* memberName = getMemberIfCreatingObject(assignment);
     if (memberName != nullptr) {
-        (*sourceFile) += "new(";
-        ClassDeclaration* classDeclaration = getClassDeclaration(assignment);
-        if (isVariableMember(memberName, classDeclaration)) {
-            if (!assignmentIsInInitializer(assignment)) {
-                (*sourceFile) += *memberName;
-                (*sourceFile) += "->";
+        if (isClass(getFunctionName(assignment))) {
+            (*sourceFile) += "new(";
+            ClassDeclaration* classDeclaration = getClassDeclaration(assignment);
+            if (isVariableMember(memberName, classDeclaration)) {
+                if (!assignmentIsInInitializer(assignment)) {
+                    (*sourceFile) += *memberName;
+                    (*sourceFile) += "->";
+                }
+                (*sourceFile) += "getPage()";
+                if (assignmentIsInInitializer(assignment)) {
+                    (*sourceFile) += "->allocateExclusivePage()";
+                }
             }
-            (*sourceFile) += "getPage()";
-            if (assignmentIsInInitializer(assignment)) {
-                (*sourceFile) += "->allocateExclusivePage()";
-            }
+            (*sourceFile) += ") ";
         }
-        (*sourceFile) += ") ";
     }
 
     return true;
@@ -924,26 +926,24 @@ bool CppVisitor::assignmentIsInInitializer(Assignment* assignment) {
     return false;
 }
 
-_LetString* CppVisitor::getMemberIfConstructorCall(Assignment* assignment) {
-    if (assignment->expression->prefixOperator == 0) {
-        PostfixExpression* rightSide = assignment->expression->expression;
-        if (rightSide->primaryExpression->_isIdentifierExpression()) {
-            IdentifierExpression* classExpression = (IdentifierExpression*)(rightSide->primaryExpression);
-            _LetString* className = classExpression->name;
-            if ((isClass(className) && (rightSide->postfixes->length() == 1))) {
-                if ((*(*rightSide->postfixes)[0])->_isFunctionCall()) {
-                    if (assignment->parent->_isSimpleExpression()) {
-                        SimpleExpression* simpleExpression = (SimpleExpression*)(assignment->parent);
-                        if (simpleExpression->prefixExpression->prefixOperator == 0) {
-                            PostfixExpression* leftSide = simpleExpression->prefixExpression->expression;
-                            if ((leftSide->postfixes == 0) && (leftSide->primaryExpression->_isIdentifierExpression())) {
-                                IdentifierExpression* memberExpression = (IdentifierExpression*)(leftSide->primaryExpression);
-                                _LetString* memberName = memberExpression->name;
-                                ClassDeclaration* classDeclaration = getClassDeclaration(assignment);
-                                if (classDeclaration != nullptr) {
-                                    return memberName;
-                                }
-                            }
+_LetString* CppVisitor::getMemberIfCreatingObject(Assignment* assignment) {
+     _LetString* functionName = getFunctionName(assignment);
+    if (functionName == nullptr) {
+        return nullptr;
+    }
+    PostfixExpression* rightSide = assignment->expression->expression;
+    if (((isClass(functionName) || isCreatingObject(functionName, assignment)) && (rightSide->postfixes->length() == 1))) {
+        if ((*(*rightSide->postfixes)[0])->_isFunctionCall()) {
+            if (assignment->parent->_isSimpleExpression()) {
+                SimpleExpression* simpleExpression = (SimpleExpression*)(assignment->parent);
+                if (simpleExpression->prefixExpression->prefixOperator == 0) {
+                    PostfixExpression* leftSide = simpleExpression->prefixExpression->expression;
+                    if ((leftSide->postfixes == 0) && (leftSide->primaryExpression->_isIdentifierExpression())) {
+                        IdentifierExpression* memberExpression = (IdentifierExpression*)(leftSide->primaryExpression);
+                        _LetString* memberName = memberExpression->name;
+                        ClassDeclaration* classDeclaration = getClassDeclaration(assignment);
+                        if (classDeclaration != nullptr) {
+                            return memberName;
                         }
                     }
                 }
@@ -952,6 +952,41 @@ _LetString* CppVisitor::getMemberIfConstructorCall(Assignment* assignment) {
     }
     
     return nullptr;
+}
+
+_LetString* CppVisitor::getFunctionName(Assignment* assignment) {
+   if (assignment->expression->prefixOperator == 0) {
+        PostfixExpression* rightSide = assignment->expression->expression;
+        if (rightSide->primaryExpression->_isIdentifierExpression()) {
+            IdentifierExpression* classExpression = (IdentifierExpression*)(rightSide->primaryExpression);
+            return classExpression->name;
+        }
+   }
+   
+   return nullptr;
+}
+
+bool CppVisitor::isCreatingObject(_LetString* functionName, SyntaxNode* node) {
+    ClassDeclaration* classDeclaration = getClassDeclaration(node);
+    if (classDeclaration == nullptr)
+        return false;
+    _Vector<ClassMember>* members = classDeclaration->body->members;
+    if (members == nullptr)
+        return false;
+    size_t _members_length = members->length();
+    for (size_t _i = 0; _i < _members_length; _i++) {
+        ClassMember* member = *(*members)[_i];
+        if (member->declaration->_isFunctionDeclaration()) {
+            FunctionDeclaration* functionDeclaration = (FunctionDeclaration*)member->declaration;
+            if (functionDeclaration->name->_isIdentifierFunction()) {
+                IdentifierFunction* identifierFunction = (IdentifierFunction*)functionDeclaration->name;
+                if ((*identifierFunction->name) == (*functionName))
+                    return true;
+            }
+        } 
+    }
+
+    return false;
 }
 
 ClassDeclaration* CppVisitor::getClassDeclaration(SyntaxNode* node) {
@@ -1072,6 +1107,30 @@ void CppVisitor::closeNamedMemberPostfix(NamedMemberPostfix* namedMemberPostfix)
 
 bool CppVisitor::openParenthesizedExpression(ParenthesizedExpression* parenthesizedExpression) {
     (*sourceFile) += "(";
+    
+    if (parenthesizedExpression->parent->_isFunctionCall()) {
+        FunctionCall* functionCall = (FunctionCall*)parenthesizedExpression->parent;
+        if (functionCall->parent->_isPostfixExpression()) {
+            PostfixExpression* postfixExpression = (PostfixExpression*)functionCall->parent;
+            if (postfixExpression->primaryExpression->_isIdentifierExpression()) {
+                IdentifierExpression* identifierExpression = (IdentifierExpression*)postfixExpression->primaryExpression;
+                if (!isClass(identifierExpression->name)) {
+                    if (postfixExpression->parent->parent->_isAssignment()) {
+                        Assignment* assignment = (Assignment*)postfixExpression->parent->parent;
+                        _LetString* member = getMemberIfCreatingObject(assignment);
+                        if (member != nullptr) {
+                            ClassDeclaration* classDeclaration = getClassDeclaration(assignment);
+                            if (isVariableMember(member, classDeclaration)) {
+                                (*sourceFile) += *member;
+                                (*sourceFile) += "->getPage()";
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
     return true;
 }
 
