@@ -434,13 +434,29 @@ Token* Lexer::scanCharacterLiteral(_Page* _rp) {
         position++; column++;
         if (position == end)
             return new(_rp) InvalidToken();
-
-        if ((*text)[position] == '\'') {
-            position++; column++;
-            return new(_rp) CharacterLiteral(&_LetString::create(_rp, value));
-        }
-        else {
-            value += (*text)[position];
+        switch ((*text)[position]) {
+            case '\'': {
+                position++; column++;
+                return new(_rp) CharacterLiteral(&_LetString::create(_rp, value));
+            }
+            case '\\': {
+                position++; column++;
+                switch ((*text)[position]) {
+                    case '\"': case '\\': case '\'':
+                        value += (*text)[position];
+                        break;
+                    case 'n': value += '\n'; break;
+                    case 'r': value += '\r'; break;
+                    case 't': value += '\t'; break;
+                    case '0': value += '\0'; break;
+                    default:
+                        return new(_rp) InvalidToken();
+                }
+                break;
+            }
+            default: {
+                value += (*text)[position];
+            }
         }
     }
     while (true);

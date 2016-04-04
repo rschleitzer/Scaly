@@ -126,7 +126,10 @@ class Lexer {
         switch c {
             case '\"':
                 token = scanStringLiteral()
-                
+
+            case '\'':
+                token = scanCharacterLiteral()
+
             case '_', '(', ')', '{', '}', '[', ']', '<', '>', ',', ':', ';', '@', '#', '`': {
                 token = Punctuation(String(text[position]))
                 position++ column++

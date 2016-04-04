@@ -1232,8 +1232,6 @@ bool CppVisitor::openItemCaseLabel(ItemCaseLabel* itemCaseLabel) {
 }
 
 void CppVisitor::closeItemCaseLabel(ItemCaseLabel* itemCaseLabel) {
-    (*sourceFile) += ": {\n";
-    sourceIndentLevel++;
 }
 
 bool CppVisitor::openCaseItem(CaseItem* caseItem) {
@@ -1241,9 +1239,6 @@ bool CppVisitor::openCaseItem(CaseItem* caseItem) {
 }
 
 void CppVisitor::closeCaseItem(CaseItem* caseItem) {
-//    sourceIndentLevel--;
-//    indentSource();
-//    (*sourceFile) += "}\n";
 }
 
 bool CppVisitor::openForExpression(ForExpression* forExpression) {
@@ -1338,10 +1333,17 @@ void CppVisitor::visitDefaultCaseLabel(DefaultCaseLabel* defaultCaseLabel) {
 }
 
 bool CppVisitor::openBlockCaseContent(BlockCaseContent* blockCaseContent) {
+    (*sourceFile) += ": {\n";
+    sourceIndentLevel++;
     return true;
 }
 
 void CppVisitor::closeBlockCaseContent(BlockCaseContent* blockCaseContent) {
+    indentSource();
+    (*sourceFile) += "break;\n";
+    sourceIndentLevel--;
+    indentSource();
+    (*sourceFile) += "}\n";
 }
 
 void CppVisitor::visitEmptyCaseContent(EmptyCaseContent* emptyCaseContent) {
