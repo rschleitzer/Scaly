@@ -1153,6 +1153,10 @@ void CppVisitor::visitLiteralExpression(LiteralExpression* literalExpression) {
     else if (literal->_isCharacterLiteral()) {
         CharacterLiteral* characterLiteral = (CharacterLiteral*)literal;
         (*sourceFile) += "\'";
+        if (characterLiteral->value->getLength() > 0) {
+            if (((*characterLiteral->value)[0] == '"') || ((*characterLiteral->value)[0] == '\''))
+                (*sourceFile) += "\\";
+        }
         (*sourceFile) += *characterLiteral->value;
         (*sourceFile) += "\'";
     }
@@ -1343,7 +1347,7 @@ void CppVisitor::closeBlockCaseContent(BlockCaseContent* blockCaseContent) {
     (*sourceFile) += "break;\n";
     sourceIndentLevel--;
     indentSource();
-    (*sourceFile) += "}\n";
+    (*sourceFile) += "}\n\n";
 }
 
 void CppVisitor::visitEmptyCaseContent(EmptyCaseContent* emptyCaseContent) {
