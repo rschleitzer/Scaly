@@ -1192,6 +1192,7 @@ void CppVisitor::closeElseClause(ElseClause* elseClause) {
 }
 
 bool CppVisitor::openSwitchExpression(SwitchExpression* switchExpression) {
+    (*sourceFile) += "switch (";
     return true;
 }
 
@@ -1199,10 +1200,15 @@ void CppVisitor::closeSwitchExpression(SwitchExpression* switchExpression) {
 }
 
 bool CppVisitor::openCurliedSwitchBody(CurliedSwitchBody* curliedSwitchBody) {
+    (*sourceFile) += ") {\n";
+    sourceIndentLevel++;
     return true;
 }
 
 void CppVisitor::closeCurliedSwitchBody(CurliedSwitchBody* curliedSwitchBody) {
+    sourceIndentLevel--;
+    indentSource();
+    (*sourceFile) += "}\n";
 }
 
 bool CppVisitor::openNakedSwitchBody(NakedSwitchBody* nakedSwitchBody) {
@@ -1213,6 +1219,8 @@ void CppVisitor::closeNakedSwitchBody(NakedSwitchBody* nakedSwitchBody) {
 }
 
 bool CppVisitor::openSwitchCase(SwitchCase* switchCase) {
+    indentSource();
+    (*sourceFile) += "case ";
     return true;
 }
 
@@ -1224,6 +1232,8 @@ bool CppVisitor::openItemCaseLabel(ItemCaseLabel* itemCaseLabel) {
 }
 
 void CppVisitor::closeItemCaseLabel(ItemCaseLabel* itemCaseLabel) {
+    (*sourceFile) += ": {\n";
+    sourceIndentLevel++;
 }
 
 bool CppVisitor::openCaseItem(CaseItem* caseItem) {
@@ -1231,6 +1241,9 @@ bool CppVisitor::openCaseItem(CaseItem* caseItem) {
 }
 
 void CppVisitor::closeCaseItem(CaseItem* caseItem) {
+//    sourceIndentLevel--;
+//    indentSource();
+//    (*sourceFile) += "}\n";
 }
 
 bool CppVisitor::openForExpression(ForExpression* forExpression) {
