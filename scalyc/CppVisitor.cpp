@@ -1163,7 +1163,16 @@ void CppVisitor::visitLiteralExpression(LiteralExpression* literalExpression) {
 }
 
 void CppVisitor::visitIdentifierExpression(IdentifierExpression* identifierExpression) {
-    (*sourceFile) += *identifierExpression->name;
+    if (isClass(identifierExpression->name)) {
+        _LetString* className = identifierExpression->name;
+        if ((*className) == "String") {
+            (*sourceFile) += "&_LetString::create(token->getPage(), ";
+        }
+        else
+            (*sourceFile) += *identifierExpression->name;
+    }
+    else
+        (*sourceFile) += *identifierExpression->name;
     if (identifierExpression->parent->_isPostfixExpression()) {
         PostfixExpression* postfixExpression = (PostfixExpression*)identifierExpression->parent;
         if (postfixExpression->postfixes != nullptr) {
