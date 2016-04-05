@@ -136,8 +136,8 @@ void Lexer::advance() {
                 token = new (token->getPage()) Punctuation(&_LetString::create(token->getPage(), (*text)[position]));
                 position++;
                 column++;
-                break;
             }
+            break;
         }
 
         case '/': case '+': case '*':  case '%': case '&': case '|': case '^': case '~': {

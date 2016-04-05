@@ -512,7 +512,7 @@ bool CppVisitor::openParameterClause(ParameterClause* parameterClause) {
 
 void CppVisitor::closeParameterClause(ParameterClause* parameterClause) {
     (*headerFile) += ")";
-    (*sourceFile) += ")";
+    (*sourceFile) += ") ";
     inParameterClause = false;
 }
 
@@ -846,7 +846,7 @@ void CppVisitor::closeClassMember(ClassMember* classMember) {
 }
 
 bool CppVisitor::openCodeBlock(CodeBlock* codeBlock) {
-    (*sourceFile) += " {\n";
+    (*sourceFile) += "{\n";
     sourceIndentLevel++;
     return true;
 }
@@ -1177,7 +1177,7 @@ void CppVisitor::visitIdentifierExpression(IdentifierExpression* identifierExpre
 bool CppVisitor::openIfExpression(IfExpression* ifExpression) {
     (*sourceFile) += "if (";
     ifExpression->condition->accept(this);
-    (*sourceFile) += ")";
+    (*sourceFile) += ") ";
     ifExpression->consequent->accept(this);
     if (ifExpression->elseClause)
         ifExpression->elseClause->accept(this);
