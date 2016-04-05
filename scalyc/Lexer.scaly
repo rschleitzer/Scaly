@@ -130,7 +130,7 @@ class Lexer {
             case '\'':
                 token = scanCharacterLiteral()
 
-            case '_', '(', ')', '{', '}', '[', ']', '<', '>', ',', ':', ';', '@', '#', '`': {
+            case '_', '(', ')', '{', '}', '[', ']', ',', ':', ';', '@', '#', '`': {
                 token = Punctuation(String(text[position]))
                 position++ column++
             }

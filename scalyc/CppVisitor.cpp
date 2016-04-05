@@ -1239,10 +1239,12 @@ void CppVisitor::closeItemCaseLabel(ItemCaseLabel* itemCaseLabel) {
 }
 
 bool CppVisitor::openCaseItem(CaseItem* caseItem) {
+    (*sourceFile) += "case ";
     return true;
 }
 
 void CppVisitor::closeCaseItem(CaseItem* caseItem) {
+    (*sourceFile) += ": ";
 }
 
 bool CppVisitor::openForExpression(ForExpression* forExpression) {
@@ -1331,13 +1333,15 @@ bool CppVisitor::openExpressionPattern(ExpressionPattern* expressionPattern) {
 }
 
 void CppVisitor::closeExpressionPattern(ExpressionPattern* expressionPattern) {
+    if (expressionPattern->parent->_isItemCaseLabel())
+        (*sourceFile) += ": ";
 }
 
 void CppVisitor::visitDefaultCaseLabel(DefaultCaseLabel* defaultCaseLabel) {
 }
 
 bool CppVisitor::openBlockCaseContent(BlockCaseContent* blockCaseContent) {
-    (*sourceFile) += ": {\n";
+    (*sourceFile) += "{\n";
     sourceIndentLevel++;
     return true;
 }
