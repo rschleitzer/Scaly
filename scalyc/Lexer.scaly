@@ -138,6 +138,23 @@ class Lexer {
             case '/', '+', '*', '%', '&', '|', '^', '~':
                 token = scanOperator(false)
             
+            case '<', '>': {
+                position++ column++
+                if position == end {
+                    token = InvalidToken()
+                }
+                else {
+                    switch text[position] {
+                        case '/', '=', '+', '!','*', '%', '&', '|', '^', '~', '.', ' ', '\t', '\r', '\n': {
+                            position-- column--
+                            token = scanOperator(true)
+                        }
+                        default:
+                            token = Punctuation(String(c))
+                    }
+                }
+            }
+
             case '.': {
                 position++ column++
                 if position == end
@@ -198,7 +215,7 @@ class Lexer {
                     token = PostfixOperator(String("?"))
                 }
                 else {
-                    switch (text[position]) {
+                    switch text[position] {
                         case '/', '=', '+', '!', '*', '%', '&', '|', '^', '~': {
                             position-- column--
                             token = scanOperator(true)

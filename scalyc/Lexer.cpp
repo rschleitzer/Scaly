@@ -147,23 +147,27 @@ void Lexer::advance() {
         }
 
         case '<': case '>': {
-            position++; column++;
-            if (position == end) {
-                token->getPage()->clear();
-                token = new (token->getPage()) InvalidToken();
-            }
-            else {
-                switch ((*text)[position]) {
-                    case '/': case '=': case '+': case '!': case'*': case '%': case '&': case '|': case '^': case '~': case '.':
-                    case ' ': case '\t': case '\r': case '\n': {
-                        position--; column--;
-                        token->getPage()->clear();
-                        token = scanOperator(token->getPage(), true);
-                        break;
+            {
+                position++;
+                column++;
+                if (position == end) {
+                    token->getPage()->clear();
+                    token = new (token->getPage()) InvalidToken();
+                }
+                else {
+                    switch ((*text)[position]) {
+                        case '/': case '=': case '+': case '!': case'*': case '%': case '&': case '|': case '^': case '~': case '.': case ' ': case '\t': case '\r': case '\n': {
+                            {
+                                position--; column--;
+                                token->getPage()->clear();
+                                token = scanOperator(token->getPage(), true);
+                            }
+                            break;
+                        }
+                        default:
+                            token->getPage()->clear();
+                            token = new (token->getPage()) Punctuation(&_LetString::create(token->getPage(), c));
                     }
-                    default:
-                        token->getPage()->clear();
-                        token = new (token->getPage()) Punctuation(&_LetString::create(token->getPage(), c));
                 }
             }
             break;
