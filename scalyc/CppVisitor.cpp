@@ -1065,6 +1065,7 @@ void CppVisitor::closePathItemCatchPattern(PathItemCatchPattern* pathItemCatchPa
 }
 
 void CppVisitor::visitOperatorPostfix(OperatorPostfix* operatorPostfix) {
+    (*sourceFile) += *operatorPostfix->postfixOperator;
 }
 
 bool CppVisitor::openFunctionCall(FunctionCall* functionCall) {
