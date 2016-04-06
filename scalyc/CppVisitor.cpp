@@ -220,6 +220,9 @@ void CppVisitor::closeTerminatedStatement(TerminatedStatement* terminatedStateme
         if (expression->prefixExpression->expression->primaryExpression->_isIfExpression())
             return;
     }
+
+    if (terminatedStatement->statement->_isCodeBlock())
+        return;
         
     (*sourceFile) += ";\n";
 }

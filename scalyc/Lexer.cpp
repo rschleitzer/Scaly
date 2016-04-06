@@ -140,7 +140,7 @@ void Lexer::advance() {
             break;
         }
 
-        case '/': case '+': case '*':  case '%': case '&': case '|': case '^': case '~': {
+        case '/': case '+': case '*': case '%': case '&': case '|': case '^': case '~': {
             token->getPage()->clear();
             token = scanOperator(token->getPage(), false);
             break;
