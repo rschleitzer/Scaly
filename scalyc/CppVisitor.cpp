@@ -1127,6 +1127,9 @@ bool CppVisitor::openParenthesizedExpression(ParenthesizedExpression* parenthesi
                                 (*sourceFile) += "(";
                                 (*sourceFile) += *member;
                                 (*sourceFile) += "->getPage()";
+                                if (functionCall->arguments != nullptr)
+                                    if (functionCall->arguments->expressionElements != nullptr)
+                                        (*sourceFile) += ", ";
                                 outputParen = false;
                             }
                         }
