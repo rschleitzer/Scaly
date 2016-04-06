@@ -152,7 +152,7 @@ void Lexer::advance() {
                 column++;
                 if (position == end) {
                     token->getPage()->clear();
-                    token = new (token->getPage()) InvalidToken();
+                    token = new(token->getPage()) InvalidToken();
                 }
                 else {
                     switch ((*text)[position]) {

@@ -1219,10 +1219,13 @@ void CppVisitor::closeIfExpression(IfExpression* ifExpression) {
 }
 
 bool CppVisitor::openElseClause(ElseClause* elseClause) {
+    indentSource();
+    (*sourceFile) += "else ";
     return true;
 }
 
 void CppVisitor::closeElseClause(ElseClause* elseClause) {
+    sourceIndentLevel++;
 }
 
 bool CppVisitor::openSwitchExpression(SwitchExpression* switchExpression) {
