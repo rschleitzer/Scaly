@@ -156,7 +156,7 @@ void Lexer::advance() {
                 }
                 else {
                     switch ((*text)[position]) {
-                        case '/': case '=': case '+': case '!': case'*': case '%': case '&': case '|': case '^': case '~': case '.': case ' ': case '\t': case '\r': case '\n': {
+                        case '/': case '=': case '+': case '!': case '*': case '%': case '&': case '|': case '^': case '~': case '.': case ' ': case '\t': case '\r': case '\n': {
                             {
                                 position--; column--;
                                 token->getPage()->clear();

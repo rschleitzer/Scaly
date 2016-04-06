@@ -1175,10 +1175,22 @@ void CppVisitor::visitLiteralExpression(LiteralExpression* literalExpression) {
         CharacterLiteral* characterLiteral = (CharacterLiteral*)literal;
         (*sourceFile) += "\'";
         if (characterLiteral->value->getLength() > 0) {
-            if (((*characterLiteral->value)[0] == '"') || ((*characterLiteral->value)[0] == '\''))
+            if (((*characterLiteral->value)[0] == '"') || ((*characterLiteral->value)[0] == '\'')) {
                 (*sourceFile) += "\\";
+                (*sourceFile) += *characterLiteral->value;
+            }
+            else if ((*characterLiteral->value)[0] == '\r') {
+                (*sourceFile) += "\\r";
+            }
+            else if ((*characterLiteral->value)[0] == '\n') {
+                (*sourceFile) += "\\n";
+            }
+            else if ((*characterLiteral->value)[0] == '\t') {
+                (*sourceFile) += "\\t";
+            }
+            else
+                (*sourceFile) += *characterLiteral->value;
         }
-        (*sourceFile) += *characterLiteral->value;
         (*sourceFile) += "\'";
     }
 }
