@@ -1106,8 +1106,7 @@ void CppVisitor::closeNamedMemberPostfix(NamedMemberPostfix* namedMemberPostfix)
 }
 
 bool CppVisitor::openParenthesizedExpression(ParenthesizedExpression* parenthesizedExpression) {
-    (*sourceFile) += "(";
-    
+    bool outputParen = true;
     if (parenthesizedExpression->parent->_isFunctionCall()) {
         FunctionCall* functionCall = (FunctionCall*)parenthesizedExpression->parent;
         if (functionCall->parent->_isPostfixExpression()) {
@@ -1121,15 +1120,30 @@ bool CppVisitor::openParenthesizedExpression(ParenthesizedExpression* parenthesi
                         if (member != nullptr) {
                             ClassDeclaration* classDeclaration = getClassDeclaration(assignment);
                             if (isVariableMember(member, classDeclaration)) {
+                                (*sourceFile) += "(";
                                 (*sourceFile) += *member;
                                 (*sourceFile) += "->getPage()";
+                                outputParen = false;
                             }
                         }
                     }
                 }
+                else {
+                    if (isClass(identifierExpression->name)) {
+                        _LetString* className = identifierExpression->name;
+                        if ((*className) == "String") {
+                            outputParen = false;
+                        }
+                    }
+                }
+                    
             }
         }
     }
+
+    if (outputParen)
+        (*sourceFile) += "(";
+
     
     return true;
 }
