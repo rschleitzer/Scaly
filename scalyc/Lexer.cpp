@@ -165,9 +165,11 @@ void Lexer::advance() {
                             }
                             break;
                         }
-                        default:
+
+                        default: {
                             token->getPage()->clear();
                             token = new (token->getPage()) Punctuation(&_LetString::create(token->getPage(), c));
+                        }
                     }
                 }
             }
