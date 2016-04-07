@@ -307,27 +307,35 @@ void Lexer::advance() {
         }
 
         case '=': {
-            position++; column++;
-            if (position == end) {
-                token->getPage()->clear();
-                token = new(token->getPage()) InvalidToken();
-            }
-            else {
-                switch ((*text)[position]) {
-                    case '/': case '=': case '+': case '!': case '*': case '%': case '&': case '|': case '^': case '~': {
-                        position--; column--;
-                        token->getPage()->clear();
-                        token = scanOperator(token->getPage(), true);
-                        break;
-                    }
-                    default: {
-                        token->getPage()->clear();
-                        token = new(token->getPage()) Punctuation(&_LetString::create(token->getPage(), "="));
+            {
+                position++;
+                column++;
+                if (position == end) {
+                    token->getPage()->clear();
+                    token = new(token->getPage()) InvalidToken();
+                }
+                else {
+                    switch ((*text)[position]) {
+                        case '/': case '=': case '+': case '!': case '*': case '%': case '&': case '|': case '^': case '~': {
+                            {
+                                position--;
+                                column--;
+                                token->getPage()->clear();
+                                token = scanOperator(token->getPage(), true);
+                            }
+                            break;
+                        }
+
+                        default: {
+                            token->getPage()->clear();
+                            token = new(token->getPage()) Punctuation(&_LetString::create(token->getPage(), "="));
+                        }
                     }
                 }
             }
             break;
         }
+
         default: {
             token->getPage()->clear();
             token = new(token->getPage()) InvalidToken();
