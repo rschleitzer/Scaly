@@ -2086,6 +2086,15 @@ class Parser {
             return node
         }
 
+        {
+            let node: NullExpression = parseNullExpression() catch _(error) {
+                errors.push(error)
+                break
+            }
+
+            return node
+        }
+
         throw ParserError.UnableToParse(start, errors)
     }
 
@@ -2694,6 +2703,21 @@ class Parser {
         }
 
         return superSubscript
+    }
+
+    function parseNullExpression() -> NullExpression throws ParserError {
+        mutable nullExpression: NullExpression? = null
+        {
+            let start: Position = lexer.getPosition()
+            let success: bool = lexer.parseKeyword(nullKeyword)
+            if success
+                lexer.advance()
+
+            if nullExpression == null
+                nullExpression = NullExpression(start, lexer.getPosition())
+        }
+
+        return nullExpression
     }
 
     function parseElseClause() -> ElseClause throws ParserError {
@@ -3655,6 +3679,9 @@ class Parser {
         if id == thisKeyword
             return false
 
+        if id == nullKeyword
+            return false
+
         true
     }
 
@@ -3690,6 +3717,7 @@ class Parser {
     let enumKeyword: String = "enum"
     let superKeyword: String = "super"
     let thisKeyword: String = "this"
+    let nullKeyword: String = "null"
     let semicolon: String = ";"
     let equal: String = "="
     let leftAngular: String = "<"

@@ -431,6 +431,9 @@ class MyVisitor : SyntaxVisitor {
     function closeSuperSubscript(superSubscript: SuperSubscript) {
     }
 
+    function visitNullExpression(nullExpression: NullExpression) {
+    }
+
     function openElseClause(elseClause: ElseClause) -> bool {
         return true;
     }

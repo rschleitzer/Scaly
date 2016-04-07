@@ -288,6 +288,7 @@
         <content link = InitializerCall
         <content link = ThisExpression
         <content link = SuperExpression
+        <content link = NullExpression
 
     <syntax id = IdentifierExpression                           base = PrimaryExpression
         <content identifier                                     property = name
@@ -375,6 +376,9 @@
     <syntax id = SuperSubscript                                 base = SuperExpression
         <content link = super
         <content link = Subscript                               property = subscript
+
+    <syntax id = NullExpression                                 base = PrimaryExpression
+        <content link = null
 
     <syntax id = ElseClause
         <content link = else
@@ -535,6 +539,7 @@
     <keyword id = enum
     <keyword id = super
     <keyword id = this
+    <keyword id = null
 
     <punctuation id = semicolon         value = ";"
     <punctuation id = equal             value = "="

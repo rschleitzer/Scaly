@@ -179,6 +179,7 @@ public:
     virtual void closeSuperDot(SuperDot* superDot);
     virtual bool openSuperSubscript(SuperSubscript* superSubscript);
     virtual void closeSuperSubscript(SuperSubscript* superSubscript);
+    virtual void visitNullExpression(NullExpression* nullExpression);
     virtual bool openElseClause(ElseClause* elseClause);
     virtual void closeElseClause(ElseClause* elseClause);
     virtual bool openCurliedSwitchBody(CurliedSwitchBody* curliedSwitchBody);

@@ -1351,6 +1351,19 @@ class SuperSubscript : SuperExpression {
     let subscript: Subscript?
 }
 
+class NullExpression : PrimaryExpression {
+
+    init(start: Position, end: Position) {
+        super.init(start, end)
+    }
+
+    override function accept(mutable visitor: SyntaxVisitor) {
+        visitor.openNullExpression(this)
+        visitor.closeNullExpression(this)
+    }
+
+}
+
 class ElseClause : SyntaxNode {
 
     init(alternative: Expression, start: Position, end: Position) {

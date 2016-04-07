@@ -79,6 +79,7 @@ class ThisWord;
 class SuperExpression;
 class SuperDot;
 class SuperSubscript;
+class NullExpression;
 class ElseClause;
 class SwitchBody;
 class CurliedSwitchBody;
@@ -239,6 +240,7 @@ class SyntaxVisitor {
     function closeSuperDot(superDot: SuperDot);
     function openSuperSubscript(superSubscript: SuperSubscript) -> bool;
     function closeSuperSubscript(superSubscript: SuperSubscript);
+    function visitNullExpression(nullExpression: NullExpression);
     function openElseClause(elseClause: ElseClause) -> bool;
     function closeElseClause(elseClause: ElseClause);
     function openCurliedSwitchBody(curliedSwitchBody: CurliedSwitchBody) -> bool;

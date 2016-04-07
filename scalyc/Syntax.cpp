@@ -87,6 +87,7 @@ bool SyntaxNode::_isThisWord() { return false; }
 bool SyntaxNode::_isSuperExpression() { return false; }
 bool SyntaxNode::_isSuperDot() { return false; }
 bool SyntaxNode::_isSuperSubscript() { return false; }
+bool SyntaxNode::_isNullExpression() { return false; }
 bool SyntaxNode::_isElseClause() { return false; }
 bool SyntaxNode::_isSwitchBody() { return false; }
 bool SyntaxNode::_isCurliedSwitchBody() { return false; }
@@ -996,6 +997,7 @@ bool PrimaryExpression::_isBreakExpression() { return false; }
 bool PrimaryExpression::_isInitializerCall() { return false; }
 bool PrimaryExpression::_isThisExpression() { return false; }
 bool PrimaryExpression::_isSuperExpression() { return false; }
+bool PrimaryExpression::_isNullExpression() { return false; }
 bool PrimaryExpression::_isThisDot() { return false; }
 bool PrimaryExpression::_isThisSubscript() { return false; }
 bool PrimaryExpression::_isThisWord() { return false; }
@@ -1247,6 +1249,15 @@ void SuperSubscript::accept(SyntaxVisitor* visitor) {
         return;
     subscript->accept(visitor);
     visitor->closeSuperSubscript(this);
+}
+
+NullExpression::NullExpression(Position* start, Position* end)
+: PrimaryExpression(start, end) {}
+
+bool NullExpression::_isNullExpression() { return true; }
+
+void NullExpression::accept(SyntaxVisitor* visitor) {
+    visitor->visitNullExpression(this);
 }
 
 ElseClause::ElseClause(Expression* alternative, Position* start, Position* end)

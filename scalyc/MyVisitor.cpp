@@ -435,6 +435,9 @@ bool MyVisitor::openSuperSubscript(SuperSubscript* superSubscript) {
 void MyVisitor::closeSuperSubscript(SuperSubscript* superSubscript) {
 }
 
+void MyVisitor::visitNullExpression(NullExpression* nullExpression) {
+}
+
 bool MyVisitor::openElseClause(ElseClause* elseClause) {
     return true;
 }

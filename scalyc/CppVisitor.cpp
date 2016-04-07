@@ -1233,6 +1233,10 @@ bool CppVisitor::openIfExpression(IfExpression* ifExpression) {
 void CppVisitor::closeIfExpression(IfExpression* ifExpression) {
 }
 
+void CppVisitor::visitNullExpression(NullExpression* nullExpression) {
+    (*sourceFile) += "nullptr";
+}
+
 bool CppVisitor::openElseClause(ElseClause* elseClause) {
     indentSource();
     (*sourceFile) += "else ";

@@ -102,6 +102,7 @@ public:
     virtual _Result<SuperExpression, ParserError> parseSuperExpression(_Page* _rp, _Page* _ep);
     virtual _Result<SuperDot, ParserError> parseSuperDot(_Page* _rp, _Page* _ep);
     virtual _Result<SuperSubscript, ParserError> parseSuperSubscript(_Page* _rp, _Page* _ep);
+    virtual _Result<NullExpression, ParserError> parseNullExpression(_Page* _rp, _Page* _ep);
     virtual _Result<ElseClause, ParserError> parseElseClause(_Page* _rp, _Page* _ep);
     virtual _Result<SwitchBody, ParserError> parseSwitchBody(_Page* _rp, _Page* _ep);
     virtual _Result<CurliedSwitchBody, ParserError> parseCurliedSwitchBody(_Page* _rp, _Page* _ep);
@@ -173,6 +174,7 @@ public:
     _LetString* enumKeyword;
     _LetString* superKeyword;
     _LetString* thisKeyword;
+    _LetString* nullKeyword;
     _LetString* semicolon;
     _LetString* equal;
     _LetString* leftAngular;
@@ -189,7 +191,6 @@ public:
     _LetString* questionMark;
     _LetString* underscore;
     _LetString* evaluatesTo;
-
 };
 
 }

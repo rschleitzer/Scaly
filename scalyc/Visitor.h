@@ -166,6 +166,8 @@ class SuperDot;
 
 class SuperSubscript;
 
+class NullExpression;
+
 class ElseClause;
 
 class SwitchBody;
@@ -359,6 +361,7 @@ public:
     virtual void closeSuperDot(SuperDot* superDot) = 0;
     virtual bool openSuperSubscript(SuperSubscript* superSubscript) = 0;
     virtual void closeSuperSubscript(SuperSubscript* superSubscript) = 0;
+    virtual void visitNullExpression(NullExpression* nullExpression) = 0;
     virtual bool openElseClause(ElseClause* elseClause) = 0;
     virtual void closeElseClause(ElseClause* elseClause) = 0;
     virtual bool openCurliedSwitchBody(CurliedSwitchBody* curliedSwitchBody) = 0;
@@ -401,7 +404,6 @@ public:
     virtual void closeTypeInheritanceClause(TypeInheritanceClause* typeInheritanceClause) = 0;
     virtual bool openInheritance(Inheritance* inheritance) = 0;
     virtual void closeInheritance(Inheritance* inheritance) = 0;
-
     virtual bool _isMyVisitor();
     virtual bool _isCppVisitor();
 };

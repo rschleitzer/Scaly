@@ -33,6 +33,7 @@ Parser::Parser(_LetString* fileName, _LetString* text)
   enumKeyword(&_LetString::create(getPage(), "enum")),
   superKeyword(&_LetString::create(getPage(), "super")),
   thisKeyword(&_LetString::create(getPage(), "this")),
+  nullKeyword(&_LetString::create(getPage(), "null")),
   semicolon(&_LetString::create(getPage(), ";")),
   equal(&_LetString::create(getPage(), "=")),
   leftAngular(&_LetString::create(getPage(), "<")),
@@ -2060,6 +2061,15 @@ _Result<PrimaryExpression, ParserError> Parser::parsePrimaryExpression(_Page* _r
         else
             errors->push(result.getError());
     }
+    {
+        // Make a region for the current block and get the Page
+        _Region _r; _Page* _p = _r.get();
+        _Result<NullExpression, ParserError> result = parseNullExpression(_rp, _p);
+        if (result.succeeded())
+            return _Result<PrimaryExpression, ParserError>(result.getResult());
+        else
+            errors->push(result.getError());
+    }
     return _Result<PrimaryExpression, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_unableToParse(start, &_Vector<ParserError>::create(_ep, *errors))));
 }
 
@@ -2589,6 +2599,20 @@ _Result<SuperSubscript, ParserError> Parser::parseSuperSubscript(_Page* _rp, _Pa
     SuperSubscript* superSubscript = new(_rp) SuperSubscript(subscript, start, lexer->getPosition(_rp));
     subscript->parent = superSubscript;
     return _Result<SuperSubscript, ParserError>(superSubscript);
+}
+
+_Result<NullExpression, ParserError> Parser::parseNullExpression(_Page* _rp, _Page* _ep) {
+    Position* start = lexer->getPreviousPosition(_rp);
+    Position* startNull1 = lexer->getPreviousPosition(_rp);
+    bool successNull1 = lexer->parseKeyword(nullKeyword);
+    if (successNull1) {
+        lexer->advance();
+    }
+    else {
+        return _Result<NullExpression, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_keywordExpected(startNull1, &_LetString::create(_ep, *nullKeyword))));
+    }
+    NullExpression* nullExpression = new(_rp) NullExpression(start, lexer->getPosition(_rp));
+    return _Result<NullExpression, ParserError>(nullExpression);
 }
 
 _Result<ElseClause, ParserError> Parser::parseElseClause(_Page* _rp, _Page* _ep) {
@@ -3527,6 +3551,9 @@ bool Parser::isIdentifier(_LetString* id) {
         return false;
 
     if (*id == *thisKeyword)
+        return false;
+
+    if (*id == *nullKeyword)
         return false;
 
     return true;
