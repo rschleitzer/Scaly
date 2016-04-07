@@ -277,14 +277,19 @@ void Lexer::advance() {
                 else {
                     switch ((*text)[position]) {
                         case '/': case '=': case '+': case '!': case '*': case '%': case '&': case '|': case '^': case '~': {
-                            position--; column--;
-                            token->getPage()->clear();
-                            token = scanOperator(token->getPage(), true);
+                            {
+                                position--;
+                                column--;
+                                token->getPage()->clear();
+                                token = scanOperator(token->getPage(), true);
+                            }
                             break;
                         }
+
                         default: {
                             if (whitespaceSkipped) {
-                                position--; column--;
+                                position--;
+                                column--;
                                 token->getPage()->clear();
                                 token = scanOperator(token->getPage(), true);
                             }
