@@ -1239,7 +1239,6 @@ bool CppVisitor::openElseClause(ElseClause* elseClause) {
 }
 
 void CppVisitor::closeElseClause(ElseClause* elseClause) {
-    sourceIndentLevel++;
 }
 
 bool CppVisitor::openSwitchExpression(SwitchExpression* switchExpression) {
@@ -1395,16 +1394,21 @@ bool CppVisitor::openBlockCaseContent(BlockCaseContent* blockCaseContent) {
 }
 
 void CppVisitor::closeBlockCaseContent(BlockCaseContent* blockCaseContent) {
+    bool additionalLineFeed = true;
     if (blockCaseContent->parent->_isSwitchCase()) {
         SwitchCase* switchCase = (SwitchCase*)blockCaseContent->parent;
         if (!switchCase->label->_isDefaultCaseLabel()) {
             indentSource();
             (*sourceFile) += "break;\n";
         }
+        else
+            additionalLineFeed = false;
     }
     sourceIndentLevel--;
     indentSource();
-    (*sourceFile) += "}\n\n";
+    (*sourceFile) += "}\n";
+    if (additionalLineFeed)
+        (*sourceFile) += "\n";
 }
 
 void CppVisitor::visitEmptyCaseContent(EmptyCaseContent* emptyCaseContent) {
