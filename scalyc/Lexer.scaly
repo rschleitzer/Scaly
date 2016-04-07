@@ -157,8 +157,9 @@ class Lexer {
 
             case '.': {
                 position++ column++
-                if position == end
+                if position == end {
                     token = InvalidToken()
+                }
                 else {
                     if text[position] == '.' {
                         position-- column--

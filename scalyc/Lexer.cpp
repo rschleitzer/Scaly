@@ -182,7 +182,7 @@ void Lexer::advance() {
                 column++;
                 if (position == end) {
                     token->getPage()->clear();
-                    token = new (token->getPage()) InvalidToken();
+                    token = new(token->getPage()) InvalidToken();
                 }
                 else {
                     if ((*text)[position] == '.') {
@@ -193,7 +193,7 @@ void Lexer::advance() {
                     }
                     else {
                         token->getPage()->clear();
-                        token = new (token->getPage()) Punctuation(&_LetString::create(token->getPage(), '.'));
+                        token = new(token->getPage()) Punctuation(&_LetString::create(token->getPage(), '.'));
                     }
                 }
             }
@@ -204,7 +204,7 @@ void Lexer::advance() {
             position++; column++;
             if (position == end) {
                 token->getPage()->clear();
-                token = new (token->getPage()) InvalidToken();
+                token = new(token->getPage()) InvalidToken();
             }
             else {
                 if ((*text)[position] != '>') {
