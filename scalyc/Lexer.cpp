@@ -177,20 +177,24 @@ void Lexer::advance() {
         }
 
         case '.': {
-            position++; column++;
-            if (position == end) {
-                token->getPage()->clear();
-                token = new (token->getPage()) InvalidToken();
-            }
-            else {
-                if ((*text)[position] == '.') {
-                    position--; column--;
+            {
+                position++;
+                column++;
+                if (position == end) {
                     token->getPage()->clear();
-                    token = scanOperator(token->getPage(), true);
+                    token = new (token->getPage()) InvalidToken();
                 }
                 else {
-                    token->getPage()->clear();
-                    token = new (token->getPage()) Punctuation(&_LetString::create(token->getPage(), '.'));
+                    if ((*text)[position] == '.') {
+                        position--;
+                        column--;
+                        token->getPage()->clear();
+                        token = scanOperator(token->getPage(), true);
+                    }
+                    else {
+                        token->getPage()->clear();
+                        token = new (token->getPage()) Punctuation(&_LetString::create(token->getPage(), '.'));
+                    }
                 }
             }
             break;
