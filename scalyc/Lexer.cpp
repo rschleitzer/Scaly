@@ -248,8 +248,9 @@ void Lexer::advance() {
 
                         default: {
                             {
-                                if (whitespaceSkipped || (token && (token->_isPunctuation()))) {
-                                    position--; column--;
+                                if (whitespaceSkipped || ((token != nullptr) && (token->_isPunctuation()))) {
+                                    position--;
+                                    column--;
                                     token->getPage()->clear();
                                     token = scanOperator(token->getPage(), true);
                                 }

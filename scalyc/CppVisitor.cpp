@@ -399,8 +399,8 @@ bool CppVisitor::openFunctionSignature(FunctionSignature* functionSignature) {
             (*headerFile) += "_Result<";
             if (functionSignature->result->resultType->_isTypeIdentifier()) {
                 TypeIdentifier* typeId = (TypeIdentifier*)functionSignature->result->resultType;
-                appendCppTypeName(headerFile, typeId->name);
-                appendCppTypeName(sourceFile, typeId->name);
+                appendCppTypeName(headerFile, typeId);
+                appendCppTypeName(sourceFile, typeId);
             }
             else if (functionSignature->result->resultType->_isArrayType()) {
                 ArrayType* arrayType = (ArrayType*)functionSignature->result->resultType;
@@ -408,24 +408,24 @@ bool CppVisitor::openFunctionSignature(FunctionSignature* functionSignature) {
                     (*headerFile) += "_Vector<";
                     (*sourceFile) += "_Vector<";
                     TypeIdentifier* typeId = (TypeIdentifier*)arrayType->elementType;
-                    appendCppTypeName(headerFile, typeId->name);
-                    appendCppTypeName(sourceFile, typeId->name);
+                    appendCppTypeName(headerFile, typeId);
+                    appendCppTypeName(sourceFile, typeId);
                     (*headerFile) += ">";
                     (*sourceFile) += ">";
                 }
             }
             (*headerFile) += ", ";
             (*sourceFile) += ", ";
-            appendCppTypeName(headerFile, ((TypeIdentifier*)(functionSignature->throwsClause->throwsType))->name);
-            appendCppTypeName(sourceFile, ((TypeIdentifier*)(functionSignature->throwsClause->throwsType))->name);
+            appendCppTypeName(headerFile, (TypeIdentifier*)(functionSignature->throwsClause->throwsType));
+            appendCppTypeName(sourceFile, (TypeIdentifier*)(functionSignature->throwsClause->throwsType));
             (*headerFile) += ">";
             (*sourceFile) += ">";
         }
         else {
             if (functionSignature->result->resultType->_isTypeIdentifier()) {
                 TypeIdentifier* typeId = (TypeIdentifier*)functionSignature->result->resultType;
-                appendCppTypeName(headerFile, typeId->name);
-                appendCppTypeName(sourceFile, typeId->name);
+                appendCppTypeName(headerFile, typeId);
+                appendCppTypeName(sourceFile, typeId);
                 if (isClass(typeId->name)) {
                     (*headerFile) += "*";
                     (*sourceFile) += "*";
@@ -437,8 +437,8 @@ bool CppVisitor::openFunctionSignature(FunctionSignature* functionSignature) {
                     (*headerFile) += "_Vector<";
                     (*sourceFile) += "_Vector<";
                     TypeIdentifier* typeId = (TypeIdentifier*)arrayType->elementType;
-                    appendCppTypeName(headerFile, typeId->name);
-                    appendCppTypeName(sourceFile, typeId->name);
+                    appendCppTypeName(headerFile, typeId);
+                    appendCppTypeName(sourceFile, typeId);
                     (*headerFile) += ">";
                     (*sourceFile) += ">";
                 }
@@ -709,7 +709,7 @@ void CppVisitor::closeEnumMember(EnumMember* enumMember) {
 void CppVisitor::appendCppType(_VarString* s, Type* type) {
     if (type->_isTypeIdentifier()) {
         TypeIdentifier* typeId = (TypeIdentifier*)type;
-        appendCppTypeName(s, typeId->name);
+        appendCppTypeName(s, typeId);
         if (isClass(typeId->name)) {
             (*s) += "*"; }
     }
@@ -719,7 +719,7 @@ void CppVisitor::appendCppType(_VarString* s, Type* type) {
         if (type->_isTypeIdentifier()) {
             TypeIdentifier* typeId = (TypeIdentifier*)type;
             (*s) += "_Vector<";
-            appendCppTypeName(s, typeId->name);
+            appendCppTypeName(s, typeId);
             (*s) += ">*";
         }
     }
@@ -1471,7 +1471,6 @@ void CppVisitor::visitSuperMember(SuperMember* superMember) {
 }
 
 bool CppVisitor::openTypeAnnotation(TypeAnnotation* annotationForType) {
-    inArrayType = false;
     return true;
 }
 
@@ -1480,12 +1479,12 @@ void CppVisitor::closeTypeAnnotation(TypeAnnotation* annotationForType) {
 
 bool CppVisitor::openTypeIdentifier(TypeIdentifier* typeIdentifier) {
     if (!suppressHeader) {
-        appendCppTypeName(headerFile, typeIdentifier->name);
+        appendCppTypeName(headerFile, typeIdentifier);
     }
     if (!suppressSource) {
-        appendCppTypeName(sourceFile, typeIdentifier->name);
+        appendCppTypeName(sourceFile, typeIdentifier);
     }
-    if (isClass(typeIdentifier->name) && (!inArrayType)) {
+    if (isClass(typeIdentifier->name) && (!inArrayType(typeIdentifier)) && (!inTypeQuery(typeIdentifier))) {
         if (!suppressHeader) {
             (*headerFile) += "*";
         }
@@ -1493,10 +1492,28 @@ bool CppVisitor::openTypeIdentifier(TypeIdentifier* typeIdentifier) {
             (*sourceFile) += "*";
         }
     }
+    if (inTypeQuery(typeIdentifier)) {
+        (*sourceFile) += "()";
+    }
+        
     return true;
 }
 
-void CppVisitor::appendCppTypeName(_VarString* s, _LetString* typeIdentifierName) {
+bool CppVisitor::inArrayType(TypeIdentifier* typeIdentifier) {
+    if (typeIdentifier->parent->_isArrayType())
+        return true;
+
+    return false;
+}
+
+bool CppVisitor::inTypeQuery(TypeIdentifier* typeIdentifier) {
+    if (typeIdentifier->parent->_isTypeQuery())
+        return true;
+
+    return false;
+}
+void CppVisitor::appendCppTypeName(_VarString* s, TypeIdentifier* typeIdentifier) {
+    _LetString* typeIdentifierName = typeIdentifier->name;
     if ((*typeIdentifierName) == "unsigned") {
         (*s) += "size_t";
         return;
@@ -1507,7 +1524,7 @@ void CppVisitor::appendCppTypeName(_VarString* s, _LetString* typeIdentifierName
     }
     else {
         if ((*typeIdentifierName) == "String") {
-            if ((constDeclaration)||(inArrayType)||(inEnumMember)||(inFunctionReturn)) {
+            if ((constDeclaration)||(inArrayType(typeIdentifier))||(inEnumMember)||(inFunctionReturn)) {
                 (*s) += "_LetString";
                 return;
             }
@@ -1537,9 +1554,7 @@ bool CppVisitor::openArrayType(ArrayType* arrayType) {
             (*headerFile) += "_Vector<";
         else
             (*headerFile) += "_Array<";
-        inArrayType = true;
         arrayType->elementType->accept(this);
-        inArrayType = false;
         (*headerFile) += ">*"; }
     return false;
 }

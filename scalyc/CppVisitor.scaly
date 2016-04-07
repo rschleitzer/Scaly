@@ -56,7 +56,7 @@ class CppVisitor : SyntaxVisitor {
     function appendDerivedClasses(mutable derivedClasses: [String], mutable inheritors: [String]) {
     }
 
-    function appendCppTypeName(mutable s: String, typeIdentifierName: String) {
+    function appendCppTypeName(mutable s: String, typeIdentifier: TypeIdentifier) {
     }
 
     function appendCppType(mutable s: String, type: Type) {
@@ -620,6 +620,14 @@ class CppVisitor : SyntaxVisitor {
 
     function openTypeIdentifier(typeIdentifier: TypeIdentifier) -> bool {
         return true;
+    }
+
+    function inArrayType(typeIdentifier: TypeIdentifier) -> bool {
+        return false;
+    }
+
+    function inTypeQuery(typeIdentifier: TypeIdentifier) -> bool {
+        return false;
     }
 
     function closeTypeIdentifier(typeIdentifier: TypeIdentifier) {

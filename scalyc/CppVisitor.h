@@ -30,7 +30,6 @@ public:
     bool inParameterClause;
     bool abstractFunction;
     bool staticFunction;
-    bool inArrayType;
     bool inEnumMember;
     bool inFunctionReturn;
     bool constDeclaration;
@@ -43,7 +42,7 @@ public:
     virtual void registerInheritance(_LetString* className, _LetString* baseName);
     virtual void collectDerivedClasses(_Array<_LetString>* derivedClasses, _LetString* className);
     virtual void appendDerivedClasses(_Array<_LetString>* derivedClasses, _Array<_LetString>* inheritors);
-    virtual void appendCppTypeName(_VarString* s, _LetString* typeIdentifierName);
+    virtual void appendCppTypeName(_VarString* s, TypeIdentifier* typeIdentifier);
     virtual void appendCppType(_VarString* s, Type* type);
     virtual bool isClass(_LetString* name);
     virtual void indentHeader();
@@ -210,6 +209,8 @@ public:
     virtual void visitSuperInit(SuperInit* superInit);
     virtual void visitSuperMember(SuperMember* superMember);
     virtual bool openTypeIdentifier(TypeIdentifier* typeIdentifier);
+    virtual bool inArrayType(TypeIdentifier* typeIdentifier);
+    virtual bool inTypeQuery(TypeIdentifier* typeIdentifier);
     virtual void closeTypeIdentifier(TypeIdentifier* typeIdentifier);
     virtual bool openArrayType(ArrayType* arrayType);
     virtual void closeArrayType(ArrayType* arrayType);
