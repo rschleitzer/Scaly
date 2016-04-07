@@ -1035,6 +1035,7 @@ void CppVisitor::closeAssignment(Assignment* assignment) {
 }
 
 bool CppVisitor::openTypeQuery(TypeQuery* typeQuery) {
+    (*sourceFile) +=  "->_is";
     return true;
 }
 
