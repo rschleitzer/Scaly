@@ -1383,6 +1383,7 @@ void CppVisitor::closeExpressionPattern(ExpressionPattern* expressionPattern) {
 }
 
 void CppVisitor::visitDefaultCaseLabel(DefaultCaseLabel* defaultCaseLabel) {
+    (*sourceFile) += "default: ";
 }
 
 bool CppVisitor::openBlockCaseContent(BlockCaseContent* blockCaseContent) {

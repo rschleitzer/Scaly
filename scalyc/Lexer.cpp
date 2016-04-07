@@ -158,7 +158,8 @@ void Lexer::advance() {
                     switch ((*text)[position]) {
                         case '/': case '=': case '+': case '!': case '*': case '%': case '&': case '|': case '^': case '~': case '.': case ' ': case '\t': case '\r': case '\n': {
                             {
-                                position--; column--;
+                                position--;
+                                column--;
                                 token->getPage()->clear();
                                 token = scanOperator(token->getPage(), true);
                             }
