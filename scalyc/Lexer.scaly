@@ -225,7 +225,7 @@ class Lexer {
                             token = scanOperator(true)
                         }
                         default: {
-                            if (whitespaceSkipped) {
+                            if whitespaceSkipped {
                                 position-- column--
                                 token = scanOperator(true)
                             }
