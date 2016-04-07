@@ -201,52 +201,65 @@ void Lexer::advance() {
         }
 
         case '-': {
-            position++; column++;
-            if (position == end) {
-                token->getPage()->clear();
-                token = new(token->getPage()) InvalidToken();
-            }
-            else {
-                if ((*text)[position] != '>') {
-                    position--; column--;
+            {
+                position++;
+                column++;
+                if (position == end) {
                     token->getPage()->clear();
-                    token = scanOperator(token->getPage(), true);
+                    token = new(token->getPage()) InvalidToken();
                 }
                 else {
-                    token->getPage()->clear();
-                    token = new(token->getPage()) Punctuation(&_LetString::create(token->getPage(), "->"));
-                    position++; column++;
+                    if ((*text)[position] != '>') {
+                        position--;
+                        column--;
+                        token->getPage()->clear();
+                        token = scanOperator(token->getPage(), true);
+                    }
+                    else {
+                        token->getPage()->clear();
+                        token = new(token->getPage()) Punctuation(&_LetString::create(token->getPage(), "->"));
+                        position++;
+                        column++;
+                    }
                 }
             }
             break;
         }
 
         case '!': {
-            position++; column++;
-            if (position == end) {
-                token->getPage()->clear();
-                token = new(token->getPage()) PostfixOperator(&_LetString::create(token->getPage(), "!"));
-            }
-            else {
-                switch ((*text)[position]) {
-                    case '/': case '=': case '+': case '!': case'*': case '%': case '&': case '|': case '^': case '~': case '.':
-                    case ' ': case '\t': case '\r': case '\n': {
-                        position--; column--;
-                        token->getPage()->clear();
-                        token = scanOperator(token->getPage(), true);
-                        break;
-                    }
+            {
+                position++;
+                column++;
+                if (position == end) {
+                    token->getPage()->clear();
+                    token = new(token->getPage()) PostfixOperator(&_LetString::create(token->getPage(), "!"));
+                }
+                else {
+                    switch ((*text)[position]) {
+                        case '/': case '=': case '+': case '!': case '*': case '%': case '&': case '|': case '^': case '~': case '.': case ' ': case '\t': case '\r': case '\n': {
+                            {
+                                position--;
+                                column--;
+                                token->getPage()->clear();
+                                token = scanOperator(token->getPage(), true);
+                            }
+                            break;
+                        }
 
-                    default:
-                        if ((whitespaceSkipped) || (token && (token->_isPunctuation()))) {
-                            position--; column--;
-                            token->getPage()->clear();
-                            token = scanOperator(token->getPage(), true);
+                        default: {
+                            {
+                                if (whitespaceSkipped || (token && (token->_isPunctuation()))) {
+                                    position--; column--;
+                                    token->getPage()->clear();
+                                    token = scanOperator(token->getPage(), true);
+                                }
+                                else {
+                                    token->getPage()->clear();
+                                    token = new(getPage()) Punctuation(&_LetString::create(token->getPage(), "!"));
+                                }
+                            }
                         }
-                        else {
-                            token->getPage()->clear();
-                            token = new(getPage()) Punctuation(&_LetString::create(token->getPage(), "!"));
-                        }
+                    }
                 }
             }
             break;
