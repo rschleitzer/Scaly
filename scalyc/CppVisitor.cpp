@@ -219,6 +219,8 @@ void CppVisitor::closeTerminatedStatement(TerminatedStatement* terminatedStateme
         SimpleExpression* expression = (SimpleExpression*) terminatedStatement->statement;
         if (expression->prefixExpression->expression->primaryExpression->_isIfExpression())
             return;
+        if (expression->prefixExpression->expression->primaryExpression->_isSwitchExpression())
+            return;
     }
 
     if (terminatedStatement->statement->_isCodeBlock())
@@ -1393,8 +1395,13 @@ bool CppVisitor::openBlockCaseContent(BlockCaseContent* blockCaseContent) {
 }
 
 void CppVisitor::closeBlockCaseContent(BlockCaseContent* blockCaseContent) {
-    indentSource();
-    (*sourceFile) += "break;\n";
+    if (blockCaseContent->parent->_isSwitchCase()) {
+        SwitchCase* switchCase = (SwitchCase*)blockCaseContent->parent;
+        if (!switchCase->label->_isDefaultCaseLabel()) {
+            indentSource();
+            (*sourceFile) += "break;\n";
+        }
+    }
     sourceIndentLevel--;
     indentSource();
     (*sourceFile) += "}\n\n";
