@@ -256,7 +256,7 @@ void Lexer::advance() {
                                 }
                                 else {
                                     token->getPage()->clear();
-                                    token = new(getPage()) Punctuation(&_LetString::create(token->getPage(), "!"));
+                                    token = new(token->getPage()) Punctuation(&_LetString::create(token->getPage(), "!"));
                                 }
                             }
                         }
