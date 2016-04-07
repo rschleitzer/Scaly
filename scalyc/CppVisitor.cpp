@@ -1269,7 +1269,6 @@ void CppVisitor::closeNakedSwitchBody(NakedSwitchBody* nakedSwitchBody) {
 
 bool CppVisitor::openSwitchCase(SwitchCase* switchCase) {
     indentSource();
-    (*sourceFile) += "case ";
     return true;
 }
 
@@ -1277,6 +1276,7 @@ void CppVisitor::closeSwitchCase(SwitchCase* switchCase) {
 }
 
 bool CppVisitor::openItemCaseLabel(ItemCaseLabel* itemCaseLabel) {
+    (*sourceFile) += "case ";
     return true;
 }
 
