@@ -165,15 +165,17 @@ class Lexer {
                         position-- column--
                         token = scanOperator(true)
                     }
-                    else
+                    else {
                         token = Punctuation(String('.'))
+                    }
                 }
             }
             
             case '-': {
                 position++ column++
-                if position == end
+                if position == end {
                     token = InvalidToken()
+                }
                 else {
                     if (text[position] != '>') {
                         position-- column--
@@ -226,8 +228,9 @@ class Lexer {
                                 position-- column--
                                 token = scanOperator(true)
                             }
-                            else
+                            else {
                                 token = Punctuation(String("?"))
+                            }
                         }
                     } 
                 }
