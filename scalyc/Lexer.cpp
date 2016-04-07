@@ -267,28 +267,31 @@ void Lexer::advance() {
         }
 
         case '?': {
-            position++; column++;
-            if (position == end) {
-                token->getPage()->clear();
-                token = new(token->getPage()) PostfixOperator(&_LetString::create(token->getPage(), "?"));
-            }
-            else {
-                switch ((*text)[position]) {
-                    case '/': case '=': case '+': case '!': case '*': case '%': case '&': case '|': case '^': case '~': {
-                        position--; column--;
-                        token->getPage()->clear();
-                        token = scanOperator(token->getPage(), true);
-                        break;
-                    }
-                    default: {
-                        if (whitespaceSkipped) {
+            {
+                position++;
+                column++;
+                if (position == end) {
+                    token->getPage()->clear();
+                    token = new(token->getPage()) PostfixOperator(&_LetString::create(token->getPage(), "?"));
+                }
+                else {
+                    switch ((*text)[position]) {
+                        case '/': case '=': case '+': case '!': case '*': case '%': case '&': case '|': case '^': case '~': {
                             position--; column--;
                             token->getPage()->clear();
                             token = scanOperator(token->getPage(), true);
+                            break;
                         }
-                        else {
-                            token->getPage()->clear();
-                            token = new(token->getPage()) Punctuation(&_LetString::create(token->getPage(),"?"));
+                        default: {
+                            if (whitespaceSkipped) {
+                                position--; column--;
+                                token->getPage()->clear();
+                                token = scanOperator(token->getPage(), true);
+                            }
+                            else {
+                                token->getPage()->clear();
+                                token = new(token->getPage()) Punctuation(&_LetString::create(token->getPage(),"?"));
+                            }
                         }
                     }
                 }

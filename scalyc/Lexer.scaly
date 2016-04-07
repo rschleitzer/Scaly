@@ -213,7 +213,7 @@ class Lexer {
                 }
             }
 
-            case "?": {
+            case '?': {
                 position++ column++
                 if position == end {
                     token = PostfixOperator(String("?"))
