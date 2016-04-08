@@ -860,6 +860,8 @@ void CppVisitor::closeCodeBlock(CodeBlock* codeBlock) {
     sourceIndentLevel--;
     indentSource();
     (*sourceFile) += "}\n";
+    if (codeBlock->parent->_isFunctionDeclaration())
+        (*sourceFile) += "\n";
 }
 
 bool CppVisitor::openSimpleExpression(SimpleExpression* simpleExpression) {

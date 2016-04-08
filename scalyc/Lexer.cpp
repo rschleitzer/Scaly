@@ -344,26 +344,23 @@ void Lexer::advance() {
 }
 
 Identifier* Lexer::scanIdentifier(_Page* _rp) {
-    // Make a String taking the character at the current position
-    {
-        _Region _region; _Page* _p = _region.get();
-        _VarString& name = *new(_p) _VarString((*text)[position]);
+    _Region _region; _Page* _p = _region.get();
+    _VarString& name = *new(_p) _VarString((*text)[position]);
 
-        do {
-            position++; column++;
+    do {
+        position++; column++;
 
-            if (position == end) {
-                return new(_rp) Identifier(&_LetString::create(_rp, name));
-            }
-
-            char c = (*text)[position];
-            if (((c >= 'a') && (c <= 'z')) || ((c >= 'A') && (c <= 'Z')) || (c == '_'))
-                name += (*text)[position];
-            else
-                return new(_rp) Identifier(&_LetString::create(_rp, name));
+        if (position == end) {
+            return new(_rp) Identifier(&_LetString::create(_rp, name));
         }
-        while (true);
+
+        char c = (*text)[position];
+        if (((c >= 'a') && (c <= 'z')) || ((c >= 'A') && (c <= 'Z')) || (c == '_'))
+            name += (*text)[position];
+        else
+            return new(_rp) Identifier(&_LetString::create(_rp, name));
     }
+    while (true);
 }
 
 Operator* Lexer::scanOperator(_Page* _rp, bool includeDots) {
