@@ -1257,6 +1257,9 @@ void CppVisitor::visitIdentifierExpression(IdentifierExpression* identifierExpre
         if ((*className) == "String") {
             (*sourceFile) += "&String::create(token->getPage(), ";
         }
+        else if ((*className) == "VarString") {
+            (*sourceFile) += "new(_p) VarString";
+        }
         else
             (*sourceFile) += *identifierExpression->name;
     }

@@ -260,7 +260,7 @@ class Lexer {
     }
 
     function scanIdentifier() -> Identifier {
-        mutable name: String = String(text[position])
+        mutable name: VarString = VarString(text[position])
 
         do {
             position++ column++
