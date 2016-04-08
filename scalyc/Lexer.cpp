@@ -346,7 +346,6 @@ void Lexer::advance() {
 Identifier* Lexer::scanIdentifier(_Page* _rp) {
     _Region _region; _Page* _p = _region.get();
     VarString* name = new(_p) VarString((*text)[position]);
-
     do {
         position++; column++;
 
