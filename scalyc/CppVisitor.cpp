@@ -1369,6 +1369,7 @@ void CppVisitor::closeWhileExpression(WhileExpression* whileExpression) {
 }
 
 bool CppVisitor::openRepeatExpression(RepeatExpression* repeatExpression) {
+    (*sourceFile) += "do ";
     return true;
 }
 
