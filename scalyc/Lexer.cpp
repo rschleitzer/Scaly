@@ -345,20 +345,20 @@ void Lexer::advance() {
 
 Identifier* Lexer::scanIdentifier(_Page* _rp) {
     _Region _region; _Page* _p = _region.get();
-    _VarString& name = *new(_p) _VarString((*text)[position]);
+    _VarString* name = new(_p) _VarString((*text)[position]);
 
     do {
         position++; column++;
 
         if (position == end) {
-            return new(_rp) Identifier(&_LetString::create(_rp, name));
+            return new(_rp) Identifier(&_LetString::create(_rp, *name));
         }
 
         char c = (*text)[position];
         if (((c >= 'a') && (c <= 'z')) || ((c >= 'A') && (c <= 'Z')) || (c == '_'))
-            name += (*text)[position];
+            *name += (*text)[position];
         else
-            return new(_rp) Identifier(&_LetString::create(_rp, name));
+            return new(_rp) Identifier(&_LetString::create(_rp, *name));
     }
     while (true);
 }
@@ -376,24 +376,24 @@ Operator* Lexer::scanOperator(_Page* _rp, bool includeDots) {
     }
 
     // Make a String taking the character at the current position
-    _VarString& operation = *new(_rp) _VarString((*text)[position]);
+    _VarString* operation = new(_rp) _VarString((*text)[position]);
 
     do {
         position++; column++;
         if (position == end) {
             if (whitespaceSkippedBefore)
-                return new(_rp) BinaryOperator(&_LetString::create(_rp, operation));
+                return new(_rp) BinaryOperator(&_LetString::create(_rp, *operation));
             else
-                return new(_rp) PostfixOperator(&_LetString::create(_rp, operation));
+                return new(_rp) PostfixOperator(&_LetString::create(_rp, *operation));
         }
         switch ((*text)[position]) {
             case '/': case '=': case '-': case '+': case '!': case '*': case '%': case '<': case '&': case '|': case '^': case '~': {
-                operation += (*text)[position];
+                *operation += (*text)[position];
                 break;
             }
             case '.': {
                 if (includeDots) {
-                    operation += (*text)[position];
+                    *operation += (*text)[position];
                     break;
                 }
                 // else fallthrough
@@ -420,13 +420,13 @@ Operator* Lexer::scanOperator(_Page* _rp, bool includeDots) {
                 }
 
                 if ((whitespaceSkippedBefore && whitespaceSkippedAfter) || (!whitespaceSkippedBefore && !whitespaceSkippedAfter))
-                    return new(_rp) BinaryOperator(&_LetString::create(_rp, operation));
+                    return new(_rp) BinaryOperator(&_LetString::create(_rp, *operation));
 
                 if ((!whitespaceSkippedBefore && whitespaceSkippedAfter))
-                    return new(_rp) PostfixOperator(&_LetString::create(_rp, operation));
+                    return new(_rp) PostfixOperator(&_LetString::create(_rp, *operation));
 
                 if ((whitespaceSkippedBefore && !whitespaceSkippedAfter))
-                    return new(_rp) PrefixOperator(&_LetString::create(_rp, operation));
+                    return new(_rp) PrefixOperator(&_LetString::create(_rp, *operation));
             }
         }
     }
