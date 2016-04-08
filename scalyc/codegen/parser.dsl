@@ -152,7 +152,8 @@ public:
     (apply-to-selected-children "punctuation" (lambda (punctuation) ($
 "    _LetString* "(id punctuation)";
 "   )))
-"};
+"
+};
 
 }
 #endif // __scalyc__Parser__

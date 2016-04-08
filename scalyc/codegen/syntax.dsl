@@ -88,6 +88,7 @@ public:
     Position* start;
     Position* end;
     SyntaxNode* parent;
+
 "   (apply-to-selected-children "syntax" (lambda (syntax-node) ($
 "    virtual bool _is"(id syntax-node)"();
 "   )))

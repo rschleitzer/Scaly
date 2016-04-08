@@ -69,10 +69,8 @@ public:"
             )
         )
     ))))
-        (if concrete
 "
-"       "")
-"
+
     virtual bool _isMyVisitor();
 "       (if (not concrete)
 "    virtual bool _isCppVisitor();
