@@ -547,6 +547,7 @@ void CppVisitor::writeParameter(String* name, Type* parameterType) {
 
 bool CppVisitor::isClass(String* name) {
     if (    (*name == "String")
+        ||  (*name == "VarString")
         ||  (*name == "DirectoryError")
         ||  (*name == "FileError")
         ||  (*name == "ParserError")
@@ -1577,18 +1578,6 @@ void CppVisitor::appendCppTypeName(VarString* s, TypeIdentifier* typeIdentifier)
     else if ((*typeIdentifierName) == "character") {
         (*s) += "char";
         return;
-    }
-    else {
-        if ((*typeIdentifierName) == "String") {
-            if ((constDeclaration)||(inArrayType(typeIdentifier))||(inEnumMember)||(inFunctionReturn)) {
-                (*s) += "String";
-                return;
-            }
-            else {
-                (*s) += "VarString";
-                return;
-            }
-        }
     }
 
     (*s) += *typeIdentifierName;

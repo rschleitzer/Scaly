@@ -8,6 +8,7 @@ class Inherits {
     mutable inheritors: [String]
 }
 
+
 class CppVisitor : SyntaxVisitor {
     init() {}
 
@@ -16,8 +17,8 @@ class CppVisitor : SyntaxVisitor {
 
     mutable cppError: CppError
     let moduleName: String
-    mutable sourceFile: String
-    mutable headerFile: String
+    mutable sourceFile: VarString
+    mutable headerFile: VarString
     mutable headerIndentLevel: unsigned
     mutable sourceIndentLevel: unsigned
     mutable firstParameter: bool
@@ -34,10 +35,10 @@ class CppVisitor : SyntaxVisitor {
     mutable suppressSource: bool
     mutable suppressHeader: bool
 
-    function buildProjectFileString(mutable projectFile: String, program: Program) {
+    function buildProjectFileString(mutable projectFile: VarString, program: Program) {
     }
 
-    function buildMainHeaderFileString(mutable projectFile: String, program: Program) {
+    function buildMainHeaderFileString(mutable projectFile: VarString, program: Program) {
     }
 
     function collectInheritances(program: Program) {
@@ -55,10 +56,10 @@ class CppVisitor : SyntaxVisitor {
     function appendDerivedClasses(mutable derivedClasses: [String], mutable inheritors: [String]) {
     }
 
-    function appendCppTypeName(mutable s: String, typeIdentifier: TypeIdentifier) {
+    function appendCppTypeName(mutable s: VarString, typeIdentifier: TypeIdentifier) {
     }
 
-    function appendCppType(mutable s: String, type: Type) {
+    function appendCppType(mutable s: VarString, type: Type) {
     }
 
     function isClass(name: String) -> bool {
