@@ -71,6 +71,7 @@ public:
     virtual bool openInitializerDeclaration(InitializerDeclaration* initializerDeclaration);
     virtual void closeInitializerDeclaration(InitializerDeclaration* initializerDeclaration);
     virtual bool openCodeBlock(CodeBlock* codeBlock);
+    virtual bool localAllocations(CodeBlock* codeBlock);
     virtual void closeCodeBlock(CodeBlock* codeBlock);
     virtual bool openSimpleExpression(SimpleExpression* simpleExpression);
     virtual void closeSimpleExpression(SimpleExpression* simpleExpression);

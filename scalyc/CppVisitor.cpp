@@ -853,7 +853,57 @@ void CppVisitor::closeClassMember(ClassMember* classMember) {
 bool CppVisitor::openCodeBlock(CodeBlock* codeBlock) {
     (*sourceFile) += "{\n";
     sourceIndentLevel++;
+    if (localAllocations(codeBlock)) {
+        indentSource();
+        (*sourceFile) += "_Region _region; _Page* _p = _region.get();\n";
+    }
     return true;
+}
+
+bool CppVisitor::localAllocations(CodeBlock* codeBlock) {
+    _Vector<TerminatedStatement>* terminatedStatements = codeBlock->statements;
+    if (terminatedStatements != nullptr) {
+        size_t _terminatedStatements_length = terminatedStatements->length();
+        for (size_t _i = 0; _i < _terminatedStatements_length; _i++) {
+            Statement* statement = (*(*terminatedStatements)[_i])->statement;
+            BindingInitializer* bindingInitializer = nullptr;
+            if (statement->_isMutableDeclaration()) {
+                MutableDeclaration* mutableDeclaration = (MutableDeclaration*)statement;
+                bindingInitializer = mutableDeclaration->initializer;
+            }
+            if (statement->_isVariableDeclaration()) {
+                VariableDeclaration* variableDeclaration = (VariableDeclaration*)statement;
+                bindingInitializer = variableDeclaration->initializer;
+            }
+            if (statement->_isConstantDeclaration()) {
+                ConstantDeclaration* constantDeclaration = (ConstantDeclaration*)statement;
+                bindingInitializer = constantDeclaration->initializer;
+            }
+            if (bindingInitializer == nullptr)
+                continue;
+            if (bindingInitializer->initializer->initializer != nullptr) {
+                Expression* expression = bindingInitializer->initializer->initializer->expression;
+                if (expression->_isSimpleExpression()) {
+                    PrefixExpression* prefixExpression = ((SimpleExpression*)expression)->prefixExpression;
+                    PostfixExpression* postfixExpression = prefixExpression->expression;
+                    if (postfixExpression->primaryExpression->_isIdentifierExpression()) {
+                        IdentifierExpression* identifierExpression = (IdentifierExpression*)postfixExpression->primaryExpression;
+                        if (isClass(identifierExpression->name)) {
+                            if (postfixExpression->postfixes != nullptr) {
+                                if (postfixExpression->postfixes->length() == 1) {
+                                    Postfix* postfix = *(*postfixExpression->postfixes)[0];
+                                    if (postfix->_isFunctionCall()) {
+                                        return true;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    return false;
 }
 
 void CppVisitor::closeCodeBlock(CodeBlock* codeBlock) {
