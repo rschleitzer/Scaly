@@ -6,9 +6,9 @@ namespace scalyc {
 
 class Inherits : public Object {
 public:
-    Inherits(_LetString* className);
-    _LetString* name;
-    _Array<_LetString>* inheritors;
+    Inherits(String* className);
+    String* name;
+    _Array<String>* inheritors;
 
 };
 
@@ -17,15 +17,15 @@ public:
     CppVisitor();
     virtual CppError* execute(_Page* _rp, Program* program);
     CppError* cppError;
-    _LetString* moduleName;
-    _VarString* sourceFile;
-    _VarString* headerFile;
+    String* moduleName;
+    VarString* sourceFile;
+    VarString* headerFile;
     size_t headerIndentLevel;
     size_t sourceIndentLevel;
     bool firstParameter;
     bool firstBindingInitializer;
     _Array<Inherits>* inherits;
-    _Array<_LetString>* classes;
+    _Array<String>* classes;
     bool declaringClassMember;
     bool inParameterClause;
     bool abstractFunction;
@@ -35,19 +35,19 @@ public:
     bool constDeclaration;
     bool suppressSource;
     bool suppressHeader;
-    virtual void buildProjectFileString(_VarString* projectFile, Program* program);
-    virtual void buildMainHeaderFileString(_VarString* projectFile, Program* program);
+    virtual void buildProjectFileString(VarString* projectFile, Program* program);
+    virtual void buildMainHeaderFileString(VarString* projectFile, Program* program);
     virtual void collectInheritances(Program* program);
     virtual void collectInheritancesInCompilationUnit(CompilationUnit* compilationUnit);
-    virtual void registerInheritance(_LetString* className, _LetString* baseName);
-    virtual void collectDerivedClasses(_Array<_LetString>* derivedClasses, _LetString* className);
-    virtual void appendDerivedClasses(_Array<_LetString>* derivedClasses, _Array<_LetString>* inheritors);
-    virtual void appendCppTypeName(_VarString* s, TypeIdentifier* typeIdentifier);
-    virtual void appendCppType(_VarString* s, Type* type);
-    virtual bool isClass(_LetString* name);
+    virtual void registerInheritance(String* className, String* baseName);
+    virtual void collectDerivedClasses(_Array<String>* derivedClasses, String* className);
+    virtual void appendDerivedClasses(_Array<String>* derivedClasses, _Array<String>* inheritors);
+    virtual void appendCppTypeName(VarString* s, TypeIdentifier* typeIdentifier);
+    virtual void appendCppType(VarString* s, Type* type);
+    virtual bool isClass(String* name);
     virtual void indentHeader();
     virtual void indentSource();
-    virtual void writeParameter(_LetString* name, Type* parameterType);
+    virtual void writeParameter(String* name, Type* parameterType);
     virtual bool openProgram(Program* program);
     virtual void closeProgram(Program* program);
     virtual bool openCompilationUnit(CompilationUnit* compilationUnit);
@@ -122,11 +122,11 @@ public:
     virtual void closeBinaryOperation(BinaryOperation* binaryOperation);
     virtual bool openAssignment(Assignment* assignment);
     virtual bool assignmentIsInInitializer(Assignment* assignment);
-    virtual _LetString* getMemberIfCreatingObject(Assignment* assignment);
-    virtual _LetString* getFunctionName(Assignment* assignment);
-    virtual bool isCreatingObject(_LetString* functionName, SyntaxNode* node);
+    virtual String* getMemberIfCreatingObject(Assignment* assignment);
+    virtual String* getFunctionName(Assignment* assignment);
+    virtual bool isCreatingObject(String* functionName, SyntaxNode* node);
     virtual ClassDeclaration* getClassDeclaration(SyntaxNode* node);
-    virtual bool isVariableMember(_LetString* memberName, ClassDeclaration* classDeclaration);
+    virtual bool isVariableMember(String* memberName, ClassDeclaration* classDeclaration);
     virtual void closeAssignment(Assignment* assignment);
     virtual bool openTypeQuery(TypeQuery* typeQuery);
     virtual void closeTypeQuery(TypeQuery* typeQuery);

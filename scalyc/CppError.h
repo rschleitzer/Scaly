@@ -8,9 +8,9 @@ class CppError;
 
 class _CppError_unableToCreateOutputDirectory : public Object {
 public:
-    _CppError_unableToCreateOutputDirectory(_LetString* directory, DirectoryError* error);
+    _CppError_unableToCreateOutputDirectory(String* directory, DirectoryError* error);
 
-    _LetString* directory;
+    String* directory;
     DirectoryError* error;
 };
 enum _CppErrorCode {

@@ -18,7 +18,7 @@
 
 using namespace scaly;
 namespace scalyc {
-int _main(_Vector<_LetString>* arguments);
+int _main(_Vector<String>* arguments);
 }
 
 #endif // __scaly__scalyc__

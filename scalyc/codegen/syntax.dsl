@@ -105,7 +105,7 @@ public:
 "    "(property-declaration content)";
 "       )))
         (if (top? syntax-node)
-"    _LetString* fileName;
+"    String* fileName;
 "
         "")
 "
@@ -130,7 +130,7 @@ public:
 (define (property-declaration content)
     (case (type content)
         (("syntax") ($ (if (multiple? content)"_Vector<" "")(link content)(if (multiple? content)">" "")"* "(property content)))
-        (("identifier" "operator" "prefixoperator" "binaryoperator" "postfixoperator") ($ "_LetString* "(property content)))
+        (("identifier" "operator" "prefixoperator" "binaryoperator" "postfixoperator") ($ "String* "(property content)))
         (("literal") ($ "Literal* "(property content)))
         (("keyword" "punctuation") ($ "bool "(property content)))))
 

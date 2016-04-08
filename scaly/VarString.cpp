@@ -1,78 +1,78 @@
 #include "Scaly.h"
 namespace scaly {
 
-_VarString::_VarString()
+VarString::VarString()
 : string(0), length(0), capacity(0) {
 }
 
-_VarString::_VarString(const char* theString) {
+VarString::VarString(const char* theString) {
     length = strlen(theString);
     capacity = length;
     string = (char*)getPage()->allocateObject(length + 1);
     strcpy(string, theString);
 }
 
-_VarString::_VarString(const _VarString& theString)
+VarString::VarString(const VarString& theString)
 : length(theString.length), capacity(length) {
     string = (char*)getPage()->allocateObject(length + 1);
     strcpy(string, theString.string);
 }
 
-_VarString::_VarString(_LetString& theString)
+VarString::VarString(String& theString)
 : length(theString.getLength()), capacity(length) {
     string = (char*)getPage()->allocateObject(length + 1);
     strcpy(string, theString.getNativeString());
 }
 
-_VarString::_VarString(size_t theLength)
+VarString::VarString(size_t theLength)
 : length(theLength), capacity(length) {
     string = (char*)getPage()->allocateObject(length + 1);
 }
 
-_VarString::_VarString(size_t theLength, size_t theCapacity)
+VarString::VarString(size_t theLength, size_t theCapacity)
 : length(theLength), capacity(theCapacity) {
     string = (char*)getPage()->allocateObject(capacity + 1);
 }
 
-_VarString::_VarString(char c)
+VarString::VarString(char c)
 : length(1), capacity(length) {
     string = (char*)getPage()->allocateObject(length + 1);
     string[0] = c;
     string[1] = 0;
 }
 
-char* _VarString::getNativeString() const {
+char* VarString::getNativeString() const {
     return string;
 }
 
-size_t _VarString::getLength() {
+size_t VarString::getLength() {
     return length;
 }
 
-bool _VarString::operator == (const char* theString){
+bool VarString::operator == (const char* theString){
     return strcmp(string, theString) == 0;
 }
 
-bool _VarString::operator != (const char* theString){
+bool VarString::operator != (const char* theString){
     return strcmp(string, theString) != 0;
 }
 
-bool _VarString::operator == (const _VarString& theString){
+bool VarString::operator == (const VarString& theString){
     return strcmp(string, theString.getNativeString()) == 0;
 }
 
-bool _VarString::operator != (const _VarString& theString){
+bool VarString::operator != (const VarString& theString){
     return strcmp(string, theString.getNativeString()) != 0;
 }
 
-char _VarString::operator [](size_t i) {
+char VarString::operator [](size_t i) {
     if (i < length)
         return string[i];
 
     return -1;
 }
 
-_VarString& _VarString::operator += (char c) {
+VarString& VarString::operator += (char c) {
     if (!string) {
         // Allocate for the char itself and the trailing 0
         allocate(2);
@@ -90,7 +90,7 @@ _VarString& _VarString::operator += (char c) {
     return *this;
 }
 
-_VarString& _VarString::operator += (const char* theString) {
+VarString& VarString::operator += (const char* theString) {
     size_t stringLength = strlen(theString);
     if (!string) {
         // Allocate for the char itself and the trailing 0
@@ -109,27 +109,27 @@ _VarString& _VarString::operator += (const char* theString) {
     return *this;
 }
 
-_VarString& _VarString::operator + (const char* theString) {
+VarString& VarString::operator + (const char* theString) {
     return *this += theString;
 }
 
-_VarString& _VarString::operator += (const _VarString& theString) {
+VarString& VarString::operator += (const VarString& theString) {
     (*this) += theString.string;
 
     return *this;
 }
 
-_VarString& _VarString::operator += (_LetString& theString) {
+VarString& VarString::operator += (String& theString) {
     (*this) += theString.getNativeString();
 
     return *this;
 }
 
-_VarString& _VarString::operator + (const _VarString& theString) {
+VarString& VarString::operator + (const VarString& theString) {
     return *this += theString;
 }
 
-bool _VarString::extend(size_t size) {
+bool VarString::extend(size_t size) {
     _Page& page = *_Page::getPage(string);
     if (length + size <= capacity) {
         length += size;
@@ -145,7 +145,7 @@ bool _VarString::extend(size_t size) {
     }
 }
 
-void _VarString::reallocate(size_t newLength) {
+void VarString::reallocate(size_t newLength) {
     char* oldString = string;
     length = newLength;
     capacity = newLength * 2;
@@ -157,13 +157,13 @@ void _VarString::reallocate(size_t newLength) {
         getPage()->reclaimArray(oldString);
 }
 
-void _VarString::allocate(size_t size) {
+void VarString::allocate(size_t size) {
     string = (char*) getPage()->allocateObject(size);
 }
 
-_Array<_VarString>& _VarString::Split(_Page* _rp, char c) {
-    _Array<_VarString>* ret = new(_rp) _Array<_VarString>();
-    _VarString* part = 0;
+_Array<VarString>& VarString::Split(_Page* _rp, char c) {
+    _Array<VarString>* ret = new(_rp) _Array<VarString>();
+    VarString* part = 0;
     for (size_t _i = 0; _i < length; _i++) {
         char currentChar = (*this)[_i];
         if (currentChar == c) {
@@ -174,7 +174,7 @@ _Array<_VarString>& _VarString::Split(_Page* _rp, char c) {
         }
         else {
             if (!part)
-                part = new(_rp) _VarString();
+                part = new(_rp) VarString();
             *part += (*this)[_i];
         }
     }

@@ -10,11 +10,11 @@ void* CompilerError::getErrorInfo() {
     return errorInfo;
 }
 
-_CompilerError_unableToReadFile::_CompilerError_unableToReadFile(_LetString* file, FileError* error)
+_CompilerError_unableToReadFile::_CompilerError_unableToReadFile(String* file, FileError* error)
 : file(file), error(error) {
 }
 
-_CompilerError_unableToCreateOutputDirectory::_CompilerError_unableToCreateOutputDirectory(_LetString* directory, DirectoryError* error)
+_CompilerError_unableToCreateOutputDirectory::_CompilerError_unableToCreateOutputDirectory(String* directory, DirectoryError* error)
 : directory(directory), error(error) {
 }
 

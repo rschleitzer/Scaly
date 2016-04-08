@@ -10,7 +10,7 @@ void* OptionsError::getErrorInfo() {
     return errorInfo;
 }
 
-_OptionsError_invalidOption::_OptionsError_invalidOption(_LetString* option)
+_OptionsError_invalidOption::_OptionsError_invalidOption(String* option)
 : option(option){
 }
 
@@ -18,7 +18,7 @@ _OptionsError_invalidOption* OptionsError::get_invalidOption(){
     return (_OptionsError_invalidOption*)errorInfo;
 }
 
-_OptionsError_unknownOption::_OptionsError_unknownOption(_LetString* option)
+_OptionsError_unknownOption::_OptionsError_unknownOption(String* option)
 : option(option){
 }
 

@@ -8,9 +8,9 @@ class CompilerError;
 
 class _CompilerError_unableToReadFile : public Object {
 public:
-    _CompilerError_unableToReadFile(_LetString* file, FileError* error);
+    _CompilerError_unableToReadFile(String* file, FileError* error);
 
-    _LetString* file;
+    String* file;
     FileError* error;
 };
 
@@ -23,9 +23,9 @@ public:
 
 class _CompilerError_unableToCreateOutputDirectory : public Object {
 public:
-    _CompilerError_unableToCreateOutputDirectory(_LetString* directory, DirectoryError* error);
+    _CompilerError_unableToCreateOutputDirectory(String* directory, DirectoryError* error);
 
-    _LetString* directory;
+    String* directory;
     DirectoryError* error;
 };
 enum _CompilerErrorCode {

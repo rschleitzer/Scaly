@@ -6,14 +6,14 @@ Options::Options()
 :files(0), outputName() {}
 
 
-_Result<Options, OptionsError> Options::parseArguments(_Page* _rp, _Page* _ep, _Vector<_LetString>* args) {
+_Result<Options, OptionsError> Options::parseArguments(_Page* _rp, _Page* _ep, _Vector<String>* args) {
     size_t length = args->length();
     Options& options = *new(_rp) Options();
     {
         // Make a region for the current block and get the page
         _Region _region; _Page* _p = _region.get();
 
-        _Array<_LetString>* files = new(_p) _Array<_LetString>();
+        _Array<String>* files = new(_p) _Array<String>();
         for (size_t i = 0; i < length; i++) {
 
             if (length < 2 || (**(*args)[i])[0] != '-') {
@@ -50,7 +50,7 @@ _Result<Options, OptionsError> Options::parseArguments(_Page* _rp, _Page* _ep, _
         if (files->length() == 0)
             return _Result<Options, OptionsError>(new(_ep) OptionsError(_OptionsErrorCode_noFilesToCompile));
 
-        options.files = &_Vector<_LetString>::create(options.getPage(), *files);
+        options.files = &_Vector<String>::create(options.getPage(), *files);
     }
 
     return _Result<Options, OptionsError>(&options);

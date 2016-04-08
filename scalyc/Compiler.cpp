@@ -4,13 +4,13 @@ namespace scalyc {
 
 CompilerError* Compiler::compileFiles(_Page* _ep, Options* options) {
     _Region _region; _Page* _p = _region.get();
-    _Vector<_LetString>* files = options->files;
-    _Vector<_LetString>* sources = 0;
+    _Vector<String>* files = options->files;
+    _Vector<String>* sources = 0;
     {
         size_t _length = files->length();
-        sources = &_Vector<_LetString>::createUninitialized(_p, _length);
+        sources = &_Vector<String>::createUninitialized(_p, _length);
         for (size_t _index = 0; _index < _length; _index++) {
-            _Result<_LetString, FileError> _readToStringResult = File::readToString(_p, _ep, **(*files)[_index]);
+            _Result<String, FileError> _readToStringResult = File::readToString(_p, _ep, **(*files)[_index]);
             if (!_readToStringResult.succeeded())
                 return new(_ep) CompilerError(new(_ep) _CompilerError_unableToReadFile(*(*files)[_index], _readToStringResult.getError()));
 
@@ -54,7 +54,7 @@ CompilerError* Compiler::compileFiles(_Page* _ep, Options* options) {
     return 0;
 }
 
-_Result<CompilationUnit, ParserError> Compiler::compileUnit(_Page* _rp, _Page* _ep, _LetString* fileName, _LetString* text)
+_Result<CompilationUnit, ParserError> Compiler::compileUnit(_Page* _rp, _Page* _ep, String* fileName, String* text)
 {
     // Make a region for the current block and get the page
     _Region _region; _Page* _p = _region.get();

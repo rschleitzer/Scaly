@@ -13,35 +13,35 @@ CppError* CppVisitor::execute(_Page* _rp, Program* program) {
 
 bool CppVisitor::openProgram(Program* program) {
     _Region _region; _Page* _p = _region.get();
-    _VarString* programDirectory = new(_p) _VarString(*program->directory);
+    VarString* programDirectory = new(_p) VarString(*program->directory);
 
     if (programDirectory == 0 || *programDirectory == "") {
         programDirectory->getPage()->clear();
-        programDirectory = new(programDirectory->getPage()) _VarString(_LetString::create(this->getPage(), "."));
+        programDirectory = new(programDirectory->getPage()) VarString(String::create(this->getPage(), "."));
     }
 
     {
         _Region _region; _Page* _p = _region.get();
-        if (!Directory::exists(_LetString::create(_p, *programDirectory))) {
-            DirectoryError* dirError = Directory::create(getPage(), _LetString::create(_p, *programDirectory));
+        if (!Directory::exists(String::create(_p, *programDirectory))) {
+            DirectoryError* dirError = Directory::create(getPage(), String::create(_p, *programDirectory));
             if (dirError) {
-                cppError = new(getPage()) CppError(new(getPage()) _CppError_unableToCreateOutputDirectory(&_LetString::create(getPage(), *programDirectory), dirError));
+                cppError = new(getPage()) CppError(new(getPage()) _CppError_unableToCreateOutputDirectory(&String::create(getPage(), *programDirectory), dirError));
                 return false; } } }
 
     {
         _Region _region; _Page* _p = _region.get();
-        _VarString& outputFilePath = *new(_p) _VarString(*programDirectory);
+        VarString& outputFilePath = *new(_p) VarString(*programDirectory);
         outputFilePath += "/";
         outputFilePath += *program->name;
 
         // Build and write the project file
         {
             _Region _region; _Page* _p = _region.get();
-            _VarString* projectFile = new(_p) _VarString();
+            VarString* projectFile = new(_p) VarString();
             buildProjectFileString(projectFile, program);
             {
                 _Region _region; _Page* _p = _region.get();
-                _VarString* projectFilePath = new(_p) _VarString(outputFilePath);
+                VarString* projectFilePath = new(_p) VarString(outputFilePath);
                 (*projectFilePath) += ".project";
                 if (File::writeFromString(_p, *projectFilePath , *projectFile))
                     return false;
@@ -51,11 +51,11 @@ bool CppVisitor::openProgram(Program* program) {
         // Build and write the main header file
         {
             _Region _region; _Page* _p = _region.get();
-            _VarString* headerFile = new(_p) _VarString(0, _pageSize);
+            VarString* headerFile = new(_p) VarString(0, _pageSize);
             buildMainHeaderFileString(headerFile, program);
             {
                 _Region _region; _Page* _p = _region.get();
-                _VarString* headerFilePath = new(_p) _VarString(outputFilePath);
+                VarString* headerFilePath = new(_p) VarString(outputFilePath);
                 (*headerFilePath) += ".h";
                 if (File::writeFromString(_p, *headerFilePath, *headerFile))
                     return false;
@@ -63,7 +63,7 @@ bool CppVisitor::openProgram(Program* program) {
         }
 
         inherits = new(getPage()) _Array<Inherits>();
-        classes = new(getPage()) _Array<_LetString>();
+        classes = new(getPage()) _Array<String>();
         collectInheritances(program);
     }
 
@@ -95,7 +95,7 @@ void CppVisitor::collectInheritancesInCompilationUnit(CompilationUnit* compilati
                             Inheritance& inheritance = **inheritances[_j];
                             registerInheritance(classDeclaration.name, inheritance.typeIdentifier->name);}}}}}}}
 
-void CppVisitor::registerInheritance(_LetString* className, _LetString* baseName) {
+void CppVisitor::registerInheritance(String* className, String* baseName) {
     size_t _inherits_length = inherits->length();
     Inherits* inherit = 0;
     for (size_t _i = 0; _i < _inherits_length; _i++) {
@@ -126,10 +126,10 @@ bool CppVisitor::openCompilationUnit(CompilationUnit* compilationUnit) {
     if (!compilationUnit->parent->_isProgram())
         return false;
 
-    _LetString* programName = ((Program*)(compilationUnit->parent))->name;
+    String* programName = ((Program*)(compilationUnit->parent))->name;
     // Build and write the header file
     if (*moduleName != *programName) {
-        headerFile = new(getPage()) _VarString(0, _pageSize);
+        headerFile = new(getPage()) VarString(0, _pageSize);
         (*headerFile) += "#ifndef __";
         (*headerFile) += *programName;
         (*headerFile) += "__";
@@ -147,7 +147,7 @@ bool CppVisitor::openCompilationUnit(CompilationUnit* compilationUnit) {
     }
 
     // Begin cpp file
-    sourceFile = new(getPage()) _VarString(0, _pageSize);
+    sourceFile = new(getPage()) VarString(0, _pageSize);
     (*sourceFile) += "#include \"";
     (*sourceFile) += *programName;
     (*sourceFile) += ".h\"\nusing namespace scaly;\nnamespace ";
@@ -161,13 +161,13 @@ void CppVisitor::closeCompilationUnit(CompilationUnit* compilationUnit) {
     if (!compilationUnit->parent->_isProgram())
         return;
 
-    _LetString* programName = ((Program*)(compilationUnit->parent))->name;
-    _LetString* programDirectory = ((Program*)(compilationUnit->parent))->directory;
+    String* programName = ((Program*)(compilationUnit->parent))->name;
+    String* programDirectory = ((Program*)(compilationUnit->parent))->directory;
 
     // Close and write cpp file
     _Region _region; _Page* _p = _region.get();
 
-    _VarString& outputFilePath = *new(_p) _VarString(*programDirectory);
+    VarString& outputFilePath = *new(_p) VarString(*programDirectory);
     outputFilePath += "/";
     outputFilePath += *Path::getFileNameWithoutExtension(_p, *compilationUnit->fileName);
 
@@ -175,13 +175,13 @@ void CppVisitor::closeCompilationUnit(CompilationUnit* compilationUnit) {
         (*headerFile) += "\n\n}\n#endif // __scalyc__";
         (*headerFile) += *moduleName;
         (*headerFile) += "__\n";
-        _VarString& headerFilePath = *new(_p) _VarString(outputFilePath);
+        VarString& headerFilePath = *new(_p) VarString(outputFilePath);
         headerFilePath += ".h";
         File::writeFromString(_p, headerFilePath , *headerFile);
     }
 
     (*sourceFile) += "\n}\n";
-    _VarString& sourceFilePath = *new(_p) _VarString(outputFilePath);
+    VarString& sourceFilePath = *new(_p) VarString(outputFilePath);
     sourceFilePath += ".cpp";
     File::writeFromString(_p, sourceFilePath , *sourceFile);
 }
@@ -197,7 +197,7 @@ bool CppVisitor::openTerminatedStatement(TerminatedStatement* terminatedStatemen
                     BinaryOp* binaryOp = *(*binaryOps)[0];
                     if (binaryOp->_isAssignment()) {
                         Assignment* assignment = (Assignment*)binaryOp;
-                        _LetString* memberName = getMemberIfCreatingObject(assignment);
+                        String* memberName = getMemberIfCreatingObject(assignment);
                         if ((memberName != nullptr) && (!assignmentIsInInitializer(assignment))) {
                             (*sourceFile) += *memberName;
                             (*sourceFile) += "->getPage()->clear();\n";
@@ -343,7 +343,7 @@ bool CppVisitor::openInitializerDeclaration(InitializerDeclaration* initializerD
     if (!initializerDeclaration->parent->parent->parent->_isClassDeclaration())
         return false;
 
-    _LetString* classDeclarationName = ((Program*)(initializerDeclaration->parent->parent->parent))->name;
+    String* classDeclarationName = ((Program*)(initializerDeclaration->parent->parent->parent))->name;
 
     (*headerFile) += *classDeclarationName;
     (*headerFile) += "(";
@@ -377,7 +377,7 @@ bool CppVisitor::openFunctionSignature(FunctionSignature* functionSignature) {
     if (!functionName->_isIdentifierFunction())
         return false;
     
-    _LetString* identifierFunctionName = ((IdentifierFunction*)functionName)->name;
+    String* identifierFunctionName = ((IdentifierFunction*)functionName)->name;
         
     if (staticFunction)
         (*headerFile) += "static ";
@@ -522,14 +522,14 @@ void CppVisitor::closeParameterClause(ParameterClause* parameterClause) {
 }
 
 bool CppVisitor::openConstParameter(ConstParameter* constParameter) {
-    _LetString* constParameterName = constParameter->name;
+    String* constParameterName = constParameter->name;
     constDeclaration = true;
     writeParameter(constParameterName, constParameter->parameterType);
     constDeclaration = false;
     return false;
 }
 
-void CppVisitor::writeParameter(_LetString* name, Type* parameterType) {
+void CppVisitor::writeParameter(String* name, Type* parameterType) {
     if (!firstParameter) {
         (*headerFile) += ", ";
         (*sourceFile) += ", ";
@@ -545,7 +545,7 @@ void CppVisitor::writeParameter(_LetString* name, Type* parameterType) {
     (*sourceFile) += *name;
 }
 
-bool CppVisitor::isClass(_LetString* name) {
+bool CppVisitor::isClass(String* name) {
     if (    (*name == "String")
         ||  (*name == "DirectoryError")
         ||  (*name == "FileError")
@@ -574,7 +574,7 @@ bool CppVisitor::openVarParameter(VarParameter* varParameter) {
 }
 
 void CppVisitor::closeVarParameter(VarParameter* varParameter) {
-    _LetString* varParameterName = varParameter->name;
+    String* varParameterName = varParameter->name;
     (*headerFile) += *varParameterName;
 }
 
@@ -586,7 +586,7 @@ void CppVisitor::closeThrowsClause(ThrowsClause* throwsClause) {
 }
 
 bool CppVisitor::openEnumDeclaration(EnumDeclaration* enumDeclaration) {
-    _LetString* enumDeclarationName = enumDeclaration->name;
+    String* enumDeclarationName = enumDeclaration->name;
     (*headerFile) += "\n\nclass ";
     (*headerFile) += *enumDeclarationName;
     (*headerFile) += ";\n";
@@ -594,7 +594,7 @@ bool CppVisitor::openEnumDeclaration(EnumDeclaration* enumDeclaration) {
 }
 
 void CppVisitor::closeEnumDeclaration(EnumDeclaration* enumDeclaration) {
-    _LetString* enumDeclarationName = enumDeclaration->name;
+    String* enumDeclarationName = enumDeclaration->name;
     _Vector<EnumMember>* members = enumDeclaration->members;
     if (members) {
         (*headerFile) += "enum _";
@@ -667,7 +667,7 @@ bool CppVisitor::openEnumMember(EnumMember* enumMember) {
     if (!enumMember->parent->_isEnumDeclaration())
         return false;
 
-    _LetString* enumDeclarationName = ((EnumDeclaration*)(enumMember->parent))->name;
+    String* enumDeclarationName = ((EnumDeclaration*)(enumMember->parent))->name;
     if (enumMember->parameterClause) {
         (*headerFile) += "\nclass _";
         (*headerFile) += *enumDeclarationName;
@@ -706,7 +706,7 @@ void CppVisitor::closeEnumMember(EnumMember* enumMember) {
     inEnumMember = false;
 }
 
-void CppVisitor::appendCppType(_VarString* s, Type* type) {
+void CppVisitor::appendCppType(VarString* s, Type* type) {
     if (type->_isTypeIdentifier()) {
         TypeIdentifier* typeId = (TypeIdentifier*)type;
         appendCppTypeName(s, typeId);
@@ -774,8 +774,8 @@ void CppVisitor::closeClassDeclaration(ClassDeclaration* classDeclaration) {
     }
     {
         _Region _region; _Page* _p = _region.get();
-        _Array<_LetString>& derivedClasses = *new(_p) _Array<_LetString>();
-        collectDerivedClasses(&derivedClasses, &_LetString::create(_p, *classDeclaration->name));
+        _Array<String>& derivedClasses = *new(_p) _Array<String>();
+        collectDerivedClasses(&derivedClasses, &String::create(_p, *classDeclaration->name));
         size_t _derivedClasses_length = derivedClasses.length();
         for (size_t _i = 0; _i < _derivedClasses_length; _i++) {
             (*headerFile) += "\n"; indentHeader(); (*headerFile) += "virtual bool _is"; (*headerFile) += **derivedClasses[_i]; (*headerFile) += "();";
@@ -811,7 +811,7 @@ void CppVisitor::indentSource() {
         (*sourceFile) += "    ";
 }
 
-void CppVisitor::collectDerivedClasses(_Array<_LetString>* derivedClasses, _LetString* className) {
+void CppVisitor::collectDerivedClasses(_Array<String>* derivedClasses, String* className) {
     size_t _inherits_length = inherits->length();
     for (size_t _i = 0; _i < _inherits_length; _i++) {
         if (*(*(*inherits)[_i])->name == *className)
@@ -819,10 +819,10 @@ void CppVisitor::collectDerivedClasses(_Array<_LetString>* derivedClasses, _LetS
     }
 }
 
-void CppVisitor::appendDerivedClasses(_Array<_LetString>* derivedClasses, _Array<_LetString>* inheritors) {
+void CppVisitor::appendDerivedClasses(_Array<String>* derivedClasses, _Array<String>* inheritors) {
     size_t _inheritors_length = inheritors->length();
     for (size_t _i = 0; _i < _inheritors_length; _i++) {
-        _LetString* derivedClass = *((*inheritors)[_i]);
+        String* derivedClass = *((*inheritors)[_i]);
         derivedClasses->push(derivedClass);
         collectDerivedClasses(derivedClasses, derivedClass);
     }
@@ -952,7 +952,7 @@ void CppVisitor::closeBinaryOperation(BinaryOperation* binaryOperation) {
 
 bool CppVisitor::openAssignment(Assignment* assignment) {
     (*sourceFile) += " = ";
-    _LetString* memberName = getMemberIfCreatingObject(assignment);
+    String* memberName = getMemberIfCreatingObject(assignment);
     if (memberName != nullptr) {
         if (isClass(getFunctionName(assignment))) {
             (*sourceFile) += "new(";
@@ -983,8 +983,8 @@ bool CppVisitor::assignmentIsInInitializer(Assignment* assignment) {
     return false;
 }
 
-_LetString* CppVisitor::getMemberIfCreatingObject(Assignment* assignment) {
-     _LetString* functionName = getFunctionName(assignment);
+String* CppVisitor::getMemberIfCreatingObject(Assignment* assignment) {
+     String* functionName = getFunctionName(assignment);
     if (functionName == nullptr) {
         return nullptr;
     }
@@ -997,7 +997,7 @@ _LetString* CppVisitor::getMemberIfCreatingObject(Assignment* assignment) {
                     PostfixExpression* leftSide = simpleExpression->prefixExpression->expression;
                     if ((leftSide->postfixes == 0) && (leftSide->primaryExpression->_isIdentifierExpression())) {
                         IdentifierExpression* memberExpression = (IdentifierExpression*)(leftSide->primaryExpression);
-                        _LetString* memberName = memberExpression->name;
+                        String* memberName = memberExpression->name;
                         ClassDeclaration* classDeclaration = getClassDeclaration(assignment);
                         if (classDeclaration != nullptr) {
                             return memberName;
@@ -1011,7 +1011,7 @@ _LetString* CppVisitor::getMemberIfCreatingObject(Assignment* assignment) {
     return nullptr;
 }
 
-_LetString* CppVisitor::getFunctionName(Assignment* assignment) {
+String* CppVisitor::getFunctionName(Assignment* assignment) {
    if (assignment->expression->prefixOperator == 0) {
         PostfixExpression* rightSide = assignment->expression->expression;
         if (rightSide->primaryExpression->_isIdentifierExpression()) {
@@ -1023,7 +1023,7 @@ _LetString* CppVisitor::getFunctionName(Assignment* assignment) {
    return nullptr;
 }
 
-bool CppVisitor::isCreatingObject(_LetString* functionName, SyntaxNode* node) {
+bool CppVisitor::isCreatingObject(String* functionName, SyntaxNode* node) {
     ClassDeclaration* classDeclaration = getClassDeclaration(node);
     if (classDeclaration == nullptr)
         return false;
@@ -1055,7 +1055,7 @@ ClassDeclaration* CppVisitor::getClassDeclaration(SyntaxNode* node) {
     return nullptr;
 }
 
-bool CppVisitor::isVariableMember(_LetString* memberName, ClassDeclaration* classDeclaration) {
+bool CppVisitor::isVariableMember(String* memberName, ClassDeclaration* classDeclaration) {
     _Vector<ClassMember>* classMembers = classDeclaration->body->members;
     size_t _classMembers_length = classMembers->length();
     for (size_t _i = 0; _i < _classMembers_length; _i++) {
@@ -1175,7 +1175,7 @@ bool CppVisitor::openParenthesizedExpression(ParenthesizedExpression* parenthesi
                 if (!isClass(identifierExpression->name)) {
                     if (postfixExpression->parent->parent->_isAssignment()) {
                         Assignment* assignment = (Assignment*)postfixExpression->parent->parent;
-                        _LetString* member = getMemberIfCreatingObject(assignment);
+                        String* member = getMemberIfCreatingObject(assignment);
                         if (member != nullptr) {
                             ClassDeclaration* classDeclaration = getClassDeclaration(assignment);
                             if (isVariableMember(member, classDeclaration)) {
@@ -1192,7 +1192,7 @@ bool CppVisitor::openParenthesizedExpression(ParenthesizedExpression* parenthesi
                 }
                 else {
                     if (isClass(identifierExpression->name)) {
-                        _LetString* className = identifierExpression->name;
+                        String* className = identifierExpression->name;
                         if ((*className) == "String") {
                             outputParen = false;
                         }
@@ -1252,9 +1252,9 @@ void CppVisitor::visitLiteralExpression(LiteralExpression* literalExpression) {
 
 void CppVisitor::visitIdentifierExpression(IdentifierExpression* identifierExpression) {
     if (isClass(identifierExpression->name)) {
-        _LetString* className = identifierExpression->name;
+        String* className = identifierExpression->name;
         if ((*className) == "String") {
-            (*sourceFile) += "&_LetString::create(token->getPage(), ";
+            (*sourceFile) += "&String::create(token->getPage(), ";
         }
         else
             (*sourceFile) += *identifierExpression->name;
@@ -1568,8 +1568,8 @@ bool CppVisitor::inTypeQuery(TypeIdentifier* typeIdentifier) {
 
     return false;
 }
-void CppVisitor::appendCppTypeName(_VarString* s, TypeIdentifier* typeIdentifier) {
-    _LetString* typeIdentifierName = typeIdentifier->name;
+void CppVisitor::appendCppTypeName(VarString* s, TypeIdentifier* typeIdentifier) {
+    String* typeIdentifierName = typeIdentifier->name;
     if ((*typeIdentifierName) == "unsigned") {
         (*s) += "size_t";
         return;
@@ -1581,11 +1581,11 @@ void CppVisitor::appendCppTypeName(_VarString* s, TypeIdentifier* typeIdentifier
     else {
         if ((*typeIdentifierName) == "String") {
             if ((constDeclaration)||(inArrayType(typeIdentifier))||(inEnumMember)||(inFunctionReturn)) {
-                (*s) += "_LetString";
+                (*s) += "String";
                 return;
             }
             else {
-                (*s) += "_VarString";
+                (*s) += "VarString";
                 return;
             }
         }
@@ -1635,7 +1635,7 @@ bool CppVisitor::openInheritance(Inheritance* inheritance) {
 void CppVisitor::closeInheritance(Inheritance* inheritance) {
 }
 
-void CppVisitor::buildMainHeaderFileString(_VarString* mainHeaderFile, Program* program) {
+void CppVisitor::buildMainHeaderFileString(VarString* mainHeaderFile, Program* program) {
     (*mainHeaderFile) += "#ifndef __scaly__";
     (*mainHeaderFile) += *program->name;
     (*mainHeaderFile) += "__\n#define __scaly__";
@@ -1645,14 +1645,14 @@ void CppVisitor::buildMainHeaderFileString(_VarString* mainHeaderFile, Program* 
     for (size_t i = 0; i < noOfCompilationUnits; i++) {
         _Region _region; _Page* _p = _region.get();
         (*mainHeaderFile) +=  "#include \"";
-        (*mainHeaderFile) += *new(mainHeaderFile->getPage()) _VarString(*Path::getFileNameWithoutExtension(_p, *(*(*program->compilationUnits)[i])->fileName)) + ".h\"\n";
+        (*mainHeaderFile) += *new(mainHeaderFile->getPage()) VarString(*Path::getFileNameWithoutExtension(_p, *(*(*program->compilationUnits)[i])->fileName)) + ".h\"\n";
     }
     (*mainHeaderFile) += "\nusing namespace scaly;\nnamespace ";
     (*mainHeaderFile) += *program->name;
-    (*mainHeaderFile) += " {\nint _main(_Vector<_LetString>* arguments);\n}\n\n#endif // __scaly__scalyc__\n";
+    (*mainHeaderFile) += " {\nint _main(_Vector<String>* arguments);\n}\n\n#endif // __scaly__scalyc__\n";
 }
 
-void CppVisitor::buildProjectFileString(_VarString* projectFile, Program* program) {
+void CppVisitor::buildProjectFileString(VarString* projectFile, Program* program) {
     (*projectFile) += "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
     (*projectFile) += "<CodeLite_Project Name=\"";
     (*projectFile) +=  *program->name;
@@ -1752,9 +1752,9 @@ void CppVisitor::buildProjectFileString(_VarString* projectFile, Program* progra
 
 bool CppVisitor::_isCppVisitor() { return true; }
 
-Inherits::Inherits(_LetString* className) {
-    name = &_LetString::create(getPage(), *className);
-    inheritors = new(getPage()) _Array<_LetString>();
+Inherits::Inherits(String* className) {
+    name = &String::create(getPage(), *className);
+    inheritors = new(getPage()) _Array<String>();
 }
 
 }

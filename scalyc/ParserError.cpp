@@ -26,7 +26,7 @@ _ParserError_literalExpected* ParserError::get_literalExpected(){
     return (_ParserError_literalExpected*)errorInfo;
 }
 
-_ParserError_keywordExpected::_ParserError_keywordExpected(Position* position, _LetString* keyword)
+_ParserError_keywordExpected::_ParserError_keywordExpected(Position* position, String* keyword)
 : position(position), keyword(keyword) {
 }
 
@@ -34,7 +34,7 @@ _ParserError_keywordExpected* ParserError::get_keywordExpected(){
     return (_ParserError_keywordExpected*)errorInfo;
 }
 
-_ParserError_punctuationExpected::_ParserError_punctuationExpected(Position* position, _LetString* punctuation)
+_ParserError_punctuationExpected::_ParserError_punctuationExpected(Position* position, String* punctuation)
 : position(position), punctuation(punctuation) {
 }
 

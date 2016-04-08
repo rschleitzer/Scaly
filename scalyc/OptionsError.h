@@ -8,16 +8,16 @@ class OptionsError;
 
 class _OptionsError_invalidOption : public Object {
 public:
-    _OptionsError_invalidOption(_LetString* option);
+    _OptionsError_invalidOption(String* option);
 
-    _LetString* option;
+    String* option;
 };
 
 class _OptionsError_unknownOption : public Object {
 public:
-    _OptionsError_unknownOption(_LetString* option);
+    _OptionsError_unknownOption(String* option);
 
-    _LetString* option;
+    String* option;
 };
 enum _OptionsErrorCode {
     _OptionsErrorCode_invalidOption = 1,

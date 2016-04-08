@@ -16,6 +16,7 @@ public:
     virtual bool _isTerminatedStatement();
     virtual bool _isStatement();
     virtual bool _isDeclaration();
+    virtual bool _isExpression();
     virtual bool _isUseDeclaration();
     virtual bool _isConstantDeclaration();
     virtual bool _isVariableDeclaration();
@@ -24,7 +25,6 @@ public:
     virtual bool _isEnumDeclaration();
     virtual bool _isClassDeclaration();
     virtual bool _isInitializerDeclaration();
-    virtual bool _isExpression();
     virtual bool _isCodeBlock();
     virtual bool _isSimpleExpression();
     virtual bool _isPathIdentifier();
@@ -130,10 +130,10 @@ public:
 
 class Program : public SyntaxNode {
 public:
-    Program(_LetString* name, _LetString* directory, _Vector<CompilationUnit>* compilationUnits);
+    Program(String* name, String* directory, _Vector<CompilationUnit>* compilationUnits);
     virtual void accept(SyntaxVisitor* visitor);
-    _LetString* name;
-    _LetString* directory;
+    String* name;
+    String* directory;
     _Vector<CompilationUnit>* compilationUnits;
 
     virtual bool _isProgram();
@@ -144,7 +144,7 @@ public:
     CompilationUnit(_Vector<TerminatedStatement>* statements, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
     _Vector<TerminatedStatement>* statements;
-    _LetString* fileName;
+    String* fileName;
 
     virtual bool _isCompilationUnit();
 };
@@ -165,6 +165,7 @@ public:
 
     virtual bool _isStatement();
     virtual bool _isDeclaration();
+    virtual bool _isExpression();
     virtual bool _isUseDeclaration();
     virtual bool _isConstantDeclaration();
     virtual bool _isVariableDeclaration();
@@ -173,7 +174,6 @@ public:
     virtual bool _isEnumDeclaration();
     virtual bool _isClassDeclaration();
     virtual bool _isInitializerDeclaration();
-    virtual bool _isExpression();
     virtual bool _isCodeBlock();
     virtual bool _isSimpleExpression();
 };
@@ -255,9 +255,9 @@ public:
 
 class EnumDeclaration : public Declaration {
 public:
-    EnumDeclaration(_LetString* name, _Vector<EnumMember>* members, Position* start, Position* end);
+    EnumDeclaration(String* name, _Vector<EnumMember>* members, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
-    _LetString* name;
+    String* name;
     _Vector<EnumMember>* members;
 
     virtual bool _isEnumDeclaration();
@@ -265,9 +265,9 @@ public:
 
 class ClassDeclaration : public Declaration {
 public:
-    ClassDeclaration(_LetString* name, GenericArgumentClause* genericArgumentClause, TypeInheritanceClause* typeInheritanceClause, ClassBody* body, Position* start, Position* end);
+    ClassDeclaration(String* name, GenericArgumentClause* genericArgumentClause, TypeInheritanceClause* typeInheritanceClause, ClassBody* body, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
-    _LetString* name;
+    String* name;
     GenericArgumentClause* genericArgumentClause;
     TypeInheritanceClause* typeInheritanceClause;
     ClassBody* body;
@@ -317,9 +317,9 @@ public:
 
 class PathItem : public SyntaxNode {
 public:
-    PathItem(_LetString* name, Position* start, Position* end);
+    PathItem(String* name, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
-    _LetString* name;
+    String* name;
 
     virtual bool _isPathItem();
 };
@@ -399,9 +399,9 @@ public:
 
 class IdentifierFunction : public FunctionName {
 public:
-    IdentifierFunction(_LetString* name, Position* start, Position* end);
+    IdentifierFunction(String* name, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
-    _LetString* name;
+    String* name;
 
     virtual bool _isIdentifierFunction();
 };
@@ -456,9 +456,9 @@ public:
 
 class ConstParameter : public Parameter {
 public:
-    ConstParameter(_LetString* name, Type* parameterType, Position* start, Position* end);
+    ConstParameter(String* name, Type* parameterType, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
-    _LetString* name;
+    String* name;
     Type* parameterType;
 
     virtual bool _isConstParameter();
@@ -466,9 +466,9 @@ public:
 
 class VarParameter : public Parameter {
 public:
-    VarParameter(_LetString* name, Type* parameterType, Position* start, Position* end);
+    VarParameter(String* name, Type* parameterType, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
-    _LetString* name;
+    String* name;
     Type* parameterType;
 
     virtual bool _isVarParameter();
@@ -496,9 +496,9 @@ public:
 
 class EnumCase : public SyntaxNode {
 public:
-    EnumCase(_LetString* name, Position* start, Position* end);
+    EnumCase(String* name, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
-    _LetString* name;
+    String* name;
 
     virtual bool _isEnumCase();
 };
@@ -532,9 +532,9 @@ public:
 
 class GenericParameter : public SyntaxNode {
 public:
-    GenericParameter(_LetString* typeName, Position* start, Position* end);
+    GenericParameter(String* typeName, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
-    _LetString* typeName;
+    String* typeName;
 
     virtual bool _isGenericParameter();
 };
@@ -550,9 +550,9 @@ public:
 
 class PrefixExpression : public SyntaxNode {
 public:
-    PrefixExpression(_LetString* prefixOperator, PostfixExpression* expression, Position* start, Position* end);
+    PrefixExpression(String* prefixOperator, PostfixExpression* expression, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
-    _LetString* prefixOperator;
+    String* prefixOperator;
     PostfixExpression* expression;
 
     virtual bool _isPrefixExpression();
@@ -582,9 +582,9 @@ public:
 
 class BinaryOperation : public BinaryOp {
 public:
-    BinaryOperation(_LetString* binaryOperator, PrefixExpression* expression, Position* start, Position* end);
+    BinaryOperation(String* binaryOperator, PrefixExpression* expression, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
-    _LetString* binaryOperator;
+    String* binaryOperator;
     PrefixExpression* expression;
 
     virtual bool _isBinaryOperation();
@@ -671,9 +671,9 @@ public:
 
 class OperatorPostfix : public Postfix {
 public:
-    OperatorPostfix(_LetString* postfixOperator, Position* start, Position* end);
+    OperatorPostfix(String* postfixOperator, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
-    _LetString* postfixOperator;
+    String* postfixOperator;
 
     virtual bool _isOperatorPostfix();
 };
@@ -752,20 +752,20 @@ public:
     virtual bool _isBreakExpression();
     virtual bool _isInitializerCall();
     virtual bool _isThisExpression();
+    virtual bool _isSuperExpression();
+    virtual bool _isNullExpression();
     virtual bool _isThisDot();
     virtual bool _isThisSubscript();
     virtual bool _isThisWord();
-    virtual bool _isSuperExpression();
     virtual bool _isSuperDot();
     virtual bool _isSuperSubscript();
-    virtual bool _isNullExpression();
 };
 
 class IdentifierExpression : public PrimaryExpression {
 public:
-    IdentifierExpression(_LetString* name, Position* start, Position* end);
+    IdentifierExpression(String* name, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
-    _LetString* name;
+    String* name;
 
     virtual bool _isIdentifierExpression();
 };
@@ -1057,9 +1057,9 @@ public:
 
 class IdentifierPattern : public Pattern {
 public:
-    IdentifierPattern(_LetString* identifier, TypeAnnotation* annotationForType, Position* start, Position* end);
+    IdentifierPattern(String* identifier, TypeAnnotation* annotationForType, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
-    _LetString* identifier;
+    String* identifier;
     TypeAnnotation* annotationForType;
 
     virtual bool _isIdentifierPattern();
@@ -1139,9 +1139,9 @@ public:
 
 class ThisMember : public CommonThisMember {
 public:
-    ThisMember(_LetString* name, Position* start, Position* end);
+    ThisMember(String* name, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
-    _LetString* name;
+    String* name;
 
     virtual bool _isThisMember();
 };
@@ -1166,9 +1166,9 @@ public:
 
 class SuperMember : public CommonSuperMember {
 public:
-    SuperMember(_LetString* name, Position* start, Position* end);
+    SuperMember(String* name, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
-    _LetString* name;
+    String* name;
 
     virtual bool _isSuperMember();
 };
@@ -1179,15 +1179,15 @@ public:
     virtual void accept(SyntaxVisitor* visitor);
 
     virtual bool _isType();
-    virtual bool _isTypeIdentifier();
     virtual bool _isArrayType();
+    virtual bool _isTypeIdentifier();
 };
 
 class TypeIdentifier : public Type {
 public:
-    TypeIdentifier(_LetString* name, SubtypeIdentifier* subType, _Vector<TypePostfix>* postfixes, Position* start, Position* end);
+    TypeIdentifier(String* name, SubtypeIdentifier* subType, _Vector<TypePostfix>* postfixes, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
-    _LetString* name;
+    String* name;
     SubtypeIdentifier* subType;
     _Vector<TypePostfix>* postfixes;
 
