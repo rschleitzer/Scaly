@@ -28,7 +28,6 @@ class CppVisitor : SyntaxVisitor {
     mutable inParameterClause: bool
     mutable abstractFunction: bool
     mutable staticFunction: bool
-    mutable inArrayType: bool
     mutable inEnumMember: bool
     mutable inFunctionReturn: bool
     mutable constDeclaration: bool
@@ -331,8 +330,13 @@ class CppVisitor : SyntaxVisitor {
         return false;
     }
 
-    function getMemberIfConstructorCall(assignment: Assignment) -> existing String {
-        return false;
+    function getMemberIfCreatingObject(assignment: Assignment) -> existing String {
+    }
+    
+    function getFunctionName(assignment: Assignment) -> existing String {
+    }
+    
+    function isCreatingObject(functionName: String, node: SyntaxNode) -> bool {
     }
 
     function getClassDeclaration(node: SyntaxNode) -> existing ClassDeclaration {
