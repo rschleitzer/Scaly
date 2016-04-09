@@ -273,9 +273,9 @@ class Lexer {
                 ((c >= 'A') && (c <= 'Z')) || 
                 ((c >= '0') && (c <= '9')) || 
                  (c == '_')
-                name += text[position]
+                name.append(text[position])
             else
-                return Identifier(name)
+                return Identifier(String(name))
         }            
         while true
     }
@@ -302,13 +302,13 @@ class Lexer {
             
             switch (text[position]) {
                 case '/', '=', '-', '+', '!', '*', '%', '<', '&', '|', '^', '~':
-                    operation += text[position]
+                    operation.append(text[position])
                 
                 case '.':
                     if !includeDots
                         fallthrough
                     else
-                        operation += text[position]
+                        operation.append(text[position])
                 
                 default: {
                     let lastPosition = position
@@ -352,7 +352,7 @@ class Lexer {
             
             let c: character = text[position]
             if (c >= '0') && (c <= '9')
-                value += text[position]
+                value.append(text[position])
             else
                 return NumericLiteral(value)
         } while true
@@ -374,15 +374,15 @@ class Lexer {
                 case '\\': {
                     position++ column++
                     switch text[position]
-                        case '\"', '\\': value += text[position]
-                        case 'n': value += "\n"
-                        case 'r': value += "\r"
-                        case 't': value += "\t"
-                        case '0': value += "\0"
+                        case '\"', '\\': value.append(text[position])
+                        case 'n': value.append('\n')
+                        case 'r': value.append('\r')
+                        case 't': value.append('\t')
+                        case '0': value.append('\0')
                         default: return InvalidToken()
                 }
                 default:
-                    value += text[position]
+                    value.append(text[position])
             }
         } while true
     }
