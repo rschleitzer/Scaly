@@ -121,7 +121,8 @@ public:
     virtual bool openBinaryOperation(BinaryOperation* binaryOperation);
     virtual void closeBinaryOperation(BinaryOperation* binaryOperation);
     virtual bool openAssignment(Assignment* assignment);
-    virtual bool assignmentIsInInitializer(Assignment* assignment);
+    virtual bool inInitializer(SyntaxNode* node);
+    virtual bool inReturn(SyntaxNode* node);
     virtual String* getMemberIfCreatingObject(Assignment* assignment);
     virtual String* getFunctionName(Assignment* assignment);
     virtual bool isCreatingObject(String* functionName, SyntaxNode* node);

@@ -327,7 +327,11 @@ class CppVisitor : SyntaxVisitor {
         return true
     }
     
-    function assignmentIsInInitializer(assignment: Assignment) -> bool {
+    function inInitializer(node: SyntaxNode) -> bool {
+        return false;
+    }
+    
+    function inReturn(node: SyntaxNode) -> bool {
         return false;
     }
 

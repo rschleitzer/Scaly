@@ -198,7 +198,7 @@ bool CppVisitor::openTerminatedStatement(TerminatedStatement* terminatedStatemen
                     if (binaryOp->_isAssignment()) {
                         Assignment* assignment = (Assignment*)binaryOp;
                         String* memberName = getMemberIfCreatingObject(assignment);
-                        if ((memberName != nullptr) && (!assignmentIsInInitializer(assignment))) {
+                        if ((memberName != nullptr) && (!inInitializer(assignment))) {
                             (*sourceFile) += *memberName;
                             (*sourceFile) += "->getPage()->clear();\n";
                             this->indentSource();
@@ -957,13 +957,26 @@ bool CppVisitor::openAssignment(Assignment* assignment) {
     return true;
 }
 
-bool CppVisitor::assignmentIsInInitializer(Assignment* assignment) {
-    if (assignment->parent->parent->parent->parent->_isInitializerDeclaration()) {
+bool CppVisitor::inInitializer(SyntaxNode* node) {
+    if (node->parent == nullptr)
+        return false;
+    
+    if (node->parent->_isInitializerDeclaration()) {
         return true;
     }
-        
+
+    return inInitializer(node->parent);
+}
+
+bool CppVisitor::inReturn(SyntaxNode* node) {
+    if (node->parent == nullptr)
+        return false;
     
-    return false;
+    if (node->parent->_isReturnExpression()) {
+        return true;
+    }
+
+    return inReturn(node->parent);
 }
 
 String* CppVisitor::getMemberIfCreatingObject(Assignment* assignment) {
@@ -1237,11 +1250,17 @@ void CppVisitor::visitIdentifierExpression(IdentifierExpression* identifierExpre
     if (isClass(identifierExpression->name)) {
         String* className = identifierExpression->name;
         if ((*className) == "String") {
-            (*sourceFile) += "&String::create(token->getPage(), ";
+            (*sourceFile) += "&String::create(";
+            if (inReturn(identifierExpression))
+                (*sourceFile) += "_rp";
+            else {
+                (*sourceFile) += "token->getPage()";
+            }
+            (*sourceFile) += ", ";
         }
         else {
             (*sourceFile) += "new(";
-            if (identifierExpression->parent->parent->parent->parent->_isReturnExpression())
+            if (inReturn(identifierExpression))
                 (*sourceFile) += "_rp";
             else if (identifierExpression->parent->parent->parent->_isAssignment()) {
                 Assignment* assignment = (Assignment*)identifierExpression->parent->parent->parent;
@@ -1249,12 +1268,12 @@ void CppVisitor::visitIdentifierExpression(IdentifierExpression* identifierExpre
                 String* memberName = getMemberIfCreatingObject(assignment);
                 if (memberName != nullptr) {
                     if (isVariableMember(memberName, classDeclaration)) {
-                        if (!assignmentIsInInitializer(assignment)) {
+                        if (!inInitializer(assignment)) {
                             (*sourceFile) += *memberName;
                             (*sourceFile) += "->";
                         }
                         (*sourceFile) += "getPage()";
-                        if (assignmentIsInInitializer(assignment)) {
+                        if (inInitializer(assignment)) {
                             (*sourceFile) += "->allocateExclusivePage()";
                         }
                     }
