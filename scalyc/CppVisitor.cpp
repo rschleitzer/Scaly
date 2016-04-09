@@ -1692,9 +1692,9 @@ void CppVisitor::buildMainHeaderFileString(VarString* mainHeaderFile, Program* p
     size_t noOfCompilationUnits = program->compilationUnits->length();
     for (size_t i = 0; i < noOfCompilationUnits; i++) {
         _Region _region; _Page* _p = _region.get();
-        mainHeaderFile->append( "#include \"");
+        mainHeaderFile->append("#include \"");
         mainHeaderFile->append(new(mainHeaderFile->getPage()) VarString(*Path::getFileNameWithoutExtension(_p, *(*(*program->compilationUnits)[i])->fileName)));
-        mainHeaderFile->append(".h\n");
+        mainHeaderFile->append(".h\"\n");
     }
     mainHeaderFile->append("\nusing namespace scaly;\nnamespace ");
     mainHeaderFile->append(program->name);
