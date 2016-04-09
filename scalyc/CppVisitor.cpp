@@ -1284,7 +1284,7 @@ bool CppVisitor::openIfExpression(IfExpression* ifExpression) {
         sourceIndentLevel++;
         indentSource();
         ifExpression->consequent->accept(this);
-        (*sourceFile) += "\n";
+        (*sourceFile) += ";\n";
         sourceIndentLevel--;
     }
     else
@@ -1295,7 +1295,7 @@ bool CppVisitor::openIfExpression(IfExpression* ifExpression) {
             sourceIndentLevel++;
             indentSource();
             ifExpression->elseClause->accept(this);
-            (*sourceFile) += "\n";
+            (*sourceFile) += ";\n";
             sourceIndentLevel--;
         }
         else
