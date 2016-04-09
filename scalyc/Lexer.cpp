@@ -352,7 +352,7 @@ Identifier* Lexer::scanIdentifier(_Page* _rp) {
         if (position == end)
             return new(_rp) Identifier(&String::create(_rp, name));
         char c = (*text)[position];
-        if (((c >= 'a') && (c <= 'z')) || ((c >= 'A') && (c <= 'Z')) || (c == '_'))
+        if (((c >= 'a') && (c <= 'z')) || ((c >= 'A') && (c <= 'Z')) || ((c >= '0') && (c <= '9')) || (c == '_'))
             *name += (*text)[position];
         else
             return new(_rp) Identifier(&String::create(_rp, name));
