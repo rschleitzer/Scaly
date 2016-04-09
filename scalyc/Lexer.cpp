@@ -347,12 +347,11 @@ Identifier* Lexer::scanIdentifier(_Page* _rp) {
     _Region _region; _Page* _p = _region.get();
     VarString* name = new(_p) VarString((*text)[position]);
     do {
-        position++; column++;
-
+        position++;
+        column++;
         if (position == end) {
             return new(_rp) Identifier(&String::create(_rp, *name));
         }
-
         char c = (*text)[position];
         if (((c >= 'a') && (c <= 'z')) || ((c >= 'A') && (c <= 'Z')) || (c == '_'))
             *name += (*text)[position];
