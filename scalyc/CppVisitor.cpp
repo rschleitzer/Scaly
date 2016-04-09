@@ -1281,7 +1281,7 @@ void CppVisitor::visitIdentifierExpression(IdentifierExpression* identifierExpre
 bool CppVisitor::openIfExpression(IfExpression* ifExpression) {
     (*sourceFile) += "if (";
     ifExpression->condition->accept(this);
-    (*sourceFile) += ") ";
+    (*sourceFile) += ")";
     if (ifExpression->consequent->_isSimpleExpression()) {
         (*sourceFile) += "\n";
         sourceIndentLevel++;
@@ -1290,8 +1290,10 @@ bool CppVisitor::openIfExpression(IfExpression* ifExpression) {
         (*sourceFile) += ";\n";
         sourceIndentLevel--;
     }
-    else
+    else {
+        (*sourceFile) += " ";
         ifExpression->consequent->accept(this);
+    }
     if (ifExpression->elseClause) {
         if (ifExpression->elseClause->alternative->_isSimpleExpression()) {
             (*sourceFile) += "\n";
@@ -1301,8 +1303,9 @@ bool CppVisitor::openIfExpression(IfExpression* ifExpression) {
             (*sourceFile) += ";\n";
             sourceIndentLevel--;
         }
-        else
+        else {
             ifExpression->elseClause->accept(this);
+        }
     }
 
     return false;
