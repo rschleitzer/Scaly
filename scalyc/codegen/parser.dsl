@@ -103,7 +103,7 @@
     function isIdentifier(id: String) -> bool {"
    (apply-to-selected-children "keyword" (lambda (keyword) ($
 "
-        if id == "(name keyword)"
+        if id.equals("(name keyword)")
             return false
 "   )))
 "
@@ -302,7 +302,7 @@ bool Parser::isAtEnd() {
 bool Parser::isIdentifier(String* id) {"
    (apply-to-selected-children "keyword" (lambda (keyword) ($
 "
-    if (*id == *"(name keyword)")
+    if (id->equals("(name keyword)"))
         return false;
 "   )))
 "

@@ -16,12 +16,12 @@ public:
     char* getNativeString() const;
     size_t getLength();
     char operator [](size_t i);
-    bool operator == (const char* theString);
-    bool operator != (const char* theString);
-    bool operator == (const String& theString);
-    bool operator != (const String& theString);
-    bool operator == (const VarString& theString);
-    bool operator != (const VarString& theString);
+    bool equals(const char* theString);
+    bool notEquals(const char* theString);
+    bool equals(String* theString);
+    bool notEquals(String* theString);
+    bool equals(VarString* theString);
+    bool notEquals(VarString* theString);
     _Array<String>& Split(_Page* _rp, char c);
 
 private:

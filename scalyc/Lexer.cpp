@@ -365,8 +365,8 @@ Operator* Lexer::scanOperator(_Page* _rp, bool includeDots) {
     bool whitespaceSkippedBefore = whitespaceSkipped;
     if (!whitespaceSkippedBefore) {
         if (token->_isPunctuation()) {
-            String& sign = *((Punctuation*)token)->sign;
-            if ((sign == "(") || (sign == "[") || (sign == "{") || (sign == ",") || (sign == ";") || (sign == ":"))
+            String* sign = ((Punctuation*)token)->sign;
+            if (sign->equals("(") || sign->equals("[") || sign->equals("{") || sign->equals(",") || sign->equals(";") || sign->equals(":"))
                 whitespaceSkippedBefore = true;
             else
                 whitespaceSkippedBefore = false;
@@ -660,7 +660,7 @@ bool Lexer::parseKeyword(String* fixedString) {
         return false;
 
     Identifier* identifier = (Identifier*)token;
-    return *identifier->name == *fixedString;
+    return identifier->name->equals(fixedString);
 }
 
 String* Lexer::parseIdentifier(_Page* _rp) {
@@ -676,7 +676,7 @@ bool Lexer::parsePunctuation(String* fixedString) {
         return false;
 
     Punctuation* punctuation = (Punctuation*)token;
-    return *punctuation->sign == *fixedString;
+    return punctuation->sign->equals(fixedString);
 }
 
 String* Lexer::parseOperator(_Page* _rp) {
@@ -719,7 +719,7 @@ String* Lexer::parsePrefixOperator(_Page* _rp) {
 
 String* Lexer::parseBinaryOperator(_Page* _rp) {
     if (!(token->_isBinaryOperator())) {
-        if ((token->_isPunctuation()) && (((*((Punctuation*)token)->sign == "<")) || (*((Punctuation*)token)->sign == ">"))) {
+        if ((token->_isPunctuation()) && ((((Punctuation*)token)->sign->equals("<")) || (((Punctuation*)token)->sign->equals(">")))) {
             Operator* op = (Operator*)token;
             return &String::create(_rp, op->operation);
         }

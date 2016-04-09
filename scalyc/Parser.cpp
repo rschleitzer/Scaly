@@ -3466,94 +3466,94 @@ bool Parser::isAtEnd() {
 }
 
 bool Parser::isIdentifier(String* id) {
-    if (*id == *useKeyword)
+    if (id->equals(useKeyword))
         return false;
 
-    if (*id == *classKeyword)
+    if (id->equals(classKeyword))
         return false;
 
-    if (*id == *functionKeyword)
+    if (id->equals(functionKeyword))
         return false;
 
-    if (*id == *ifKeyword)
+    if (id->equals(ifKeyword))
         return false;
 
-    if (*id == *elseKeyword)
+    if (id->equals(elseKeyword))
         return false;
 
-    if (*id == *switchKeyword)
+    if (id->equals(switchKeyword))
         return false;
 
-    if (*id == *caseKeyword)
+    if (id->equals(caseKeyword))
         return false;
 
-    if (*id == *defaultKeyword)
+    if (id->equals(defaultKeyword))
         return false;
 
-    if (*id == *catchKeyword)
+    if (id->equals(catchKeyword))
         return false;
 
-    if (*id == *forKeyword)
+    if (id->equals(forKeyword))
         return false;
 
-    if (*id == *inKeyword)
+    if (id->equals(inKeyword))
         return false;
 
-    if (*id == *whileKeyword)
+    if (id->equals(whileKeyword))
         return false;
 
-    if (*id == *repeatKeyword)
+    if (id->equals(repeatKeyword))
         return false;
 
-    if (*id == *returnKeyword)
+    if (id->equals(returnKeyword))
         return false;
 
-    if (*id == *throwKeyword)
+    if (id->equals(throwKeyword))
         return false;
 
-    if (*id == *breakKeyword)
+    if (id->equals(breakKeyword))
         return false;
 
-    if (*id == *throwsKeyword)
+    if (id->equals(throwsKeyword))
         return false;
 
-    if (*id == *existingKeyword)
+    if (id->equals(existingKeyword))
         return false;
 
-    if (*id == *overrideKeyword)
+    if (id->equals(overrideKeyword))
         return false;
 
-    if (*id == *staticKeyword)
+    if (id->equals(staticKeyword))
         return false;
 
-    if (*id == *letKeyword)
+    if (id->equals(letKeyword))
         return false;
 
-    if (*id == *varKeyword)
+    if (id->equals(varKeyword))
         return false;
 
-    if (*id == *mutableKeyword)
+    if (id->equals(mutableKeyword))
         return false;
 
-    if (*id == *isKeyword)
+    if (id->equals(isKeyword))
         return false;
 
-    if (*id == *asKeyword)
+    if (id->equals(asKeyword))
         return false;
 
-    if (*id == *initKeyword)
+    if (id->equals(initKeyword))
         return false;
 
-    if (*id == *enumKeyword)
+    if (id->equals(enumKeyword))
         return false;
 
-    if (*id == *superKeyword)
+    if (id->equals(superKeyword))
         return false;
 
-    if (*id == *thisKeyword)
+    if (id->equals(thisKeyword))
         return false;
 
-    if (*id == *nullKeyword)
+    if (id->equals(nullKeyword))
         return false;
 
     return true;

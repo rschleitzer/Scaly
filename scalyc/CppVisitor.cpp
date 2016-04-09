@@ -100,7 +100,7 @@ void CppVisitor::registerInheritance(String* className, String* baseName) {
     Inherits* inherit = 0;
     for (size_t _i = 0; _i < _inherits_length; _i++) {
         Inherits* inh = *(*inherits)[_i];
-        if (*inh->name == *baseName) {
+        if (inh->name->equals(baseName)) {
             inherit = inh;
         }
     }
@@ -128,7 +128,7 @@ bool CppVisitor::openCompilationUnit(CompilationUnit* compilationUnit) {
 
     String* programName = ((Program*)(compilationUnit->parent))->name;
     // Build and write the header file
-    if (*moduleName != *programName) {
+    if (moduleName->notEquals(programName)) {
         headerFile = new(getPage()) VarString(0, _pageSize);
         headerFile->append("#ifndef __");
         headerFile->append(programName);
@@ -171,7 +171,7 @@ void CppVisitor::closeCompilationUnit(CompilationUnit* compilationUnit) {
     outputFilePath->append("/");
     outputFilePath->append(Path::getFileNameWithoutExtension(_p, *compilationUnit->fileName));
 
-    if (*moduleName != *programName) {
+    if (moduleName->notEquals(programName)) {
         headerFile->append("\n\n}\n#endif // __scalyc__");
         headerFile->append(moduleName);
         headerFile->append("__\n");
@@ -546,19 +546,19 @@ void CppVisitor::writeParameter(String* name, Type* parameterType) {
 }
 
 bool CppVisitor::isClass(String* name) {
-    if (    (*name == "String")
-        ||  (*name == "VarString")
-        ||  (*name == "DirectoryError")
-        ||  (*name == "FileError")
-        ||  (*name == "ParserError")
-        ||  (*name == "CppError")
-        ||  (*name == "CompilerError")
+    if (    name->equals("String")
+        ||  name->equals("VarString")
+        ||  name->equals("DirectoryError")
+        ||  name->equals("FileError")
+        ||  name->equals("ParserError")
+        ||  name->equals("CppError")
+        ||  name->equals("CompilerError")
        )
         return true;
 
     size_t _classes_length = classes->length();
     for (size_t _i = 0; _i < _classes_length; _i++) {
-        if (**(*classes)[_i] == *name)
+        if ((*(*classes)[_i])->equals(name))
             return true;
     }
 
@@ -823,7 +823,7 @@ void CppVisitor::indentSource() {
 void CppVisitor::collectDerivedClasses(_Array<String>* derivedClasses, String* className) {
     size_t _inherits_length = inherits->length();
     for (size_t _i = 0; _i < _inherits_length; _i++) {
-        if (*(*(*inherits)[_i])->name == *className)
+        if ((*(*inherits)[_i])->name->equals(className))
             appendDerivedClasses(derivedClasses, (*(*inherits)[_i])->inheritors);
     }
 }
@@ -1043,7 +1043,7 @@ bool CppVisitor::isCreatingObject(String* functionName, SyntaxNode* node) {
             FunctionDeclaration* functionDeclaration = (FunctionDeclaration*)member->declaration;
             if (functionDeclaration->name->_isIdentifierFunction()) {
                 IdentifierFunction* identifierFunction = (IdentifierFunction*)functionDeclaration->name;
-                if ((*identifierFunction->name) == (*functionName))
+                if (identifierFunction->name->equals(functionName))
                     return true;
             }
         } 
@@ -1081,7 +1081,7 @@ bool CppVisitor::isVariableMember(String* memberName, ClassDeclaration* classDec
         PatternInitializer* patternInitializer = bindingInitializer->initializer;
         if (patternInitializer->pattern->_isIdentifierPattern()) {
             IdentifierPattern* identifierPattern = (IdentifierPattern*)patternInitializer->pattern;
-            if (*identifierPattern->identifier == *memberName)
+            if (identifierPattern->identifier->equals(memberName))
                 return true;
         }
     }
@@ -1199,7 +1199,7 @@ bool CppVisitor::openParenthesizedExpression(ParenthesizedExpression* parenthesi
                 else {
                     if (isClass(identifierExpression->name)) {
                         String* className = identifierExpression->name;
-                        if ((*className) == "String") {
+                        if (className->equals("String")) {
                             outputParen = false;
                         }
                     }
@@ -1259,7 +1259,7 @@ void CppVisitor::visitLiteralExpression(LiteralExpression* literalExpression) {
 void CppVisitor::visitIdentifierExpression(IdentifierExpression* identifierExpression) {
     if (isClass(identifierExpression->name)) {
         String* className = identifierExpression->name;
-        if ((*className) == "String") {
+        if (className->equals("String")) {
             sourceFile->append("&String::create(");
             if (inReturn(identifierExpression))
                 sourceFile->append("_rp");
@@ -1659,11 +1659,11 @@ bool CppVisitor::inTypeQuery(TypeIdentifier* typeIdentifier) {
 }
 void CppVisitor::appendCppTypeName(VarString* s, TypeIdentifier* typeIdentifier) {
     String* typeIdentifierName = typeIdentifier->name;
-    if ((*typeIdentifierName) == "unsigned") {
+    if (typeIdentifierName->equals("unsigned")) {
         s->append("size_t");
         return;
     }
-    else if ((*typeIdentifierName) == "character") {
+    else if (typeIdentifierName->equals("character")) {
         s->append("char");
         return;
     }
