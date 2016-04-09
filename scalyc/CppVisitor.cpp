@@ -1279,9 +1279,28 @@ bool CppVisitor::openIfExpression(IfExpression* ifExpression) {
     (*sourceFile) += "if (";
     ifExpression->condition->accept(this);
     (*sourceFile) += ") ";
-    ifExpression->consequent->accept(this);
-    if (ifExpression->elseClause)
-        ifExpression->elseClause->accept(this);
+    if (ifExpression->consequent->_isSimpleExpression()) {
+        (*sourceFile) += "\n";
+        sourceIndentLevel++;
+        indentSource();
+        ifExpression->consequent->accept(this);
+        (*sourceFile) += "\n";
+        sourceIndentLevel--;
+    }
+    else
+        ifExpression->consequent->accept(this);
+    if (ifExpression->elseClause) {
+        if (ifExpression->elseClause->alternative->_isSimpleExpression()) {
+            (*sourceFile) += "\n";
+            sourceIndentLevel++;
+            indentSource();
+            ifExpression->elseClause->accept(this);
+            (*sourceFile) += "\n";
+            sourceIndentLevel--;
+        }
+        else
+            ifExpression->elseClause->accept(this);
+    }
 
     return false;
 }
@@ -1378,6 +1397,8 @@ void CppVisitor::closeRepeatExpression(RepeatExpression* repeatExpression) {
 
 bool CppVisitor::openReturnExpression(ReturnExpression* returnExpression) {
     (*sourceFile) += "return";
+    if (returnExpression->expression)
+        (*sourceFile) += " ";
     return true;
 }
 

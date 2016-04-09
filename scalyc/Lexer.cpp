@@ -349,9 +349,8 @@ Identifier* Lexer::scanIdentifier(_Page* _rp) {
     do {
         position++;
         column++;
-        if (position == end) {
+        if (position == end)
             return new(_rp) Identifier(&String::create(_rp, *name));
-        }
         char c = (*text)[position];
         if (((c >= 'a') && (c <= 'z')) || ((c >= 'A') && (c <= 'Z')) || (c == '_'))
             *name += (*text)[position];
