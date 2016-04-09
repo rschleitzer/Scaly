@@ -281,14 +281,17 @@ class Lexer {
     }
 
     function scanOperator(includeDots: bool) -> Operator {
-        mutable whitespaceSkippedBefore = whitespaceSkipped
+        mutable whitespaceSkippedBefore: bool = whitespaceSkipped
 
-        if !whitespaceSkippedBefore && token is Punctuation
-            switch (token as Punctuation).sign
-                case '(', '[', '{', ',', ';', ':':
-                    whitespaceSkippedBefore = true
-                default:
-                    whitespaceSkippedBefore = false
+        if !whitespaceSkippedBefore {
+            if token is Punctuation {
+                switch (token as Punctuation).sign
+                    case '(', '[', '{', ',', ';', ':':
+                        whitespaceSkippedBefore = true
+                    default:
+                        whitespaceSkippedBefore = false
+            }
+        }
         
         mutable operation: String = String(text[position])
 
