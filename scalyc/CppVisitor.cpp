@@ -953,24 +953,6 @@ void CppVisitor::closeBinaryOperation(BinaryOperation* binaryOperation) {
 
 bool CppVisitor::openAssignment(Assignment* assignment) {
     (*sourceFile) += " = ";
-    String* memberName = getMemberIfCreatingObject(assignment);
-    if (memberName != nullptr) {
-        if (isClass(getFunctionName(assignment))) {
-            (*sourceFile) += "new(";
-            ClassDeclaration* classDeclaration = getClassDeclaration(assignment);
-            if (isVariableMember(memberName, classDeclaration)) {
-                if (!assignmentIsInInitializer(assignment)) {
-                    (*sourceFile) += *memberName;
-                    (*sourceFile) += "->";
-                }
-                (*sourceFile) += "getPage()";
-                if (assignmentIsInInitializer(assignment)) {
-                    (*sourceFile) += "->allocateExclusivePage()";
-                }
-            }
-            (*sourceFile) += ") ";
-        }
-    }
 
     return true;
 }
@@ -1257,11 +1239,32 @@ void CppVisitor::visitIdentifierExpression(IdentifierExpression* identifierExpre
         if ((*className) == "String") {
             (*sourceFile) += "&String::create(token->getPage(), ";
         }
-        else if ((*className) == "VarString") {
-            (*sourceFile) += "new(_p) VarString";
-        }
-        else
+        else {
+            (*sourceFile) += "new(";
+            if (identifierExpression->parent->parent->parent->parent->_isReturnExpression())
+                (*sourceFile) += "_rp";
+            else if (identifierExpression->parent->parent->parent->_isAssignment()) {
+                Assignment* assignment = (Assignment*)identifierExpression->parent->parent->parent;
+                ClassDeclaration* classDeclaration = getClassDeclaration(assignment);
+                String* memberName = getMemberIfCreatingObject(assignment);
+                if (memberName != nullptr) {
+                    if (isVariableMember(memberName, classDeclaration)) {
+                        if (!assignmentIsInInitializer(assignment)) {
+                            (*sourceFile) += *memberName;
+                            (*sourceFile) += "->";
+                        }
+                        (*sourceFile) += "getPage()";
+                        if (assignmentIsInInitializer(assignment)) {
+                            (*sourceFile) += "->allocateExclusivePage()";
+                        }
+                    }
+                }
+            }
+            else
+                (*sourceFile) += "_p";
+            (*sourceFile) += ") ";
             (*sourceFile) += *identifierExpression->name;
+        }
     }
     else
         (*sourceFile) += *identifierExpression->name;

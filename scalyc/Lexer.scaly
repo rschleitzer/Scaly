@@ -266,7 +266,7 @@ class Lexer {
             position++ column++
             
             if position == end
-                return Identifier(name)
+                return Identifier(String(name))
             
             let c: character = text[position]
             if  ((c >= 'a') && (c <= 'z')) || 
