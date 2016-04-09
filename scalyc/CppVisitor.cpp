@@ -1323,12 +1323,8 @@ bool CppVisitor::openIfExpression(IfExpression* ifExpression) {
     }
     if (ifExpression->elseClause) {
         if (ifExpression->elseClause->alternative->_isSimpleExpression()) {
-            sourceFile->append("\n");
-            sourceIndentLevel++;
-            indentSource();
             ifExpression->elseClause->accept(this);
             sourceFile->append(";\n");
-            sourceIndentLevel--;
         }
         else {
             ifExpression->elseClause->accept(this);
@@ -1347,8 +1343,23 @@ void CppVisitor::visitNullExpression(NullExpression* nullExpression) {
 
 bool CppVisitor::openElseClause(ElseClause* elseClause) {
     indentSource();
-    sourceFile->append("else ");
-    return true;
+    sourceFile->append("else");
+    if (elseClause->alternative->_isSimpleExpression()) {
+        sourceFile->append("\n");
+        sourceIndentLevel++;
+        indentSource();
+        elseClause->alternative->accept(this);
+        if (elseClause->alternative == nullptr) {
+            sourceFile->append(";\n");
+        }
+        sourceIndentLevel--;
+    }
+    else {
+        sourceFile->append(" ");
+        elseClause->alternative->accept(this);
+    }
+    
+    return false;
 }
 
 void CppVisitor::closeElseClause(ElseClause* elseClause) {
@@ -1421,8 +1432,25 @@ void CppVisitor::closeWhileExpression(WhileExpression* whileExpression) {
 }
 
 bool CppVisitor::openRepeatExpression(RepeatExpression* repeatExpression) {
-    sourceFile->append("do ");
-    return true;
+    sourceFile->append("do");
+    if (repeatExpression->code->_isSimpleExpression()) {
+        sourceFile->append("\n");
+        sourceIndentLevel++;
+        indentSource();
+        repeatExpression->code->accept(this);
+        sourceFile->append(";");
+        sourceIndentLevel--;
+    }
+    else {
+        sourceFile->append(" ");
+        repeatExpression->code->accept(this);
+    }
+    indentSource();
+    sourceFile->append("while (");
+    repeatExpression->condition->accept(this);
+    sourceFile->append(")");
+
+    return false;
 }
 
 void CppVisitor::closeRepeatExpression(RepeatExpression* repeatExpression) {

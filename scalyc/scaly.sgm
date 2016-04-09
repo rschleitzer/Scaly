@@ -321,9 +321,9 @@
 
     <syntax id = RepeatExpression                               base = PrimaryExpression
         <content link = repeat
-        <content link = Expression                              property = condition
-        <content link = while
         <content link = Expression                              property = code
+        <content link = while
+        <content link = Expression                              property = condition
 
     <syntax id = ParenthesizedExpression                        base = PrimaryExpression
         <content link = leftParen

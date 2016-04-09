@@ -2331,7 +2331,7 @@ class Parser {
             if repeatExpression == null
                 repeatExpression = RepeatExpression(start, lexer.getPosition())
 
-            repeatExpression.condition = node
+            repeatExpression.code = node
         }
         {
             let start: Position = lexer.getPosition()
@@ -2351,7 +2351,7 @@ class Parser {
             if repeatExpression == null
                 repeatExpression = RepeatExpression(start, lexer.getPosition())
 
-            repeatExpression.code = node
+            repeatExpression.condition = node
         }
 
         return repeatExpression

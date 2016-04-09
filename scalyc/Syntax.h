@@ -823,10 +823,10 @@ public:
 
 class RepeatExpression : public PrimaryExpression {
 public:
-    RepeatExpression(Expression* condition, Expression* code, Position* start, Position* end);
+    RepeatExpression(Expression* code, Expression* condition, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
-    Expression* condition;
     Expression* code;
+    Expression* condition;
 
     virtual bool _isRepeatExpression();
 };

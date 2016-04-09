@@ -1081,16 +1081,16 @@ void WhileExpression::accept(SyntaxVisitor* visitor) {
     visitor->closeWhileExpression(this);
 }
 
-RepeatExpression::RepeatExpression(Expression* condition, Expression* code, Position* start, Position* end)
-: PrimaryExpression(start, end), condition(condition), code(code) {}
+RepeatExpression::RepeatExpression(Expression* code, Expression* condition, Position* start, Position* end)
+: PrimaryExpression(start, end), code(code), condition(condition) {}
 
 bool RepeatExpression::_isRepeatExpression() { return true; }
 
 void RepeatExpression::accept(SyntaxVisitor* visitor) {
     if (!visitor->openRepeatExpression(this))
         return;
-    condition->accept(visitor);
     code->accept(visitor);
+    condition->accept(visitor);
     visitor->closeRepeatExpression(this);
 }
 

@@ -1144,19 +1144,19 @@ class WhileExpression : PrimaryExpression {
 
 class RepeatExpression : PrimaryExpression {
 
-    init(condition: Expression, code: Expression, start: Position, end: Position) {
+    init(code: Expression, condition: Expression, start: Position, end: Position) {
         super.init(start, end)
     }
 
     override function accept(mutable visitor: SyntaxVisitor) {
         visitor.openRepeatExpression(this)
-        condition!.accept(visitor)
         code!.accept(visitor)
+        condition!.accept(visitor)
         visitor.closeRepeatExpression(this)
     }
 
-    let condition: Expression?
     let code: Expression?
+    let condition: Expression?
 }
 
 class ParenthesizedExpression : PrimaryExpression {

@@ -2263,13 +2263,13 @@ _Result<RepeatExpression, ParserError> Parser::parseRepeatExpression(_Page* _rp,
     else {
         return _Result<RepeatExpression, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_keywordExpected(startRepeat1, &String::create(_ep, repeatKeyword))));
     }
-    _Result<Expression, ParserError> _result_condition = parseExpression(_rp, _ep);
-    Expression* condition = 0;
-    if (_result_condition.succeeded()) {
-        condition = _result_condition.getResult();
+    _Result<Expression, ParserError> _result_code = parseExpression(_rp, _ep);
+    Expression* code = 0;
+    if (_result_code.succeeded()) {
+        code = _result_code.getResult();
     }
     else {
-        return _Result<RepeatExpression, ParserError>(_result_condition.getError());
+        return _Result<RepeatExpression, ParserError>(_result_code.getError());
     }
     Position* startWhile3 = lexer->getPreviousPosition(_rp);
     bool successWhile3 = lexer->parseKeyword(whileKeyword);
@@ -2279,17 +2279,17 @@ _Result<RepeatExpression, ParserError> Parser::parseRepeatExpression(_Page* _rp,
     else {
         return _Result<RepeatExpression, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_keywordExpected(startWhile3, &String::create(_ep, whileKeyword))));
     }
-    _Result<Expression, ParserError> _result_code = parseExpression(_rp, _ep);
-    Expression* code = 0;
-    if (_result_code.succeeded()) {
-        code = _result_code.getResult();
+    _Result<Expression, ParserError> _result_condition = parseExpression(_rp, _ep);
+    Expression* condition = 0;
+    if (_result_condition.succeeded()) {
+        condition = _result_condition.getResult();
     }
     else {
-        return _Result<RepeatExpression, ParserError>(_result_code.getError());
+        return _Result<RepeatExpression, ParserError>(_result_condition.getError());
     }
-    RepeatExpression* repeatExpression = new(_rp) RepeatExpression(condition, code, start, lexer->getPosition(_rp));
-    condition->parent = repeatExpression;
+    RepeatExpression* repeatExpression = new(_rp) RepeatExpression(code, condition, start, lexer->getPosition(_rp));
     code->parent = repeatExpression;
+    condition->parent = repeatExpression;
     return _Result<RepeatExpression, ParserError>(repeatExpression);
 }
 
