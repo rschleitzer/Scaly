@@ -72,7 +72,7 @@ char VarString::operator [](size_t i) {
     return -1;
 }
 
-VarString& VarString::operator += (char c) {
+void VarString::append (char c) {
     if (!string) {
         // Allocate for the char itself and the trailing 0
         allocate(2);
@@ -86,11 +86,9 @@ VarString& VarString::operator += (char c) {
 
     *(string + length - 1) = c;
     *(string + length) = 0;
-
-    return *this;
 }
 
-VarString& VarString::operator += (const char* theString) {
+void VarString::append(const char* theString) {
     size_t stringLength = strlen(theString);
     if (!string) {
         // Allocate for the char itself and the trailing 0
@@ -106,27 +104,14 @@ VarString& VarString::operator += (const char* theString) {
     strcpy(string + length - stringLength, theString);
     *(string + length) = 0;
 
-    return *this;
 }
 
-VarString& VarString::operator + (const char* theString) {
-    return *this += theString;
+void VarString::append(VarString* theString) {
+    append(theString->string);
 }
 
-VarString& VarString::operator += (const VarString& theString) {
-    (*this) += theString.string;
-
-    return *this;
-}
-
-VarString& VarString::operator += (String& theString) {
-    (*this) += theString.getNativeString();
-
-    return *this;
-}
-
-VarString& VarString::operator + (const VarString& theString) {
-    return *this += theString;
+void VarString::append(String* theString) {
+    append(theString->getNativeString());
 }
 
 bool VarString::extend(size_t size) {
@@ -175,7 +160,7 @@ _Array<VarString>& VarString::Split(_Page* _rp, char c) {
         else {
             if (!part)
                 part = new(_rp) VarString();
-            *part += (*this)[_i];
+            part->append((*this)[_i]);
         }
     }
 

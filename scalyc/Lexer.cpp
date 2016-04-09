@@ -353,7 +353,7 @@ Identifier* Lexer::scanIdentifier(_Page* _rp) {
             return new(_rp) Identifier(&String::create(_rp, name));
         char c = (*text)[position];
         if (((c >= 'a') && (c <= 'z')) || ((c >= 'A') && (c <= 'Z')) || ((c >= '0') && (c <= '9')) || (c == '_'))
-            *name += (*text)[position];
+            name->append((*text)[position]);
         else
             return new(_rp) Identifier(&String::create(_rp, name));
     }
@@ -385,12 +385,12 @@ Operator* Lexer::scanOperator(_Page* _rp, bool includeDots) {
         }
         switch ((*text)[position]) {
             case '/': case '=': case '-': case '+': case '!': case '*': case '%': case '<': case '&': case '|': case '^': case '~': {
-                *operation += (*text)[position];
+                operation->append((*text)[position]);
                 break;
             }
             case '.': {
                 if (includeDots) {
-                    *operation += (*text)[position];
+                    operation->append((*text)[position]);
                     break;
                 }
                 // else fallthrough
@@ -447,19 +447,19 @@ Token* Lexer::scanStringLiteral(_Page* _rp) {
                 position++; column++;
                 switch ((*text)[position]) {
                     case '\"': case '\\': case '\'':
-                        *value += (*text)[position];
+                        value->append((*text)[position]);
                         break;
-                    case 'n': *value += '\n'; break;
-                    case 'r': *value += '\r'; break;
-                    case 't': *value += '\t'; break;
-                    case '0': *value += '\0'; break;
+                    case 'n': value->append('\n'); break;
+                    case 'r': value->append('\r'); break;
+                    case 't': value->append('\t'); break;
+                    case '0': value->append('\0'); break;
                     default:
                         return new(_rp) InvalidToken();
                 }
                 break;
             }
             default: {
-                *value += (*text)[position];
+                value->append((*text)[position]);
             }
         }
     }
@@ -483,19 +483,19 @@ Token* Lexer::scanCharacterLiteral(_Page* _rp) {
                 position++; column++;
                 switch ((*text)[position]) {
                     case '\"': case '\\': case '\'':
-                        *value += (*text)[position];
+                        value->append((*text)[position]);
                         break;
-                    case 'n': *value += '\n'; break;
-                    case 'r': *value += '\r'; break;
-                    case 't': *value += '\t'; break;
-                    case '0': *value += '\0'; break;
+                    case 'n': value->append('\n'); break;
+                    case 'r': value->append('\r'); break;
+                    case 't': value->append('\t'); break;
+                    case '0': value->append('\0'); break;
                     default:
                         return new(_rp) InvalidToken();
                 }
                 break;
             }
             default: {
-                *value += (*text)[position];
+                value->append((*text)[position]);
             }
         }
     }
@@ -514,7 +514,7 @@ NumericLiteral* Lexer::scanNumericLiteral(_Page* _rp) {
 
         char c = (*text)[position];
         if ((c >= '0') && (c <= '9'))
-            *value += (*text)[position];
+            value->append((*text)[position]);
         else
             return new(_rp) NumericLiteral(&String::create(_rp, value));
     }

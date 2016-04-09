@@ -11,19 +11,17 @@ public:
     VarString(size_t theLength);
     VarString(size_t theLength, size_t theCapacity);
     VarString(char c);
-     char* getNativeString() const;
-     size_t getLength();
-     char operator [](size_t i);
-    VarString& operator += (char c);
-    VarString& operator += (const char* theString);
-    VarString& operator + (const char* theString);
-    VarString& operator += (const VarString& theString);
-    VarString& operator += (String& theString);
-    VarString& operator + (const VarString& thestring);
-     bool operator == (const char* theString);
-     bool operator != (const char* theString);
-     bool operator == (const VarString& theString);
-     bool operator != (const VarString& theString);
+    char* getNativeString() const;
+    size_t getLength();
+    char operator [](size_t i);
+    void append(char c);
+    void append(const char* theString);
+    void append(VarString* theString);
+    void append(String* theString);
+    bool operator == (const char* theString);
+    bool operator != (const char* theString);
+    bool operator == (const VarString& theString);
+    bool operator != (const VarString& theString);
     _Array<VarString>& Split(_Page* _rp, char c);
 
 private:

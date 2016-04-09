@@ -31,8 +31,8 @@ _Result<String, FileError> File::readToString(_Page* _rp, _Page* _ep, const Stri
     return ret;
 }
 
-FileError* File::writeFromString(_Page *_ep, VarString& path, VarString& contents) {
-    FILE* file = fopen(path.getNativeString(), "wb");
+FileError* File::writeFromString(_Page *_ep, VarString* path, VarString* contents) {
+    FILE* file = fopen(path->getNativeString(), "wb");
     if (!file) {
         _FileErrorCode fileErrorCode = _FileError_unknownError;
         switch (errno) {
@@ -41,7 +41,7 @@ FileError* File::writeFromString(_Page *_ep, VarString& path, VarString& content
         return new(_ep) FileError(fileErrorCode);
     }
 
-    fwrite(contents.getNativeString(), 1, contents.getLength(), file);
+    fwrite(contents->getNativeString(), 1, contents->getLength(), file);
     fclose (file);
     return 0;
 }

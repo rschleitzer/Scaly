@@ -107,7 +107,7 @@ _Array<String>& String::Split(_Page* _rp, char c) {
         else {
             if (!part)
                 part = new(_rp) VarString();
-            *part += (*this)[_i];
+            part->append((*this)[_i]);
         }
     }
 

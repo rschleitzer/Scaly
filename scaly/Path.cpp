@@ -13,7 +13,7 @@ String* Path::getFileNameWithoutExtension(_Page* _rp, String& path) {
         
     VarString* ret = new(_rp) VarString();
     for (size_t _i = 0; _i < fileNameComponentsLength - 1; _i++)
-        *ret += **fileNameComponents[_i];
+        ret->append(*fileNameComponents[_i]);
         
     return &String::create(_rp, ret);
 }

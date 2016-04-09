@@ -30,9 +30,9 @@ bool CppVisitor::openProgram(Program* program) {
 
     {
         _Region _region; _Page* _p = _region.get();
-        VarString& outputFilePath = *new(_p) VarString(*programDirectory);
-        outputFilePath += "/";
-        outputFilePath += *program->name;
+        VarString* outputFilePath = new(_p) VarString(*programDirectory);
+        outputFilePath->append("/");
+        outputFilePath->append(program->name);
 
         // Build and write the project file
         {
@@ -41,9 +41,9 @@ bool CppVisitor::openProgram(Program* program) {
             buildProjectFileString(projectFile, program);
             {
                 _Region _region; _Page* _p = _region.get();
-                VarString* projectFilePath = new(_p) VarString(outputFilePath);
-                (*projectFilePath) += ".project";
-                if (File::writeFromString(_p, *projectFilePath , *projectFile))
+                VarString* projectFilePath = new(_p) VarString(*outputFilePath);
+                projectFilePath->append(".project");
+                if (File::writeFromString(_p, projectFilePath , projectFile))
                     return false;
             }
         }
@@ -55,9 +55,9 @@ bool CppVisitor::openProgram(Program* program) {
             buildMainHeaderFileString(headerFile, program);
             {
                 _Region _region; _Page* _p = _region.get();
-                VarString* headerFilePath = new(_p) VarString(outputFilePath);
-                (*headerFilePath) += ".h";
-                if (File::writeFromString(_p, *headerFilePath, *headerFile))
+                VarString* headerFilePath = new(_p) VarString(*outputFilePath);
+                headerFilePath->append(".h");
+                if (File::writeFromString(_p, headerFilePath, headerFile))
                     return false;
             }
         }
@@ -130,29 +130,29 @@ bool CppVisitor::openCompilationUnit(CompilationUnit* compilationUnit) {
     // Build and write the header file
     if (*moduleName != *programName) {
         headerFile = new(getPage()) VarString(0, _pageSize);
-        (*headerFile) += "#ifndef __";
-        (*headerFile) += *programName;
-        (*headerFile) += "__";
-        (*headerFile) += *moduleName;
-        (*headerFile) += "__\n";
-        (*headerFile) += "#define __";
-        (*headerFile) += *programName;
-        (*headerFile) += "__";
-        (*headerFile) += *moduleName;
-        (*headerFile) += "__\n#include \"";
-        (*headerFile) += *programName;
-        (*headerFile) += ".h\"\nusing namespace scaly;\nnamespace ";
-        (*headerFile) += *programName;
-        (*headerFile) += " {";
+        headerFile->append("#ifndef __");
+        headerFile->append(programName);
+        headerFile->append("__");
+        headerFile->append(moduleName);
+        headerFile->append("__\n");
+        headerFile->append("#define __");
+        headerFile->append(programName);
+        headerFile->append("__");
+        headerFile->append(moduleName);
+        headerFile->append("__\n#include \"");
+        headerFile->append(programName);
+        headerFile->append(".h\"\nusing namespace scaly;\nnamespace ");
+        headerFile->append(programName);
+        headerFile->append(" {");
     }
 
     // Begin cpp file
     sourceFile = new(getPage()) VarString(0, _pageSize);
-    (*sourceFile) += "#include \"";
-    (*sourceFile) += *programName;
-    (*sourceFile) += ".h\"\nusing namespace scaly;\nnamespace ";
-    (*sourceFile) += *programName;
-    (*sourceFile) += " {\n\n";
+    sourceFile->append("#include \"");
+    sourceFile->append(programName);
+    sourceFile->append(".h\"\nusing namespace scaly;\nnamespace ");
+    sourceFile->append(programName);
+    sourceFile->append(" {\n\n");
 
     return true;
 }
@@ -167,23 +167,23 @@ void CppVisitor::closeCompilationUnit(CompilationUnit* compilationUnit) {
     // Close and write cpp file
     _Region _region; _Page* _p = _region.get();
 
-    VarString& outputFilePath = *new(_p) VarString(*programDirectory);
-    outputFilePath += "/";
-    outputFilePath += *Path::getFileNameWithoutExtension(_p, *compilationUnit->fileName);
+    VarString* outputFilePath = new(_p) VarString(*programDirectory);
+    outputFilePath->append("/");
+    outputFilePath->append(Path::getFileNameWithoutExtension(_p, *compilationUnit->fileName));
 
     if (*moduleName != *programName) {
-        (*headerFile) += "\n\n}\n#endif // __scalyc__";
-        (*headerFile) += *moduleName;
-        (*headerFile) += "__\n";
-        VarString& headerFilePath = *new(_p) VarString(outputFilePath);
-        headerFilePath += ".h";
-        File::writeFromString(_p, headerFilePath , *headerFile);
+        headerFile->append("\n\n}\n#endif // __scalyc__");
+        headerFile->append(moduleName);
+        headerFile->append("__\n");
+        VarString* headerFilePath = new(_p) VarString(*outputFilePath);
+        headerFilePath->append(".h");
+        File::writeFromString(_p, headerFilePath, headerFile);
     }
 
-    (*sourceFile) += "\n}\n";
-    VarString& sourceFilePath = *new(_p) VarString(outputFilePath);
-    sourceFilePath += ".cpp";
-    File::writeFromString(_p, sourceFilePath , *sourceFile);
+    sourceFile->append("\n}\n");
+    VarString* sourceFilePath = new(_p) VarString(*outputFilePath);
+    sourceFilePath->append(".cpp");
+    File::writeFromString(_p, sourceFilePath , sourceFile);
 }
 
 bool CppVisitor::openTerminatedStatement(TerminatedStatement* terminatedStatement) {
@@ -199,8 +199,8 @@ bool CppVisitor::openTerminatedStatement(TerminatedStatement* terminatedStatemen
                         Assignment* assignment = (Assignment*)binaryOp;
                         String* memberName = getMemberIfCreatingObject(assignment);
                         if ((memberName != nullptr) && (!inInitializer(assignment))) {
-                            (*sourceFile) += *memberName;
-                            (*sourceFile) += "->getPage()->clear();\n";
+                            sourceFile->append(memberName);
+                            sourceFile->append("->getPage()->clear();\n");
                             this->indentSource();
                         }
                     }
@@ -226,7 +226,7 @@ void CppVisitor::closeTerminatedStatement(TerminatedStatement* terminatedStateme
     if (terminatedStatement->statement->_isCodeBlock())
         return;
         
-    (*sourceFile) += ";\n";
+    sourceFile->append(";\n");
 }
 
 bool CppVisitor::openUseDeclaration(UseDeclaration* useDeclaration) {
@@ -247,7 +247,7 @@ void CppVisitor::visitPathItem(PathItem* pathItem) {
 }
 
 bool CppVisitor::openInitializer(Initializer* initializer) {
-    (*sourceFile) += " = ";
+    sourceFile->append(" = ");
     return true;
 }
 
@@ -297,7 +297,7 @@ void CppVisitor::closeBindingInitializer(BindingInitializer* bindingInitializer)
 
 bool CppVisitor::openPatternInitializer(PatternInitializer* patternInitializer) {
     if (!firstBindingInitializer)
-        (*headerFile) += ", ";
+        headerFile->append(", ");
     else
         firstBindingInitializer = false;
 
@@ -332,7 +332,7 @@ bool CppVisitor::openFunctionDeclaration(FunctionDeclaration* functionDeclaratio
 
 void CppVisitor::closeFunctionDeclaration(FunctionDeclaration* functionDeclaration) {
     if (abstractFunction) {
-        (*headerFile) += " = 0";
+        headerFile->append(" = 0");
         abstractFunction = false;
     }
     staticFunction = false;
@@ -345,19 +345,19 @@ bool CppVisitor::openInitializerDeclaration(InitializerDeclaration* initializerD
 
     String* classDeclarationName = ((Program*)(initializerDeclaration->parent->parent->parent))->name;
 
-    (*headerFile) += *classDeclarationName;
-    (*headerFile) += "(";
+    headerFile->append(classDeclarationName);
+    headerFile->append("(");
     
-    (*sourceFile) += *classDeclarationName;
-    (*sourceFile) += "::";
-    (*sourceFile) += *classDeclarationName;
-    (*sourceFile) += "(";
+    sourceFile->append(classDeclarationName);
+    sourceFile->append("::");
+    sourceFile->append(classDeclarationName);
+    sourceFile->append("(");
     
     return true;
 }
 
 void CppVisitor::closeInitializerDeclaration(InitializerDeclaration* initializerDeclaration) {
-    (*sourceFile) += "\n";
+    sourceFile->append("\n");
 }
 
 void CppVisitor::visitOverrideWord(OverrideWord* overrideWord) {
@@ -380,14 +380,14 @@ bool CppVisitor::openFunctionSignature(FunctionSignature* functionSignature) {
     String* identifierFunctionName = ((IdentifierFunction*)functionName)->name;
         
     if (staticFunction)
-        (*headerFile) += "static ";
+        headerFile->append("static ");
     else
-        (*headerFile) += "virtual ";
+        headerFile->append("virtual ");
     inFunctionReturn = true;
     if (!functionSignature->result) {
         if (!functionSignature->throwsClause) {
-            (*headerFile) += "void";
-            (*sourceFile) += "void";
+            headerFile->append("void");
+            sourceFile->append("void");
         }
         else {
             appendCppType(headerFile, functionSignature->throwsClause->throwsType);
@@ -396,7 +396,7 @@ bool CppVisitor::openFunctionSignature(FunctionSignature* functionSignature) {
     }
     else {
         if (functionSignature->throwsClause) {
-            (*headerFile) += "_Result<";
+            headerFile->append("_Result<");
             if (functionSignature->result->resultType->_isTypeIdentifier()) {
                 TypeIdentifier* typeId = (TypeIdentifier*)functionSignature->result->resultType;
                 appendCppTypeName(headerFile, typeId);
@@ -405,21 +405,21 @@ bool CppVisitor::openFunctionSignature(FunctionSignature* functionSignature) {
             else if (functionSignature->result->resultType->_isArrayType()) {
                 ArrayType* arrayType = (ArrayType*)functionSignature->result->resultType;
                 if (arrayType->elementType->_isTypeIdentifier()) {
-                    (*headerFile) += "_Vector<";
-                    (*sourceFile) += "_Vector<";
+                    headerFile->append("_Vector<");
+                    sourceFile->append("_Vector<");
                     TypeIdentifier* typeId = (TypeIdentifier*)arrayType->elementType;
                     appendCppTypeName(headerFile, typeId);
                     appendCppTypeName(sourceFile, typeId);
-                    (*headerFile) += ">";
-                    (*sourceFile) += ">";
+                    headerFile->append(">");
+                    sourceFile->append(">");
                 }
             }
-            (*headerFile) += ", ";
-            (*sourceFile) += ", ";
+            headerFile->append(", ");
+            sourceFile->append(", ");
             appendCppTypeName(headerFile, (TypeIdentifier*)(functionSignature->throwsClause->throwsType));
             appendCppTypeName(sourceFile, (TypeIdentifier*)(functionSignature->throwsClause->throwsType));
-            (*headerFile) += ">";
-            (*sourceFile) += ">";
+            headerFile->append(">");
+            sourceFile->append(">");
         }
         else {
             if (functionSignature->result->resultType->_isTypeIdentifier()) {
@@ -427,68 +427,68 @@ bool CppVisitor::openFunctionSignature(FunctionSignature* functionSignature) {
                 appendCppTypeName(headerFile, typeId);
                 appendCppTypeName(sourceFile, typeId);
                 if (isClass(typeId->name)) {
-                    (*headerFile) += "*";
-                    (*sourceFile) += "*";
+                    headerFile->append("*");
+                    sourceFile->append("*");
                 }
             }
             else if (functionSignature->result->resultType->_isArrayType()) {
                 ArrayType* arrayType = (ArrayType*)functionSignature->result->resultType;
                 if (arrayType->elementType->_isTypeIdentifier()) {
-                    (*headerFile) += "_Vector<";
-                    (*sourceFile) += "_Vector<";
+                    headerFile->append("_Vector<");
+                    sourceFile->append("_Vector<");
                     TypeIdentifier* typeId = (TypeIdentifier*)arrayType->elementType;
                     appendCppTypeName(headerFile, typeId);
                     appendCppTypeName(sourceFile, typeId);
-                    (*headerFile) += ">";
-                    (*sourceFile) += ">";
+                    headerFile->append(">");
+                    sourceFile->append(">");
                 }
             }
         }
     }
     inFunctionReturn = false;
-    (*headerFile) += " ";
-    (*sourceFile) += " ";
+    headerFile->append(" ");
+    sourceFile->append(" ");
     
     if (functionSignature->parent->parent->parent->parent->_isClassDeclaration()) {
         ClassDeclaration* classDeclaration = (ClassDeclaration*)functionSignature->parent->parent->parent->parent;
-        (*sourceFile) += *classDeclaration->name;
-        (*sourceFile) += "::";
+        sourceFile->append(classDeclaration->name);
+        sourceFile->append("::");
     }
-    (*headerFile) += *identifierFunctionName;
-    (*sourceFile) += *identifierFunctionName;
-    (*headerFile) += "(";
-    (*sourceFile) += "(";
+    headerFile->append(identifierFunctionName);
+    sourceFile->append(identifierFunctionName);
+    headerFile->append("(");
+    sourceFile->append("(");
     if (functionSignature->result != nullptr) {
         if (functionSignature->result->resultType->_isTypeIdentifier()) {
             TypeIdentifier* typeId = (TypeIdentifier*)functionSignature->result->resultType;
             if (isClass(typeId->name)) {
                 if (functionSignature->result->existingObject == nullptr) {
-                    (*headerFile) += "_Page* _rp";
-                    (*sourceFile) += "_Page* _rp";
+                    headerFile->append("_Page* _rp");
+                    sourceFile->append("_Page* _rp");
                     if ((functionSignature->parameterClause->parameters) || (functionSignature->throwsClause)) {
-                        (*headerFile) += ", ";
-                        (*sourceFile) += ", ";
+                        headerFile->append(", ");
+                        sourceFile->append(", ");
                     }
                 }
             }
         }
         else if (functionSignature->result->resultType->_isArrayType()) {
             if (functionSignature->result->existingObject == nullptr) {
-                (*headerFile) += "_Page* _rp";
-                (*sourceFile) += "_Page* _rp";
+                headerFile->append("_Page* _rp");
+                sourceFile->append("_Page* _rp");
                 if ((functionSignature->parameterClause->parameters) || (functionSignature->throwsClause)) {
-                    (*headerFile) += ", ";
-                    (*sourceFile) += ", ";
+                    headerFile->append(", ");
+                    sourceFile->append(", ");
                 }
             }
         }
     }
     if (functionSignature->throwsClause) {
-        (*headerFile) += "_Page* _ep";
-        (*sourceFile) += "_Page* _ep";
+        headerFile->append("_Page* _ep");
+        sourceFile->append("_Page* _ep");
         if (functionSignature->parameterClause->parameters) {
-            (*headerFile) += ", ";
-            (*sourceFile) += ", ";
+            headerFile->append(", ");
+            sourceFile->append(", ");
         }
     }
 
@@ -516,8 +516,8 @@ bool CppVisitor::openParameterClause(ParameterClause* parameterClause) {
 }
 
 void CppVisitor::closeParameterClause(ParameterClause* parameterClause) {
-    (*headerFile) += ")";
-    (*sourceFile) += ") ";
+    headerFile->append(")");
+    sourceFile->append(") ");
     inParameterClause = false;
 }
 
@@ -531,18 +531,18 @@ bool CppVisitor::openConstParameter(ConstParameter* constParameter) {
 
 void CppVisitor::writeParameter(String* name, Type* parameterType) {
     if (!firstParameter) {
-        (*headerFile) += ", ";
-        (*sourceFile) += ", ";
+        headerFile->append(", ");
+        sourceFile->append(", ");
     }
     else {
         firstParameter = false;
     }
 
     parameterType->accept(this);
-    (*headerFile) += " ";
-    (*sourceFile) += " ";
-    (*headerFile) += *name;
-    (*sourceFile) += *name;
+    headerFile->append(" ");
+    sourceFile->append(" ");
+    headerFile->append(name);
+    sourceFile->append(name);
 }
 
 bool CppVisitor::isClass(String* name) {
@@ -566,7 +566,7 @@ bool CppVisitor::isClass(String* name) {
 }
 
 void CppVisitor::closeConstParameter(ConstParameter* constParameter) {
-    (*headerFile) += *constParameter->name;
+    headerFile->append(constParameter->name);
 }
 
 bool CppVisitor::openVarParameter(VarParameter* varParameter) {
@@ -576,7 +576,7 @@ bool CppVisitor::openVarParameter(VarParameter* varParameter) {
 
 void CppVisitor::closeVarParameter(VarParameter* varParameter) {
     String* varParameterName = varParameter->name;
-    (*headerFile) += *varParameterName;
+    headerFile->append(varParameterName);
 }
 
 bool CppVisitor::openThrowsClause(ThrowsClause* throwsClause) {
@@ -588,9 +588,9 @@ void CppVisitor::closeThrowsClause(ThrowsClause* throwsClause) {
 
 bool CppVisitor::openEnumDeclaration(EnumDeclaration* enumDeclaration) {
     String* enumDeclarationName = enumDeclaration->name;
-    (*headerFile) += "\n\nclass ";
-    (*headerFile) += *enumDeclarationName;
-    (*headerFile) += ";\n";
+    headerFile->append("\n\nclass ");
+    headerFile->append(enumDeclarationName);
+    headerFile->append(";\n");
     return true;
 }
 
@@ -598,70 +598,70 @@ void CppVisitor::closeEnumDeclaration(EnumDeclaration* enumDeclaration) {
     String* enumDeclarationName = enumDeclaration->name;
     _Vector<EnumMember>* members = enumDeclaration->members;
     if (members) {
-        (*headerFile) += "enum _";
-        (*headerFile) += *enumDeclarationName;
-        (*headerFile) += "Code {\n";
+        headerFile->append("enum _");
+        headerFile->append(enumDeclarationName);
+        headerFile->append("Code {\n");
         size_t _members_length = members->length();
         for (size_t _i = 0; _i < _members_length; _i++) {
-            (*headerFile) += "    _";
-            (*headerFile) += *enumDeclarationName;
-            (*headerFile) += "Code_";
-            (*headerFile) += *(*(*members)[_i])->enumCase->name;
+            headerFile->append("    _");
+            headerFile->append(enumDeclarationName);
+            headerFile->append("Code_");
+            headerFile->append((*(*members)[_i])->enumCase->name);
             if (!_i)
-                (*headerFile) += " = 1";
-            (*headerFile) += ",\n";
+                headerFile->append(" = 1");
+            headerFile->append(",\n");
         }
-        (*headerFile) += "};\n\n";
+        headerFile->append("};\n\n");
     }
-    (*headerFile) += "class ";
-    (*headerFile) += *enumDeclarationName;
-    (*headerFile) += " : public Object\n{\npublic:\n    ";
-    (*headerFile) += *enumDeclarationName;
-    (*headerFile) += "(_";
-    (*headerFile) += *enumDeclarationName;
-    (*headerFile) += "Code errorCode)\n    : errorCode(errorCode), errorInfo(0) {}\n\n";
+    headerFile->append("class ");
+    headerFile->append(enumDeclarationName);
+    headerFile->append(" : public Object\n{\npublic:\n    ");
+    headerFile->append(enumDeclarationName);
+    headerFile->append("(_");
+    headerFile->append(enumDeclarationName);
+    headerFile->append("Code errorCode)\n    : errorCode(errorCode), errorInfo(0) {}\n\n");
     if (members) {
         size_t _members_length = members->length();
         for (size_t _i = 0; _i < _members_length; _i++) {
             EnumMember* member = *(*members)[_i];
             if (member->parameterClause) {
-                (*headerFile) += "    ";
-                (*headerFile) += *enumDeclarationName;
-                (*headerFile) += "(_";
-                (*headerFile) += *enumDeclarationName;
-                (*headerFile) += "_";
-                (*headerFile) += *member->enumCase->name;
-                (*headerFile) += "* ";
-                (*headerFile) += *member->enumCase->name;
-                (*headerFile) += ")\n    : errorCode(_";
-                (*headerFile) += *enumDeclarationName;
-                (*headerFile) += "Code_";
-                (*headerFile) += *member->enumCase->name;
-                (*headerFile) += "), errorInfo(";
-                (*headerFile) += *member->enumCase->name;
-                (*headerFile) += ") {}\n\n";
+                headerFile->append("    ");
+                headerFile->append(enumDeclarationName);
+                headerFile->append("(_");
+                headerFile->append(enumDeclarationName);
+                headerFile->append("_");
+                headerFile->append(member->enumCase->name);
+                headerFile->append("* ");
+                headerFile->append(member->enumCase->name);
+                headerFile->append(")\n    : errorCode(_");
+                headerFile->append(enumDeclarationName);
+                headerFile->append("Code_");
+                headerFile->append(member->enumCase->name);
+                headerFile->append("), errorInfo(");
+                headerFile->append(member->enumCase->name);
+                headerFile->append(") {}\n\n");
             }
         }
     }
-    (*headerFile) += "    long getErrorCode();\n    void* getErrorInfo();\n\n";
+    headerFile->append("    long getErrorCode();\n    void* getErrorInfo();\n\n");
     if (members) {
         size_t _members_length = members->length();
         for (size_t _i = 0; _i < _members_length; _i++) {
             EnumMember* member = *(*members)[_i];
             if (member->parameterClause) {
-                (*headerFile) += "    _";
-                (*headerFile) += *enumDeclarationName;
-                (*headerFile) += "_";
-                (*headerFile) += *member->enumCase->name;
-                (*headerFile) += "* get_";
-                (*headerFile) += *member->enumCase->name;
-                (*headerFile) += "();\n";
+                headerFile->append("    _");
+                headerFile->append(enumDeclarationName);
+                headerFile->append("_");
+                headerFile->append(member->enumCase->name);
+                headerFile->append("* get_");
+                headerFile->append(member->enumCase->name);
+                headerFile->append("();\n");
             }
         }
     }
-    (*headerFile) += "\nprivate:\n    _";
-    (*headerFile) += *enumDeclarationName;
-    (*headerFile) +="Code errorCode;\n    void* errorInfo;\n};";
+    headerFile->append("\nprivate:\n    _");
+    headerFile->append(enumDeclarationName);
+    headerFile->append("Code errorCode;\n    void* errorInfo;\n};");
 }
 
 bool CppVisitor::openEnumMember(EnumMember* enumMember) {
@@ -670,15 +670,15 @@ bool CppVisitor::openEnumMember(EnumMember* enumMember) {
 
     String* enumDeclarationName = ((EnumDeclaration*)(enumMember->parent))->name;
     if (enumMember->parameterClause) {
-        (*headerFile) += "\nclass _";
-        (*headerFile) += *enumDeclarationName;
-        (*headerFile) += "_";
-        (*headerFile) += *enumMember->enumCase->name;
-        (*headerFile) += " : public Object {\npublic:\n    _";
-        (*headerFile) += *enumDeclarationName;
-        (*headerFile) += "_";
-        (*headerFile) += *enumMember->enumCase->name;
-        (*headerFile) += "(";
+        headerFile->append("\nclass _");
+        headerFile->append(enumDeclarationName);
+        headerFile->append("_");
+        headerFile->append(enumMember->enumCase->name);
+        headerFile->append(" : public Object {\npublic:\n    _");
+        headerFile->append(enumDeclarationName);
+        headerFile->append("_");
+        headerFile->append(enumMember->enumCase->name);
+        headerFile->append("(");
     }
     inEnumMember = true;
     return true;
@@ -686,7 +686,7 @@ bool CppVisitor::openEnumMember(EnumMember* enumMember) {
 
 void CppVisitor::closeEnumMember(EnumMember* enumMember) {
     if (enumMember->parameterClause) {
-        (*headerFile) += ";\n\n";
+        headerFile->append(";\n\n");
         _Vector<Parameter>* parameters = enumMember->parameterClause->parameters;
         if (parameters) {
             size_t _parameters_length = parameters->length();
@@ -694,15 +694,15 @@ void CppVisitor::closeEnumMember(EnumMember* enumMember) {
                 Parameter* parameter = *(*parameters)[_i];
                 if (parameter->_isConstParameter()) {
                     ConstParameter* constParameter = (ConstParameter*)parameter;
-                    (*headerFile) += "    ";
+                    headerFile->append("    ");
                     appendCppType(headerFile, constParameter->parameterType);
-                    (*headerFile) += " ";
-                    (*headerFile) += *constParameter->name;
-                    (*headerFile) += ";\n";
+                    headerFile->append(" ");
+                    headerFile->append(constParameter->name);
+                    headerFile->append(";\n");
                 }
             }
         }
-        (*headerFile) += "};\n";
+        headerFile->append("};\n");
     }
     inEnumMember = false;
 }
@@ -712,16 +712,16 @@ void CppVisitor::appendCppType(VarString* s, Type* type) {
         TypeIdentifier* typeId = (TypeIdentifier*)type;
         appendCppTypeName(s, typeId);
         if (isClass(typeId->name)) {
-            (*s) += "*"; }
+            s->append("*"); }
     }
     else if (type->_isArrayType()) {
         ArrayType* arrayType = (ArrayType*)type;
         Type* type = arrayType->elementType;
         if (type->_isTypeIdentifier()) {
             TypeIdentifier* typeId = (TypeIdentifier*)type;
-            (*s) += "_Vector<";
+            s->append("_Vector<");
             appendCppTypeName(s, typeId);
-            (*s) += ">*";
+            s->append(">*");
         }
     }
 }
@@ -737,26 +737,26 @@ void CppVisitor::closeAdditionalCase(AdditionalCase* additionalCase) {
 }
 
 bool CppVisitor::openClassDeclaration(ClassDeclaration* classDeclaration) {
-    (*headerFile) += "\n\nclass ";
-    (*headerFile) += *classDeclaration->name;
+    headerFile->append("\n\nclass ");
+    headerFile->append(classDeclaration->name);
     if (!classDeclaration->body) {
-        (*headerFile) += ";";
+        headerFile->append(";");
         return false; }
-    (*headerFile) += " : public ";
+    headerFile->append(" : public ");
     if (classDeclaration->typeInheritanceClause) {
         size_t noOfInheritanceClauses = classDeclaration->typeInheritanceClause->inheritances->length();
         for (size_t _i = 0; _i < noOfInheritanceClauses; _i++) {
             if (_i > 0)
-                (*headerFile) += ", ";
+                headerFile->append(", ");
             TypeIdentifier* typeIdentifier = (*(*classDeclaration->typeInheritanceClause->inheritances)[_i])->typeIdentifier;
-            (*headerFile) += *typeIdentifier->name;
+            headerFile->append(typeIdentifier->name);
         }
     }
     else {
-        (*headerFile) += "Object";
+        headerFile->append("Object");
     }
-    (*headerFile) += " {\n";
-    (*headerFile) += "public:";
+    headerFile->append(" {\n");
+    headerFile->append("public:");
 
     headerIndentLevel++;
 
@@ -764,14 +764,18 @@ bool CppVisitor::openClassDeclaration(ClassDeclaration* classDeclaration) {
 }
 
 void CppVisitor::closeClassDeclaration(ClassDeclaration* classDeclaration) {
-    (*headerFile) += "\n";
+    headerFile->append("\n");
     if (classDeclaration->typeInheritanceClause) {
-        (*headerFile) += "\n"; indentHeader(); (*headerFile) += "virtual bool _is"; (*headerFile) += *classDeclaration->name; (*headerFile) += "();";
-        (*sourceFile) += "bool "; 
-        (*sourceFile) += *classDeclaration->name; 
-        (*sourceFile) += "::_is"; 
-        (*sourceFile) += *classDeclaration->name; 
-        (*sourceFile) += "() { return true; }\n\n";
+        headerFile->append("\n");
+        indentHeader();
+        headerFile->append("virtual bool _is");
+        headerFile->append(classDeclaration->name);
+        headerFile->append("();");
+        sourceFile->append("bool ");
+        sourceFile->append(classDeclaration->name);
+        sourceFile->append("::_is");
+        sourceFile->append(classDeclaration->name);
+        sourceFile->append("() { return true; }\n\n");
     }
     {
         _Region _region; _Page* _p = _region.get();
@@ -779,20 +783,24 @@ void CppVisitor::closeClassDeclaration(ClassDeclaration* classDeclaration) {
         collectDerivedClasses(&derivedClasses, &String::create(_p, classDeclaration->name));
         size_t _derivedClasses_length = derivedClasses.length();
         for (size_t _i = 0; _i < _derivedClasses_length; _i++) {
-            (*headerFile) += "\n"; indentHeader(); (*headerFile) += "virtual bool _is"; (*headerFile) += **derivedClasses[_i]; (*headerFile) += "();";
-            (*sourceFile) += "bool "; 
-            (*sourceFile) += *classDeclaration->name; 
-            (*sourceFile) += "::_is"; 
-            (*sourceFile) += **derivedClasses[_i]; 
-            (*sourceFile) += "() { return false; }\n";
+            headerFile->append("\n");
+            indentHeader();
+            headerFile->append("virtual bool _is");
+            headerFile->append(*derivedClasses[_i]);
+            headerFile->append("();");
+            sourceFile->append("bool "); 
+            sourceFile->append(classDeclaration->name);
+            sourceFile->append("::_is");
+            sourceFile->append(*derivedClasses[_i]);
+            sourceFile->append("() { return false; }\n");
         }
         if (derivedClasses.length() > 0)
-            (*sourceFile) += "\n";
+            sourceFile->append("\n");
     }
     
 
     headerIndentLevel--;
-    (*headerFile) += "\n};";
+    headerFile->append("\n};");
 }
 
 bool CppVisitor::openClassBody(ClassBody* classBody) {
@@ -804,12 +812,12 @@ void CppVisitor::closeClassBody(ClassBody* classBody) {
 
 void CppVisitor::indentHeader() {
     for (size_t i = 0; i < headerIndentLevel; i++)
-        (*headerFile) += "    ";
+        headerFile->append("    ");
 }
 
 void CppVisitor::indentSource() {
     for (size_t i = 0; i < sourceIndentLevel; i++)
-        (*sourceFile) += "    ";
+        sourceFile->append("    ");
 }
 
 void CppVisitor::collectDerivedClasses(_Array<String>* derivedClasses, String* className) {
@@ -840,23 +848,23 @@ void CppVisitor::visitGenericParameter(GenericParameter* genericParameter) {
 }
 
 bool CppVisitor::openClassMember(ClassMember* classMember) {
-    (*headerFile) += "\n";
+    headerFile->append("\n");
     indentHeader();
     declaringClassMember = true;
     return true;
 }
 
 void CppVisitor::closeClassMember(ClassMember* classMember) {
-    (*headerFile) += ";";
+    headerFile->append(";");
     declaringClassMember = false;
 }
 
 bool CppVisitor::openCodeBlock(CodeBlock* codeBlock) {
-    (*sourceFile) += "{\n";
+    sourceFile->append("{\n");
     sourceIndentLevel++;
     if (localAllocations(codeBlock)) {
         indentSource();
-        (*sourceFile) += "_Region _region; _Page* _p = _region.get();\n";
+        sourceFile->append("_Region _region; _Page* _p = _region.get();\n");
     }
     return true;
 }
@@ -910,9 +918,9 @@ bool CppVisitor::localAllocations(CodeBlock* codeBlock) {
 void CppVisitor::closeCodeBlock(CodeBlock* codeBlock) {
     sourceIndentLevel--;
     indentSource();
-    (*sourceFile) += "}\n";
+    sourceFile->append("}\n");
     if (codeBlock->parent->_isFunctionDeclaration())
-        (*sourceFile) += "\n";
+        sourceFile->append("\n");
 }
 
 bool CppVisitor::openSimpleExpression(SimpleExpression* simpleExpression) {
@@ -932,7 +940,7 @@ void CppVisitor::closePrefixExpression(PrefixExpression* prefixExpression) {
 bool CppVisitor::openPostfixExpression(PostfixExpression* postfixExpression) {
     if (postfixExpression->postfixes != nullptr) {
         if ((*(*postfixExpression->postfixes)[0])->_isSubscript()) {
-            (*sourceFile) += "(*";
+            sourceFile->append("(*");
         }
     }
     return true;
@@ -942,9 +950,9 @@ void CppVisitor::closePostfixExpression(PostfixExpression* postfixExpression) {
 }
 
 bool CppVisitor::openBinaryOperation(BinaryOperation* binaryOperation) {
-    (*sourceFile) += " ";
-    (*sourceFile) += *binaryOperation->binaryOperator;
-    (*sourceFile) += " ";
+    sourceFile->append(" ");
+    sourceFile->append(binaryOperation->binaryOperator);
+    sourceFile->append(" ");
     return true;
 }
 
@@ -952,7 +960,7 @@ void CppVisitor::closeBinaryOperation(BinaryOperation* binaryOperation) {
 }
 
 bool CppVisitor::openAssignment(Assignment* assignment) {
-    (*sourceFile) += " = ";
+    sourceFile->append(" = ");
 
     return true;
 }
@@ -1083,7 +1091,7 @@ void CppVisitor::closeAssignment(Assignment* assignment) {
 }
 
 bool CppVisitor::openTypeQuery(TypeQuery* typeQuery) {
-    (*sourceFile) +=  "->_is";
+    sourceFile->append("->_is");
     return true;
 }
 
@@ -1119,7 +1127,7 @@ void CppVisitor::closePathItemCatchPattern(PathItemCatchPattern* pathItemCatchPa
 }
 
 void CppVisitor::visitOperatorPostfix(OperatorPostfix* operatorPostfix) {
-    (*sourceFile) += *operatorPostfix->postfixOperator;
+    sourceFile->append(operatorPostfix->postfixOperator);
 }
 
 bool CppVisitor::openFunctionCall(FunctionCall* functionCall) {
@@ -1130,7 +1138,7 @@ void CppVisitor::closeFunctionCall(FunctionCall* functionCall) {
 }
 
 bool CppVisitor::openExplicitMemberExpression(ExplicitMemberExpression* explicitMemberExpression) {
-    (*sourceFile) += "->";
+    sourceFile->append("->");
     return true;
 }
 
@@ -1138,12 +1146,12 @@ void CppVisitor::closeExplicitMemberExpression(ExplicitMemberExpression* explici
 }
 
 bool CppVisitor::openSubscript(Subscript* subscript) {
-    (*sourceFile) += "[";
+    sourceFile->append("[");
     return true;
 }
 
 void CppVisitor::closeSubscript(Subscript* subscript) {
-    (*sourceFile) += "]";
+    sourceFile->append("]");
 }
 
 bool CppVisitor::openExpressionElement(ExpressionElement* expressionElement) {
@@ -1175,12 +1183,12 @@ bool CppVisitor::openParenthesizedExpression(ParenthesizedExpression* parenthesi
                         if (member != nullptr) {
                             ClassDeclaration* classDeclaration = getClassDeclaration(assignment);
                             if (isVariableMember(member, classDeclaration)) {
-                                (*sourceFile) += "(";
-                                (*sourceFile) += *member;
-                                (*sourceFile) += "->getPage()";
+                                sourceFile->append("(");
+                                sourceFile->append(member);
+                                sourceFile->append("->getPage()");
                                 if (functionCall->arguments != nullptr)
                                     if (functionCall->arguments->expressionElements != nullptr)
-                                        (*sourceFile) += ", ";
+                                        sourceFile->append(", ");
                                 outputParen = false;
                             }
                         }
@@ -1200,49 +1208,49 @@ bool CppVisitor::openParenthesizedExpression(ParenthesizedExpression* parenthesi
     }
 
     if (outputParen)
-        (*sourceFile) += "(";
+        sourceFile->append("(");
 
     
     return true;
 }
 
 void CppVisitor::closeParenthesizedExpression(ParenthesizedExpression* parenthesizedExpression) {
-    (*sourceFile) += ")";
+    sourceFile->append(")");
 }
 
 void CppVisitor::visitLiteralExpression(LiteralExpression* literalExpression) {
     Literal* literal = literalExpression->literal;
     if (literal->_isNumericLiteral()) {
         NumericLiteral* numericLiteral = (NumericLiteral*)literal;
-        (*sourceFile) += *numericLiteral->value;
+        sourceFile->append(numericLiteral->value);
     }
     else if (literal->_isStringLiteral()) {
         StringLiteral* stringLiteral = (StringLiteral*)literal;
-        (*sourceFile) += "\"";
-        (*sourceFile) += *stringLiteral->string;
-        (*sourceFile) += "\"";
+        sourceFile->append("\"");
+        sourceFile->append(stringLiteral->string);
+        sourceFile->append("\"");
     }
     else if (literal->_isCharacterLiteral()) {
         CharacterLiteral* characterLiteral = (CharacterLiteral*)literal;
-        (*sourceFile) += "\'";
+        sourceFile->append("\'");
         if (characterLiteral->value->getLength() > 0) {
             if (((*characterLiteral->value)[0] == '"') || ((*characterLiteral->value)[0] == '\'')) {
-                (*sourceFile) += "\\";
-                (*sourceFile) += *characterLiteral->value;
+                sourceFile->append("\\");
+                sourceFile->append(characterLiteral->value);
             }
             else if ((*characterLiteral->value)[0] == '\r') {
-                (*sourceFile) += "\\r";
+                sourceFile->append("\\r");
             }
             else if ((*characterLiteral->value)[0] == '\n') {
-                (*sourceFile) += "\\n";
+                sourceFile->append("\\n");
             }
             else if ((*characterLiteral->value)[0] == '\t') {
-                (*sourceFile) += "\\t";
+                sourceFile->append("\\t");
             }
             else
-                (*sourceFile) += *characterLiteral->value;
+                sourceFile->append(characterLiteral->value);
         }
-        (*sourceFile) += "\'";
+        sourceFile->append("\'");
     }
 }
 
@@ -1250,18 +1258,18 @@ void CppVisitor::visitIdentifierExpression(IdentifierExpression* identifierExpre
     if (isClass(identifierExpression->name)) {
         String* className = identifierExpression->name;
         if ((*className) == "String") {
-            (*sourceFile) += "&String::create(";
+            sourceFile->append("&String::create(");
             if (inReturn(identifierExpression))
-                (*sourceFile) += "_rp";
+                sourceFile->append("_rp");
             else {
-                (*sourceFile) += "token->getPage()";
+                sourceFile->append("token->getPage()");
             }
-            (*sourceFile) += ", ";
+            sourceFile->append(", ");
         }
         else {
-            (*sourceFile) += "new(";
+            sourceFile->append("new(");
             if (inReturn(identifierExpression))
-                (*sourceFile) += "_rp";
+                sourceFile->append("_rp");
             else if (identifierExpression->parent->parent->parent->_isAssignment()) {
                 Assignment* assignment = (Assignment*)identifierExpression->parent->parent->parent;
                 ClassDeclaration* classDeclaration = getClassDeclaration(assignment);
@@ -1269,57 +1277,57 @@ void CppVisitor::visitIdentifierExpression(IdentifierExpression* identifierExpre
                 if (memberName != nullptr) {
                     if (isVariableMember(memberName, classDeclaration)) {
                         if (!inInitializer(assignment)) {
-                            (*sourceFile) += *memberName;
-                            (*sourceFile) += "->";
+                            sourceFile->append(memberName);
+                            sourceFile->append("->");
                         }
-                        (*sourceFile) += "getPage()";
+                        sourceFile->append("getPage()");
                         if (inInitializer(assignment)) {
-                            (*sourceFile) += "->allocateExclusivePage()";
+                            sourceFile->append("->allocateExclusivePage()");
                         }
                     }
                 }
             }
             else
-                (*sourceFile) += "_p";
-            (*sourceFile) += ") ";
-            (*sourceFile) += *identifierExpression->name;
+                sourceFile->append("_p");
+            sourceFile->append(") ");
+            sourceFile->append(identifierExpression->name);
         }
     }
     else
-        (*sourceFile) += *identifierExpression->name;
+        sourceFile->append(identifierExpression->name);
     if (identifierExpression->parent->_isPostfixExpression()) {
         PostfixExpression* postfixExpression = (PostfixExpression*)identifierExpression->parent;
         if (postfixExpression->postfixes != nullptr) {
             if ((*(*postfixExpression->postfixes)[0])->_isSubscript()) {
-                (*sourceFile) += ")";
+                sourceFile->append(")");
             }
         }
     }
 }
 
 bool CppVisitor::openIfExpression(IfExpression* ifExpression) {
-    (*sourceFile) += "if (";
+    sourceFile->append("if (");
     ifExpression->condition->accept(this);
-    (*sourceFile) += ")";
+    sourceFile->append(")");
     if (ifExpression->consequent->_isSimpleExpression()) {
-        (*sourceFile) += "\n";
+        sourceFile->append("\n");
         sourceIndentLevel++;
         indentSource();
         ifExpression->consequent->accept(this);
-        (*sourceFile) += ";\n";
+        sourceFile->append(";\n");
         sourceIndentLevel--;
     }
     else {
-        (*sourceFile) += " ";
+        sourceFile->append(" ");
         ifExpression->consequent->accept(this);
     }
     if (ifExpression->elseClause) {
         if (ifExpression->elseClause->alternative->_isSimpleExpression()) {
-            (*sourceFile) += "\n";
+            sourceFile->append("\n");
             sourceIndentLevel++;
             indentSource();
             ifExpression->elseClause->accept(this);
-            (*sourceFile) += ";\n";
+            sourceFile->append(";\n");
             sourceIndentLevel--;
         }
         else {
@@ -1334,12 +1342,12 @@ void CppVisitor::closeIfExpression(IfExpression* ifExpression) {
 }
 
 void CppVisitor::visitNullExpression(NullExpression* nullExpression) {
-    (*sourceFile) += "nullptr";
+    sourceFile->append("nullptr");
 }
 
 bool CppVisitor::openElseClause(ElseClause* elseClause) {
     indentSource();
-    (*sourceFile) += "else ";
+    sourceFile->append("else ");
     return true;
 }
 
@@ -1347,7 +1355,7 @@ void CppVisitor::closeElseClause(ElseClause* elseClause) {
 }
 
 bool CppVisitor::openSwitchExpression(SwitchExpression* switchExpression) {
-    (*sourceFile) += "switch (";
+    sourceFile->append("switch (");
     return true;
 }
 
@@ -1355,7 +1363,7 @@ void CppVisitor::closeSwitchExpression(SwitchExpression* switchExpression) {
 }
 
 bool CppVisitor::openCurliedSwitchBody(CurliedSwitchBody* curliedSwitchBody) {
-    (*sourceFile) += ") {\n";
+    sourceFile->append(") {\n");
     sourceIndentLevel++;
     return true;
 }
@@ -1363,7 +1371,7 @@ bool CppVisitor::openCurliedSwitchBody(CurliedSwitchBody* curliedSwitchBody) {
 void CppVisitor::closeCurliedSwitchBody(CurliedSwitchBody* curliedSwitchBody) {
     sourceIndentLevel--;
     indentSource();
-    (*sourceFile) += "}\n";
+    sourceFile->append("}\n");
 }
 
 bool CppVisitor::openNakedSwitchBody(NakedSwitchBody* nakedSwitchBody) {
@@ -1382,7 +1390,7 @@ void CppVisitor::closeSwitchCase(SwitchCase* switchCase) {
 }
 
 bool CppVisitor::openItemCaseLabel(ItemCaseLabel* itemCaseLabel) {
-    (*sourceFile) += "case ";
+    sourceFile->append("case ");
     return true;
 }
 
@@ -1390,12 +1398,12 @@ void CppVisitor::closeItemCaseLabel(ItemCaseLabel* itemCaseLabel) {
 }
 
 bool CppVisitor::openCaseItem(CaseItem* caseItem) {
-    (*sourceFile) += "case ";
+    sourceFile->append("case ");
     return true;
 }
 
 void CppVisitor::closeCaseItem(CaseItem* caseItem) {
-    (*sourceFile) += ": ";
+    sourceFile->append(": ");
 }
 
 bool CppVisitor::openForExpression(ForExpression* forExpression) {
@@ -1413,7 +1421,7 @@ void CppVisitor::closeWhileExpression(WhileExpression* whileExpression) {
 }
 
 bool CppVisitor::openRepeatExpression(RepeatExpression* repeatExpression) {
-    (*sourceFile) += "do ";
+    sourceFile->append("do ");
     return true;
 }
 
@@ -1421,9 +1429,9 @@ void CppVisitor::closeRepeatExpression(RepeatExpression* repeatExpression) {
 }
 
 bool CppVisitor::openReturnExpression(ReturnExpression* returnExpression) {
-    (*sourceFile) += "return";
+    sourceFile->append("return");
     if (returnExpression->expression)
-        (*sourceFile) += " ";
+        sourceFile->append(" ");
     return true;
 }
 
@@ -1451,16 +1459,16 @@ bool CppVisitor::openIdentifierPattern(IdentifierPattern* identifierPattern) {
     if (identifierPattern->annotationForType) {
         identifierPattern->annotationForType->accept(this);
         if (!suppressHeader) {
-            (*headerFile) += " ";
+            headerFile->append(" ");
         }
         if (!suppressSource)
-            (*sourceFile) += " ";
+            sourceFile->append(" ");
     }
     if (!suppressHeader) {
-        (*headerFile) += *identifierPattern->identifier;
+        headerFile->append(identifierPattern->identifier);
     }
     if (!suppressSource) {
-        (*sourceFile) += *identifierPattern->identifier;
+        sourceFile->append(identifierPattern->identifier);
     }
     return false;
  }
@@ -1488,15 +1496,15 @@ bool CppVisitor::openExpressionPattern(ExpressionPattern* expressionPattern) {
 
 void CppVisitor::closeExpressionPattern(ExpressionPattern* expressionPattern) {
     if (expressionPattern->parent->_isItemCaseLabel())
-        (*sourceFile) += ": ";
+        sourceFile->append(": ");
 }
 
 void CppVisitor::visitDefaultCaseLabel(DefaultCaseLabel* defaultCaseLabel) {
-    (*sourceFile) += "default: ";
+    sourceFile->append("default: ");
 }
 
 bool CppVisitor::openBlockCaseContent(BlockCaseContent* blockCaseContent) {
-    (*sourceFile) += "{\n";
+    sourceFile->append("{\n");
     sourceIndentLevel++;
     return true;
 }
@@ -1507,16 +1515,16 @@ void CppVisitor::closeBlockCaseContent(BlockCaseContent* blockCaseContent) {
         SwitchCase* switchCase = (SwitchCase*)blockCaseContent->parent;
         if (!switchCase->label->_isDefaultCaseLabel()) {
             indentSource();
-            (*sourceFile) += "break;\n";
+            sourceFile->append("break;\n");
         }
         else
             additionalLineFeed = false;
     }
     sourceIndentLevel--;
     indentSource();
-    (*sourceFile) += "}\n";
+    sourceFile->append("}\n");
     if (additionalLineFeed)
-        (*sourceFile) += "\n";
+        sourceFile->append("\n");
 }
 
 void CppVisitor::visitEmptyCaseContent(EmptyCaseContent* emptyCaseContent) {
@@ -1530,10 +1538,10 @@ void CppVisitor::closeInitializerCall(InitializerCall* initializerCall) {
 }
 
 bool CppVisitor::openThisDot(ThisDot* thisDot) {
-    (*sourceFile) += "this->";
+    sourceFile->append("this->");
     if(thisDot->member->_isThisMember()) {
         ThisMember* thisMember = (ThisMember*)(thisDot->member);
-        (*sourceFile) += *thisMember->name;
+        sourceFile->append(thisMember->name);
     }
     return true;
 }
@@ -1593,14 +1601,14 @@ bool CppVisitor::openTypeIdentifier(TypeIdentifier* typeIdentifier) {
     }
     if (isClass(typeIdentifier->name) && (!inArrayType(typeIdentifier)) && (!inTypeQuery(typeIdentifier))) {
         if (!suppressHeader) {
-            (*headerFile) += "*";
+            headerFile->append("*");
         }
         if (!suppressSource) {
-            (*sourceFile) += "*";
+            sourceFile->append("*");
         }
     }
     if (inTypeQuery(typeIdentifier)) {
-        (*sourceFile) += "()";
+        sourceFile->append("()");
     }
         
     return true;
@@ -1622,15 +1630,15 @@ bool CppVisitor::inTypeQuery(TypeIdentifier* typeIdentifier) {
 void CppVisitor::appendCppTypeName(VarString* s, TypeIdentifier* typeIdentifier) {
     String* typeIdentifierName = typeIdentifier->name;
     if ((*typeIdentifierName) == "unsigned") {
-        (*s) += "size_t";
+        s->append("size_t");
         return;
     }
     else if ((*typeIdentifierName) == "character") {
-        (*s) += "char";
+        s->append("char");
         return;
     }
 
-    (*s) += *typeIdentifierName;
+    s->append(typeIdentifierName);
 }
 
 void CppVisitor::closeTypeIdentifier(TypeIdentifier* typeIdentifier) {
@@ -1646,11 +1654,12 @@ void CppVisitor::closeSubtypeIdentifier(SubtypeIdentifier* subtypeIdentifier) {
 bool CppVisitor::openArrayType(ArrayType* arrayType) {
     if (!sourceIndentLevel) {
         if (constDeclaration)
-            (*headerFile) += "_Vector<";
+            headerFile->append("_Vector<");
         else
-            (*headerFile) += "_Array<";
+            headerFile->append("_Array<");
         arrayType->elementType->accept(this);
-        (*headerFile) += ">*"; }
+        headerFile->append(">*");
+    }
     return false;
 }
 
@@ -1675,118 +1684,121 @@ void CppVisitor::closeInheritance(Inheritance* inheritance) {
 }
 
 void CppVisitor::buildMainHeaderFileString(VarString* mainHeaderFile, Program* program) {
-    (*mainHeaderFile) += "#ifndef __scaly__";
-    (*mainHeaderFile) += *program->name;
-    (*mainHeaderFile) += "__\n#define __scaly__";
-    (*mainHeaderFile) += *program->name;
-    (*mainHeaderFile) += "__\n\n#include \"Scaly.h\"\n";
+    mainHeaderFile->append("#ifndef __scaly__");
+    mainHeaderFile->append(program->name);
+    mainHeaderFile->append("__\n#define __scaly__");
+    mainHeaderFile->append(program->name);
+    mainHeaderFile->append("__\n\n#include \"Scaly.h\"\n");
     size_t noOfCompilationUnits = program->compilationUnits->length();
     for (size_t i = 0; i < noOfCompilationUnits; i++) {
         _Region _region; _Page* _p = _region.get();
-        (*mainHeaderFile) +=  "#include \"";
-        (*mainHeaderFile) += *new(mainHeaderFile->getPage()) VarString(*Path::getFileNameWithoutExtension(_p, *(*(*program->compilationUnits)[i])->fileName)) + ".h\"\n";
+        mainHeaderFile->append( "#include \"");
+        mainHeaderFile->append(new(mainHeaderFile->getPage()) VarString(*Path::getFileNameWithoutExtension(_p, *(*(*program->compilationUnits)[i])->fileName)));
+        mainHeaderFile->append(".h\n");
     }
-    (*mainHeaderFile) += "\nusing namespace scaly;\nnamespace ";
-    (*mainHeaderFile) += *program->name;
-    (*mainHeaderFile) += " {\nint _main(_Vector<String>* arguments);\n}\n\n#endif // __scaly__scalyc__\n";
+    mainHeaderFile->append("\nusing namespace scaly;\nnamespace ");
+    mainHeaderFile->append(program->name);
+    mainHeaderFile->append(" {\nint _main(_Vector<String>* arguments);\n}\n\n#endif // __scaly__scalyc__\n");
 }
 
 void CppVisitor::buildProjectFileString(VarString* projectFile, Program* program) {
-    (*projectFile) += "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
-    (*projectFile) += "<CodeLite_Project Name=\"";
-    (*projectFile) +=  *program->name;
-    (*projectFile) +=  "\" InternalType=\"Console\">\n  <Plugins>\n    <Plugin Name=\"qmake\">\n";
-    (*projectFile) +=  "      <![CDATA[00020001N0005Debug0000000000000001N0007Release000000000000]]>\n    </Plugin>\n";
-    (*projectFile) +=  "    <Plugin Name=\"CMakePlugin\">\n      <![CDATA[[{\n";
-    (*projectFile) +=  "  \"name\": \"Debug\",\n  \"enabled\": false,\n  \"buildDirectory\": \"build\",\n";
-    (*projectFile) +=  "  \"sourceDirectory\": \"$(ProjectPath)\",\n  \"generator\": \"\",\n  \"buildType\": \"\",\n";
-    (*projectFile) +=  "  \"arguments\": [],\n  \"parentProject\": \"\"\n";
-    (*projectFile) +=  " }, {\n";
-    (*projectFile) +=  "  \"name\": \"Release\",\n";
-    (*projectFile) +=  "  \"enabled\": false,\n";
-    (*projectFile) +=  "  \"buildDirectory\": \"build\",\n";
-    (*projectFile) +=  "  \"sourceDirectory\": \"$(ProjectPath)\",\n";
-    (*projectFile) +=  "  \"generator\": \"\",\n";
-    (*projectFile) +=  "  \"buildType\": \"\",\n";
-    (*projectFile) +=  "  \"arguments\": [],\n";
-    (*projectFile) +=  "  \"parentProject\": \"\"\n";
-    (*projectFile) +=  " }]]]>\n    </Plugin>\n  </Plugins>\n";
-    (*projectFile) +=  "  <Description/>\n  <Dependencies/>\n";
-    (*projectFile) +=  "  <VirtualDirectory Name=\"src\">\n    <File Name=\"main.cpp\"/>\n";
+    projectFile->append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
+    projectFile->append("<CodeLite_Project Name=\"");
+    projectFile->append(program->name);
+    projectFile->append("\" InternalType=\"Console\">\n  <Plugins>\n    <Plugin Name=\"qmake\">\n");
+    projectFile->append("      <![CDATA[00020001N0005Debug0000000000000001N0007Release000000000000]]>\n    </Plugin>\n");
+    projectFile->append("    <Plugin Name=\"CMakePlugin\">\n      <![CDATA[[{\n");
+    projectFile->append("  \"name\": \"Debug\",\n  \"enabled\": false,\n  \"buildDirectory\": \"build\",\n");
+    projectFile->append("  \"sourceDirectory\": \"$(ProjectPath)\",\n  \"generator\": \"\",\n  \"buildType\": \"\",\n");
+    projectFile->append("  \"arguments\": [],\n  \"parentProject\": \"\"\n");
+    projectFile->append(" }, {\n");
+    projectFile->append("  \"name\": \"Release\",\n");
+    projectFile->append("  \"enabled\": false,\n");
+    projectFile->append("  \"buildDirectory\": \"build\",\n");
+    projectFile->append("  \"sourceDirectory\": \"$(ProjectPath)\",\n");
+    projectFile->append("  \"generator\": \"\",\n");
+    projectFile->append("  \"buildType\": \"\",\n");
+    projectFile->append("  \"arguments\": [],\n");
+    projectFile->append("  \"parentProject\": \"\"\n");
+    projectFile->append(" }]]]>\n    </Plugin>\n  </Plugins>\n");
+    projectFile->append("  <Description/>\n  <Dependencies/>\n");
+    projectFile->append("  <VirtualDirectory Name=\"src\">\n    <File Name=\"main.cpp\"/>\n");
     size_t noOfCompilationUnits = program->compilationUnits->length();
     for (size_t i = 0; i < noOfCompilationUnits; i++) {
         _Region _region; _Page* _p = _region.get();
-        (*projectFile) +=  "    <File Name=\"";
-        (*projectFile) +=  *Path::getFileNameWithoutExtension(_p, *(*(*program->compilationUnits)[i])->fileName);
-        (*projectFile) +=  ".cpp\"/>\n";
+        projectFile->append("    <File Name=\"");
+        projectFile->append(Path::getFileNameWithoutExtension(_p, *(*(*program->compilationUnits)[i])->fileName));
+        projectFile->append(".cpp\"/>\n");
     }
-    (*projectFile) +=  "  </VirtualDirectory>\n  <VirtualDirectory Name=\"include\">\n";
+    projectFile->append("  </VirtualDirectory>\n  <VirtualDirectory Name=\"include\">\n");
     for (size_t i = 0; i < noOfCompilationUnits; i++) {
         _Region _region; _Page* _p = _region.get();
-        (*projectFile) +=  "    <File Name=\"";
-        (*projectFile) +=  *Path::getFileNameWithoutExtension(_p, *(*(*program->compilationUnits)[i])->fileName);
-        (*projectFile) +=  ".h\"/>\n";
+        projectFile->append("    <File Name=\"");
+        projectFile->append(Path::getFileNameWithoutExtension(_p, *(*(*program->compilationUnits)[i])->fileName));
+        projectFile->append(".h\"/>\n");
     }
-    (*projectFile) +=  "  </VirtualDirectory>\n  <Settings Type=\"Executable\">\n    <GlobalSettings>\n";
-    (*projectFile) +=  "      <Compiler Options=\"\" C_Options=\"\" Assembler=\"\">\n";
-    (*projectFile) +=  "        <IncludePath Value=\".\"/>\n      </Compiler>\n      <Linker Options=\"\">\n";
-    (*projectFile) +=  "        <LibraryPath Value=\".\"/>\n      </Linker>\n      <ResourceCompiler Options=\"\"/>\n";
-    (*projectFile) +=  "    </GlobalSettings>\n";
-    (*projectFile) +=  "    <Configuration Name=\"Debug\" CompilerType=\"GCC\" DebuggerType=\"GNU gdb debugger\"";
-    (*projectFile) +=  " Type=\"Executable\" BuildCmpWithGlobalSettings=\"push\" BuildLnkWithGlobalSettings=\"push\"";
-    (*projectFile) +=  " BuildResWithGlobalSettings=\"push\">\n";
-    (*projectFile) +=  "      <Compiler Options=\"-g;-O0;-std=c++11;-Wall\" C_Options=\"-g;-O0;-Wall\" Assembler=\"\"";
-    (*projectFile) +=  " Required=\"yes\" PreCompiledHeader=\"\" PCHInCommandLine=\"no\" PCHFlags=\"\" PCHFlagsPolicy=\"0\">\n";
-    (*projectFile) +=  "        <IncludePath Value=\".\"/>\n        <IncludePath Value=\"../scaly\"/>\n      </Compiler>\n";
-    (*projectFile) +=  "      <Linker Options=\"\" Required=\"yes\">\n        <LibraryPath Value=\"../Debug\"/>\n";
-    (*projectFile) +=  "        <Library Value=\"libscaly\"/>\n      </Linker>\n      <ResourceCompiler Options=\"\" Required=\"no\"/>\n";
-    (*projectFile) +=  "      <General OutputFile=\"$(IntermediateDirectory)/$(ProjectName)\" IntermediateDirectory=\"../Debug\" ";
-    (*projectFile) +=  "Command=\"./$(ProjectName)\" CommandArguments=\"-o ";
-    (*projectFile) +=  *program->name;
-    (*projectFile) +=  " -d output";
+    projectFile->append("  </VirtualDirectory>\n  <Settings Type=\"Executable\">\n    <GlobalSettings>\n");
+    projectFile->append("      <Compiler Options=\"\" C_Options=\"\" Assembler=\"\">\n");
+    projectFile->append("        <IncludePath Value=\".\"/>\n      </Compiler>\n      <Linker Options=\"\">\n");
+    projectFile->append("        <LibraryPath Value=\".\"/>\n      </Linker>\n      <ResourceCompiler Options=\"\"/>\n");
+    projectFile->append("    </GlobalSettings>\n");
+    projectFile->append("    <Configuration Name=\"Debug\" CompilerType=\"GCC\" DebuggerType=\"GNU gdb debugger\"");
+    projectFile->append(" Type=\"Executable\" BuildCmpWithGlobalSettings=\"push\" BuildLnkWithGlobalSettings=\"push\"");
+    projectFile->append(" BuildResWithGlobalSettings=\"push\">\n");
+    projectFile->append("      <Compiler Options=\"-g;-O0;-std=c++11;-Wall\" C_Options=\"-g;-O0;-Wall\" Assembler=\"\"");
+    projectFile->append(" Required=\"yes\" PreCompiledHeader=\"\" PCHInCommandLine=\"no\" PCHFlags=\"\" PCHFlagsPolicy=\"0\">\n");
+    projectFile->append("        <IncludePath Value=\".\"/>\n        <IncludePath Value=\"../scaly\"/>\n      </Compiler>\n");
+    projectFile->append("      <Linker Options=\"\" Required=\"yes\">\n        <LibraryPath Value=\"../Debug\"/>\n");
+    projectFile->append("        <Library Value=\"libscaly\"/>\n      </Linker>\n      <ResourceCompiler Options=\"\" Required=\"no\"/>\n");
+    projectFile->append("      <General OutputFile=\"$(IntermediateDirectory)/$(ProjectName)\" IntermediateDirectory=\"../Debug\" ");
+    projectFile->append("Command=\"./$(ProjectName)\" CommandArguments=\"-o ");
+    projectFile->append(program->name);
+    projectFile->append(" -d output");
     for (size_t i = 0; i < noOfCompilationUnits; i++) {
         _Region _region; _Page* _p = _region.get();
-        (*projectFile) +=  " ../"; (*projectFile) +=  *program->name; (*projectFile) += "/";
-        (*projectFile) +=  *Path::getFileNameWithoutExtension(_p, *(*(*program->compilationUnits)[i])->fileName);
-        (*projectFile) +=  ".scaly";
+        projectFile->append(" ../");
+        projectFile->append(program->name);
+        projectFile->append("/");
+        projectFile->append(Path::getFileNameWithoutExtension(_p, *(*(*program->compilationUnits)[i])->fileName));
+        projectFile->append(".scaly");
     }
-    (*projectFile) += "\" UseSeparateDebugArgs=\"no\" DebugArguments=\"\" WorkingDirectory=\"$(IntermediateDirectory)\"";
-    (*projectFile) += " PauseExecWhenProcTerminates=\"yes\" IsGUIProgram=\"no\" IsEnabled=\"yes\"/>\n";
-    (*projectFile) += "      <Environment EnvVarSetName=\"&lt;Use Defaults&gt;\" DbgSetName=\"&lt;Use Defaults&gt;\">\n";
-    (*projectFile) += "        <![CDATA[]]>\n      </Environment>\n";
-    (*projectFile) += "      <Debugger IsRemote=\"no\" RemoteHostName=\"\" RemoteHostPort=\"\" DebuggerPath=\"\" IsExtended=\"yes\">\n";
-    (*projectFile) += "        <DebuggerSearchPaths/>\n        <PostConnectCommands/>\n        <StartupCommands/>\n      </Debugger>\n";
-    (*projectFile) += "      <PreBuild/>\n      <PostBuild/>\n      <CustomBuild Enabled=\"no\">\n        <RebuildCommand/>\n";
-    (*projectFile) += "        <CleanCommand/>\n        <BuildCommand/>\n        <PreprocessFileCommand/>\n        <SingleFileCommand/>\n";
-    (*projectFile) += "        <MakefileGenerationCommand/>\n        <ThirdPartyToolName>None</ThirdPartyToolName>\n";
-    (*projectFile) += "        <WorkingDirectory/>\n      </CustomBuild>\n      <AdditionalRules>\n";
-    (*projectFile) += "        <CustomPostBuild/>\n        <CustomPreBuild/>\n      </AdditionalRules>\n";
-    (*projectFile) += "      <Completion EnableCpp11=\"no\" EnableCpp14=\"no\">\n        <ClangCmpFlagsC/>\n        <ClangCmpFlags/>\n";
-    (*projectFile) += "        <ClangPP/>\n        <SearchPaths/>\n      </Completion>\n";
-    (*projectFile) += "    </Configuration>\n";
-    (*projectFile) += "    <Configuration Name=\"Release\" CompilerType=\"GCC\" DebuggerType=\"GNU gdb debugger\" Type=\"Executable\"";
-    (*projectFile) += " BuildCmpWithGlobalSettings=\"push\" BuildLnkWithGlobalSettings=\"push\" BuildResWithGlobalSettings=\"push\">\n";
-    (*projectFile) += "      <Compiler Options=\"-O2;-Wall\" C_Options=\"-O2;-Wall\" Assembler=\"\" Required=\"yes\" PreCompiledHeader=\"\"";
-    (*projectFile) += " PCHInCommandLine=\"no\" PCHFlags=\"\" PCHFlagsPolicy=\"0\">\n";
-    (*projectFile) += "        <IncludePath Value=\".\"/>\n        <Preprocessor Value=\"NDEBUG\"/>\n";
-    (*projectFile) += "      </Compiler>\n      <Linker Options=\"\" Required=\"yes\">\n";
-    (*projectFile) += "        <LibraryPath Value=\"../Release\"/>\n        <Library Value=\"libscaly\"/>\n      </Linker>\n";
-    (*projectFile) += "      <ResourceCompiler Options=\"\" Required=\"no\"/>\n";
-    (*projectFile) += "      <General OutputFile=\"$(IntermediateDirectory)/$(ProjectName)\" IntermediateDirectory=\"../Release\"";
-    (*projectFile) += " Command=\"./$(ProjectName)\" CommandArguments=\"\" UseSeparateDebugArgs=\"no\" DebugArguments=\"\"";
-    (*projectFile) += " WorkingDirectory=\"$(IntermediateDirectory)\" PauseExecWhenProcTerminates=\"yes\" IsGUIProgram=\"no\" IsEnabled=\"yes\"/>\n";
-    (*projectFile) += "      <Environment EnvVarSetName=\"&lt;Use Defaults&gt;\" DbgSetName=\"&lt;Use Defaults&gt;\">\n";
-    (*projectFile) += "        <![CDATA[]]>\n      </Environment>\n";
-    (*projectFile) += "      <Debugger IsRemote=\"no\" RemoteHostName=\"\" RemoteHostPort=\"\" DebuggerPath=\"\" IsExtended=\"yes\">\n";
-    (*projectFile) += "        <DebuggerSearchPaths/>\n        <PostConnectCommands/>\n        <StartupCommands/>\n";
-    (*projectFile) += "      </Debugger>\n      <PreBuild/>\n      <PostBuild/>\n      <CustomBuild Enabled=\"no\">\n";
-    (*projectFile) += "        <RebuildCommand/>\n        <CleanCommand/>\n        <BuildCommand/>\n        <PreprocessFileCommand/>\n";
-    (*projectFile) += "        <SingleFileCommand/>\n        <MakefileGenerationCommand/>\n";
-    (*projectFile) += "        <ThirdPartyToolName>None</ThirdPartyToolName>\n        <WorkingDirectory/>\n";
-    (*projectFile) += "      </CustomBuild>\n      <AdditionalRules>\n        <CustomPostBuild/>\n";
-    (*projectFile) += "        <CustomPreBuild/>\n      </AdditionalRules>\n      <Completion EnableCpp11=\"no\" EnableCpp14=\"no\">\n";
-    (*projectFile) += "        <ClangCmpFlagsC/>\n        <ClangCmpFlags/>\n        <ClangPP/>\n";
-    (*projectFile) += "        <SearchPaths/>\n      </Completion>\n    </Configuration>\n  </Settings>\n</CodeLite_Project>\n";
+    projectFile->append("\" UseSeparateDebugArgs=\"no\" DebugArguments=\"\" WorkingDirectory=\"$(IntermediateDirectory)\"");
+    projectFile->append(" PauseExecWhenProcTerminates=\"yes\" IsGUIProgram=\"no\" IsEnabled=\"yes\"/>\n");
+    projectFile->append("      <Environment EnvVarSetName=\"&lt;Use Defaults&gt;\" DbgSetName=\"&lt;Use Defaults&gt;\">\n");
+    projectFile->append("        <![CDATA[]]>\n      </Environment>\n");
+    projectFile->append("      <Debugger IsRemote=\"no\" RemoteHostName=\"\" RemoteHostPort=\"\" DebuggerPath=\"\" IsExtended=\"yes\">\n");
+    projectFile->append("        <DebuggerSearchPaths/>\n        <PostConnectCommands/>\n        <StartupCommands/>\n      </Debugger>\n");
+    projectFile->append("      <PreBuild/>\n      <PostBuild/>\n      <CustomBuild Enabled=\"no\">\n        <RebuildCommand/>\n");
+    projectFile->append("        <CleanCommand/>\n        <BuildCommand/>\n        <PreprocessFileCommand/>\n        <SingleFileCommand/>\n");
+    projectFile->append("        <MakefileGenerationCommand/>\n        <ThirdPartyToolName>None</ThirdPartyToolName>\n");
+    projectFile->append("        <WorkingDirectory/>\n      </CustomBuild>\n      <AdditionalRules>\n");
+    projectFile->append("        <CustomPostBuild/>\n        <CustomPreBuild/>\n      </AdditionalRules>\n");
+    projectFile->append("      <Completion EnableCpp11=\"no\" EnableCpp14=\"no\">\n        <ClangCmpFlagsC/>\n        <ClangCmpFlags/>\n");
+    projectFile->append("        <ClangPP/>\n        <SearchPaths/>\n      </Completion>\n");
+    projectFile->append("    </Configuration>\n");
+    projectFile->append("    <Configuration Name=\"Release\" CompilerType=\"GCC\" DebuggerType=\"GNU gdb debugger\" Type=\"Executable\"");
+    projectFile->append(" BuildCmpWithGlobalSettings=\"push\" BuildLnkWithGlobalSettings=\"push\" BuildResWithGlobalSettings=\"push\">\n");
+    projectFile->append("      <Compiler Options=\"-O2;-Wall\" C_Options=\"-O2;-Wall\" Assembler=\"\" Required=\"yes\" PreCompiledHeader=\"\"");
+    projectFile->append(" PCHInCommandLine=\"no\" PCHFlags=\"\" PCHFlagsPolicy=\"0\">\n");
+    projectFile->append("        <IncludePath Value=\".\"/>\n        <Preprocessor Value=\"NDEBUG\"/>\n");
+    projectFile->append("      </Compiler>\n      <Linker Options=\"\" Required=\"yes\">\n");
+    projectFile->append("        <LibraryPath Value=\"../Release\"/>\n        <Library Value=\"libscaly\"/>\n      </Linker>\n");
+    projectFile->append("      <ResourceCompiler Options=\"\" Required=\"no\"/>\n");
+    projectFile->append("      <General OutputFile=\"$(IntermediateDirectory)/$(ProjectName)\" IntermediateDirectory=\"../Release\"");
+    projectFile->append(" Command=\"./$(ProjectName)\" CommandArguments=\"\" UseSeparateDebugArgs=\"no\" DebugArguments=\"\"");
+    projectFile->append(" WorkingDirectory=\"$(IntermediateDirectory)\" PauseExecWhenProcTerminates=\"yes\" IsGUIProgram=\"no\" IsEnabled=\"yes\"/>\n");
+    projectFile->append("      <Environment EnvVarSetName=\"&lt;Use Defaults&gt;\" DbgSetName=\"&lt;Use Defaults&gt;\">\n");
+    projectFile->append("        <![CDATA[]]>\n      </Environment>\n");
+    projectFile->append("      <Debugger IsRemote=\"no\" RemoteHostName=\"\" RemoteHostPort=\"\" DebuggerPath=\"\" IsExtended=\"yes\">\n");
+    projectFile->append("        <DebuggerSearchPaths/>\n        <PostConnectCommands/>\n        <StartupCommands/>\n");
+    projectFile->append("      </Debugger>\n      <PreBuild/>\n      <PostBuild/>\n      <CustomBuild Enabled=\"no\">\n");
+    projectFile->append("        <RebuildCommand/>\n        <CleanCommand/>\n        <BuildCommand/>\n        <PreprocessFileCommand/>\n");
+    projectFile->append("        <SingleFileCommand/>\n        <MakefileGenerationCommand/>\n");
+    projectFile->append("        <ThirdPartyToolName>None</ThirdPartyToolName>\n        <WorkingDirectory/>\n");
+    projectFile->append("      </CustomBuild>\n      <AdditionalRules>\n        <CustomPostBuild/>\n");
+    projectFile->append("        <CustomPreBuild/>\n      </AdditionalRules>\n      <Completion EnableCpp11=\"no\" EnableCpp14=\"no\">\n");
+    projectFile->append("        <ClangCmpFlagsC/>\n        <ClangCmpFlags/>\n        <ClangPP/>\n");
+    projectFile->append("        <SearchPaths/>\n      </Completion>\n    </Configuration>\n  </Settings>\n</CodeLite_Project>\n");
 }
 
 bool CppVisitor::_isCppVisitor() { return true; }
