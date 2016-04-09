@@ -350,12 +350,12 @@ Identifier* Lexer::scanIdentifier(_Page* _rp) {
         position++;
         column++;
         if (position == end)
-            return new(_rp) Identifier(&String::create(_rp, *name));
+            return new(_rp) Identifier(&String::create(_rp, name));
         char c = (*text)[position];
         if (((c >= 'a') && (c <= 'z')) || ((c >= 'A') && (c <= 'Z')) || (c == '_'))
             *name += (*text)[position];
         else
-            return new(_rp) Identifier(&String::create(_rp, *name));
+            return new(_rp) Identifier(&String::create(_rp, name));
     }
     while (true);
 }
@@ -379,9 +379,9 @@ Operator* Lexer::scanOperator(_Page* _rp, bool includeDots) {
         position++; column++;
         if (position == end) {
             if (whitespaceSkippedBefore)
-                return new(_rp) BinaryOperator(&String::create(_rp, *operation));
+                return new(_rp) BinaryOperator(&String::create(_rp, operation));
             else
-                return new(_rp) PostfixOperator(&String::create(_rp, *operation));
+                return new(_rp) PostfixOperator(&String::create(_rp, operation));
         }
         switch ((*text)[position]) {
             case '/': case '=': case '-': case '+': case '!': case '*': case '%': case '<': case '&': case '|': case '^': case '~': {
@@ -417,13 +417,13 @@ Operator* Lexer::scanOperator(_Page* _rp, bool includeDots) {
                 }
 
                 if ((whitespaceSkippedBefore && whitespaceSkippedAfter) || (!whitespaceSkippedBefore && !whitespaceSkippedAfter))
-                    return new(_rp) BinaryOperator(&String::create(_rp, *operation));
+                    return new(_rp) BinaryOperator(&String::create(_rp, operation));
 
                 if ((!whitespaceSkippedBefore && whitespaceSkippedAfter))
-                    return new(_rp) PostfixOperator(&String::create(_rp, *operation));
+                    return new(_rp) PostfixOperator(&String::create(_rp, operation));
 
                 if ((whitespaceSkippedBefore && !whitespaceSkippedAfter))
-                    return new(_rp) PrefixOperator(&String::create(_rp, *operation));
+                    return new(_rp) PrefixOperator(&String::create(_rp, operation));
             }
         }
     }
@@ -432,7 +432,7 @@ Operator* Lexer::scanOperator(_Page* _rp, bool includeDots) {
 
 Token* Lexer::scanStringLiteral(_Page* _rp) {
     // Make a String taking the character at the current position
-    VarString& value = *new(_rp) VarString("");
+    VarString* value = new(_rp) VarString("");
 
     do {
         position++; column++;
@@ -447,19 +447,19 @@ Token* Lexer::scanStringLiteral(_Page* _rp) {
                 position++; column++;
                 switch ((*text)[position]) {
                     case '\"': case '\\': case '\'':
-                        value += (*text)[position];
+                        *value += (*text)[position];
                         break;
-                    case 'n': value += '\n'; break;
-                    case 'r': value += '\r'; break;
-                    case 't': value += '\t'; break;
-                    case '0': value += '\0'; break;
+                    case 'n': *value += '\n'; break;
+                    case 'r': *value += '\r'; break;
+                    case 't': *value += '\t'; break;
+                    case '0': *value += '\0'; break;
                     default:
                         return new(_rp) InvalidToken();
                 }
                 break;
             }
             default: {
-                value += (*text)[position];
+                *value += (*text)[position];
             }
         }
     }
@@ -468,7 +468,7 @@ Token* Lexer::scanStringLiteral(_Page* _rp) {
 
 Token* Lexer::scanCharacterLiteral(_Page* _rp) {
     // Make a String taking the character at the current position
-    VarString& value = *new(_rp) VarString("");
+    VarString* value = new(_rp) VarString("");
 
     do {
         position++; column++;
@@ -483,19 +483,19 @@ Token* Lexer::scanCharacterLiteral(_Page* _rp) {
                 position++; column++;
                 switch ((*text)[position]) {
                     case '\"': case '\\': case '\'':
-                        value += (*text)[position];
+                        *value += (*text)[position];
                         break;
-                    case 'n': value += '\n'; break;
-                    case 'r': value += '\r'; break;
-                    case 't': value += '\t'; break;
-                    case '0': value += '\0'; break;
+                    case 'n': *value += '\n'; break;
+                    case 'r': *value += '\r'; break;
+                    case 't': *value += '\t'; break;
+                    case '0': *value += '\0'; break;
                     default:
                         return new(_rp) InvalidToken();
                 }
                 break;
             }
             default: {
-                value += (*text)[position];
+                *value += (*text)[position];
             }
         }
     }
@@ -504,7 +504,7 @@ Token* Lexer::scanCharacterLiteral(_Page* _rp) {
 
 NumericLiteral* Lexer::scanNumericLiteral(_Page* _rp) {
     // Make a String taking the character at the current position
-    VarString& value = *new(_rp) VarString((*text)[position]);
+    VarString* value = new(_rp) VarString((*text)[position]);
 
     do {
         position++; column++;
@@ -514,7 +514,7 @@ NumericLiteral* Lexer::scanNumericLiteral(_Page* _rp) {
 
         char c = (*text)[position];
         if ((c >= '0') && (c <= '9'))
-            value += (*text)[position];
+            *value += (*text)[position];
         else
             return new(_rp) NumericLiteral(&String::create(_rp, value));
     }
@@ -667,7 +667,7 @@ String* Lexer::parseIdentifier(_Page* _rp) {
         return 0;
 
     Identifier* identifier = (Identifier*)token;
-    return &String::create(_rp, *identifier->name);
+    return &String::create(_rp, identifier->name);
 }
 
 bool Lexer::parsePunctuation(String* fixedString) {
@@ -683,7 +683,7 @@ String* Lexer::parseOperator(_Page* _rp) {
         return 0;
 
     Operator* op = (Operator*)token;
-    return &String::create(_rp, *(op->operation));
+    return &String::create(_rp, op->operation);
 }
 
 Literal* Lexer::parseLiteral(_Page* _rp) {
@@ -692,16 +692,16 @@ Literal* Lexer::parseLiteral(_Page* _rp) {
 
     if (token->_isStringLiteral()) {
         StringLiteral* stringLiteral = (StringLiteral*)token;
-        return new(_rp) StringLiteral(&String::create(_rp, *stringLiteral->string));
+        return new(_rp) StringLiteral(&String::create(_rp, stringLiteral->string));
     }
 
     if (token->_isCharacterLiteral()) {
         CharacterLiteral* characterLiteral = (CharacterLiteral*)token;
-        return new(_rp) CharacterLiteral(&String::create(_rp, *characterLiteral->value));
+        return new(_rp) CharacterLiteral(&String::create(_rp, characterLiteral->value));
     }
     if (token->_isNumericLiteral()) {
         NumericLiteral* numericLiteral = (NumericLiteral*)token;
-        return new(_rp) NumericLiteral(&String::create(_rp, *numericLiteral->value));
+        return new(_rp) NumericLiteral(&String::create(_rp, numericLiteral->value));
     }
     
     return 0;
@@ -713,21 +713,21 @@ String* Lexer::parsePrefixOperator(_Page* _rp) {
 
     Operator* op = (Operator*)token;
 
-    return &String::create(_rp, *(op->operation));
+    return &String::create(_rp, op->operation);
 }
 
 String* Lexer::parseBinaryOperator(_Page* _rp) {
     if (!(token->_isBinaryOperator())) {
         if ((token->_isPunctuation()) && (((*((Punctuation*)token)->sign == "<")) || (*((Punctuation*)token)->sign == ">"))) {
             Operator* op = (Operator*)token;
-            return &String::create(_rp, *(op->operation));
+            return &String::create(_rp, op->operation);
         }
 
         return 0;
     }
 
     Operator* op = (Operator*)token;
-    return &String::create(_rp, *(op->operation));
+    return &String::create(_rp, op->operation);
 }
 
 
@@ -736,7 +736,7 @@ String* Lexer::parsePostfixOperator(_Page* _rp){
         return 0;
 
     Operator* op = (Operator*)token;
-    return &String::create(_rp, *(op->operation));
+    return &String::create(_rp, op->operation);
 }
 
 bool Lexer::isAtEnd() {

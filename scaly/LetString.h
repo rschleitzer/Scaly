@@ -9,8 +9,8 @@ public:
     static String& create(_Page* page);
     static String& create(_Page* page, char c);
     static String& create(_Page* page, const char* theString);
-    static String& create(_Page* page, const String& theString);
-    static String& create(_Page* page, VarString& theString);
+    static String& create(_Page* page, String* theString);
+    static String& create(_Page* page, VarString* theString);
     static String& createFromChar(_Page* page, char c);
     static String& createUninitialized(_Page* page, size_t length);
     char* getNativeString() const;

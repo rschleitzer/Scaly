@@ -21,18 +21,18 @@ String& String::create(_Page* page, const char* theString) {
     return string;
 }
 
-String& String::create(_Page* page, const String& theString) {
-    String& string = createUninitialized(page, theString.length);
+String& String::create(_Page* page, String* theString) {
+    String& string = createUninitialized(page, theString->length);
     char* pString = string.getNativeString();
-    strcpy(pString, theString.getNativeString());
+    strcpy(pString, theString->getNativeString());
     return string;
 }
 
-String& String::create(_Page* page, VarString& theString) {
-    size_t length = theString.getLength();
+String& String::create(_Page* page, VarString* theString) {
+    size_t length = theString->getLength();
     String& string = createUninitialized(page, length);
     char* pString = string.getNativeString();
-    strcpy(pString, theString.getNativeString());
+    strcpy(pString, theString->getNativeString());
     return string;
 }
 
@@ -100,7 +100,7 @@ _Array<String>& String::Split(_Page* _rp, char c) {
         char currentChar = (*this)[_i];
         if (currentChar == c) {
             if (part) {
-                ret->push(&create(_rp, *part));
+                ret->push(&create(_rp, part));
                 part = 0;
             }
         }
@@ -112,7 +112,7 @@ _Array<String>& String::Split(_Page* _rp, char c) {
     }
 
     if (part)
-        ret->push(&create(_rp, *part));
+        ret->push(&create(_rp, part));
 
     return *ret;
 }

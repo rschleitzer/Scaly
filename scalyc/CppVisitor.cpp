@@ -22,10 +22,10 @@ bool CppVisitor::openProgram(Program* program) {
 
     {
         _Region _region; _Page* _p = _region.get();
-        if (!Directory::exists(String::create(_p, *programDirectory))) {
-            DirectoryError* dirError = Directory::create(getPage(), String::create(_p, *programDirectory));
+        if (!Directory::exists(String::create(_p, programDirectory))) {
+            DirectoryError* dirError = Directory::create(getPage(), String::create(_p, programDirectory));
             if (dirError) {
-                cppError = new(getPage()) CppError(new(getPage()) _CppError_unableToCreateOutputDirectory(&String::create(getPage(), *programDirectory), dirError));
+                cppError = new(getPage()) CppError(new(getPage()) _CppError_unableToCreateOutputDirectory(&String::create(getPage(), programDirectory), dirError));
                 return false; } } }
 
     {
@@ -776,7 +776,7 @@ void CppVisitor::closeClassDeclaration(ClassDeclaration* classDeclaration) {
     {
         _Region _region; _Page* _p = _region.get();
         _Array<String>& derivedClasses = *new(_p) _Array<String>();
-        collectDerivedClasses(&derivedClasses, &String::create(_p, *classDeclaration->name));
+        collectDerivedClasses(&derivedClasses, &String::create(_p, classDeclaration->name));
         size_t _derivedClasses_length = derivedClasses.length();
         for (size_t _i = 0; _i < _derivedClasses_length; _i++) {
             (*headerFile) += "\n"; indentHeader(); (*headerFile) += "virtual bool _is"; (*headerFile) += **derivedClasses[_i]; (*headerFile) += "();";
@@ -1792,7 +1792,7 @@ void CppVisitor::buildProjectFileString(VarString* projectFile, Program* program
 bool CppVisitor::_isCppVisitor() { return true; }
 
 Inherits::Inherits(String* className) {
-    name = &String::create(getPage(), *className);
+    name = &String::create(getPage(), className);
     inheritors = new(getPage()) _Array<String>();
 }
 

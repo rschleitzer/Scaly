@@ -9,13 +9,13 @@ String* Path::getFileNameWithoutExtension(_Page* _rp, String& path) {
     _Array<String>& fileNameComponents = fileName->Split(_rp, '.');
     size_t fileNameComponentsLength = fileNameComponents.length();
     if (fileNameComponentsLength == 1)
-        return &String::create(_rp, path);
+        return &String::create(_rp, &path);
         
     VarString* ret = new(_rp) VarString();
     for (size_t _i = 0; _i < fileNameComponentsLength - 1; _i++)
         *ret += **fileNameComponents[_i];
         
-    return &String::create(_rp, *ret);
+    return &String::create(_rp, ret);
 }
 
 String* Path::getFileName(_Page* _rp, String& path) {
