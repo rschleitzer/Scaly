@@ -931,6 +931,8 @@ void CppVisitor::closeSimpleExpression(SimpleExpression* simpleExpression) {
 }
 
 bool CppVisitor::openPrefixExpression(PrefixExpression* prefixExpression) {
+    if (prefixExpression->prefixOperator != nullptr)
+        sourceFile->append(prefixExpression->prefixOperator);
     return true;
 }
 

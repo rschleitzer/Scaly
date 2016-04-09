@@ -361,6 +361,7 @@ Identifier* Lexer::scanIdentifier(_Page* _rp) {
 }
 
 Operator* Lexer::scanOperator(_Page* _rp, bool includeDots) {
+    _Region _region; _Page* _p = _region.get();
     bool whitespaceSkippedBefore = whitespaceSkipped;
     if (!whitespaceSkippedBefore) {
         if (token->_isPunctuation()) {
@@ -373,7 +374,7 @@ Operator* Lexer::scanOperator(_Page* _rp, bool includeDots) {
     }
 
     // Make a String taking the character at the current position
-    VarString* operation = new(_rp) VarString((*text)[position]);
+    VarString* operation = new(_p) VarString((*text)[position]);
 
     do {
         position++; column++;
