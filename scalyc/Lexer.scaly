@@ -316,7 +316,7 @@ class Lexer {
                 default: {
                     let lastPosition: unsigned = position
                     let lastLine: unsigned = line
-                    let lastColumn: unsigned = position
+                    let lastColumn: unsigned = column
                     skipWhitespace()
                     position = lastPosition
                     line = lastLine
