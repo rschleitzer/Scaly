@@ -376,6 +376,9 @@ class Lexer {
         } while true
     }
 
+    function scanCharacterLiteral() -> Token {
+    }
+
     function scanNumericLiteral() -> NumericLiteral {    
         mutable value: String = String(text[position])
 
@@ -391,9 +394,6 @@ class Lexer {
             else
                 return NumericLiteral(value)
         } while true
-    }
-
-    function scanCharacterLiteral() -> Token {
     }
 
     function parseKeyword(fixedString: String) -> bool {

@@ -482,6 +482,7 @@ Token* Lexer::scanStringLiteral(_Page* _rp) {
                 }
                 break;
             }
+
             default: {
                 value->append((*text)[position]);
             }
@@ -491,20 +492,22 @@ Token* Lexer::scanStringLiteral(_Page* _rp) {
 }
 
 Token* Lexer::scanCharacterLiteral(_Page* _rp) {
-    // Make a String taking the character at the current position
-    VarString* value = new(_rp) VarString("");
-
+    _Region _region; _Page* _p = _region.get();
+    VarString* value = new(_p) VarString("");
     do {
-        position++; column++;
+        position++;
+        column++;
         if (position == end)
             return new(_rp) InvalidToken();
         switch ((*text)[position]) {
             case '\'': {
-                position++; column++;
+                position++;
+                column++;
                 return new(_rp) CharacterLiteral(&String::create(_rp, value));
             }
             case '\\': {
-                position++; column++;
+                position++;
+                column++;
                 switch ((*text)[position]) {
                     case '\"': case '\\': case '\'':
                         value->append((*text)[position]);
