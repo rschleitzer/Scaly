@@ -349,7 +349,7 @@ class Lexer {
     function scanStringLiteral() -> Token {
         mutable value: VarString = VarString("")
 
-        do {
+        repeat {
             position++ column++
             if position == end
                 return InvalidToken()
