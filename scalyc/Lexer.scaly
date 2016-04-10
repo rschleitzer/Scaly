@@ -323,22 +323,24 @@ class Lexer {
                     column = lastColumn
                     mutable whitespaceSkippedAfter: bool = whitespaceSkipped
 
-                    if !whitespaceSkippedAfter
-                        switch text[position]
+                    if !whitespaceSkippedAfter {
+                        switch text[position] {
                             case ')', ']', '}', ',', ';', ':', '.':
                                 whitespaceSkippedAfter = true
                             default:
                                 whitespaceSkippedAfter = false
+                        }
+                    }
 
                     if (whitespaceSkippedBefore &&  whitespaceSkippedAfter) || 
                       (!whitespaceSkippedBefore && !whitespaceSkippedAfter)
-                        return BinaryOperator(operation)
+                        return BinaryOperator(String(operation))
                         
                     if (!whitespaceSkippedBefore && whitespaceSkippedAfter)
-                        return PostfixOperator(operation)
+                        return PostfixOperator(String(operation))
                         
                     if (whitespaceSkippedBefore && !whitespaceSkippedAfter)
-                        return PrefixOperator(operation)
+                        return PrefixOperator(String(operation))
                 }
             }
         } while true

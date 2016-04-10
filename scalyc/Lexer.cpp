@@ -408,18 +408,16 @@ Operator* Lexer::scanOperator(_Page* _rp, bool includeDots) {
                                 whitespaceSkippedAfter = true;
                                 break;
                             }
+
                             default: {
                                 whitespaceSkippedAfter = false;
                             }
                         }
                     }
-
                     if ((whitespaceSkippedBefore && whitespaceSkippedAfter) || (!whitespaceSkippedBefore && !whitespaceSkippedAfter))
                         return new(_rp) BinaryOperator(&String::create(_rp, operation));
-
                     if ((!whitespaceSkippedBefore && whitespaceSkippedAfter))
                         return new(_rp) PostfixOperator(&String::create(_rp, operation));
-
                     if ((whitespaceSkippedBefore && !whitespaceSkippedAfter))
                         return new(_rp) PrefixOperator(&String::create(_rp, operation));
                 }
