@@ -303,16 +303,15 @@ class Lexer {
                 else
                     return PostfixOperator(String(operation))
             }
+
+            if includeDots && (text[position] == '.') {
+                operation.append(text[position]);
+                continue;
+            }
             
             switch text[position] {
                 case '/', '=', '-', '+', '!', '*', '%', '<', '&', '|', '^', '~':
                     operation.append(text[position])
-                
-                case '.':
-                    if includeDots
-                        operation.append(text[position])
-                    else
-                        fallthrough
 
                 default: {
                     let lastPosition = position

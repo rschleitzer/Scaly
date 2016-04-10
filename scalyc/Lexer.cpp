@@ -382,18 +382,14 @@ Operator* Lexer::scanOperator(_Page* _rp, bool includeDots) {
             else
                 return new(_rp) PostfixOperator(&String::create(_rp, operation));
         }
+        if (includeDots && ((*text)[position] == '.')) {
+            operation->append((*text)[position]);
+            continue;
+        }
         switch ((*text)[position]) {
             case '/': case '=': case '-': case '+': case '!': case '*': case '%': case '<': case '&': case '|': case '^': case '~': {
                 operation->append((*text)[position]);
                 break;
-            }
-
-            case '.': {
-                if (includeDots) {
-                    operation->append((*text)[position]);
-                    break;
-                }
-                // else fallthrough
             }
 
             default: {
