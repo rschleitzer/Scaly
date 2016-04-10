@@ -357,7 +357,7 @@ class Lexer {
             switch text[position] {
                 case '\"': {
                     position++ column++
-                    return StringLiteral(value)
+                    return StringLiteral(String(value))
                 }
                 case '\\': {
                     position++ column++

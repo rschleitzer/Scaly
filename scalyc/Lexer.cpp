@@ -437,9 +437,12 @@ Token* Lexer::scanStringLiteral(_Page* _rp) {
             return new(_rp) InvalidToken();
         switch ((*text)[position]) {
             case '\"': {
-                position++;
-                column++;
-                return new(_rp) StringLiteral(&String::create(_rp, value));
+                {
+                    position++;
+                    column++;
+                    return new(_rp) StringLiteral(&String::create(_rp, value));
+                }
+                break;
             }
             case '\\': {
                 position++;
