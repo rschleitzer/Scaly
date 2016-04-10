@@ -314,9 +314,9 @@ class Lexer {
                     operation.append(text[position])
 
                 default: {
-                    let lastPosition = position
-                    let lastLine = line
-                    let lastColumn = position
+                    let lastPosition: unsigned = position
+                    let lastLine: unsigned = line
+                    let lastColumn: unsigned = position
                     skipWhitespace()
                     position = lastPosition
                     line = lastLine

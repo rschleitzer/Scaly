@@ -393,34 +393,36 @@ Operator* Lexer::scanOperator(_Page* _rp, bool includeDots) {
             }
 
             default: {
-                size_t lastPosition = position;
-                size_t lastLine = line;
-                size_t lastColumn = column;
-                skipWhitespace();
-                position = lastPosition;
-                line = lastLine;
-                column = lastColumn;
-                bool whitespaceSkippedAfter = whitespaceSkipped;
-                if (!whitespaceSkippedAfter) {
-                    switch ((*text)[position]) {
-                        case ')': case ']': case '}': case ',': case ';': case ':': case '.': {
-                            whitespaceSkippedAfter = true;
-                            break;
-                        }
-                        default: {
-                            whitespaceSkippedAfter = false;
+                {
+                    size_t lastPosition = position;
+                    size_t lastLine = line;
+                    size_t lastColumn = column;
+                    skipWhitespace();
+                    position = lastPosition;
+                    line = lastLine;
+                    column = lastColumn;
+                    bool whitespaceSkippedAfter = whitespaceSkipped;
+                    if (!whitespaceSkippedAfter) {
+                        switch ((*text)[position]) {
+                            case ')': case ']': case '}': case ',': case ';': case ':': case '.': {
+                                whitespaceSkippedAfter = true;
+                                break;
+                            }
+                            default: {
+                                whitespaceSkippedAfter = false;
+                            }
                         }
                     }
+
+                    if ((whitespaceSkippedBefore && whitespaceSkippedAfter) || (!whitespaceSkippedBefore && !whitespaceSkippedAfter))
+                        return new(_rp) BinaryOperator(&String::create(_rp, operation));
+
+                    if ((!whitespaceSkippedBefore && whitespaceSkippedAfter))
+                        return new(_rp) PostfixOperator(&String::create(_rp, operation));
+
+                    if ((whitespaceSkippedBefore && !whitespaceSkippedAfter))
+                        return new(_rp) PrefixOperator(&String::create(_rp, operation));
                 }
-
-                if ((whitespaceSkippedBefore && whitespaceSkippedAfter) || (!whitespaceSkippedBefore && !whitespaceSkippedAfter))
-                    return new(_rp) BinaryOperator(&String::create(_rp, operation));
-
-                if ((!whitespaceSkippedBefore && whitespaceSkippedAfter))
-                    return new(_rp) PostfixOperator(&String::create(_rp, operation));
-
-                if ((whitespaceSkippedBefore && !whitespaceSkippedAfter))
-                    return new(_rp) PrefixOperator(&String::create(_rp, operation));
             }
         }
     }
