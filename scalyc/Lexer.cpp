@@ -376,10 +376,12 @@ Operator* Lexer::scanOperator(_Page* _rp, bool includeDots) {
     do {
         position++;
         column++;
-        if ((position == end) && whitespaceSkippedBefore)
-            return new(_rp) BinaryOperator(&String::create(_rp, operation));
-        else
-            return new(_rp) PostfixOperator(&String::create(_rp, operation));
+        if (position == end) {
+            if (whitespaceSkippedBefore)
+                return new(_rp) BinaryOperator(&String::create(_rp, operation));
+            else
+                return new(_rp) PostfixOperator(&String::create(_rp, operation));
+        }
         switch ((*text)[position]) {
             case '/': case '=': case '-': case '+': case '!': case '*': case '%': case '<': case '&': case '|': case '^': case '~': {
                 operation->append((*text)[position]);
