@@ -286,7 +286,7 @@ class Lexer {
         if !whitespaceSkippedBefore {
             if token is Punctuation {
                 let sign: String = (token as Punctuation).sign;
-                if (sign.equals("(") || sign.equals("[") || sign.equals("{") || sign.equals(",") || sign.equals(";") || sign.equals(":"))
+                if sign.equals("(") || sign.equals("[") || sign.equals("{") || sign.equals(",") || sign.equals(";") || sign.equals(":")
                     whitespaceSkippedBefore = true
                 else
                     whitespaceSkippedBefore = false
