@@ -309,11 +309,11 @@ class Lexer {
                     operation.append(text[position])
                 
                 case '.':
-                    if !includeDots
-                        fallthrough
-                    else
+                    if includeDots
                         operation.append(text[position])
-                
+                    else
+                        fallthrough
+
                 default: {
                     let lastPosition = position
                     let lastLine = line
