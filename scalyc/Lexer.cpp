@@ -444,19 +444,22 @@ Token* Lexer::scanStringLiteral(_Page* _rp) {
                 }
                 break;
             }
+
             case '\\': {
-                position++;
-                column++;
-                switch ((*text)[position]) {
-                    case '\"': case '\\': case '\'':
-                        value->append((*text)[position]);
-                        break;
-                    case 'n': value->append('\n'); break;
-                    case 'r': value->append('\r'); break;
-                    case 't': value->append('\t'); break;
-                    case '0': value->append('\0'); break;
-                    default:
-                        return new(_rp) InvalidToken();
+                {
+                    position++;
+                    column++;
+                    switch ((*text)[position]) {
+                        case '\"': case '\\': case '\'':
+                            value->append((*text)[position]);
+                            break;
+                        case 'n': value->append('\n'); break;
+                        case 'r': value->append('\r'); break;
+                        case 't': value->append('\t'); break;
+                        case '0': value->append('\0'); break;
+                        default:
+                            return new(_rp) InvalidToken();
+                    }
                 }
                 break;
             }
