@@ -297,13 +297,14 @@ class Lexer {
 
         repeat {
             position++ column++
-            if position == end
+            if position == end {
                 if whitespaceSkippedBefore
-                    return BinaryOperator(operation)
+                    return BinaryOperator(String(operation))
                 else
-                    return PostfixOperator(operation)
+                    return PostfixOperator(String(operation))
+            }
             
-            switch (text[position]) {
+            switch text[position] {
                 case '/', '=', '-', '+', '!', '*', '%', '<', '&', '|', '^', '~':
                     operation.append(text[position])
                 

@@ -387,6 +387,7 @@ Operator* Lexer::scanOperator(_Page* _rp, bool includeDots) {
                 operation->append((*text)[position]);
                 break;
             }
+
             case '.': {
                 if (includeDots) {
                     operation->append((*text)[position]);
@@ -394,6 +395,7 @@ Operator* Lexer::scanOperator(_Page* _rp, bool includeDots) {
                 }
                 // else fallthrough
             }
+
             default: {
                 size_t lastPosition = position;
                 size_t lastLine = line;
