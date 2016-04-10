@@ -1266,6 +1266,9 @@ void CppVisitor::visitLiteralExpression(LiteralExpression* literalExpression) {
             else if ((*characterLiteral->value)[0] == '\t') {
                 sourceFile->append("\\t");
             }
+            else if ((*characterLiteral->value)[0] == '\\') {
+                sourceFile->append("\\\\");
+            }
             else
                 sourceFile->append(characterLiteral->value);
         }
