@@ -372,12 +372,10 @@ Operator* Lexer::scanOperator(_Page* _rp, bool includeDots) {
                 whitespaceSkippedBefore = false;
         }
     }
-
-    // Make a String taking the character at the current position
     VarString* operation = new(_p) VarString((*text)[position]);
-
     do {
-        position++; column++;
+        position++;
+        column++;
         if (position == end) {
             if (whitespaceSkippedBefore)
                 return new(_rp) BinaryOperator(&String::create(_rp, operation));

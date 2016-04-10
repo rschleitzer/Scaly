@@ -295,7 +295,7 @@ class Lexer {
         
         mutable operation: VarString = VarString(text[position])
 
-        do {
+        repeat {
             position++ column++
             if position == end
                 if whitespaceSkippedBefore
