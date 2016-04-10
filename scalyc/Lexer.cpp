@@ -428,11 +428,11 @@ Operator* Lexer::scanOperator(_Page* _rp, bool includeDots) {
 }
 
 Token* Lexer::scanStringLiteral(_Page* _rp) {
-    // Make a String taking the character at the current position
-    VarString* value = new(_rp) VarString("");
-
+    _Region _region; _Page* _p = _region.get();
+    VarString* value = new(_p) VarString("");
     do {
-        position++; column++;
+        position++;
+        column++;
         if (position == end)
             return new(_rp) InvalidToken();
         switch ((*text)[position]) {
