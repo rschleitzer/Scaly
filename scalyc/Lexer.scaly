@@ -293,7 +293,7 @@ class Lexer {
             }
         }
         
-        mutable operation: VarString = String(text[position])
+        mutable operation: VarString = VarString(text[position])
 
         do {
             position++ column++

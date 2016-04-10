@@ -924,6 +924,23 @@ void CppVisitor::closeCodeBlock(CodeBlock* codeBlock) {
 }
 
 bool CppVisitor::openSimpleExpression(SimpleExpression* simpleExpression) {
+    if (simpleExpression->binaryOps != nullptr) {
+        _Vector<BinaryOp>* binaryOps = simpleExpression->binaryOps;
+        if (binaryOps->length() > 0) {
+            BinaryOp* binaryOp = *(*binaryOps)[0];
+            if (binaryOp->_isTypeCast()) {
+                TypeCast* typeCast = (TypeCast*)binaryOp;
+                if(typeCast->objectType->_isTypeIdentifier()) {
+                    TypeIdentifier* typeIdentifier = (TypeIdentifier*)typeCast->objectType;
+                    sourceFile->append("(");
+                    sourceFile->append(typeIdentifier->name);
+                    sourceFile->append("*)");
+                    simpleExpression->prefixExpression->accept(this);
+                    return false;
+                }
+            }
+        }
+    }
     return true;
 }
 
