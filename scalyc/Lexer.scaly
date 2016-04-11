@@ -517,7 +517,7 @@ class Lexer {
                     position++ column++
                     if position == end
                         return
-                    else if text[position] == "*"
+                    else if text[position] == '*'
                         handleMultiLineComment()
                     else
                         return

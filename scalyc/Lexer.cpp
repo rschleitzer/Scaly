@@ -708,7 +708,7 @@ void Lexer::handleMultiLineComment() {
                     column++;
                     if (position == end)
                         return;
-                    else 
+                    else
                         if ((*text)[position] == '*')
                             handleMultiLineComment();
                         else
