@@ -579,45 +579,69 @@ bool Lexer::skipWhitespace() {
     do {
         if (position == end)
             return true;
-
         switch ((*text)[position]) {
             case ' ': {
-                whitespaceSkipped = true;
-                position++; column++;
-                continue;
-            }
-            case '\t': {
-                whitespaceSkipped = true;
-                position++; column+=4;
-                continue;
-            }
-            case '\r': {
-                whitespaceSkipped = true;
-                position++;
-                continue;
-            }
-            case '\n': {
-                whitespaceSkipped = true;
-                position++; column = 1; line++;
-                continue;
-            }
-            case '/': {
-                position++; column++;
-                if (position == end)
-                    return whitespaceSkipped;
-                if ((*text)[position] == '/') {
+                {
                     whitespaceSkipped = true;
-                    handleSingleLineComment();
-                }
-                else if ((*text)[position] == '*') {
-                    whitespaceSkipped = true;
-                    handleMultiLineComment();
-                }
-                else {
-                    return whitespaceSkipped;
+                    position++;
+                    column++;
+                    continue;
                 }
                 break;
             }
+
+            case '\t': {
+                {
+                    whitespaceSkipped = true;
+                    position++;
+                    column += 4;
+                    continue;
+                }
+                break;
+            }
+
+            case '\r': {
+                {
+                    whitespaceSkipped = true;
+                    position++;
+                    continue;
+                }
+                break;
+            }
+
+            case '\n': {
+                {
+                    whitespaceSkipped = true;
+                    position++;
+                    column = 1;
+                    line++;
+                    continue;
+                }
+                break;
+            }
+
+            case '/': {
+                {
+                    position++;
+                    column++;
+                    if (position == end)
+                        return whitespaceSkipped;
+                    if ((*text)[position] == '/') {
+                        whitespaceSkipped = true;
+                        handleSingleLineComment();
+                    }
+                    else {
+                        if ((*text)[position] == '*') {
+                            whitespaceSkipped = true;
+                            handleMultiLineComment();
+                        }
+                        else
+                            return whitespaceSkipped;
+                    }
+                }
+                break;
+            }
+
             default: {
                 return whitespaceSkipped;
             }

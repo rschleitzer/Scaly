@@ -424,6 +424,59 @@ class Lexer {
         } while true
     }
 
+    function skipWhitespace() -> bool {
+        whitespaceSkipped = false
+        repeat {
+            if position == end
+                return true
+
+            switch text[position] {
+                case ' ': {
+                    whitespaceSkipped = true
+                    position++ column++
+                    continue
+                }
+                case '\t': {
+                    whitespaceSkipped = true
+                    position++ column += 4
+                    continue
+                }
+                case '\r': {
+                    whitespaceSkipped = true
+                    position++
+                    continue
+                }
+                case '\n': {
+                    whitespaceSkipped = true
+                    position++ column = 1 line++
+                    continue
+                }
+                case '/': {
+                    position++ column++
+
+                    if position == end
+                        return whitespaceSkipped
+                        
+                    if text[position] == '/' { 
+                        whitespaceSkipped = true
+                        handleSingleLineComment()
+                    }
+                    else { 
+                        if text[position] == '*' { 
+                            whitespaceSkipped = true
+                            handleMultiLineComment()
+                        }
+                        else
+                            return whitespaceSkipped
+                    }
+                }
+                default:
+                    return whitespaceSkipped
+            }
+        } 
+        while true
+    }
+
     function parseKeyword(fixedString: String) -> bool {
         if !(token is Identifier)
             return false
@@ -492,57 +545,6 @@ class Lexer {
 
         let op: Operator = token as Operator
         return String(op.operation)
-    }
-
-    function skipWhitespace() -> bool {
-        whitespaceSkipped = false
-        do {
-            if (position == end)
-                return true
-
-            switch text[position] {
-                case ' ': {
-                    whitespaceSkipped = true
-                    position++ column++
-                    continue
-                }
-                case '\t': {
-                    whitespaceSkipped = true
-                    position++ column += 4
-                    continue
-                }
-                case '\r': {
-                    whitespaceSkipped = true
-                    position++
-                    continue
-                }
-                case '\n': {
-                    whitespaceSkipped = true
-                    position++ column = 1 line++
-                    continue
-                }
-                case '/': {
-                    position++ column++
-
-                    if position == end
-                        return whitespaceSkipped
-                        
-                    if text[position] == '/' { 
-                        whitespaceSkipped = true
-                        handleSingleLineComment()
-                    }
-                    else if text[position] == '*' { 
-                        whitespaceSkipped = true
-                        handleMultiLineComment()
-                    }
-                    else
-                        return whitespaceSkipped
-                }
-                default:
-                    return whitespaceSkipped
-            }
-        } 
-        while true
     }
 
     function isAtEnd() -> bool {
