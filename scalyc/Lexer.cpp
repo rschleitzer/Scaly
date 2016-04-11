@@ -559,7 +559,7 @@ Token* Lexer::scanCharacterLiteral(_Page* _rp) {
 
 NumericLiteral* Lexer::scanNumericLiteral(_Page* _rp) {
     _Region _region; _Page* _p = _region.get();
-    VarString* value = new(_p) VarString("");
+    VarString* value = new(_p) VarString((*text)[position]);
     do {
         position++;
         column++;
