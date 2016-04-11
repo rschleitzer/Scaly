@@ -539,8 +539,9 @@ Token* Lexer::scanCharacterLiteral(_Page* _rp) {
                             break;
                         }
 
-                        default:
+                        default: {
                             return new(_rp) InvalidToken();
+                        }
                     }
                 }
                 break;
@@ -557,15 +558,13 @@ Token* Lexer::scanCharacterLiteral(_Page* _rp) {
 }
 
 NumericLiteral* Lexer::scanNumericLiteral(_Page* _rp) {
-    // Make a String taking the character at the current position
-    VarString* value = new(_rp) VarString((*text)[position]);
-
+    _Region _region; _Page* _p = _region.get();
+    VarString* value = new(_p) VarString("");
     do {
-        position++; column++;
-
+        position++;
+        column++;
         if (position == end)
             return new(_rp) NumericLiteral(&String::create(_rp, value));
-
         char c = (*text)[position];
         if ((c >= '0') && (c <= '9'))
             value->append((*text)[position]);
