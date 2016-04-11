@@ -505,22 +505,42 @@ Token* Lexer::scanCharacterLiteral(_Page* _rp) {
                 column++;
                 return new(_rp) CharacterLiteral(&String::create(_rp, value));
             }
+
             case '\\': {
                 position++;
                 column++;
                 switch ((*text)[position]) {
-                    case '\"': case '\\': case '\'':
+                    case '\"': case '\\': case '\'': {
                         value->append((*text)[position]);
                         break;
-                    case 'n': value->append('\n'); break;
-                    case 'r': value->append('\r'); break;
-                    case 't': value->append('\t'); break;
-                    case '0': value->append('\0'); break;
+                    }
+
+                    case 'n': {
+                        value->append('\n');
+                        break;
+                    }
+
+                    case 'r': {
+                        value->append('\r');
+                        break;
+                    }
+
+                    case 't': {
+                        value->append('\t');
+                        break;
+                    }
+
+                    case '0': {
+                        value->append('\0');
+                        break;
+                    }
+
                     default:
                         return new(_rp) InvalidToken();
                 }
                 break;
             }
+
             default: {
                 value->append((*text)[position]);
             }
