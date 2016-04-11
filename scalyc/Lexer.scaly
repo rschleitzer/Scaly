@@ -565,7 +565,7 @@ class Lexer {
             return false
 
         let identifier: Identifier = token as Identifier
-        return identifier.name == fixedString
+        return identifier.name.equals(fixedString)
     }
 
     function parseIdentifier() -> String? {

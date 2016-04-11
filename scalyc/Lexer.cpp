@@ -780,7 +780,6 @@ void Lexer::handleMultiLineComment() {
 bool Lexer::parseKeyword(String* fixedString) {
     if (!(token->_isIdentifier()))
         return false;
-
     Identifier* identifier = (Identifier*)token;
     return identifier->name->equals(fixedString);
 }
