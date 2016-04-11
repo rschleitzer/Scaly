@@ -501,48 +501,55 @@ Token* Lexer::scanCharacterLiteral(_Page* _rp) {
             return new(_rp) InvalidToken();
         switch ((*text)[position]) {
             case '\'': {
-                position++;
-                column++;
-                return new(_rp) CharacterLiteral(&String::create(_rp, value));
+                {
+                    position++;
+                    column++;
+                    return new(_rp) CharacterLiteral(&String::create(_rp, value));
+                }
+                break;
             }
 
             case '\\': {
-                position++;
-                column++;
-                switch ((*text)[position]) {
-                    case '\"': case '\\': case '\'': {
-                        value->append((*text)[position]);
-                        break;
-                    }
+                {
+                    position++;
+                    column++;
+                    switch ((*text)[position]) {
+                        case '\"': case '\\': case '\'': {
+                            value->append((*text)[position]);
+                            break;
+                        }
 
-                    case 'n': {
-                        value->append('\n');
-                        break;
-                    }
+                        case 'n': {
+                            value->append('\n');
+                            break;
+                        }
 
-                    case 'r': {
-                        value->append('\r');
-                        break;
-                    }
+                        case 'r': {
+                            value->append('\r');
+                            break;
+                        }
 
-                    case 't': {
-                        value->append('\t');
-                        break;
-                    }
+                        case 't': {
+                            value->append('\t');
+                            break;
+                        }
 
-                    case '0': {
-                        value->append('\0');
-                        break;
-                    }
+                        case '0': {
+                            value->append('\0');
+                            break;
+                        }
 
-                    default:
-                        return new(_rp) InvalidToken();
+                        default:
+                            return new(_rp) InvalidToken();
+                    }
                 }
                 break;
             }
 
             default: {
-                value->append((*text)[position]);
+                {
+                    value->append((*text)[position]);
+                }
             }
         }
     }
