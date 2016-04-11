@@ -408,19 +408,19 @@ class Lexer {
     }
 
     function scanNumericLiteral() -> NumericLiteral {    
-        mutable value: String = String(text[position])
+        mutable value: VarString = VarString(text[position])
 
-        do {
+        repeat {
             position++ column++
             
             if position == end
-                return NumericLiteral(value)
+                return NumericLiteral(String(value))
             
             let c: character = text[position]
             if (c >= '0') && (c <= '9')
                 value.append(text[position])
             else
-                return NumericLiteral(value)
+                return NumericLiteral(String(value))
         } while true
     }
 
