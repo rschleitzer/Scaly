@@ -476,6 +476,88 @@ class Lexer {
         } 
         while true
     }
+    
+    function handleSingleLineComment() {
+        repeat {
+            if position == end
+                return;
+                
+            switch text[position] {
+                case '\t': {
+                    whitespaceSkipped = true
+                    position++ column += 4
+                    continue
+                }
+                case '\r': {
+                    whitespaceSkipped = true
+                    position++
+                    continue
+                }
+                case '\n': {
+                    whitespaceSkipped = true
+                    position++ column = 1 line++
+                    return
+                }
+                default: {
+                    position++ column++
+                    continue
+                }
+            }
+        }
+        while true
+    }
+
+    function handleMultiLineComment() {
+        repeat {
+            if position == end
+                return
+                
+            let character: character = text[position]
+            switch (character) {
+                case '/': {
+                    position++ column++
+                    if position == end
+                        return
+                    else if text[position] == "*"
+                        handleMultiLineComment()
+                    else
+                        return
+                }
+                case '*': {
+                    position++ column++
+
+                    if position == end
+                        return
+                    else if text[position] == '/' { 
+                        position++ column++
+                        return
+                    }
+                    else
+                        fallthrough
+                }
+                case '\t': {
+                    whitespaceSkipped = true
+                    position++ column += 4
+                    continue
+                }
+                case '\r': {
+                    whitespaceSkipped = true
+                    position++
+                    continue
+                }
+                case '\n': {
+                    whitespaceSkipped = true
+                    position++ column = 1 line++
+                    continue
+                }
+                default: {
+                    position++ column++
+                    continue
+                }
+            }
+        }
+        while true
+    }
 
     function parseKeyword(fixedString: String) -> bool {
         if !(token is Identifier)
@@ -557,87 +639,5 @@ class Lexer {
 
     function getPreviousPosition() -> Position {
         return Position(previousLine, previousColumn)
-    }
-
-    function handleSingleLineComment() {
-        do {
-            if position == end
-                return
-                
-            switch text[position] {
-                case '\t': {
-                    whitespaceSkipped = true
-                    position++ column += 4
-                    continue
-                }
-                case '\r': {
-                    whitespaceSkipped = true
-                    position++
-                    continue
-                }
-                case '\n': {
-                    whitespaceSkipped = true
-                    position++ column = 1 line++
-                    return
-                }
-                default: {
-                    position++ column++
-                    continue
-                }
-            }
-        }
-        while true
-    }
-
-    function handleMultiLineComment() {
-        do {
-            if position == end
-                return
-                
-            let character: character = text[position]
-            switch (character) {
-                case '/': {
-                    position++ column++
-                    if position == end
-                        return
-                    else if text[position] == "*"
-                        handleMultiLineComment()
-                    else
-                        return
-                }
-                case '*': {
-                    position++ column++
-
-                    if position == end
-                        return
-                    else if text[position] == '/' { 
-                        position++ column++
-                        return
-                    }
-                    else
-                        fallthrough
-                }
-                case '\t': {
-                    whitespaceSkipped = true
-                    position++ column += 4
-                    continue
-                }
-                case '\r': {
-                    whitespaceSkipped = true
-                    position++
-                    continue
-                }
-                case '\n': {
-                    whitespaceSkipped = true
-                    position++ column = 1 line++
-                    continue
-                }
-                default: {
-                    position++ column++
-                    continue
-                }
-            }
-        }
-        while true
     }
 }

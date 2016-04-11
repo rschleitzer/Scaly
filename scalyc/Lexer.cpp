@@ -654,23 +654,37 @@ void Lexer::handleSingleLineComment() {
     do {
         if (position == end)
             return;
-
         switch ((*text)[position]) {
             case '\t': {
-                whitespaceSkipped = true;
-                position++; column+=4;
-                continue;
+                {
+                    whitespaceSkipped = true;
+                    position++;
+                    column += 4;
+                    continue;
+                }
+                break;
             }
+            
             case '\r': {
-                whitespaceSkipped = true;
-                position++;
-                continue;
+                {
+                    whitespaceSkipped = true;
+                    position++;
+                    continue;
+                }
+                break;
             }
+            
             case '\n': {
-                whitespaceSkipped = true;
-                position++; column = 1; line++;
-                return;
+                {
+                    whitespaceSkipped = true;
+                    position++;
+                    column = 1;
+                    line++;
+                    return;
+                }
+                break;
             }
+            
             default: {
                 position++; column++;
                 continue;
@@ -684,26 +698,29 @@ void Lexer::handleMultiLineComment() {
     do {
         if (position == end)
             return;
-
         char character = (*text)[position];
         switch (character) {
             case '/': {
-                position++; column++;
-                if (position == end)
-                    return;
-                else if ((*text)[position] == '*')
-                    handleMultiLineComment();
-                else
-                    return;
+                {
+                    position++; column++;
+                    if (position == end)
+                        return;
+                    else if ((*text)[position] == '*')
+                        handleMultiLineComment();
+                    else
+                        return;
+                }
                 break;
             }
             case '*': {
-                position++; column++;
-                if (position == end)
-                    return;
-                else if ((*text)[position] == '/') {
+                {
                     position++; column++;
-                    return;
+                    if (position == end)
+                        return;
+                    else if ((*text)[position] == '/') {
+                        position++; column++;
+                        return;
+                    }
                 }
                 // else fallthrough
             }
