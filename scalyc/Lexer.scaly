@@ -596,17 +596,17 @@ class Lexer {
         if !(token is Literal)
             return null
 
-        if (token is StringLiteral) {
+        if token is StringLiteral {
             let stringLiteral: StringLiteral = token as StringLiteral
             return StringLiteral(String(stringLiteral.string));
         }
 
-        if (token is CharacterLiteral) {
+        if token is CharacterLiteral {
             let characterLiteral: CharacterLiteral = token as CharacterLiteral
             return CharacterLiteral(String(characterLiteral.value))
         }
 
-        if (token is NumericLiteral) {
+        if token is NumericLiteral {
             let numericLiteral: NumericLiteral = token as NumericLiteral
             return NumericLiteral(String(numericLiteral.value))
         }
