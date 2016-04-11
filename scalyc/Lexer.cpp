@@ -686,8 +686,11 @@ void Lexer::handleSingleLineComment() {
             }
 
             default: {
-                position++; column++;
-                continue;
+                {
+                    position++;
+                    column++;
+                    continue;
+                }
             }
         }
     }
@@ -702,7 +705,8 @@ void Lexer::handleMultiLineComment() {
         switch (character) {
             case '/': {
                 {
-                    position++; column++;
+                    position++;
+                    column++;
                     if (position == end)
                         return;
                     else if ((*text)[position] == '*')
@@ -712,36 +716,55 @@ void Lexer::handleMultiLineComment() {
                 }
                 break;
             }
+
             case '*': {
                 {
-                    position++; column++;
+                    position++;
+                    column++;
                     if (position == end)
                         return;
                     else if ((*text)[position] == '/') {
-                        position++; column++;
+                        position++;
+                        column++;
                         return;
                     }
                 }
-                // else fallthrough
+                break;
             }
+
             case '\t': {
-                whitespaceSkipped = true;
-                position++; column+=4;
-                continue;
+                {
+                    whitespaceSkipped = true;
+                    position++; column+=4;
+                    continue;
+                }
+                break;
             }
+
             case '\r': {
-                whitespaceSkipped = true;
-                position++;
-                continue;
+                {
+                    whitespaceSkipped = true;
+                    position++;
+                    continue;
+                }
+                break;
             }   
+
             case '\n': {
-                whitespaceSkipped = true;
-                position++; column = 1; line++;
-                continue;
+                {
+                    whitespaceSkipped = true;
+                    position++; column = 1; line++;
+                    continue;
+                }
+                break;
             }
+
             default: {
-                position++; column++;
-                continue;
+                {
+                    position++;
+                    column++;
+                    continue;
+                }
             }
         }
     }
