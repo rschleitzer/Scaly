@@ -733,7 +733,7 @@ void Lexer::handleMultiLineComment() {
                 whitespaceSkipped = true;
                 position++;
                 continue;
-            }
+            }   
             case '\n': {
                 whitespaceSkipped = true;
                 position++; column = 1; line++;
