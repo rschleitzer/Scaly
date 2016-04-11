@@ -701,8 +701,7 @@ void Lexer::handleMultiLineComment() {
     do {
         if (position == end)
             return;
-        char character = (*text)[position];
-        switch (character) {
+        switch ((*text)[position]) {
             case '/': {
                 {
                     position++;

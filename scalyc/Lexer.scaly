@@ -510,10 +510,9 @@ class Lexer {
     function handleMultiLineComment() {
         repeat {
             if position == end
-                return
+                return;
                 
-            let character: character = text[position]
-            switch (character) {
+            switch text[position] {
                 case '/': {
                     position++ column++
                     if position == end
