@@ -708,11 +708,12 @@ void Lexer::handleMultiLineComment() {
                     column++;
                     if (position == end)
                         return;
-                    else
+                    else {
                         if ((*text)[position] == '*')
                             handleMultiLineComment();
                         else
                             return;
+                    }
                 }
                 break;
             }
@@ -723,10 +724,12 @@ void Lexer::handleMultiLineComment() {
                     column++;
                     if (position == end)
                         return;
-                    else if ((*text)[position] == '/') {
-                        position++;
-                        column++;
-                        return;
+                    else {
+                        if ((*text)[position] == '/') {
+                            position++;
+                            column++;
+                            return;
+                        }
                     }
                 }
                 break;
@@ -735,7 +738,8 @@ void Lexer::handleMultiLineComment() {
             case '\t': {
                 {
                     whitespaceSkipped = true;
-                    position++; column+=4;
+                    position++;
+                    column += 4;
                     continue;
                 }
                 break;
@@ -753,7 +757,9 @@ void Lexer::handleMultiLineComment() {
             case '\n': {
                 {
                     whitespaceSkipped = true;
-                    position++; column = 1; line++;
+                    position++;
+                    column = 1;
+                    line++;
                     continue;
                 }
                 break;

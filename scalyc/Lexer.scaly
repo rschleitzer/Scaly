@@ -517,22 +517,24 @@ class Lexer {
                     position++ column++
                     if position == end
                         return
-                    else if text[position] == '*'
-                        handleMultiLineComment()
-                    else
-                        return
+                    else {
+                        if text[position] == '*'
+                            handleMultiLineComment()
+                        else
+                            return
+                    }
                 }
                 case '*': {
                     position++ column++
 
                     if position == end
                         return
-                    else if text[position] == '/' { 
-                        position++ column++
-                        return
+                    else {
+                        if text[position] == '/' { 
+                            position++ column++
+                            return
+                        }
                     }
-                    else
-                        fallthrough
                 }
                 case '\t': {
                     whitespaceSkipped = true
