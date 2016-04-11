@@ -752,7 +752,7 @@ void Lexer::handleMultiLineComment() {
                     continue;
                 }
                 break;
-            }   
+            }
 
             case '\n': {
                 {
