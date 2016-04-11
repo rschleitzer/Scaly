@@ -786,8 +786,7 @@ bool Lexer::parseKeyword(String* fixedString) {
 
 String* Lexer::parseIdentifier(_Page* _rp) {
     if (!(token->_isIdentifier()))
-        return 0;
-
+        return nullptr;
     Identifier* identifier = (Identifier*)token;
     return &String::create(_rp, identifier->name);
 }
@@ -795,15 +794,13 @@ String* Lexer::parseIdentifier(_Page* _rp) {
 bool Lexer::parsePunctuation(String* fixedString) {
     if (!(token->_isPunctuation()))
         return false;
-
     Punctuation* punctuation = (Punctuation*)token;
     return punctuation->sign->equals(fixedString);
 }
 
 String* Lexer::parseOperator(_Page* _rp) {
     if (!(token->_isOperator()))
-        return 0;
-
+        return nullptr;
     Operator* op = (Operator*)token;
     return &String::create(_rp, op->operation);
 }
