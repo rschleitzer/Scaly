@@ -664,7 +664,7 @@ void Lexer::handleSingleLineComment() {
                 }
                 break;
             }
-            
+
             case '\r': {
                 {
                     whitespaceSkipped = true;
@@ -673,7 +673,7 @@ void Lexer::handleSingleLineComment() {
                 }
                 break;
             }
-            
+
             case '\n': {
                 {
                     whitespaceSkipped = true;
@@ -684,7 +684,7 @@ void Lexer::handleSingleLineComment() {
                 }
                 break;
             }
-            
+
             default: {
                 position++; column++;
                 continue;
