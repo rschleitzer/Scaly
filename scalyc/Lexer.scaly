@@ -625,7 +625,7 @@ class Lexer {
 
     function parseBinaryOperator() -> String? {
         if !(token is BinaryOperator) {
-            if (token is Punctuation) && ((token as Punctuation).sign == "<") {
+            if (token is Punctuation) && (((token as Punctuation).sign.equals("<")) || ((token as Punctuation).sign.equals(">"))) {
                 let op: Operator = token as Operator
                 return String(op.operation)
             }
@@ -633,7 +633,7 @@ class Lexer {
             return null
         }
 
-        let op = token as Operator
+        let op: Operator = token as Operator
         return String(op.operation)
     }
 
