@@ -842,7 +842,6 @@ String* Lexer::parseBinaryOperator(_Page* _rp) {
     return &String::create(_rp, op->operation);
 }
 
-
 String* Lexer::parsePostfixOperator(_Page* _rp) {
     if (!(token->_isPostfixOperator()))
         return nullptr;
