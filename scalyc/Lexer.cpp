@@ -807,13 +807,11 @@ String* Lexer::parseOperator(_Page* _rp) {
 
 Literal* Lexer::parseLiteral(_Page* _rp) {
     if (!(token->_isLiteral()))
-        return 0;
-
+        return nullptr;
     if (token->_isStringLiteral()) {
         StringLiteral* stringLiteral = (StringLiteral*)token;
         return new(_rp) StringLiteral(&String::create(_rp, stringLiteral->string));
     }
-
     if (token->_isCharacterLiteral()) {
         CharacterLiteral* characterLiteral = (CharacterLiteral*)token;
         return new(_rp) CharacterLiteral(&String::create(_rp, characterLiteral->value));
@@ -822,16 +820,13 @@ Literal* Lexer::parseLiteral(_Page* _rp) {
         NumericLiteral* numericLiteral = (NumericLiteral*)token;
         return new(_rp) NumericLiteral(&String::create(_rp, numericLiteral->value));
     }
-    
-    return 0;
+    return nullptr;
 }
 
 String* Lexer::parsePrefixOperator(_Page* _rp) {
     if (!(token->_isPrefixOperator()))
-        return 0;
-
+        return nullptr;
     Operator* op = (Operator*)token;
-
     return &String::create(_rp, op->operation);
 }
 

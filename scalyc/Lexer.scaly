@@ -576,19 +576,12 @@ class Lexer {
         return String(identifier.name)
     }
 
-    function parseLiteral() -> Literal? {
-        if !(token is Literal)
-            return null
-
-        return token as Literal
-    }
-
     function parsePunctuation(fixedString: String) -> bool {
         if !(token is Punctuation)
             return false
 
         let punctuation: Punctuation = token as Punctuation
-        return punctuation.sign == fixedString
+        return punctuation.sign.equals(fixedString)
     }
 
     function parseOperator() -> String? {
@@ -598,6 +591,29 @@ class Lexer {
         let op: Operator = token as Operator
         return String(op.operation)
     }
+
+    function parseLiteral() -> Literal? {
+        if !(token is Literal)
+            return null
+
+        if (token is StringLiteral) {
+            let stringLiteral: StringLiteral = token as StringLiteral
+            return StringLiteral(String(stringLiteral.string));
+        }
+
+        if (token is CharacterLiteral) {
+            let characterLiteral: CharacterLiteral = token as CharacterLiteral
+            return CharacterLiteral(String(characterLiteral.value))
+        }
+
+        if (token is NumericLiteral) {
+            let numericLiteral: NumericLiteral = token as NumericLiteral
+            return NumericLiteral(String(numericLiteral.value))
+        }
+
+        return null;
+    }
+
 
     function parsePrefixOperator() -> String? {
         if !(token is PrefixOperator)
