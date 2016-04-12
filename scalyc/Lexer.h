@@ -136,23 +136,23 @@ public:
     virtual void advance();
     virtual Identifier* scanIdentifier(_Page* _rp);
     virtual Operator* scanOperator(_Page* _rp, bool includeDots);
-    virtual NumericLiteral* scanNumericLiteral(_Page* _rp);
     virtual Token* scanStringLiteral(_Page* _rp);
     virtual Token* scanCharacterLiteral(_Page* _rp);
+    virtual NumericLiteral* scanNumericLiteral(_Page* _rp);
+    virtual bool skipWhitespace();
+    virtual void handleSingleLineComment();
+    virtual void handleMultiLineComment();
     virtual bool parseKeyword(String* fixedString);
     virtual String* parseIdentifier(_Page* _rp);
-    virtual Literal* parseLiteral(_Page* _rp);
     virtual bool parsePunctuation(String* fixedString);
     virtual String* parseOperator(_Page* _rp);
+    virtual Literal* parseLiteral(_Page* _rp);
     virtual String* parsePrefixOperator(_Page* _rp);
     virtual String* parseBinaryOperator(_Page* _rp);
     virtual String* parsePostfixOperator(_Page* _rp);
-    virtual bool skipWhitespace();
     virtual bool isAtEnd();
     virtual Position* getPosition(_Page* _rp);
     virtual Position* getPreviousPosition(_Page* _rp);
-    virtual void handleSingleLineComment();
-    virtual void handleMultiLineComment();
 
 };
 

@@ -419,6 +419,10 @@ class CppVisitor : SyntaxVisitor {
     function closeExpressionElement(expressionElement: ExpressionElement) {
     }
 
+    function isLastExpressionElement(expressionElement: ExpressionElement) -> bool {
+        return false
+    }
+
     function openNamedMemberPostfix(namedMemberPostfix: NamedMemberPostfix) -> bool {
         return true
     }
