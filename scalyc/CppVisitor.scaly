@@ -506,21 +506,7 @@ class CppVisitor : SyntaxVisitor {
     function closeInitializerCall(initializerCall: InitializerCall) {
     }
 
-    function openThisDot(thisDot: ThisDot) -> bool {
-        return true
-    }
-
-    function closeThisDot(thisDot: ThisDot) {
-    }
-
-    function openThisSubscript(thisSubscript: ThisSubscript) -> bool {
-        return true
-    }
-
-    function closeThisSubscript(thisSubscript: ThisSubscript) {
-    }
-
-    function visitThisWord(thisWord: ThisWord) {
+    function visitThisExpression(thisExpression: ThisExpression) {
     }
 
     function openSuperDot(superDot: SuperDot) -> bool {
@@ -624,12 +610,6 @@ class CppVisitor : SyntaxVisitor {
     }
 
     function visitEmptyCaseContent(emptyCaseContent: EmptyCaseContent) {
-    }
-
-    function visitThisInit(thisInit: ThisInit) {
-    }
-
-    function visitThisMember(thisMember: ThisMember) {
     }
 
     function visitSuperInit(superInit: SuperInit) {
