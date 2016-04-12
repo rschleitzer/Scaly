@@ -1648,32 +1648,8 @@ bool CppVisitor::openInitializerCall(InitializerCall* initializerCall) {
 void CppVisitor::closeInitializerCall(InitializerCall* initializerCall) {
 }
 
-bool CppVisitor::openThisDot(ThisDot* thisDot) {
-    sourceFile->append("this->");
-    if(thisDot->member->_isThisMember()) {
-        ThisMember* thisMember = (ThisMember*)(thisDot->member);
-        sourceFile->append(thisMember->name);
-    }
-    return true;
-}
-
-void CppVisitor::closeThisDot(ThisDot* thisDot) {
-}
-
-bool CppVisitor::openThisSubscript(ThisSubscript* thisSubscript) {
-    return true;
-}
-
-void CppVisitor::closeThisSubscript(ThisSubscript* thisSubscript) {
-}
-
-void CppVisitor::visitThisWord(ThisWord* thisWord) {
-}
-
-void CppVisitor::visitThisInit(ThisInit* thisInit) {
-}
-
-void CppVisitor::visitThisMember(ThisMember* thisMember) {
+void CppVisitor::visitThisExpression(ThisExpression* thisExpression) {
+    sourceFile->append("this");
 }
 
 bool CppVisitor::openSuperDot(SuperDot* superDot) {

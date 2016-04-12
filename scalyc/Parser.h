@@ -96,9 +96,6 @@ public:
     virtual _Result<BreakExpression, ParserError> parseBreakExpression(_Page* _rp, _Page* _ep);
     virtual _Result<InitializerCall, ParserError> parseInitializerCall(_Page* _rp, _Page* _ep);
     virtual _Result<ThisExpression, ParserError> parseThisExpression(_Page* _rp, _Page* _ep);
-    virtual _Result<ThisDot, ParserError> parseThisDot(_Page* _rp, _Page* _ep);
-    virtual _Result<ThisSubscript, ParserError> parseThisSubscript(_Page* _rp, _Page* _ep);
-    virtual _Result<ThisWord, ParserError> parseThisWord(_Page* _rp, _Page* _ep);
     virtual _Result<SuperExpression, ParserError> parseSuperExpression(_Page* _rp, _Page* _ep);
     virtual _Result<SuperDot, ParserError> parseSuperDot(_Page* _rp, _Page* _ep);
     virtual _Result<SuperSubscript, ParserError> parseSuperSubscript(_Page* _rp, _Page* _ep);
@@ -124,9 +121,6 @@ public:
     virtual _Result<CaseContent, ParserError> parseCaseContent(_Page* _rp, _Page* _ep);
     virtual _Result<BlockCaseContent, ParserError> parseBlockCaseContent(_Page* _rp, _Page* _ep);
     virtual _Result<EmptyCaseContent, ParserError> parseEmptyCaseContent(_Page* _rp, _Page* _ep);
-    virtual _Result<CommonThisMember, ParserError> parseCommonThisMember(_Page* _rp, _Page* _ep);
-    virtual _Result<ThisInit, ParserError> parseThisInit(_Page* _rp, _Page* _ep);
-    virtual _Result<ThisMember, ParserError> parseThisMember(_Page* _rp, _Page* _ep);
     virtual _Result<CommonSuperMember, ParserError> parseCommonSuperMember(_Page* _rp, _Page* _ep);
     virtual _Result<SuperInit, ParserError> parseSuperInit(_Page* _rp, _Page* _ep);
     virtual _Result<SuperMember, ParserError> parseSuperMember(_Page* _rp, _Page* _ep);

@@ -1440,61 +1440,15 @@ class InitializerCall : PrimaryExpression {
 
 class ThisExpression : PrimaryExpression {
 
-    override function accept(mutable visitor: SyntaxVisitor) {
-        if !visitor.openThisExpression(this)
-            return;
-        visitor.closeThisExpression(this)
-    }
-
-}
-
-class ThisDot : ThisExpression {
-
-    init(member: CommonThisMember, start: Position, end: Position) {
-        this.start = start;
-        this.end = end;
-        this.member = member;
-    }
-
-    override function accept(mutable visitor: SyntaxVisitor) {
-        if !visitor.openThisDot(this)
-            return;
-        member!.accept(visitor)
-        visitor.closeThisDot(this)
-    }
-
-    let member: CommonThisMember?
-}
-
-class ThisSubscript : ThisExpression {
-
-    init(subscript: Subscript, start: Position, end: Position) {
-        this.start = start;
-        this.end = end;
-        this.subscript = subscript;
-    }
-
-    override function accept(mutable visitor: SyntaxVisitor) {
-        if !visitor.openThisSubscript(this)
-            return;
-        subscript!.accept(visitor)
-        visitor.closeThisSubscript(this)
-    }
-
-    let subscript: Subscript?
-}
-
-class ThisWord : ThisExpression {
-
     init(start: Position, end: Position) {
         this.start = start;
         this.end = end;
     }
 
     override function accept(mutable visitor: SyntaxVisitor) {
-        if !visitor.openThisWord(this)
+        if !visitor.openThisExpression(this)
             return;
-        visitor.closeThisWord(this)
+        visitor.closeThisExpression(this)
     }
 
 }
@@ -1863,48 +1817,6 @@ class EmptyCaseContent : CaseContent {
         visitor.closeEmptyCaseContent(this)
     }
 
-}
-
-class CommonThisMember : SyntaxNode {
-
-    function accept(mutable visitor: SyntaxVisitor) {
-        if !visitor.openCommonThisMember(this)
-            return;
-        visitor.closeCommonThisMember(this)
-    }
-
-}
-
-class ThisInit : CommonThisMember {
-
-    init(start: Position, end: Position) {
-        this.start = start;
-        this.end = end;
-    }
-
-    override function accept(mutable visitor: SyntaxVisitor) {
-        if !visitor.openThisInit(this)
-            return;
-        visitor.closeThisInit(this)
-    }
-
-}
-
-class ThisMember : CommonThisMember {
-
-    init(name: String, start: Position, end: Position) {
-        this.start = start;
-        this.end = end;
-        this.name = name;
-    }
-
-    override function accept(mutable visitor: SyntaxVisitor) {
-        if !visitor.openThisMember(this)
-            return;
-        visitor.closeThisMember(this)
-    }
-
-    let name: String?
 }
 
 class CommonSuperMember : SyntaxNode {

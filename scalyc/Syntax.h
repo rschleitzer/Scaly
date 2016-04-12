@@ -85,9 +85,6 @@ public:
     virtual bool _isBreakExpression();
     virtual bool _isInitializerCall();
     virtual bool _isThisExpression();
-    virtual bool _isThisDot();
-    virtual bool _isThisSubscript();
-    virtual bool _isThisWord();
     virtual bool _isSuperExpression();
     virtual bool _isSuperDot();
     virtual bool _isSuperSubscript();
@@ -110,9 +107,6 @@ public:
     virtual bool _isCaseContent();
     virtual bool _isBlockCaseContent();
     virtual bool _isEmptyCaseContent();
-    virtual bool _isCommonThisMember();
-    virtual bool _isThisInit();
-    virtual bool _isThisMember();
     virtual bool _isCommonSuperMember();
     virtual bool _isSuperInit();
     virtual bool _isSuperMember();
@@ -740,9 +734,6 @@ public:
     virtual bool _isBreakExpression();
     virtual bool _isInitializerCall();
     virtual bool _isThisExpression();
-    virtual bool _isThisDot();
-    virtual bool _isThisSubscript();
-    virtual bool _isThisWord();
     virtual bool _isSuperExpression();
     virtual bool _isSuperDot();
     virtual bool _isSuperSubscript();
@@ -868,38 +859,10 @@ public:
 
 class ThisExpression : public PrimaryExpression {
 public:
+    ThisExpression(Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
 
     virtual bool _isThisExpression();
-    virtual bool _isThisDot();
-    virtual bool _isThisSubscript();
-    virtual bool _isThisWord();
-};
-
-class ThisDot : public ThisExpression {
-public:
-    ThisDot(CommonThisMember* member, Position* start, Position* end);
-    virtual void accept(SyntaxVisitor* visitor);
-    CommonThisMember* member;
-
-    virtual bool _isThisDot();
-};
-
-class ThisSubscript : public ThisExpression {
-public:
-    ThisSubscript(Subscript* subscript, Position* start, Position* end);
-    virtual void accept(SyntaxVisitor* visitor);
-    Subscript* subscript;
-
-    virtual bool _isThisSubscript();
-};
-
-class ThisWord : public ThisExpression {
-public:
-    ThisWord(Position* start, Position* end);
-    virtual void accept(SyntaxVisitor* visitor);
-
-    virtual bool _isThisWord();
 };
 
 class SuperExpression : public PrimaryExpression {
@@ -1099,32 +1062,6 @@ public:
     virtual void accept(SyntaxVisitor* visitor);
 
     virtual bool _isEmptyCaseContent();
-};
-
-class CommonThisMember : public SyntaxNode {
-public:
-    virtual void accept(SyntaxVisitor* visitor);
-
-    virtual bool _isCommonThisMember();
-    virtual bool _isThisInit();
-    virtual bool _isThisMember();
-};
-
-class ThisInit : public CommonThisMember {
-public:
-    ThisInit(Position* start, Position* end);
-    virtual void accept(SyntaxVisitor* visitor);
-
-    virtual bool _isThisInit();
-};
-
-class ThisMember : public CommonThisMember {
-public:
-    ThisMember(String* name, Position* start, Position* end);
-    virtual void accept(SyntaxVisitor* visitor);
-    String* name;
-
-    virtual bool _isThisMember();
 };
 
 class CommonSuperMember : public SyntaxNode {

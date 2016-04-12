@@ -347,21 +347,7 @@
         <content link = ParenthesizedExpression                 property = arguments
         <content link = CatchClause           multiple optional property = catchClauses
 
-    <syntax id = ThisExpression                        abstract base = PrimaryExpression
-        <content link = ThisDot
-        <content link = ThisSubscript
-        <content link = ThisWord
-
-    <syntax id = ThisDot                                        base = ThisExpression
-        <content link = this
-        <content link = dot
-        <content link = CommonThisMember                        property = member
-
-    <syntax id = ThisSubscript                                  base = ThisExpression
-        <content link = this
-        <content link = Subscript                               property = subscript
-
-    <syntax id = ThisWord                                       base = ThisExpression
+    <syntax id = ThisExpression                                 base = PrimaryExpression
         <content link = this
 
     <syntax id = SuperExpression                       abstract base = PrimaryExpression
@@ -452,16 +438,6 @@
 
     <syntax id = EmptyCaseContent                               base = CaseContent
         <content link = semicolon
-
-    <syntax id = CommonThisMember                      abstract
-        <content link = ThisInit
-        <content link = ThisMember
-
-    <syntax id = ThisInit                                       base = CommonThisMember
-        <content link = init
-
-    <syntax id = ThisMember                                     base = CommonThisMember
-        <content identifier                                     property = name
 
     <syntax id = CommonSuperMember                     abstract
         <content link = SuperInit

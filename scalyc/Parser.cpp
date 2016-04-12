@@ -2423,39 +2423,6 @@ _Result<InitializerCall, ParserError> Parser::parseInitializerCall(_Page* _rp, _
 }
 
 _Result<ThisExpression, ParserError> Parser::parseThisExpression(_Page* _rp, _Page* _ep) {
-    _Array<ParserError>* errors = new(_ep) _Array<ParserError>();
-    Position* start = lexer->getPreviousPosition(_rp);
-    {
-        // Make a region for the current block and get the Page
-        _Region _r; _Page* _p = _r.get();
-        _Result<ThisDot, ParserError> result = parseThisDot(_rp, _p);
-        if (result.succeeded())
-            return _Result<ThisExpression, ParserError>(result.getResult());
-        else
-            errors->push(result.getError());
-    }
-    {
-        // Make a region for the current block and get the Page
-        _Region _r; _Page* _p = _r.get();
-        _Result<ThisSubscript, ParserError> result = parseThisSubscript(_rp, _p);
-        if (result.succeeded())
-            return _Result<ThisExpression, ParserError>(result.getResult());
-        else
-            errors->push(result.getError());
-    }
-    {
-        // Make a region for the current block and get the Page
-        _Region _r; _Page* _p = _r.get();
-        _Result<ThisWord, ParserError> result = parseThisWord(_rp, _p);
-        if (result.succeeded())
-            return _Result<ThisExpression, ParserError>(result.getResult());
-        else
-            errors->push(result.getError());
-    }
-    return _Result<ThisExpression, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_unableToParse(start, &_Vector<ParserError>::create(_ep, *errors))));
-}
-
-_Result<ThisDot, ParserError> Parser::parseThisDot(_Page* _rp, _Page* _ep) {
     Position* start = lexer->getPreviousPosition(_rp);
     Position* startThis1 = lexer->getPreviousPosition(_rp);
     bool successThis1 = lexer->parseKeyword(thisKeyword);
@@ -2463,64 +2430,10 @@ _Result<ThisDot, ParserError> Parser::parseThisDot(_Page* _rp, _Page* _ep) {
         lexer->advance();
     }
     else {
-        return _Result<ThisDot, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_keywordExpected(startThis1, &String::create(_ep, thisKeyword))));
+        return _Result<ThisExpression, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_keywordExpected(startThis1, &String::create(_ep, thisKeyword))));
     }
-    Position* startDot2 = lexer->getPreviousPosition(_rp);
-    bool successDot2 = lexer->parsePunctuation(dot);
-    if (successDot2) {
-        lexer->advance();
-    }
-    else {
-        return _Result<ThisDot, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_punctuationExpected(startDot2, &String::create(_ep, dot))));
-    }
-    _Result<CommonThisMember, ParserError> _result_member = parseCommonThisMember(_rp, _ep);
-    CommonThisMember* member = 0;
-    if (_result_member.succeeded()) {
-        member = _result_member.getResult();
-    }
-    else {
-        return _Result<ThisDot, ParserError>(_result_member.getError());
-    }
-    ThisDot* thisDot = new(_rp) ThisDot(member, start, lexer->getPosition(_rp));
-    member->parent = thisDot;
-    return _Result<ThisDot, ParserError>(thisDot);
-}
-
-_Result<ThisSubscript, ParserError> Parser::parseThisSubscript(_Page* _rp, _Page* _ep) {
-    Position* start = lexer->getPreviousPosition(_rp);
-    Position* startThis1 = lexer->getPreviousPosition(_rp);
-    bool successThis1 = lexer->parseKeyword(thisKeyword);
-    if (successThis1) {
-        lexer->advance();
-    }
-    else {
-        return _Result<ThisSubscript, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_keywordExpected(startThis1, &String::create(_ep, thisKeyword))));
-    }
-    _Result<Subscript, ParserError> _result_subscript = parseSubscript(_rp, _ep);
-    Subscript* subscript = 0;
-    if (_result_subscript.succeeded()) {
-        subscript = _result_subscript.getResult();
-    }
-    else {
-        return _Result<ThisSubscript, ParserError>(_result_subscript.getError());
-    }
-    ThisSubscript* thisSubscript = new(_rp) ThisSubscript(subscript, start, lexer->getPosition(_rp));
-    subscript->parent = thisSubscript;
-    return _Result<ThisSubscript, ParserError>(thisSubscript);
-}
-
-_Result<ThisWord, ParserError> Parser::parseThisWord(_Page* _rp, _Page* _ep) {
-    Position* start = lexer->getPreviousPosition(_rp);
-    Position* startThis1 = lexer->getPreviousPosition(_rp);
-    bool successThis1 = lexer->parseKeyword(thisKeyword);
-    if (successThis1) {
-        lexer->advance();
-    }
-    else {
-        return _Result<ThisWord, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_keywordExpected(startThis1, &String::create(_ep, thisKeyword))));
-    }
-    ThisWord* thisWord = new(_rp) ThisWord(start, lexer->getPosition(_rp));
-    return _Result<ThisWord, ParserError>(thisWord);
+    ThisExpression* thisExpression = new(_rp) ThisExpression(start, lexer->getPosition(_rp));
+    return _Result<ThisExpression, ParserError>(thisExpression);
 }
 
 _Result<SuperExpression, ParserError> Parser::parseSuperExpression(_Page* _rp, _Page* _ep) {
@@ -3105,58 +3018,6 @@ _Result<EmptyCaseContent, ParserError> Parser::parseEmptyCaseContent(_Page* _rp,
     }
     EmptyCaseContent* emptyCaseContent = new(_rp) EmptyCaseContent(start, lexer->getPosition(_rp));
     return _Result<EmptyCaseContent, ParserError>(emptyCaseContent);
-}
-
-_Result<CommonThisMember, ParserError> Parser::parseCommonThisMember(_Page* _rp, _Page* _ep) {
-    _Array<ParserError>* errors = new(_ep) _Array<ParserError>();
-    Position* start = lexer->getPreviousPosition(_rp);
-    {
-        // Make a region for the current block and get the Page
-        _Region _r; _Page* _p = _r.get();
-        _Result<ThisInit, ParserError> result = parseThisInit(_rp, _p);
-        if (result.succeeded())
-            return _Result<CommonThisMember, ParserError>(result.getResult());
-        else
-            errors->push(result.getError());
-    }
-    {
-        // Make a region for the current block and get the Page
-        _Region _r; _Page* _p = _r.get();
-        _Result<ThisMember, ParserError> result = parseThisMember(_rp, _p);
-        if (result.succeeded())
-            return _Result<CommonThisMember, ParserError>(result.getResult());
-        else
-            errors->push(result.getError());
-    }
-    return _Result<CommonThisMember, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_unableToParse(start, &_Vector<ParserError>::create(_ep, *errors))));
-}
-
-_Result<ThisInit, ParserError> Parser::parseThisInit(_Page* _rp, _Page* _ep) {
-    Position* start = lexer->getPreviousPosition(_rp);
-    Position* startInit1 = lexer->getPreviousPosition(_rp);
-    bool successInit1 = lexer->parseKeyword(initKeyword);
-    if (successInit1) {
-        lexer->advance();
-    }
-    else {
-        return _Result<ThisInit, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_keywordExpected(startInit1, &String::create(_ep, initKeyword))));
-    }
-    ThisInit* thisInit = new(_rp) ThisInit(start, lexer->getPosition(_rp));
-    return _Result<ThisInit, ParserError>(thisInit);
-}
-
-_Result<ThisMember, ParserError> Parser::parseThisMember(_Page* _rp, _Page* _ep) {
-    Position* start = lexer->getPreviousPosition(_rp);
-    Position* startName = lexer->getPreviousPosition(_rp);
-    String* name = lexer->parseIdentifier(_rp);
-    if ((name) && (isIdentifier(name))) {
-        lexer->advance();
-    }
-    else {
-        return _Result<ThisMember, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_identifierExpected(startName)));
-    }
-    ThisMember* thisMember = new(_rp) ThisMember(name, start, lexer->getPosition(_rp));
-    return _Result<ThisMember, ParserError>(thisMember);
 }
 
 _Result<CommonSuperMember, ParserError> Parser::parseCommonSuperMember(_Page* _rp, _Page* _ep) {

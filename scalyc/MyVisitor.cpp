@@ -404,21 +404,7 @@ bool MyVisitor::openInitializerCall(InitializerCall* initializerCall) {
 void MyVisitor::closeInitializerCall(InitializerCall* initializerCall) {
 }
 
-bool MyVisitor::openThisDot(ThisDot* thisDot) {
-    return true;
-}
-
-void MyVisitor::closeThisDot(ThisDot* thisDot) {
-}
-
-bool MyVisitor::openThisSubscript(ThisSubscript* thisSubscript) {
-    return true;
-}
-
-void MyVisitor::closeThisSubscript(ThisSubscript* thisSubscript) {
-}
-
-void MyVisitor::visitThisWord(ThisWord* thisWord) {
+void MyVisitor::visitThisExpression(ThisExpression* thisExpression) {
 }
 
 bool MyVisitor::openSuperDot(SuperDot* superDot) {
@@ -522,12 +508,6 @@ void MyVisitor::closeBlockCaseContent(BlockCaseContent* blockCaseContent) {
 }
 
 void MyVisitor::visitEmptyCaseContent(EmptyCaseContent* emptyCaseContent) {
-}
-
-void MyVisitor::visitThisInit(ThisInit* thisInit) {
-}
-
-void MyVisitor::visitThisMember(ThisMember* thisMember) {
 }
 
 void MyVisitor::visitSuperInit(SuperInit* superInit) {

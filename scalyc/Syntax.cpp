@@ -77,9 +77,6 @@ bool SyntaxNode::_isThrowExpression() { return false; }
 bool SyntaxNode::_isBreakExpression() { return false; }
 bool SyntaxNode::_isInitializerCall() { return false; }
 bool SyntaxNode::_isThisExpression() { return false; }
-bool SyntaxNode::_isThisDot() { return false; }
-bool SyntaxNode::_isThisSubscript() { return false; }
-bool SyntaxNode::_isThisWord() { return false; }
 bool SyntaxNode::_isSuperExpression() { return false; }
 bool SyntaxNode::_isSuperDot() { return false; }
 bool SyntaxNode::_isSuperSubscript() { return false; }
@@ -102,9 +99,6 @@ bool SyntaxNode::_isTuplePatternElement() { return false; }
 bool SyntaxNode::_isCaseContent() { return false; }
 bool SyntaxNode::_isBlockCaseContent() { return false; }
 bool SyntaxNode::_isEmptyCaseContent() { return false; }
-bool SyntaxNode::_isCommonThisMember() { return false; }
-bool SyntaxNode::_isThisInit() { return false; }
-bool SyntaxNode::_isThisMember() { return false; }
 bool SyntaxNode::_isCommonSuperMember() { return false; }
 bool SyntaxNode::_isSuperInit() { return false; }
 bool SyntaxNode::_isSuperMember() { return false; }
@@ -1082,9 +1076,6 @@ bool PrimaryExpression::_isInitializerCall() { return false; }
 bool PrimaryExpression::_isThisExpression() { return false; }
 bool PrimaryExpression::_isSuperExpression() { return false; }
 bool PrimaryExpression::_isNullExpression() { return false; }
-bool PrimaryExpression::_isThisDot() { return false; }
-bool PrimaryExpression::_isThisSubscript() { return false; }
-bool PrimaryExpression::_isThisWord() { return false; }
 bool PrimaryExpression::_isSuperDot() { return false; }
 bool PrimaryExpression::_isSuperSubscript() { return false; }
 bool PrimaryExpression::_isPrimaryExpression() { return true; }
@@ -1287,50 +1278,15 @@ void InitializerCall::accept(SyntaxVisitor* visitor) {
 }
 bool InitializerCall::_isInitializerCall() { return true; }
 
+ThisExpression::ThisExpression(Position* start, Position* end) {
+    this->start = start;
+    this->end = end;
+}
+
 void ThisExpression::accept(SyntaxVisitor* visitor) {
+    visitor->visitThisExpression(this);
 }
-bool ThisExpression::_isThisDot() { return false; }
-bool ThisExpression::_isThisSubscript() { return false; }
-bool ThisExpression::_isThisWord() { return false; }
 bool ThisExpression::_isThisExpression() { return true; }
-
-ThisDot::ThisDot(CommonThisMember* member, Position* start, Position* end) {
-    this->start = start;
-    this->end = end;
-    this->member = member;
-}
-
-void ThisDot::accept(SyntaxVisitor* visitor) {
-    if (!visitor->openThisDot(this))
-        return;
-    member->accept(visitor);
-    visitor->closeThisDot(this);
-}
-bool ThisDot::_isThisDot() { return true; }
-
-ThisSubscript::ThisSubscript(Subscript* subscript, Position* start, Position* end) {
-    this->start = start;
-    this->end = end;
-    this->subscript = subscript;
-}
-
-void ThisSubscript::accept(SyntaxVisitor* visitor) {
-    if (!visitor->openThisSubscript(this))
-        return;
-    subscript->accept(visitor);
-    visitor->closeThisSubscript(this);
-}
-bool ThisSubscript::_isThisSubscript() { return true; }
-
-ThisWord::ThisWord(Position* start, Position* end) {
-    this->start = start;
-    this->end = end;
-}
-
-void ThisWord::accept(SyntaxVisitor* visitor) {
-    visitor->visitThisWord(this);
-}
-bool ThisWord::_isThisWord() { return true; }
 
 void SuperExpression::accept(SyntaxVisitor* visitor) {
 }
@@ -1626,33 +1582,6 @@ void EmptyCaseContent::accept(SyntaxVisitor* visitor) {
     visitor->visitEmptyCaseContent(this);
 }
 bool EmptyCaseContent::_isEmptyCaseContent() { return true; }
-
-void CommonThisMember::accept(SyntaxVisitor* visitor) {
-}
-bool CommonThisMember::_isThisInit() { return false; }
-bool CommonThisMember::_isThisMember() { return false; }
-bool CommonThisMember::_isCommonThisMember() { return true; }
-
-ThisInit::ThisInit(Position* start, Position* end) {
-    this->start = start;
-    this->end = end;
-}
-
-void ThisInit::accept(SyntaxVisitor* visitor) {
-    visitor->visitThisInit(this);
-}
-bool ThisInit::_isThisInit() { return true; }
-
-ThisMember::ThisMember(String* name, Position* start, Position* end) {
-    this->start = start;
-    this->end = end;
-    this->name = name;
-}
-
-void ThisMember::accept(SyntaxVisitor* visitor) {
-    visitor->visitThisMember(this);
-}
-bool ThisMember::_isThisMember() { return true; }
 
 void CommonSuperMember::accept(SyntaxVisitor* visitor) {
 }

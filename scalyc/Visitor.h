@@ -154,12 +154,6 @@ class InitializerCall;
 
 class ThisExpression;
 
-class ThisDot;
-
-class ThisSubscript;
-
-class ThisWord;
-
 class SuperExpression;
 
 class SuperDot;
@@ -203,12 +197,6 @@ class CaseContent;
 class BlockCaseContent;
 
 class EmptyCaseContent;
-
-class CommonThisMember;
-
-class ThisInit;
-
-class ThisMember;
 
 class CommonSuperMember;
 
@@ -352,11 +340,7 @@ public:
     virtual void closeBreakExpression(BreakExpression* breakExpression) = 0;
     virtual bool openInitializerCall(InitializerCall* initializerCall) = 0;
     virtual void closeInitializerCall(InitializerCall* initializerCall) = 0;
-    virtual bool openThisDot(ThisDot* thisDot) = 0;
-    virtual void closeThisDot(ThisDot* thisDot) = 0;
-    virtual bool openThisSubscript(ThisSubscript* thisSubscript) = 0;
-    virtual void closeThisSubscript(ThisSubscript* thisSubscript) = 0;
-    virtual void visitThisWord(ThisWord* thisWord) = 0;
+    virtual void visitThisExpression(ThisExpression* thisExpression) = 0;
     virtual bool openSuperDot(SuperDot* superDot) = 0;
     virtual void closeSuperDot(SuperDot* superDot) = 0;
     virtual bool openSuperSubscript(SuperSubscript* superSubscript) = 0;
@@ -387,8 +371,6 @@ public:
     virtual bool openBlockCaseContent(BlockCaseContent* blockCaseContent) = 0;
     virtual void closeBlockCaseContent(BlockCaseContent* blockCaseContent) = 0;
     virtual void visitEmptyCaseContent(EmptyCaseContent* emptyCaseContent) = 0;
-    virtual void visitThisInit(ThisInit* thisInit) = 0;
-    virtual void visitThisMember(ThisMember* thisMember) = 0;
     virtual void visitSuperInit(SuperInit* superInit) = 0;
     virtual void visitSuperMember(SuperMember* superMember) = 0;
     virtual bool openTypeIdentifier(TypeIdentifier* typeIdentifier) = 0;

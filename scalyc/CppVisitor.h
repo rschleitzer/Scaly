@@ -173,11 +173,7 @@ public:
     virtual void closeBreakExpression(BreakExpression* breakExpression);
     virtual bool openInitializerCall(InitializerCall* initializerCall);
     virtual void closeInitializerCall(InitializerCall* initializerCall);
-    virtual bool openThisDot(ThisDot* thisDot);
-    virtual void closeThisDot(ThisDot* thisDot);
-    virtual bool openThisSubscript(ThisSubscript* thisSubscript);
-    virtual void closeThisSubscript(ThisSubscript* thisSubscript);
-    virtual void visitThisWord(ThisWord* thisWord);
+    virtual void visitThisExpression(ThisExpression* thisExpression);
     virtual bool openSuperDot(SuperDot* superDot);
     virtual void closeSuperDot(SuperDot* superDot);
     virtual bool openSuperSubscript(SuperSubscript* superSubscript);
@@ -208,8 +204,6 @@ public:
     virtual bool openBlockCaseContent(BlockCaseContent* blockCaseContent);
     virtual void closeBlockCaseContent(BlockCaseContent* blockCaseContent);
     virtual void visitEmptyCaseContent(EmptyCaseContent* emptyCaseContent);
-    virtual void visitThisInit(ThisInit* thisInit);
-    virtual void visitThisMember(ThisMember* thisMember);
     virtual void visitSuperInit(SuperInit* superInit);
     virtual void visitSuperMember(SuperMember* superMember);
     virtual bool openTypeIdentifier(TypeIdentifier* typeIdentifier);
