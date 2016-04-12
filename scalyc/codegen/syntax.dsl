@@ -1,12 +1,6 @@
 (define (syntax-scaly) ($
 
 "class SyntaxNode {
-
-    init(theStart: Position, theEnd: Position) {
-        start = theStart
-        end = theEnd
-    }
-
     let start: Position
     let end: Position
     var parent: SyntaxNode
@@ -17,7 +11,7 @@
 class "(id syntax-node)" : "(if (base syntax-node) (base syntax-node) "SyntaxNode")" {
 
     init("(scaly-syntax-constructor-parameters syntax-node)") {
-        super.init("(if (program? syntax-node) "Position(0, 0), Position(0, 0)" "theStart, theEnd")")
+        super.init("(if (program? syntax-node) "Position(0, 0), Position(0, 0)" "start, end")")
     }
 
     "(if (base syntax-node) "override " "")"function accept(mutable visitor: SyntaxVisitor) {
@@ -84,7 +78,6 @@ namespace scalyc {
 
 class SyntaxNode : public Object {
 public:
-    SyntaxNode(Position* theStart, Position* theEnd);
     Position* start;
     Position* end;
     SyntaxNode* parent;
@@ -98,8 +91,10 @@ public:
 "
 class "(id syntax-node)" : public "(if (base syntax-node) (base syntax-node) "SyntaxNode")" {
 public:
-    "(id syntax-node)"("(constructor-parameters syntax-node)");
-    virtual void accept(SyntaxVisitor* visitor);
+"       (if (abstract? syntax-node) "" ($
+"    "(id syntax-node)"("(constructor-parameters syntax-node)");
+"       ))
+"    virtual void accept(SyntaxVisitor* visitor);
 "
         (apply-to-property-children-of syntax-node (lambda (content) ($
 "    "(property-declaration content)";
@@ -125,7 +120,7 @@ public:
         (apply-to-property-children-of syntax-node (lambda (content) ($
             (property-declaration content)(if (properties-remaining? content syntax-node) ", " "")
         )))
-        (if (program? syntax-node) "" ($ (if (node-list-empty? (properties syntax-node)) "" ", ") "Position* theStart, Position* theEnd"))))
+        (if (program? syntax-node) "" ($ (if (node-list-empty? (properties syntax-node)) "" ", ") "Position* start, Position* end"))))
 
 (define (property-declaration content)
     (case (type content)
@@ -164,9 +159,11 @@ public:
 
 (define (constructor-initializers syntax-node)
     ($
-        (if (base syntax-node) (base syntax-node) "SyntaxNode") "(start, end)" (if (node-list-empty? (properties syntax-node)) "" ", ")
-        (apply-to-property-children-of syntax-node (lambda (content) ($
-            (property content)"("(property content)")"(if (properties-remaining? content syntax-node) ", " "")
+"    this->start = start;
+    this->end = end;
+"       (apply-to-property-children-of syntax-node (lambda (content) ($
+"    this->"(property content)" = "(property content)";
+"
         )))))
 
 (define (syntax-cpp) ($
@@ -175,24 +172,28 @@ public:
 using namespace scaly;
 namespace scalyc {
 
-SyntaxNode::SyntaxNode(Position* theStart, Position* theEnd) {
-    start = theStart;
-    end = theEnd;
-}
-
 "   (apply-to-selected-children "syntax" (lambda (syntax-node) ($
 "bool SyntaxNode::_is"(id syntax-node)"() { return false; }
 "   )))
     (apply-to-selected-children "syntax" (lambda (syntax-node) ($
 "
-"(id syntax-node)"::"(id syntax-node)"("(constructor-parameters syntax-node)")
-: "     (if (program? syntax-node)
-            "SyntaxNode(new(getPage()) Position(0, 0), new(getPage()) Position(0, 0)), name(name), directory(directory), compilationUnits(compilationUnits)"
+"
+       (if (abstract? syntax-node) "" ($
+
+(id syntax-node)"::"(id syntax-node)"("(constructor-parameters syntax-node)") {
+"     (if (program? syntax-node)
+"    start = new(getPage()) Position(0, 0);
+    end = new(getPage()) Position(0, 0);
+    this->name = name;
+    this->directory = directory;
+    this->compilationUnits = compilationUnits;
+"
             (constructor-initializers syntax-node)
         )
-" {}
+"}
 
-"       (apply-to-nodelist (inheritors syntax-node) (lambda (inheritor) ($
+"      ))
+       (apply-to-nodelist (inheritors syntax-node) (lambda (inheritor) ($
 "bool "(id syntax-node)"::_is"(attribute-string "link" inheritor)"() { return false; }
 "       )))
 "bool "(id syntax-node)"::_is"(id syntax-node)"() { return true; }
