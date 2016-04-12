@@ -1365,6 +1365,9 @@ void CppVisitor::visitIdentifierExpression(IdentifierExpression* identifierExpre
                             sourceFile->append("->allocateExclusivePage()");
                         }
                     }
+                    else {
+                        sourceFile->append("getPage()");
+                    }
                 }
             }
             else
@@ -1761,12 +1764,17 @@ void CppVisitor::closeSubtypeIdentifier(SubtypeIdentifier* subtypeIdentifier) {
 
 bool CppVisitor::openArrayType(ArrayType* arrayType) {
     if (!sourceIndentLevel) {
-        if (constDeclaration)
+        if (constDeclaration) {
             headerFile->append("_Vector<");
-        else
+            sourceFile->append("_Vector<");
+        }
+        else {
             headerFile->append("_Array<");
+            sourceFile->append("_Array<");
+        }
         arrayType->elementType->accept(this);
         headerFile->append(">*");
+        sourceFile->append(">*");
     }
     return false;
 }
