@@ -25,7 +25,8 @@ class "(id syntax-node)" : "(if (base syntax-node) (base syntax-node) "SyntaxNod
 "       ))
 "
     "(if (base syntax-node) "override " "")"function accept(mutable visitor: SyntaxVisitor) {
-        visitor.open"(id syntax-node)"(this)
+        if !visitor.open"(id syntax-node)"(this)
+            return;
 "
         (apply-to-children-of syntax-node (lambda (content)
             (case (type content)
