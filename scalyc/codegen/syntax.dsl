@@ -17,7 +17,7 @@
 class "(id syntax-node)" : "(if (base syntax-node) (base syntax-node) "SyntaxNode")" {
 
     init("(scaly-syntax-constructor-parameters syntax-node)") {
-        super.init("(if (program? syntax-node) "Position(0, 0), Position(0, 0)" "start, end")")
+        super.init("(if (program? syntax-node) "Position(0, 0), Position(0, 0)" "theStart, theEnd")")
     }
 
     "(if (base syntax-node) "override " "")"function accept(mutable visitor: SyntaxVisitor) {
