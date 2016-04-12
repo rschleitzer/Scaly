@@ -125,7 +125,7 @@ public:
         (apply-to-property-children-of syntax-node (lambda (content) ($
             (property-declaration content)(if (properties-remaining? content syntax-node) ", " "")
         )))
-        (if (program? syntax-node) "" ($ (if (node-list-empty? (properties syntax-node)) "" ", ") "Position* start, Position* end"))))
+        (if (program? syntax-node) "" ($ (if (node-list-empty? (properties syntax-node)) "" ", ") "Position* theStart, Position* theEnd"))))
 
 (define (property-declaration content)
     (case (type content)
@@ -175,8 +175,10 @@ public:
 using namespace scaly;
 namespace scalyc {
 
-SyntaxNode::SyntaxNode(Position* start, Position* end)
-: start(start), end(end) {
+SyntaxNode::SyntaxNode(Position* theStart, Position* theEnd)
+{
+    start = theStart;
+    end = theEnd;
 }
 
 "   (apply-to-selected-children "syntax" (lambda (syntax-node) ($
