@@ -60,10 +60,6 @@ class TerminatedStatement : SyntaxNode {
 
 class Statement : SyntaxNode {
 
-    init(start: Position, end: Position) {
-        super.init(start, end)
-    }
-
     function accept(mutable visitor: SyntaxVisitor) {
         visitor.openStatement(this)
         visitor.closeStatement(this)
@@ -73,10 +69,6 @@ class Statement : SyntaxNode {
 
 class Declaration : Statement {
 
-    init(start: Position, end: Position) {
-        super.init(start, end)
-    }
-
     override function accept(mutable visitor: SyntaxVisitor) {
         visitor.openDeclaration(this)
         visitor.closeDeclaration(this)
@@ -85,10 +77,6 @@ class Declaration : Statement {
 }
 
 class Expression : Statement {
-
-    init(start: Position, end: Position) {
-        super.init(start, end)
-    }
 
     override function accept(mutable visitor: SyntaxVisitor) {
         visitor.openExpression(this)
@@ -400,10 +388,6 @@ class AdditionalInitializer : SyntaxNode {
 
 class Modifier : SyntaxNode {
 
-    init(start: Position, end: Position) {
-        super.init(start, end)
-    }
-
     function accept(mutable visitor: SyntaxVisitor) {
         visitor.openModifier(this)
         visitor.closeModifier(this)
@@ -438,10 +422,6 @@ class StaticWord : Modifier {
 }
 
 class FunctionName : SyntaxNode {
-
-    init(start: Position, end: Position) {
-        super.init(start, end)
-    }
 
     function accept(mutable visitor: SyntaxVisitor) {
         visitor.openFunctionName(this)
@@ -539,10 +519,6 @@ class ParameterClause : SyntaxNode {
 }
 
 class Parameter : SyntaxNode {
-
-    init(start: Position, end: Position) {
-        super.init(start, end)
-    }
 
     function accept(mutable visitor: SyntaxVisitor) {
         visitor.openParameter(this)
@@ -756,10 +732,6 @@ class PostfixExpression : SyntaxNode {
 
 class BinaryOp : SyntaxNode {
 
-    init(start: Position, end: Position) {
-        super.init(start, end)
-    }
-
     function accept(mutable visitor: SyntaxVisitor) {
         visitor.openBinaryOp(this)
         visitor.closeBinaryOp(this)
@@ -851,10 +823,6 @@ class CatchClause : SyntaxNode {
 
 class CatchPattern : SyntaxNode {
 
-    init(start: Position, end: Position) {
-        super.init(start, end)
-    }
-
     function accept(mutable visitor: SyntaxVisitor) {
         visitor.openCatchPattern(this)
         visitor.closeCatchPattern(this)
@@ -899,10 +867,6 @@ class PathItemCatchPattern : CatchPattern {
 }
 
 class Postfix : SyntaxNode {
-
-    init(start: Position, end: Position) {
-        super.init(start, end)
-    }
 
     function accept(mutable visitor: SyntaxVisitor) {
         visitor.openPostfix(this)
@@ -995,10 +959,6 @@ class ExpressionElement : SyntaxNode {
 
 class MemberPostfix : SyntaxNode {
 
-    init(start: Position, end: Position) {
-        super.init(start, end)
-    }
-
     function accept(mutable visitor: SyntaxVisitor) {
         visitor.openMemberPostfix(this)
         visitor.closeMemberPostfix(this)
@@ -1022,10 +982,6 @@ class NamedMemberPostfix : MemberPostfix {
 }
 
 class PrimaryExpression : SyntaxNode {
-
-    init(start: Position, end: Position) {
-        super.init(start, end)
-    }
 
     function accept(mutable visitor: SyntaxVisitor) {
         visitor.openPrimaryExpression(this)
@@ -1248,10 +1204,6 @@ class InitializerCall : PrimaryExpression {
 
 class ThisExpression : PrimaryExpression {
 
-    init(start: Position, end: Position) {
-        super.init(start, end)
-    }
-
     override function accept(mutable visitor: SyntaxVisitor) {
         visitor.openThisExpression(this)
         visitor.closeThisExpression(this)
@@ -1303,10 +1255,6 @@ class ThisWord : ThisExpression {
 }
 
 class SuperExpression : PrimaryExpression {
-
-    init(start: Position, end: Position) {
-        super.init(start, end)
-    }
 
     override function accept(mutable visitor: SyntaxVisitor) {
         visitor.openSuperExpression(this)
@@ -1375,10 +1323,6 @@ class ElseClause : SyntaxNode {
 
 class SwitchBody : SyntaxNode {
 
-    init(start: Position, end: Position) {
-        super.init(start, end)
-    }
-
     function accept(mutable visitor: SyntaxVisitor) {
         visitor.openSwitchBody(this)
         visitor.closeSwitchBody(this)
@@ -1439,10 +1383,6 @@ class SwitchCase : SyntaxNode {
 
 class CaseLabel : SyntaxNode {
 
-    init(start: Position, end: Position) {
-        super.init(start, end)
-    }
-
     function accept(mutable visitor: SyntaxVisitor) {
         visitor.openCaseLabel(this)
         visitor.closeCaseLabel(this)
@@ -1500,10 +1440,6 @@ class CaseItem : SyntaxNode {
 }
 
 class Pattern : SyntaxNode {
-
-    init(start: Position, end: Position) {
-        super.init(start, end)
-    }
 
     function accept(mutable visitor: SyntaxVisitor) {
         visitor.openPattern(this)
@@ -1592,10 +1528,6 @@ class TuplePatternElement : SyntaxNode {
 
 class CaseContent : SyntaxNode {
 
-    init(start: Position, end: Position) {
-        super.init(start, end)
-    }
-
     function accept(mutable visitor: SyntaxVisitor) {
         visitor.openCaseContent(this)
         visitor.closeCaseContent(this)
@@ -1635,10 +1567,6 @@ class EmptyCaseContent : CaseContent {
 
 class CommonThisMember : SyntaxNode {
 
-    init(start: Position, end: Position) {
-        super.init(start, end)
-    }
-
     function accept(mutable visitor: SyntaxVisitor) {
         visitor.openCommonThisMember(this)
         visitor.closeCommonThisMember(this)
@@ -1675,10 +1603,6 @@ class ThisMember : CommonThisMember {
 
 class CommonSuperMember : SyntaxNode {
 
-    init(start: Position, end: Position) {
-        super.init(start, end)
-    }
-
     function accept(mutable visitor: SyntaxVisitor) {
         visitor.openCommonSuperMember(this)
         visitor.closeCommonSuperMember(this)
@@ -1714,10 +1638,6 @@ class SuperMember : CommonSuperMember {
 }
 
 class Type : SyntaxNode {
-
-    init(start: Position, end: Position) {
-        super.init(start, end)
-    }
 
     function accept(mutable visitor: SyntaxVisitor) {
         visitor.openType(this)
@@ -1802,10 +1722,6 @@ class SubtypeIdentifier : SyntaxNode {
 }
 
 class TypePostfix : SyntaxNode {
-
-    init(start: Position, end: Position) {
-        super.init(start, end)
-    }
 
     function accept(mutable visitor: SyntaxVisitor) {
         visitor.openTypePostfix(this)

@@ -9,11 +9,13 @@
     (apply-to-selected-children "syntax" (lambda (syntax-node) ($
 "
 class "(id syntax-node)" : "(if (base syntax-node) (base syntax-node) "SyntaxNode")" {
-
+"       (if (abstract? syntax-node) "" ($
+"
     init("(scaly-syntax-constructor-parameters syntax-node)") {
         super.init("(if (program? syntax-node) "Position(0, 0), Position(0, 0)" "start, end")")
     }
-
+"       ))
+"
     "(if (base syntax-node) "override " "")"function accept(mutable visitor: SyntaxVisitor) {
         visitor.open"(id syntax-node)"(this)
 "
