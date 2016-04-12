@@ -1178,6 +1178,32 @@ bool CppVisitor::openExpressionElement(ExpressionElement* expressionElement) {
 }
 
 void CppVisitor::closeExpressionElement(ExpressionElement* expressionElement) {
+    if (!isLastExpressionElement(expressionElement))
+        sourceFile->append(", ");
+}
+
+bool CppVisitor::isLastExpressionElement(ExpressionElement* expressionElement) {
+    if (expressionElement->parent->_isParenthesizedExpression()) {
+        ParenthesizedExpression* parenthesizedExpression = (ParenthesizedExpression*)expressionElement->parent;
+        _Vector<ExpressionElement>* expressionElements = parenthesizedExpression->expressionElements;
+        size_t _expressionElements_length = expressionElements->length();
+        for (size_t _i = 0; _i < _expressionElements_length; _i++) {
+            if ((*(*expressionElements)[_i] == expressionElement) && (_i == _expressionElements_length - 1))
+                return true;
+        }
+    }
+
+    if (expressionElement->parent->_isSubscript()) {
+        Subscript* subscript = (Subscript*)expressionElement->parent;
+        _Vector<ExpressionElement>* expressions = subscript->expressions;
+        size_t _expressions_length = expressions->length();
+        for (size_t _i = 0; _i < _expressions_length; _i++) {
+            if ((*(*expressions)[_i] == expressionElement) && (_i == _expressions_length - 1))
+                return true;
+        }
+    }
+    
+    return false;
 }
 
 bool CppVisitor::openNamedMemberPostfix(NamedMemberPostfix* namedMemberPostfix) {

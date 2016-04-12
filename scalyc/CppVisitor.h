@@ -148,6 +148,7 @@ public:
     virtual void closeSubscript(Subscript* subscript);
     virtual bool openExpressionElement(ExpressionElement* expressionElement);
     virtual void closeExpressionElement(ExpressionElement* expressionElement);
+    virtual bool isLastExpressionElement(ExpressionElement* expressionElement);
     virtual bool openNamedMemberPostfix(NamedMemberPostfix* namedMemberPostfix);
     virtual void closeNamedMemberPostfix(NamedMemberPostfix* namedMemberPostfix);
     virtual void visitIdentifierExpression(IdentifierExpression* identifierExpression);

@@ -861,4 +861,5 @@ Position* Lexer::getPreviousPosition(_Page* _rp) {
     return new(_rp) Position(previousLine, previousColumn);
 }
 
+
 }
