@@ -33,18 +33,18 @@ class "(id syntax-node)" : "(if (base syntax-node) (base syntax-node) "SyntaxNod
                 (("syntax") ($
                     (if (abstract? syntax-node) "" ($
                         (if (optional? content) ($
-"        if "(property content)" != nil {
+"        if "(property content)" != null {
 "
                         )"")
                         (if (multiple? content)
                             ($
-(if (optional? content) "    " "")"        for node in "(property content)"! {
+(if (optional? content) "    " "")"        for node: "(link content)" in "(property content)" {
 "(if (optional? content) "    " "")"            node.accept(visitor)
 "(if (optional? content) "    " "")"        }
 "
                             )
                             ($
-(if (optional? content) "    " "")"        "(property content)"!.accept(visitor)
+(if (optional? content) "    " "")"        "(property content)".accept(visitor)
 "
                             )
                         )
