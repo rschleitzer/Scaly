@@ -212,8 +212,7 @@ namespace scalyc {
 "}
 
 "      ))
-"
-void "(id syntax-node)"::accept(SyntaxVisitor* visitor) {
+"void "(id syntax-node)"::accept(SyntaxVisitor* visitor) {
 "       (if (abstract? syntax-node) "" ($
             (if (has-syntax-children? syntax-node)
                 ($
