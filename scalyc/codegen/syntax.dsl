@@ -2,9 +2,9 @@
 
 "class SyntaxNode {
 
-    init(start: Position, end: Position) {
-        start = start
-        end = end
+    init(theStart: Position, theEnd: Position) {
+        start = theStart
+        end = theEnd
     }
 
     let start: Position
@@ -84,7 +84,7 @@ namespace scalyc {
 
 class SyntaxNode : public Object {
 public:
-    SyntaxNode(Position* start, Position* end);
+    SyntaxNode(Position* theStart, Position* theEnd);
     Position* start;
     Position* end;
     SyntaxNode* parent;

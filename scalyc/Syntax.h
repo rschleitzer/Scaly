@@ -6,7 +6,7 @@ namespace scalyc {
 
 class SyntaxNode : public Object {
 public:
-    SyntaxNode(Position* start, Position* end);
+    SyntaxNode(Position* theStart, Position* theEnd);
     Position* start;
     Position* end;
     SyntaxNode* parent;
