@@ -2,8 +2,7 @@
 using namespace scaly;
 namespace scalyc {
 
-SyntaxNode::SyntaxNode(Position* theStart, Position* theEnd)
-{
+SyntaxNode::SyntaxNode(Position* theStart, Position* theEnd) {
     start = theStart;
     end = theEnd;
 }
