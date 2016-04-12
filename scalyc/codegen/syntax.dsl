@@ -12,8 +12,16 @@ class "(id syntax-node)" : "(if (base syntax-node) (base syntax-node) "SyntaxNod
 "       (if (abstract? syntax-node) "" ($
 "
     init("(scaly-syntax-constructor-parameters syntax-node)") {
-        super.init("(if (program? syntax-node) "Position(0, 0), Position(0, 0)" "start, end")")
-    }
+"     (if (program? syntax-node)
+"        start = Position(0, 0)
+        end = Position(0, 0)
+        this.name = name;
+        this.directory = directory;
+        this.compilationUnits = compilationUnits;
+"
+            (scaly-constructor-initializers syntax-node)
+        )
+"    }
 "       ))
 "
     "(if (base syntax-node) "override " "")"function accept(mutable visitor: SyntaxVisitor) {
@@ -165,6 +173,15 @@ public:
     this->end = end;
 "       (apply-to-property-children-of syntax-node (lambda (content) ($
 "    this->"(property content)" = "(property content)";
+"
+        )))))
+
+(define (scaly-constructor-initializers syntax-node)
+    ($
+"        this.start = start;
+        this.end = end;
+"       (apply-to-property-children-of syntax-node (lambda (content) ($
+"        this."(property content)" = "(property content)";
 "
         )))))
 
