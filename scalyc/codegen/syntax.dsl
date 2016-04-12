@@ -212,11 +212,7 @@ namespace scalyc {
 "}
 
 "      ))
-       (apply-to-nodelist (inheritors syntax-node) (lambda (inheritor) ($
-"bool "(id syntax-node)"::_is"(attribute-string "link" inheritor)"() { return false; }
-"       )))
-"bool "(id syntax-node)"::_is"(id syntax-node)"() { return true; }
-
+"
 void "(id syntax-node)"::accept(SyntaxVisitor* visitor) {
 "       (if (abstract? syntax-node) "" ($
             (if (has-syntax-children? syntax-node)
@@ -264,6 +260,10 @@ void "(id syntax-node)"::accept(SyntaxVisitor* visitor) {
             )
        ))
 "}
+"       (apply-to-nodelist (inheritors syntax-node) (lambda (inheritor) ($
+"bool "(id syntax-node)"::_is"(attribute-string "link" inheritor)"() { return false; }
+"       )))
+"bool "(id syntax-node)"::_is"(id syntax-node)"() { return true; }
 "   )))
 "
 }
