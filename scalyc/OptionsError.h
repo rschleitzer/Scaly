@@ -26,8 +26,7 @@ enum _OptionsErrorCode {
     _OptionsErrorCode_noFilesToCompile,
 };
 
-class OptionsError : public Object
-{
+class OptionsError : public Object {
 public:
     OptionsError(_OptionsErrorCode errorCode)
     : errorCode(errorCode), errorInfo(0) {}

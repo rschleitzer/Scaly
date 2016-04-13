@@ -67,8 +67,7 @@ enum _ParserErrorCode {
     _ParserErrorCode_notAtEnd,
 };
 
-class ParserError : public Object
-{
+class ParserError : public Object {
 public:
     ParserError(_ParserErrorCode errorCode)
     : errorCode(errorCode), errorInfo(0) {}

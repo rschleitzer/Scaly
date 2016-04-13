@@ -34,8 +34,7 @@ enum _CompilerErrorCode {
     _CompilerErrorCode_unableToCreateOutputDirectory,
 };
 
-class CompilerError : public Object
-{
+class CompilerError : public Object {
 public:
     CompilerError(_CompilerErrorCode errorCode)
     : errorCode(errorCode), errorInfo(0) {}
