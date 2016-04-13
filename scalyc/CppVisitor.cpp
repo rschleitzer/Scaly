@@ -221,6 +221,8 @@ void CppVisitor::closeTerminatedStatement(TerminatedStatement* terminatedStateme
             return;
         if (expression->prefixExpression->expression->primaryExpression->_isSwitchExpression())
             return;
+        if (expression->prefixExpression->expression->primaryExpression->_isForExpression())
+            return;
     }
 
     if (terminatedStatement->statement->_isCodeBlock())
@@ -1501,7 +1503,36 @@ void CppVisitor::closeCaseItem(CaseItem* caseItem) {
 }
 
 bool CppVisitor::openForExpression(ForExpression* forExpression) {
-    return true;
+    Pattern* pattern = forExpression->pattern;
+    pattern->accept(this);    
+    if (pattern->_isIdentifierPattern()) {
+        sourceFile->append(" = 0;\n");
+        indentSource();
+        sourceFile->append("size_t _");
+        Expression* expression = forExpression->expression;
+        if (expression->_isSimpleExpression()) {
+            SimpleExpression* simpleExpression = (SimpleExpression*)expression;
+            if (simpleExpression->prefixExpression->expression->primaryExpression->_isIdentifierExpression()) {
+                IdentifierExpression* identifierExpression = (IdentifierExpression*)simpleExpression->prefixExpression->expression->primaryExpression;
+                String* collectionName = identifierExpression->name;
+                sourceFile->append(collectionName);
+                sourceFile->append("_length = ");
+                sourceFile->append(collectionName);
+                sourceFile->append(".length();\n");
+                indentSource();
+                sourceFile->append("for (size_t _i = 0; _i < _");
+                sourceFile->append(collectionName);
+                sourceFile->append("_length; _i++) {\n");
+                sourceIndentLevel++;
+                indentSource();
+                forExpression->code->accept(this);
+                sourceIndentLevel--;
+                indentSource();
+                sourceFile->append("}\n");
+            }
+        }
+    }
+    return false;
 }
 
 void CppVisitor::closeForExpression(ForExpression* forExpression) {

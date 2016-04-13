@@ -25,36 +25,47 @@ class "(id syntax-node)" : "(if (base syntax-node) (base syntax-node) "SyntaxNod
 "       ))
 "
     "(if (base syntax-node) "override " "")"function accept(mutable visitor: SyntaxVisitor) {
-        if !visitor.open"(id syntax-node)"(this)
+"       (if (abstract? syntax-node) "" ($
+            (if (has-syntax-children? syntax-node)
+                ($
+"        if !visitor.open"(id syntax-node)"(this)
             return;
 "
-        (apply-to-children-of syntax-node (lambda (content)
-            (case (type content)
-                (("syntax") ($
-                    (if (abstract? syntax-node) "" ($
-                        (if (optional? content) ($
+                    (apply-to-children-of syntax-node (lambda (content)
+                        (case (type content)
+                            (("syntax") ($
+                                (if (abstract? syntax-node) "" ($
+                                    (if (and (optional? content) (not (multiple? content))) ($
+"        if ("(property content)")
+"
+                                    )"")
+                                    (if (multiple? content)
+                                        ($
 "        if "(property content)" != null {
+            for node: "(link content)" in "(property content)"
+                node.accept(visitor)
+        }
 "
-                        )"")
-                        (if (multiple? content)
-                            ($
-(if (optional? content) "    " "")"        for node: "(link content)" in "(property content)" {
-"(if (optional? content) "    " "")"            node.accept(visitor)
-"(if (optional? content) "    " "")"        }
-"
-                            )
-                            ($
+                                        )
+                                        ($
 (if (optional? content) "    " "")"        "(property content)".accept(visitor)
 "
-                            )
+                                        )
+                                    )
+                                ))
+                            ))
+                            (else "")
                         )
-                        (if (optional? content) "        }
-" ""                    )
-                   ))
-                ))
-                (else "")
+                    ))
+"        visitor.close"(id syntax-node)"(this)
+"
+                )
+                ($
+"        visitor.visit"(id syntax-node)"(this)
+"
+                )
             )
-        ))
+       ))
 "        visitor.close"(id syntax-node)"(this)
     }
 
