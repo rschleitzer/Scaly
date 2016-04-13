@@ -36,7 +36,7 @@ class "(id syntax-node)" : "(if (base syntax-node) (base syntax-node) "SyntaxNod
                             (("syntax") ($
                                 (if (abstract? syntax-node) "" ($
                                     (if (and (optional? content) (not (multiple? content))) ($
-"        if ("(property content)" != null)
+"        if "(property content)" != null
 "
                                     )"")
                                     (if (multiple? content)
@@ -240,7 +240,7 @@ namespace scalyc {
                                     )"")
                                     (if (multiple? content)
                                         ($
-"    if ("(property content)") {
+"    if ("(property content)" != nullptr) {
         "(link content)"* node = 0;
         size_t _"(property content)"_length = "(property content)"->length();
         for (size_t _i = 0; _i < _"(property content)"_length; _i++) {

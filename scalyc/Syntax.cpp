@@ -123,7 +123,7 @@ Program::Program(String* name, String* directory, _Vector<CompilationUnit>* comp
 void Program::accept(SyntaxVisitor* visitor) {
     if (!visitor->openProgram(this))
         return;
-    if (compilationUnits) {
+    if (compilationUnits != nullptr) {
         CompilationUnit* node = 0;
         size_t _compilationUnits_length = compilationUnits->length();
         for (size_t _i = 0; _i < _compilationUnits_length; _i++) {
@@ -144,7 +144,7 @@ CompilationUnit::CompilationUnit(_Vector<TerminatedStatement>* statements, Posit
 void CompilationUnit::accept(SyntaxVisitor* visitor) {
     if (!visitor->openCompilationUnit(this))
         return;
-    if (statements) {
+    if (statements != nullptr) {
         TerminatedStatement* node = 0;
         size_t _statements_length = statements->length();
         for (size_t _i = 0; _i < _statements_length; _i++) {
@@ -215,7 +215,7 @@ void UseDeclaration::accept(SyntaxVisitor* visitor) {
     if (!visitor->openUseDeclaration(this))
         return;
     importModule->accept(visitor);
-    if (importExtensions) {
+    if (importExtensions != nullptr) {
         PathIdentifier* node = 0;
         size_t _importExtensions_length = importExtensions->length();
         for (size_t _i = 0; _i < _importExtensions_length; _i++) {
@@ -281,7 +281,7 @@ FunctionDeclaration::FunctionDeclaration(_Vector<Modifier>* modifiers, FunctionN
 void FunctionDeclaration::accept(SyntaxVisitor* visitor) {
     if (!visitor->openFunctionDeclaration(this))
         return;
-    if (modifiers) {
+    if (modifiers != nullptr) {
         Modifier* node = 0;
         size_t _modifiers_length = modifiers->length();
         for (size_t _i = 0; _i < _modifiers_length; _i++) {
@@ -307,7 +307,7 @@ EnumDeclaration::EnumDeclaration(String* name, _Vector<EnumMember>* members, Pos
 void EnumDeclaration::accept(SyntaxVisitor* visitor) {
     if (!visitor->openEnumDeclaration(this))
         return;
-    if (members) {
+    if (members != nullptr) {
         EnumMember* node = 0;
         size_t _members_length = members->length();
         for (size_t _i = 0; _i < _members_length; _i++) {
@@ -353,7 +353,7 @@ InitializerDeclaration::InitializerDeclaration(_Vector<Modifier>* modifiers, Par
 void InitializerDeclaration::accept(SyntaxVisitor* visitor) {
     if (!visitor->openInitializerDeclaration(this))
         return;
-    if (modifiers) {
+    if (modifiers != nullptr) {
         Modifier* node = 0;
         size_t _modifiers_length = modifiers->length();
         for (size_t _i = 0; _i < _modifiers_length; _i++) {
@@ -378,7 +378,7 @@ CodeBlock::CodeBlock(_Vector<TerminatedStatement>* statements, Position* start, 
 void CodeBlock::accept(SyntaxVisitor* visitor) {
     if (!visitor->openCodeBlock(this))
         return;
-    if (statements) {
+    if (statements != nullptr) {
         TerminatedStatement* node = 0;
         size_t _statements_length = statements->length();
         for (size_t _i = 0; _i < _statements_length; _i++) {
@@ -401,7 +401,7 @@ void SimpleExpression::accept(SyntaxVisitor* visitor) {
     if (!visitor->openSimpleExpression(this))
         return;
     prefixExpression->accept(visitor);
-    if (binaryOps) {
+    if (binaryOps != nullptr) {
         BinaryOp* node = 0;
         size_t _binaryOps_length = binaryOps->length();
         for (size_t _i = 0; _i < _binaryOps_length; _i++) {
@@ -463,7 +463,7 @@ void BindingInitializer::accept(SyntaxVisitor* visitor) {
     if (!visitor->openBindingInitializer(this))
         return;
     initializer->accept(visitor);
-    if (additionalInitializers) {
+    if (additionalInitializers != nullptr) {
         AdditionalInitializer* node = 0;
         size_t _additionalInitializers_length = additionalInitializers->length();
         for (size_t _i = 0; _i < _additionalInitializers_length; _i++) {
@@ -604,7 +604,7 @@ ParameterClause::ParameterClause(_Vector<Parameter>* parameters, Position* start
 void ParameterClause::accept(SyntaxVisitor* visitor) {
     if (!visitor->openParameterClause(this))
         return;
-    if (parameters) {
+    if (parameters != nullptr) {
         Parameter* node = 0;
         size_t _parameters_length = parameters->length();
         for (size_t _i = 0; _i < _parameters_length; _i++) {
@@ -678,7 +678,7 @@ void EnumMember::accept(SyntaxVisitor* visitor) {
     if (!visitor->openEnumMember(this))
         return;
     enumCase->accept(visitor);
-    if (additionalCases) {
+    if (additionalCases != nullptr) {
         AdditionalCase* node = 0;
         size_t _additionalCases_length = additionalCases->length();
         for (size_t _i = 0; _i < _additionalCases_length; _i++) {
@@ -726,7 +726,7 @@ ClassBody::ClassBody(_Vector<ClassMember>* members, Position* start, Position* e
 void ClassBody::accept(SyntaxVisitor* visitor) {
     if (!visitor->openClassBody(this))
         return;
-    if (members) {
+    if (members != nullptr) {
         ClassMember* node = 0;
         size_t _members_length = members->length();
         for (size_t _i = 0; _i < _members_length; _i++) {
@@ -747,7 +747,7 @@ GenericArgumentClause::GenericArgumentClause(_Vector<GenericParameter>* genericP
 void GenericArgumentClause::accept(SyntaxVisitor* visitor) {
     if (!visitor->openGenericArgumentClause(this))
         return;
-    if (genericParameters) {
+    if (genericParameters != nullptr) {
         GenericParameter* node = 0;
         size_t _genericParameters_length = genericParameters->length();
         for (size_t _i = 0; _i < _genericParameters_length; _i++) {
@@ -810,7 +810,7 @@ void PostfixExpression::accept(SyntaxVisitor* visitor) {
     if (!visitor->openPostfixExpression(this))
         return;
     primaryExpression->accept(visitor);
-    if (postfixes) {
+    if (postfixes != nullptr) {
         Postfix* node = 0;
         size_t _postfixes_length = postfixes->length();
         for (size_t _i = 0; _i < _postfixes_length; _i++) {
@@ -937,7 +937,7 @@ void PathItemCatchPattern::accept(SyntaxVisitor* visitor) {
     if (!visitor->openPathItemCatchPattern(this))
         return;
     catchCase->accept(visitor);
-    if (catchCaseExtensions) {
+    if (catchCaseExtensions != nullptr) {
         PathIdentifier* node = 0;
         size_t _catchCaseExtensions_length = catchCaseExtensions->length();
         for (size_t _i = 0; _i < _catchCaseExtensions_length; _i++) {
@@ -979,7 +979,7 @@ void FunctionCall::accept(SyntaxVisitor* visitor) {
     if (!visitor->openFunctionCall(this))
         return;
     arguments->accept(visitor);
-    if (catchClauses) {
+    if (catchClauses != nullptr) {
         CatchClause* node = 0;
         size_t _catchClauses_length = catchClauses->length();
         for (size_t _i = 0; _i < _catchClauses_length; _i++) {
@@ -1014,7 +1014,7 @@ Subscript::Subscript(_Vector<ExpressionElement>* expressions, Position* start, P
 void Subscript::accept(SyntaxVisitor* visitor) {
     if (!visitor->openSubscript(this))
         return;
-    if (expressions) {
+    if (expressions != nullptr) {
         ExpressionElement* node = 0;
         size_t _expressions_length = expressions->length();
         for (size_t _i = 0; _i < _expressions_length; _i++) {
@@ -1196,7 +1196,7 @@ ParenthesizedExpression::ParenthesizedExpression(_Vector<ExpressionElement>* exp
 void ParenthesizedExpression::accept(SyntaxVisitor* visitor) {
     if (!visitor->openParenthesizedExpression(this))
         return;
-    if (expressionElements) {
+    if (expressionElements != nullptr) {
         ExpressionElement* node = 0;
         size_t _expressionElements_length = expressionElements->length();
         for (size_t _i = 0; _i < _expressionElements_length; _i++) {
@@ -1266,7 +1266,7 @@ void InitializerCall::accept(SyntaxVisitor* visitor) {
         return;
     typeToInitialize->accept(visitor);
     arguments->accept(visitor);
-    if (catchClauses) {
+    if (catchClauses != nullptr) {
         CatchClause* node = 0;
         size_t _catchClauses_length = catchClauses->length();
         for (size_t _i = 0; _i < _catchClauses_length; _i++) {
@@ -1361,7 +1361,7 @@ CurliedSwitchBody::CurliedSwitchBody(_Vector<SwitchCase>* cases, Position* start
 void CurliedSwitchBody::accept(SyntaxVisitor* visitor) {
     if (!visitor->openCurliedSwitchBody(this))
         return;
-    if (cases) {
+    if (cases != nullptr) {
         SwitchCase* node = 0;
         size_t _cases_length = cases->length();
         for (size_t _i = 0; _i < _cases_length; _i++) {
@@ -1382,7 +1382,7 @@ NakedSwitchBody::NakedSwitchBody(_Vector<SwitchCase>* cases, Position* start, Po
 void NakedSwitchBody::accept(SyntaxVisitor* visitor) {
     if (!visitor->openNakedSwitchBody(this))
         return;
-    if (cases) {
+    if (cases != nullptr) {
         SwitchCase* node = 0;
         size_t _cases_length = cases->length();
         for (size_t _i = 0; _i < _cases_length; _i++) {
@@ -1427,7 +1427,7 @@ void ItemCaseLabel::accept(SyntaxVisitor* visitor) {
     if (!visitor->openItemCaseLabel(this))
         return;
     pattern->accept(visitor);
-    if (additionalPatterns) {
+    if (additionalPatterns != nullptr) {
         CaseItem* node = 0;
         size_t _additionalPatterns_length = additionalPatterns->length();
         for (size_t _i = 0; _i < _additionalPatterns_length; _i++) {
@@ -1506,7 +1506,7 @@ TuplePattern::TuplePattern(_Vector<TuplePatternElement>* elements, Position* sta
 void TuplePattern::accept(SyntaxVisitor* visitor) {
     if (!visitor->openTuplePattern(this))
         return;
-    if (elements) {
+    if (elements != nullptr) {
         TuplePatternElement* node = 0;
         size_t _elements_length = elements->length();
         for (size_t _i = 0; _i < _elements_length; _i++) {
@@ -1561,7 +1561,7 @@ BlockCaseContent::BlockCaseContent(_Vector<TerminatedStatement>* statements, Pos
 void BlockCaseContent::accept(SyntaxVisitor* visitor) {
     if (!visitor->openBlockCaseContent(this))
         return;
-    if (statements) {
+    if (statements != nullptr) {
         TerminatedStatement* node = 0;
         size_t _statements_length = statements->length();
         for (size_t _i = 0; _i < _statements_length; _i++) {
@@ -1629,7 +1629,7 @@ void TypeIdentifier::accept(SyntaxVisitor* visitor) {
         return;
     if (subType != nullptr)
         subType->accept(visitor);
-    if (postfixes) {
+    if (postfixes != nullptr) {
         TypePostfix* node = 0;
         size_t _postfixes_length = postfixes->length();
         for (size_t _i = 0; _i < _postfixes_length; _i++) {
@@ -1652,7 +1652,7 @@ void ArrayType::accept(SyntaxVisitor* visitor) {
     if (!visitor->openArrayType(this))
         return;
     elementType->accept(visitor);
-    if (postfixes) {
+    if (postfixes != nullptr) {
         TypePostfix* node = 0;
         size_t _postfixes_length = postfixes->length();
         for (size_t _i = 0; _i < _postfixes_length; _i++) {
@@ -1716,7 +1716,7 @@ TypeInheritanceClause::TypeInheritanceClause(_Vector<Inheritance>* inheritances,
 void TypeInheritanceClause::accept(SyntaxVisitor* visitor) {
     if (!visitor->openTypeInheritanceClause(this))
         return;
-    if (inheritances) {
+    if (inheritances != nullptr) {
         Inheritance* node = 0;
         size_t _inheritances_length = inheritances->length();
         for (size_t _i = 0; _i < _inheritances_length; _i++) {
