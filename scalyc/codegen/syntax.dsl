@@ -36,7 +36,7 @@ class "(id syntax-node)" : "(if (base syntax-node) (base syntax-node) "SyntaxNod
                             (("syntax") ($
                                 (if (abstract? syntax-node) "" ($
                                     (if (and (optional? content) (not (multiple? content))) ($
-"        if ("(property content)")
+"        if ("(property content)" != null)
 "
                                     )"")
                                     (if (multiple? content)

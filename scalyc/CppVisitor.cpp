@@ -1518,7 +1518,7 @@ bool CppVisitor::openForExpression(ForExpression* forExpression) {
                 sourceFile->append(collectionName);
                 sourceFile->append("_length = ");
                 sourceFile->append(collectionName);
-                sourceFile->append(".length();\n");
+                sourceFile->append("->length();\n");
                 indentSource();
                 sourceFile->append("for (size_t _i = 0; _i < _");
                 sourceFile->append(collectionName);
