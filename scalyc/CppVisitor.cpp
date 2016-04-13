@@ -1783,15 +1783,18 @@ bool CppVisitor::openArrayType(ArrayType* arrayType) {
     if (!sourceIndentLevel) {
         if (constDeclaration) {
             headerFile->append("_Vector<");
-            sourceFile->append("_Vector<");
+            if (!suppressSource)
+                sourceFile->append("_Vector<");
         }
         else {
             headerFile->append("_Array<");
-            sourceFile->append("_Array<");
+            if (!suppressSource)
+                sourceFile->append("_Array<");
         }
         arrayType->elementType->accept(this);
         headerFile->append(">*");
-        sourceFile->append(">*");
+        if (!suppressSource)
+            sourceFile->append(">*");
     }
     return false;
 }
