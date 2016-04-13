@@ -17,8 +17,7 @@ enum _CppErrorCode {
     _CppErrorCode_unableToCreateOutputDirectory = 1,
 };
 
-class CppError : public Object
-{
+class CppError : public Object {
 public:
     CppError(_CppErrorCode errorCode)
     : errorCode(errorCode), errorInfo(0) {}

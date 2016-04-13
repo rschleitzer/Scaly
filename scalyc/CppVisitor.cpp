@@ -646,7 +646,7 @@ void CppVisitor::closeEnumDeclaration(EnumDeclaration* enumDeclaration) {
     }
     headerFile->append("class ");
     headerFile->append(enumDeclarationName);
-    headerFile->append(" : public Object\n{\npublic:\n    ");
+    headerFile->append(" : public Object {\npublic:\n    ");
     headerFile->append(enumDeclarationName);
     headerFile->append("(_");
     headerFile->append(enumDeclarationName);
