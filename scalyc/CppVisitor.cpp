@@ -525,7 +525,6 @@ bool CppVisitor::openFunctionSignature(FunctionSignature* functionSignature) {
 }
 
 void CppVisitor::closeFunctionSignature(FunctionSignature* functionSignature) {
-    sourceFile->append(" ");
     suppressHeader = true;
 }
 
@@ -548,7 +547,7 @@ bool CppVisitor::openParameterClause(ParameterClause* parameterClause) {
 void CppVisitor::closeParameterClause(ParameterClause* parameterClause) {
     headerFile->append(")");
     if (!suppressSource) 
-        sourceFile->append(")");
+        sourceFile->append(") ");
     inParameterClause = false;
 }
 
@@ -627,9 +626,9 @@ bool CppVisitor::openEnumDeclaration(EnumDeclaration* enumDeclaration) {
     headerFile->append(";\n");
     sourceFile->append("long ");
     sourceFile->append(enumDeclarationName);
-    sourceFile->append("::getErrorCode() {\n    return (long)errorCode; }\n\nvoid* ");
+    sourceFile->append("::getErrorCode() {\n    return (long)errorCode;\n}\n\nvoid* ");
     sourceFile->append(enumDeclarationName);
-    sourceFile->append("::getErrorInfo() {\n    return errorInfo; }\n\n");
+    sourceFile->append("::getErrorInfo() {\n    return errorInfo;\n}\n\n");
     return true;
 }
 
@@ -774,7 +773,7 @@ void CppVisitor::closeEnumMember(EnumMember* enumMember) {
         sourceFile->append(enumDeclarationName);
         sourceFile->append("_");
         sourceFile->append(enumMember->enumCase->name);
-        sourceFile->append("*)errorInfo; }\n");
+        sourceFile->append("*)errorInfo;\n}\n\n");
     }
     inEnumMember = false;
 }
