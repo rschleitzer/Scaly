@@ -5,35 +5,34 @@ namespace scalyc {
 CompilerError* Compiler::compileFiles(_Page* _ep, Options* options) {
     _Region _region; _Page* _p = _region.get();
     _Vector<String>* files = options->files;
-    _Vector<String>* sources = 0;
-    {
-        size_t _length = files->length();
-        sources = &_Vector<String>::createUninitialized(_p, _length);
-        for (size_t _index = 0; _index < _length; _index++) {
-            _Result<String, FileError> _readToStringResult = File::readToString(_p, _ep, **(*files)[_index]);
-            if (!_readToStringResult.succeeded())
-                return new(_ep) CompilerError(new(_ep) _CompilerError_unableToReadFile(*(*files)[_index], _readToStringResult.getError()));
-
-            *(*sources)[_index] = _readToStringResult.getResult();
+    _Array<String>* sources = new(_p) _Array<String>();
+    String* file = 0;
+    size_t _files_length = files->length();
+    for (size_t _i = 0; _i < _files_length; _i++) {
+        file = *(*files)[_i];
+        {
+            auto _source_Result = File::readToString(_p, _ep, *file);
+            if (!_source_Result.succeeded())
+                return new(_ep) CompilerError(new(_ep) _CompilerError_unableToReadFile(file, _source_Result.getError()));
+            sources->push(_source_Result.getResult());
+        }
+    }
+    _Array<CompilationUnit>* compilationUnits = new(_p) _Array<CompilationUnit>();
+    size_t index = 0;
+    String* source = 0;
+    size_t _sources_length = sources->length();
+    for (size_t _i = 0; _i < _sources_length; _i++) {
+        source = *(*sources)[_i];
+        {
+            auto _compilationUnit_Result = compileUnit(_p, _ep, *(*files)[index], source);
+            if (!_compilationUnit_Result.succeeded())
+                return new(_ep) CompilerError(new(_ep) _CompilerError_syntaxError(_compilationUnit_Result.getError()));
+            compilationUnits->push(_compilationUnit_Result.getResult());
+            index++;
         }
     }
 
-    _Vector<CompilationUnit>* compilationUnits = 0;
-    {
-        size_t _length = sources->length();
-        compilationUnits = &_Vector<CompilationUnit>::createUninitialized(_p, _length);
-        for (size_t _index = 0; _index < _length; _index++) {
-            _Result<CompilationUnit, ParserError> _compileUnitResult = compileUnit(_p, _ep, *(*files)[_index], *(*sources)[_index]);
-            if (!_compileUnitResult.succeeded()) {
-                return new(_ep) CompilerError(new(_ep) _CompilerError_syntaxError(_compileUnitResult.getError()));
-            }
-            else {
-                *(*compilationUnits)[_index] = _compileUnitResult.getResult();
-            }
-        }
-    }
-
-    Program* program = new(_p) Program(options->outputName, options->directory, compilationUnits);
+    Program* program = new(_p) Program(options->outputName, options->directory, &_Vector<CompilationUnit>::create(_p, *compilationUnits));
     if (compilationUnits) {
         size_t _compilationUnits_length = compilationUnits->length();
         for (size_t _i = 0; _i < _compilationUnits_length; _i++)

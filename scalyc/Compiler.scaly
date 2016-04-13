@@ -1,11 +1,23 @@
 class Compiler {
     static function compileFiles(options: Options) throws CompilerError {
         let files: [String] = options.files
-        let sources: [String] = map(files, File.readToString)
-            catch _ (file, error) throw UnableToReadFile(file, error)
+        mutable sources: [String] = [String]();
+        for file: String in files {
+            let source: String = File.readToString(file)
+                catch _ (file, error) throw CompilerError.UnableToReadFile(file, error)
+                
+            sources.push(source)
+        }
 
-        let compilationUnits: [CompilationUnit] = map(compileUnit, sources, files)
-            catch _ (_, error) throw SyntaxError(error)
+        mutable compilationUnits: [CompilationUnit] = [CompilationUnit]();
+        let index: unsigned = 0
+        for source: String in sources {
+            let compilationUnit: CompilationUnit = compileUnit(source, files[index])
+                catch _ (_, error) throw CompilerError.SyntaxError(error)
+
+            compilationUnits.push(compilationUnit);
+            index++
+        }
 
         mutable program: Program = Program()
         program.name = options.outputName
