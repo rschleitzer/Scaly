@@ -1836,6 +1836,14 @@ bool CppVisitor::openArrayType(ArrayType* arrayType) {
         if (!suppressSource)
             sourceFile->append(">*");
     }
+    else {
+        if (constDeclaration)
+            sourceFile->append("_Vector<");
+        else
+            sourceFile->append("_Array<");
+        arrayType->elementType->accept(this);
+        sourceFile->append(">*");
+    }
     return false;
 }
 
