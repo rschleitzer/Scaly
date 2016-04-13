@@ -133,6 +133,7 @@ void Program::accept(SyntaxVisitor* visitor) {
     }
     visitor->closeProgram(this);
 }
+
 bool Program::_isProgram() { return true; }
 
 CompilationUnit::CompilationUnit(_Vector<TerminatedStatement>* statements, Position* start, Position* end) {
@@ -154,6 +155,7 @@ void CompilationUnit::accept(SyntaxVisitor* visitor) {
     }
     visitor->closeCompilationUnit(this);
 }
+
 bool CompilationUnit::_isCompilationUnit() { return true; }
 
 TerminatedStatement::TerminatedStatement(Statement* statement, Position* start, Position* end) {
@@ -168,10 +170,12 @@ void TerminatedStatement::accept(SyntaxVisitor* visitor) {
     statement->accept(visitor);
     visitor->closeTerminatedStatement(this);
 }
+
 bool TerminatedStatement::_isTerminatedStatement() { return true; }
 
 void Statement::accept(SyntaxVisitor* visitor) {
 }
+
 bool Statement::_isDeclaration() { return false; }
 bool Statement::_isExpression() { return false; }
 bool Statement::_isUseDeclaration() { return false; }
@@ -188,6 +192,7 @@ bool Statement::_isStatement() { return true; }
 
 void Declaration::accept(SyntaxVisitor* visitor) {
 }
+
 bool Declaration::_isUseDeclaration() { return false; }
 bool Declaration::_isConstantDeclaration() { return false; }
 bool Declaration::_isVariableDeclaration() { return false; }
@@ -200,6 +205,7 @@ bool Declaration::_isDeclaration() { return true; }
 
 void Expression::accept(SyntaxVisitor* visitor) {
 }
+
 bool Expression::_isCodeBlock() { return false; }
 bool Expression::_isSimpleExpression() { return false; }
 bool Expression::_isExpression() { return true; }
@@ -225,6 +231,7 @@ void UseDeclaration::accept(SyntaxVisitor* visitor) {
     }
     visitor->closeUseDeclaration(this);
 }
+
 bool UseDeclaration::_isUseDeclaration() { return true; }
 
 ConstantDeclaration::ConstantDeclaration(BindingInitializer* initializer, Position* start, Position* end) {
@@ -239,6 +246,7 @@ void ConstantDeclaration::accept(SyntaxVisitor* visitor) {
     initializer->accept(visitor);
     visitor->closeConstantDeclaration(this);
 }
+
 bool ConstantDeclaration::_isConstantDeclaration() { return true; }
 
 VariableDeclaration::VariableDeclaration(BindingInitializer* initializer, Position* start, Position* end) {
@@ -253,6 +261,7 @@ void VariableDeclaration::accept(SyntaxVisitor* visitor) {
     initializer->accept(visitor);
     visitor->closeVariableDeclaration(this);
 }
+
 bool VariableDeclaration::_isVariableDeclaration() { return true; }
 
 MutableDeclaration::MutableDeclaration(BindingInitializer* initializer, Position* start, Position* end) {
@@ -267,6 +276,7 @@ void MutableDeclaration::accept(SyntaxVisitor* visitor) {
     initializer->accept(visitor);
     visitor->closeMutableDeclaration(this);
 }
+
 bool MutableDeclaration::_isMutableDeclaration() { return true; }
 
 FunctionDeclaration::FunctionDeclaration(_Vector<Modifier>* modifiers, FunctionName* name, FunctionSignature* signature, Expression* body, Position* start, Position* end) {
@@ -295,6 +305,7 @@ void FunctionDeclaration::accept(SyntaxVisitor* visitor) {
         body->accept(visitor);
     visitor->closeFunctionDeclaration(this);
 }
+
 bool FunctionDeclaration::_isFunctionDeclaration() { return true; }
 
 EnumDeclaration::EnumDeclaration(String* name, _Vector<EnumMember>* members, Position* start, Position* end) {
@@ -317,6 +328,7 @@ void EnumDeclaration::accept(SyntaxVisitor* visitor) {
     }
     visitor->closeEnumDeclaration(this);
 }
+
 bool EnumDeclaration::_isEnumDeclaration() { return true; }
 
 ClassDeclaration::ClassDeclaration(String* name, GenericArgumentClause* genericArgumentClause, TypeInheritanceClause* typeInheritanceClause, ClassBody* body, Position* start, Position* end) {
@@ -339,6 +351,7 @@ void ClassDeclaration::accept(SyntaxVisitor* visitor) {
         body->accept(visitor);
     visitor->closeClassDeclaration(this);
 }
+
 bool ClassDeclaration::_isClassDeclaration() { return true; }
 
 InitializerDeclaration::InitializerDeclaration(_Vector<Modifier>* modifiers, ParameterClause* parameterClause, ThrowsClause* throwsClause, Expression* body, Position* start, Position* end) {
@@ -367,6 +380,7 @@ void InitializerDeclaration::accept(SyntaxVisitor* visitor) {
     body->accept(visitor);
     visitor->closeInitializerDeclaration(this);
 }
+
 bool InitializerDeclaration::_isInitializerDeclaration() { return true; }
 
 CodeBlock::CodeBlock(_Vector<TerminatedStatement>* statements, Position* start, Position* end) {
@@ -388,6 +402,7 @@ void CodeBlock::accept(SyntaxVisitor* visitor) {
     }
     visitor->closeCodeBlock(this);
 }
+
 bool CodeBlock::_isCodeBlock() { return true; }
 
 SimpleExpression::SimpleExpression(PrefixExpression* prefixExpression, _Vector<BinaryOp>* binaryOps, Position* start, Position* end) {
@@ -411,6 +426,7 @@ void SimpleExpression::accept(SyntaxVisitor* visitor) {
     }
     visitor->closeSimpleExpression(this);
 }
+
 bool SimpleExpression::_isSimpleExpression() { return true; }
 
 PathIdentifier::PathIdentifier(PathItem* extension, Position* start, Position* end) {
@@ -425,6 +441,7 @@ void PathIdentifier::accept(SyntaxVisitor* visitor) {
     extension->accept(visitor);
     visitor->closePathIdentifier(this);
 }
+
 bool PathIdentifier::_isPathIdentifier() { return true; }
 
 PathItem::PathItem(String* name, Position* start, Position* end) {
@@ -436,6 +453,7 @@ PathItem::PathItem(String* name, Position* start, Position* end) {
 void PathItem::accept(SyntaxVisitor* visitor) {
     visitor->visitPathItem(this);
 }
+
 bool PathItem::_isPathItem() { return true; }
 
 Initializer::Initializer(Expression* expression, Position* start, Position* end) {
@@ -450,6 +468,7 @@ void Initializer::accept(SyntaxVisitor* visitor) {
     expression->accept(visitor);
     visitor->closeInitializer(this);
 }
+
 bool Initializer::_isInitializer() { return true; }
 
 BindingInitializer::BindingInitializer(PatternInitializer* initializer, _Vector<AdditionalInitializer>* additionalInitializers, Position* start, Position* end) {
@@ -473,6 +492,7 @@ void BindingInitializer::accept(SyntaxVisitor* visitor) {
     }
     visitor->closeBindingInitializer(this);
 }
+
 bool BindingInitializer::_isBindingInitializer() { return true; }
 
 PatternInitializer::PatternInitializer(Pattern* pattern, Initializer* initializer, Position* start, Position* end) {
@@ -490,6 +510,7 @@ void PatternInitializer::accept(SyntaxVisitor* visitor) {
         initializer->accept(visitor);
     visitor->closePatternInitializer(this);
 }
+
 bool PatternInitializer::_isPatternInitializer() { return true; }
 
 AdditionalInitializer::AdditionalInitializer(PatternInitializer* pattern, Position* start, Position* end) {
@@ -504,10 +525,12 @@ void AdditionalInitializer::accept(SyntaxVisitor* visitor) {
     pattern->accept(visitor);
     visitor->closeAdditionalInitializer(this);
 }
+
 bool AdditionalInitializer::_isAdditionalInitializer() { return true; }
 
 void Modifier::accept(SyntaxVisitor* visitor) {
 }
+
 bool Modifier::_isOverrideWord() { return false; }
 bool Modifier::_isStaticWord() { return false; }
 bool Modifier::_isModifier() { return true; }
@@ -520,6 +543,7 @@ OverrideWord::OverrideWord(Position* start, Position* end) {
 void OverrideWord::accept(SyntaxVisitor* visitor) {
     visitor->visitOverrideWord(this);
 }
+
 bool OverrideWord::_isOverrideWord() { return true; }
 
 StaticWord::StaticWord(Position* start, Position* end) {
@@ -530,10 +554,12 @@ StaticWord::StaticWord(Position* start, Position* end) {
 void StaticWord::accept(SyntaxVisitor* visitor) {
     visitor->visitStaticWord(this);
 }
+
 bool StaticWord::_isStaticWord() { return true; }
 
 void FunctionName::accept(SyntaxVisitor* visitor) {
 }
+
 bool FunctionName::_isIdentifierFunction() { return false; }
 bool FunctionName::_isFunctionName() { return true; }
 
@@ -546,6 +572,7 @@ IdentifierFunction::IdentifierFunction(String* name, Position* start, Position* 
 void IdentifierFunction::accept(SyntaxVisitor* visitor) {
     visitor->visitIdentifierFunction(this);
 }
+
 bool IdentifierFunction::_isIdentifierFunction() { return true; }
 
 FunctionSignature::FunctionSignature(ParameterClause* parameterClause, FunctionResult* result, ThrowsClause* throwsClause, Position* start, Position* end) {
@@ -566,6 +593,7 @@ void FunctionSignature::accept(SyntaxVisitor* visitor) {
         throwsClause->accept(visitor);
     visitor->closeFunctionSignature(this);
 }
+
 bool FunctionSignature::_isFunctionSignature() { return true; }
 
 FunctionResult::FunctionResult(ExistingClause* existingObject, Type* resultType, Position* start, Position* end) {
@@ -583,6 +611,7 @@ void FunctionResult::accept(SyntaxVisitor* visitor) {
     resultType->accept(visitor);
     visitor->closeFunctionResult(this);
 }
+
 bool FunctionResult::_isFunctionResult() { return true; }
 
 ExistingClause::ExistingClause(Position* start, Position* end) {
@@ -593,6 +622,7 @@ ExistingClause::ExistingClause(Position* start, Position* end) {
 void ExistingClause::accept(SyntaxVisitor* visitor) {
     visitor->visitExistingClause(this);
 }
+
 bool ExistingClause::_isExistingClause() { return true; }
 
 ParameterClause::ParameterClause(_Vector<Parameter>* parameters, Position* start, Position* end) {
@@ -614,10 +644,12 @@ void ParameterClause::accept(SyntaxVisitor* visitor) {
     }
     visitor->closeParameterClause(this);
 }
+
 bool ParameterClause::_isParameterClause() { return true; }
 
 void Parameter::accept(SyntaxVisitor* visitor) {
 }
+
 bool Parameter::_isConstParameter() { return false; }
 bool Parameter::_isVarParameter() { return false; }
 bool Parameter::_isParameter() { return true; }
@@ -635,6 +667,7 @@ void ConstParameter::accept(SyntaxVisitor* visitor) {
     parameterType->accept(visitor);
     visitor->closeConstParameter(this);
 }
+
 bool ConstParameter::_isConstParameter() { return true; }
 
 VarParameter::VarParameter(String* name, Type* parameterType, Position* start, Position* end) {
@@ -650,6 +683,7 @@ void VarParameter::accept(SyntaxVisitor* visitor) {
     parameterType->accept(visitor);
     visitor->closeVarParameter(this);
 }
+
 bool VarParameter::_isVarParameter() { return true; }
 
 ThrowsClause::ThrowsClause(Type* throwsType, Position* start, Position* end) {
@@ -664,6 +698,7 @@ void ThrowsClause::accept(SyntaxVisitor* visitor) {
     throwsType->accept(visitor);
     visitor->closeThrowsClause(this);
 }
+
 bool ThrowsClause::_isThrowsClause() { return true; }
 
 EnumMember::EnumMember(EnumCase* enumCase, _Vector<AdditionalCase>* additionalCases, ParameterClause* parameterClause, Position* start, Position* end) {
@@ -690,6 +725,7 @@ void EnumMember::accept(SyntaxVisitor* visitor) {
         parameterClause->accept(visitor);
     visitor->closeEnumMember(this);
 }
+
 bool EnumMember::_isEnumMember() { return true; }
 
 EnumCase::EnumCase(String* name, Position* start, Position* end) {
@@ -701,6 +737,7 @@ EnumCase::EnumCase(String* name, Position* start, Position* end) {
 void EnumCase::accept(SyntaxVisitor* visitor) {
     visitor->visitEnumCase(this);
 }
+
 bool EnumCase::_isEnumCase() { return true; }
 
 AdditionalCase::AdditionalCase(EnumCase* enumCase, Position* start, Position* end) {
@@ -715,6 +752,7 @@ void AdditionalCase::accept(SyntaxVisitor* visitor) {
     enumCase->accept(visitor);
     visitor->closeAdditionalCase(this);
 }
+
 bool AdditionalCase::_isAdditionalCase() { return true; }
 
 ClassBody::ClassBody(_Vector<ClassMember>* members, Position* start, Position* end) {
@@ -736,6 +774,7 @@ void ClassBody::accept(SyntaxVisitor* visitor) {
     }
     visitor->closeClassBody(this);
 }
+
 bool ClassBody::_isClassBody() { return true; }
 
 GenericArgumentClause::GenericArgumentClause(_Vector<GenericParameter>* genericParameters, Position* start, Position* end) {
@@ -757,6 +796,7 @@ void GenericArgumentClause::accept(SyntaxVisitor* visitor) {
     }
     visitor->closeGenericArgumentClause(this);
 }
+
 bool GenericArgumentClause::_isGenericArgumentClause() { return true; }
 
 GenericParameter::GenericParameter(String* typeName, Position* start, Position* end) {
@@ -768,6 +808,7 @@ GenericParameter::GenericParameter(String* typeName, Position* start, Position* 
 void GenericParameter::accept(SyntaxVisitor* visitor) {
     visitor->visitGenericParameter(this);
 }
+
 bool GenericParameter::_isGenericParameter() { return true; }
 
 ClassMember::ClassMember(Declaration* declaration, Position* start, Position* end) {
@@ -782,6 +823,7 @@ void ClassMember::accept(SyntaxVisitor* visitor) {
     declaration->accept(visitor);
     visitor->closeClassMember(this);
 }
+
 bool ClassMember::_isClassMember() { return true; }
 
 PrefixExpression::PrefixExpression(String* prefixOperator, PostfixExpression* expression, Position* start, Position* end) {
@@ -797,6 +839,7 @@ void PrefixExpression::accept(SyntaxVisitor* visitor) {
     expression->accept(visitor);
     visitor->closePrefixExpression(this);
 }
+
 bool PrefixExpression::_isPrefixExpression() { return true; }
 
 PostfixExpression::PostfixExpression(PrimaryExpression* primaryExpression, _Vector<Postfix>* postfixes, Position* start, Position* end) {
@@ -820,10 +863,12 @@ void PostfixExpression::accept(SyntaxVisitor* visitor) {
     }
     visitor->closePostfixExpression(this);
 }
+
 bool PostfixExpression::_isPostfixExpression() { return true; }
 
 void BinaryOp::accept(SyntaxVisitor* visitor) {
 }
+
 bool BinaryOp::_isBinaryOperation() { return false; }
 bool BinaryOp::_isAssignment() { return false; }
 bool BinaryOp::_isTypeQuery() { return false; }
@@ -843,6 +888,7 @@ void BinaryOperation::accept(SyntaxVisitor* visitor) {
     expression->accept(visitor);
     visitor->closeBinaryOperation(this);
 }
+
 bool BinaryOperation::_isBinaryOperation() { return true; }
 
 Assignment::Assignment(PrefixExpression* expression, Position* start, Position* end) {
@@ -857,6 +903,7 @@ void Assignment::accept(SyntaxVisitor* visitor) {
     expression->accept(visitor);
     visitor->closeAssignment(this);
 }
+
 bool Assignment::_isAssignment() { return true; }
 
 TypeQuery::TypeQuery(Type* objectType, Position* start, Position* end) {
@@ -871,6 +918,7 @@ void TypeQuery::accept(SyntaxVisitor* visitor) {
     objectType->accept(visitor);
     visitor->closeTypeQuery(this);
 }
+
 bool TypeQuery::_isTypeQuery() { return true; }
 
 TypeCast::TypeCast(Type* objectType, Position* start, Position* end) {
@@ -885,6 +933,7 @@ void TypeCast::accept(SyntaxVisitor* visitor) {
     objectType->accept(visitor);
     visitor->closeTypeCast(this);
 }
+
 bool TypeCast::_isTypeCast() { return true; }
 
 CatchClause::CatchClause(CatchPattern* catchPattern, TuplePattern* bindingPattern, Expression* expression, Position* start, Position* end) {
@@ -904,10 +953,12 @@ void CatchClause::accept(SyntaxVisitor* visitor) {
     expression->accept(visitor);
     visitor->closeCatchClause(this);
 }
+
 bool CatchClause::_isCatchClause() { return true; }
 
 void CatchPattern::accept(SyntaxVisitor* visitor) {
 }
+
 bool CatchPattern::_isWildCardCatchPattern() { return false; }
 bool CatchPattern::_isPathItemCatchPattern() { return false; }
 bool CatchPattern::_isCatchPattern() { return true; }
@@ -924,6 +975,7 @@ void WildCardCatchPattern::accept(SyntaxVisitor* visitor) {
     pattern->accept(visitor);
     visitor->closeWildCardCatchPattern(this);
 }
+
 bool WildCardCatchPattern::_isWildCardCatchPattern() { return true; }
 
 PathItemCatchPattern::PathItemCatchPattern(PathItem* catchCase, _Vector<PathIdentifier>* catchCaseExtensions, Position* start, Position* end) {
@@ -947,10 +999,12 @@ void PathItemCatchPattern::accept(SyntaxVisitor* visitor) {
     }
     visitor->closePathItemCatchPattern(this);
 }
+
 bool PathItemCatchPattern::_isPathItemCatchPattern() { return true; }
 
 void Postfix::accept(SyntaxVisitor* visitor) {
 }
+
 bool Postfix::_isOperatorPostfix() { return false; }
 bool Postfix::_isFunctionCall() { return false; }
 bool Postfix::_isExplicitMemberExpression() { return false; }
@@ -966,6 +1020,7 @@ OperatorPostfix::OperatorPostfix(String* postfixOperator, Position* start, Posit
 void OperatorPostfix::accept(SyntaxVisitor* visitor) {
     visitor->visitOperatorPostfix(this);
 }
+
 bool OperatorPostfix::_isOperatorPostfix() { return true; }
 
 FunctionCall::FunctionCall(ParenthesizedExpression* arguments, _Vector<CatchClause>* catchClauses, Position* start, Position* end) {
@@ -989,6 +1044,7 @@ void FunctionCall::accept(SyntaxVisitor* visitor) {
     }
     visitor->closeFunctionCall(this);
 }
+
 bool FunctionCall::_isFunctionCall() { return true; }
 
 ExplicitMemberExpression::ExplicitMemberExpression(MemberPostfix* memberPostfix, Position* start, Position* end) {
@@ -1003,6 +1059,7 @@ void ExplicitMemberExpression::accept(SyntaxVisitor* visitor) {
     memberPostfix->accept(visitor);
     visitor->closeExplicitMemberExpression(this);
 }
+
 bool ExplicitMemberExpression::_isExplicitMemberExpression() { return true; }
 
 Subscript::Subscript(_Vector<ExpressionElement>* expressions, Position* start, Position* end) {
@@ -1024,6 +1081,7 @@ void Subscript::accept(SyntaxVisitor* visitor) {
     }
     visitor->closeSubscript(this);
 }
+
 bool Subscript::_isSubscript() { return true; }
 
 ExpressionElement::ExpressionElement(Expression* expression, Position* start, Position* end) {
@@ -1038,10 +1096,12 @@ void ExpressionElement::accept(SyntaxVisitor* visitor) {
     expression->accept(visitor);
     visitor->closeExpressionElement(this);
 }
+
 bool ExpressionElement::_isExpressionElement() { return true; }
 
 void MemberPostfix::accept(SyntaxVisitor* visitor) {
 }
+
 bool MemberPostfix::_isNamedMemberPostfix() { return false; }
 bool MemberPostfix::_isMemberPostfix() { return true; }
 
@@ -1057,10 +1117,12 @@ void NamedMemberPostfix::accept(SyntaxVisitor* visitor) {
     identifier->accept(visitor);
     visitor->closeNamedMemberPostfix(this);
 }
+
 bool NamedMemberPostfix::_isNamedMemberPostfix() { return true; }
 
 void PrimaryExpression::accept(SyntaxVisitor* visitor) {
 }
+
 bool PrimaryExpression::_isIdentifierExpression() { return false; }
 bool PrimaryExpression::_isLiteralExpression() { return false; }
 bool PrimaryExpression::_isIfExpression() { return false; }
@@ -1089,6 +1151,7 @@ IdentifierExpression::IdentifierExpression(String* name, Position* start, Positi
 void IdentifierExpression::accept(SyntaxVisitor* visitor) {
     visitor->visitIdentifierExpression(this);
 }
+
 bool IdentifierExpression::_isIdentifierExpression() { return true; }
 
 LiteralExpression::LiteralExpression(Literal* literal, Position* start, Position* end) {
@@ -1100,6 +1163,7 @@ LiteralExpression::LiteralExpression(Literal* literal, Position* start, Position
 void LiteralExpression::accept(SyntaxVisitor* visitor) {
     visitor->visitLiteralExpression(this);
 }
+
 bool LiteralExpression::_isLiteralExpression() { return true; }
 
 IfExpression::IfExpression(Expression* condition, Expression* consequent, ElseClause* elseClause, Position* start, Position* end) {
@@ -1119,6 +1183,7 @@ void IfExpression::accept(SyntaxVisitor* visitor) {
         elseClause->accept(visitor);
     visitor->closeIfExpression(this);
 }
+
 bool IfExpression::_isIfExpression() { return true; }
 
 SwitchExpression::SwitchExpression(Expression* expression, SwitchBody* body, Position* start, Position* end) {
@@ -1135,6 +1200,7 @@ void SwitchExpression::accept(SyntaxVisitor* visitor) {
     body->accept(visitor);
     visitor->closeSwitchExpression(this);
 }
+
 bool SwitchExpression::_isSwitchExpression() { return true; }
 
 ForExpression::ForExpression(Pattern* pattern, Expression* expression, Expression* code, Position* start, Position* end) {
@@ -1153,6 +1219,7 @@ void ForExpression::accept(SyntaxVisitor* visitor) {
     code->accept(visitor);
     visitor->closeForExpression(this);
 }
+
 bool ForExpression::_isForExpression() { return true; }
 
 WhileExpression::WhileExpression(Expression* condition, Expression* code, Position* start, Position* end) {
@@ -1169,6 +1236,7 @@ void WhileExpression::accept(SyntaxVisitor* visitor) {
     code->accept(visitor);
     visitor->closeWhileExpression(this);
 }
+
 bool WhileExpression::_isWhileExpression() { return true; }
 
 RepeatExpression::RepeatExpression(Expression* code, Expression* condition, Position* start, Position* end) {
@@ -1185,6 +1253,7 @@ void RepeatExpression::accept(SyntaxVisitor* visitor) {
     condition->accept(visitor);
     visitor->closeRepeatExpression(this);
 }
+
 bool RepeatExpression::_isRepeatExpression() { return true; }
 
 ParenthesizedExpression::ParenthesizedExpression(_Vector<ExpressionElement>* expressionElements, Position* start, Position* end) {
@@ -1206,6 +1275,7 @@ void ParenthesizedExpression::accept(SyntaxVisitor* visitor) {
     }
     visitor->closeParenthesizedExpression(this);
 }
+
 bool ParenthesizedExpression::_isParenthesizedExpression() { return true; }
 
 ReturnExpression::ReturnExpression(Expression* expression, Position* start, Position* end) {
@@ -1221,6 +1291,7 @@ void ReturnExpression::accept(SyntaxVisitor* visitor) {
         expression->accept(visitor);
     visitor->closeReturnExpression(this);
 }
+
 bool ReturnExpression::_isReturnExpression() { return true; }
 
 ThrowExpression::ThrowExpression(Expression* expression, Position* start, Position* end) {
@@ -1236,6 +1307,7 @@ void ThrowExpression::accept(SyntaxVisitor* visitor) {
         expression->accept(visitor);
     visitor->closeThrowExpression(this);
 }
+
 bool ThrowExpression::_isThrowExpression() { return true; }
 
 BreakExpression::BreakExpression(Expression* expression, Position* start, Position* end) {
@@ -1251,6 +1323,7 @@ void BreakExpression::accept(SyntaxVisitor* visitor) {
         expression->accept(visitor);
     visitor->closeBreakExpression(this);
 }
+
 bool BreakExpression::_isBreakExpression() { return true; }
 
 InitializerCall::InitializerCall(Type* typeToInitialize, ParenthesizedExpression* arguments, _Vector<CatchClause>* catchClauses, Position* start, Position* end) {
@@ -1276,6 +1349,7 @@ void InitializerCall::accept(SyntaxVisitor* visitor) {
     }
     visitor->closeInitializerCall(this);
 }
+
 bool InitializerCall::_isInitializerCall() { return true; }
 
 ThisExpression::ThisExpression(Position* start, Position* end) {
@@ -1286,10 +1360,12 @@ ThisExpression::ThisExpression(Position* start, Position* end) {
 void ThisExpression::accept(SyntaxVisitor* visitor) {
     visitor->visitThisExpression(this);
 }
+
 bool ThisExpression::_isThisExpression() { return true; }
 
 void SuperExpression::accept(SyntaxVisitor* visitor) {
 }
+
 bool SuperExpression::_isSuperDot() { return false; }
 bool SuperExpression::_isSuperSubscript() { return false; }
 bool SuperExpression::_isSuperExpression() { return true; }
@@ -1306,6 +1382,7 @@ void SuperDot::accept(SyntaxVisitor* visitor) {
     member->accept(visitor);
     visitor->closeSuperDot(this);
 }
+
 bool SuperDot::_isSuperDot() { return true; }
 
 SuperSubscript::SuperSubscript(Subscript* subscript, Position* start, Position* end) {
@@ -1320,6 +1397,7 @@ void SuperSubscript::accept(SyntaxVisitor* visitor) {
     subscript->accept(visitor);
     visitor->closeSuperSubscript(this);
 }
+
 bool SuperSubscript::_isSuperSubscript() { return true; }
 
 NullExpression::NullExpression(Position* start, Position* end) {
@@ -1330,6 +1408,7 @@ NullExpression::NullExpression(Position* start, Position* end) {
 void NullExpression::accept(SyntaxVisitor* visitor) {
     visitor->visitNullExpression(this);
 }
+
 bool NullExpression::_isNullExpression() { return true; }
 
 ElseClause::ElseClause(Expression* alternative, Position* start, Position* end) {
@@ -1344,10 +1423,12 @@ void ElseClause::accept(SyntaxVisitor* visitor) {
     alternative->accept(visitor);
     visitor->closeElseClause(this);
 }
+
 bool ElseClause::_isElseClause() { return true; }
 
 void SwitchBody::accept(SyntaxVisitor* visitor) {
 }
+
 bool SwitchBody::_isCurliedSwitchBody() { return false; }
 bool SwitchBody::_isNakedSwitchBody() { return false; }
 bool SwitchBody::_isSwitchBody() { return true; }
@@ -1371,6 +1452,7 @@ void CurliedSwitchBody::accept(SyntaxVisitor* visitor) {
     }
     visitor->closeCurliedSwitchBody(this);
 }
+
 bool CurliedSwitchBody::_isCurliedSwitchBody() { return true; }
 
 NakedSwitchBody::NakedSwitchBody(_Vector<SwitchCase>* cases, Position* start, Position* end) {
@@ -1392,6 +1474,7 @@ void NakedSwitchBody::accept(SyntaxVisitor* visitor) {
     }
     visitor->closeNakedSwitchBody(this);
 }
+
 bool NakedSwitchBody::_isNakedSwitchBody() { return true; }
 
 SwitchCase::SwitchCase(CaseLabel* label, CaseContent* content, Position* start, Position* end) {
@@ -1408,10 +1491,12 @@ void SwitchCase::accept(SyntaxVisitor* visitor) {
     content->accept(visitor);
     visitor->closeSwitchCase(this);
 }
+
 bool SwitchCase::_isSwitchCase() { return true; }
 
 void CaseLabel::accept(SyntaxVisitor* visitor) {
 }
+
 bool CaseLabel::_isItemCaseLabel() { return false; }
 bool CaseLabel::_isDefaultCaseLabel() { return false; }
 bool CaseLabel::_isCaseLabel() { return true; }
@@ -1437,6 +1522,7 @@ void ItemCaseLabel::accept(SyntaxVisitor* visitor) {
     }
     visitor->closeItemCaseLabel(this);
 }
+
 bool ItemCaseLabel::_isItemCaseLabel() { return true; }
 
 DefaultCaseLabel::DefaultCaseLabel(Position* start, Position* end) {
@@ -1447,6 +1533,7 @@ DefaultCaseLabel::DefaultCaseLabel(Position* start, Position* end) {
 void DefaultCaseLabel::accept(SyntaxVisitor* visitor) {
     visitor->visitDefaultCaseLabel(this);
 }
+
 bool DefaultCaseLabel::_isDefaultCaseLabel() { return true; }
 
 CaseItem::CaseItem(Pattern* pattern, Position* start, Position* end) {
@@ -1461,10 +1548,12 @@ void CaseItem::accept(SyntaxVisitor* visitor) {
     pattern->accept(visitor);
     visitor->closeCaseItem(this);
 }
+
 bool CaseItem::_isCaseItem() { return true; }
 
 void Pattern::accept(SyntaxVisitor* visitor) {
 }
+
 bool Pattern::_isWildcardPattern() { return false; }
 bool Pattern::_isIdentifierPattern() { return false; }
 bool Pattern::_isTuplePattern() { return false; }
@@ -1479,6 +1568,7 @@ WildcardPattern::WildcardPattern(Position* start, Position* end) {
 void WildcardPattern::accept(SyntaxVisitor* visitor) {
     visitor->visitWildcardPattern(this);
 }
+
 bool WildcardPattern::_isWildcardPattern() { return true; }
 
 IdentifierPattern::IdentifierPattern(String* identifier, TypeAnnotation* annotationForType, Position* start, Position* end) {
@@ -1495,6 +1585,7 @@ void IdentifierPattern::accept(SyntaxVisitor* visitor) {
         annotationForType->accept(visitor);
     visitor->closeIdentifierPattern(this);
 }
+
 bool IdentifierPattern::_isIdentifierPattern() { return true; }
 
 TuplePattern::TuplePattern(_Vector<TuplePatternElement>* elements, Position* start, Position* end) {
@@ -1516,6 +1607,7 @@ void TuplePattern::accept(SyntaxVisitor* visitor) {
     }
     visitor->closeTuplePattern(this);
 }
+
 bool TuplePattern::_isTuplePattern() { return true; }
 
 ExpressionPattern::ExpressionPattern(Expression* expression, Position* start, Position* end) {
@@ -1530,6 +1622,7 @@ void ExpressionPattern::accept(SyntaxVisitor* visitor) {
     expression->accept(visitor);
     visitor->closeExpressionPattern(this);
 }
+
 bool ExpressionPattern::_isExpressionPattern() { return true; }
 
 TuplePatternElement::TuplePatternElement(Pattern* pattern, Position* start, Position* end) {
@@ -1544,10 +1637,12 @@ void TuplePatternElement::accept(SyntaxVisitor* visitor) {
     pattern->accept(visitor);
     visitor->closeTuplePatternElement(this);
 }
+
 bool TuplePatternElement::_isTuplePatternElement() { return true; }
 
 void CaseContent::accept(SyntaxVisitor* visitor) {
 }
+
 bool CaseContent::_isBlockCaseContent() { return false; }
 bool CaseContent::_isEmptyCaseContent() { return false; }
 bool CaseContent::_isCaseContent() { return true; }
@@ -1571,6 +1666,7 @@ void BlockCaseContent::accept(SyntaxVisitor* visitor) {
     }
     visitor->closeBlockCaseContent(this);
 }
+
 bool BlockCaseContent::_isBlockCaseContent() { return true; }
 
 EmptyCaseContent::EmptyCaseContent(Position* start, Position* end) {
@@ -1581,10 +1677,12 @@ EmptyCaseContent::EmptyCaseContent(Position* start, Position* end) {
 void EmptyCaseContent::accept(SyntaxVisitor* visitor) {
     visitor->visitEmptyCaseContent(this);
 }
+
 bool EmptyCaseContent::_isEmptyCaseContent() { return true; }
 
 void CommonSuperMember::accept(SyntaxVisitor* visitor) {
 }
+
 bool CommonSuperMember::_isSuperInit() { return false; }
 bool CommonSuperMember::_isSuperMember() { return false; }
 bool CommonSuperMember::_isCommonSuperMember() { return true; }
@@ -1597,6 +1695,7 @@ SuperInit::SuperInit(Position* start, Position* end) {
 void SuperInit::accept(SyntaxVisitor* visitor) {
     visitor->visitSuperInit(this);
 }
+
 bool SuperInit::_isSuperInit() { return true; }
 
 SuperMember::SuperMember(String* name, Position* start, Position* end) {
@@ -1608,10 +1707,12 @@ SuperMember::SuperMember(String* name, Position* start, Position* end) {
 void SuperMember::accept(SyntaxVisitor* visitor) {
     visitor->visitSuperMember(this);
 }
+
 bool SuperMember::_isSuperMember() { return true; }
 
 void Type::accept(SyntaxVisitor* visitor) {
 }
+
 bool Type::_isArrayType() { return false; }
 bool Type::_isTypeIdentifier() { return false; }
 bool Type::_isType() { return true; }
@@ -1639,6 +1740,7 @@ void TypeIdentifier::accept(SyntaxVisitor* visitor) {
     }
     visitor->closeTypeIdentifier(this);
 }
+
 bool TypeIdentifier::_isTypeIdentifier() { return true; }
 
 ArrayType::ArrayType(Type* elementType, _Vector<TypePostfix>* postfixes, Position* start, Position* end) {
@@ -1662,6 +1764,7 @@ void ArrayType::accept(SyntaxVisitor* visitor) {
     }
     visitor->closeArrayType(this);
 }
+
 bool ArrayType::_isArrayType() { return true; }
 
 TypeAnnotation::TypeAnnotation(Type* annotationForType, Position* start, Position* end) {
@@ -1676,6 +1779,7 @@ void TypeAnnotation::accept(SyntaxVisitor* visitor) {
     annotationForType->accept(visitor);
     visitor->closeTypeAnnotation(this);
 }
+
 bool TypeAnnotation::_isTypeAnnotation() { return true; }
 
 SubtypeIdentifier::SubtypeIdentifier(TypeIdentifier* typeIdentifier, Position* start, Position* end) {
@@ -1690,10 +1794,12 @@ void SubtypeIdentifier::accept(SyntaxVisitor* visitor) {
     typeIdentifier->accept(visitor);
     visitor->closeSubtypeIdentifier(this);
 }
+
 bool SubtypeIdentifier::_isSubtypeIdentifier() { return true; }
 
 void TypePostfix::accept(SyntaxVisitor* visitor) {
 }
+
 bool TypePostfix::_isOptionalType() { return false; }
 bool TypePostfix::_isTypePostfix() { return true; }
 
@@ -1705,6 +1811,7 @@ OptionalType::OptionalType(Position* start, Position* end) {
 void OptionalType::accept(SyntaxVisitor* visitor) {
     visitor->visitOptionalType(this);
 }
+
 bool OptionalType::_isOptionalType() { return true; }
 
 TypeInheritanceClause::TypeInheritanceClause(_Vector<Inheritance>* inheritances, Position* start, Position* end) {
@@ -1726,6 +1833,7 @@ void TypeInheritanceClause::accept(SyntaxVisitor* visitor) {
     }
     visitor->closeTypeInheritanceClause(this);
 }
+
 bool TypeInheritanceClause::_isTypeInheritanceClause() { return true; }
 
 Inheritance::Inheritance(TypeIdentifier* typeIdentifier, Position* start, Position* end) {
@@ -1740,6 +1848,7 @@ void Inheritance::accept(SyntaxVisitor* visitor) {
     typeIdentifier->accept(visitor);
     visitor->closeInheritance(this);
 }
+
 bool Inheritance::_isInheritance() { return true; }
 
 }

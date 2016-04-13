@@ -270,6 +270,7 @@ namespace scalyc {
             )
        ))
 "}
+
 "       (apply-to-nodelist (inheritors syntax-node) (lambda (inheritor) ($
 "bool "(id syntax-node)"::_is"(attribute-string "link" inheritor)"() { return false; }
 "       )))
