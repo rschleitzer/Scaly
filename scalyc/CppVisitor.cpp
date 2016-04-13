@@ -525,6 +525,7 @@ bool CppVisitor::openFunctionSignature(FunctionSignature* functionSignature) {
 }
 
 void CppVisitor::closeFunctionSignature(FunctionSignature* functionSignature) {
+    sourceFile->append(" ");
     suppressHeader = true;
 }
 
@@ -547,7 +548,7 @@ bool CppVisitor::openParameterClause(ParameterClause* parameterClause) {
 void CppVisitor::closeParameterClause(ParameterClause* parameterClause) {
     headerFile->append(")");
     if (!suppressSource) 
-        sourceFile->append(") ");
+        sourceFile->append(")");
     inParameterClause = false;
 }
 
