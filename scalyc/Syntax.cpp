@@ -125,9 +125,9 @@ void Program::accept(SyntaxVisitor* visitor) {
         return;
     if (compilationUnits) {
         CompilationUnit* node = 0;
-        size_t _alength = compilationUnits->length();
-        for (size_t _a = 0; _a < _alength; _a++) {
-            node = *(*compilationUnits)[_a];
+        size_t _compilationUnits_length = compilationUnits->length();
+        for (size_t _i = 0; _i < _compilationUnits_length; _i++) {
+            node = *(*compilationUnits)[_i];
             node->accept(visitor);
         }
     }
@@ -146,9 +146,9 @@ void CompilationUnit::accept(SyntaxVisitor* visitor) {
         return;
     if (statements) {
         TerminatedStatement* node = 0;
-        size_t _alength = statements->length();
-        for (size_t _a = 0; _a < _alength; _a++) {
-            node = *(*statements)[_a];
+        size_t _statements_length = statements->length();
+        for (size_t _i = 0; _i < _statements_length; _i++) {
+            node = *(*statements)[_i];
             node->accept(visitor);
         }
     }
@@ -217,9 +217,9 @@ void UseDeclaration::accept(SyntaxVisitor* visitor) {
     importModule->accept(visitor);
     if (importExtensions) {
         PathIdentifier* node = 0;
-        size_t _alength = importExtensions->length();
-        for (size_t _a = 0; _a < _alength; _a++) {
-            node = *(*importExtensions)[_a];
+        size_t _importExtensions_length = importExtensions->length();
+        for (size_t _i = 0; _i < _importExtensions_length; _i++) {
+            node = *(*importExtensions)[_i];
             node->accept(visitor);
         }
     }
@@ -283,15 +283,15 @@ void FunctionDeclaration::accept(SyntaxVisitor* visitor) {
         return;
     if (modifiers) {
         Modifier* node = 0;
-        size_t _alength = modifiers->length();
-        for (size_t _a = 0; _a < _alength; _a++) {
-            node = *(*modifiers)[_a];
+        size_t _modifiers_length = modifiers->length();
+        for (size_t _i = 0; _i < _modifiers_length; _i++) {
+            node = *(*modifiers)[_i];
             node->accept(visitor);
         }
     }
     name->accept(visitor);
     signature->accept(visitor);
-    if (body)
+    if (body != nullptr)
         body->accept(visitor);
     visitor->closeFunctionDeclaration(this);
 }
@@ -309,9 +309,9 @@ void EnumDeclaration::accept(SyntaxVisitor* visitor) {
         return;
     if (members) {
         EnumMember* node = 0;
-        size_t _alength = members->length();
-        for (size_t _a = 0; _a < _alength; _a++) {
-            node = *(*members)[_a];
+        size_t _members_length = members->length();
+        for (size_t _i = 0; _i < _members_length; _i++) {
+            node = *(*members)[_i];
             node->accept(visitor);
         }
     }
@@ -331,11 +331,11 @@ ClassDeclaration::ClassDeclaration(String* name, GenericArgumentClause* genericA
 void ClassDeclaration::accept(SyntaxVisitor* visitor) {
     if (!visitor->openClassDeclaration(this))
         return;
-    if (genericArgumentClause)
+    if (genericArgumentClause != nullptr)
         genericArgumentClause->accept(visitor);
-    if (typeInheritanceClause)
+    if (typeInheritanceClause != nullptr)
         typeInheritanceClause->accept(visitor);
-    if (body)
+    if (body != nullptr)
         body->accept(visitor);
     visitor->closeClassDeclaration(this);
 }
@@ -355,14 +355,14 @@ void InitializerDeclaration::accept(SyntaxVisitor* visitor) {
         return;
     if (modifiers) {
         Modifier* node = 0;
-        size_t _alength = modifiers->length();
-        for (size_t _a = 0; _a < _alength; _a++) {
-            node = *(*modifiers)[_a];
+        size_t _modifiers_length = modifiers->length();
+        for (size_t _i = 0; _i < _modifiers_length; _i++) {
+            node = *(*modifiers)[_i];
             node->accept(visitor);
         }
     }
     parameterClause->accept(visitor);
-    if (throwsClause)
+    if (throwsClause != nullptr)
         throwsClause->accept(visitor);
     body->accept(visitor);
     visitor->closeInitializerDeclaration(this);
@@ -380,9 +380,9 @@ void CodeBlock::accept(SyntaxVisitor* visitor) {
         return;
     if (statements) {
         TerminatedStatement* node = 0;
-        size_t _alength = statements->length();
-        for (size_t _a = 0; _a < _alength; _a++) {
-            node = *(*statements)[_a];
+        size_t _statements_length = statements->length();
+        for (size_t _i = 0; _i < _statements_length; _i++) {
+            node = *(*statements)[_i];
             node->accept(visitor);
         }
     }
@@ -403,9 +403,9 @@ void SimpleExpression::accept(SyntaxVisitor* visitor) {
     prefixExpression->accept(visitor);
     if (binaryOps) {
         BinaryOp* node = 0;
-        size_t _alength = binaryOps->length();
-        for (size_t _a = 0; _a < _alength; _a++) {
-            node = *(*binaryOps)[_a];
+        size_t _binaryOps_length = binaryOps->length();
+        for (size_t _i = 0; _i < _binaryOps_length; _i++) {
+            node = *(*binaryOps)[_i];
             node->accept(visitor);
         }
     }
@@ -465,9 +465,9 @@ void BindingInitializer::accept(SyntaxVisitor* visitor) {
     initializer->accept(visitor);
     if (additionalInitializers) {
         AdditionalInitializer* node = 0;
-        size_t _alength = additionalInitializers->length();
-        for (size_t _a = 0; _a < _alength; _a++) {
-            node = *(*additionalInitializers)[_a];
+        size_t _additionalInitializers_length = additionalInitializers->length();
+        for (size_t _i = 0; _i < _additionalInitializers_length; _i++) {
+            node = *(*additionalInitializers)[_i];
             node->accept(visitor);
         }
     }
@@ -486,7 +486,7 @@ void PatternInitializer::accept(SyntaxVisitor* visitor) {
     if (!visitor->openPatternInitializer(this))
         return;
     pattern->accept(visitor);
-    if (initializer)
+    if (initializer != nullptr)
         initializer->accept(visitor);
     visitor->closePatternInitializer(this);
 }
@@ -560,9 +560,9 @@ void FunctionSignature::accept(SyntaxVisitor* visitor) {
     if (!visitor->openFunctionSignature(this))
         return;
     parameterClause->accept(visitor);
-    if (result)
+    if (result != nullptr)
         result->accept(visitor);
-    if (throwsClause)
+    if (throwsClause != nullptr)
         throwsClause->accept(visitor);
     visitor->closeFunctionSignature(this);
 }
@@ -578,7 +578,7 @@ FunctionResult::FunctionResult(ExistingClause* existingObject, Type* resultType,
 void FunctionResult::accept(SyntaxVisitor* visitor) {
     if (!visitor->openFunctionResult(this))
         return;
-    if (existingObject)
+    if (existingObject != nullptr)
         existingObject->accept(visitor);
     resultType->accept(visitor);
     visitor->closeFunctionResult(this);
@@ -606,9 +606,9 @@ void ParameterClause::accept(SyntaxVisitor* visitor) {
         return;
     if (parameters) {
         Parameter* node = 0;
-        size_t _alength = parameters->length();
-        for (size_t _a = 0; _a < _alength; _a++) {
-            node = *(*parameters)[_a];
+        size_t _parameters_length = parameters->length();
+        for (size_t _i = 0; _i < _parameters_length; _i++) {
+            node = *(*parameters)[_i];
             node->accept(visitor);
         }
     }
@@ -680,13 +680,13 @@ void EnumMember::accept(SyntaxVisitor* visitor) {
     enumCase->accept(visitor);
     if (additionalCases) {
         AdditionalCase* node = 0;
-        size_t _alength = additionalCases->length();
-        for (size_t _a = 0; _a < _alength; _a++) {
-            node = *(*additionalCases)[_a];
+        size_t _additionalCases_length = additionalCases->length();
+        for (size_t _i = 0; _i < _additionalCases_length; _i++) {
+            node = *(*additionalCases)[_i];
             node->accept(visitor);
         }
     }
-    if (parameterClause)
+    if (parameterClause != nullptr)
         parameterClause->accept(visitor);
     visitor->closeEnumMember(this);
 }
@@ -728,9 +728,9 @@ void ClassBody::accept(SyntaxVisitor* visitor) {
         return;
     if (members) {
         ClassMember* node = 0;
-        size_t _alength = members->length();
-        for (size_t _a = 0; _a < _alength; _a++) {
-            node = *(*members)[_a];
+        size_t _members_length = members->length();
+        for (size_t _i = 0; _i < _members_length; _i++) {
+            node = *(*members)[_i];
             node->accept(visitor);
         }
     }
@@ -749,9 +749,9 @@ void GenericArgumentClause::accept(SyntaxVisitor* visitor) {
         return;
     if (genericParameters) {
         GenericParameter* node = 0;
-        size_t _alength = genericParameters->length();
-        for (size_t _a = 0; _a < _alength; _a++) {
-            node = *(*genericParameters)[_a];
+        size_t _genericParameters_length = genericParameters->length();
+        for (size_t _i = 0; _i < _genericParameters_length; _i++) {
+            node = *(*genericParameters)[_i];
             node->accept(visitor);
         }
     }
@@ -812,9 +812,9 @@ void PostfixExpression::accept(SyntaxVisitor* visitor) {
     primaryExpression->accept(visitor);
     if (postfixes) {
         Postfix* node = 0;
-        size_t _alength = postfixes->length();
-        for (size_t _a = 0; _a < _alength; _a++) {
-            node = *(*postfixes)[_a];
+        size_t _postfixes_length = postfixes->length();
+        for (size_t _i = 0; _i < _postfixes_length; _i++) {
+            node = *(*postfixes)[_i];
             node->accept(visitor);
         }
     }
@@ -899,7 +899,7 @@ void CatchClause::accept(SyntaxVisitor* visitor) {
     if (!visitor->openCatchClause(this))
         return;
     catchPattern->accept(visitor);
-    if (bindingPattern)
+    if (bindingPattern != nullptr)
         bindingPattern->accept(visitor);
     expression->accept(visitor);
     visitor->closeCatchClause(this);
@@ -939,9 +939,9 @@ void PathItemCatchPattern::accept(SyntaxVisitor* visitor) {
     catchCase->accept(visitor);
     if (catchCaseExtensions) {
         PathIdentifier* node = 0;
-        size_t _alength = catchCaseExtensions->length();
-        for (size_t _a = 0; _a < _alength; _a++) {
-            node = *(*catchCaseExtensions)[_a];
+        size_t _catchCaseExtensions_length = catchCaseExtensions->length();
+        for (size_t _i = 0; _i < _catchCaseExtensions_length; _i++) {
+            node = *(*catchCaseExtensions)[_i];
             node->accept(visitor);
         }
     }
@@ -981,9 +981,9 @@ void FunctionCall::accept(SyntaxVisitor* visitor) {
     arguments->accept(visitor);
     if (catchClauses) {
         CatchClause* node = 0;
-        size_t _alength = catchClauses->length();
-        for (size_t _a = 0; _a < _alength; _a++) {
-            node = *(*catchClauses)[_a];
+        size_t _catchClauses_length = catchClauses->length();
+        for (size_t _i = 0; _i < _catchClauses_length; _i++) {
+            node = *(*catchClauses)[_i];
             node->accept(visitor);
         }
     }
@@ -1016,9 +1016,9 @@ void Subscript::accept(SyntaxVisitor* visitor) {
         return;
     if (expressions) {
         ExpressionElement* node = 0;
-        size_t _alength = expressions->length();
-        for (size_t _a = 0; _a < _alength; _a++) {
-            node = *(*expressions)[_a];
+        size_t _expressions_length = expressions->length();
+        for (size_t _i = 0; _i < _expressions_length; _i++) {
+            node = *(*expressions)[_i];
             node->accept(visitor);
         }
     }
@@ -1115,7 +1115,7 @@ void IfExpression::accept(SyntaxVisitor* visitor) {
         return;
     condition->accept(visitor);
     consequent->accept(visitor);
-    if (elseClause)
+    if (elseClause != nullptr)
         elseClause->accept(visitor);
     visitor->closeIfExpression(this);
 }
@@ -1198,9 +1198,9 @@ void ParenthesizedExpression::accept(SyntaxVisitor* visitor) {
         return;
     if (expressionElements) {
         ExpressionElement* node = 0;
-        size_t _alength = expressionElements->length();
-        for (size_t _a = 0; _a < _alength; _a++) {
-            node = *(*expressionElements)[_a];
+        size_t _expressionElements_length = expressionElements->length();
+        for (size_t _i = 0; _i < _expressionElements_length; _i++) {
+            node = *(*expressionElements)[_i];
             node->accept(visitor);
         }
     }
@@ -1217,7 +1217,7 @@ ReturnExpression::ReturnExpression(Expression* expression, Position* start, Posi
 void ReturnExpression::accept(SyntaxVisitor* visitor) {
     if (!visitor->openReturnExpression(this))
         return;
-    if (expression)
+    if (expression != nullptr)
         expression->accept(visitor);
     visitor->closeReturnExpression(this);
 }
@@ -1232,7 +1232,7 @@ ThrowExpression::ThrowExpression(Expression* expression, Position* start, Positi
 void ThrowExpression::accept(SyntaxVisitor* visitor) {
     if (!visitor->openThrowExpression(this))
         return;
-    if (expression)
+    if (expression != nullptr)
         expression->accept(visitor);
     visitor->closeThrowExpression(this);
 }
@@ -1247,7 +1247,7 @@ BreakExpression::BreakExpression(Expression* expression, Position* start, Positi
 void BreakExpression::accept(SyntaxVisitor* visitor) {
     if (!visitor->openBreakExpression(this))
         return;
-    if (expression)
+    if (expression != nullptr)
         expression->accept(visitor);
     visitor->closeBreakExpression(this);
 }
@@ -1268,9 +1268,9 @@ void InitializerCall::accept(SyntaxVisitor* visitor) {
     arguments->accept(visitor);
     if (catchClauses) {
         CatchClause* node = 0;
-        size_t _alength = catchClauses->length();
-        for (size_t _a = 0; _a < _alength; _a++) {
-            node = *(*catchClauses)[_a];
+        size_t _catchClauses_length = catchClauses->length();
+        for (size_t _i = 0; _i < _catchClauses_length; _i++) {
+            node = *(*catchClauses)[_i];
             node->accept(visitor);
         }
     }
@@ -1363,9 +1363,9 @@ void CurliedSwitchBody::accept(SyntaxVisitor* visitor) {
         return;
     if (cases) {
         SwitchCase* node = 0;
-        size_t _alength = cases->length();
-        for (size_t _a = 0; _a < _alength; _a++) {
-            node = *(*cases)[_a];
+        size_t _cases_length = cases->length();
+        for (size_t _i = 0; _i < _cases_length; _i++) {
+            node = *(*cases)[_i];
             node->accept(visitor);
         }
     }
@@ -1384,9 +1384,9 @@ void NakedSwitchBody::accept(SyntaxVisitor* visitor) {
         return;
     if (cases) {
         SwitchCase* node = 0;
-        size_t _alength = cases->length();
-        for (size_t _a = 0; _a < _alength; _a++) {
-            node = *(*cases)[_a];
+        size_t _cases_length = cases->length();
+        for (size_t _i = 0; _i < _cases_length; _i++) {
+            node = *(*cases)[_i];
             node->accept(visitor);
         }
     }
@@ -1429,9 +1429,9 @@ void ItemCaseLabel::accept(SyntaxVisitor* visitor) {
     pattern->accept(visitor);
     if (additionalPatterns) {
         CaseItem* node = 0;
-        size_t _alength = additionalPatterns->length();
-        for (size_t _a = 0; _a < _alength; _a++) {
-            node = *(*additionalPatterns)[_a];
+        size_t _additionalPatterns_length = additionalPatterns->length();
+        for (size_t _i = 0; _i < _additionalPatterns_length; _i++) {
+            node = *(*additionalPatterns)[_i];
             node->accept(visitor);
         }
     }
@@ -1491,7 +1491,7 @@ IdentifierPattern::IdentifierPattern(String* identifier, TypeAnnotation* annotat
 void IdentifierPattern::accept(SyntaxVisitor* visitor) {
     if (!visitor->openIdentifierPattern(this))
         return;
-    if (annotationForType)
+    if (annotationForType != nullptr)
         annotationForType->accept(visitor);
     visitor->closeIdentifierPattern(this);
 }
@@ -1508,9 +1508,9 @@ void TuplePattern::accept(SyntaxVisitor* visitor) {
         return;
     if (elements) {
         TuplePatternElement* node = 0;
-        size_t _alength = elements->length();
-        for (size_t _a = 0; _a < _alength; _a++) {
-            node = *(*elements)[_a];
+        size_t _elements_length = elements->length();
+        for (size_t _i = 0; _i < _elements_length; _i++) {
+            node = *(*elements)[_i];
             node->accept(visitor);
         }
     }
@@ -1563,9 +1563,9 @@ void BlockCaseContent::accept(SyntaxVisitor* visitor) {
         return;
     if (statements) {
         TerminatedStatement* node = 0;
-        size_t _alength = statements->length();
-        for (size_t _a = 0; _a < _alength; _a++) {
-            node = *(*statements)[_a];
+        size_t _statements_length = statements->length();
+        for (size_t _i = 0; _i < _statements_length; _i++) {
+            node = *(*statements)[_i];
             node->accept(visitor);
         }
     }
@@ -1627,13 +1627,13 @@ TypeIdentifier::TypeIdentifier(String* name, SubtypeIdentifier* subType, _Vector
 void TypeIdentifier::accept(SyntaxVisitor* visitor) {
     if (!visitor->openTypeIdentifier(this))
         return;
-    if (subType)
+    if (subType != nullptr)
         subType->accept(visitor);
     if (postfixes) {
         TypePostfix* node = 0;
-        size_t _alength = postfixes->length();
-        for (size_t _a = 0; _a < _alength; _a++) {
-            node = *(*postfixes)[_a];
+        size_t _postfixes_length = postfixes->length();
+        for (size_t _i = 0; _i < _postfixes_length; _i++) {
+            node = *(*postfixes)[_i];
             node->accept(visitor);
         }
     }
@@ -1654,9 +1654,9 @@ void ArrayType::accept(SyntaxVisitor* visitor) {
     elementType->accept(visitor);
     if (postfixes) {
         TypePostfix* node = 0;
-        size_t _alength = postfixes->length();
-        for (size_t _a = 0; _a < _alength; _a++) {
-            node = *(*postfixes)[_a];
+        size_t _postfixes_length = postfixes->length();
+        for (size_t _i = 0; _i < _postfixes_length; _i++) {
+            node = *(*postfixes)[_i];
             node->accept(visitor);
         }
     }
@@ -1718,9 +1718,9 @@ void TypeInheritanceClause::accept(SyntaxVisitor* visitor) {
         return;
     if (inheritances) {
         Inheritance* node = 0;
-        size_t _alength = inheritances->length();
-        for (size_t _a = 0; _a < _alength; _a++) {
-            node = *(*inheritances)[_a];
+        size_t _inheritances_length = inheritances->length();
+        for (size_t _i = 0; _i < _inheritances_length; _i++) {
+            node = *(*inheritances)[_i];
             node->accept(visitor);
         }
     }

@@ -66,8 +66,7 @@ class "(id syntax-node)" : "(if (base syntax-node) (base syntax-node) "SyntaxNod
                 )
             )
        ))
-"        visitor.close"(id syntax-node)"(this)
-    }
+"    }
 
 "
         (apply-to-children-of syntax-node (lambda (content) ($
@@ -236,16 +235,16 @@ namespace scalyc {
                             (("syntax") ($
                                 (if (abstract? syntax-node) "" ($
                                     (if (and (optional? content) (not (multiple? content))) ($
-"    if ("(property content)")
+"    if ("(property content)" != nullptr)
 "
                                     )"")
                                     (if (multiple? content)
                                         ($
 "    if ("(property content)") {
         "(link content)"* node = 0;
-        size_t _alength = "(property content)"->length();
-        for (size_t _a = 0; _a < _alength; _a++) {
-            node = *(*"(property content)")[_a];
+        size_t _"(property content)"_length = "(property content)"->length();
+        for (size_t _i = 0; _i < _"(property content)"_length; _i++) {
+            node = *(*"(property content)")[_i];
             node->accept(visitor);
         }
     }

@@ -1525,10 +1525,20 @@ bool CppVisitor::openForExpression(ForExpression* forExpression) {
                 sourceFile->append("_length; _i++) {\n");
                 sourceIndentLevel++;
                 indentSource();
-                forExpression->code->accept(this);
-                sourceIndentLevel--;
-                indentSource();
-                sourceFile->append("}\n");
+                if (forExpression->pattern->_isIdentifierPattern()) {
+                    IdentifierPattern* identifierPattern = (IdentifierPattern*)forExpression->pattern;
+                    sourceFile->append(identifierPattern->identifier);
+                    sourceFile->append(" = *(*");
+                    sourceFile->append(collectionName);
+                    sourceFile->append(")[_i];\n");
+                    indentSource();
+                    forExpression->code->accept(this);
+                    if (forExpression->code->_isSimpleExpression())
+                        sourceFile->append(";\n");
+                    sourceIndentLevel--;
+                    indentSource();
+                    sourceFile->append("}\n");
+                }
             }
         }
     }
