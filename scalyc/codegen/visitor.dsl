@@ -89,7 +89,6 @@ public:"
 "#include \"scalyc.h\"
 using namespace scaly;
 namespace scalyc {
-
 "
     (apply-to-selected-children "syntax" (lambda (syntax) (if (abstract? syntax) ""
         (if (has-syntax-children? syntax)
@@ -111,6 +110,8 @@ void MyVisitor::visit"(id syntax)"("(id syntax)"* "(string-firstchar-downcase (i
     )))
 "
 bool MyVisitor::_isMyVisitor() { return true; }
+
+
 }
 "
 ))

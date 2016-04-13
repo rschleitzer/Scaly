@@ -2,7 +2,6 @@
 using namespace scaly;
 namespace scalyc {
 
-
 bool MyVisitor::openProgram(Program* program) {
     return true;
 }
@@ -562,4 +561,6 @@ void MyVisitor::closeInheritance(Inheritance* inheritance) {
 }
 
 bool MyVisitor::_isMyVisitor() { return true; }
+
+
 }
