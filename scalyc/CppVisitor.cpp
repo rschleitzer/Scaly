@@ -214,6 +214,8 @@ bool CppVisitor::openTerminatedStatement(TerminatedStatement* terminatedStatemen
 void CppVisitor::closeTerminatedStatement(TerminatedStatement* terminatedStatement) {
     if (terminatedStatement->statement->_isClassDeclaration())
         return;
+    if (terminatedStatement->statement->_isEnumDeclaration())
+        return;
 
     if (terminatedStatement->statement->_isSimpleExpression()) {
         SimpleExpression* expression = (SimpleExpression*) terminatedStatement->statement;
@@ -622,6 +624,11 @@ bool CppVisitor::openEnumDeclaration(EnumDeclaration* enumDeclaration) {
     headerFile->append("\n\nclass ");
     headerFile->append(enumDeclarationName);
     headerFile->append(";\n");
+    sourceFile->append("long ");
+    sourceFile->append(enumDeclarationName);
+    sourceFile->append("::getErrorCode() {\n    return (long)errorCode; }\n\nvoid* ");
+    sourceFile->append(enumDeclarationName);
+    sourceFile->append("::getErrorInfo() {\n    return errorInfo; }\n\n");
     return true;
 }
 
@@ -710,6 +717,15 @@ bool CppVisitor::openEnumMember(EnumMember* enumMember) {
         headerFile->append("_");
         headerFile->append(enumMember->enumCase->name);
         headerFile->append("(");
+        sourceFile->append("_");
+        sourceFile->append(enumDeclarationName);
+        sourceFile->append("_");
+        sourceFile->append(enumMember->enumCase->name);
+        sourceFile->append("::_");
+        sourceFile->append(enumDeclarationName);
+        sourceFile->append("_");
+        sourceFile->append(enumMember->enumCase->name);
+        sourceFile->append("(");
     }
     inEnumMember = true;
     return true;
@@ -717,9 +733,12 @@ bool CppVisitor::openEnumMember(EnumMember* enumMember) {
 
 void CppVisitor::closeEnumMember(EnumMember* enumMember) {
     if (enumMember->parameterClause) {
+        sourceFile->append("\n");
         headerFile->append(";\n\n");
         _Vector<Parameter>* parameters = enumMember->parameterClause->parameters;
         if (parameters) {
+            sourceFile->append(": ");
+            size_t pos = 0;
             size_t _parameters_length = parameters->length();
             for (size_t _i = 0; _i < _parameters_length; _i++) {
                 Parameter* parameter = *(*parameters)[_i];
@@ -730,10 +749,31 @@ void CppVisitor::closeEnumMember(EnumMember* enumMember) {
                     headerFile->append(" ");
                     headerFile->append(constParameter->name);
                     headerFile->append(";\n");
+                    if (pos)
+                        sourceFile->append(", ");
+                    sourceFile->append(constParameter->name);
+                    sourceFile->append("(");
+                    sourceFile->append(constParameter->name);
+                    sourceFile->append(")");
                 }
+                pos++;
             }
         }
         headerFile->append("};\n");
+        sourceFile->append(" { }\n\n_");
+        String* enumDeclarationName = ((EnumDeclaration*)(enumMember->parent))->name;
+        sourceFile->append(enumDeclarationName);
+        sourceFile->append("_");
+        sourceFile->append(enumMember->enumCase->name);
+        sourceFile->append("* ");
+        sourceFile->append(enumDeclarationName);
+        sourceFile->append("::get_");
+        sourceFile->append(enumMember->enumCase->name);
+        sourceFile->append("() {\n    return (_");
+        sourceFile->append(enumDeclarationName);
+        sourceFile->append("_");
+        sourceFile->append(enumMember->enumCase->name);
+        sourceFile->append("*)errorInfo; }\n");
     }
     inEnumMember = false;
 }
