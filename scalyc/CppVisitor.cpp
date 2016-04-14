@@ -1723,6 +1723,9 @@ void CppVisitor::visitEmptyCaseContent(EmptyCaseContent* emptyCaseContent) {
 }
 
 bool CppVisitor::openInitializerCall(InitializerCall* initializerCall) {
+    if (initializerCall->typeToInitialize->_isArrayType()) {
+        sourceFile->append("new(_p) ");
+    }
     return true;
 }
 
@@ -1833,8 +1836,11 @@ bool CppVisitor::openArrayType(ArrayType* arrayType) {
         }
         arrayType->elementType->accept(this);
         headerFile->append(">*");
-        if (!suppressSource)
-            sourceFile->append(">*");
+        if (!suppressSource) {
+            sourceFile->append(">");
+            if (!arrayType->parent->_isInitializerCall())
+                sourceFile->append("*");
+        }
     }
     else {
         if (constDeclaration)
@@ -1842,7 +1848,9 @@ bool CppVisitor::openArrayType(ArrayType* arrayType) {
         else
             sourceFile->append("_Array<");
         arrayType->elementType->accept(this);
-        sourceFile->append(">*");
+        sourceFile->append(">");
+        if (!arrayType->parent->_isInitializerCall())
+            sourceFile->append("*");
     }
     return false;
 }
