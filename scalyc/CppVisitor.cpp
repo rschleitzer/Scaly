@@ -1766,25 +1766,67 @@ void CppVisitor::closeTypeAnnotation(TypeAnnotation* annotationForType) {
 }
 
 bool CppVisitor::openTypeIdentifier(TypeIdentifier* typeIdentifier) {
-    if (!suppressHeader) {
-        appendCppTypeName(headerFile, typeIdentifier);
+    if (inCatchingAssignment(typeIdentifier)) {
+        sourceFile->append("auto");
     }
-    if (!suppressSource) {
-        appendCppTypeName(sourceFile, typeIdentifier);
-    }
-    if (isClass(typeIdentifier->name) && (!inArrayType(typeIdentifier)) && (!inTypeQuery(typeIdentifier))) {
+    else {
         if (!suppressHeader) {
-            headerFile->append("*");
+            appendCppTypeName(headerFile, typeIdentifier);
         }
         if (!suppressSource) {
-            sourceFile->append("*");
+            appendCppTypeName(sourceFile, typeIdentifier);
         }
-    }
-    if (inTypeQuery(typeIdentifier)) {
-        sourceFile->append("()");
+        if (isClass(typeIdentifier->name) && (!inArrayType(typeIdentifier)) && (!inTypeQuery(typeIdentifier))) {
+            if (!suppressHeader) {
+                headerFile->append("*");
+            }
+            if (!suppressSource) {
+                sourceFile->append("*");
+            }
+        }
+        if (inTypeQuery(typeIdentifier)) {
+            sourceFile->append("()");
+        }
     }
         
     return true;
+}
+
+bool CppVisitor::inCatchingAssignment(TypeIdentifier* typeIdentifier) {
+    if (typeIdentifier->parent->parent->parent->_isPatternInitializer()) {
+        PatternInitializer* patternInitializer = (PatternInitializer*)typeIdentifier->parent->parent->parent;
+        if (patternInitializer->initializer != nullptr)
+        {
+            if (patternInitializer->initializer->expression->_isSimpleExpression()) {
+                SimpleExpression* simpleExpression = (SimpleExpression*)patternInitializer->initializer->expression;
+                PostfixExpression* postfixExpression = simpleExpression->prefixExpression->expression;
+                if (postfixExpression->postfixes != nullptr) {
+                    FunctionCall* functionCall =  nullptr;
+                    if (postfixExpression->postfixes->length() > 0) {
+                        Postfix* postfix = *(*(postfixExpression->postfixes))[0];
+                        if (postfix->_isFunctionCall()) {
+                            functionCall = (FunctionCall*)postfix;
+                        }
+                        else if (postfix->_isExplicitMemberExpression()) {
+                            if (postfixExpression->postfixes->length() > 1) {
+                                Postfix* postfix = *(*(postfixExpression->postfixes))[1];
+                                if (postfix->_isFunctionCall()) {
+                                    functionCall = (FunctionCall*)postfix;
+                                    return true;
+                                }
+                            }
+                        }
+                    }
+                    if (functionCall != nullptr) {
+                        if (functionCall->catchClauses != nullptr)
+                            return true;
+                    }
+                }
+            }
+        }
+    }
+    
+    return false;
 }
 
 bool CppVisitor::inArrayType(TypeIdentifier* typeIdentifier) {

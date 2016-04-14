@@ -207,6 +207,7 @@ public:
     virtual void visitSuperInit(SuperInit* superInit);
     virtual void visitSuperMember(SuperMember* superMember);
     virtual bool openTypeIdentifier(TypeIdentifier* typeIdentifier);
+    virtual bool inCatchingAssignment(TypeIdentifier* typeIdentifier);
     virtual bool inArrayType(TypeIdentifier* typeIdentifier);
     virtual bool inTypeQuery(TypeIdentifier* typeIdentifier);
     virtual void closeTypeIdentifier(TypeIdentifier* typeIdentifier);
