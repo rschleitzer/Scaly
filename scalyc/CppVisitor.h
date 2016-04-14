@@ -194,6 +194,7 @@ public:
     virtual void closeCaseItem(CaseItem* caseItem);
     virtual void visitWildcardPattern(WildcardPattern* wildcardPattern);
     virtual bool openIdentifierPattern(IdentifierPattern* identifierPattern);
+    virtual bool isCatchingPatternInitializer(PatternInitializer* patternInitializer);
     virtual void closeIdentifierPattern(IdentifierPattern* identifierPattern);
     virtual bool openTuplePattern(TuplePattern* tuplePattern);
     virtual void closeTuplePattern(TuplePattern* tuplePattern);
@@ -207,7 +208,6 @@ public:
     virtual void visitSuperInit(SuperInit* superInit);
     virtual void visitSuperMember(SuperMember* superMember);
     virtual bool openTypeIdentifier(TypeIdentifier* typeIdentifier);
-    virtual bool inCatchingAssignment(TypeIdentifier* typeIdentifier);
     virtual bool inArrayType(TypeIdentifier* typeIdentifier);
     virtual bool inTypeQuery(TypeIdentifier* typeIdentifier);
     virtual void closeTypeIdentifier(TypeIdentifier* typeIdentifier);
