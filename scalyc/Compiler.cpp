@@ -14,7 +14,8 @@ CompilerError* Compiler::compileFiles(_Page* _ep, Options* options) {
             auto _source_Result = File::readToString(_p, _ep, *file);
             if (!_source_Result.succeeded())
                 return new(_ep) CompilerError(new(_ep) _CompilerError_unableToReadFile(file, _source_Result.getError()));
-            sources->push(_source_Result.getResult());
+            String* source = _source_Result.getResult();
+            sources->push(source);
         }
     }
     _Array<CompilationUnit>* compilationUnits = new(_p) _Array<CompilationUnit>();
@@ -27,7 +28,8 @@ CompilerError* Compiler::compileFiles(_Page* _ep, Options* options) {
             auto _compilationUnit_Result = compileUnit(_p, _ep, *(*files)[index], source);
             if (!_compilationUnit_Result.succeeded())
                 return new(_ep) CompilerError(new(_ep) _CompilerError_syntaxError(_compilationUnit_Result.getError()));
-            compilationUnits->push(_compilationUnit_Result.getResult());
+            CompilationUnit* compilationUnit = _compilationUnit_Result.getResult();
+            compilationUnits->push(compilationUnit);
             index++;
         }
     }
