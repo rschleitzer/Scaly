@@ -367,6 +367,7 @@ bool CppVisitor::openInitializerDeclaration(InitializerDeclaration* initializerD
 
 void CppVisitor::closeInitializerDeclaration(InitializerDeclaration* initializerDeclaration) {
     sourceFile->append("\n");
+    suppressHeader = false;
 }
 
 void CppVisitor::visitOverrideWord(OverrideWord* overrideWord) {
@@ -937,6 +938,7 @@ bool CppVisitor::openCodeBlock(CodeBlock* codeBlock) {
         indentSource();
         sourceFile->append("_Region _region; _Page* _p = _region.get();\n");
     }
+    suppressHeader = true;
     return true;
 }
 
