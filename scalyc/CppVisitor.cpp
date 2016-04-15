@@ -1363,17 +1363,17 @@ bool CppVisitor::openParenthesizedExpression(ParenthesizedExpression* parenthesi
 bool CppVisitor::returnsLocalObject(FunctionCall* functionCall) {
     if (functionCall->parent->_isPostfixExpression()) {
         PostfixExpression* postfixExpression = (PostfixExpression*)functionCall->parent;
-        if (postfixExpression->postfixes->length() > 0) {
-            Postfix* postfix = *(*postfixExpression->postfixes)[postfixExpression->postfixes->length() - 1];
-            if (postfix->_isIdentifierExpression()) {
-                IdentifierExpression* identifierExpression = (IdentifierExpression*)postfix;
+        if (postfixExpression->postfixes->length() == 1) {
+            if (postfixExpression->primaryExpression->_isIdentifierExpression()) {
+                IdentifierExpression* identifierExpression = (IdentifierExpression*)postfixExpression->primaryExpression;
                 if (isClass(identifierExpression->name)) {
                     return false;
                 }
-                
-                return true;
             }
         }
+
+        if (postfixExpression->parent->parent->parent->_isInitializer())
+            return true;
     }
 
     return false;
