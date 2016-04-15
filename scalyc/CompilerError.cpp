@@ -10,6 +10,13 @@ void* CompilerError::getErrorInfo() {
     return errorInfo;
 }
 
+_CompilerError_fileNotFound::_CompilerError_fileNotFound(String* file) 
+: file(file) { }
+
+_CompilerError_fileNotFound* CompilerError::get_fileNotFound() {
+    return (_CompilerError_fileNotFound*)errorInfo;
+}
+
 _CompilerError_unableToReadFile::_CompilerError_unableToReadFile(String* file, FileError* error) 
 : file(file), error(error) { }
 

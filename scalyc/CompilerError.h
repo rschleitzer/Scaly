@@ -6,6 +6,13 @@ namespace scalyc {
 
 class CompilerError;
 
+class _CompilerError_fileNotFound : public Object {
+public:
+    _CompilerError_fileNotFound(String* file);
+
+    String* file;
+};
+
 class _CompilerError_unableToReadFile : public Object {
 public:
     _CompilerError_unableToReadFile(String* file, FileError* error);
@@ -29,7 +36,8 @@ public:
     DirectoryError* error;
 };
 enum _CompilerErrorCode {
-    _CompilerErrorCode_unableToReadFile = 1,
+    _CompilerErrorCode_fileNotFound = 1,
+    _CompilerErrorCode_unableToReadFile,
     _CompilerErrorCode_syntaxError,
     _CompilerErrorCode_unableToCreateOutputDirectory,
 };
@@ -38,6 +46,9 @@ class CompilerError : public Object {
 public:
     CompilerError(_CompilerErrorCode errorCode)
     : errorCode(errorCode), errorInfo(0) {}
+
+    CompilerError(_CompilerError_fileNotFound* fileNotFound)
+    : errorCode(_CompilerErrorCode_fileNotFound), errorInfo(fileNotFound) {}
 
     CompilerError(_CompilerError_unableToReadFile* unableToReadFile)
     : errorCode(_CompilerErrorCode_unableToReadFile), errorInfo(unableToReadFile) {}
@@ -51,6 +62,7 @@ public:
     long getErrorCode();
     void* getErrorInfo();
 
+    _CompilerError_fileNotFound* get_fileNotFound();
     _CompilerError_unableToReadFile* get_unableToReadFile();
     _CompilerError_syntaxError* get_syntaxError();
     _CompilerError_unableToCreateOutputDirectory* get_unableToCreateOutputDirectory();

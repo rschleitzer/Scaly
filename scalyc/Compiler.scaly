@@ -4,7 +4,8 @@ class Compiler {
         mutable sources: [String] = [String]();
         for file: String in files {
             let source: String = File.readToString(file)
-                catch _ (file, error) throw CompilerError.UnableToReadFile(file, error)
+                catch noSuchFileOrDirectory(error) throw CompilerError.FileNotFound(file)
+                catch _ (error) throw CompilerError.UnableToReadFile(file, error)
                 
             sources.push(source)
         }
@@ -13,7 +14,7 @@ class Compiler {
         let index: unsigned = 0
         for source: String in sources {
             let compilationUnit: CompilationUnit = compileUnit(source, files[index])
-                catch _ (_, error) throw CompilerError.SyntaxError(error)
+                catch _ (error) throw CompilerError.SyntaxError(error)
 
             compilationUnits.push(compilationUnit);
             index++
