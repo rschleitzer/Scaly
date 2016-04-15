@@ -1199,7 +1199,32 @@ void CppVisitor::closeTypeCast(TypeCast* typeCast) {
 }
 
 bool CppVisitor::openCatchClause(CatchClause* catchClause) {
-    return true;
+    sourceFile->append(";\n");
+    indentSource();
+    sourceFile->append("if (_");
+    sourceFile->append("source");
+    sourceFile->append("_Result.");
+    sourceFile->append("getErrorCode() == _");
+    sourceFile->append("FileError");
+    sourceFile->append("_");
+    sourceFile->append("noSuchFileOrDirectory");
+    sourceFile->append(") {\n");
+    sourceIndentLevel++;
+    indentSource();
+    sourceFile->append("return new(_ep) ");
+    sourceFile->append("CompilerError");
+    sourceFile->append("(new(_ep) _");
+    sourceFile->append("CompilerError");
+    sourceFile->append("_");
+    sourceFile->append("fileNotFound");
+    sourceFile->append("(");
+    sourceFile->append("file");
+    sourceFile->append("));\n");
+    sourceIndentLevel--;
+    indentSource();
+    sourceFile->append("}\n");
+
+    return false;
 }
 
 void CppVisitor::closeCatchClause(CatchClause* catchClause) {
