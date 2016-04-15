@@ -10,8 +10,8 @@ void* FileError::getErrorInfo() {
     return 0;
 }
 
-_Result<String, FileError> File::readToString(_Page* _rp, _Page* _ep, const String& path) {
-    FILE* file = fopen(path.getNativeString(), "rb");
+_Result<String, FileError> File::readToString(_Page* _rp, _Page* _ep, String* path) {
+    FILE* file = fopen(path->getNativeString(), "rb");
     if (!file) {
         _FileErrorCode fileErrorCode = _FileError_unknownError;
         switch (errno) {

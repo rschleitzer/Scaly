@@ -11,7 +11,7 @@ CompilerError* Compiler::compileFiles(_Page* _ep, Options* options) {
     for (size_t _i = 0; _i < _files_length; _i++) {
         file = *(*files)[_i];
         {
-            auto _source_Result = File::readToString(_p, _ep, *file);
+            auto _source_Result = File::readToString(_p, _ep, file);
             if (!_source_Result.succeeded())
                 return new(_ep) CompilerError(new(_ep) _CompilerError_unableToReadFile(file, _source_Result.getError()));
             String* source = _source_Result.getResult();
