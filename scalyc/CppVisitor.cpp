@@ -1338,13 +1338,51 @@ bool CppVisitor::openParenthesizedExpression(ParenthesizedExpression* parenthesi
                     
             }
         }
+        if (returnsLocalObject(functionCall)) {
+            sourceFile->append("(_p");
+            outputParen = false;
+        }
+        if (catchesError(functionCall)) {
+            if (outputParen)
+                sourceFile->append("(");
+            else
+                sourceFile->append(", ");
+            sourceFile->append("_ep");
+            if (parenthesizedExpression->expressionElements != nullptr)
+                sourceFile->append(", ");
+            outputParen = false;
+        }
     }
 
     if (outputParen)
         sourceFile->append("(");
 
-    
     return true;
+}
+
+bool CppVisitor::returnsLocalObject(FunctionCall* functionCall) {
+    if (functionCall->parent->_isPostfixExpression()) {
+        PostfixExpression* postfixExpression = (PostfixExpression*)functionCall->parent;
+        if (postfixExpression->postfixes->length() > 0) {
+            Postfix* postfix = *(*postfixExpression->postfixes)[postfixExpression->postfixes->length() - 1];
+            if (postfix->_isIdentifierExpression()) {
+                IdentifierExpression* identifierExpression = (IdentifierExpression*)postfix;
+                if (isClass(identifierExpression->name)) {
+                    return false;
+                }
+                
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
+bool CppVisitor::catchesError(FunctionCall* functionCall) {
+    if (functionCall->catchClauses != nullptr)
+        return true;
+    return false;
 }
 
 void CppVisitor::closeParenthesizedExpression(ParenthesizedExpression* parenthesizedExpression) {

@@ -475,6 +475,14 @@ class CppVisitor : SyntaxVisitor {
         return true
     }
 
+    function returnsLocalObject(functionCall: FunctionCall) -> bool {
+        return false
+    }
+
+    function catchesError(functionCall: FunctionCall) -> bool {
+        return false
+    }
+
     function closeParenthesizedExpression(parenthesizedExpression: ParenthesizedExpression) {
     }
 
