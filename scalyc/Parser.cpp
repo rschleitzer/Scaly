@@ -2,54 +2,56 @@
 using namespace scaly;
 namespace scalyc {
 
-Parser::Parser(String* fileName, String* text)
-: lexer(new(getPage()) Lexer(text)), fileName(fileName),
-  useKeyword(&String::create(getPage(), "use")),
-  classKeyword(&String::create(getPage(), "class")),
-  functionKeyword(&String::create(getPage(), "function")),
-  ifKeyword(&String::create(getPage(), "if")),
-  elseKeyword(&String::create(getPage(), "else")),
-  switchKeyword(&String::create(getPage(), "switch")),
-  caseKeyword(&String::create(getPage(), "case")),
-  defaultKeyword(&String::create(getPage(), "default")),
-  catchKeyword(&String::create(getPage(), "catch")),
-  forKeyword(&String::create(getPage(), "for")),
-  inKeyword(&String::create(getPage(), "in")),
-  whileKeyword(&String::create(getPage(), "while")),
-  repeatKeyword(&String::create(getPage(), "repeat")),
-  returnKeyword(&String::create(getPage(), "return")),
-  throwKeyword(&String::create(getPage(), "throw")),
-  breakKeyword(&String::create(getPage(), "break")),
-  throwsKeyword(&String::create(getPage(), "throws")),
-  existingKeyword(&String::create(getPage(), "existing")),
-  overrideKeyword(&String::create(getPage(), "override")),
-  staticKeyword(&String::create(getPage(), "static")),
-  letKeyword(&String::create(getPage(), "let")),
-  varKeyword(&String::create(getPage(), "var")),
-  mutableKeyword(&String::create(getPage(), "mutable")),
-  isKeyword(&String::create(getPage(), "is")),
-  asKeyword(&String::create(getPage(), "as")),
-  initKeyword(&String::create(getPage(), "init")),
-  enumKeyword(&String::create(getPage(), "enum")),
-  superKeyword(&String::create(getPage(), "super")),
-  thisKeyword(&String::create(getPage(), "this")),
-  nullKeyword(&String::create(getPage(), "null")),
-  semicolon(&String::create(getPage(), ";")),
-  equal(&String::create(getPage(), "=")),
-  leftAngular(&String::create(getPage(), "<")),
-  rightAngular(&String::create(getPage(), ">")),
-  comma(&String::create(getPage(), ",")),
-  leftParen(&String::create(getPage(), "(")),
-  rightParen(&String::create(getPage(), ")")),
-  leftCurly(&String::create(getPage(), "{")),
-  rightCurly(&String::create(getPage(), "}")),
-  leftBracket(&String::create(getPage(), "[")),
-  rightBracket(&String::create(getPage(), "]")),
-  colon(&String::create(getPage(), ":")),
-  dot(&String::create(getPage(), ".")),
-  questionMark(&String::create(getPage(), "?")),
-  underscore(&String::create(getPage(), "_")),
-  evaluatesTo(&String::create(getPage(), "->")) {}
+Parser::Parser(String* theFileName, String* text) {
+    lexer = new(getPage()->allocateExclusivePage()) Lexer(text);
+    fileName = theFileName;
+    useKeyword = &String::create(getPage(), "use");
+    classKeyword = &String::create(getPage(), "class");
+    functionKeyword = &String::create(getPage(), "function");
+    ifKeyword = &String::create(getPage(), "if");
+    elseKeyword = &String::create(getPage(), "else");
+    switchKeyword = &String::create(getPage(), "switch");
+    caseKeyword = &String::create(getPage(), "case");
+    defaultKeyword = &String::create(getPage(), "default");
+    catchKeyword = &String::create(getPage(), "catch");
+    forKeyword = &String::create(getPage(), "for");
+    inKeyword = &String::create(getPage(), "in");
+    whileKeyword = &String::create(getPage(), "while");
+    repeatKeyword = &String::create(getPage(), "repeat");
+    returnKeyword = &String::create(getPage(), "return");
+    throwKeyword = &String::create(getPage(), "throw");
+    breakKeyword = &String::create(getPage(), "break");
+    throwsKeyword = &String::create(getPage(), "throws");
+    existingKeyword = &String::create(getPage(), "existing");
+    overrideKeyword = &String::create(getPage(), "override");
+    staticKeyword = &String::create(getPage(), "static");
+    letKeyword = &String::create(getPage(), "let");
+    varKeyword = &String::create(getPage(), "var");
+    mutableKeyword = &String::create(getPage(), "mutable");
+    isKeyword = &String::create(getPage(), "is");
+    asKeyword = &String::create(getPage(), "as");
+    initKeyword = &String::create(getPage(), "init");
+    enumKeyword = &String::create(getPage(), "enum");
+    superKeyword = &String::create(getPage(), "super");
+    thisKeyword = &String::create(getPage(), "this");
+    nullKeyword = &String::create(getPage(), "null");
+    semicolon = &String::create(getPage(), ";");
+    equal = &String::create(getPage(), "=");
+    leftAngular = &String::create(getPage(), "<");
+    rightAngular = &String::create(getPage(), ">");
+    comma = &String::create(getPage(), ",");
+    leftParen = &String::create(getPage(), "(");
+    rightParen = &String::create(getPage(), ")");
+    leftCurly = &String::create(getPage(), "{");
+    rightCurly = &String::create(getPage(), "}");
+    leftBracket = &String::create(getPage(), "[");
+    rightBracket = &String::create(getPage(), "]");
+    colon = &String::create(getPage(), ":");
+    dot = &String::create(getPage(), ".");
+    questionMark = &String::create(getPage(), "?");
+    underscore = &String::create(getPage(), "_");
+    evaluatesTo = &String::create(getPage(), "->");
+}
 
 _Result<CompilationUnit, ParserError> Parser::parseCompilationUnit(_Page* _rp, _Page* _ep) {
     Position* start = lexer->getPreviousPosition(_rp);

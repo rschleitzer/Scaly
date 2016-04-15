@@ -1,9 +1,16 @@
 (define (parser-scaly) ($
 
 "class Parser {
-    init(fileName: String, text: String) {
+    init(theFileName: String, text: String) {
         lexer = Lexer(text)
-    }
+        fileName = theFileName
+"   (apply-to-selected-children "keyword" (lambda (keyword) ($
+"        "(name keyword)" = String(\""(id keyword)"\")
+"   )))
+    (apply-to-selected-children "punctuation" (lambda (punctuation) ($
+"        "(id punctuation)" = String(\""(value punctuation)"\")
+"   )))
+"    }
 "
     (apply-to-selected-children "syntax" (lambda (syntax) (if (program? syntax) "" ($
         (if (multiple? syntax) ($
@@ -134,7 +141,7 @@ namespace scalyc {
 
 class Parser : public Object {
 public:
-    Parser(String* fileName, String* text);
+    Parser(String* theFileName, String* text);
 "
     (apply-to-selected-children "syntax" (lambda (syntax) (if (program? syntax) "" ($
         (if (multiple? syntax) ($
@@ -167,17 +174,16 @@ public:
 using namespace scaly;
 namespace scalyc {
 
-Parser::Parser(String* fileName, String* text)
-: lexer(new(getPage()) Lexer(text)), fileName(fileName)"
-    (apply-to-selected-children "keyword" (lambda (keyword) ($
-",
-  "(name keyword)"(&""String::create(getPage(), \""(id keyword)"\"))"
-    )))
+Parser::Parser(String* theFileName, String* text) {
+    lexer = new(getPage()->allocateExclusivePage()) Lexer(text);
+    fileName = theFileName;
+"   (apply-to-selected-children "keyword" (lambda (keyword) ($
+"    "(name keyword)" = &""String::create(getPage(), \""(id keyword)"\");
+"   )))
     (apply-to-selected-children "punctuation" (lambda (punctuation) ($
-",
-  "(id punctuation)"(&""String::create(getPage(), \""(value punctuation)"\"))"
-    )))
-" {}
+"    "(id punctuation)" = &""String::create(getPage(), \""(value punctuation)"\");
+"   )))
+"}
 "    (apply-to-selected-children "syntax" (lambda (syntax) (if (program? syntax) "" ($
         (if (multiple? syntax) ($
 "

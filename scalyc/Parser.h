@@ -6,7 +6,7 @@ namespace scalyc {
 
 class Parser : public Object {
 public:
-    Parser(String* fileName, String* text);
+    Parser(String* theFileName, String* text);
     virtual _Result<CompilationUnit, ParserError> parseCompilationUnit(_Page* _rp, _Page* _ep);
     virtual _Result<_Vector<TerminatedStatement>, ParserError> parseTerminatedStatementList(_Page* _rp, _Page* _ep);
     virtual _Result<TerminatedStatement, ParserError> parseTerminatedStatement(_Page* _rp, _Page* _ep);
