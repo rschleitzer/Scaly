@@ -1447,6 +1447,9 @@ void CppVisitor::visitIdentifierExpression(IdentifierExpression* identifierExpre
                 sourceFile->append(identifierExpression->name);
             }
         }
+        else {
+            sourceFile->append(identifierExpression->name);
+        }
     }
     else
         sourceFile->append(identifierExpression->name);
