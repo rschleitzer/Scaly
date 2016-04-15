@@ -12,12 +12,12 @@ CompilerError* Compiler::compileFiles(_Page* _ep, Options* options) {
         file = *(*files)[_i];
         {
             auto _source_Result = File::readToString(_p, _ep, file);
+            if (_source_Result.getErrorCode() == _FileError_noSuchFileOrDirectory) {
+                return new(_ep) CompilerError(new(_ep) _CompilerError_fileNotFound(file));
+            }
             if (!_source_Result.succeeded()) {
                 FileError* error = _source_Result.getError();
-                if (error->getErrorCode() == _FileError_noSuchFileOrDirectory)
-                    return new(_ep) CompilerError(new(_ep) _CompilerError_fileNotFound(file));
-                else
-                    return new(_ep) CompilerError(new(_ep) _CompilerError_unableToReadFile(file, error));
+                return new(_ep) CompilerError(new(_ep) _CompilerError_unableToReadFile(file, error));
             }
             String* source = _source_Result.getResult();
             sources->push(source);
