@@ -578,6 +578,10 @@ class CppVisitor : SyntaxVisitor {
         return true
     }
 
+    function isCatchingPatternInitializer(patternInitializer: PatternInitializer) -> bool {
+        return false
+    }
+
     function closeIdentifierPattern(identifierPattern: IdentifierPattern) {
     }
 
