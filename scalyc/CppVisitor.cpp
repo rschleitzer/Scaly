@@ -582,6 +582,7 @@ void CppVisitor::writeParameter(String* name, Type* parameterType) {
 bool CppVisitor::isClass(String* name) {
     if (    name->equals("String")
         ||  name->equals("VarString")
+        ||  name->equals("File")
         ||  name->equals("DirectoryError")
         ||  name->equals("FileError")
         ||  name->equals("ParserError")
@@ -1230,6 +1231,20 @@ void CppVisitor::closeFunctionCall(FunctionCall* functionCall) {
 }
 
 bool CppVisitor::openExplicitMemberExpression(ExplicitMemberExpression* explicitMemberExpression) {
+    if (explicitMemberExpression->parent->_isPostfixExpression()) {
+        PostfixExpression* postfixExpression = (PostfixExpression*)explicitMemberExpression->parent;
+        if (postfixExpression->primaryExpression->_isIdentifierExpression()) {
+            IdentifierExpression* identifierExpression = (IdentifierExpression*)postfixExpression->primaryExpression;
+            if (postfixExpression->postfixes->length() > 1) {
+                if ((*((*postfixExpression->postfixes)[0]) == (Postfix*)explicitMemberExpression) && ((*(*postfixExpression->postfixes)[1])->_isFunctionCall())) {
+                    if (isClass(identifierExpression->name)) {
+                        sourceFile->append("::");
+                        return true;
+                    }
+                }
+            }
+        }
+    }
     sourceFile->append("->");
     return true;
 }
@@ -1379,45 +1394,58 @@ void CppVisitor::visitLiteralExpression(LiteralExpression* literalExpression) {
 }
 
 void CppVisitor::visitIdentifierExpression(IdentifierExpression* identifierExpression) {
-    if (isClass(identifierExpression->name)) {
-        String* className = identifierExpression->name;
-        if (className->equals("String")) {
-            sourceFile->append("&String::create(");
-            if (inReturn(identifierExpression))
-                sourceFile->append("_rp");
-            else {
-                sourceFile->append("token->getPage()");
-            }
-            sourceFile->append(", ");
-        }
-        else {
-            sourceFile->append("new(");
-            if (inReturn(identifierExpression))
-                sourceFile->append("_rp");
-            else if (identifierExpression->parent->parent->parent->_isAssignment()) {
-                Assignment* assignment = (Assignment*)identifierExpression->parent->parent->parent;
-                ClassDeclaration* classDeclaration = getClassDeclaration(assignment);
-                String* memberName = getMemberIfCreatingObject(assignment);
-                if (memberName != nullptr) {
-                    if (isVariableMember(memberName, classDeclaration)) {
-                        if (!inInitializer(assignment)) {
-                            sourceFile->append(memberName);
-                            sourceFile->append("->");
+    if (identifierExpression->parent->_isPostfixExpression()) {
+        PostfixExpression* postfixExpression = (PostfixExpression*)identifierExpression->parent;
+        if (postfixExpression->postfixes != nullptr) {
+            if (postfixExpression->postfixes->length() > 0) {
+                if ((isClass(identifierExpression->name)) && ((*(*(postfixExpression->postfixes))[0])->_isFunctionCall())) {
+                    String* className = identifierExpression->name;
+                    if (className->equals("String")) {
+                        sourceFile->append("&String::create(");
+                        if (inReturn(identifierExpression))
+                            sourceFile->append("_rp");
+                        else {
+                            sourceFile->append("token->getPage()");
                         }
-                        sourceFile->append("getPage()");
-                        if (inInitializer(assignment)) {
-                            sourceFile->append("->allocateExclusivePage()");
-                        }
+                        sourceFile->append(", ");
                     }
                     else {
-                        sourceFile->append("getPage()");
+                        sourceFile->append("new(");
+                        if (inReturn(identifierExpression))
+                            sourceFile->append("_rp");
+                        else if (identifierExpression->parent->parent->parent->_isAssignment()) {
+                            Assignment* assignment = (Assignment*)identifierExpression->parent->parent->parent;
+                            ClassDeclaration* classDeclaration = getClassDeclaration(assignment);
+                            String* memberName = getMemberIfCreatingObject(assignment);
+                            if (memberName != nullptr) {
+                                if (isVariableMember(memberName, classDeclaration)) {
+                                    if (!inInitializer(assignment)) {
+                                        sourceFile->append(memberName);
+                                        sourceFile->append("->");
+                                    }
+                                    sourceFile->append("getPage()");
+                                    if (inInitializer(assignment)) {
+                                        sourceFile->append("->allocateExclusivePage()");
+                                    }
+                                }
+                                else {
+                                    sourceFile->append("getPage()");
+                                }
+                            }
+                        }
+                        else
+                            sourceFile->append("_p");
+                        sourceFile->append(") ");
+                        sourceFile->append(identifierExpression->name);
                     }
                 }
+                else {
+                    sourceFile->append(identifierExpression->name);
+                }
             }
-            else
-                sourceFile->append("_p");
-            sourceFile->append(") ");
-            sourceFile->append(identifierExpression->name);
+            else {
+                sourceFile->append(identifierExpression->name);
+            }
         }
     }
     else
