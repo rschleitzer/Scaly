@@ -42,7 +42,7 @@
 "
                 )))
 "
-        throw ParserError.UnableToParse(start, errors)
+        throw ParserError.UnableToParse(Position(start), errors)
 "
             )
             ($ ; non-abstract syntax
@@ -82,7 +82,7 @@
                     ) ; syntax or terminal
 "
         if "(string-firstchar-downcase (id syntax))" == null
-            "(string-firstchar-downcase (id syntax))" = "(id syntax)"(start, lexer.getPosition())
+            "(string-firstchar-downcase (id syntax))" = "(id syntax)"(Position(start), lexer.getPosition())
 "                   (if (property content) ($
 "
         "(string-firstchar-downcase (id syntax))"."(property content)" = "(if (string=? "syntax" (type content)) "node" (property content))"
@@ -221,7 +221,7 @@ _Result<"(id syntax)", ParserError> Parser::parse"(id syntax)"(_Page* _rp, _Page
     }
 "
                 )))
-"    return _Result<"(id syntax)", ParserError>(new(_ep) ParserError(new(_ep) _ParserError_unableToParse(start, &_Vector<""ParserError>::create(_ep, *errors))));
+"    return _Result<"(id syntax)", ParserError>(new(_ep) ParserError(new(_ep) _ParserError_unableToParse(new(_ep) Position(start), &_Vector<""ParserError>::create(_ep, *errors))));
 "
             )
             ($ ; non-abstract syntax
@@ -270,7 +270,7 @@ _Result<"(id syntax)", ParserError> Parser::parse"(id syntax)"(_Page* _rp, _Page
                     (property content)(if (properties-remaining? content syntax) ", " "")
                 )))
                 (if (node-list-empty? (properties syntax)) "" ", ")
-                "start, lexer->getPosition(_rp));
+                "new(_rp) Position(start), lexer->getPosition(_rp));
 "                (if (top? syntax) ($
 "    "(string-firstchar-downcase (id syntax))"->fileName = fileName;
 "               )"")

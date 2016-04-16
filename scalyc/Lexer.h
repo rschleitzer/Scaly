@@ -7,6 +7,7 @@ namespace scalyc {
 class Position : public Object {
 public:
     Position(size_t line, size_t column);
+    Position(Position* position);
     size_t line;
     size_t column;
 

@@ -3,6 +3,12 @@ class Position {
         this.line = line
         this.column = column
     }
+
+    init(position: Position) {
+        this.line = position.line
+        this.column = position.column
+    }
+
     let line: unsigned
     let column: unsigned
 }

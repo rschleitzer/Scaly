@@ -7,6 +7,11 @@ Position::Position(size_t line, size_t column) {
     this->column = column;
 }
 
+Position::Position(Position* position) {
+    this->line = position->line;
+    this->column = position->column;
+}
+
 bool Token::_isEofToken() { return false; }
 bool Token::_isInvalidToken() { return false; }
 bool Token::_isIdentifier() { return false; }
