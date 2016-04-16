@@ -16,10 +16,10 @@
         (if (multiple? syntax) ($
 "
     function parse"(id syntax)"List() -> ["(id syntax)"] throws ParserError {
-        mutable "(string-firstchar-downcase (string-firstchar-downcase (id syntax)))": ["(id syntax)"]? = ["(id syntax)"]()
+        mutable ret: ["(id syntax)"]? = ["(id syntax)"]()
         while true
-            "(string-firstchar-downcase (id syntax))".push(parse"(id syntax)"() catch _ break)
-        return "(string-firstchar-downcase (id syntax))"
+            ret.push(parse"(id syntax)"() catch _ break)
+        return ret
     }
 "       )"")
 "
@@ -94,23 +94,23 @@
                         ($
 "        if "(property content)" != null {
             for item in "(property content)"
-                item.parent = "(string-firstchar-downcase (id syntax))"
+                item.parent = ret
         }
 "                       )
                         (if (string=? "syntax" (type content)) ($
                             (if (optional? content) ($
 "       if "(property content)" != null
     "                       )"")
-"       "(property content)".parent = "(string-firstchar-downcase (id syntax))";
+"       "(property content)".parent = ret
 "                       )"")
                     )
                 ))
 "
 "               (if (top? syntax) ($
-"        "(string-firstchar-downcase (id syntax))".fileName = fileName;
+"        ret.fileName = fileName;
 "
                 )"")
-"        return "(string-firstchar-downcase (id syntax))"
+"        return ret
 "
             ) ; $
         ) ; abstract or not
@@ -203,19 +203,19 @@ Parser::Parser(String* theFileName, String* text) {
 "
 _Result<""_Vector<"(id syntax)">, ParserError> Parser::parse"(id syntax)"List(_Page* _rp, _Page* _ep) {
     _Region _region; _Page* _p = _region.get();
-    _Array<"(id syntax)">* "(string-firstchar-downcase (id syntax))" = 0;
+    _Array<"(id syntax)">* ret = 0;
     while (true) {
         _Result<"(id syntax)", ParserError> nodeResult = parse"(id syntax)"(_rp, _p);
         if (nodeResult.succeeded()) {
-            if (!"(string-firstchar-downcase (id syntax))")
-                "(string-firstchar-downcase (id syntax))" = new(_p) _Array<"(id syntax)">();
-            "(string-firstchar-downcase (id syntax))"->push(nodeResult.getResult());
+            if (!ret)
+                ret = new(_p) _Array<"(id syntax)">();
+            ret->push(nodeResult.getResult());
         }
         else {
             break;
         }
     }
-    return _Result<""_Vector<"(id syntax)">, ParserError>("(string-firstchar-downcase (id syntax))" ? &_Vector<"(id syntax)">::create(_rp, *"(string-firstchar-downcase (id syntax))") : 0);
+    return _Result<""_Vector<"(id syntax)">, ParserError>(ret ? &_Vector<"(id syntax)">::create(_rp, *ret) : 0);
 }
 "       )"")
 "
@@ -289,14 +289,14 @@ _Result<"(id syntax)", ParserError> Parser::parse"(id syntax)"(_Page* _rp, _Page
                         )
                     ) ; syntax or terminal
                 ))) ; apply to children of syntax
-"    "(id syntax)"* "(string-firstchar-downcase (id syntax))" = new(_rp) "(id syntax)"("
+"    "(id syntax)"* ret = new(_rp) "(id syntax)"("
                 (apply-to-property-children-of syntax (lambda (content) ($
                     (property content)(if (properties-remaining? content syntax) ", " "")
                 )))
                 (if (node-list-empty? (properties syntax)) "" ", ")
                 "new(_rp) Position(start), lexer->getPosition(_rp));
 "                (if (top? syntax) ($
-"    "(string-firstchar-downcase (id syntax))"->fileName = fileName;
+"    ret->fileName = fileName;
 "               )"")
                 (apply-to-property-children-of syntax (lambda (content)
                     (if (multiple? content)
@@ -304,18 +304,18 @@ _Result<"(id syntax)", ParserError> Parser::parse"(id syntax)"(_Page* _rp, _Page
 "    if ("(property content)") {
         size_t _"(property content)"_length = "(property content)"->length();
         for (size_t _i = 0; _i < _"(property content)"_length; _i++)
-            (*(*"(property content)")[_i])->parent = "(string-firstchar-downcase (id syntax))";
+            (*(*"(property content)")[_i])->parent = ret;
     }
 "                       )
                         (if (string=? "syntax" (type content)) ($
                             (if (optional? content) ($
 "    if ("(property content)")
     "                       )"")
-"    "(property content)"->parent = "(string-firstchar-downcase (id syntax))";
+"    "(property content)"->parent = ret;
 "                       )"")
                     )
                 ))
-"    return _Result<"(id syntax)", ParserError>("(string-firstchar-downcase (id syntax))");
+"    return _Result<"(id syntax)", ParserError>(ret);
 "
             ) ; $
         ) ; abstract or not
