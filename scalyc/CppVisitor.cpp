@@ -1809,7 +1809,6 @@ bool CppVisitor::isCatchingPatternInitializer(PatternInitializer* patternInitial
                             Postfix* postfix = *(*(postfixExpression->postfixes))[1];
                             if (postfix->_isFunctionCall()) {
                                 functionCall = (FunctionCall*)postfix;
-                                return true;
                             }
                         }
                     }

@@ -433,15 +433,15 @@ class CppVisitor : SyntaxVisitor {
     function visitIdentifierExpression(identifierExpression: IdentifierExpression) {
     }
 
-    function visitLiteralExpression(literalExpression: LiteralExpression) {
-    }
-
     function inAssignment(syntaxNode: SyntaxNode) -> bool {
         return false
     }
 
     function getAssignment(syntaxNode: SyntaxNode) -> Assignment {
         return null
+    }
+
+    function visitLiteralExpression(literalExpression: LiteralExpression) {
     }
 
     function openIfExpression(ifExpression: IfExpression) -> bool {
