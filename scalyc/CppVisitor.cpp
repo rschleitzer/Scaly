@@ -973,8 +973,9 @@ bool CppVisitor::localAllocations(CodeBlock* codeBlock) {
                                         PostfixExpression* postfixExpression = prefixExpression->expression;
                                         if (postfixExpression->primaryExpression->_isIdentifierExpression()) {
                                             if (postfixExpression->postfixes != nullptr) {
-                                                if (postfixExpression->postfixes->length() > 1) {
-                                                    Postfix* postfix = *(*postfixExpression->postfixes)[postfixExpression->postfixes->length() - 1];
+                                                size_t _postfixes_length = postfixExpression->postfixes->length();
+                                                for (size_t _i = 0; _i < _postfixes_length; _i++) {
+                                                    Postfix* postfix = *(*postfixExpression->postfixes)[_i];
                                                     if (postfix->_isFunctionCall()) {
                                                         return true;
                                                     }
