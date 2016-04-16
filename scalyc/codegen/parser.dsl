@@ -243,7 +243,7 @@ _Result<"(id syntax)", ParserError> Parser::parse"(id syntax)"(_Page* _rp, _Page
                             (if (top? syntax) ($
 "    if ("(property content)" != nullptr) {
         if (!isAtEnd()) {
-            Position* current = lexer->getPosition(_ep);
+            Position* current = lexer->getPosition(_p);
             return _Result<"(id syntax)", ParserError>(new(_ep) ParserError(new(_ep) _ParserError_notAtEnd(new(_ep) Position(current))));
         }
     }

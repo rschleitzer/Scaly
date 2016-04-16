@@ -64,8 +64,8 @@ _Result<CompilationUnit, ParserError> Parser::parseCompilationUnit(_Page* _rp, _
         statements = nullptr;
     if (statements != nullptr) {
         if (!isAtEnd()) {
-            Position* current = lexer->getPosition(_ep);
-            return _Result<CompilationUnit, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_notAtEnd(new (_ep) Position(current))));
+            Position* current = lexer->getPosition(_p);
+            return _Result<CompilationUnit, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_notAtEnd(new(_ep) Position(current))));
         }
     }
     CompilationUnit* compilationUnit = new(_rp) CompilationUnit(statements, new(_rp) Position(start), lexer->getPosition(_rp));
