@@ -218,12 +218,13 @@ void CppVisitor::closeTerminatedStatement(TerminatedStatement* terminatedStateme
         return;
 
     if (terminatedStatement->statement->_isSimpleExpression()) {
-        SimpleExpression* expression = (SimpleExpression*) terminatedStatement->statement;
-        if (expression->prefixExpression->expression->primaryExpression->_isIfExpression())
+        SimpleExpression* expression = (SimpleExpression*)terminatedStatement->statement;
+        PrimaryExpression* primaryExpression = expression->prefixExpression->expression->primaryExpression;
+        if (primaryExpression->_isIfExpression())
             return;
-        if (expression->prefixExpression->expression->primaryExpression->_isSwitchExpression())
+        if (primaryExpression->_isSwitchExpression())
             return;
-        if (expression->prefixExpression->expression->primaryExpression->_isForExpression())
+        if (primaryExpression->_isForExpression())
             return;
     }
 
@@ -1215,31 +1216,47 @@ void CppVisitor::closeTypeCast(TypeCast* typeCast) {
 }
 
 bool CppVisitor::openCatchClause(CatchClause* catchClause) {
-    sourceFile->append(";\n");
-    indentSource();
-    sourceFile->append("if (_");
-    sourceFile->append("source");
-    sourceFile->append("_Result.");
-    sourceFile->append("getErrorCode() == _");
-    sourceFile->append("FileError");
-    sourceFile->append("_");
-    sourceFile->append("noSuchFileOrDirectory");
-    sourceFile->append(") {\n");
-    sourceIndentLevel++;
-    indentSource();
-    sourceFile->append("return new(_ep) ");
-    sourceFile->append("CompilerError");
-    sourceFile->append("(new(_ep) _");
-    sourceFile->append("CompilerError");
-    sourceFile->append("_");
-    sourceFile->append("fileNotFound");
-    sourceFile->append("(");
-    sourceFile->append("file");
-    sourceFile->append("));\n");
-    sourceIndentLevel--;
-    indentSource();
-    sourceFile->append("}\n");
-
+    if (catchClause->parent->_isFunctionCall()) {
+        FunctionCall* functionCall = (FunctionCall*)catchClause->parent;
+        if (*(*functionCall->catchClauses)[0] == catchClause) {
+            BindingInitializer* bindingInitializer = getBindingInitializer(functionCall);
+            if (bindingInitializer != nullptr) {
+                PatternInitializer* patternInitializer = bindingInitializer->initializer;
+                if (patternInitializer->pattern->_isIdentifierPattern()) {
+                    IdentifierPattern* identifierPattern = (IdentifierPattern*)patternInitializer->pattern;
+                    sourceFile->append("\n");
+                    indentSource();
+                    identifierPattern->annotationForType->accept(this);
+                    sourceFile->append(" ");
+                    sourceFile->append(identifierPattern->identifier);
+                    sourceFile->append(";\n");
+                    indentSource();
+                    sourceFile->append("if (_");
+                    sourceFile->append(identifierPattern->identifier);
+                    sourceFile->append("_result.succeeded())\n");
+                    sourceIndentLevel++;
+                    indentSource();
+                    sourceFile->append(identifierPattern->identifier);                    
+                    sourceFile->append(" = _");
+                    sourceFile->append(identifierPattern->identifier);                    
+                    sourceFile->append("_result.getResult();\n");
+                    sourceIndentLevel--;
+                    if (catchClause->catchPattern->_isWildCardCatchPattern()) {
+                        indentSource();
+                        sourceFile->append("else\n");
+                        sourceIndentLevel++;
+                        indentSource();
+                        if (!catchClause->expression->_isReturnExpression()) {
+                            sourceFile->append(identifierPattern->identifier);
+                            sourceFile->append(" = ");
+                        }
+                        catchClause->expression->accept(this);
+                        sourceIndentLevel--;
+                    }
+                }
+            }
+        }
+    }
     return false;
 }
 
@@ -1465,6 +1482,12 @@ bool CppVisitor::catchesError(FunctionCall* functionCall) {
 
 void CppVisitor::closeParenthesizedExpression(ParenthesizedExpression* parenthesizedExpression) {
     sourceFile->append(")");
+    if (parenthesizedExpression->parent->_isFunctionCall()) {
+        FunctionCall* functionCall = (FunctionCall*)parenthesizedExpression->parent;
+        if (functionCall->catchClauses != nullptr) {
+            sourceFile->append(";");
+        }
+    }
 }
 
 void CppVisitor::visitLiteralExpression(LiteralExpression* literalExpression) {

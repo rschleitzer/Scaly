@@ -51,22 +51,22 @@
 "        mutable start: Position = lexer.getPreviousPosition()
 "                   (if (string=? "syntax" (type content))
                         ($ ; non-terminals
-"        let "(property content)": "(if (multiple? content) "[" "")(link content)(if (multiple? content) "]" "")" = parse"(link content)(if (multiple? content) "List" "")"() catch _(error) {
-"
+"        let "(property content)": "(if (multiple? content) "[" "")(link content)(if (multiple? content) "]" "")" = parse"(link content)(if (multiple? content) "List" "")"() catch _(error)"
                     (if (optional? content)
-"             null
+                        " null
 "                       ($
-"            throw ("(if (string=? (type content) "syntax") "error" ($ "ParserError."
+"
+            throw ("(if (string=? (type content) "syntax") "error" ($ "ParserError."
                 (case (type content) (("keyword") "Keyword") (("punctuation") "Punctuation")(("identifier") "Identifier")(("literal") "Literal")(("prefixoperator" "binaryoperator" "postfixoperator") "Operator"))
                 "Expected(start"(case (type content) (("keyword" "punctuation") ($ ", String("((if (string=? (type content) "keyword") name-of-link link) content)")"))(else ""))"))"))")
 "                       )
                     )
-"        }
-"                           (if (top? syntax) ($
-"        if("(property content)" != null)
-        if !isAtEnd() {
-            let current: Position = lexer.getPreviousPosition()
-            throw ParserError.NotAtEnd(current)
+                           (if (top? syntax) ($
+"        if("(property content)" != null) {
+            if !isAtEnd() {
+                let current: Position = lexer.getPreviousPosition()
+                throw ParserError.NotAtEnd(current)
+            }
         }
 "                           )"")
                         )
