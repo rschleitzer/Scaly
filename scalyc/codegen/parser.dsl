@@ -185,7 +185,7 @@ Parser::Parser(String* theFileName, String* text) {
         (if (multiple? syntax) ($
 "
 _Result<""_Vector<"(id syntax)">, ParserError> Parser::parse"(id syntax)"List(_Page* _rp, _Page* _ep) {
-    _Region _r; _Page* _p = _r.get();
+    _Region _region; _Page* _p = _region.get();
     _Array<"(id syntax)">* "(string-firstchar-downcase (id syntax))" = 0;
     while (true) {
         _Result<"(id syntax)", ParserError> nodeResult = parse"(id syntax)"(_rp, _p);
@@ -203,7 +203,7 @@ _Result<""_Vector<"(id syntax)">, ParserError> Parser::parse"(id syntax)"List(_P
 "       )"")
 "
 _Result<"(id syntax)", ParserError> Parser::parse"(id syntax)"(_Page* _rp, _Page* _ep) {
-    _Region _r; _Page* _p = _r.get();
+    _Region _region; _Page* _p = _region.get();
 "
         (if (abstract? syntax)
             ($
@@ -211,7 +211,7 @@ _Result<"(id syntax)", ParserError> Parser::parse"(id syntax)"(_Page* _rp, _Page
     Position* start = lexer->getPreviousPosition(_p);
 "                (apply-to-children-of syntax (lambda (content) ($
 "    {
-        _Region _r; _Page* _p = _r.get();
+        _Region _region; _Page* _p = _region.get();
         _Result<"(link content)", ParserError> result = parse"(link content)"(_rp, _p);
         if (result.succeeded())
             return _Result<"(id syntax)", ParserError>(result.getResult());

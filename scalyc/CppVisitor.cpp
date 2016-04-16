@@ -966,19 +966,33 @@ bool CppVisitor::localAllocations(CodeBlock* codeBlock) {
             }
             if (bindingInitializer == nullptr)
                 continue;
-            if (bindingInitializer->initializer->initializer != nullptr) {
-                Expression* expression = bindingInitializer->initializer->initializer->expression;
-                if (expression->_isSimpleExpression()) {
-                    PrefixExpression* prefixExpression = ((SimpleExpression*)expression)->prefixExpression;
-                    PostfixExpression* postfixExpression = prefixExpression->expression;
-                    if (postfixExpression->primaryExpression->_isIdentifierExpression()) {
-                        IdentifierExpression* identifierExpression = (IdentifierExpression*)postfixExpression->primaryExpression;
-                        if (isClass(identifierExpression->name)) {
-                            if (postfixExpression->postfixes != nullptr) {
-                                if (postfixExpression->postfixes->length() == 1) {
-                                    Postfix* postfix = *(*postfixExpression->postfixes)[0];
-                                    if (postfix->_isFunctionCall()) {
-                                        return true;
+            if (bindingInitializer->initializer != nullptr) {
+                PatternInitializer* patternInitializer = bindingInitializer->initializer;
+                if (patternInitializer->pattern->_isIdentifierPattern()) {
+                    IdentifierPattern* identifierPattern = (IdentifierPattern*)patternInitializer->pattern;
+                    Type* type = identifierPattern->annotationForType->annotationForType;
+                    if (type->_isArrayType())
+                        return true;
+                    if (type->_isTypeIdentifier()) {
+                        TypeIdentifier* typeIdentifier = (TypeIdentifier*)type;
+                        if (isClass(typeIdentifier->name)) {
+                            if (patternInitializer->initializer != nullptr) {
+                                Expression* expression = patternInitializer->initializer->expression;
+                                if (expression->_isSimpleExpression()) {
+                                    PrefixExpression* prefixExpression = ((SimpleExpression*)expression)->prefixExpression;
+                                    PostfixExpression* postfixExpression = prefixExpression->expression;
+                                    if (postfixExpression->primaryExpression->_isIdentifierExpression()) {
+                                        IdentifierExpression* identifierExpression = (IdentifierExpression*)postfixExpression->primaryExpression;
+                                        if (isClass(identifierExpression->name)) {
+                                            if (postfixExpression->postfixes != nullptr) {
+                                                if (postfixExpression->postfixes->length() == 1) {
+                                                    Postfix* postfix = *(*postfixExpression->postfixes)[0];
+                                                    if (postfix->_isFunctionCall()) {
+                                                        return true;
+                                                    }
+                                                }
+                                            }
+                                        }
                                     }
                                 }
                             }
