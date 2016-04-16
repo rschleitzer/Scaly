@@ -64,6 +64,7 @@ _Result<CompilationUnit, ParserError> Parser::parseCompilationUnit(_Page* _rp, _
         statements = nullptr;
     if (statements != nullptr) {
         if (!isAtEnd()) {
+            _Region _region; _Page* _p = _region.get();
             Position* current = lexer->getPosition(_p);
             return _Result<CompilationUnit, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_notAtEnd(new(_ep) Position(current))));
         }
