@@ -62,7 +62,7 @@
 "                       )
                     )
                            (if (top? syntax) ($
-"        if("(property content)" != null) {
+"        if "(property content)" != null {
             if !isAtEnd() {
                 let current: Position = lexer.getPreviousPosition()
                 throw ParserError.NotAtEnd(current)
@@ -229,7 +229,9 @@ _Result<"(id syntax)", ParserError> Parser::parse"(id syntax)"(_Page* _rp, _Page
                         ($ ; non-terminals
 "    auto _"(property content)"_result = parse"(link content)(if (multiple? content) "List" "")"(_rp, _ep);
     "(if (string=? "syntax" (type content)) ($ (if (multiple? content) "_Vector<" "")(link content)(if (multiple? content) ">" "") "* ") "")(property content)";
-    if (!_"(property content)"_result.succeeded()) {
+    if (_"(property content)"_result.succeeded())
+        "(property content)" = _"(property content)"_result.getResult();
+    else
 "                            (if (optional? content)
                                 ($
 "        "(property content)" = nullptr;
@@ -238,11 +240,7 @@ _Result<"(id syntax)", ParserError> Parser::parse"(id syntax)"(_Page* _rp, _Page
 "        return _Result<"(id syntax)", ParserError>(_"(property content)"_result.getError());
 "                               )
                             )
-"    }
-    else {
-        "(property content)" = _"(property content)"_result.getResult();
-    }
-"                           (if (top? syntax) ($
+                            (if (top? syntax) ($
 "    if ("(property content)" != nullptr) {
         if (!isAtEnd()) {
             Position* current = lexer->getPosition(_ep);

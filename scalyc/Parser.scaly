@@ -53,7 +53,7 @@ class Parser {
     function parseCompilationUnit() -> CompilationUnit throws ParserError {
         mutable start: Position = lexer.getPreviousPosition()
         let statements: [TerminatedStatement] = parseTerminatedStatementList() catch _(error) null
-        if(statements != null) {
+        if statements != null {
             if !isAtEnd() {
                 let current: Position = lexer.getPreviousPosition()
                 throw ParserError.NotAtEnd(current)
