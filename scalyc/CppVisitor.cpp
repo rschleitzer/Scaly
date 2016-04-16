@@ -1822,7 +1822,102 @@ void CppVisitor::closeReturnExpression(ReturnExpression* returnExpression) {
 }
 
 bool CppVisitor::openThrowExpression(ThrowExpression* throwExpression) {
-    return true;
+    _Region _region; _Page* _p = _region.get();
+    sourceFile->append("return _Result<");
+    String* returnType = getReturnType(_p, throwExpression);
+    if (returnType != nullptr) {
+        sourceFile->append(returnType);
+        sourceFile->append(", ");
+    }
+    String* thrownType = getThrownType(_p, throwExpression);
+    if (returnType != nullptr) {
+        sourceFile->append(thrownType);
+        sourceFile->append(">(new(_ep) ");
+        sourceFile->append(thrownType);
+        sourceFile->append("(new(_ep) _");
+        sourceFile->append(thrownType);
+        sourceFile->append("_");
+        if (throwExpression->expression->_isSimpleExpression()) {
+            SimpleExpression* simpleExpression = (SimpleExpression*)throwExpression->expression;
+            PrimaryExpression* primaryExpression = simpleExpression->prefixExpression->expression->primaryExpression;
+            if (primaryExpression->_isIdentifierExpression()) {
+                IdentifierExpression* identifierExpression = (IdentifierExpression*)primaryExpression;
+                sourceFile->append(identifierExpression->name);
+                if (simpleExpression->prefixExpression->expression->postfixes != nullptr) {
+                    if ((*(*simpleExpression->prefixExpression->expression->postfixes)[0])->_isFunctionCall()) {
+                        FunctionCall* functionCall = (FunctionCall*)*(*simpleExpression->prefixExpression->expression->postfixes)[0];
+                        functionCall->accept(this);
+                    }
+                }
+                sourceFile->append("))");
+            }
+        }
+    }
+    return false;
+}
+
+String* CppVisitor::getReturnType(_Page* _rp, ThrowExpression* throwExpression) {
+    _Region _region; _Page* _p = _region.get();
+    FunctionDeclaration* functionDeclaration = getFunctionDeclaration(throwExpression);
+    if (functionDeclaration != nullptr) {
+        FunctionResult* functionResult = functionDeclaration->signature->result;
+        if (functionResult != nullptr) {
+            VarString* ret = new(_p) VarString("");
+            if (functionResult->resultType->_isTypeIdentifier()) {
+                TypeIdentifier* typeIdentifier = (TypeIdentifier*)functionResult->resultType;
+                appendCppTypeName(ret, typeIdentifier);
+                return &String::create(_rp, ret);
+            }
+            else if (functionResult->resultType->_isArrayType()) {
+                ArrayType* arrayType = (ArrayType*)functionResult->resultType;
+                if (arrayType->elementType->_isTypeIdentifier()) {
+                    TypeIdentifier* typeIdentifier = (TypeIdentifier*)arrayType->elementType;
+                    ret->append("_Vector<");
+                    appendCppTypeName(ret, typeIdentifier);
+                    ret->append(">");
+                    return &String::create(_rp, ret);
+                }
+            }
+        }
+    }
+    
+    return nullptr;
+}
+
+String* CppVisitor::getThrownType(_Page* _rp, ThrowExpression* throwExpression) {
+    _Region _region; _Page* _p = _region.get();
+    FunctionDeclaration* functionDeclaration = getFunctionDeclaration(throwExpression);
+    if (functionDeclaration != nullptr) {
+        ThrowsClause* throwsClause = functionDeclaration->signature->throwsClause;
+        if (throwsClause != nullptr) {
+            VarString* ret = new(_p) VarString("");
+            if (throwsClause->throwsType->_isTypeIdentifier()) {
+                TypeIdentifier* typeIdentifier = (TypeIdentifier*)throwsClause->throwsType;
+                appendCppTypeName(ret, typeIdentifier);
+                return &String::create(_rp, ret);
+            }
+            else if (throwsClause->throwsType->_isArrayType()) {
+                ArrayType* arrayType = (ArrayType*)throwsClause->throwsType;
+                if (arrayType->elementType->_isTypeIdentifier()) {
+                    TypeIdentifier* typeIdentifier = (TypeIdentifier*)arrayType->elementType;
+                    ret->append("_Vector<");
+                    appendCppTypeName(ret, typeIdentifier);
+                    ret->append(">");
+                    return &String::create(_rp, ret);
+                }
+            }
+        }
+    }
+    
+    return nullptr;
+}
+
+FunctionDeclaration* CppVisitor::getFunctionDeclaration(SyntaxNode* syntaxNode) {
+    if (syntaxNode->_isFunctionDeclaration())
+        return (FunctionDeclaration*)syntaxNode;
+    if (syntaxNode->parent == nullptr)
+        return nullptr;
+    return getFunctionDeclaration(syntaxNode->parent);
 }
 
 void CppVisitor::closeThrowExpression(ThrowExpression* throwExpression) {

@@ -175,6 +175,9 @@ public:
     virtual bool openReturnExpression(ReturnExpression* returnExpression);
     virtual void closeReturnExpression(ReturnExpression* returnExpression);
     virtual bool openThrowExpression(ThrowExpression* throwExpression);
+    virtual String* getReturnType(_Page* _rp, ThrowExpression* throwExpression);
+    virtual String* getThrownType(_Page* _rp, ThrowExpression* throwExpression);
+    virtual FunctionDeclaration* getFunctionDeclaration(SyntaxNode* syntaxNode);
     virtual void closeThrowExpression(ThrowExpression* throwExpression);
     virtual bool openBreakExpression(BreakExpression* breakExpression);
     virtual void closeBreakExpression(BreakExpression* breakExpression);

@@ -64,8 +64,8 @@
                            (if (top? syntax) ($
 "        if "(property content)" != null {
             if !isAtEnd() {
-                let current: Position = lexer.getPreviousPosition()
-                throw ParserError.NotAtEnd(current)
+                let current: Position = lexer.getPosition()
+                throw notAtEnd(current)
             }
         }
 "                           )"")
