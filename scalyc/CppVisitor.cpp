@@ -1097,6 +1097,17 @@ bool CppVisitor::inReturn(SyntaxNode* node) {
     return inReturn(node->parent);
 }
 
+bool CppVisitor::inThrow(SyntaxNode* node) {
+    if (node->parent == nullptr)
+        return false;
+    
+    if (node->parent->_isThrowExpression()) {
+        return true;
+    }
+
+    return inThrow(node->parent);
+}
+
 String* CppVisitor::getMemberIfCreatingObject(Assignment* assignment) {
      String* functionName = getFunctionName(assignment);
     if (functionName == nullptr) {
@@ -1547,6 +1558,11 @@ void CppVisitor::visitIdentifierExpression(IdentifierExpression* identifierExpre
                         sourceFile->append("_rp");
                         if (className->equals("String"))
                             sourceFile->append(", ");
+                    }
+                    else if (inThrow(identifierExpression)) {
+                        sourceFile->append("_ep");
+                        if (className->equals("String"))
+                            sourceFile->append(", ");                        
                     }
                     else if (inAssignment(identifierExpression)) {
                         Assignment* assignment = getAssignment(identifierExpression);

@@ -326,18 +326,22 @@ class CppVisitor : SyntaxVisitor {
     function openAssignment(assignment: Assignment) -> bool {
         return true
     }
-    
+
     function inInitializer(node: SyntaxNode) -> bool {
         return false;
     }
-    
+
     function inReturn(node: SyntaxNode) -> bool {
+        return false;
+    }
+
+    function inThrow(node: SyntaxNode) -> bool {
         return false;
     }
 
     function getMemberIfCreatingObject(assignment: Assignment) -> existing String {
     }
-    
+
     function getFunctionName(assignment: Assignment) -> existing String {
     }
     

@@ -64,8 +64,8 @@
                            (if (top? syntax) ($
 "        if "(property content)" != null {
             if !isAtEnd() {
-                let current: Position = lexer.getPosition()
-                throw notAtEnd(current)
+                mutable current: Position = lexer.getPosition()
+                throw notAtEnd(Position(current))
             }
         }
 "                           )"")
@@ -244,7 +244,7 @@ _Result<"(id syntax)", ParserError> Parser::parse"(id syntax)"(_Page* _rp, _Page
 "    if ("(property content)" != nullptr) {
         if (!isAtEnd()) {
             Position* current = lexer->getPosition(_ep);
-            return _Result<"(id syntax)", ParserError>(new(_ep) ParserError(new(_ep) _ParserError_notAtEnd(current)));
+            return _Result<"(id syntax)", ParserError>(new(_ep) ParserError(new(_ep) _ParserError_notAtEnd(new(_ep) Position(current))));
         }
     }
 "                           )"")

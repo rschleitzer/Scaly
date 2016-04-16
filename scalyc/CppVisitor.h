@@ -123,6 +123,7 @@ public:
     virtual bool openAssignment(Assignment* assignment);
     virtual bool inInitializer(SyntaxNode* node);
     virtual bool inReturn(SyntaxNode* node);
+    virtual bool inThrow(SyntaxNode* node);
     virtual String* getMemberIfCreatingObject(Assignment* assignment);
     virtual String* getFunctionName(Assignment* assignment);
     virtual bool isCreatingObject(String* functionName, SyntaxNode* node);

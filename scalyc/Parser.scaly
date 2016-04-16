@@ -55,8 +55,8 @@ class Parser {
         let statements: [TerminatedStatement] = parseTerminatedStatementList() catch _(error) null
         if statements != null {
             if !isAtEnd() {
-                let current: Position = lexer.getPosition()
-                throw notAtEnd(current)
+                mutable current: Position = lexer.getPosition()
+                throw notAtEnd(Position(current))
             }
         }
 
