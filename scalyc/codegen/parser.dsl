@@ -47,50 +47,47 @@
             )
             ($ ; non-abstract syntax
 "
-        mutable "(string-firstchar-downcase (id syntax))": "(id syntax)"? = null
 "                (apply-to-children-of syntax (lambda (content) ($
-"        {
-            let start: Position = lexer.getPosition()
+"        let start: Position = lexer.getPreviousPosition()
 "                   (if (string=? "syntax" (type content))
 
                         ($ ; non-terminals
-"            let result: "(if (multiple? content) "[" "")(link content)(if (multiple? content) "]" "")" node = parse"(link content)(if (multiple? content) "List" "")"() catch _(error) {
+"        let result: "(if (multiple? content) "[" "")(link content)(if (multiple? content) "]" "")" node = parse"(link content)(if (multiple? content) "List" "")"() catch _(error) {
 "
                     (if (optional? content)
-"                 null
+"             null
 "
                         ($
-"                throw ("(if (string=? (type content) "syntax") "error" ($ "ParserError."
+"            throw ("(if (string=? (type content) "syntax") "error" ($ "ParserError."
                 (case (type content) (("keyword") "Keyword") (("punctuation") "Punctuation")(("identifier") "Identifier")(("literal") "Literal")(("prefixoperator" "binaryoperator" "postfixoperator") "Operator"))
                 "Expected(start"(case (type content) (("keyword" "punctuation") ($ ", String("((if (string=? (type content) "keyword") name-of-link link) content)")"))(else ""))"))"))")
 "                       )
                     )
-"            }
+"        }
 "                           (if (top? syntax) ($
-"            if !isAtEnd() {
-                let current: Position = lexer.getPreviousPosition()
-                throw ParserError.NotAtEnd(current)
-            }
+"        if !isAtEnd() {
+            let current: Position = lexer.getPreviousPosition()
+            throw ParserError.NotAtEnd(current)
+        }
 "                           )"")
                         )
                         ($ ; terminals
-"            let "(case (type content) (("keyword" "punctuation") "success: bool")(("literal") "literal: Literal?")(else ($ (property content)": String?")))
+"        let "(case (type content) (("keyword" "punctuation") "success: bool")(("literal") "literal: Literal?")(else ($ (property content)": String?")))
             " = lexer.parse"
             (case (type content)(("prefixoperator") "PrefixOperator")(("binaryoperator") "BinaryOperator")(("postfixoperator") "PostfixOperator")(("identifier") "Identifier")(("literal") "Literal")(("keyword") "Keyword")(("punctuation") "Punctuation"))
             "("(case (type content)(("keyword") (name-of-link content)) (("punctuation") (link content)) (else ""))")
-            if "(case (type content) (("keyword" "punctuation") "success")(("identifier") ($ "("(property content)" != null) && ("(property content)" is Identifier)")) (else ($ (property content)" != null")))"
-                lexer.advance()
+        if "(case (type content) (("keyword" "punctuation") "success")(("identifier") ($ "("(property content)" != null) && ("(property content)" is Identifier)")) (else ($ (property content)" != null")))"
+            lexer.advance()
 "                       )
                     ) ; syntax or terminal
 "
-            if "(string-firstchar-downcase (id syntax))" == null
-                "(string-firstchar-downcase (id syntax))" = "(id syntax)"(start, lexer.getPosition())
+        if "(string-firstchar-downcase (id syntax))" == null
+            "(string-firstchar-downcase (id syntax))" = "(id syntax)"(start, lexer.getPosition())
 "                   (if (property content) ($
 "
-            "(string-firstchar-downcase (id syntax))"."(property content)" = "(if (string=? "syntax" (type content)) "node" (property content))"
+        "(string-firstchar-downcase (id syntax))"."(property content)" = "(if (string=? "syntax" (type content)) "node" (property content))"
 "                   )"")
-"        }
-"                ))) ; apply to children of syntax
+                ))) ; apply to children of syntax
 "
 "               (if (top? syntax) ($
 "        "(string-firstchar-downcase (id syntax))".fileName = fileName;

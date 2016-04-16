@@ -409,6 +409,8 @@ bool CppVisitor::openFunctionSignature(FunctionSignature* functionSignature) {
     else {
         if (functionSignature->throwsClause) {
             headerFile->append("_Result<");
+            if (!suppressSource)
+                sourceFile->append("_Result<");
             if (functionSignature->result->resultType->_isTypeIdentifier()) {
                 TypeIdentifier* typeId = (TypeIdentifier*)functionSignature->result->resultType;
                 appendCppTypeName(headerFile, typeId);
@@ -1463,21 +1465,18 @@ void CppVisitor::visitIdentifierExpression(IdentifierExpression* identifierExpre
             if (postfixExpression->postfixes->length() > 0) {
                 if ((isClass(identifierExpression->name)) && ((*(*(postfixExpression->postfixes))[0])->_isFunctionCall())) {
                     String* className = identifierExpression->name;
-                    if (className->equals("String")) {
+                    if (className->equals("String"))
                         sourceFile->append("&String::create(");
-                        if (inReturn(identifierExpression))
-                            sourceFile->append("_rp");
-                        else {
-                            sourceFile->append("token->getPage()");
-                        }
-                        sourceFile->append(", ");
-                    }
-                    else {
+                    else
                         sourceFile->append("new(");
-                        if (inReturn(identifierExpression))
-                            sourceFile->append("_rp");
-                        else if (identifierExpression->parent->parent->parent->_isAssignment()) {
-                            Assignment* assignment = (Assignment*)identifierExpression->parent->parent->parent;
+                    if (inReturn(identifierExpression)) {
+                        sourceFile->append("_rp");
+                        if (className->equals("String"))
+                            sourceFile->append(", ");
+                    }
+                    else if (inAssignment(identifierExpression)) {
+                        Assignment* assignment = getAssignment(identifierExpression);
+                        if (assignment != nullptr) {
                             ClassDeclaration* classDeclaration = getClassDeclaration(assignment);
                             String* memberName = getMemberIfCreatingObject(assignment);
                             if (memberName != nullptr) {
@@ -1494,10 +1493,14 @@ void CppVisitor::visitIdentifierExpression(IdentifierExpression* identifierExpre
                                 else {
                                     sourceFile->append("getPage()");
                                 }
+                                if (className->equals("String"))
+                                    sourceFile->append(", ");
                             }
                         }
-                        else
-                            sourceFile->append("_p");
+                    }
+                    else
+                        sourceFile->append("_p");
+                    if (!className->equals("String")) {
                         sourceFile->append(") ");
                         sourceFile->append(identifierExpression->name);
                     }
@@ -1524,6 +1527,24 @@ void CppVisitor::visitIdentifierExpression(IdentifierExpression* identifierExpre
             }
         }
     }
+}
+
+bool CppVisitor::inAssignment(SyntaxNode* syntaxNode) {
+    if (syntaxNode->_isAssignment())
+        return true;
+    SyntaxNode* parentNode = syntaxNode->parent;
+    if (parentNode == nullptr)
+        return false;
+    return inAssignment(parentNode);
+}
+
+Assignment* CppVisitor::getAssignment(SyntaxNode* syntaxNode) {
+    if (syntaxNode->_isAssignment())
+        return (Assignment*)syntaxNode;
+    SyntaxNode* parentNode = syntaxNode->parent;
+    if (parentNode == nullptr)
+        return nullptr;
+    return getAssignment(parentNode);
 }
 
 bool CppVisitor::openIfExpression(IfExpression* ifExpression) {

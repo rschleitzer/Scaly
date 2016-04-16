@@ -152,6 +152,8 @@ public:
     virtual bool openNamedMemberPostfix(NamedMemberPostfix* namedMemberPostfix);
     virtual void closeNamedMemberPostfix(NamedMemberPostfix* namedMemberPostfix);
     virtual void visitIdentifierExpression(IdentifierExpression* identifierExpression);
+    virtual bool inAssignment(SyntaxNode* syntaxNode);
+    virtual Assignment* getAssignment(SyntaxNode* syntaxNode);
     virtual void visitLiteralExpression(LiteralExpression* literalExpression);
     virtual bool openIfExpression(IfExpression* ifExpression);
     virtual void closeIfExpression(IfExpression* ifExpression);

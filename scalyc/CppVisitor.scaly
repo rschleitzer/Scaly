@@ -436,6 +436,14 @@ class CppVisitor : SyntaxVisitor {
     function visitLiteralExpression(literalExpression: LiteralExpression) {
     }
 
+    function inAssignment(syntaxNode: SyntaxNode) -> bool {
+        return false
+    }
+
+    function getAssignment(syntaxNode: SyntaxNode) -> Assignment {
+        return null
+    }
+
     function openIfExpression(ifExpression: IfExpression) -> bool {
         return true
     }
