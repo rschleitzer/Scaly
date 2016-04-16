@@ -185,7 +185,6 @@ Parser::Parser(String* theFileName, String* text) {
         (if (multiple? syntax) ($
 "
 _Result<""_Vector<"(id syntax)">, ParserError> Parser::parse"(id syntax)"List(_Page* _rp, _Page* _ep) {
-    // Make a region for the current block and get the Page
     _Region _r; _Page* _p = _r.get();
     _Array<"(id syntax)">* "(string-firstchar-downcase (id syntax))" = 0;
     while (true) {
@@ -204,14 +203,14 @@ _Result<""_Vector<"(id syntax)">, ParserError> Parser::parse"(id syntax)"List(_P
 "       )"")
 "
 _Result<"(id syntax)", ParserError> Parser::parse"(id syntax)"(_Page* _rp, _Page* _ep) {
+    _Region _r; _Page* _p = _r.get();
 "
         (if (abstract? syntax)
             ($
 "    _Array<""ParserError>* errors = new(_ep) _Array<""ParserError>();
-    Position* start = lexer->getPreviousPosition(_rp);
+    Position* start = lexer->getPreviousPosition(_p);
 "                (apply-to-children-of syntax (lambda (content) ($
 "    {
-        // Make a region for the current block and get the Page
         _Region _r; _Page* _p = _r.get();
         _Result<"(link content)", ParserError> result = parse"(link content)"(_rp, _p);
         if (result.succeeded())
@@ -225,7 +224,7 @@ _Result<"(id syntax)", ParserError> Parser::parse"(id syntax)"(_Page* _rp, _Page
 "
             )
             ($ ; non-abstract syntax
-"    Position* start = lexer->getPreviousPosition(_rp);
+"    Position* start = lexer->getPreviousPosition(_p);
 "               (apply-to-children-of syntax (lambda (content) ($
                    (if (string=? "syntax" (type content))
                         ($ ; non-terminals
@@ -246,7 +245,7 @@ _Result<"(id syntax)", ParserError> Parser::parse"(id syntax)"(_Page* _rp, _Page
                         )
                         ($ ; terminals
                             (if (optional? content) "" ($
-"    Position* start"(if (property content) (string-firstchar-upcase (property content)) ($ (string-firstchar-upcase (link content))(number->string (child-number content))))" = lexer->getPreviousPosition(_rp);
+"    Position* start"(if (property content) (string-firstchar-upcase (property content)) ($ (string-firstchar-upcase (link content))(number->string (child-number content))))" = lexer->getPreviousPosition(_p);
 "                           ))
 "    "(case (type content) (("keyword" "punctuation") ($ "bool success"(string-firstchar-upcase (link content))(number->string (child-number content))))(("literal") "Literal* literal")(else ($ "String* "(property content))))
         " = lexer->parse"
@@ -261,7 +260,7 @@ _Result<"(id syntax)", ParserError> Parser::parse"(id syntax)"(_Page* _rp, _Page
 "    else {
         return _Result<"(id syntax)", ParserError>("(if (string=? (type content) "syntax") ($ "_result_"(property content)".getError()") ($ "new(_ep) ParserError(new(_ep) _ParserError"
         (case (type content) (("keyword") "_keyword") (("punctuation") "_punctuation")(("identifier") "_identifier")(("literal") "_literal")(("prefixoperator" "binaryoperator" "postfixoperator") "_operator"))
-        "Expected(start"(if (property content) (string-firstchar-upcase (property content)) ($ (string-firstchar-upcase (link content))(number->string (child-number content))))(case (type content) (("keyword" "punctuation") ($ ", &""String::create(_ep, "((if (string=? (type content) "keyword") name-of-link link) content)")"))(else ""))"))"))");
+        "Expected(new(_ep) Position(start"(if (property content) (string-firstchar-upcase (property content)) ($ (string-firstchar-upcase (link content))(number->string (child-number content))))(case (type content) (("keyword" "punctuation") ($ "), &""String::create(_ep, "((if (string=? (type content) "keyword") name-of-link link) content)")"))(else ")"))"))"))");
     }
 "                   ))
                 ))) ; apply to children of syntax
