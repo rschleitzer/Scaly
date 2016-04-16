@@ -79,14 +79,32 @@
             lexer.advance()
 "                       )
                     ) ; syntax or terminal
-"
-        if "(string-firstchar-downcase (id syntax))" == null
-            "(string-firstchar-downcase (id syntax))" = "(id syntax)"(Position(start), lexer.getPosition())
-"                   (if (property content) ($
-"
-        "(string-firstchar-downcase (id syntax))"."(property content)" = "(if (string=? "syntax" (type content)) "node" (property content))"
-"                   )"")
                 ))) ; apply to children of syntax
+"        mutable ret: "(id syntax)" = "(id syntax)"("
+                (apply-to-property-children-of syntax (lambda (content) ($
+                    (property content)(if (properties-remaining? content syntax) ", " "")
+                )))
+                (if (node-list-empty? (properties syntax)) "" ", ")
+                "Position(start), lexer.getPosition())
+"                (if (top? syntax) ($
+"        ret.fileName = fileName;
+"               )"")
+                (apply-to-property-children-of syntax (lambda (content)
+                    (if (multiple? content)
+                        ($
+"        if "(property content)" != null {
+            for item in "(property content)"
+                item.parent = "(string-firstchar-downcase (id syntax))"
+        }
+"                       )
+                        (if (string=? "syntax" (type content)) ($
+                            (if (optional? content) ($
+"       if "(property content)" != null
+    "                       )"")
+"       "(property content)".parent = "(string-firstchar-downcase (id syntax))";
+"                       )"")
+                    )
+                ))
 "
 "               (if (top? syntax) ($
 "        "(string-firstchar-downcase (id syntax))".fileName = fileName;
