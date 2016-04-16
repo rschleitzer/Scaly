@@ -50,14 +50,12 @@
 "                (apply-to-children-of syntax (lambda (content) ($
 "        let start: Position = lexer.getPreviousPosition()
 "                   (if (string=? "syntax" (type content))
-
                         ($ ; non-terminals
 "        let "(property content)": "(if (multiple? content) "[" "")(link content)(if (multiple? content) "]" "")" = parse"(link content)(if (multiple? content) "List" "")"() catch _(error) {
 "
                     (if (optional? content)
 "             null
-"
-                        ($
+"                       ($
 "            throw ("(if (string=? (type content) "syntax") "error" ($ "ParserError."
                 (case (type content) (("keyword") "Keyword") (("punctuation") "Punctuation")(("identifier") "Identifier")(("literal") "Literal")(("prefixoperator" "binaryoperator" "postfixoperator") "Operator"))
                 "Expected(start"(case (type content) (("keyword" "punctuation") ($ ", String("((if (string=? (type content) "keyword") name-of-link link) content)")"))(else ""))"))"))")
@@ -65,7 +63,8 @@
                     )
 "        }
 "                           (if (top? syntax) ($
-"        if !isAtEnd() {
+"        if("(property content)" != null)
+        if !isAtEnd() {
             let current: Position = lexer.getPreviousPosition()
             throw ParserError.NotAtEnd(current)
         }
@@ -229,18 +228,27 @@ _Result<"(id syntax)", ParserError> Parser::parse"(id syntax)"(_Page* _rp, _Page
                    (if (string=? "syntax" (type content))
                         ($ ; non-terminals
 "    auto _"(property content)"_result = parse"(link content)(if (multiple? content) "List" "")"(_rp, _ep);
-"                   (if (property content) ($
-"    "(if (string=? "syntax" (type content)) ($ (if (multiple? content) "_Vector<" "")(link content)(if (multiple? content) ">" "") "* ") "")(property content)" = 0;
-"                  )"")
-"    if (_"(property content)"_result.succeeded()) {
+    "(if (string=? "syntax" (type content)) ($ (if (multiple? content) "_Vector<" "")(link content)(if (multiple? content) ">" "") "* ") "")(property content)";
+    if (!_"(property content)"_result.succeeded()) {
+"                            (if (optional? content)
+                                ($
+"        "(property content)" = nullptr;
+"                               )
+                                ($
+"        return _Result<"(id syntax)", ParserError>(_"(property content)"_result.getError());
+"                               )
+                            )
+"    }
+    else {
+        "(property content)" = _"(property content)"_result.getResult();
+    }
 "                           (if (top? syntax) ($
-"        if (!isAtEnd()) {
+"    if ("(property content)" != nullptr) {
+        if (!isAtEnd()) {
             Position* current = lexer->getPosition(_ep);
             return _Result<"(id syntax)", ParserError>(new(_ep) ParserError(new(_ep) _ParserError_notAtEnd(current)));
         }
-"                           )"")
-                            (if (property content) ($
-"        "(property content)" = "(if (string=? "syntax" (type content)) ($ "_"(property content)"_result.getResult()") (property content))";
+    }
 "                           )"")
                         )
                         ($ ; terminals
@@ -253,16 +261,16 @@ _Result<"(id syntax)", ParserError> Parser::parse"(id syntax)"(_Page* _rp, _Page
         "("(case (type content)(("keyword") (name-of-link content)) (("punctuation") (link content)) (else "_rp"))");
     if "(case (type content) (("keyword" "punctuation") ($ "("($ "success"(string-firstchar-upcase (link content))(number->string (child-number content)))")"))(("identifier") ($ "(("(property content)") && (isIdentifier("(property content)")))")) (else ($"("(property content)")")))" {
         lexer->advance();
-"                       )
-                    ) ; syntax or terminal
-"    }
-"                   (if (optional? content) "" ($
+    }
+"                            (if (optional? content) "" ($
 "    else {
         return _Result<"(id syntax)", ParserError>("(if (string=? (type content) "syntax") ($ "_"(property content)"_result.getError()") ($ "new(_ep) ParserError(new(_ep) _ParserError"
         (case (type content) (("keyword") "_keyword") (("punctuation") "_punctuation")(("identifier") "_identifier")(("literal") "_literal")(("prefixoperator" "binaryoperator" "postfixoperator") "_operator"))
         "Expected(new(_ep) Position(start"(if (property content) (string-firstchar-upcase (property content)) ($ (string-firstchar-upcase (link content))(number->string (child-number content))))(case (type content) (("keyword" "punctuation") ($ "), &""String::create(_ep, "((if (string=? (type content) "keyword") name-of-link link) content)")"))(else ")"))"))"))");
     }
-"                   ))
+"                          ))
+                        )
+                    ) ; syntax or terminal
                 ))) ; apply to children of syntax
 "    "(id syntax)"* "(string-firstchar-downcase (id syntax))" = new(_rp) "(id syntax)"("
                 (apply-to-property-children-of syntax (lambda (content) ($

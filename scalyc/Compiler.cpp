@@ -11,15 +11,15 @@ CompilerError* Compiler::compileFiles(_Page* _ep, Options* options) {
     for (size_t _i = 0; _i < _files_length; _i++) {
         file = *(*files)[_i];
         {
-            auto _source_Result = File::readToString(_p, _ep, file);
-            if (_source_Result.getErrorCode() == _FileError_noSuchFileOrDirectory) {
+            auto _source_result = File::readToString(_p, _ep, file);
+            if (_source_result.getErrorCode() == _FileError_noSuchFileOrDirectory) {
                 return new(_ep) CompilerError(new(_ep) _CompilerError_fileNotFound(file));
             }
-            if (!_source_Result.succeeded()) {
-                FileError* error = _source_Result.getError();
+            if (!_source_result.succeeded()) {
+                FileError* error = _source_result.getError();
                 return new(_ep) CompilerError(new(_ep) _CompilerError_unableToReadFile(file, error));
             }
-            String* source = _source_Result.getResult();
+            String* source = _source_result.getResult();
             sources->push(source);
         }
     }
@@ -30,10 +30,10 @@ CompilerError* Compiler::compileFiles(_Page* _ep, Options* options) {
     for (size_t _i = 0; _i < _sources_length; _i++) {
         source = *(*sources)[_i];
         {
-            auto _compilationUnit_Result = compileUnit(_p, _ep, *(*files)[index], source);
-            if (!_compilationUnit_Result.succeeded())
-                return new(_ep) CompilerError(new(_ep) _CompilerError_syntaxError(_compilationUnit_Result.getError()));
-            CompilationUnit* compilationUnit = _compilationUnit_Result.getResult();
+            auto _compilationUnit_result = compileUnit(_p, _ep, *(*files)[index], source);
+            if (!_compilationUnit_result.succeeded())
+                return new(_ep) CompilerError(new(_ep) _CompilerError_syntaxError(_compilationUnit_result.getError()));
+            CompilationUnit* compilationUnit = _compilationUnit_result.getResult();
             compilationUnits->push(compilationUnit);
             index++;
         }
