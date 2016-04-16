@@ -483,7 +483,19 @@ class CppVisitor : SyntaxVisitor {
         return true
     }
 
-    function returnsLocalObject(functionCall: FunctionCall) -> bool {
+    function assignedToMutableObject(functionCall: FunctionCall) -> bool {
+        return false
+    }
+
+    function assignedToConstantObject(functionCall: FunctionCall) -> bool {
+        return false
+    }
+
+    function getBindingInitializer(functionCall: FunctionCall) -> BindingInitializer {
+        return null
+    }
+
+    function callsInitializer(functionCall: FunctionCall) -> bool {
         return false
     }
 

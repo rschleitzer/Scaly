@@ -166,7 +166,10 @@ public:
     virtual bool openRepeatExpression(RepeatExpression* repeatExpression);
     virtual void closeRepeatExpression(RepeatExpression* repeatExpression);
     virtual bool openParenthesizedExpression(ParenthesizedExpression* parenthesizedExpression);
-    virtual bool returnsLocalObject(FunctionCall* functionCall);
+    virtual bool assignedToMutableObject(FunctionCall* functionCall);
+    virtual bool assignedToConstantObject(FunctionCall* functionCall);
+    virtual BindingInitializer* getBindingInitializer(FunctionCall* functionCall);
+    virtual bool callsInitializer(FunctionCall* functionCall);
     virtual bool catchesError(FunctionCall* functionCall);
     virtual void closeParenthesizedExpression(ParenthesizedExpression* parenthesizedExpression);
     virtual bool openReturnExpression(ReturnExpression* returnExpression);

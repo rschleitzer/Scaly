@@ -28,7 +28,7 @@
             ($
 "
         let errors: [ParserError] = [ParserError]()
-        let start: Position = lexer.getPreviousPosition()
+        mutable start: Position = lexer.getPreviousPosition()
 "                (apply-to-children-of syntax (lambda (content) ($
 "
         {
@@ -48,7 +48,7 @@
             ($ ; non-abstract syntax
 "
 "                (apply-to-children-of syntax (lambda (content) ($
-"        let start: Position = lexer.getPreviousPosition()
+"        mutable start: Position = lexer.getPreviousPosition()
 "                   (if (string=? "syntax" (type content))
                         ($ ; non-terminals
 "        let "(property content)": "(if (multiple? content) "[" "")(link content)(if (multiple? content) "]" "")" = parse"(link content)(if (multiple? content) "List" "")"() catch _(error) {

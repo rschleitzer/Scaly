@@ -1379,9 +1379,15 @@ bool CppVisitor::openParenthesizedExpression(ParenthesizedExpression* parenthesi
                     
             }
         }
-        if (returnsLocalObject(functionCall)) {
-            sourceFile->append("(_p");
-            outputParen = false;
+        if (!callsInitializer(functionCall)) {
+            if (assignedToMutableObject(functionCall)) {
+                sourceFile->append("(_p");
+                outputParen = false;
+            }
+            if (assignedToConstantObject(functionCall)) {
+                sourceFile->append("(_rp");
+                outputParen = false;
+            }
         }
         if (catchesError(functionCall)) {
             if (outputParen)
@@ -1401,20 +1407,51 @@ bool CppVisitor::openParenthesizedExpression(ParenthesizedExpression* parenthesi
     return true;
 }
 
-bool CppVisitor::returnsLocalObject(FunctionCall* functionCall) {
+bool CppVisitor::assignedToMutableObject(FunctionCall* functionCall) {
+    BindingInitializer* bindingInitializer = getBindingInitializer(functionCall);
+    if (bindingInitializer == nullptr)
+        return false;
+    if (bindingInitializer->parent->_isMutableDeclaration())
+        return true;
+    return false;
+}
+
+bool CppVisitor::assignedToConstantObject(FunctionCall* functionCall) {
+    BindingInitializer* bindingInitializer = getBindingInitializer(functionCall);
+    if (bindingInitializer == nullptr)
+        return false;
+    if (bindingInitializer->parent->_isConstantDeclaration())
+        return true;
+    return false;
+}
+
+BindingInitializer* CppVisitor::getBindingInitializer(FunctionCall* functionCall) {
+    if (functionCall->parent->_isPostfixExpression()) {
+        PostfixExpression* postfixExpression = (PostfixExpression*)functionCall->parent;
+        if (postfixExpression->parent->parent->parent->_isInitializer()) {
+            Initializer* initializer = (Initializer*)postfixExpression->parent->parent->parent;
+            if (initializer->parent->_isPatternInitializer()) {
+                PatternInitializer* patternInitializer = (PatternInitializer*)initializer->parent;
+                if (patternInitializer->parent->_isBindingInitializer()) {
+                    return (BindingInitializer*)patternInitializer->parent;
+                }
+            }
+        }
+    }
+    return nullptr;
+}
+
+bool CppVisitor::callsInitializer(FunctionCall* functionCall) {
     if (functionCall->parent->_isPostfixExpression()) {
         PostfixExpression* postfixExpression = (PostfixExpression*)functionCall->parent;
         if (postfixExpression->postfixes->length() == 1) {
             if (postfixExpression->primaryExpression->_isIdentifierExpression()) {
                 IdentifierExpression* identifierExpression = (IdentifierExpression*)postfixExpression->primaryExpression;
                 if (isClass(identifierExpression->name)) {
-                    return false;
+                    return true;
                 }
             }
         }
-
-        if (postfixExpression->parent->parent->parent->_isInitializer())
-            return true;
     }
 
     return false;
