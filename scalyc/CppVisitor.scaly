@@ -521,6 +521,18 @@ class CppVisitor : SyntaxVisitor {
         return true
     }
 
+    function getReturnType(throwExpression: ThrowExpression) -> String {
+        return null
+    }
+
+    function getThrownType(throwExpression: ThrowExpression) -> String {
+        return null
+    }
+
+    function getFunctionDeclaration(syntaxNode: SyntaxNode) -> existing FunctionDeclaration {
+        return null
+    }
+
     function closeThrowExpression(throwExpression: ThrowExpression) {
     }
 
