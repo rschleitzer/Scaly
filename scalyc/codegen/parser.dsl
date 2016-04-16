@@ -52,7 +52,7 @@
 "                   (if (string=? "syntax" (type content))
 
                         ($ ; non-terminals
-"        let result: "(if (multiple? content) "[" "")(link content)(if (multiple? content) "]" "")" node = parse"(link content)(if (multiple? content) "List" "")"() catch _(error) {
+"        let "(property content)": "(if (multiple? content) "[" "")(link content)(if (multiple? content) "]" "")" = parse"(link content)(if (multiple? content) "List" "")"() catch _(error) {
 "
                     (if (optional? content)
 "             null
@@ -228,11 +228,11 @@ _Result<"(id syntax)", ParserError> Parser::parse"(id syntax)"(_Page* _rp, _Page
 "               (apply-to-children-of syntax (lambda (content) ($
                    (if (string=? "syntax" (type content))
                         ($ ; non-terminals
-"    _Result<"(if (multiple? content) "_Vector<" "")(link content)(if (multiple? content) ">" "")", ParserError> _result_"(property content)" = parse"(link content)(if (multiple? content) "List" "")"(_rp, _ep);
+"    auto _"(property content)"_result = parse"(link content)(if (multiple? content) "List" "")"(_rp, _ep);
 "                   (if (property content) ($
 "    "(if (string=? "syntax" (type content)) ($ (if (multiple? content) "_Vector<" "")(link content)(if (multiple? content) ">" "") "* ") "")(property content)" = 0;
 "                  )"")
-"    if (_result_"(property content)".succeeded()) {
+"    if (_"(property content)"_result.succeeded()) {
 "                           (if (top? syntax) ($
 "        if (!isAtEnd()) {
             Position* current = lexer->getPosition(_ep);
@@ -240,7 +240,7 @@ _Result<"(id syntax)", ParserError> Parser::parse"(id syntax)"(_Page* _rp, _Page
         }
 "                           )"")
                             (if (property content) ($
-"        "(property content)" = "(if (string=? "syntax" (type content)) ($ "_result_"(property content)".getResult()") (property content))";
+"        "(property content)" = "(if (string=? "syntax" (type content)) ($ "_"(property content)"_result.getResult()") (property content))";
 "                           )"")
                         )
                         ($ ; terminals
@@ -258,7 +258,7 @@ _Result<"(id syntax)", ParserError> Parser::parse"(id syntax)"(_Page* _rp, _Page
 "    }
 "                   (if (optional? content) "" ($
 "    else {
-        return _Result<"(id syntax)", ParserError>("(if (string=? (type content) "syntax") ($ "_result_"(property content)".getError()") ($ "new(_ep) ParserError(new(_ep) _ParserError"
+        return _Result<"(id syntax)", ParserError>("(if (string=? (type content) "syntax") ($ "_"(property content)"_result.getError()") ($ "new(_ep) ParserError(new(_ep) _ParserError"
         (case (type content) (("keyword") "_keyword") (("punctuation") "_punctuation")(("identifier") "_identifier")(("literal") "_literal")(("prefixoperator" "binaryoperator" "postfixoperator") "_operator"))
         "Expected(new(_ep) Position(start"(if (property content) (string-firstchar-upcase (property content)) ($ (string-firstchar-upcase (link content))(number->string (child-number content))))(case (type content) (("keyword" "punctuation") ($ "), &""String::create(_ep, "((if (string=? (type content) "keyword") name-of-link link) content)")"))(else ")"))"))"))");
     }

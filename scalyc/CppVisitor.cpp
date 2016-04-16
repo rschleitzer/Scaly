@@ -1784,7 +1784,7 @@ bool CppVisitor::openIdentifierPattern(IdentifierPattern* identifierPattern) {
         {
             sourceFile->append("auto _");
             sourceFile->append(identifierPattern->identifier);
-            sourceFile->append("_Result");
+            sourceFile->append("_result");
             return false;
         }
     }
