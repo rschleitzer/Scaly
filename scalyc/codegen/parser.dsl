@@ -107,7 +107,7 @@
                             (if (optional? content) ($
 "       if "(property content)" != null
     "                       )"")
-"       "(property content)".parent = ret
+"        "(property content)".parent = ret
 "                       )"")
                     )
                 ))
