@@ -1208,7 +1208,7 @@ class Parser {
         }
 
         {
-            let node: PathItemCatchPattern = parsePathItemCatchPattern() catch _ (error) {
+            let node: IdentifierCatchPattern = parseIdentifierCatchPattern() catch _ (error) {
                 errors.push(error)
                 break
             }
@@ -1230,19 +1230,13 @@ class Parser {
         return ret
     }
 
-    function parsePathItemCatchPattern() -> PathItemCatchPattern throws ParserError {
+    function parseIdentifierCatchPattern() -> IdentifierCatchPattern throws ParserError {
         mutable start: Position = lexer.getPreviousPosition()
-        let catchCase: PathItem = parsePathItem() catch _ (error)
-            throw error
-        mutable start: Position = lexer.getPreviousPosition()
-        let catchCaseExtensions: [PathIdentifier] = parsePathIdentifierList() catch _ (error) null
+        let name: String? = lexer.parseIdentifier()
+        if (name != null) && (name is Identifier)
+            lexer.advance()
         mutable end: Position = lexer.getPosition()
-        var ret: PathItemCatchPattern = PathItemCatchPattern(catchCase, catchCaseExtensions, Position(start), Position(end))
-       catchCase.parent = ret
-        if catchCaseExtensions != null {
-            for item: PathIdentifier in catchCaseExtensions
-                item.parent = ret
-        }
+        var ret: IdentifierCatchPattern = IdentifierCatchPattern(name, Position(start), Position(end))
 
         return ret
     }

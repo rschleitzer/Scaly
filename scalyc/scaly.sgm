@@ -232,14 +232,13 @@
 
     <syntax id = CatchPattern                          abstract
         <content link = WildCardCatchPattern
-        <content link = PathItemCatchPattern
+        <content link = IdentifierCatchPattern
 
     <syntax id = WildCardCatchPattern                           base = CatchPattern
         <content link = WildcardPattern                         property = pattern
 
-    <syntax id = PathItemCatchPattern                           base = CatchPattern
-        <content link = PathItem                                property = catchCase
-        <content link = PathIdentifier        multiple optional property = catchCaseExtensions
+    <syntax id = IdentifierCatchPattern                         base = CatchPattern
+        <content identifier                                     property = name
 
     <syntax id = Postfix                      multiple abstract
         <content link = OperatorPostfix

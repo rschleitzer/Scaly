@@ -62,7 +62,7 @@ public:
     virtual bool _isCatchClause();
     virtual bool _isCatchPattern();
     virtual bool _isWildCardCatchPattern();
-    virtual bool _isPathItemCatchPattern();
+    virtual bool _isIdentifierCatchPattern();
     virtual bool _isPostfix();
     virtual bool _isOperatorPostfix();
     virtual bool _isFunctionCall();
@@ -620,7 +620,7 @@ public:
 
     virtual bool _isCatchPattern();
     virtual bool _isWildCardCatchPattern();
-    virtual bool _isPathItemCatchPattern();
+    virtual bool _isIdentifierCatchPattern();
 };
 
 class WildCardCatchPattern : public CatchPattern {
@@ -632,14 +632,13 @@ public:
     virtual bool _isWildCardCatchPattern();
 };
 
-class PathItemCatchPattern : public CatchPattern {
+class IdentifierCatchPattern : public CatchPattern {
 public:
-    PathItemCatchPattern(PathItem* catchCase, _Vector<PathIdentifier>* catchCaseExtensions, Position* start, Position* end);
+    IdentifierCatchPattern(String* name, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
-    PathItem* catchCase;
-    _Vector<PathIdentifier>* catchCaseExtensions;
+    String* name;
 
-    virtual bool _isPathItemCatchPattern();
+    virtual bool _isIdentifierCatchPattern();
 };
 
 class Postfix : public SyntaxNode {

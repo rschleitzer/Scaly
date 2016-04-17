@@ -282,11 +282,7 @@ bool MyVisitor::openWildCardCatchPattern(WildCardCatchPattern* wildCardCatchPatt
 void MyVisitor::closeWildCardCatchPattern(WildCardCatchPattern* wildCardCatchPattern) {
 }
 
-bool MyVisitor::openPathItemCatchPattern(PathItemCatchPattern* pathItemCatchPattern) {
-    return true;
-}
-
-void MyVisitor::closePathItemCatchPattern(PathItemCatchPattern* pathItemCatchPattern) {
+void MyVisitor::visitIdentifierCatchPattern(IdentifierCatchPattern* identifierCatchPattern) {
 }
 
 void MyVisitor::visitOperatorPostfix(OperatorPostfix* operatorPostfix) {

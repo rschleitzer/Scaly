@@ -279,11 +279,7 @@ class MyVisitor : SyntaxVisitor {
     function closeWildCardCatchPattern(wildCardCatchPattern: WildCardCatchPattern) {
     }
 
-    function openPathItemCatchPattern(pathItemCatchPattern: PathItemCatchPattern) -> bool {
-        return true
-    }
-
-    function closePathItemCatchPattern(pathItemCatchPattern: PathItemCatchPattern) {
+    function visitIdentifierCatchPattern(identifierCatchPattern: IdentifierCatchPattern) {
     }
 
     function visitOperatorPostfix(operatorPostfix: OperatorPostfix) {

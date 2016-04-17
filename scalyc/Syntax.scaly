@@ -955,28 +955,19 @@ class WildCardCatchPattern : CatchPattern {
     let pattern: WildcardPattern?
 }
 
-class PathItemCatchPattern : CatchPattern {
+class IdentifierCatchPattern : CatchPattern {
 
-    init(catchCase: PathItem, catchCaseExtensions: [PathIdentifier], start: Position, end: Position) {
+    init(name: String, start: Position, end: Position) {
         this.start = start;
         this.end = end;
-        this.catchCase = catchCase;
-        this.catchCaseExtensions = catchCaseExtensions;
+        this.name = name;
     }
 
     override function accept(mutable visitor: SyntaxVisitor) {
-        if !visitor.openPathItemCatchPattern(this)
-            return;
-        catchCase.accept(visitor)
-        if catchCaseExtensions != null {
-            for node: PathIdentifier in catchCaseExtensions
-                node.accept(visitor)
-        }
-        visitor.closePathItemCatchPattern(this)
+        visitor.visitIdentifierCatchPattern(this)
     }
 
-    let catchCase: PathItem?
-    let catchCaseExtensions: [PathIdentifier]?
+    let name: String?
 }
 
 class Postfix : SyntaxNode {

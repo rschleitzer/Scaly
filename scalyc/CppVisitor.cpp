@@ -1285,25 +1285,34 @@ bool CppVisitor::openCatchClause(CatchClause* catchClause) {
                     sourceIndentLevel--;
                     indentSource();
                     sourceFile->append("}\n");
+                    indentSource();
                     if (catchClause->catchPattern->_isWildCardCatchPattern()) {
-                        indentSource();
-                        sourceFile->append("else {\n");
-                        sourceIndentLevel++;
-                        indentSource();
-                        if (catchClause->expression->_isSimpleExpression()) {
-                            SimpleExpression* simpleExpression = (SimpleExpression*)catchClause->expression;
-                            PrimaryExpression* primaryExpression = simpleExpression->prefixExpression->expression->primaryExpression;
-                            if ((!primaryExpression->_isReturnExpression()) && (!primaryExpression->_isBreakExpression())) {
-                                sourceFile->append(identifierPattern->identifier);
-                                sourceFile->append(" = ");
-                            }
-                        }
-                        catchClause->expression->accept(this);
-                        sourceFile->append(";\n");
-                        sourceIndentLevel--;
-                        indentSource();
-                        sourceFile->append("}\n");
+                        sourceFile->append("else");
                     }
+                    else if (catchClause->catchPattern->_isIdentifierCatchPattern()) {
+                        IdentifierCatchPattern* identifierCatchPattern = (IdentifierCatchPattern*)catchClause->catchPattern;
+                        sourceFile->append("if (_");
+                        sourceFile->append(identifierPattern->identifier);
+                        sourceFile->append("_result.getError() == ");
+                        sourceFile->append(identifierCatchPattern->name);
+                        sourceFile->append(") {\n");
+                    }
+                    sourceFile->append(" {\n");
+                    sourceIndentLevel++;
+                    indentSource();
+                    if (catchClause->expression->_isSimpleExpression()) {
+                        SimpleExpression* simpleExpression = (SimpleExpression*)catchClause->expression;
+                        PrimaryExpression* primaryExpression = simpleExpression->prefixExpression->expression->primaryExpression;
+                        if ((!primaryExpression->_isReturnExpression()) && (!primaryExpression->_isBreakExpression())) {
+                            sourceFile->append(identifierPattern->identifier);
+                            sourceFile->append(" = ");
+                        }
+                    }
+                    catchClause->expression->accept(this);
+                    sourceFile->append(";\n");
+                    sourceIndentLevel--;
+                    indentSource();
+                    sourceFile->append("}\n");
                 }
             }
         }
@@ -1321,11 +1330,8 @@ bool CppVisitor::openWildCardCatchPattern(WildCardCatchPattern* wildCardCatchPat
 void CppVisitor::closeWildCardCatchPattern(WildCardCatchPattern* wildCardCatchPattern) {
 }
 
-bool CppVisitor::openPathItemCatchPattern(PathItemCatchPattern* pathItemCatchPattern) {
-    return true;
-}
-
-void CppVisitor::closePathItemCatchPattern(PathItemCatchPattern* pathItemCatchPattern) {
+void CppVisitor::visitIdentifierCatchPattern(IdentifierCatchPattern* pathItemCatchPattern) {
+    return;
 }
 
 void CppVisitor::visitOperatorPostfix(OperatorPostfix* operatorPostfix) {

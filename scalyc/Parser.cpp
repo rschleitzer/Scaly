@@ -1892,7 +1892,7 @@ _Result<CatchPattern, ParserError> Parser::parseCatchPattern(_Page* _rp, _Page* 
     }
     {
         _Region _region; _Page* _p = _region.get();
-        _Result<PathItemCatchPattern, ParserError> result = parsePathItemCatchPattern(_rp, _p);
+        _Result<IdentifierCatchPattern, ParserError> result = parseIdentifierCatchPattern(_rp, _p);
         if (result.succeeded()) {
             return _Result<CatchPattern, ParserError>(result.getResult());
         }
@@ -1920,37 +1920,20 @@ _Result<WildCardCatchPattern, ParserError> Parser::parseWildCardCatchPattern(_Pa
     return _Result<WildCardCatchPattern, ParserError>(ret);
 }
 
-_Result<PathItemCatchPattern, ParserError> Parser::parsePathItemCatchPattern(_Page* _rp, _Page* _ep) {
+_Result<IdentifierCatchPattern, ParserError> Parser::parseIdentifierCatchPattern(_Page* _rp, _Page* _ep) {
     _Region _region; _Page* _p = _region.get();
     Position* start = lexer->getPreviousPosition(_p);
-    auto _catchCase_result = parsePathItem(_rp, _ep);
-    PathItem* catchCase;
-    if (_catchCase_result.succeeded()) {
-        catchCase = _catchCase_result.getResult();
+    Position* startName = lexer->getPreviousPosition(_p);
+    String* name = lexer->parseIdentifier(_rp);
+    if ((name) && (isIdentifier(name))) {
+        lexer->advance();
     }
     else {
-        return _Result<PathItemCatchPattern, ParserError>(_catchCase_result.getError());
-    }
-    auto _catchCaseExtensions_result = parsePathIdentifierList(_rp, _ep);
-    _Vector<PathIdentifier>* catchCaseExtensions;
-    if (_catchCaseExtensions_result.succeeded()) {
-        catchCaseExtensions = _catchCaseExtensions_result.getResult();
-    }
-    else {
-        catchCaseExtensions = nullptr;
+        return _Result<IdentifierCatchPattern, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_identifierExpected(new(_ep) Position(startName))));
     }
     Position* end = lexer->getPosition(_p);
-    PathItemCatchPattern* ret = new(_rp) PathItemCatchPattern(catchCase, catchCaseExtensions, new(_rp) Position(start), new(_rp) Position(end));
-    catchCase->parent = ret;
-    if (catchCaseExtensions != nullptr) {
-        PathIdentifier* item = nullptr;
-        size_t _catchCaseExtensions_length = catchCaseExtensions->length();
-        for (size_t _i = 0; _i < _catchCaseExtensions_length; _i++) {
-            item = *(*catchCaseExtensions)[_i];
-            item->parent = ret;
-        }
-    }
-    return _Result<PathItemCatchPattern, ParserError>(ret);
+    IdentifierCatchPattern* ret = new(_rp) IdentifierCatchPattern(name, new(_rp) Position(start), new(_rp) Position(end));
+    return _Result<IdentifierCatchPattern, ParserError>(ret);
 }
 
 _Result<_Vector<Postfix>, ParserError> Parser::parsePostfixList(_Page* _rp, _Page* _ep) {

@@ -71,7 +71,7 @@ public:
     virtual _Result<CatchClause, ParserError> parseCatchClause(_Page* _rp, _Page* _ep);
     virtual _Result<CatchPattern, ParserError> parseCatchPattern(_Page* _rp, _Page* _ep);
     virtual _Result<WildCardCatchPattern, ParserError> parseWildCardCatchPattern(_Page* _rp, _Page* _ep);
-    virtual _Result<PathItemCatchPattern, ParserError> parsePathItemCatchPattern(_Page* _rp, _Page* _ep);
+    virtual _Result<IdentifierCatchPattern, ParserError> parseIdentifierCatchPattern(_Page* _rp, _Page* _ep);
     virtual _Result<_Vector<Postfix>, ParserError> parsePostfixList(_Page* _rp, _Page* _ep);
     virtual _Result<Postfix, ParserError> parsePostfix(_Page* _rp, _Page* _ep);
     virtual _Result<OperatorPostfix, ParserError> parseOperatorPostfix(_Page* _rp, _Page* _ep);

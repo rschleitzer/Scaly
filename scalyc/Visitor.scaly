@@ -50,7 +50,7 @@ class TypeCast;
 class CatchClause;
 class CatchPattern;
 class WildCardCatchPattern;
-class PathItemCatchPattern;
+class IdentifierCatchPattern;
 class Postfix;
 class OperatorPostfix;
 class FunctionCall;
@@ -190,8 +190,7 @@ class SyntaxVisitor {
     function closeCatchClause(catchClause: CatchClause);
     function openWildCardCatchPattern(wildCardCatchPattern: WildCardCatchPattern) -> bool;
     function closeWildCardCatchPattern(wildCardCatchPattern: WildCardCatchPattern);
-    function openPathItemCatchPattern(pathItemCatchPattern: PathItemCatchPattern) -> bool;
-    function closePathItemCatchPattern(pathItemCatchPattern: PathItemCatchPattern);
+    function visitIdentifierCatchPattern(identifierCatchPattern: IdentifierCatchPattern);
     function visitOperatorPostfix(operatorPostfix: OperatorPostfix);
     function openFunctionCall(functionCall: FunctionCall) -> bool;
     function closeFunctionCall(functionCall: FunctionCall);
