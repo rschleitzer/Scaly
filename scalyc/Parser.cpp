@@ -87,7 +87,7 @@ _Result<_Vector<TerminatedStatement>, ParserError> Parser::parseTerminatedStatem
     _Region _region; _Page* _p = _region.get();
     _Array<TerminatedStatement>* ret = nullptr;
     while (true) {
-        auto _node_result = parseTerminatedStatement(_rp, _p);
+        auto _node_result = parseTerminatedStatement(_rp, _ep);
         TerminatedStatement* node;
         if (_node_result.succeeded())
             node = _node_result.getResult();
@@ -619,7 +619,7 @@ _Result<_Vector<PathIdentifier>, ParserError> Parser::parsePathIdentifierList(_P
     _Region _region; _Page* _p = _region.get();
     _Array<PathIdentifier>* ret = nullptr;
     while (true) {
-        auto _node_result = parsePathIdentifier(_rp, _p);
+        auto _node_result = parsePathIdentifier(_rp, _ep);
         PathIdentifier* node;
         if (_node_result.succeeded())
             node = _node_result.getResult();
@@ -727,7 +727,7 @@ _Result<_Vector<PatternInitializer>, ParserError> Parser::parsePatternInitialize
     _Region _region; _Page* _p = _region.get();
     _Array<PatternInitializer>* ret = nullptr;
     while (true) {
-        auto _node_result = parsePatternInitializer(_rp, _p);
+        auto _node_result = parsePatternInitializer(_rp, _ep);
         PatternInitializer* node;
         if (_node_result.succeeded())
             node = _node_result.getResult();
@@ -767,7 +767,7 @@ _Result<_Vector<AdditionalInitializer>, ParserError> Parser::parseAdditionalInit
     _Region _region; _Page* _p = _region.get();
     _Array<AdditionalInitializer>* ret = nullptr;
     while (true) {
-        auto _node_result = parseAdditionalInitializer(_rp, _p);
+        auto _node_result = parseAdditionalInitializer(_rp, _ep);
         AdditionalInitializer* node;
         if (_node_result.succeeded())
             node = _node_result.getResult();
@@ -807,7 +807,7 @@ _Result<_Vector<Modifier>, ParserError> Parser::parseModifierList(_Page* _rp, _P
     _Region _region; _Page* _p = _region.get();
     _Array<Modifier>* ret = nullptr;
     while (true) {
-        auto _node_result = parseModifier(_rp, _p);
+        auto _node_result = parseModifier(_rp, _ep);
         Modifier* node;
         if (_node_result.succeeded())
             node = _node_result.getResult();
@@ -988,7 +988,7 @@ _Result<_Vector<ParameterClause>, ParserError> Parser::parseParameterClauseList(
     _Region _region; _Page* _p = _region.get();
     _Array<ParameterClause>* ret = nullptr;
     while (true) {
-        auto _node_result = parseParameterClause(_rp, _p);
+        auto _node_result = parseParameterClause(_rp, _ep);
         ParameterClause* node;
         if (_node_result.succeeded())
             node = _node_result.getResult();
@@ -1043,7 +1043,7 @@ _Result<_Vector<Parameter>, ParserError> Parser::parseParameterList(_Page* _rp, 
     _Region _region; _Page* _p = _region.get();
     _Array<Parameter>* ret = nullptr;
     while (true) {
-        auto _node_result = parseParameter(_rp, _p);
+        auto _node_result = parseParameter(_rp, _ep);
         Parameter* node;
         if (_node_result.succeeded())
             node = _node_result.getResult();
@@ -1188,7 +1188,7 @@ _Result<_Vector<EnumMember>, ParserError> Parser::parseEnumMemberList(_Page* _rp
     _Region _region; _Page* _p = _region.get();
     _Array<EnumMember>* ret = nullptr;
     while (true) {
-        auto _node_result = parseEnumMember(_rp, _p);
+        auto _node_result = parseEnumMember(_rp, _ep);
         EnumMember* node;
         if (_node_result.succeeded())
             node = _node_result.getResult();
@@ -1266,7 +1266,7 @@ _Result<_Vector<AdditionalCase>, ParserError> Parser::parseAdditionalCaseList(_P
     _Region _region; _Page* _p = _region.get();
     _Array<AdditionalCase>* ret = nullptr;
     while (true) {
-        auto _node_result = parseAdditionalCase(_rp, _p);
+        auto _node_result = parseAdditionalCase(_rp, _ep);
         AdditionalCase* node;
         if (_node_result.succeeded())
             node = _node_result.getResult();
@@ -1382,7 +1382,7 @@ _Result<_Vector<GenericParameter>, ParserError> Parser::parseGenericParameterLis
     _Region _region; _Page* _p = _region.get();
     _Array<GenericParameter>* ret = nullptr;
     while (true) {
-        auto _node_result = parseGenericParameter(_rp, _p);
+        auto _node_result = parseGenericParameter(_rp, _ep);
         GenericParameter* node;
         if (_node_result.succeeded())
             node = _node_result.getResult();
@@ -1415,7 +1415,7 @@ _Result<_Vector<ClassMember>, ParserError> Parser::parseClassMemberList(_Page* _
     _Region _region; _Page* _p = _region.get();
     _Array<ClassMember>* ret = nullptr;
     while (true) {
-        auto _node_result = parseClassMember(_rp, _p);
+        auto _node_result = parseClassMember(_rp, _ep);
         ClassMember* node;
         if (_node_result.succeeded())
             node = _node_result.getResult();
@@ -1499,7 +1499,7 @@ _Result<_Vector<BinaryOp>, ParserError> Parser::parseBinaryOpList(_Page* _rp, _P
     _Region _region; _Page* _p = _region.get();
     _Array<BinaryOp>* ret = nullptr;
     while (true) {
-        auto _node_result = parseBinaryOp(_rp, _p);
+        auto _node_result = parseBinaryOp(_rp, _ep);
         BinaryOp* node;
         if (_node_result.succeeded())
             node = _node_result.getResult();
@@ -1647,7 +1647,7 @@ _Result<_Vector<CatchClause>, ParserError> Parser::parseCatchClauseList(_Page* _
     _Region _region; _Page* _p = _region.get();
     _Array<CatchClause>* ret = nullptr;
     while (true) {
-        auto _node_result = parseCatchClause(_rp, _p);
+        auto _node_result = parseCatchClause(_rp, _ep);
         CatchClause* node;
         if (_node_result.succeeded())
             node = _node_result.getResult();
@@ -1769,7 +1769,7 @@ _Result<_Vector<Postfix>, ParserError> Parser::parsePostfixList(_Page* _rp, _Pag
     _Region _region; _Page* _p = _region.get();
     _Array<Postfix>* ret = nullptr;
     while (true) {
-        auto _node_result = parsePostfix(_rp, _p);
+        auto _node_result = parsePostfix(_rp, _ep);
         Postfix* node;
         if (_node_result.succeeded())
             node = _node_result.getResult();
@@ -1931,7 +1931,7 @@ _Result<_Vector<ExpressionElement>, ParserError> Parser::parseExpressionElementL
     _Region _region; _Page* _p = _region.get();
     _Array<ExpressionElement>* ret = nullptr;
     while (true) {
-        auto _node_result = parseExpressionElement(_rp, _p);
+        auto _node_result = parseExpressionElement(_rp, _ep);
         ExpressionElement* node;
         if (_node_result.succeeded())
             node = _node_result.getResult();
@@ -2698,7 +2698,7 @@ _Result<_Vector<SwitchCase>, ParserError> Parser::parseSwitchCaseList(_Page* _rp
     _Region _region; _Page* _p = _region.get();
     _Array<SwitchCase>* ret = nullptr;
     while (true) {
-        auto _node_result = parseSwitchCase(_rp, _p);
+        auto _node_result = parseSwitchCase(_rp, _ep);
         SwitchCase* node;
         if (_node_result.succeeded())
             node = _node_result.getResult();
@@ -2829,7 +2829,7 @@ _Result<_Vector<CaseItem>, ParserError> Parser::parseCaseItemList(_Page* _rp, _P
     _Region _region; _Page* _p = _region.get();
     _Array<CaseItem>* ret = nullptr;
     while (true) {
-        auto _node_result = parseCaseItem(_rp, _p);
+        auto _node_result = parseCaseItem(_rp, _ep);
         CaseItem* node;
         if (_node_result.succeeded())
             node = _node_result.getResult();
@@ -3001,7 +3001,7 @@ _Result<_Vector<TuplePatternElement>, ParserError> Parser::parseTuplePatternElem
     _Region _region; _Page* _p = _region.get();
     _Array<TuplePatternElement>* ret = nullptr;
     while (true) {
-        auto _node_result = parseTuplePatternElement(_rp, _p);
+        auto _node_result = parseTuplePatternElement(_rp, _ep);
         TuplePatternElement* node;
         if (_node_result.succeeded())
             node = _node_result.getResult();
@@ -3305,7 +3305,7 @@ _Result<_Vector<TypePostfix>, ParserError> Parser::parseTypePostfixList(_Page* _
     _Region _region; _Page* _p = _region.get();
     _Array<TypePostfix>* ret = nullptr;
     while (true) {
-        auto _node_result = parseTypePostfix(_rp, _p);
+        auto _node_result = parseTypePostfix(_rp, _ep);
         TypePostfix* node;
         if (_node_result.succeeded())
             node = _node_result.getResult();
@@ -3383,7 +3383,7 @@ _Result<_Vector<Inheritance>, ParserError> Parser::parseInheritanceList(_Page* _
     _Region _region; _Page* _p = _region.get();
     _Array<Inheritance>* ret = nullptr;
     while (true) {
-        auto _node_result = parseInheritance(_rp, _p);
+        auto _node_result = parseInheritance(_rp, _ep);
         Inheritance* node;
         if (_node_result.succeeded())
             node = _node_result.getResult();

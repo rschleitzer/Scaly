@@ -207,7 +207,7 @@ _Result<""_Vector<"(id syntax)">, ParserError> Parser::parse"(id syntax)"List(_P
     _Region _region; _Page* _p = _region.get();
     _Array<"(id syntax)">* ret = nullptr;
     while (true) {
-        auto _node_result = parse"(id syntax)"(_rp, _p);
+        auto _node_result = parse"(id syntax)"(_rp, _ep);
         "(id syntax)"* node;
         if (_node_result.succeeded())
             node = _node_result.getResult();
