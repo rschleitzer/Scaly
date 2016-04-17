@@ -1841,13 +1841,31 @@ void CppVisitor::closeRepeatExpression(RepeatExpression* repeatExpression) {
 }
 
 bool CppVisitor::openReturnExpression(ReturnExpression* returnExpression) {
+    _Region _region; _Page* _p = _region.get();
     sourceFile->append("return");
-    if (returnExpression->expression)
+    if (returnExpression->expression) {
         sourceFile->append(" ");
+        String* returnType = getReturnType(_p, returnExpression);
+        if (returnType != nullptr) {
+            _Region _region; _Page* _p = _region.get();
+            sourceFile->append("_Result<");
+            sourceFile->append(returnType);
+            sourceFile->append(", ");
+            String* thrownType = getThrownType(_p, returnExpression);
+            if (thrownType != nullptr)
+                sourceFile->append(thrownType);
+            sourceFile->append(">(");
+        }
+    }
     return true;
 }
 
 void CppVisitor::closeReturnExpression(ReturnExpression* returnExpression) {
+    _Region _region; _Page* _p = _region.get();
+    String* returnType = getReturnType(_p, returnExpression);
+    if (returnType != nullptr) {
+        sourceFile->append(")");
+    }
 }
 
 bool CppVisitor::openThrowExpression(ThrowExpression* throwExpression) {
@@ -1885,9 +1903,9 @@ bool CppVisitor::openThrowExpression(ThrowExpression* throwExpression) {
     return false;
 }
 
-String* CppVisitor::getReturnType(_Page* _rp, ThrowExpression* throwExpression) {
+String* CppVisitor::getReturnType(_Page* _rp, SyntaxNode* syntaxNode) {
     _Region _region; _Page* _p = _region.get();
-    FunctionDeclaration* functionDeclaration = getFunctionDeclaration(throwExpression);
+    FunctionDeclaration* functionDeclaration = getFunctionDeclaration(syntaxNode);
     if (functionDeclaration != nullptr) {
         FunctionResult* functionResult = functionDeclaration->signature->result;
         if (functionResult != nullptr) {
@@ -1913,9 +1931,9 @@ String* CppVisitor::getReturnType(_Page* _rp, ThrowExpression* throwExpression) 
     return nullptr;
 }
 
-String* CppVisitor::getThrownType(_Page* _rp, ThrowExpression* throwExpression) {
+String* CppVisitor::getThrownType(_Page* _rp, SyntaxNode* syntaxNode) {
     _Region _region; _Page* _p = _region.get();
-    FunctionDeclaration* functionDeclaration = getFunctionDeclaration(throwExpression);
+    FunctionDeclaration* functionDeclaration = getFunctionDeclaration(syntaxNode);
     if (functionDeclaration != nullptr) {
         ThrowsClause* throwsClause = functionDeclaration->signature->throwsClause;
         if (throwsClause != nullptr) {
