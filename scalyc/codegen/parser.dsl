@@ -19,9 +19,9 @@
         mutable ret: ["(id syntax)"]? = null
         while true {
             let node: "(id syntax)" = parse"(id syntax)"()
-                catch _ break
+                catch _ break;
             if ret == null
-                ret = ["(id syntax)"]();
+                ret = ["(id syntax)"]()
             ret.push(node)
         }
         return ret
@@ -93,7 +93,7 @@
                 (if (node-list-empty? (properties syntax)) "" ", ")
                 "Position(start), Position(end))
 "                (if (top? syntax) ($
-"        ret.fileName = fileName;
+"        ret.fileName = fileName
 "               )"")
                 (apply-to-property-children-of syntax (lambda (content)
                     (if (multiple? content)

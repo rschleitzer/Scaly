@@ -61,7 +61,7 @@ class Parser {
         }
         mutable end: Position = lexer.getPosition()
         var ret: CompilationUnit = CompilationUnit(statements, Position(start), Position(end))
-        ret.fileName = fileName;
+        ret.fileName = fileName
         if statements != null {
             for item: TerminatedStatement in statements
                 item.parent = ret
@@ -74,9 +74,9 @@ class Parser {
         mutable ret: [TerminatedStatement]? = null
         while true {
             let node: TerminatedStatement = parseTerminatedStatement()
-                catch _ break
+                catch _ break;
             if ret == null
-                ret = [TerminatedStatement]();
+                ret = [TerminatedStatement]()
             ret.push(node)
         }
         return ret
@@ -450,9 +450,9 @@ class Parser {
         mutable ret: [PathIdentifier]? = null
         while true {
             let node: PathIdentifier = parsePathIdentifier()
-                catch _ break
+                catch _ break;
             if ret == null
-                ret = [PathIdentifier]();
+                ret = [PathIdentifier]()
             ret.push(node)
         }
         return ret
@@ -520,9 +520,9 @@ class Parser {
         mutable ret: [PatternInitializer]? = null
         while true {
             let node: PatternInitializer = parsePatternInitializer()
-                catch _ break
+                catch _ break;
             if ret == null
-                ret = [PatternInitializer]();
+                ret = [PatternInitializer]()
             ret.push(node)
         }
         return ret
@@ -547,9 +547,9 @@ class Parser {
         mutable ret: [AdditionalInitializer]? = null
         while true {
             let node: AdditionalInitializer = parseAdditionalInitializer()
-                catch _ break
+                catch _ break;
             if ret == null
-                ret = [AdditionalInitializer]();
+                ret = [AdditionalInitializer]()
             ret.push(node)
         }
         return ret
@@ -574,9 +574,9 @@ class Parser {
         mutable ret: [Modifier]? = null
         while true {
             let node: Modifier = parseModifier()
-                catch _ break
+                catch _ break;
             if ret == null
-                ret = [Modifier]();
+                ret = [Modifier]()
             ret.push(node)
         }
         return ret
@@ -709,9 +709,9 @@ class Parser {
         mutable ret: [ParameterClause]? = null
         while true {
             let node: ParameterClause = parseParameterClause()
-                catch _ break
+                catch _ break;
             if ret == null
-                ret = [ParameterClause]();
+                ret = [ParameterClause]()
             ret.push(node)
         }
         return ret
@@ -742,9 +742,9 @@ class Parser {
         mutable ret: [Parameter]? = null
         while true {
             let node: Parameter = parseParameter()
-                catch _ break
+                catch _ break;
             if ret == null
-                ret = [Parameter]();
+                ret = [Parameter]()
             ret.push(node)
         }
         return ret
@@ -848,9 +848,9 @@ class Parser {
         mutable ret: [EnumMember]? = null
         while true {
             let node: EnumMember = parseEnumMember()
-                catch _ break
+                catch _ break;
             if ret == null
-                ret = [EnumMember]();
+                ret = [EnumMember]()
             ret.push(node)
         }
         return ret
@@ -896,9 +896,9 @@ class Parser {
         mutable ret: [AdditionalCase]? = null
         while true {
             let node: AdditionalCase = parseAdditionalCase()
-                catch _ break
+                catch _ break;
             if ret == null
-                ret = [AdditionalCase]();
+                ret = [AdditionalCase]()
             ret.push(node)
         }
         return ret
@@ -966,9 +966,9 @@ class Parser {
         mutable ret: [GenericParameter]? = null
         while true {
             let node: GenericParameter = parseGenericParameter()
-                catch _ break
+                catch _ break;
             if ret == null
-                ret = [GenericParameter]();
+                ret = [GenericParameter]()
             ret.push(node)
         }
         return ret
@@ -989,9 +989,9 @@ class Parser {
         mutable ret: [ClassMember]? = null
         while true {
             let node: ClassMember = parseClassMember()
-                catch _ break
+                catch _ break;
             if ret == null
-                ret = [ClassMember]();
+                ret = [ClassMember]()
             ret.push(node)
         }
         return ret
@@ -1048,9 +1048,9 @@ class Parser {
         mutable ret: [BinaryOp]? = null
         while true {
             let node: BinaryOp = parseBinaryOp()
-                catch _ break
+                catch _ break;
             if ret == null
-                ret = [BinaryOp]();
+                ret = [BinaryOp]()
             ret.push(node)
         }
         return ret
@@ -1163,9 +1163,9 @@ class Parser {
         mutable ret: [CatchClause]? = null
         while true {
             let node: CatchClause = parseCatchClause()
-                catch _ break
+                catch _ break;
             if ret == null
-                ret = [CatchClause]();
+                ret = [CatchClause]()
             ret.push(node)
         }
         return ret
@@ -1251,9 +1251,9 @@ class Parser {
         mutable ret: [Postfix]? = null
         while true {
             let node: Postfix = parsePostfix()
-                catch _ break
+                catch _ break;
             if ret == null
-                ret = [Postfix]();
+                ret = [Postfix]()
             ret.push(node)
         }
         return ret
@@ -1371,9 +1371,9 @@ class Parser {
         mutable ret: [ExpressionElement]? = null
         while true {
             let node: ExpressionElement = parseExpressionElement()
-                catch _ break
+                catch _ break;
             if ret == null
-                ret = [ExpressionElement]();
+                ret = [ExpressionElement]()
             ret.push(node)
         }
         return ret
@@ -1944,9 +1944,9 @@ class Parser {
         mutable ret: [SwitchCase]? = null
         while true {
             let node: SwitchCase = parseSwitchCase()
-                catch _ break
+                catch _ break;
             if ret == null
-                ret = [SwitchCase]();
+                ret = [SwitchCase]()
             ret.push(node)
         }
         return ret
@@ -2036,9 +2036,9 @@ class Parser {
         mutable ret: [CaseItem]? = null
         while true {
             let node: CaseItem = parseCaseItem()
-                catch _ break
+                catch _ break;
             if ret == null
-                ret = [CaseItem]();
+                ret = [CaseItem]()
             ret.push(node)
         }
         return ret
@@ -2165,9 +2165,9 @@ class Parser {
         mutable ret: [TuplePatternElement]? = null
         while true {
             let node: TuplePatternElement = parseTuplePatternElement()
-                catch _ break
+                catch _ break;
             if ret == null
-                ret = [TuplePatternElement]();
+                ret = [TuplePatternElement]()
             ret.push(node)
         }
         return ret
@@ -2390,9 +2390,9 @@ class Parser {
         mutable ret: [TypePostfix]? = null
         while true {
             let node: TypePostfix = parseTypePostfix()
-                catch _ break
+                catch _ break;
             if ret == null
-                ret = [TypePostfix]();
+                ret = [TypePostfix]()
             ret.push(node)
         }
         return ret
@@ -2446,9 +2446,9 @@ class Parser {
         mutable ret: [Inheritance]? = null
         while true {
             let node: Inheritance = parseInheritance()
-                catch _ break
+                catch _ break;
             if ret == null
-                ret = [Inheritance]();
+                ret = [Inheritance]()
             ret.push(node)
         }
         return ret

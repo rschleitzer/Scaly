@@ -1702,9 +1702,6 @@ bool CppVisitor::openElseClause(ElseClause* elseClause) {
         sourceIndentLevel++;
         indentSource();
         elseClause->alternative->accept(this);
-        if (elseClause->alternative == nullptr) {
-            sourceFile->append(";\n");
-        }
         sourceIndentLevel--;
     }
     else {
@@ -1995,11 +1992,13 @@ void CppVisitor::closeThrowExpression(ThrowExpression* throwExpression) {
 }
 
 bool CppVisitor::openBreakExpression(BreakExpression* breakExpression) {
-    sourceFile->append("break;\n");
+    sourceFile->append("break");
     return true;
 }
 
 void CppVisitor::closeBreakExpression(BreakExpression* breakExpression) {
+    if (breakExpression->expression == nullptr)
+        sourceFile->append(";\n");
 }
 
 void CppVisitor::visitWildcardPattern(WildcardPattern* wildcardPattern) {
