@@ -80,12 +80,13 @@
 "                       )
                     ) ; syntax or terminal
                 ))) ; apply to children of syntax
-"        mutable ret: "(id syntax)" = "(id syntax)"("
+"        mutable end: Position = lexer.getPosition()
+        var ret: "(id syntax)" = "(id syntax)"("
                 (apply-to-property-children-of syntax (lambda (content) ($
                     (property content)(if (properties-remaining? content syntax) ", " "")
                 )))
                 (if (node-list-empty? (properties syntax)) "" ", ")
-                "Position(start), lexer.getPosition())
+                "Position(start), Position(end))
 "                (if (top? syntax) ($
 "        ret.fileName = fileName;
 "               )"")
@@ -203,7 +204,7 @@ Parser::Parser(String* theFileName, String* text) {
 "
 _Result<""_Vector<"(id syntax)">, ParserError> Parser::parse"(id syntax)"List(_Page* _rp, _Page* _ep) {
     _Region _region; _Page* _p = _region.get();
-    _Array<"(id syntax)">* ret = 0;
+    _Array<"(id syntax)">* ret = nullptr;
     while (true) {
         _Result<"(id syntax)", ParserError> nodeResult = parse"(id syntax)"(_rp, _p);
         if (nodeResult.succeeded()) {
@@ -289,12 +290,13 @@ _Result<"(id syntax)", ParserError> Parser::parse"(id syntax)"(_Page* _rp, _Page
                         )
                     ) ; syntax or terminal
                 ))) ; apply to children of syntax
-"    "(id syntax)"* ret = new(_rp) "(id syntax)"("
+"    Position* end = lexer->getPosition(_p);
+    "(id syntax)"* ret = new(_rp) "(id syntax)"("
                 (apply-to-property-children-of syntax (lambda (content) ($
                     (property content)(if (properties-remaining? content syntax) ", " "")
                 )))
                 (if (node-list-empty? (properties syntax)) "" ", ")
-                "new(_rp) Position(start), lexer->getPosition(_rp));
+                "new(_rp) Position(start), new(_rp) Position(end));
 "                (if (top? syntax) ($
 "    ret->fileName = fileName;
 "               )"")

@@ -69,7 +69,8 @@ _Result<CompilationUnit, ParserError> Parser::parseCompilationUnit(_Page* _rp, _
             return _Result<CompilationUnit, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_notAtEnd(new(_ep) Position(current))));
         }
     }
-    CompilationUnit* ret = new(_rp) CompilationUnit(statements, new(_rp) Position(start), lexer->getPosition(_rp));
+    Position* end = lexer->getPosition(_p);
+    CompilationUnit* ret = new(_rp) CompilationUnit(statements, new(_rp) Position(start), new(_rp) Position(end));
     ret->fileName = fileName;
     if (statements) {
         size_t _statements_length = statements->length();
@@ -81,7 +82,7 @@ _Result<CompilationUnit, ParserError> Parser::parseCompilationUnit(_Page* _rp, _
 
 _Result<_Vector<TerminatedStatement>, ParserError> Parser::parseTerminatedStatementList(_Page* _rp, _Page* _ep) {
     _Region _region; _Page* _p = _region.get();
-    _Array<TerminatedStatement>* ret = 0;
+    _Array<TerminatedStatement>* ret = nullptr;
     while (true) {
         _Result<TerminatedStatement, ParserError> nodeResult = parseTerminatedStatement(_rp, _p);
         if (nodeResult.succeeded()) {
@@ -109,7 +110,8 @@ _Result<TerminatedStatement, ParserError> Parser::parseTerminatedStatement(_Page
     if (successSemicolon2) {
         lexer->advance();
     }
-    TerminatedStatement* ret = new(_rp) TerminatedStatement(statement, new(_rp) Position(start), lexer->getPosition(_rp));
+    Position* end = lexer->getPosition(_p);
+    TerminatedStatement* ret = new(_rp) TerminatedStatement(statement, new(_rp) Position(start), new(_rp) Position(end));
     statement->parent = ret;
     return _Result<TerminatedStatement, ParserError>(ret);
 }
@@ -254,7 +256,8 @@ _Result<UseDeclaration, ParserError> Parser::parseUseDeclaration(_Page* _rp, _Pa
         importExtensions = _importExtensions_result.getResult();
     else
         importExtensions = nullptr;
-    UseDeclaration* ret = new(_rp) UseDeclaration(importModule, importExtensions, new(_rp) Position(start), lexer->getPosition(_rp));
+    Position* end = lexer->getPosition(_p);
+    UseDeclaration* ret = new(_rp) UseDeclaration(importModule, importExtensions, new(_rp) Position(start), new(_rp) Position(end));
     importModule->parent = ret;
     if (importExtensions) {
         size_t _importExtensions_length = importExtensions->length();
@@ -281,7 +284,8 @@ _Result<ConstantDeclaration, ParserError> Parser::parseConstantDeclaration(_Page
         initializer = _initializer_result.getResult();
     else
         return _Result<ConstantDeclaration, ParserError>(_initializer_result.getError());
-    ConstantDeclaration* ret = new(_rp) ConstantDeclaration(initializer, new(_rp) Position(start), lexer->getPosition(_rp));
+    Position* end = lexer->getPosition(_p);
+    ConstantDeclaration* ret = new(_rp) ConstantDeclaration(initializer, new(_rp) Position(start), new(_rp) Position(end));
     initializer->parent = ret;
     return _Result<ConstantDeclaration, ParserError>(ret);
 }
@@ -303,7 +307,8 @@ _Result<VariableDeclaration, ParserError> Parser::parseVariableDeclaration(_Page
         initializer = _initializer_result.getResult();
     else
         return _Result<VariableDeclaration, ParserError>(_initializer_result.getError());
-    VariableDeclaration* ret = new(_rp) VariableDeclaration(initializer, new(_rp) Position(start), lexer->getPosition(_rp));
+    Position* end = lexer->getPosition(_p);
+    VariableDeclaration* ret = new(_rp) VariableDeclaration(initializer, new(_rp) Position(start), new(_rp) Position(end));
     initializer->parent = ret;
     return _Result<VariableDeclaration, ParserError>(ret);
 }
@@ -325,7 +330,8 @@ _Result<MutableDeclaration, ParserError> Parser::parseMutableDeclaration(_Page* 
         initializer = _initializer_result.getResult();
     else
         return _Result<MutableDeclaration, ParserError>(_initializer_result.getError());
-    MutableDeclaration* ret = new(_rp) MutableDeclaration(initializer, new(_rp) Position(start), lexer->getPosition(_rp));
+    Position* end = lexer->getPosition(_p);
+    MutableDeclaration* ret = new(_rp) MutableDeclaration(initializer, new(_rp) Position(start), new(_rp) Position(end));
     initializer->parent = ret;
     return _Result<MutableDeclaration, ParserError>(ret);
 }
@@ -365,7 +371,8 @@ _Result<FunctionDeclaration, ParserError> Parser::parseFunctionDeclaration(_Page
         body = _body_result.getResult();
     else
         body = nullptr;
-    FunctionDeclaration* ret = new(_rp) FunctionDeclaration(modifiers, name, signature, body, new(_rp) Position(start), lexer->getPosition(_rp));
+    Position* end = lexer->getPosition(_p);
+    FunctionDeclaration* ret = new(_rp) FunctionDeclaration(modifiers, name, signature, body, new(_rp) Position(start), new(_rp) Position(end));
     if (modifiers) {
         size_t _modifiers_length = modifiers->length();
         for (size_t _i = 0; _i < _modifiers_length; _i++)
@@ -419,7 +426,8 @@ _Result<EnumDeclaration, ParserError> Parser::parseEnumDeclaration(_Page* _rp, _
     else {
         return _Result<EnumDeclaration, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_punctuationExpected(new(_ep) Position(startRightCurly5), &String::create(_ep, rightCurly))));
     }
-    EnumDeclaration* ret = new(_rp) EnumDeclaration(name, members, new(_rp) Position(start), lexer->getPosition(_rp));
+    Position* end = lexer->getPosition(_p);
+    EnumDeclaration* ret = new(_rp) EnumDeclaration(name, members, new(_rp) Position(start), new(_rp) Position(end));
     if (members) {
         size_t _members_length = members->length();
         for (size_t _i = 0; _i < _members_length; _i++)
@@ -465,7 +473,8 @@ _Result<ClassDeclaration, ParserError> Parser::parseClassDeclaration(_Page* _rp,
         body = _body_result.getResult();
     else
         body = nullptr;
-    ClassDeclaration* ret = new(_rp) ClassDeclaration(name, genericArgumentClause, typeInheritanceClause, body, new(_rp) Position(start), lexer->getPosition(_rp));
+    Position* end = lexer->getPosition(_p);
+    ClassDeclaration* ret = new(_rp) ClassDeclaration(name, genericArgumentClause, typeInheritanceClause, body, new(_rp) Position(start), new(_rp) Position(end));
     if (genericArgumentClause)
         genericArgumentClause->parent = ret;
     if (typeInheritanceClause)
@@ -510,7 +519,8 @@ _Result<InitializerDeclaration, ParserError> Parser::parseInitializerDeclaration
         body = _body_result.getResult();
     else
         return _Result<InitializerDeclaration, ParserError>(_body_result.getError());
-    InitializerDeclaration* ret = new(_rp) InitializerDeclaration(modifiers, parameterClause, throwsClause, body, new(_rp) Position(start), lexer->getPosition(_rp));
+    Position* end = lexer->getPosition(_p);
+    InitializerDeclaration* ret = new(_rp) InitializerDeclaration(modifiers, parameterClause, throwsClause, body, new(_rp) Position(start), new(_rp) Position(end));
     if (modifiers) {
         size_t _modifiers_length = modifiers->length();
         for (size_t _i = 0; _i < _modifiers_length; _i++)
@@ -548,7 +558,8 @@ _Result<CodeBlock, ParserError> Parser::parseCodeBlock(_Page* _rp, _Page* _ep) {
     else {
         return _Result<CodeBlock, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_punctuationExpected(new(_ep) Position(startRightCurly3), &String::create(_ep, rightCurly))));
     }
-    CodeBlock* ret = new(_rp) CodeBlock(statements, new(_rp) Position(start), lexer->getPosition(_rp));
+    Position* end = lexer->getPosition(_p);
+    CodeBlock* ret = new(_rp) CodeBlock(statements, new(_rp) Position(start), new(_rp) Position(end));
     if (statements) {
         size_t _statements_length = statements->length();
         for (size_t _i = 0; _i < _statements_length; _i++)
@@ -572,7 +583,8 @@ _Result<SimpleExpression, ParserError> Parser::parseSimpleExpression(_Page* _rp,
         binaryOps = _binaryOps_result.getResult();
     else
         binaryOps = nullptr;
-    SimpleExpression* ret = new(_rp) SimpleExpression(prefixExpression, binaryOps, new(_rp) Position(start), lexer->getPosition(_rp));
+    Position* end = lexer->getPosition(_p);
+    SimpleExpression* ret = new(_rp) SimpleExpression(prefixExpression, binaryOps, new(_rp) Position(start), new(_rp) Position(end));
     prefixExpression->parent = ret;
     if (binaryOps) {
         size_t _binaryOps_length = binaryOps->length();
@@ -584,7 +596,7 @@ _Result<SimpleExpression, ParserError> Parser::parseSimpleExpression(_Page* _rp,
 
 _Result<_Vector<PathIdentifier>, ParserError> Parser::parsePathIdentifierList(_Page* _rp, _Page* _ep) {
     _Region _region; _Page* _p = _region.get();
-    _Array<PathIdentifier>* ret = 0;
+    _Array<PathIdentifier>* ret = nullptr;
     while (true) {
         _Result<PathIdentifier, ParserError> nodeResult = parsePathIdentifier(_rp, _p);
         if (nodeResult.succeeded()) {
@@ -616,7 +628,8 @@ _Result<PathIdentifier, ParserError> Parser::parsePathIdentifier(_Page* _rp, _Pa
         extension = _extension_result.getResult();
     else
         return _Result<PathIdentifier, ParserError>(_extension_result.getError());
-    PathIdentifier* ret = new(_rp) PathIdentifier(extension, new(_rp) Position(start), lexer->getPosition(_rp));
+    Position* end = lexer->getPosition(_p);
+    PathIdentifier* ret = new(_rp) PathIdentifier(extension, new(_rp) Position(start), new(_rp) Position(end));
     extension->parent = ret;
     return _Result<PathIdentifier, ParserError>(ret);
 }
@@ -632,7 +645,8 @@ _Result<PathItem, ParserError> Parser::parsePathItem(_Page* _rp, _Page* _ep) {
     else {
         return _Result<PathItem, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_identifierExpected(new(_ep) Position(startName))));
     }
-    PathItem* ret = new(_rp) PathItem(name, new(_rp) Position(start), lexer->getPosition(_rp));
+    Position* end = lexer->getPosition(_p);
+    PathItem* ret = new(_rp) PathItem(name, new(_rp) Position(start), new(_rp) Position(end));
     return _Result<PathItem, ParserError>(ret);
 }
 
@@ -653,7 +667,8 @@ _Result<Initializer, ParserError> Parser::parseInitializer(_Page* _rp, _Page* _e
         expression = _expression_result.getResult();
     else
         return _Result<Initializer, ParserError>(_expression_result.getError());
-    Initializer* ret = new(_rp) Initializer(expression, new(_rp) Position(start), lexer->getPosition(_rp));
+    Position* end = lexer->getPosition(_p);
+    Initializer* ret = new(_rp) Initializer(expression, new(_rp) Position(start), new(_rp) Position(end));
     expression->parent = ret;
     return _Result<Initializer, ParserError>(ret);
 }
@@ -673,7 +688,8 @@ _Result<BindingInitializer, ParserError> Parser::parseBindingInitializer(_Page* 
         additionalInitializers = _additionalInitializers_result.getResult();
     else
         additionalInitializers = nullptr;
-    BindingInitializer* ret = new(_rp) BindingInitializer(initializer, additionalInitializers, new(_rp) Position(start), lexer->getPosition(_rp));
+    Position* end = lexer->getPosition(_p);
+    BindingInitializer* ret = new(_rp) BindingInitializer(initializer, additionalInitializers, new(_rp) Position(start), new(_rp) Position(end));
     initializer->parent = ret;
     if (additionalInitializers) {
         size_t _additionalInitializers_length = additionalInitializers->length();
@@ -685,7 +701,7 @@ _Result<BindingInitializer, ParserError> Parser::parseBindingInitializer(_Page* 
 
 _Result<_Vector<PatternInitializer>, ParserError> Parser::parsePatternInitializerList(_Page* _rp, _Page* _ep) {
     _Region _region; _Page* _p = _region.get();
-    _Array<PatternInitializer>* ret = 0;
+    _Array<PatternInitializer>* ret = nullptr;
     while (true) {
         _Result<PatternInitializer, ParserError> nodeResult = parsePatternInitializer(_rp, _p);
         if (nodeResult.succeeded()) {
@@ -715,7 +731,8 @@ _Result<PatternInitializer, ParserError> Parser::parsePatternInitializer(_Page* 
         initializer = _initializer_result.getResult();
     else
         initializer = nullptr;
-    PatternInitializer* ret = new(_rp) PatternInitializer(pattern, initializer, new(_rp) Position(start), lexer->getPosition(_rp));
+    Position* end = lexer->getPosition(_p);
+    PatternInitializer* ret = new(_rp) PatternInitializer(pattern, initializer, new(_rp) Position(start), new(_rp) Position(end));
     pattern->parent = ret;
     if (initializer)
         initializer->parent = ret;
@@ -724,7 +741,7 @@ _Result<PatternInitializer, ParserError> Parser::parsePatternInitializer(_Page* 
 
 _Result<_Vector<AdditionalInitializer>, ParserError> Parser::parseAdditionalInitializerList(_Page* _rp, _Page* _ep) {
     _Region _region; _Page* _p = _region.get();
-    _Array<AdditionalInitializer>* ret = 0;
+    _Array<AdditionalInitializer>* ret = nullptr;
     while (true) {
         _Result<AdditionalInitializer, ParserError> nodeResult = parseAdditionalInitializer(_rp, _p);
         if (nodeResult.succeeded()) {
@@ -756,14 +773,15 @@ _Result<AdditionalInitializer, ParserError> Parser::parseAdditionalInitializer(_
         pattern = _pattern_result.getResult();
     else
         return _Result<AdditionalInitializer, ParserError>(_pattern_result.getError());
-    AdditionalInitializer* ret = new(_rp) AdditionalInitializer(pattern, new(_rp) Position(start), lexer->getPosition(_rp));
+    Position* end = lexer->getPosition(_p);
+    AdditionalInitializer* ret = new(_rp) AdditionalInitializer(pattern, new(_rp) Position(start), new(_rp) Position(end));
     pattern->parent = ret;
     return _Result<AdditionalInitializer, ParserError>(ret);
 }
 
 _Result<_Vector<Modifier>, ParserError> Parser::parseModifierList(_Page* _rp, _Page* _ep) {
     _Region _region; _Page* _p = _region.get();
-    _Array<Modifier>* ret = 0;
+    _Array<Modifier>* ret = nullptr;
     while (true) {
         _Result<Modifier, ParserError> nodeResult = parseModifier(_rp, _p);
         if (nodeResult.succeeded()) {
@@ -812,7 +830,8 @@ _Result<OverrideWord, ParserError> Parser::parseOverrideWord(_Page* _rp, _Page* 
     else {
         return _Result<OverrideWord, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_keywordExpected(new(_ep) Position(startOverride1), &String::create(_ep, overrideKeyword))));
     }
-    OverrideWord* ret = new(_rp) OverrideWord(new(_rp) Position(start), lexer->getPosition(_rp));
+    Position* end = lexer->getPosition(_p);
+    OverrideWord* ret = new(_rp) OverrideWord(new(_rp) Position(start), new(_rp) Position(end));
     return _Result<OverrideWord, ParserError>(ret);
 }
 
@@ -827,7 +846,8 @@ _Result<StaticWord, ParserError> Parser::parseStaticWord(_Page* _rp, _Page* _ep)
     else {
         return _Result<StaticWord, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_keywordExpected(new(_ep) Position(startStatic1), &String::create(_ep, staticKeyword))));
     }
-    StaticWord* ret = new(_rp) StaticWord(new(_rp) Position(start), lexer->getPosition(_rp));
+    Position* end = lexer->getPosition(_p);
+    StaticWord* ret = new(_rp) StaticWord(new(_rp) Position(start), new(_rp) Position(end));
     return _Result<StaticWord, ParserError>(ret);
 }
 
@@ -857,7 +877,8 @@ _Result<IdentifierFunction, ParserError> Parser::parseIdentifierFunction(_Page* 
     else {
         return _Result<IdentifierFunction, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_identifierExpected(new(_ep) Position(startName))));
     }
-    IdentifierFunction* ret = new(_rp) IdentifierFunction(name, new(_rp) Position(start), lexer->getPosition(_rp));
+    Position* end = lexer->getPosition(_p);
+    IdentifierFunction* ret = new(_rp) IdentifierFunction(name, new(_rp) Position(start), new(_rp) Position(end));
     return _Result<IdentifierFunction, ParserError>(ret);
 }
 
@@ -882,7 +903,8 @@ _Result<FunctionSignature, ParserError> Parser::parseFunctionSignature(_Page* _r
         throwsClause = _throwsClause_result.getResult();
     else
         throwsClause = nullptr;
-    FunctionSignature* ret = new(_rp) FunctionSignature(parameterClause, result, throwsClause, new(_rp) Position(start), lexer->getPosition(_rp));
+    Position* end = lexer->getPosition(_p);
+    FunctionSignature* ret = new(_rp) FunctionSignature(parameterClause, result, throwsClause, new(_rp) Position(start), new(_rp) Position(end));
     parameterClause->parent = ret;
     if (result)
         result->parent = ret;
@@ -914,7 +936,8 @@ _Result<FunctionResult, ParserError> Parser::parseFunctionResult(_Page* _rp, _Pa
         resultType = _resultType_result.getResult();
     else
         return _Result<FunctionResult, ParserError>(_resultType_result.getError());
-    FunctionResult* ret = new(_rp) FunctionResult(existingObject, resultType, new(_rp) Position(start), lexer->getPosition(_rp));
+    Position* end = lexer->getPosition(_p);
+    FunctionResult* ret = new(_rp) FunctionResult(existingObject, resultType, new(_rp) Position(start), new(_rp) Position(end));
     if (existingObject)
         existingObject->parent = ret;
     resultType->parent = ret;
@@ -932,13 +955,14 @@ _Result<ExistingClause, ParserError> Parser::parseExistingClause(_Page* _rp, _Pa
     else {
         return _Result<ExistingClause, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_keywordExpected(new(_ep) Position(startExisting1), &String::create(_ep, existingKeyword))));
     }
-    ExistingClause* ret = new(_rp) ExistingClause(new(_rp) Position(start), lexer->getPosition(_rp));
+    Position* end = lexer->getPosition(_p);
+    ExistingClause* ret = new(_rp) ExistingClause(new(_rp) Position(start), new(_rp) Position(end));
     return _Result<ExistingClause, ParserError>(ret);
 }
 
 _Result<_Vector<ParameterClause>, ParserError> Parser::parseParameterClauseList(_Page* _rp, _Page* _ep) {
     _Region _region; _Page* _p = _region.get();
-    _Array<ParameterClause>* ret = 0;
+    _Array<ParameterClause>* ret = nullptr;
     while (true) {
         _Result<ParameterClause, ParserError> nodeResult = parseParameterClause(_rp, _p);
         if (nodeResult.succeeded()) {
@@ -978,7 +1002,8 @@ _Result<ParameterClause, ParserError> Parser::parseParameterClause(_Page* _rp, _
     else {
         return _Result<ParameterClause, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_punctuationExpected(new(_ep) Position(startRightParen3), &String::create(_ep, rightParen))));
     }
-    ParameterClause* ret = new(_rp) ParameterClause(parameters, new(_rp) Position(start), lexer->getPosition(_rp));
+    Position* end = lexer->getPosition(_p);
+    ParameterClause* ret = new(_rp) ParameterClause(parameters, new(_rp) Position(start), new(_rp) Position(end));
     if (parameters) {
         size_t _parameters_length = parameters->length();
         for (size_t _i = 0; _i < _parameters_length; _i++)
@@ -989,7 +1014,7 @@ _Result<ParameterClause, ParserError> Parser::parseParameterClause(_Page* _rp, _
 
 _Result<_Vector<Parameter>, ParserError> Parser::parseParameterList(_Page* _rp, _Page* _ep) {
     _Region _region; _Page* _p = _region.get();
-    _Array<Parameter>* ret = 0;
+    _Array<Parameter>* ret = nullptr;
     while (true) {
         _Result<Parameter, ParserError> nodeResult = parseParameter(_rp, _p);
         if (nodeResult.succeeded()) {
@@ -1060,7 +1085,8 @@ _Result<ConstParameter, ParserError> Parser::parseConstParameter(_Page* _rp, _Pa
     if (successComma5) {
         lexer->advance();
     }
-    ConstParameter* ret = new(_rp) ConstParameter(name, parameterType, new(_rp) Position(start), lexer->getPosition(_rp));
+    Position* end = lexer->getPosition(_p);
+    ConstParameter* ret = new(_rp) ConstParameter(name, parameterType, new(_rp) Position(start), new(_rp) Position(end));
     parameterType->parent = ret;
     return _Result<ConstParameter, ParserError>(ret);
 }
@@ -1102,7 +1128,8 @@ _Result<VarParameter, ParserError> Parser::parseVarParameter(_Page* _rp, _Page* 
     if (successComma5) {
         lexer->advance();
     }
-    VarParameter* ret = new(_rp) VarParameter(name, parameterType, new(_rp) Position(start), lexer->getPosition(_rp));
+    Position* end = lexer->getPosition(_p);
+    VarParameter* ret = new(_rp) VarParameter(name, parameterType, new(_rp) Position(start), new(_rp) Position(end));
     parameterType->parent = ret;
     return _Result<VarParameter, ParserError>(ret);
 }
@@ -1124,14 +1151,15 @@ _Result<ThrowsClause, ParserError> Parser::parseThrowsClause(_Page* _rp, _Page* 
         throwsType = _throwsType_result.getResult();
     else
         return _Result<ThrowsClause, ParserError>(_throwsType_result.getError());
-    ThrowsClause* ret = new(_rp) ThrowsClause(throwsType, new(_rp) Position(start), lexer->getPosition(_rp));
+    Position* end = lexer->getPosition(_p);
+    ThrowsClause* ret = new(_rp) ThrowsClause(throwsType, new(_rp) Position(start), new(_rp) Position(end));
     throwsType->parent = ret;
     return _Result<ThrowsClause, ParserError>(ret);
 }
 
 _Result<_Vector<EnumMember>, ParserError> Parser::parseEnumMemberList(_Page* _rp, _Page* _ep) {
     _Region _region; _Page* _p = _region.get();
-    _Array<EnumMember>* ret = 0;
+    _Array<EnumMember>* ret = nullptr;
     while (true) {
         _Result<EnumMember, ParserError> nodeResult = parseEnumMember(_rp, _p);
         if (nodeResult.succeeded()) {
@@ -1175,7 +1203,8 @@ _Result<EnumMember, ParserError> Parser::parseEnumMember(_Page* _rp, _Page* _ep)
         parameterClause = _parameterClause_result.getResult();
     else
         parameterClause = nullptr;
-    EnumMember* ret = new(_rp) EnumMember(enumCase, additionalCases, parameterClause, new(_rp) Position(start), lexer->getPosition(_rp));
+    Position* end = lexer->getPosition(_p);
+    EnumMember* ret = new(_rp) EnumMember(enumCase, additionalCases, parameterClause, new(_rp) Position(start), new(_rp) Position(end));
     enumCase->parent = ret;
     if (additionalCases) {
         size_t _additionalCases_length = additionalCases->length();
@@ -1198,13 +1227,14 @@ _Result<EnumCase, ParserError> Parser::parseEnumCase(_Page* _rp, _Page* _ep) {
     else {
         return _Result<EnumCase, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_identifierExpected(new(_ep) Position(startName))));
     }
-    EnumCase* ret = new(_rp) EnumCase(name, new(_rp) Position(start), lexer->getPosition(_rp));
+    Position* end = lexer->getPosition(_p);
+    EnumCase* ret = new(_rp) EnumCase(name, new(_rp) Position(start), new(_rp) Position(end));
     return _Result<EnumCase, ParserError>(ret);
 }
 
 _Result<_Vector<AdditionalCase>, ParserError> Parser::parseAdditionalCaseList(_Page* _rp, _Page* _ep) {
     _Region _region; _Page* _p = _region.get();
-    _Array<AdditionalCase>* ret = 0;
+    _Array<AdditionalCase>* ret = nullptr;
     while (true) {
         _Result<AdditionalCase, ParserError> nodeResult = parseAdditionalCase(_rp, _p);
         if (nodeResult.succeeded()) {
@@ -1236,7 +1266,8 @@ _Result<AdditionalCase, ParserError> Parser::parseAdditionalCase(_Page* _rp, _Pa
         enumCase = _enumCase_result.getResult();
     else
         return _Result<AdditionalCase, ParserError>(_enumCase_result.getError());
-    AdditionalCase* ret = new(_rp) AdditionalCase(enumCase, new(_rp) Position(start), lexer->getPosition(_rp));
+    Position* end = lexer->getPosition(_p);
+    AdditionalCase* ret = new(_rp) AdditionalCase(enumCase, new(_rp) Position(start), new(_rp) Position(end));
     enumCase->parent = ret;
     return _Result<AdditionalCase, ParserError>(ret);
 }
@@ -1266,7 +1297,8 @@ _Result<ClassBody, ParserError> Parser::parseClassBody(_Page* _rp, _Page* _ep) {
     else {
         return _Result<ClassBody, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_punctuationExpected(new(_ep) Position(startRightCurly3), &String::create(_ep, rightCurly))));
     }
-    ClassBody* ret = new(_rp) ClassBody(members, new(_rp) Position(start), lexer->getPosition(_rp));
+    Position* end = lexer->getPosition(_p);
+    ClassBody* ret = new(_rp) ClassBody(members, new(_rp) Position(start), new(_rp) Position(end));
     if (members) {
         size_t _members_length = members->length();
         for (size_t _i = 0; _i < _members_length; _i++)
@@ -1300,7 +1332,8 @@ _Result<GenericArgumentClause, ParserError> Parser::parseGenericArgumentClause(_
     else {
         return _Result<GenericArgumentClause, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_punctuationExpected(new(_ep) Position(startRightAngular3), &String::create(_ep, rightAngular))));
     }
-    GenericArgumentClause* ret = new(_rp) GenericArgumentClause(genericParameters, new(_rp) Position(start), lexer->getPosition(_rp));
+    Position* end = lexer->getPosition(_p);
+    GenericArgumentClause* ret = new(_rp) GenericArgumentClause(genericParameters, new(_rp) Position(start), new(_rp) Position(end));
     if (genericParameters) {
         size_t _genericParameters_length = genericParameters->length();
         for (size_t _i = 0; _i < _genericParameters_length; _i++)
@@ -1311,7 +1344,7 @@ _Result<GenericArgumentClause, ParserError> Parser::parseGenericArgumentClause(_
 
 _Result<_Vector<GenericParameter>, ParserError> Parser::parseGenericParameterList(_Page* _rp, _Page* _ep) {
     _Region _region; _Page* _p = _region.get();
-    _Array<GenericParameter>* ret = 0;
+    _Array<GenericParameter>* ret = nullptr;
     while (true) {
         _Result<GenericParameter, ParserError> nodeResult = parseGenericParameter(_rp, _p);
         if (nodeResult.succeeded()) {
@@ -1337,13 +1370,14 @@ _Result<GenericParameter, ParserError> Parser::parseGenericParameter(_Page* _rp,
     else {
         return _Result<GenericParameter, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_identifierExpected(new(_ep) Position(startTypeName))));
     }
-    GenericParameter* ret = new(_rp) GenericParameter(typeName, new(_rp) Position(start), lexer->getPosition(_rp));
+    Position* end = lexer->getPosition(_p);
+    GenericParameter* ret = new(_rp) GenericParameter(typeName, new(_rp) Position(start), new(_rp) Position(end));
     return _Result<GenericParameter, ParserError>(ret);
 }
 
 _Result<_Vector<ClassMember>, ParserError> Parser::parseClassMemberList(_Page* _rp, _Page* _ep) {
     _Region _region; _Page* _p = _region.get();
-    _Array<ClassMember>* ret = 0;
+    _Array<ClassMember>* ret = nullptr;
     while (true) {
         _Result<ClassMember, ParserError> nodeResult = parseClassMember(_rp, _p);
         if (nodeResult.succeeded()) {
@@ -1371,7 +1405,8 @@ _Result<ClassMember, ParserError> Parser::parseClassMember(_Page* _rp, _Page* _e
     if (successSemicolon2) {
         lexer->advance();
     }
-    ClassMember* ret = new(_rp) ClassMember(declaration, new(_rp) Position(start), lexer->getPosition(_rp));
+    Position* end = lexer->getPosition(_p);
+    ClassMember* ret = new(_rp) ClassMember(declaration, new(_rp) Position(start), new(_rp) Position(end));
     declaration->parent = ret;
     return _Result<ClassMember, ParserError>(ret);
 }
@@ -1389,7 +1424,8 @@ _Result<PrefixExpression, ParserError> Parser::parsePrefixExpression(_Page* _rp,
         expression = _expression_result.getResult();
     else
         return _Result<PrefixExpression, ParserError>(_expression_result.getError());
-    PrefixExpression* ret = new(_rp) PrefixExpression(prefixOperator, expression, new(_rp) Position(start), lexer->getPosition(_rp));
+    Position* end = lexer->getPosition(_p);
+    PrefixExpression* ret = new(_rp) PrefixExpression(prefixOperator, expression, new(_rp) Position(start), new(_rp) Position(end));
     expression->parent = ret;
     return _Result<PrefixExpression, ParserError>(ret);
 }
@@ -1409,7 +1445,8 @@ _Result<PostfixExpression, ParserError> Parser::parsePostfixExpression(_Page* _r
         postfixes = _postfixes_result.getResult();
     else
         postfixes = nullptr;
-    PostfixExpression* ret = new(_rp) PostfixExpression(primaryExpression, postfixes, new(_rp) Position(start), lexer->getPosition(_rp));
+    Position* end = lexer->getPosition(_p);
+    PostfixExpression* ret = new(_rp) PostfixExpression(primaryExpression, postfixes, new(_rp) Position(start), new(_rp) Position(end));
     primaryExpression->parent = ret;
     if (postfixes) {
         size_t _postfixes_length = postfixes->length();
@@ -1421,7 +1458,7 @@ _Result<PostfixExpression, ParserError> Parser::parsePostfixExpression(_Page* _r
 
 _Result<_Vector<BinaryOp>, ParserError> Parser::parseBinaryOpList(_Page* _rp, _Page* _ep) {
     _Region _region; _Page* _p = _region.get();
-    _Array<BinaryOp>* ret = 0;
+    _Array<BinaryOp>* ret = nullptr;
     while (true) {
         _Result<BinaryOp, ParserError> nodeResult = parseBinaryOp(_rp, _p);
         if (nodeResult.succeeded()) {
@@ -1492,7 +1529,8 @@ _Result<BinaryOperation, ParserError> Parser::parseBinaryOperation(_Page* _rp, _
         expression = _expression_result.getResult();
     else
         return _Result<BinaryOperation, ParserError>(_expression_result.getError());
-    BinaryOperation* ret = new(_rp) BinaryOperation(binaryOperator, expression, new(_rp) Position(start), lexer->getPosition(_rp));
+    Position* end = lexer->getPosition(_p);
+    BinaryOperation* ret = new(_rp) BinaryOperation(binaryOperator, expression, new(_rp) Position(start), new(_rp) Position(end));
     expression->parent = ret;
     return _Result<BinaryOperation, ParserError>(ret);
 }
@@ -1514,7 +1552,8 @@ _Result<Assignment, ParserError> Parser::parseAssignment(_Page* _rp, _Page* _ep)
         expression = _expression_result.getResult();
     else
         return _Result<Assignment, ParserError>(_expression_result.getError());
-    Assignment* ret = new(_rp) Assignment(expression, new(_rp) Position(start), lexer->getPosition(_rp));
+    Position* end = lexer->getPosition(_p);
+    Assignment* ret = new(_rp) Assignment(expression, new(_rp) Position(start), new(_rp) Position(end));
     expression->parent = ret;
     return _Result<Assignment, ParserError>(ret);
 }
@@ -1536,7 +1575,8 @@ _Result<TypeQuery, ParserError> Parser::parseTypeQuery(_Page* _rp, _Page* _ep) {
         objectType = _objectType_result.getResult();
     else
         return _Result<TypeQuery, ParserError>(_objectType_result.getError());
-    TypeQuery* ret = new(_rp) TypeQuery(objectType, new(_rp) Position(start), lexer->getPosition(_rp));
+    Position* end = lexer->getPosition(_p);
+    TypeQuery* ret = new(_rp) TypeQuery(objectType, new(_rp) Position(start), new(_rp) Position(end));
     objectType->parent = ret;
     return _Result<TypeQuery, ParserError>(ret);
 }
@@ -1558,14 +1598,15 @@ _Result<TypeCast, ParserError> Parser::parseTypeCast(_Page* _rp, _Page* _ep) {
         objectType = _objectType_result.getResult();
     else
         return _Result<TypeCast, ParserError>(_objectType_result.getError());
-    TypeCast* ret = new(_rp) TypeCast(objectType, new(_rp) Position(start), lexer->getPosition(_rp));
+    Position* end = lexer->getPosition(_p);
+    TypeCast* ret = new(_rp) TypeCast(objectType, new(_rp) Position(start), new(_rp) Position(end));
     objectType->parent = ret;
     return _Result<TypeCast, ParserError>(ret);
 }
 
 _Result<_Vector<CatchClause>, ParserError> Parser::parseCatchClauseList(_Page* _rp, _Page* _ep) {
     _Region _region; _Page* _p = _region.get();
-    _Array<CatchClause>* ret = 0;
+    _Array<CatchClause>* ret = nullptr;
     while (true) {
         _Result<CatchClause, ParserError> nodeResult = parseCatchClause(_rp, _p);
         if (nodeResult.succeeded()) {
@@ -1609,7 +1650,8 @@ _Result<CatchClause, ParserError> Parser::parseCatchClause(_Page* _rp, _Page* _e
         expression = _expression_result.getResult();
     else
         return _Result<CatchClause, ParserError>(_expression_result.getError());
-    CatchClause* ret = new(_rp) CatchClause(catchPattern, bindingPattern, expression, new(_rp) Position(start), lexer->getPosition(_rp));
+    Position* end = lexer->getPosition(_p);
+    CatchClause* ret = new(_rp) CatchClause(catchPattern, bindingPattern, expression, new(_rp) Position(start), new(_rp) Position(end));
     catchPattern->parent = ret;
     if (bindingPattern)
         bindingPattern->parent = ret;
@@ -1649,7 +1691,8 @@ _Result<WildCardCatchPattern, ParserError> Parser::parseWildCardCatchPattern(_Pa
         pattern = _pattern_result.getResult();
     else
         return _Result<WildCardCatchPattern, ParserError>(_pattern_result.getError());
-    WildCardCatchPattern* ret = new(_rp) WildCardCatchPattern(pattern, new(_rp) Position(start), lexer->getPosition(_rp));
+    Position* end = lexer->getPosition(_p);
+    WildCardCatchPattern* ret = new(_rp) WildCardCatchPattern(pattern, new(_rp) Position(start), new(_rp) Position(end));
     pattern->parent = ret;
     return _Result<WildCardCatchPattern, ParserError>(ret);
 }
@@ -1669,7 +1712,8 @@ _Result<PathItemCatchPattern, ParserError> Parser::parsePathItemCatchPattern(_Pa
         catchCaseExtensions = _catchCaseExtensions_result.getResult();
     else
         catchCaseExtensions = nullptr;
-    PathItemCatchPattern* ret = new(_rp) PathItemCatchPattern(catchCase, catchCaseExtensions, new(_rp) Position(start), lexer->getPosition(_rp));
+    Position* end = lexer->getPosition(_p);
+    PathItemCatchPattern* ret = new(_rp) PathItemCatchPattern(catchCase, catchCaseExtensions, new(_rp) Position(start), new(_rp) Position(end));
     catchCase->parent = ret;
     if (catchCaseExtensions) {
         size_t _catchCaseExtensions_length = catchCaseExtensions->length();
@@ -1681,7 +1725,7 @@ _Result<PathItemCatchPattern, ParserError> Parser::parsePathItemCatchPattern(_Pa
 
 _Result<_Vector<Postfix>, ParserError> Parser::parsePostfixList(_Page* _rp, _Page* _ep) {
     _Region _region; _Page* _p = _region.get();
-    _Array<Postfix>* ret = 0;
+    _Array<Postfix>* ret = nullptr;
     while (true) {
         _Result<Postfix, ParserError> nodeResult = parsePostfix(_rp, _p);
         if (nodeResult.succeeded()) {
@@ -1746,7 +1790,8 @@ _Result<OperatorPostfix, ParserError> Parser::parseOperatorPostfix(_Page* _rp, _
     else {
         return _Result<OperatorPostfix, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_operatorExpected(new(_ep) Position(startPostfixOperator))));
     }
-    OperatorPostfix* ret = new(_rp) OperatorPostfix(postfixOperator, new(_rp) Position(start), lexer->getPosition(_rp));
+    Position* end = lexer->getPosition(_p);
+    OperatorPostfix* ret = new(_rp) OperatorPostfix(postfixOperator, new(_rp) Position(start), new(_rp) Position(end));
     return _Result<OperatorPostfix, ParserError>(ret);
 }
 
@@ -1765,7 +1810,8 @@ _Result<FunctionCall, ParserError> Parser::parseFunctionCall(_Page* _rp, _Page* 
         catchClauses = _catchClauses_result.getResult();
     else
         catchClauses = nullptr;
-    FunctionCall* ret = new(_rp) FunctionCall(arguments, catchClauses, new(_rp) Position(start), lexer->getPosition(_rp));
+    Position* end = lexer->getPosition(_p);
+    FunctionCall* ret = new(_rp) FunctionCall(arguments, catchClauses, new(_rp) Position(start), new(_rp) Position(end));
     arguments->parent = ret;
     if (catchClauses) {
         size_t _catchClauses_length = catchClauses->length();
@@ -1792,7 +1838,8 @@ _Result<ExplicitMemberExpression, ParserError> Parser::parseExplicitMemberExpres
         memberPostfix = _memberPostfix_result.getResult();
     else
         return _Result<ExplicitMemberExpression, ParserError>(_memberPostfix_result.getError());
-    ExplicitMemberExpression* ret = new(_rp) ExplicitMemberExpression(memberPostfix, new(_rp) Position(start), lexer->getPosition(_rp));
+    Position* end = lexer->getPosition(_p);
+    ExplicitMemberExpression* ret = new(_rp) ExplicitMemberExpression(memberPostfix, new(_rp) Position(start), new(_rp) Position(end));
     memberPostfix->parent = ret;
     return _Result<ExplicitMemberExpression, ParserError>(ret);
 }
@@ -1822,7 +1869,8 @@ _Result<Subscript, ParserError> Parser::parseSubscript(_Page* _rp, _Page* _ep) {
     else {
         return _Result<Subscript, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_punctuationExpected(new(_ep) Position(startRightBracket3), &String::create(_ep, rightBracket))));
     }
-    Subscript* ret = new(_rp) Subscript(expressions, new(_rp) Position(start), lexer->getPosition(_rp));
+    Position* end = lexer->getPosition(_p);
+    Subscript* ret = new(_rp) Subscript(expressions, new(_rp) Position(start), new(_rp) Position(end));
     if (expressions) {
         size_t _expressions_length = expressions->length();
         for (size_t _i = 0; _i < _expressions_length; _i++)
@@ -1833,7 +1881,7 @@ _Result<Subscript, ParserError> Parser::parseSubscript(_Page* _rp, _Page* _ep) {
 
 _Result<_Vector<ExpressionElement>, ParserError> Parser::parseExpressionElementList(_Page* _rp, _Page* _ep) {
     _Region _region; _Page* _p = _region.get();
-    _Array<ExpressionElement>* ret = 0;
+    _Array<ExpressionElement>* ret = nullptr;
     while (true) {
         _Result<ExpressionElement, ParserError> nodeResult = parseExpressionElement(_rp, _p);
         if (nodeResult.succeeded()) {
@@ -1861,7 +1909,8 @@ _Result<ExpressionElement, ParserError> Parser::parseExpressionElement(_Page* _r
     if (successComma2) {
         lexer->advance();
     }
-    ExpressionElement* ret = new(_rp) ExpressionElement(expression, new(_rp) Position(start), lexer->getPosition(_rp));
+    Position* end = lexer->getPosition(_p);
+    ExpressionElement* ret = new(_rp) ExpressionElement(expression, new(_rp) Position(start), new(_rp) Position(end));
     expression->parent = ret;
     return _Result<ExpressionElement, ParserError>(ret);
 }
@@ -1890,7 +1939,8 @@ _Result<NamedMemberPostfix, ParserError> Parser::parseNamedMemberPostfix(_Page* 
         identifier = _identifier_result.getResult();
     else
         return _Result<NamedMemberPostfix, ParserError>(_identifier_result.getError());
-    NamedMemberPostfix* ret = new(_rp) NamedMemberPostfix(identifier, new(_rp) Position(start), lexer->getPosition(_rp));
+    Position* end = lexer->getPosition(_p);
+    NamedMemberPostfix* ret = new(_rp) NamedMemberPostfix(identifier, new(_rp) Position(start), new(_rp) Position(end));
     identifier->parent = ret;
     return _Result<NamedMemberPostfix, ParserError>(ret);
 }
@@ -2033,7 +2083,8 @@ _Result<IdentifierExpression, ParserError> Parser::parseIdentifierExpression(_Pa
     else {
         return _Result<IdentifierExpression, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_identifierExpected(new(_ep) Position(startName))));
     }
-    IdentifierExpression* ret = new(_rp) IdentifierExpression(name, new(_rp) Position(start), lexer->getPosition(_rp));
+    Position* end = lexer->getPosition(_p);
+    IdentifierExpression* ret = new(_rp) IdentifierExpression(name, new(_rp) Position(start), new(_rp) Position(end));
     return _Result<IdentifierExpression, ParserError>(ret);
 }
 
@@ -2048,7 +2099,8 @@ _Result<LiteralExpression, ParserError> Parser::parseLiteralExpression(_Page* _r
     else {
         return _Result<LiteralExpression, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_literalExpected(new(_ep) Position(startLiteral))));
     }
-    LiteralExpression* ret = new(_rp) LiteralExpression(literal, new(_rp) Position(start), lexer->getPosition(_rp));
+    Position* end = lexer->getPosition(_p);
+    LiteralExpression* ret = new(_rp) LiteralExpression(literal, new(_rp) Position(start), new(_rp) Position(end));
     return _Result<LiteralExpression, ParserError>(ret);
 }
 
@@ -2081,7 +2133,8 @@ _Result<IfExpression, ParserError> Parser::parseIfExpression(_Page* _rp, _Page* 
         elseClause = _elseClause_result.getResult();
     else
         elseClause = nullptr;
-    IfExpression* ret = new(_rp) IfExpression(condition, consequent, elseClause, new(_rp) Position(start), lexer->getPosition(_rp));
+    Position* end = lexer->getPosition(_p);
+    IfExpression* ret = new(_rp) IfExpression(condition, consequent, elseClause, new(_rp) Position(start), new(_rp) Position(end));
     condition->parent = ret;
     consequent->parent = ret;
     if (elseClause)
@@ -2112,7 +2165,8 @@ _Result<SwitchExpression, ParserError> Parser::parseSwitchExpression(_Page* _rp,
         body = _body_result.getResult();
     else
         return _Result<SwitchExpression, ParserError>(_body_result.getError());
-    SwitchExpression* ret = new(_rp) SwitchExpression(expression, body, new(_rp) Position(start), lexer->getPosition(_rp));
+    Position* end = lexer->getPosition(_p);
+    SwitchExpression* ret = new(_rp) SwitchExpression(expression, body, new(_rp) Position(start), new(_rp) Position(end));
     expression->parent = ret;
     body->parent = ret;
     return _Result<SwitchExpression, ParserError>(ret);
@@ -2155,7 +2209,8 @@ _Result<ForExpression, ParserError> Parser::parseForExpression(_Page* _rp, _Page
         code = _code_result.getResult();
     else
         return _Result<ForExpression, ParserError>(_code_result.getError());
-    ForExpression* ret = new(_rp) ForExpression(pattern, expression, code, new(_rp) Position(start), lexer->getPosition(_rp));
+    Position* end = lexer->getPosition(_p);
+    ForExpression* ret = new(_rp) ForExpression(pattern, expression, code, new(_rp) Position(start), new(_rp) Position(end));
     pattern->parent = ret;
     expression->parent = ret;
     code->parent = ret;
@@ -2185,7 +2240,8 @@ _Result<WhileExpression, ParserError> Parser::parseWhileExpression(_Page* _rp, _
         code = _code_result.getResult();
     else
         return _Result<WhileExpression, ParserError>(_code_result.getError());
-    WhileExpression* ret = new(_rp) WhileExpression(condition, code, new(_rp) Position(start), lexer->getPosition(_rp));
+    Position* end = lexer->getPosition(_p);
+    WhileExpression* ret = new(_rp) WhileExpression(condition, code, new(_rp) Position(start), new(_rp) Position(end));
     condition->parent = ret;
     code->parent = ret;
     return _Result<WhileExpression, ParserError>(ret);
@@ -2222,7 +2278,8 @@ _Result<RepeatExpression, ParserError> Parser::parseRepeatExpression(_Page* _rp,
         condition = _condition_result.getResult();
     else
         return _Result<RepeatExpression, ParserError>(_condition_result.getError());
-    RepeatExpression* ret = new(_rp) RepeatExpression(code, condition, new(_rp) Position(start), lexer->getPosition(_rp));
+    Position* end = lexer->getPosition(_p);
+    RepeatExpression* ret = new(_rp) RepeatExpression(code, condition, new(_rp) Position(start), new(_rp) Position(end));
     code->parent = ret;
     condition->parent = ret;
     return _Result<RepeatExpression, ParserError>(ret);
@@ -2253,7 +2310,8 @@ _Result<ParenthesizedExpression, ParserError> Parser::parseParenthesizedExpressi
     else {
         return _Result<ParenthesizedExpression, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_punctuationExpected(new(_ep) Position(startRightParen3), &String::create(_ep, rightParen))));
     }
-    ParenthesizedExpression* ret = new(_rp) ParenthesizedExpression(expressionElements, new(_rp) Position(start), lexer->getPosition(_rp));
+    Position* end = lexer->getPosition(_p);
+    ParenthesizedExpression* ret = new(_rp) ParenthesizedExpression(expressionElements, new(_rp) Position(start), new(_rp) Position(end));
     if (expressionElements) {
         size_t _expressionElements_length = expressionElements->length();
         for (size_t _i = 0; _i < _expressionElements_length; _i++)
@@ -2279,7 +2337,8 @@ _Result<ReturnExpression, ParserError> Parser::parseReturnExpression(_Page* _rp,
         expression = _expression_result.getResult();
     else
         expression = nullptr;
-    ReturnExpression* ret = new(_rp) ReturnExpression(expression, new(_rp) Position(start), lexer->getPosition(_rp));
+    Position* end = lexer->getPosition(_p);
+    ReturnExpression* ret = new(_rp) ReturnExpression(expression, new(_rp) Position(start), new(_rp) Position(end));
     if (expression)
         expression->parent = ret;
     return _Result<ReturnExpression, ParserError>(ret);
@@ -2302,7 +2361,8 @@ _Result<ThrowExpression, ParserError> Parser::parseThrowExpression(_Page* _rp, _
         expression = _expression_result.getResult();
     else
         expression = nullptr;
-    ThrowExpression* ret = new(_rp) ThrowExpression(expression, new(_rp) Position(start), lexer->getPosition(_rp));
+    Position* end = lexer->getPosition(_p);
+    ThrowExpression* ret = new(_rp) ThrowExpression(expression, new(_rp) Position(start), new(_rp) Position(end));
     if (expression)
         expression->parent = ret;
     return _Result<ThrowExpression, ParserError>(ret);
@@ -2325,7 +2385,8 @@ _Result<BreakExpression, ParserError> Parser::parseBreakExpression(_Page* _rp, _
         expression = _expression_result.getResult();
     else
         expression = nullptr;
-    BreakExpression* ret = new(_rp) BreakExpression(expression, new(_rp) Position(start), lexer->getPosition(_rp));
+    Position* end = lexer->getPosition(_p);
+    BreakExpression* ret = new(_rp) BreakExpression(expression, new(_rp) Position(start), new(_rp) Position(end));
     if (expression)
         expression->parent = ret;
     return _Result<BreakExpression, ParserError>(ret);
@@ -2352,7 +2413,8 @@ _Result<InitializerCall, ParserError> Parser::parseInitializerCall(_Page* _rp, _
         catchClauses = _catchClauses_result.getResult();
     else
         catchClauses = nullptr;
-    InitializerCall* ret = new(_rp) InitializerCall(typeToInitialize, arguments, catchClauses, new(_rp) Position(start), lexer->getPosition(_rp));
+    Position* end = lexer->getPosition(_p);
+    InitializerCall* ret = new(_rp) InitializerCall(typeToInitialize, arguments, catchClauses, new(_rp) Position(start), new(_rp) Position(end));
     typeToInitialize->parent = ret;
     arguments->parent = ret;
     if (catchClauses) {
@@ -2374,7 +2436,8 @@ _Result<ThisExpression, ParserError> Parser::parseThisExpression(_Page* _rp, _Pa
     else {
         return _Result<ThisExpression, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_keywordExpected(new(_ep) Position(startThis1), &String::create(_ep, thisKeyword))));
     }
-    ThisExpression* ret = new(_rp) ThisExpression(new(_rp) Position(start), lexer->getPosition(_rp));
+    Position* end = lexer->getPosition(_p);
+    ThisExpression* ret = new(_rp) ThisExpression(new(_rp) Position(start), new(_rp) Position(end));
     return _Result<ThisExpression, ParserError>(ret);
 }
 
@@ -2426,7 +2489,8 @@ _Result<SuperDot, ParserError> Parser::parseSuperDot(_Page* _rp, _Page* _ep) {
         member = _member_result.getResult();
     else
         return _Result<SuperDot, ParserError>(_member_result.getError());
-    SuperDot* ret = new(_rp) SuperDot(member, new(_rp) Position(start), lexer->getPosition(_rp));
+    Position* end = lexer->getPosition(_p);
+    SuperDot* ret = new(_rp) SuperDot(member, new(_rp) Position(start), new(_rp) Position(end));
     member->parent = ret;
     return _Result<SuperDot, ParserError>(ret);
 }
@@ -2448,7 +2512,8 @@ _Result<SuperSubscript, ParserError> Parser::parseSuperSubscript(_Page* _rp, _Pa
         subscript = _subscript_result.getResult();
     else
         return _Result<SuperSubscript, ParserError>(_subscript_result.getError());
-    SuperSubscript* ret = new(_rp) SuperSubscript(subscript, new(_rp) Position(start), lexer->getPosition(_rp));
+    Position* end = lexer->getPosition(_p);
+    SuperSubscript* ret = new(_rp) SuperSubscript(subscript, new(_rp) Position(start), new(_rp) Position(end));
     subscript->parent = ret;
     return _Result<SuperSubscript, ParserError>(ret);
 }
@@ -2464,7 +2529,8 @@ _Result<NullExpression, ParserError> Parser::parseNullExpression(_Page* _rp, _Pa
     else {
         return _Result<NullExpression, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_keywordExpected(new(_ep) Position(startNull1), &String::create(_ep, nullKeyword))));
     }
-    NullExpression* ret = new(_rp) NullExpression(new(_rp) Position(start), lexer->getPosition(_rp));
+    Position* end = lexer->getPosition(_p);
+    NullExpression* ret = new(_rp) NullExpression(new(_rp) Position(start), new(_rp) Position(end));
     return _Result<NullExpression, ParserError>(ret);
 }
 
@@ -2485,7 +2551,8 @@ _Result<ElseClause, ParserError> Parser::parseElseClause(_Page* _rp, _Page* _ep)
         alternative = _alternative_result.getResult();
     else
         return _Result<ElseClause, ParserError>(_alternative_result.getError());
-    ElseClause* ret = new(_rp) ElseClause(alternative, new(_rp) Position(start), lexer->getPosition(_rp));
+    Position* end = lexer->getPosition(_p);
+    ElseClause* ret = new(_rp) ElseClause(alternative, new(_rp) Position(start), new(_rp) Position(end));
     alternative->parent = ret;
     return _Result<ElseClause, ParserError>(ret);
 }
@@ -2538,7 +2605,8 @@ _Result<CurliedSwitchBody, ParserError> Parser::parseCurliedSwitchBody(_Page* _r
     else {
         return _Result<CurliedSwitchBody, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_punctuationExpected(new(_ep) Position(startRightCurly3), &String::create(_ep, rightCurly))));
     }
-    CurliedSwitchBody* ret = new(_rp) CurliedSwitchBody(cases, new(_rp) Position(start), lexer->getPosition(_rp));
+    Position* end = lexer->getPosition(_p);
+    CurliedSwitchBody* ret = new(_rp) CurliedSwitchBody(cases, new(_rp) Position(start), new(_rp) Position(end));
     if (cases) {
         size_t _cases_length = cases->length();
         for (size_t _i = 0; _i < _cases_length; _i++)
@@ -2556,7 +2624,8 @@ _Result<NakedSwitchBody, ParserError> Parser::parseNakedSwitchBody(_Page* _rp, _
         cases = _cases_result.getResult();
     else
         return _Result<NakedSwitchBody, ParserError>(_cases_result.getError());
-    NakedSwitchBody* ret = new(_rp) NakedSwitchBody(cases, new(_rp) Position(start), lexer->getPosition(_rp));
+    Position* end = lexer->getPosition(_p);
+    NakedSwitchBody* ret = new(_rp) NakedSwitchBody(cases, new(_rp) Position(start), new(_rp) Position(end));
     if (cases) {
         size_t _cases_length = cases->length();
         for (size_t _i = 0; _i < _cases_length; _i++)
@@ -2567,7 +2636,7 @@ _Result<NakedSwitchBody, ParserError> Parser::parseNakedSwitchBody(_Page* _rp, _
 
 _Result<_Vector<SwitchCase>, ParserError> Parser::parseSwitchCaseList(_Page* _rp, _Page* _ep) {
     _Region _region; _Page* _p = _region.get();
-    _Array<SwitchCase>* ret = 0;
+    _Array<SwitchCase>* ret = nullptr;
     while (true) {
         _Result<SwitchCase, ParserError> nodeResult = parseSwitchCase(_rp, _p);
         if (nodeResult.succeeded()) {
@@ -2597,7 +2666,8 @@ _Result<SwitchCase, ParserError> Parser::parseSwitchCase(_Page* _rp, _Page* _ep)
         content = _content_result.getResult();
     else
         return _Result<SwitchCase, ParserError>(_content_result.getError());
-    SwitchCase* ret = new(_rp) SwitchCase(label, content, new(_rp) Position(start), lexer->getPosition(_rp));
+    Position* end = lexer->getPosition(_p);
+    SwitchCase* ret = new(_rp) SwitchCase(label, content, new(_rp) Position(start), new(_rp) Position(end));
     label->parent = ret;
     content->parent = ret;
     return _Result<SwitchCase, ParserError>(ret);
@@ -2657,7 +2727,8 @@ _Result<ItemCaseLabel, ParserError> Parser::parseItemCaseLabel(_Page* _rp, _Page
     else {
         return _Result<ItemCaseLabel, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_punctuationExpected(new(_ep) Position(startColon4), &String::create(_ep, colon))));
     }
-    ItemCaseLabel* ret = new(_rp) ItemCaseLabel(pattern, additionalPatterns, new(_rp) Position(start), lexer->getPosition(_rp));
+    Position* end = lexer->getPosition(_p);
+    ItemCaseLabel* ret = new(_rp) ItemCaseLabel(pattern, additionalPatterns, new(_rp) Position(start), new(_rp) Position(end));
     pattern->parent = ret;
     if (additionalPatterns) {
         size_t _additionalPatterns_length = additionalPatterns->length();
@@ -2686,13 +2757,14 @@ _Result<DefaultCaseLabel, ParserError> Parser::parseDefaultCaseLabel(_Page* _rp,
     else {
         return _Result<DefaultCaseLabel, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_punctuationExpected(new(_ep) Position(startColon2), &String::create(_ep, colon))));
     }
-    DefaultCaseLabel* ret = new(_rp) DefaultCaseLabel(new(_rp) Position(start), lexer->getPosition(_rp));
+    Position* end = lexer->getPosition(_p);
+    DefaultCaseLabel* ret = new(_rp) DefaultCaseLabel(new(_rp) Position(start), new(_rp) Position(end));
     return _Result<DefaultCaseLabel, ParserError>(ret);
 }
 
 _Result<_Vector<CaseItem>, ParserError> Parser::parseCaseItemList(_Page* _rp, _Page* _ep) {
     _Region _region; _Page* _p = _region.get();
-    _Array<CaseItem>* ret = 0;
+    _Array<CaseItem>* ret = nullptr;
     while (true) {
         _Result<CaseItem, ParserError> nodeResult = parseCaseItem(_rp, _p);
         if (nodeResult.succeeded()) {
@@ -2724,7 +2796,8 @@ _Result<CaseItem, ParserError> Parser::parseCaseItem(_Page* _rp, _Page* _ep) {
         pattern = _pattern_result.getResult();
     else
         return _Result<CaseItem, ParserError>(_pattern_result.getError());
-    CaseItem* ret = new(_rp) CaseItem(pattern, new(_rp) Position(start), lexer->getPosition(_rp));
+    Position* end = lexer->getPosition(_p);
+    CaseItem* ret = new(_rp) CaseItem(pattern, new(_rp) Position(start), new(_rp) Position(end));
     pattern->parent = ret;
     return _Result<CaseItem, ParserError>(ret);
 }
@@ -2779,7 +2852,8 @@ _Result<WildcardPattern, ParserError> Parser::parseWildcardPattern(_Page* _rp, _
     else {
         return _Result<WildcardPattern, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_punctuationExpected(new(_ep) Position(startUnderscore1), &String::create(_ep, underscore))));
     }
-    WildcardPattern* ret = new(_rp) WildcardPattern(new(_rp) Position(start), lexer->getPosition(_rp));
+    Position* end = lexer->getPosition(_p);
+    WildcardPattern* ret = new(_rp) WildcardPattern(new(_rp) Position(start), new(_rp) Position(end));
     return _Result<WildcardPattern, ParserError>(ret);
 }
 
@@ -2800,7 +2874,8 @@ _Result<IdentifierPattern, ParserError> Parser::parseIdentifierPattern(_Page* _r
         annotationForType = _annotationForType_result.getResult();
     else
         annotationForType = nullptr;
-    IdentifierPattern* ret = new(_rp) IdentifierPattern(identifier, annotationForType, new(_rp) Position(start), lexer->getPosition(_rp));
+    Position* end = lexer->getPosition(_p);
+    IdentifierPattern* ret = new(_rp) IdentifierPattern(identifier, annotationForType, new(_rp) Position(start), new(_rp) Position(end));
     if (annotationForType)
         annotationForType->parent = ret;
     return _Result<IdentifierPattern, ParserError>(ret);
@@ -2831,7 +2906,8 @@ _Result<TuplePattern, ParserError> Parser::parseTuplePattern(_Page* _rp, _Page* 
     else {
         return _Result<TuplePattern, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_punctuationExpected(new(_ep) Position(startRightParen3), &String::create(_ep, rightParen))));
     }
-    TuplePattern* ret = new(_rp) TuplePattern(elements, new(_rp) Position(start), lexer->getPosition(_rp));
+    Position* end = lexer->getPosition(_p);
+    TuplePattern* ret = new(_rp) TuplePattern(elements, new(_rp) Position(start), new(_rp) Position(end));
     if (elements) {
         size_t _elements_length = elements->length();
         for (size_t _i = 0; _i < _elements_length; _i++)
@@ -2849,14 +2925,15 @@ _Result<ExpressionPattern, ParserError> Parser::parseExpressionPattern(_Page* _r
         expression = _expression_result.getResult();
     else
         return _Result<ExpressionPattern, ParserError>(_expression_result.getError());
-    ExpressionPattern* ret = new(_rp) ExpressionPattern(expression, new(_rp) Position(start), lexer->getPosition(_rp));
+    Position* end = lexer->getPosition(_p);
+    ExpressionPattern* ret = new(_rp) ExpressionPattern(expression, new(_rp) Position(start), new(_rp) Position(end));
     expression->parent = ret;
     return _Result<ExpressionPattern, ParserError>(ret);
 }
 
 _Result<_Vector<TuplePatternElement>, ParserError> Parser::parseTuplePatternElementList(_Page* _rp, _Page* _ep) {
     _Region _region; _Page* _p = _region.get();
-    _Array<TuplePatternElement>* ret = 0;
+    _Array<TuplePatternElement>* ret = nullptr;
     while (true) {
         _Result<TuplePatternElement, ParserError> nodeResult = parseTuplePatternElement(_rp, _p);
         if (nodeResult.succeeded()) {
@@ -2884,7 +2961,8 @@ _Result<TuplePatternElement, ParserError> Parser::parseTuplePatternElement(_Page
     if (successComma2) {
         lexer->advance();
     }
-    TuplePatternElement* ret = new(_rp) TuplePatternElement(pattern, new(_rp) Position(start), lexer->getPosition(_rp));
+    Position* end = lexer->getPosition(_p);
+    TuplePatternElement* ret = new(_rp) TuplePatternElement(pattern, new(_rp) Position(start), new(_rp) Position(end));
     pattern->parent = ret;
     return _Result<TuplePatternElement, ParserError>(ret);
 }
@@ -2921,7 +2999,8 @@ _Result<BlockCaseContent, ParserError> Parser::parseBlockCaseContent(_Page* _rp,
         statements = _statements_result.getResult();
     else
         return _Result<BlockCaseContent, ParserError>(_statements_result.getError());
-    BlockCaseContent* ret = new(_rp) BlockCaseContent(statements, new(_rp) Position(start), lexer->getPosition(_rp));
+    Position* end = lexer->getPosition(_p);
+    BlockCaseContent* ret = new(_rp) BlockCaseContent(statements, new(_rp) Position(start), new(_rp) Position(end));
     if (statements) {
         size_t _statements_length = statements->length();
         for (size_t _i = 0; _i < _statements_length; _i++)
@@ -2941,7 +3020,8 @@ _Result<EmptyCaseContent, ParserError> Parser::parseEmptyCaseContent(_Page* _rp,
     else {
         return _Result<EmptyCaseContent, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_punctuationExpected(new(_ep) Position(startSemicolon1), &String::create(_ep, semicolon))));
     }
-    EmptyCaseContent* ret = new(_rp) EmptyCaseContent(new(_rp) Position(start), lexer->getPosition(_rp));
+    Position* end = lexer->getPosition(_p);
+    EmptyCaseContent* ret = new(_rp) EmptyCaseContent(new(_rp) Position(start), new(_rp) Position(end));
     return _Result<EmptyCaseContent, ParserError>(ret);
 }
 
@@ -2979,7 +3059,8 @@ _Result<SuperInit, ParserError> Parser::parseSuperInit(_Page* _rp, _Page* _ep) {
     else {
         return _Result<SuperInit, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_keywordExpected(new(_ep) Position(startInit1), &String::create(_ep, initKeyword))));
     }
-    SuperInit* ret = new(_rp) SuperInit(new(_rp) Position(start), lexer->getPosition(_rp));
+    Position* end = lexer->getPosition(_p);
+    SuperInit* ret = new(_rp) SuperInit(new(_rp) Position(start), new(_rp) Position(end));
     return _Result<SuperInit, ParserError>(ret);
 }
 
@@ -2994,7 +3075,8 @@ _Result<SuperMember, ParserError> Parser::parseSuperMember(_Page* _rp, _Page* _e
     else {
         return _Result<SuperMember, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_identifierExpected(new(_ep) Position(startName))));
     }
-    SuperMember* ret = new(_rp) SuperMember(name, new(_rp) Position(start), lexer->getPosition(_rp));
+    Position* end = lexer->getPosition(_p);
+    SuperMember* ret = new(_rp) SuperMember(name, new(_rp) Position(start), new(_rp) Position(end));
     return _Result<SuperMember, ParserError>(ret);
 }
 
@@ -3044,7 +3126,8 @@ _Result<TypeIdentifier, ParserError> Parser::parseTypeIdentifier(_Page* _rp, _Pa
         postfixes = _postfixes_result.getResult();
     else
         postfixes = nullptr;
-    TypeIdentifier* ret = new(_rp) TypeIdentifier(name, subType, postfixes, new(_rp) Position(start), lexer->getPosition(_rp));
+    Position* end = lexer->getPosition(_p);
+    TypeIdentifier* ret = new(_rp) TypeIdentifier(name, subType, postfixes, new(_rp) Position(start), new(_rp) Position(end));
     if (subType)
         subType->parent = ret;
     if (postfixes) {
@@ -3086,7 +3169,8 @@ _Result<ArrayType, ParserError> Parser::parseArrayType(_Page* _rp, _Page* _ep) {
         postfixes = _postfixes_result.getResult();
     else
         postfixes = nullptr;
-    ArrayType* ret = new(_rp) ArrayType(elementType, postfixes, new(_rp) Position(start), lexer->getPosition(_rp));
+    Position* end = lexer->getPosition(_p);
+    ArrayType* ret = new(_rp) ArrayType(elementType, postfixes, new(_rp) Position(start), new(_rp) Position(end));
     elementType->parent = ret;
     if (postfixes) {
         size_t _postfixes_length = postfixes->length();
@@ -3113,7 +3197,8 @@ _Result<TypeAnnotation, ParserError> Parser::parseTypeAnnotation(_Page* _rp, _Pa
         annotationForType = _annotationForType_result.getResult();
     else
         return _Result<TypeAnnotation, ParserError>(_annotationForType_result.getError());
-    TypeAnnotation* ret = new(_rp) TypeAnnotation(annotationForType, new(_rp) Position(start), lexer->getPosition(_rp));
+    Position* end = lexer->getPosition(_p);
+    TypeAnnotation* ret = new(_rp) TypeAnnotation(annotationForType, new(_rp) Position(start), new(_rp) Position(end));
     annotationForType->parent = ret;
     return _Result<TypeAnnotation, ParserError>(ret);
 }
@@ -3135,14 +3220,15 @@ _Result<SubtypeIdentifier, ParserError> Parser::parseSubtypeIdentifier(_Page* _r
         typeIdentifier = _typeIdentifier_result.getResult();
     else
         return _Result<SubtypeIdentifier, ParserError>(_typeIdentifier_result.getError());
-    SubtypeIdentifier* ret = new(_rp) SubtypeIdentifier(typeIdentifier, new(_rp) Position(start), lexer->getPosition(_rp));
+    Position* end = lexer->getPosition(_p);
+    SubtypeIdentifier* ret = new(_rp) SubtypeIdentifier(typeIdentifier, new(_rp) Position(start), new(_rp) Position(end));
     typeIdentifier->parent = ret;
     return _Result<SubtypeIdentifier, ParserError>(ret);
 }
 
 _Result<_Vector<TypePostfix>, ParserError> Parser::parseTypePostfixList(_Page* _rp, _Page* _ep) {
     _Region _region; _Page* _p = _region.get();
-    _Array<TypePostfix>* ret = 0;
+    _Array<TypePostfix>* ret = nullptr;
     while (true) {
         _Result<TypePostfix, ParserError> nodeResult = parseTypePostfix(_rp, _p);
         if (nodeResult.succeeded()) {
@@ -3183,7 +3269,8 @@ _Result<OptionalType, ParserError> Parser::parseOptionalType(_Page* _rp, _Page* 
     else {
         return _Result<OptionalType, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_punctuationExpected(new(_ep) Position(startQuestionMark1), &String::create(_ep, questionMark))));
     }
-    OptionalType* ret = new(_rp) OptionalType(new(_rp) Position(start), lexer->getPosition(_rp));
+    Position* end = lexer->getPosition(_p);
+    OptionalType* ret = new(_rp) OptionalType(new(_rp) Position(start), new(_rp) Position(end));
     return _Result<OptionalType, ParserError>(ret);
 }
 
@@ -3204,7 +3291,8 @@ _Result<TypeInheritanceClause, ParserError> Parser::parseTypeInheritanceClause(_
         inheritances = _inheritances_result.getResult();
     else
         inheritances = nullptr;
-    TypeInheritanceClause* ret = new(_rp) TypeInheritanceClause(inheritances, new(_rp) Position(start), lexer->getPosition(_rp));
+    Position* end = lexer->getPosition(_p);
+    TypeInheritanceClause* ret = new(_rp) TypeInheritanceClause(inheritances, new(_rp) Position(start), new(_rp) Position(end));
     if (inheritances) {
         size_t _inheritances_length = inheritances->length();
         for (size_t _i = 0; _i < _inheritances_length; _i++)
@@ -3215,7 +3303,7 @@ _Result<TypeInheritanceClause, ParserError> Parser::parseTypeInheritanceClause(_
 
 _Result<_Vector<Inheritance>, ParserError> Parser::parseInheritanceList(_Page* _rp, _Page* _ep) {
     _Region _region; _Page* _p = _region.get();
-    _Array<Inheritance>* ret = 0;
+    _Array<Inheritance>* ret = nullptr;
     while (true) {
         _Result<Inheritance, ParserError> nodeResult = parseInheritance(_rp, _p);
         if (nodeResult.succeeded()) {
@@ -3243,7 +3331,8 @@ _Result<Inheritance, ParserError> Parser::parseInheritance(_Page* _rp, _Page* _e
     if (successComma2) {
         lexer->advance();
     }
-    Inheritance* ret = new(_rp) Inheritance(typeIdentifier, new(_rp) Position(start), lexer->getPosition(_rp));
+    Position* end = lexer->getPosition(_p);
+    Inheritance* ret = new(_rp) Inheritance(typeIdentifier, new(_rp) Position(start), new(_rp) Position(end));
     typeIdentifier->parent = ret;
     return _Result<Inheritance, ParserError>(ret);
 }
