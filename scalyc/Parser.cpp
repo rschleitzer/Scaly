@@ -88,9 +88,11 @@ _Result<_Vector<TerminatedStatement>, ParserError> Parser::parseTerminatedStatem
     _Array<TerminatedStatement>* ret = nullptr;
     while (true) {
         auto _node_result = parseTerminatedStatement(_rp, _p);
-        if (!_node_result.succeeded())
+        TerminatedStatement* node;
+        if (_node_result.succeeded())
+            node = _node_result.getResult();
+        else
             break;
-        TerminatedStatement* node = _node_result.getResult();
         if (!ret)
             ret = new(_p) _Array<TerminatedStatement>();
         ret->push(node);
@@ -618,9 +620,11 @@ _Result<_Vector<PathIdentifier>, ParserError> Parser::parsePathIdentifierList(_P
     _Array<PathIdentifier>* ret = nullptr;
     while (true) {
         auto _node_result = parsePathIdentifier(_rp, _p);
-        if (!_node_result.succeeded())
+        PathIdentifier* node;
+        if (_node_result.succeeded())
+            node = _node_result.getResult();
+        else
             break;
-        PathIdentifier* node = _node_result.getResult();
         if (!ret)
             ret = new(_p) _Array<PathIdentifier>();
         ret->push(node);
@@ -724,9 +728,11 @@ _Result<_Vector<PatternInitializer>, ParserError> Parser::parsePatternInitialize
     _Array<PatternInitializer>* ret = nullptr;
     while (true) {
         auto _node_result = parsePatternInitializer(_rp, _p);
-        if (!_node_result.succeeded())
+        PatternInitializer* node;
+        if (_node_result.succeeded())
+            node = _node_result.getResult();
+        else
             break;
-        PatternInitializer* node = _node_result.getResult();
         if (!ret)
             ret = new(_p) _Array<PatternInitializer>();
         ret->push(node);
@@ -762,9 +768,11 @@ _Result<_Vector<AdditionalInitializer>, ParserError> Parser::parseAdditionalInit
     _Array<AdditionalInitializer>* ret = nullptr;
     while (true) {
         auto _node_result = parseAdditionalInitializer(_rp, _p);
-        if (!_node_result.succeeded())
+        AdditionalInitializer* node;
+        if (_node_result.succeeded())
+            node = _node_result.getResult();
+        else
             break;
-        AdditionalInitializer* node = _node_result.getResult();
         if (!ret)
             ret = new(_p) _Array<AdditionalInitializer>();
         ret->push(node);
@@ -800,9 +808,11 @@ _Result<_Vector<Modifier>, ParserError> Parser::parseModifierList(_Page* _rp, _P
     _Array<Modifier>* ret = nullptr;
     while (true) {
         auto _node_result = parseModifier(_rp, _p);
-        if (!_node_result.succeeded())
+        Modifier* node;
+        if (_node_result.succeeded())
+            node = _node_result.getResult();
+        else
             break;
-        Modifier* node = _node_result.getResult();
         if (!ret)
             ret = new(_p) _Array<Modifier>();
         ret->push(node);
@@ -979,9 +989,11 @@ _Result<_Vector<ParameterClause>, ParserError> Parser::parseParameterClauseList(
     _Array<ParameterClause>* ret = nullptr;
     while (true) {
         auto _node_result = parseParameterClause(_rp, _p);
-        if (!_node_result.succeeded())
+        ParameterClause* node;
+        if (_node_result.succeeded())
+            node = _node_result.getResult();
+        else
             break;
-        ParameterClause* node = _node_result.getResult();
         if (!ret)
             ret = new(_p) _Array<ParameterClause>();
         ret->push(node);
@@ -1032,9 +1044,11 @@ _Result<_Vector<Parameter>, ParserError> Parser::parseParameterList(_Page* _rp, 
     _Array<Parameter>* ret = nullptr;
     while (true) {
         auto _node_result = parseParameter(_rp, _p);
-        if (!_node_result.succeeded())
+        Parameter* node;
+        if (_node_result.succeeded())
+            node = _node_result.getResult();
+        else
             break;
-        Parameter* node = _node_result.getResult();
         if (!ret)
             ret = new(_p) _Array<Parameter>();
         ret->push(node);
@@ -1175,9 +1189,11 @@ _Result<_Vector<EnumMember>, ParserError> Parser::parseEnumMemberList(_Page* _rp
     _Array<EnumMember>* ret = nullptr;
     while (true) {
         auto _node_result = parseEnumMember(_rp, _p);
-        if (!_node_result.succeeded())
+        EnumMember* node;
+        if (_node_result.succeeded())
+            node = _node_result.getResult();
+        else
             break;
-        EnumMember* node = _node_result.getResult();
         if (!ret)
             ret = new(_p) _Array<EnumMember>();
         ret->push(node);
@@ -1251,9 +1267,11 @@ _Result<_Vector<AdditionalCase>, ParserError> Parser::parseAdditionalCaseList(_P
     _Array<AdditionalCase>* ret = nullptr;
     while (true) {
         auto _node_result = parseAdditionalCase(_rp, _p);
-        if (!_node_result.succeeded())
+        AdditionalCase* node;
+        if (_node_result.succeeded())
+            node = _node_result.getResult();
+        else
             break;
-        AdditionalCase* node = _node_result.getResult();
         if (!ret)
             ret = new(_p) _Array<AdditionalCase>();
         ret->push(node);
@@ -1365,9 +1383,11 @@ _Result<_Vector<GenericParameter>, ParserError> Parser::parseGenericParameterLis
     _Array<GenericParameter>* ret = nullptr;
     while (true) {
         auto _node_result = parseGenericParameter(_rp, _p);
-        if (!_node_result.succeeded())
+        GenericParameter* node;
+        if (_node_result.succeeded())
+            node = _node_result.getResult();
+        else
             break;
-        GenericParameter* node = _node_result.getResult();
         if (!ret)
             ret = new(_p) _Array<GenericParameter>();
         ret->push(node);
@@ -1396,9 +1416,11 @@ _Result<_Vector<ClassMember>, ParserError> Parser::parseClassMemberList(_Page* _
     _Array<ClassMember>* ret = nullptr;
     while (true) {
         auto _node_result = parseClassMember(_rp, _p);
-        if (!_node_result.succeeded())
+        ClassMember* node;
+        if (_node_result.succeeded())
+            node = _node_result.getResult();
+        else
             break;
-        ClassMember* node = _node_result.getResult();
         if (!ret)
             ret = new(_p) _Array<ClassMember>();
         ret->push(node);
@@ -1478,9 +1500,11 @@ _Result<_Vector<BinaryOp>, ParserError> Parser::parseBinaryOpList(_Page* _rp, _P
     _Array<BinaryOp>* ret = nullptr;
     while (true) {
         auto _node_result = parseBinaryOp(_rp, _p);
-        if (!_node_result.succeeded())
+        BinaryOp* node;
+        if (_node_result.succeeded())
+            node = _node_result.getResult();
+        else
             break;
-        BinaryOp* node = _node_result.getResult();
         if (!ret)
             ret = new(_p) _Array<BinaryOp>();
         ret->push(node);
@@ -1624,9 +1648,11 @@ _Result<_Vector<CatchClause>, ParserError> Parser::parseCatchClauseList(_Page* _
     _Array<CatchClause>* ret = nullptr;
     while (true) {
         auto _node_result = parseCatchClause(_rp, _p);
-        if (!_node_result.succeeded())
+        CatchClause* node;
+        if (_node_result.succeeded())
+            node = _node_result.getResult();
+        else
             break;
-        CatchClause* node = _node_result.getResult();
         if (!ret)
             ret = new(_p) _Array<CatchClause>();
         ret->push(node);
@@ -1744,9 +1770,11 @@ _Result<_Vector<Postfix>, ParserError> Parser::parsePostfixList(_Page* _rp, _Pag
     _Array<Postfix>* ret = nullptr;
     while (true) {
         auto _node_result = parsePostfix(_rp, _p);
-        if (!_node_result.succeeded())
+        Postfix* node;
+        if (_node_result.succeeded())
+            node = _node_result.getResult();
+        else
             break;
-        Postfix* node = _node_result.getResult();
         if (!ret)
             ret = new(_p) _Array<Postfix>();
         ret->push(node);
@@ -1904,9 +1932,11 @@ _Result<_Vector<ExpressionElement>, ParserError> Parser::parseExpressionElementL
     _Array<ExpressionElement>* ret = nullptr;
     while (true) {
         auto _node_result = parseExpressionElement(_rp, _p);
-        if (!_node_result.succeeded())
+        ExpressionElement* node;
+        if (_node_result.succeeded())
+            node = _node_result.getResult();
+        else
             break;
-        ExpressionElement* node = _node_result.getResult();
         if (!ret)
             ret = new(_p) _Array<ExpressionElement>();
         ret->push(node);
@@ -2669,9 +2699,11 @@ _Result<_Vector<SwitchCase>, ParserError> Parser::parseSwitchCaseList(_Page* _rp
     _Array<SwitchCase>* ret = nullptr;
     while (true) {
         auto _node_result = parseSwitchCase(_rp, _p);
-        if (!_node_result.succeeded())
+        SwitchCase* node;
+        if (_node_result.succeeded())
+            node = _node_result.getResult();
+        else
             break;
-        SwitchCase* node = _node_result.getResult();
         if (!ret)
             ret = new(_p) _Array<SwitchCase>();
         ret->push(node);
@@ -2798,9 +2830,11 @@ _Result<_Vector<CaseItem>, ParserError> Parser::parseCaseItemList(_Page* _rp, _P
     _Array<CaseItem>* ret = nullptr;
     while (true) {
         auto _node_result = parseCaseItem(_rp, _p);
-        if (!_node_result.succeeded())
+        CaseItem* node;
+        if (_node_result.succeeded())
+            node = _node_result.getResult();
+        else
             break;
-        CaseItem* node = _node_result.getResult();
         if (!ret)
             ret = new(_p) _Array<CaseItem>();
         ret->push(node);
@@ -2968,9 +3002,11 @@ _Result<_Vector<TuplePatternElement>, ParserError> Parser::parseTuplePatternElem
     _Array<TuplePatternElement>* ret = nullptr;
     while (true) {
         auto _node_result = parseTuplePatternElement(_rp, _p);
-        if (!_node_result.succeeded())
+        TuplePatternElement* node;
+        if (_node_result.succeeded())
+            node = _node_result.getResult();
+        else
             break;
-        TuplePatternElement* node = _node_result.getResult();
         if (!ret)
             ret = new(_p) _Array<TuplePatternElement>();
         ret->push(node);
@@ -3270,9 +3306,11 @@ _Result<_Vector<TypePostfix>, ParserError> Parser::parseTypePostfixList(_Page* _
     _Array<TypePostfix>* ret = nullptr;
     while (true) {
         auto _node_result = parseTypePostfix(_rp, _p);
-        if (!_node_result.succeeded())
+        TypePostfix* node;
+        if (_node_result.succeeded())
+            node = _node_result.getResult();
+        else
             break;
-        TypePostfix* node = _node_result.getResult();
         if (!ret)
             ret = new(_p) _Array<TypePostfix>();
         ret->push(node);
@@ -3346,9 +3384,11 @@ _Result<_Vector<Inheritance>, ParserError> Parser::parseInheritanceList(_Page* _
     _Array<Inheritance>* ret = nullptr;
     while (true) {
         auto _node_result = parseInheritance(_rp, _p);
-        if (!_node_result.succeeded())
+        Inheritance* node;
+        if (_node_result.succeeded())
+            node = _node_result.getResult();
+        else
             break;
-        Inheritance* node = _node_result.getResult();
         if (!ret)
             ret = new(_p) _Array<Inheritance>();
         ret->push(node);

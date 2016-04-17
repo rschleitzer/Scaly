@@ -208,9 +208,11 @@ _Result<""_Vector<"(id syntax)">, ParserError> Parser::parse"(id syntax)"List(_P
     _Array<"(id syntax)">* ret = nullptr;
     while (true) {
         auto _node_result = parse"(id syntax)"(_rp, _p);
-        if (!_node_result.succeeded())
+        "(id syntax)"* node;
+        if (_node_result.succeeded())
+            node = _node_result.getResult();
+        else
             break;
-        "(id syntax)"* node = _node_result.getResult();
         if (!ret)
             ret = new(_p) _Array<"(id syntax)">();
         ret->push(node);

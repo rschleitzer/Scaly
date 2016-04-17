@@ -1991,6 +1991,7 @@ void CppVisitor::closeThrowExpression(ThrowExpression* throwExpression) {
 }
 
 bool CppVisitor::openBreakExpression(BreakExpression* breakExpression) {
+    sourceFile->append("break;\n");
     return true;
 }
 
