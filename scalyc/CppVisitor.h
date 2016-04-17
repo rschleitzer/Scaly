@@ -180,6 +180,7 @@ public:
     virtual bool openThrowExpression(ThrowExpression* throwExpression);
     virtual String* getReturnType(_Page* _rp, SyntaxNode* SyntaxNode);
     virtual String* getThrownType(_Page* _rp, SyntaxNode* SyntaxNode);
+    virtual bool returnsArray(SyntaxNode* syntaxNode);
     virtual FunctionDeclaration* getFunctionDeclaration(SyntaxNode* syntaxNode);
     virtual void closeThrowExpression(ThrowExpression* throwExpression);
     virtual bool openBreakExpression(BreakExpression* breakExpression);

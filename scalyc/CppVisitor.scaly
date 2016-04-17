@@ -533,6 +533,10 @@ class CppVisitor : SyntaxVisitor {
         return null
     }
 
+    function returnsArray(syntaxNode: SyntaxNode) -> bool {
+        return false
+    }
+
     function getFunctionDeclaration(syntaxNode: SyntaxNode) -> existing FunctionDeclaration {
         return null
     }

@@ -1916,9 +1916,18 @@ bool CppVisitor::openReturnExpression(ReturnExpression* returnExpression) {
             if (thrownType != nullptr)
                 sourceFile->append(thrownType);
             sourceFile->append(">(");
+            returnExpression->expression->accept(this);
+            if (returnsArray(returnExpression)) {
+                sourceFile->append(" ? &");
+                sourceFile->append(returnType);
+                sourceFile->append("::create(_rp, *");
+                returnExpression->expression->accept(this);
+                sourceFile->append(") : 0");
+            }
+            sourceFile->append(")");
         }
     }
-    return true;
+    return false;
 }
 
 void CppVisitor::closeReturnExpression(ReturnExpression* returnExpression) {
@@ -2018,6 +2027,18 @@ String* CppVisitor::getThrownType(_Page* _rp, SyntaxNode* syntaxNode) {
     }
     
     return nullptr;
+}
+
+bool CppVisitor::returnsArray(SyntaxNode* syntaxNode) {
+    FunctionDeclaration* functionDeclaration = getFunctionDeclaration(syntaxNode);
+    if (functionDeclaration != nullptr) {
+        FunctionResult* functionResult = functionDeclaration->signature->result;
+        if (functionResult != nullptr) {
+            if (functionResult->resultType->_isArrayType())
+                return true;
+        }
+    }    
+    return false;
 }
 
 FunctionDeclaration* CppVisitor::getFunctionDeclaration(SyntaxNode* syntaxNode) {
