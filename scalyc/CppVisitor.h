@@ -177,8 +177,8 @@ public:
     virtual bool openReturnExpression(ReturnExpression* returnExpression);
     virtual void closeReturnExpression(ReturnExpression* returnExpression);
     virtual bool openThrowExpression(ThrowExpression* throwExpression);
-    virtual String* getReturnType(_Page* _rp, SyntaxNode* SyntaxNode);
-    virtual String* getThrownType(_Page* _rp, SyntaxNode* SyntaxNode);
+    virtual String* getReturnType(_Page* _rp, SyntaxNode* syntaxNode);
+    virtual String* getThrownType(_Page* _rp, SyntaxNode* syntaxNode);
     virtual bool returnsArray(SyntaxNode* syntaxNode);
     virtual FunctionDeclaration* getFunctionDeclaration(SyntaxNode* syntaxNode);
     virtual void closeThrowExpression(ThrowExpression* throwExpression);

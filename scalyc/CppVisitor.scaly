@@ -389,7 +389,8 @@ class CppVisitor : SyntaxVisitor {
     function closeWildCardCatchPattern(wildCardCatchPattern: WildCardCatchPattern) {
     }
 
-    function visitIdentifierCatchPattern(identifierCatchPattern* identifierCatchPattern);
+    function visitIdentifierCatchPattern(identifierCatchPattern: IdentifierCatchPattern) {
+    }
 
     function visitOperatorPostfix(operatorPostfix: OperatorPostfix) {
     }
@@ -442,6 +443,10 @@ class CppVisitor : SyntaxVisitor {
 
     function getAssignment(syntaxNode: SyntaxNode) -> existing Assignment {
         return null
+    }
+
+    function inRetDeclaration(syntaxNode: SyntaxNode) -> bool {
+        return false
     }
 
     function visitLiteralExpression(literalExpression: LiteralExpression) {
@@ -520,11 +525,11 @@ class CppVisitor : SyntaxVisitor {
         return true
     }
 
-    function getReturnType(throwExpression: ThrowExpression) -> String {
+    function getReturnType(syntaxNode: SyntaxNode) -> String {
         return null
     }
-
-    function getThrownType(throwExpression: ThrowExpression) -> String {
+    
+    function getThrownType(syntaxNode: SyntaxNode) -> String {
         return null
     }
 
