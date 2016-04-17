@@ -1275,7 +1275,7 @@ bool CppVisitor::openCatchClause(CatchClause* catchClause) {
                     indentSource();
                     sourceFile->append("if (_");
                     sourceFile->append(identifierPattern->identifier);
-                    sourceFile->append("_result.succeeded())\n");
+                    sourceFile->append("_result.succeeded()) {\n");
                     sourceIndentLevel++;
                     indentSource();
                     sourceFile->append(identifierPattern->identifier);                    
@@ -1283,9 +1283,11 @@ bool CppVisitor::openCatchClause(CatchClause* catchClause) {
                     sourceFile->append(identifierPattern->identifier);                    
                     sourceFile->append("_result.getResult();\n");
                     sourceIndentLevel--;
+                    indentSource();
+                    sourceFile->append("}\n");
                     if (catchClause->catchPattern->_isWildCardCatchPattern()) {
                         indentSource();
-                        sourceFile->append("else\n");
+                        sourceFile->append("else {\n");
                         sourceIndentLevel++;
                         indentSource();
                         if (catchClause->expression->_isSimpleExpression()) {
@@ -1299,6 +1301,8 @@ bool CppVisitor::openCatchClause(CatchClause* catchClause) {
                         catchClause->expression->accept(this);
                         sourceFile->append(";\n");
                         sourceIndentLevel--;
+                        indentSource();
+                        sourceFile->append("}\n");
                     }
                 }
             }

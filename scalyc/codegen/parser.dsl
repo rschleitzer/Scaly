@@ -209,10 +209,12 @@ _Result<""_Vector<"(id syntax)">, ParserError> Parser::parse"(id syntax)"List(_P
     while (true) {
         auto _node_result = parse"(id syntax)"(_rp, _ep);
         "(id syntax)"* node;
-        if (_node_result.succeeded())
+        if (_node_result.succeeded()) {
             node = _node_result.getResult();
-        else
+        }
+        else {
             break;
+        }
         if (ret == nullptr)
             ret = new(_p) _Array<"(id syntax)">();
         ret->push(node);
@@ -232,10 +234,12 @@ _Result<"(id syntax)", ParserError> Parser::parse"(id syntax)"(_Page* _rp, _Page
 "    {
         _Region _region; _Page* _p = _region.get();
         _Result<"(link content)", ParserError> result = parse"(link content)"(_rp, _p);
-        if (result.succeeded())
+        if (result.succeeded()) {
             return _Result<"(id syntax)", ParserError>(result.getResult());
-        else
+        }
+        else {
             errors->push(result.getError());
+        }
     }
 "
                 )))
@@ -249,9 +253,10 @@ _Result<"(id syntax)", ParserError> Parser::parse"(id syntax)"(_Page* _rp, _Page
                         ($ ; non-terminals
 "    auto _"(property content)"_result = parse"(link content)(if (multiple? content) "List" "")"(_rp, _ep);
     "(if (string=? "syntax" (type content)) ($ (if (multiple? content) "_Vector<" "")(link content)(if (multiple? content) ">" "") "* ") "")(property content)";
-    if (_"(property content)"_result.succeeded())
+    if (_"(property content)"_result.succeeded()) {
         "(property content)" = _"(property content)"_result.getResult();
-    else
+    }
+    else {
 "                            (if (optional? content)
                                 ($
 "        "(property content)" = nullptr;
@@ -260,6 +265,8 @@ _Result<"(id syntax)", ParserError> Parser::parse"(id syntax)"(_Page* _rp, _Page
 "        return _Result<"(id syntax)", ParserError>(_"(property content)"_result.getError());
 "                               )
                             )
+"   }
+"
                             (if (top? syntax) ($
 "    if ("(property content)" != nullptr) {
         if (!isAtEnd()) {
