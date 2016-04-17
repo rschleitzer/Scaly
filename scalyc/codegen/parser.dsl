@@ -37,7 +37,7 @@
 "                (apply-to-children-of syntax (lambda (content) ($
 "
         {
-            let node: "(link content)" = parse"(link content)"() catch _(error) {
+            let node: "(link content)" = parse"(link content)"() catch _ (error) {
                 errors.push(error)
                 break
             }
@@ -56,14 +56,14 @@
 "        mutable start: Position = lexer.getPreviousPosition()
 "                   (if (string=? "syntax" (type content))
                         ($ ; non-terminals
-"        let "(property content)": "(if (multiple? content) "[" "")(link content)(if (multiple? content) "]" "")" = parse"(link content)(if (multiple? content) "List" "")"() catch _(error)"
+"        let "(property content)": "(if (multiple? content) "[" "")(link content)(if (multiple? content) "]" "")" = parse"(link content)(if (multiple? content) "List" "")"() catch _ (error)"
                     (if (optional? content)
                         " null
 "                       ($
 "
-            throw ("(if (string=? (type content) "syntax") "error" ($ "ParserError."
+            throw "(if (string=? (type content) "syntax") "error" ($ "ParserError."
                 (case (type content) (("keyword") "Keyword") (("punctuation") "Punctuation")(("identifier") "Identifier")(("literal") "Literal")(("prefixoperator" "binaryoperator" "postfixoperator") "Operator"))
-                "Expected(start"(case (type content) (("keyword" "punctuation") ($ ", String("((if (string=? (type content) "keyword") name-of-link link) content)")"))(else ""))"))"))")
+                "Expected(start"(case (type content) (("keyword" "punctuation") ($ ", String("((if (string=? (type content) "keyword") name-of-link link) content)")"))(else ""))"))"))"
 "                       )
                     )
                            (if (top? syntax) ($
