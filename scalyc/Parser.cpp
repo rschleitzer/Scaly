@@ -93,7 +93,7 @@ _Result<_Vector<TerminatedStatement>, ParserError> Parser::parseTerminatedStatem
             node = _node_result.getResult();
         else
             break;
-        if (!ret)
+        if (ret == nullptr)
             ret = new(_p) _Array<TerminatedStatement>();
         ret->push(node);
     }
@@ -625,7 +625,7 @@ _Result<_Vector<PathIdentifier>, ParserError> Parser::parsePathIdentifierList(_P
             node = _node_result.getResult();
         else
             break;
-        if (!ret)
+        if (ret == nullptr)
             ret = new(_p) _Array<PathIdentifier>();
         ret->push(node);
     }
@@ -733,7 +733,7 @@ _Result<_Vector<PatternInitializer>, ParserError> Parser::parsePatternInitialize
             node = _node_result.getResult();
         else
             break;
-        if (!ret)
+        if (ret == nullptr)
             ret = new(_p) _Array<PatternInitializer>();
         ret->push(node);
     }
@@ -773,7 +773,7 @@ _Result<_Vector<AdditionalInitializer>, ParserError> Parser::parseAdditionalInit
             node = _node_result.getResult();
         else
             break;
-        if (!ret)
+        if (ret == nullptr)
             ret = new(_p) _Array<AdditionalInitializer>();
         ret->push(node);
     }
@@ -813,7 +813,7 @@ _Result<_Vector<Modifier>, ParserError> Parser::parseModifierList(_Page* _rp, _P
             node = _node_result.getResult();
         else
             break;
-        if (!ret)
+        if (ret == nullptr)
             ret = new(_p) _Array<Modifier>();
         ret->push(node);
     }
@@ -994,7 +994,7 @@ _Result<_Vector<ParameterClause>, ParserError> Parser::parseParameterClauseList(
             node = _node_result.getResult();
         else
             break;
-        if (!ret)
+        if (ret == nullptr)
             ret = new(_p) _Array<ParameterClause>();
         ret->push(node);
     }
@@ -1049,7 +1049,7 @@ _Result<_Vector<Parameter>, ParserError> Parser::parseParameterList(_Page* _rp, 
             node = _node_result.getResult();
         else
             break;
-        if (!ret)
+        if (ret == nullptr)
             ret = new(_p) _Array<Parameter>();
         ret->push(node);
     }
@@ -1194,7 +1194,7 @@ _Result<_Vector<EnumMember>, ParserError> Parser::parseEnumMemberList(_Page* _rp
             node = _node_result.getResult();
         else
             break;
-        if (!ret)
+        if (ret == nullptr)
             ret = new(_p) _Array<EnumMember>();
         ret->push(node);
     }
@@ -1272,7 +1272,7 @@ _Result<_Vector<AdditionalCase>, ParserError> Parser::parseAdditionalCaseList(_P
             node = _node_result.getResult();
         else
             break;
-        if (!ret)
+        if (ret == nullptr)
             ret = new(_p) _Array<AdditionalCase>();
         ret->push(node);
     }
@@ -1388,7 +1388,7 @@ _Result<_Vector<GenericParameter>, ParserError> Parser::parseGenericParameterLis
             node = _node_result.getResult();
         else
             break;
-        if (!ret)
+        if (ret == nullptr)
             ret = new(_p) _Array<GenericParameter>();
         ret->push(node);
     }
@@ -1421,7 +1421,7 @@ _Result<_Vector<ClassMember>, ParserError> Parser::parseClassMemberList(_Page* _
             node = _node_result.getResult();
         else
             break;
-        if (!ret)
+        if (ret == nullptr)
             ret = new(_p) _Array<ClassMember>();
         ret->push(node);
     }
@@ -1505,7 +1505,7 @@ _Result<_Vector<BinaryOp>, ParserError> Parser::parseBinaryOpList(_Page* _rp, _P
             node = _node_result.getResult();
         else
             break;
-        if (!ret)
+        if (ret == nullptr)
             ret = new(_p) _Array<BinaryOp>();
         ret->push(node);
     }
@@ -1653,7 +1653,7 @@ _Result<_Vector<CatchClause>, ParserError> Parser::parseCatchClauseList(_Page* _
             node = _node_result.getResult();
         else
             break;
-        if (!ret)
+        if (ret == nullptr)
             ret = new(_p) _Array<CatchClause>();
         ret->push(node);
     }
@@ -1775,7 +1775,7 @@ _Result<_Vector<Postfix>, ParserError> Parser::parsePostfixList(_Page* _rp, _Pag
             node = _node_result.getResult();
         else
             break;
-        if (!ret)
+        if (ret == nullptr)
             ret = new(_p) _Array<Postfix>();
         ret->push(node);
     }
@@ -1937,7 +1937,7 @@ _Result<_Vector<ExpressionElement>, ParserError> Parser::parseExpressionElementL
             node = _node_result.getResult();
         else
             break;
-        if (!ret)
+        if (ret == nullptr)
             ret = new(_p) _Array<ExpressionElement>();
         ret->push(node);
     }
@@ -2704,7 +2704,7 @@ _Result<_Vector<SwitchCase>, ParserError> Parser::parseSwitchCaseList(_Page* _rp
             node = _node_result.getResult();
         else
             break;
-        if (!ret)
+        if (ret == nullptr)
             ret = new(_p) _Array<SwitchCase>();
         ret->push(node);
     }
@@ -2835,7 +2835,7 @@ _Result<_Vector<CaseItem>, ParserError> Parser::parseCaseItemList(_Page* _rp, _P
             node = _node_result.getResult();
         else
             break;
-        if (!ret)
+        if (ret == nullptr)
             ret = new(_p) _Array<CaseItem>();
         ret->push(node);
     }
@@ -3007,7 +3007,7 @@ _Result<_Vector<TuplePatternElement>, ParserError> Parser::parseTuplePatternElem
             node = _node_result.getResult();
         else
             break;
-        if (!ret)
+        if (ret == nullptr)
             ret = new(_p) _Array<TuplePatternElement>();
         ret->push(node);
     }
@@ -3311,7 +3311,7 @@ _Result<_Vector<TypePostfix>, ParserError> Parser::parseTypePostfixList(_Page* _
             node = _node_result.getResult();
         else
             break;
-        if (!ret)
+        if (ret == nullptr)
             ret = new(_p) _Array<TypePostfix>();
         ret->push(node);
     }
@@ -3389,7 +3389,7 @@ _Result<_Vector<Inheritance>, ParserError> Parser::parseInheritanceList(_Page* _
             node = _node_result.getResult();
         else
             break;
-        if (!ret)
+        if (ret == nullptr)
             ret = new(_p) _Array<Inheritance>();
         ret->push(node);
     }

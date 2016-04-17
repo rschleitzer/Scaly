@@ -213,7 +213,7 @@ _Result<""_Vector<"(id syntax)">, ParserError> Parser::parse"(id syntax)"List(_P
             node = _node_result.getResult();
         else
             break;
-        if (!ret)
+        if (ret == nullptr)
             ret = new(_p) _Array<"(id syntax)">();
         ret->push(node);
     }
