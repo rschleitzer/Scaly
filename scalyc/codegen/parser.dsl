@@ -304,11 +304,11 @@ _Result<"(id syntax)", ParserError> Parser::parse"(id syntax)"(_Page* _rp, _Page
                     (if (multiple? content)
                         ($
 "    if ("(property content)" != nullptr) {
-        "(link content)"* _item = nullptr;
+        "(link content)"* item = nullptr;
         size_t _"(property content)"_length = "(property content)"->length();
         for (size_t _i = 0; _i < _"(property content)"_length; _i++) {
-            _item = *(*"(property content)")[_i];
-            _item->parent = ret;
+            item = *(*"(property content)")[_i];
+            item->parent = ret;
         }
     }
 "                       )
