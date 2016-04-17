@@ -159,6 +159,10 @@ class CppVisitor : SyntaxVisitor {
         return false
     }
 
+    function getFunctionCall(patternInitializer: PatternInitializer) -> existing FunctionCall {
+        return null
+    }
+
     function closeCodeBlock(codeBlock: CodeBlock) {
     }
 

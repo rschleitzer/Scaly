@@ -216,6 +216,39 @@ void CppVisitor::closeTerminatedStatement(TerminatedStatement* terminatedStateme
         return;
     if (terminatedStatement->statement->_isEnumDeclaration())
         return;
+    {
+        BindingInitializer* bindingInitializer = nullptr;
+        if (terminatedStatement->statement->_isConstantDeclaration()) {
+            {
+                ConstantDeclaration* constantDeclaration = (ConstantDeclaration*) terminatedStatement->statement;
+                if (constantDeclaration->initializer->_isBindingInitializer()) {
+                    bindingInitializer = (BindingInitializer*)constantDeclaration->initializer;
+                }
+            }
+            {
+                VariableDeclaration* variableDeclaration = (VariableDeclaration*) terminatedStatement->statement;
+                if (variableDeclaration->initializer->_isBindingInitializer()) {
+                    bindingInitializer = (BindingInitializer*)variableDeclaration->initializer;
+                }
+            }
+            {
+                MutableDeclaration* mutableDeclaration = (MutableDeclaration*) terminatedStatement->statement;
+                if (mutableDeclaration->initializer->_isBindingInitializer()) {
+                    bindingInitializer = (BindingInitializer*)mutableDeclaration->initializer;
+                }
+            }
+        }
+        if (bindingInitializer != nullptr) {
+            if (bindingInitializer->initializer->_isPatternInitializer()) {
+                PatternInitializer* patternInitializer = (PatternInitializer*)bindingInitializer->initializer;
+                FunctionCall* functionCall = getFunctionCall(patternInitializer);
+                if (functionCall != nullptr) {
+                    if (catchesError(functionCall))
+                        return;
+                }
+            }
+        }
+    }
 
     if (terminatedStatement->statement->_isSimpleExpression()) {
         SimpleExpression* expression = (SimpleExpression*)terminatedStatement->statement;
@@ -970,24 +1003,8 @@ bool CppVisitor::localAllocations(CodeBlock* codeBlock) {
                         if (type->_isTypeIdentifier()) {
                             TypeIdentifier* typeIdentifier = (TypeIdentifier*)type;
                             if (isClass(typeIdentifier->name)) {
-                                if (patternInitializer->initializer != nullptr) {
-                                    Expression* expression = patternInitializer->initializer->expression;
-                                    if (expression->_isSimpleExpression()) {
-                                        PrefixExpression* prefixExpression = ((SimpleExpression*)expression)->prefixExpression;
-                                        PostfixExpression* postfixExpression = prefixExpression->expression;
-                                        if (postfixExpression->primaryExpression->_isIdentifierExpression()) {
-                                            if (postfixExpression->postfixes != nullptr) {
-                                                size_t _postfixes_length = postfixExpression->postfixes->length();
-                                                for (size_t _i = 0; _i < _postfixes_length; _i++) {
-                                                    Postfix* postfix = *(*postfixExpression->postfixes)[_i];
-                                                    if (postfix->_isFunctionCall()) {
-                                                        return true;
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
+                                if (getFunctionCall(patternInitializer) != nullptr)
+                                    return true;
                             }
                         }
                     }
@@ -996,6 +1013,28 @@ bool CppVisitor::localAllocations(CodeBlock* codeBlock) {
         }
     }
     return false;
+}
+
+FunctionCall* CppVisitor::getFunctionCall(PatternInitializer* patternInitializer) {
+    if (patternInitializer->initializer != nullptr) {
+        Expression* expression = patternInitializer->initializer->expression;
+        if (expression->_isSimpleExpression()) {
+            PrefixExpression* prefixExpression = ((SimpleExpression*)expression)->prefixExpression;
+            PostfixExpression* postfixExpression = prefixExpression->expression;
+            if (postfixExpression->primaryExpression->_isIdentifierExpression()) {
+                if (postfixExpression->postfixes != nullptr) {
+                    size_t _postfixes_length = postfixExpression->postfixes->length();
+                    for (size_t _i = 0; _i < _postfixes_length; _i++) {
+                        Postfix* postfix = *(*postfixExpression->postfixes)[_i];
+                        if (postfix->_isFunctionCall()) {
+                            return (FunctionCall*)postfix;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    return nullptr;
 }
 
 void CppVisitor::closeCodeBlock(CodeBlock* codeBlock) {
@@ -1258,6 +1297,7 @@ bool CppVisitor::openCatchClause(CatchClause* catchClause) {
                             }
                         }
                         catchClause->expression->accept(this);
+                        sourceFile->append(";\n");
                         sourceIndentLevel--;
                     }
                 }
@@ -1997,8 +2037,6 @@ bool CppVisitor::openBreakExpression(BreakExpression* breakExpression) {
 }
 
 void CppVisitor::closeBreakExpression(BreakExpression* breakExpression) {
-    if (breakExpression->expression == nullptr)
-        sourceFile->append(";\n");
 }
 
 void CppVisitor::visitWildcardPattern(WildcardPattern* wildcardPattern) {
