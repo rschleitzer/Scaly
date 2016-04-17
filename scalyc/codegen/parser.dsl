@@ -265,7 +265,7 @@ _Result<"(id syntax)", ParserError> Parser::parse"(id syntax)"(_Page* _rp, _Page
 "        return _Result<"(id syntax)", ParserError>(_"(property content)"_result.getError());
 "                               )
                             )
-"   }
+"    }
 "
                             (if (top? syntax) ($
 "    if ("(property content)" != nullptr) {
