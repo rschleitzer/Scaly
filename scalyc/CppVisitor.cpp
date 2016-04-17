@@ -261,8 +261,6 @@ void CppVisitor::closeTerminatedStatement(TerminatedStatement* terminatedStateme
             return;
         if (primaryExpression->_isWhileExpression())
             return;
-        if (primaryExpression->_isRepeatExpression())
-            return;
     }
 
     if (terminatedStatement->statement->_isCodeBlock())
@@ -1917,25 +1915,25 @@ bool CppVisitor::openReturnExpression(ReturnExpression* returnExpression) {
     if (returnExpression->expression) {
         sourceFile->append(" ");
         String* returnType = getReturnType(_p, returnExpression);
-        if (returnType != nullptr) {
-            _Region _region; _Page* _p = _region.get();
+        String* thrownType = getThrownType(_p, returnExpression);
+        if (thrownType != nullptr) {
             sourceFile->append("_Result<");
-            sourceFile->append(returnType);
-            sourceFile->append(", ");
-            String* thrownType = getThrownType(_p, returnExpression);
-            if (thrownType != nullptr)
-                sourceFile->append(thrownType);
-            sourceFile->append(">(");
-            returnExpression->expression->accept(this);
-            if (returnsArray(returnExpression)) {
-                sourceFile->append(" ? &");
+            if (returnType != nullptr)
                 sourceFile->append(returnType);
-                sourceFile->append("::create(_rp, *");
-                returnExpression->expression->accept(this);
-                sourceFile->append(") : 0");
-            }
-            sourceFile->append(")");
+            sourceFile->append(", ");
+            sourceFile->append(thrownType);
+            sourceFile->append(">(");
         }
+        returnExpression->expression->accept(this);
+        if (returnsArray(returnExpression)) {
+            sourceFile->append(" ? &");
+            sourceFile->append(returnType);
+            sourceFile->append("::create(_rp, *");
+            returnExpression->expression->accept(this);
+            sourceFile->append(") : 0");
+        }
+        if (thrownType != nullptr)
+            sourceFile->append(")");
     }
     return false;
 }
