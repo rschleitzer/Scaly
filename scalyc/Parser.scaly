@@ -71,9 +71,14 @@ class Parser {
     }
 
     function parseTerminatedStatementList() -> [TerminatedStatement] throws ParserError {
-        mutable ret: [TerminatedStatement]? = [TerminatedStatement]()
-        while true
-            ret.push(parseTerminatedStatement() catch _ break)
+        mutable ret: [TerminatedStatement]? = null
+        while true {
+            let node: TerminatedStatement = parseTerminatedStatement()
+                catch _ break
+            if ret == null
+                ret = [TerminatedStatement]();
+            ret.push(node)
+        }
         return ret
     }
 
@@ -442,9 +447,14 @@ class Parser {
     }
 
     function parsePathIdentifierList() -> [PathIdentifier] throws ParserError {
-        mutable ret: [PathIdentifier]? = [PathIdentifier]()
-        while true
-            ret.push(parsePathIdentifier() catch _ break)
+        mutable ret: [PathIdentifier]? = null
+        while true {
+            let node: PathIdentifier = parsePathIdentifier()
+                catch _ break
+            if ret == null
+                ret = [PathIdentifier]();
+            ret.push(node)
+        }
         return ret
     }
 
@@ -507,9 +517,14 @@ class Parser {
     }
 
     function parsePatternInitializerList() -> [PatternInitializer] throws ParserError {
-        mutable ret: [PatternInitializer]? = [PatternInitializer]()
-        while true
-            ret.push(parsePatternInitializer() catch _ break)
+        mutable ret: [PatternInitializer]? = null
+        while true {
+            let node: PatternInitializer = parsePatternInitializer()
+                catch _ break
+            if ret == null
+                ret = [PatternInitializer]();
+            ret.push(node)
+        }
         return ret
     }
 
@@ -529,9 +544,14 @@ class Parser {
     }
 
     function parseAdditionalInitializerList() -> [AdditionalInitializer] throws ParserError {
-        mutable ret: [AdditionalInitializer]? = [AdditionalInitializer]()
-        while true
-            ret.push(parseAdditionalInitializer() catch _ break)
+        mutable ret: [AdditionalInitializer]? = null
+        while true {
+            let node: AdditionalInitializer = parseAdditionalInitializer()
+                catch _ break
+            if ret == null
+                ret = [AdditionalInitializer]();
+            ret.push(node)
+        }
         return ret
     }
 
@@ -551,9 +571,14 @@ class Parser {
     }
 
     function parseModifierList() -> [Modifier] throws ParserError {
-        mutable ret: [Modifier]? = [Modifier]()
-        while true
-            ret.push(parseModifier() catch _ break)
+        mutable ret: [Modifier]? = null
+        while true {
+            let node: Modifier = parseModifier()
+                catch _ break
+            if ret == null
+                ret = [Modifier]();
+            ret.push(node)
+        }
         return ret
     }
 
@@ -681,9 +706,14 @@ class Parser {
     }
 
     function parseParameterClauseList() -> [ParameterClause] throws ParserError {
-        mutable ret: [ParameterClause]? = [ParameterClause]()
-        while true
-            ret.push(parseParameterClause() catch _ break)
+        mutable ret: [ParameterClause]? = null
+        while true {
+            let node: ParameterClause = parseParameterClause()
+                catch _ break
+            if ret == null
+                ret = [ParameterClause]();
+            ret.push(node)
+        }
         return ret
     }
 
@@ -709,9 +739,14 @@ class Parser {
     }
 
     function parseParameterList() -> [Parameter] throws ParserError {
-        mutable ret: [Parameter]? = [Parameter]()
-        while true
-            ret.push(parseParameter() catch _ break)
+        mutable ret: [Parameter]? = null
+        while true {
+            let node: Parameter = parseParameter()
+                catch _ break
+            if ret == null
+                ret = [Parameter]();
+            ret.push(node)
+        }
         return ret
     }
 
@@ -810,9 +845,14 @@ class Parser {
     }
 
     function parseEnumMemberList() -> [EnumMember] throws ParserError {
-        mutable ret: [EnumMember]? = [EnumMember]()
-        while true
-            ret.push(parseEnumMember() catch _ break)
+        mutable ret: [EnumMember]? = null
+        while true {
+            let node: EnumMember = parseEnumMember()
+                catch _ break
+            if ret == null
+                ret = [EnumMember]();
+            ret.push(node)
+        }
         return ret
     }
 
@@ -853,9 +893,14 @@ class Parser {
     }
 
     function parseAdditionalCaseList() -> [AdditionalCase] throws ParserError {
-        mutable ret: [AdditionalCase]? = [AdditionalCase]()
-        while true
-            ret.push(parseAdditionalCase() catch _ break)
+        mutable ret: [AdditionalCase]? = null
+        while true {
+            let node: AdditionalCase = parseAdditionalCase()
+                catch _ break
+            if ret == null
+                ret = [AdditionalCase]();
+            ret.push(node)
+        }
         return ret
     }
 
@@ -918,9 +963,14 @@ class Parser {
     }
 
     function parseGenericParameterList() -> [GenericParameter] throws ParserError {
-        mutable ret: [GenericParameter]? = [GenericParameter]()
-        while true
-            ret.push(parseGenericParameter() catch _ break)
+        mutable ret: [GenericParameter]? = null
+        while true {
+            let node: GenericParameter = parseGenericParameter()
+                catch _ break
+            if ret == null
+                ret = [GenericParameter]();
+            ret.push(node)
+        }
         return ret
     }
 
@@ -936,9 +986,14 @@ class Parser {
     }
 
     function parseClassMemberList() -> [ClassMember] throws ParserError {
-        mutable ret: [ClassMember]? = [ClassMember]()
-        while true
-            ret.push(parseClassMember() catch _ break)
+        mutable ret: [ClassMember]? = null
+        while true {
+            let node: ClassMember = parseClassMember()
+                catch _ break
+            if ret == null
+                ret = [ClassMember]();
+            ret.push(node)
+        }
         return ret
     }
 
@@ -990,9 +1045,14 @@ class Parser {
     }
 
     function parseBinaryOpList() -> [BinaryOp] throws ParserError {
-        mutable ret: [BinaryOp]? = [BinaryOp]()
-        while true
-            ret.push(parseBinaryOp() catch _ break)
+        mutable ret: [BinaryOp]? = null
+        while true {
+            let node: BinaryOp = parseBinaryOp()
+                catch _ break
+            if ret == null
+                ret = [BinaryOp]();
+            ret.push(node)
+        }
         return ret
     }
 
@@ -1100,9 +1160,14 @@ class Parser {
     }
 
     function parseCatchClauseList() -> [CatchClause] throws ParserError {
-        mutable ret: [CatchClause]? = [CatchClause]()
-        while true
-            ret.push(parseCatchClause() catch _ break)
+        mutable ret: [CatchClause]? = null
+        while true {
+            let node: CatchClause = parseCatchClause()
+                catch _ break
+            if ret == null
+                ret = [CatchClause]();
+            ret.push(node)
+        }
         return ret
     }
 
@@ -1183,9 +1248,14 @@ class Parser {
     }
 
     function parsePostfixList() -> [Postfix] throws ParserError {
-        mutable ret: [Postfix]? = [Postfix]()
-        while true
-            ret.push(parsePostfix() catch _ break)
+        mutable ret: [Postfix]? = null
+        while true {
+            let node: Postfix = parsePostfix()
+                catch _ break
+            if ret == null
+                ret = [Postfix]();
+            ret.push(node)
+        }
         return ret
     }
 
@@ -1298,9 +1368,14 @@ class Parser {
     }
 
     function parseExpressionElementList() -> [ExpressionElement] throws ParserError {
-        mutable ret: [ExpressionElement]? = [ExpressionElement]()
-        while true
-            ret.push(parseExpressionElement() catch _ break)
+        mutable ret: [ExpressionElement]? = null
+        while true {
+            let node: ExpressionElement = parseExpressionElement()
+                catch _ break
+            if ret == null
+                ret = [ExpressionElement]();
+            ret.push(node)
+        }
         return ret
     }
 
@@ -1866,9 +1941,14 @@ class Parser {
     }
 
     function parseSwitchCaseList() -> [SwitchCase] throws ParserError {
-        mutable ret: [SwitchCase]? = [SwitchCase]()
-        while true
-            ret.push(parseSwitchCase() catch _ break)
+        mutable ret: [SwitchCase]? = null
+        while true {
+            let node: SwitchCase = parseSwitchCase()
+                catch _ break
+            if ret == null
+                ret = [SwitchCase]();
+            ret.push(node)
+        }
         return ret
     }
 
@@ -1953,9 +2033,14 @@ class Parser {
     }
 
     function parseCaseItemList() -> [CaseItem] throws ParserError {
-        mutable ret: [CaseItem]? = [CaseItem]()
-        while true
-            ret.push(parseCaseItem() catch _ break)
+        mutable ret: [CaseItem]? = null
+        while true {
+            let node: CaseItem = parseCaseItem()
+                catch _ break
+            if ret == null
+                ret = [CaseItem]();
+            ret.push(node)
+        }
         return ret
     }
 
@@ -2077,9 +2162,14 @@ class Parser {
     }
 
     function parseTuplePatternElementList() -> [TuplePatternElement] throws ParserError {
-        mutable ret: [TuplePatternElement]? = [TuplePatternElement]()
-        while true
-            ret.push(parseTuplePatternElement() catch _ break)
+        mutable ret: [TuplePatternElement]? = null
+        while true {
+            let node: TuplePatternElement = parseTuplePatternElement()
+                catch _ break
+            if ret == null
+                ret = [TuplePatternElement]();
+            ret.push(node)
+        }
         return ret
     }
 
@@ -2297,9 +2387,14 @@ class Parser {
     }
 
     function parseTypePostfixList() -> [TypePostfix] throws ParserError {
-        mutable ret: [TypePostfix]? = [TypePostfix]()
-        while true
-            ret.push(parseTypePostfix() catch _ break)
+        mutable ret: [TypePostfix]? = null
+        while true {
+            let node: TypePostfix = parseTypePostfix()
+                catch _ break
+            if ret == null
+                ret = [TypePostfix]();
+            ret.push(node)
+        }
         return ret
     }
 
@@ -2348,9 +2443,14 @@ class Parser {
     }
 
     function parseInheritanceList() -> [Inheritance] throws ParserError {
-        mutable ret: [Inheritance]? = [Inheritance]()
-        while true
-            ret.push(parseInheritance() catch _ break)
+        mutable ret: [Inheritance]? = null
+        while true {
+            let node: Inheritance = parseInheritance()
+                catch _ break
+            if ret == null
+                ret = [Inheritance]();
+            ret.push(node)
+        }
         return ret
     }
 

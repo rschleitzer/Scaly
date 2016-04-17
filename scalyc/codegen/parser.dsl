@@ -16,9 +16,14 @@
         (if (multiple? syntax) ($
 "
     function parse"(id syntax)"List() -> ["(id syntax)"] throws ParserError {
-        mutable ret: ["(id syntax)"]? = ["(id syntax)"]()
-        while true
-            ret.push(parse"(id syntax)"() catch _ break)
+        mutable ret: ["(id syntax)"]? = null
+        while true {
+            let node: "(id syntax)" = parse"(id syntax)"()
+                catch _ break
+            if ret == null
+                ret = ["(id syntax)"]();
+            ret.push(node)
+        }
         return ret
     }
 "       )"")
@@ -202,15 +207,13 @@ _Result<""_Vector<"(id syntax)">, ParserError> Parser::parse"(id syntax)"List(_P
     _Region _region; _Page* _p = _region.get();
     _Array<"(id syntax)">* ret = nullptr;
     while (true) {
-        _Result<"(id syntax)", ParserError> nodeResult = parse"(id syntax)"(_rp, _p);
-        if (nodeResult.succeeded()) {
-            if (!ret)
-                ret = new(_p) _Array<"(id syntax)">();
-            ret->push(nodeResult.getResult());
-        }
-        else {
+        auto _node_result = parse"(id syntax)"(_rp, _p);
+        if (!_node_result.succeeded())
             break;
-        }
+        "(id syntax)"* node = _node_result.getResult();
+        if (!ret)
+            ret = new(_p) _Array<"(id syntax)">();
+        ret->push(node);
     }
     return _Result<""_Vector<"(id syntax)">, ParserError>(ret ? &_Vector<"(id syntax)">::create(_rp, *ret) : 0);
 }
