@@ -107,11 +107,7 @@
                     )
                 ))
 "
-"               (if (top? syntax) ($
-"        ret.fileName = fileName;
-"
-                )"")
-"        return ret
+        return ret
 "
             ) ; $
         ) ; abstract or not

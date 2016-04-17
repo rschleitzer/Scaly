@@ -67,7 +67,6 @@ class Parser {
                 item.parent = ret
         }
 
-        ret.fileName = fileName;
         return ret
     }
 
