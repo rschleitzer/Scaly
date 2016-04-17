@@ -226,6 +226,10 @@ void CppVisitor::closeTerminatedStatement(TerminatedStatement* terminatedStateme
             return;
         if (primaryExpression->_isForExpression())
             return;
+        if (primaryExpression->_isWhileExpression())
+            return;
+        if (primaryExpression->_isRepeatExpression())
+            return;
     }
 
     if (terminatedStatement->statement->_isCodeBlock())
@@ -1809,7 +1813,23 @@ void CppVisitor::closeForExpression(ForExpression* forExpression) {
 }
 
 bool CppVisitor::openWhileExpression(WhileExpression* whileExpression) {
-    return true;
+    sourceFile->append("while (");
+    whileExpression->condition->accept(this);
+    sourceFile->append(")");
+    if (whileExpression->code->_isSimpleExpression()) {
+        sourceFile->append("\n");
+        sourceIndentLevel++;
+        indentSource();
+        whileExpression->code->accept(this);
+        sourceFile->append(";\n");
+        sourceIndentLevel--;
+    }
+    else {
+        sourceFile->append(" ");
+        whileExpression->code->accept(this);
+    }
+
+    return false;
 }
 
 void CppVisitor::closeWhileExpression(WhileExpression* whileExpression) {
