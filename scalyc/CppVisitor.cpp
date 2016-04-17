@@ -1542,7 +1542,7 @@ void CppVisitor::visitIdentifierExpression(IdentifierExpression* identifierExpre
                         sourceFile->append("&String::create(");
                     else
                         sourceFile->append("new(");
-                    if (inReturn(identifierExpression)) {
+                    if ((inReturn(identifierExpression)) || (inRetDeclaration(identifierExpression))) {
                         sourceFile->append("_rp");
                         if (className->equals("String"))
                             sourceFile->append(", ");
@@ -1623,6 +1623,31 @@ Assignment* CppVisitor::getAssignment(SyntaxNode* syntaxNode) {
     if (parentNode == nullptr)
         return nullptr;
     return getAssignment(parentNode);
+}
+
+bool CppVisitor::inRetDeclaration(SyntaxNode* syntaxNode) {
+    if (syntaxNode == nullptr)
+        return false;
+    BindingInitializer* bindingInitializer = nullptr;
+    do {
+        if (syntaxNode->_isBindingInitializer()) {
+            bindingInitializer = (BindingInitializer*)syntaxNode;
+            break;
+        }
+        syntaxNode = syntaxNode->parent;
+    } 
+    while (syntaxNode != nullptr);
+    if (bindingInitializer == nullptr)
+        return false;
+    if (bindingInitializer->initializer != nullptr) {
+        PatternInitializer* patternInitializer = bindingInitializer->initializer;
+        if (patternInitializer->pattern->_isIdentifierPattern()) {
+            IdentifierPattern* identifierPattern = (IdentifierPattern*)patternInitializer->pattern;
+            return identifierPattern->identifier->equals("ret");
+        }
+    }
+
+    return false;
 }
 
 bool CppVisitor::openIfExpression(IfExpression* ifExpression) {

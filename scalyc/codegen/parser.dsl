@@ -311,7 +311,7 @@ _Result<"(id syntax)", ParserError> Parser::parse"(id syntax)"(_Page* _rp, _Page
 "                       )
                         (if (string=? "syntax" (type content)) ($
                             (if (optional? content) ($
-"    if ("(property content)")
+"    if ("(property content)" != nullptr)
     "                       )"")
 "    "(property content)"->parent = ret;
 "                       )"")

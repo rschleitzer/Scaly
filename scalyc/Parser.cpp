@@ -380,7 +380,7 @@ _Result<FunctionDeclaration, ParserError> Parser::parseFunctionDeclaration(_Page
     }
     name->parent = ret;
     signature->parent = ret;
-    if (body)
+    if (body != nullptr)
         body->parent = ret;
     return _Result<FunctionDeclaration, ParserError>(ret);
 }
@@ -475,11 +475,11 @@ _Result<ClassDeclaration, ParserError> Parser::parseClassDeclaration(_Page* _rp,
         body = nullptr;
     Position* end = lexer->getPosition(_p);
     ClassDeclaration* ret = new(_rp) ClassDeclaration(name, genericArgumentClause, typeInheritanceClause, body, new(_rp) Position(start), new(_rp) Position(end));
-    if (genericArgumentClause)
+    if (genericArgumentClause != nullptr)
         genericArgumentClause->parent = ret;
-    if (typeInheritanceClause)
+    if (typeInheritanceClause != nullptr)
         typeInheritanceClause->parent = ret;
-    if (body)
+    if (body != nullptr)
         body->parent = ret;
     return _Result<ClassDeclaration, ParserError>(ret);
 }
@@ -527,7 +527,7 @@ _Result<InitializerDeclaration, ParserError> Parser::parseInitializerDeclaration
             (*(*modifiers)[_i])->parent = ret;
     }
     parameterClause->parent = ret;
-    if (throwsClause)
+    if (throwsClause != nullptr)
         throwsClause->parent = ret;
     body->parent = ret;
     return _Result<InitializerDeclaration, ParserError>(ret);
@@ -734,7 +734,7 @@ _Result<PatternInitializer, ParserError> Parser::parsePatternInitializer(_Page* 
     Position* end = lexer->getPosition(_p);
     PatternInitializer* ret = new(_rp) PatternInitializer(pattern, initializer, new(_rp) Position(start), new(_rp) Position(end));
     pattern->parent = ret;
-    if (initializer)
+    if (initializer != nullptr)
         initializer->parent = ret;
     return _Result<PatternInitializer, ParserError>(ret);
 }
@@ -906,9 +906,9 @@ _Result<FunctionSignature, ParserError> Parser::parseFunctionSignature(_Page* _r
     Position* end = lexer->getPosition(_p);
     FunctionSignature* ret = new(_rp) FunctionSignature(parameterClause, result, throwsClause, new(_rp) Position(start), new(_rp) Position(end));
     parameterClause->parent = ret;
-    if (result)
+    if (result != nullptr)
         result->parent = ret;
-    if (throwsClause)
+    if (throwsClause != nullptr)
         throwsClause->parent = ret;
     return _Result<FunctionSignature, ParserError>(ret);
 }
@@ -938,7 +938,7 @@ _Result<FunctionResult, ParserError> Parser::parseFunctionResult(_Page* _rp, _Pa
         return _Result<FunctionResult, ParserError>(_resultType_result.getError());
     Position* end = lexer->getPosition(_p);
     FunctionResult* ret = new(_rp) FunctionResult(existingObject, resultType, new(_rp) Position(start), new(_rp) Position(end));
-    if (existingObject)
+    if (existingObject != nullptr)
         existingObject->parent = ret;
     resultType->parent = ret;
     return _Result<FunctionResult, ParserError>(ret);
@@ -1211,7 +1211,7 @@ _Result<EnumMember, ParserError> Parser::parseEnumMember(_Page* _rp, _Page* _ep)
         for (size_t _i = 0; _i < _additionalCases_length; _i++)
             (*(*additionalCases)[_i])->parent = ret;
     }
-    if (parameterClause)
+    if (parameterClause != nullptr)
         parameterClause->parent = ret;
     return _Result<EnumMember, ParserError>(ret);
 }
@@ -1653,7 +1653,7 @@ _Result<CatchClause, ParserError> Parser::parseCatchClause(_Page* _rp, _Page* _e
     Position* end = lexer->getPosition(_p);
     CatchClause* ret = new(_rp) CatchClause(catchPattern, bindingPattern, expression, new(_rp) Position(start), new(_rp) Position(end));
     catchPattern->parent = ret;
-    if (bindingPattern)
+    if (bindingPattern != nullptr)
         bindingPattern->parent = ret;
     expression->parent = ret;
     return _Result<CatchClause, ParserError>(ret);
@@ -2137,7 +2137,7 @@ _Result<IfExpression, ParserError> Parser::parseIfExpression(_Page* _rp, _Page* 
     IfExpression* ret = new(_rp) IfExpression(condition, consequent, elseClause, new(_rp) Position(start), new(_rp) Position(end));
     condition->parent = ret;
     consequent->parent = ret;
-    if (elseClause)
+    if (elseClause != nullptr)
         elseClause->parent = ret;
     return _Result<IfExpression, ParserError>(ret);
 }
@@ -2339,7 +2339,7 @@ _Result<ReturnExpression, ParserError> Parser::parseReturnExpression(_Page* _rp,
         expression = nullptr;
     Position* end = lexer->getPosition(_p);
     ReturnExpression* ret = new(_rp) ReturnExpression(expression, new(_rp) Position(start), new(_rp) Position(end));
-    if (expression)
+    if (expression != nullptr)
         expression->parent = ret;
     return _Result<ReturnExpression, ParserError>(ret);
 }
@@ -2363,7 +2363,7 @@ _Result<ThrowExpression, ParserError> Parser::parseThrowExpression(_Page* _rp, _
         expression = nullptr;
     Position* end = lexer->getPosition(_p);
     ThrowExpression* ret = new(_rp) ThrowExpression(expression, new(_rp) Position(start), new(_rp) Position(end));
-    if (expression)
+    if (expression != nullptr)
         expression->parent = ret;
     return _Result<ThrowExpression, ParserError>(ret);
 }
@@ -2387,7 +2387,7 @@ _Result<BreakExpression, ParserError> Parser::parseBreakExpression(_Page* _rp, _
         expression = nullptr;
     Position* end = lexer->getPosition(_p);
     BreakExpression* ret = new(_rp) BreakExpression(expression, new(_rp) Position(start), new(_rp) Position(end));
-    if (expression)
+    if (expression != nullptr)
         expression->parent = ret;
     return _Result<BreakExpression, ParserError>(ret);
 }
@@ -2876,7 +2876,7 @@ _Result<IdentifierPattern, ParserError> Parser::parseIdentifierPattern(_Page* _r
         annotationForType = nullptr;
     Position* end = lexer->getPosition(_p);
     IdentifierPattern* ret = new(_rp) IdentifierPattern(identifier, annotationForType, new(_rp) Position(start), new(_rp) Position(end));
-    if (annotationForType)
+    if (annotationForType != nullptr)
         annotationForType->parent = ret;
     return _Result<IdentifierPattern, ParserError>(ret);
 }
@@ -3128,7 +3128,7 @@ _Result<TypeIdentifier, ParserError> Parser::parseTypeIdentifier(_Page* _rp, _Pa
         postfixes = nullptr;
     Position* end = lexer->getPosition(_p);
     TypeIdentifier* ret = new(_rp) TypeIdentifier(name, subType, postfixes, new(_rp) Position(start), new(_rp) Position(end));
-    if (subType)
+    if (subType != nullptr)
         subType->parent = ret;
     if (postfixes) {
         size_t _postfixes_length = postfixes->length();
