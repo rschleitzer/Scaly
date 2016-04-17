@@ -1330,7 +1330,7 @@ bool CppVisitor::openWildCardCatchPattern(WildCardCatchPattern* wildCardCatchPat
 void CppVisitor::closeWildCardCatchPattern(WildCardCatchPattern* wildCardCatchPattern) {
 }
 
-void CppVisitor::visitIdentifierCatchPattern(IdentifierCatchPattern* pathItemCatchPattern) {
+void CppVisitor::visitIdentifierCatchPattern(IdentifierCatchPattern* identifierCatchPattern) {
     return;
 }
 
