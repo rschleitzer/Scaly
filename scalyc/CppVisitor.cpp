@@ -1249,9 +1249,13 @@ bool CppVisitor::openCatchClause(CatchClause* catchClause) {
                         sourceFile->append("else\n");
                         sourceIndentLevel++;
                         indentSource();
-                        if (!catchClause->expression->_isReturnExpression()) {
-                            sourceFile->append(identifierPattern->identifier);
-                            sourceFile->append(" = ");
+                        if (catchClause->expression->_isSimpleExpression()) {
+                            SimpleExpression* simpleExpression = (SimpleExpression*)catchClause->expression;
+                            PrimaryExpression* primaryExpression = simpleExpression->prefixExpression->expression->primaryExpression;
+                            if ((!primaryExpression->_isReturnExpression()) && (!primaryExpression->_isBreakExpression())) {
+                                sourceFile->append(identifierPattern->identifier);
+                                sourceFile->append(" = ");
+                            }
                         }
                         catchClause->expression->accept(this);
                         sourceIndentLevel--;
