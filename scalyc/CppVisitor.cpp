@@ -1766,7 +1766,7 @@ bool CppVisitor::openForExpression(ForExpression* forExpression) {
     Pattern* pattern = forExpression->pattern;
     pattern->accept(this);    
     if (pattern->_isIdentifierPattern()) {
-        sourceFile->append(" = 0;\n");
+        sourceFile->append(" = nullptr;\n");
         indentSource();
         sourceFile->append("size_t _");
         Expression* expression = forExpression->expression;

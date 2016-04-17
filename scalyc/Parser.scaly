@@ -63,7 +63,7 @@ class Parser {
         var ret: CompilationUnit = CompilationUnit(statements, Position(start), Position(end))
         ret.fileName = fileName;
         if statements != null {
-            for item in statements
+            for item: TerminatedStatement in statements
                 item.parent = ret
         }
 
@@ -236,7 +236,7 @@ class Parser {
         var ret: UseDeclaration = UseDeclaration(importModule, importExtensions, Position(start), Position(end))
        importModule.parent = ret
         if importExtensions != null {
-            for item in importExtensions
+            for item: PathIdentifier in importExtensions
                 item.parent = ret
         }
 
@@ -306,7 +306,7 @@ class Parser {
         mutable end: Position = lexer.getPosition()
         var ret: FunctionDeclaration = FunctionDeclaration(modifiers, name, signature, body, Position(start), Position(end))
         if modifiers != null {
-            for item in modifiers
+            for item: Modifier in modifiers
                 item.parent = ret
         }
        name.parent = ret
@@ -340,7 +340,7 @@ class Parser {
         mutable end: Position = lexer.getPosition()
         var ret: EnumDeclaration = EnumDeclaration(name, members, Position(start), Position(end))
         if members != null {
-            for item in members
+            for item: EnumMember in members
                 item.parent = ret
         }
 
@@ -392,7 +392,7 @@ class Parser {
         mutable end: Position = lexer.getPosition()
         var ret: InitializerDeclaration = InitializerDeclaration(modifiers, parameterClause, throwsClause, body, Position(start), Position(end))
         if modifiers != null {
-            for item in modifiers
+            for item: Modifier in modifiers
                 item.parent = ret
         }
        parameterClause.parent = ret
@@ -418,7 +418,7 @@ class Parser {
         mutable end: Position = lexer.getPosition()
         var ret: CodeBlock = CodeBlock(statements, Position(start), Position(end))
         if statements != null {
-            for item in statements
+            for item: TerminatedStatement in statements
                 item.parent = ret
         }
 
@@ -435,7 +435,7 @@ class Parser {
         var ret: SimpleExpression = SimpleExpression(prefixExpression, binaryOps, Position(start), Position(end))
        prefixExpression.parent = ret
         if binaryOps != null {
-            for item in binaryOps
+            for item: BinaryOp in binaryOps
                 item.parent = ret
         }
 
@@ -500,7 +500,7 @@ class Parser {
         var ret: BindingInitializer = BindingInitializer(initializer, additionalInitializers, Position(start), Position(end))
        initializer.parent = ret
         if additionalInitializers != null {
-            for item in additionalInitializers
+            for item: AdditionalInitializer in additionalInitializers
                 item.parent = ret
         }
 
@@ -702,7 +702,7 @@ class Parser {
         mutable end: Position = lexer.getPosition()
         var ret: ParameterClause = ParameterClause(parameters, Position(start), Position(end))
         if parameters != null {
-            for item in parameters
+            for item: Parameter in parameters
                 item.parent = ret
         }
 
@@ -833,7 +833,7 @@ class Parser {
         var ret: EnumMember = EnumMember(enumCase, additionalCases, parameterClause, Position(start), Position(end))
        enumCase.parent = ret
         if additionalCases != null {
-            for item in additionalCases
+            for item: AdditionalCase in additionalCases
                 item.parent = ret
         }
        if parameterClause != null
@@ -889,7 +889,7 @@ class Parser {
         mutable end: Position = lexer.getPosition()
         var ret: ClassBody = ClassBody(members, Position(start), Position(end))
         if members != null {
-            for item in members
+            for item: ClassMember in members
                 item.parent = ret
         }
 
@@ -911,7 +911,7 @@ class Parser {
         mutable end: Position = lexer.getPosition()
         var ret: GenericArgumentClause = GenericArgumentClause(genericParameters, Position(start), Position(end))
         if genericParameters != null {
-            for item in genericParameters
+            for item: GenericParameter in genericParameters
                 item.parent = ret
         }
 
@@ -983,7 +983,7 @@ class Parser {
         var ret: PostfixExpression = PostfixExpression(primaryExpression, postfixes, Position(start), Position(end))
        primaryExpression.parent = ret
         if postfixes != null {
-            for item in postfixes
+            for item: Postfix in postfixes
                 item.parent = ret
         }
 
@@ -1176,7 +1176,7 @@ class Parser {
         var ret: PathItemCatchPattern = PathItemCatchPattern(catchCase, catchCaseExtensions, Position(start), Position(end))
        catchCase.parent = ret
         if catchCaseExtensions != null {
-            for item in catchCaseExtensions
+            for item: PathIdentifier in catchCaseExtensions
                 item.parent = ret
         }
 
@@ -1254,7 +1254,7 @@ class Parser {
         var ret: FunctionCall = FunctionCall(arguments, catchClauses, Position(start), Position(end))
        arguments.parent = ret
         if catchClauses != null {
-            for item in catchClauses
+            for item: CatchClause in catchClauses
                 item.parent = ret
         }
 
@@ -1291,7 +1291,7 @@ class Parser {
         mutable end: Position = lexer.getPosition()
         var ret: Subscript = Subscript(expressions, Position(start), Position(end))
         if expressions != null {
-            for item in expressions
+            for item: ExpressionElement in expressions
                 item.parent = ret
         }
 
@@ -1636,7 +1636,7 @@ class Parser {
         mutable end: Position = lexer.getPosition()
         var ret: ParenthesizedExpression = ParenthesizedExpression(expressionElements, Position(start), Position(end))
         if expressionElements != null {
-            for item in expressionElements
+            for item: ExpressionElement in expressionElements
                 item.parent = ret
         }
 
@@ -1702,7 +1702,7 @@ class Parser {
        typeToInitialize.parent = ret
        arguments.parent = ret
         if catchClauses != null {
-            for item in catchClauses
+            for item: CatchClause in catchClauses
                 item.parent = ret
         }
 
@@ -1845,7 +1845,7 @@ class Parser {
         mutable end: Position = lexer.getPosition()
         var ret: CurliedSwitchBody = CurliedSwitchBody(cases, Position(start), Position(end))
         if cases != null {
-            for item in cases
+            for item: SwitchCase in cases
                 item.parent = ret
         }
 
@@ -1859,7 +1859,7 @@ class Parser {
         mutable end: Position = lexer.getPosition()
         var ret: NakedSwitchBody = NakedSwitchBody(cases, Position(start), Position(end))
         if cases != null {
-            for item in cases
+            for item: SwitchCase in cases
                 item.parent = ret
         }
 
@@ -1931,7 +1931,7 @@ class Parser {
         var ret: ItemCaseLabel = ItemCaseLabel(pattern, additionalPatterns, Position(start), Position(end))
        pattern.parent = ret
         if additionalPatterns != null {
-            for item in additionalPatterns
+            for item: CaseItem in additionalPatterns
                 item.parent = ret
         }
 
@@ -2059,7 +2059,7 @@ class Parser {
         mutable end: Position = lexer.getPosition()
         var ret: TuplePattern = TuplePattern(elements, Position(start), Position(end))
         if elements != null {
-            for item in elements
+            for item: TuplePatternElement in elements
                 item.parent = ret
         }
 
@@ -2131,7 +2131,7 @@ class Parser {
         mutable end: Position = lexer.getPosition()
         var ret: BlockCaseContent = BlockCaseContent(statements, Position(start), Position(end))
         if statements != null {
-            for item in statements
+            for item: TerminatedStatement in statements
                 item.parent = ret
         }
 
@@ -2235,7 +2235,7 @@ class Parser {
        if subType != null
            subType.parent = ret
         if postfixes != null {
-            for item in postfixes
+            for item: TypePostfix in postfixes
                 item.parent = ret
         }
 
@@ -2260,7 +2260,7 @@ class Parser {
         var ret: ArrayType = ArrayType(elementType, postfixes, Position(start), Position(end))
        elementType.parent = ret
         if postfixes != null {
-            for item in postfixes
+            for item: TypePostfix in postfixes
                 item.parent = ret
         }
 
@@ -2341,7 +2341,7 @@ class Parser {
         mutable end: Position = lexer.getPosition()
         var ret: TypeInheritanceClause = TypeInheritanceClause(inheritances, Position(start), Position(end))
         if inheritances != null {
-            for item in inheritances
+            for item: Inheritance in inheritances
                 item.parent = ret
         }
 
