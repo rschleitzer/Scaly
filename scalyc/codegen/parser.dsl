@@ -234,7 +234,6 @@ _Result<"(id syntax)", ParserError> Parser::parse"(id syntax)"(_Page* _rp, _Page
     Position* start = lexer->getPreviousPosition(_p);
 "                (apply-to-children-of syntax (lambda (content) ($
 "    {
-        _Region _region; _Page* _p = _region.get();
         _Result<"(link content)", ParserError> result = parse"(link content)"(_rp, _p);
         if (result.succeeded()) {
             return _Result<"(id syntax)", ParserError>(result.getResult());
