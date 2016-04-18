@@ -51,7 +51,8 @@
 "
             )
             ($ ; non-abstract syntax
-"        mutable start: Position = lexer.getPreviousPosition()
+"
+        mutable start: Position = lexer.getPreviousPosition()
 "                (apply-to-children-of syntax (lambda (content) ($
                    (if (string=? "syntax" (type content))
                         ($ ; non-terminals

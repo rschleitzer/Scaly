@@ -1506,8 +1506,10 @@ bool CppVisitor::assignedToMutableObject(FunctionCall* functionCall) {
     BindingInitializer* bindingInitializer = getBindingInitializer(functionCall);
     if (bindingInitializer == nullptr)
         return false;
-    if (bindingInitializer->parent->_isMutableDeclaration())
-        return true;
+    if (bindingInitializer->parent->_isMutableDeclaration()) {
+        if (boundToObject(bindingInitializer))
+            return true;
+    }
     return false;
 }
 
@@ -1515,8 +1517,28 @@ bool CppVisitor::assignedToConstantObject(FunctionCall* functionCall) {
     BindingInitializer* bindingInitializer = getBindingInitializer(functionCall);
     if (bindingInitializer == nullptr)
         return false;
-    if (bindingInitializer->parent->_isConstantDeclaration())
-        return true;
+    if (bindingInitializer->parent->_isConstantDeclaration()) {
+        if (boundToObject(bindingInitializer))
+            return true;
+    }
+    return false;
+}
+
+bool CppVisitor::boundToObject(BindingInitializer* bindingInitializer) {
+    PatternInitializer* patternInitializer = bindingInitializer->initializer;
+    if (patternInitializer->pattern->_isIdentifierPattern()) {
+        IdentifierPattern* identifierPattern = (IdentifierPattern*)patternInitializer->pattern;
+        Type* type = identifierPattern->annotationForType->annotationForType;
+        if (type->_isArrayType())
+            return true;
+        if (type->_isTypeIdentifier()) {
+            TypeIdentifier* typeIdentifier = (TypeIdentifier*)type;
+            if (isClass(typeIdentifier->name)) {
+                if (getFunctionCall(patternInitializer) != nullptr)
+                    return true;
+            }
+        }
+    }
     return false;
 }
 

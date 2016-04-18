@@ -495,6 +495,10 @@ class CppVisitor : SyntaxVisitor {
         return false
     }
 
+    function boundToObject(bindingInitializer: BindingInitializer) -> bool {
+        return false
+    }
+
     function assignedToConstantObject(functionCall: FunctionCall) -> bool {
         return false
     }
