@@ -1269,7 +1269,7 @@ bool CppVisitor::openCatchClause(CatchClause* catchClause) {
                     identifierPattern->annotationForType->accept(this);
                     sourceFile->append(" ");
                     sourceFile->append(identifierPattern->identifier);
-                    sourceFile->append(";\n");
+                    sourceFile->append(" = nullptr;\n");
                     indentSource();
                     sourceFile->append("if (_");
                     sourceFile->append(identifierPattern->identifier);

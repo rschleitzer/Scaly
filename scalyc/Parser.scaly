@@ -103,19 +103,19 @@ class Parser {
         {
             let node: Declaration = parseDeclaration() catch _ (error) {
                 errors.push(error)
-                break
             }
 
-            return node
+            if (node != null)
+                return node
         }
 
         {
             let node: Expression = parseExpression() catch _ (error) {
                 errors.push(error)
-                break
             }
 
-            return node
+            if (node != null)
+                return node
         }
 
         throw ParserError.UnableToParse(Position(start), errors)
@@ -128,73 +128,73 @@ class Parser {
         {
             let node: UseDeclaration = parseUseDeclaration() catch _ (error) {
                 errors.push(error)
-                break
             }
 
-            return node
+            if (node != null)
+                return node
         }
 
         {
             let node: ConstantDeclaration = parseConstantDeclaration() catch _ (error) {
                 errors.push(error)
-                break
             }
 
-            return node
+            if (node != null)
+                return node
         }
 
         {
             let node: VariableDeclaration = parseVariableDeclaration() catch _ (error) {
                 errors.push(error)
-                break
             }
 
-            return node
+            if (node != null)
+                return node
         }
 
         {
             let node: MutableDeclaration = parseMutableDeclaration() catch _ (error) {
                 errors.push(error)
-                break
             }
 
-            return node
+            if (node != null)
+                return node
         }
 
         {
             let node: FunctionDeclaration = parseFunctionDeclaration() catch _ (error) {
                 errors.push(error)
-                break
             }
 
-            return node
+            if (node != null)
+                return node
         }
 
         {
             let node: EnumDeclaration = parseEnumDeclaration() catch _ (error) {
                 errors.push(error)
-                break
             }
 
-            return node
+            if (node != null)
+                return node
         }
 
         {
             let node: ClassDeclaration = parseClassDeclaration() catch _ (error) {
                 errors.push(error)
-                break
             }
 
-            return node
+            if (node != null)
+                return node
         }
 
         {
             let node: InitializerDeclaration = parseInitializerDeclaration() catch _ (error) {
                 errors.push(error)
-                break
             }
 
-            return node
+            if (node != null)
+                return node
         }
 
         throw ParserError.UnableToParse(Position(start), errors)
@@ -207,19 +207,19 @@ class Parser {
         {
             let node: CodeBlock = parseCodeBlock() catch _ (error) {
                 errors.push(error)
-                break
             }
 
-            return node
+            if (node != null)
+                return node
         }
 
         {
             let node: SimpleExpression = parseSimpleExpression() catch _ (error) {
                 errors.push(error)
-                break
             }
 
-            return node
+            if (node != null)
+                return node
         }
 
         throw ParserError.UnableToParse(Position(start), errors)
@@ -577,19 +577,19 @@ class Parser {
         {
             let node: OverrideWord = parseOverrideWord() catch _ (error) {
                 errors.push(error)
-                break
             }
 
-            return node
+            if (node != null)
+                return node
         }
 
         {
             let node: StaticWord = parseStaticWord() catch _ (error) {
                 errors.push(error)
-                break
             }
 
-            return node
+            if (node != null)
+                return node
         }
 
         throw ParserError.UnableToParse(Position(start), errors)
@@ -626,10 +626,10 @@ class Parser {
         {
             let node: IdentifierFunction = parseIdentifierFunction() catch _ (error) {
                 errors.push(error)
-                break
             }
 
-            return node
+            if (node != null)
+                return node
         }
 
         throw ParserError.UnableToParse(Position(start), errors)
@@ -746,19 +746,19 @@ class Parser {
         {
             let node: ConstParameter = parseConstParameter() catch _ (error) {
                 errors.push(error)
-                break
             }
 
-            return node
+            if (node != null)
+                return node
         }
 
         {
             let node: VarParameter = parseVarParameter() catch _ (error) {
                 errors.push(error)
-                break
             }
 
-            return node
+            if (node != null)
+                return node
         }
 
         throw ParserError.UnableToParse(Position(start), errors)
@@ -1046,37 +1046,37 @@ class Parser {
         {
             let node: BinaryOperation = parseBinaryOperation() catch _ (error) {
                 errors.push(error)
-                break
             }
 
-            return node
+            if (node != null)
+                return node
         }
 
         {
             let node: Assignment = parseAssignment() catch _ (error) {
                 errors.push(error)
-                break
             }
 
-            return node
+            if (node != null)
+                return node
         }
 
         {
             let node: TypeQuery = parseTypeQuery() catch _ (error) {
                 errors.push(error)
-                break
             }
 
-            return node
+            if (node != null)
+                return node
         }
 
         {
             let node: TypeCast = parseTypeCast() catch _ (error) {
                 errors.push(error)
-                break
             }
 
-            return node
+            if (node != null)
+                return node
         }
 
         throw ParserError.UnableToParse(Position(start), errors)
@@ -1182,19 +1182,19 @@ class Parser {
         {
             let node: WildCardCatchPattern = parseWildCardCatchPattern() catch _ (error) {
                 errors.push(error)
-                break
             }
 
-            return node
+            if (node != null)
+                return node
         }
 
         {
             let node: IdentifierCatchPattern = parseIdentifierCatchPattern() catch _ (error) {
                 errors.push(error)
-                break
             }
 
-            return node
+            if (node != null)
+                return node
         }
 
         throw ParserError.UnableToParse(Position(start), errors)
@@ -1242,37 +1242,37 @@ class Parser {
         {
             let node: OperatorPostfix = parseOperatorPostfix() catch _ (error) {
                 errors.push(error)
-                break
             }
 
-            return node
+            if (node != null)
+                return node
         }
 
         {
             let node: FunctionCall = parseFunctionCall() catch _ (error) {
                 errors.push(error)
-                break
             }
 
-            return node
+            if (node != null)
+                return node
         }
 
         {
             let node: ExplicitMemberExpression = parseExplicitMemberExpression() catch _ (error) {
                 errors.push(error)
-                break
             }
 
-            return node
+            if (node != null)
+                return node
         }
 
         {
             let node: Subscript = parseSubscript() catch _ (error) {
                 errors.push(error)
-                break
             }
 
-            return node
+            if (node != null)
+                return node
         }
 
         throw ParserError.UnableToParse(Position(start), errors)
@@ -1376,10 +1376,10 @@ class Parser {
         {
             let node: NamedMemberPostfix = parseNamedMemberPostfix() catch _ (error) {
                 errors.push(error)
-                break
             }
 
-            return node
+            if (node != null)
+                return node
         }
 
         throw ParserError.UnableToParse(Position(start), errors)
@@ -1403,136 +1403,136 @@ class Parser {
         {
             let node: IdentifierExpression = parseIdentifierExpression() catch _ (error) {
                 errors.push(error)
-                break
             }
 
-            return node
+            if (node != null)
+                return node
         }
 
         {
             let node: LiteralExpression = parseLiteralExpression() catch _ (error) {
                 errors.push(error)
-                break
             }
 
-            return node
+            if (node != null)
+                return node
         }
 
         {
             let node: IfExpression = parseIfExpression() catch _ (error) {
                 errors.push(error)
-                break
             }
 
-            return node
+            if (node != null)
+                return node
         }
 
         {
             let node: SwitchExpression = parseSwitchExpression() catch _ (error) {
                 errors.push(error)
-                break
             }
 
-            return node
+            if (node != null)
+                return node
         }
 
         {
             let node: ForExpression = parseForExpression() catch _ (error) {
                 errors.push(error)
-                break
             }
 
-            return node
+            if (node != null)
+                return node
         }
 
         {
             let node: WhileExpression = parseWhileExpression() catch _ (error) {
                 errors.push(error)
-                break
             }
 
-            return node
+            if (node != null)
+                return node
         }
 
         {
             let node: RepeatExpression = parseRepeatExpression() catch _ (error) {
                 errors.push(error)
-                break
             }
 
-            return node
+            if (node != null)
+                return node
         }
 
         {
             let node: ParenthesizedExpression = parseParenthesizedExpression() catch _ (error) {
                 errors.push(error)
-                break
             }
 
-            return node
+            if (node != null)
+                return node
         }
 
         {
             let node: ReturnExpression = parseReturnExpression() catch _ (error) {
                 errors.push(error)
-                break
             }
 
-            return node
+            if (node != null)
+                return node
         }
 
         {
             let node: ThrowExpression = parseThrowExpression() catch _ (error) {
                 errors.push(error)
-                break
             }
 
-            return node
+            if (node != null)
+                return node
         }
 
         {
             let node: BreakExpression = parseBreakExpression() catch _ (error) {
                 errors.push(error)
-                break
             }
 
-            return node
+            if (node != null)
+                return node
         }
 
         {
             let node: InitializerCall = parseInitializerCall() catch _ (error) {
                 errors.push(error)
-                break
             }
 
-            return node
+            if (node != null)
+                return node
         }
 
         {
             let node: ThisExpression = parseThisExpression() catch _ (error) {
                 errors.push(error)
-                break
             }
 
-            return node
+            if (node != null)
+                return node
         }
 
         {
             let node: SuperExpression = parseSuperExpression() catch _ (error) {
                 errors.push(error)
-                break
             }
 
-            return node
+            if (node != null)
+                return node
         }
 
         {
             let node: NullExpression = parseNullExpression() catch _ (error) {
                 errors.push(error)
-                break
             }
 
-            return node
+            if (node != null)
+                return node
         }
 
         throw ParserError.UnableToParse(Position(start), errors)
@@ -1770,19 +1770,19 @@ class Parser {
         {
             let node: SuperDot = parseSuperDot() catch _ (error) {
                 errors.push(error)
-                break
             }
 
-            return node
+            if (node != null)
+                return node
         }
 
         {
             let node: SuperSubscript = parseSuperSubscript() catch _ (error) {
                 errors.push(error)
-                break
             }
 
-            return node
+            if (node != null)
+                return node
         }
 
         throw ParserError.UnableToParse(Position(start), errors)
@@ -1856,19 +1856,19 @@ class Parser {
         {
             let node: CurliedSwitchBody = parseCurliedSwitchBody() catch _ (error) {
                 errors.push(error)
-                break
             }
 
-            return node
+            if (node != null)
+                return node
         }
 
         {
             let node: NakedSwitchBody = parseNakedSwitchBody() catch _ (error) {
                 errors.push(error)
-                break
             }
 
-            return node
+            if (node != null)
+                return node
         }
 
         throw ParserError.UnableToParse(Position(start), errors)
@@ -1943,19 +1943,19 @@ class Parser {
         {
             let node: ItemCaseLabel = parseItemCaseLabel() catch _ (error) {
                 errors.push(error)
-                break
             }
 
-            return node
+            if (node != null)
+                return node
         }
 
         {
             let node: DefaultCaseLabel = parseDefaultCaseLabel() catch _ (error) {
                 errors.push(error)
-                break
             }
 
-            return node
+            if (node != null)
+                return node
         }
 
         throw ParserError.UnableToParse(Position(start), errors)
@@ -2035,37 +2035,37 @@ class Parser {
         {
             let node: WildcardPattern = parseWildcardPattern() catch _ (error) {
                 errors.push(error)
-                break
             }
 
-            return node
+            if (node != null)
+                return node
         }
 
         {
             let node: IdentifierPattern = parseIdentifierPattern() catch _ (error) {
                 errors.push(error)
-                break
             }
 
-            return node
+            if (node != null)
+                return node
         }
 
         {
             let node: TuplePattern = parseTuplePattern() catch _ (error) {
                 errors.push(error)
-                break
             }
 
-            return node
+            if (node != null)
+                return node
         }
 
         {
             let node: ExpressionPattern = parseExpressionPattern() catch _ (error) {
                 errors.push(error)
-                break
             }
 
-            return node
+            if (node != null)
+                return node
         }
 
         throw ParserError.UnableToParse(Position(start), errors)
@@ -2164,19 +2164,19 @@ class Parser {
         {
             let node: BlockCaseContent = parseBlockCaseContent() catch _ (error) {
                 errors.push(error)
-                break
             }
 
-            return node
+            if (node != null)
+                return node
         }
 
         {
             let node: EmptyCaseContent = parseEmptyCaseContent() catch _ (error) {
                 errors.push(error)
-                break
             }
 
-            return node
+            if (node != null)
+                return node
         }
 
         throw ParserError.UnableToParse(Position(start), errors)
@@ -2215,19 +2215,19 @@ class Parser {
         {
             let node: SuperInit = parseSuperInit() catch _ (error) {
                 errors.push(error)
-                break
             }
 
-            return node
+            if (node != null)
+                return node
         }
 
         {
             let node: SuperMember = parseSuperMember() catch _ (error) {
                 errors.push(error)
-                break
             }
 
-            return node
+            if (node != null)
+                return node
         }
 
         throw ParserError.UnableToParse(Position(start), errors)
@@ -2264,19 +2264,19 @@ class Parser {
         {
             let node: ArrayType = parseArrayType() catch _ (error) {
                 errors.push(error)
-                break
             }
 
-            return node
+            if (node != null)
+                return node
         }
 
         {
             let node: TypeIdentifier = parseTypeIdentifier() catch _ (error) {
                 errors.push(error)
-                break
             }
 
-            return node
+            if (node != null)
+                return node
         }
 
         throw ParserError.UnableToParse(Position(start), errors)
@@ -2375,10 +2375,10 @@ class Parser {
         {
             let node: OptionalType = parseOptionalType() catch _ (error) {
                 errors.push(error)
-                break
             }
 
-            return node
+            if (node != null)
+                return node
         }
 
         throw ParserError.UnableToParse(Position(start), errors)

@@ -39,10 +39,10 @@
         {
             let node: "(link content)" = parse"(link content)"() catch _ (error) {
                 errors.push(error)
-                break
             }
 
-            return node
+            if (node != null)
+                return node
         }
 "
                 )))
@@ -210,7 +210,7 @@ _Result<""_Vector<"(id syntax)">, ParserError> Parser::parse"(id syntax)"List(_P
     _Array<"(id syntax)">* ret = nullptr;
     while (true) {
         auto _node_result = parse"(id syntax)"(_rp, _ep);
-        "(id syntax)"* node;
+        "(id syntax)"* node = nullptr;
         if (_node_result.succeeded()) {
             node = _node_result.getResult();
         }
@@ -234,13 +234,19 @@ _Result<"(id syntax)", ParserError> Parser::parse"(id syntax)"(_Page* _rp, _Page
     Position* start = lexer->getPreviousPosition(_p);
 "                (apply-to-children-of syntax (lambda (content) ($
 "    {
-        _Result<"(link content)", ParserError> result = parse"(link content)"(_rp, _p);
-        if (result.succeeded()) {
-            return _Result<"(id syntax)", ParserError>(result.getResult());
+        auto _node_result = parse"(link content)"(_rp, _ep);
+        "(id syntax)"* node = nullptr;
+        if (_node_result.succeeded()) {
+            node = _node_result.getResult();
         }
         else {
-            errors->push(result.getError());
+            auto error = _node_result.getError();
+            {
+                errors->push(error);
+            }
         }
+        if (node != nullptr)
+            return _Result<"(id syntax)", ParserError>(node);
     }
 "
                 )))
