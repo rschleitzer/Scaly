@@ -262,7 +262,8 @@ _Result<"(id syntax)", ParserError> Parser::parse"(id syntax)"(_Page* _rp, _Page
 "        "(property content)" = nullptr;
 "                               )
                                 ($
-"        return _Result<"(id syntax)", ParserError>(_"(property content)"_result.getError());
+"        auto error = _"(property content)"_result.getError();
+        return _Result<"(id syntax)", ParserError>(error);
 "                               )
                             )
 "    }
