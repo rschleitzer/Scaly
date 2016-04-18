@@ -259,7 +259,7 @@ _Result<"(id syntax)", ParserError> Parser::parse"(id syntax)"(_Page* _rp, _Page
                    (if (string=? "syntax" (type content))
                         ($ ; non-terminals
 "    auto _"(property content)"_result = parse"(link content)(if (multiple? content) "List" "")"(_rp, _ep);
-    "(if (string=? "syntax" (type content)) ($ (if (multiple? content) "_Vector<" "")(link content)(if (multiple? content) ">" "") "* ") "")(property content)";
+    "(if (string=? "syntax" (type content)) ($ (if (multiple? content) "_Vector<" "")(link content)(if (multiple? content) ">" "") "* ") "")(property content)" = nullptr;
     if (_"(property content)"_result.succeeded()) {
         "(property content)" = _"(property content)"_result.getResult();
     }
