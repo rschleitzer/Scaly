@@ -105,7 +105,7 @@ class Parser {
                 errors.push(error)
             }
 
-            if (node != null)
+            if node != null
                 return node
         }
 
@@ -114,7 +114,7 @@ class Parser {
                 errors.push(error)
             }
 
-            if (node != null)
+            if node != null
                 return node
         }
 
@@ -130,7 +130,7 @@ class Parser {
                 errors.push(error)
             }
 
-            if (node != null)
+            if node != null
                 return node
         }
 
@@ -139,7 +139,7 @@ class Parser {
                 errors.push(error)
             }
 
-            if (node != null)
+            if node != null
                 return node
         }
 
@@ -148,7 +148,7 @@ class Parser {
                 errors.push(error)
             }
 
-            if (node != null)
+            if node != null
                 return node
         }
 
@@ -157,7 +157,7 @@ class Parser {
                 errors.push(error)
             }
 
-            if (node != null)
+            if node != null
                 return node
         }
 
@@ -166,7 +166,7 @@ class Parser {
                 errors.push(error)
             }
 
-            if (node != null)
+            if node != null
                 return node
         }
 
@@ -175,7 +175,7 @@ class Parser {
                 errors.push(error)
             }
 
-            if (node != null)
+            if node != null
                 return node
         }
 
@@ -184,7 +184,7 @@ class Parser {
                 errors.push(error)
             }
 
-            if (node != null)
+            if node != null
                 return node
         }
 
@@ -193,7 +193,7 @@ class Parser {
                 errors.push(error)
             }
 
-            if (node != null)
+            if node != null
                 return node
         }
 
@@ -209,7 +209,7 @@ class Parser {
                 errors.push(error)
             }
 
-            if (node != null)
+            if node != null
                 return node
         }
 
@@ -218,7 +218,7 @@ class Parser {
                 errors.push(error)
             }
 
-            if (node != null)
+            if node != null
                 return node
         }
 
@@ -579,7 +579,7 @@ class Parser {
                 errors.push(error)
             }
 
-            if (node != null)
+            if node != null
                 return node
         }
 
@@ -588,7 +588,7 @@ class Parser {
                 errors.push(error)
             }
 
-            if (node != null)
+            if node != null
                 return node
         }
 
@@ -628,7 +628,7 @@ class Parser {
                 errors.push(error)
             }
 
-            if (node != null)
+            if node != null
                 return node
         }
 
@@ -748,7 +748,7 @@ class Parser {
                 errors.push(error)
             }
 
-            if (node != null)
+            if node != null
                 return node
         }
 
@@ -757,7 +757,7 @@ class Parser {
                 errors.push(error)
             }
 
-            if (node != null)
+            if node != null
                 return node
         }
 
@@ -1048,7 +1048,7 @@ class Parser {
                 errors.push(error)
             }
 
-            if (node != null)
+            if node != null
                 return node
         }
 
@@ -1057,7 +1057,7 @@ class Parser {
                 errors.push(error)
             }
 
-            if (node != null)
+            if node != null
                 return node
         }
 
@@ -1066,7 +1066,7 @@ class Parser {
                 errors.push(error)
             }
 
-            if (node != null)
+            if node != null
                 return node
         }
 
@@ -1075,7 +1075,7 @@ class Parser {
                 errors.push(error)
             }
 
-            if (node != null)
+            if node != null
                 return node
         }
 
@@ -1184,7 +1184,7 @@ class Parser {
                 errors.push(error)
             }
 
-            if (node != null)
+            if node != null
                 return node
         }
 
@@ -1193,7 +1193,7 @@ class Parser {
                 errors.push(error)
             }
 
-            if (node != null)
+            if node != null
                 return node
         }
 
@@ -1244,7 +1244,7 @@ class Parser {
                 errors.push(error)
             }
 
-            if (node != null)
+            if node != null
                 return node
         }
 
@@ -1253,7 +1253,7 @@ class Parser {
                 errors.push(error)
             }
 
-            if (node != null)
+            if node != null
                 return node
         }
 
@@ -1262,7 +1262,7 @@ class Parser {
                 errors.push(error)
             }
 
-            if (node != null)
+            if node != null
                 return node
         }
 
@@ -1271,7 +1271,7 @@ class Parser {
                 errors.push(error)
             }
 
-            if (node != null)
+            if node != null
                 return node
         }
 
@@ -1378,7 +1378,7 @@ class Parser {
                 errors.push(error)
             }
 
-            if (node != null)
+            if node != null
                 return node
         }
 
@@ -1405,7 +1405,7 @@ class Parser {
                 errors.push(error)
             }
 
-            if (node != null)
+            if node != null
                 return node
         }
 
@@ -1414,7 +1414,7 @@ class Parser {
                 errors.push(error)
             }
 
-            if (node != null)
+            if node != null
                 return node
         }
 
@@ -1423,7 +1423,7 @@ class Parser {
                 errors.push(error)
             }
 
-            if (node != null)
+            if node != null
                 return node
         }
 
@@ -1432,7 +1432,7 @@ class Parser {
                 errors.push(error)
             }
 
-            if (node != null)
+            if node != null
                 return node
         }
 
@@ -1441,7 +1441,7 @@ class Parser {
                 errors.push(error)
             }
 
-            if (node != null)
+            if node != null
                 return node
         }
 
@@ -1450,7 +1450,7 @@ class Parser {
                 errors.push(error)
             }
 
-            if (node != null)
+            if node != null
                 return node
         }
 
@@ -1459,7 +1459,7 @@ class Parser {
                 errors.push(error)
             }
 
-            if (node != null)
+            if node != null
                 return node
         }
 
@@ -1468,7 +1468,7 @@ class Parser {
                 errors.push(error)
             }
 
-            if (node != null)
+            if node != null
                 return node
         }
 
@@ -1477,7 +1477,7 @@ class Parser {
                 errors.push(error)
             }
 
-            if (node != null)
+            if node != null
                 return node
         }
 
@@ -1486,7 +1486,7 @@ class Parser {
                 errors.push(error)
             }
 
-            if (node != null)
+            if node != null
                 return node
         }
 
@@ -1495,7 +1495,7 @@ class Parser {
                 errors.push(error)
             }
 
-            if (node != null)
+            if node != null
                 return node
         }
 
@@ -1504,7 +1504,7 @@ class Parser {
                 errors.push(error)
             }
 
-            if (node != null)
+            if node != null
                 return node
         }
 
@@ -1513,7 +1513,7 @@ class Parser {
                 errors.push(error)
             }
 
-            if (node != null)
+            if node != null
                 return node
         }
 
@@ -1522,7 +1522,7 @@ class Parser {
                 errors.push(error)
             }
 
-            if (node != null)
+            if node != null
                 return node
         }
 
@@ -1531,7 +1531,7 @@ class Parser {
                 errors.push(error)
             }
 
-            if (node != null)
+            if node != null
                 return node
         }
 
@@ -1772,7 +1772,7 @@ class Parser {
                 errors.push(error)
             }
 
-            if (node != null)
+            if node != null
                 return node
         }
 
@@ -1781,7 +1781,7 @@ class Parser {
                 errors.push(error)
             }
 
-            if (node != null)
+            if node != null
                 return node
         }
 
@@ -1858,7 +1858,7 @@ class Parser {
                 errors.push(error)
             }
 
-            if (node != null)
+            if node != null
                 return node
         }
 
@@ -1867,7 +1867,7 @@ class Parser {
                 errors.push(error)
             }
 
-            if (node != null)
+            if node != null
                 return node
         }
 
@@ -1945,7 +1945,7 @@ class Parser {
                 errors.push(error)
             }
 
-            if (node != null)
+            if node != null
                 return node
         }
 
@@ -1954,7 +1954,7 @@ class Parser {
                 errors.push(error)
             }
 
-            if (node != null)
+            if node != null
                 return node
         }
 
@@ -2037,7 +2037,7 @@ class Parser {
                 errors.push(error)
             }
 
-            if (node != null)
+            if node != null
                 return node
         }
 
@@ -2046,7 +2046,7 @@ class Parser {
                 errors.push(error)
             }
 
-            if (node != null)
+            if node != null
                 return node
         }
 
@@ -2055,7 +2055,7 @@ class Parser {
                 errors.push(error)
             }
 
-            if (node != null)
+            if node != null
                 return node
         }
 
@@ -2064,7 +2064,7 @@ class Parser {
                 errors.push(error)
             }
 
-            if (node != null)
+            if node != null
                 return node
         }
 
@@ -2166,7 +2166,7 @@ class Parser {
                 errors.push(error)
             }
 
-            if (node != null)
+            if node != null
                 return node
         }
 
@@ -2175,7 +2175,7 @@ class Parser {
                 errors.push(error)
             }
 
-            if (node != null)
+            if node != null
                 return node
         }
 
@@ -2217,7 +2217,7 @@ class Parser {
                 errors.push(error)
             }
 
-            if (node != null)
+            if node != null
                 return node
         }
 
@@ -2226,7 +2226,7 @@ class Parser {
                 errors.push(error)
             }
 
-            if (node != null)
+            if node != null
                 return node
         }
 
@@ -2266,7 +2266,7 @@ class Parser {
                 errors.push(error)
             }
 
-            if (node != null)
+            if node != null
                 return node
         }
 
@@ -2275,7 +2275,7 @@ class Parser {
                 errors.push(error)
             }
 
-            if (node != null)
+            if node != null
                 return node
         }
 
@@ -2377,7 +2377,7 @@ class Parser {
                 errors.push(error)
             }
 
-            if (node != null)
+            if node != null
                 return node
         }
 

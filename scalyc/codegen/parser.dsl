@@ -41,7 +41,7 @@
                 errors.push(error)
             }
 
-            if (node != null)
+            if node != null
                 return node
         }
 "
@@ -235,7 +235,7 @@ _Result<"(id syntax)", ParserError> Parser::parse"(id syntax)"(_Page* _rp, _Page
 "                (apply-to-children-of syntax (lambda (content) ($
 "    {
         auto _node_result = parse"(link content)"(_rp, _ep);
-        "(id syntax)"* node = nullptr;
+        "(link content)"* node = nullptr;
         if (_node_result.succeeded()) {
             node = _node_result.getResult();
         }
