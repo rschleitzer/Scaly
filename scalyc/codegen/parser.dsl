@@ -32,7 +32,7 @@
         (if (abstract? syntax)
             ($
 "
-        let errors: [ParserError] = [ParserError]()
+        mutable errors: [ParserError] = [ParserError]()
         mutable start: Position = lexer.getPreviousPosition()
 "                (apply-to-children-of syntax (lambda (content) ($
 "
@@ -230,7 +230,7 @@ _Result<"(id syntax)", ParserError> Parser::parse"(id syntax)"(_Page* _rp, _Page
 "
         (if (abstract? syntax)
             ($
-"    _Array<""ParserError>* errors = new(_ep) _Array<""ParserError>();
+"    _Array<""ParserError>* errors = new(_p) _Array<""ParserError>();
     Position* start = lexer->getPreviousPosition(_p);
 "                (apply-to-children-of syntax (lambda (content) ($
 "    {

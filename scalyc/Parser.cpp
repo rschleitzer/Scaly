@@ -127,7 +127,7 @@ _Result<TerminatedStatement, ParserError> Parser::parseTerminatedStatement(_Page
 
 _Result<Statement, ParserError> Parser::parseStatement(_Page* _rp, _Page* _ep) {
     _Region _region; _Page* _p = _region.get();
-    _Array<ParserError>* errors = new(_ep) _Array<ParserError>();
+    _Array<ParserError>* errors = new(_p) _Array<ParserError>();
     Position* start = lexer->getPreviousPosition(_p);
     {
         _Region _region; _Page* _p = _region.get();
@@ -154,7 +154,7 @@ _Result<Statement, ParserError> Parser::parseStatement(_Page* _rp, _Page* _ep) {
 
 _Result<Declaration, ParserError> Parser::parseDeclaration(_Page* _rp, _Page* _ep) {
     _Region _region; _Page* _p = _region.get();
-    _Array<ParserError>* errors = new(_ep) _Array<ParserError>();
+    _Array<ParserError>* errors = new(_p) _Array<ParserError>();
     Position* start = lexer->getPreviousPosition(_p);
     {
         _Region _region; _Page* _p = _region.get();
@@ -241,7 +241,7 @@ _Result<Declaration, ParserError> Parser::parseDeclaration(_Page* _rp, _Page* _e
 
 _Result<Expression, ParserError> Parser::parseExpression(_Page* _rp, _Page* _ep) {
     _Region _region; _Page* _p = _region.get();
-    _Array<ParserError>* errors = new(_ep) _Array<ParserError>();
+    _Array<ParserError>* errors = new(_p) _Array<ParserError>();
     Position* start = lexer->getPreviousPosition(_p);
     {
         _Region _region; _Page* _p = _region.get();
@@ -912,7 +912,7 @@ _Result<_Vector<Modifier>, ParserError> Parser::parseModifierList(_Page* _rp, _P
 
 _Result<Modifier, ParserError> Parser::parseModifier(_Page* _rp, _Page* _ep) {
     _Region _region; _Page* _p = _region.get();
-    _Array<ParserError>* errors = new(_ep) _Array<ParserError>();
+    _Array<ParserError>* errors = new(_p) _Array<ParserError>();
     Position* start = lexer->getPreviousPosition(_p);
     {
         _Region _region; _Page* _p = _region.get();
@@ -969,7 +969,7 @@ _Result<StaticWord, ParserError> Parser::parseStaticWord(_Page* _rp, _Page* _ep)
 
 _Result<FunctionName, ParserError> Parser::parseFunctionName(_Page* _rp, _Page* _ep) {
     _Region _region; _Page* _p = _region.get();
-    _Array<ParserError>* errors = new(_ep) _Array<ParserError>();
+    _Array<ParserError>* errors = new(_p) _Array<ParserError>();
     Position* start = lexer->getPreviousPosition(_p);
     {
         _Region _region; _Page* _p = _region.get();
@@ -1165,7 +1165,7 @@ _Result<_Vector<Parameter>, ParserError> Parser::parseParameterList(_Page* _rp, 
 
 _Result<Parameter, ParserError> Parser::parseParameter(_Page* _rp, _Page* _ep) {
     _Region _region; _Page* _p = _region.get();
-    _Array<ParserError>* errors = new(_ep) _Array<ParserError>();
+    _Array<ParserError>* errors = new(_p) _Array<ParserError>();
     Position* start = lexer->getPreviousPosition(_p);
     {
         _Region _region; _Page* _p = _region.get();
@@ -1651,7 +1651,7 @@ _Result<_Vector<BinaryOp>, ParserError> Parser::parseBinaryOpList(_Page* _rp, _P
 
 _Result<BinaryOp, ParserError> Parser::parseBinaryOp(_Page* _rp, _Page* _ep) {
     _Region _region; _Page* _p = _region.get();
-    _Array<ParserError>* errors = new(_ep) _Array<ParserError>();
+    _Array<ParserError>* errors = new(_p) _Array<ParserError>();
     Position* start = lexer->getPreviousPosition(_p);
     {
         _Region _region; _Page* _p = _region.get();
@@ -1862,7 +1862,7 @@ _Result<CatchClause, ParserError> Parser::parseCatchClause(_Page* _rp, _Page* _e
 
 _Result<CatchPattern, ParserError> Parser::parseCatchPattern(_Page* _rp, _Page* _ep) {
     _Region _region; _Page* _p = _region.get();
-    _Array<ParserError>* errors = new(_ep) _Array<ParserError>();
+    _Array<ParserError>* errors = new(_p) _Array<ParserError>();
     Position* start = lexer->getPreviousPosition(_p);
     {
         _Region _region; _Page* _p = _region.get();
@@ -1941,7 +1941,7 @@ _Result<_Vector<Postfix>, ParserError> Parser::parsePostfixList(_Page* _rp, _Pag
 
 _Result<Postfix, ParserError> Parser::parsePostfix(_Page* _rp, _Page* _ep) {
     _Region _region; _Page* _p = _region.get();
-    _Array<ParserError>* errors = new(_ep) _Array<ParserError>();
+    _Array<ParserError>* errors = new(_p) _Array<ParserError>();
     Position* start = lexer->getPreviousPosition(_p);
     {
         _Region _region; _Page* _p = _region.get();
@@ -2141,7 +2141,7 @@ _Result<ExpressionElement, ParserError> Parser::parseExpressionElement(_Page* _r
 
 _Result<MemberPostfix, ParserError> Parser::parseMemberPostfix(_Page* _rp, _Page* _ep) {
     _Region _region; _Page* _p = _region.get();
-    _Array<ParserError>* errors = new(_ep) _Array<ParserError>();
+    _Array<ParserError>* errors = new(_p) _Array<ParserError>();
     Position* start = lexer->getPreviousPosition(_p);
     {
         _Region _region; _Page* _p = _region.get();
@@ -2176,7 +2176,7 @@ _Result<NamedMemberPostfix, ParserError> Parser::parseNamedMemberPostfix(_Page* 
 
 _Result<PrimaryExpression, ParserError> Parser::parsePrimaryExpression(_Page* _rp, _Page* _ep) {
     _Region _region; _Page* _p = _region.get();
-    _Array<ParserError>* errors = new(_ep) _Array<ParserError>();
+    _Array<ParserError>* errors = new(_p) _Array<ParserError>();
     Position* start = lexer->getPreviousPosition(_p);
     {
         _Region _region; _Page* _p = _region.get();
@@ -2744,7 +2744,7 @@ _Result<ThisExpression, ParserError> Parser::parseThisExpression(_Page* _rp, _Pa
 
 _Result<SuperExpression, ParserError> Parser::parseSuperExpression(_Page* _rp, _Page* _ep) {
     _Region _region; _Page* _p = _region.get();
-    _Array<ParserError>* errors = new(_ep) _Array<ParserError>();
+    _Array<ParserError>* errors = new(_p) _Array<ParserError>();
     Position* start = lexer->getPreviousPosition(_p);
     {
         _Region _region; _Page* _p = _region.get();
@@ -2868,7 +2868,7 @@ _Result<ElseClause, ParserError> Parser::parseElseClause(_Page* _rp, _Page* _ep)
 
 _Result<SwitchBody, ParserError> Parser::parseSwitchBody(_Page* _rp, _Page* _ep) {
     _Region _region; _Page* _p = _region.get();
-    _Array<ParserError>* errors = new(_ep) _Array<ParserError>();
+    _Array<ParserError>* errors = new(_p) _Array<ParserError>();
     Position* start = lexer->getPreviousPosition(_p);
     {
         _Region _region; _Page* _p = _region.get();
@@ -3006,7 +3006,7 @@ _Result<SwitchCase, ParserError> Parser::parseSwitchCase(_Page* _rp, _Page* _ep)
 
 _Result<CaseLabel, ParserError> Parser::parseCaseLabel(_Page* _rp, _Page* _ep) {
     _Region _region; _Page* _p = _region.get();
-    _Array<ParserError>* errors = new(_ep) _Array<ParserError>();
+    _Array<ParserError>* errors = new(_p) _Array<ParserError>();
     Position* start = lexer->getPreviousPosition(_p);
     {
         _Region _region; _Page* _p = _region.get();
@@ -3147,7 +3147,7 @@ _Result<CaseItem, ParserError> Parser::parseCaseItem(_Page* _rp, _Page* _ep) {
 
 _Result<Pattern, ParserError> Parser::parsePattern(_Page* _rp, _Page* _ep) {
     _Region _region; _Page* _p = _region.get();
-    _Array<ParserError>* errors = new(_ep) _Array<ParserError>();
+    _Array<ParserError>* errors = new(_p) _Array<ParserError>();
     Position* start = lexer->getPreviousPosition(_p);
     {
         _Region _region; _Page* _p = _region.get();
@@ -3331,7 +3331,7 @@ _Result<TuplePatternElement, ParserError> Parser::parseTuplePatternElement(_Page
 
 _Result<CaseContent, ParserError> Parser::parseCaseContent(_Page* _rp, _Page* _ep) {
     _Region _region; _Page* _p = _region.get();
-    _Array<ParserError>* errors = new(_ep) _Array<ParserError>();
+    _Array<ParserError>* errors = new(_p) _Array<ParserError>();
     Position* start = lexer->getPreviousPosition(_p);
     {
         _Region _region; _Page* _p = _region.get();
@@ -3398,7 +3398,7 @@ _Result<EmptyCaseContent, ParserError> Parser::parseEmptyCaseContent(_Page* _rp,
 
 _Result<CommonSuperMember, ParserError> Parser::parseCommonSuperMember(_Page* _rp, _Page* _ep) {
     _Region _region; _Page* _p = _region.get();
-    _Array<ParserError>* errors = new(_ep) _Array<ParserError>();
+    _Array<ParserError>* errors = new(_p) _Array<ParserError>();
     Position* start = lexer->getPreviousPosition(_p);
     {
         _Region _region; _Page* _p = _region.get();
@@ -3455,7 +3455,7 @@ _Result<SuperMember, ParserError> Parser::parseSuperMember(_Page* _rp, _Page* _e
 
 _Result<Type, ParserError> Parser::parseType(_Page* _rp, _Page* _ep) {
     _Region _region; _Page* _p = _region.get();
-    _Array<ParserError>* errors = new(_ep) _Array<ParserError>();
+    _Array<ParserError>* errors = new(_p) _Array<ParserError>();
     Position* start = lexer->getPreviousPosition(_p);
     {
         _Region _region; _Page* _p = _region.get();
@@ -3640,7 +3640,7 @@ _Result<_Vector<TypePostfix>, ParserError> Parser::parseTypePostfixList(_Page* _
 
 _Result<TypePostfix, ParserError> Parser::parseTypePostfix(_Page* _rp, _Page* _ep) {
     _Region _region; _Page* _p = _region.get();
-    _Array<ParserError>* errors = new(_ep) _Array<ParserError>();
+    _Array<ParserError>* errors = new(_p) _Array<ParserError>();
     Position* start = lexer->getPreviousPosition(_p);
     {
         _Region _region; _Page* _p = _region.get();

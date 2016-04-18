@@ -97,7 +97,7 @@ class Parser {
     }
 
     function parseStatement() -> Statement throws ParserError {
-        let errors: [ParserError] = [ParserError]()
+        mutable errors: [ParserError] = [ParserError]()
         mutable start: Position = lexer.getPreviousPosition()
 
         {
@@ -122,7 +122,7 @@ class Parser {
     }
 
     function parseDeclaration() -> Declaration throws ParserError {
-        let errors: [ParserError] = [ParserError]()
+        mutable errors: [ParserError] = [ParserError]()
         mutable start: Position = lexer.getPreviousPosition()
 
         {
@@ -201,7 +201,7 @@ class Parser {
     }
 
     function parseExpression() -> Expression throws ParserError {
-        let errors: [ParserError] = [ParserError]()
+        mutable errors: [ParserError] = [ParserError]()
         mutable start: Position = lexer.getPreviousPosition()
 
         {
@@ -571,7 +571,7 @@ class Parser {
     }
 
     function parseModifier() -> Modifier throws ParserError {
-        let errors: [ParserError] = [ParserError]()
+        mutable errors: [ParserError] = [ParserError]()
         mutable start: Position = lexer.getPreviousPosition()
 
         {
@@ -620,7 +620,7 @@ class Parser {
     }
 
     function parseFunctionName() -> FunctionName throws ParserError {
-        let errors: [ParserError] = [ParserError]()
+        mutable errors: [ParserError] = [ParserError]()
         mutable start: Position = lexer.getPreviousPosition()
 
         {
@@ -740,7 +740,7 @@ class Parser {
     }
 
     function parseParameter() -> Parameter throws ParserError {
-        let errors: [ParserError] = [ParserError]()
+        mutable errors: [ParserError] = [ParserError]()
         mutable start: Position = lexer.getPreviousPosition()
 
         {
@@ -1040,7 +1040,7 @@ class Parser {
     }
 
     function parseBinaryOp() -> BinaryOp throws ParserError {
-        let errors: [ParserError] = [ParserError]()
+        mutable errors: [ParserError] = [ParserError]()
         mutable start: Position = lexer.getPreviousPosition()
 
         {
@@ -1176,7 +1176,7 @@ class Parser {
     }
 
     function parseCatchPattern() -> CatchPattern throws ParserError {
-        let errors: [ParserError] = [ParserError]()
+        mutable errors: [ParserError] = [ParserError]()
         mutable start: Position = lexer.getPreviousPosition()
 
         {
@@ -1236,7 +1236,7 @@ class Parser {
     }
 
     function parsePostfix() -> Postfix throws ParserError {
-        let errors: [ParserError] = [ParserError]()
+        mutable errors: [ParserError] = [ParserError]()
         mutable start: Position = lexer.getPreviousPosition()
 
         {
@@ -1370,7 +1370,7 @@ class Parser {
     }
 
     function parseMemberPostfix() -> MemberPostfix throws ParserError {
-        let errors: [ParserError] = [ParserError]()
+        mutable errors: [ParserError] = [ParserError]()
         mutable start: Position = lexer.getPreviousPosition()
 
         {
@@ -1397,7 +1397,7 @@ class Parser {
     }
 
     function parsePrimaryExpression() -> PrimaryExpression throws ParserError {
-        let errors: [ParserError] = [ParserError]()
+        mutable errors: [ParserError] = [ParserError]()
         mutable start: Position = lexer.getPreviousPosition()
 
         {
@@ -1764,7 +1764,7 @@ class Parser {
     }
 
     function parseSuperExpression() -> SuperExpression throws ParserError {
-        let errors: [ParserError] = [ParserError]()
+        mutable errors: [ParserError] = [ParserError]()
         mutable start: Position = lexer.getPreviousPosition()
 
         {
@@ -1850,7 +1850,7 @@ class Parser {
     }
 
     function parseSwitchBody() -> SwitchBody throws ParserError {
-        let errors: [ParserError] = [ParserError]()
+        mutable errors: [ParserError] = [ParserError]()
         mutable start: Position = lexer.getPreviousPosition()
 
         {
@@ -1937,7 +1937,7 @@ class Parser {
     }
 
     function parseCaseLabel() -> CaseLabel throws ParserError {
-        let errors: [ParserError] = [ParserError]()
+        mutable errors: [ParserError] = [ParserError]()
         mutable start: Position = lexer.getPreviousPosition()
 
         {
@@ -2029,7 +2029,7 @@ class Parser {
     }
 
     function parsePattern() -> Pattern throws ParserError {
-        let errors: [ParserError] = [ParserError]()
+        mutable errors: [ParserError] = [ParserError]()
         mutable start: Position = lexer.getPreviousPosition()
 
         {
@@ -2158,7 +2158,7 @@ class Parser {
     }
 
     function parseCaseContent() -> CaseContent throws ParserError {
-        let errors: [ParserError] = [ParserError]()
+        mutable errors: [ParserError] = [ParserError]()
         mutable start: Position = lexer.getPreviousPosition()
 
         {
@@ -2209,7 +2209,7 @@ class Parser {
     }
 
     function parseCommonSuperMember() -> CommonSuperMember throws ParserError {
-        let errors: [ParserError] = [ParserError]()
+        mutable errors: [ParserError] = [ParserError]()
         mutable start: Position = lexer.getPreviousPosition()
 
         {
@@ -2258,7 +2258,7 @@ class Parser {
     }
 
     function parseType() -> Type throws ParserError {
-        let errors: [ParserError] = [ParserError]()
+        mutable errors: [ParserError] = [ParserError]()
         mutable start: Position = lexer.getPreviousPosition()
 
         {
@@ -2369,7 +2369,7 @@ class Parser {
     }
 
     function parseTypePostfix() -> TypePostfix throws ParserError {
-        let errors: [ParserError] = [ParserError]()
+        mutable errors: [ParserError] = [ParserError]()
         mutable start: Position = lexer.getPreviousPosition()
 
         {
