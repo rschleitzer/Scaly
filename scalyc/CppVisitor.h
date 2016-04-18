@@ -177,6 +177,8 @@ public:
     virtual bool openReturnExpression(ReturnExpression* returnExpression);
     virtual void closeReturnExpression(ReturnExpression* returnExpression);
     virtual bool openThrowExpression(ThrowExpression* throwExpression);
+    virtual bool inWildcardCatchClause(ThrowExpression* throwExpression);
+    virtual CatchClause* getCatchClause(SyntaxNode* syntaxNode);
     virtual String* getReturnType(_Page* _rp, SyntaxNode* syntaxNode);
     virtual String* getThrownType(_Page* _rp, SyntaxNode* syntaxNode);
     virtual bool returnsArray(SyntaxNode* syntaxNode);

@@ -525,6 +525,13 @@ class CppVisitor : SyntaxVisitor {
         return true
     }
 
+    function inWildcardCatchClause(throwExpression: ThrowExpression) -> bool {
+    }
+
+    function getCatchClause(syntaxNode: SyntaxNode) -> existing CatchClause {
+        return null
+    }
+
     function getReturnType(syntaxNode: SyntaxNode) -> String {
         return null
     }

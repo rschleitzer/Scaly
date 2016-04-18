@@ -1296,6 +1296,29 @@ bool CppVisitor::openCatchClause(CatchClause* catchClause) {
                         sourceFile->append(") {\n");
                     }
                     sourceFile->append(" {\n");
+                    
+                    if (catchClause->catchPattern->_isWildCardCatchPattern()) {
+                        if (catchClause->bindingPattern != nullptr) {
+                            TuplePattern* bindingPattern = catchClause->bindingPattern;
+                            if (bindingPattern->elements != nullptr) {
+                                if (bindingPattern->elements->length() > 0) {
+                                    TuplePatternElement* element = *(*(bindingPattern->elements))[0];
+                                    if (element->pattern->_isIdentifierPattern()) {
+                                        IdentifierPattern* pattern = (IdentifierPattern*)element->pattern;
+                                        sourceIndentLevel++;
+                                        indentSource();
+                                        sourceFile->append("auto ");
+                                        sourceFile->append(pattern->identifier);                    
+                                        sourceFile->append(" = _");
+                                        sourceFile->append(identifierPattern->identifier);
+                                        sourceFile->append("_result.getError();\n");
+                                        sourceIndentLevel--;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    
                     sourceIndentLevel++;
                     indentSource();
                     if (catchClause->expression->_isSimpleExpression()) {
@@ -1955,30 +1978,53 @@ bool CppVisitor::openThrowExpression(ThrowExpression* throwExpression) {
         sourceFile->append(", ");
     }
     String* thrownType = getThrownType(_p, throwExpression);
-    if (returnType != nullptr) {
+    if (thrownType != nullptr) {
         sourceFile->append(thrownType);
-        sourceFile->append(">(new(_ep) ");
-        sourceFile->append(thrownType);
-        sourceFile->append("(new(_ep) _");
-        sourceFile->append(thrownType);
-        sourceFile->append("_");
-        if (throwExpression->expression->_isSimpleExpression()) {
-            SimpleExpression* simpleExpression = (SimpleExpression*)throwExpression->expression;
-            PrimaryExpression* primaryExpression = simpleExpression->prefixExpression->expression->primaryExpression;
-            if (primaryExpression->_isIdentifierExpression()) {
-                IdentifierExpression* identifierExpression = (IdentifierExpression*)primaryExpression;
-                sourceFile->append(identifierExpression->name);
-                if (simpleExpression->prefixExpression->expression->postfixes != nullptr) {
-                    if ((*(*simpleExpression->prefixExpression->expression->postfixes)[0])->_isFunctionCall()) {
-                        FunctionCall* functionCall = (FunctionCall*)*(*simpleExpression->prefixExpression->expression->postfixes)[0];
-                        functionCall->accept(this);
+        sourceFile->append(">(");
+        if (inWildcardCatchClause(throwExpression)) {
+            throwExpression->expression->accept(this);
+            sourceFile->append(")");
+        }
+        else {
+            sourceFile->append("new(_ep) ");
+            sourceFile->append(thrownType);
+            sourceFile->append("(new(_ep) _");
+            sourceFile->append(thrownType);
+            sourceFile->append("_");
+            if (throwExpression->expression->_isSimpleExpression()) {
+                SimpleExpression* simpleExpression = (SimpleExpression*)throwExpression->expression;
+                PrimaryExpression* primaryExpression = simpleExpression->prefixExpression->expression->primaryExpression;
+                if (primaryExpression->_isIdentifierExpression()) {
+                    IdentifierExpression* identifierExpression = (IdentifierExpression*)primaryExpression;
+                    sourceFile->append(identifierExpression->name);
+                    if (simpleExpression->prefixExpression->expression->postfixes != nullptr) {
+                        if ((*(*simpleExpression->prefixExpression->expression->postfixes)[0])->_isFunctionCall()) {
+                            FunctionCall* functionCall = (FunctionCall*)*(*simpleExpression->prefixExpression->expression->postfixes)[0];
+                            functionCall->accept(this);
+                        }
                     }
+                    sourceFile->append("))");
                 }
-                sourceFile->append("))");
             }
         }
     }
     return false;
+}
+
+bool CppVisitor::inWildcardCatchClause(ThrowExpression* throwExpression) {
+    CatchClause* catchClause = getCatchClause(throwExpression);
+    if (catchClause != nullptr)
+        if (catchClause->catchPattern->_isWildCardCatchPattern())
+            return true;
+    return false;
+}
+
+CatchClause* CppVisitor::getCatchClause(SyntaxNode* syntaxNode) {
+    if (syntaxNode->_isCatchClause())
+        return (CatchClause*)syntaxNode;
+    if (syntaxNode->parent == nullptr)
+        return nullptr;
+    return getCatchClause(syntaxNode->parent);
 }
 
 String* CppVisitor::getReturnType(_Page* _rp, SyntaxNode* syntaxNode) {
