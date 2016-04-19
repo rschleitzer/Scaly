@@ -1282,7 +1282,9 @@ bool CppVisitor::openCatchClause(CatchClause* catchClause) {
                         IdentifierCatchPattern* identifierCatchPattern = (IdentifierCatchPattern*)catchClause->catchPattern;
                         sourceFile->append("if (_");
                         sourceFile->append(identifierPattern->identifier);
-                        sourceFile->append("_result.getError() == ");
+                        sourceFile->append("_result.getErrorCode() == _");
+                        sourceFile->append("FileError");
+                        sourceFile->append("_");
                         sourceFile->append(identifierCatchPattern->name);
                         sourceFile->append(") {\n");
                     }
