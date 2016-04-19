@@ -515,7 +515,7 @@ _Result<EnumDeclaration, ParserError> Parser::parseEnumDeclaration(_Page* _rp, _
     }
     Position* startName = lexer->getPreviousPosition(_p);
     String* name = lexer->parseIdentifier(_rp);
-    if ((name != nullptr) && (isIdentifier(name)))
+    if ((name != nullptr) && isIdentifier(name))
         lexer->advance();
     else {
         return _Result<EnumDeclaration, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_identifierExpected(new(_ep) Position(startName))));
@@ -568,7 +568,7 @@ _Result<ClassDeclaration, ParserError> Parser::parseClassDeclaration(_Page* _rp,
     }
     Position* startName = lexer->getPreviousPosition(_p);
     String* name = lexer->parseIdentifier(_rp);
-    if ((name != nullptr) && (isIdentifier(name)))
+    if ((name != nullptr) && isIdentifier(name))
         lexer->advance();
     else {
         return _Result<ClassDeclaration, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_identifierExpected(new(_ep) Position(startName))));
@@ -791,7 +791,7 @@ _Result<PathItem, ParserError> Parser::parsePathItem(_Page* _rp, _Page* _ep) {
     Position* start = lexer->getPreviousPosition(_p);
     Position* startName = lexer->getPreviousPosition(_p);
     String* name = lexer->parseIdentifier(_rp);
-    if ((name != nullptr) && (isIdentifier(name)))
+    if ((name != nullptr) && isIdentifier(name))
         lexer->advance();
     else {
         return _Result<PathItem, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_identifierExpected(new(_ep) Position(startName))));
@@ -1064,7 +1064,7 @@ _Result<IdentifierFunction, ParserError> Parser::parseIdentifierFunction(_Page* 
     Position* start = lexer->getPreviousPosition(_p);
     Position* startName = lexer->getPreviousPosition(_p);
     String* name = lexer->parseIdentifier(_rp);
-    if ((name != nullptr) && (isIdentifier(name)))
+    if ((name != nullptr) && isIdentifier(name))
         lexer->advance();
     else {
         return _Result<IdentifierFunction, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_identifierExpected(new(_ep) Position(startName))));
@@ -1283,7 +1283,7 @@ _Result<ConstParameter, ParserError> Parser::parseConstParameter(_Page* _rp, _Pa
         lexer->advance();
     Position* startName = lexer->getPreviousPosition(_p);
     String* name = lexer->parseIdentifier(_rp);
-    if ((name != nullptr) && (isIdentifier(name)))
+    if ((name != nullptr) && isIdentifier(name))
         lexer->advance();
     else {
         return _Result<ConstParameter, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_identifierExpected(new(_ep) Position(startName))));
@@ -1325,7 +1325,7 @@ _Result<VarParameter, ParserError> Parser::parseVarParameter(_Page* _rp, _Page* 
     }
     Position* startName = lexer->getPreviousPosition(_p);
     String* name = lexer->parseIdentifier(_rp);
-    if ((name != nullptr) && (isIdentifier(name)))
+    if ((name != nullptr) && isIdentifier(name))
         lexer->advance();
     else {
         return _Result<VarParameter, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_identifierExpected(new(_ep) Position(startName))));
@@ -1455,7 +1455,7 @@ _Result<EnumCase, ParserError> Parser::parseEnumCase(_Page* _rp, _Page* _ep) {
     Position* start = lexer->getPreviousPosition(_p);
     Position* startName = lexer->getPreviousPosition(_p);
     String* name = lexer->parseIdentifier(_rp);
-    if ((name != nullptr) && (isIdentifier(name)))
+    if ((name != nullptr) && isIdentifier(name))
         lexer->advance();
     else {
         return _Result<EnumCase, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_identifierExpected(new(_ep) Position(startName))));
@@ -1610,7 +1610,7 @@ _Result<GenericParameter, ParserError> Parser::parseGenericParameter(_Page* _rp,
     Position* start = lexer->getPreviousPosition(_p);
     Position* startTypeName = lexer->getPreviousPosition(_p);
     String* typeName = lexer->parseIdentifier(_rp);
-    if ((typeName != nullptr) && (isIdentifier(typeName)))
+    if ((typeName != nullptr) && isIdentifier(typeName))
         lexer->advance();
     else {
         return _Result<GenericParameter, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_identifierExpected(new(_ep) Position(startTypeName))));
@@ -2025,7 +2025,7 @@ _Result<IdentifierCatchPattern, ParserError> Parser::parseIdentifierCatchPattern
     Position* start = lexer->getPreviousPosition(_p);
     Position* startName = lexer->getPreviousPosition(_p);
     String* name = lexer->parseIdentifier(_rp);
-    if ((name != nullptr) && (isIdentifier(name)))
+    if ((name != nullptr) && isIdentifier(name))
         lexer->advance();
     else {
         return _Result<IdentifierCatchPattern, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_identifierExpected(new(_ep) Position(startName))));
@@ -2551,7 +2551,7 @@ _Result<IdentifierExpression, ParserError> Parser::parseIdentifierExpression(_Pa
     Position* start = lexer->getPreviousPosition(_p);
     Position* startName = lexer->getPreviousPosition(_p);
     String* name = lexer->parseIdentifier(_rp);
-    if ((name != nullptr) && (isIdentifier(name)))
+    if ((name != nullptr) && isIdentifier(name))
         lexer->advance();
     else {
         return _Result<IdentifierExpression, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_identifierExpected(new(_ep) Position(startName))));
@@ -3477,7 +3477,7 @@ _Result<IdentifierPattern, ParserError> Parser::parseIdentifierPattern(_Page* _r
     Position* start = lexer->getPreviousPosition(_p);
     Position* startIdentifier = lexer->getPreviousPosition(_p);
     String* identifier = lexer->parseIdentifier(_rp);
-    if ((identifier != nullptr) && (isIdentifier(identifier)))
+    if ((identifier != nullptr) && isIdentifier(identifier))
         lexer->advance();
     else {
         return _Result<IdentifierPattern, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_identifierExpected(new(_ep) Position(startIdentifier))));
@@ -3728,7 +3728,7 @@ _Result<SuperMember, ParserError> Parser::parseSuperMember(_Page* _rp, _Page* _e
     Position* start = lexer->getPreviousPosition(_p);
     Position* startName = lexer->getPreviousPosition(_p);
     String* name = lexer->parseIdentifier(_rp);
-    if ((name != nullptr) && (isIdentifier(name)))
+    if ((name != nullptr) && isIdentifier(name))
         lexer->advance();
     else {
         return _Result<SuperMember, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_identifierExpected(new(_ep) Position(startName))));
@@ -3780,7 +3780,7 @@ _Result<TypeIdentifier, ParserError> Parser::parseTypeIdentifier(_Page* _rp, _Pa
     Position* start = lexer->getPreviousPosition(_p);
     Position* startName = lexer->getPreviousPosition(_p);
     String* name = lexer->parseIdentifier(_rp);
-    if ((name != nullptr) && (isIdentifier(name)))
+    if ((name != nullptr) && isIdentifier(name))
         lexer->advance();
     else {
         return _Result<TypeIdentifier, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_identifierExpected(new(_ep) Position(startName))));
