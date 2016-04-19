@@ -6,7 +6,7 @@ CompilerError* Compiler::compileFiles(_Page* _ep, Options* options) {
     _Region _region; _Page* _p = _region.get();
     _Vector<String>* files = options->files;
     _Array<String>* sources = new(_p) _Array<String>();
-    String* file = 0;
+    String* file = nullptr;
     size_t _files_length = files->length();
     for (size_t _i = 0; _i < _files_length; _i++) {
         file = *(*files)[_i];

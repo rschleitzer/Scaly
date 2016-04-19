@@ -3,7 +3,7 @@ class Compiler {
         let files: [String] = options.files
         mutable sources: [String] = [String]();
         for file: String in files {
-            let source: String = File.readToString(file)
+            mutable source: String = File.readToString(file)
                 catch noSuchFileOrDirectory(error) throw CompilerError.FileNotFound(file)
                 catch _ (error) throw CompilerError.UnableToReadFile(file, error)
                 
