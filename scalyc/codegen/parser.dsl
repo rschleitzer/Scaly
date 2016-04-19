@@ -84,7 +84,14 @@
             "("(case (type content)(("keyword") (name-of-link content)) (("punctuation") (link content)) (else ""))")
         if "(case (type content) (("keyword" "punctuation") ($ "success"(if (property content) (string-firstchar-upcase (property content)) ($ (string-firstchar-upcase (link content))(number->string (child-number content))))))(("identifier") ($ "("(property content)" != null) && isIdentifier("(property content)")")) (else ($ (property content)" != null")))"
             lexer.advance()
-"                       )
+"                           (if (optional? content) "" ($
+"        else
+            throw "
+        (case (type content) (("keyword") "keyword") (("punctuation") "punctuation")(("identifier") "identifier")(("literal") "literal")(("prefixoperator" "binaryoperator" "postfixoperator") "operator"))
+        "Expected(Position(start"(if (property content) (string-firstchar-upcase (property content)) ($ (string-firstchar-upcase (link content))(number->string (child-number content))))(case (type content) (("keyword" "punctuation") ($ "), String("((if (string=? (type content) "keyword") name-of-link link) content)")"))(else ")"))")
+
+"                           ))
+                        )
                     ) ; syntax or terminal
                 ))) ; apply to children of syntax
 "        mutable end: Position = lexer.getPosition()
@@ -296,11 +303,10 @@ _Result<"(id syntax)", ParserError> Parser::parse"(id syntax)"(_Page* _rp, _Page
     if "(case (type content) (("keyword" "punctuation") ($ "("($ "success"(string-firstchar-upcase (link content))(number->string (child-number content)))")"))(("identifier") ($ "(("(property content)" != nullptr) && isIdentifier("(property content)"))")) (else ($"("(property content)")")))"
         lexer->advance();
 "                            (if (optional? content) "" ($
-"    else {
-        return _Result<"(id syntax)", ParserError>("(if (string=? (type content) "syntax") ($ "_"(property content)"_result.getError()") ($ "new(_ep) ParserError(new(_ep) _ParserError"
+"    else
+        return _Result<"(id syntax)", ParserError>(new(_ep) ParserError(new(_ep) _ParserError"
         (case (type content) (("keyword") "_keyword") (("punctuation") "_punctuation")(("identifier") "_identifier")(("literal") "_literal")(("prefixoperator" "binaryoperator" "postfixoperator") "_operator"))
-        "Expected(new(_ep) Position(start"(if (property content) (string-firstchar-upcase (property content)) ($ (string-firstchar-upcase (link content))(number->string (child-number content))))(case (type content) (("keyword" "punctuation") ($ "), &""String::create(_ep, "((if (string=? (type content) "keyword") name-of-link link) content)")"))(else ")"))"))"))");
-    }
+        "Expected(new(_ep) Position(start"(if (property content) (string-firstchar-upcase (property content)) ($ (string-firstchar-upcase (link content))(number->string (child-number content))))(case (type content) (("keyword" "punctuation") ($ "), &""String::create(_ep, "((if (string=? (type content) "keyword") name-of-link link) content)")"))(else ")"))")));
 "                          ))
                         )
                     ) ; syntax or terminal
