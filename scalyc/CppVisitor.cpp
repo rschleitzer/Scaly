@@ -1105,35 +1105,26 @@ bool CppVisitor::openAssignment(Assignment* assignment) {
 }
 
 bool CppVisitor::inInitializer(SyntaxNode* node) {
+    if (node->_isInitializerDeclaration())
+        return true;
     if (node->parent == nullptr)
         return false;
-    
-    if (node->parent->_isInitializerDeclaration()) {
-        return true;
-    }
-
     return inInitializer(node->parent);
 }
 
 bool CppVisitor::inReturn(SyntaxNode* node) {
+    if (node->_isReturnExpression())
+        return true;
     if (node->parent == nullptr)
         return false;
-    
-    if (node->parent->_isReturnExpression()) {
-        return true;
-    }
-
     return inReturn(node->parent);
 }
 
 bool CppVisitor::inThrow(SyntaxNode* node) {
+    if (node->_isThrowExpression())
+        return true;
     if (node->parent == nullptr)
         return false;
-    
-    if (node->parent->_isThrowExpression()) {
-        return true;
-    }
-
     return inThrow(node->parent);
 }
 
@@ -1330,7 +1321,8 @@ bool CppVisitor::openCatchClause(CatchClause* catchClause) {
                         }
                     }
                     catchClause->expression->accept(this);
-                    sourceFile->append(";\n");
+                    if (catchClause->expression->_isSimpleExpression())
+                        sourceFile->append(";\n");
                     sourceIndentLevel--;
                     indentSource();
                     sourceFile->append("}\n");
@@ -2258,7 +2250,21 @@ void CppVisitor::visitEmptyCaseContent(EmptyCaseContent* emptyCaseContent) {
 
 bool CppVisitor::openInitializerCall(InitializerCall* initializerCall) {
     if (initializerCall->typeToInitialize->_isArrayType()) {
-        sourceFile->append("new(_p) ");
+        if (inThrow(initializerCall)) {
+            ArrayType* arrayType = (ArrayType*)initializerCall->typeToInitialize;
+            if (arrayType->elementType->_isTypeIdentifier()) {
+                TypeIdentifier* typeId = (TypeIdentifier*)arrayType->elementType;
+                sourceFile->append("&_Vector<");
+                sourceFile->append(typeId->name);
+                sourceFile->append(">::create(_ep, *");
+                initializerCall->arguments->accept(this);
+                sourceFile->append(")");
+                return false;
+            }
+        }
+        else {
+            sourceFile->append("new(_p) ");
+        }
     }
     return true;
 }
@@ -2380,7 +2386,8 @@ bool CppVisitor::openArrayType(ArrayType* arrayType) {
         if (constDeclaration)
             sourceFile->append("_Vector<");
         else
-            sourceFile->append("_Array<");
+            if (!inThrow(arrayType))
+                sourceFile->append("_Array<");
         arrayType->elementType->accept(this);
         sourceFile->append(">");
         if (!arrayType->parent->_isInitializerCall())

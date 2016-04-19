@@ -47,7 +47,7 @@
 "
                 )))
 "
-        throw ParserError.UnableToParse(Position(start), errors)
+        throw unableToParse(Position(start), [ParserError](errors))
 "
             )
             ($ ; non-abstract syntax
@@ -250,7 +250,7 @@ _Result<"(id syntax)", ParserError> Parser::parse"(id syntax)"(_Page* _rp, _Page
     }
 "
                 )))
-"    return _Result<"(id syntax)", ParserError>(new(_ep) ParserError(new(_ep) _ParserError_unableToParse(new(_ep) Position(start), &_Vector<""ParserError>::create(_ep, *errors))));
+"    return _Result<"(id syntax)", ParserError>(new(_ep) ParserError(new(_ep) _ParserError_unableToParse(new(_ep) Position(start), &_Vector<""ParserError>::create(_ep, *(errors)))));
 "
             )
             ($ ; non-abstract syntax

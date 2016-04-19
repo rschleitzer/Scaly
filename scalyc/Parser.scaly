@@ -118,7 +118,7 @@ class Parser {
                 return node
         }
 
-        throw ParserError.UnableToParse(Position(start), errors)
+        throw unableToParse(Position(start), [ParserError](errors))
     }
 
     function parseDeclaration() -> Declaration throws ParserError {
@@ -197,7 +197,7 @@ class Parser {
                 return node
         }
 
-        throw ParserError.UnableToParse(Position(start), errors)
+        throw unableToParse(Position(start), [ParserError](errors))
     }
 
     function parseExpression() -> Expression throws ParserError {
@@ -222,7 +222,7 @@ class Parser {
                 return node
         }
 
-        throw ParserError.UnableToParse(Position(start), errors)
+        throw unableToParse(Position(start), [ParserError](errors))
     }
 
     function parseUseDeclaration() -> UseDeclaration throws ParserError {
@@ -592,7 +592,7 @@ class Parser {
                 return node
         }
 
-        throw ParserError.UnableToParse(Position(start), errors)
+        throw unableToParse(Position(start), [ParserError](errors))
     }
 
     function parseOverrideWord() -> OverrideWord throws ParserError {
@@ -632,7 +632,7 @@ class Parser {
                 return node
         }
 
-        throw ParserError.UnableToParse(Position(start), errors)
+        throw unableToParse(Position(start), [ParserError](errors))
     }
 
     function parseIdentifierFunction() -> IdentifierFunction throws ParserError {
@@ -761,7 +761,7 @@ class Parser {
                 return node
         }
 
-        throw ParserError.UnableToParse(Position(start), errors)
+        throw unableToParse(Position(start), [ParserError](errors))
     }
 
     function parseConstParameter() -> ConstParameter throws ParserError {
@@ -1079,7 +1079,7 @@ class Parser {
                 return node
         }
 
-        throw ParserError.UnableToParse(Position(start), errors)
+        throw unableToParse(Position(start), [ParserError](errors))
     }
 
     function parseBinaryOperation() -> BinaryOperation throws ParserError {
@@ -1197,7 +1197,7 @@ class Parser {
                 return node
         }
 
-        throw ParserError.UnableToParse(Position(start), errors)
+        throw unableToParse(Position(start), [ParserError](errors))
     }
 
     function parseWildCardCatchPattern() -> WildCardCatchPattern throws ParserError {
@@ -1275,7 +1275,7 @@ class Parser {
                 return node
         }
 
-        throw ParserError.UnableToParse(Position(start), errors)
+        throw unableToParse(Position(start), [ParserError](errors))
     }
 
     function parseOperatorPostfix() -> OperatorPostfix throws ParserError {
@@ -1382,7 +1382,7 @@ class Parser {
                 return node
         }
 
-        throw ParserError.UnableToParse(Position(start), errors)
+        throw unableToParse(Position(start), [ParserError](errors))
     }
 
     function parseNamedMemberPostfix() -> NamedMemberPostfix throws ParserError {
@@ -1535,7 +1535,7 @@ class Parser {
                 return node
         }
 
-        throw ParserError.UnableToParse(Position(start), errors)
+        throw unableToParse(Position(start), [ParserError](errors))
     }
 
     function parseIdentifierExpression() -> IdentifierExpression throws ParserError {
@@ -1785,7 +1785,7 @@ class Parser {
                 return node
         }
 
-        throw ParserError.UnableToParse(Position(start), errors)
+        throw unableToParse(Position(start), [ParserError](errors))
     }
 
     function parseSuperDot() -> SuperDot throws ParserError {
@@ -1871,7 +1871,7 @@ class Parser {
                 return node
         }
 
-        throw ParserError.UnableToParse(Position(start), errors)
+        throw unableToParse(Position(start), [ParserError](errors))
     }
 
     function parseCurliedSwitchBody() -> CurliedSwitchBody throws ParserError {
@@ -1958,7 +1958,7 @@ class Parser {
                 return node
         }
 
-        throw ParserError.UnableToParse(Position(start), errors)
+        throw unableToParse(Position(start), [ParserError](errors))
     }
 
     function parseItemCaseLabel() -> ItemCaseLabel throws ParserError {
@@ -2068,7 +2068,7 @@ class Parser {
                 return node
         }
 
-        throw ParserError.UnableToParse(Position(start), errors)
+        throw unableToParse(Position(start), [ParserError](errors))
     }
 
     function parseWildcardPattern() -> WildcardPattern throws ParserError {
@@ -2179,7 +2179,7 @@ class Parser {
                 return node
         }
 
-        throw ParserError.UnableToParse(Position(start), errors)
+        throw unableToParse(Position(start), [ParserError](errors))
     }
 
     function parseBlockCaseContent() -> BlockCaseContent throws ParserError {
@@ -2230,7 +2230,7 @@ class Parser {
                 return node
         }
 
-        throw ParserError.UnableToParse(Position(start), errors)
+        throw unableToParse(Position(start), [ParserError](errors))
     }
 
     function parseSuperInit() -> SuperInit throws ParserError {
@@ -2279,7 +2279,7 @@ class Parser {
                 return node
         }
 
-        throw ParserError.UnableToParse(Position(start), errors)
+        throw unableToParse(Position(start), [ParserError](errors))
     }
 
     function parseTypeIdentifier() -> TypeIdentifier throws ParserError {
@@ -2381,7 +2381,7 @@ class Parser {
                 return node
         }
 
-        throw ParserError.UnableToParse(Position(start), errors)
+        throw unableToParse(Position(start), [ParserError](errors))
     }
 
     function parseOptionalType() -> OptionalType throws ParserError {
