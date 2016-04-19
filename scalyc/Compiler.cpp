@@ -12,6 +12,10 @@ CompilerError* Compiler::compileFiles(_Page* _ep, Options* options) {
         file = *(*files)[_i];
         {
             auto _source_result = File::readToString(_p, _ep, file);
+            String* source = nullptr;
+            if (_source_result.succeeded()) {
+                source = _source_result.getResult();
+            }
             if (_source_result.getErrorCode() == _FileError_noSuchFileOrDirectory) {
                 return new(_ep) CompilerError(new(_ep) _CompilerError_fileNotFound(file));
             }
@@ -19,7 +23,6 @@ CompilerError* Compiler::compileFiles(_Page* _ep, Options* options) {
                 FileError* error = _source_result.getError();
                 return new(_ep) CompilerError(new(_ep) _CompilerError_unableToReadFile(file, error));
             }
-            String* source = _source_result.getResult();
             sources->push(source);
         }
     }

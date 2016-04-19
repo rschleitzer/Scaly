@@ -1472,7 +1472,11 @@ bool CppVisitor::openParenthesizedExpression(ParenthesizedExpression* parenthesi
                 outputParen = false;
             }
             if (assignedToConstantObject(functionCall)) {
-                sourceFile->append("(_rp");
+                _Region _region; _Page* _p = _region.get();
+                if (getReturnType(_p, functionCall) != nullptr)
+                    sourceFile->append("(_rp");
+                else
+                    sourceFile->append("(_p");
                 outputParen = false;
             }
         }
