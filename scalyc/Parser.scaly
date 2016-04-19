@@ -2710,7 +2710,7 @@ class Parser {
     }
 
     function isAtEnd() -> bool {
-        lexer.isAtEnd()
+        return lexer.isAtEnd()
     }
 
     function isIdentifier(id: String) -> bool {

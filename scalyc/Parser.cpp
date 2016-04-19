@@ -3958,94 +3958,64 @@ bool Parser::isAtEnd() {
 bool Parser::isIdentifier(String* id) {
     if (id->equals(useKeyword))
         return false;
-
     if (id->equals(classKeyword))
         return false;
-
     if (id->equals(functionKeyword))
         return false;
-
     if (id->equals(ifKeyword))
         return false;
-
     if (id->equals(elseKeyword))
         return false;
-
     if (id->equals(switchKeyword))
         return false;
-
     if (id->equals(caseKeyword))
         return false;
-
     if (id->equals(defaultKeyword))
         return false;
-
     if (id->equals(catchKeyword))
         return false;
-
     if (id->equals(forKeyword))
         return false;
-
     if (id->equals(inKeyword))
         return false;
-
     if (id->equals(whileKeyword))
         return false;
-
     if (id->equals(repeatKeyword))
         return false;
-
     if (id->equals(returnKeyword))
         return false;
-
     if (id->equals(throwKeyword))
         return false;
-
     if (id->equals(breakKeyword))
         return false;
-
     if (id->equals(throwsKeyword))
         return false;
-
     if (id->equals(existingKeyword))
         return false;
-
     if (id->equals(overrideKeyword))
         return false;
-
     if (id->equals(staticKeyword))
         return false;
-
     if (id->equals(letKeyword))
         return false;
-
     if (id->equals(varKeyword))
         return false;
-
     if (id->equals(mutableKeyword))
         return false;
-
     if (id->equals(isKeyword))
         return false;
-
     if (id->equals(asKeyword))
         return false;
-
     if (id->equals(initKeyword))
         return false;
-
     if (id->equals(enumKeyword))
         return false;
-
     if (id->equals(superKeyword))
         return false;
-
     if (id->equals(thisKeyword))
         return false;
-
     if (id->equals(nullKeyword))
         return false;
-
     return true;
 }
 

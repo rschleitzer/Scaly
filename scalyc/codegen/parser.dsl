@@ -129,7 +129,7 @@
 "   ))))
 "
     function isAtEnd() -> bool {
-        lexer.isAtEnd()
+        return lexer.isAtEnd()
     }
 
     function isIdentifier(id: String) -> bool {"
@@ -352,14 +352,13 @@ bool Parser::isAtEnd() {
     return lexer->isAtEnd();
 }
 
-bool Parser::isIdentifier(String* id) {"
-   (apply-to-selected-children "keyword" (lambda (keyword) ($
+bool Parser::isIdentifier(String* id) {
 "
-    if (id->equals("(name keyword)"))
+   (apply-to-selected-children "keyword" (lambda (keyword) ($
+"    if (id->equals("(name keyword)"))
         return false;
 "   )))
-"
-    return true;
+"    return true;
 }
 
 }
