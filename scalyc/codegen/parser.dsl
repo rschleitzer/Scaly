@@ -139,17 +139,17 @@
             return false
 "   )))
 "
-        true
+        return true
     }
 
     mutable lexer: Lexer
     let fileName: String
 
 "   (apply-to-selected-children "keyword" (lambda (keyword) ($
-"    let "(name keyword)": String = \""(id keyword)"\"
+"    let "(name keyword)": String
 "   )))
     (apply-to-selected-children "punctuation" (lambda (punctuation) ($
-"    let "(id punctuation)": String = \""(value punctuation)"\"
+"    let "(id punctuation)": String
 "   )))
 "}
 "
@@ -360,6 +360,7 @@ bool Parser::isIdentifier(String* id) {
 "   )))
 "    return true;
 }
+
 
 }
 "

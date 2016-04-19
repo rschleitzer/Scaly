@@ -2804,56 +2804,56 @@ class Parser {
         if id.equals(nullKeyword)
             return false
 
-        true
+        return true
     }
 
     mutable lexer: Lexer
     let fileName: String
 
-    let useKeyword: String = "use"
-    let classKeyword: String = "class"
-    let functionKeyword: String = "function"
-    let ifKeyword: String = "if"
-    let elseKeyword: String = "else"
-    let switchKeyword: String = "switch"
-    let caseKeyword: String = "case"
-    let defaultKeyword: String = "default"
-    let catchKeyword: String = "catch"
-    let forKeyword: String = "for"
-    let inKeyword: String = "in"
-    let whileKeyword: String = "while"
-    let repeatKeyword: String = "repeat"
-    let returnKeyword: String = "return"
-    let throwKeyword: String = "throw"
-    let breakKeyword: String = "break"
-    let throwsKeyword: String = "throws"
-    let existingKeyword: String = "existing"
-    let overrideKeyword: String = "override"
-    let staticKeyword: String = "static"
-    let letKeyword: String = "let"
-    let varKeyword: String = "var"
-    let mutableKeyword: String = "mutable"
-    let isKeyword: String = "is"
-    let asKeyword: String = "as"
-    let initKeyword: String = "init"
-    let enumKeyword: String = "enum"
-    let superKeyword: String = "super"
-    let thisKeyword: String = "this"
-    let nullKeyword: String = "null"
-    let semicolon: String = ";"
-    let equal: String = "="
-    let leftAngular: String = "<"
-    let rightAngular: String = ">"
-    let comma: String = ","
-    let leftParen: String = "("
-    let rightParen: String = ")"
-    let leftCurly: String = "{"
-    let rightCurly: String = "}"
-    let leftBracket: String = "["
-    let rightBracket: String = "]"
-    let colon: String = ":"
-    let dot: String = "."
-    let questionMark: String = "?"
-    let underscore: String = "_"
-    let evaluatesTo: String = "->"
+    let useKeyword: String
+    let classKeyword: String
+    let functionKeyword: String
+    let ifKeyword: String
+    let elseKeyword: String
+    let switchKeyword: String
+    let caseKeyword: String
+    let defaultKeyword: String
+    let catchKeyword: String
+    let forKeyword: String
+    let inKeyword: String
+    let whileKeyword: String
+    let repeatKeyword: String
+    let returnKeyword: String
+    let throwKeyword: String
+    let breakKeyword: String
+    let throwsKeyword: String
+    let existingKeyword: String
+    let overrideKeyword: String
+    let staticKeyword: String
+    let letKeyword: String
+    let varKeyword: String
+    let mutableKeyword: String
+    let isKeyword: String
+    let asKeyword: String
+    let initKeyword: String
+    let enumKeyword: String
+    let superKeyword: String
+    let thisKeyword: String
+    let nullKeyword: String
+    let semicolon: String
+    let equal: String
+    let leftAngular: String
+    let rightAngular: String
+    let comma: String
+    let leftParen: String
+    let rightParen: String
+    let leftCurly: String
+    let rightCurly: String
+    let leftBracket: String
+    let rightBracket: String
+    let colon: String
+    let dot: String
+    let questionMark: String
+    let underscore: String
+    let evaluatesTo: String
 }
