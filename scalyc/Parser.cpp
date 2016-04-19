@@ -1625,7 +1625,7 @@ _Result<PrefixExpression, ParserError> Parser::parsePrefixExpression(_Page* _rp,
     _Region _region; _Page* _p = _region.get();
     Position* start = lexer->getPreviousPosition(_p);
     String* prefixOperator = lexer->parsePrefixOperator(_rp);
-    if (prefixOperator)
+    if (prefixOperator != nullptr)
         lexer->advance();
     auto _expression_result = parsePostfixExpression(_rp, _ep);
     PostfixExpression* expression = nullptr;
@@ -1767,7 +1767,7 @@ _Result<BinaryOperation, ParserError> Parser::parseBinaryOperation(_Page* _rp, _
     Position* start = lexer->getPreviousPosition(_p);
     Position* startBinaryOperator = lexer->getPreviousPosition(_p);
     String* binaryOperator = lexer->parseBinaryOperator(_rp);
-    if (binaryOperator)
+    if (binaryOperator != nullptr)
         lexer->advance();
     else
         return _Result<BinaryOperation, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_operatorExpected(new(_ep) Position(startBinaryOperator))));
@@ -2081,7 +2081,7 @@ _Result<OperatorPostfix, ParserError> Parser::parseOperatorPostfix(_Page* _rp, _
     Position* start = lexer->getPreviousPosition(_p);
     Position* startPostfixOperator = lexer->getPreviousPosition(_p);
     String* postfixOperator = lexer->parsePostfixOperator(_rp);
-    if (postfixOperator)
+    if (postfixOperator != nullptr)
         lexer->advance();
     else
         return _Result<OperatorPostfix, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_operatorExpected(new(_ep) Position(startPostfixOperator))));
@@ -2516,7 +2516,7 @@ _Result<LiteralExpression, ParserError> Parser::parseLiteralExpression(_Page* _r
     Position* start = lexer->getPreviousPosition(_p);
     Position* startLiteral = lexer->getPreviousPosition(_p);
     Literal* literal = lexer->parseLiteral(_rp);
-    if (literal)
+    if (literal != nullptr)
         lexer->advance();
     else
         return _Result<LiteralExpression, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_literalExpected(new(_ep) Position(startLiteral))));
