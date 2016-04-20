@@ -2034,7 +2034,10 @@ bool CppVisitor::openThrowExpression(ThrowExpression* throwExpression) {
         sourceFile->append("(new(_ep) _");
         sourceFile->append(thrownType);
         sourceFile->append("_");
-        throwExpression->error->accept(this);
+        if (throwExpression->error != nullptr)
+            throwExpression->error->accept(this);
+        if (throwExpression->arguments != nullptr)
+            throwExpression->arguments->accept(this);
         if (returnType != nullptr) 
             sourceFile->append(")");
     }
