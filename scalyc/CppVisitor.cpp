@@ -1274,8 +1274,8 @@ bool CppVisitor::openCatchClause(CatchClause* catchClause) {
                     sourceIndentLevel--;
                     indentSource();
                     sourceFile->append("}\n");
-                    indentSource();
                 }
+                indentSource();
                 sourceFile->append("else");
                 if (catchClause->catchPattern->_isIdentifierCatchPattern()) {
                     IdentifierCatchPattern* identifierCatchPattern = (IdentifierCatchPattern*)catchClause->catchPattern;

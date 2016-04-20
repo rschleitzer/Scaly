@@ -20,7 +20,7 @@ CompilerError* Compiler::compileFiles(_Page* _ep, Options* options) {
                 return new(_ep) CompilerError(new(_ep) _CompilerError_fileNotFound(file));
             }
             else {
-                FileError* error = _source_result.getError();
+                auto error = _source_result.getError();
                 return new(_ep) CompilerError(new(_ep) _CompilerError_unableToReadFile(file, error));
             }
             sources->push(source);
