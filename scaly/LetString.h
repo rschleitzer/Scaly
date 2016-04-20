@@ -15,7 +15,7 @@ public:
     static String& createUninitialized(_Page* page, size_t length);
     char* getNativeString() const;
     size_t getLength();
-    char operator [](size_t i);
+    char charAt(size_t i);
     bool equals(const char* theString);
     bool notEquals(const char* theString);
     bool equals(String* theString);

@@ -117,7 +117,7 @@ class Lexer {
             return
         }
         
-        let c: character = text[position]
+        let c: character = text.charAt(position)
         
         if ((c >= 'a') && (c <= 'z')) || ((c >= 'A') && (c <= 'Z')) {
             token = scanIdentifier()
@@ -137,7 +137,7 @@ class Lexer {
                 token = scanCharacterLiteral()
 
             case '_', '(', ')', '{', '}', '[', ']', ',', ':', ';', '@', '#', '`': {
-                token = Punctuation(String(text[position]))
+                token = Punctuation(String(text.charAt(position)))
                 position++ column++
             }
 
@@ -150,7 +150,7 @@ class Lexer {
                     token = InvalidToken()
                 }
                 else {
-                    switch text[position] {
+                    switch text.charAt(position) {
                         case '/', '=', '+', '!','*', '%', '&', '|', '^', '~', '.', ' ', '\t', '\r', '\n': {
                             position-- column--
                             token = scanOperator(true)
@@ -167,7 +167,7 @@ class Lexer {
                     token = InvalidToken()
                 }
                 else {
-                    if text[position] == '.' {
+                    if text.charAt(position) == '.' {
                         position-- column--
                         token = scanOperator(true)
                     }
@@ -183,7 +183,7 @@ class Lexer {
                     token = InvalidToken()
                 }
                 else {
-                    if text[position] != '>' {
+                    if text.charAt(position) != '>' {
                         position-- column--
                         token = scanOperator(true)
                     }
@@ -200,7 +200,7 @@ class Lexer {
                     token = PostfixOperator(String("!"))
                 }
                 else {
-                    switch text[position] {
+                    switch text.charAt(position) {
                         case '/', '=', '+', '!', '*', '%', '&', '|', '^', '~' , '.', ' ', '\t', '\r', '\n': {
                             position-- column--
                             token = scanOperator(true)
@@ -225,7 +225,7 @@ class Lexer {
                     token = PostfixOperator(String("?"))
                 }
                 else {
-                    switch text[position] {
+                    switch text.charAt(position) {
                         case '/', '=', '+', '!', '*', '%', '&', '|', '^', '~': {
                             position-- column--
                             token = scanOperator(true)
@@ -249,7 +249,7 @@ class Lexer {
                     token = InvalidToken()
                 }
                 else {
-                    switch text[position] {
+                    switch text.charAt(position) {
                         case '/', '=', '+', '!', '*', '%', '&', '|', '^', '~': {
                             position-- column--
                             token = scanOperator(true)
@@ -266,7 +266,7 @@ class Lexer {
     }
 
     function scanIdentifier() -> Identifier {
-        mutable name: VarString = VarString(text[position])
+        mutable name: VarString = VarString(text.charAt(position))
 
         repeat {
             position++ column++
@@ -274,12 +274,12 @@ class Lexer {
             if position == end
                 return Identifier(String(name))
             
-            let c: character = text[position]
+            let c: character = text.charAt(position)
             if  ((c >= 'a') && (c <= 'z')) || 
                 ((c >= 'A') && (c <= 'Z')) || 
                 ((c >= '0') && (c <= '9')) || 
                  (c == '_')
-                name.append(text[position])
+                name.append(text.charAt(position))
             else
                 return Identifier(String(name))
         }            
@@ -299,7 +299,7 @@ class Lexer {
             }
         }
         
-        mutable operation: VarString = VarString(text[position])
+        mutable operation: VarString = VarString(text.charAt(position))
 
         repeat {
             position++ column++
@@ -310,14 +310,14 @@ class Lexer {
                     return PostfixOperator(String(operation))
             }
 
-            if includeDots && (text[position] == '.') {
-                operation.append(text[position]);
+            if includeDots && (text.charAt(position) == '.') {
+                operation.append(text.charAt(position));
                 continue;
             }
             
-            switch text[position] {
+            switch text.charAt(position) {
                 case '/', '=', '-', '+', '!', '*', '%', '<', '&', '|', '^', '~':
-                    operation.append(text[position])
+                    operation.append(text.charAt(position))
 
                 default: {
                     let lastPosition: unsigned = position
@@ -330,7 +330,7 @@ class Lexer {
                     mutable whitespaceSkippedAfter: bool = whitespaceSkipped
 
                     if !whitespaceSkippedAfter {
-                        switch text[position] {
+                        switch text.charAt(position) {
                             case ')', ']', '}', ',', ';', ':', '.':
                                 whitespaceSkippedAfter = true
                             default:
@@ -360,15 +360,15 @@ class Lexer {
             if position == end
                 return InvalidToken()
 
-            switch text[position] {
+            switch text.charAt(position) {
                 case '\"': {
                     position++ column++
                     return StringLiteral(String(value))
                 }
                 case '\\': {
                     position++ column++
-                    switch text[position] {
-                        case '\"', '\\', '\'': value.append(text[position])
+                    switch text.charAt(position) {
+                        case '\"', '\\', '\'': value.append(text.charAt(position))
                         case 'n': value.append('\n')
                         case 'r': value.append('\r')
                         case 't': value.append('\t')
@@ -377,7 +377,7 @@ class Lexer {
                     }
                 }
                 default:
-                    value.append(text[position])
+                    value.append(text.charAt(position))
             }
         } while true
     }
@@ -389,15 +389,15 @@ class Lexer {
             if position == end
                 return InvalidToken()
 
-            switch text[position] {
+            switch text.charAt(position) {
                 case '\'': {
                     position++ column++
                     return CharacterLiteral(String(value))
                 }
                 case '\\': {
                     position++ column++;
-                    switch text[position] {
-                        case '\"', '\\', '\'': value.append(text[position])
+                    switch text.charAt(position) {
+                        case '\"', '\\', '\'': value.append(text.charAt(position))
                         case 'n': value.append('\n')
                         case 'r': value.append('\r')
                         case 't': value.append('\t')
@@ -406,7 +406,7 @@ class Lexer {
                     }
                 }
                 default: {
-                    value.append(text[position])
+                    value.append(text.charAt(position))
                 }
             }
         }
@@ -414,7 +414,7 @@ class Lexer {
     }
 
     function scanNumericLiteral() -> NumericLiteral {    
-        mutable value: VarString = VarString(text[position])
+        mutable value: VarString = VarString(text.charAt(position))
 
         repeat {
             position++ column++
@@ -422,9 +422,9 @@ class Lexer {
             if position == end
                 return NumericLiteral(String(value))
             
-            let c: character = text[position]
+            let c: character = text.charAt(position)
             if (c >= '0') && (c <= '9')
-                value.append(text[position])
+                value.append(text.charAt(position))
             else
                 return NumericLiteral(String(value))
         } while true
@@ -436,7 +436,7 @@ class Lexer {
             if position == end
                 return true
 
-            switch text[position] {
+            switch text.charAt(position) {
                 case ' ': {
                     whitespaceSkipped = true
                     position++ column++
@@ -463,12 +463,12 @@ class Lexer {
                     if position == end
                         return whitespaceSkipped
                         
-                    if text[position] == '/' { 
+                    if text.charAt(position) == '/' { 
                         whitespaceSkipped = true
                         handleSingleLineComment()
                     }
                     else { 
-                        if text[position] == '*' { 
+                        if text.charAt(position) == '*' { 
                             whitespaceSkipped = true
                             handleMultiLineComment()
                         }
@@ -488,7 +488,7 @@ class Lexer {
             if position == end
                 return;
                 
-            switch text[position] {
+            switch text.charAt(position) {
                 case '\t': {
                     whitespaceSkipped = true
                     position++ column += 4
@@ -518,13 +518,13 @@ class Lexer {
             if position == end
                 return;
                 
-            switch text[position] {
+            switch text.charAt(position) {
                 case '/': {
                     position++ column++
                     if position == end
                         return
                     else {
-                        if text[position] == '*'
+                        if text.charAt(position) == '*'
                             handleMultiLineComment()
                         else
                             return
@@ -536,7 +536,7 @@ class Lexer {
                     if position == end
                         return
                     else {
-                        if text[position] == '/' { 
+                        if text.charAt(position) == '/' { 
                             position++ column++
                             return
                         }

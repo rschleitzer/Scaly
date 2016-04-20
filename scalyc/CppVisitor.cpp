@@ -117,7 +117,7 @@ void CppVisitor::closeProgram(Program* program) {
 
 
 bool CppVisitor::openCompilationUnit(CompilationUnit* compilationUnit) {
-    moduleName = Path::getFileNameWithoutExtension(getPage(), *compilationUnit->fileName);
+    moduleName = Path::getFileNameWithoutExtension(getPage(), compilationUnit->fileName);
     headerIndentLevel = 0;
     sourceIndentLevel = 0;
     declaringClassMember = false;
@@ -169,7 +169,7 @@ void CppVisitor::closeCompilationUnit(CompilationUnit* compilationUnit) {
 
     VarString* outputFilePath = new(_p) VarString(*programDirectory);
     outputFilePath->append("/");
-    outputFilePath->append(Path::getFileNameWithoutExtension(_p, *compilationUnit->fileName));
+    outputFilePath->append(Path::getFileNameWithoutExtension(_p, compilationUnit->fileName));
 
     if (moduleName->notEquals(programName)) {
         headerFile->append("\n\n}\n#endif // __scalyc__");
@@ -1079,7 +1079,7 @@ void CppVisitor::closePrefixExpression(PrefixExpression* prefixExpression) {
 bool CppVisitor::openPostfixExpression(PostfixExpression* postfixExpression) {
     if (postfixExpression->postfixes != nullptr) {
         if ((*(*postfixExpression->postfixes)[0])->_isSubscript()) {
-            sourceFile->append("(*");
+            sourceFile->append("*(*");
         }
     }
     return true;
@@ -1626,23 +1626,23 @@ void CppVisitor::visitLiteralExpression(LiteralExpression* literalExpression) {
         CharacterLiteral* characterLiteral = (CharacterLiteral*)literal;
         sourceFile->append("\'");
         if (characterLiteral->value->getLength() > 0) {
-            if (((*characterLiteral->value)[0] == '"') || ((*characterLiteral->value)[0] == '\'')) {
+            if ((characterLiteral->value->charAt(0) == '"') || (characterLiteral->value->charAt(0) == '\'')) {
                 sourceFile->append("\\");
                 sourceFile->append(characterLiteral->value);
             }
-            else if ((*characterLiteral->value)[0] == '\r') {
+            else if (characterLiteral->value->charAt(0) == '\r') {
                 sourceFile->append("\\r");
             }
-            else if ((*characterLiteral->value)[0] == '\n') {
+            else if (characterLiteral->value->charAt(0) == '\n') {
                 sourceFile->append("\\n");
             }
-            else if ((*characterLiteral->value)[0] == '\t') {
+            else if (characterLiteral->value->charAt(0) == '\t') {
                 sourceFile->append("\\t");
             }
-            else if ((*characterLiteral->value)[0] == '\0') {
+            else if (characterLiteral->value->charAt(0) == '\0') {
                 sourceFile->append("\\0");
             }
-            else if ((*characterLiteral->value)[0] == '\\') {
+            else if (characterLiteral->value->charAt(0) == '\\') {
                 sourceFile->append("\\\\");
             }
             else
@@ -2473,7 +2473,7 @@ void CppVisitor::buildMainHeaderFileString(VarString* mainHeaderFile, Program* p
     for (size_t i = 0; i < noOfCompilationUnits; i++) {
         _Region _region; _Page* _p = _region.get();
         mainHeaderFile->append("#include \"");
-        mainHeaderFile->append(new(mainHeaderFile->getPage()) VarString(*Path::getFileNameWithoutExtension(_p, *(*(*program->compilationUnits)[i])->fileName)));
+        mainHeaderFile->append(new(mainHeaderFile->getPage()) VarString(*Path::getFileNameWithoutExtension(_p, (*(*program->compilationUnits)[i])->fileName)));
         mainHeaderFile->append(".h\"\n");
     }
     mainHeaderFile->append("\nusing namespace scaly;\nnamespace ");
@@ -2507,14 +2507,14 @@ void CppVisitor::buildProjectFileString(VarString* projectFile, Program* program
     for (size_t i = 0; i < noOfCompilationUnits; i++) {
         _Region _region; _Page* _p = _region.get();
         projectFile->append("    <File Name=\"");
-        projectFile->append(Path::getFileNameWithoutExtension(_p, *(*(*program->compilationUnits)[i])->fileName));
+        projectFile->append(Path::getFileNameWithoutExtension(_p, (*(*program->compilationUnits)[i])->fileName));
         projectFile->append(".cpp\"/>\n");
     }
     projectFile->append("  </VirtualDirectory>\n  <VirtualDirectory Name=\"include\">\n");
     for (size_t i = 0; i < noOfCompilationUnits; i++) {
         _Region _region; _Page* _p = _region.get();
         projectFile->append("    <File Name=\"");
-        projectFile->append(Path::getFileNameWithoutExtension(_p, *(*(*program->compilationUnits)[i])->fileName));
+        projectFile->append(Path::getFileNameWithoutExtension(_p, (*(*program->compilationUnits)[i])->fileName));
         projectFile->append(".h\"/>\n");
     }
     projectFile->append("  </VirtualDirectory>\n  <Settings Type=\"Executable\">\n    <GlobalSettings>\n");
@@ -2539,7 +2539,7 @@ void CppVisitor::buildProjectFileString(VarString* projectFile, Program* program
         projectFile->append(" ../");
         projectFile->append(program->name);
         projectFile->append("/");
-        projectFile->append(Path::getFileNameWithoutExtension(_p, *(*(*program->compilationUnits)[i])->fileName));
+        projectFile->append(Path::getFileNameWithoutExtension(_p, (*(*program->compilationUnits)[i])->fileName));
         projectFile->append(".scaly");
     }
     projectFile->append("\" UseSeparateDebugArgs=\"no\" DebugArguments=\"\" WorkingDirectory=\"$(IntermediateDirectory)\"");

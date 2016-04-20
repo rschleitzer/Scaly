@@ -16,11 +16,11 @@ _Result<Options, OptionsError> Options::parseArguments(_Page* _rp, _Page* _ep, _
         _Array<String>* files = new(_p) _Array<String>();
         for (size_t i = 0; i < length; i++) {
 
-            if (length < 2 || (**(*args)[i])[0] != '-') {
+            if (length < 2 || (*(*args)[i])->charAt(0) != '-') {
                 files->push(*(*args)[i]);
                 continue;
             }
-            switch ((**(*args)[i])[1])
+            switch ((*(*args)[i])->charAt(1))
             {
                 case 'o': {
                     i++;

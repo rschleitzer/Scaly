@@ -86,7 +86,7 @@ bool String::notEquals(VarString* theString){
     return strcmp(getNativeString(), theString->getNativeString()) != 0;
 }
 
-char String::operator [](size_t i) {
+char String::charAt(size_t i) {
     if (i < length)
         return getNativeString()[i];
 
@@ -97,7 +97,7 @@ _Array<String>& String::Split(_Page* _rp, char c) {
     _Array<String>* ret = new(_rp) _Array<String>();
     VarString* part = 0;
     for (size_t _i = 0; _i < length; _i++) {
-        char currentChar = (*this)[_i];
+        char currentChar = this->charAt(_i);
         if (currentChar == c) {
             if (part) {
                 ret->push(&create(_rp, part));
@@ -107,7 +107,7 @@ _Array<String>& String::Split(_Page* _rp, char c) {
         else {
             if (!part)
                 part = new(_rp) VarString();
-            part->append((*this)[_i]);
+            part->append(this->charAt(_i));
         }
     }
 
