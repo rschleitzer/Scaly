@@ -16,10 +16,10 @@ CompilerError* Compiler::compileFiles(_Page* _ep, Options* options) {
             if (_source_result.succeeded()) {
                 source = _source_result.getResult();
             }
-            if (_source_result.getErrorCode() == _FileError_noSuchFileOrDirectory) {
+            else if (_source_result.getErrorCode() == _FileError_noSuchFileOrDirectory) {
                 return new(_ep) CompilerError(new(_ep) _CompilerError_fileNotFound(file));
             }
-            if (!_source_result.succeeded()) {
+            else {
                 FileError* error = _source_result.getError();
                 return new(_ep) CompilerError(new(_ep) _CompilerError_unableToReadFile(file, error));
             }
