@@ -1255,7 +1255,7 @@ bool CppVisitor::openCatchClause(CatchClause* catchClause) {
                 PatternInitializer* patternInitializer = bindingInitializer->initializer;
                 if (patternInitializer->pattern->_isIdentifierPattern()) {
                     IdentifierPattern* identifierPattern = (IdentifierPattern*)patternInitializer->pattern;
-                    sourceFile->append("\n");
+                    sourceFile->append(";\n");
                     indentSource();
                     identifierPattern->annotationForType->accept(this);
                     sourceFile->append(" ");
@@ -1286,7 +1286,7 @@ bool CppVisitor::openCatchClause(CatchClause* catchClause) {
                             sourceFile->append(errorType);
                         sourceFile->append("_");
                         sourceFile->append(identifierCatchPattern->name);
-                        sourceFile->append(") {\n");
+                        sourceFile->append(")");
                     }
                     sourceFile->append(" {\n");
                     
@@ -1503,14 +1503,16 @@ bool CppVisitor::openParenthesizedExpression(ParenthesizedExpression* parenthesi
             }
         }
         if (catchesError(functionCall)) {
-            if (outputParen)
-                sourceFile->append("(");
-            else
-                sourceFile->append(", ");
-            sourceFile->append("_ep");
-            if (parenthesizedExpression->expressionElements != nullptr)
-                sourceFile->append(", ");
-            outputParen = false;
+            if (!inThrow(functionCall)) {
+                if (outputParen)
+                    sourceFile->append("(");
+                else
+                    sourceFile->append(", ");
+                sourceFile->append("_ep");
+                if (parenthesizedExpression->expressionElements != nullptr)
+                    sourceFile->append(", ");
+                outputParen = false;
+            }
         }
     }
 
@@ -1600,12 +1602,12 @@ bool CppVisitor::catchesError(FunctionCall* functionCall) {
 
 void CppVisitor::closeParenthesizedExpression(ParenthesizedExpression* parenthesizedExpression) {
     sourceFile->append(")");
-    if (parenthesizedExpression->parent->_isFunctionCall()) {
+/*    if (parenthesizedExpression->parent->_isFunctionCall()) {
         FunctionCall* functionCall = (FunctionCall*)parenthesizedExpression->parent;
         if (functionCall->catchClauses != nullptr) {
             sourceFile->append(";");
         }
-    }
+    }*/
 }
 
 void CppVisitor::visitLiteralExpression(LiteralExpression* literalExpression) {
@@ -2011,43 +2013,45 @@ void CppVisitor::closeReturnExpression(ReturnExpression* returnExpression) {
 
 bool CppVisitor::openThrowExpression(ThrowExpression* throwExpression) {
     _Region _region; _Page* _p = _region.get();
-    sourceFile->append("return _Result<");
+    String* thrownType = getThrownType(_p, throwExpression);
+    if (thrownType == nullptr)
+        return false;
+    sourceFile->append("return ");
     String* returnType = getReturnType(_p, throwExpression);
     if (returnType != nullptr) {
+        sourceFile->append("_Result<");
         sourceFile->append(returnType);
         sourceFile->append(", ");
-    }
-    String* thrownType = getThrownType(_p, throwExpression);
-    if (thrownType != nullptr) {
         sourceFile->append(thrownType);
         sourceFile->append(">(");
-        if (inWildcardCatchClause(throwExpression)) {
-            throwExpression->expression->accept(this);
-            sourceFile->append(")");
-        }
-        else {
-            sourceFile->append("new(_ep) ");
-            sourceFile->append(thrownType);
-            sourceFile->append("(new(_ep) _");
-            sourceFile->append(thrownType);
-            sourceFile->append("_");
-            if (throwExpression->expression->_isSimpleExpression()) {
-                SimpleExpression* simpleExpression = (SimpleExpression*)throwExpression->expression;
-                PrimaryExpression* primaryExpression = simpleExpression->prefixExpression->expression->primaryExpression;
-                if (primaryExpression->_isIdentifierExpression()) {
-                    IdentifierExpression* identifierExpression = (IdentifierExpression*)primaryExpression;
-                    sourceFile->append(identifierExpression->name);
-                    if (simpleExpression->prefixExpression->expression->postfixes != nullptr) {
-                        if ((*(*simpleExpression->prefixExpression->expression->postfixes)[0])->_isFunctionCall()) {
-                            FunctionCall* functionCall = (FunctionCall*)*(*simpleExpression->prefixExpression->expression->postfixes)[0];
-                            functionCall->accept(this);
-                        }
+    }
+    if (inWildcardCatchClause(throwExpression)) {
+        throwExpression->expression->accept(this);
+    }
+    else {
+        sourceFile->append("new(_ep) ");
+        sourceFile->append(thrownType);
+        sourceFile->append("(new(_ep) _");
+        sourceFile->append(thrownType);
+        sourceFile->append("_");
+        if (throwExpression->expression->_isSimpleExpression()) {
+            SimpleExpression* simpleExpression = (SimpleExpression*)throwExpression->expression;
+            PrimaryExpression* primaryExpression = simpleExpression->prefixExpression->expression->primaryExpression;
+            if (primaryExpression->_isIdentifierExpression()) {
+                IdentifierExpression* identifierExpression = (IdentifierExpression*)primaryExpression;
+                sourceFile->append(identifierExpression->name);
+                if (simpleExpression->prefixExpression->expression->postfixes != nullptr) {
+                    if ((*(*simpleExpression->prefixExpression->expression->postfixes)[0])->_isFunctionCall()) {
+                        FunctionCall* functionCall = (FunctionCall*)*(*simpleExpression->prefixExpression->expression->postfixes)[0];
+                        functionCall->accept(this);
                     }
-                    sourceFile->append("))");
                 }
             }
         }
+        if (returnType != nullptr) 
+            sourceFile->append(")");
     }
+    sourceFile->append(")");
     return false;
 }
 
