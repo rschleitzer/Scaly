@@ -1275,15 +1275,15 @@ bool CppVisitor::openCatchClause(CatchClause* catchClause) {
                     indentSource();
                     sourceFile->append("}\n");
                     indentSource();
-                    if (catchClause->catchPattern->_isWildCardCatchPattern()) {
-                        sourceFile->append("else");
-                    }
-                    else if (catchClause->catchPattern->_isIdentifierCatchPattern()) {
+                    sourceFile->append("else");
+                    if (catchClause->catchPattern->_isIdentifierCatchPattern()) {
                         IdentifierCatchPattern* identifierCatchPattern = (IdentifierCatchPattern*)catchClause->catchPattern;
-                        sourceFile->append("if (_");
+                        sourceFile->append(" if (_");
                         sourceFile->append(identifierPattern->identifier);
                         sourceFile->append("_result.getErrorCode() == _");
-                        sourceFile->append("FileError");
+                        String* errorType = getErrorType(catchClause);
+                        if (errorType != nullptr)
+                            sourceFile->append(errorType);
                         sourceFile->append("_");
                         sourceFile->append(identifierCatchPattern->name);
                         sourceFile->append(") {\n");
@@ -1333,6 +1333,26 @@ bool CppVisitor::openCatchClause(CatchClause* catchClause) {
         }
     }
     return false;
+}
+
+String* CppVisitor::getErrorType(CatchClause* catchClause) {
+    if (catchClause->bindingPattern != nullptr) {
+        if (catchClause->bindingPattern->elements != nullptr) {
+            if (catchClause->bindingPattern->elements->length() == 1) {
+                TuplePatternElement* element = *(*catchClause->bindingPattern->elements)[0];
+                if (element->pattern->_isIdentifierPattern()) {
+                    IdentifierPattern* pattern = (IdentifierPattern*)element->pattern;
+                    if (pattern->annotationForType != nullptr) {
+                        if (pattern->annotationForType->annotationForType->_isTypeIdentifier()) {
+                            TypeIdentifier* typeIdentifier = (TypeIdentifier*)pattern->annotationForType->annotationForType;
+                            return typeIdentifier->name;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    return nullptr;
 }
 
 void CppVisitor::closeCatchClause(CatchClause* catchClause) {

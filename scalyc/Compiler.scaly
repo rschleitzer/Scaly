@@ -4,7 +4,7 @@ class Compiler {
         mutable sources: [String] = [String]();
         for file: String in files {
             let source: String = File.readToString(file)
-                catch noSuchFileOrDirectory(error) throw CompilerError.FileNotFound(file)
+                catch noSuchFileOrDirectory(error: FileError) throw CompilerError.FileNotFound(file)
                 catch _ (error) throw CompilerError.UnableToReadFile(file, error)
                 
             sources.push(source)
