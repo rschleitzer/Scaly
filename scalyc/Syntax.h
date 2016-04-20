@@ -829,9 +829,10 @@ public:
 
 class ThrowExpression : public PrimaryExpression {
 public:
-    ThrowExpression(Expression* expression, Position* start, Position* end);
+    ThrowExpression(IdentifierExpression* error, ParenthesizedExpression* arguments, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
-    Expression* expression;
+    IdentifierExpression* error;
+    ParenthesizedExpression* arguments;
 
     virtual bool _isThrowExpression();
 };

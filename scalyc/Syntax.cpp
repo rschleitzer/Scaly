@@ -1293,17 +1293,20 @@ void ReturnExpression::accept(SyntaxVisitor* visitor) {
 
 bool ReturnExpression::_isReturnExpression() { return true; }
 
-ThrowExpression::ThrowExpression(Expression* expression, Position* start, Position* end) {
+ThrowExpression::ThrowExpression(IdentifierExpression* error, ParenthesizedExpression* arguments, Position* start, Position* end) {
     this->start = start;
     this->end = end;
-    this->expression = expression;
+    this->error = error;
+    this->arguments = arguments;
 }
 
 void ThrowExpression::accept(SyntaxVisitor* visitor) {
     if (!visitor->openThrowExpression(this))
         return;
-    if (expression != nullptr)
-        expression->accept(visitor);
+    if (error != nullptr)
+        error->accept(visitor);
+    if (arguments != nullptr)
+        arguments->accept(visitor);
     visitor->closeThrowExpression(this);
 }
 

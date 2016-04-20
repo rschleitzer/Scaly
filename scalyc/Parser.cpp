@@ -2796,18 +2796,28 @@ _Result<ThrowExpression, ParserError> Parser::parseThrowExpression(_Page* _rp, _
         lexer->advance();
     else
         return _Result<ThrowExpression, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_keywordExpected(new(_ep) Position(startThrow1), &String::create(_ep, throwKeyword))));
-    auto _expression_result = parseExpression(_rp, _ep);
-    Expression* expression = nullptr;
-    if (_expression_result.succeeded()) {
-        expression = _expression_result.getResult();
+    auto _error_result = parseIdentifierExpression(_rp, _ep);
+    IdentifierExpression* error = nullptr;
+    if (_error_result.succeeded()) {
+        error = _error_result.getResult();
     }
     else {
-        expression = nullptr;
+        error = nullptr;
+    }
+    auto _arguments_result = parseParenthesizedExpression(_rp, _ep);
+    ParenthesizedExpression* arguments = nullptr;
+    if (_arguments_result.succeeded()) {
+        arguments = _arguments_result.getResult();
+    }
+    else {
+        arguments = nullptr;
     }
     Position* end = lexer->getPosition(_p);
-    ThrowExpression* ret = new(_rp) ThrowExpression(expression, new(_rp) Position(start), new(_rp) Position(end));
-    if (expression != nullptr)
-        expression->parent = ret;
+    ThrowExpression* ret = new(_rp) ThrowExpression(error, arguments, new(_rp) Position(start), new(_rp) Position(end));
+    if (error != nullptr)
+        error->parent = ret;
+    if (arguments != nullptr)
+        arguments->parent = ret;
     return _Result<ThrowExpression, ParserError>(ret);
 }
 

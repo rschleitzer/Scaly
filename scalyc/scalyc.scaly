@@ -1,11 +1,11 @@
 if args.length < 1 {
-    throw 1
+    throw
 }
 else {
     let options: CompilerOptions = CompilerOptions.ParseArguments(args)
-        catch invalidOption throw 2
-        catch noOutputOption throw 3
-        catch noFilesToCompile throw 4
+        catch invalidOption throw
+        catch noOutputOption throw
+        catch noFilesToCompile throw
 
-    Compiler.compile(options) catch _ throw 5
+    Compiler.compile(options) catch _ throw
 }

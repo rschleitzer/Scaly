@@ -1894,11 +1894,14 @@ class Parser {
         else
             throw keywordExpected(Position(startThrow1), String(throwKeyword))
 
-        let expression: Expression = parseExpression() catch _ null
+        let error: IdentifierExpression = parseIdentifierExpression() catch _ null
+        let arguments: ParenthesizedExpression = parseParenthesizedExpression() catch _ null
         mutable end: Position = lexer.getPosition()
-        var ret: ThrowExpression = ThrowExpression(expression, Position(start), Position(end))
-       if expression != null
-            expression.parent = ret
+        var ret: ThrowExpression = ThrowExpression(error, arguments, Position(start), Position(end))
+       if error != null
+            error.parent = ret
+       if arguments != null
+            arguments.parent = ret
 
         return ret
     }

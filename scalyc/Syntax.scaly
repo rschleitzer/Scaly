@@ -1289,21 +1289,25 @@ class ReturnExpression : PrimaryExpression {
 
 class ThrowExpression : PrimaryExpression {
 
-    init(expression: Expression, start: Position, end: Position) {
+    init(error: IdentifierExpression, arguments: ParenthesizedExpression, start: Position, end: Position) {
         this.start = start;
         this.end = end;
-        this.expression = expression;
+        this.error = error;
+        this.arguments = arguments;
     }
 
     override function accept(mutable visitor: SyntaxVisitor) {
         if !visitor.openThrowExpression(this)
             return;
-        if expression != null
-            expression.accept(visitor)
+        if error != null
+            error.accept(visitor)
+        if arguments != null
+            arguments.accept(visitor)
         visitor.closeThrowExpression(this)
     }
 
-    let expression: Expression?
+    let error: IdentifierExpression?
+    let arguments: ParenthesizedExpression?
 }
 
 class BreakExpression : PrimaryExpression {
