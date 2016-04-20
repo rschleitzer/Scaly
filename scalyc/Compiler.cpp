@@ -34,14 +34,18 @@ CompilerError* Compiler::compileFiles(_Page* _ep, Options* options) {
         source = *(*sources)[_i];
         {
             auto _compilationUnit_result = compileUnit(_p, _ep, *(*files)[index], source);
-            if (!_compilationUnit_result.succeeded())
-                return new(_ep) CompilerError(new(_ep) _CompilerError_syntaxError(_compilationUnit_result.getError()));
-            CompilationUnit* compilationUnit = _compilationUnit_result.getResult();
+            CompilationUnit* compilationUnit = nullptr;
+            if (_compilationUnit_result.succeeded()) {
+                compilationUnit = _compilationUnit_result.getResult();
+            }
+            else {
+                auto error = _compilationUnit_result.getError();
+                return new(_ep) CompilerError(new(_ep) _CompilerError_syntaxError(error));
+            }
             compilationUnits->push(compilationUnit);
             index++;
         }
     }
-
     Program* program = new(_p) Program(options->outputName, options->directory, &_Vector<CompilationUnit>::create(_p, *compilationUnits));
     if (compilationUnits) {
         size_t _compilationUnits_length = compilationUnits->length();

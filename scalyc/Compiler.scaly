@@ -13,7 +13,7 @@ class Compiler {
         mutable compilationUnits: [CompilationUnit] = [CompilationUnit]();
         let index: unsigned = 0
         for source: String in sources {
-            let compilationUnit: CompilationUnit = compileUnit(source, files[index])
+            let compilationUnit: CompilationUnit = compileUnit(files[index], source)
                 catch _ (error: CompilerError) throw syntaxError(error)
 
             compilationUnits.push(compilationUnit);
