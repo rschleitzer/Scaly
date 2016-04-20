@@ -2025,23 +2025,50 @@ bool CppVisitor::openThrowExpression(ThrowExpression* throwExpression) {
         sourceFile->append(thrownType);
         sourceFile->append(">(");
     }
-    if (inWildcardCatchClause(throwExpression)) {
-        throwExpression->error->accept(this);
-    }
-    else {
-        sourceFile->append("new(_ep) ");
-        sourceFile->append(thrownType);
-        sourceFile->append("(new(_ep) _");
-        sourceFile->append(thrownType);
-        sourceFile->append("_");
+    {
+        bool buildError = true;
+        if (throwExpression->arguments == nullptr) {
+            if (throwExpression->error->_isIdentifierExpression()) {
+                IdentifierExpression* errorExpression = (IdentifierExpression*)(throwExpression->error);
+                String* errorName = errorExpression->name;
+                CatchClause* catchClause = getCatchClause(throwExpression);
+                if (catchClause != nullptr) {
+                    if (catchClause->catchPattern != nullptr) {
+                        if (catchClause->catchPattern->_isWildCardCatchPattern()) {
+                            if (catchClause->bindingPattern != nullptr) {
+                                TuplePattern* bindingPattern = catchClause->bindingPattern;
+                                if (bindingPattern->elements != nullptr) {
+                                    if (bindingPattern->elements->length() > 0) {
+                                        TuplePatternElement* element = *(*(bindingPattern->elements))[0];
+                                        if (element->pattern->_isIdentifierPattern()) {
+                                            IdentifierPattern* pattern = (IdentifierPattern*)element->pattern;
+                                            if (pattern->identifier->equals(errorName))
+                                                buildError = false;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        if (buildError) {
+            sourceFile->append("new(_ep) ");
+            sourceFile->append(thrownType);
+            sourceFile->append("(new(_ep) _");
+            sourceFile->append(thrownType);
+            sourceFile->append("_");
+        }
         if (throwExpression->error != nullptr)
             throwExpression->error->accept(this);
         if (throwExpression->arguments != nullptr)
             throwExpression->arguments->accept(this);
-        if (returnType != nullptr) 
+        if (buildError)
             sourceFile->append(")");
     }
-    sourceFile->append(")");
+    if (returnType != nullptr) 
+        sourceFile->append(")");
     return false;
 }
 

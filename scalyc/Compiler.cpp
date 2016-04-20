@@ -28,7 +28,7 @@ CompilerError* Compiler::compileFiles(_Page* _ep, Options* options) {
     }
     _Array<CompilationUnit>* compilationUnits = new(_p) _Array<CompilationUnit>();
     size_t index = 0;
-    String* source = 0;
+    String* source = nullptr;
     size_t _sources_length = sources->length();
     for (size_t _i = 0; _i < _sources_length; _i++) {
         source = *(*sources)[_i];
