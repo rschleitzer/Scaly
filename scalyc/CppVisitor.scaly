@@ -379,7 +379,7 @@ class CppVisitor : SyntaxVisitor {
         return true
     }
 
-    function getErrorType(catchClause: CatchClause) -> String {
+    function getErrorType(catchClause: CatchClause) -> existing String {
         return 0;
     }
 

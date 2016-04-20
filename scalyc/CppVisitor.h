@@ -136,7 +136,7 @@ public:
     virtual bool openTypeCast(TypeCast* typeCast);
     virtual void closeTypeCast(TypeCast* typeCast);
     virtual bool openCatchClause(CatchClause* catchClause);
-    String* getErrorType(CatchClause* catchClause);
+    virtual String* getErrorType(CatchClause* catchClause);
     virtual void closeCatchClause(CatchClause* catchClause);
     virtual bool openWildCardCatchPattern(WildCardCatchPattern* wildCardCatchPattern);
     virtual void closeWildCardCatchPattern(WildCardCatchPattern* wildCardCatchPattern);
