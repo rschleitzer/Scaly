@@ -20,7 +20,7 @@ class Compiler {
             index++
         }
 
-        mutable program: Program = Program()
+        mutable program: Program = Program(options.outputName, options.directory, [CompilationUnit](compilationUnits))
         program.name = options.outputName
         program.compilationUnits = compilationUnits
 
