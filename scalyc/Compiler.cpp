@@ -53,9 +53,8 @@ CompilerError* Compiler::compileFiles(_Page* _ep, Options* options) {
         item = *(*compilationUnits)[_i];
         item->parent = program;
     }
-
-    CppVisitor& visitor = *new(_p) CppVisitor();
-    CppError* cppError = visitor.execute(_p, program);
+    CppVisitor* visitor = new(_p) CppVisitor();
+    CppError* cppError = visitor->execute(_p, program);
     if (cppError) {
         switch (cppError->getErrorCode()) {
             case _CppErrorCode_unableToCreateOutputDirectory:

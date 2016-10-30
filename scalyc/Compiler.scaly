@@ -23,6 +23,11 @@ class Compiler {
         mutable program: Program = Program(options.outputName, options.directory, [CompilationUnit](compilationUnits))
         for item: CompilationUnit in compilationUnits
             item.parent = program
+        
+        mutable visitor: CppVisitor = CppVisitor()
+        
+        visitor.execute(program)
+            catch unableToCreateOutputDirectory(uTCOD: unableToCreateOutputDirectory) throw unableToCreateOutputDirectory(uTCOD.directory, uTCOD.error)
     }
 
     static function compileUnit(fileName: String, text: String) -> CompilationUnit throws ParserError {
