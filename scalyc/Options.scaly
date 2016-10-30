@@ -42,7 +42,7 @@ class Options {
         if input.length() == 0
             throw noFilesToCompile
 
-        return Options(input, output, dir)
+        return Options([String](input), output, dir)
     }
 
     let files: [String]
