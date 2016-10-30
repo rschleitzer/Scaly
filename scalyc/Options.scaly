@@ -1,14 +1,15 @@
 class Options {
-    init() {
-        files = null;
-        outputName = null;
+    init(input: [String], output: String, dir: String) {
+        files = input
+        outputName = output
+        directory = dir
     }
 
     static function parseArguments(args: [String]) -> Options throws OptionsError {
         let length: unsigned = args.length()
-        mutable options: Options = Options()
-        options.files = [String]()
-        
+        mutable output: String = null
+        mutable dir: String = null
+        mutable files: [String] = [String]()
         mutable i: unsigned = 0
         repeat {
             if length < 2 || args[i][0] != "-" {

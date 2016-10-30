@@ -2,58 +2,55 @@
 using namespace scaly;
 namespace scalyc {
 
-Options::Options() {
-    files = nullptr;
-    outputName = nullptr;
+Options::Options(_Vector<String>* input, String* output, String* dir) {
+    files = input;
+    outputName = output;
+    directory = dir;
 }
 
 _Result<Options, OptionsError> Options::parseArguments(_Page* _rp, _Page* _ep, _Vector<String>* args) {
     _Region _region; _Page* _p = _region.get();
     size_t length = args->length();
-    Options& options = *new(_rp) Options();
-    {
-
-        _Array<String>* files = new(_p) _Array<String>();
-        for (size_t i = 0; i < length; i++) {
-
-            if (length < 2 || (*(*args)[i])->charAt(0) != '-') {
-                files->push(*(*args)[i]);
-                continue;
-            }
-            switch ((*(*args)[i])->charAt(1))
-            {
-                case 'o': {
-                    i++;
-                    if (i == length)
-                        return _Result<Options, OptionsError>(new(_ep) OptionsError(new(_ep) _OptionsError_invalidOption(*(*args)[i])));
-                    else
-                        options.outputName = *(*args)[i];
-
-                    break;
-                }
-                case 'd': {
-                    i++;
-                    if (i == length)
-                        return _Result<Options, OptionsError>(new(_ep) OptionsError(new(_ep) _OptionsError_invalidOption(*(*args)[i])));
-                    else
-                        options.directory = *(*args)[i];
-
-                    break;
-                }
-                default:
-                    return _Result<Options, OptionsError>(new(_ep) OptionsError(new(_ep) _OptionsError_unknownOption(*(*args)[i])));
-            }
+    String* output = 0;
+    String* dir = 0;
+    _Array<String>* input = new(_p) _Array<String>();
+    size_t i = 0;
+    do {
+        if (length < 2 || (*(*args)[i])->charAt(0) != '-') {
+            input->push(*(*args)[i]);
+            i++;
+            continue;
         }
+        switch ((*(*args)[i])->charAt(1))
+        {
+            case 'o': {
+                i++;
+                if (i == length)
+                    return _Result<Options, OptionsError>(new(_ep) OptionsError(new(_ep) _OptionsError_invalidOption(*(*args)[i])));
+                else
+                    output = *(*args)[i];
+                break;
+            }
+            case 'd': {
+                i++;
+                if (i == length)
+                    return _Result<Options, OptionsError>(new(_ep) OptionsError(new(_ep) _OptionsError_invalidOption(*(*args)[i])));
+                else
+                    dir = *(*args)[i];
+                break;
+            }
+            default:
+                return _Result<Options, OptionsError>(new(_ep) OptionsError(new(_ep) _OptionsError_unknownOption(*(*args)[i])));
+        }
+        i++;
+    } while (i < length);
 
-        if (!options.outputName)
-            return _Result<Options, OptionsError>(new(_ep) OptionsError(_OptionsErrorCode_noOutputOption));
-        if (files->length() == 0)
-            return _Result<Options, OptionsError>(new(_ep) OptionsError(_OptionsErrorCode_noFilesToCompile));
+    if (!output)
+        return _Result<Options, OptionsError>(new(_ep) OptionsError(_OptionsErrorCode_noOutputOption));
+    if (input->length() == 0)
+        return _Result<Options, OptionsError>(new(_ep) OptionsError(_OptionsErrorCode_noFilesToCompile));
 
-        options.files = &_Vector<String>::create(options.getPage(), *files);
-    }
-
-    return _Result<Options, OptionsError>(&options);
+    return _Result<Options, OptionsError>(new(_rp) Options(&_Vector<String>::create(_rp, *input), output, dir));
 }
 
 }
