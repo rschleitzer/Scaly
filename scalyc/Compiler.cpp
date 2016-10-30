@@ -46,7 +46,7 @@ CompilerError* Compiler::compileFiles(_Page* _ep, Options* options) {
             index++;
         }
     }
-    Program* program = new(_p) Program(options->outputName, options->directory, &_Vector<CompilationUnit>::create(_p, *compilationUnits));
+    Program* program = new(_p) Program(options->outputName, options->directory, &_Vector<CompilationUnit>::create(_p, *(compilationUnits)));
     if (compilationUnits) {
         size_t _compilationUnits_length = compilationUnits->length();
         for (size_t _i = 0; _i < _compilationUnits_length; _i++)
