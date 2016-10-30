@@ -18,14 +18,14 @@ class Options {
                 continue
             }
             switch (args[i]).charAt(1) {
-                case "o": {
+                case 'o': {
                     i++
                     if i == length
                         throw invalidOption(args[i])
                     else
                         output = args[i]
                 }
-                case "d": {
+                case 'd': {
                     i++
                     if i == length
                         throw invalidOption(args[i])

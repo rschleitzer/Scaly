@@ -23,19 +23,23 @@ _Result<Options, OptionsError> Options::parseArguments(_Page* _rp, _Page* _ep, _
         }
         switch ((*(*args)[i])->charAt(1)) {
             case 'o': {
-                i++;
-                if (i == length)
-                    return _Result<Options, OptionsError>(new(_ep) OptionsError(new(_ep) _OptionsError_invalidOption(*(*args)[i])));
-                else
-                    output = *(*args)[i];
+                {
+                    i++;
+                    if (i == length)
+                        return _Result<Options, OptionsError>(new(_ep) OptionsError(new(_ep) _OptionsError_invalidOption(*(*args)[i])));
+                    else
+                        output = *(*args)[i];
+                }
                 break;
             }
             case 'd': {
-                i++;
-                if (i == length)
-                    return _Result<Options, OptionsError>(new(_ep) OptionsError(new(_ep) _OptionsError_invalidOption(*(*args)[i])));
-                else
-                    dir = *(*args)[i];
+                {
+                    i++;
+                    if (i == length)
+                        return _Result<Options, OptionsError>(new(_ep) OptionsError(new(_ep) _OptionsError_invalidOption(*(*args)[i])));
+                    else
+                        dir = *(*args)[i];
+                }
                 break;
             }
             default:
