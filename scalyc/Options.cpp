@@ -32,6 +32,7 @@ _Result<Options, OptionsError> Options::parseArguments(_Page* _rp, _Page* _ep, _
                 }
                 break;
             }
+
             case 'd': {
                 {
                     i++;
@@ -42,11 +43,14 @@ _Result<Options, OptionsError> Options::parseArguments(_Page* _rp, _Page* _ep, _
                 }
                 break;
             }
-            default:
+
+            default: {
                 return _Result<Options, OptionsError>(new(_ep) OptionsError(new(_ep) _OptionsError_unknownOption(*(*args)[i])));
+            }
         }
         i++;
-    } while (i < length);
+    }
+    while (i < length);
 
     if (!output)
         return _Result<Options, OptionsError>(new(_ep) OptionsError(_OptionsErrorCode_noOutputOption));
