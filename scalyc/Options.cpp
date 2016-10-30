@@ -2,9 +2,10 @@
 using namespace scaly;
 namespace scalyc {
 
-Options::Options()
-:files(0), outputName() {}
-
+Options::Options() {
+    files = nullptr;
+    outputName = nullptr;
+}
 
 _Result<Options, OptionsError> Options::parseArguments(_Page* _rp, _Page* _ep, _Vector<String>* args) {
     size_t length = args->length();

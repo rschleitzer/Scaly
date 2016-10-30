@@ -1,5 +1,9 @@
 class Options {
-    init() {}
+    init() {
+        files = null;
+        outputName = null;
+    }
+
     static function parseArguments(args: [String]) -> Options throws OptionsError {
         let length: unsigned = args.length
         mutable options: Options = Options()
