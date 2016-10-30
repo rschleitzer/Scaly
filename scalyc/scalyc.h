@@ -11,8 +11,8 @@
 #include "ParserError.h"
 #include "Parser.h"
 #include "OptionsError.h"
-#include "Options.h"
 #include "CompilerError.h"
+#include "Options.h"
 #include "Compiler.h"
 #include "scalyc.h"
 
