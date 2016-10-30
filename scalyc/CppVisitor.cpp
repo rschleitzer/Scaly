@@ -2316,8 +2316,10 @@ bool CppVisitor::openInitializerCall(InitializerCall* initializerCall) {
                 sourceFile->append(">::create(");
                 if (inThrow(initializerCall))
                     sourceFile->append("_ep");
-                if (inReturn(initializerCall))
+                else if (inReturn(initializerCall))
                     sourceFile->append("_rp");
+                else
+                    sourceFile->append("_p");
                 sourceFile->append(", *");
                 initializerCall->arguments->accept(this);
                 sourceFile->append(")");
