@@ -2302,13 +2302,18 @@ void CppVisitor::visitEmptyCaseContent(EmptyCaseContent* emptyCaseContent) {
 
 bool CppVisitor::openInitializerCall(InitializerCall* initializerCall) {
     if (initializerCall->typeToInitialize->_isArrayType()) {
-        if (inThrow(initializerCall)) {
+        if (inThrow(initializerCall) || inReturn(initializerCall)) {
             ArrayType* arrayType = (ArrayType*)initializerCall->typeToInitialize;
             if (arrayType->elementType->_isTypeIdentifier()) {
                 TypeIdentifier* typeId = (TypeIdentifier*)arrayType->elementType;
                 sourceFile->append("&_Vector<");
                 sourceFile->append(typeId->name);
-                sourceFile->append(">::create(_ep, *");
+                sourceFile->append(">::create(");
+                if (inThrow(initializerCall))
+                    sourceFile->append("_ep");
+                if (inReturn(initializerCall))
+                    sourceFile->append("_rp");
+                sourceFile->append(", *");
                 initializerCall->arguments->accept(this);
                 sourceFile->append(")");
                 return false;

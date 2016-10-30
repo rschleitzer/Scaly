@@ -58,4 +58,5 @@ _Result<Options, OptionsError> Options::parseArguments(_Page* _rp, _Page* _ep, _
     return _Result<Options, OptionsError>(new(_rp) Options(&_Vector<String>::create(_rp, *input), output, dir));
 }
 
+
 }
