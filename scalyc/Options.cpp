@@ -51,8 +51,7 @@ _Result<Options, OptionsError> Options::parseArguments(_Page* _rp, _Page* _ep, _
         i++;
     }
     while (i < length);
-
-    if (!output)
+    if (output == nullptr)
         return _Result<Options, OptionsError>(new(_ep) OptionsError(_OptionsErrorCode_noOutputOption));
     if (input->length() == 0)
         return _Result<Options, OptionsError>(new(_ep) OptionsError(_OptionsErrorCode_noFilesToCompile));
