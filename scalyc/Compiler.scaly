@@ -21,11 +21,8 @@ class Compiler {
         }
 
         mutable program: Program = Program(options.outputName, options.directory, [CompilationUnit](compilationUnits))
-        program.name = options.outputName
-        program.compilationUnits = compilationUnits
-
-        mutable visitor: CppVisitor = CppVisitor()
-        program.Accept(visitor)
+        for item: CompilationUnit in compilationUnits
+            item.parent = program
     }
 
     static function compileUnit(fileName: String, text: String) -> CompilationUnit throws ParserError {
