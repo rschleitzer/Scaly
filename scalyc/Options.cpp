@@ -11,8 +11,8 @@ Options::Options(_Vector<String>* input, String* output, String* dir) {
 _Result<Options, OptionsError> Options::parseArguments(_Page* _rp, _Page* _ep, _Vector<String>* args) {
     _Region _region; _Page* _p = _region.get();
     size_t length = args->length();
-    String* output = 0;
-    String* dir = 0;
+    String* output = nullptr;
+    String* dir = nullptr;
     _Array<String>* input = new(_p) _Array<String>();
     size_t i = 0;
     do {

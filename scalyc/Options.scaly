@@ -9,11 +9,11 @@ class Options {
         let length: unsigned = args.length()
         mutable output: String = null
         mutable dir: String = null
-        mutable files: [String] = [String]()
+        mutable input: [String] = [String]()
         mutable i: unsigned = 0
         repeat {
             if length < 2 || args[i][0] != "-" {
-                options.files.append(arg)
+                input.append(arg)
                 i++
                 continue
             }
@@ -23,26 +23,26 @@ class Options {
                     if i == length
                         throw invalidOption(args[i])
                     else
-                        options.outputName = args[i]
+                        output = args[i]
                 }
                 case "d": {
                     i++
                     if i == length
                         throw invalidOption(args[i])
                     else
-                        options.directory = args[i]
+                        dir = args[i]
                 }
                 default:
                     throw unknownOption(args[i])
             }
             i++
         } while i < length
-        if options.outputName == null
+        if output == null
             throw noOutputOption
-        if options.files.length == 0
+        if input.length == 0
             throw noFilesToCompile
 
-        return options
+        return new Options(input, output, dir)
     }
 
     let files: [String]
