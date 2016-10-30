@@ -511,7 +511,7 @@ class CppVisitor : SyntaxVisitor {
         return null
     }
 
-    function getBindingInitializerOfPostfix(postfix: Postfix) -> existing BindingInitializer {
+    function getBindingInitializerOfPostfix(postfixExpression: PostfixExpression) -> existing BindingInitializer {
         return null
     }
 
