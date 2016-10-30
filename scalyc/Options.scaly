@@ -5,11 +5,11 @@ class Options {
     }
 
     static function parseArguments(args: [String]) -> Options throws OptionsError {
-        let length: unsigned = args.length
+        let length: unsigned = args.length()
         mutable options: Options = Options()
         options.files = [String]()
         
-        mutable i: unsigned = 0;
+        mutable i: unsigned = 0
         repeat {
             if length < 2 || args[i][0] != "-" {
                 options.files.append(arg)
