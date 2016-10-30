@@ -12,12 +12,12 @@ class Options {
         mutable input: [String] = [String]()
         mutable i: unsigned = 0
         repeat {
-            if length < 2 || args[i][0] != "-" {
-                input.append(arg)
+            if length < 2 || (args[i]).charAt(0) != '-' {
+                input.push(args[i])
                 i++
                 continue
             }
-            switch args[i][1] {
+            switch (args[i]).charAt(1) {
                 case "o": {
                     i++
                     if i == length

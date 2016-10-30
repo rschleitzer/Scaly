@@ -21,8 +21,7 @@ _Result<Options, OptionsError> Options::parseArguments(_Page* _rp, _Page* _ep, _
             i++;
             continue;
         }
-        switch ((*(*args)[i])->charAt(1))
-        {
+        switch ((*(*args)[i])->charAt(1)) {
             case 'o': {
                 i++;
                 if (i == length)
