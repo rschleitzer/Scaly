@@ -8,11 +8,10 @@ Options::Options() {
 }
 
 _Result<Options, OptionsError> Options::parseArguments(_Page* _rp, _Page* _ep, _Vector<String>* args) {
+    _Region _region; _Page* _p = _region.get();
     size_t length = args->length();
     Options& options = *new(_rp) Options();
     {
-        // Make a region for the current block and get the page
-        _Region _region; _Page* _p = _region.get();
 
         _Array<String>* files = new(_p) _Array<String>();
         for (size_t i = 0; i < length; i++) {
