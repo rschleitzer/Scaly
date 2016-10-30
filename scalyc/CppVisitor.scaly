@@ -507,7 +507,11 @@ class CppVisitor : SyntaxVisitor {
         return false
     }
 
-    function getBindingInitializer(functionCall: FunctionCall) -> existing BindingInitializer {
+    function getBindingInitializerOfFunctionCall(functionCall: FunctionCall) -> existing BindingInitializer {
+        return null
+    }
+
+    function getBindingInitializerOfPostfix(postfix: Postfix) -> existing BindingInitializer {
         return null
     }
 
@@ -568,6 +572,10 @@ class CppVisitor : SyntaxVisitor {
 
     function openInitializerCall(initializerCall: InitializerCall) -> bool {
         return true
+    }
+
+    function initializerIsBoundOrAssigned(initializerCall: InitializerCall) -> bool {
+        return false
     }
 
     function closeInitializerCall(initializerCall: InitializerCall) {

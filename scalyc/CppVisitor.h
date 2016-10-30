@@ -172,7 +172,8 @@ public:
     virtual bool assignedToMutableObject(FunctionCall* functionCall);
     virtual bool assignedToConstantObject(FunctionCall* functionCall);
     virtual bool boundToObject(BindingInitializer* bindingInitializer);
-    virtual BindingInitializer* getBindingInitializer(FunctionCall* functionCall);
+    virtual BindingInitializer* getBindingInitializerOfFunctionCall(FunctionCall* functionCall);
+    virtual BindingInitializer* getBindingInitializerOfPostfix(PostfixExpression* postfixExpression);
     virtual bool callsInitializer(FunctionCall* functionCall);
     virtual bool catchesError(FunctionCall* functionCall);
     virtual void closeParenthesizedExpression(ParenthesizedExpression* parenthesizedExpression);
@@ -189,6 +190,7 @@ public:
     virtual bool openBreakExpression(BreakExpression* breakExpression);
     virtual void closeBreakExpression(BreakExpression* breakExpression);
     virtual bool openInitializerCall(InitializerCall* initializerCall);
+    virtual bool initializerIsBoundOrAssigned(InitializerCall* initializerCall);
     virtual void closeInitializerCall(InitializerCall* initializerCall);
     virtual void visitThisExpression(ThisExpression* thisExpression);
     virtual bool openSuperDot(SuperDot* superDot);
