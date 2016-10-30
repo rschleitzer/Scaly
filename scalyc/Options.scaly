@@ -39,10 +39,10 @@ class Options {
         } while i < length
         if output == null
             throw noOutputOption
-        if input.length == 0
+        if input.length() == 0
             throw noFilesToCompile
 
-        return new Options(input, output, dir)
+        return Options(input, output, dir)
     }
 
     let files: [String]

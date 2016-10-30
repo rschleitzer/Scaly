@@ -2056,8 +2056,13 @@ bool CppVisitor::openThrowExpression(ThrowExpression* throwExpression) {
         if (buildError) {
             sourceFile->append("new(_ep) ");
             sourceFile->append(thrownType);
-            sourceFile->append("(new(_ep) _");
+            sourceFile->append("(");
+            if (throwExpression->arguments != nullptr)
+                sourceFile->append("new(_ep) ");
+            sourceFile->append("_");
             sourceFile->append(thrownType);
+            if (throwExpression->arguments == nullptr)
+                sourceFile->append("Code");
             sourceFile->append("_");
         }
         if (throwExpression->error != nullptr)
