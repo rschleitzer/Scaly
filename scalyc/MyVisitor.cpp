@@ -282,7 +282,11 @@ bool MyVisitor::openWildCardCatchPattern(WildCardCatchPattern* wildCardCatchPatt
 void MyVisitor::closeWildCardCatchPattern(WildCardCatchPattern* wildCardCatchPattern) {
 }
 
-void MyVisitor::visitIdentifierCatchPattern(IdentifierCatchPattern* identifierCatchPattern) {
+bool MyVisitor::openIdentifierCatchPattern(IdentifierCatchPattern* identifierCatchPattern) {
+    return true;
+}
+
+void MyVisitor::closeIdentifierCatchPattern(IdentifierCatchPattern* identifierCatchPattern) {
 }
 
 void MyVisitor::visitOperatorPostfix(OperatorPostfix* operatorPostfix) {

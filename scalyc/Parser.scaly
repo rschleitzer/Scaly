@@ -1352,8 +1352,11 @@ class Parser {
         else
             throw identifierExpected(Position(startName))
 
+        let member: ExplicitMemberExpression = parseExplicitMemberExpression() catch _ null
         mutable end: Position = lexer.getPosition()
-        var ret: IdentifierCatchPattern = IdentifierCatchPattern(name, Position(start), Position(end))
+        var ret: IdentifierCatchPattern = IdentifierCatchPattern(name, member, Position(start), Position(end))
+       if member != null
+            member.parent = ret
 
         return ret
     }

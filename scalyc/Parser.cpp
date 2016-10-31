@@ -1985,8 +1985,18 @@ _Result<IdentifierCatchPattern, ParserError> Parser::parseIdentifierCatchPattern
         lexer->advance();
     else
         return _Result<IdentifierCatchPattern, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_identifierExpected(new(_ep) Position(startName))));
+    auto _member_result = parseExplicitMemberExpression(_rp, _ep);
+    ExplicitMemberExpression* member = nullptr;
+    if (_member_result.succeeded()) {
+        member = _member_result.getResult();
+    }
+    else {
+        member = nullptr;
+    }
     Position* end = lexer->getPosition(_p);
-    IdentifierCatchPattern* ret = new(_rp) IdentifierCatchPattern(name, new(_rp) Position(start), new(_rp) Position(end));
+    IdentifierCatchPattern* ret = new(_rp) IdentifierCatchPattern(name, member, new(_rp) Position(start), new(_rp) Position(end));
+    if (member != nullptr)
+        member->parent = ret;
     return _Result<IdentifierCatchPattern, ParserError>(ret);
 }
 

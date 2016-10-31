@@ -190,7 +190,8 @@ class SyntaxVisitor {
     function closeCatchClause(catchClause: CatchClause);
     function openWildCardCatchPattern(wildCardCatchPattern: WildCardCatchPattern) -> bool;
     function closeWildCardCatchPattern(wildCardCatchPattern: WildCardCatchPattern);
-    function visitIdentifierCatchPattern(identifierCatchPattern: IdentifierCatchPattern);
+    function openIdentifierCatchPattern(identifierCatchPattern: IdentifierCatchPattern) -> bool;
+    function closeIdentifierCatchPattern(identifierCatchPattern: IdentifierCatchPattern);
     function visitOperatorPostfix(operatorPostfix: OperatorPostfix);
     function openFunctionCall(functionCall: FunctionCall) -> bool;
     function closeFunctionCall(functionCall: FunctionCall);

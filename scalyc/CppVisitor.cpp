@@ -1422,8 +1422,11 @@ bool CppVisitor::openWildCardCatchPattern(WildCardCatchPattern* wildCardCatchPat
 void CppVisitor::closeWildCardCatchPattern(WildCardCatchPattern* wildCardCatchPattern) {
 }
 
-void CppVisitor::visitIdentifierCatchPattern(IdentifierCatchPattern* identifierCatchPattern) {
-    return;
+bool CppVisitor::openIdentifierCatchPattern(IdentifierCatchPattern* identifierCatchPattern) {
+    return true;
+}
+
+void CppVisitor::closeIdentifierCatchPattern(IdentifierCatchPattern* identifierCatchPattern) {
 }
 
 void CppVisitor::visitOperatorPostfix(OperatorPostfix* operatorPostfix) {

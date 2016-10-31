@@ -141,7 +141,8 @@ public:
     virtual void closeCatchClause(CatchClause* catchClause);
     virtual bool openWildCardCatchPattern(WildCardCatchPattern* wildCardCatchPattern);
     virtual void closeWildCardCatchPattern(WildCardCatchPattern* wildCardCatchPattern);
-    virtual void visitIdentifierCatchPattern(IdentifierCatchPattern* identifierCatchPattern);
+    virtual bool openIdentifierCatchPattern(IdentifierCatchPattern* identifierCatchPattern);
+    virtual void closeIdentifierCatchPattern(IdentifierCatchPattern* identifierCatchPattern);
     virtual void visitOperatorPostfix(OperatorPostfix* operatorPostfix);
     virtual bool openFunctionCall(FunctionCall* functionCall);
     virtual void closeFunctionCall(FunctionCall* functionCall);

@@ -957,17 +957,23 @@ class WildCardCatchPattern : CatchPattern {
 
 class IdentifierCatchPattern : CatchPattern {
 
-    init(name: String, start: Position, end: Position) {
+    init(name: String, member: ExplicitMemberExpression, start: Position, end: Position) {
         this.start = start;
         this.end = end;
         this.name = name;
+        this.member = member;
     }
 
     override function accept(mutable visitor: SyntaxVisitor) {
-        visitor.visitIdentifierCatchPattern(this)
+        if !visitor.openIdentifierCatchPattern(this)
+            return;
+        if member != null
+            member.accept(visitor)
+        visitor.closeIdentifierCatchPattern(this)
     }
 
     let name: String?
+    let member: ExplicitMemberExpression?
 }
 
 class Postfix : SyntaxNode {

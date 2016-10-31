@@ -305,7 +305,8 @@ public:
     virtual void closeCatchClause(CatchClause* catchClause) = 0;
     virtual bool openWildCardCatchPattern(WildCardCatchPattern* wildCardCatchPattern) = 0;
     virtual void closeWildCardCatchPattern(WildCardCatchPattern* wildCardCatchPattern) = 0;
-    virtual void visitIdentifierCatchPattern(IdentifierCatchPattern* identifierCatchPattern) = 0;
+    virtual bool openIdentifierCatchPattern(IdentifierCatchPattern* identifierCatchPattern) = 0;
+    virtual void closeIdentifierCatchPattern(IdentifierCatchPattern* identifierCatchPattern) = 0;
     virtual void visitOperatorPostfix(OperatorPostfix* operatorPostfix) = 0;
     virtual bool openFunctionCall(FunctionCall* functionCall) = 0;
     virtual void closeFunctionCall(FunctionCall* functionCall) = 0;

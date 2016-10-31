@@ -239,6 +239,7 @@
 
     <syntax id = IdentifierCatchPattern                         base = CatchPattern
         <content identifier                                     property = name
+        <content link = ExplicitMemberExpression       optional property = member
 
     <syntax id = Postfix                      multiple abstract
         <content link = OperatorPostfix
