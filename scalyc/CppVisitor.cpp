@@ -1249,7 +1249,7 @@ void CppVisitor::closeTypeCast(TypeCast* typeCast) {
 bool CppVisitor::openCatchClause(CatchClause* catchClause) {
     if (catchClause->parent->_isFunctionCall()) {
         FunctionCall* functionCall = (FunctionCall*)catchClause->parent;
-        BindingInitializer* bindingInitializer = getBindingInitializerOfFunctionCall(functionCall);
+        BindingInitializer* bindingInitializer = getBindingInitializer(functionCall);
         if (bindingInitializer != nullptr) {
             PatternInitializer* patternInitializer = bindingInitializer->initializer;
             if (patternInitializer->pattern->_isIdentifierPattern()) {
@@ -1523,7 +1523,7 @@ bool CppVisitor::openParenthesizedExpression(ParenthesizedExpression* parenthesi
 }
 
 bool CppVisitor::assignedToMutableObject(FunctionCall* functionCall) {
-    BindingInitializer* bindingInitializer = getBindingInitializerOfFunctionCall(functionCall);
+    BindingInitializer* bindingInitializer = getBindingInitializer(functionCall);
     if (bindingInitializer == nullptr)
         return false;
     if (bindingInitializer->parent->_isMutableDeclaration()) {
@@ -1534,7 +1534,7 @@ bool CppVisitor::assignedToMutableObject(FunctionCall* functionCall) {
 }
 
 bool CppVisitor::assignedToConstantObject(FunctionCall* functionCall) {
-    BindingInitializer* bindingInitializer = getBindingInitializerOfFunctionCall(functionCall);
+    BindingInitializer* bindingInitializer = getBindingInitializer(functionCall);
     if (bindingInitializer == nullptr)
         return false;
     if (bindingInitializer->parent->_isConstantDeclaration()) {
@@ -1562,21 +1562,16 @@ bool CppVisitor::boundToObject(BindingInitializer* bindingInitializer) {
     return false;
 }
 
-BindingInitializer* CppVisitor::getBindingInitializerOfFunctionCall(FunctionCall* functionCall) {
+BindingInitializer* CppVisitor::getBindingInitializer(FunctionCall* functionCall) {
     if (functionCall->parent->_isPostfixExpression()) {
         PostfixExpression* postfixExpression = (PostfixExpression*)functionCall->parent;
-        return getBindingInitializerOfPostfix(postfixExpression);
-    }
-    return nullptr;
-}
-
-BindingInitializer* CppVisitor::getBindingInitializerOfPostfix(PostfixExpression* postfixExpression) {
-    if (postfixExpression->parent->parent->parent->_isInitializer()) {
-        Initializer* initializer = (Initializer*)postfixExpression->parent->parent->parent;
-        if (initializer->parent->_isPatternInitializer()) {
-            PatternInitializer* patternInitializer = (PatternInitializer*)initializer->parent;
-            if (patternInitializer->parent->_isBindingInitializer()) {
-                return (BindingInitializer*)patternInitializer->parent;
+        if (postfixExpression->parent->parent->parent->_isInitializer()) {
+            Initializer* initializer = (Initializer*)postfixExpression->parent->parent->parent;
+            if (initializer->parent->_isPatternInitializer()) {
+                PatternInitializer* patternInitializer = (PatternInitializer*)initializer->parent;
+                if (patternInitializer->parent->_isBindingInitializer()) {
+                    return (BindingInitializer*)patternInitializer->parent;
+                }
             }
         }
     }
