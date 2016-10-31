@@ -1265,90 +1265,114 @@ void CppVisitor::closeTypeCast(TypeCast* typeCast) {
 bool CppVisitor::openCatchClause(CatchClause* catchClause) {
     if (catchClause->parent->_isFunctionCall()) {
         FunctionCall* functionCall = (FunctionCall*)catchClause->parent;
-        BindingInitializer* bindingInitializer = getBindingInitializer(functionCall);
-        if (bindingInitializer != nullptr) {
-            PatternInitializer* patternInitializer = bindingInitializer->initializer;
-            if (patternInitializer->pattern->_isIdentifierPattern()) {
-                IdentifierPattern* identifierPattern = (IdentifierPattern*)patternInitializer->pattern;
-                if (*(*functionCall->catchClauses)[0] == catchClause) {
-                    sourceFile->append(";\n");
+        {
+            BindingInitializer* bindingInitializer = getBindingInitializer(functionCall);
+            if (bindingInitializer != nullptr) {
+                PatternInitializer* patternInitializer = bindingInitializer->initializer;
+                if (patternInitializer->pattern->_isIdentifierPattern()) {
+                    IdentifierPattern* identifierPattern = (IdentifierPattern*)patternInitializer->pattern;
+                    if (*(*functionCall->catchClauses)[0] == catchClause) {
+                        sourceFile->append(";\n");
+                        indentSource();
+                        identifierPattern->annotationForType->accept(this);
+                        sourceFile->append(" ");
+                        sourceFile->append(identifierPattern->identifier);
+                        sourceFile->append(" = nullptr;\n");
+                        indentSource();
+                        sourceFile->append("if (_");
+                        sourceFile->append(identifierPattern->identifier);
+                        sourceFile->append("_result.succeeded()) {\n");
+                        sourceIndentLevel++;
+                        indentSource();
+                        sourceFile->append(identifierPattern->identifier);                    
+                        sourceFile->append(" = _");
+                        sourceFile->append(identifierPattern->identifier);                    
+                        sourceFile->append("_result.getResult();\n");
+                        sourceIndentLevel--;
+                        indentSource();
+                        sourceFile->append("}\n");
+                    }
                     indentSource();
-                    identifierPattern->annotationForType->accept(this);
-                    sourceFile->append(" ");
-                    sourceFile->append(identifierPattern->identifier);
-                    sourceFile->append(" = nullptr;\n");
-                    indentSource();
-                    sourceFile->append("if (_");
-                    sourceFile->append(identifierPattern->identifier);
-                    sourceFile->append("_result.succeeded()) {\n");
-                    sourceIndentLevel++;
-                    indentSource();
-                    sourceFile->append(identifierPattern->identifier);                    
-                    sourceFile->append(" = _");
-                    sourceFile->append(identifierPattern->identifier);                    
-                    sourceFile->append("_result.getResult();\n");
-                    sourceIndentLevel--;
-                    indentSource();
-                    sourceFile->append("}\n");
-                }
-                indentSource();
-                sourceFile->append("else");
-                if (catchClause->catchPattern->_isIdentifierCatchPattern()) {
-                    IdentifierCatchPattern* identifierCatchPattern = (IdentifierCatchPattern*)catchClause->catchPattern;
-                    sourceFile->append(" if (_");
-                    sourceFile->append(identifierPattern->identifier);
-                    sourceFile->append("_result.getErrorCode() == _");
-                    String* errorType = getErrorType(catchClause);
-                    if (errorType != nullptr)
-                        sourceFile->append(errorType);
-                    sourceFile->append("_");
-                    sourceFile->append(identifierCatchPattern->name);
-                    sourceFile->append(")");
-                }
-                sourceFile->append(" {\n");
-                
-                if (catchClause->catchPattern->_isWildCardCatchPattern()) {
-                    if (catchClause->bindingPattern != nullptr) {
-                        TuplePattern* bindingPattern = catchClause->bindingPattern;
-                        if (bindingPattern->elements != nullptr) {
-                            if (bindingPattern->elements->length() > 0) {
-                                TuplePatternElement* element = *(*(bindingPattern->elements))[0];
-                                if (element->pattern->_isIdentifierPattern()) {
-                                    IdentifierPattern* pattern = (IdentifierPattern*)element->pattern;
-                                    sourceIndentLevel++;
-                                    indentSource();
-                                    sourceFile->append("auto ");
-                                    sourceFile->append(pattern->identifier);                    
-                                    sourceFile->append(" = _");
-                                    sourceFile->append(identifierPattern->identifier);
-                                    sourceFile->append("_result.getError();\n");
-                                    sourceIndentLevel--;
+                    sourceFile->append("else");
+                    if (catchClause->catchPattern->_isIdentifierCatchPattern()) {
+                        IdentifierCatchPattern* identifierCatchPattern = (IdentifierCatchPattern*)catchClause->catchPattern;
+                        sourceFile->append(" if (_");
+                        sourceFile->append(identifierPattern->identifier);
+                        sourceFile->append("_result.getErrorCode() == _");
+                        String* errorType = getErrorType(catchClause);
+                        if (errorType != nullptr)
+                            sourceFile->append(errorType);
+                        sourceFile->append("_");
+                        sourceFile->append(identifierCatchPattern->name);
+                        sourceFile->append(")");
+                    }
+                    sourceFile->append(" {\n");
+                    
+                    if (catchClause->catchPattern->_isWildCardCatchPattern()) {
+                        if (catchClause->bindingPattern != nullptr) {
+                            TuplePattern* bindingPattern = catchClause->bindingPattern;
+                            if (bindingPattern->elements != nullptr) {
+                                if (bindingPattern->elements->length() > 0) {
+                                    TuplePatternElement* element = *(*(bindingPattern->elements))[0];
+                                    if (element->pattern->_isIdentifierPattern()) {
+                                        IdentifierPattern* pattern = (IdentifierPattern*)element->pattern;
+                                        sourceIndentLevel++;
+                                        indentSource();
+                                        sourceFile->append("auto ");
+                                        sourceFile->append(pattern->identifier);                    
+                                        sourceFile->append(" = _");
+                                        sourceFile->append(identifierPattern->identifier);
+                                        sourceFile->append("_result.getError();\n");
+                                        sourceIndentLevel--;
+                                    }
                                 }
                             }
                         }
                     }
-                }
-                
-                sourceIndentLevel++;
-                indentSource();
-                if (catchClause->expression->_isSimpleExpression()) {
-                    SimpleExpression* simpleExpression = (SimpleExpression*)catchClause->expression;
-                    PrimaryExpression* primaryExpression = simpleExpression->prefixExpression->expression->primaryExpression;
-                    if ((!primaryExpression->_isReturnExpression()) && (!primaryExpression->_isBreakExpression()) && (!primaryExpression->_isThrowExpression())) {
-                        sourceFile->append(identifierPattern->identifier);
-                        sourceFile->append(" = ");
+                    
+                    sourceIndentLevel++;
+                    indentSource();
+                    if (catchClause->expression->_isSimpleExpression()) {
+                        SimpleExpression* simpleExpression = (SimpleExpression*)catchClause->expression;
+                        PrimaryExpression* primaryExpression = simpleExpression->prefixExpression->expression->primaryExpression;
+                        if ((!primaryExpression->_isReturnExpression()) && (!primaryExpression->_isBreakExpression()) && (!primaryExpression->_isThrowExpression())) {
+                            sourceFile->append(identifierPattern->identifier);
+                            sourceFile->append(" = ");
+                        }
                     }
+                    catchClause->expression->accept(this);
+                    if (catchClause->expression->_isSimpleExpression())
+                        sourceFile->append(";\n");
+                    sourceIndentLevel--;
+                    indentSource();
+                    sourceFile->append("}\n");
                 }
-                catchClause->expression->accept(this);
-                if (catchClause->expression->_isSimpleExpression())
-                    sourceFile->append(";\n");
-                sourceIndentLevel--;
+            }
+        }
+        {
+            IdentifierExpression* identifierExpression = getIdentifierExpression((PostfixExpression*)functionCall->parent);
+            if (identifierExpression != nullptr) {
+                sourceFile->append(";\n");
                 indentSource();
-                sourceFile->append("}\n");
+                sourceFile->append("if (_");
+                sourceFile->append(identifierExpression->name);
+                sourceFile->append("_error) {\n");
             }
         }
     }
     return false;
+}
+
+IdentifierExpression* CppVisitor::getIdentifierExpression(PostfixExpression* postfixExpression) {
+    if (postfixExpression->parent->parent->parent->parent->_isCodeBlock()) {
+        if (postfixExpression->parent->_isPrefixExpression()) {
+            PrefixExpression* prefixExpression = (PrefixExpression*)postfixExpression->parent;
+            if (prefixExpression->expression->primaryExpression->_isIdentifierExpression()) {
+                return (IdentifierExpression*)prefixExpression->expression->primaryExpression;
+            }
+        }
+    }
+    return nullptr;
 }
 
 String* CppVisitor::getErrorType(CatchClause* catchClause) {

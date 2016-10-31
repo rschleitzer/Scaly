@@ -379,6 +379,10 @@ class CppVisitor : SyntaxVisitor {
         return true
     }
 
+    function getIdentifierExpression(functionCall: FunctionCall) -> IdentifierExpression {
+        return null
+    }
+
     function getErrorType(catchClause: CatchClause) -> existing String {
         return 0;
     }

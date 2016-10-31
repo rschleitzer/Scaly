@@ -136,6 +136,7 @@ public:
     virtual bool openTypeCast(TypeCast* typeCast);
     virtual void closeTypeCast(TypeCast* typeCast);
     virtual bool openCatchClause(CatchClause* catchClause);
+    virtual IdentifierExpression* getIdentifierExpression(PostfixExpression* postfixExpression);
     virtual String* getErrorType(CatchClause* catchClause);
     virtual void closeCatchClause(CatchClause* catchClause);
     virtual bool openWildCardCatchPattern(WildCardCatchPattern* wildCardCatchPattern);
