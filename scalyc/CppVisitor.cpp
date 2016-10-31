@@ -1364,8 +1364,21 @@ bool CppVisitor::openCatchClause(CatchClause* catchClause) {
                     sourceFile->append(identifierExpression->name);
                     sourceFile->append("_error->getErrorCode()) {\n");
                     sourceIndentLevel++;
-
                 }
+                indentSource();
+                sourceFile->append("case _");
+                if (catchClause->catchPattern->_isIdentifierCatchPattern()) {
+                    IdentifierCatchPattern* identifierCatchPattern = (IdentifierCatchPattern*)catchClause->catchPattern;
+                    sourceFile->append(identifierCatchPattern->name);
+                    sourceFile->append("Code_");
+                    if (identifierCatchPattern->member != nullptr) {
+                        if(identifierCatchPattern->member->memberPostfix->_isNamedMemberPostfix()) {
+                            NamedMemberPostfix* namedMemberPostfix = (NamedMemberPostfix*)identifierCatchPattern->member->memberPostfix;
+                            sourceFile->append(namedMemberPostfix->identifier->name);
+                        }
+                    }
+                }
+                sourceFile->append(":\n");
                 if (*(*functionCall->catchClauses)[functionCall->catchClauses->length() - 1] == catchClause) {
                     sourceIndentLevel--;
                     indentSource();
