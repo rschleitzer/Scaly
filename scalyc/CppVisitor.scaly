@@ -397,7 +397,11 @@ class CppVisitor : SyntaxVisitor {
     function closeWildCardCatchPattern(wildCardCatchPattern: WildCardCatchPattern) {
     }
 
-    function visitIdentifierCatchPattern(identifierCatchPattern: IdentifierCatchPattern) {
+    function openIdentifierCatchPattern(identifierCatchPattern: IdentifierCatchPattern) -> bool {
+        return true
+    }
+
+    function closeIdentifierCatchPattern(identifierCatchPattern: IdentifierCatchPattern) {
     }
 
     function visitOperatorPostfix(operatorPostfix: OperatorPostfix) {
