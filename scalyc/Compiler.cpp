@@ -54,11 +54,11 @@ CompilerError* Compiler::compileFiles(_Page* _ep, Options* options) {
         item->parent = program;
     }
     CppVisitor* visitor = new(_p) CppVisitor();
-    CppError* cppError = visitor->execute(_p, program);
-    if (cppError) {
-        switch (cppError->getErrorCode()) {
+    auto _visitor_error = visitor->execute(_p, program);
+    if (_visitor_error) {
+        switch (_visitor_error->getErrorCode()) {
             case _CppErrorCode_unableToCreateOutputDirectory:
-                _CppError_unableToCreateOutputDirectory* uTCOD = cppError->get_unableToCreateOutputDirectory();
+                _CppError_unableToCreateOutputDirectory* uTCOD = _visitor_error->get_unableToCreateOutputDirectory();
                 return new(_ep) CompilerError(new(_ep) _CompilerError_unableToCreateOutputDirectory(uTCOD->directory, uTCOD->error));
         }
     }
