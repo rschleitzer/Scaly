@@ -379,7 +379,7 @@ class CppVisitor : SyntaxVisitor {
         return true
     }
 
-    function getIdentifierExpression(functionCall: FunctionCall) -> IdentifierExpression {
+    function getIdentifierExpression(functionCall: FunctionCall) -> existing IdentifierExpression {
         return null
     }
 
