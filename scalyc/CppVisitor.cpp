@@ -6,7 +6,7 @@ CppVisitor::CppVisitor() {
     this->cppError = 0;
 }
 
-CppError* CppVisitor::execute(_Page* _rp, Program* program) {
+CppError* CppVisitor::execute(_Page* _ep, Program* program) {
     program->accept(this);
     return cppError;
 }
