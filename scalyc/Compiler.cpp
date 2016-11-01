@@ -68,7 +68,16 @@ CompilerError* Compiler::compileFiles(_Page* _ep, Options* options) {
 _Result<CompilationUnit, ParserError> Compiler::compileUnit(_Page* _rp, _Page* _ep, String* fileName, String* text) {
     _Region _region; _Page* _p = _region.get();
     Parser* parser = new(_p) Parser(fileName, text);
-    return _Result<CompilationUnit, ParserError>(parser->parseCompilationUnit(_rp, _ep));
+    auto _compilationUnit_result = parser->parseCompilationUnit(_rp, _ep);
+    CompilationUnit* compilationUnit = nullptr;
+    if (_compilationUnit_result.succeeded()) {
+        compilationUnit = _compilationUnit_result.getResult();
+    }
+    else {
+        auto error = _compilationUnit_result.getError();
+        return _Result<CompilationUnit, ParserError>(error);
+    }
+    return _Result<CompilationUnit, ParserError>(compilationUnit);
 }
 
 

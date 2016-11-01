@@ -32,6 +32,9 @@ class Compiler {
 
     static function compileUnit(fileName: String, text: String) -> CompilationUnit throws ParserError {
         mutable parser: Parser = Parser(fileName, text)
-        return parser.parseCompilationUnit()
+        let compilationUnit: CompilationUnit = parser.parseCompilationUnit()
+            catch _ (error: ParserError)
+                throw error
+        return compilationUnit
     }
 };
