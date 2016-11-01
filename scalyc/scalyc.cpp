@@ -6,7 +6,6 @@ int _main(_Vector<String>* args) {
 _Region _rp; _Page* _p = _rp.get();
 _Region _rep; _Page* _ep = _rep.get();
 
-
 if (args->length() < 1) {
     return 1;
 }
