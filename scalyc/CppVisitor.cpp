@@ -1066,6 +1066,13 @@ FunctionCall* CppVisitor::getFunctionCall(PatternInitializer* patternInitializer
 }
 
 void CppVisitor::closeCodeBlock(CodeBlock* codeBlock) {
+    if (codeBlock->parent->_isFunctionDeclaration()) {
+        FunctionDeclaration* functionDeclaration = (FunctionDeclaration*)codeBlock->parent;
+        if ((functionDeclaration->signature->throwsClause != nullptr) && (functionDeclaration->signature->result == nullptr)) {
+            indentSource();
+            sourceFile->append("return nullptr;\n");
+        }
+    }
     sourceIndentLevel--;
     indentSource();
     sourceFile->append("}\n");
