@@ -1406,6 +1406,13 @@ bool CppVisitor::openCatchClause(CatchClause* catchClause) {
                     }
                 }
                 
+                sourceIndentLevel++;
+                indentSource();
+                catchClause->expression->accept(this);
+                if (catchClause->expression->_isSimpleExpression())
+                    sourceFile->append(";\n");
+                sourceIndentLevel--;
+                
                 if (*(*functionCall->catchClauses)[functionCall->catchClauses->length() - 1] == catchClause) {
                     sourceIndentLevel--;
                     indentSource();
