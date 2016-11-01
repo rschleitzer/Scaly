@@ -277,6 +277,20 @@ void CppVisitor::closeTerminatedStatement(TerminatedStatement* terminatedStateme
             return;
         if (primaryExpression->_isWhileExpression())
             return;
+        if (primaryExpression->_isIdentifierExpression()) {
+            PostfixExpression* postfixExpression = expression->prefixExpression->expression;
+            if (postfixExpression->postfixes != nullptr) {
+                size_t _postfixes_length = postfixExpression->postfixes->length();
+                for (size_t _i = 0; _i < _postfixes_length; _i++) {
+                    Postfix* postfix = *(*postfixExpression->postfixes)[_i];
+                    if (postfix->_isFunctionCall()) {
+                        FunctionCall* functionCall = (FunctionCall*)postfix;
+                        if (catchesError(functionCall))
+                            return;
+                    }
+                }
+            }
+        }
     }
 
     if (terminatedStatement->statement->_isCodeBlock())

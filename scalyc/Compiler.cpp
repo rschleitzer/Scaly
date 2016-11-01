@@ -62,9 +62,7 @@ CompilerError* Compiler::compileFiles(_Page* _ep, Options* options) {
                 return new(_ep) CompilerError(new(_ep) _CompilerError_unableToCreateOutputDirectory(uTCOD->directory, uTCOD->error));
         }
     }
-
-    // Everything went fine
-    return 0;
+    return nullptr;
 }
 
 _Result<CompilationUnit, ParserError> Compiler::compileUnit(_Page* _rp, _Page* _ep, String* fileName, String* text)
