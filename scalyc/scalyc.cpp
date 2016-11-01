@@ -15,20 +15,15 @@ else {
     if (_options_result.succeeded()) {
         options = _options_result.getResult();
     }
-    else {
-        switch (_options_result.getErrorCode()) {
-            case _OptionsErrorCode_invalidOption: {
-                return 2;
-            }
-            case _OptionsErrorCode_noOutputOption: {
-                return 3;
-            }
-            case _OptionsErrorCode_noFilesToCompile: {
-                return 4;
-            }
-        }
+    else if (_options_result.getErrorCode() == _OptionsErrorCode_invalidOption) {
+        return 2;
     }
-
+    else if (_options_result.getErrorCode() == _OptionsErrorCode_noOutputOption) {
+        return 3;
+    }
+    else if (_options_result.getErrorCode() == _OptionsErrorCode_noFilesToCompile) {
+        return 4;
+    }
     CompilerError* compilerError = Compiler::compileFiles(_p, options);
     if (compilerError) {
         return 2;
@@ -36,6 +31,7 @@ else {
 }
 
 return 0;
+
 }
 
 }

@@ -155,7 +155,7 @@ bool CppVisitor::openCompilationUnit(CompilationUnit* compilationUnit) {
     sourceFile->append(" {\n\n");
     
     if (isTopLevelFile(compilationUnit))
-        sourceFile->append("int _main(_Vector<String>* args) {\n_Region _rp; _Page* _p = _rp.get();\nRegion _rep; _Page* _ep = _rep.get();\n");
+        sourceFile->append("int _main(_Vector<String>* args) {\n_Region _rp; _Page* _p = _rp.get();\n_Region _rep; _Page* _ep = _rep.get();\n\n");
 
     return true;
 }
