@@ -51,6 +51,7 @@ public:
     virtual bool openProgram(Program* program);
     virtual void closeProgram(Program* program);
     virtual bool openCompilationUnit(CompilationUnit* compilationUnit);
+    virtual bool isTopLevelFile(CompilationUnit* compilationUnit);
     virtual void closeCompilationUnit(CompilationUnit* compilationUnit);
     virtual bool openTerminatedStatement(TerminatedStatement* terminatedStatement);
     virtual void closeTerminatedStatement(TerminatedStatement* terminatedStatement);

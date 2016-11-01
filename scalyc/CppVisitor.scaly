@@ -84,6 +84,10 @@ class CppVisitor : SyntaxVisitor {
     function openCompilationUnit(compilationUnit: CompilationUnit) -> bool {
         return true
     }
+    
+    function isTopLevelFile(compilationUnit: CompilationUnit) -> bool {
+        return false
+    }
 
     function closeCompilationUnit(compilationUnit: CompilationUnit) {
     }

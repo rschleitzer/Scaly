@@ -3,19 +3,21 @@ using namespace scaly;
 namespace scalyc {
 
 int _main(_Vector<String>* args) {
-_Region _region; _Page* _p = _region.get();
+_Region _rp; _Page* _p = _rp.get();
+_Region _rep; _Page* _ep = _rep.get();
+
 
 if (args->length() < 1) {
     return 1;
 }
 else {
-    Options* options = 0;
-    _Result<Options, OptionsError> _result_options = Options::parseArguments(_p, _p, args);
-    if (_result_options.succeeded()) {
-        options = _result_options.getResult();
+    auto _options_result = Options::parseArguments(_p, _ep, args);
+    Options* options = nullptr;
+    if (_options_result.succeeded()) {
+        options = _options_result.getResult();
     }
     else {
-        switch (_result_options.getErrorCode()) {
+        switch (_options_result.getErrorCode()) {
             case _OptionsErrorCode_invalidOption: {
                 return 2;
             }

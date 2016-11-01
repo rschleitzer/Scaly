@@ -153,8 +153,24 @@ bool CppVisitor::openCompilationUnit(CompilationUnit* compilationUnit) {
     sourceFile->append(".h\"\nusing namespace scaly;\nnamespace ");
     sourceFile->append(programName);
     sourceFile->append(" {\n\n");
+    
+    if (isTopLevelFile(compilationUnit))
+        sourceFile->append("int _main(_Vector<String>* args) {\n_Region _region; _Page* _p = _region.get();\n\n");
 
     return true;
+}
+
+bool CppVisitor::isTopLevelFile(CompilationUnit* compilationUnit) {
+    _Vector<TerminatedStatement>* statements = compilationUnit->statements;
+    size_t _statements_length = statements->length();
+    for (size_t _i = 0; _i < _statements_length; _i++) {
+        TerminatedStatement* statement = *(*statements)[_i];
+        if (statement->statement->_isExpression()) {
+            return true;
+        }
+    }
+            
+    return false;
 }
 
 void CppVisitor::closeCompilationUnit(CompilationUnit* compilationUnit) {
