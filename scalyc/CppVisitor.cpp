@@ -1342,11 +1342,11 @@ bool CppVisitor::openCatchClause(CatchClause* catchClause) {
                         sourceFile->append(" if (_");
                         sourceFile->append(identifierPattern->identifier);
                         sourceFile->append("_result.getErrorCode() == _");
+                        sourceFile->append(identifierCatchPattern->name);
+                        sourceFile->append("Code_");
                         String* errorType = getErrorType(catchClause);
                         if (errorType != nullptr)
                             sourceFile->append(errorType);
-                        sourceFile->append("_");
-                        sourceFile->append(identifierCatchPattern->name);
                         sourceFile->append(")");
                     }
                     sourceFile->append(" {\n");

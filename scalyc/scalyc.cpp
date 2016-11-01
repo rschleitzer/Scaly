@@ -24,9 +24,11 @@ else {
     else if (_options_result.getErrorCode() == _OptionsErrorCode_noFilesToCompile) {
         return 4;
     }
-    CompilerError* compilerError = Compiler::compileFiles(_p, options);
-    if (compilerError) {
-        return 2;
+    auto _Compiler_error = Compiler::compileFiles(_ep, options);
+    if (_Compiler_error) {
+        switch (_Compiler_error->getErrorCode()) {
+            default:                return 5;
+        }
     }
 }
 
