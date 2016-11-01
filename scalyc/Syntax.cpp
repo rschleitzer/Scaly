@@ -118,6 +118,7 @@ Program::Program(String* name, String* directory, _Vector<CompilationUnit>* comp
     this->name = name;
     this->directory = directory;
     this->compilationUnits = compilationUnits;
+    this->parent = nullptr;
 }
 
 void Program::accept(SyntaxVisitor* visitor) {

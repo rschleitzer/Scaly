@@ -15,9 +15,10 @@ class "(id syntax-node)" : "(if (base syntax-node) (base syntax-node) "SyntaxNod
 "     (if (program? syntax-node)
 "        start = Position(0, 0)
         end = Position(0, 0)
-        this.name = name;
-        this.directory = directory;
-        this.compilationUnits = compilationUnits;
+        this.name = name
+        this.directory = directory
+        this.compilationUnits = compilationUnits
+        this.parent = null
 "
             (scaly-constructor-initializers syntax-node)
         )
@@ -217,6 +218,7 @@ namespace scalyc {
     this->name = name;
     this->directory = directory;
     this->compilationUnits = compilationUnits;
+    this->parent = nullptr;
 "
             (constructor-initializers syntax-node)
         )
@@ -241,7 +243,7 @@ namespace scalyc {
                                     (if (multiple? content)
                                         ($
 "    if ("(property content)" != nullptr) {
-        "(link content)"* node = 0;
+        "(link content)"* node = nullptr;
         size_t _"(property content)"_length = "(property content)"->length();
         for (size_t _i = 0; _i < _"(property content)"_length; _i++) {
             node = *(*"(property content)")[_i];

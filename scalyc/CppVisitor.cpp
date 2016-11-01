@@ -1375,10 +1375,37 @@ bool CppVisitor::openCatchClause(CatchClause* catchClause) {
                         if(identifierCatchPattern->member->memberPostfix->_isNamedMemberPostfix()) {
                             NamedMemberPostfix* namedMemberPostfix = (NamedMemberPostfix*)identifierCatchPattern->member->memberPostfix;
                             sourceFile->append(namedMemberPostfix->identifier->name);
+                            sourceFile->append(":\n");
+                            sourceIndentLevel++;
+                            indentSource();
+                            sourceFile->append("_");
+                            sourceFile->append(identifierCatchPattern->name);
+                            sourceFile->append("_");
+                            sourceFile->append(namedMemberPostfix->identifier->name);                            
+                            sourceFile->append("* ");
+                            if (catchClause->bindingPattern != nullptr) {
+                                TuplePattern* bindingPattern = catchClause->bindingPattern;
+                                if (bindingPattern->elements != nullptr) {
+                                    if (bindingPattern->elements->length() > 0) {
+                                        TuplePatternElement* element = *(*(bindingPattern->elements))[0];
+                                        if (element->pattern->_isIdentifierPattern()) {
+                                            IdentifierPattern* pattern = (IdentifierPattern*)element->pattern;
+                                            sourceFile->append(pattern->identifier);                    
+                                            sourceFile->append(" = _");
+                                            sourceFile->append(identifierExpression->name);
+                                            sourceFile->append("_error->get_");
+                                            sourceFile->append(namedMemberPostfix->identifier->name);                            
+                                            sourceFile->append("();");
+                                        }
+                                    }
+                                }
+                            }
+                            sourceFile->append("\n");
+                            sourceIndentLevel--;
                         }
                     }
                 }
-                sourceFile->append(":\n");
+                
                 if (*(*functionCall->catchClauses)[functionCall->catchClauses->length() - 1] == catchClause) {
                     sourceIndentLevel--;
                     indentSource();
