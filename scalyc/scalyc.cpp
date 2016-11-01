@@ -1,4 +1,5 @@
 #include "scalyc.h"
+using namespace scaly;
 namespace scalyc {
 
 int _main(_Vector<String>* args) {
