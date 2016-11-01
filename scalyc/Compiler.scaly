@@ -31,7 +31,7 @@ class Compiler {
     }
 
     static function compileUnit(fileName: String, text: String) -> CompilationUnit throws ParserError {
-        parser = Parser(fileName, text)
-        parser.parseTopLevelDeclaration
+        mutable parser: Parser = Parser(fileName, text)
+        return parser.parseCompilationUnit()
     }
 };

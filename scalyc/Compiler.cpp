@@ -66,11 +66,10 @@ CompilerError* Compiler::compileFiles(_Page* _ep, Options* options) {
 }
 
 _Result<CompilationUnit, ParserError> Compiler::compileUnit(_Page* _rp, _Page* _ep, String* fileName, String* text) {
-    // Make a region for the current block and get the page
     _Region _region; _Page* _p = _region.get();
-
-    Parser& parser = *new(_p) Parser(fileName, text);
-    return parser.parseCompilationUnit(_rp, _ep);
+    Parser* parser = new(_p) Parser(fileName, text);
+    return _Result<CompilationUnit, ParserError>(parser->parseCompilationUnit(_rp, _ep));
 }
+
 
 }
