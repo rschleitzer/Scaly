@@ -196,7 +196,11 @@ void CppVisitor::closeCompilationUnit(CompilationUnit* compilationUnit) {
         File::writeFromString(_p, headerFilePath, headerFile);
     }
 
+    if (isTopLevelFile(compilationUnit))
+        sourceFile->append("\nreturn 0;\n");
     sourceFile->append("\n}\n");
+    if (isTopLevelFile(compilationUnit))
+        sourceFile->append("\n}\n");
     VarString* sourceFilePath = new(_p) VarString(*outputFilePath);
     sourceFilePath->append(".cpp");
     File::writeFromString(_p, sourceFilePath , sourceFile);
