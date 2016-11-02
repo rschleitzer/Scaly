@@ -4,13 +4,12 @@ namespace scalyc {
 
 int _main(_Vector<String>* args) {
 _Region _rp; _Page* _p = _rp.get();
-_Region _rep; _Page* _ep = _rep.get();
 
 if (args->length() < 1) {
     return 1;
 }
 else {
-    auto _options_result = Options::parseArguments(_p, _ep, args);
+    auto _options_result = Options::parseArguments(_p, _p, args);
     Options* options = nullptr;
     if (_options_result.succeeded()) {
         options = _options_result.getResult();
@@ -24,7 +23,7 @@ else {
     else if (_options_result.getErrorCode() == _OptionsErrorCode_noFilesToCompile) {
         return 4;
     }
-    auto _Compiler_error = Compiler::compileFiles(_ep, options);
+    auto _Compiler_error = Compiler::compileFiles(_p, options);
     if (_Compiler_error) {
         switch (_Compiler_error->getErrorCode()) {
             default:

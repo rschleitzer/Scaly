@@ -160,7 +160,7 @@ bool CppVisitor::openCompilationUnit(CompilationUnit* compilationUnit) {
     sourceFile->append(" {\n\n");
     
     if (isTopLevelFile(compilationUnit))
-        sourceFile->append("int _main(_Vector<String>* args) {\n_Region _rp; _Page* _p = _rp.get();\n_Region _rep; _Page* _ep = _rep.get();\n\n");
+        sourceFile->append("int _main(_Vector<String>* args) {\n_Region _rp; _Page* _p = _rp.get();\n\n");
 
     return true;
 }
@@ -1663,11 +1663,16 @@ bool CppVisitor::openParenthesizedExpression(ParenthesizedExpression* parenthesi
         }
         if (catchesError(functionCall)) {
             if (!inThrow(functionCall)) {
+                _Region _region; _Page* _p = _region.get();
                 if (outputParen)
                     sourceFile->append("(");
                 else
                     sourceFile->append(", ");
-                sourceFile->append("_ep");
+                String* thrownType = getThrownType(_p, functionCall);
+                if (thrownType == nullptr)
+                    sourceFile->append("_p");
+                else
+                    sourceFile->append("_ep");
                 if (parenthesizedExpression->expressionElements != nullptr)
                     sourceFile->append(", ");
                 outputParen = false;
