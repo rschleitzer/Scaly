@@ -14,8 +14,6 @@ public:
 
 class CppVisitor : public SyntaxVisitor {
 public:
-    CppVisitor();
-    virtual CppError* execute(_Page* _rp, Program* program);
     CppError* cppError;
     String* moduleName;
     VarString* sourceFile;
@@ -35,6 +33,9 @@ public:
     bool constDeclaration;
     bool suppressSource;
     bool suppressHeader;
+    CppVisitor();
+    virtual CppError* execute(_Page* _rp, Program* program);
+    virtual bool openProgram(Program* program);
     virtual void buildProjectFileString(VarString* projectFile, Program* program);
     virtual void buildMainHeaderFileString(VarString* projectFile, Program* program);
     virtual void collectInheritances(Program* program);
@@ -48,7 +49,6 @@ public:
     virtual void indentHeader();
     virtual void indentSource();
     virtual void writeParameter(String* name, Type* parameterType);
-    virtual bool openProgram(Program* program);
     virtual void closeProgram(Program* program);
     virtual bool openCompilationUnit(CompilationUnit* compilationUnit);
     virtual bool isTopLevelFile(CompilationUnit* compilationUnit);

@@ -10,12 +10,6 @@ class Inherits {
 
 
 class CppVisitor : SyntaxVisitor {
-    init() {
-        cppError = null
-    }
-
-    function execute(program: Program) -> CppError {
-    }
 
     mutable cppError: CppError
     let moduleName: String
@@ -36,6 +30,19 @@ class CppVisitor : SyntaxVisitor {
     mutable constDeclaration: bool
     mutable suppressSource: bool
     mutable suppressHeader: bool
+
+    init() {
+        cppError = null
+    }
+
+    function execute(program: Program) -> CppError {
+        program.accept(this)
+        return cppError
+    }
+
+    function openProgram(program: Program) -> bool {
+        return true
+    }
 
     function buildProjectFileString(mutable projectFile: VarString, program: Program) {
     }
@@ -74,10 +81,6 @@ class CppVisitor : SyntaxVisitor {
     }
 
     function writeParameter(name: String, parameterType: Type) {
-    }
-
-    function openProgram(program: Program) -> bool {
-        return true
     }
 
     function closeProgram(program: Program) {
