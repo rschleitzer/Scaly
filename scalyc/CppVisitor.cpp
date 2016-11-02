@@ -11,7 +11,7 @@ CppVisitor::CppVisitor() {
     cppError = nullptr;
 }
 
-CppError* CppVisitor::execute(_Page* _ep, Program* program) {
+CppError* CppVisitor::execute(_Page* _rp, Program* program) {
     program->accept(this);
     return cppError;
 }
