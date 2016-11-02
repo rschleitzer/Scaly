@@ -2,6 +2,11 @@
 using namespace scaly;
 namespace scalyc {
 
+Inherits::Inherits(String* className) {
+    name = &String::create(getPage(), className);
+    inheritors = new(getPage()) _Array<String>();
+}
+
 CppVisitor::CppVisitor() {
     this->cppError = 0;
 }
@@ -2761,10 +2766,5 @@ void CppVisitor::buildProjectFileString(VarString* projectFile, Program* program
 }
 
 bool CppVisitor::_isCppVisitor() { return true; }
-
-Inherits::Inherits(String* className) {
-    name = &String::create(getPage(), className);
-    inheritors = new(getPage()) _Array<String>();
-}
 
 }
