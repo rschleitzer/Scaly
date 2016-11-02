@@ -8,12 +8,10 @@ Inherits::Inherits(String* className) {
 }
 
 CppVisitor::CppVisitor() {
-    cppError = nullptr;
 }
 
-CppError* CppVisitor::execute(_Page* _rp, Program* program) {
+void CppVisitor::execute(_Page* _rp, Program* program) {
     program->accept(this);
-    return cppError;
 }
 
 bool CppVisitor::openProgram(Program* program) {
@@ -28,7 +26,7 @@ bool CppVisitor::openProgram(Program* program) {
         if (_Directory_error) {
             switch (_Directory_error->getErrorCode()) {
                 default:
-                    cppError = new(getPage()) CppError(new(getPage()) _CppError_unableToCreateOutputDirectory(&String::create(getPage(), programDirectory), _Directory_error));
+                    return false;
             }
         }
     }

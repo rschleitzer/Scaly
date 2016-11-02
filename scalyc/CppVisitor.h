@@ -14,7 +14,6 @@ public:
 
 class CppVisitor : public SyntaxVisitor {
 public:
-    CppError* cppError;
     String* moduleName;
     VarString* sourceFile;
     VarString* headerFile;
@@ -34,7 +33,7 @@ public:
     bool suppressSource;
     bool suppressHeader;
     CppVisitor();
-    virtual CppError* execute(_Page* _rp, Program* program);
+    virtual void execute(_Page* _rp, Program* program);
     virtual bool openProgram(Program* program);
     virtual void buildProjectFileString(VarString* projectFile, Program* program);
     virtual void buildMainHeaderFileString(VarString* projectFile, Program* program);

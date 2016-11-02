@@ -54,14 +54,7 @@ CompilerError* Compiler::compileFiles(_Page* _ep, Options* options) {
         item->parent = program;
     }
     CppVisitor* visitor = new(_p) CppVisitor();
-    auto _visitor_error = visitor->execute(_ep, program);
-    if (_visitor_error) {
-        switch (_visitor_error->getErrorCode()) {
-            case _CppErrorCode_unableToCreateOutputDirectory:
-                _CppError_unableToCreateOutputDirectory* uTCOD = _visitor_error->get_unableToCreateOutputDirectory();
-                return new(_ep) CompilerError(new(_ep) _CompilerError_unableToCreateOutputDirectory(uTCOD->directory, uTCOD->error));
-        }
-    }
+    visitor->execute(_ep, program);
     return nullptr;
 }
 
