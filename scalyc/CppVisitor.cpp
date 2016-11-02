@@ -8,7 +8,7 @@ Inherits::Inherits(String* className) {
 }
 
 CppVisitor::CppVisitor() {
-    this->cppError = 0;
+    cppError = nullptr;
 }
 
 CppError* CppVisitor::execute(_Page* _ep, Program* program) {

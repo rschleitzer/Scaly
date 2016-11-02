@@ -1,6 +1,6 @@
 class Inherits {
     init(className: String) {
-        name = className
+        name = String(className)
         inheritors = [String]()
     }
 
@@ -10,7 +10,9 @@ class Inherits {
 
 
 class CppVisitor : SyntaxVisitor {
-    init() {}
+    init() {
+        cppError = null
+    }
 
     function execute(program: Program) -> CppError {
     }
