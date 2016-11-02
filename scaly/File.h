@@ -3,8 +3,8 @@
 namespace scaly {
     
 enum _FileErrorCode {
-    _FileError_unknownError = 1,
-    _FileError_noSuchFileOrDirectory,
+    _FileErrorCode_unknownError = 1,
+    _FileErrorCode_noSuchFileOrDirectory,
 };
 
 class FileError : public Object {

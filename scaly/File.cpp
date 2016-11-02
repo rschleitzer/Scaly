@@ -13,9 +13,9 @@ void* FileError::getErrorInfo() {
 _Result<String, FileError> File::readToString(_Page* _rp, _Page* _ep, String* path) {
     FILE* file = fopen(path->getNativeString(), "rb");
     if (!file) {
-        _FileErrorCode fileErrorCode = _FileError_unknownError;
+        _FileErrorCode fileErrorCode = _FileErrorCode_unknownError;
         switch (errno) {
-            case ENOENT: fileErrorCode = _FileError_noSuchFileOrDirectory; break;
+            case ENOENT: fileErrorCode = _FileErrorCode_noSuchFileOrDirectory; break;
         }
         return _Result<String, FileError>(new(_ep) FileError(fileErrorCode));
     }
@@ -34,9 +34,9 @@ _Result<String, FileError> File::readToString(_Page* _rp, _Page* _ep, String* pa
 FileError* File::writeFromString(_Page *_ep, VarString* path, VarString* contents) {
     FILE* file = fopen(path->getNativeString(), "wb");
     if (!file) {
-        _FileErrorCode fileErrorCode = _FileError_unknownError;
+        _FileErrorCode fileErrorCode = _FileErrorCode_unknownError;
         switch (errno) {
-            case ENOENT: fileErrorCode = _FileError_noSuchFileOrDirectory; break;
+            case ENOENT: fileErrorCode = _FileErrorCode_noSuchFileOrDirectory; break;
         }
         return new(_ep) FileError(fileErrorCode);
     }
