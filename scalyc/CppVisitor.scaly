@@ -41,9 +41,9 @@ class CppVisitor : SyntaxVisitor {
     }
 
     function openProgram(program: Program) -> bool {
-        mutable programDirectory: VarString = VarString(program.directory)
+        mutable programDirectory: String = String(program.directory)
          if programDirectory == null || programDirectory.equals("") {
-            programDirectory = VarString(".")
+            programDirectory = String(".")
         }
 
         if !Directory.exists(programDirectory) {

@@ -18,7 +18,7 @@ CppError* CppVisitor::execute(_Page* _rp, Program* program) {
 
 bool CppVisitor::openProgram(Program* program) {
     _Region _region; _Page* _p = _region.get();
-    String* programDirectory = program->directory;
+    String* programDirectory = &String::create(_p, program->directory);
     if (programDirectory == nullptr || programDirectory->equals("")) {
         programDirectory->getPage()->clear();
         programDirectory = &String::create(getPage(), ".");
