@@ -50,9 +50,12 @@ size_t VarString::getLength() {
 }
 
 bool VarString::operator == (const char* theString){
-    return strcmp(string, theString) == 0;
+    return equals(theString);
 }
 
+bool VarString::equals (const char* theString){
+    return strcmp(string, theString) == 0;
+}
 bool VarString::operator != (const char* theString){
     return strcmp(string, theString) != 0;
 }
