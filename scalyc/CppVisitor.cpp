@@ -18,23 +18,25 @@ CppError* CppVisitor::execute(_Page* _rp, Program* program) {
 
 bool CppVisitor::openProgram(Program* program) {
     _Region _region; _Page* _p = _region.get();
-    VarString* programDirectory = new(_p) VarString(program->directory);
+    String* programDirectory = program->directory;
     if (programDirectory == nullptr || programDirectory->equals("")) {
         programDirectory->getPage()->clear();
-        programDirectory = new(programDirectory->getPage()) VarString(&String::create(this->getPage(), "."));
+        programDirectory = &String::create(getPage(), ".");
+    }
+
+    if (!Directory::exists(programDirectory)) {
+        auto _Directory_error = Directory::create(_p, programDirectory);
+        if (_Directory_error) {
+            switch (_Directory_error->getErrorCode()) {
+                case _DirectoryErrorCode_noSuchDirectory:
+                    cppError = new(getPage()) CppError(new(getPage()) _CppError_unableToCreateOutputDirectory(&String::create(getPage(), programDirectory), _Directory_error));
+            }
+        }
     }
 
     {
         _Region _region; _Page* _p = _region.get();
-        if (!Directory::exists(String::create(_p, programDirectory))) {
-            DirectoryError* dirError = Directory::create(getPage(), String::create(_p, programDirectory));
-            if (dirError) {
-                cppError = new(getPage()) CppError(new(getPage()) _CppError_unableToCreateOutputDirectory(&String::create(getPage(), programDirectory), dirError));
-                return false; } } }
-
-    {
-        _Region _region; _Page* _p = _region.get();
-        VarString* outputFilePath = new(_p) VarString(*programDirectory);
+        VarString* outputFilePath = new(_p) VarString(programDirectory);
         outputFilePath->append("/");
         outputFilePath->append(program->name);
 

@@ -3,8 +3,8 @@
 namespace scaly {
     
 enum _DirectoryErrorCode {
-    _DirectoryError_unknownError = 1,
-    _DirectoryError_noSuchDirectory,
+    _DirectoryErrorCode_unknownError = 1,
+    _DirectoryErrorCode_noSuchDirectory,
 };
 
 class DirectoryError : public Object {
@@ -22,8 +22,8 @@ private:
 
 class Directory {
 public:
-    static bool exists(const String& path);
-    static DirectoryError* create(_Page *_ep, const String& path);
+    static bool exists(String* path);
+    static DirectoryError* create(_Page *_ep, String* path);
 };
 
 }

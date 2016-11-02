@@ -43,9 +43,15 @@ class CppVisitor : SyntaxVisitor {
     function openProgram(program: Program) -> bool {
         mutable programDirectory: VarString = VarString(program.directory)
          if programDirectory == null || programDirectory.equals("") {
-            programDirectory = VarString(".");
+            programDirectory = VarString(".")
         }
-       return true
+
+        if !Directory.exists(programDirectory) {
+            Directory.create(programDirectory)
+                catch _ (error: dirError())
+                    throw CppError(CppError.unableToCreateOutputDirectory(programDirectory), dirError) }
+        
+        return true
     }
 
     function buildProjectFileString(mutable projectFile: VarString, program: Program) {
