@@ -23,7 +23,6 @@ bool CppVisitor::openProgram(Program* program) {
         programDirectory->getPage()->clear();
         programDirectory = &String::create(getPage(), ".");
     }
-
     if (!Directory::exists(programDirectory)) {
         auto _Directory_error = Directory::create(_p, programDirectory);
         if (_Directory_error) {
