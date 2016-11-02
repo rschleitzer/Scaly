@@ -35,7 +35,6 @@ class CppVisitor : SyntaxVisitor {
 
     function execute(program: Program) {
         program.accept(this)
-        return cppError
     }
 
     function openProgram(program: Program) -> bool {
@@ -48,7 +47,7 @@ class CppVisitor : SyntaxVisitor {
         if !Directory.exists(programDirectory) {
             Directory.create(programDirectory)
                 catch _ (error: dirError())
-                    cppError = CppError.unableToCreateOutputDirectory(programDirectory, dirError)
+                    return false
         }
         
         return true
