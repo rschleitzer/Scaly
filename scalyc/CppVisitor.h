@@ -33,7 +33,7 @@ public:
     bool suppressSource;
     bool suppressHeader;
     CppVisitor();
-    virtual void execute(_Page* _rp, Program* program);
+    virtual void execute(Program* program);
     virtual bool openProgram(Program* program);
     virtual void buildProjectFileString(VarString* projectFile, Program* program);
     virtual void buildMainHeaderFileString(VarString* projectFile, Program* program);

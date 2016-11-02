@@ -10,7 +10,7 @@ Inherits::Inherits(String* className) {
 CppVisitor::CppVisitor() {
 }
 
-void CppVisitor::execute(_Page* _rp, Program* program) {
+void CppVisitor::execute(Program* program) {
     program->accept(this);
 }
 
