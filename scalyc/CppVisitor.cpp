@@ -2480,7 +2480,10 @@ bool CppVisitor::openInitializerCall(InitializerCall* initializerCall) {
             }
         }
         else {
-            sourceFile->append("new(_p) ");
+            if (inInitializer(initializerCall))
+                sourceFile->append("new(getPage()) ");
+            else
+                sourceFile->append("new(_p) ");
         }
     }
     return true;
