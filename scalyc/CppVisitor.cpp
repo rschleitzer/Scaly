@@ -18,11 +18,11 @@ CppError* CppVisitor::execute(_Page* _rp, Program* program) {
 
 bool CppVisitor::openProgram(Program* program) {
     _Region _region; _Page* _p = _region.get();
-    VarString* programDirectory = new(_p) VarString(*program->directory);
+    VarString* programDirectory = new(_p) VarString(program->directory);
 
     if (programDirectory == 0 || *programDirectory == "") {
         programDirectory->getPage()->clear();
-        programDirectory = new(programDirectory->getPage()) VarString(String::create(this->getPage(), "."));
+        programDirectory = new(programDirectory->getPage()) VarString(&String::create(this->getPage(), "."));
     }
 
     {
@@ -188,7 +188,7 @@ void CppVisitor::closeCompilationUnit(CompilationUnit* compilationUnit) {
     // Close and write cpp file
     _Region _region; _Page* _p = _region.get();
 
-    VarString* outputFilePath = new(_p) VarString(*programDirectory);
+    VarString* outputFilePath = new(_p) VarString(programDirectory);
     outputFilePath->append("/");
     outputFilePath->append(Path::getFileNameWithoutExtension(_p, compilationUnit->fileName));
 
@@ -2660,7 +2660,7 @@ void CppVisitor::buildMainHeaderFileString(VarString* mainHeaderFile, Program* p
     for (size_t i = 0; i < noOfCompilationUnits; i++) {
         _Region _region; _Page* _p = _region.get();
         mainHeaderFile->append("#include \"");
-        mainHeaderFile->append(new(mainHeaderFile->getPage()) VarString(*Path::getFileNameWithoutExtension(_p, (*(*program->compilationUnits)[i])->fileName)));
+        mainHeaderFile->append(new(mainHeaderFile->getPage()) VarString(Path::getFileNameWithoutExtension(_p, (*(*program->compilationUnits)[i])->fileName)));
         mainHeaderFile->append(".h\"\n");
     }
     mainHeaderFile->append("\nusing namespace scaly;\nnamespace ");

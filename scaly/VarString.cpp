@@ -12,16 +12,16 @@ VarString::VarString(const char* theString) {
     strcpy(string, theString);
 }
 
-VarString::VarString(const VarString& theString)
-: length(theString.length), capacity(length) {
+VarString::VarString(VarString* theString)
+: length(theString->length), capacity(length) {
     string = (char*)getPage()->allocateObject(length + 1);
-    strcpy(string, theString.string);
+    strcpy(string, theString->string);
 }
 
-VarString::VarString(String& theString)
-: length(theString.getLength()), capacity(length) {
+VarString::VarString(String* theString)
+: length(theString->getLength()), capacity(length) {
     string = (char*)getPage()->allocateObject(length + 1);
-    strcpy(string, theString.getNativeString());
+    strcpy(string, theString->getNativeString());
 }
 
 VarString::VarString(size_t theLength)

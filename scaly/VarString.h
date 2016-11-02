@@ -6,8 +6,8 @@ class VarString : public Object {
 public:
     VarString();
     VarString(const char* theString);
-    VarString(const VarString& theString);
-    VarString(String& theString);
+    VarString(VarString* theString);
+    VarString(String* theString);
     VarString(size_t theLength);
     VarString(size_t theLength, size_t theCapacity);
     VarString(char c);

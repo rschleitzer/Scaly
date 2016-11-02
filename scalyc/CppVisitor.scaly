@@ -41,7 +41,8 @@ class CppVisitor : SyntaxVisitor {
     }
 
     function openProgram(program: Program) -> bool {
-        return true
+        mutable programDirectory: VarString = VarString(program.directory)
+        return true;
     }
 
     function buildProjectFileString(mutable projectFile: VarString, program: Program) {
