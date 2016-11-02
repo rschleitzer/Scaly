@@ -42,14 +42,16 @@ class CppVisitor : SyntaxVisitor {
 
     function openProgram(program: Program) -> bool {
         mutable programDirectory: String = String(program.directory)
-         if programDirectory == null || programDirectory.equals("") {
+
+        if programDirectory == null || programDirectory.equals("") {
             programDirectory = String(".")
         }
 
         if !Directory.exists(programDirectory) {
             Directory.create(programDirectory)
                 catch _ (error: dirError())
-                    throw CppError(CppError.unableToCreateOutputDirectory(programDirectory), dirError) }
+                    cppError = CppError.unableToCreateOutputDirectory(programDirectory, dirError)
+        }
         
         return true
     }

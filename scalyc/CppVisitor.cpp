@@ -27,7 +27,7 @@ bool CppVisitor::openProgram(Program* program) {
         auto _Directory_error = Directory::create(_p, programDirectory);
         if (_Directory_error) {
             switch (_Directory_error->getErrorCode()) {
-                case _DirectoryErrorCode_noSuchDirectory:
+                default:
                     cppError = new(getPage()) CppError(new(getPage()) _CppError_unableToCreateOutputDirectory(&String::create(getPage(), programDirectory), _Directory_error));
             }
         }
