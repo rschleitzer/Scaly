@@ -11,7 +11,6 @@ class Inherits {
 
 class CppVisitor : SyntaxVisitor {
 
-    mutable cppError: CppError
     let moduleName: String
     mutable sourceFile: VarString
     mutable headerFile: VarString
@@ -32,7 +31,6 @@ class CppVisitor : SyntaxVisitor {
     mutable suppressHeader: bool
 
     init() {
-        cppError = null
     }
 
     function execute(program: Program) -> CppError {

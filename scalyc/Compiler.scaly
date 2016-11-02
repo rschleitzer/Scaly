@@ -27,7 +27,6 @@ class Compiler {
         mutable visitor: CppVisitor = CppVisitor()
         
         visitor.execute(program)
-            catch CppError.unableToCreateOutputDirectory(uTCOD: unableToCreateOutputDirectory) throw unableToCreateOutputDirectory(uTCOD.directory, uTCOD.error)
     }
 
     static function compileUnit(fileName: String, text: String) -> CompilationUnit throws ParserError {
