@@ -676,6 +676,7 @@ bool CppVisitor::isClass(String* name) {
     if (    name->equals("String")
         ||  name->equals("VarString")
         ||  name->equals("File")
+        ||  name->equals("Directory")
         ||  name->equals("DirectoryError")
         ||  name->equals("FileError")
         ||  name->equals("ParserError")
