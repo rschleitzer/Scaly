@@ -33,7 +33,7 @@ class CppVisitor : SyntaxVisitor {
     init() {
     }
 
-    function execute(program: Program) -> CppError {
+    function execute(program: Program) {
         program.accept(this)
         return cppError
     }
