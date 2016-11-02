@@ -49,7 +49,41 @@ class CppVisitor : SyntaxVisitor {
                 catch _ (error: dirError())
                     return false
         }
-        
+
+        {
+            mutable outputFilePath: VarString = VarString(programDirectory)
+            outputFilePath.append("/");
+            outputFilePath.append(program.name)
+
+            // Build and write the project file
+            {
+                mutable projectFile: VarString = VarString()
+                buildProjectFileString(projectFile, program)
+                {
+                    mutable projectFilePath: VarString  = VarString(outputFilePath)
+                    projectFilePath.append(".project")
+                    if File.writeFromString(projectFilePath , projectFile)
+                        return false
+                }
+            }
+
+            // Build and write the main header file
+            {
+                mutable headerFile: VarString = VarString()
+                buildMainHeaderFileString(headerFile, program)
+                {
+                    mutable headerFilePath: VarString  = VarString(outputFilePath)
+                    headerFilePath.append(".h")
+                    if File.writeFromString(headerFilePath, headerFile)
+                        return false
+                }
+            }
+
+            inherits = [Inherits]()
+            classes = [String]()
+            collectInheritances(program)
+        }
+
         return true
     }
 

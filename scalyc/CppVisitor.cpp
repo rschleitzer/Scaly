@@ -30,14 +30,11 @@ bool CppVisitor::openProgram(Program* program) {
             }
         }
     }
-
     {
         _Region _region; _Page* _p = _region.get();
         VarString* outputFilePath = new(_p) VarString(programDirectory);
         outputFilePath->append("/");
         outputFilePath->append(program->name);
-
-        // Build and write the project file
         {
             _Region _region; _Page* _p = _region.get();
             VarString* projectFile = new(_p) VarString();
@@ -50,8 +47,6 @@ bool CppVisitor::openProgram(Program* program) {
                     return false;
             }
         }
-
-        // Build and write the main header file
         {
             _Region _region; _Page* _p = _region.get();
             VarString* headerFile = new(_p) VarString(0, _pageSize);
@@ -69,7 +64,6 @@ bool CppVisitor::openProgram(Program* program) {
         classes = new(getPage()) _Array<String>();
         collectInheritances(program);
     }
-
     return true;
 }
 
