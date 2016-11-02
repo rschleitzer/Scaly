@@ -41,7 +41,7 @@ bool CppVisitor::openProgram(Program* program) {
             buildProjectFileString(projectFile, program);
             {
                 _Region _region; _Page* _p = _region.get();
-                VarString* projectFilePath = new(_p) VarString(*outputFilePath);
+                VarString* projectFilePath = new(_p) VarString(outputFilePath);
                 projectFilePath->append(".project");
                 if (File::writeFromString(_p, projectFilePath , projectFile))
                     return false;
@@ -53,7 +53,7 @@ bool CppVisitor::openProgram(Program* program) {
             buildMainHeaderFileString(headerFile, program);
             {
                 _Region _region; _Page* _p = _region.get();
-                VarString* headerFilePath = new(_p) VarString(*outputFilePath);
+                VarString* headerFilePath = new(_p) VarString(outputFilePath);
                 headerFilePath->append(".h");
                 if (File::writeFromString(_p, headerFilePath, headerFile))
                     return false;
