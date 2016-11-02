@@ -1824,13 +1824,9 @@ void CppVisitor::visitIdentifierExpression(IdentifierExpression* identifierExpre
                         sourceFile->append("new(");
                     if ((inReturn(identifierExpression)) || (inRetDeclaration(identifierExpression))) {
                         sourceFile->append("_rp");
-                        if (className->equals("String"))
-                            sourceFile->append(", ");
                     }
                     else if (inThrow(identifierExpression)) {
                         sourceFile->append("_ep");
-                        if (className->equals("String"))
-                            sourceFile->append(", ");                        
                     }
                     else if (inAssignment(identifierExpression)) {
                         Assignment* assignment = getAssignment(identifierExpression);
@@ -1851,14 +1847,14 @@ void CppVisitor::visitIdentifierExpression(IdentifierExpression* identifierExpre
                                 else {
                                     sourceFile->append("getPage()");
                                 }
-                                if (className->equals("String"))
-                                    sourceFile->append(", ");
                             }
                         }
                     }
                     else
                         sourceFile->append("_p");
-                    if (!className->equals("String")) {
+                    if (className->equals("String"))
+                        sourceFile->append(", ");
+                    else {
                         sourceFile->append(") ");
                         sourceFile->append(identifierExpression->name);
                     }
