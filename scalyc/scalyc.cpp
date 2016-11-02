@@ -27,7 +27,8 @@ else {
     auto _Compiler_error = Compiler::compileFiles(_ep, options);
     if (_Compiler_error) {
         switch (_Compiler_error->getErrorCode()) {
-            default:                return 5;
+            default:
+                return 5;
         }
     }
 }

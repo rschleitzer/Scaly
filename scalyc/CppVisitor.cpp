@@ -1409,8 +1409,8 @@ bool CppVisitor::openCatchClause(CatchClause* catchClause) {
                     sourceIndentLevel++;
                 }
                 indentSource();
-                sourceFile->append("case _");
                 if (catchClause->catchPattern->_isIdentifierCatchPattern()) {
+                    sourceFile->append("case _");
                     IdentifierCatchPattern* identifierCatchPattern = (IdentifierCatchPattern*)catchClause->catchPattern;
                     sourceFile->append(identifierCatchPattern->name);
                     sourceFile->append("Code_");
@@ -1447,6 +1447,9 @@ bool CppVisitor::openCatchClause(CatchClause* catchClause) {
                             sourceIndentLevel--;
                         }
                     }
+                }
+                if (catchClause->catchPattern->_isWildCardCatchPattern()) {
+                    sourceFile->append("default:\n");
                 }
                 
                 sourceIndentLevel++;
