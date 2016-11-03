@@ -2497,7 +2497,7 @@ bool CppVisitor::openInitializerCall(InitializerCall* initializerCall) {
         else {
             sourceFile->append("new(");
             if (inInitializer(initializerCall)) {
-                sourceFile->append("getPage() ");
+                sourceFile->append("getPage()");
             }
             else {
                 if (initializerCall->parent->parent->parent->_isAssignment()) {
