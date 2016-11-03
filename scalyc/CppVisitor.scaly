@@ -89,12 +89,6 @@ class CppVisitor : SyntaxVisitor {
         return true
     }
 
-    function buildProjectFileString(mutable projectFile: VarString, program: Program) {
-    }
-
-    function buildMainHeaderFileString(mutable projectFile: VarString, program: Program) {
-    }
-
     function collectInheritances(program: Program) {
     }
 
@@ -102,6 +96,12 @@ class CppVisitor : SyntaxVisitor {
     }
 
     function registerInheritance(className: String, baseName: String) {
+    }
+
+    function buildProjectFileString(mutable projectFile: VarString, program: Program) {
+    }
+
+    function buildMainHeaderFileString(mutable projectFile: VarString, program: Program) {
     }
 
     function collectDerivedClasses(mutable derivedClasses: [String], className: String) {
