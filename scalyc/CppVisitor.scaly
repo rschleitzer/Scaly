@@ -75,8 +75,9 @@ class CppVisitor : SyntaxVisitor {
                 {
                     mutable headerFilePath: VarString  = VarString(outputFilePath)
                     headerFilePath.append(".h")
-                    if File.writeFromString(headerFilePath, headerFile)
-                        return false
+                    File.writeFromString(headerFilePath, headerFile)
+                        catch _ (error: fileError)
+                            return false
                 }
             }
 

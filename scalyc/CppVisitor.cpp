@@ -60,8 +60,13 @@ bool CppVisitor::openProgram(Program* program) {
                 _Region _region; _Page* _p = _region.get();
                 VarString* headerFilePath = new(_p) VarString(outputFilePath);
                 headerFilePath->append(".h");
-                if (File::writeFromString(_p, headerFilePath, headerFile))
-                    return false;
+                auto _File_error = File::writeFromString(_p, headerFilePath, headerFile);
+                if (_File_error) {
+                    switch (_File_error->getErrorCode()) {
+                        default:
+                            return false;
+                    }
+                }
             }
         }
 
