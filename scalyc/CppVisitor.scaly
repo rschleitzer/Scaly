@@ -130,6 +130,11 @@ class CppVisitor : SyntaxVisitor {
         }
         inherit.inheritors.push(className)
     }
+    
+    function closeProgram(program: Program) {
+    }
+
+
 
     function buildProjectFileString(mutable projectFile: VarString, program: Program) {
     }
@@ -159,9 +164,6 @@ class CppVisitor : SyntaxVisitor {
     }
 
     function writeParameter(name: String, parameterType: Type) {
-    }
-
-    function closeProgram(program: Program) {
     }
 
     function openCompilationUnit(compilationUnit: CompilationUnit) -> bool {

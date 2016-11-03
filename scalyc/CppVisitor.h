@@ -38,6 +38,7 @@ public:
     virtual void collectInheritances(Program* program);
     virtual void collectInheritancesInCompilationUnit(CompilationUnit* compilationUnit);
     virtual void registerInheritance(String* className, String* baseName);
+    virtual void closeProgram(Program* program);
     virtual void buildProjectFileString(VarString* projectFile, Program* program);
     virtual void buildMainHeaderFileString(VarString* projectFile, Program* program);
     virtual void collectDerivedClasses(_Array<String>* derivedClasses, String* className);
@@ -48,7 +49,6 @@ public:
     virtual void indentHeader();
     virtual void indentSource();
     virtual void writeParameter(String* name, Type* parameterType);
-    virtual void closeProgram(Program* program);
     virtual bool openCompilationUnit(CompilationUnit* compilationUnit);
     virtual bool isTopLevelFile(CompilationUnit* compilationUnit);
     virtual void closeCompilationUnit(CompilationUnit* compilationUnit);
