@@ -119,21 +119,22 @@ void CppVisitor::collectInheritancesInCompilationUnit(CompilationUnit* compilati
 }
 
 void CppVisitor::registerInheritance(String* className, String* baseName) {
+    Inherits* inherit = nullptr;
+    Inherits* inh = nullptr;
     size_t _inherits_length = inherits->length();
-    Inherits* inherit = 0;
     for (size_t _i = 0; _i < _inherits_length; _i++) {
-        Inherits* inh = *(*inherits)[_i];
-        if (inh->name->equals(baseName)) {
-            inherit = inh;
+        inh = *(*inherits)[_i];
+        {
+            if (inh->name->equals(baseName))
+                inherit = inh;
         }
     }
-    if (!inherit) {
+    if (inherit == nullptr) {
         inherit = new(getPage()) Inherits(baseName);
         inherits->push(inherit);
     }
     inherit->inheritors->push(className);
 }
-
 
 void CppVisitor::closeProgram(Program* program) {
 }

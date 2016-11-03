@@ -118,6 +118,17 @@ class CppVisitor : SyntaxVisitor {
     }
 
     function registerInheritance(className: String, baseName: String) {
+        mutable inherit: Inherits = null
+        for inh: Inherits in inherits {
+            if inh.name.equals(baseName)
+             inherit = inh
+        }
+
+        if inherit == null {
+            inherit = Inherits(baseName)
+            inherits.push(inherit)
+        }
+        inherit.inheritors.push(className)
     }
 
     function buildProjectFileString(mutable projectFile: VarString, program: Program) {
