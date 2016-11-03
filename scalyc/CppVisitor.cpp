@@ -88,22 +88,35 @@ void CppVisitor::collectInheritances(Program* program) {
 }
 
 void CppVisitor::collectInheritancesInCompilationUnit(CompilationUnit* compilationUnit) {
-    if (compilationUnit->statements) {
-        _Vector<TerminatedStatement>& statements = *compilationUnit->statements;
-        size_t _statements_length = statements.length();
+    if (compilationUnit->statements != nullptr) {
+        _Vector<TerminatedStatement>* statements = compilationUnit->statements;
+        TerminatedStatement* terminatedStatement = nullptr;
+        size_t _statements_length = statements->length();
         for (size_t _i = 0; _i < _statements_length; _i++) {
-            TerminatedStatement& terminatedStatement = **statements[_i];
-            if (terminatedStatement.statement) {
-                if (terminatedStatement.statement->_isClassDeclaration()) {
-                    ClassDeclaration& classDeclaration = *(ClassDeclaration*)terminatedStatement.statement;
-                    classes->push(classDeclaration.name);
-                    if (classDeclaration.typeInheritanceClause) {
-                        TypeInheritanceClause& inheritanceClause = *classDeclaration.typeInheritanceClause;
-                        _Vector<Inheritance>& inheritances = *inheritanceClause.inheritances;
-                        size_t _inheritances_length = inheritances.length();
-                        for (size_t _j = 0; _j < _inheritances_length; _j++) {
-                            Inheritance& inheritance = **inheritances[_j];
-                            registerInheritance(classDeclaration.name, inheritance.typeIdentifier->name);}}}}}}}
+            terminatedStatement = *(*statements)[_i];
+            {
+                if (terminatedStatement->statement != nullptr) {
+                    if (terminatedStatement->statement->_isClassDeclaration()) {
+                        ClassDeclaration* classDeclaration = (ClassDeclaration*)terminatedStatement->statement;
+                        classes->push(classDeclaration->name);
+                        if (classDeclaration->typeInheritanceClause != nullptr) {
+                            TypeInheritanceClause* inheritanceClause = classDeclaration->typeInheritanceClause;
+                            _Vector<Inheritance>* inheritances = inheritanceClause->inheritances;
+                            Inheritance* inheritance = nullptr;
+                            size_t _inheritances_length = inheritances->length();
+                            for (size_t _i = 0; _i < _inheritances_length; _i++) {
+                                inheritance = *(*inheritances)[_i];
+                                {
+                                    registerInheritance(classDeclaration->name, inheritance->typeIdentifier->name);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
 
 void CppVisitor::registerInheritance(String* className, String* baseName) {
     size_t _inherits_length = inherits->length();
