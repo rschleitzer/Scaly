@@ -200,7 +200,13 @@ void CppVisitor::closeCompilationUnit(CompilationUnit* compilationUnit) {
         headerFile->append("__\n");
         VarString* headerFilePath = new(_p) VarString(*outputFilePath);
         headerFilePath->append(".h");
-        File::writeFromString(_p, headerFilePath, headerFile);
+        auto _File_error = File::writeFromString(_p, headerFilePath, headerFile);
+        if (_File_error) {
+            switch (_File_error->getErrorCode()) {
+                default:
+                    return;
+            }
+        }
     }
 
     if (isTopLevelFile(compilationUnit))
@@ -210,7 +216,13 @@ void CppVisitor::closeCompilationUnit(CompilationUnit* compilationUnit) {
         sourceFile->append("\n}\n");
     VarString* sourceFilePath = new(_p) VarString(*outputFilePath);
     sourceFilePath->append(".cpp");
-    File::writeFromString(_p, sourceFilePath , sourceFile);
+    auto _File_error = File::writeFromString(_p, sourceFilePath, sourceFile);
+    if (_File_error) {
+        switch (_File_error->getErrorCode()) {
+            default:
+                return;
+        }
+    }
 }
 
 bool CppVisitor::openTerminatedStatement(TerminatedStatement* terminatedStatement) {
