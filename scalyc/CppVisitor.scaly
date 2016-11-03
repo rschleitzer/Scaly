@@ -62,8 +62,9 @@ class CppVisitor : SyntaxVisitor {
                 {
                     mutable projectFilePath: VarString  = VarString(outputFilePath)
                     projectFilePath.append(".project")
-                    if File.writeFromString(projectFilePath , projectFile)
-                        return false
+                    File.writeFromString(projectFilePath , projectFile)
+                        catch _ (error: fileError)
+                            return false
                 }
             }
 

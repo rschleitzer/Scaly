@@ -43,8 +43,13 @@ bool CppVisitor::openProgram(Program* program) {
                 _Region _region; _Page* _p = _region.get();
                 VarString* projectFilePath = new(_p) VarString(outputFilePath);
                 projectFilePath->append(".project");
-                if (File::writeFromString(_p, projectFilePath , projectFile))
-                    return false;
+                auto _File_error = File::writeFromString(_p, projectFilePath, projectFile);
+                if (_File_error) {
+                    switch (_File_error->getErrorCode()) {
+                        default:
+                            return false;
+                    }
+                }
             }
         }
         {
