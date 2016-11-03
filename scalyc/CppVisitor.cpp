@@ -78,10 +78,14 @@ bool CppVisitor::openProgram(Program* program) {
 
 void CppVisitor::collectInheritances(Program* program) {
     inherits = new(getPage()) _Array<Inherits>();
-    _Vector<CompilationUnit>& compilationUnits = *program->compilationUnits;
-    size_t _compilationUnits_length = compilationUnits.length();
+    _Vector<CompilationUnit>* compilationUnits = program->compilationUnits;
+    CompilationUnit* compilationUnit = nullptr;
+    size_t _compilationUnits_length = compilationUnits->length();
     for (size_t _i = 0; _i < _compilationUnits_length; _i++) {
-        collectInheritancesInCompilationUnit(*compilationUnits[_i]);}}
+        compilationUnit = *(*compilationUnits)[_i];
+        collectInheritancesInCompilationUnit(compilationUnit);
+    }
+}
 
 void CppVisitor::collectInheritancesInCompilationUnit(CompilationUnit* compilationUnit) {
     if (compilationUnit->statements) {

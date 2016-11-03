@@ -90,6 +90,10 @@ class CppVisitor : SyntaxVisitor {
     }
 
     function collectInheritances(program: Program) {
+        inherits = [Inherits]();
+        let compilationUnits: [CompilationUnit] = program.compilationUnits
+        for compilationUnit: CompilationUnit in compilationUnits
+            collectInheritancesInCompilationUnit(compilationUnit)
     }
 
     function collectInheritancesInCompilationUnit(compilationUnit: CompilationUnit) {
