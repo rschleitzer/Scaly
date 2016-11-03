@@ -69,7 +69,6 @@ bool CppVisitor::openProgram(Program* program) {
                 }
             }
         }
-
         inherits = new(getPage()) _Array<Inherits>();
         classes = new(getPage()) _Array<String>();
         collectInheritances(program);
@@ -154,7 +153,7 @@ bool CppVisitor::openCompilationUnit(CompilationUnit* compilationUnit) {
     }
 
     // Begin cpp file
-    sourceFile = new(getPage()) VarString();
+    sourceFile = new(getPage()) VarString(0, 4096);
     sourceFile->append("#include \"");
     sourceFile->append(programName);
     sourceFile->append(".h\"\nusing namespace scaly;\nnamespace ");
@@ -2496,10 +2495,40 @@ bool CppVisitor::openInitializerCall(InitializerCall* initializerCall) {
             }
         }
         else {
-            if (inInitializer(initializerCall))
-                sourceFile->append("new(getPage()) ");
-            else
-                sourceFile->append("new(_p) ");
+            sourceFile->append("new(");
+            if (inInitializer(initializerCall)) {
+                sourceFile->append("getPage() ");
+            }
+            else {
+                if (initializerCall->parent->parent->parent->_isAssignment()) {
+                    Assignment* assignment = (Assignment*)initializerCall->parent->parent->parent;
+                    SimpleExpression* simpleExpression = (SimpleExpression*)(assignment->parent);
+                    if (simpleExpression->prefixExpression->prefixOperator == 0) {
+                        PostfixExpression* leftSide = simpleExpression->prefixExpression->expression;
+                        if ((leftSide->postfixes == 0) && (leftSide->primaryExpression->_isIdentifierExpression())) {
+                            IdentifierExpression* memberExpression = (IdentifierExpression*)(leftSide->primaryExpression);
+                            String* memberName = memberExpression->name;
+                            ClassDeclaration* classDeclaration = getClassDeclaration(assignment);
+                            if ((classDeclaration != nullptr) && (memberName != nullptr) && (isVariableMember(memberName, classDeclaration))) {
+                                sourceFile->append("getPage()");
+                            }
+                            else {
+                                sourceFile->append("_p");
+                            }
+                        }
+                        else {
+                            sourceFile->append("_p");
+                        }
+                    }
+                    else {
+                        sourceFile->append("_p");
+                    }
+                }
+                else {
+                    sourceFile->append("_p");
+                }
+            }
+            sourceFile->append(") ");
         }
     }
     return true;
