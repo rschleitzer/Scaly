@@ -119,11 +119,11 @@ void VarString::append(String* theString) {
 
 bool VarString::extend(size_t size) {
     _Page& page = *_Page::getPage(string);
-    if (length + size <= capacity) {
+    if (length + size < capacity) {
         length += size;
         return true;
     }
-    if (page.extend(string + length + 1, size)) {
+    if (page.extend(string + length + 1, size + 1)) {
         length += size;
         capacity += size;
         return true;
@@ -135,10 +135,11 @@ bool VarString::extend(size_t size) {
 
 void VarString::reallocate(size_t newLength) {
     char* oldString = string;
+    size_t oldLength = length;
     length = newLength;
     capacity = newLength * 2;
     allocate(capacity + 1);
-    memcpy(string, oldString, length + 1);
+    memcpy(string, oldString, oldLength + 1);
 
     // Reclaim the page if it was oversized, i.e., exclusively allocated
     if (((Object*)oldString)->getPage() == ((_Page*)oldString))
