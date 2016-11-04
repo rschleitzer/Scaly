@@ -159,7 +159,9 @@ bool CppVisitor::openCompilationUnit(CompilationUnit* compilationUnit) {
         return false;
     String* programName = ((Program*)(compilationUnit->parent))->name;
     if (!moduleName->equals(programName)) {
-        headerFile = new(getPage()) VarString();
+        if (headerFile != nullptr)
+            headerFile->getPage()->clear();
+        headerFile = new(headerFile->getPage()) VarString();
         headerFile->append("#ifndef __");
         headerFile->append(programName);
         headerFile->append("__");
