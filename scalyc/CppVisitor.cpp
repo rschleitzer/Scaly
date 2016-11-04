@@ -131,6 +131,8 @@ void CppVisitor::registerInheritance(String* className, String* baseName) {
         }
     }
     if (inherit == nullptr) {
+        if (inherit != nullptr)
+            inherit->getPage()->clear();
         inherit = new(getPage()) Inherits(baseName);
         inherits->push(inherit);
     }

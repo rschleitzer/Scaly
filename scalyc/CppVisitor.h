@@ -39,8 +39,6 @@ public:
     virtual void collectInheritancesInCompilationUnit(CompilationUnit* compilationUnit);
     virtual void registerInheritance(String* className, String* baseName);
     virtual void closeProgram(Program* program);
-    virtual void buildProjectFileString(VarString* projectFile, Program* program);
-    virtual void buildMainHeaderFileString(VarString* projectFile, Program* program);
     virtual void collectDerivedClasses(_Array<String>* derivedClasses, String* className);
     virtual void appendDerivedClasses(_Array<String>* derivedClasses, _Array<String>* inheritors);
     virtual void appendCppTypeName(VarString* s, TypeIdentifier* typeIdentifier);
@@ -242,6 +240,8 @@ public:
     virtual void closeTypeInheritanceClause(TypeInheritanceClause* typeInheritanceClause);
     virtual bool openInheritance(Inheritance* inheritance);
     virtual void closeInheritance(Inheritance* inheritance);
+    virtual void buildProjectFileString(VarString* projectFile, Program* program);
+    virtual void buildMainHeaderFileString(VarString* projectFile, Program* program);
 
     virtual bool _isCppVisitor();
 };
