@@ -56,6 +56,11 @@ bool VarString::operator == (const char* theString){
 bool VarString::equals (const char* theString){
     return strcmp(string, theString) == 0;
 }
+
+bool VarString::equals (String* theString){
+    return strcmp(string, theString->getNativeString()) == 0;
+}
+
 bool VarString::operator != (const char* theString){
     return strcmp(string, theString) != 0;
 }

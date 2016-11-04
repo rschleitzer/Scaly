@@ -14,7 +14,7 @@ public:
 
 class CppVisitor : public SyntaxVisitor {
 public:
-    String* moduleName;
+    VarString* moduleName;
     VarString* sourceFile;
     VarString* headerFile;
     size_t headerIndentLevel;

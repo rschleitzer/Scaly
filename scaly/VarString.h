@@ -20,6 +20,7 @@ public:
     void append(String* theString);
     bool operator == (const char* theString);
     bool equals(const char* theString);
+    bool equals(String* theString);
     bool operator != (const char* theString);
     bool operator == (const VarString& theString);
     bool operator != (const VarString& theString);

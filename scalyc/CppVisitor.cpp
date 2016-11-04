@@ -8,11 +8,11 @@ Inherits::Inherits(String* className) {
 }
 
 CppVisitor::CppVisitor() {
-    moduleName = nullptr;
-    sourceFile = nullptr;
-    headerFile = nullptr;
-    inherits = nullptr;
-    classes = nullptr;
+    moduleName = new(getPage()->allocateExclusivePage()) VarString("");
+    sourceFile = new(getPage()->allocateExclusivePage()) VarString("");
+    headerFile = new(getPage()->allocateExclusivePage()) VarString("");
+    inherits = new(getPage()->allocateExclusivePage()) _Array<Inherits>();
+    classes = new(getPage()->allocateExclusivePage()) _Array<String>();
 }
 
 void CppVisitor::execute(Program* program) {
@@ -148,7 +148,7 @@ void CppVisitor::closeProgram(Program* program) {
 }
 
 bool CppVisitor::openCompilationUnit(CompilationUnit* compilationUnit) {
-    moduleName = Path::getFileNameWithoutExtension(getPage(), compilationUnit->fileName);
+    moduleName = new(getPage()) VarString(Path::getFileNameWithoutExtension(getPage(), compilationUnit->fileName));
     headerIndentLevel = 0;
     sourceIndentLevel = 0;
     declaringClassMember = false;
@@ -156,7 +156,7 @@ bool CppVisitor::openCompilationUnit(CompilationUnit* compilationUnit) {
     if (!(compilationUnit->parent->_isProgram()))
         return false;
     String* programName = ((Program*)(compilationUnit->parent))->name;
-    if (moduleName->notEquals(programName)) {
+    if (!moduleName->equals(programName)) {
         headerFile = new(getPage()) VarString();
         headerFile->append("#ifndef __");
         headerFile->append(programName);
@@ -215,7 +215,7 @@ void CppVisitor::closeCompilationUnit(CompilationUnit* compilationUnit) {
     outputFilePath->append("/");
     outputFilePath->append(Path::getFileNameWithoutExtension(_p, compilationUnit->fileName));
 
-    if (moduleName->notEquals(programName)) {
+    if (!moduleName->equals(programName)) {
         headerFile->append("\n\n}\n#endif // __scalyc__");
         headerFile->append(moduleName);
         headerFile->append("__\n");

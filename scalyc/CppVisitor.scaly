@@ -11,7 +11,7 @@ class Inherits {
 
 class CppVisitor : SyntaxVisitor {
 
-    mutable moduleName: String
+    mutable moduleName: VarString
     mutable sourceFile: VarString
     mutable headerFile: VarString
     mutable headerIndentLevel: unsigned
@@ -31,11 +31,12 @@ class CppVisitor : SyntaxVisitor {
     mutable suppressHeader: bool
 
     init() {
-        moduleName = null
-        sourceFile = null
-        headerFile = null
-        inherits = null
-        classes = null
+        // null init of mutable members does not work yet
+        moduleName = String("")
+        sourceFile = String("")
+        headerFile = String("")
+        inherits = [Inherits]()
+        classes = [String]()
     }
 
     function execute(program: Program) {
@@ -140,7 +141,7 @@ class CppVisitor : SyntaxVisitor {
     }
 
     function openCompilationUnit(compilationUnit: CompilationUnit) -> bool {
-        moduleName = Path.getFileNameWithoutExtension(getPage(), compilationUnit.fileName)
+        moduleName = VarString(Path.getFileNameWithoutExtension(getPage(), compilationUnit.fileName))
         headerIndentLevel = 0
         sourceIndentLevel = 0
         declaringClassMember = false
@@ -152,7 +153,7 @@ class CppVisitor : SyntaxVisitor {
         let programName: String = ((compilationUnit.parent) as Program).name;
 
         // Build and write the header file
-        if moduleName.notEquals(programName) {
+        if !moduleName.equals(programName) {
             headerFile = VarString()
             headerFile.append("#ifndef __")
             headerFile.append(programName)
