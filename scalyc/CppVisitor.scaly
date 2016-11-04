@@ -32,9 +32,9 @@ class CppVisitor : SyntaxVisitor {
 
     init() {
         // null init of mutable members does not work yet
-        moduleName = String("")
-        sourceFile = String("")
-        headerFile = String("")
+        moduleName = VarString("")
+        sourceFile = VarString("")
+        headerFile = VarString("")
         inherits = [Inherits]()
         classes = [String]()
     }
