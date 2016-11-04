@@ -150,9 +150,7 @@ bool CppVisitor::openCompilationUnit(CompilationUnit* compilationUnit) {
     inParameterClause = false;
     if (!(compilationUnit->parent->_isProgram()))
         return false;
-
     String* programName = ((Program*)(compilationUnit->parent))->name;
-    // Build and write the header file
     if (moduleName->notEquals(programName)) {
         headerFile = new(getPage()) VarString();
         headerFile->append("#ifndef __");

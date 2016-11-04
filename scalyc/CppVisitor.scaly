@@ -144,7 +144,7 @@ class CppVisitor : SyntaxVisitor {
         if !(compilationUnit.parent is Program)
             return false
 
-        let programName: String = (compilationUnit.parent as Program).name;
+        let programName: String = ((compilationUnit.parent) as Program).name;
 
         // Build and write the header file
         if moduleName.notEquals(programName) {
