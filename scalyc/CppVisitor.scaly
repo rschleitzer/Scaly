@@ -134,30 +134,6 @@ class CppVisitor : SyntaxVisitor {
     function closeProgram(program: Program) {
     }
 
-    function appendDerivedClasses(mutable derivedClasses: [String], mutable inheritors: [String]) {
-    }
-
-    function appendCppTypeName(mutable s: VarString, typeIdentifier: TypeIdentifier) {
-    }
-
-    function appendCppType(mutable s: VarString, type: Type) {
-    }
-
-    function isClass(name: String) -> bool {
-    }
-
-    function indentHeader() {
-    }
-
-    function indentSource() {
-    }
-
-    function collectDerivedClasses(mutable derivedClasses: [String], className: String) {
-    }
-
-    function writeParameter(name: String, parameterType: Type) {
-    }
-
     function openCompilationUnit(compilationUnit: CompilationUnit) -> bool {
         return true
     }
@@ -329,6 +305,12 @@ class CppVisitor : SyntaxVisitor {
         return true
     }
 
+    function writeParameter(name: String, parameterType: Type) {
+    }
+
+    function isClass(name: String) -> bool {
+    }
+
     function closeConstParameter(constParameter: ConstParameter) {
     }
 
@@ -353,6 +335,9 @@ class CppVisitor : SyntaxVisitor {
     function closeEnumMember(enumMember: EnumMember) {
     }
 
+    function appendCppType(mutable s: VarString, type: Type) {
+    }
+
     function visitEnumCase(enumCase: EnumCase) {
     }
 
@@ -368,6 +353,18 @@ class CppVisitor : SyntaxVisitor {
     }
 
     function closeClassBody(classBody: ClassBody) {
+    }
+
+    function indentHeader() {
+    }
+
+    function indentSource() {
+    }
+
+    function collectDerivedClasses(mutable derivedClasses: [String], className: String) {
+    }
+
+    function appendDerivedClasses(mutable derivedClasses: [String], mutable inheritors: [String]) {
     }
 
     function openGenericArgumentClause(genericArgumentClause: GenericArgumentClause) -> bool {
@@ -792,6 +789,9 @@ class CppVisitor : SyntaxVisitor {
 
     function inTypeQuery(typeIdentifier: TypeIdentifier) -> bool {
         return false;
+    }
+
+    function appendCppTypeName(mutable s: VarString, typeIdentifier: TypeIdentifier) {
     }
 
     function closeTypeIdentifier(typeIdentifier: TypeIdentifier) {

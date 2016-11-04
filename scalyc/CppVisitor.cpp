@@ -142,7 +142,6 @@ void CppVisitor::registerInheritance(String* className, String* baseName) {
 void CppVisitor::closeProgram(Program* program) {
 }
 
-
 bool CppVisitor::openCompilationUnit(CompilationUnit* compilationUnit) {
     moduleName = Path::getFileNameWithoutExtension(getPage(), compilationUnit->fileName);
     headerIndentLevel = 0;

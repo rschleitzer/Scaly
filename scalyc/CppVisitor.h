@@ -39,14 +39,6 @@ public:
     virtual void collectInheritancesInCompilationUnit(CompilationUnit* compilationUnit);
     virtual void registerInheritance(String* className, String* baseName);
     virtual void closeProgram(Program* program);
-    virtual void appendDerivedClasses(_Array<String>* derivedClasses, _Array<String>* inheritors);
-    virtual void appendCppTypeName(VarString* s, TypeIdentifier* typeIdentifier);
-    virtual void appendCppType(VarString* s, Type* type);
-    virtual bool isClass(String* name);
-    virtual void indentHeader();
-    virtual void indentSource();
-    virtual void collectDerivedClasses(_Array<String>* derivedClasses, String* className);
-    virtual void writeParameter(String* name, Type* parameterType);
     virtual bool openCompilationUnit(CompilationUnit* compilationUnit);
     virtual bool isTopLevelFile(CompilationUnit* compilationUnit);
     virtual void closeCompilationUnit(CompilationUnit* compilationUnit);
@@ -96,6 +88,8 @@ public:
     virtual bool openParameterClause(ParameterClause* parameterClause);
     virtual void closeParameterClause(ParameterClause* parameterClause);
     virtual bool openConstParameter(ConstParameter* constParameter);
+    virtual void writeParameter(String* name, Type* parameterType);
+    virtual bool isClass(String* name);
     virtual void closeConstParameter(ConstParameter* constParameter);
     virtual bool openVarParameter(VarParameter* varParameter);
     virtual void closeVarParameter(VarParameter* varParameter);
@@ -103,11 +97,16 @@ public:
     virtual void closeThrowsClause(ThrowsClause* throwsClause);
     virtual bool openEnumMember(EnumMember* enumMember);
     virtual void closeEnumMember(EnumMember* enumMember);
+    virtual void appendCppType(VarString* s, Type* type);
     virtual void visitEnumCase(EnumCase* enumCase);
     virtual bool openAdditionalCase(AdditionalCase* additionalCase);
     virtual void closeAdditionalCase(AdditionalCase* additionalCase);
     virtual bool openClassBody(ClassBody* classBody);
     virtual void closeClassBody(ClassBody* classBody);
+    virtual void indentHeader();
+    virtual void indentSource();
+    virtual void collectDerivedClasses(_Array<String>* derivedClasses, String* className);
+    virtual void appendDerivedClasses(_Array<String>* derivedClasses, _Array<String>* inheritors);
     virtual bool openGenericArgumentClause(GenericArgumentClause* genericArgumentClause);
     virtual void closeGenericArgumentClause(GenericArgumentClause* genericArgumentClause);
     virtual void visitGenericParameter(GenericParameter* genericParameter);
@@ -228,6 +227,7 @@ public:
     virtual bool openTypeIdentifier(TypeIdentifier* typeIdentifier);
     virtual bool inArrayType(TypeIdentifier* typeIdentifier);
     virtual bool inTypeQuery(TypeIdentifier* typeIdentifier);
+    virtual void appendCppTypeName(VarString* s, TypeIdentifier* typeIdentifier);
     virtual void closeTypeIdentifier(TypeIdentifier* typeIdentifier);
     virtual bool openArrayType(ArrayType* arrayType);
     virtual void closeArrayType(ArrayType* arrayType);
