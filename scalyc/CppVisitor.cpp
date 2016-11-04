@@ -148,8 +148,7 @@ bool CppVisitor::openCompilationUnit(CompilationUnit* compilationUnit) {
     sourceIndentLevel = 0;
     declaringClassMember = false;
     inParameterClause = false;
-
-    if (!compilationUnit->parent->_isProgram())
+    if (!(compilationUnit->parent->_isProgram()))
         return false;
 
     String* programName = ((Program*)(compilationUnit->parent))->name;
