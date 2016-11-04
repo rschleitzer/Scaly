@@ -66,19 +66,19 @@ class Operator : Token {
 
 class PrefixOperator : Operator {
     init(theOperation: String) {
-        operation = theOperation;
+        operation = theOperation
     }
 }
 
 class BinaryOperator : Operator {
     init(theOperation: String) {
-        operation = theOperation;
+        operation = theOperation
     }
 }
 
 class PostfixOperator : Operator {
     init(theOperation: String) {
-        operation = theOperation;
+        operation = theOperation
     }
 }
 
@@ -95,7 +95,7 @@ class Lexer {
     mutable column: unsigned
     
     init(theText: String) {
-        token = InvalidToken();
+        token = InvalidToken()
         whitespaceSkipped = true
         text = theText
         end = text.getLength()
@@ -291,7 +291,7 @@ class Lexer {
 
         if !whitespaceSkippedBefore {
             if token is Punctuation {
-                let sign: String = (token as Punctuation).sign;
+                let sign: String = (token as Punctuation).sign
                 if sign.equals("(") || sign.equals("[") || sign.equals("{") || sign.equals(",") || sign.equals(";") || sign.equals(":")
                     whitespaceSkippedBefore = true
                 else
@@ -311,8 +311,8 @@ class Lexer {
             }
 
             if includeDots && (text.charAt(position) == '.') {
-                operation.append(text.charAt(position));
-                continue;
+                operation.append(text.charAt(position))
+                continue
             }
             
             switch text.charAt(position) {
@@ -395,7 +395,7 @@ class Lexer {
                     return CharacterLiteral(String(value))
                 }
                 case '\\': {
-                    position++ column++;
+                    position++ column++
                     switch text.charAt(position) {
                         case '\"', '\\', '\'': value.append(text.charAt(position))
                         case 'n': value.append('\n')
@@ -604,7 +604,7 @@ class Lexer {
 
         if token is StringLiteral {
             let stringLiteral: StringLiteral = token as StringLiteral
-            return StringLiteral(String(stringLiteral.string));
+            return StringLiteral(String(stringLiteral.string))
         }
 
         if token is CharacterLiteral {
@@ -617,7 +617,7 @@ class Lexer {
             return NumericLiteral(String(numericLiteral.value))
         }
 
-        return null;
+        return null
     }
 
 

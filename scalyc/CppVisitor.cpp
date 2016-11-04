@@ -255,8 +255,14 @@ bool CppVisitor::openTerminatedStatement(TerminatedStatement* terminatedStatemen
                         Assignment* assignment = (Assignment*)binaryOp;
                         String* memberName = getMemberIfCreatingObject(assignment);
                         if ((memberName != nullptr) && (!inInitializer(assignment))) {
+                            sourceFile->append("if (");
+                            sourceFile->append(memberName);
+                            sourceFile->append(" != nullptr)\n");
+                            sourceIndentLevel++;
+                            this->indentSource();
                             sourceFile->append(memberName);
                             sourceFile->append("->getPage()->clear();\n");
+                            sourceIndentLevel--;
                             this->indentSource();
                         }
                     }

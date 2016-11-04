@@ -107,37 +107,43 @@ void Lexer::advance() {
     previousLine = line;
     previousColumn = column;
     if (position == end) {
-        token->getPage()->clear();
+        if (token != nullptr)
+            token->getPage()->clear();
         token = new(token->getPage()) EofToken();
         return;
     }
     char c = text->charAt(position);
     if (((c >= 'a') && (c <= 'z')) || ((c >= 'A') && (c <= 'Z'))) {
-        token->getPage()->clear();
+        if (token != nullptr)
+            token->getPage()->clear();
         token = scanIdentifier(token->getPage());
         return;
     }
     if ((c >= '0') && (c <= '9')) {
-        token->getPage()->clear();
+        if (token != nullptr)
+            token->getPage()->clear();
         token = scanNumericLiteral(token->getPage());
         return;
     }
     switch (c) {
         case '\"': {
-            token->getPage()->clear();
+            if (token != nullptr)
+                token->getPage()->clear();
             token = scanStringLiteral(token->getPage());
             break;
         }
 
         case '\'': {
-            token->getPage()->clear();
+            if (token != nullptr)
+                token->getPage()->clear();
             token = scanCharacterLiteral(token->getPage());
             break;
         }
 
         case '_': case '(': case ')': case '{': case '}': case '[': case ']': case ',': case ':': case ';': case '@': case '#': case '`': {
             {
-                token->getPage()->clear();
+                if (token != nullptr)
+                    token->getPage()->clear();
                 token = new(token->getPage()) Punctuation(&String::create(token->getPage(), text->charAt(position)));
                 position++;
                 column++;
@@ -146,7 +152,8 @@ void Lexer::advance() {
         }
 
         case '/': case '+': case '*': case '%': case '&': case '|': case '^': case '~': {
-            token->getPage()->clear();
+            if (token != nullptr)
+                token->getPage()->clear();
             token = scanOperator(token->getPage(), false);
             break;
         }
@@ -156,7 +163,8 @@ void Lexer::advance() {
                 position++;
                 column++;
                 if (position == end) {
-                    token->getPage()->clear();
+                    if (token != nullptr)
+                        token->getPage()->clear();
                     token = new(token->getPage()) InvalidToken();
                 }
                 else {
@@ -165,14 +173,16 @@ void Lexer::advance() {
                             {
                                 position--;
                                 column--;
-                                token->getPage()->clear();
+                                if (token != nullptr)
+                                    token->getPage()->clear();
                                 token = scanOperator(token->getPage(), true);
                             }
                             break;
                         }
 
                         default: {
-                            token->getPage()->clear();
+                            if (token != nullptr)
+                                token->getPage()->clear();
                             token = new(token->getPage()) Punctuation(&String::create(token->getPage(), c));
                         }
                     }
@@ -186,18 +196,21 @@ void Lexer::advance() {
                 position++;
                 column++;
                 if (position == end) {
-                    token->getPage()->clear();
+                    if (token != nullptr)
+                        token->getPage()->clear();
                     token = new(token->getPage()) InvalidToken();
                 }
                 else {
                     if (text->charAt(position) == '.') {
                         position--;
                         column--;
-                        token->getPage()->clear();
+                        if (token != nullptr)
+                            token->getPage()->clear();
                         token = scanOperator(token->getPage(), true);
                     }
                     else {
-                        token->getPage()->clear();
+                        if (token != nullptr)
+                            token->getPage()->clear();
                         token = new(token->getPage()) Punctuation(&String::create(token->getPage(), '.'));
                     }
                 }
@@ -210,18 +223,21 @@ void Lexer::advance() {
                 position++;
                 column++;
                 if (position == end) {
-                    token->getPage()->clear();
+                    if (token != nullptr)
+                        token->getPage()->clear();
                     token = new(token->getPage()) InvalidToken();
                 }
                 else {
                     if (text->charAt(position) != '>') {
                         position--;
                         column--;
-                        token->getPage()->clear();
+                        if (token != nullptr)
+                            token->getPage()->clear();
                         token = scanOperator(token->getPage(), true);
                     }
                     else {
-                        token->getPage()->clear();
+                        if (token != nullptr)
+                            token->getPage()->clear();
                         token = new(token->getPage()) Punctuation(&String::create(token->getPage(), "->"));
                         position++;
                         column++;
@@ -236,7 +252,8 @@ void Lexer::advance() {
                 position++;
                 column++;
                 if (position == end) {
-                    token->getPage()->clear();
+                    if (token != nullptr)
+                        token->getPage()->clear();
                     token = new(token->getPage()) PostfixOperator(&String::create(token->getPage(), "!"));
                 }
                 else {
@@ -245,7 +262,8 @@ void Lexer::advance() {
                             {
                                 position--;
                                 column--;
-                                token->getPage()->clear();
+                                if (token != nullptr)
+                                    token->getPage()->clear();
                                 token = scanOperator(token->getPage(), true);
                             }
                             break;
@@ -256,11 +274,13 @@ void Lexer::advance() {
                                 if (whitespaceSkipped || ((token != nullptr) && (token->_isPunctuation()))) {
                                     position--;
                                     column--;
-                                    token->getPage()->clear();
+                                    if (token != nullptr)
+                                        token->getPage()->clear();
                                     token = scanOperator(token->getPage(), true);
                                 }
                                 else {
-                                    token->getPage()->clear();
+                                    if (token != nullptr)
+                                        token->getPage()->clear();
                                     token = new(token->getPage()) Punctuation(&String::create(token->getPage(), "!"));
                                 }
                             }
@@ -276,7 +296,8 @@ void Lexer::advance() {
                 position++;
                 column++;
                 if (position == end) {
-                    token->getPage()->clear();
+                    if (token != nullptr)
+                        token->getPage()->clear();
                     token = new(token->getPage()) PostfixOperator(&String::create(token->getPage(), "?"));
                 }
                 else {
@@ -285,7 +306,8 @@ void Lexer::advance() {
                             {
                                 position--;
                                 column--;
-                                token->getPage()->clear();
+                                if (token != nullptr)
+                                    token->getPage()->clear();
                                 token = scanOperator(token->getPage(), true);
                             }
                             break;
@@ -296,11 +318,13 @@ void Lexer::advance() {
                                 if (whitespaceSkipped) {
                                     position--;
                                     column--;
-                                    token->getPage()->clear();
+                                    if (token != nullptr)
+                                        token->getPage()->clear();
                                     token = scanOperator(token->getPage(), true);
                                 }
                                 else {
-                                    token->getPage()->clear();
+                                    if (token != nullptr)
+                                        token->getPage()->clear();
                                     token = new(token->getPage()) Punctuation(&String::create(token->getPage(), "?"));
                                 }
                             }
@@ -316,7 +340,8 @@ void Lexer::advance() {
                 position++;
                 column++;
                 if (position == end) {
-                    token->getPage()->clear();
+                    if (token != nullptr)
+                        token->getPage()->clear();
                     token = new(token->getPage()) InvalidToken();
                 }
                 else {
@@ -325,14 +350,16 @@ void Lexer::advance() {
                             {
                                 position--;
                                 column--;
-                                token->getPage()->clear();
+                                if (token != nullptr)
+                                    token->getPage()->clear();
                                 token = scanOperator(token->getPage(), true);
                             }
                             break;
                         }
 
                         default: {
-                            token->getPage()->clear();
+                            if (token != nullptr)
+                                token->getPage()->clear();
                             token = new(token->getPage()) Punctuation(&String::create(token->getPage(), "="));
                         }
                     }
@@ -342,7 +369,8 @@ void Lexer::advance() {
         }
 
         default: {
-            token->getPage()->clear();
+            if (token != nullptr)
+                token->getPage()->clear();
             token = new(token->getPage()) InvalidToken();
         }
     }
