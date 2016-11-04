@@ -212,7 +212,8 @@ void CppVisitor::closeCompilationUnit(CompilationUnit* compilationUnit) {
     String* programDirectory = ((Program*)(compilationUnit->parent))->directory;
     VarString* outputFilePath = new(_p) VarString(programDirectory);
     outputFilePath->append('/');
-    outputFilePath->append(Path::getFileNameWithoutExtension(_p, compilationUnit->fileName));
+    String* fileNameWithoutExtension = Path::getFileNameWithoutExtension(_p, compilationUnit->fileName);
+    outputFilePath->append(fileNameWithoutExtension);
     if (!moduleName->equals(programName)) {
         headerFile->append("\n\n}\n#endif // __scalyc__");
         headerFile->append(moduleName);
