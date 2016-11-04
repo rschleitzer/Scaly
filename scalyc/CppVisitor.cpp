@@ -8,6 +8,11 @@ Inherits::Inherits(String* className) {
 }
 
 CppVisitor::CppVisitor() {
+    moduleName = nullptr;
+    sourceFile = nullptr;
+    headerFile = nullptr;
+    inherits = nullptr;
+    classes = nullptr;
 }
 
 void CppVisitor::execute(Program* program) {
