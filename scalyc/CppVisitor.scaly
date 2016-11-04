@@ -135,6 +135,47 @@ class CppVisitor : SyntaxVisitor {
     }
 
     function openCompilationUnit(compilationUnit: CompilationUnit) -> bool {
+        moduleName = Path.getFileNameWithoutExtension(getPage(), compilationUnit.fileName)
+        headerIndentLevel = 0
+        sourceIndentLevel = 0
+        declaringClassMember = false
+        inParameterClause = false
+
+        if !(compilationUnit.parent is Program)
+            return false
+
+        let programName: String = (compilationUnit.parent as Program).name;
+
+        // Build and write the header file
+        if moduleName.notEquals(programName) {
+            headerFile = VarString()
+            headerFile.append("#ifndef __")
+            headerFile.append(programName)
+            headerFile.append("__")
+            headerFile.append(moduleName)
+            headerFile.append("__\n")
+            headerFile.append("#define __")
+            headerFile.append(programName)
+            headerFile.append("__")
+            headerFile.append(moduleName)
+            headerFile.append("__\n#include \"")
+            headerFile.append(programName)
+            headerFile.append(".h\"\nusing namespace scaly;\nnamespace ")
+            headerFile.append(programName)
+            headerFile.append(" {")
+        }
+
+        // Begin cpp file
+        sourceFile VarString(0, 4096)
+        sourceFile.append("#include \"")
+        sourceFile.append(programName)
+        sourceFile.append(".h\"\nusing namespace scaly;\nnamespace ")
+        sourceFile.append(programName)
+        sourceFile.append(" {\n\n")
+        
+        if isTopLevelFile(compilationUnit)
+            sourceFile.append("int _main(_Vector<String>* args) {\n_Region _rp; _Page* _p = _rp.get();\n\n")
+
         return true
     }
     
