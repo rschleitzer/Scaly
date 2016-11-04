@@ -39,13 +39,13 @@ public:
     virtual void collectInheritancesInCompilationUnit(CompilationUnit* compilationUnit);
     virtual void registerInheritance(String* className, String* baseName);
     virtual void closeProgram(Program* program);
-    virtual void collectDerivedClasses(_Array<String>* derivedClasses, String* className);
     virtual void appendDerivedClasses(_Array<String>* derivedClasses, _Array<String>* inheritors);
     virtual void appendCppTypeName(VarString* s, TypeIdentifier* typeIdentifier);
     virtual void appendCppType(VarString* s, Type* type);
     virtual bool isClass(String* name);
     virtual void indentHeader();
     virtual void indentSource();
+    virtual void collectDerivedClasses(_Array<String>* derivedClasses, String* className);
     virtual void writeParameter(String* name, Type* parameterType);
     virtual bool openCompilationUnit(CompilationUnit* compilationUnit);
     virtual bool isTopLevelFile(CompilationUnit* compilationUnit);

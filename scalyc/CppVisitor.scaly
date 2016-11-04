@@ -134,9 +134,6 @@ class CppVisitor : SyntaxVisitor {
     function closeProgram(program: Program) {
     }
 
-    function collectDerivedClasses(mutable derivedClasses: [String], className: String) {
-    }
-
     function appendDerivedClasses(mutable derivedClasses: [String], mutable inheritors: [String]) {
     }
 
@@ -153,6 +150,9 @@ class CppVisitor : SyntaxVisitor {
     }
 
     function indentSource() {
+    }
+
+    function collectDerivedClasses(mutable derivedClasses: [String], className: String) {
     }
 
     function writeParameter(name: String, parameterType: Type) {
