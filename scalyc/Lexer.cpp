@@ -484,8 +484,10 @@ Token* Lexer::scanStringLiteral(_Page* _rp) {
                     column++;
                     switch (text->charAt(position)) {
                         case '\"': case '\\': case '\'': {
-                            value->append('\\');
-                            value->append(text->charAt(position));
+                            {
+                                value->append('\\');
+                                value->append(text->charAt(position));
+                            }
                             break;
                         }
 

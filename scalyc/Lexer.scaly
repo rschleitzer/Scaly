@@ -368,11 +368,14 @@ class Lexer {
                 case '\\': {
                     position++ column++
                     switch text.charAt(position) {
-                        case '\"', '\\', '\'': value.append(text.charAt(position))
-                        case 'n': value.append('\n')
-                        case 'r': value.append('\r')
-                        case 't': value.append('\t')
-                        case '0': value.append('\0')
+                        case '\"', '\\', '\'': {
+                            value.append('\\');
+                            value.append(text.charAt(position))
+                        }
+                        case 'n': value.append("\\n")
+                        case 'r': value.append("\\r")
+                        case 't': value.append("\\t")
+                        case '0': value.append("\\0")
                         default: return InvalidToken()
                     }
                 }
