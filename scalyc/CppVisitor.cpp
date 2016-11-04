@@ -4,7 +4,7 @@ namespace scalyc {
 
 Inherits::Inherits(String* className) {
     name = &String::create(getPage(), className);
-    inheritors = new(getPage()) _Array<String>();
+    inheritors = new(getPage()->allocateExclusivePage()) _Array<String>();
 }
 
 CppVisitor::CppVisitor() {
@@ -2527,6 +2527,12 @@ bool CppVisitor::openInitializerCall(InitializerCall* initializerCall) {
             sourceFile->append("new(");
             if (inInitializer(initializerCall)) {
                 sourceFile->append("getPage()");
+                if (initializerCall->parent->parent->parent->_isAssignment()) {
+                    Assignment* assignment = (Assignment*)initializerCall->parent->parent->parent;
+                    if (inInitializer(assignment)) {
+                        sourceFile->append("->allocateExclusivePage()");
+                    }
+                }
             }
             else {
                 if (initializerCall->parent->parent->parent->_isAssignment()) {
