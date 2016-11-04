@@ -205,24 +205,19 @@ bool CppVisitor::isTopLevelFile(CompilationUnit* compilationUnit) {
 }
 
 void CppVisitor::closeCompilationUnit(CompilationUnit* compilationUnit) {
-    if (!compilationUnit->parent->_isProgram())
+    _Region _region; _Page* _p = _region.get();
+    if (!(compilationUnit->parent)->_isProgram())
         return;
-
     String* programName = ((Program*)(compilationUnit->parent))->name;
     String* programDirectory = ((Program*)(compilationUnit->parent))->directory;
-
-    // Close and write cpp file
-    _Region _region; _Page* _p = _region.get();
-
     VarString* outputFilePath = new(_p) VarString(programDirectory);
-    outputFilePath->append("/");
+    outputFilePath->append('/');
     outputFilePath->append(Path::getFileNameWithoutExtension(_p, compilationUnit->fileName));
-
     if (!moduleName->equals(programName)) {
         headerFile->append("\n\n}\n#endif // __scalyc__");
         headerFile->append(moduleName);
         headerFile->append("__\n");
-        VarString* headerFilePath = new(_p) VarString(*outputFilePath);
+        VarString* headerFilePath = new(_p) VarString(outputFilePath);
         headerFilePath->append(".h");
         auto _File_error = File::writeFromString(_p, headerFilePath, headerFile);
         if (_File_error) {
@@ -232,13 +227,12 @@ void CppVisitor::closeCompilationUnit(CompilationUnit* compilationUnit) {
             }
         }
     }
-
     if (isTopLevelFile(compilationUnit))
         sourceFile->append("\nreturn 0;\n");
     sourceFile->append("\n}\n");
     if (isTopLevelFile(compilationUnit))
         sourceFile->append("\n}\n");
-    VarString* sourceFilePath = new(_p) VarString(*outputFilePath);
+    VarString* sourceFilePath = new(_p) VarString(outputFilePath);
     sourceFilePath->append(".cpp");
     auto _File_error = File::writeFromString(_p, sourceFilePath, sourceFile);
     if (_File_error) {
