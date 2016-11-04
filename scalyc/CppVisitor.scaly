@@ -172,7 +172,7 @@ class CppVisitor : SyntaxVisitor {
         }
 
         // Begin cpp file
-        sourceFile VarString(0, 4096)
+        sourceFile = VarString(0, 4096)
         sourceFile.append("#include \"")
         sourceFile.append(programName)
         sourceFile.append(".h\"\nusing namespace scaly;\nnamespace ")

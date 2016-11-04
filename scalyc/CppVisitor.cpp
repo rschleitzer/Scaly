@@ -177,18 +177,16 @@ bool CppVisitor::openCompilationUnit(CompilationUnit* compilationUnit) {
         headerFile->append(programName);
         headerFile->append(" {");
     }
-
-    // Begin cpp file
-    sourceFile = new(getPage()) VarString(0, 4096);
+    if (sourceFile != nullptr)
+        sourceFile->getPage()->clear();
+    sourceFile = new(sourceFile->getPage()) VarString(0, 4096);
     sourceFile->append("#include \"");
     sourceFile->append(programName);
     sourceFile->append(".h\"\nusing namespace scaly;\nnamespace ");
     sourceFile->append(programName);
     sourceFile->append(" {\n\n");
-    
     if (isTopLevelFile(compilationUnit))
         sourceFile->append("int _main(_Vector<String>* args) {\n_Region _rp; _Page* _p = _rp.get();\n\n");
-
     return true;
 }
 
