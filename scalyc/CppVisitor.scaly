@@ -186,6 +186,12 @@ class CppVisitor : SyntaxVisitor {
     }
     
     function isTopLevelFile(compilationUnit: CompilationUnit) -> bool {
+        let statements: [TerminatedStatement] = compilationUnit.statements
+        for statement: TerminatedStatement in statements {
+            if statement.statement is Expression
+                return true
+        }
+            
         return false
     }
 

@@ -192,14 +192,15 @@ bool CppVisitor::openCompilationUnit(CompilationUnit* compilationUnit) {
 
 bool CppVisitor::isTopLevelFile(CompilationUnit* compilationUnit) {
     _Vector<TerminatedStatement>* statements = compilationUnit->statements;
+    TerminatedStatement* statement = nullptr;
     size_t _statements_length = statements->length();
     for (size_t _i = 0; _i < _statements_length; _i++) {
-        TerminatedStatement* statement = *(*statements)[_i];
-        if (statement->statement->_isExpression()) {
-            return true;
+        statement = *(*statements)[_i];
+        {
+            if (statement->statement->_isExpression())
+                return true;
         }
     }
-            
     return false;
 }
 
