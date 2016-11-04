@@ -148,7 +148,9 @@ void CppVisitor::closeProgram(Program* program) {
 }
 
 bool CppVisitor::openCompilationUnit(CompilationUnit* compilationUnit) {
-    moduleName = new(getPage()) VarString(Path::getFileNameWithoutExtension(getPage(), compilationUnit->fileName));
+    if (moduleName != nullptr)
+        moduleName->getPage()->clear();
+    moduleName = new(moduleName->getPage()) VarString(Path::getFileNameWithoutExtension(getPage(), compilationUnit->fileName));
     headerIndentLevel = 0;
     sourceIndentLevel = 0;
     declaringClassMember = false;
