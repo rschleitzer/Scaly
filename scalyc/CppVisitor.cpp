@@ -271,18 +271,22 @@ bool CppVisitor::openTerminatedStatement(TerminatedStatement* terminatedStatemen
                     }
                 }
             }
-            _Vector<Postfix>* postfixes = simpleExpression->prefixExpression->expression->postfixes;
+            _Vector<Postfix>* postfixes;
+            postfixes = simpleExpression->prefixExpression->expression->postfixes;
             if (postfixes != nullptr) {
+                Postfix* postfix = nullptr;
                 size_t _postfixes_length = postfixes->length();
                 for (size_t _i = 0; _i < _postfixes_length; _i++) {
-                    Postfix* postfix = *(*postfixes)[_i];
-                    if (postfix->_isFunctionCall()) {
-                        FunctionCall* functionCall = (FunctionCall*)postfix;
-                        if (functionCall->catchClauses != nullptr) {
-                            IdentifierExpression* identifierExpression = (IdentifierExpression*)simpleExpression->prefixExpression->expression->primaryExpression;
-                            sourceFile->append("auto _");
-                            sourceFile->append(identifierExpression->name);
-                            sourceFile->append("_error = ");
+                    postfix = *(*postfixes)[_i];
+                    {
+                        if (postfix->_isFunctionCall()) {
+                            FunctionCall* functionCall = (FunctionCall*)postfix;
+                            if (functionCall->catchClauses != nullptr) {
+                                IdentifierExpression* identifierExpression = (IdentifierExpression*)simpleExpression->prefixExpression->expression->primaryExpression;
+                                sourceFile->append("auto _");
+                                sourceFile->append(identifierExpression->name);
+                                sourceFile->append("_error = ");
+                            }
                         }
                     }
                 }
