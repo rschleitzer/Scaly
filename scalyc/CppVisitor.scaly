@@ -414,7 +414,7 @@ class CppVisitor : SyntaxVisitor {
         if functionDeclaration.modifiers != null {
             let modifiers: [Modifier] = functionDeclaration.modifiers
             for modifier: Modifier in modifiers {
-                if modifieris StaticWord
+                if modifier is StaticWord
                     staticFunction = true
             }
         }

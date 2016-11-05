@@ -375,9 +375,8 @@ void CppVisitor::closeUseDeclaration(UseDeclaration* useDeclaration) {
 
 bool CppVisitor::openConstantDeclaration(ConstantDeclaration* constantDeclaration) {
     constDeclaration = true;
-    if (constantDeclaration->parent->parent->parent->_isClassDeclaration()) {
+    if (constantDeclaration->parent->parent->parent->_isClassDeclaration())
         suppressSource = true;
-    }
     return true;
 }
 
@@ -407,7 +406,7 @@ void CppVisitor::closeMutableDeclaration(MutableDeclaration* mutableDeclaration)
 }
 
 bool CppVisitor::openFunctionDeclaration(FunctionDeclaration* functionDeclaration) {
-    if (!functionDeclaration->body) {
+    if (functionDeclaration->body == nullptr) {
         abstractFunction = true;
         suppressSource = true;
     }
@@ -415,12 +414,16 @@ bool CppVisitor::openFunctionDeclaration(FunctionDeclaration* functionDeclaratio
         abstractFunction = false;
         suppressSource = false;
     }
-    if (functionDeclaration->modifiers) {
-        size_t _modifiers_length = functionDeclaration->modifiers->length();
+    if (functionDeclaration->modifiers != nullptr) {
+        _Vector<Modifier>* modifiers = functionDeclaration->modifiers;
+        Modifier* modifier = nullptr;
+        size_t _modifiers_length = modifiers->length();
         for (size_t _i = 0; _i < _modifiers_length; _i++) {
-            Modifier* modifier = *(*functionDeclaration->modifiers)[_i];
-            if (modifier->_isStaticWord())
-                staticFunction = true;
+            modifier = *(*modifiers)[_i];
+            {
+                if (modifier->_isStaticWord())
+                    staticFunction = true;
+            }
         }
     }
     return true;
