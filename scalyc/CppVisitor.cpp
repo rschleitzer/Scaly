@@ -455,19 +455,25 @@ bool CppVisitor::openEnumDeclaration(EnumDeclaration* enumDeclaration) {
 void CppVisitor::closeEnumDeclaration(EnumDeclaration* enumDeclaration) {
     String* enumDeclarationName = enumDeclaration->name;
     _Vector<EnumMember>* members = enumDeclaration->members;
-    if (members) {
+    if (members != nullptr) {
         headerFile->append("enum _");
         headerFile->append(enumDeclarationName);
         headerFile->append("Code {\n");
+        int i = 0;
+        EnumMember* member = nullptr;
         size_t _members_length = members->length();
         for (size_t _i = 0; _i < _members_length; _i++) {
-            headerFile->append("    _");
-            headerFile->append(enumDeclarationName);
-            headerFile->append("Code_");
-            headerFile->append((*(*members)[_i])->enumCase->name);
-            if (!_i)
-                headerFile->append(" = 1");
-            headerFile->append(",\n");
+            member = *(*members)[_i];
+            {
+                headerFile->append("    _");
+                headerFile->append(enumDeclarationName);
+                headerFile->append("Code_");
+                headerFile->append(member->enumCase->name);
+                if (i == 0)
+                    headerFile->append(" = 1");
+                headerFile->append(",\n");
+                i++;
+            }
         }
         headerFile->append("};\n\n");
     }
