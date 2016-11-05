@@ -551,6 +551,39 @@ class CppVisitor : SyntaxVisitor {
     }
 
     function closeClassDeclaration(classDeclaration: ClassDeclaration) {
+        headerFile.append("\n")
+        if classDeclaration.typeInheritanceClause != null {
+            headerFile.append("\n")
+            indentHeader()
+            headerFile.append("virtual bool _is")
+            headerFile.append(classDeclaration.name)
+            headerFile.append("();")
+            sourceFile.append("bool ")
+            sourceFile.append(classDeclaration.name)
+            sourceFile.append("::_is")
+            sourceFile.append(classDeclaration.name)
+            sourceFile.append("() { return true; }\n\n")
+        }
+        {
+            var derivedClasses: [String] = [String]()
+            collectDerivedClasses(derivedClasses, String(classDeclaration.name))
+            for derivedClass: String in derivedClasses {
+                headerFile.append("\n")
+                indentHeader()
+                headerFile.append("virtual bool _is")
+                headerFile.append(derivedClass)
+                headerFile.append("();")
+                sourceFile.append("bool ");
+                sourceFile.append(classDeclaration.name);
+                sourceFile.append("::_is");
+                sourceFile.append(derivedClass)
+                sourceFile.append("() { return false; }\n")
+            }
+            if derivedClasses.length() > 0
+                sourceFile.append("\n")
+        }
+        headerIndentLevel--
+        headerFile.append("\n};")
     }
 
     function openInitializerDeclaration(initializerDeclaration: InitializerDeclaration) -> bool {

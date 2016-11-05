@@ -569,7 +569,7 @@ bool CppVisitor::openClassDeclaration(ClassDeclaration* classDeclaration) {
 
 void CppVisitor::closeClassDeclaration(ClassDeclaration* classDeclaration) {
     headerFile->append("\n");
-    if (classDeclaration->typeInheritanceClause) {
+    if (classDeclaration->typeInheritanceClause != nullptr) {
         headerFile->append("\n");
         indentHeader();
         headerFile->append("virtual bool _is");
