@@ -58,7 +58,7 @@ class CppVisitor : SyntaxVisitor {
 
         {
             mutable outputFilePath: VarString = VarString(programDirectory)
-            outputFilePath.append("/");
+            outputFilePath.append("/")
             outputFilePath.append(program.name)
 
             // Build and write the project file
@@ -150,7 +150,7 @@ class CppVisitor : SyntaxVisitor {
         if !(compilationUnit.parent is Program)
             return false
 
-        let programName: String = ((compilationUnit.parent) as Program).name;
+        let programName: String = ((compilationUnit.parent) as Program).name
 
         // Build and write the header file
         if !moduleName.equals(programName) {
@@ -235,6 +235,47 @@ class CppVisitor : SyntaxVisitor {
     }
 
     function openTerminatedStatement(terminatedStatement: TerminatedStatement) -> bool {
+        indentSource()
+        if terminatedStatement.statement is SimpleExpression {
+            let simpleExpression: SimpleExpression = terminatedStatement.statement as SimpleExpression
+            if simpleExpression.prefixExpression.expression.primaryExpression is IdentifierExpression {
+                let binaryOps: [BinaryOp] = simpleExpression.binaryOps
+                if binaryOps != null {
+                    if binaryOps.length() == 1 {
+                        let binaryOp: BinaryOp = binaryOps[0]
+                        if binaryOp is Assignment {
+                            let assignment: Assignment = binaryOp as Assignment
+                            let memberName: String = getMemberIfCreatingObject(assignment)
+                            if (memberName != null) && (!inInitializer(assignment)) {
+                                sourceFile.append("if (")
+                                sourceFile.append(memberName)
+                                sourceFile.append(" != nullptr)\n")
+                                sourceIndentLevel++
+                                this.indentSource()
+                                sourceFile.append(memberName)
+                                sourceFile.append("->getPage()->clear();\n")
+                                sourceIndentLevel--
+                                this.indentSource()
+                            }
+                        }
+                    }
+                }
+                let postfixes: [Postfix] postfixes = simpleExpression.prefixExpression.expression.postfixes
+                if postfixes != null {
+                    for postfix: Postfix in postfixes {
+                        if postfix is FunctionCall {
+                            let functionCall: FunctionCall = postfix as FunctionCall
+                            if functionCall.catchClauses != null {
+                                let identifierExpression: IdentifierExpression = simpleExpression.prefixExpression.expression.primaryExpression as IdentifierExpression
+                                sourceFile.append("auto _")
+                                sourceFile.append(identifierExpression.name)
+                                sourceFile.append("_error = ")
+                            }
+                        }
+                    }
+                }
+            }
+        }
         return true
     }
 
@@ -499,15 +540,15 @@ class CppVisitor : SyntaxVisitor {
     }
 
     function inInitializer(node: SyntaxNode) -> bool {
-        return false;
+        return false
     }
 
     function inReturn(node: SyntaxNode) -> bool {
-        return false;
+        return false
     }
 
     function inThrow(node: SyntaxNode) -> bool {
-        return false;
+        return false
     }
 
     function getMemberIfCreatingObject(assignment: Assignment) -> existing String {
@@ -551,7 +592,7 @@ class CppVisitor : SyntaxVisitor {
     }
 
     function getErrorType(catchClause: CatchClause) -> existing String {
-        return 0;
+        return 0
     }
 
     function closeCatchClause(catchClause: CatchClause) {
@@ -873,11 +914,11 @@ class CppVisitor : SyntaxVisitor {
     }
 
     function inArrayType(typeIdentifier: TypeIdentifier) -> bool {
-        return false;
+        return false
     }
 
     function inTypeQuery(typeIdentifier: TypeIdentifier) -> bool {
-        return false;
+        return false
     }
 
     function appendCppTypeName(mutable s: VarString, typeIdentifier: TypeIdentifier) {

@@ -245,7 +245,7 @@ void CppVisitor::closeCompilationUnit(CompilationUnit* compilationUnit) {
 }
 
 bool CppVisitor::openTerminatedStatement(TerminatedStatement* terminatedStatement) {
-    this->indentSource();
+    indentSource();
     if (terminatedStatement->statement->_isSimpleExpression()) {
         SimpleExpression* simpleExpression = (SimpleExpression*)terminatedStatement->statement;
         if (simpleExpression->prefixExpression->expression->primaryExpression->_isIdentifierExpression()) {
