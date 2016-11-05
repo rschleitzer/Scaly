@@ -583,22 +583,26 @@ void CppVisitor::closeClassDeclaration(ClassDeclaration* classDeclaration) {
     }
     {
         _Region _region; _Page* _p = _region.get();
-        _Array<String>& derivedClasses = *new(_p) _Array<String>();
-        collectDerivedClasses(&derivedClasses, new(_p) String(classDeclaration->name));
-        size_t _derivedClasses_length = derivedClasses.length();
+        _Array<String>* derivedClasses = new(_p) _Array<String>();
+        collectDerivedClasses(derivedClasses, new(_p) String(classDeclaration->name));
+        String* derivedClass = nullptr;
+        size_t _derivedClasses_length = derivedClasses->length();
         for (size_t _i = 0; _i < _derivedClasses_length; _i++) {
-            headerFile->append("\n");
-            indentHeader();
-            headerFile->append("virtual bool _is");
-            headerFile->append(*derivedClasses[_i]);
-            headerFile->append("();");
-            sourceFile->append("bool "); 
-            sourceFile->append(classDeclaration->name);
-            sourceFile->append("::_is");
-            sourceFile->append(*derivedClasses[_i]);
-            sourceFile->append("() { return false; }\n");
+            derivedClass = *(*derivedClasses)[_i];
+            {
+                headerFile->append("\n");
+                indentHeader();
+                headerFile->append("virtual bool _is");
+                headerFile->append(derivedClass);
+                headerFile->append("();");
+                sourceFile->append("bool ");
+                sourceFile->append(classDeclaration->name);
+                sourceFile->append("::_is");
+                sourceFile->append(derivedClass);
+                sourceFile->append("() { return false; }\n");
+            }
         }
-        if (derivedClasses.length() > 0)
+        if (derivedClasses->length() > 0)
             sourceFile->append("\n");
     }
     headerIndentLevel--;
