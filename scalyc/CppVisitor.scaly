@@ -524,13 +524,13 @@ class CppVisitor : SyntaxVisitor {
     function openClassDeclaration(classDeclaration: ClassDeclaration) -> bool {
         headerFile.append("\n\nclass ")
         headerFile.append(classDeclaration.name)
-        if classDeclaration.body == 0 {
+        if classDeclaration.body == null {
             headerFile.append(";")
             return false
         }
 
         headerFile.append(" : public ")
-        if classDeclaration.typeInheritanceClause {
+        if classDeclaration.typeInheritanceClause != nullptr {
             let inheritances: [Inheritance] = classDeclaration.typeInheritanceClause.inheritances
             var i: int = 0
             for inheritance: Inheritance in inheritances {

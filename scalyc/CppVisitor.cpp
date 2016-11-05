@@ -537,17 +537,25 @@ void CppVisitor::closeEnumDeclaration(EnumDeclaration* enumDeclaration) {
 bool CppVisitor::openClassDeclaration(ClassDeclaration* classDeclaration) {
     headerFile->append("\n\nclass ");
     headerFile->append(classDeclaration->name);
-    if (!classDeclaration->body) {
+    if (classDeclaration->body == nullptr) {
         headerFile->append(";");
-        return false; }
+        return false;
+    }
     headerFile->append(" : public ");
-    if (classDeclaration->typeInheritanceClause) {
-        size_t noOfInheritanceClauses = classDeclaration->typeInheritanceClause->inheritances->length();
-        for (size_t _i = 0; _i < noOfInheritanceClauses; _i++) {
-            if (_i > 0)
-                headerFile->append(", ");
-            TypeIdentifier* typeIdentifier = (*(*classDeclaration->typeInheritanceClause->inheritances)[_i])->typeIdentifier;
-            headerFile->append(typeIdentifier->name);
+    if (classDeclaration->typeInheritanceClause != nullptr) {
+        _Vector<Inheritance>* inheritances = classDeclaration->typeInheritanceClause->inheritances;
+        int i = 0;
+        Inheritance* inheritance = nullptr;
+        size_t _inheritances_length = inheritances->length();
+        for (size_t _i = 0; _i < _inheritances_length; _i++) {
+            inheritance = *(*inheritances)[_i];
+            {
+                if (i > 0)
+                    headerFile->append(", ");
+                TypeIdentifier* typeIdentifier = inheritance->typeIdentifier;
+                headerFile->append(typeIdentifier->name);
+                i++;
+            }
         }
     }
     else {
