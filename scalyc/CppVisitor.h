@@ -122,7 +122,7 @@ public:
     virtual bool inInitializer(SyntaxNode* node);
     virtual bool inReturn(SyntaxNode* node);
     virtual bool inThrow(SyntaxNode* node);
-    virtual String* getMemberIfCreatingObject(Assignment* assignment);
+    virtual String* getMemberIfCreatingObject(_Page* _rp, Assignment* assignment);
     virtual String* getFunctionName(Assignment* assignment);
     virtual bool isCreatingObject(String* functionName, SyntaxNode* node);
     virtual ClassDeclaration* getClassDeclaration(SyntaxNode* node);

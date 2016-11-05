@@ -245,7 +245,7 @@ class CppVisitor : SyntaxVisitor {
                         let binaryOp: BinaryOp = binaryOps[0]
                         if binaryOp is Assignment {
                             let assignment: Assignment = binaryOp as Assignment
-                            let memberName: String = getMemberIfCreatingObject(assignment)
+                            mutable memberName: String = getMemberIfCreatingObject(assignment)
                             if (memberName != null) && (!inInitializer(assignment)) {
                                 sourceFile.append("if (")
                                 sourceFile.append(memberName)

@@ -254,8 +254,9 @@ bool CppVisitor::openTerminatedStatement(TerminatedStatement* terminatedStatemen
                 if (binaryOps->length() == 1) {
                     BinaryOp* binaryOp = *(*binaryOps)[0];
                     if (binaryOp->_isAssignment()) {
+                        _Region _region; _Page* _p = _region.get();
                         Assignment* assignment = (Assignment*)binaryOp;
-                        String* memberName = getMemberIfCreatingObject(assignment);
+                        String* memberName = getMemberIfCreatingObject(_p, assignment);
                         if ((memberName != nullptr) && (!inInitializer(assignment))) {
                             sourceFile->append("if (");
                             sourceFile->append(memberName);
@@ -1233,7 +1234,7 @@ bool CppVisitor::inThrow(SyntaxNode* node) {
     return inThrow(node->parent);
 }
 
-String* CppVisitor::getMemberIfCreatingObject(Assignment* assignment) {
+String* CppVisitor::getMemberIfCreatingObject(_Page* _rp, Assignment* assignment) {
      String* functionName = getFunctionName(assignment);
     if (functionName == nullptr) {
         return nullptr;
@@ -1247,7 +1248,7 @@ String* CppVisitor::getMemberIfCreatingObject(Assignment* assignment) {
                     PostfixExpression* leftSide = simpleExpression->prefixExpression->expression;
                     if ((leftSide->postfixes == 0) && (leftSide->primaryExpression->_isIdentifierExpression())) {
                         IdentifierExpression* memberExpression = (IdentifierExpression*)(leftSide->primaryExpression);
-                        String* memberName = memberExpression->name;
+                        String* memberName = new(_rp) String(memberExpression->name);
                         ClassDeclaration* classDeclaration = getClassDeclaration(assignment);
                         if (classDeclaration != nullptr) {
                             return memberName;
@@ -1660,8 +1661,9 @@ bool CppVisitor::openParenthesizedExpression(ParenthesizedExpression* parenthesi
                 IdentifierExpression* identifierExpression = (IdentifierExpression*)postfixExpression->primaryExpression;
                 if (!isClass(identifierExpression->name)) {
                     if (postfixExpression->parent->parent->_isAssignment()) {
+                        _Region _region; _Page* _p = _region.get();
                         Assignment* assignment = (Assignment*)postfixExpression->parent->parent;
-                        String* member = getMemberIfCreatingObject(assignment);
+                        String* member = getMemberIfCreatingObject(_p, assignment);
                         if (member != nullptr) {
                             ClassDeclaration* classDeclaration = getClassDeclaration(assignment);
                             if (isVariableMember(member, classDeclaration)) {
@@ -1856,8 +1858,9 @@ void CppVisitor::visitIdentifierExpression(IdentifierExpression* identifierExpre
                     else if (inAssignment(identifierExpression)) {
                         Assignment* assignment = getAssignment(identifierExpression);
                         if (assignment != nullptr) {
+                            _Region _region; _Page* _p = _region.get();
                             ClassDeclaration* classDeclaration = getClassDeclaration(assignment);
-                            String* memberName = getMemberIfCreatingObject(assignment);
+                            String* memberName = getMemberIfCreatingObject(_p, assignment);
                             if (memberName != nullptr) {
                                 if (isVariableMember(memberName, classDeclaration)) {
                                     if (!inInitializer(assignment)) {
