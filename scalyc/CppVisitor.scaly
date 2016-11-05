@@ -280,6 +280,82 @@ class CppVisitor : SyntaxVisitor {
     }
 
     function closeTerminatedStatement(terminatedStatement: TerminatedStatement) {
+
+        if terminatedStatement.statement is ClassDeclaration
+            return;
+
+        if terminatedStatement.statement is EnumDeclaration
+            return;
+
+        {
+            let bindingInitializer: BindingInitializer = null
+            if terminatedStatement.statement is ConstantDeclaration {
+                {
+                    let constantDeclaration: ConstantDeclaration = terminatedStatement.statement as ConstantDeclaration
+                    if constantDeclaration.initializer is BindingInitializer {
+                        bindingInitializer = constantDeclaration.initializer as BindingInitializer
+                    }
+                }
+                {
+                    let variableDeclaration: VariableDeclaration = terminatedStatement.statement as VariableDeclaration
+                    if variableDeclaration.initializer is BindingInitializer {
+                        bindingInitializer = variableDeclaration.initializer as BindingInitializer
+                    }
+                }
+                {
+                    let mutableDeclaration: MutableDeclaration = terminatedStatement.statement as MutableDeclaration
+                    if mutableDeclaration.initializer is BindingInitializer {
+                        bindingInitializer = mutableDeclaration.initializer as BindingInitializer
+                    }
+                }
+            }
+            if bindingInitializer != null {
+                if bindingInitializer.initializer is PatternInitializer {
+                    let patternInitializer: PatternInitializer = bindingInitializer.initializer as PatternInitializer
+                    let functionCall: FunctionCall = getFunctionCall(patternInitializer)
+                    if functionCall != null {
+                        if catchesError(functionCall)
+                            return
+                    }
+                }
+            }
+        }
+
+        if terminatedStatement.statement is SimpleExpression {
+            let expression: SimpleExpression = terminatedStatement.statement as SimpleExpression
+            let primaryExpression: PrimaryExpression = expression.prefixExpression.expression.primaryExpression
+
+            if primaryExpression is IfExpression
+                return;
+
+            if primaryExpression is SwitchExpression
+                return;
+
+            if primaryExpression is ForExpression
+                return;
+
+            if primaryExpression is WhileExpression
+                return;
+
+            if primaryExpression is IdentifierExpression {
+                let postfixExpression: PostfixExpression = expression.prefixExpression.expression
+                if postfixExpression.postfixes != null {
+                    let postfixes: [Postfix] = postfixExpression.postfixes
+                    for postfix: Postfix in postfixes {
+                        if postfix is FunctionCall {
+                            let functionCall: FunctionCall = postfix as FunctionCall
+                            if catchesError(functionCall)
+                                return
+                        }
+                    }
+                }
+            }
+        }
+
+        if terminatedStatement.statement is CodeBlock
+            return;
+            
+        sourceFile.append(";\n")
     }
 
     function openUseDeclaration(useDeclaration: UseDeclaration) -> bool {
