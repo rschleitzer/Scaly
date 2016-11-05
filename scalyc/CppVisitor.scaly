@@ -466,9 +466,9 @@ class CppVisitor : SyntaxVisitor {
                 if i == 0
                     headerFile.append(" = 1")
                 headerFile.append(",\n")
+                i++
             }
             headerFile.append("};\n\n")
-            i++
         }
 
         headerFile.append("class ")
