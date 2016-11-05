@@ -522,6 +522,31 @@ class CppVisitor : SyntaxVisitor {
     }
 
     function openClassDeclaration(classDeclaration: ClassDeclaration) -> bool {
+        headerFile.append("\n\nclass ")
+        headerFile.append(classDeclaration.name)
+        if classDeclaration.body == 0 {
+            headerFile.append(";")
+            return false
+        }
+
+        headerFile.append(" : public ")
+        if classDeclaration.typeInheritanceClause {
+            let inheritances: [Inheritance] = classDeclaration.typeInheritanceClause.inheritances
+            var i: int = 0
+            for inheritance: Inheritance in inheritances {
+                if i > 0
+                    headerFile.append(", ");
+                    var typeIdentifier: TypeIdentifier = inheritance.typeIdentifier
+                headerFile.append(typeIdentifier.name)
+                i++
+            }
+        }
+        else {
+            headerFile.append("Object")
+        }
+        headerFile.append(" {\n")
+        headerFile.append("public:")
+        headerIndentLevel++
         return true
     }
 

@@ -534,6 +534,69 @@ void CppVisitor::closeEnumDeclaration(EnumDeclaration* enumDeclaration) {
     headerFile->append("Code errorCode;\n    void* errorInfo;\n};");
 }
 
+bool CppVisitor::openClassDeclaration(ClassDeclaration* classDeclaration) {
+    headerFile->append("\n\nclass ");
+    headerFile->append(classDeclaration->name);
+    if (!classDeclaration->body) {
+        headerFile->append(";");
+        return false; }
+    headerFile->append(" : public ");
+    if (classDeclaration->typeInheritanceClause) {
+        size_t noOfInheritanceClauses = classDeclaration->typeInheritanceClause->inheritances->length();
+        for (size_t _i = 0; _i < noOfInheritanceClauses; _i++) {
+            if (_i > 0)
+                headerFile->append(", ");
+            TypeIdentifier* typeIdentifier = (*(*classDeclaration->typeInheritanceClause->inheritances)[_i])->typeIdentifier;
+            headerFile->append(typeIdentifier->name);
+        }
+    }
+    else {
+        headerFile->append("Object");
+    }
+    headerFile->append(" {\n");
+    headerFile->append("public:");
+    headerIndentLevel++;
+    return true;
+}
+
+void CppVisitor::closeClassDeclaration(ClassDeclaration* classDeclaration) {
+    headerFile->append("\n");
+    if (classDeclaration->typeInheritanceClause) {
+        headerFile->append("\n");
+        indentHeader();
+        headerFile->append("virtual bool _is");
+        headerFile->append(classDeclaration->name);
+        headerFile->append("();");
+        sourceFile->append("bool ");
+        sourceFile->append(classDeclaration->name);
+        sourceFile->append("::_is");
+        sourceFile->append(classDeclaration->name);
+        sourceFile->append("() { return true; }\n\n");
+    }
+    {
+        _Region _region; _Page* _p = _region.get();
+        _Array<String>& derivedClasses = *new(_p) _Array<String>();
+        collectDerivedClasses(&derivedClasses, new(_p) String(classDeclaration->name));
+        size_t _derivedClasses_length = derivedClasses.length();
+        for (size_t _i = 0; _i < _derivedClasses_length; _i++) {
+            headerFile->append("\n");
+            indentHeader();
+            headerFile->append("virtual bool _is");
+            headerFile->append(*derivedClasses[_i]);
+            headerFile->append("();");
+            sourceFile->append("bool "); 
+            sourceFile->append(classDeclaration->name);
+            sourceFile->append("::_is");
+            sourceFile->append(*derivedClasses[_i]);
+            sourceFile->append("() { return false; }\n");
+        }
+        if (derivedClasses.length() > 0)
+            sourceFile->append("\n");
+    }
+    headerIndentLevel--;
+    headerFile->append("\n};");
+}
+
 bool CppVisitor::openPathIdentifier(PathIdentifier* pathIdentifier) {
     return true;
 }
@@ -959,73 +1022,6 @@ bool CppVisitor::openAdditionalCase(AdditionalCase* additionalCase) {
 }
 
 void CppVisitor::closeAdditionalCase(AdditionalCase* additionalCase) {
-}
-
-bool CppVisitor::openClassDeclaration(ClassDeclaration* classDeclaration) {
-    headerFile->append("\n\nclass ");
-    headerFile->append(classDeclaration->name);
-    if (!classDeclaration->body) {
-        headerFile->append(";");
-        return false; }
-    headerFile->append(" : public ");
-    if (classDeclaration->typeInheritanceClause) {
-        size_t noOfInheritanceClauses = classDeclaration->typeInheritanceClause->inheritances->length();
-        for (size_t _i = 0; _i < noOfInheritanceClauses; _i++) {
-            if (_i > 0)
-                headerFile->append(", ");
-            TypeIdentifier* typeIdentifier = (*(*classDeclaration->typeInheritanceClause->inheritances)[_i])->typeIdentifier;
-            headerFile->append(typeIdentifier->name);
-        }
-    }
-    else {
-        headerFile->append("Object");
-    }
-    headerFile->append(" {\n");
-    headerFile->append("public:");
-
-    headerIndentLevel++;
-
-    return true;
-}
-
-void CppVisitor::closeClassDeclaration(ClassDeclaration* classDeclaration) {
-    headerFile->append("\n");
-    if (classDeclaration->typeInheritanceClause) {
-        headerFile->append("\n");
-        indentHeader();
-        headerFile->append("virtual bool _is");
-        headerFile->append(classDeclaration->name);
-        headerFile->append("();");
-        sourceFile->append("bool ");
-        sourceFile->append(classDeclaration->name);
-        sourceFile->append("::_is");
-        sourceFile->append(classDeclaration->name);
-        sourceFile->append("() { return true; }\n\n");
-    }
-    {
-        _Region _region; _Page* _p = _region.get();
-        _Array<String>& derivedClasses = *new(_p) _Array<String>();
-        collectDerivedClasses(&derivedClasses, new(_p) String(classDeclaration->name));
-        size_t _derivedClasses_length = derivedClasses.length();
-        for (size_t _i = 0; _i < _derivedClasses_length; _i++) {
-            headerFile->append("\n");
-            indentHeader();
-            headerFile->append("virtual bool _is");
-            headerFile->append(*derivedClasses[_i]);
-            headerFile->append("();");
-            sourceFile->append("bool "); 
-            sourceFile->append(classDeclaration->name);
-            sourceFile->append("::_is");
-            sourceFile->append(*derivedClasses[_i]);
-            sourceFile->append("() { return false; }\n");
-        }
-        if (derivedClasses.length() > 0)
-            sourceFile->append("\n");
-    }
-    
-
-    headerIndentLevel--;
-    headerFile->append("\n};");
 }
 
 bool CppVisitor::openClassBody(ClassBody* classBody) {
