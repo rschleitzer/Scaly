@@ -1676,15 +1676,6 @@ bool CppVisitor::openParenthesizedExpression(ParenthesizedExpression* parenthesi
                         }
                     }
                 }
-                else {
-                    if (isClass(identifierExpression->name)) {
-                        String* className = identifierExpression->name;
-                        if (className->equals("String")) {
-                            outputParen = false;
-                        }
-                    }
-                }
-                    
             }
         }
         if (!callsInitializer(functionCall)) {
@@ -1862,11 +1853,7 @@ void CppVisitor::visitIdentifierExpression(IdentifierExpression* identifierExpre
         if (postfixExpression->postfixes != nullptr) {
             if (postfixExpression->postfixes->length() > 0) {
                 if ((isClass(identifierExpression->name)) && ((*(*(postfixExpression->postfixes))[0])->_isFunctionCall())) {
-                    String* className = identifierExpression->name;
-                    if (className->equals("String"))
-                        sourceFile->append("&String::create(");
-                    else
-                        sourceFile->append("new(");
+                    sourceFile->append("new(");
                     if ((inReturn(identifierExpression)) || (inRetDeclaration(identifierExpression))) {
                         sourceFile->append("_rp");
                     }
@@ -1897,12 +1884,8 @@ void CppVisitor::visitIdentifierExpression(IdentifierExpression* identifierExpre
                     }
                     else
                         sourceFile->append("_p");
-                    if (className->equals("String"))
-                        sourceFile->append(", ");
-                    else {
-                        sourceFile->append(") ");
-                        sourceFile->append(identifierExpression->name);
-                    }
+                    sourceFile->append(") ");
+                    sourceFile->append(identifierExpression->name);
                 }
                 else {
                     sourceFile->append(identifierExpression->name);

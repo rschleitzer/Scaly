@@ -183,7 +183,7 @@ void Lexer::advance() {
                         default: {
                             if (token != nullptr)
                                 token->getPage()->clear();
-                            token = new(token->getPage()) Punctuation(new(token->getPage()) String (c));
+                            token = new(token->getPage()) Punctuation(new(token->getPage()) String(c));
                         }
                     }
                 }
