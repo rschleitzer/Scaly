@@ -1651,7 +1651,7 @@ void CppVisitor::closeNamedMemberPostfix(NamedMemberPostfix* namedMemberPostfix)
 }
 
 bool CppVisitor::openParenthesizedExpression(ParenthesizedExpression* parenthesizedExpression) {
-    bool outputParen = true;
+    sourceFile->append("(");
     if (parenthesizedExpression->parent->_isFunctionCall()) {
         FunctionCall* functionCall = (FunctionCall*)parenthesizedExpression->parent;
         if (functionCall->parent->_isPostfixExpression()) {
@@ -1665,55 +1665,48 @@ bool CppVisitor::openParenthesizedExpression(ParenthesizedExpression* parenthesi
                         if (member != nullptr) {
                             ClassDeclaration* classDeclaration = getClassDeclaration(assignment);
                             if (isVariableMember(member, classDeclaration)) {
-                                sourceFile->append("(");
                                 sourceFile->append(member);
                                 sourceFile->append("->getPage()");
                                 if (functionCall->arguments != nullptr)
                                     if (functionCall->arguments->expressionElements != nullptr)
                                         sourceFile->append(", ");
-                                outputParen = false;
                             }
                         }
                     }
                 }
             }
         }
+        bool parameterInserted = false;
         if (!callsInitializer(functionCall)) {
             if (assignedToMutableObject(functionCall)) {
-                sourceFile->append("(_p");
-                outputParen = false;
+                sourceFile->append("_p");
+                parameterInserted = true;
             }
             if (assignedToConstantObject(functionCall)) {
                 _Region _region; _Page* _p = _region.get();
                 if (getReturnType(_p, functionCall) != nullptr)
-                    sourceFile->append("(_rp");
+                    sourceFile->append("_rp");
                 else
-                    sourceFile->append("(_p");
-                outputParen = false;
+                    sourceFile->append("_p");
+                parameterInserted = true;
             }
         }
         if (catchesError(functionCall)) {
             if (!inThrow(functionCall)) {
                 _Region _region; _Page* _p = _region.get();
-                if (outputParen)
-                    sourceFile->append("(");
-                else
+                if (parameterInserted)
                     sourceFile->append(", ");
                 String* thrownType = getThrownType(_p, functionCall);
                 if (thrownType == nullptr)
                     sourceFile->append("_p");
                 else
                     sourceFile->append("_ep");
-                if (parenthesizedExpression->expressionElements != nullptr)
-                    sourceFile->append(", ");
-                outputParen = false;
+                parameterInserted = true;
             }
         }
+        if (parameterInserted && (parenthesizedExpression->expressionElements != nullptr))
+            sourceFile->append(", ");
     }
-
-    if (outputParen)
-        sourceFile->append("(");
-
     return true;
 }
 
