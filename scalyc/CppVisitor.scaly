@@ -363,31 +363,75 @@ class CppVisitor : SyntaxVisitor {
     }
 
     function openConstantDeclaration(constantDeclaration: ConstantDeclaration) -> bool {
+        constDeclaration = true
+
+        if constantDeclaration.parent.parent.parent is ClassDeclaration
+            suppressSource = true
+            
         return true
     }
 
     function closeConstantDeclaration(constantDeclaration: ConstantDeclaration) {
+        constDeclaration = false
+        suppressSource = false
     }
 
     function openVariableDeclaration(variableDeclaration: VariableDeclaration) -> bool {
+
+        if variableDeclaration.parent.parent.parent is ClassDeclaration
+            suppressSource = true
+
         return true
     }
 
     function closeVariableDeclaration(variableDeclaration: VariableDeclaration) {
+        suppressSource = false
     }
 
     function openMutableDeclaration(mutableDeclaration: MutableDeclaration) -> bool {
+
+        if mutableDeclaration.parent.parent.parent is ClassDeclaration
+            suppressSource = true
+
         return true
     }
 
     function closeMutableDeclaration(mutableDeclaration: MutableDeclaration) {
+        suppressSource = false
     }
 
     function openFunctionDeclaration(functionDeclaration: FunctionDeclaration) -> bool {
+
+        if functionDeclaration.body == null {
+            abstractFunction = true
+            suppressSource = true
+        }
+        else {
+            abstractFunction = false
+            suppressSource = false
+        }
+
+        if functionDeclaration.modifiers != null {
+            let modifiers: [Modifier] = functionDeclaration.modifiers
+            for modifier: Modifier in modifiers {
+                if modifieris StaticWord
+                    staticFunction = true
+            }
+        }
+
         return true
     }
 
     function closeFunctionDeclaration(functionDeclaration: FunctionDeclaration) {
+
+        if abstractFunction {
+            headerFile.append(" = 0")
+            abstractFunction = false
+        }
+
+        staticFunction = false
+        suppressHeader = false
+        suppressSource = false
     }
 
     function openEnumDeclaration(enumDeclaration: EnumDeclaration) -> bool {
