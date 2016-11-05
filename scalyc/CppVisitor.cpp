@@ -373,24 +373,6 @@ bool CppVisitor::openUseDeclaration(UseDeclaration* useDeclaration) {
 void CppVisitor::closeUseDeclaration(UseDeclaration* useDeclaration) {
 }
 
-bool CppVisitor::openPathIdentifier(PathIdentifier* pathIdentifier) {
-    return true;
-}
-
-void CppVisitor::closePathIdentifier(PathIdentifier* pathIdentifier) {
-}
-
-void CppVisitor::visitPathItem(PathItem* pathItem) {
-}
-
-bool CppVisitor::openInitializer(Initializer* initializer) {
-    sourceFile->append(" = ");
-    return true;
-}
-
-void CppVisitor::closeInitializer(Initializer* initializer) {
-}
-
 bool CppVisitor::openConstantDeclaration(ConstantDeclaration* constantDeclaration) {
     constDeclaration = true;
     if (constantDeclaration->parent->parent->parent->_isClassDeclaration()) {
@@ -424,33 +406,6 @@ void CppVisitor::closeMutableDeclaration(MutableDeclaration* mutableDeclaration)
     suppressSource = false;
 }
 
-bool CppVisitor::openBindingInitializer(BindingInitializer* bindingInitializer) {
-    firstBindingInitializer = true;
-    return true;
-}
-
-void CppVisitor::closeBindingInitializer(BindingInitializer* bindingInitializer) {
-}
-
-bool CppVisitor::openPatternInitializer(PatternInitializer* patternInitializer) {
-    if (!firstBindingInitializer)
-        headerFile->append(", ");
-    else
-        firstBindingInitializer = false;
-
-    return true;
-}
-
-void CppVisitor::closePatternInitializer(PatternInitializer* patternInitializer) {
-}
-
-bool CppVisitor::openAdditionalInitializer(AdditionalInitializer* additionalInitializer) {
-    return true;
-}
-
-void CppVisitor::closeAdditionalInitializer(AdditionalInitializer* additionalInitializer) {
-}
-
 bool CppVisitor::openFunctionDeclaration(FunctionDeclaration* functionDeclaration) {
     if (!functionDeclaration->body) {
         abstractFunction = true;
@@ -479,6 +434,51 @@ void CppVisitor::closeFunctionDeclaration(FunctionDeclaration* functionDeclarati
     staticFunction = false;
     suppressHeader = false;
     suppressSource = false;
+}
+
+bool CppVisitor::openPathIdentifier(PathIdentifier* pathIdentifier) {
+    return true;
+}
+
+void CppVisitor::closePathIdentifier(PathIdentifier* pathIdentifier) {
+}
+
+void CppVisitor::visitPathItem(PathItem* pathItem) {
+}
+
+bool CppVisitor::openInitializer(Initializer* initializer) {
+    sourceFile->append(" = ");
+    return true;
+}
+
+void CppVisitor::closeInitializer(Initializer* initializer) {
+}
+
+bool CppVisitor::openBindingInitializer(BindingInitializer* bindingInitializer) {
+    firstBindingInitializer = true;
+    return true;
+}
+
+void CppVisitor::closeBindingInitializer(BindingInitializer* bindingInitializer) {
+}
+
+bool CppVisitor::openPatternInitializer(PatternInitializer* patternInitializer) {
+    if (!firstBindingInitializer)
+        headerFile->append(", ");
+    else
+        firstBindingInitializer = false;
+
+    return true;
+}
+
+void CppVisitor::closePatternInitializer(PatternInitializer* patternInitializer) {
+}
+
+bool CppVisitor::openAdditionalInitializer(AdditionalInitializer* additionalInitializer) {
+    return true;
+}
+
+void CppVisitor::closeAdditionalInitializer(AdditionalInitializer* additionalInitializer) {
 }
 
 bool CppVisitor::openInitializerDeclaration(InitializerDeclaration* initializerDeclaration) {
