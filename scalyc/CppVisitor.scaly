@@ -457,7 +457,6 @@ class CppVisitor : SyntaxVisitor {
             headerFile.append("enum _")
             headerFile.append(enumDeclarationName)
             headerFile.append("Code {\n")
-            var i: int = 0
             for member: EnumMember in members {
                 headerFile.append("    _")
                 headerFile.append(enumDeclarationName)
@@ -466,7 +465,6 @@ class CppVisitor : SyntaxVisitor {
                 if i == 0
                     headerFile.append(" = 1")
                 headerFile.append(",\n")
-                i++
             }
             headerFile.append("};\n\n")
         }
