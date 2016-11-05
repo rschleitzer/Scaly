@@ -1137,6 +1137,9 @@ FunctionCall* CppVisitor::getFunctionCall(PatternInitializer* patternInitializer
 }
 
 bool CppVisitor::isCatchingFunctionCall(PatternInitializer* patternInitializer) {
+    FunctionCall* functionCall = getFunctionCall(patternInitializer);
+    if (functionCall == nullptr)
+        return false;
     if (catchesError(getFunctionCall(patternInitializer)))
         return true;
     return false;
