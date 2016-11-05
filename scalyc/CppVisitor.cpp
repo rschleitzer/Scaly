@@ -439,6 +439,89 @@ void CppVisitor::closeFunctionDeclaration(FunctionDeclaration* functionDeclarati
     suppressSource = false;
 }
 
+bool CppVisitor::openEnumDeclaration(EnumDeclaration* enumDeclaration) {
+    String* enumDeclarationName = enumDeclaration->name;
+    headerFile->append("\n\nclass ");
+    headerFile->append(enumDeclarationName);
+    headerFile->append(";\n");
+    sourceFile->append("long ");
+    sourceFile->append(enumDeclarationName);
+    sourceFile->append("::getErrorCode() {\n    return (long)errorCode;\n}\n\nvoid* ");
+    sourceFile->append(enumDeclarationName);
+    sourceFile->append("::getErrorInfo() {\n    return errorInfo;\n}\n\n");
+    return true;
+}
+
+void CppVisitor::closeEnumDeclaration(EnumDeclaration* enumDeclaration) {
+    String* enumDeclarationName = enumDeclaration->name;
+    _Vector<EnumMember>* members = enumDeclaration->members;
+    if (members) {
+        headerFile->append("enum _");
+        headerFile->append(enumDeclarationName);
+        headerFile->append("Code {\n");
+        size_t _members_length = members->length();
+        for (size_t _i = 0; _i < _members_length; _i++) {
+            headerFile->append("    _");
+            headerFile->append(enumDeclarationName);
+            headerFile->append("Code_");
+            headerFile->append((*(*members)[_i])->enumCase->name);
+            if (!_i)
+                headerFile->append(" = 1");
+            headerFile->append(",\n");
+        }
+        headerFile->append("};\n\n");
+    }
+    headerFile->append("class ");
+    headerFile->append(enumDeclarationName);
+    headerFile->append(" : public Object {\npublic:\n    ");
+    headerFile->append(enumDeclarationName);
+    headerFile->append("(_");
+    headerFile->append(enumDeclarationName);
+    headerFile->append("Code errorCode)\n    : errorCode(errorCode), errorInfo(0) {}\n\n");
+    if (members) {
+        size_t _members_length = members->length();
+        for (size_t _i = 0; _i < _members_length; _i++) {
+            EnumMember* member = *(*members)[_i];
+            if (member->parameterClause) {
+                headerFile->append("    ");
+                headerFile->append(enumDeclarationName);
+                headerFile->append("(_");
+                headerFile->append(enumDeclarationName);
+                headerFile->append("_");
+                headerFile->append(member->enumCase->name);
+                headerFile->append("* ");
+                headerFile->append(member->enumCase->name);
+                headerFile->append(")\n    : errorCode(_");
+                headerFile->append(enumDeclarationName);
+                headerFile->append("Code_");
+                headerFile->append(member->enumCase->name);
+                headerFile->append("), errorInfo(");
+                headerFile->append(member->enumCase->name);
+                headerFile->append(") {}\n\n");
+            }
+        }
+    }
+    headerFile->append("    long getErrorCode();\n    void* getErrorInfo();\n\n");
+    if (members) {
+        size_t _members_length = members->length();
+        for (size_t _i = 0; _i < _members_length; _i++) {
+            EnumMember* member = *(*members)[_i];
+            if (member->parameterClause) {
+                headerFile->append("    _");
+                headerFile->append(enumDeclarationName);
+                headerFile->append("_");
+                headerFile->append(member->enumCase->name);
+                headerFile->append("* get_");
+                headerFile->append(member->enumCase->name);
+                headerFile->append("();\n");
+            }
+        }
+    }
+    headerFile->append("\nprivate:\n    _");
+    headerFile->append(enumDeclarationName);
+    headerFile->append("Code errorCode;\n    void* errorInfo;\n};");
+}
+
 bool CppVisitor::openPathIdentifier(PathIdentifier* pathIdentifier) {
     return true;
 }
@@ -759,89 +842,6 @@ bool CppVisitor::openThrowsClause(ThrowsClause* throwsClause) {
 }
 
 void CppVisitor::closeThrowsClause(ThrowsClause* throwsClause) {
-}
-
-bool CppVisitor::openEnumDeclaration(EnumDeclaration* enumDeclaration) {
-    String* enumDeclarationName = enumDeclaration->name;
-    headerFile->append("\n\nclass ");
-    headerFile->append(enumDeclarationName);
-    headerFile->append(";\n");
-    sourceFile->append("long ");
-    sourceFile->append(enumDeclarationName);
-    sourceFile->append("::getErrorCode() {\n    return (long)errorCode;\n}\n\nvoid* ");
-    sourceFile->append(enumDeclarationName);
-    sourceFile->append("::getErrorInfo() {\n    return errorInfo;\n}\n\n");
-    return true;
-}
-
-void CppVisitor::closeEnumDeclaration(EnumDeclaration* enumDeclaration) {
-    String* enumDeclarationName = enumDeclaration->name;
-    _Vector<EnumMember>* members = enumDeclaration->members;
-    if (members) {
-        headerFile->append("enum _");
-        headerFile->append(enumDeclarationName);
-        headerFile->append("Code {\n");
-        size_t _members_length = members->length();
-        for (size_t _i = 0; _i < _members_length; _i++) {
-            headerFile->append("    _");
-            headerFile->append(enumDeclarationName);
-            headerFile->append("Code_");
-            headerFile->append((*(*members)[_i])->enumCase->name);
-            if (!_i)
-                headerFile->append(" = 1");
-            headerFile->append(",\n");
-        }
-        headerFile->append("};\n\n");
-    }
-    headerFile->append("class ");
-    headerFile->append(enumDeclarationName);
-    headerFile->append(" : public Object {\npublic:\n    ");
-    headerFile->append(enumDeclarationName);
-    headerFile->append("(_");
-    headerFile->append(enumDeclarationName);
-    headerFile->append("Code errorCode)\n    : errorCode(errorCode), errorInfo(0) {}\n\n");
-    if (members) {
-        size_t _members_length = members->length();
-        for (size_t _i = 0; _i < _members_length; _i++) {
-            EnumMember* member = *(*members)[_i];
-            if (member->parameterClause) {
-                headerFile->append("    ");
-                headerFile->append(enumDeclarationName);
-                headerFile->append("(_");
-                headerFile->append(enumDeclarationName);
-                headerFile->append("_");
-                headerFile->append(member->enumCase->name);
-                headerFile->append("* ");
-                headerFile->append(member->enumCase->name);
-                headerFile->append(")\n    : errorCode(_");
-                headerFile->append(enumDeclarationName);
-                headerFile->append("Code_");
-                headerFile->append(member->enumCase->name);
-                headerFile->append("), errorInfo(");
-                headerFile->append(member->enumCase->name);
-                headerFile->append(") {}\n\n");
-            }
-        }
-    }
-    headerFile->append("    long getErrorCode();\n    void* getErrorInfo();\n\n");
-    if (members) {
-        size_t _members_length = members->length();
-        for (size_t _i = 0; _i < _members_length; _i++) {
-            EnumMember* member = *(*members)[_i];
-            if (member->parameterClause) {
-                headerFile->append("    _");
-                headerFile->append(enumDeclarationName);
-                headerFile->append("_");
-                headerFile->append(member->enumCase->name);
-                headerFile->append("* get_");
-                headerFile->append(member->enumCase->name);
-                headerFile->append("();\n");
-            }
-        }
-    }
-    headerFile->append("\nprivate:\n    _");
-    headerFile->append(enumDeclarationName);
-    headerFile->append("Code errorCode;\n    void* errorInfo;\n};");
 }
 
 bool CppVisitor::openEnumMember(EnumMember* enumMember) {
