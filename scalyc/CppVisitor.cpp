@@ -305,21 +305,21 @@ void CppVisitor::closeTerminatedStatement(TerminatedStatement* terminatedStateme
         BindingInitializer* bindingInitializer = nullptr;
         if (terminatedStatement->statement->_isConstantDeclaration()) {
             {
-                ConstantDeclaration* constantDeclaration = (ConstantDeclaration*) terminatedStatement->statement;
+                ConstantDeclaration* constantDeclaration = (ConstantDeclaration*)terminatedStatement->statement;
                 if (constantDeclaration->initializer->_isBindingInitializer()) {
-                    bindingInitializer = (BindingInitializer*)constantDeclaration->initializer;
+                    bindingInitializer = constantDeclaration->initializer;
                 }
             }
             {
-                VariableDeclaration* variableDeclaration = (VariableDeclaration*) terminatedStatement->statement;
+                VariableDeclaration* variableDeclaration = (VariableDeclaration*)terminatedStatement->statement;
                 if (variableDeclaration->initializer->_isBindingInitializer()) {
-                    bindingInitializer = (BindingInitializer*)variableDeclaration->initializer;
+                    bindingInitializer = variableDeclaration->initializer;
                 }
             }
             {
-                MutableDeclaration* mutableDeclaration = (MutableDeclaration*) terminatedStatement->statement;
+                MutableDeclaration* mutableDeclaration = (MutableDeclaration*)terminatedStatement->statement;
                 if (mutableDeclaration->initializer->_isBindingInitializer()) {
-                    bindingInitializer = (BindingInitializer*)mutableDeclaration->initializer;
+                    bindingInitializer = mutableDeclaration->initializer;
                 }
             }
         }

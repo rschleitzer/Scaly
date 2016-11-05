@@ -293,25 +293,25 @@ class CppVisitor : SyntaxVisitor {
                 {
                     let constantDeclaration: ConstantDeclaration = terminatedStatement.statement as ConstantDeclaration
                     if constantDeclaration.initializer is BindingInitializer {
-                        bindingInitializer = constantDeclaration.initializer as BindingInitializer
+                        bindingInitializer = constantDeclaration.initializer
                     }
                 }
                 {
                     let variableDeclaration: VariableDeclaration = terminatedStatement.statement as VariableDeclaration
                     if variableDeclaration.initializer is BindingInitializer {
-                        bindingInitializer = variableDeclaration.initializer as BindingInitializer
+                        bindingInitializer = variableDeclaration.initializer
                     }
                 }
                 {
                     let mutableDeclaration: MutableDeclaration = terminatedStatement.statement as MutableDeclaration
                     if mutableDeclaration.initializer is BindingInitializer {
-                        bindingInitializer = mutableDeclaration.initializer as BindingInitializer
+                        bindingInitializer = mutableDeclaration.initializer
                     }
                 }
             }
             if bindingInitializer != null {
                 if bindingInitializer.initializer is PatternInitializer {
-                    let patternInitializer: PatternInitializer = bindingInitializer.initializer as PatternInitializer
+                    let patternInitializer: PatternInitializer = (bindingInitializer.initializer) as PatternInitializer
                     let functionCall: FunctionCall = getFunctionCall(patternInitializer)
                     if functionCall != null {
                         if catchesError(functionCall)
