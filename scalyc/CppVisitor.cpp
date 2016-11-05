@@ -3,7 +3,7 @@ using namespace scaly;
 namespace scalyc {
 
 Inherits::Inherits(String* className) {
-    name = &String::create(getPage(), className);
+    name = new(getPage()) String(className);
     inheritors = new(getPage()->allocateExclusivePage()) _Array<String>();
 }
 
@@ -21,11 +21,11 @@ void CppVisitor::execute(Program* program) {
 
 bool CppVisitor::openProgram(Program* program) {
     _Region _region; _Page* _p = _region.get();
-    String* programDirectory = &String::create(_p, program->directory);
+    String* programDirectory = new(_p) String(program->directory);
     if (programDirectory == nullptr || programDirectory->equals("")) {
         if (programDirectory != nullptr)
             programDirectory->getPage()->clear();
-        programDirectory = &String::create(getPage(), ".");
+        programDirectory = new(getPage()) String(".");
     }
     if (!Directory::exists(programDirectory)) {
         auto _Directory_error = Directory::create(_p, programDirectory);
@@ -987,7 +987,7 @@ void CppVisitor::closeClassDeclaration(ClassDeclaration* classDeclaration) {
     {
         _Region _region; _Page* _p = _region.get();
         _Array<String>& derivedClasses = *new(_p) _Array<String>();
-        collectDerivedClasses(&derivedClasses, &String::create(_p, classDeclaration->name));
+        collectDerivedClasses(&derivedClasses, new(_p) String(classDeclaration->name));
         size_t _derivedClasses_length = derivedClasses.length();
         for (size_t _i = 0; _i < _derivedClasses_length; _i++) {
             headerFile->append("\n");
@@ -2303,7 +2303,7 @@ String* CppVisitor::getReturnType(_Page* _rp, SyntaxNode* syntaxNode) {
             if (functionResult->resultType->_isTypeIdentifier()) {
                 TypeIdentifier* typeIdentifier = (TypeIdentifier*)functionResult->resultType;
                 appendCppTypeName(ret, typeIdentifier);
-                return &String::create(_rp, ret);
+                return new(_rp) String(ret);
             }
             else if (functionResult->resultType->_isArrayType()) {
                 ArrayType* arrayType = (ArrayType*)functionResult->resultType;
@@ -2312,7 +2312,7 @@ String* CppVisitor::getReturnType(_Page* _rp, SyntaxNode* syntaxNode) {
                     ret->append("_Vector<");
                     appendCppTypeName(ret, typeIdentifier);
                     ret->append(">");
-                    return &String::create(_rp, ret);
+                    return new(_rp) String(ret);
                 }
             }
         }
@@ -2331,7 +2331,7 @@ String* CppVisitor::getThrownType(_Page* _rp, SyntaxNode* syntaxNode) {
             if (throwsClause->throwsType->_isTypeIdentifier()) {
                 TypeIdentifier* typeIdentifier = (TypeIdentifier*)throwsClause->throwsType;
                 appendCppTypeName(ret, typeIdentifier);
-                return &String::create(_rp, ret);
+                return new(_rp) String(ret);
             }
             else if (throwsClause->throwsType->_isArrayType()) {
                 ArrayType* arrayType = (ArrayType*)throwsClause->throwsType;
@@ -2340,7 +2340,7 @@ String* CppVisitor::getThrownType(_Page* _rp, SyntaxNode* syntaxNode) {
                     ret->append("_Vector<");
                     appendCppTypeName(ret, typeIdentifier);
                     ret->append(">");
-                    return &String::create(_rp, ret);
+                    return new(_rp) String(ret);
                 }
             }
         }

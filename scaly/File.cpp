@@ -23,7 +23,7 @@ _Result<String, FileError> File::readToString(_Page* _rp, _Page* _ep, String* pa
     fseek(file, 0, SEEK_END);
     long size = ftell(file);
     rewind(file);
-    String* ret = &String::createUninitialized(_rp, (size_t)size);
+    String* ret = new(_rp) String((size_t)size);
     char* buffer = ret->getNativeString();
     fread (buffer, 1, size, file);
     fclose (file);

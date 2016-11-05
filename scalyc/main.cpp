@@ -22,7 +22,7 @@ int main(int argc, char** argv) {
     // Collect the arguments into a String Vector
     _Vector<String>* arguments = &_Vector<String>::createUninitialized(__CurrentPage, argc - 1);
     for (int i = 1; i < argc; i++)
-        *(*arguments)[i - 1] = &String::create(__CurrentPage, argv[i]);
+        *(*arguments)[i - 1] = new(__CurrentPage) String(argv[i]);
 
     // Call Scaly's top-level code
     int ret = scalyc::_main(arguments);

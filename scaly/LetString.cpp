@@ -1,61 +1,42 @@
 #include "Scaly.h"
 namespace scaly {
 
-String& String::create(_Page* page) {
-    return createUninitialized(page, 0);
+String::String()
+: string(0), length(0) {
 }
 
-String& String::create(_Page* page, char c) {
-    String& string = createUninitialized(page, 1);
-    char* pString = string.getNativeString();
-    pString[0] = c;
-    pString[1] = 0;
-    return string;
+String::String(const char c) {
+    length = 1;
+    string = (char*)getPage()->allocateObject(length + 1);
+    string[0] = c;
+    string[1] = 0;
 }
 
-String& String::create(_Page* page, const char* theString) {
-    size_t length = strlen(theString);
-    String& string = createUninitialized(page, length);
-    char* pString = string.getNativeString();
-    strcpy(pString, theString);
-    return string;
+String::String(const char* theString) {
+    length = strlen(theString);
+    string = (char*)getPage()->allocateObject(length + 1);
+    strcpy(string, theString);
 }
 
-String& String::create(_Page* page, String* theString) {
-    String& string = createUninitialized(page, theString->length);
-    char* pString = string.getNativeString();
-    strcpy(pString, theString->getNativeString());
-    return string;
+String::String(String* theString) {
+    length = theString->getLength();
+    string = (char*)getPage()->allocateObject(length + 1);
+    strcpy(string, theString->getNativeString());
 }
 
-String& String::create(_Page* page, VarString* theString) {
-    size_t length = theString->getLength();
-    String& string = createUninitialized(page, length);
-    char* pString = string.getNativeString();
-    strcpy(pString, theString->getNativeString());
-    return string;
+String::String(VarString* theString) {
+    length = theString->getLength();
+    string = (char*)getPage()->allocateObject(length + 1);
+    strcpy(string, theString->getNativeString());
 }
 
-String& String::createUninitialized(_Page* page, size_t length)
-{
-    String& string = *(String*)page->allocateObject(sizeof(String) + length + 1);
-    string.length = length;
-    return string;
-}
-
-String& String::createFromChar(_Page* page, char c) {
-    String& string = createUninitialized(page, 1);
-    char* pString = string.getNativeString();
-    *pString = c;
-    pString++;
-    *pString = 0;
-    return string;
+String::String(size_t theLength) {
+    length = theLength;
+    string = (char*)getPage()->allocateObject(length + 1);
 }
 
 char* String::getNativeString() const {
-    const String* ret = this;
-    ret++;
-    return (char*)ret;
+    return string;
 }
 
 size_t String::getLength() {
@@ -100,7 +81,7 @@ _Array<String>& String::Split(_Page* _rp, char c) {
         char currentChar = this->charAt(_i);
         if (currentChar == c) {
             if (part) {
-                ret->push(&create(_rp, part));
+                ret->push(new(_rp) String(part));
                 part = 0;
             }
         }
@@ -112,7 +93,7 @@ _Array<String>& String::Split(_Page* _rp, char c) {
     }
 
     if (part)
-        ret->push(&create(_rp, part));
+        ret->push(new(_rp) String(part));
 
     return *ret;
 }

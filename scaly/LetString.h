@@ -6,13 +6,12 @@ class VarString;
 
 class String : public Object {
 public:
-    static String& create(_Page* page);
-    static String& create(_Page* page, char c);
-    static String& create(_Page* page, const char* theString);
-    static String& create(_Page* page, String* theString);
-    static String& create(_Page* page, VarString* theString);
-    static String& createFromChar(_Page* page, char c);
-    static String& createUninitialized(_Page* page, size_t length);
+    String();
+    String(const char c);
+    String(const char* theString);
+    String(String* theString);
+    String(VarString* theString);
+    String(size_t theLength);
     char* getNativeString() const;
     size_t getLength();
     char charAt(size_t i);
@@ -25,9 +24,10 @@ public:
     _Array<String>& Split(_Page* _rp, char c);
 
 private:
-    // Disable default and copy constuctors
-    String();
+    // Disable copy constuctor
     String(const String&);
+
+    char* string;
     size_t length;
 };
 
