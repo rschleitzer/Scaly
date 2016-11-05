@@ -312,11 +312,8 @@ class CppVisitor : SyntaxVisitor {
             if bindingInitializer != null {
                 if bindingInitializer.initializer is PatternInitializer {
                     let patternInitializer: PatternInitializer = bindingInitializer.initializer as PatternInitializer
-                    let functionCall: FunctionCall = getFunctionCall(patternInitializer)
-                    if functionCall != null {
-                        if catchesError(functionCall)
-                            return
-                    }
+                    if isCatchingFunctionCall(patternInitializer)
+                        return
                 }
             }
         }
@@ -424,6 +421,10 @@ class CppVisitor : SyntaxVisitor {
 
     function getFunctionCall(patternInitializer: PatternInitializer) -> existing FunctionCall {
         return null
+    }
+
+    function isCatchingFunctionCall(patternInitializer: PatternInitializer) -> bool {
+        return false
     }
 
     function closeCodeBlock(codeBlock: CodeBlock) {

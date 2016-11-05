@@ -326,11 +326,8 @@ void CppVisitor::closeTerminatedStatement(TerminatedStatement* terminatedStateme
         if (bindingInitializer != nullptr) {
             if (bindingInitializer->initializer->_isPatternInitializer()) {
                 PatternInitializer* patternInitializer = (PatternInitializer*)bindingInitializer->initializer;
-                FunctionCall* functionCall = getFunctionCall(patternInitializer);
-                if (functionCall != nullptr) {
-                    if (catchesError(functionCall))
-                        return;
-                }
+                if (isCatchingFunctionCall(patternInitializer))
+                    return;
             }
         }
     }
@@ -1137,6 +1134,12 @@ FunctionCall* CppVisitor::getFunctionCall(PatternInitializer* patternInitializer
         }
     }
     return nullptr;
+}
+
+bool CppVisitor::isCatchingFunctionCall(PatternInitializer* patternInitializer) {
+    if (catchesError(getFunctionCall(patternInitializer)))
+        return true;
+    return false;
 }
 
 void CppVisitor::closeCodeBlock(CodeBlock* codeBlock) {

@@ -63,6 +63,7 @@ public:
     virtual bool openCodeBlock(CodeBlock* codeBlock);
     virtual bool localAllocations(CodeBlock* codeBlock);
     virtual FunctionCall* getFunctionCall(PatternInitializer* patternInitializer);
+    virtual bool isCatchingFunctionCall(PatternInitializer* patternInitializer);
     virtual void closeCodeBlock(CodeBlock* codeBlock);
     virtual bool openSimpleExpression(SimpleExpression* simpleExpression);
     virtual void closeSimpleExpression(SimpleExpression* simpleExpression);
