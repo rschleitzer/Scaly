@@ -1186,10 +1186,14 @@ void CppVisitor::indentSource() {
 }
 
 void CppVisitor::collectDerivedClasses(_Array<String>* derivedClasses, String* className) {
+    Inherits* inherit = nullptr;
     size_t _inherits_length = inherits->length();
     for (size_t _i = 0; _i < _inherits_length; _i++) {
-        if ((*(*inherits)[_i])->name->equals(className))
-            appendDerivedClasses(derivedClasses, (*(*inherits)[_i])->inheritors);
+        inherit = *(*inherits)[_i];
+        {
+            if (inherit->name->equals(className))
+                appendDerivedClasses(derivedClasses, inherit->inheritors);
+        }
     }
 }
 

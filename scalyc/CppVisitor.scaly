@@ -1181,6 +1181,10 @@ class CppVisitor : SyntaxVisitor {
     }
 
     function collectDerivedClasses(mutable derivedClasses: [String], className: String) {
+        for inherit: Inherits in inherits {
+            if inherit.name.equals(className)
+                appendDerivedClasses(derivedClasses, inherit.inheritors)
+        }
     }
 
     function appendDerivedClasses(mutable derivedClasses: [String], mutable inheritors: [String]) {
