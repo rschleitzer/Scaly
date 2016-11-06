@@ -1135,16 +1135,19 @@ void CppVisitor::appendCppType(VarString* s, Type* type) {
         TypeIdentifier* typeId = (TypeIdentifier*)type;
         appendCppTypeName(s, typeId);
         if (isClass(typeId->name)) {
-            s->append("*"); }
+            s->append("*");
+        }
     }
-    else if (type->_isArrayType()) {
-        ArrayType* arrayType = (ArrayType*)type;
-        Type* type = arrayType->elementType;
-        if (type->_isTypeIdentifier()) {
-            TypeIdentifier* typeId = (TypeIdentifier*)type;
-            s->append("_Vector<");
-            appendCppTypeName(s, typeId);
-            s->append(">*");
+    else {
+        if (type->_isArrayType()) {
+            ArrayType* arrayType = (ArrayType*)type;
+            Type* type = arrayType->elementType;
+            if (type->_isTypeIdentifier()) {
+                TypeIdentifier* typeId = (TypeIdentifier*)type;
+                s->append("_Vector<");
+                appendCppTypeName(s, typeId);
+                s->append(">*");
+            }
         }
     }
 }
