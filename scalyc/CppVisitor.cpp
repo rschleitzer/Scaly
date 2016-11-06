@@ -1318,7 +1318,6 @@ String* CppVisitor::getMemberIfCreatingObject(_Page* _rp, Assignment* assignment
             }
         }
     }
-    
     return nullptr;
 }
 
