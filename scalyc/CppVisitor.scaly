@@ -861,17 +861,19 @@ class CppVisitor : SyntaxVisitor {
                             sourceFile.append("*")
                     }
                 }
-                else if functionSignature.result.resultType is ArrayType {
-                    let arrayType: ArrayType = functionSignature.result.resultType as ArrayType
-                    if arrayType.elementType is TypeIdentifier {
-                        headerFile.append("_Vector<")
-                        let typeId: TypeIdentifier = arrayType.elementType as TypeIdentifier
-                        appendCppTypeName(headerFile, typeId)
-                        headerFile.append(">")
-                        if !suppressSource {
-                            sourceFile.append("_Vector<")
-                            appendCppTypeName(sourceFile, typeId)
-                            sourceFile.append(">")
+                else {
+                    if functionSignature.result.resultType is ArrayType {
+                        let arrayType: ArrayType = functionSignature.result.resultType as ArrayType
+                        if arrayType.elementType is TypeIdentifier {
+                            headerFile.append("_Vector<")
+                            let typeId: TypeIdentifier = arrayType.elementType as TypeIdentifier
+                            appendCppTypeName(headerFile, typeId)
+                            headerFile.append(">")
+                            if !suppressSource {
+                                sourceFile.append("_Vector<")
+                                appendCppTypeName(sourceFile, typeId)
+                                sourceFile.append(">")
+                            }
                         }
                     }
                 }
@@ -910,15 +912,17 @@ class CppVisitor : SyntaxVisitor {
                     }
                 }
             }
-            else if functionSignature.result.resultType is ArrayType {
-                if functionSignature.result.existingObject == null {
-                    headerFile.append("_Page* _rp")
-                    if !suppressSource
-                        sourceFile.append("_Page* _rp")
-                    if (functionSignature.parameterClause.parameters != null) || (functionSignature.throwsClause != null) {
-                        headerFile.append(", ")
+            else {
+                if functionSignature.result.resultType is ArrayType {
+                    if functionSignature.result.existingObject == null {
+                        headerFile.append("_Page* _rp")
                         if !suppressSource
-                            sourceFile.append(", ")
+                            sourceFile.append("_Page* _rp")
+                        if (functionSignature.parameterClause.parameters != null) || (functionSignature.throwsClause != null) {
+                            headerFile.append(", ")
+                            if !suppressSource
+                                sourceFile.append(", ")
+                        }
                     }
                 }
             }
