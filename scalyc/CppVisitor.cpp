@@ -983,7 +983,7 @@ bool CppVisitor::openParameterClause(ParameterClause* parameterClause) {
 
 void CppVisitor::closeParameterClause(ParameterClause* parameterClause) {
     headerFile->append(")");
-    if (!suppressSource) 
+    if (!suppressSource)
         sourceFile->append(") ");
     inParameterClause = false;
 }
@@ -1005,7 +1005,6 @@ void CppVisitor::writeParameter(String* name, Type* parameterType) {
     else {
         firstParameter = false;
     }
-
     parameterType->accept(this);
     headerFile->append(" ");
     headerFile->append(name);

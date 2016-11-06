@@ -944,10 +944,11 @@ class CppVisitor : SyntaxVisitor {
     }
 
     function closeFunctionSignature(functionSignature: FunctionSignature) {
+        suppressHeader = true
     }
 
     function openFunctionResult(functionResult: FunctionResult) -> bool {
-        return true
+        return false
     }
 
     function closeFunctionResult(functionResult: FunctionResult) {
@@ -957,17 +958,47 @@ class CppVisitor : SyntaxVisitor {
     }
 
     function openParameterClause(parameterClause: ParameterClause) -> bool {
+        firstParameter = true
+        inParameterClause = true
+
         return true
     }
 
     function closeParameterClause(parameterClause: ParameterClause) {
+        headerFile.append(")")
+
+        if !suppressSource
+            sourceFile.append(") ")
+
+        inParameterClause = false
     }
 
     function openConstParameter(constParameter: ConstParameter) -> bool {
-        return true
+        let constParameterName: String = constParameter.name
+        constDeclaration = true
+        writeParameter(constParameterName, constParameter.parameterType)
+        constDeclaration = false
+
+        return false
     }
 
     function writeParameter(name: String, parameterType: Type) {
+        if !firstParameter {
+            headerFile.append(", ")
+            if !suppressSource
+                sourceFile.append(", ")
+        }
+        else {
+            firstParameter = false
+        }
+
+        parameterType.accept(this)
+        headerFile.append(" ");
+        headerFile.append(name);
+        if !suppressSource {
+            sourceFile.append(" ");
+            sourceFile.append(name)
+        }
     }
 
     function isClass(name: String) -> bool {
