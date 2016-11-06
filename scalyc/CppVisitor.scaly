@@ -1305,7 +1305,7 @@ class CppVisitor : SyntaxVisitor {
                         if (leftSide.postfixes == 0) && (leftSide.primaryExpression is IdentifierExpression) {
                             let memberExpression: IdentifierExpression = (leftSide.primaryExpression) as IdentifierExpression
                             var memberName: String = String(memberExpression.name)
-                            let classDeclaration: ClassDeclaration = getClassDeclaration(assignment)
+                            var classDeclaration: ClassDeclaration = getClassDeclaration(assignment)
                             if classDeclaration != null {
                                 return String(memberName)
                             }
