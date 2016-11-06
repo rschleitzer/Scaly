@@ -1322,15 +1322,14 @@ String* CppVisitor::getMemberIfCreatingObject(_Page* _rp, Assignment* assignment
 }
 
 String* CppVisitor::getFunctionName(_Page* _rp, Assignment* assignment) {
-   if (assignment->expression->prefixOperator == 0) {
+    if (assignment->expression->prefixOperator == nullptr) {
         PostfixExpression* rightSide = assignment->expression->expression;
         if (rightSide->primaryExpression->_isIdentifierExpression()) {
             IdentifierExpression* classExpression = (IdentifierExpression*)(rightSide->primaryExpression);
             return new(_rp) String(classExpression->name);
         }
-   }
-   
-   return nullptr;
+    }
+    return nullptr;
 }
 
 bool CppVisitor::isCreatingObject(String* functionName, SyntaxNode* node) {

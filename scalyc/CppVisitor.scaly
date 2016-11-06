@@ -1319,6 +1319,15 @@ class CppVisitor : SyntaxVisitor {
     }
 
     function getFunctionName(assignment: Assignment) -> String {
+        if assignment.expression.prefixOperator == null {
+            let rightSide: PostfixExpression = assignment.expression.expression
+            if rightSide.primaryExpression is IdentifierExpression {
+                let classExpression: IdentifierExpression = (rightSide.primaryExpression) as IdentifierExpression
+                return String(classExpression.name)
+            }
+        }
+
+        return nullptr;
     }
     
     function isCreatingObject(functionName: String, node: SyntaxNode) -> bool {
