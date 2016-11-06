@@ -730,6 +730,34 @@ void CppVisitor::closeCodeBlock(CodeBlock* codeBlock) {
         sourceFile->append("\n");
 }
 
+bool CppVisitor::openSimpleExpression(SimpleExpression* simpleExpression) {
+    if (simpleExpression->binaryOps != nullptr) {
+        _Vector<BinaryOp>* binaryOps = simpleExpression->binaryOps;
+        BinaryOp* binaryOp = nullptr;
+        size_t _binaryOps_length = binaryOps->length();
+        for (size_t _i = 0; _i < _binaryOps_length; _i++) {
+            binaryOp = *(*binaryOps)[_i];
+            {
+                if (binaryOp->_isTypeCast()) {
+                    TypeCast* typeCast = (TypeCast*)binaryOp;
+                    if (typeCast->objectType->_isTypeIdentifier()) {
+                        TypeIdentifier* typeIdentifier = (TypeIdentifier*)typeCast->objectType;
+                        sourceFile->append("(");
+                        sourceFile->append(typeIdentifier->name);
+                        sourceFile->append("*)");
+                        simpleExpression->prefixExpression->accept(this);
+                        return false;
+                    }
+                }
+            }
+        }
+    }
+    return true;
+}
+
+void CppVisitor::closeSimpleExpression(SimpleExpression* simpleExpression) {
+}
+
 bool CppVisitor::openPathIdentifier(PathIdentifier* pathIdentifier) {
     return true;
 }
@@ -1189,30 +1217,6 @@ bool CppVisitor::openClassMember(ClassMember* classMember) {
 void CppVisitor::closeClassMember(ClassMember* classMember) {
     headerFile->append(";");
     declaringClassMember = false;
-}
-
-bool CppVisitor::openSimpleExpression(SimpleExpression* simpleExpression) {
-    if (simpleExpression->binaryOps != nullptr) {
-        _Vector<BinaryOp>* binaryOps = simpleExpression->binaryOps;
-        if (binaryOps->length() > 0) {
-            BinaryOp* binaryOp = *(*binaryOps)[0];
-            if (binaryOp->_isTypeCast()) {
-                TypeCast* typeCast = (TypeCast*)binaryOp;
-                if(typeCast->objectType->_isTypeIdentifier()) {
-                    TypeIdentifier* typeIdentifier = (TypeIdentifier*)typeCast->objectType;
-                    sourceFile->append("(");
-                    sourceFile->append(typeIdentifier->name);
-                    sourceFile->append("*)");
-                    simpleExpression->prefixExpression->accept(this);
-                    return false;
-                }
-            }
-        }
-    }
-    return true;
-}
-
-void CppVisitor::closeSimpleExpression(SimpleExpression* simpleExpression) {
 }
 
 bool CppVisitor::openPrefixExpression(PrefixExpression* prefixExpression) {

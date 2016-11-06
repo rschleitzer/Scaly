@@ -707,6 +707,22 @@ class CppVisitor : SyntaxVisitor {
     }
 
     function openSimpleExpression(simpleExpression: SimpleExpression) -> bool {
+        if simpleExpression.binaryOps != null {
+            let binaryOps: [BinaryOp] = simpleExpression.binaryOps
+            for binaryOp: BinaryOp in binaryOps {
+                if binaryOp is TypeCast {
+                    let typeCast: TypeCast = binaryOp as TypeCast
+                    if  typeCast.objectType is TypeIdentifier {
+                        let typeIdentifier: TypeIdentifier = typeCast.objectType as TypeIdentifier
+                        sourceFile.append("(")
+                        sourceFile.append(typeIdentifier.name)
+                        sourceFile.append("*)")
+                        simpleExpression.prefixExpression.accept(this)
+                        return false
+                    }
+                }
+            }
+        }
         return true
     }
 
