@@ -1242,6 +1242,10 @@ class CppVisitor : SyntaxVisitor {
     }
 
     function openBinaryOperation(binaryOperation: BinaryOperation) -> bool {
+        sourceFile.append(" ")
+        sourceFile.append(binaryOperation.binaryOperator)
+        sourceFile.append(" ")
+
         return true
     }
 
@@ -1249,19 +1253,39 @@ class CppVisitor : SyntaxVisitor {
     }
 
     function openAssignment(assignment: Assignment) -> bool {
+        sourceFile.append(" = ")
+
         return true
     }
 
     function inInitializer(node: SyntaxNode) -> bool {
-        return false
+        if node is InitializerDeclaration
+            return true
+
+        if node.parent == null
+            return false
+
+        return inInitializer(node.parent)
     }
 
     function inReturn(node: SyntaxNode) -> bool {
-        return false
+        if node is ReturnExpression
+            return true
+
+        if node.parent == null
+            return false
+
+        return inReturn(node.parent)
     }
 
     function inThrow(node: SyntaxNode) -> bool {
-        return false
+        if node is ThrowExpression
+            return true
+
+        if node.parent == null
+            return false
+
+        return inThrow(node.parent)
     }
 
     function getMemberIfCreatingObject(assignment: Assignment) -> String {

@@ -1265,7 +1265,6 @@ void CppVisitor::closeBinaryOperation(BinaryOperation* binaryOperation) {
 
 bool CppVisitor::openAssignment(Assignment* assignment) {
     sourceFile->append(" = ");
-
     return true;
 }
 
