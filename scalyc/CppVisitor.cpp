@@ -641,32 +641,36 @@ bool CppVisitor::openCodeBlock(CodeBlock* codeBlock) {
 bool CppVisitor::localAllocations(CodeBlock* codeBlock) {
     _Vector<TerminatedStatement>* terminatedStatements = codeBlock->statements;
     if (terminatedStatements != nullptr) {
+        TerminatedStatement* terminatedStatement = nullptr;
         size_t _terminatedStatements_length = terminatedStatements->length();
         for (size_t _i = 0; _i < _terminatedStatements_length; _i++) {
-            Statement* statement = (*(*terminatedStatements)[_i])->statement;
-            BindingInitializer* bindingInitializer = nullptr;            
-            if (statement->_isMutableDeclaration()) {
-                MutableDeclaration* mutableDeclaration = (MutableDeclaration*)statement;
-                bindingInitializer = mutableDeclaration->initializer;
-            }
-            if (statement->_isVariableDeclaration()) {
-                VariableDeclaration* variableDeclaration = (VariableDeclaration*)statement;
-                bindingInitializer = variableDeclaration->initializer;
-            }
-            if (bindingInitializer != nullptr) {
-                if (bindingInitializer->initializer != nullptr) {
-                    PatternInitializer* patternInitializer = bindingInitializer->initializer;
-                    if (patternInitializer->pattern->_isIdentifierPattern()) {
-                        IdentifierPattern* identifierPattern = (IdentifierPattern*)patternInitializer->pattern;
-                        if (identifierPattern->annotationForType != nullptr) {
-                            Type* type = identifierPattern->annotationForType->annotationForType;
-                            if (type->_isArrayType())
-                                return true;
-                            if (type->_isTypeIdentifier()) {
-                                TypeIdentifier* typeIdentifier = (TypeIdentifier*)type;
-                                if (isClass(typeIdentifier->name)) {
-                                    if (getFunctionCall(patternInitializer) != nullptr)
-                                        return true;
+            terminatedStatement = *(*terminatedStatements)[_i];
+            {
+                BindingInitializer* bindingInitializer = nullptr;
+                Statement* statement = terminatedStatement->statement;
+                if (statement->_isMutableDeclaration()) {
+                    MutableDeclaration* mutableDeclaration = (MutableDeclaration*)statement;
+                    bindingInitializer = mutableDeclaration->initializer;
+                }
+                if (statement->_isVariableDeclaration()) {
+                    VariableDeclaration* variableDeclaration = (VariableDeclaration*)statement;
+                    bindingInitializer = variableDeclaration->initializer;
+                }
+                if (bindingInitializer != nullptr) {
+                    if (bindingInitializer->initializer != nullptr) {
+                        PatternInitializer* patternInitializer = bindingInitializer->initializer;
+                        if (patternInitializer->pattern->_isIdentifierPattern()) {
+                            IdentifierPattern* identifierPattern = (IdentifierPattern*)patternInitializer->pattern;
+                            if (identifierPattern->annotationForType != nullptr) {
+                                Type* type = identifierPattern->annotationForType->annotationForType;
+                                if ((type->_isArrayType()))
+                                    return true;
+                                if (type->_isTypeIdentifier()) {
+                                    TypeIdentifier* typeIdentifier = (TypeIdentifier*)type;
+                                    if (isClass(typeIdentifier->name)) {
+                                        if (getFunctionCall(patternInitializer) != nullptr)
+                                            return true;
+                                    }
                                 }
                             }
                         }

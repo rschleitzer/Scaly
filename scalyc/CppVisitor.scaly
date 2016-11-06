@@ -625,8 +625,9 @@ class CppVisitor : SyntaxVisitor {
     function localAllocations(codeBlock: CodeBlock) -> bool {
         let terminatedStatements: [TerminatedStatement] = codeBlock.statements
         if terminatedStatements != null {
-            for statement: TerminatedStatement in terminatedStatements {
+            for terminatedStatement: TerminatedStatement in terminatedStatements {
                 let bindingInitializer: BindingInitializer = null            
+                let statement: Statement = terminatedStatement.statement
                 if statement is MutableDeclaration {
                     let mutableDeclaration: MutableDeclaration = statement as MutableDeclaration
                     bindingInitializer = mutableDeclaration.initializer
@@ -669,7 +670,7 @@ class CppVisitor : SyntaxVisitor {
                 let postfixExpression: PostfixExpression = prefixExpression.expression
                 if postfixExpression.primaryExpression is IdentifierExpression {
                     if postfixExpression.postfixes != null {
-                        let postfixes = postfixExpression.postfixes
+                        let postfixes: [Postfix] = postfixExpression.postfixes
                         for postfix: Postfix in postfixes {
                             if postfix is FunctionCall {
                                 return postfix as FunctionCall
@@ -705,9 +706,9 @@ class CppVisitor : SyntaxVisitor {
  
         sourceIndentLevel--
         indentSource()
-        sourceFile-.append("}\n")
+        sourceFile.append("}\n")
         if codeBlock.parent is FunctionDeclaration
-            sourceFile.>append("\n")
+            sourceFile.append("\n")
     }
 
     function openSimpleExpression(simpleExpression: SimpleExpression) -> bool {
