@@ -684,12 +684,7 @@ class CppVisitor : SyntaxVisitor {
     }
 
     function isCatchingFunctionCall(patternInitializer: PatternInitializer) -> bool {
-        let functionCall: FunctionCall = getFunctionCall(patternInitializer)
-
-        if functionCall == null
-            return false;
-
-        if (catchesError(getFunctionCall(patternInitializer)))
+        if catchesError(getFunctionCall(patternInitializer))
             return true
 
         return false
