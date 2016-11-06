@@ -756,14 +756,15 @@ class CppVisitor : SyntaxVisitor {
     }
 
     function openPatternInitializer(patternInitializer: PatternInitializer) -> bool {
-        return true
-    }
-
-    function closePatternInitializer(patternInitializer: PatternInitializer) {
         if !firstBindingInitializer
             headerFile.append(", ")
         else
             firstBindingInitializer = false
+
+        return true
+    }
+
+    function closePatternInitializer(patternInitializer: PatternInitializer) {
     }
 
     function openAdditionalInitializer(additionalInitializer: AdditionalInitializer) -> bool {
