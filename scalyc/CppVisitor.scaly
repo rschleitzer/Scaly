@@ -1331,6 +1331,26 @@ class CppVisitor : SyntaxVisitor {
     }
     
     function isCreatingObject(functionName: String, node: SyntaxNode) -> bool {
+        var classDeclaration: ClassDeclaration = getClassDeclaration(node)
+        if classDeclaration == null
+            return false
+
+        let members: [ClassMember] = classDeclaration.body.members
+        if members == null
+            return false
+
+        for member: ClassMember in members {
+            if member.declaration is FunctionDeclaration {
+                let functionDeclaration: FunctionDeclaration = (member.declaration) as FunctionDeclaration
+                if functionDeclaration.name is IdentifierFunction {
+                    let identifierFunction: IdentifierFunction = (functionDeclaration.name) as IdentifierFunction
+                    if identifierFunction.name.equals(functionName)
+                        return true
+                }
+            } 
+        }
+
+        return false
     }
 
     function getClassDeclaration(node: SyntaxNode) -> existing ClassDeclaration {

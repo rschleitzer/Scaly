@@ -1339,19 +1339,21 @@ bool CppVisitor::isCreatingObject(String* functionName, SyntaxNode* node) {
     _Vector<ClassMember>* members = classDeclaration->body->members;
     if (members == nullptr)
         return false;
+    ClassMember* member = nullptr;
     size_t _members_length = members->length();
     for (size_t _i = 0; _i < _members_length; _i++) {
-        ClassMember* member = *(*members)[_i];
-        if (member->declaration->_isFunctionDeclaration()) {
-            FunctionDeclaration* functionDeclaration = (FunctionDeclaration*)member->declaration;
-            if (functionDeclaration->name->_isIdentifierFunction()) {
-                IdentifierFunction* identifierFunction = (IdentifierFunction*)functionDeclaration->name;
-                if (identifierFunction->name->equals(functionName))
-                    return true;
+        member = *(*members)[_i];
+        {
+            if (member->declaration->_isFunctionDeclaration()) {
+                FunctionDeclaration* functionDeclaration = (FunctionDeclaration*)(member->declaration);
+                if (functionDeclaration->name->_isIdentifierFunction()) {
+                    IdentifierFunction* identifierFunction = (IdentifierFunction*)(functionDeclaration->name);
+                    if (identifierFunction->name->equals(functionName))
+                        return true;
+                }
             }
-        } 
+        }
     }
-
     return false;
 }
 
