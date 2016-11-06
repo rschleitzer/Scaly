@@ -1289,7 +1289,7 @@ class CppVisitor : SyntaxVisitor {
     }
 
     function getMemberIfCreatingObject(assignment: Assignment) -> String {
-        var functionName: String = getFunctionName(assignment)
+        let functionName: String = getFunctionName(assignment)
         if functionName == null {
             return null
         }
@@ -1307,7 +1307,7 @@ class CppVisitor : SyntaxVisitor {
                             var memberName: String = String(memberExpression.name)
                             let classDeclaration: ClassDeclaration = getClassDeclaration(assignment)
                             if classDeclaration != null {
-                                return memberName
+                                return String(memberName)
                             }
                         }
                     }

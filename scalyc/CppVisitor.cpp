@@ -1311,7 +1311,7 @@ String* CppVisitor::getMemberIfCreatingObject(_Page* _rp, Assignment* assignment
                         String* memberName = new(_p) String(memberExpression->name);
                         ClassDeclaration* classDeclaration = getClassDeclaration(assignment);
                         if (classDeclaration != nullptr) {
-                            return new (_rp) String(memberName);
+                            return new(_rp) String(memberName);
                         }
                     }
                 }
