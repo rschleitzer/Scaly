@@ -1170,13 +1170,19 @@ void CppVisitor::closeClassBody(ClassBody* classBody) {
 }
 
 void CppVisitor::indentHeader() {
-    for (size_t i = 0; i < headerIndentLevel; i++)
+    size_t i = 0;
+    while (i < headerIndentLevel) {
         headerFile->append("    ");
+        i++;
+    }
 }
 
 void CppVisitor::indentSource() {
-    for (size_t i = 0; i < sourceIndentLevel; i++)
+    size_t i = 0;
+    while (i < sourceIndentLevel) {
         sourceFile->append("    ");
+        i++;
+    }
 }
 
 void CppVisitor::collectDerivedClasses(_Array<String>* derivedClasses, String* className) {

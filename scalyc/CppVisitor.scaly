@@ -1165,9 +1165,19 @@ class CppVisitor : SyntaxVisitor {
     }
 
     function indentHeader() {
+        var i: unsigned = 0
+        while i < headerIndentLevel {
+            headerFile.append("    ")
+            i++
+        }
     }
 
     function indentSource() {
+        var i: unsigned = 0
+        while i < sourceIndentLevel {
+            sourceFile.append("    ")
+            i++
+        }
     }
 
     function collectDerivedClasses(mutable derivedClasses: [String], className: String) {
