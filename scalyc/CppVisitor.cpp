@@ -1357,35 +1357,36 @@ ClassDeclaration* CppVisitor::getClassDeclaration(SyntaxNode* node) {
     if (node->_isClassDeclaration())
         return (ClassDeclaration*)node;
     if (node->parent != nullptr)
-        return getClassDeclaration(node->parent);    
+        return getClassDeclaration(node->parent);
     return nullptr;
 }
 
 bool CppVisitor::isVariableMember(String* memberName, ClassDeclaration* classDeclaration) {
     _Vector<ClassMember>* classMembers = classDeclaration->body->members;
+    ClassMember* member = nullptr;
     size_t _classMembers_length = classMembers->length();
     for (size_t _i = 0; _i < _classMembers_length; _i++) {
-        BindingInitializer* bindingInitializer = 0;
-        if ((*(*classMembers)[_i])->declaration->_isMutableDeclaration()) {
-            MutableDeclaration* mutableDeclaration = (MutableDeclaration*)(*(*classMembers)[_i])->declaration;
-            bindingInitializer = mutableDeclaration->initializer;
-        }
-        if ((*(*classMembers)[_i])->declaration->_isVariableDeclaration()) {
-            VariableDeclaration* variableDeclaration = (VariableDeclaration*)(*(*classMembers)[_i])->declaration;
-            bindingInitializer = variableDeclaration->initializer;
-        }
-        
-        if (bindingInitializer == nullptr)
-            continue;
-            
-        PatternInitializer* patternInitializer = bindingInitializer->initializer;
-        if (patternInitializer->pattern->_isIdentifierPattern()) {
-            IdentifierPattern* identifierPattern = (IdentifierPattern*)patternInitializer->pattern;
-            if (identifierPattern->identifier->equals(memberName))
-                return true;
+        member = *(*classMembers)[_i];
+        {
+            BindingInitializer* bindingInitializer = nullptr;
+            if (member->declaration->_isMutableDeclaration()) {
+                MutableDeclaration* mutableDeclaration = (MutableDeclaration*)(member->declaration);
+                bindingInitializer = mutableDeclaration->initializer;
+            }
+            if (member->declaration->_isVariableDeclaration()) {
+                VariableDeclaration* variableDeclaration = (VariableDeclaration*)(member->declaration);
+                bindingInitializer = variableDeclaration->initializer;
+            }
+            if (bindingInitializer == nullptr)
+                continue;
+            PatternInitializer* patternInitializer = bindingInitializer->initializer;
+            if (patternInitializer->pattern->_isIdentifierPattern()) {
+                IdentifierPattern* identifierPattern = (IdentifierPattern*)(patternInitializer->pattern);
+                if (identifierPattern->identifier->equals(memberName))
+                    return true;
+            }
         }
     }
-
     return false;
 }
 
