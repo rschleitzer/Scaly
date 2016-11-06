@@ -1198,11 +1198,14 @@ void CppVisitor::collectDerivedClasses(_Array<String>* derivedClasses, String* c
 }
 
 void CppVisitor::appendDerivedClasses(_Array<String>* derivedClasses, _Array<String>* inheritors) {
+    String* inheritor = nullptr;
     size_t _inheritors_length = inheritors->length();
     for (size_t _i = 0; _i < _inheritors_length; _i++) {
-        String* derivedClass = *((*inheritors)[_i]);
-        derivedClasses->push(derivedClass);
-        collectDerivedClasses(derivedClasses, derivedClass);
+        inheritor = *(*inheritors)[_i];
+        {
+            derivedClasses->push(inheritor);
+            collectDerivedClasses(derivedClasses, inheritor);
+        }
     }
 }
 

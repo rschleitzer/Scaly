@@ -1188,6 +1188,10 @@ class CppVisitor : SyntaxVisitor {
     }
 
     function appendDerivedClasses(mutable derivedClasses: [String], mutable inheritors: [String]) {
+        for inheritor: String in inheritors {
+            derivedClasses.push(inheritor)
+            collectDerivedClasses(derivedClasses, inheritor)
+        }
     }
 
     function openGenericArgumentClause(genericArgumentClause: GenericArgumentClause) -> bool {
