@@ -826,17 +826,19 @@ class CppVisitor : SyntaxVisitor {
                     if !suppressSource
                         appendCppTypeName(sourceFile, typeId)
                 }
-                else if functionSignature.result.resultType is ArrayType {
-                    let arrayType: ArrayType = functionSignature.result.resultType as ArrayType
-                    if arrayType.elementType is TypeIdentifier {
-                        headerFile.append("_Vector<")
-                        let typeId: TypeIdentifier = arrayType.elementType as TypeIdentifier
-                        appendCppTypeName(headerFile, typeId)
-                        headerFile.append(">")
-                        if !suppressSource {
-                            sourceFile.append("_Vector<")
-                            appendCppTypeName(sourceFile, typeId)
-                            sourceFile.append(">")
+                else { 
+                    if functionSignature.result.resultType is ArrayType {
+                        let arrayType: ArrayType = functionSignature.result.resultType as ArrayType
+                        if arrayType.elementType is TypeIdentifier {
+                            headerFile.append("_Vector<")
+                            let typeId: TypeIdentifier = arrayType.elementType as TypeIdentifier
+                            appendCppTypeName(headerFile, typeId)
+                            headerFile.append(">")
+                            if !suppressSource {
+                                sourceFile.append("_Vector<")
+                                appendCppTypeName(sourceFile, typeId)
+                                sourceFile.append(">")
+                            }
                         }
                     }
                 }
