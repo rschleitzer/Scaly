@@ -1015,25 +1015,19 @@ void CppVisitor::writeParameter(String* name, Type* parameterType) {
 }
 
 bool CppVisitor::isClass(String* name) {
-    if (    name->equals("String")
-        ||  name->equals("VarString")
-        ||  name->equals("File")
-        ||  name->equals("Directory")
-        ||  name->equals("Path")
-        ||  name->equals("DirectoryError")
-        ||  name->equals("FileError")
-        ||  name->equals("ParserError")
-        ||  name->equals("CppError")
-        ||  name->equals("CompilerError")
-       )
+    if ((name->equals("String") || name->equals("VarString") || name->equals("File") || name->equals("Directory") || name->equals("Path") || name->equals("DirectoryError") || name->equals("FileError") || name->equals("ParserError") || name->equals("CppError") || name->equals("CompilerError"))) {
         return true;
-
+    }
+    String* className = nullptr;
     size_t _classes_length = classes->length();
     for (size_t _i = 0; _i < _classes_length; _i++) {
-        if ((*(*classes)[_i])->equals(name))
-            return true;
+        className = *(*classes)[_i];
+        {
+            if (className->equals(name)) {
+                return true;
+            }
+        }
     }
-
     return false;
 }
 

@@ -1002,6 +1002,28 @@ class CppVisitor : SyntaxVisitor {
     }
 
     function isClass(name: String) -> bool {
+        if (    name.equals("String")
+            ||  name.equals("VarString")
+            ||  name.equals("File")
+            ||  name.equals("Directory")
+            ||  name.equals("Path")
+            ||  name.equals("DirectoryError")
+            ||  name.equals("FileError")
+            ||  name.equals("ParserError")
+            ||  name.equals("CppError")
+            ||  name.equals("CompilerError")
+           )
+        {
+            return true
+        }
+
+        for className: String in classes {
+            if className.equals(name) {
+                return true
+            }
+        }
+
+        return false
     }
 
     function closeConstParameter(constParameter: ConstParameter) {
