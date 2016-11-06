@@ -1027,27 +1027,102 @@ class CppVisitor : SyntaxVisitor {
     }
 
     function closeConstParameter(constParameter: ConstParameter) {
+        headerFile.append(constParameter.name)
     }
 
     function openVarParameter(varParameter: VarParameter) -> bool {
-        return true
+        writeParameter(varParameter.name, varParameter.parameterType)
+        return false
     }
 
     function closeVarParameter(varParameter: VarParameter) {
+        let varParameterName: String = varParameter.name
+        headerFile.append(varParameterName)
     }
 
     function openThrowsClause(throwsClause: ThrowsClause) -> bool {
-        return true
+        return false
     }
 
     function closeThrowsClause(throwsClause: ThrowsClause) {
     }
 
     function openEnumMember(enumMember: EnumMember) -> bool {
+        if !enumMember.parent is EnumDeclaration
+            return false
+
+        let enumDeclarationName: String = ((enumMember.parent) as EnumDeclaration).name
+        if enumMember.parameterClause {
+            headerFile.append("\nclass _")
+            headerFile.append(enumDeclarationName)
+            headerFile.append("_")
+            headerFile.append(enumMember.enumCase.name);
+            headerFile.append(" : public Object {\npublic:\n    _")
+            headerFile.append(enumDeclarationName)
+            headerFile.append("_")
+            headerFile.append(enumMember.enumCase.name);
+            headerFile.append("(")
+            sourceFile.append("_")
+            sourceFile.append(enumDeclarationName)
+            sourceFile.append("_")
+            sourceFile.append(enumMember.enumCase.name)
+            sourceFile.append("::_")
+            sourceFile.append(enumDeclarationName)
+            sourceFile.append("_")
+            sourceFile.append(enumMember.enumCase.name)
+            sourceFile.append("(")
+        }
+
+        inEnumMember = true
         return true
     }
 
     function closeEnumMember(enumMember: EnumMember) {
+        if enumMember.parameterClause != null {
+            sourceFile.append("\n")
+            headerFile.append(";\n\n")
+
+            let parameters: [Parameter] = enumMember.parameterClause.parameters
+            if parameters != null {
+                sourceFile.append(": ")
+                var pos: unsigned = 0
+                for parameter: Parameter in parameters {
+                    if parameter is ConstParameter {
+                        let constParameter: ConstParameter = parameter as ConstParameter
+                        headerFile.append("    ")
+                        appendCppType(headerFile, constParameter.parameterType)
+                        headerFile.append(" ")
+                        headerFile.append(constParameter.name)
+                        headerFile.append(";\n")
+                        if pos != 0
+                            sourceFile.append(", ")
+                        sourceFile.append(constParameter.name)
+                        sourceFile.append("(")
+                        sourceFile.append(constParameter.name)
+                        sourceFile.append(")")
+                    }
+                    pos++
+                }
+            }
+
+            headerFile.append("};\n")
+            sourceFile.append(" { }\n\n_")
+            let enumDeclarationName: String = ((enumMember.parent) as EnumDeclaration).name
+            sourceFile.append(enumDeclarationName)
+            sourceFile.append("_")
+            sourceFile.append(enumMember.enumCase.name)
+            sourceFile.append("* ")
+            sourceFile.append(enumDeclarationName)
+            sourceFile.append("::get_")
+            sourceFile.append(enumMember.enumCase.name)
+            sourceFile.append("() {\n    return (_")
+            sourceFile.append(enumDeclarationName)
+            sourceFile.append("_")
+            sourceFile.append(enumMember.enumCase.name)
+            sourceFile.append("*)errorInfo;\n}\n\n")
+        }
+
+        inEnumMember = false
     }
 
     function appendCppType(mutable s: VarString, type: Type) {

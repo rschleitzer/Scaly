@@ -1055,7 +1055,6 @@ void CppVisitor::closeThrowsClause(ThrowsClause* throwsClause) {
 bool CppVisitor::openEnumMember(EnumMember* enumMember) {
     if (!enumMember->parent->_isEnumDeclaration())
         return false;
-
     String* enumDeclarationName = ((EnumDeclaration*)(enumMember->parent))->name;
     if (enumMember->parameterClause) {
         headerFile->append("\nclass _");
@@ -1082,31 +1081,34 @@ bool CppVisitor::openEnumMember(EnumMember* enumMember) {
 }
 
 void CppVisitor::closeEnumMember(EnumMember* enumMember) {
-    if (enumMember->parameterClause) {
+    if (enumMember->parameterClause != nullptr) {
         sourceFile->append("\n");
         headerFile->append(";\n\n");
         _Vector<Parameter>* parameters = enumMember->parameterClause->parameters;
-        if (parameters) {
+        if (parameters != nullptr) {
             sourceFile->append(": ");
             size_t pos = 0;
+            Parameter* parameter = nullptr;
             size_t _parameters_length = parameters->length();
             for (size_t _i = 0; _i < _parameters_length; _i++) {
-                Parameter* parameter = *(*parameters)[_i];
-                if (parameter->_isConstParameter()) {
-                    ConstParameter* constParameter = (ConstParameter*)parameter;
-                    headerFile->append("    ");
-                    appendCppType(headerFile, constParameter->parameterType);
-                    headerFile->append(" ");
-                    headerFile->append(constParameter->name);
-                    headerFile->append(";\n");
-                    if (pos)
-                        sourceFile->append(", ");
-                    sourceFile->append(constParameter->name);
-                    sourceFile->append("(");
-                    sourceFile->append(constParameter->name);
-                    sourceFile->append(")");
+                parameter = *(*parameters)[_i];
+                {
+                    if (parameter->_isConstParameter()) {
+                        ConstParameter* constParameter = (ConstParameter*)parameter;
+                        headerFile->append("    ");
+                        appendCppType(headerFile, constParameter->parameterType);
+                        headerFile->append(" ");
+                        headerFile->append(constParameter->name);
+                        headerFile->append(";\n");
+                        if (pos != 0)
+                            sourceFile->append(", ");
+                        sourceFile->append(constParameter->name);
+                        sourceFile->append("(");
+                        sourceFile->append(constParameter->name);
+                        sourceFile->append(")");
+                    }
+                    pos++;
                 }
-                pos++;
             }
         }
         headerFile->append("};\n");
