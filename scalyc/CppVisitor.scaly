@@ -1289,9 +1289,36 @@ class CppVisitor : SyntaxVisitor {
     }
 
     function getMemberIfCreatingObject(assignment: Assignment) -> String {
+        var functionName: String = getFunctionName(assignment)
+        if functionName == null {
+            return null
+        }
+
+        let rightSide: PostfixExpression = assignment.expression.expression
+        if ((isClass(functionName) || isCreatingObject(functionName, assignment)) && (rightSide.postfixes.length() == 1)) {
+            let postfixes: [Postfix] = rightSide.postfixes
+            if (postfixes[0]) is FunctionCall {
+                if assignment.parent is SimpleExpression {
+                    let simpleExpression: SimpleExpression = (assignment.parent) as SimpleExpression
+                    if simpleExpression.prefixExpression.prefixOperator == 0 {
+                        let leftSide: PostfixExpression = simpleExpression.prefixExpression.expression
+                        if (leftSide.postfixes == 0) && (leftSide.primaryExpression is IdentifierExpression) {
+                            let memberExpression: IdentifierExpression = (leftSide.primaryExpression) as IdentifierExpression
+                            var memberName: String = String(memberExpression.name)
+                            let classDeclaration: ClassDeclaration = getClassDeclaration(assignment)
+                            if classDeclaration != null {
+                                return memberName
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        return null
     }
 
-    function getFunctionName(assignment: Assignment) -> existing String {
+    function getFunctionName(assignment: Assignment) -> String {
     }
     
     function isCreatingObject(functionName: String, node: SyntaxNode) -> bool {

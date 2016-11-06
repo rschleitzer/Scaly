@@ -124,7 +124,7 @@ public:
     virtual bool inReturn(SyntaxNode* node);
     virtual bool inThrow(SyntaxNode* node);
     virtual String* getMemberIfCreatingObject(_Page* _rp, Assignment* assignment);
-    virtual String* getFunctionName(Assignment* assignment);
+    virtual String* getFunctionName(_Page* _rp, Assignment* assignment);
     virtual bool isCreatingObject(String* functionName, SyntaxNode* node);
     virtual ClassDeclaration* getClassDeclaration(SyntaxNode* node);
     virtual bool isVariableMember(String* memberName, ClassDeclaration* classDeclaration);

@@ -1293,23 +1293,25 @@ bool CppVisitor::inThrow(SyntaxNode* node) {
 }
 
 String* CppVisitor::getMemberIfCreatingObject(_Page* _rp, Assignment* assignment) {
-     String* functionName = getFunctionName(assignment);
+    String* functionName = getFunctionName(_rp, assignment);
     if (functionName == nullptr) {
         return nullptr;
     }
     PostfixExpression* rightSide = assignment->expression->expression;
     if (((isClass(functionName) || isCreatingObject(functionName, assignment)) && (rightSide->postfixes->length() == 1))) {
-        if ((*(*rightSide->postfixes)[0])->_isFunctionCall()) {
+        _Vector<Postfix>* postfixes = rightSide->postfixes;
+        if ((*(*postfixes)[0])->_isFunctionCall()) {
             if (assignment->parent->_isSimpleExpression()) {
                 SimpleExpression* simpleExpression = (SimpleExpression*)(assignment->parent);
                 if (simpleExpression->prefixExpression->prefixOperator == 0) {
                     PostfixExpression* leftSide = simpleExpression->prefixExpression->expression;
                     if ((leftSide->postfixes == 0) && (leftSide->primaryExpression->_isIdentifierExpression())) {
+                        _Region _region; _Page* _p = _region.get();
                         IdentifierExpression* memberExpression = (IdentifierExpression*)(leftSide->primaryExpression);
-                        String* memberName = new(_rp) String(memberExpression->name);
+                        String* memberName = new(_p) String(memberExpression->name);
                         ClassDeclaration* classDeclaration = getClassDeclaration(assignment);
                         if (classDeclaration != nullptr) {
-                            return memberName;
+                            return new (_rp) String(memberName);
                         }
                     }
                 }
@@ -1320,12 +1322,12 @@ String* CppVisitor::getMemberIfCreatingObject(_Page* _rp, Assignment* assignment
     return nullptr;
 }
 
-String* CppVisitor::getFunctionName(Assignment* assignment) {
+String* CppVisitor::getFunctionName(_Page* _rp, Assignment* assignment) {
    if (assignment->expression->prefixOperator == 0) {
         PostfixExpression* rightSide = assignment->expression->expression;
         if (rightSide->primaryExpression->_isIdentifierExpression()) {
             IdentifierExpression* classExpression = (IdentifierExpression*)(rightSide->primaryExpression);
-            return classExpression->name;
+            return new(_rp) String(classExpression->name);
         }
    }
    
