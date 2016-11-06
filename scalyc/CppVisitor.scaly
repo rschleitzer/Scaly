@@ -1390,6 +1390,8 @@ class CppVisitor : SyntaxVisitor {
     }
 
     function openTypeQuery(typeQuery: TypeQuery) -> bool {
+        sourceFile.append("->_is")
+
         return true
     }
 
