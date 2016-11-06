@@ -740,6 +740,7 @@ class CppVisitor : SyntaxVisitor {
     }
 
     function openInitializer(initializer: Initializer) -> bool {
+        sourceFile.append(" = ")
         return true
     }
 
@@ -747,6 +748,7 @@ class CppVisitor : SyntaxVisitor {
     }
 
     function openBindingInitializer(bindingInitializer: BindingInitializer) -> bool {
+        firstBindingInitializer = true
         return true
     }
 
@@ -758,6 +760,10 @@ class CppVisitor : SyntaxVisitor {
     }
 
     function closePatternInitializer(patternInitializer: PatternInitializer) {
+        if !firstBindingInitializer
+            headerFile.append(", ")
+        else
+            firstBindingInitializer = false
     }
 
     function openAdditionalInitializer(additionalInitializer: AdditionalInitializer) -> bool {
