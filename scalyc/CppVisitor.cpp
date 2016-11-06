@@ -814,20 +814,17 @@ void CppVisitor::visitIdentifierFunction(IdentifierFunction* identifierFunction)
 bool CppVisitor::openFunctionSignature(FunctionSignature* functionSignature) {
     if (!functionSignature->parent->_isFunctionDeclaration())
         return false;
-
-    FunctionName* functionName = ((FunctionDeclaration*)(functionSignature->parent))->name;
+    FunctionName* functionName = ((FunctionDeclaration*)functionSignature->parent)->name;
     if (!functionName->_isIdentifierFunction())
         return false;
-    
     String* identifierFunctionName = ((IdentifierFunction*)functionName)->name;
-        
     if (staticFunction)
         headerFile->append("static ");
     else
         headerFile->append("virtual ");
     inFunctionReturn = true;
-    if (!functionSignature->result) {
-        if (!functionSignature->throwsClause) {
+    if (functionSignature->result == nullptr) {
+        if (functionSignature->throwsClause == nullptr) {
             headerFile->append("void");
             if (!suppressSource)
                 sourceFile->append("void");
@@ -839,7 +836,7 @@ bool CppVisitor::openFunctionSignature(FunctionSignature* functionSignature) {
         }
     }
     else {
-        if (functionSignature->throwsClause) {
+        if (functionSignature->throwsClause != nullptr) {
             headerFile->append("_Result<");
             if (!suppressSource)
                 sourceFile->append("_Result<");
@@ -849,17 +846,19 @@ bool CppVisitor::openFunctionSignature(FunctionSignature* functionSignature) {
                 if (!suppressSource)
                     appendCppTypeName(sourceFile, typeId);
             }
-            else if (functionSignature->result->resultType->_isArrayType()) {
-                ArrayType* arrayType = (ArrayType*)functionSignature->result->resultType;
-                if (arrayType->elementType->_isTypeIdentifier()) {
-                    headerFile->append("_Vector<");
-                    TypeIdentifier* typeId = (TypeIdentifier*)arrayType->elementType;
-                    appendCppTypeName(headerFile, typeId);
-                    headerFile->append(">");
-                    if (!suppressSource) {
-                        sourceFile->append("_Vector<");
-                        appendCppTypeName(sourceFile, typeId);
-                        sourceFile->append(">");
+            else {
+                if (functionSignature->result->resultType->_isArrayType()) {
+                    ArrayType* arrayType = (ArrayType*)functionSignature->result->resultType;
+                    if (arrayType->elementType->_isTypeIdentifier()) {
+                        headerFile->append("_Vector<");
+                        TypeIdentifier* typeId = (TypeIdentifier*)arrayType->elementType;
+                        appendCppTypeName(headerFile, typeId);
+                        headerFile->append(">");
+                        if (!suppressSource) {
+                            sourceFile->append("_Vector<");
+                            appendCppTypeName(sourceFile, typeId);
+                            sourceFile->append(">");
+                        }
                     }
                 }
             }
@@ -884,17 +883,19 @@ bool CppVisitor::openFunctionSignature(FunctionSignature* functionSignature) {
                         sourceFile->append("*");
                 }
             }
-            else if (functionSignature->result->resultType->_isArrayType()) {
-                ArrayType* arrayType = (ArrayType*)functionSignature->result->resultType;
-                if (arrayType->elementType->_isTypeIdentifier()) {
-                    headerFile->append("_Vector<");
-                    TypeIdentifier* typeId = (TypeIdentifier*)arrayType->elementType;
-                    appendCppTypeName(headerFile, typeId);
-                    headerFile->append(">");
-                    if (!suppressSource) {
-                        sourceFile->append("_Vector<");
-                        appendCppTypeName(sourceFile, typeId);
-                        sourceFile->append(">");
+            else {
+                if (functionSignature->result->resultType->_isArrayType()) {
+                    ArrayType* arrayType = (ArrayType*)functionSignature->result->resultType;
+                    if (arrayType->elementType->_isTypeIdentifier()) {
+                        headerFile->append("_Vector<");
+                        TypeIdentifier* typeId = (TypeIdentifier*)arrayType->elementType;
+                        appendCppTypeName(headerFile, typeId);
+                        headerFile->append(">");
+                        if (!suppressSource) {
+                            sourceFile->append("_Vector<");
+                            appendCppTypeName(sourceFile, typeId);
+                            sourceFile->append(">");
+                        }
                     }
                 }
             }
@@ -903,7 +904,7 @@ bool CppVisitor::openFunctionSignature(FunctionSignature* functionSignature) {
     inFunctionReturn = false;
     headerFile->append(" ");
     if (!suppressSource) {
-        sourceFile->append(" ");    
+        sourceFile->append(" ");
         if (functionSignature->parent->parent->parent->parent->_isClassDeclaration()) {
             ClassDeclaration* classDeclaration = (ClassDeclaration*)functionSignature->parent->parent->parent->parent;
             sourceFile->append(classDeclaration->name);
@@ -932,20 +933,22 @@ bool CppVisitor::openFunctionSignature(FunctionSignature* functionSignature) {
                 }
             }
         }
-        else if (functionSignature->result->resultType->_isArrayType()) {
-            if (functionSignature->result->existingObject == nullptr) {
-                headerFile->append("_Page* _rp");
-                if (!suppressSource)
-                    sourceFile->append("_Page* _rp");
-                if ((functionSignature->parameterClause->parameters) || (functionSignature->throwsClause)) {
-                    headerFile->append(", ");
+        else {
+            if (functionSignature->result->resultType->_isArrayType()) {
+                if (functionSignature->result->existingObject == nullptr) {
+                    headerFile->append("_Page* _rp");
                     if (!suppressSource)
-                        sourceFile->append(", ");
+                        sourceFile->append("_Page* _rp");
+                    if ((functionSignature->parameterClause->parameters != nullptr) || (functionSignature->throwsClause != nullptr)) {
+                        headerFile->append(", ");
+                        if (!suppressSource)
+                            sourceFile->append(", ");
+                    }
                 }
             }
         }
     }
-    if (functionSignature->throwsClause) {
+    if (functionSignature->throwsClause != nullptr) {
         headerFile->append("_Page* _ep");
         if (!suppressSource)
             sourceFile->append("_Page* _ep");
@@ -955,7 +958,6 @@ bool CppVisitor::openFunctionSignature(FunctionSignature* functionSignature) {
                 sourceFile->append(", ");
         }
     }
-
     return true;
 }
 

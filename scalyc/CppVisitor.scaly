@@ -802,7 +802,7 @@ class CppVisitor : SyntaxVisitor {
         inFunctionReturn = true
 
         if functionSignature.result == null {
-            if functionSignature.throwsClause != null {
+            if functionSignature.throwsClause == null {
                 headerFile.append("void")
                 if !suppressSource
                     sourceFile.append("void")
@@ -843,11 +843,11 @@ class CppVisitor : SyntaxVisitor {
                     }
                 }
                 headerFile.append(", ")
-                appendCppTypeName(headerFile, functionSignature.throwsClause.throwsType as TypeIdentifier)
+                appendCppTypeName(headerFile, (functionSignature.throwsClause.throwsType) as TypeIdentifier)
                 headerFile.append(">")
                 if !suppressSource {
                     sourceFile.append(", ")
-                    appendCppTypeName(sourceFile, functionSignature.throwsClause.throwsType as TypeIdentifier)
+                    appendCppTypeName(sourceFile, (functionSignature.throwsClause.throwsType) as TypeIdentifier)
                     sourceFile.append(">")
                 }
             }
