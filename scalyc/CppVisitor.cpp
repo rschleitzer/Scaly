@@ -686,15 +686,20 @@ FunctionCall* CppVisitor::getFunctionCall(PatternInitializer* patternInitializer
     if (patternInitializer->initializer != nullptr) {
         Expression* expression = patternInitializer->initializer->expression;
         if (expression->_isSimpleExpression()) {
-            PrefixExpression* prefixExpression = ((SimpleExpression*)expression)->prefixExpression;
+            SimpleExpression* simpleExpression = (SimpleExpression*)expression;
+            PrefixExpression* prefixExpression = simpleExpression->prefixExpression;
             PostfixExpression* postfixExpression = prefixExpression->expression;
             if (postfixExpression->primaryExpression->_isIdentifierExpression()) {
                 if (postfixExpression->postfixes != nullptr) {
-                    size_t _postfixes_length = postfixExpression->postfixes->length();
+                    _Vector<Postfix>* postfixes = postfixExpression->postfixes;
+                    Postfix* postfix = nullptr;
+                    size_t _postfixes_length = postfixes->length();
                     for (size_t _i = 0; _i < _postfixes_length; _i++) {
-                        Postfix* postfix = *(*postfixExpression->postfixes)[_i];
-                        if (postfix->_isFunctionCall()) {
-                            return (FunctionCall*)postfix;
+                        postfix = *(*postfixes)[_i];
+                        {
+                            if (postfix->_isFunctionCall()) {
+                                return (FunctionCall*)postfix;
+                            }
                         }
                     }
                 }
@@ -702,6 +707,15 @@ FunctionCall* CppVisitor::getFunctionCall(PatternInitializer* patternInitializer
         }
     }
     return nullptr;
+}
+
+bool CppVisitor::isCatchingFunctionCall(PatternInitializer* patternInitializer) {
+    FunctionCall* functionCall = getFunctionCall(patternInitializer);
+    if (functionCall == nullptr)
+        return false;
+    if ((catchesError(getFunctionCall(patternInitializer))))
+        return true;
+    return false;
 }
 
 void CppVisitor::closeCodeBlock(CodeBlock* codeBlock) {
@@ -717,15 +731,6 @@ void CppVisitor::closeCodeBlock(CodeBlock* codeBlock) {
     sourceFile->append("}\n");
     if (codeBlock->parent->_isFunctionDeclaration())
         sourceFile->append("\n");
-}
-
-bool CppVisitor::isCatchingFunctionCall(PatternInitializer* patternInitializer) {
-    FunctionCall* functionCall = getFunctionCall(patternInitializer);
-    if (functionCall == nullptr)
-        return false;
-    if (catchesError(getFunctionCall(patternInitializer)))
-        return true;
-    return false;
 }
 
 bool CppVisitor::openPathIdentifier(PathIdentifier* pathIdentifier) {
