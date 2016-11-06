@@ -632,10 +632,6 @@ class CppVisitor : SyntaxVisitor {
                     let mutableDeclaration: MutableDeclaration = statement as MutableDeclaration
                     bindingInitializer = mutableDeclaration.initializer
                 }
-                if statement is VariableDeclaration {
-                    let variableDeclaration: VariableDeclaration = statement as VariableDeclaration
-                    bindingInitializer = variableDeclaration.initializer
-                }
                 if bindingInitializer != null {
                     if bindingInitializer.initializer != null {
                         let patternInitializer: PatternInitializer = bindingInitializer.initializer
@@ -1354,6 +1350,13 @@ class CppVisitor : SyntaxVisitor {
     }
 
     function getClassDeclaration(node: SyntaxNode) -> existing ClassDeclaration {
+        if node is ClassDeclaration
+            return node as ClassDeclaration
+
+        if node.parent != null
+            return getClassDeclaration(node.parent)
+        
+        return null
     }
     
     function isVariableMember(memberName: String, classDeclaration: ClassDeclaration) -> bool {

@@ -1357,8 +1357,7 @@ ClassDeclaration* CppVisitor::getClassDeclaration(SyntaxNode* node) {
     if (node->_isClassDeclaration())
         return (ClassDeclaration*)node;
     if (node->parent != nullptr)
-        return getClassDeclaration(node->parent);
-    
+        return getClassDeclaration(node->parent);    
     return nullptr;
 }
 
