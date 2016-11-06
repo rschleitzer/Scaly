@@ -1242,7 +1242,8 @@ void CppVisitor::closePrefixExpression(PrefixExpression* prefixExpression) {
 
 bool CppVisitor::openPostfixExpression(PostfixExpression* postfixExpression) {
     if (postfixExpression->postfixes != nullptr) {
-        if ((*(*postfixExpression->postfixes)[0])->_isSubscript()) {
+        _Vector<Postfix>* postfixes = postfixExpression->postfixes;
+        if ((*(*postfixes)[0])->_isSubscript()) {
             sourceFile->append("*(*");
         }
     }

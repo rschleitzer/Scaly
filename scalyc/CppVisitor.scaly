@@ -1205,13 +1205,22 @@ class CppVisitor : SyntaxVisitor {
     }
 
     function openClassMember(classMember: ClassMember) -> bool {
+        headerFile.append("\n")
+        indentHeader()
+        declaringClassMember = true
+
         return true
     }
 
     function closeClassMember(classMember: ClassMember) {
+        headerFile.append(";")
+        declaringClassMember = false
     }
 
     function openPrefixExpression(prefixExpression: PrefixExpression) -> bool {
+        if prefixExpression.prefixOperator != null
+            sourceFile.append(prefixExpression.prefixOperator)
+
         return true
     }
 
@@ -1219,6 +1228,13 @@ class CppVisitor : SyntaxVisitor {
     }
 
     function openPostfixExpression(postfixExpression: PostfixExpression) -> bool {
+        if postfixExpression.postfixes != null {
+            let postfixes: [Postfix] = postfixExpression.postfixes
+            if (postfixes[0]) is Subscript {
+                sourceFile.append("*(*")
+            }
+        }
+
         return true
     }
 
