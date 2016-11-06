@@ -610,22 +610,104 @@ class CppVisitor : SyntaxVisitor {
     }
 
     function openCodeBlock(codeBlock: CodeBlock) -> bool {
+        sourceFile.append("{\n")
+        sourceIndentLevel++
+
+        if localAllocations(codeBlock) {
+            indentSource()
+            sourceFile.append("_Region _region; _Page* _p = _region.get();\n")
+        }
+
+        suppressHeader = true
         return true
     }
 
     function localAllocations(codeBlock: CodeBlock) -> bool {
+        let terminatedStatements: [TerminatedStatement] = codeBlock.statements
+        if terminatedStatements != null {
+            for statement: TerminatedStatement in terminatedStatements {
+                let bindingInitializer: BindingInitializer = null            
+                if statement is MutableDeclaration {
+                    let mutableDeclaration: MutableDeclaration = statement as MutableDeclaration
+                    bindingInitializer = mutableDeclaration.initializer
+                }
+                if statement is VariableDeclaration {
+                    let variableDeclaration: VariableDeclaration = statement as VariableDeclaration
+                    bindingInitializer = variableDeclaration.initializer
+                }
+                if bindingInitializer != null {
+                    if bindingInitializer.initializer != null {
+                        let patternInitializer: PatternInitializer = bindingInitializer.initializer
+                        if patternInitializer.pattern is IdentifierPattern {
+                            let identifierPattern: IdentifierPattern = patternInitializer.pattern as IdentifierPattern
+                            if identifierPattern.annotationForType != null {
+                                let type: Type = identifierPattern.annotationForType.annotationForType
+                                if (type is ArrayType)
+                                    return true
+                                if type is TypeIdentifier {
+                                    let typeIdentifier: TypeIdentifier = type as TypeIdentifier
+                                    if isClass(typeIdentifier.name) {
+                                        if getFunctionCall(patternInitializer) != null
+                                            return true
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
         return false
     }
 
     function getFunctionCall(patternInitializer: PatternInitializer) -> existing FunctionCall {
-        return null
+        if patternInitializer.initializer != null {
+            let expression: Expression = patternInitializer.initializer.expression
+            if expression is SimpleExpression {
+                let simpleExpression: SimpleExpression = expression as SimpleExpression
+                let prefixExpression: PrefixExpression = simpleExpression.prefixExpression
+                let postfixExpression: PostfixExpression = prefixExpression.expression
+                if postfixExpression.primaryExpression is IdentifierExpression {
+                    if postfixExpression.postfixes != null {
+                        let postfixes = postfixExpression.postfixes
+                        for postfix: Postfix in postfixes {
+                            if postfix is FunctionCall {
+                                return postfix as FunctionCall
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return nullptr
     }
 
     function isCatchingFunctionCall(patternInitializer: PatternInitializer) -> bool {
+        let functionCall: FunctionCall = getFunctionCall(patternInitializer)
+
+        if functionCall == null
+            return false;
+
+        if (catchesError(getFunctionCall(patternInitializer)))
+            return true
+
         return false
     }
 
     function closeCodeBlock(codeBlock: CodeBlock) {
+        if codeBlock.parent is FunctionDeclaration {
+            let functionDeclaration: FunctionDeclaration = codeBlock.parent as FunctionDeclaration
+            if (functionDeclaration.signature.throwsClause != null) && (functionDeclaration.signature.result == null) {
+                indentSource()
+                sourceFile.append("return nullptr;\n")
+            }
+        }
+ 
+        sourceIndentLevel--
+        indentSource()
+        sourceFile-.append("}\n")
+        if codeBlock.parent is FunctionDeclaration
+            sourceFile.>append("\n")
     }
 
     function openSimpleExpression(simpleExpression: SimpleExpression) -> bool {
