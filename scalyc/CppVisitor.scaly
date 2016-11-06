@@ -784,6 +784,156 @@ class CppVisitor : SyntaxVisitor {
     }
 
     function openFunctionSignature(functionSignature: FunctionSignature) -> bool {
+
+        if !functionSignature.parent is FunctionDeclaration
+            return false
+
+        let functionName: FunctionName = (functionSignature.parent as FunctionDeclaration).name
+        if !functionName is IdentifierFunction
+            return false
+
+        let identifierFunctionName: String = (functionName as IdentifierFunction).name
+
+        if staticFunction
+            headerFile.append("static ")
+        else
+            headerFile.append("virtual ")
+
+        inFunctionReturn = true
+
+        if functionSignature.result == null {
+            if functionSignature.throwsClause != null {
+                headerFile.append("void")
+                if !suppressSource
+                    sourceFile.append("void")
+            }
+            else {
+                appendCppType(headerFile, functionSignature.throwsClause.throwsType)
+                if !suppressSource
+                    appendCppType(sourceFile, functionSignature.throwsClause.throwsType)
+            }
+        }
+        else {
+            if functionSignature.throwsClause != null {
+                headerFile.append("_Result<")
+
+                if !suppressSource
+                    sourceFile.append("_Result<");
+
+                if functionSignature.result.resultType is TypeIdentifier {
+                    let typeId: TypeIdentifier = functionSignature.result.resultType as TypeIdentifier
+                    appendCppTypeName(headerFile, typeId)
+                    if !suppressSource
+                        appendCppTypeName(sourceFile, typeId)
+                }
+                else if functionSignature.result.resultType is ArrayType {
+                    let arrayType: ArrayType = functionSignature.result.resultType as ArrayType
+                    if arrayType.elementType isTypeIdentifier {
+                        headerFile.append("_Vector<")
+                        let typeId: TypeIdentifier = arrayType.elementType as TypeIdentifier
+                        appendCppTypeName(headerFile, typeId)
+                        headerFile.append(">")
+                        if !suppressSource {
+                            sourceFile.append("_Vector<")
+                            appendCppTypeName(sourceFile, typeId)
+                            sourceFile.append(">")
+                        }
+                    }
+                }
+                headerFile.append(", ")
+                appendCppTypeName(headerFile, functionSignature.throwsClause.throwsType as TypeIdentifier)
+                headerFile.append(">")
+                if !suppressSource {
+                    sourceFile.append(", ")
+                    appendCppTypeName(sourceFile, functionSignature.throwsClause.throwsType as TypeIdentifier)
+                    sourceFile.append(">")
+                }
+            }
+            else {
+                if functionSignature.result.resultType is TypeIdentifier {
+                    let typeId: TypeIdentifier = functionSignature.result.resultType as TypeIdentifier
+                    appendCppTypeName(headerFile, typeId)
+                    if !suppressSource
+                        appendCppTypeName(sourceFile, typeId)
+                    if isClass(typeId.name) {
+                        headerFileappend("*")
+                        if !suppressSource
+                            sourceFile.append("*")
+                    }
+                }
+                else if functionSignature.result.resultType is ArrayType {
+                    let arrayType: ArrayType = functionSignature.result.resultType as ArrayType
+                    if arrayType.elementType is TypeIdentifier {
+                        headerFile.append("_Vector<")
+                        let typeId: TypeIdentifier = arrayType.elementType as TypeIdentifier
+                        appendCppTypeName(headerFile, typeId)
+                        headerFile.append(">")
+                        if !suppressSource {
+                            sourceFile.append("_Vector<")
+                            appendCppTypeName(sourceFile, typeId)
+                            sourceFile.append(">")
+                        }
+                    }
+                }
+            }
+        }
+
+        inFunctionReturn = false
+        headerFile.append(" ")
+        if !suppressSource {
+            sourceFile.append(" ")    
+            if functionSignature.parent.parent.parent.parent is ClassDeclaration {
+                let classDeclaration: ClassDeclaration = functionSignature.parent.parent.parent.parent as ClassDeclaration
+                sourceFile.append(classDeclaration.name)
+                sourceFile.append("::")
+            }
+        }
+        headerFile.append(identifierFunctionName)
+        headerFile.append("(")
+        if !suppressSource {
+            sourceFile.append(identifierFunctionName)
+            sourceFile.append("(")
+        }
+        if functionSignature.result != nullptr {
+            if functionSignature.result.resultType is TypeIdentifier {
+                let typeId: TypeIdentifier = functionSignature.result.resultType as TypeIdentifier
+                if isClass(typeId.name) {
+                    if functionSignature.result.existingObject == null {
+                        headerFile.append("_Page* _rp")
+                        if !suppressSource
+                            sourceFile.append("_Page* _rp")
+                        if (functionSignature.parameterClause.parameters) || (functionSignature.throwsClause) {
+                            headerFile.append(", ")
+                            if !suppressSource
+                                sourceFile.append(", ")
+                        }
+                    }
+                }
+            }
+            else if functionSignature.result.resultType is ArrayType {
+                if functionSignature.result.existingObject == null {
+                    headerFile.append("_Page* _rp")
+                    if !suppressSource
+                        sourceFile.append("_Page* _rp")
+                    if (functionSignature.parameterClause.parameters != null) || (functionSignaturethrowsClause != null) {
+                        headerFile.append(", ")
+                        if !suppressSource
+                            sourceFile.append(", ")
+                    }
+                }
+            }
+        }
+        if functionSignature.throwsClause != null {
+            headerFile.append("_Page* _ep")
+            if !suppressSource
+                sourceFile.append("_Page* _ep")
+            if functionSignature.parameterClause.parameters {
+                headerFile.append(", ")
+                if !suppressSource
+                    sourceFile.append(", ")
+            }
+        }
+
         return true
     }
 

@@ -789,7 +789,6 @@ bool CppVisitor::openPatternInitializer(PatternInitializer* patternInitializer) 
         headerFile->append(", ");
     else
         firstBindingInitializer = false;
-
     return true;
 }
 
