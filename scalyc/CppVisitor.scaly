@@ -565,7 +565,7 @@ class CppVisitor : SyntaxVisitor {
             sourceFile.append("() { return true; }\n\n")
         }
         {
-            var derivedClasses: [String] = [String]()
+            mutable derivedClasses: [String] = [String]()
             collectDerivedClasses(derivedClasses, String(classDeclaration.name))
             for derivedClass: String in derivedClasses {
                 headerFile.append("\n")

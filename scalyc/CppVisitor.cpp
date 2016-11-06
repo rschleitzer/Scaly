@@ -652,10 +652,6 @@ bool CppVisitor::localAllocations(CodeBlock* codeBlock) {
                     MutableDeclaration* mutableDeclaration = (MutableDeclaration*)statement;
                     bindingInitializer = mutableDeclaration->initializer;
                 }
-                if (statement->_isVariableDeclaration()) {
-                    VariableDeclaration* variableDeclaration = (VariableDeclaration*)statement;
-                    bindingInitializer = variableDeclaration->initializer;
-                }
                 if (bindingInitializer != nullptr) {
                     if (bindingInitializer->initializer != nullptr) {
                         PatternInitializer* patternInitializer = bindingInitializer->initializer;
