@@ -609,6 +609,24 @@ void CppVisitor::closeClassDeclaration(ClassDeclaration* classDeclaration) {
     headerFile->append("\n};");
 }
 
+bool CppVisitor::openInitializerDeclaration(InitializerDeclaration* initializerDeclaration) {
+    if (!initializerDeclaration->parent->parent->parent->_isClassDeclaration())
+        return false;
+    String* classDeclarationName = ((Program*)(initializerDeclaration->parent->parent->parent))->name;
+    headerFile->append(classDeclarationName);
+    headerFile->append("(");
+    sourceFile->append(classDeclarationName);
+    sourceFile->append("::");
+    sourceFile->append(classDeclarationName);
+    sourceFile->append("(");
+    return true;
+}
+
+void CppVisitor::closeInitializerDeclaration(InitializerDeclaration* initializerDeclaration) {
+    sourceFile->append("\n");
+    suppressHeader = false;
+}
+
 bool CppVisitor::openPathIdentifier(PathIdentifier* pathIdentifier) {
     return true;
 }
@@ -652,28 +670,6 @@ bool CppVisitor::openAdditionalInitializer(AdditionalInitializer* additionalInit
 }
 
 void CppVisitor::closeAdditionalInitializer(AdditionalInitializer* additionalInitializer) {
-}
-
-bool CppVisitor::openInitializerDeclaration(InitializerDeclaration* initializerDeclaration) {
-    if (!initializerDeclaration->parent->parent->parent->_isClassDeclaration())
-        return false;
-
-    String* classDeclarationName = ((Program*)(initializerDeclaration->parent->parent->parent))->name;
-
-    headerFile->append(classDeclarationName);
-    headerFile->append("(");
-    
-    sourceFile->append(classDeclarationName);
-    sourceFile->append("::");
-    sourceFile->append(classDeclarationName);
-    sourceFile->append("(");
-    
-    return true;
-}
-
-void CppVisitor::closeInitializerDeclaration(InitializerDeclaration* initializerDeclaration) {
-    sourceFile->append("\n");
-    suppressHeader = false;
 }
 
 void CppVisitor::visitOverrideWord(OverrideWord* overrideWord) {

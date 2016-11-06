@@ -587,10 +587,26 @@ class CppVisitor : SyntaxVisitor {
     }
 
     function openInitializerDeclaration(initializerDeclaration: InitializerDeclaration) -> bool {
+
+        if !initializerDeclaration.parent.parent.parent is ClassDeclaration
+            return false
+
+        let classDeclarationName: String = ((initializerDeclaration.parent.parent.parent) as Program).name
+
+        headerFile.append(classDeclarationName)
+        headerFile.append("(")
+        
+        sourceFile.append(classDeclarationName)
+        sourceFile.append("::")
+        sourceFile.append(classDeclarationName)
+        sourceFile.append("(")
+        
         return true
     }
 
     function closeInitializerDeclaration(initializerDeclaration: InitializerDeclaration) {
+        sourceFile.append("\n")
+        suppressHeader = false
     }
 
     function openCodeBlock(codeBlock: CodeBlock) -> bool {
