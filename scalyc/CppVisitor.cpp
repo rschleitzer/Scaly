@@ -2173,6 +2173,43 @@ void CppVisitor::closeParenthesizedExpression(ParenthesizedExpression* parenthes
     sourceFile->append(")");
 }
 
+bool CppVisitor::openReturnExpression(ReturnExpression* returnExpression) {
+    sourceFile->append("return");
+    if (returnExpression->expression != nullptr) {
+        _Region _region; _Page* _p = _region.get();
+        sourceFile->append(" ");
+        String* returnType = getReturnType(_p, returnExpression);
+        String* thrownType = getThrownType(_p, returnExpression);
+        if (thrownType != nullptr) {
+            sourceFile->append("_Result<");
+            if (returnType != nullptr)
+                sourceFile->append(returnType);
+            sourceFile->append(", ");
+            sourceFile->append(thrownType);
+            sourceFile->append(">(");
+        }
+        returnExpression->expression->accept(this);
+        if (returnsArray(returnExpression)) {
+            sourceFile->append(" ? &");
+            sourceFile->append(returnType);
+            sourceFile->append("::create(_rp, *");
+            returnExpression->expression->accept(this);
+            sourceFile->append(") : 0");
+        }
+        if ((thrownType != nullptr))
+            sourceFile->append(")");
+    }
+    return false;
+}
+
+void CppVisitor::closeReturnExpression(ReturnExpression* returnExpression) {
+    _Region _region; _Page* _p = _region.get();
+    String* returnType = getReturnType(_p, returnExpression);
+    if (returnType != nullptr) {
+        sourceFile->append(")");
+    }
+}
+
 void CppVisitor::visitNullExpression(NullExpression* nullExpression) {
     sourceFile->append("nullptr");
 }
@@ -2240,43 +2277,6 @@ bool CppVisitor::openCaseItem(CaseItem* caseItem) {
 
 void CppVisitor::closeCaseItem(CaseItem* caseItem) {
     sourceFile->append(": ");
-}
-
-bool CppVisitor::openReturnExpression(ReturnExpression* returnExpression) {
-    _Region _region; _Page* _p = _region.get();
-    sourceFile->append("return");
-    if (returnExpression->expression) {
-        sourceFile->append(" ");
-        String* returnType = getReturnType(_p, returnExpression);
-        String* thrownType = getThrownType(_p, returnExpression);
-        if (thrownType != nullptr) {
-            sourceFile->append("_Result<");
-            if (returnType != nullptr)
-                sourceFile->append(returnType);
-            sourceFile->append(", ");
-            sourceFile->append(thrownType);
-            sourceFile->append(">(");
-        }
-        returnExpression->expression->accept(this);
-        if (returnsArray(returnExpression)) {
-            sourceFile->append(" ? &");
-            sourceFile->append(returnType);
-            sourceFile->append("::create(_rp, *");
-            returnExpression->expression->accept(this);
-            sourceFile->append(") : 0");
-        }
-        if (thrownType != nullptr)
-            sourceFile->append(")");
-    }
-    return false;
-}
-
-void CppVisitor::closeReturnExpression(ReturnExpression* returnExpression) {
-    _Region _region; _Page* _p = _region.get();
-    String* returnType = getReturnType(_p, returnExpression);
-    if (returnType != nullptr) {
-        sourceFile->append(")");
-    }
 }
 
 bool CppVisitor::openThrowExpression(ThrowExpression* throwExpression) {

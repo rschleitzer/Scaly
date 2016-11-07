@@ -2168,7 +2168,31 @@ class CppVisitor : SyntaxVisitor {
     }
 
     function openReturnExpression(returnExpression: ReturnExpression) -> bool {
-        return true
+        sourceFile.append("return")
+        if returnExpression.expression != null {
+            sourceFile.append(" ")
+            mutable returnType: String = getReturnType(returnExpression)
+            mutable thrownType: String = getThrownType(returnExpression)
+            if thrownType != null {
+                sourceFile.append("_Result<")
+                if returnType != null
+                    sourceFile.append(returnType)
+                sourceFile.append(", ")
+                sourceFile.append(thrownType)
+                sourceFile.append(">(")
+            }
+            returnExpression.expression.accept(this)
+            if returnsArray(returnExpression) {
+                sourceFile.append(" ? &")
+                sourceFile.append(returnType)
+                sourceFile.append("::create(_rp, *")
+                returnExpression.expression.accept(this)
+                sourceFile.append(") : 0")
+            }
+            if (thrownType != nullptr)
+                sourceFile.append(")")
+        }
+        return false
     }
 
     function closeReturnExpression(returnExpression: ReturnExpression) {
