@@ -1983,6 +1983,28 @@ bool CppVisitor::openForExpression(ForExpression* forExpression) {
 void CppVisitor::closeForExpression(ForExpression* forExpression) {
 }
 
+bool CppVisitor::openWhileExpression(WhileExpression* whileExpression) {
+    sourceFile->append("while (");
+    whileExpression->condition->accept(this);
+    sourceFile->append(")");
+    if (whileExpression->code->_isSimpleExpression()) {
+        sourceFile->append("\n");
+        sourceIndentLevel++;
+        indentSource();
+        whileExpression->code->accept(this);
+        sourceFile->append(";\n");
+        sourceIndentLevel--;
+    }
+    else {
+        sourceFile->append(" ");
+        whileExpression->code->accept(this);
+    }
+    return false;
+}
+
+void CppVisitor::closeWhileExpression(WhileExpression* whileExpression) {
+}
+
 bool CppVisitor::openParenthesizedExpression(ParenthesizedExpression* parenthesizedExpression) {
     sourceFile->append("(");
     if (parenthesizedExpression->parent->_isFunctionCall()) {
@@ -2201,29 +2223,6 @@ bool CppVisitor::openCaseItem(CaseItem* caseItem) {
 
 void CppVisitor::closeCaseItem(CaseItem* caseItem) {
     sourceFile->append(": ");
-}
-
-bool CppVisitor::openWhileExpression(WhileExpression* whileExpression) {
-    sourceFile->append("while (");
-    whileExpression->condition->accept(this);
-    sourceFile->append(")");
-    if (whileExpression->code->_isSimpleExpression()) {
-        sourceFile->append("\n");
-        sourceIndentLevel++;
-        indentSource();
-        whileExpression->code->accept(this);
-        sourceFile->append(";\n");
-        sourceIndentLevel--;
-    }
-    else {
-        sourceFile->append(" ");
-        whileExpression->code->accept(this);
-    }
-
-    return false;
-}
-
-void CppVisitor::closeWhileExpression(WhileExpression* whileExpression) {
 }
 
 bool CppVisitor::openRepeatExpression(RepeatExpression* repeatExpression) {

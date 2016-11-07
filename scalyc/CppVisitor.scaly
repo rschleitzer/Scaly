@@ -1969,7 +1969,23 @@ class CppVisitor : SyntaxVisitor {
     }
 
     function openWhileExpression(whileExpression: WhileExpression) -> bool {
-        return true
+        sourceFile.append("while (")
+        whileExpression.condition.accept(this)
+        sourceFile.append(")")
+        if whileExpression.code is SimpleExpression {
+            sourceFile.append("\n")
+            sourceIndentLevel++
+            indentSource()
+            whileExpression.code.accept(this)
+            sourceFile.append(";\n")
+            sourceIndentLevel--
+        }
+        else {
+            sourceFile.append(" ")
+            whileExpression.code.accept(this)
+        }
+
+        return false
     }
 
     function closeWhileExpression(whileExpression: WhileExpression) {
