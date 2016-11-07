@@ -1926,6 +1926,9 @@ bool CppVisitor::openIfExpression(IfExpression* ifExpression) {
     return false;
 }
 
+void CppVisitor::closeIfExpression(IfExpression* ifExpression) {
+}
+
 bool CppVisitor::openParenthesizedExpression(ParenthesizedExpression* parenthesizedExpression) {
     sourceFile->append("(");
     if (parenthesizedExpression->parent->_isFunctionCall()) {
@@ -2075,9 +2078,6 @@ void CppVisitor::closeParenthesizedExpression(ParenthesizedExpression* parenthes
             sourceFile->append(";");
         }
     }*/
-}
-
-void CppVisitor::closeIfExpression(IfExpression* ifExpression) {
 }
 
 void CppVisitor::visitNullExpression(NullExpression* nullExpression) {
