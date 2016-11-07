@@ -1783,7 +1783,7 @@ class CppVisitor : SyntaxVisitor {
         if identifierExpression.parent is PostfixExpression {
             let postfixExpression: PostfixExpression = (identifierExpression.parent) as PostfixExpression
             if postfixExpression.postfixes != null {
-                mutable postfixes: [Postfix] = postfixExpression.postfixes
+                let postfixes: [Postfix] = postfixExpression.postfixes
                 if (postfixes[0]) is Subscript {
                     sourceFile.append(")")
                 }
@@ -1792,11 +1792,25 @@ class CppVisitor : SyntaxVisitor {
     }
 
     function inAssignment(syntaxNode: SyntaxNode) -> bool {
-        return false
+        if syntaxNode is Assignment
+            return true
+
+        let parentNode: SyntaxNode = syntaxNode.parent
+        if parentNode == nullptr
+            return false
+
+        return inAssignment(parentNode)
     }
 
     function getAssignment(syntaxNode: SyntaxNode) -> existing Assignment {
-        return null
+        if syntaxNode is Assignment
+            return syntaxNode as Assignment
+
+        let parentNode: SyntaxNode = syntaxNode.parent
+        if parentNode == null
+            return null
+
+        return getAssignment(parentNode)
     }
 
     function inRetDeclaration(syntaxNode: SyntaxNode) -> bool {

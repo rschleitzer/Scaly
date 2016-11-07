@@ -1795,6 +1795,24 @@ void CppVisitor::visitIdentifierExpression(IdentifierExpression* identifierExpre
     }
 }
 
+bool CppVisitor::inAssignment(SyntaxNode* syntaxNode) {
+    if (syntaxNode->_isAssignment())
+        return true;
+    SyntaxNode* parentNode = syntaxNode->parent;
+    if (parentNode == nullptr)
+        return false;
+    return inAssignment(parentNode);
+}
+
+Assignment* CppVisitor::getAssignment(SyntaxNode* syntaxNode) {
+    if (syntaxNode->_isAssignment())
+        return (Assignment*)syntaxNode;
+    SyntaxNode* parentNode = syntaxNode->parent;
+    if (parentNode == nullptr)
+        return nullptr;
+    return getAssignment(parentNode);
+}
+
 bool CppVisitor::openParenthesizedExpression(ParenthesizedExpression* parenthesizedExpression) {
     sourceFile->append("(");
     if (parenthesizedExpression->parent->_isFunctionCall()) {
@@ -1986,24 +2004,6 @@ void CppVisitor::visitLiteralExpression(LiteralExpression* literalExpression) {
         }
         sourceFile->append("\'");
     }
-}
-
-bool CppVisitor::inAssignment(SyntaxNode* syntaxNode) {
-    if (syntaxNode->_isAssignment())
-        return true;
-    SyntaxNode* parentNode = syntaxNode->parent;
-    if (parentNode == nullptr)
-        return false;
-    return inAssignment(parentNode);
-}
-
-Assignment* CppVisitor::getAssignment(SyntaxNode* syntaxNode) {
-    if (syntaxNode->_isAssignment())
-        return (Assignment*)syntaxNode;
-    SyntaxNode* parentNode = syntaxNode->parent;
-    if (parentNode == nullptr)
-        return nullptr;
-    return getAssignment(parentNode);
 }
 
 bool CppVisitor::inRetDeclaration(SyntaxNode* syntaxNode) {
