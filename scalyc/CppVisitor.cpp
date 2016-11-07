@@ -1898,6 +1898,34 @@ void CppVisitor::visitLiteralExpression(LiteralExpression* literalExpression) {
     }
 }
 
+bool CppVisitor::openIfExpression(IfExpression* ifExpression) {
+    sourceFile->append("if (");
+    ifExpression->condition->accept(this);
+    sourceFile->append(")");
+    if (ifExpression->consequent->_isSimpleExpression()) {
+        sourceFile->append("\n");
+        sourceIndentLevel++;
+        indentSource();
+        ifExpression->consequent->accept(this);
+        sourceFile->append(";\n");
+        sourceIndentLevel--;
+    }
+    else {
+        sourceFile->append(" ");
+        ifExpression->consequent->accept(this);
+    }
+    if (ifExpression->elseClause != nullptr) {
+        if (ifExpression->elseClause->alternative->_isSimpleExpression()) {
+            ifExpression->elseClause->accept(this);
+            sourceFile->append(";\n");
+        }
+        else {
+            ifExpression->elseClause->accept(this);
+        }
+    }
+    return false;
+}
+
 bool CppVisitor::openParenthesizedExpression(ParenthesizedExpression* parenthesizedExpression) {
     sourceFile->append("(");
     if (parenthesizedExpression->parent->_isFunctionCall()) {
@@ -2047,35 +2075,6 @@ void CppVisitor::closeParenthesizedExpression(ParenthesizedExpression* parenthes
             sourceFile->append(";");
         }
     }*/
-}
-
-bool CppVisitor::openIfExpression(IfExpression* ifExpression) {
-    sourceFile->append("if (");
-    ifExpression->condition->accept(this);
-    sourceFile->append(")");
-    if (ifExpression->consequent->_isSimpleExpression()) {
-        sourceFile->append("\n");
-        sourceIndentLevel++;
-        indentSource();
-        ifExpression->consequent->accept(this);
-        sourceFile->append(";\n");
-        sourceIndentLevel--;
-    }
-    else {
-        sourceFile->append(" ");
-        ifExpression->consequent->accept(this);
-    }
-    if (ifExpression->elseClause) {
-        if (ifExpression->elseClause->alternative->_isSimpleExpression()) {
-            ifExpression->elseClause->accept(this);
-            sourceFile->append(";\n");
-        }
-        else {
-            ifExpression->elseClause->accept(this);
-        }
-    }
-
-    return false;
 }
 
 void CppVisitor::closeIfExpression(IfExpression* ifExpression) {

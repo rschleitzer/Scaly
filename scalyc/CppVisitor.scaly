@@ -1882,7 +1882,32 @@ class CppVisitor : SyntaxVisitor {
     }
 
     function openIfExpression(ifExpression: IfExpression) -> bool {
-        return true
+        sourceFile.append("if (")
+        ifExpression.condition.accept(this)
+        sourceFile.append(")")
+        if ifExpression.consequent is SimpleExpression {
+            sourceFile.append("\n")
+            sourceIndentLevel++
+            indentSource()
+            ifExpression.consequent.accept(this)
+            sourceFile.append(";\n")
+            sourceIndentLevel--
+        }
+        else {
+            sourceFile.append(" ")
+            ifExpression.consequent.accept(this)
+        }
+        if ifExpression.elseClause != null {
+            if ifExpression.elseClause.alternative is SimpleExpression {
+                ifExpression.elseClause.accept(this)
+                sourceFile.append(";\n")
+            }
+            else {
+                ifExpression.elseClause.accept(this)
+            }
+        }
+
+        return false
     }
 
     function closeIfExpression(ifExpression: IfExpression) {
