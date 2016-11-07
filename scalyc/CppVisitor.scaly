@@ -1442,7 +1442,7 @@ class CppVisitor : SyntaxVisitor {
                             let identifierCatchPattern: IdentifierCatchPattern = (catchClause.catchPattern) as IdentifierCatchPattern
                             sourceFile.append(" if (_")
                             sourceFile.append(identifierPattern.identifier)
-                            sourceFile.append("_result.getErrorCode() == _")
+                            sourceFile.append("_result->getErrorCode() == _")
                             sourceFile.append(identifierCatchPattern.name)
                             sourceFile.append("Code_")
                             var errorType: String = getErrorType(catchClause)
@@ -1508,7 +1508,7 @@ class CppVisitor : SyntaxVisitor {
                         indentSource()
                         sourceFile.append("switch (_")
                         sourceFile.append(identifierExpression.name)
-                        sourceFile.append("_error.getErrorCode()) {\n")
+                        sourceFile.append("_error->getErrorCode()) {\n")
                         sourceIndentLevel++
                     }
                     indentSource()

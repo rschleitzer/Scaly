@@ -1445,7 +1445,7 @@ bool CppVisitor::openCatchClause(CatchClause* catchClause) {
                         IdentifierCatchPattern* identifierCatchPattern = (IdentifierCatchPattern*)(catchClause->catchPattern);
                         sourceFile->append(" if (_");
                         sourceFile->append(identifierPattern->identifier);
-                        sourceFile->append("_result.getErrorCode() == _");
+                        sourceFile->append("_result->getErrorCode() == _");
                         sourceFile->append(identifierCatchPattern->name);
                         sourceFile->append("Code_");
                         String* errorType = getErrorType(catchClause);
@@ -1509,7 +1509,7 @@ bool CppVisitor::openCatchClause(CatchClause* catchClause) {
                     indentSource();
                     sourceFile->append("switch (_");
                     sourceFile->append(identifierExpression->name);
-                    sourceFile->append("_error.getErrorCode()) {\n");
+                    sourceFile->append("_error->getErrorCode()) {\n");
                     sourceIndentLevel++;
                 }
                 indentSource();
