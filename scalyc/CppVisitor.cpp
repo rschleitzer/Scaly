@@ -2132,13 +2132,13 @@ bool CppVisitor::boundToObject(BindingInitializer* bindingInitializer) {
 
 BindingInitializer* CppVisitor::getBindingInitializer(FunctionCall* functionCall) {
     if (functionCall->parent->_isPostfixExpression()) {
-        PostfixExpression* postfixExpression = (PostfixExpression*)functionCall->parent;
+        PostfixExpression* postfixExpression = (PostfixExpression*)(functionCall->parent);
         if (postfixExpression->parent->parent->parent->_isInitializer()) {
-            Initializer* initializer = (Initializer*)postfixExpression->parent->parent->parent;
+            Initializer* initializer = (Initializer*)(postfixExpression->parent->parent->parent);
             if (initializer->parent->_isPatternInitializer()) {
-                PatternInitializer* patternInitializer = (PatternInitializer*)initializer->parent;
+                PatternInitializer* patternInitializer = (PatternInitializer*)(initializer->parent);
                 if (patternInitializer->parent->_isBindingInitializer()) {
-                    return (BindingInitializer*)patternInitializer->parent;
+                    return (BindingInitializer*)(patternInitializer->parent);
                 }
             }
         }

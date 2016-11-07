@@ -2121,6 +2121,19 @@ class CppVisitor : SyntaxVisitor {
     }
 
     function getBindingInitializer(functionCall: FunctionCall) -> existing BindingInitializer {
+        if functionCall.parent is PostfixExpression {
+            let postfixExpression: PostfixExpression = (functionCall.parent) as PostfixExpression
+            if postfixExpression.parent.parent.parent is Initializer {
+                let initializer: Initializer = (postfixExpression.parent.parent.parent) as Initializer
+                if initializer.parent is PatternInitializer {
+                    let patternInitializer: PatternInitializer = (initializer.parent) as PatternInitializer
+                    if patternInitializer.parent is BindingInitializer {
+                        return (patternInitializer.parent) as BindingInitializer
+                    }
+                }
+            }
+        }
+
         return null
     }
 
