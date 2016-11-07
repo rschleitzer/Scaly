@@ -2203,7 +2203,70 @@ class CppVisitor : SyntaxVisitor {
     }
 
     function openThrowExpression(throwExpression: ThrowExpression) -> bool {
-        return true
+        mutable thrownType: String = getThrownType(throwExpression)
+        if thrownType == null
+            return false
+
+        sourceFile.append("return ")
+        mutable returnType: String = getReturnType(throwExpression)
+        if returnType != null {
+            sourceFile.append("_Result<")
+            sourceFile.append(returnType)
+            sourceFile.append(", ")
+            sourceFile.append(thrownType)
+            sourceFile.append(">(")
+        }
+        {
+            let buildError: bool = true
+            if throwExpression.arguments == null {
+                if throwExpression.error is IdentifierExpression {
+                    let errorExpression: IdentifierExpression = (throwExpression.error) as IdentifierExpression
+                    let errorName: String = errorExpression.name
+                    var catchClause: CatchClause = getCatchClause(throwExpression)
+                    if catchClause != null {
+                        if catchClause.catchPattern != null {
+                            if catchClause.catchPattern is WildCardCatchPattern {
+                                if catchClause.bindingPattern != null {
+                                    let bindingPattern: TuplePattern bindingPattern = catchClause.bindingPattern
+                                    if bindingPattern.elements != null {
+                                        if bindingPattern.elements.length() > 0 {
+                                            let elements: [TuplePatternElement] = bindingPattern.elements
+                                            let element: TuplePatternElement = elements[0]
+                                            if element.pattern is IdentifierPattern {
+                                                let pattern: IdentifierPattern = (element.pattern) as IdentifierPattern
+                                                if pattern.identifier.equals(errorName)
+                                                    buildError = false
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            if buildError {
+                sourceFile.append("new(_ep) ")
+                sourceFile.append(thrownType)
+                sourceFile.append("(")
+                if throwExpression.arguments != null
+                    sourceFile.append("new(_ep) ")
+                sourceFile.append("_")
+                sourceFile.append(thrownType)
+                if throwExpression.arguments == nullptr
+                    sourceFile.append("Code")
+                sourceFile.append("_")
+            }
+            if throwExpression.error != null
+                throwExpression.error.accept(this)
+            if throwExpression.arguments != null
+                throwExpression.arguments.accept(this)
+            if buildError
+                sourceFile.append(")")
+        }
+        if returnType != nullptr
+            sourceFile.append(")")
+        return false
     }
 
     function inWildcardCatchClause(throwExpression: ThrowExpression) -> bool {

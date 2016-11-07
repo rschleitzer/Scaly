@@ -2210,6 +2210,74 @@ void CppVisitor::closeReturnExpression(ReturnExpression* returnExpression) {
     }
 }
 
+bool CppVisitor::openThrowExpression(ThrowExpression* throwExpression) {
+    _Region _region; _Page* _p = _region.get();
+    String* thrownType = getThrownType(_p, throwExpression);
+    if (thrownType == nullptr)
+        return false;
+    sourceFile->append("return ");
+    String* returnType = getReturnType(_p, throwExpression);
+    if (returnType != nullptr) {
+        sourceFile->append("_Result<");
+        sourceFile->append(returnType);
+        sourceFile->append(", ");
+        sourceFile->append(thrownType);
+        sourceFile->append(">(");
+    }
+    {
+        bool buildError = true;
+        if (throwExpression->arguments == nullptr) {
+            if (throwExpression->error->_isIdentifierExpression()) {
+                IdentifierExpression* errorExpression = (IdentifierExpression*)(throwExpression->error);
+                String* errorName = errorExpression->name;
+                CatchClause* catchClause = getCatchClause(throwExpression);
+                if (catchClause != nullptr) {
+                    if (catchClause->catchPattern != nullptr) {
+                        if (catchClause->catchPattern->_isWildCardCatchPattern()) {
+                            if (catchClause->bindingPattern != nullptr) {
+                                TuplePattern* bindingPattern;
+                                bindingPattern = catchClause->bindingPattern;
+                                if (bindingPattern->elements != nullptr) {
+                                    if (bindingPattern->elements->length() > 0) {
+                                        _Vector<TuplePatternElement>* elements = bindingPattern->elements;
+                                        TuplePatternElement* element = *(*elements)[0];
+                                        if (element->pattern->_isIdentifierPattern()) {
+                                            IdentifierPattern* pattern = (IdentifierPattern*)(element->pattern);
+                                            if (pattern->identifier->equals(errorName))
+                                                buildError = false;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        if (buildError) {
+            sourceFile->append("new(_ep) ");
+            sourceFile->append(thrownType);
+            sourceFile->append("(");
+            if (throwExpression->arguments != nullptr)
+                sourceFile->append("new(_ep) ");
+            sourceFile->append("_");
+            sourceFile->append(thrownType);
+            if (throwExpression->arguments == nullptr)
+                sourceFile->append("Code");
+            sourceFile->append("_");
+        }
+        if (throwExpression->error != nullptr)
+            throwExpression->error->accept(this);
+        if (throwExpression->arguments != nullptr)
+            throwExpression->arguments->accept(this);
+        if (buildError)
+            sourceFile->append(")");
+    }
+    if (returnType != nullptr)
+        sourceFile->append(")");
+    return false;
+}
+
 void CppVisitor::visitNullExpression(NullExpression* nullExpression) {
     sourceFile->append("nullptr");
 }
@@ -2277,72 +2345,6 @@ bool CppVisitor::openCaseItem(CaseItem* caseItem) {
 
 void CppVisitor::closeCaseItem(CaseItem* caseItem) {
     sourceFile->append(": ");
-}
-
-bool CppVisitor::openThrowExpression(ThrowExpression* throwExpression) {
-    _Region _region; _Page* _p = _region.get();
-    String* thrownType = getThrownType(_p, throwExpression);
-    if (thrownType == nullptr)
-        return false;
-    sourceFile->append("return ");
-    String* returnType = getReturnType(_p, throwExpression);
-    if (returnType != nullptr) {
-        sourceFile->append("_Result<");
-        sourceFile->append(returnType);
-        sourceFile->append(", ");
-        sourceFile->append(thrownType);
-        sourceFile->append(">(");
-    }
-    {
-        bool buildError = true;
-        if (throwExpression->arguments == nullptr) {
-            if (throwExpression->error->_isIdentifierExpression()) {
-                IdentifierExpression* errorExpression = (IdentifierExpression*)(throwExpression->error);
-                String* errorName = errorExpression->name;
-                CatchClause* catchClause = getCatchClause(throwExpression);
-                if (catchClause != nullptr) {
-                    if (catchClause->catchPattern != nullptr) {
-                        if (catchClause->catchPattern->_isWildCardCatchPattern()) {
-                            if (catchClause->bindingPattern != nullptr) {
-                                TuplePattern* bindingPattern = catchClause->bindingPattern;
-                                if (bindingPattern->elements != nullptr) {
-                                    if (bindingPattern->elements->length() > 0) {
-                                        TuplePatternElement* element = *(*(bindingPattern->elements))[0];
-                                        if (element->pattern->_isIdentifierPattern()) {
-                                            IdentifierPattern* pattern = (IdentifierPattern*)element->pattern;
-                                            if (pattern->identifier->equals(errorName))
-                                                buildError = false;
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        if (buildError) {
-            sourceFile->append("new(_ep) ");
-            sourceFile->append(thrownType);
-            sourceFile->append("(");
-            if (throwExpression->arguments != nullptr)
-                sourceFile->append("new(_ep) ");
-            sourceFile->append("_");
-            sourceFile->append(thrownType);
-            if (throwExpression->arguments == nullptr)
-                sourceFile->append("Code");
-            sourceFile->append("_");
-        }
-        if (throwExpression->error != nullptr)
-            throwExpression->error->accept(this);
-        if (throwExpression->arguments != nullptr)
-            throwExpression->arguments->accept(this);
-        if (buildError)
-            sourceFile->append(")");
-    }
-    if (returnType != nullptr) 
-        sourceFile->append(")");
-    return false;
 }
 
 bool CppVisitor::inWildcardCatchClause(ThrowExpression* throwExpression) {
