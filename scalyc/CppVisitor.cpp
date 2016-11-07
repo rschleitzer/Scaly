@@ -1580,9 +1580,9 @@ bool CppVisitor::openCatchClause(CatchClause* catchClause) {
 IdentifierExpression* CppVisitor::getIdentifierExpression(PostfixExpression* postfixExpression) {
     if (postfixExpression->parent->parent->parent->parent->_isCodeBlock()) {
         if (postfixExpression->parent->_isPrefixExpression()) {
-            PrefixExpression* prefixExpression = (PrefixExpression*)postfixExpression->parent;
+            PrefixExpression* prefixExpression = (PrefixExpression*)(postfixExpression->parent);
             if (prefixExpression->expression->primaryExpression->_isIdentifierExpression()) {
-                return (IdentifierExpression*)prefixExpression->expression->primaryExpression;
+                return (IdentifierExpression*)(prefixExpression->expression->primaryExpression);
             }
         }
     }
@@ -1593,12 +1593,13 @@ String* CppVisitor::getErrorType(CatchClause* catchClause) {
     if (catchClause->bindingPattern != nullptr) {
         if (catchClause->bindingPattern->elements != nullptr) {
             if (catchClause->bindingPattern->elements->length() == 1) {
-                TuplePatternElement* element = *(*catchClause->bindingPattern->elements)[0];
+                _Vector<TuplePatternElement>* elements = catchClause->bindingPattern->elements;
+                TuplePatternElement* element = *(*elements)[0];
                 if (element->pattern->_isIdentifierPattern()) {
-                    IdentifierPattern* pattern = (IdentifierPattern*)element->pattern;
+                    IdentifierPattern* pattern = (IdentifierPattern*)(element->pattern);
                     if (pattern->annotationForType != nullptr) {
                         if (pattern->annotationForType->annotationForType->_isTypeIdentifier()) {
-                            TypeIdentifier* typeIdentifier = (TypeIdentifier*)pattern->annotationForType->annotationForType;
+                            TypeIdentifier* typeIdentifier = (TypeIdentifier*)(pattern->annotationForType->annotationForType);
                             return typeIdentifier->name;
                         }
                     }
@@ -1639,11 +1640,12 @@ void CppVisitor::closeFunctionCall(FunctionCall* functionCall) {
 
 bool CppVisitor::openExplicitMemberExpression(ExplicitMemberExpression* explicitMemberExpression) {
     if (explicitMemberExpression->parent->_isPostfixExpression()) {
-        PostfixExpression* postfixExpression = (PostfixExpression*)explicitMemberExpression->parent;
+        PostfixExpression* postfixExpression = (PostfixExpression*)(explicitMemberExpression->parent);
         if (postfixExpression->primaryExpression->_isIdentifierExpression()) {
-            IdentifierExpression* identifierExpression = (IdentifierExpression*)postfixExpression->primaryExpression;
+            IdentifierExpression* identifierExpression = (IdentifierExpression*)(postfixExpression->primaryExpression);
             if (postfixExpression->postfixes->length() > 1) {
-                if ((*((*postfixExpression->postfixes)[0]) == (Postfix*)explicitMemberExpression) && ((*(*postfixExpression->postfixes)[1])->_isFunctionCall())) {
+                _Vector<Postfix>* postfixes = postfixExpression->postfixes;
+                if (((Postfix*)*(*postfixes)[0]) && ((*(*postfixes)[1])->_isFunctionCall())) {
                     if (isClass(identifierExpression->name)) {
                         sourceFile->append("::");
                         return true;

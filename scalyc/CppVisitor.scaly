@@ -1579,11 +1579,38 @@ class CppVisitor : SyntaxVisitor {
     }
 
     function getIdentifierExpression(postfixExpression: PostfixExpression) -> existing IdentifierExpression {
+        if postfixExpression.parent.parent.parent.parent is CodeBlock {
+            if postfixExpression.parent is PrefixExpression {
+                let prefixExpression: PrefixExpression = (postfixExpression.parent) as PrefixExpression
+                if prefixExpression.expression.primaryExpression is IdentifierExpression {
+                    return (prefixExpression.expression.primaryExpression) as IdentifierExpression
+                }
+            }
+        }
+
         return null
     }
 
     function getErrorType(catchClause: CatchClause) -> existing String {
-        return 0
+        if catchClause.bindingPattern != null {
+            if catchClause.bindingPattern.elements != null {
+                if catchClause.bindingPattern.elements.length() == 1 {
+                    let elements: [TuplePatternElement] = catchClause.bindingPattern.elements
+                    let element: TuplePatternElement = elements[0]
+                    if element.pattern is IdentifierPattern {
+                        let pattern: IdentifierPattern = (element.pattern) as IdentifierPattern
+                        if pattern.annotationForType != null {
+                            if pattern.annotationForType.annotationForType is TypeIdentifier {
+                                let typeIdentifier: TypeIdentifier = (pattern.annotationForType.annotationForType) as TypeIdentifier
+                                return typeIdentifier.name
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return null
     }
 
     function closeCatchClause(catchClause: CatchClause) {
@@ -1604,6 +1631,7 @@ class CppVisitor : SyntaxVisitor {
     }
 
     function visitOperatorPostfix(operatorPostfix: OperatorPostfix) {
+        sourceFile.append(operatorPostfix.postfixOperator)
     }
 
     function openFunctionCall(functionCall: FunctionCall) -> bool {
@@ -1614,6 +1642,23 @@ class CppVisitor : SyntaxVisitor {
     }
 
     function openExplicitMemberExpression(explicitMemberExpression: ExplicitMemberExpression) -> bool {
+        if explicitMemberExpression.parent is PostfixExpression {
+            let postfixExpression: PostfixExpression = (explicitMemberExpression.parent) as PostfixExpression
+            if postfixExpression.primaryExpression is IdentifierExpression {
+                let identifierExpression: IdentifierExpression = (postfixExpression.primaryExpression) as IdentifierExpression
+                if postfixExpression.postfixes.length() > 1 {
+                    let postfixes: [Postfix] = postfixExpression.postfixes
+                    if (postfixes[0] == explicitMemberExpression as Postfix) && ((postfixes[1]) is FunctionCall) {
+                        if isClass(identifierExpression.name) {
+                            sourceFile.append("::")
+                            return true
+                        }
+                    }
+                }
+            }
+        }
+        sourceFile.append("->")
+
         return true
     }
 
@@ -1621,10 +1666,13 @@ class CppVisitor : SyntaxVisitor {
     }
 
     function openSubscript(subscript: Subscript) -> bool {
+        sourceFile.append("[")
+
         return true
     }
 
     function closeSubscript(subscript: Subscript) {
+        sourceFile.append("]")
     }
 
     function openExpressionElement(expressionElement: ExpressionElement) -> bool {
@@ -1632,6 +1680,8 @@ class CppVisitor : SyntaxVisitor {
     }
 
     function closeExpressionElement(expressionElement: ExpressionElement) {
+        if !isLastExpressionElement(expressionElement)
+            sourceFile.append(", ")
     }
 
     function isLastExpressionElement(expressionElement: ExpressionElement) -> bool {
