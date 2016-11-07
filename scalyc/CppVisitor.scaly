@@ -1946,7 +1946,7 @@ class CppVisitor : SyntaxVisitor {
                     sourceIndentLevel++
                     indentSource()
                     if forExpression.pattern is IdentifierPattern {
-                        IdentifierPattern* identifierPattern = (forExpression.pattern) as IdentifierPattern
+                        let identifierPattern: IdentifierPattern = (forExpression.pattern) as IdentifierPattern
                         sourceFile.append(identifierPattern.identifier)
                         sourceFile.append(" = *(*")
                         sourceFile.append(collectionName)

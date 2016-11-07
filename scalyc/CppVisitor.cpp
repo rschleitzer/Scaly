@@ -1939,7 +1939,7 @@ void CppVisitor::closeSwitchExpression(SwitchExpression* switchExpression) {
 
 bool CppVisitor::openForExpression(ForExpression* forExpression) {
     Pattern* pattern = forExpression->pattern;
-    pattern->accept(this);    
+    pattern->accept(this);
     if (pattern->_isIdentifierPattern()) {
         sourceFile->append(" = nullptr;\n");
         indentSource();
@@ -1948,7 +1948,7 @@ bool CppVisitor::openForExpression(ForExpression* forExpression) {
         if (expression->_isSimpleExpression()) {
             SimpleExpression* simpleExpression = (SimpleExpression*)expression;
             if (simpleExpression->prefixExpression->expression->primaryExpression->_isIdentifierExpression()) {
-                IdentifierExpression* identifierExpression = (IdentifierExpression*)simpleExpression->prefixExpression->expression->primaryExpression;
+                IdentifierExpression* identifierExpression = (IdentifierExpression*)(simpleExpression->prefixExpression->expression->primaryExpression);
                 String* collectionName = identifierExpression->name;
                 sourceFile->append(collectionName);
                 sourceFile->append("_length = ");
@@ -1961,7 +1961,7 @@ bool CppVisitor::openForExpression(ForExpression* forExpression) {
                 sourceIndentLevel++;
                 indentSource();
                 if (forExpression->pattern->_isIdentifierPattern()) {
-                    IdentifierPattern* identifierPattern = (IdentifierPattern*)forExpression->pattern;
+                    IdentifierPattern* identifierPattern = (IdentifierPattern*)(forExpression->pattern);
                     sourceFile->append(identifierPattern->identifier);
                     sourceFile->append(" = *(*");
                     sourceFile->append(collectionName);
