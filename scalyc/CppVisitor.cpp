@@ -1813,6 +1813,30 @@ Assignment* CppVisitor::getAssignment(SyntaxNode* syntaxNode) {
     return getAssignment(parentNode);
 }
 
+bool CppVisitor::inRetDeclaration(SyntaxNode* syntaxNode) {
+    if (syntaxNode == nullptr)
+        return false;
+    BindingInitializer* bindingInitializer = nullptr;
+    do {
+        if (syntaxNode->_isBindingInitializer()) {
+            bindingInitializer = ((BindingInitializer*)syntaxNode);
+            break;
+        }
+        syntaxNode = syntaxNode->parent;
+    }
+    while (syntaxNode != nullptr);
+    if (bindingInitializer == nullptr)
+        return false;
+    if (bindingInitializer->initializer != nullptr) {
+        PatternInitializer* patternInitializer = bindingInitializer->initializer;
+        if (patternInitializer->pattern->_isIdentifierPattern()) {
+            IdentifierPattern* identifierPattern = (IdentifierPattern*)(patternInitializer->pattern);
+            return identifierPattern->identifier->equals("ret");
+        }
+    }
+    return false;
+}
+
 bool CppVisitor::openParenthesizedExpression(ParenthesizedExpression* parenthesizedExpression) {
     sourceFile->append("(");
     if (parenthesizedExpression->parent->_isFunctionCall()) {
@@ -2004,31 +2028,6 @@ void CppVisitor::visitLiteralExpression(LiteralExpression* literalExpression) {
         }
         sourceFile->append("\'");
     }
-}
-
-bool CppVisitor::inRetDeclaration(SyntaxNode* syntaxNode) {
-    if (syntaxNode == nullptr)
-        return false;
-    BindingInitializer* bindingInitializer = nullptr;
-    do {
-        if (syntaxNode->_isBindingInitializer()) {
-            bindingInitializer = (BindingInitializer*)syntaxNode;
-            break;
-        }
-        syntaxNode = syntaxNode->parent;
-    } 
-    while (syntaxNode != nullptr);
-    if (bindingInitializer == nullptr)
-        return false;
-    if (bindingInitializer->initializer != nullptr) {
-        PatternInitializer* patternInitializer = bindingInitializer->initializer;
-        if (patternInitializer->pattern->_isIdentifierPattern()) {
-            IdentifierPattern* identifierPattern = (IdentifierPattern*)patternInitializer->pattern;
-            return identifierPattern->identifier->equals("ret");
-        }
-    }
-
-    return false;
 }
 
 bool CppVisitor::openIfExpression(IfExpression* ifExpression) {

@@ -1814,6 +1814,31 @@ class CppVisitor : SyntaxVisitor {
     }
 
     function inRetDeclaration(syntaxNode: SyntaxNode) -> bool {
+        if syntaxNode == null
+            return false
+
+        var bindingInitializer: BindingInitializer = null
+
+        repeat {
+            if syntaxNode is BindingInitializer {
+                bindingInitializer = (syntaxNode as BindingInitializer)
+                break
+            }
+            syntaxNode = syntaxNode.parent
+        } 
+        while syntaxNode != null
+
+        if bindingInitializer == null
+            return false
+
+        if bindingInitializer.initializer != null {
+            let patternInitializer: PatternInitializer = bindingInitializer.initializer
+            if patternInitializer.pattern is IdentifierPattern {
+                let identifierPattern: IdentifierPattern = (patternInitializer.pattern) as IdentifierPattern
+                return identifierPattern.identifier.equals("ret")
+            }
+        }
+
         return false
     }
 
