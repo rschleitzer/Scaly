@@ -1929,6 +1929,60 @@ bool CppVisitor::openIfExpression(IfExpression* ifExpression) {
 void CppVisitor::closeIfExpression(IfExpression* ifExpression) {
 }
 
+bool CppVisitor::openSwitchExpression(SwitchExpression* switchExpression) {
+    sourceFile->append("switch (");
+    return true;
+}
+
+void CppVisitor::closeSwitchExpression(SwitchExpression* switchExpression) {
+}
+
+bool CppVisitor::openForExpression(ForExpression* forExpression) {
+    Pattern* pattern = forExpression->pattern;
+    pattern->accept(this);    
+    if (pattern->_isIdentifierPattern()) {
+        sourceFile->append(" = nullptr;\n");
+        indentSource();
+        sourceFile->append("size_t _");
+        Expression* expression = forExpression->expression;
+        if (expression->_isSimpleExpression()) {
+            SimpleExpression* simpleExpression = (SimpleExpression*)expression;
+            if (simpleExpression->prefixExpression->expression->primaryExpression->_isIdentifierExpression()) {
+                IdentifierExpression* identifierExpression = (IdentifierExpression*)simpleExpression->prefixExpression->expression->primaryExpression;
+                String* collectionName = identifierExpression->name;
+                sourceFile->append(collectionName);
+                sourceFile->append("_length = ");
+                sourceFile->append(collectionName);
+                sourceFile->append("->length();\n");
+                indentSource();
+                sourceFile->append("for (size_t _i = 0; _i < _");
+                sourceFile->append(collectionName);
+                sourceFile->append("_length; _i++) {\n");
+                sourceIndentLevel++;
+                indentSource();
+                if (forExpression->pattern->_isIdentifierPattern()) {
+                    IdentifierPattern* identifierPattern = (IdentifierPattern*)forExpression->pattern;
+                    sourceFile->append(identifierPattern->identifier);
+                    sourceFile->append(" = *(*");
+                    sourceFile->append(collectionName);
+                    sourceFile->append(")[_i];\n");
+                    indentSource();
+                    forExpression->code->accept(this);
+                    if (forExpression->code->_isSimpleExpression())
+                        sourceFile->append(";\n");
+                    sourceIndentLevel--;
+                    indentSource();
+                    sourceFile->append("}\n");
+                }
+            }
+        }
+    }
+    return false;
+}
+
+void CppVisitor::closeForExpression(ForExpression* forExpression) {
+}
+
 bool CppVisitor::openParenthesizedExpression(ParenthesizedExpression* parenthesizedExpression) {
     sourceFile->append("(");
     if (parenthesizedExpression->parent->_isFunctionCall()) {
@@ -2105,14 +2159,6 @@ bool CppVisitor::openElseClause(ElseClause* elseClause) {
 void CppVisitor::closeElseClause(ElseClause* elseClause) {
 }
 
-bool CppVisitor::openSwitchExpression(SwitchExpression* switchExpression) {
-    sourceFile->append("switch (");
-    return true;
-}
-
-void CppVisitor::closeSwitchExpression(SwitchExpression* switchExpression) {
-}
-
 bool CppVisitor::openCurliedSwitchBody(CurliedSwitchBody* curliedSwitchBody) {
     sourceFile->append(") {\n");
     sourceIndentLevel++;
@@ -2155,52 +2201,6 @@ bool CppVisitor::openCaseItem(CaseItem* caseItem) {
 
 void CppVisitor::closeCaseItem(CaseItem* caseItem) {
     sourceFile->append(": ");
-}
-
-bool CppVisitor::openForExpression(ForExpression* forExpression) {
-    Pattern* pattern = forExpression->pattern;
-    pattern->accept(this);    
-    if (pattern->_isIdentifierPattern()) {
-        sourceFile->append(" = nullptr;\n");
-        indentSource();
-        sourceFile->append("size_t _");
-        Expression* expression = forExpression->expression;
-        if (expression->_isSimpleExpression()) {
-            SimpleExpression* simpleExpression = (SimpleExpression*)expression;
-            if (simpleExpression->prefixExpression->expression->primaryExpression->_isIdentifierExpression()) {
-                IdentifierExpression* identifierExpression = (IdentifierExpression*)simpleExpression->prefixExpression->expression->primaryExpression;
-                String* collectionName = identifierExpression->name;
-                sourceFile->append(collectionName);
-                sourceFile->append("_length = ");
-                sourceFile->append(collectionName);
-                sourceFile->append("->length();\n");
-                indentSource();
-                sourceFile->append("for (size_t _i = 0; _i < _");
-                sourceFile->append(collectionName);
-                sourceFile->append("_length; _i++) {\n");
-                sourceIndentLevel++;
-                indentSource();
-                if (forExpression->pattern->_isIdentifierPattern()) {
-                    IdentifierPattern* identifierPattern = (IdentifierPattern*)forExpression->pattern;
-                    sourceFile->append(identifierPattern->identifier);
-                    sourceFile->append(" = *(*");
-                    sourceFile->append(collectionName);
-                    sourceFile->append(")[_i];\n");
-                    indentSource();
-                    forExpression->code->accept(this);
-                    if (forExpression->code->_isSimpleExpression())
-                        sourceFile->append(";\n");
-                    sourceIndentLevel--;
-                    indentSource();
-                    sourceFile->append("}\n");
-                }
-            }
-        }
-    }
-    return false;
-}
-
-void CppVisitor::closeForExpression(ForExpression* forExpression) {
 }
 
 bool CppVisitor::openWhileExpression(WhileExpression* whileExpression) {

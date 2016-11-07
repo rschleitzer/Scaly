@@ -1914,6 +1914,8 @@ class CppVisitor : SyntaxVisitor {
     }
 
     function openSwitchExpression(switchExpression: SwitchExpression) -> bool {
+        sourceFile.append("switch (")
+
         return true
     }
 
@@ -1921,7 +1923,46 @@ class CppVisitor : SyntaxVisitor {
     }
 
     function openForExpression(forExpression: ForExpression) -> bool {
-        return true
+        let pattern: Pattern = forExpression.pattern
+        pattern.accept(this)    
+        if pattern is IdentifierPattern {
+            sourceFile.append(" = nullptr;\n")
+            indentSource()
+            sourceFile.append("size_t _")
+            let expression: Expression = forExpression.expression
+            if expression is SimpleExpression {
+                let simpleExpression: SimpleExpression = expression as SimpleExpression
+                if simpleExpression.prefixExpression.expression.primaryExpression is IdentifierExpression {
+                    let identifierExpression: IdentifierExpression = (simpleExpression.prefixExpression.expression.primaryExpression) as IdentifierExpression
+                    let collectionName: String = identifierExpression.name
+                    sourceFile.append(collectionName)
+                    sourceFile.append("_length = ")
+                    sourceFile.append(collectionName)
+                    sourceFile.append("->length();\n")
+                    indentSource()
+                    sourceFile.append("for (size_t _i = 0; _i < _")
+                    sourceFile.append(collectionName)
+                    sourceFile.append("_length; _i++) {\n")
+                    sourceIndentLevel++
+                    indentSource()
+                    if forExpression.pattern is IdentifierPattern {
+                        IdentifierPattern* identifierPattern = (forExpression.pattern) as IdentifierPattern
+                        sourceFile.append(identifierPattern.identifier)
+                        sourceFile.append(" = *(*")
+                        sourceFile.append(collectionName)
+                        sourceFile.append(")[_i];\n")
+                        indentSource()
+                        forExpression.code.accept(this)
+                        if forExpression.code is SimpleExpression
+                            sourceFile.append(";\n")
+                        sourceIndentLevel--
+                        indentSource()
+                        sourceFile.append("}\n")
+                    }
+                }
+            }
+        }
+        return false
     }
 
     function closeForExpression(forExpression: ForExpression) {
