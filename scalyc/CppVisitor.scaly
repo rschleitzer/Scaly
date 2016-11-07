@@ -2042,14 +2042,15 @@ class CppVisitor : SyntaxVisitor {
                 }
             }
 
-            bool parameterInserted = false
+            let parameterInserted: bool = false
             if !callsInitializer(functionCall) {
                 if assignedToMutableObject(functionCall) {
                     sourceFile.append("_p")
                     parameterInserted = true
                 }
                 if assignedToConstantObject(functionCall) {
-                    if getReturnType(functionCall) != null
+                    mutable returnType: String = getReturnType(functionCall)
+                    if returnType != null
                         sourceFile.append("_rp")
                     else
                         sourceFile.append("_p")
@@ -2058,9 +2059,9 @@ class CppVisitor : SyntaxVisitor {
             }
             if catchesError(functionCall) {
                 if !inThrow(functionCall) {
-                    if (parameterInserted)
+                    if parameterInserted
                         sourceFile.append(", ")
-                    let thrownType: String = getThrownType(functionCall)
+                    mutable thrownType: String = getThrownType(functionCall)
                     if thrownType == null
                         sourceFile.append("_p")
                     else
