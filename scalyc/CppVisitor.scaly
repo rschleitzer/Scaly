@@ -2270,6 +2270,12 @@ class CppVisitor : SyntaxVisitor {
     }
 
     function inWildcardCatchClause(throwExpression: ThrowExpression) -> bool {
+        var catchClause: CatchClause = getCatchClause(throwExpression)
+        if catchClause != null
+            if catchClause.catchPattern is WildCardCatchPattern
+                return true
+
+        return false
     }
 
     function getCatchClause(syntaxNode: SyntaxNode) -> existing CatchClause {

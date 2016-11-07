@@ -2278,6 +2278,14 @@ bool CppVisitor::openThrowExpression(ThrowExpression* throwExpression) {
     return false;
 }
 
+bool CppVisitor::inWildcardCatchClause(ThrowExpression* throwExpression) {
+    CatchClause* catchClause = getCatchClause(throwExpression);
+    if (catchClause != nullptr)
+        if (catchClause->catchPattern->_isWildCardCatchPattern())
+            return true;
+    return false;
+}
+
 void CppVisitor::visitNullExpression(NullExpression* nullExpression) {
     sourceFile->append("nullptr");
 }
@@ -2345,14 +2353,6 @@ bool CppVisitor::openCaseItem(CaseItem* caseItem) {
 
 void CppVisitor::closeCaseItem(CaseItem* caseItem) {
     sourceFile->append(": ");
-}
-
-bool CppVisitor::inWildcardCatchClause(ThrowExpression* throwExpression) {
-    CatchClause* catchClause = getCatchClause(throwExpression);
-    if (catchClause != nullptr)
-        if (catchClause->catchPattern->_isWildCardCatchPattern())
-            return true;
-    return false;
 }
 
 CatchClause* CppVisitor::getCatchClause(SyntaxNode* syntaxNode) {
