@@ -2196,6 +2196,10 @@ class CppVisitor : SyntaxVisitor {
     }
 
     function closeReturnExpression(returnExpression: ReturnExpression) {
+        mutable returnType: String = getReturnType(returnExpression)
+        if returnType != null {
+            sourceFile.append(")")
+        }
     }
 
     function openThrowExpression(throwExpression: ThrowExpression) -> bool {
