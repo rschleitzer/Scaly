@@ -2027,9 +2027,9 @@ class CppVisitor : SyntaxVisitor {
                     if !isClass(identifierExpression.name) {
                         if postfixExpression.parent.parent is Assignment {
                             let assignment: Assignment = (postfixExpression.parent.parent) as Assignment
-                            let member: String = getMemberIfCreatingObject(assignment)
+                            mutable member: String = getMemberIfCreatingObject(assignment)
                             if member != null {
-                                let classDeclaration: ClassDeclaration = getClassDeclaration(assignment)
+                                var classDeclaration: ClassDeclaration = getClassDeclaration(assignment)
                                 if isVariableMember(member, classDeclaration) {
                                     sourceFile.append(member)
                                     sourceFile.append("->getPage()")

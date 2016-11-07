@@ -2032,22 +2032,22 @@ void CppVisitor::closeRepeatExpression(RepeatExpression* repeatExpression) {
 bool CppVisitor::openParenthesizedExpression(ParenthesizedExpression* parenthesizedExpression) {
     sourceFile->append("(");
     if (parenthesizedExpression->parent->_isFunctionCall()) {
-        FunctionCall* functionCall = (FunctionCall*)parenthesizedExpression->parent;
+        FunctionCall* functionCall = (FunctionCall*)(parenthesizedExpression->parent);
         if (functionCall->parent->_isPostfixExpression()) {
-            PostfixExpression* postfixExpression = (PostfixExpression*)functionCall->parent;
+            PostfixExpression* postfixExpression = (PostfixExpression*)(functionCall->parent);
             if (postfixExpression->primaryExpression->_isIdentifierExpression()) {
-                IdentifierExpression* identifierExpression = (IdentifierExpression*)postfixExpression->primaryExpression;
+                IdentifierExpression* identifierExpression = (IdentifierExpression*)(postfixExpression->primaryExpression);
                 if (!isClass(identifierExpression->name)) {
                     if (postfixExpression->parent->parent->_isAssignment()) {
                         _Region _region; _Page* _p = _region.get();
-                        Assignment* assignment = (Assignment*)postfixExpression->parent->parent;
+                        Assignment* assignment = (Assignment*)(postfixExpression->parent->parent);
                         String* member = getMemberIfCreatingObject(_p, assignment);
                         if (member != nullptr) {
                             ClassDeclaration* classDeclaration = getClassDeclaration(assignment);
                             if (isVariableMember(member, classDeclaration)) {
                                 sourceFile->append(member);
                                 sourceFile->append("->getPage()");
-                                if ((functionCall->arguments != nullptr) && (functionCall->arguments->expressionElements != nullptr))
+                                if (functionCall->arguments != nullptr && functionCall->arguments->expressionElements != nullptr)
                                     sourceFile->append(", ");
                             }
                         }
@@ -2063,7 +2063,8 @@ bool CppVisitor::openParenthesizedExpression(ParenthesizedExpression* parenthesi
             }
             if (assignedToConstantObject(functionCall)) {
                 _Region _region; _Page* _p = _region.get();
-                if (getReturnType(_p, functionCall) != nullptr)
+                String* returnType = getReturnType(_p, functionCall);
+                if (returnType != nullptr)
                     sourceFile->append("_rp");
                 else
                     sourceFile->append("_p");
