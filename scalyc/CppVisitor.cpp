@@ -1410,14 +1410,15 @@ void CppVisitor::closeTypeCast(TypeCast* typeCast) {
 
 bool CppVisitor::openCatchClause(CatchClause* catchClause) {
     if (catchClause->parent->_isFunctionCall()) {
-        FunctionCall* functionCall = (FunctionCall*)catchClause->parent;
+        FunctionCall* functionCall = (FunctionCall*)(catchClause->parent);
         {
             BindingInitializer* bindingInitializer = getBindingInitializer(functionCall);
             if (bindingInitializer != nullptr) {
                 PatternInitializer* patternInitializer = bindingInitializer->initializer;
                 if (patternInitializer->pattern->_isIdentifierPattern()) {
-                    IdentifierPattern* identifierPattern = (IdentifierPattern*)patternInitializer->pattern;
-                    if (*(*functionCall->catchClauses)[0] == catchClause) {
+                    IdentifierPattern* identifierPattern = (IdentifierPattern*)(patternInitializer->pattern);
+                    _Vector<CatchClause>* catchClauses = functionCall->catchClauses;
+                    if (*(*catchClauses)[0] == catchClause) {
                         sourceFile->append(";\n");
                         indentSource();
                         identifierPattern->annotationForType->accept(this);
@@ -1430,9 +1431,9 @@ bool CppVisitor::openCatchClause(CatchClause* catchClause) {
                         sourceFile->append("_result.succeeded()) {\n");
                         sourceIndentLevel++;
                         indentSource();
-                        sourceFile->append(identifierPattern->identifier);                    
+                        sourceFile->append(identifierPattern->identifier);
                         sourceFile->append(" = _");
-                        sourceFile->append(identifierPattern->identifier);                    
+                        sourceFile->append(identifierPattern->identifier);
                         sourceFile->append("_result.getResult();\n");
                         sourceIndentLevel--;
                         indentSource();
@@ -1441,7 +1442,7 @@ bool CppVisitor::openCatchClause(CatchClause* catchClause) {
                     indentSource();
                     sourceFile->append("else");
                     if (catchClause->catchPattern->_isIdentifierCatchPattern()) {
-                        IdentifierCatchPattern* identifierCatchPattern = (IdentifierCatchPattern*)catchClause->catchPattern;
+                        IdentifierCatchPattern* identifierCatchPattern = (IdentifierCatchPattern*)(catchClause->catchPattern);
                         sourceFile->append(" if (_");
                         sourceFile->append(identifierPattern->identifier);
                         sourceFile->append("_result.getErrorCode() == _");
@@ -1453,19 +1454,19 @@ bool CppVisitor::openCatchClause(CatchClause* catchClause) {
                         sourceFile->append(")");
                     }
                     sourceFile->append(" {\n");
-                    
                     if (catchClause->catchPattern->_isWildCardCatchPattern()) {
                         if (catchClause->bindingPattern != nullptr) {
                             TuplePattern* bindingPattern = catchClause->bindingPattern;
                             if (bindingPattern->elements != nullptr) {
                                 if (bindingPattern->elements->length() > 0) {
-                                    TuplePatternElement* element = *(*(bindingPattern->elements))[0];
+                                    _Vector<TuplePatternElement>* elements = bindingPattern->elements;
+                                    TuplePatternElement* element = *(*elements)[0];
                                     if (element->pattern->_isIdentifierPattern()) {
-                                        IdentifierPattern* pattern = (IdentifierPattern*)element->pattern;
+                                        IdentifierPattern* pattern = (IdentifierPattern*)(element->pattern);
                                         sourceIndentLevel++;
                                         indentSource();
                                         sourceFile->append("auto ");
-                                        sourceFile->append(pattern->identifier);                    
+                                        sourceFile->append(pattern->identifier);
                                         sourceFile->append(" = _");
                                         sourceFile->append(identifierPattern->identifier);
                                         sourceFile->append("_result.getError();\n");
@@ -1475,11 +1476,10 @@ bool CppVisitor::openCatchClause(CatchClause* catchClause) {
                             }
                         }
                     }
-                    
                     sourceIndentLevel++;
                     indentSource();
                     if (catchClause->expression->_isSimpleExpression()) {
-                        SimpleExpression* simpleExpression = (SimpleExpression*)catchClause->expression;
+                        SimpleExpression* simpleExpression = (SimpleExpression*)(catchClause->expression);
                         PrimaryExpression* primaryExpression = simpleExpression->prefixExpression->expression->primaryExpression;
                         if ((!primaryExpression->_isReturnExpression()) && (!primaryExpression->_isBreakExpression()) && (!primaryExpression->_isThrowExpression())) {
                             sourceFile->append(identifierPattern->identifier);
@@ -1496,9 +1496,10 @@ bool CppVisitor::openCatchClause(CatchClause* catchClause) {
             }
         }
         {
-            IdentifierExpression* identifierExpression = getIdentifierExpression((PostfixExpression*)functionCall->parent);
+            IdentifierExpression* identifierExpression = getIdentifierExpression((PostfixExpression*)(functionCall->parent));
             if (identifierExpression != nullptr) {
-                if (*(*functionCall->catchClauses)[0] == catchClause) {
+                _Vector<CatchClause>* catchClauses = functionCall->catchClauses;
+                if (*(*catchClauses)[0] == catchClause) {
                     sourceFile->append(";\n");
                     indentSource();
                     sourceFile->append("if (_");
@@ -1508,18 +1509,18 @@ bool CppVisitor::openCatchClause(CatchClause* catchClause) {
                     indentSource();
                     sourceFile->append("switch (_");
                     sourceFile->append(identifierExpression->name);
-                    sourceFile->append("_error->getErrorCode()) {\n");
+                    sourceFile->append("_error.getErrorCode()) {\n");
                     sourceIndentLevel++;
                 }
                 indentSource();
                 if (catchClause->catchPattern->_isIdentifierCatchPattern()) {
                     sourceFile->append("case _");
-                    IdentifierCatchPattern* identifierCatchPattern = (IdentifierCatchPattern*)catchClause->catchPattern;
+                    IdentifierCatchPattern* identifierCatchPattern = (IdentifierCatchPattern*)(catchClause->catchPattern);
                     sourceFile->append(identifierCatchPattern->name);
                     sourceFile->append("Code_");
                     if (identifierCatchPattern->member != nullptr) {
-                        if(identifierCatchPattern->member->memberPostfix->_isNamedMemberPostfix()) {
-                            NamedMemberPostfix* namedMemberPostfix = (NamedMemberPostfix*)identifierCatchPattern->member->memberPostfix;
+                        if (identifierCatchPattern->member->memberPostfix->_isNamedMemberPostfix()) {
+                            NamedMemberPostfix* namedMemberPostfix = (NamedMemberPostfix*)(identifierCatchPattern->member->memberPostfix);
                             sourceFile->append(namedMemberPostfix->identifier->name);
                             sourceFile->append(":\n");
                             sourceIndentLevel++;
@@ -1527,20 +1528,21 @@ bool CppVisitor::openCatchClause(CatchClause* catchClause) {
                             sourceFile->append("_");
                             sourceFile->append(identifierCatchPattern->name);
                             sourceFile->append("_");
-                            sourceFile->append(namedMemberPostfix->identifier->name);                            
+                            sourceFile->append(namedMemberPostfix->identifier->name);
                             sourceFile->append("* ");
                             if (catchClause->bindingPattern != nullptr) {
                                 TuplePattern* bindingPattern = catchClause->bindingPattern;
                                 if (bindingPattern->elements != nullptr) {
                                     if (bindingPattern->elements->length() > 0) {
-                                        TuplePatternElement* element = *(*(bindingPattern->elements))[0];
+                                        _Vector<TuplePatternElement>* elements = bindingPattern->elements;
+                                        TuplePatternElement* element = *(*elements)[0];
                                         if (element->pattern->_isIdentifierPattern()) {
-                                            IdentifierPattern* pattern = (IdentifierPattern*)element->pattern;
-                                            sourceFile->append(pattern->identifier);                    
+                                            IdentifierPattern* pattern = (IdentifierPattern*)(element->pattern);
+                                            sourceFile->append(pattern->identifier);
                                             sourceFile->append(" = _");
                                             sourceFile->append(identifierExpression->name);
-                                            sourceFile->append("_error->get_");
-                                            sourceFile->append(namedMemberPostfix->identifier->name);                            
+                                            sourceFile->append("_error.get_");
+                                            sourceFile->append(namedMemberPostfix->identifier->name);
                                             sourceFile->append("();");
                                         }
                                     }
@@ -1554,15 +1556,14 @@ bool CppVisitor::openCatchClause(CatchClause* catchClause) {
                 if (catchClause->catchPattern->_isWildCardCatchPattern()) {
                     sourceFile->append("default:\n");
                 }
-                
                 sourceIndentLevel++;
                 indentSource();
                 catchClause->expression->accept(this);
                 if (catchClause->expression->_isSimpleExpression())
                     sourceFile->append(";\n");
                 sourceIndentLevel--;
-                
-                if (*(*functionCall->catchClauses)[functionCall->catchClauses->length() - 1] == catchClause) {
+                _Vector<CatchClause>* clauses = functionCall->catchClauses;
+                if (*(*clauses)[functionCall->catchClauses->length() - 1] == catchClause) {
                     sourceIndentLevel--;
                     indentSource();
                     sourceFile->append("}\n");
