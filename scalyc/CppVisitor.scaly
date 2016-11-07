@@ -2076,6 +2076,15 @@ class CppVisitor : SyntaxVisitor {
     }
 
     function assignedToMutableObject(functionCall: FunctionCall) -> bool {
+        var bindingInitializer: BindingInitializer = getBindingInitializer(functionCall)
+        if bindingInitializer == null
+            return false
+
+        if bindingInitializer.parent is MutableDeclaration {
+            if boundToObject(bindingInitializer)
+                return true
+        }
+
         return false
     }
 
