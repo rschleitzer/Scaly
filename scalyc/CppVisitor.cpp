@@ -2171,12 +2171,6 @@ bool CppVisitor::catchesError(FunctionCall* functionCall) {
 
 void CppVisitor::closeParenthesizedExpression(ParenthesizedExpression* parenthesizedExpression) {
     sourceFile->append(")");
-/*    if (parenthesizedExpression->parent->_isFunctionCall()) {
-        FunctionCall* functionCall = (FunctionCall*)parenthesizedExpression->parent;
-        if (functionCall->catchClauses != nullptr) {
-            sourceFile->append(";");
-        }
-    }*/
 }
 
 void CppVisitor::visitNullExpression(NullExpression* nullExpression) {

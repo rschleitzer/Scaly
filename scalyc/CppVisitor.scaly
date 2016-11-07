@@ -2154,10 +2154,17 @@ class CppVisitor : SyntaxVisitor {
     }
 
     function catchesError(functionCall: FunctionCall) -> bool {
+        if functionCall == null
+            return false
+
+        if functionCall.catchClauses != null
+            return true
+
         return false
     }
 
     function closeParenthesizedExpression(parenthesizedExpression: ParenthesizedExpression) {
+        sourceFile.append(")")
     }
 
     function openReturnExpression(returnExpression: ReturnExpression) -> bool {
