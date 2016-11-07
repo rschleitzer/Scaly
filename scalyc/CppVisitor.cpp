@@ -2148,17 +2148,16 @@ BindingInitializer* CppVisitor::getBindingInitializer(FunctionCall* functionCall
 
 bool CppVisitor::callsInitializer(FunctionCall* functionCall) {
     if (functionCall->parent->_isPostfixExpression()) {
-        PostfixExpression* postfixExpression = (PostfixExpression*)functionCall->parent;
+        PostfixExpression* postfixExpression = (PostfixExpression*)(functionCall->parent);
         if (postfixExpression->postfixes->length() == 1) {
             if (postfixExpression->primaryExpression->_isIdentifierExpression()) {
-                IdentifierExpression* identifierExpression = (IdentifierExpression*)postfixExpression->primaryExpression;
+                IdentifierExpression* identifierExpression = (IdentifierExpression*)(postfixExpression->primaryExpression);
                 if (isClass(identifierExpression->name)) {
                     return true;
                 }
             }
         }
     }
-
     return false;
 }
 
