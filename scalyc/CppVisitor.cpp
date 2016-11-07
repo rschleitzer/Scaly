@@ -2047,9 +2047,8 @@ bool CppVisitor::openParenthesizedExpression(ParenthesizedExpression* parenthesi
                             if (isVariableMember(member, classDeclaration)) {
                                 sourceFile->append(member);
                                 sourceFile->append("->getPage()");
-                                if (functionCall->arguments != nullptr)
-                                    if (functionCall->arguments->expressionElements != nullptr)
-                                        sourceFile->append(", ");
+                                if ((functionCall->arguments != nullptr) && (functionCall->arguments->expressionElements != nullptr))
+                                    sourceFile->append(", ");
                             }
                         }
                     }
