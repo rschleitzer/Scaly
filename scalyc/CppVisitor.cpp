@@ -1681,25 +1681,37 @@ void CppVisitor::closeExpressionElement(ExpressionElement* expressionElement) {
 
 bool CppVisitor::isLastExpressionElement(ExpressionElement* expressionElement) {
     if (expressionElement->parent->_isParenthesizedExpression()) {
-        ParenthesizedExpression* parenthesizedExpression = (ParenthesizedExpression*)expressionElement->parent;
+        ParenthesizedExpression* parenthesizedExpression = (ParenthesizedExpression*)(expressionElement->parent);
         _Vector<ExpressionElement>* expressionElements = parenthesizedExpression->expressionElements;
+        size_t length = expressionElements->length() - 1;
+        size_t i = 0;
+        ExpressionElement* element = nullptr;
         size_t _expressionElements_length = expressionElements->length();
         for (size_t _i = 0; _i < _expressionElements_length; _i++) {
-            if ((*(*expressionElements)[_i] == expressionElement) && (_i == _expressionElements_length - 1))
-                return true;
+            element = *(*expressionElements)[_i];
+            {
+                if ((element == expressionElement) && (i == length))
+                    return true;
+                i++;
+            }
         }
     }
-
     if (expressionElement->parent->_isSubscript()) {
-        Subscript* subscript = (Subscript*)expressionElement->parent;
+        Subscript* subscript = (Subscript*)(expressionElement->parent);
         _Vector<ExpressionElement>* expressions = subscript->expressions;
+        size_t length = expressions->length() - 1;
+        size_t i = 0;
+        ExpressionElement* element = nullptr;
         size_t _expressions_length = expressions->length();
         for (size_t _i = 0; _i < _expressions_length; _i++) {
-            if ((*(*expressions)[_i] == expressionElement) && (_i == _expressions_length - 1))
-                return true;
+            element = *(*expressions)[_i];
+            {
+                if ((element == expressionElement) && (i == length))
+                    return true;
+                i++;
+            }
         }
     }
-    
     return false;
 }
 

@@ -1685,6 +1685,30 @@ class CppVisitor : SyntaxVisitor {
     }
 
     function isLastExpressionElement(expressionElement: ExpressionElement) -> bool {
+        if expressionElement.parent is ParenthesizedExpression {
+            let parenthesizedExpression: ParenthesizedExpression = (expressionElement.parent) as ParenthesizedExpression
+            let expressionElements: [ExpressionElement] = parenthesizedExpression.expressionElements
+            let length: unsigned = expressionElements.length() - 1
+            let i: unsigned = 0
+            for element: ExpressionElement in expressionElements {
+                if (element == expressionElement) && (i == length)
+                    return true
+                i++
+            }
+        }
+
+        if expressionElement.parent is Subscript {
+            let subscript: Subscript = (expressionElement.parent) as Subscript
+            let expressions: [ExpressionElement] = subscript.expressions
+            let length: unsigned = expressions.length() - 1
+            let i: unsigned = 0
+            for element: ExpressionElement in expressions {
+                if (element == expressionElement) && (i == length)
+                    return true
+                i++
+            }
+        }
+
         return false
     }
 
