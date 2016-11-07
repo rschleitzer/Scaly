@@ -2115,7 +2115,7 @@ bool CppVisitor::assignedToConstantObject(FunctionCall* functionCall) {
 bool CppVisitor::boundToObject(BindingInitializer* bindingInitializer) {
     PatternInitializer* patternInitializer = bindingInitializer->initializer;
     if (patternInitializer->pattern->_isIdentifierPattern()) {
-        IdentifierPattern* identifierPattern = (IdentifierPattern*)patternInitializer->pattern;
+        IdentifierPattern* identifierPattern = (IdentifierPattern*)(patternInitializer->pattern);
         Type* type = identifierPattern->annotationForType->annotationForType;
         if (type->_isArrayType())
             return true;
