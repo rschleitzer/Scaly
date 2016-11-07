@@ -1837,6 +1837,67 @@ bool CppVisitor::inRetDeclaration(SyntaxNode* syntaxNode) {
     return false;
 }
 
+void CppVisitor::visitLiteralExpression(LiteralExpression* literalExpression) {
+    Literal* literal = literalExpression->literal;
+    if (literal->_isNumericLiteral()) {
+        NumericLiteral* numericLiteral = (NumericLiteral*)literal;
+        sourceFile->append(numericLiteral->value);
+    }
+    else {
+        if (literal->_isStringLiteral()) {
+            StringLiteral* stringLiteral = (StringLiteral*)literal;
+            sourceFile->append("\"");
+            sourceFile->append(stringLiteral->string);
+            sourceFile->append("\"");
+        }
+        else {
+            if (literal->_isCharacterLiteral()) {
+                CharacterLiteral* characterLiteral = (CharacterLiteral*)literal;
+                sourceFile->append("\'");
+                if (characterLiteral->value->getLength() > 0) {
+                    if ((characterLiteral->value->charAt(0) == '\"') || (characterLiteral->value->charAt(0) == '\'')) {
+                        sourceFile->append("\\");
+                        sourceFile->append(characterLiteral->value);
+                    }
+                    else {
+                        switch (characterLiteral->value->charAt(0)) {
+                            case '\r': {
+                                sourceFile->append("\\r");
+                                break;
+                            }
+
+                            case '\n': {
+                                sourceFile->append("\\n");
+                                break;
+                            }
+
+                            case '\t': {
+                                sourceFile->append("\\t");
+                                break;
+                            }
+
+                            case '\0': {
+                                sourceFile->append("\\0");
+                                break;
+                            }
+
+                            case '\\': {
+                                sourceFile->append("\\\\");
+                                break;
+                            }
+
+                            default: {
+                                sourceFile->append(characterLiteral->value);
+                            }
+                        }
+                    }
+                }
+                sourceFile->append("\'");
+            }
+        }
+    }
+}
+
 bool CppVisitor::openParenthesizedExpression(ParenthesizedExpression* parenthesizedExpression) {
     sourceFile->append("(");
     if (parenthesizedExpression->parent->_isFunctionCall()) {
@@ -1986,48 +2047,6 @@ void CppVisitor::closeParenthesizedExpression(ParenthesizedExpression* parenthes
             sourceFile->append(";");
         }
     }*/
-}
-
-void CppVisitor::visitLiteralExpression(LiteralExpression* literalExpression) {
-    Literal* literal = literalExpression->literal;
-    if (literal->_isNumericLiteral()) {
-        NumericLiteral* numericLiteral = (NumericLiteral*)literal;
-        sourceFile->append(numericLiteral->value);
-    }
-    else if (literal->_isStringLiteral()) {
-        StringLiteral* stringLiteral = (StringLiteral*)literal;
-        sourceFile->append("\"");
-        sourceFile->append(stringLiteral->string);
-        sourceFile->append("\"");
-    }
-    else if (literal->_isCharacterLiteral()) {
-        CharacterLiteral* characterLiteral = (CharacterLiteral*)literal;
-        sourceFile->append("\'");
-        if (characterLiteral->value->getLength() > 0) {
-            if ((characterLiteral->value->charAt(0) == '"') || (characterLiteral->value->charAt(0) == '\'')) {
-                sourceFile->append("\\");
-                sourceFile->append(characterLiteral->value);
-            }
-            else if (characterLiteral->value->charAt(0) == '\r') {
-                sourceFile->append("\\r");
-            }
-            else if (characterLiteral->value->charAt(0) == '\n') {
-                sourceFile->append("\\n");
-            }
-            else if (characterLiteral->value->charAt(0) == '\t') {
-                sourceFile->append("\\t");
-            }
-            else if (characterLiteral->value->charAt(0) == '\0') {
-                sourceFile->append("\\0");
-            }
-            else if (characterLiteral->value->charAt(0) == '\\') {
-                sourceFile->append("\\\\");
-            }
-            else
-                sourceFile->append(characterLiteral->value);
-        }
-        sourceFile->append("\'");
-    }
 }
 
 bool CppVisitor::openIfExpression(IfExpression* ifExpression) {

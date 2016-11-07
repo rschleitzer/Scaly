@@ -1843,6 +1843,42 @@ class CppVisitor : SyntaxVisitor {
     }
 
     function visitLiteralExpression(literalExpression: LiteralExpression) {
+        let literal: Literal = literalExpression.literal
+        if literal is NumericLiteral {
+            let numericLiteral: NumericLiteral = literal as NumericLiteral
+            sourceFile.append(numericLiteral.value)
+        }
+        else {
+            if literal is StringLiteral {
+                let stringLiteral: StringLiteral = literal as StringLiteral
+                sourceFile.append("\"")
+                sourceFile.append(stringLiteral.string)
+                sourceFile.append("\"")
+            }
+            else {
+                if literal is CharacterLiteral {
+                    let characterLiteral: CharacterLiteral = literal as CharacterLiteral
+                    sourceFile.append("\'")
+                    if characterLiteral.value.getLength() > 0 {
+                        if (characterLiteral.value.charAt(0) == '"') || (characterLiteral.value.charAt(0) == '\'') {
+                            sourceFile.append("\\")
+                            sourceFile.append(characterLiteral.value)
+                        }
+                        else {                        
+                            switch characterLiteral.value.charAt(0) {                            
+                                case '\r': sourceFile.append("\\r")
+                                case '\n': sourceFile.append("\\n")
+                                case '\t': sourceFile.append("\\t")
+                                case '\0': sourceFile.append("\\0")
+                                case '\\': sourceFile.append("\\\\")
+                                default:   sourceFile.append(characterLiteral.value);                                    
+                            }
+                        }
+                    }
+                    sourceFile.append("\'");
+                }
+            }
+        }
     }
 
     function openIfExpression(ifExpression: IfExpression) -> bool {
