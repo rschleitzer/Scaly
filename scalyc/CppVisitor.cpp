@@ -659,7 +659,7 @@ bool CppVisitor::localAllocations(CodeBlock* codeBlock) {
                             IdentifierPattern* identifierPattern = (IdentifierPattern*)patternInitializer->pattern;
                             if (identifierPattern->annotationForType != nullptr) {
                                 Type* type = identifierPattern->annotationForType->annotationForType;
-                                if ((type->_isArrayType()))
+                                if (type->_isArrayType())
                                     return true;
                                 if (type->_isTypeIdentifier()) {
                                     TypeIdentifier* typeIdentifier = (TypeIdentifier*)type;
