@@ -2278,7 +2278,13 @@ class CppVisitor : SyntaxVisitor {
     }
 
     function getCatchClause(syntaxNode: SyntaxNode) -> existing CatchClause {
-        return null
+        if syntaxNode is CatchClause
+            return syntaxNode as CatchClause
+
+        if syntaxNode.parent == null
+            return null
+
+        return getCatchClause(syntaxNode.parent)
     }
 
     function getReturnType(syntaxNode: SyntaxNode) -> String {
