@@ -2586,20 +2586,23 @@ bool CppVisitor::openIdentifierPattern(IdentifierPattern* identifierPattern) {
 bool CppVisitor::isCatchingPatternInitializer(PatternInitializer* patternInitializer) {
     if (patternInitializer->initializer != nullptr) {
         if (patternInitializer->initializer->expression->_isSimpleExpression()) {
-            SimpleExpression* simpleExpression = (SimpleExpression*)patternInitializer->initializer->expression;
+            SimpleExpression* simpleExpression = (SimpleExpression*)(patternInitializer->initializer->expression);
             PostfixExpression* postfixExpression = simpleExpression->prefixExpression->expression;
             if (postfixExpression->postfixes != nullptr) {
-                FunctionCall* functionCall =  nullptr;
+                FunctionCall* functionCall = nullptr;
                 if (postfixExpression->postfixes->length() > 0) {
-                    Postfix* postfix = *(*(postfixExpression->postfixes))[0];
+                    _Vector<Postfix>* postfixes = postfixExpression->postfixes;
+                    Postfix* postfix = *(*postfixes)[0];
                     if (postfix->_isFunctionCall()) {
                         functionCall = (FunctionCall*)postfix;
                     }
-                    else if (postfix->_isExplicitMemberExpression()) {
-                        if (postfixExpression->postfixes->length() > 1) {
-                            Postfix* postfix = *(*(postfixExpression->postfixes))[1];
-                            if (postfix->_isFunctionCall()) {
-                                functionCall = (FunctionCall*)postfix;
+                    else {
+                        if (postfix->_isExplicitMemberExpression()) {
+                            if (postfixExpression->postfixes->length() > 1) {
+                                Postfix* postfix = *(*postfixes)[1];
+                                if (postfix->_isFunctionCall()) {
+                                    functionCall = (FunctionCall*)postfix;
+                                }
                             }
                         }
                     }
@@ -2611,7 +2614,6 @@ bool CppVisitor::isCatchingPatternInitializer(PatternInitializer* patternInitial
             }
         }
     }
-
     return false;
 }
 

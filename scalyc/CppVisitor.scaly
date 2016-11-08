@@ -2595,6 +2595,37 @@ class CppVisitor : SyntaxVisitor {
     }
 
     function isCatchingPatternInitializer(patternInitializer: PatternInitializer) -> bool {
+        if patternInitializer.initializer != null {
+            if patternInitializer.initializer.expression is SimpleExpression {
+                let simpleExpression: SimpleExpression = (patternInitializer.initializer.expression) as SimpleExpression
+                let postfixExpression: PostfixExpression = simpleExpression.prefixExpression.expression
+                if postfixExpression.postfixes != null {
+                    let functionCall: FunctionCall =  null
+                    if postfixExpression.postfixes.length() > 0 {
+                        let postfixes: [Postfix] = postfixExpression.postfixes
+                        let postfix: Postfix = postfixes[0]
+                        if postfix is FunctionCall {
+                            functionCall = (postfix as FunctionCall)
+                        }
+                        else {
+                            if postfix is ExplicitMemberExpression {
+                                if postfixExpression.postfixes.length() > 1 {
+                                    let postfix: Postfix = postfixes[1]
+                                    if postfix is FunctionCall {
+                                        functionCall = (postfix as FunctionCall)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    if functionCall != null {
+                        if functionCall.catchClauses != null
+                            return true
+                    }
+                }
+            }
+        }
+
         return false
     }
 
