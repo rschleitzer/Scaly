@@ -2369,6 +2369,84 @@ FunctionDeclaration* CppVisitor::getFunctionDeclaration(SyntaxNode* syntaxNode) 
     return getFunctionDeclaration(syntaxNode->parent);
 }
 
+void CppVisitor::closeThrowExpression(ThrowExpression* throwExpression) {
+}
+
+bool CppVisitor::openBreakExpression(BreakExpression* breakExpression) {
+    sourceFile->append("break");
+    return true;
+}
+
+void CppVisitor::closeBreakExpression(BreakExpression* breakExpression) {
+}
+
+bool CppVisitor::openInitializerCall(InitializerCall* initializerCall) {
+    if (initializerCall->typeToInitialize->_isArrayType()) {
+        if (!initializerIsBoundOrAssigned(initializerCall)) {
+            ArrayType* arrayType = (ArrayType*)initializerCall->typeToInitialize;
+            if (arrayType->elementType->_isTypeIdentifier()) {
+                TypeIdentifier* typeId = (TypeIdentifier*)arrayType->elementType;
+                sourceFile->append("&_Vector<");
+                sourceFile->append(typeId->name);
+                sourceFile->append(">::create(");
+                if (inThrow(initializerCall))
+                    sourceFile->append("_ep");
+                else if (inReturn(initializerCall))
+                    sourceFile->append("_rp");
+                else
+                    sourceFile->append("_p");
+                sourceFile->append(", *");
+                initializerCall->arguments->accept(this);
+                sourceFile->append(")");
+                return false;
+            }
+        }
+        else {
+            sourceFile->append("new(");
+            if (inInitializer(initializerCall)) {
+                sourceFile->append("getPage()");
+                if (initializerCall->parent->parent->parent->_isAssignment()) {
+                    Assignment* assignment = (Assignment*)initializerCall->parent->parent->parent;
+                    if (inInitializer(assignment)) {
+                        sourceFile->append("->allocateExclusivePage()");
+                    }
+                }
+            }
+            else {
+                if (initializerCall->parent->parent->parent->_isAssignment()) {
+                    Assignment* assignment = (Assignment*)initializerCall->parent->parent->parent;
+                    SimpleExpression* simpleExpression = (SimpleExpression*)(assignment->parent);
+                    if (simpleExpression->prefixExpression->prefixOperator == 0) {
+                        PostfixExpression* leftSide = simpleExpression->prefixExpression->expression;
+                        if ((leftSide->postfixes == 0) && (leftSide->primaryExpression->_isIdentifierExpression())) {
+                            IdentifierExpression* memberExpression = (IdentifierExpression*)(leftSide->primaryExpression);
+                            String* memberName = memberExpression->name;
+                            ClassDeclaration* classDeclaration = getClassDeclaration(assignment);
+                            if ((classDeclaration != nullptr) && (memberName != nullptr) && (isVariableMember(memberName, classDeclaration))) {
+                                sourceFile->append("getPage()");
+                            }
+                            else {
+                                sourceFile->append("_p");
+                            }
+                        }
+                        else {
+                            sourceFile->append("_p");
+                        }
+                    }
+                    else {
+                        sourceFile->append("_p");
+                    }
+                }
+                else {
+                    sourceFile->append("_p");
+                }
+            }
+            sourceFile->append(") ");
+        }
+    }
+    return true;
+}
+
 void CppVisitor::visitNullExpression(NullExpression* nullExpression) {
     sourceFile->append("nullptr");
 }
@@ -2436,17 +2514,6 @@ bool CppVisitor::openCaseItem(CaseItem* caseItem) {
 
 void CppVisitor::closeCaseItem(CaseItem* caseItem) {
     sourceFile->append(": ");
-}
-
-void CppVisitor::closeThrowExpression(ThrowExpression* throwExpression) {
-}
-
-bool CppVisitor::openBreakExpression(BreakExpression* breakExpression) {
-    sourceFile->append("break");
-    return true;
-}
-
-void CppVisitor::closeBreakExpression(BreakExpression* breakExpression) {
 }
 
 void CppVisitor::visitWildcardPattern(WildcardPattern* wildcardPattern) {
@@ -2567,73 +2634,6 @@ void CppVisitor::closeBlockCaseContent(BlockCaseContent* blockCaseContent) {
 }
 
 void CppVisitor::visitEmptyCaseContent(EmptyCaseContent* emptyCaseContent) {
-}
-
-bool CppVisitor::openInitializerCall(InitializerCall* initializerCall) {
-    if (initializerCall->typeToInitialize->_isArrayType()) {
-        if (!initializerIsBoundOrAssigned(initializerCall)) {
-            ArrayType* arrayType = (ArrayType*)initializerCall->typeToInitialize;
-            if (arrayType->elementType->_isTypeIdentifier()) {
-                TypeIdentifier* typeId = (TypeIdentifier*)arrayType->elementType;
-                sourceFile->append("&_Vector<");
-                sourceFile->append(typeId->name);
-                sourceFile->append(">::create(");
-                if (inThrow(initializerCall))
-                    sourceFile->append("_ep");
-                else if (inReturn(initializerCall))
-                    sourceFile->append("_rp");
-                else
-                    sourceFile->append("_p");
-                sourceFile->append(", *");
-                initializerCall->arguments->accept(this);
-                sourceFile->append(")");
-                return false;
-            }
-        }
-        else {
-            sourceFile->append("new(");
-            if (inInitializer(initializerCall)) {
-                sourceFile->append("getPage()");
-                if (initializerCall->parent->parent->parent->_isAssignment()) {
-                    Assignment* assignment = (Assignment*)initializerCall->parent->parent->parent;
-                    if (inInitializer(assignment)) {
-                        sourceFile->append("->allocateExclusivePage()");
-                    }
-                }
-            }
-            else {
-                if (initializerCall->parent->parent->parent->_isAssignment()) {
-                    Assignment* assignment = (Assignment*)initializerCall->parent->parent->parent;
-                    SimpleExpression* simpleExpression = (SimpleExpression*)(assignment->parent);
-                    if (simpleExpression->prefixExpression->prefixOperator == 0) {
-                        PostfixExpression* leftSide = simpleExpression->prefixExpression->expression;
-                        if ((leftSide->postfixes == 0) && (leftSide->primaryExpression->_isIdentifierExpression())) {
-                            IdentifierExpression* memberExpression = (IdentifierExpression*)(leftSide->primaryExpression);
-                            String* memberName = memberExpression->name;
-                            ClassDeclaration* classDeclaration = getClassDeclaration(assignment);
-                            if ((classDeclaration != nullptr) && (memberName != nullptr) && (isVariableMember(memberName, classDeclaration))) {
-                                sourceFile->append("getPage()");
-                            }
-                            else {
-                                sourceFile->append("_p");
-                            }
-                        }
-                        else {
-                            sourceFile->append("_p");
-                        }
-                    }
-                    else {
-                        sourceFile->append("_p");
-                    }
-                }
-                else {
-                    sourceFile->append("_p");
-                }
-            }
-            sourceFile->append(") ");
-        }
-    }
-    return true;
 }
 
 bool CppVisitor::initializerIsBoundOrAssigned(InitializerCall* initializerCall) {

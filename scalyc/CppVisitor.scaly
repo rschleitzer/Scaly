@@ -2372,6 +2372,8 @@ class CppVisitor : SyntaxVisitor {
     }
 
     function openBreakExpression(breakExpression: BreakExpression) -> bool {
+        sourceFile.append("break")
+
         return true
     }
 
