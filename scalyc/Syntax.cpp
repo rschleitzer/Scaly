@@ -899,7 +899,7 @@ void BinaryOperation::accept(SyntaxVisitor* visitor) {
 
 bool BinaryOperation::_isBinaryOperation() { return true; }
 
-Assignment::Assignment(PrefixExpression* expression, Position* start, Position* end) {
+Assignment::Assignment(Expression* expression, Position* start, Position* end) {
     this->start = start;
     this->end = end;
     this->expression = expression;

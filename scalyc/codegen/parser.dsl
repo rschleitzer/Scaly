@@ -203,10 +203,10 @@ Parser::Parser(String* theFileName, String* text) {
     lexer = new(getPage()->allocateExclusivePage()) Lexer(text);
     fileName = theFileName;
 "   (apply-to-selected-children "keyword" (lambda (keyword) ($
-"    "(name keyword)" = &""String::create(getPage(), \""(id keyword)"\");
+"    "(name keyword)" = new(getPage()) String(\""(id keyword)"\");
 "   )))
     (apply-to-selected-children "punctuation" (lambda (punctuation) ($
-"    "(id punctuation)" = &""String::create(getPage(), \""(value punctuation)"\");
+"    "(id punctuation)" = new(getPage()) String(\""(value punctuation)"\");
 "   )))
 "}
 "    (apply-to-selected-children "syntax" (lambda (syntax) (if (program? syntax) "" ($
@@ -306,7 +306,7 @@ _Result<"(id syntax)", ParserError> Parser::parse"(id syntax)"(_Page* _rp, _Page
 "    else
         return _Result<"(id syntax)", ParserError>(new(_ep) ParserError(new(_ep) _ParserError"
         (case (type content) (("keyword") "_keyword") (("punctuation") "_punctuation")(("identifier") "_identifier")(("literal") "_literal")(("prefixoperator" "binaryoperator" "postfixoperator") "_operator"))
-        "Expected(new(_ep) Position(start"(if (property content) (string-firstchar-upcase (property content)) ($ (string-firstchar-upcase (link content))(number->string (child-number content))))(case (type content) (("keyword" "punctuation") ($ "), &""String::create(_ep, "((if (string=? (type content) "keyword") name-of-link link) content)")"))(else ")"))")));
+        "Expected(new(_ep) Position(start"(if (property content) (string-firstchar-upcase (property content)) ($ (string-firstchar-upcase (link content))(number->string (child-number content))))(case (type content) (("keyword" "punctuation") ($ "), new(_ep) String("((if (string=? (type content) "keyword") name-of-link link) content)")"))(else ")"))")));
 "                          ))
                         )
                     ) ; syntax or terminal

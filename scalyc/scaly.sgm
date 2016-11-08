@@ -214,7 +214,7 @@
 
     <syntax id = Assignment                                     base = BinaryOp
         <content link = equal
-        <content link = PrefixExpression                        property = expression
+        <content link = Expression                              property = expression
 
     <syntax id = TypeQuery                                      base = BinaryOp
         <content link = is

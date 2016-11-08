@@ -1795,8 +1795,8 @@ _Result<Assignment, ParserError> Parser::parseAssignment(_Page* _rp, _Page* _ep)
         lexer->advance();
     else
         return _Result<Assignment, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_punctuationExpected(new(_ep) Position(startEqual1), new(_ep) String(equal))));
-    auto _expression_result = parsePrefixExpression(_rp, _ep);
-    PrefixExpression* expression = nullptr;
+    auto _expression_result = parseExpression(_rp, _ep);
+    Expression* expression = nullptr;
     if (_expression_result.succeeded()) {
         expression = _expression_result.getResult();
     }

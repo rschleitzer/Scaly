@@ -1293,21 +1293,24 @@ String* CppVisitor::getMemberIfCreatingObject(_Page* _rp, Assignment* assignment
     if (functionName == nullptr) {
         return nullptr;
     }
-    PostfixExpression* rightSide = assignment->expression->expression;
-    if (((isClass(functionName) || isCreatingObject(functionName, assignment)) && (rightSide->postfixes->length() == 1))) {
-        _Vector<Postfix>* postfixes = rightSide->postfixes;
-        if ((*(*postfixes)[0])->_isFunctionCall()) {
-            if (assignment->parent->_isSimpleExpression()) {
-                SimpleExpression* simpleExpression = (SimpleExpression*)(assignment->parent);
-                if (simpleExpression->prefixExpression->prefixOperator == 0) {
-                    PostfixExpression* leftSide = simpleExpression->prefixExpression->expression;
-                    if ((leftSide->postfixes == 0) && (leftSide->primaryExpression->_isIdentifierExpression())) {
-                        _Region _region; _Page* _p = _region.get();
-                        IdentifierExpression* memberExpression = (IdentifierExpression*)(leftSide->primaryExpression);
-                        String* memberName = new(_p) String(memberExpression->name);
-                        ClassDeclaration* classDeclaration = getClassDeclaration(assignment);
-                        if (classDeclaration != nullptr) {
-                            return new(_rp) String(memberName);
+    if (assignment->expression->_isPrefixExpression()) {
+        PrefixExpression* prefixExpression = (PrefixExpression*)(assignment->expression);
+        PostfixExpression* rightSide = prefixExpression->expression;
+        if (((isClass(functionName) || isCreatingObject(functionName, assignment)) && (rightSide->postfixes->length() == 1))) {
+            _Vector<Postfix>* postfixes = rightSide->postfixes;
+            if ((*(*postfixes)[0])->_isFunctionCall()) {
+                if (assignment->parent->_isSimpleExpression()) {
+                    SimpleExpression* simpleExpression = (SimpleExpression*)(assignment->parent);
+                    if (simpleExpression->prefixExpression->prefixOperator == 0) {
+                        PostfixExpression* leftSide = simpleExpression->prefixExpression->expression;
+                        if ((leftSide->postfixes == 0) && (leftSide->primaryExpression->_isIdentifierExpression())) {
+                            _Region _region; _Page* _p = _region.get();
+                            IdentifierExpression* memberExpression = (IdentifierExpression*)(leftSide->primaryExpression);
+                            String* memberName = new(_p) String(memberExpression->name);
+                            ClassDeclaration* classDeclaration = getClassDeclaration(assignment);
+                            if (classDeclaration != nullptr) {
+                                return new(_rp) String(memberName);
+                            }
                         }
                     }
                 }
@@ -1318,11 +1321,14 @@ String* CppVisitor::getMemberIfCreatingObject(_Page* _rp, Assignment* assignment
 }
 
 String* CppVisitor::getFunctionName(_Page* _rp, Assignment* assignment) {
-    if (assignment->expression->prefixOperator == nullptr) {
-        PostfixExpression* rightSide = assignment->expression->expression;
-        if (rightSide->primaryExpression->_isIdentifierExpression()) {
-            IdentifierExpression* classExpression = (IdentifierExpression*)(rightSide->primaryExpression);
-            return new(_rp) String(classExpression->name);
+    if (assignment->expression->_isPrefixExpression()) {
+        PrefixExpression* prefixExpression = (PrefixExpression*)(assignment->expression);
+        if (prefixExpression->prefixOperator == nullptr) {
+            PostfixExpression* rightSide = prefixExpression->expression;
+            if (rightSide->primaryExpression->_isIdentifierExpression()) {
+                IdentifierExpression* classExpression = (IdentifierExpression*)(rightSide->primaryExpression);
+                return new(_rp) String(classExpression->name);
+            }
         }
     }
     return nullptr;

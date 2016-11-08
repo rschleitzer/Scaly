@@ -1226,7 +1226,7 @@ class Parser {
         else
             throw punctuationExpected(Position(startEqual1), String(equal))
 
-        let expression: PrefixExpression = parsePrefixExpression() catch _ (error)
+        let expression: Expression = parseExpression() catch _ (error)
             throw error
         mutable end: Position = lexer.getPosition()
         var ret: Assignment = Assignment(expression, Position(start), Position(end))

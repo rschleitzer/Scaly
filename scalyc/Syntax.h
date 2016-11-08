@@ -578,9 +578,9 @@ public:
 
 class Assignment : public BinaryOp {
 public:
-    Assignment(PrefixExpression* expression, Position* start, Position* end);
+    Assignment(Expression* expression, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
-    PrefixExpression* expression;
+    Expression* expression;
 
     virtual bool _isAssignment();
 };

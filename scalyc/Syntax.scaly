@@ -854,7 +854,7 @@ class BinaryOperation : BinaryOp {
 
 class Assignment : BinaryOp {
 
-    init(expression: PrefixExpression, start: Position, end: Position) {
+    init(expression: Expression, start: Position, end: Position) {
         this.start = start;
         this.end = end;
         this.expression = expression;
@@ -867,7 +867,7 @@ class Assignment : BinaryOp {
         visitor.closeAssignment(this)
     }
 
-    let expression: PrefixExpression?
+    let expression: Expression?
 }
 
 class TypeQuery : BinaryOp {
