@@ -2468,6 +2468,7 @@ class CppVisitor : SyntaxVisitor {
     }
 
     function visitThisExpression(thisExpression: ThisExpression) {
+        sourceFile.append("this")
     }
 
     function openSuperDot(superDot: SuperDot) -> bool {
@@ -2485,10 +2486,25 @@ class CppVisitor : SyntaxVisitor {
     }
 
     function visitNullExpression(nullExpression: NullExpression) {
+        sourceFile.append("nullptr")
     }
 
     function openElseClause(elseClause: ElseClause) -> bool {
-        return true
+        indentSource();
+        sourceFile.append("else")
+        if elseClause.alternative is SimpleExpression {
+            sourceFile.append("\n")
+            sourceIndentLevel++
+            indentSource()
+            elseClause.alternative.accept(this)
+            sourceIndentLevel--
+        }
+        else {
+            sourceFile.append(" ")
+            elseClause.alternative.accept(this)
+        }
+        
+        return false
     }
 
     function closeElseClause(elseClause: ElseClause) {

@@ -2502,7 +2502,6 @@ bool CppVisitor::openElseClause(ElseClause* elseClause) {
         sourceFile->append(" ");
         elseClause->alternative->accept(this);
     }
-    
     return false;
 }
 
