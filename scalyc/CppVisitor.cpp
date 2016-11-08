@@ -2543,6 +2543,10 @@ bool CppVisitor::openItemCaseLabel(ItemCaseLabel* itemCaseLabel) {
 void CppVisitor::closeItemCaseLabel(ItemCaseLabel* itemCaseLabel) {
 }
 
+void CppVisitor::visitDefaultCaseLabel(DefaultCaseLabel* defaultCaseLabel) {
+    sourceFile->append("default: ");
+}
+
 bool CppVisitor::openCaseItem(CaseItem* caseItem) {
     sourceFile->append("case ");
     return true;
@@ -2639,10 +2643,6 @@ bool CppVisitor::openExpressionPattern(ExpressionPattern* expressionPattern) {
 void CppVisitor::closeExpressionPattern(ExpressionPattern* expressionPattern) {
     if (expressionPattern->parent->_isItemCaseLabel())
         sourceFile->append(": ");
-}
-
-void CppVisitor::visitDefaultCaseLabel(DefaultCaseLabel* defaultCaseLabel) {
-    sourceFile->append("default: ");
 }
 
 bool CppVisitor::openBlockCaseContent(BlockCaseContent* blockCaseContent) {

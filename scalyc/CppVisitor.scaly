@@ -2511,10 +2511,16 @@ class CppVisitor : SyntaxVisitor {
     }
 
     function openCurliedSwitchBody(curliedSwitchBody: CurliedSwitchBody) -> bool {
+        sourceFile.append(") {\n")
+        sourceIndentLevel++
+
         return true
     }
 
     function closeCurliedSwitchBody(curliedSwitchBody: CurliedSwitchBody) {
+        sourceIndentLevel--
+        indentSource()
+        sourceFile.append("}\n")
     }
 
     function openNakedSwitchBody(nakedSwitchBody: NakedSwitchBody) -> bool {
@@ -2525,6 +2531,7 @@ class CppVisitor : SyntaxVisitor {
     }
 
     function openSwitchCase(switchCase: SwitchCase) -> bool {
+        indentSource()
         return true
     }
 
@@ -2532,6 +2539,7 @@ class CppVisitor : SyntaxVisitor {
     }
 
     function openItemCaseLabel(itemCaseLabel: ItemCaseLabel) -> bool {
+        sourceFile.append("case ")
         return true
     }
 
@@ -2539,6 +2547,7 @@ class CppVisitor : SyntaxVisitor {
     }
 
     function visitDefaultCaseLabel(defaultCaseLabel: DefaultCaseLabel) {
+        sourceFile.append("default: ")
     }
 
     function openCaseItem(caseItem: CaseItem) -> bool {
