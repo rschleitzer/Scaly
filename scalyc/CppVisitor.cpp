@@ -2447,6 +2447,41 @@ bool CppVisitor::openInitializerCall(InitializerCall* initializerCall) {
     return true;
 }
 
+bool CppVisitor::initializerIsBoundOrAssigned(InitializerCall* initializerCall) {
+    if (initializerCall->parent->_isPostfixExpression()) {
+        PostfixExpression* postfixExpression = (PostfixExpression*)initializerCall->parent;
+        if (postfixExpression->parent->parent->_isAssignment()) {
+            return true;
+        }
+        if (postfixExpression->parent->parent->parent->_isInitializer()) {
+            return true;
+        }
+    }
+    
+    return false;
+}
+
+void CppVisitor::closeInitializerCall(InitializerCall* initializerCall) {
+}
+
+void CppVisitor::visitThisExpression(ThisExpression* thisExpression) {
+    sourceFile->append("this");
+}
+
+bool CppVisitor::openSuperDot(SuperDot* superDot) {
+    return true;
+}
+
+void CppVisitor::closeSuperDot(SuperDot* superDot) {
+}
+
+bool CppVisitor::openSuperSubscript(SuperSubscript* superSubscript) {
+    return true;
+}
+
+void CppVisitor::closeSuperSubscript(SuperSubscript* superSubscript) {
+}
+
 void CppVisitor::visitNullExpression(NullExpression* nullExpression) {
     sourceFile->append("nullptr");
 }
@@ -2634,41 +2669,6 @@ void CppVisitor::closeBlockCaseContent(BlockCaseContent* blockCaseContent) {
 }
 
 void CppVisitor::visitEmptyCaseContent(EmptyCaseContent* emptyCaseContent) {
-}
-
-bool CppVisitor::initializerIsBoundOrAssigned(InitializerCall* initializerCall) {
-    if (initializerCall->parent->_isPostfixExpression()) {
-        PostfixExpression* postfixExpression = (PostfixExpression*)initializerCall->parent;
-        if (postfixExpression->parent->parent->_isAssignment()) {
-            return true;
-        }
-        if (postfixExpression->parent->parent->parent->_isInitializer()) {
-            return true;
-        }
-    }
-    
-    return false;
-}
-
-void CppVisitor::closeInitializerCall(InitializerCall* initializerCall) {
-}
-
-void CppVisitor::visitThisExpression(ThisExpression* thisExpression) {
-    sourceFile->append("this");
-}
-
-bool CppVisitor::openSuperDot(SuperDot* superDot) {
-    return true;
-}
-
-void CppVisitor::closeSuperDot(SuperDot* superDot) {
-}
-
-bool CppVisitor::openSuperSubscript(SuperSubscript* superSubscript) {
-    return true;
-}
-
-void CppVisitor::closeSuperSubscript(SuperSubscript* superSubscript) {
 }
 
 void CppVisitor::visitSuperInit(SuperInit* superInit) {
