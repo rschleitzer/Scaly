@@ -2293,6 +2293,34 @@ CatchClause* CppVisitor::getCatchClause(SyntaxNode* syntaxNode) {
     return getCatchClause(syntaxNode->parent);
 }
 
+String* CppVisitor::getReturnType(_Page* _rp, SyntaxNode* syntaxNode) {
+    FunctionDeclaration* functionDeclaration = getFunctionDeclaration(syntaxNode);
+    if (functionDeclaration != nullptr) {
+        FunctionResult* functionResult = functionDeclaration->signature->result;
+        if (functionResult != nullptr) {
+            VarString* ret = new(_rp) VarString();
+            if (functionResult->resultType->_isTypeIdentifier()) {
+                TypeIdentifier* typeIdentifier = (TypeIdentifier*)(functionResult->resultType);
+                appendCppTypeName(ret, typeIdentifier);
+                return new(_rp) String(ret);
+            }
+            else {
+                if (functionResult->resultType->_isArrayType()) {
+                    ArrayType* arrayType = (ArrayType*)(functionResult->resultType);
+                    if (arrayType->elementType->_isTypeIdentifier()) {
+                        TypeIdentifier* typeIdentifier = (TypeIdentifier*)(arrayType->elementType);
+                        ret->append("_Vector<");
+                        appendCppTypeName(ret, typeIdentifier);
+                        ret->append(">");
+                        return new(_rp) String(ret);
+                    }
+                }
+            }
+        }
+    }
+    return nullptr;
+}
+
 void CppVisitor::visitNullExpression(NullExpression* nullExpression) {
     sourceFile->append("nullptr");
 }
@@ -2360,34 +2388,6 @@ bool CppVisitor::openCaseItem(CaseItem* caseItem) {
 
 void CppVisitor::closeCaseItem(CaseItem* caseItem) {
     sourceFile->append(": ");
-}
-
-String* CppVisitor::getReturnType(_Page* _rp, SyntaxNode* syntaxNode) {
-    _Region _region; _Page* _p = _region.get();
-    FunctionDeclaration* functionDeclaration = getFunctionDeclaration(syntaxNode);
-    if (functionDeclaration != nullptr) {
-        FunctionResult* functionResult = functionDeclaration->signature->result;
-        if (functionResult != nullptr) {
-            VarString* ret = new(_p) VarString("");
-            if (functionResult->resultType->_isTypeIdentifier()) {
-                TypeIdentifier* typeIdentifier = (TypeIdentifier*)functionResult->resultType;
-                appendCppTypeName(ret, typeIdentifier);
-                return new(_rp) String(ret);
-            }
-            else if (functionResult->resultType->_isArrayType()) {
-                ArrayType* arrayType = (ArrayType*)functionResult->resultType;
-                if (arrayType->elementType->_isTypeIdentifier()) {
-                    TypeIdentifier* typeIdentifier = (TypeIdentifier*)arrayType->elementType;
-                    ret->append("_Vector<");
-                    appendCppTypeName(ret, typeIdentifier);
-                    ret->append(">");
-                    return new(_rp) String(ret);
-                }
-            }
-        }
-    }
-    
-    return nullptr;
 }
 
 String* CppVisitor::getThrownType(_Page* _rp, SyntaxNode* syntaxNode) {

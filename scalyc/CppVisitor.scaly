@@ -530,7 +530,7 @@ class CppVisitor : SyntaxVisitor {
         }
 
         headerFile.append(" : public ")
-        if classDeclaration.typeInheritanceClause != nullptr {
+        if classDeclaration.typeInheritanceClause != null {
             let inheritances: [Inheritance] = classDeclaration.typeInheritanceClause.inheritances
             var i: int = 0
             for inheritance: Inheritance in inheritances {
@@ -639,7 +639,7 @@ class CppVisitor : SyntaxVisitor {
                             let identifierPattern: IdentifierPattern = patternInitializer.pattern as IdentifierPattern
                             if identifierPattern.annotationForType != null {
                                 let type: Type = identifierPattern.annotationForType.annotationForType
-                                if (type is ArrayType)
+                                if type is ArrayType
                                     return true
                                 if type is TypeIdentifier {
                                     let typeIdentifier: TypeIdentifier = type as TypeIdentifier
@@ -676,7 +676,7 @@ class CppVisitor : SyntaxVisitor {
                 }
             }
         }
-        return nullptr
+        return null
     }
 
     function isCatchingFunctionCall(patternInitializer: PatternInitializer) -> bool {
@@ -894,7 +894,7 @@ class CppVisitor : SyntaxVisitor {
             sourceFile.append(identifierFunctionName)
             sourceFile.append("(")
         }
-        if functionSignature.result != nullptr {
+        if functionSignature.result != null {
             if functionSignature.result.resultType is TypeIdentifier {
                 let typeId: TypeIdentifier = functionSignature.result.resultType as TypeIdentifier
                 if isClass(typeId.name) {
@@ -1323,7 +1323,7 @@ class CppVisitor : SyntaxVisitor {
             }
         }
 
-        return nullptr;
+        return null
     }
     
     function isCreatingObject(functionName: String, node: SyntaxNode) -> bool {
@@ -1731,11 +1731,11 @@ class CppVisitor : SyntaxVisitor {
                             sourceFile.append("_rp")
                         }
                         else {
-                            if (inThrow(identifierExpression)) {
+                            if inThrow(identifierExpression) {
                                 sourceFile.append("_ep")
                             }
                             else {
-                                if (inAssignment(identifierExpression)) {
+                                if inAssignment(identifierExpression) {
                                     var assignment: Assignment = getAssignment(identifierExpression)
                                     if assignment != null {
                                         var classDeclaration: ClassDeclaration = getClassDeclaration(assignment)
@@ -1796,7 +1796,7 @@ class CppVisitor : SyntaxVisitor {
             return true
 
         let parentNode: SyntaxNode = syntaxNode.parent
-        if parentNode == nullptr
+        if parentNode == null
             return false
 
         return inAssignment(parentNode)
@@ -2189,7 +2189,7 @@ class CppVisitor : SyntaxVisitor {
                 returnExpression.expression.accept(this)
                 sourceFile.append(") : 0")
             }
-            if (thrownType != nullptr)
+            if thrownType != null
                 sourceFile.append(")")
         }
         return false
@@ -2253,7 +2253,7 @@ class CppVisitor : SyntaxVisitor {
                     sourceFile.append("new(_ep) ")
                 sourceFile.append("_")
                 sourceFile.append(thrownType)
-                if throwExpression.arguments == nullptr
+                if throwExpression.arguments == null
                     sourceFile.append("Code")
                 sourceFile.append("_")
             }
@@ -2264,7 +2264,7 @@ class CppVisitor : SyntaxVisitor {
             if buildError
                 sourceFile.append(")")
         }
-        if returnType != nullptr
+        if returnType != null
             sourceFile.append(")")
         return false
     }
@@ -2288,6 +2288,31 @@ class CppVisitor : SyntaxVisitor {
     }
 
     function getReturnType(syntaxNode: SyntaxNode) -> String {
+        var functionDeclaration: FunctionDeclaration = getFunctionDeclaration(syntaxNode)
+        if functionDeclaration != null {
+            let functionResult: FunctionResult = functionDeclaration.signature.result
+            if functionResult != null {
+                let ret: VarString = VarString()
+                if functionResult.resultType is TypeIdentifier {
+                    let typeIdentifier: TypeIdentifier = (functionResult.resultType) as TypeIdentifier
+                    appendCppTypeName(ret, typeIdentifier)
+                    return String(ret)
+                }
+                else {
+                    if functionResult.resultType is ArrayType {
+                        let arrayType: ArrayType = (functionResult.resultType) as ArrayType
+                        if arrayType.elementType is TypeIdentifier {
+                            let typeIdentifier: TypeIdentifier = (arrayType.elementType) as TypeIdentifier
+                            ret.append("_Vector<")
+                            appendCppTypeName(ret, typeIdentifier)
+                            ret.append(">")
+                            return String(ret)
+                        }
+                    }
+                }
+            }
+        }
+        
         return null
     }
     
