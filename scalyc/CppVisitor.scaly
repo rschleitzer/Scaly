@@ -2359,7 +2359,13 @@ class CppVisitor : SyntaxVisitor {
     }
 
     function getFunctionDeclaration(syntaxNode: SyntaxNode) -> existing FunctionDeclaration {
-        return null
+        if syntaxNode is FunctionDeclaration
+            return syntaxNode as FunctionDeclaration
+
+        if syntaxNode.parent == null
+            return null
+
+        return getFunctionDeclaration(syntaxNode.parent)
     }
 
     function closeThrowExpression(throwExpression: ThrowExpression) {

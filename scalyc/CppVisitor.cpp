@@ -2361,6 +2361,14 @@ bool CppVisitor::returnsArray(SyntaxNode* syntaxNode) {
     return false;
 }
 
+FunctionDeclaration* CppVisitor::getFunctionDeclaration(SyntaxNode* syntaxNode) {
+    if (syntaxNode->_isFunctionDeclaration())
+        return (FunctionDeclaration*)syntaxNode;
+    if (syntaxNode->parent == nullptr)
+        return nullptr;
+    return getFunctionDeclaration(syntaxNode->parent);
+}
+
 void CppVisitor::visitNullExpression(NullExpression* nullExpression) {
     sourceFile->append("nullptr");
 }
@@ -2428,14 +2436,6 @@ bool CppVisitor::openCaseItem(CaseItem* caseItem) {
 
 void CppVisitor::closeCaseItem(CaseItem* caseItem) {
     sourceFile->append(": ");
-}
-
-FunctionDeclaration* CppVisitor::getFunctionDeclaration(SyntaxNode* syntaxNode) {
-    if (syntaxNode->_isFunctionDeclaration())
-        return (FunctionDeclaration*)syntaxNode;
-    if (syntaxNode->parent == nullptr)
-        return nullptr;
-    return getFunctionDeclaration(syntaxNode->parent);
 }
 
 void CppVisitor::closeThrowExpression(ThrowExpression* throwExpression) {
