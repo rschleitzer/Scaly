@@ -1293,8 +1293,9 @@ String* CppVisitor::getMemberIfCreatingObject(_Page* _rp, Assignment* assignment
     if (functionName == nullptr) {
         return nullptr;
     }
-    if (assignment->expression->_isPrefixExpression()) {
-        PrefixExpression* prefixExpression = (PrefixExpression*)(assignment->expression);
+    if (assignment->expression->_isSimpleExpression()) {
+        SimpleExpression* simpleExpression = (SimpleExpression*)(assignment->expression);
+        PrefixExpression* prefixExpression = simpleExpression->prefixExpression;
         PostfixExpression* rightSide = prefixExpression->expression;
         if (((isClass(functionName) || isCreatingObject(functionName, assignment)) && (rightSide->postfixes->length() == 1))) {
             _Vector<Postfix>* postfixes = rightSide->postfixes;
@@ -1321,8 +1322,9 @@ String* CppVisitor::getMemberIfCreatingObject(_Page* _rp, Assignment* assignment
 }
 
 String* CppVisitor::getFunctionName(_Page* _rp, Assignment* assignment) {
-    if (assignment->expression->_isPrefixExpression()) {
-        PrefixExpression* prefixExpression = (PrefixExpression*)(assignment->expression);
+    if (assignment->expression->_isSimpleExpression()) {
+        SimpleExpression* simpleExpression = (SimpleExpression*)(assignment->expression);
+        PrefixExpression* prefixExpression = simpleExpression->prefixExpression;
         if (prefixExpression->prefixOperator == nullptr) {
             PostfixExpression* rightSide = prefixExpression->expression;
             if (rightSide->primaryExpression->_isIdentifierExpression()) {
@@ -2044,9 +2046,9 @@ bool CppVisitor::openParenthesizedExpression(ParenthesizedExpression* parenthesi
             if (postfixExpression->primaryExpression->_isIdentifierExpression()) {
                 IdentifierExpression* identifierExpression = (IdentifierExpression*)(postfixExpression->primaryExpression);
                 if (!isClass(identifierExpression->name)) {
-                    if (postfixExpression->parent->parent->_isAssignment()) {
+                    if (postfixExpression->parent->parent->parent->_isAssignment()) {
                         _Region _region; _Page* _p = _region.get();
-                        Assignment* assignment = (Assignment*)(postfixExpression->parent->parent);
+                        Assignment* assignment = (Assignment*)(postfixExpression->parent->parent->parent);
                         String* member = getMemberIfCreatingObject(_p, assignment);
                         if (member != nullptr) {
                             ClassDeclaration* classDeclaration = getClassDeclaration(assignment);
