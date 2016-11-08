@@ -2317,7 +2317,32 @@ class CppVisitor : SyntaxVisitor {
     }
     
     function getThrownType(syntaxNode: SyntaxNode) -> String {
-        return null
+        var functionDeclaration: FunctionDeclaration = getFunctionDeclaration(syntaxNode)
+        if functionDeclaration != null {
+            let throwsClause: ThrowsClause = functionDeclaration.signature.throwsClause
+            if throwsClause != null {
+                let ret: VarString = VarString()
+                if throwsClause.throwsType is TypeIdentifier {
+                    let typeIdentifier: TypeIdentifier = (throwsClause.throwsType) as TypeIdentifier
+                    appendCppTypeName(ret, typeIdentifier)
+                    return String(ret)
+                }
+                else {
+                    if throwsClause.throwsType is ArrayType {
+                        let arrayType: ArrayType = (throwsClause.throwsType) as ArrayType
+                        if arrayType.elementType is TypeIdentifier {
+                            let typeIdentifier: TypeIdentifier = (arrayType.elementType) as TypeIdentifier
+                            ret.append("_Vector<")
+                            appendCppTypeName(ret, typeIdentifier)
+                            ret.append(">")
+                            return String(ret)
+                        }
+                    }
+                }
+            }
+        }
+        
+        return nullptr
     }
 
     function returnsArray(syntaxNode: SyntaxNode) -> bool {

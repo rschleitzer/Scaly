@@ -1734,11 +1734,11 @@ void CppVisitor::visitIdentifierExpression(IdentifierExpression* identifierExpre
                         sourceFile->append("_rp");
                     }
                     else {
-                        if ((inThrow(identifierExpression))) {
+                        if (inThrow(identifierExpression)) {
                             sourceFile->append("_ep");
                         }
                         else {
-                            if ((inAssignment(identifierExpression))) {
+                            if (inAssignment(identifierExpression)) {
                                 Assignment* assignment = getAssignment(identifierExpression);
                                 if (assignment != nullptr) {
                                     _Region _region; _Page* _p = _region.get();
@@ -2196,7 +2196,7 @@ bool CppVisitor::openReturnExpression(ReturnExpression* returnExpression) {
             returnExpression->expression->accept(this);
             sourceFile->append(") : 0");
         }
-        if ((thrownType != nullptr))
+        if (thrownType != nullptr)
             sourceFile->append(")");
     }
     return false;
@@ -2321,6 +2321,34 @@ String* CppVisitor::getReturnType(_Page* _rp, SyntaxNode* syntaxNode) {
     return nullptr;
 }
 
+String* CppVisitor::getThrownType(_Page* _rp, SyntaxNode* syntaxNode) {
+    FunctionDeclaration* functionDeclaration = getFunctionDeclaration(syntaxNode);
+    if (functionDeclaration != nullptr) {
+        ThrowsClause* throwsClause = functionDeclaration->signature->throwsClause;
+        if (throwsClause != nullptr) {
+            VarString* ret = new(_rp) VarString();
+            if (throwsClause->throwsType->_isTypeIdentifier()) {
+                TypeIdentifier* typeIdentifier = (TypeIdentifier*)(throwsClause->throwsType);
+                appendCppTypeName(ret, typeIdentifier);
+                return new(_rp) String(ret);
+            }
+            else {
+                if (throwsClause->throwsType->_isArrayType()) {
+                    ArrayType* arrayType = (ArrayType*)(throwsClause->throwsType);
+                    if (arrayType->elementType->_isTypeIdentifier()) {
+                        TypeIdentifier* typeIdentifier = (TypeIdentifier*)(arrayType->elementType);
+                        ret->append("_Vector<");
+                        appendCppTypeName(ret, typeIdentifier);
+                        ret->append(">");
+                        return new(_rp) String(ret);
+                    }
+                }
+            }
+        }
+    }
+    return nullptr;
+}
+
 void CppVisitor::visitNullExpression(NullExpression* nullExpression) {
     sourceFile->append("nullptr");
 }
@@ -2388,34 +2416,6 @@ bool CppVisitor::openCaseItem(CaseItem* caseItem) {
 
 void CppVisitor::closeCaseItem(CaseItem* caseItem) {
     sourceFile->append(": ");
-}
-
-String* CppVisitor::getThrownType(_Page* _rp, SyntaxNode* syntaxNode) {
-    _Region _region; _Page* _p = _region.get();
-    FunctionDeclaration* functionDeclaration = getFunctionDeclaration(syntaxNode);
-    if (functionDeclaration != nullptr) {
-        ThrowsClause* throwsClause = functionDeclaration->signature->throwsClause;
-        if (throwsClause != nullptr) {
-            VarString* ret = new(_p) VarString("");
-            if (throwsClause->throwsType->_isTypeIdentifier()) {
-                TypeIdentifier* typeIdentifier = (TypeIdentifier*)throwsClause->throwsType;
-                appendCppTypeName(ret, typeIdentifier);
-                return new(_rp) String(ret);
-            }
-            else if (throwsClause->throwsType->_isArrayType()) {
-                ArrayType* arrayType = (ArrayType*)throwsClause->throwsType;
-                if (arrayType->elementType->_isTypeIdentifier()) {
-                    TypeIdentifier* typeIdentifier = (TypeIdentifier*)arrayType->elementType;
-                    ret->append("_Vector<");
-                    appendCppTypeName(ret, typeIdentifier);
-                    ret->append(">");
-                    return new(_rp) String(ret);
-                }
-            }
-        }
-    }
-    
-    return nullptr;
 }
 
 bool CppVisitor::returnsArray(SyntaxNode* syntaxNode) {
