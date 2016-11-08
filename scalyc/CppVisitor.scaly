@@ -2381,6 +2381,72 @@ class CppVisitor : SyntaxVisitor {
     }
 
     function openInitializerCall(initializerCall: InitializerCall) -> bool {
+        if initializerCall.typeToInitialize is ArrayType {
+            if !initializerIsBoundOrAssigned(initializerCall) {
+                let arrayType: ArrayType = (initializerCall.typeToInitialize) as ArrayType
+                if arrayType.elementType is TypeIdentifier {
+                    let typeId: TypeIdentifier = (arrayType.elementType) as TypeIdentifier
+                    sourceFile.append("&_Vector<")
+                    sourceFile.append(typeId.name)
+                    sourceFile.append(">::create(")
+                    if inThrow(initializerCall) {
+                        sourceFile.append("_ep")
+                    }
+                    else {
+                        if inReturn(initializerCall)
+                            sourceFile.append("_rp")
+                        else
+                            sourceFile.append("_p")
+                    }
+                    sourceFile.append(", *")
+                    initializerCall.arguments.accept(this)
+                    sourceFile.append(")")
+                    return false
+                }
+            }
+            else {
+                sourceFile.append("new(")
+                if inInitializer(initializerCall) {
+                    sourceFile.append("getPage()")
+                    if initializerCall.parent.parent.parent is Assignment {
+                        let assignment: Assignment = (initializerCall.parent.parent.parent) as Assignment
+                        if inInitializer(assignment) {
+                            sourceFile.append("->allocateExclusivePage()")
+                        }
+                    }
+                }
+                else {
+                    if initializerCall.parent.parent.parent is Assignment {
+                        let assignment: Assignment = (initializerCall.parent.parent.parent) as Assignment
+                        let simpleExpression: SimpleExpression = (assignment.parent) as SimpleExpression
+                        if simpleExpression.prefixExpression.prefixOperator == null {
+                            let leftSide: PostfixExpression = simpleExpression.prefixExpression.expression
+                            if (leftSide.postfixes == null) && (leftSide.primaryExpression is IdentifierExpression) {
+                                let memberExpression: IdentifierExpression = (leftSide.primaryExpression) as IdentifierExpression
+                                let memberName: String = memberExpression.name
+                                var classDeclaration: ClassDeclaration = getClassDeclaration(assignment)
+                                if (classDeclaration != null) && (memberName != null) && (isVariableMember(memberName, classDeclaration)) {
+                                    sourceFile.append("getPage()")
+                                }
+                                else {
+                                    sourceFile.append("_p")
+                                }
+                            }
+                            else {
+                                sourceFile.append("_p")
+                            }
+                        }
+                        else {
+                            sourceFile.append("_p")
+                        }
+                    }
+                    else {
+                        sourceFile.append("_p")
+                    }
+                }
+                sourceFile.append(") ")
+            }
+        }
         return true
     }
 

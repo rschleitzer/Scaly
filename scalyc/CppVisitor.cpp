@@ -2383,18 +2383,21 @@ void CppVisitor::closeBreakExpression(BreakExpression* breakExpression) {
 bool CppVisitor::openInitializerCall(InitializerCall* initializerCall) {
     if (initializerCall->typeToInitialize->_isArrayType()) {
         if (!initializerIsBoundOrAssigned(initializerCall)) {
-            ArrayType* arrayType = (ArrayType*)initializerCall->typeToInitialize;
+            ArrayType* arrayType = (ArrayType*)(initializerCall->typeToInitialize);
             if (arrayType->elementType->_isTypeIdentifier()) {
-                TypeIdentifier* typeId = (TypeIdentifier*)arrayType->elementType;
+                TypeIdentifier* typeId = (TypeIdentifier*)(arrayType->elementType);
                 sourceFile->append("&_Vector<");
                 sourceFile->append(typeId->name);
                 sourceFile->append(">::create(");
-                if (inThrow(initializerCall))
+                if (inThrow(initializerCall)) {
                     sourceFile->append("_ep");
-                else if (inReturn(initializerCall))
-                    sourceFile->append("_rp");
-                else
-                    sourceFile->append("_p");
+                }
+                else {
+                    if (inReturn(initializerCall))
+                        sourceFile->append("_rp");
+                    else
+                        sourceFile->append("_p");
+                }
                 sourceFile->append(", *");
                 initializerCall->arguments->accept(this);
                 sourceFile->append(")");
@@ -2406,7 +2409,7 @@ bool CppVisitor::openInitializerCall(InitializerCall* initializerCall) {
             if (inInitializer(initializerCall)) {
                 sourceFile->append("getPage()");
                 if (initializerCall->parent->parent->parent->_isAssignment()) {
-                    Assignment* assignment = (Assignment*)initializerCall->parent->parent->parent;
+                    Assignment* assignment = (Assignment*)(initializerCall->parent->parent->parent);
                     if (inInitializer(assignment)) {
                         sourceFile->append("->allocateExclusivePage()");
                     }
@@ -2414,11 +2417,11 @@ bool CppVisitor::openInitializerCall(InitializerCall* initializerCall) {
             }
             else {
                 if (initializerCall->parent->parent->parent->_isAssignment()) {
-                    Assignment* assignment = (Assignment*)initializerCall->parent->parent->parent;
+                    Assignment* assignment = (Assignment*)(initializerCall->parent->parent->parent);
                     SimpleExpression* simpleExpression = (SimpleExpression*)(assignment->parent);
-                    if (simpleExpression->prefixExpression->prefixOperator == 0) {
+                    if (simpleExpression->prefixExpression->prefixOperator == nullptr) {
                         PostfixExpression* leftSide = simpleExpression->prefixExpression->expression;
-                        if ((leftSide->postfixes == 0) && (leftSide->primaryExpression->_isIdentifierExpression())) {
+                        if ((leftSide->postfixes == nullptr) && (leftSide->primaryExpression->_isIdentifierExpression())) {
                             IdentifierExpression* memberExpression = (IdentifierExpression*)(leftSide->primaryExpression);
                             String* memberName = memberExpression->name;
                             ClassDeclaration* classDeclaration = getClassDeclaration(assignment);
