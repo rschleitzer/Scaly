@@ -2551,17 +2551,47 @@ class CppVisitor : SyntaxVisitor {
     }
 
     function openCaseItem(caseItem: CaseItem) -> bool {
+        sourceFile.append("case ")
+
         return true
     }
 
     function closeCaseItem(caseItem: CaseItem) {
+        sourceFile.append(": ")
     }
 
     function visitWildcardPattern(wildcardPattern: WildcardPattern) {
     }
 
     function openIdentifierPattern(identifierPattern: IdentifierPattern) -> bool {
-        return true
+        if identifierPattern.parent is PatternInitializer {
+            let patternInitializer: PatternInitializer = (identifierPattern.parent) as PatternInitializer
+            if isCatchingPatternInitializer(patternInitializer)
+            {
+                sourceFile.append("auto _")
+                sourceFile.append(identifierPattern.identifier)
+                sourceFile.append("_result")
+                return false
+            }
+        }
+
+        if identifierPattern.annotationForType != null {
+            identifierPattern.annotationForType.accept(this)
+
+            if !suppressHeader
+                headerFile.append(" ")
+
+            if !suppressSource
+                sourceFile.append(" ")
+        }
+
+        if !suppressHeader
+            headerFile.append(identifierPattern.identifier)
+
+        if !suppressSource
+            sourceFile.append(identifierPattern.identifier)
+
+        return false
     }
 
     function isCatchingPatternInitializer(patternInitializer: PatternInitializer) -> bool {

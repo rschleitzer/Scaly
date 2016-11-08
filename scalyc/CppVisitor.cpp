@@ -2561,29 +2561,25 @@ void CppVisitor::visitWildcardPattern(WildcardPattern* wildcardPattern) {
 
 bool CppVisitor::openIdentifierPattern(IdentifierPattern* identifierPattern) {
     if (identifierPattern->parent->_isPatternInitializer()) {
-        if (isCatchingPatternInitializer((PatternInitializer*)identifierPattern->parent))
-        {
+        PatternInitializer* patternInitializer = (PatternInitializer*)(identifierPattern->parent);
+        if (isCatchingPatternInitializer(patternInitializer)) {
             sourceFile->append("auto _");
             sourceFile->append(identifierPattern->identifier);
             sourceFile->append("_result");
             return false;
         }
     }
-
-    if (identifierPattern->annotationForType) {
+    if (identifierPattern->annotationForType != nullptr) {
         identifierPattern->annotationForType->accept(this);
-        if (!suppressHeader) {
+        if (!suppressHeader)
             headerFile->append(" ");
-        }
         if (!suppressSource)
             sourceFile->append(" ");
     }
-    if (!suppressHeader) {
+    if (!suppressHeader)
         headerFile->append(identifierPattern->identifier);
-    }
-    if (!suppressSource) {
+    if (!suppressSource)
         sourceFile->append(identifierPattern->identifier);
-    }
     return false;
 }
 
