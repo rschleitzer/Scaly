@@ -2346,6 +2346,15 @@ class CppVisitor : SyntaxVisitor {
     }
 
     function returnsArray(syntaxNode: SyntaxNode) -> bool {
+        var functionDeclaration: FunctionDeclaration = getFunctionDeclaration(syntaxNode)
+        if functionDeclaration != null {
+            let functionResult: FunctionResult = functionDeclaration.signature.result
+            if functionResult != null {
+                if functionResult.resultType is ArrayType
+                    return true
+            }
+        }    
+
         return false
     }
 

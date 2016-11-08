@@ -2349,6 +2349,18 @@ String* CppVisitor::getThrownType(_Page* _rp, SyntaxNode* syntaxNode) {
     return nullptr;
 }
 
+bool CppVisitor::returnsArray(SyntaxNode* syntaxNode) {
+    FunctionDeclaration* functionDeclaration = getFunctionDeclaration(syntaxNode);
+    if (functionDeclaration != nullptr) {
+        FunctionResult* functionResult = functionDeclaration->signature->result;
+        if (functionResult != nullptr) {
+            if (functionResult->resultType->_isArrayType())
+                return true;
+        }
+    }
+    return false;
+}
+
 void CppVisitor::visitNullExpression(NullExpression* nullExpression) {
     sourceFile->append("nullptr");
 }
@@ -2416,18 +2428,6 @@ bool CppVisitor::openCaseItem(CaseItem* caseItem) {
 
 void CppVisitor::closeCaseItem(CaseItem* caseItem) {
     sourceFile->append(": ");
-}
-
-bool CppVisitor::returnsArray(SyntaxNode* syntaxNode) {
-    FunctionDeclaration* functionDeclaration = getFunctionDeclaration(syntaxNode);
-    if (functionDeclaration != nullptr) {
-        FunctionResult* functionResult = functionDeclaration->signature->result;
-        if (functionResult != nullptr) {
-            if (functionResult->resultType->_isArrayType())
-                return true;
-        }
-    }    
-    return false;
 }
 
 FunctionDeclaration* CppVisitor::getFunctionDeclaration(SyntaxNode* syntaxNode) {
