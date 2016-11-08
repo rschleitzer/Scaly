@@ -2451,6 +2451,16 @@ class CppVisitor : SyntaxVisitor {
     }
 
     function initializerIsBoundOrAssigned(initializerCall: InitializerCall) -> bool {
+        if initializerCall.parent is PostfixExpression {
+            let postfixExpression: PostfixExpression = (initializerCall.parent) as PostfixExpression
+            if postfixExpression.parent.parent is Assignment {
+                return true
+            }
+            if postfixExpression.parent.parent.parent is Initializer {
+                return true
+            }
+        }
+
         return false
     }
 
