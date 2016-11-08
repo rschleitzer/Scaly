@@ -2416,8 +2416,8 @@ bool CppVisitor::openInitializerCall(InitializerCall* initializerCall) {
             sourceFile->append("new(");
             if (inInitializer(initializerCall)) {
                 sourceFile->append("getPage()");
-                if (initializerCall->parent->parent->parent->_isAssignment()) {
-                    Assignment* assignment = (Assignment*)(initializerCall->parent->parent->parent);
+                if (initializerCall->parent->parent->parent->parent->_isAssignment()) {
+                    Assignment* assignment = (Assignment*)(initializerCall->parent->parent->parent->parent);
                     if (inInitializer(assignment)) {
                         sourceFile->append("->allocateExclusivePage()");
                     }
