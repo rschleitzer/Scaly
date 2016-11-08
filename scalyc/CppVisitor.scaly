@@ -2271,9 +2271,8 @@ class CppVisitor : SyntaxVisitor {
 
     function inWildcardCatchClause(throwExpression: ThrowExpression) -> bool {
         var catchClause: CatchClause = getCatchClause(throwExpression)
-        if catchClause != null
-            if catchClause.catchPattern is WildCardCatchPattern
-                return true
+        if (catchClause != null) && (catchClause.catchPattern is WildCardCatchPattern)
+            return true
 
         return false
     }

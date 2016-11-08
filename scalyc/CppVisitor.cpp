@@ -2280,9 +2280,8 @@ bool CppVisitor::openThrowExpression(ThrowExpression* throwExpression) {
 
 bool CppVisitor::inWildcardCatchClause(ThrowExpression* throwExpression) {
     CatchClause* catchClause = getCatchClause(throwExpression);
-    if (catchClause != nullptr)
-        if (catchClause->catchPattern->_isWildCardCatchPattern())
-            return true;
+    if ((catchClause != nullptr) && (catchClause->catchPattern->_isWildCardCatchPattern()))
+        return true;
     return false;
 }
 
