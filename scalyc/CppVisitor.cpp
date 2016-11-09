@@ -1300,24 +1300,18 @@ String* CppVisitor::getMemberIfCreatingObject(_Page* _rp, Assignment* assignment
         return nullptr;
     }
     if (assignment->expression->_isSimpleExpression()) {
-        SimpleExpression* simpleExpression = (SimpleExpression*)(assignment->expression);
-        PrefixExpression* prefixExpression = simpleExpression->prefixExpression;
-        PostfixExpression* rightSide = prefixExpression->expression;
-        if (((isClass(functionName) || isCreatingObject(functionName, assignment)) && (rightSide->postfixes->length() == 1))) {
-            _Vector<Postfix>* postfixes = rightSide->postfixes;
-            if ((*(*postfixes)[0])->_isFunctionCall()) {
-                if (assignment->parent->_isSimpleExpression()) {
-                    SimpleExpression* simpleExpression = (SimpleExpression*)(assignment->parent);
-                    if (simpleExpression->prefixExpression->prefixOperator == 0) {
-                        PostfixExpression* leftSide = simpleExpression->prefixExpression->expression;
-                        if ((leftSide->postfixes == 0) && (leftSide->primaryExpression->_isIdentifierExpression())) {
-                            _Region _region; _Page* _p = _region.get();
-                            IdentifierExpression* memberExpression = (IdentifierExpression*)(leftSide->primaryExpression);
-                            String* memberName = new(_p) String(memberExpression->name);
-                            ClassDeclaration* classDeclaration = getClassDeclaration(assignment);
-                            if (classDeclaration != nullptr) {
-                                return new(_rp) String(memberName);
-                            }
+        if ((isClass(functionName) || isCreatingObject(functionName, assignment))) {
+            if (assignment->parent->_isSimpleExpression()) {
+                SimpleExpression* simpleExpression = (SimpleExpression*)(assignment->parent);
+                if (simpleExpression->prefixExpression->prefixOperator == 0) {
+                    PostfixExpression* leftSide = simpleExpression->prefixExpression->expression;
+                    if ((leftSide->postfixes == 0) && (leftSide->primaryExpression->_isIdentifierExpression())) {
+                        _Region _region; _Page* _p = _region.get();
+                        IdentifierExpression* memberExpression = (IdentifierExpression*)(leftSide->primaryExpression);
+                        String* memberName = new(_p) String(memberExpression->name);
+                        ClassDeclaration* classDeclaration = getClassDeclaration(assignment);
+                        if (classDeclaration != nullptr) {
+                            return new(_rp) String(memberName);
                         }
                     }
                 }
@@ -1336,6 +1330,18 @@ String* CppVisitor::getFunctionName(_Page* _rp, Assignment* assignment) {
             if (rightSide->primaryExpression->_isIdentifierExpression()) {
                 IdentifierExpression* classExpression = (IdentifierExpression*)(rightSide->primaryExpression);
                 return new(_rp) String(classExpression->name);
+            }
+            else {
+                if (rightSide->primaryExpression->_isInitializerCall()) {
+                    InitializerCall* initializerCall = (InitializerCall*)(rightSide->primaryExpression);
+                    if (initializerCall->typeToInitialize->_isArrayType()) {
+                        ArrayType* arrayType = (ArrayType*)(initializerCall->typeToInitialize);
+                        if (arrayType->elementType->_isTypeIdentifier()) {
+                            TypeIdentifier* typeIdentifier = (TypeIdentifier*)(arrayType->elementType);
+                            return new(_rp) String(typeIdentifier->name);
+                        }
+                    }
+                }
             }
         }
     }
