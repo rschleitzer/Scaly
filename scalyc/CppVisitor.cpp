@@ -2635,13 +2635,6 @@ bool CppVisitor::openTuplePattern(TuplePattern* tuplePattern) {
 void CppVisitor::closeTuplePattern(TuplePattern* tuplePattern) {
 }
 
-bool CppVisitor::openTuplePatternElement(TuplePatternElement* tuplePatternElement) {
-    return true;
-}
-
-void CppVisitor::closeTuplePatternElement(TuplePatternElement* tuplePatternElement) {
-}
-
 bool CppVisitor::openExpressionPattern(ExpressionPattern* expressionPattern) {
     return true;
 }
@@ -2649,6 +2642,13 @@ bool CppVisitor::openExpressionPattern(ExpressionPattern* expressionPattern) {
 void CppVisitor::closeExpressionPattern(ExpressionPattern* expressionPattern) {
     if (expressionPattern->parent->_isItemCaseLabel())
         sourceFile->append(": ");
+}
+
+bool CppVisitor::openTuplePatternElement(TuplePatternElement* tuplePatternElement) {
+    return true;
+}
+
+void CppVisitor::closeTuplePatternElement(TuplePatternElement* tuplePatternElement) {
 }
 
 bool CppVisitor::openBlockCaseContent(BlockCaseContent* blockCaseContent) {

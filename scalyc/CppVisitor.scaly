@@ -2652,6 +2652,8 @@ class CppVisitor : SyntaxVisitor {
     }
 
     function closeExpressionPattern(expressionPattern: ExpressionPattern) {
+        if expressionPattern.parent is ItemCaseLabel
+            sourceFile.append(": ")
     }
 
     function openTuplePatternElement(tuplePatternElement: TuplePatternElement) -> bool {
