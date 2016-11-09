@@ -2684,33 +2684,27 @@ void CppVisitor::visitSuperInit(SuperInit* superInit) {
 void CppVisitor::visitSuperMember(SuperMember* superMember) {
 }
 
+bool CppVisitor::openTypeIdentifier(TypeIdentifier* typeIdentifier) {
+    if (!suppressHeader)
+        appendCppTypeName(headerFile, typeIdentifier);
+    if (!suppressSource)
+        appendCppTypeName(sourceFile, typeIdentifier);
+    if (isClass(typeIdentifier->name) && !inArrayType(typeIdentifier) && !inTypeQuery(typeIdentifier)) {
+        if (!suppressHeader)
+            headerFile->append("*");
+        if (!suppressSource)
+            sourceFile->append("*");
+    }
+    if (inTypeQuery(typeIdentifier))
+        sourceFile->append("()");
+    return true;
+}
+
 bool CppVisitor::openTypeAnnotation(TypeAnnotation* annotationForType) {
     return true;
 }
 
 void CppVisitor::closeTypeAnnotation(TypeAnnotation* annotationForType) {
-}
-
-bool CppVisitor::openTypeIdentifier(TypeIdentifier* typeIdentifier) {
-    if (!suppressHeader) {
-        appendCppTypeName(headerFile, typeIdentifier);
-    }
-    if (!suppressSource) {
-        appendCppTypeName(sourceFile, typeIdentifier);
-    }
-    if (isClass(typeIdentifier->name) && (!inArrayType(typeIdentifier)) && (!inTypeQuery(typeIdentifier))) {
-        if (!suppressHeader) {
-            headerFile->append("*");
-        }
-        if (!suppressSource) {
-            sourceFile->append("*");
-        }
-    }
-    if (inTypeQuery(typeIdentifier)) {
-        sourceFile->append("()");
-    }
-        
-    return true;
 }
 
 bool CppVisitor::inArrayType(TypeIdentifier* typeIdentifier) {

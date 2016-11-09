@@ -2698,6 +2698,23 @@ class CppVisitor : SyntaxVisitor {
     }
 
     function openTypeIdentifier(typeIdentifier: TypeIdentifier) -> bool {
+        if !suppressHeader
+            appendCppTypeName(headerFile, typeIdentifier)
+
+        if !suppressSource
+            appendCppTypeName(sourceFile, typeIdentifier)
+
+        if isClass(typeIdentifier.name) && !inArrayType(typeIdentifier) && !inTypeQuery(typeIdentifier) {
+            if !suppressHeader
+                headerFile.append("*")
+
+            if !suppressSource
+                sourceFile.append("*")
+        }
+
+        if inTypeQuery(typeIdentifier)
+            sourceFile.append("()")
+            
         return true
     }
 
