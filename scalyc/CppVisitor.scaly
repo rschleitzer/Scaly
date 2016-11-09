@@ -2816,7 +2816,7 @@ class CppVisitor : SyntaxVisitor {
     }
 
     function openInheritance(inheritance: Inheritance) -> bool {
-        return true
+        return false
     }
 
     function closeInheritance(inheritance: Inheritance) {

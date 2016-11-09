@@ -2769,11 +2769,11 @@ bool CppVisitor::openArrayType(ArrayType* arrayType) {
 void CppVisitor::closeArrayType(ArrayType* arrayType) {
 }
 
-bool CppVisitor::openTypeAnnotation(TypeAnnotation* annotationForType) {
+bool CppVisitor::openTypeAnnotation(TypeAnnotation* typeAnnotation) {
     return true;
 }
 
-void CppVisitor::closeTypeAnnotation(TypeAnnotation* annotationForType) {
+void CppVisitor::closeTypeAnnotation(TypeAnnotation* typeAnnotation) {
 }
 
 bool CppVisitor::openSubtypeIdentifier(SubtypeIdentifier* subtypeIdentifier) {
