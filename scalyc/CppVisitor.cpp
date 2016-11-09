@@ -75,8 +75,12 @@ bool CppVisitor::openProgram(Program* program) {
                 }
             }
         }
-        inherits = new(getPage()) _Array<Inherits>();
-        classes = new(getPage()) _Array<String>();
+        if (inherits != nullptr)
+            inherits->getPage()->clear();
+        inherits = new(inherits->getPage()) _Array<Inherits>();
+        if (classes != nullptr)
+            classes->getPage()->clear();
+        classes = new(classes->getPage()) _Array<String>();
         collectInheritances(program);
     }
     return true;
