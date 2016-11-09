@@ -2806,12 +2806,18 @@ void CppVisitor::buildMainHeaderFileString(VarString* mainHeaderFile, Program* p
     mainHeaderFile->append("__\n#define __scaly__");
     mainHeaderFile->append(program->name);
     mainHeaderFile->append("__\n\n#include \"Scaly.h\"\n");
-    size_t noOfCompilationUnits = program->compilationUnits->length();
-    for (size_t i = 0; i < noOfCompilationUnits; i++) {
-        _Region _region; _Page* _p = _region.get();
-        mainHeaderFile->append("#include \"");
-        mainHeaderFile->append(new(mainHeaderFile->getPage()) VarString(Path::getFileNameWithoutExtension(_p, (*(*program->compilationUnits)[i])->fileName)));
-        mainHeaderFile->append(".h\"\n");
+    _Vector<CompilationUnit>* compilationUnits = program->compilationUnits;
+    CompilationUnit* compilationUnit = nullptr;
+    size_t _compilationUnits_length = compilationUnits->length();
+    for (size_t _i = 0; _i < _compilationUnits_length; _i++) {
+        compilationUnit = *(*compilationUnits)[_i];
+        {
+            _Region _region; _Page* _p = _region.get();
+            mainHeaderFile->append("#include \"");
+            String* fileName = Path::getFileNameWithoutExtension(_p, compilationUnit->fileName);
+            mainHeaderFile->append(fileName);
+            mainHeaderFile->append(".h\"\n");
+        }
     }
     mainHeaderFile->append("\nusing namespace scaly;\nnamespace ");
     mainHeaderFile->append(program->name);

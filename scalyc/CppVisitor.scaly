@@ -2823,6 +2823,21 @@ class CppVisitor : SyntaxVisitor {
     }
 
     function buildMainHeaderFileString(mutable projectFile: VarString, program: Program) {
+        mainHeaderFile.append("#ifndef __scaly__")
+        mainHeaderFile.append(program.name)
+        mainHeaderFile.append("__\n#define __scaly__")
+        mainHeaderFile.append(program.name)
+        mainHeaderFile.append("__\n\n#include \"Scaly.h\"\n")
+        let compilationUnits: [CompilationUnit] = program.compilationUnits
+        for compilationUnit: CompilationUnit in compilationUnits {
+            mainHeaderFile.append("#include \"")
+            mutable fileName: String = Path.getFileNameWithoutExtension(compilationUnit.fileName)
+            mainHeaderFile.append(fileName)
+            mainHeaderFile.append(".h\"\n")
+        }
+        mainHeaderFile.append("\nusing namespace scaly;\nnamespace ")
+        mainHeaderFile.append(program.name)
+        mainHeaderFile.append(" {\nint _main(_Vector<String>* arguments);\n}\n\n#endif // __scaly__scalyc__\n")
     }
     
     function buildProjectFileString(mutable projectFile: VarString, program: Program) {
