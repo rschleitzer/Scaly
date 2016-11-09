@@ -2474,12 +2474,8 @@ bool CppVisitor::openInitializerCall(InitializerCall* initializerCall) {
 bool CppVisitor::initializerIsBoundOrAssigned(InitializerCall* initializerCall) {
     if (initializerCall->parent->_isPostfixExpression()) {
         PostfixExpression* postfixExpression = (PostfixExpression*)(initializerCall->parent);
-        if (postfixExpression->parent->parent->parent->_isAssignment()) {
+        if ((postfixExpression->parent->parent->parent->_isAssignment()) || (postfixExpression->parent->parent->parent->_isInitializer()))
             return true;
-        }
-        if (postfixExpression->parent->parent->parent->_isInitializer()) {
-            return true;
-        }
     }
     return false;
 }

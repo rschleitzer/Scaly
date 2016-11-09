@@ -2039,8 +2039,8 @@ class CppVisitor : SyntaxVisitor {
                 if postfixExpression.primaryExpression is IdentifierExpression {
                     let identifierExpression: IdentifierExpression = (postfixExpression.primaryExpression) as IdentifierExpression
                     if !isClass(identifierExpression.name) {
-                        if postfixExpression.parent.parent is Assignment {
-                            let assignment: Assignment = (postfixExpression.parent.parent) as Assignment
+                        if postfixExpression.parent.parent.parent is Assignment {
+                            let assignment: Assignment = (postfixExpression.parent.parent.parent) as Assignment
                             mutable member: String = getMemberIfCreatingObject(assignment)
                             if member != null {
                                 var classDeclaration: ClassDeclaration = getClassDeclaration(assignment)
@@ -2422,16 +2422,16 @@ class CppVisitor : SyntaxVisitor {
                 sourceFile.append("new(")
                 if inInitializer(initializerCall) {
                     sourceFile.append("getPage()")
-                    if initializerCall.parent.parent.parent is Assignment {
-                        let assignment: Assignment = (initializerCall.parent.parent.parent) as Assignment
+                    if initializerCall.parent.parent.parent.parent is Assignment {
+                        let assignment: Assignment = (initializerCall.parent.parent.parent.parent) as Assignment
                         if inInitializer(assignment) {
                             sourceFile.append("->allocateExclusivePage()")
                         }
                     }
                 }
                 else {
-                    if initializerCall.parent.parent.parent is Assignment {
-                        let assignment: Assignment = (initializerCall.parent.parent.parent) as Assignment
+                    if initializerCall.parent.parent.parent.parent is Assignment {
+                        let assignment: Assignment = (initializerCall.parent.parent.parent.parent) as Assignment
                         let simpleExpression: SimpleExpression = (assignment.parent) as SimpleExpression
                         if simpleExpression.prefixExpression.prefixOperator == null {
                             let leftSide: PostfixExpression = simpleExpression.prefixExpression.expression
@@ -2440,7 +2440,8 @@ class CppVisitor : SyntaxVisitor {
                                 let memberName: String = memberExpression.name
                                 var classDeclaration: ClassDeclaration = getClassDeclaration(assignment)
                                 if (classDeclaration != null) && (memberName != null) && (isVariableMember(memberName, classDeclaration)) {
-                                    sourceFile.append("getPage()")
+                                    sourceFile.append(memberName)
+                                    sourceFile.append("->getPage()")
                                 }
                                 else {
                                     sourceFile.append("_p")
@@ -2467,12 +2468,8 @@ class CppVisitor : SyntaxVisitor {
     function initializerIsBoundOrAssigned(initializerCall: InitializerCall) -> bool {
         if initializerCall.parent is PostfixExpression {
             let postfixExpression: PostfixExpression = (initializerCall.parent) as PostfixExpression
-            if postfixExpression.parent.parent is Assignment {
+            if (postfixExpression.parent.parent.parent is Assignment) || (postfixExpression.parent.parent.parent is Initializer)
                 return true
-            }
-            if postfixExpression.parent.parent.parent is Initializer {
-                return true
-            }
         }
 
         return false
