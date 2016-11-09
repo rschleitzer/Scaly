@@ -2673,7 +2673,7 @@ class CppVisitor : SyntaxVisitor {
     function closeBlockCaseContent(blockCaseContent: BlockCaseContent) {
         var additionalLineFeed: bool = true
         if blockCaseContent.parent is SwitchCase {
-            let switchCase: SwitchCase = (blockCaseContent.parent) as SwitchCase
+            let switchCase: SwitchCase = blockCaseContent.parent as SwitchCase
             if !switchCase.label is DefaultCaseLabel {
                 indentSource()
                 sourceFile.append("break;\n")
