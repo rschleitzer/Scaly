@@ -2733,6 +2733,19 @@ class CppVisitor : SyntaxVisitor {
     }
 
     function appendCppTypeName(mutable s: VarString, typeIdentifier: TypeIdentifier) {
+        let typeIdentifierName: String = typeIdentifier.name
+        if typeIdentifierName.equals("unsigned") {
+            s.append("size_t")
+            return
+        }
+        else {
+            if typeIdentifierName.equals("character") {
+                s.append("char")
+                return
+            }
+        }
+
+        s.append(typeIdentifierName)
     }
 
     function closeTypeIdentifier(typeIdentifier: TypeIdentifier) {

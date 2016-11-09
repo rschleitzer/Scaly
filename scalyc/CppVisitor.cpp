@@ -2712,25 +2712,26 @@ bool CppVisitor::inTypeQuery(TypeIdentifier* typeIdentifier) {
     return false;
 }
 
-bool CppVisitor::openTypeAnnotation(TypeAnnotation* annotationForType) {
-    return true;
-}
-
-void CppVisitor::closeTypeAnnotation(TypeAnnotation* annotationForType) {
-}
-
 void CppVisitor::appendCppTypeName(VarString* s, TypeIdentifier* typeIdentifier) {
     String* typeIdentifierName = typeIdentifier->name;
     if (typeIdentifierName->equals("unsigned")) {
         s->append("size_t");
         return;
     }
-    else if (typeIdentifierName->equals("character")) {
-        s->append("char");
-        return;
+    else {
+        if (typeIdentifierName->equals("character")) {
+            s->append("char");
+            return;
+        }
     }
-
     s->append(typeIdentifierName);
+}
+
+bool CppVisitor::openTypeAnnotation(TypeAnnotation* annotationForType) {
+    return true;
+}
+
+void CppVisitor::closeTypeAnnotation(TypeAnnotation* annotationForType) {
 }
 
 void CppVisitor::closeTypeIdentifier(TypeIdentifier* typeIdentifier) {
