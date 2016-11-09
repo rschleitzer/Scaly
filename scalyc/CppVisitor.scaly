@@ -2841,5 +2841,110 @@ class CppVisitor : SyntaxVisitor {
     }
     
     function buildProjectFileString(mutable projectFile: VarString, program: Program) {
+        projectFile.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n")
+        projectFile.append("<CodeLite_Project Name=\"")
+        projectFile.append(program.name)
+        projectFile.append("\" InternalType=\"Console\">\n  <Plugins>\n    <Plugin Name=\"qmake\">\n")
+        projectFile.append("      <![CDATA[00020001N0005Debug0000000000000001N0007Release000000000000]]>\n    </Plugin>\n")
+        projectFile.append("    <Plugin Name=\"CMakePlugin\">\n      <![CDATA[[{\n")
+        projectFile.append("  \"name\": \"Debug\",\n  \"enabled\": false,\n  \"buildDirectory\": \"build\",\n")
+        projectFile.append("  \"sourceDirectory\": \"$(ProjectPath)\",\n  \"generator\": \"\",\n  \"buildType\": \"\",\n")
+        projectFile.append("  \"arguments\": [],\n  \"parentProject\": \"\"\n")
+        projectFile.append(" }, {\n")
+        projectFile.append("  \"name\": \"Release\",\n")
+        projectFile.append("  \"enabled\": false,\n")
+        projectFile.append("  \"buildDirectory\": \"build\",\n")
+        projectFile.append("  \"sourceDirectory\": \"$(ProjectPath)\",\n")
+        projectFile.append("  \"generator\": \"\",\n")
+        projectFile.append("  \"buildType\": \"\",\n")
+        projectFile.append("  \"arguments\": [],\n")
+        projectFile.append("  \"parentProject\": \"\"\n")
+        projectFile.append(" }]]]>\n    </Plugin>\n  </Plugins>\n")
+        projectFile.append("  <Description/>\n  <Dependencies/>\n")
+        projectFile.append("  <VirtualDirectory Name=\"src\">\n    <File Name=\"main.cpp\"/>\n")
+        {
+            let compilationUnits: [CompilationUnit] = program.compilationUnits
+            for compilationUnit: CompilationUnit in compilationUnits {
+                projectFile.append("    <File Name=\"")
+                mutable fileName: String = Path.getFileNameWithoutExtension(compilationUnit.fileName)
+                projectFile.append(fileName)
+                projectFile.append(".cpp\"/>\n");
+            }
+        }
+        projectFile.append("  </VirtualDirectory>\n  <VirtualDirectory Name=\"include\">\n")
+        {
+            let compilationUnits: [CompilationUnit] = program.compilationUnits
+            for compilationUnit: CompilationUnit in compilationUnits {
+                projectFile.append("    <File Name=\"")
+                mutable fileName: String = Path.getFileNameWithoutExtension(compilationUnit.fileName)
+                projectFile.append(fileName)
+                projectFile.append(".h\"/>\n");
+            }
+        }
+        projectFile.append("  </VirtualDirectory>\n  <Settings Type=\"Executable\">\n    <GlobalSettings>\n")
+        projectFile.append("      <Compiler Options=\"\" C_Options=\"\" Assembler=\"\">\n")
+        projectFile.append("        <IncludePath Value=\".\"/>\n      </Compiler>\n      <Linker Options=\"\">\n")
+        projectFile.append("        <LibraryPath Value=\".\"/>\n      </Linker>\n      <ResourceCompiler Options=\"\"/>\n")
+        projectFile.append("    </GlobalSettings>\n")
+        projectFile.append("    <Configuration Name=\"Debug\" CompilerType=\"GCC\" DebuggerType=\"GNU gdb debugger\"")
+        projectFile.append(" Type=\"Executable\" BuildCmpWithGlobalSettings=\"append\" BuildLnkWithGlobalSettings=\"append\"")
+        projectFile.append(" BuildResWithGlobalSettings=\"append\">\n")
+        projectFile.append("      <Compiler Options=\"-g;-O0;-std=c++11;-Wall\" C_Options=\"-g;-O0;-Wall\" Assembler=\"\"")
+        projectFile.append(" Required=\"yes\" PreCompiledHeader=\"\" PCHInCommandLine=\"no\" PCHFlags=\"\" PCHFlagsPolicy=\"0\">\n")
+        projectFile.append("        <IncludePath Value=\".\"/>\n        <IncludePath Value=\"../scaly\"/>\n      </Compiler>\n")
+        projectFile.append("      <Linker Options=\"\" Required=\"yes\">\n        <LibraryPath Value=\"../Debug\"/>\n")
+        projectFile.append("        <Library Value=\"libscaly\"/>\n      </Linker>\n      <ResourceCompiler Options=\"\" Required=\"no\"/>\n")
+        projectFile.append("      <General OutputFile=\"$(IntermediateDirectory)/$(ProjectName)\" IntermediateDirectory=\"../Debug\" ")
+        projectFile.append("Command=\"./$(ProjectName)\" CommandArguments=\"-o ")
+        projectFile.append(program.name)
+        projectFile.append(" -d output")
+        {
+            let compilationUnits: [CompilationUnit] = program.compilationUnits
+            for compilationUnit: CompilationUnit in compilationUnits {
+                projectFile.append(" ../")
+                projectFile.append(program.name)
+                projectFile.append("/")
+                mutable fileName: String = Path.getFileNameWithoutExtension(compilationUnit.fileName)
+                projectFile.append(fileName)
+                projectFile.append(".scaly")
+            }
+        }
+        projectFile.append("\" UseSeparateDebugArgs=\"no\" DebugArguments=\"\" WorkingDirectory=\"$(IntermediateDirectory)\"")
+        projectFile.append(" PauseExecWhenProcTerminates=\"yes\" IsGUIProgram=\"no\" IsEnabled=\"yes\"/>\n")
+        projectFile.append("      <Environment EnvVarSetName=\"&lt;Use Defaults&gt;\" DbgSetName=\"&lt;Use Defaults&gt;\">\n")
+        projectFile.append("        <![CDATA[]]>\n      </Environment>\n")
+        projectFile.append("      <Debugger IsRemote=\"no\" RemoteHostName=\"\" RemoteHostPort=\"\" DebuggerPath=\"\" IsExtended=\"yes\">\n")
+        projectFile.append("        <DebuggerSearchPaths/>\n        <PostConnectCommands/>\n        <StartupCommands/>\n      </Debugger>\n")
+        projectFile.append("      <PreBuild/>\n      <PostBuild/>\n      <CustomBuild Enabled=\"no\">\n        <RebuildCommand/>\n")
+        projectFile.append("        <CleanCommand/>\n        <BuildCommand/>\n        <PreprocessFileCommand/>\n        <SingleFileCommand/>\n")
+        projectFile.append("        <MakefileGenerationCommand/>\n        <ThirdPartyToolName>None</ThirdPartyToolName>\n")
+        projectFile.append("        <WorkingDirectory/>\n      </CustomBuild>\n      <AdditionalRules>\n")
+        projectFile.append("        <CustomPostBuild/>\n        <CustomPreBuild/>\n      </AdditionalRules>\n")
+        projectFile.append("      <Completion EnableCpp11=\"no\" EnableCpp14=\"no\">\n        <ClangCmpFlagsC/>\n        <ClangCmpFlags/>\n")
+        projectFile.append("        <ClangPP/>\n        <SearchPaths/>\n      </Completion>\n")
+        projectFile.append("    </Configuration>\n")
+        projectFile.append("    <Configuration Name=\"Release\" CompilerType=\"GCC\" DebuggerType=\"GNU gdb debugger\" Type=\"Executable\"")
+        projectFile.append(" BuildCmpWithGlobalSettings=\"append\" BuildLnkWithGlobalSettings=\"append\" BuildResWithGlobalSettings=\"append\">\n")
+        projectFile.append("      <Compiler Options=\"-O2;-Wall\" C_Options=\"-O2;-Wall\" Assembler=\"\" Required=\"yes\" PreCompiledHeader=\"\"")
+        projectFile.append(" PCHInCommandLine=\"no\" PCHFlags=\"\" PCHFlagsPolicy=\"0\">\n")
+        projectFile.append("        <IncludePath Value=\".\"/>\n        <Preprocessor Value=\"NDEBUG\"/>\n")
+        projectFile.append("      </Compiler>\n      <Linker Options=\"\" Required=\"yes\">\n")
+        projectFile.append("        <LibraryPath Value=\"../Release\"/>\n        <Library Value=\"libscaly\"/>\n      </Linker>\n")
+        projectFile.append("      <ResourceCompiler Options=\"\" Required=\"no\"/>\n")
+        projectFile.append("      <General OutputFile=\"$(IntermediateDirectory)/$(ProjectName)\" IntermediateDirectory=\"../Release\"")
+        projectFile.append(" Command=\"./$(ProjectName)\" CommandArguments=\"\" UseSeparateDebugArgs=\"no\" DebugArguments=\"\"")
+        projectFile.append(" WorkingDirectory=\"$(IntermediateDirectory)\" PauseExecWhenProcTerminates=\"yes\" IsGUIProgram=\"no\" IsEnabled=\"yes\"/>\n")
+        projectFile.append("      <Environment EnvVarSetName=\"&lt;Use Defaults&gt;\" DbgSetName=\"&lt;Use Defaults&gt;\">\n")
+        projectFile.append("        <![CDATA[]]>\n      </Environment>\n")
+        projectFile.append("      <Debugger IsRemote=\"no\" RemoteHostName=\"\" RemoteHostPort=\"\" DebuggerPath=\"\" IsExtended=\"yes\">\n")
+        projectFile.append("        <DebuggerSearchPaths/>\n        <PostConnectCommands/>\n        <StartupCommands/>\n")
+        projectFile.append("      </Debugger>\n      <PreBuild/>\n      <PostBuild/>\n      <CustomBuild Enabled=\"no\">\n")
+        projectFile.append("        <RebuildCommand/>\n        <CleanCommand/>\n        <BuildCommand/>\n        <PreprocessFileCommand/>\n")
+        projectFile.append("        <SingleFileCommand/>\n        <MakefileGenerationCommand/>\n")
+        projectFile.append("        <ThirdPartyToolName>None</ThirdPartyToolName>\n        <WorkingDirectory/>\n")
+        projectFile.append("      </CustomBuild>\n      <AdditionalRules>\n        <CustomPostBuild/>\n")
+        projectFile.append("        <CustomPreBuild/>\n      </AdditionalRules>\n      <Completion EnableCpp11=\"no\" EnableCpp14=\"no\">\n")
+        projectFile.append("        <ClangCmpFlagsC/>\n        <ClangCmpFlags/>\n        <ClangPP/>\n")
+        projectFile.append("        <SearchPaths/>\n      </Completion>\n    </Configuration>\n  </Settings>\n</CodeLite_Project>\n")
     }
 }
