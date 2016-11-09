@@ -2821,10 +2821,10 @@ class CppVisitor : SyntaxVisitor {
 
     function closeInheritance(inheritance: Inheritance) {
     }
-    
-    function buildProjectFileString(mutable projectFile: VarString, program: Program) {
-    }
 
     function buildMainHeaderFileString(mutable projectFile: VarString, program: Program) {
+    }
+    
+    function buildProjectFileString(mutable projectFile: VarString, program: Program) {
     }
 }
