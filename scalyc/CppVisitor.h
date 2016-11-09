@@ -241,7 +241,7 @@ public:
     virtual void closeTypeInheritanceClause(TypeInheritanceClause* typeInheritanceClause);
     virtual bool openInheritance(Inheritance* inheritance);
     virtual void closeInheritance(Inheritance* inheritance);
-    virtual void buildMainHeaderFileString(VarString* projectFile, Program* program);
+    virtual void buildMainHeaderFileString(VarString* mainHeaderFile, Program* program);
     virtual void buildProjectFileString(VarString* projectFile, Program* program);
 
     virtual bool _isCppVisitor();
