@@ -435,7 +435,7 @@
         <content link = EmptyCaseContent
 
     <syntax id = BlockCaseContent                               base = CaseContent
-        <content link = TerminatedStatement    multiple         property = statements
+        <content link = TerminatedStatement   multiple          property = statements
 
     <syntax id = EmptyCaseContent                               base = CaseContent
         <content link = semicolon

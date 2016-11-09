@@ -2436,8 +2436,8 @@ bool CppVisitor::openInitializerCall(InitializerCall* initializerCall) {
                 }
             }
             else {
-                if (initializerCall->parent->parent->parent->_isAssignment()) {
-                    Assignment* assignment = (Assignment*)(initializerCall->parent->parent->parent);
+                if (initializerCall->parent->parent->parent->parent->_isAssignment()) {
+                    Assignment* assignment = (Assignment*)(initializerCall->parent->parent->parent->parent);
                     SimpleExpression* simpleExpression = (SimpleExpression*)(assignment->parent);
                     if (simpleExpression->prefixExpression->prefixOperator == nullptr) {
                         PostfixExpression* leftSide = simpleExpression->prefixExpression->expression;
@@ -2446,7 +2446,8 @@ bool CppVisitor::openInitializerCall(InitializerCall* initializerCall) {
                             String* memberName = memberExpression->name;
                             ClassDeclaration* classDeclaration = getClassDeclaration(assignment);
                             if ((classDeclaration != nullptr) && (memberName != nullptr) && (isVariableMember(memberName, classDeclaration))) {
-                                sourceFile->append("getPage()");
+                                sourceFile->append(memberName);
+                                sourceFile->append("->getPage()");
                             }
                             else {
                                 sourceFile->append("_p");
