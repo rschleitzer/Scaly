@@ -2822,7 +2822,7 @@ class CppVisitor : SyntaxVisitor {
     function closeInheritance(inheritance: Inheritance) {
     }
 
-    function buildMainHeaderFileString(mutable projectFile: VarString, program: Program) {
+    function buildMainHeaderFileString(mutable mainHeaderFile: VarString, program: Program) {
         mainHeaderFile.append("#ifndef __scaly__")
         mainHeaderFile.append(program.name)
         mainHeaderFile.append("__\n#define __scaly__")
