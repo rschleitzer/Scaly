@@ -2719,10 +2719,16 @@ class CppVisitor : SyntaxVisitor {
     }
 
     function inArrayType(typeIdentifier: TypeIdentifier) -> bool {
+        if typeIdentifier.parent is ArrayType
+            return true
+
         return false
     }
 
     function inTypeQuery(typeIdentifier: TypeIdentifier) -> bool {
+        if typeIdentifier.parent is TypeQuery
+            return true
+
         return false
     }
 

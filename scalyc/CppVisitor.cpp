@@ -2700,6 +2700,18 @@ bool CppVisitor::openTypeIdentifier(TypeIdentifier* typeIdentifier) {
     return true;
 }
 
+bool CppVisitor::inArrayType(TypeIdentifier* typeIdentifier) {
+    if (typeIdentifier->parent->_isArrayType())
+        return true;
+    return false;
+}
+
+bool CppVisitor::inTypeQuery(TypeIdentifier* typeIdentifier) {
+    if (typeIdentifier->parent->_isTypeQuery())
+        return true;
+    return false;
+}
+
 bool CppVisitor::openTypeAnnotation(TypeAnnotation* annotationForType) {
     return true;
 }
@@ -2707,19 +2719,6 @@ bool CppVisitor::openTypeAnnotation(TypeAnnotation* annotationForType) {
 void CppVisitor::closeTypeAnnotation(TypeAnnotation* annotationForType) {
 }
 
-bool CppVisitor::inArrayType(TypeIdentifier* typeIdentifier) {
-    if (typeIdentifier->parent->_isArrayType())
-        return true;
-
-    return false;
-}
-
-bool CppVisitor::inTypeQuery(TypeIdentifier* typeIdentifier) {
-    if (typeIdentifier->parent->_isTypeQuery())
-        return true;
-
-    return false;
-}
 void CppVisitor::appendCppTypeName(VarString* s, TypeIdentifier* typeIdentifier) {
     String* typeIdentifierName = typeIdentifier->name;
     if (typeIdentifierName->equals("unsigned")) {
