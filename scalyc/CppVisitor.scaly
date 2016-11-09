@@ -2664,10 +2664,28 @@ class CppVisitor : SyntaxVisitor {
     }
 
     function openBlockCaseContent(blockCaseContent: BlockCaseContent) -> bool {
+        sourceFile.append("{\n")
+        sourceIndentLevel++
+
         return true
     }
 
     function closeBlockCaseContent(blockCaseContent: BlockCaseContent) {
+        var additionalLineFeed: bool = true
+        if blockCaseContent.parent is SwitchCase {
+            let switchCase: SwitchCase = (blockCaseContent.parent) as SwitchCase
+            if !switchCase.label is DefaultCaseLabel {
+                indentSource()
+                sourceFile.append("break;\n")
+            }
+            else
+                additionalLineFeed = false
+        }
+        sourceIndentLevel--
+        indentSource()
+        sourceFile.append("}\n")
+        if additionalLineFeed
+            sourceFile.append("\n")
     }
 
     function visitEmptyCaseContent(emptyCaseContent: EmptyCaseContent) {
