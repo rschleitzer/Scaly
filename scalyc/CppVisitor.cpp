@@ -1300,7 +1300,7 @@ String* CppVisitor::getMemberIfCreatingObject(_Page* _rp, Assignment* assignment
         return nullptr;
     }
     if (assignment->expression->_isSimpleExpression()) {
-        if ((isClass(functionName) || isCreatingObject(functionName, assignment))) {
+        if (isClass(functionName) || isCreatingObject(functionName, assignment)) {
             if (assignment->parent->_isSimpleExpression()) {
                 SimpleExpression* simpleExpression = (SimpleExpression*)(assignment->parent);
                 if (simpleExpression->prefixExpression->prefixOperator == 0) {

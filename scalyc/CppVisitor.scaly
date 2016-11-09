@@ -1290,10 +1290,8 @@ class CppVisitor : SyntaxVisitor {
             return null
         }
 
-        let rightSide: PostfixExpression = assignment.expression.expression
-        if ((isClass(functionName) || isCreatingObject(functionName, assignment)) && (rightSide.postfixes.length() == 1)) {
-            let postfixes: [Postfix] = rightSide.postfixes
-            if (postfixes[0]) is FunctionCall {
+        if assignment.expression is SimpleExpression {
+            if isClass(functionName) || isCreatingObject(functionName, assignment) {
                 if assignment.parent is SimpleExpression {
                     let simpleExpression: SimpleExpression = (assignment.parent) as SimpleExpression
                     if simpleExpression.prefixExpression.prefixOperator == 0 {
@@ -1315,11 +1313,27 @@ class CppVisitor : SyntaxVisitor {
     }
 
     function getFunctionName(assignment: Assignment) -> String {
-        if assignment.expression.prefixOperator == null {
-            let rightSide: PostfixExpression = assignment.expression.expression
-            if rightSide.primaryExpression is IdentifierExpression {
-                let classExpression: IdentifierExpression = (rightSide.primaryExpression) as IdentifierExpression
-                return String(classExpression.name)
+        if assignment.expression is SimpleExpression {
+            let simpleExpression: SimpleExpression = (assignment.expression) as SimpleExpression
+            let prefixExpression: PrefixExpression = simpleExpression.prefixExpression
+            if prefixExpression.prefixOperator == null {
+                let rightSide: PostfixExpression = prefixExpression.expression
+                if rightSide.primaryExpression is IdentifierExpression {
+                    let classExpression: IdentifierExpression = (rightSide.primaryExpression) as IdentifierExpression
+                    return String(classExpression.name)
+                }
+                else {
+                    if rightSide.primaryExpression is InitializerCall {
+                        let initializerCall: InitializerCall = (rightSide.primaryExpression) as InitializerCall
+                        if initializerCall.typeToInitialize is ArrayType {
+                            let arrayType: ArrayType = (initializerCall.typeToInitialize) as ArrayType
+                            if arrayType.elementType is TypeIdentifier {
+                                let typeIdentifier: TypeIdentifier = (arrayType.elementType) as TypeIdentifier
+                                return String(typeIdentifier.name)
+                            }
+                        }
+                    }
+                }
             }
         }
 
