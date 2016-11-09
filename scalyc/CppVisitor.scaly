@@ -2752,7 +2752,40 @@ class CppVisitor : SyntaxVisitor {
     }
 
     function openArrayType(arrayType: ArrayType) -> bool {
-        return true
+        if !sourceIndentLevel {
+            if constDeclaration {
+                headerFile.append("_Vector<")
+                if !suppressSource
+                    sourceFile.append("_Vector<")
+            }
+            else {
+                headerFile.append("_Array<")
+                if !suppressSource
+                    sourceFile.append("_Array<")
+            }
+            arrayType.elementType.accept(this)
+            headerFile.append(">*")
+            if !suppressSource {
+                sourceFile.append(">")
+                if !arrayType.parent is InitializerCall
+                    sourceFile.append("*")
+            }
+        }
+        else {
+            if constDeclaration {
+                sourceFile.append("_Vector<")
+            }
+            else {
+                if !inThrow(arrayType)
+                    sourceFile.append("_Array<")
+            }
+            arrayType.elementType.accept(this)
+            sourceFile.append(">")
+            if !arrayType.parent is InitializerCall
+                sourceFile.append("*")
+        }
+
+        return false
     }
 
     function closeArrayType(arrayType: ArrayType) {

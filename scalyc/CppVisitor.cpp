@@ -2727,21 +2727,7 @@ void CppVisitor::appendCppTypeName(VarString* s, TypeIdentifier* typeIdentifier)
     s->append(typeIdentifierName);
 }
 
-bool CppVisitor::openTypeAnnotation(TypeAnnotation* annotationForType) {
-    return true;
-}
-
-void CppVisitor::closeTypeAnnotation(TypeAnnotation* annotationForType) {
-}
-
 void CppVisitor::closeTypeIdentifier(TypeIdentifier* typeIdentifier) {
-}
-
-bool CppVisitor::openSubtypeIdentifier(SubtypeIdentifier* subtypeIdentifier) {
-    return true;
-}
-
-void CppVisitor::closeSubtypeIdentifier(SubtypeIdentifier* subtypeIdentifier) {
 }
 
 bool CppVisitor::openArrayType(ArrayType* arrayType) {
@@ -2765,17 +2751,33 @@ bool CppVisitor::openArrayType(ArrayType* arrayType) {
         }
     }
     else {
-        if (constDeclaration)
+        if (constDeclaration) {
             sourceFile->append("_Vector<");
-        else
+        }
+        else {
             if (!inThrow(arrayType))
                 sourceFile->append("_Array<");
+        }
         arrayType->elementType->accept(this);
         sourceFile->append(">");
         if (!arrayType->parent->_isInitializerCall())
             sourceFile->append("*");
     }
     return false;
+}
+
+bool CppVisitor::openTypeAnnotation(TypeAnnotation* annotationForType) {
+    return true;
+}
+
+void CppVisitor::closeTypeAnnotation(TypeAnnotation* annotationForType) {
+}
+
+bool CppVisitor::openSubtypeIdentifier(SubtypeIdentifier* subtypeIdentifier) {
+    return true;
+}
+
+void CppVisitor::closeSubtypeIdentifier(SubtypeIdentifier* subtypeIdentifier) {
 }
 
 void CppVisitor::closeArrayType(ArrayType* arrayType) {
