@@ -2766,6 +2766,9 @@ bool CppVisitor::openArrayType(ArrayType* arrayType) {
     return false;
 }
 
+void CppVisitor::closeArrayType(ArrayType* arrayType) {
+}
+
 bool CppVisitor::openTypeAnnotation(TypeAnnotation* annotationForType) {
     return true;
 }
@@ -2778,9 +2781,6 @@ bool CppVisitor::openSubtypeIdentifier(SubtypeIdentifier* subtypeIdentifier) {
 }
 
 void CppVisitor::closeSubtypeIdentifier(SubtypeIdentifier* subtypeIdentifier) {
-}
-
-void CppVisitor::closeArrayType(ArrayType* arrayType) {
 }
 
 void CppVisitor::visitOptionalType(OptionalType* optionalType) {
