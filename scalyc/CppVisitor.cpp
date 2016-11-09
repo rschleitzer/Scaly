@@ -75,21 +75,12 @@ bool CppVisitor::openProgram(Program* program) {
                 }
             }
         }
-        if (inherits != nullptr)
-            inherits->getPage()->clear();
-        inherits = new(inherits->getPage()) _Array<Inherits>();
-        if (classes != nullptr)
-            classes->getPage()->clear();
-        classes = new(classes->getPage()) _Array<String>();
         collectInheritances(program);
     }
     return true;
 }
 
 void CppVisitor::collectInheritances(Program* program) {
-    if (inherits != nullptr)
-        inherits->getPage()->clear();
-    inherits = new(inherits->getPage()) _Array<Inherits>();
     _Vector<CompilationUnit>* compilationUnits = program->compilationUnits;
     CompilationUnit* compilationUnit = nullptr;
     size_t _compilationUnits_length = compilationUnits->length();
