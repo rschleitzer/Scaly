@@ -2846,19 +2846,36 @@ void CppVisitor::buildProjectFileString(VarString* projectFile, Program* program
     projectFile->append(" }]]]>\n    </Plugin>\n  </Plugins>\n");
     projectFile->append("  <Description/>\n  <Dependencies/>\n");
     projectFile->append("  <VirtualDirectory Name=\"src\">\n    <File Name=\"main.cpp\"/>\n");
-    size_t noOfCompilationUnits = program->compilationUnits->length();
-    for (size_t i = 0; i < noOfCompilationUnits; i++) {
-        _Region _region; _Page* _p = _region.get();
-        projectFile->append("    <File Name=\"");
-        projectFile->append(Path::getFileNameWithoutExtension(_p, (*(*program->compilationUnits)[i])->fileName));
-        projectFile->append(".cpp\"/>\n");
+    {
+        _Vector<CompilationUnit>* compilationUnits = program->compilationUnits;
+        CompilationUnit* compilationUnit = nullptr;
+        size_t _compilationUnits_length = compilationUnits->length();
+        for (size_t _i = 0; _i < _compilationUnits_length; _i++) {
+            compilationUnit = *(*compilationUnits)[_i];
+            {
+                _Region _region; _Page* _p = _region.get();
+                projectFile->append("    <File Name=\"");
+                String* fileName = Path::getFileNameWithoutExtension(_p, compilationUnit->fileName);
+                projectFile->append(fileName);
+                projectFile->append(".cpp\"/>\n");
+            }
+        }
     }
     projectFile->append("  </VirtualDirectory>\n  <VirtualDirectory Name=\"include\">\n");
-    for (size_t i = 0; i < noOfCompilationUnits; i++) {
-        _Region _region; _Page* _p = _region.get();
-        projectFile->append("    <File Name=\"");
-        projectFile->append(Path::getFileNameWithoutExtension(_p, (*(*program->compilationUnits)[i])->fileName));
-        projectFile->append(".h\"/>\n");
+    {
+        _Vector<CompilationUnit>* compilationUnits = program->compilationUnits;
+        CompilationUnit* compilationUnit = nullptr;
+        size_t _compilationUnits_length = compilationUnits->length();
+        for (size_t _i = 0; _i < _compilationUnits_length; _i++) {
+            compilationUnit = *(*compilationUnits)[_i];
+            {
+                _Region _region; _Page* _p = _region.get();
+                projectFile->append("    <File Name=\"");
+                String* fileName = Path::getFileNameWithoutExtension(_p, compilationUnit->fileName);
+                projectFile->append(fileName);
+                projectFile->append(".h\"/>\n");
+            }
+        }
     }
     projectFile->append("  </VirtualDirectory>\n  <Settings Type=\"Executable\">\n    <GlobalSettings>\n");
     projectFile->append("      <Compiler Options=\"\" C_Options=\"\" Assembler=\"\">\n");
@@ -2877,13 +2894,22 @@ void CppVisitor::buildProjectFileString(VarString* projectFile, Program* program
     projectFile->append("Command=\"./$(ProjectName)\" CommandArguments=\"-o ");
     projectFile->append(program->name);
     projectFile->append(" -d output");
-    for (size_t i = 0; i < noOfCompilationUnits; i++) {
-        _Region _region; _Page* _p = _region.get();
-        projectFile->append(" ../");
-        projectFile->append(program->name);
-        projectFile->append("/");
-        projectFile->append(Path::getFileNameWithoutExtension(_p, (*(*program->compilationUnits)[i])->fileName));
-        projectFile->append(".scaly");
+    {
+        _Vector<CompilationUnit>* compilationUnits = program->compilationUnits;
+        CompilationUnit* compilationUnit = nullptr;
+        size_t _compilationUnits_length = compilationUnits->length();
+        for (size_t _i = 0; _i < _compilationUnits_length; _i++) {
+            compilationUnit = *(*compilationUnits)[_i];
+            {
+                _Region _region; _Page* _p = _region.get();
+                projectFile->append(" ../");
+                projectFile->append(program->name);
+                projectFile->append("/");
+                String* fileName = Path::getFileNameWithoutExtension(_p, compilationUnit->fileName);
+                projectFile->append(fileName);
+                projectFile->append(".scaly");
+            }
+        }
     }
     projectFile->append("\" UseSeparateDebugArgs=\"no\" DebugArguments=\"\" WorkingDirectory=\"$(IntermediateDirectory)\"");
     projectFile->append(" PauseExecWhenProcTerminates=\"yes\" IsGUIProgram=\"no\" IsEnabled=\"yes\"/>\n");
