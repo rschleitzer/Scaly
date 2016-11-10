@@ -13,7 +13,8 @@ class Compiler {
         mutable compilationUnits: [CompilationUnit] = [CompilationUnit]();
         let index: unsigned = 0
         for source: String in sources {
-            let compilationUnit: CompilationUnit = parseUnit(files[index], source)
+            let moduleName: String = Path.getFileNameWithoutExtension(files[index])
+            let compilationUnit: CompilationUnit = parseUnit(moduleName, source)
                 catch _ (error: CompilerError) throw syntaxError(error)
 
             compilationUnits.push(compilationUnit);
@@ -29,8 +30,8 @@ class Compiler {
         visitor.execute(program)
     }
 
-    static function parseUnit(fileName: String, text: String) -> CompilationUnit throws ParserError {
-        mutable parser: Parser = Parser(fileName, text)
+    static function parseUnit(moduleName: String, text: String) -> CompilationUnit throws ParserError {
+        mutable parser: Parser = Parser(moduleName, text)
         let compilationUnit: CompilationUnit = parser.parseCompilationUnit()
             catch _ (error: ParserError)
                 throw error

@@ -6,23 +6,23 @@ namespace scalyc {
 
 class Inherits : public Object {
 public:
-    Inherits(String* className);
     String* name;
     _Array<String>* inheritors;
+    Inherits(String* className);
 
 };
 
 class CppVisitor : public SyntaxVisitor {
 public:
-    VarString* moduleName;
+    String* moduleName;
     VarString* sourceFile;
     VarString* headerFile;
+    _Array<Inherits>* inherits;
+    _Array<String>* classes;
     size_t headerIndentLevel;
     size_t sourceIndentLevel;
     bool firstParameter;
     bool firstBindingInitializer;
-    _Array<Inherits>* inherits;
-    _Array<String>* classes;
     bool declaringClassMember;
     bool inParameterClause;
     bool abstractFunction;

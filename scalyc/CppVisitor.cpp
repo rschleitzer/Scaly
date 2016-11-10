@@ -8,7 +8,7 @@ Inherits::Inherits(String* className) {
 }
 
 CppVisitor::CppVisitor() {
-    moduleName = new(getPage()->allocateExclusivePage()) VarString("");
+    moduleName = new(getPage()->allocateExclusivePage()) String("");
     sourceFile = new(getPage()->allocateExclusivePage()) VarString("");
     headerFile = new(getPage()->allocateExclusivePage()) VarString("");
     inherits = new(getPage()->allocateExclusivePage()) _Array<Inherits>();
@@ -145,9 +145,7 @@ void CppVisitor::closeProgram(Program* program) {
 }
 
 bool CppVisitor::openCompilationUnit(CompilationUnit* compilationUnit) {
-    if (moduleName != nullptr)
-        moduleName->getPage()->clear();
-    moduleName = new(moduleName->getPage()) VarString(Path::getFileNameWithoutExtension(getPage(), compilationUnit->fileName));
+    moduleName = compilationUnit->fileName;
     headerIndentLevel = 0;
     sourceIndentLevel = 0;
     declaringClassMember = false;

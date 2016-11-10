@@ -1,25 +1,36 @@
 class Inherits {
+
+    // Class to inherit from
+    let name: String
+
+    // Classes which inherit from the class
+    mutable inheritors: [String]
+
     init(className: String) {
         name = String(className)
         inheritors = [String]()
     }
-
-    let name: String
-    mutable inheritors: [String]
 }
 
 
 class CppVisitor : SyntaxVisitor {
 
-    mutable moduleName: VarString
+    // Needed during building one module
+    mutable moduleName: String
     mutable sourceFile: VarString
     mutable headerFile: VarString
-    mutable headerIndentLevel: unsigned
-    mutable sourceIndentLevel: unsigned
-    mutable firstParameter: bool
-    mutable firstBindingInitializer: bool
+
+    // Some rudimentary semantics cache
     mutable inherits: [Inherits]
     mutable classes: [String]
+
+    // indent level
+    mutable headerIndentLevel: unsigned
+    mutable sourceIndentLevel: unsigned
+
+    // Some state during building some constructs
+    mutable firstParameter: bool
+    mutable firstBindingInitializer: bool
     mutable declaringClassMember: bool
     mutable inParameterClause: bool
     mutable abstractFunction: bool
@@ -32,7 +43,7 @@ class CppVisitor : SyntaxVisitor {
 
     init() {
         // null init of mutable members does not work yet
-        moduleName = VarString("")
+        moduleName = String("")
         sourceFile = VarString("")
         headerFile = VarString("")
         inherits = [Inherits]()
@@ -138,7 +149,7 @@ class CppVisitor : SyntaxVisitor {
     }
 
     function openCompilationUnit(compilationUnit: CompilationUnit) -> bool {
-        moduleName = VarString(Path.getFileNameWithoutExtension(getPage(), compilationUnit.fileName))
+        moduleName = compilationUnit.fileName
         headerIndentLevel = 0
         sourceIndentLevel = 0
         declaringClassMember = false

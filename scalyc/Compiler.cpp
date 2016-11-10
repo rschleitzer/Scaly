@@ -33,7 +33,8 @@ CompilerError* Compiler::compileFiles(_Page* _ep, Options* options) {
     for (size_t _i = 0; _i < _sources_length; _i++) {
         source = *(*sources)[_i];
         {
-            auto _compilationUnit_result = parseUnit(_p, _ep, *(*files)[index], source);
+            String* moduleName = Path::getFileNameWithoutExtension(_p, *(*files)[index]);
+            auto _compilationUnit_result = parseUnit(_p, _ep, moduleName, source);
             CompilationUnit* compilationUnit = nullptr;
             if (_compilationUnit_result.succeeded()) {
                 compilationUnit = _compilationUnit_result.getResult();
@@ -58,9 +59,9 @@ CompilerError* Compiler::compileFiles(_Page* _ep, Options* options) {
     return nullptr;
 }
 
-_Result<CompilationUnit, ParserError> Compiler::parseUnit(_Page* _rp, _Page* _ep, String* fileName, String* text) {
+_Result<CompilationUnit, ParserError> Compiler::parseUnit(_Page* _rp, _Page* _ep, String* moduleName, String* text) {
     _Region _region; _Page* _p = _region.get();
-    Parser* parser = new(_p) Parser(fileName, text);
+    Parser* parser = new(_p) Parser(moduleName, text);
     auto _compilationUnit_result = parser->parseCompilationUnit(_rp, _ep);
     CompilationUnit* compilationUnit = nullptr;
     if (_compilationUnit_result.succeeded()) {
