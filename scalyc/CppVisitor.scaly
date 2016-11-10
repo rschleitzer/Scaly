@@ -2897,7 +2897,7 @@ class CppVisitor : SyntaxVisitor {
         projectFile.append("      <General OutputFile=\"$(IntermediateDirectory)/$(ProjectName)\" IntermediateDirectory=\"../Debug\" ")
         projectFile.append("Command=\"./$(ProjectName)\" CommandArguments=\"-o ")
         projectFile.append(program.name)
-        projectFile.append(" -d output")
+        projectFile.append(" -d ../scalyc")
         {
             let compilationUnits: [CompilationUnit] = program.compilationUnits
             for compilationUnit: CompilationUnit in compilationUnits {

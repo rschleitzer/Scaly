@@ -2893,7 +2893,7 @@ void CppVisitor::buildProjectFileString(VarString* projectFile, Program* program
     projectFile->append("      <General OutputFile=\"$(IntermediateDirectory)/$(ProjectName)\" IntermediateDirectory=\"../Debug\" ");
     projectFile->append("Command=\"./$(ProjectName)\" CommandArguments=\"-o ");
     projectFile->append(program->name);
-    projectFile->append(" -d output");
+    projectFile->append(" -d ../scalyc");
     {
         _Vector<CompilationUnit>* compilationUnits = program->compilationUnits;
         CompilationUnit* compilationUnit = nullptr;
