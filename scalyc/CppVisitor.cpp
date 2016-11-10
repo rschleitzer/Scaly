@@ -3,9 +3,12 @@ using namespace scaly;
 namespace scalyc {
 
 CppVisitor::CppVisitor() {
-    moduleName = new(getPage()->allocateExclusivePage()) String("");
-    sourceFile = new(getPage()->allocateExclusivePage()) VarString("");
-    headerFile = new(getPage()->allocateExclusivePage()) VarString("");
+    moduleName = new(getPage()->allocateExclusivePage()) String();
+    sourceFile = new(getPage()->allocateExclusivePage()) VarString();
+    headerFile = new(getPage()->allocateExclusivePage()) VarString();
+    mainHeaderFile = new(getPage()->allocateExclusivePage()) VarString();
+    projectFile = new(getPage()->allocateExclusivePage()) VarString();
+    modules = new(getPage()->allocateExclusivePage()) _Array<CppModule>();
     inherits = new(getPage()->allocateExclusivePage()) _Array<Inherits>();
     classes = new(getPage()->allocateExclusivePage()) _Array<String>();
 }
@@ -37,9 +40,7 @@ bool CppVisitor::openProgram(Program* program) {
         outputFilePath->append("/");
         outputFilePath->append(program->name);
         {
-            _Region _region; _Page* _p = _region.get();
-            VarString* projectFile = new(_p) VarString();
-            buildProjectFileString(projectFile, program);
+            buildProjectFileString(program);
             {
                 _Region _region; _Page* _p = _region.get();
                 VarString* projectFilePath = new(_p) VarString(outputFilePath);
@@ -54,14 +55,12 @@ bool CppVisitor::openProgram(Program* program) {
             }
         }
         {
-            _Region _region; _Page* _p = _region.get();
-            VarString* headerFile = new(_p) VarString();
-            buildMainHeaderFileString(headerFile, program);
+            buildMainHeaderFileString(program);
             {
                 _Region _region; _Page* _p = _region.get();
                 VarString* headerFilePath = new(_p) VarString(outputFilePath);
                 headerFilePath->append(".h");
-                auto _File_error = File::writeFromString(_p, headerFilePath, headerFile);
+                auto _File_error = File::writeFromString(_p, headerFilePath, mainHeaderFile);
                 if (_File_error) {
                     switch (_File_error->getErrorCode()) {
                         default:
@@ -73,67 +72,6 @@ bool CppVisitor::openProgram(Program* program) {
         collectInheritances(program);
     }
     return true;
-}
-
-void CppVisitor::collectInheritances(Program* program) {
-    _Vector<CompilationUnit>* compilationUnits = program->compilationUnits;
-    CompilationUnit* compilationUnit = nullptr;
-    size_t _compilationUnits_length = compilationUnits->length();
-    for (size_t _i = 0; _i < _compilationUnits_length; _i++) {
-        compilationUnit = *(*compilationUnits)[_i];
-        collectInheritancesInCompilationUnit(compilationUnit);
-    }
-}
-
-void CppVisitor::collectInheritancesInCompilationUnit(CompilationUnit* compilationUnit) {
-    if (compilationUnit->statements != nullptr) {
-        _Vector<TerminatedStatement>* statements = compilationUnit->statements;
-        TerminatedStatement* terminatedStatement = nullptr;
-        size_t _statements_length = statements->length();
-        for (size_t _i = 0; _i < _statements_length; _i++) {
-            terminatedStatement = *(*statements)[_i];
-            {
-                if (terminatedStatement->statement != nullptr) {
-                    if (terminatedStatement->statement->_isClassDeclaration()) {
-                        ClassDeclaration* classDeclaration = (ClassDeclaration*)terminatedStatement->statement;
-                        classes->push(classDeclaration->name);
-                        if (classDeclaration->typeInheritanceClause != nullptr) {
-                            TypeInheritanceClause* inheritanceClause = classDeclaration->typeInheritanceClause;
-                            _Vector<Inheritance>* inheritances = inheritanceClause->inheritances;
-                            Inheritance* inheritance = nullptr;
-                            size_t _inheritances_length = inheritances->length();
-                            for (size_t _i = 0; _i < _inheritances_length; _i++) {
-                                inheritance = *(*inheritances)[_i];
-                                {
-                                    registerInheritance(classDeclaration->name, inheritance->typeIdentifier->name);
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-void CppVisitor::registerInheritance(String* className, String* baseName) {
-    Inherits* inherit = nullptr;
-    Inherits* inh = nullptr;
-    size_t _inherits_length = inherits->length();
-    for (size_t _i = 0; _i < _inherits_length; _i++) {
-        inh = *(*inherits)[_i];
-        {
-            if (inh->name->equals(baseName))
-                inherit = inh;
-        }
-    }
-    if (inherit == nullptr) {
-        if (inherit != nullptr)
-            inherit->getPage()->clear();
-        inherit = new(getPage()) Inherits(baseName);
-        inherits->push(inherit);
-    }
-    inherit->inheritors->push(className);
 }
 
 void CppVisitor::closeProgram(Program* program) {
@@ -180,20 +118,6 @@ bool CppVisitor::openCompilationUnit(CompilationUnit* compilationUnit) {
     return true;
 }
 
-bool CppVisitor::isTopLevelFile(CompilationUnit* compilationUnit) {
-    _Vector<TerminatedStatement>* statements = compilationUnit->statements;
-    TerminatedStatement* statement = nullptr;
-    size_t _statements_length = statements->length();
-    for (size_t _i = 0; _i < _statements_length; _i++) {
-        statement = *(*statements)[_i];
-        {
-            if (statement->statement->_isExpression())
-                return true;
-        }
-    }
-    return false;
-}
-
 void CppVisitor::closeCompilationUnit(CompilationUnit* compilationUnit) {
     _Region _region; _Page* _p = _region.get();
     if (!(compilationUnit->parent)->_isProgram())
@@ -232,6 +156,20 @@ void CppVisitor::closeCompilationUnit(CompilationUnit* compilationUnit) {
                 return;
         }
     }
+}
+
+bool CppVisitor::isTopLevelFile(CompilationUnit* compilationUnit) {
+    _Vector<TerminatedStatement>* statements = compilationUnit->statements;
+    TerminatedStatement* statement = nullptr;
+    size_t _statements_length = statements->length();
+    for (size_t _i = 0; _i < _statements_length; _i++) {
+        statement = *(*statements)[_i];
+        {
+            if (statement->statement->_isExpression())
+                return true;
+        }
+    }
+    return false;
 }
 
 bool CppVisitor::openTerminatedStatement(TerminatedStatement* terminatedStatement) {
@@ -2793,7 +2731,7 @@ bool CppVisitor::openInheritance(Inheritance* inheritance) {
 void CppVisitor::closeInheritance(Inheritance* inheritance) {
 }
 
-void CppVisitor::buildMainHeaderFileString(VarString* mainHeaderFile, Program* program) {
+void CppVisitor::buildMainHeaderFileString(Program* program) {
     mainHeaderFile->append("#ifndef __scaly__");
     mainHeaderFile->append(program->name);
     mainHeaderFile->append("__\n#define __scaly__");
@@ -2817,7 +2755,7 @@ void CppVisitor::buildMainHeaderFileString(VarString* mainHeaderFile, Program* p
     mainHeaderFile->append(" {\nint _main(_Vector<String>* arguments);\n}\n\n#endif // __scaly__scalyc__\n");
 }
 
-void CppVisitor::buildProjectFileString(VarString* projectFile, Program* program) {
+void CppVisitor::buildProjectFileString(Program* program) {
     projectFile->append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
     projectFile->append("<CodeLite_Project Name=\"");
     projectFile->append(program->name);
@@ -2941,6 +2879,67 @@ void CppVisitor::buildProjectFileString(VarString* projectFile, Program* program
     projectFile->append("        <CustomPreBuild/>\n      </AdditionalRules>\n      <Completion EnableCpp11=\"no\" EnableCpp14=\"no\">\n");
     projectFile->append("        <ClangCmpFlagsC/>\n        <ClangCmpFlags/>\n        <ClangPP/>\n");
     projectFile->append("        <SearchPaths/>\n      </Completion>\n    </Configuration>\n  </Settings>\n</CodeLite_Project>\n");
+}
+
+void CppVisitor::collectInheritances(Program* program) {
+    _Vector<CompilationUnit>* compilationUnits = program->compilationUnits;
+    CompilationUnit* compilationUnit = nullptr;
+    size_t _compilationUnits_length = compilationUnits->length();
+    for (size_t _i = 0; _i < _compilationUnits_length; _i++) {
+        compilationUnit = *(*compilationUnits)[_i];
+        collectInheritancesInCompilationUnit(compilationUnit);
+    }
+}
+
+void CppVisitor::collectInheritancesInCompilationUnit(CompilationUnit* compilationUnit) {
+    if (compilationUnit->statements != nullptr) {
+        _Vector<TerminatedStatement>* statements = compilationUnit->statements;
+        TerminatedStatement* terminatedStatement = nullptr;
+        size_t _statements_length = statements->length();
+        for (size_t _i = 0; _i < _statements_length; _i++) {
+            terminatedStatement = *(*statements)[_i];
+            {
+                if (terminatedStatement->statement != nullptr) {
+                    if (terminatedStatement->statement->_isClassDeclaration()) {
+                        ClassDeclaration* classDeclaration = (ClassDeclaration*)terminatedStatement->statement;
+                        classes->push(classDeclaration->name);
+                        if (classDeclaration->typeInheritanceClause != nullptr) {
+                            TypeInheritanceClause* inheritanceClause = classDeclaration->typeInheritanceClause;
+                            _Vector<Inheritance>* inheritances = inheritanceClause->inheritances;
+                            Inheritance* inheritance = nullptr;
+                            size_t _inheritances_length = inheritances->length();
+                            for (size_t _i = 0; _i < _inheritances_length; _i++) {
+                                inheritance = *(*inheritances)[_i];
+                                {
+                                    registerInheritance(classDeclaration->name, inheritance->typeIdentifier->name);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+void CppVisitor::registerInheritance(String* className, String* baseName) {
+    Inherits* inherit = nullptr;
+    Inherits* inh = nullptr;
+    size_t _inherits_length = inherits->length();
+    for (size_t _i = 0; _i < _inherits_length; _i++) {
+        inh = *(*inherits)[_i];
+        {
+            if (inh->name->equals(baseName))
+                inherit = inh;
+        }
+    }
+    if (inherit == nullptr) {
+        if (inherit != nullptr)
+            inherit->getPage()->clear();
+        inherit = new(getPage()) Inherits(baseName);
+        inherits->push(inherit);
+    }
+    inherit->inheritors->push(className);
 }
 
 bool CppVisitor::_isCppVisitor() { return true; }

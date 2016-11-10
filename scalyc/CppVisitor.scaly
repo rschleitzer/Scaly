@@ -5,6 +5,12 @@ class CppVisitor : SyntaxVisitor {
     mutable sourceFile: VarString
     mutable headerFile: VarString
 
+    mutable mainHeaderFile: VarString
+    mutable projectFile: VarString
+    
+    mutable modules: [CppModule]
+
+
     // Some rudimentary semantics cache
     mutable inherits: [Inherits]
     mutable classes: [String]
@@ -29,9 +35,12 @@ class CppVisitor : SyntaxVisitor {
     init() {
 
         // null init of mutable members does not work yet
-        moduleName = String("")
-        sourceFile = VarString("")
-        headerFile = VarString("")
+        moduleName = String()
+        sourceFile = VarString()
+        headerFile = VarString()
+        mainHeaderFile = VarString()
+        projectFile = VarString()
+        modules = [CppModule]()
         inherits = [Inherits]()
         classes = [String]()
     }
@@ -60,8 +69,7 @@ class CppVisitor : SyntaxVisitor {
 
             // Build and write the project file
             {
-                mutable projectFile: VarString = VarString()
-                buildProjectFileString(projectFile, program)
+                buildProjectFileString(program)
                 {
                     mutable projectFilePath: VarString  = VarString(outputFilePath)
                     projectFilePath.append(".project")
@@ -73,12 +81,11 @@ class CppVisitor : SyntaxVisitor {
 
             // Build and write the main header file
             {
-                mutable headerFile: VarString = VarString()
-                buildMainHeaderFileString(headerFile, program)
+                buildMainHeaderFileString(program)
                 {
                     mutable headerFilePath: VarString  = VarString(outputFilePath)
                     headerFilePath.append(".h")
-                    File.writeFromString(headerFilePath, headerFile)
+                    File.writeFromString(headerFilePath, mainHeaderFile)
                         catch _ (error: fileError)
                             return false
                 }
@@ -88,47 +95,6 @@ class CppVisitor : SyntaxVisitor {
         }
 
         return true
-    }
-
-    function collectInheritances(program: Program) {
-        let compilationUnits: [CompilationUnit] = program.compilationUnits
-        for compilationUnit: CompilationUnit in compilationUnits
-            collectInheritancesInCompilationUnit(compilationUnit)
-    }
-
-    function collectInheritancesInCompilationUnit(compilationUnit: CompilationUnit) {
-        if compilationUnit.statements != null {
-            let statements: [TerminatedStatement] = compilationUnit.statements
-            for terminatedStatement: TerminatedStatement in statements {
-                if terminatedStatement.statement != null {
-                    if terminatedStatement.statement is ClassDeclaration {
-                        let classDeclaration: ClassDeclaration = terminatedStatement.statement as ClassDeclaration
-                        classes.push(classDeclaration.name)
-                        if classDeclaration.typeInheritanceClause != null {
-                            let inheritanceClause: TypeInheritanceClause  = classDeclaration.typeInheritanceClause
-                            let inheritances: [Inheritance] = inheritanceClause.inheritances
-                            for inheritance: Inheritance in inheritances {
-                                registerInheritance(classDeclaration.name, inheritance.typeIdentifier.name)
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    function registerInheritance(className: String, baseName: String) {
-        mutable inherit: Inherits = null
-        for inh: Inherits in inherits {
-            if inh.name.equals(baseName)
-             inherit = inh
-        }
-
-        if inherit == null {
-            inherit = Inherits(baseName)
-            inherits.push(inherit)
-        }
-        inherit.inheritors.push(className)
     }
     
     function closeProgram(program: Program) {
@@ -178,16 +144,6 @@ class CppVisitor : SyntaxVisitor {
 
         return true
     }
-    
-    function isTopLevelFile(compilationUnit: CompilationUnit) -> bool {
-        let statements: [TerminatedStatement] = compilationUnit.statements
-        for statement: TerminatedStatement in statements {
-            if statement.statement is Expression
-                return true
-        }
-            
-        return false
-    }
 
     function closeCompilationUnit(compilationUnit: CompilationUnit) {
         if !(compilationUnit.parent) is Program
@@ -226,6 +182,23 @@ class CppVisitor : SyntaxVisitor {
         File.writeFromString(sourceFilePath, sourceFile)
             catch _ (error: fileError)
                 return
+        
+        
+        // Fix member assignments
+        // let module: CppModule = CppModule()
+        // module.name = String(moduleName)
+        // module.header = String(headerFile)
+        // module.source = String(sourceFile)
+    }
+    
+    function isTopLevelFile(compilationUnit: CompilationUnit) -> bool {
+        let statements: [TerminatedStatement] = compilationUnit.statements
+        for statement: TerminatedStatement in statements {
+            if statement.statement is Expression
+                return true
+        }
+            
+        return false
     }
 
     function openTerminatedStatement(terminatedStatement: TerminatedStatement) -> bool {
@@ -2819,7 +2792,7 @@ class CppVisitor : SyntaxVisitor {
     function closeInheritance(inheritance: Inheritance) {
     }
 
-    function buildMainHeaderFileString(mutable mainHeaderFile: VarString, program: Program) {
+    function buildMainHeaderFileString(program: Program) {
         mainHeaderFile.append("#ifndef __scaly__")
         mainHeaderFile.append(program.name)
         mainHeaderFile.append("__\n#define __scaly__")
@@ -2837,7 +2810,7 @@ class CppVisitor : SyntaxVisitor {
         mainHeaderFile.append(" {\nint _main(_Vector<String>* arguments);\n}\n\n#endif // __scaly__scalyc__\n")
     }
     
-    function buildProjectFileString(mutable projectFile: VarString, program: Program) {
+    function buildProjectFileString(program: Program) {
         projectFile.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n")
         projectFile.append("<CodeLite_Project Name=\"")
         projectFile.append(program.name)
@@ -2943,5 +2916,46 @@ class CppVisitor : SyntaxVisitor {
         projectFile.append("        <CustomPreBuild/>\n      </AdditionalRules>\n      <Completion EnableCpp11=\"no\" EnableCpp14=\"no\">\n")
         projectFile.append("        <ClangCmpFlagsC/>\n        <ClangCmpFlags/>\n        <ClangPP/>\n")
         projectFile.append("        <SearchPaths/>\n      </Completion>\n    </Configuration>\n  </Settings>\n</CodeLite_Project>\n")
+    }
+
+    function collectInheritances(program: Program) {
+        let compilationUnits: [CompilationUnit] = program.compilationUnits
+        for compilationUnit: CompilationUnit in compilationUnits
+            collectInheritancesInCompilationUnit(compilationUnit)
+    }
+
+    function collectInheritancesInCompilationUnit(compilationUnit: CompilationUnit) {
+        if compilationUnit.statements != null {
+            let statements: [TerminatedStatement] = compilationUnit.statements
+            for terminatedStatement: TerminatedStatement in statements {
+                if terminatedStatement.statement != null {
+                    if terminatedStatement.statement is ClassDeclaration {
+                        let classDeclaration: ClassDeclaration = terminatedStatement.statement as ClassDeclaration
+                        classes.push(classDeclaration.name)
+                        if classDeclaration.typeInheritanceClause != null {
+                            let inheritanceClause: TypeInheritanceClause  = classDeclaration.typeInheritanceClause
+                            let inheritances: [Inheritance] = inheritanceClause.inheritances
+                            for inheritance: Inheritance in inheritances {
+                                registerInheritance(classDeclaration.name, inheritance.typeIdentifier.name)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    function registerInheritance(className: String, baseName: String) {
+        mutable inherit: Inherits = null
+        for inh: Inherits in inherits {
+            if inh.name.equals(baseName)
+             inherit = inh
+        }
+
+        if inherit == null {
+            inherit = Inherits(baseName)
+            inherits.push(inherit)
+        }
+        inherit.inheritors.push(className)
     }
 }

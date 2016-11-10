@@ -9,6 +9,9 @@ public:
     String* moduleName;
     VarString* sourceFile;
     VarString* headerFile;
+    VarString* mainHeaderFile;
+    VarString* projectFile;
+    _Array<CppModule>* modules;
     _Array<Inherits>* inherits;
     _Array<String>* classes;
     size_t headerIndentLevel;
@@ -27,13 +30,10 @@ public:
     CppVisitor();
     virtual void execute(Program* program);
     virtual bool openProgram(Program* program);
-    virtual void collectInheritances(Program* program);
-    virtual void collectInheritancesInCompilationUnit(CompilationUnit* compilationUnit);
-    virtual void registerInheritance(String* className, String* baseName);
     virtual void closeProgram(Program* program);
     virtual bool openCompilationUnit(CompilationUnit* compilationUnit);
-    virtual bool isTopLevelFile(CompilationUnit* compilationUnit);
     virtual void closeCompilationUnit(CompilationUnit* compilationUnit);
+    virtual bool isTopLevelFile(CompilationUnit* compilationUnit);
     virtual bool openTerminatedStatement(TerminatedStatement* terminatedStatement);
     virtual void closeTerminatedStatement(TerminatedStatement* terminatedStatement);
     virtual bool openUseDeclaration(UseDeclaration* useDeclaration);
@@ -233,8 +233,11 @@ public:
     virtual void closeTypeInheritanceClause(TypeInheritanceClause* typeInheritanceClause);
     virtual bool openInheritance(Inheritance* inheritance);
     virtual void closeInheritance(Inheritance* inheritance);
-    virtual void buildMainHeaderFileString(VarString* mainHeaderFile, Program* program);
-    virtual void buildProjectFileString(VarString* projectFile, Program* program);
+    virtual void buildMainHeaderFileString(Program* program);
+    virtual void buildProjectFileString(Program* program);
+    virtual void collectInheritances(Program* program);
+    virtual void collectInheritancesInCompilationUnit(CompilationUnit* compilationUnit);
+    virtual void registerInheritance(String* className, String* baseName);
 
     virtual bool _isCppVisitor();
 };

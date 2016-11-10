@@ -1,0 +1,14 @@
+class CppModule {
+
+    let name: String
+    let header: String
+    let source: String
+}
+
+class CppProgram {
+
+    let name: String
+    let project: String
+    let main: String
+    let modules: [CppModule]
+}
