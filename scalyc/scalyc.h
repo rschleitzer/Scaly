@@ -7,6 +7,7 @@
 #include "Syntax.h"
 #include "MyVisitor.h"
 #include "CppError.h"
+#include "Inherits.h"
 #include "CppVisitor.h"
 #include "ParserError.h"
 #include "Parser.h"

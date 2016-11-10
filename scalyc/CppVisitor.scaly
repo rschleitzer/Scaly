@@ -1,18 +1,3 @@
-class Inherits {
-
-    // Class to inherit from
-    let name: String
-
-    // Classes which inherit from the class
-    mutable inheritors: [String]
-
-    init(className: String) {
-        name = String(className)
-        inheritors = [String]()
-    }
-}
-
-
 class CppVisitor : SyntaxVisitor {
 
     // Needed during building one module
@@ -42,6 +27,7 @@ class CppVisitor : SyntaxVisitor {
     mutable suppressHeader: bool
 
     init() {
+
         // null init of mutable members does not work yet
         moduleName = String("")
         sourceFile = VarString("")
