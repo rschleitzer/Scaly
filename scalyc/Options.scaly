@@ -1,4 +1,9 @@
 class Options {
+
+    let files: [String]
+    let outputName: String
+    let directory: String
+
     init(input: [String], output: String, dir: String) {
         files = input
         outputName = output
@@ -44,9 +49,5 @@ class Options {
 
         return Options([String](input), output, dir)
     }
-
-    let files: [String]
-    let outputName: String
-    let directory: String
 }
 
