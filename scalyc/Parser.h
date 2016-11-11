@@ -169,6 +169,7 @@ public:
     String* superKeyword;
     String* thisKeyword;
     String* nullKeyword;
+    String* newKeyword;
     String* semicolon;
     String* equal;
     String* leftAngular;

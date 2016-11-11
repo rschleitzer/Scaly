@@ -5,10 +5,10 @@
         lexer = Lexer(text)
         fileName = theFileName
 "   (apply-to-selected-children "keyword" (lambda (keyword) ($
-"        "(name keyword)" = String(\""(id keyword)"\")
+"        "(name keyword)" = new String(\""(id keyword)"\")
 "   )))
     (apply-to-selected-children "punctuation" (lambda (punctuation) ($
-"        "(id punctuation)" = String(\""(value punctuation)"\")
+"        "(id punctuation)" = new String(\""(value punctuation)"\")
 "   )))
 "    }
 "
@@ -21,7 +21,7 @@
             let node: "(id syntax)" = parse"(id syntax)"()
                 catch _ break;
             if ret == null
-                ret = ["(id syntax)"]()
+                ret = new ["(id syntax)"]()
             ret.push(node)
         }
         return ret
@@ -32,7 +32,7 @@
         (if (abstract? syntax)
             ($
 "
-        mutable errors: [ParserError] = [ParserError]()
+        mutable errors: [ParserError] = new [ParserError]()
         mutable start: Position = lexer.getPreviousPosition()
 "                (apply-to-children-of syntax (lambda (content) ($
 "
@@ -47,7 +47,7 @@
 "
                 )))
 "
-        throw unableToParse(Position(start), [ParserError](errors))
+        throw unableToParse(Position(start), new [ParserError](errors))
 "
             )
             ($ ; non-abstract syntax
@@ -95,7 +95,7 @@
                     ) ; syntax or terminal
                 ))) ; apply to children of syntax
 "        mutable end: Position = lexer.getPosition()
-        var ret: "(id syntax)" = "(id syntax)"("
+        var ret: "(id syntax)" = new "(id syntax)"("
                 (apply-to-property-children-of syntax (lambda (content) ($
                     (property content)(if (properties-remaining? content syntax) ", " "")
                 )))

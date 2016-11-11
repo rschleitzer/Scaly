@@ -35,6 +35,7 @@ Parser::Parser(String* theFileName, String* text) {
     superKeyword = new(getPage()) String("super");
     thisKeyword = new(getPage()) String("this");
     nullKeyword = new(getPage()) String("null");
+    newKeyword = new (getPage()) String("new");
     semicolon = new(getPage()) String(";");
     equal = new(getPage()) String("=");
     leftAngular = new(getPage()) String("<");
@@ -2857,6 +2858,12 @@ _Result<BreakExpression, ParserError> Parser::parseBreakExpression(_Page* _rp, _
 _Result<InitializerCall, ParserError> Parser::parseInitializerCall(_Page* _rp, _Page* _ep) {
     _Region _region; _Page* _p = _region.get();
     Position* start = lexer->getPreviousPosition(_p);
+    Position* startNew1 = lexer->getPreviousPosition(_p);
+    bool successNew1 = lexer->parseKeyword(newKeyword);
+    if (successNew1)
+        lexer->advance();
+    else
+        return _Result<InitializerCall, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_keywordExpected(new(_ep) Position(startNew1), new(_ep) String(newKeyword))));
     auto _typeToInitialize_result = parseType(_rp, _ep);
     Type* typeToInitialize = nullptr;
     if (_typeToInitialize_result.succeeded()) {
@@ -4034,6 +4041,8 @@ bool Parser::isIdentifier(String* id) {
     if (id->equals(thisKeyword))
         return false;
     if (id->equals(nullKeyword))
+        return false;
+    if (id->equals(newKeyword))
         return false;
     return true;
 }

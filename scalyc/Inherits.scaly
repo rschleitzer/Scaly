@@ -8,6 +8,6 @@ class Inherits {
 
     init(className: String) {
         name = String(className)
-        inheritors = [String]()
+        inheritors = new [String]()
     }
 }

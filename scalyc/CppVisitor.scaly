@@ -40,11 +40,11 @@ class CppVisitor : SyntaxVisitor {
         headerFile = VarString()
         mainHeaderFile = VarString()
         projectFile = VarString()
-        modules = [CppModule]()
+        modules = new [CppModule]()
         output = CppProgram()
         module = CppModule()
-        inherits = [Inherits]()
-        classes = [String]()
+        inherits = new [Inherits]()
+        classes = new [String]()
     }
 
     function execute(program: Program) {
@@ -100,7 +100,7 @@ class CppVisitor : SyntaxVisitor {
     }
     
     function closeProgram(program: Program) {
-        output = CppProgram(program.name, String(projectFile), String(mainHeaderFile), [CppModule](modules))
+        output = CppProgram(program.name, String(projectFile), String(mainHeaderFile), new [CppModule](modules))
         
     }
 
@@ -532,7 +532,7 @@ class CppVisitor : SyntaxVisitor {
             sourceFile.append("() { return true; }\n\n")
         }
         {
-            mutable derivedClasses: [String] = [String]()
+            mutable derivedClasses: [String] = new [String]()
             collectDerivedClasses(derivedClasses, String(classDeclaration.name))
             for derivedClass: String in derivedClasses {
                 headerFile.append("\n")

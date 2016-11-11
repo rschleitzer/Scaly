@@ -344,6 +344,7 @@
         <content link = Expression                     optional property = expression
 
     <syntax id = InitializerCall                                base = PrimaryExpression
+        <content link = new
         <content link = Type                                    property = typeToInitialize
         <content link = ParenthesizedExpression                 property = arguments
         <content link = CatchClause           multiple optional property = catchClauses
@@ -517,6 +518,7 @@
     <keyword id = super
     <keyword id = this
     <keyword id = null
+    <keyword id = new
 
     <punctuation id = semicolon         value = ";"
     <punctuation id = equal             value = "="
