@@ -15,7 +15,7 @@
     (apply-to-selected-children "syntax" (lambda (syntax) (if (program? syntax) "" ($
         (if (multiple? syntax) ($
 "
-    function parse"(id syntax)"List() -> ["(id syntax)"] throws ParserError {
+    function parse"(id syntax)"List(): ["(id syntax)"] throws ParserError {
         mutable ret: ["(id syntax)"]? = null
         while true {
             let node: "(id syntax)" = parse"(id syntax)"()
@@ -28,7 +28,7 @@
     }
 "       )"")
 "
-    function parse"(id syntax)"() -> "(id syntax)" throws ParserError {"
+    function parse"(id syntax)"(): "(id syntax)" throws ParserError {"
         (if (abstract? syntax)
             ($
 "
@@ -128,11 +128,11 @@
 "    }
 "   ))))
 "
-    function isAtEnd() -> bool {
+    function isAtEnd(): bool {
         return lexer.isAtEnd()
     }
 
-    function isIdentifier(id: String) -> bool {"
+    function isIdentifier(id: String): bool {"
    (apply-to-selected-children "keyword" (lambda (keyword) ($
 "
         if id.equals("(name keyword)")

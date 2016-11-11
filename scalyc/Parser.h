@@ -184,7 +184,6 @@ public:
     String* dot;
     String* questionMark;
     String* underscore;
-    String* evaluatesTo;
 
 };
 

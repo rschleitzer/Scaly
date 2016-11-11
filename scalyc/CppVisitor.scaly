@@ -51,7 +51,7 @@ class CppVisitor : SyntaxVisitor {
         program.accept(this)
     }
 
-    function openProgram(program: Program) -> bool {
+    function openProgram(program: Program): bool {
         mutable programDirectory: String = String(program.directory)
 
         if programDirectory == null || programDirectory.equals("") {
@@ -104,7 +104,7 @@ class CppVisitor : SyntaxVisitor {
         
     }
 
-    function openCompilationUnit(compilationUnit: CompilationUnit) -> bool {
+    function openCompilationUnit(compilationUnit: CompilationUnit): bool {
         moduleName = compilationUnit.fileName
         headerIndentLevel = 0
         sourceIndentLevel = 0
@@ -191,7 +191,7 @@ class CppVisitor : SyntaxVisitor {
         modules.push(module)
     }
     
-    function isTopLevelFile(compilationUnit: CompilationUnit) -> bool {
+    function isTopLevelFile(compilationUnit: CompilationUnit): bool {
         let statements: [TerminatedStatement] = compilationUnit.statements
         for statement: TerminatedStatement in statements {
             if statement.statement is Expression
@@ -201,7 +201,7 @@ class CppVisitor : SyntaxVisitor {
         return false
     }
 
-    function openTerminatedStatement(terminatedStatement: TerminatedStatement) -> bool {
+    function openTerminatedStatement(terminatedStatement: TerminatedStatement): bool {
         indentSource()
         if terminatedStatement.statement is SimpleExpression {
             let simpleExpression: SimpleExpression = terminatedStatement.statement as SimpleExpression
@@ -322,14 +322,14 @@ class CppVisitor : SyntaxVisitor {
         sourceFile.append(";\n")
     }
 
-    function openUseDeclaration(useDeclaration: UseDeclaration) -> bool {
+    function openUseDeclaration(useDeclaration: UseDeclaration): bool {
         return true
     }
 
     function closeUseDeclaration(useDeclaration: UseDeclaration) {
     }
 
-    function openConstantDeclaration(constantDeclaration: ConstantDeclaration) -> bool {
+    function openConstantDeclaration(constantDeclaration: ConstantDeclaration): bool {
         constDeclaration = true
 
         if constantDeclaration.parent.parent.parent is ClassDeclaration
@@ -343,7 +343,7 @@ class CppVisitor : SyntaxVisitor {
         suppressSource = false
     }
 
-    function openVariableDeclaration(variableDeclaration: VariableDeclaration) -> bool {
+    function openVariableDeclaration(variableDeclaration: VariableDeclaration): bool {
 
         if variableDeclaration.parent.parent.parent is ClassDeclaration
             suppressSource = true
@@ -355,7 +355,7 @@ class CppVisitor : SyntaxVisitor {
         suppressSource = false
     }
 
-    function openMutableDeclaration(mutableDeclaration: MutableDeclaration) -> bool {
+    function openMutableDeclaration(mutableDeclaration: MutableDeclaration): bool {
 
         if mutableDeclaration.parent.parent.parent is ClassDeclaration
             suppressSource = true
@@ -367,7 +367,7 @@ class CppVisitor : SyntaxVisitor {
         suppressSource = false
     }
 
-    function openFunctionDeclaration(functionDeclaration: FunctionDeclaration) -> bool {
+    function openFunctionDeclaration(functionDeclaration: FunctionDeclaration): bool {
 
         if functionDeclaration.body == null {
             abstractFunction = true
@@ -401,7 +401,7 @@ class CppVisitor : SyntaxVisitor {
         suppressSource = false
     }
 
-    function openEnumDeclaration(enumDeclaration: EnumDeclaration) -> bool {
+    function openEnumDeclaration(enumDeclaration: EnumDeclaration): bool {
         let enumDeclarationName: String = enumDeclaration.name
 
         headerFile.append("\n\nclass ")
@@ -488,7 +488,7 @@ class CppVisitor : SyntaxVisitor {
         headerFile.append("Code errorCode;\n    void* errorInfo;\n};")
     }
 
-    function openClassDeclaration(classDeclaration: ClassDeclaration) -> bool {
+    function openClassDeclaration(classDeclaration: ClassDeclaration): bool {
         headerFile.append("\n\nclass ")
         headerFile.append(classDeclaration.name)
         if classDeclaration.body == null {
@@ -553,7 +553,7 @@ class CppVisitor : SyntaxVisitor {
         headerFile.append("\n};")
     }
 
-    function openInitializerDeclaration(initializerDeclaration: InitializerDeclaration) -> bool {
+    function openInitializerDeclaration(initializerDeclaration: InitializerDeclaration): bool {
 
         if !initializerDeclaration.parent.parent.parent is ClassDeclaration
             return false
@@ -576,7 +576,7 @@ class CppVisitor : SyntaxVisitor {
         suppressHeader = false
     }
 
-    function openCodeBlock(codeBlock: CodeBlock) -> bool {
+    function openCodeBlock(codeBlock: CodeBlock): bool {
         sourceFile.append("{\n")
         sourceIndentLevel++
 
@@ -589,7 +589,7 @@ class CppVisitor : SyntaxVisitor {
         return true
     }
 
-    function localAllocations(codeBlock: CodeBlock) -> bool {
+    function localAllocations(codeBlock: CodeBlock): bool {
         let terminatedStatements: [TerminatedStatement] = codeBlock.statements
         if terminatedStatements != null {
             for terminatedStatement: TerminatedStatement in terminatedStatements {
@@ -624,7 +624,7 @@ class CppVisitor : SyntaxVisitor {
         return false
     }
 
-    function getFunctionCall(patternInitializer: PatternInitializer) -> existing FunctionCall {
+    function getFunctionCall(patternInitializer: PatternInitializer): existing FunctionCall {
         if patternInitializer.initializer != null {
             let expression: Expression = patternInitializer.initializer.expression
             if expression is SimpleExpression {
@@ -646,7 +646,7 @@ class CppVisitor : SyntaxVisitor {
         return null
     }
 
-    function isCatchingFunctionCall(patternInitializer: PatternInitializer) -> bool {
+    function isCatchingFunctionCall(patternInitializer: PatternInitializer): bool {
         if catchesError(getFunctionCall(patternInitializer))
             return true
 
@@ -669,7 +669,7 @@ class CppVisitor : SyntaxVisitor {
             sourceFile.append("\n")
     }
 
-    function openSimpleExpression(simpleExpression: SimpleExpression) -> bool {
+    function openSimpleExpression(simpleExpression: SimpleExpression): bool {
         if simpleExpression.binaryOps != null {
             let binaryOps: [BinaryOp] = simpleExpression.binaryOps
             for binaryOp: BinaryOp in binaryOps {
@@ -692,7 +692,7 @@ class CppVisitor : SyntaxVisitor {
     function closeSimpleExpression(simpleExpression: SimpleExpression) {
     }
 
-    function openPathIdentifier(pathIdentifier: PathIdentifier) -> bool {
+    function openPathIdentifier(pathIdentifier: PathIdentifier): bool {
         return true
     }
 
@@ -702,7 +702,7 @@ class CppVisitor : SyntaxVisitor {
     function visitPathItem(pathItem: PathItem) {
     }
 
-    function openInitializer(initializer: Initializer) -> bool {
+    function openInitializer(initializer: Initializer): bool {
         sourceFile.append(" = ")
         return true
     }
@@ -710,7 +710,7 @@ class CppVisitor : SyntaxVisitor {
     function closeInitializer(initializer: Initializer) {
     }
 
-    function openBindingInitializer(bindingInitializer: BindingInitializer) -> bool {
+    function openBindingInitializer(bindingInitializer: BindingInitializer): bool {
         firstBindingInitializer = true
         return true
     }
@@ -718,7 +718,7 @@ class CppVisitor : SyntaxVisitor {
     function closeBindingInitializer(bindingInitializer: BindingInitializer) {
     }
 
-    function openPatternInitializer(patternInitializer: PatternInitializer) -> bool {
+    function openPatternInitializer(patternInitializer: PatternInitializer): bool {
         if !firstBindingInitializer
             headerFile.append(", ")
         else
@@ -730,7 +730,7 @@ class CppVisitor : SyntaxVisitor {
     function closePatternInitializer(patternInitializer: PatternInitializer) {
     }
 
-    function openAdditionalInitializer(additionalInitializer: AdditionalInitializer) -> bool {
+    function openAdditionalInitializer(additionalInitializer: AdditionalInitializer): bool {
         return true
     }
 
@@ -746,7 +746,7 @@ class CppVisitor : SyntaxVisitor {
     function visitIdentifierFunction(identifierFunction: IdentifierFunction) {
     }
 
-    function openFunctionSignature(functionSignature: FunctionSignature) -> bool {
+    function openFunctionSignature(functionSignature: FunctionSignature): bool {
 
         if !functionSignature.parent is FunctionDeclaration
             return false
@@ -910,7 +910,7 @@ class CppVisitor : SyntaxVisitor {
         suppressHeader = true
     }
 
-    function openFunctionResult(functionResult: FunctionResult) -> bool {
+    function openFunctionResult(functionResult: FunctionResult): bool {
         return false
     }
 
@@ -920,7 +920,7 @@ class CppVisitor : SyntaxVisitor {
     function visitExistingClause(existingClause: ExistingClause) {
     }
 
-    function openParameterClause(parameterClause: ParameterClause) -> bool {
+    function openParameterClause(parameterClause: ParameterClause): bool {
         firstParameter = true
         inParameterClause = true
 
@@ -936,7 +936,7 @@ class CppVisitor : SyntaxVisitor {
         inParameterClause = false
     }
 
-    function openConstParameter(constParameter: ConstParameter) -> bool {
+    function openConstParameter(constParameter: ConstParameter): bool {
         let constParameterName: String = constParameter.name
         constDeclaration = true
         writeParameter(constParameterName, constParameter.parameterType)
@@ -964,7 +964,7 @@ class CppVisitor : SyntaxVisitor {
         }
     }
 
-    function isClass(name: String) -> bool {
+    function isClass(name: String): bool {
         if (    name.equals("String")
             ||  name.equals("VarString")
             ||  name.equals("File")
@@ -993,7 +993,7 @@ class CppVisitor : SyntaxVisitor {
         headerFile.append(constParameter.name)
     }
 
-    function openVarParameter(varParameter: VarParameter) -> bool {
+    function openVarParameter(varParameter: VarParameter): bool {
         writeParameter(varParameter.name, varParameter.parameterType)
         return false
     }
@@ -1003,14 +1003,14 @@ class CppVisitor : SyntaxVisitor {
         headerFile.append(varParameterName)
     }
 
-    function openThrowsClause(throwsClause: ThrowsClause) -> bool {
+    function openThrowsClause(throwsClause: ThrowsClause): bool {
         return false
     }
 
     function closeThrowsClause(throwsClause: ThrowsClause) {
     }
 
-    function openEnumMember(enumMember: EnumMember) -> bool {
+    function openEnumMember(enumMember: EnumMember): bool {
         if !enumMember.parent is EnumDeclaration
             return false
 
@@ -1113,14 +1113,14 @@ class CppVisitor : SyntaxVisitor {
     function visitEnumCase(enumCase: EnumCase) {
     }
 
-    function openAdditionalCase(additionalCase: AdditionalCase) -> bool {
+    function openAdditionalCase(additionalCase: AdditionalCase): bool {
         return true
     }
 
     function closeAdditionalCase(additionalCase: AdditionalCase) {
     }
 
-    function openClassBody(classBody: ClassBody) -> bool {
+    function openClassBody(classBody: ClassBody): bool {
         return true
     }
 
@@ -1157,7 +1157,7 @@ class CppVisitor : SyntaxVisitor {
         }
     }
 
-    function openGenericArgumentClause(genericArgumentClause: GenericArgumentClause) -> bool {
+    function openGenericArgumentClause(genericArgumentClause: GenericArgumentClause): bool {
         return true
     }
 
@@ -1167,7 +1167,7 @@ class CppVisitor : SyntaxVisitor {
     function visitGenericParameter(genericParameter: GenericParameter) {
     }
 
-    function openClassMember(classMember: ClassMember) -> bool {
+    function openClassMember(classMember: ClassMember): bool {
         headerFile.append("\n")
         indentHeader()
         declaringClassMember = true
@@ -1180,7 +1180,7 @@ class CppVisitor : SyntaxVisitor {
         declaringClassMember = false
     }
 
-    function openPrefixExpression(prefixExpression: PrefixExpression) -> bool {
+    function openPrefixExpression(prefixExpression: PrefixExpression): bool {
         if prefixExpression.prefixOperator != null
             sourceFile.append(prefixExpression.prefixOperator)
 
@@ -1190,7 +1190,7 @@ class CppVisitor : SyntaxVisitor {
     function closePrefixExpression(prefixExpression: PrefixExpression) {
     }
 
-    function openPostfixExpression(postfixExpression: PostfixExpression) -> bool {
+    function openPostfixExpression(postfixExpression: PostfixExpression): bool {
         if postfixExpression.postfixes != null {
             let postfixes: [Postfix] = postfixExpression.postfixes
             if (postfixes[0]) is Subscript {
@@ -1204,7 +1204,7 @@ class CppVisitor : SyntaxVisitor {
     function closePostfixExpression(postfixExpression: PostfixExpression) {
     }
 
-    function openBinaryOperation(binaryOperation: BinaryOperation) -> bool {
+    function openBinaryOperation(binaryOperation: BinaryOperation): bool {
         sourceFile.append(" ")
         sourceFile.append(binaryOperation.binaryOperator)
         sourceFile.append(" ")
@@ -1215,13 +1215,13 @@ class CppVisitor : SyntaxVisitor {
     function closeBinaryOperation(binaryOperation: BinaryOperation) {
     }
 
-    function openAssignment(assignment: Assignment) -> bool {
+    function openAssignment(assignment: Assignment): bool {
         sourceFile.append(" = ")
 
         return true
     }
 
-    function inInitializer(node: SyntaxNode) -> bool {
+    function inInitializer(node: SyntaxNode): bool {
         if node is InitializerDeclaration
             return true
 
@@ -1231,7 +1231,7 @@ class CppVisitor : SyntaxVisitor {
         return inInitializer(node.parent)
     }
 
-    function inReturn(node: SyntaxNode) -> bool {
+    function inReturn(node: SyntaxNode): bool {
         if node is ReturnExpression
             return true
 
@@ -1241,7 +1241,7 @@ class CppVisitor : SyntaxVisitor {
         return inReturn(node.parent)
     }
 
-    function inThrow(node: SyntaxNode) -> bool {
+    function inThrow(node: SyntaxNode): bool {
         if node is ThrowExpression
             return true
 
@@ -1251,7 +1251,7 @@ class CppVisitor : SyntaxVisitor {
         return inThrow(node.parent)
     }
 
-    function getMemberIfCreatingObject(assignment: Assignment) -> String {
+    function getMemberIfCreatingObject(assignment: Assignment): String {
         let functionName: String = getFunctionName(assignment)
         if functionName == null {
             return null
@@ -1279,7 +1279,7 @@ class CppVisitor : SyntaxVisitor {
         return null
     }
 
-    function getFunctionName(assignment: Assignment) -> String {
+    function getFunctionName(assignment: Assignment): String {
         if assignment.expression is SimpleExpression {
             let simpleExpression: SimpleExpression = (assignment.expression) as SimpleExpression
             let prefixExpression: PrefixExpression = simpleExpression.prefixExpression
@@ -1307,7 +1307,7 @@ class CppVisitor : SyntaxVisitor {
         return null
     }
     
-    function isCreatingObject(functionName: String, node: SyntaxNode) -> bool {
+    function isCreatingObject(functionName: String, node: SyntaxNode): bool {
         var classDeclaration: ClassDeclaration = getClassDeclaration(node)
         if classDeclaration == null
             return false
@@ -1330,7 +1330,7 @@ class CppVisitor : SyntaxVisitor {
         return false
     }
 
-    function getClassDeclaration(node: SyntaxNode) -> existing ClassDeclaration {
+    function getClassDeclaration(node: SyntaxNode): existing ClassDeclaration {
         if node is ClassDeclaration
             return node as ClassDeclaration
 
@@ -1340,7 +1340,7 @@ class CppVisitor : SyntaxVisitor {
         return null
     }
     
-    function isVariableMember(memberName: String, classDeclaration: ClassDeclaration) -> bool {
+    function isVariableMember(memberName: String, classDeclaration: ClassDeclaration): bool {
         let classMembers: [ClassMember] = classDeclaration.body.members
         for member: ClassMember in classMembers {
             mutable bindingInitializer: BindingInitializer = null
@@ -1370,7 +1370,7 @@ class CppVisitor : SyntaxVisitor {
     function closeAssignment(assignment: Assignment) {
     }
 
-    function openTypeQuery(typeQuery: TypeQuery) -> bool {
+    function openTypeQuery(typeQuery: TypeQuery): bool {
         sourceFile.append("->_is")
 
         return true
@@ -1379,14 +1379,14 @@ class CppVisitor : SyntaxVisitor {
     function closeTypeQuery(typeQuery: TypeQuery) {
     }
 
-    function openTypeCast(typeCast: TypeCast) -> bool {
+    function openTypeCast(typeCast: TypeCast): bool {
         return true
     }
 
     function closeTypeCast(typeCast: TypeCast) {
     }
 
-    function openCatchClause(catchClause: CatchClause) -> bool {
+    function openCatchClause(catchClause: CatchClause): bool {
         if catchClause.parent is FunctionCall {
             let functionCall: FunctionCall = (catchClause.parent) as FunctionCall
             {
@@ -1559,7 +1559,7 @@ class CppVisitor : SyntaxVisitor {
         return false
     }
 
-    function getIdentifierExpression(postfixExpression: PostfixExpression) -> existing IdentifierExpression {
+    function getIdentifierExpression(postfixExpression: PostfixExpression): existing IdentifierExpression {
         if postfixExpression.parent.parent.parent.parent is CodeBlock {
             if postfixExpression.parent is PrefixExpression {
                 let prefixExpression: PrefixExpression = (postfixExpression.parent) as PrefixExpression
@@ -1572,7 +1572,7 @@ class CppVisitor : SyntaxVisitor {
         return null
     }
 
-    function getErrorType(catchClause: CatchClause) -> existing String {
+    function getErrorType(catchClause: CatchClause): existing String {
         if catchClause.bindingPattern != null {
             if catchClause.bindingPattern.elements != null {
                 if catchClause.bindingPattern.elements.length() == 1 {
@@ -1597,14 +1597,14 @@ class CppVisitor : SyntaxVisitor {
     function closeCatchClause(catchClause: CatchClause) {
     }
 
-    function openWildCardCatchPattern(wildCardCatchPattern: WildCardCatchPattern) -> bool {
+    function openWildCardCatchPattern(wildCardCatchPattern: WildCardCatchPattern): bool {
         return true
     }
 
     function closeWildCardCatchPattern(wildCardCatchPattern: WildCardCatchPattern) {
     }
 
-    function openIdentifierCatchPattern(identifierCatchPattern: IdentifierCatchPattern) -> bool {
+    function openIdentifierCatchPattern(identifierCatchPattern: IdentifierCatchPattern): bool {
         return true
     }
 
@@ -1615,14 +1615,14 @@ class CppVisitor : SyntaxVisitor {
         sourceFile.append(operatorPostfix.postfixOperator)
     }
 
-    function openFunctionCall(functionCall: FunctionCall) -> bool {
+    function openFunctionCall(functionCall: FunctionCall): bool {
         return true
     }
 
     function closeFunctionCall(functionCall: FunctionCall) {
     }
 
-    function openExplicitMemberExpression(explicitMemberExpression: ExplicitMemberExpression) -> bool {
+    function openExplicitMemberExpression(explicitMemberExpression: ExplicitMemberExpression): bool {
         if explicitMemberExpression.parent is PostfixExpression {
             let postfixExpression: PostfixExpression = (explicitMemberExpression.parent) as PostfixExpression
             if postfixExpression.primaryExpression is IdentifierExpression {
@@ -1646,7 +1646,7 @@ class CppVisitor : SyntaxVisitor {
     function closeExplicitMemberExpression(explicitMemberExpression: ExplicitMemberExpression) {
     }
 
-    function openSubscript(subscript: Subscript) -> bool {
+    function openSubscript(subscript: Subscript): bool {
         sourceFile.append("[")
 
         return true
@@ -1656,7 +1656,7 @@ class CppVisitor : SyntaxVisitor {
         sourceFile.append("]")
     }
 
-    function openExpressionElement(expressionElement: ExpressionElement) -> bool {
+    function openExpressionElement(expressionElement: ExpressionElement): bool {
         return true
     }
 
@@ -1665,7 +1665,7 @@ class CppVisitor : SyntaxVisitor {
             sourceFile.append(", ")
     }
 
-    function isLastExpressionElement(expressionElement: ExpressionElement) -> bool {
+    function isLastExpressionElement(expressionElement: ExpressionElement): bool {
         if expressionElement.parent is ParenthesizedExpression {
             let parenthesizedExpression: ParenthesizedExpression = (expressionElement.parent) as ParenthesizedExpression
             let expressionElements: [ExpressionElement] = parenthesizedExpression.expressionElements
@@ -1693,7 +1693,7 @@ class CppVisitor : SyntaxVisitor {
         return false
     }
 
-    function openNamedMemberPostfix(namedMemberPostfix: NamedMemberPostfix) -> bool {
+    function openNamedMemberPostfix(namedMemberPostfix: NamedMemberPostfix): bool {
         return true
     }
 
@@ -1772,7 +1772,7 @@ class CppVisitor : SyntaxVisitor {
         }
     }
 
-    function inAssignment(syntaxNode: SyntaxNode) -> bool {
+    function inAssignment(syntaxNode: SyntaxNode): bool {
         if syntaxNode is Assignment
             return true
 
@@ -1783,7 +1783,7 @@ class CppVisitor : SyntaxVisitor {
         return inAssignment(parentNode)
     }
 
-    function getAssignment(syntaxNode: SyntaxNode) -> existing Assignment {
+    function getAssignment(syntaxNode: SyntaxNode): existing Assignment {
         if syntaxNode is Assignment
             return syntaxNode as Assignment
 
@@ -1794,7 +1794,7 @@ class CppVisitor : SyntaxVisitor {
         return getAssignment(parentNode)
     }
 
-    function inRetDeclaration(syntaxNode: SyntaxNode) -> bool {
+    function inRetDeclaration(syntaxNode: SyntaxNode): bool {
         if syntaxNode == null
             return false
 
@@ -1862,7 +1862,7 @@ class CppVisitor : SyntaxVisitor {
         }
     }
 
-    function openIfExpression(ifExpression: IfExpression) -> bool {
+    function openIfExpression(ifExpression: IfExpression): bool {
         sourceFile.append("if (")
         ifExpression.condition.accept(this)
         sourceFile.append(")")
@@ -1894,7 +1894,7 @@ class CppVisitor : SyntaxVisitor {
     function closeIfExpression(ifExpression: IfExpression) {
     }
 
-    function openSwitchExpression(switchExpression: SwitchExpression) -> bool {
+    function openSwitchExpression(switchExpression: SwitchExpression): bool {
         sourceFile.append("switch (")
 
         return true
@@ -1903,7 +1903,7 @@ class CppVisitor : SyntaxVisitor {
     function closeSwitchExpression(switchExpression: SwitchExpression) {
     }
 
-    function openForExpression(forExpression: ForExpression) -> bool {
+    function openForExpression(forExpression: ForExpression): bool {
         let pattern: Pattern = forExpression.pattern
         pattern.accept(this)    
         if pattern is IdentifierPattern {
@@ -1949,7 +1949,7 @@ class CppVisitor : SyntaxVisitor {
     function closeForExpression(forExpression: ForExpression) {
     }
 
-    function openWhileExpression(whileExpression: WhileExpression) -> bool {
+    function openWhileExpression(whileExpression: WhileExpression): bool {
         sourceFile.append("while (")
         whileExpression.condition.accept(this)
         sourceFile.append(")")
@@ -1972,7 +1972,7 @@ class CppVisitor : SyntaxVisitor {
     function closeWhileExpression(whileExpression: WhileExpression) {
     }
 
-    function openRepeatExpression(repeatExpression: RepeatExpression) -> bool {
+    function openRepeatExpression(repeatExpression: RepeatExpression): bool {
         sourceFile.append("do")
         if repeatExpression.code is SimpleExpression {
             sourceFile.append("\n")
@@ -1997,7 +1997,7 @@ class CppVisitor : SyntaxVisitor {
     function closeRepeatExpression(repeatExpression: RepeatExpression) {
     }
 
-    function openParenthesizedExpression(parenthesizedExpression: ParenthesizedExpression) -> bool {
+    function openParenthesizedExpression(parenthesizedExpression: ParenthesizedExpression): bool {
         sourceFile.append("(")
         if parenthesizedExpression.parent is FunctionCall {
             let functionCall: FunctionCall = (parenthesizedExpression.parent) as FunctionCall
@@ -2056,7 +2056,7 @@ class CppVisitor : SyntaxVisitor {
         return true
     }
 
-    function assignedToMutableObject(functionCall: FunctionCall) -> bool {
+    function assignedToMutableObject(functionCall: FunctionCall): bool {
         var bindingInitializer: BindingInitializer = getBindingInitializer(functionCall)
         if bindingInitializer == null
             return false
@@ -2069,7 +2069,7 @@ class CppVisitor : SyntaxVisitor {
         return false
     }
 
-    function assignedToConstantObject(functionCall: FunctionCall) -> bool {
+    function assignedToConstantObject(functionCall: FunctionCall): bool {
         var bindingInitializer: BindingInitializer = getBindingInitializer(functionCall)
         if bindingInitializer == null
             return false
@@ -2082,7 +2082,7 @@ class CppVisitor : SyntaxVisitor {
         return false
     }
 
-    function boundToObject(bindingInitializer: BindingInitializer) -> bool {
+    function boundToObject(bindingInitializer: BindingInitializer): bool {
         let patternInitializer: PatternInitializer = bindingInitializer.initializer
         if patternInitializer.pattern is IdentifierPattern {
             let identifierPattern: IdentifierPattern = (patternInitializer.pattern) as IdentifierPattern
@@ -2101,7 +2101,7 @@ class CppVisitor : SyntaxVisitor {
         return false
     }
 
-    function getBindingInitializer(functionCall: FunctionCall) -> existing BindingInitializer {
+    function getBindingInitializer(functionCall: FunctionCall): existing BindingInitializer {
         if functionCall.parent is PostfixExpression {
             let postfixExpression: PostfixExpression = (functionCall.parent) as PostfixExpression
             if postfixExpression.parent.parent.parent is Initializer {
@@ -2118,7 +2118,7 @@ class CppVisitor : SyntaxVisitor {
         return null
     }
 
-    function callsInitializer(functionCall: FunctionCall) -> bool {
+    function callsInitializer(functionCall: FunctionCall): bool {
         if functionCall.parent is PostfixExpression {
             let postfixExpression: PostfixExpression = (functionCall.parent) as PostfixExpression
             if postfixExpression.postfixes.length() == 1 {
@@ -2134,7 +2134,7 @@ class CppVisitor : SyntaxVisitor {
         return false
     }
 
-    function catchesError(functionCall: FunctionCall) -> bool {
+    function catchesError(functionCall: FunctionCall): bool {
         if functionCall == null
             return false
 
@@ -2148,7 +2148,7 @@ class CppVisitor : SyntaxVisitor {
         sourceFile.append(")")
     }
 
-    function openReturnExpression(returnExpression: ReturnExpression) -> bool {
+    function openReturnExpression(returnExpression: ReturnExpression): bool {
         sourceFile.append("return")
         if returnExpression.expression != null {
             sourceFile.append(" ")
@@ -2183,7 +2183,7 @@ class CppVisitor : SyntaxVisitor {
         }
     }
 
-    function openThrowExpression(throwExpression: ThrowExpression) -> bool {
+    function openThrowExpression(throwExpression: ThrowExpression): bool {
         mutable thrownType: String = getThrownType(throwExpression)
         if thrownType == null
             return false
@@ -2250,7 +2250,7 @@ class CppVisitor : SyntaxVisitor {
         return false
     }
 
-    function inWildcardCatchClause(throwExpression: ThrowExpression) -> bool {
+    function inWildcardCatchClause(throwExpression: ThrowExpression): bool {
         var catchClause: CatchClause = getCatchClause(throwExpression)
         if (catchClause != null) && (catchClause.catchPattern is WildCardCatchPattern)
             return true
@@ -2258,7 +2258,7 @@ class CppVisitor : SyntaxVisitor {
         return false
     }
 
-    function getCatchClause(syntaxNode: SyntaxNode) -> existing CatchClause {
+    function getCatchClause(syntaxNode: SyntaxNode): existing CatchClause {
         if syntaxNode is CatchClause
             return syntaxNode as CatchClause
 
@@ -2268,7 +2268,7 @@ class CppVisitor : SyntaxVisitor {
         return getCatchClause(syntaxNode.parent)
     }
 
-    function getReturnType(syntaxNode: SyntaxNode) -> String {
+    function getReturnType(syntaxNode: SyntaxNode): String {
         var functionDeclaration: FunctionDeclaration = getFunctionDeclaration(syntaxNode)
         if functionDeclaration != null {
             let functionResult: FunctionResult = functionDeclaration.signature.result
@@ -2297,7 +2297,7 @@ class CppVisitor : SyntaxVisitor {
         return null
     }
     
-    function getThrownType(syntaxNode: SyntaxNode) -> String {
+    function getThrownType(syntaxNode: SyntaxNode): String {
         var functionDeclaration: FunctionDeclaration = getFunctionDeclaration(syntaxNode)
         if functionDeclaration != null {
             let throwsClause: ThrowsClause = functionDeclaration.signature.throwsClause
@@ -2326,7 +2326,7 @@ class CppVisitor : SyntaxVisitor {
         return nullptr
     }
 
-    function returnsArray(syntaxNode: SyntaxNode) -> bool {
+    function returnsArray(syntaxNode: SyntaxNode): bool {
         var functionDeclaration: FunctionDeclaration = getFunctionDeclaration(syntaxNode)
         if functionDeclaration != null {
             let functionResult: FunctionResult = functionDeclaration.signature.result
@@ -2339,7 +2339,7 @@ class CppVisitor : SyntaxVisitor {
         return false
     }
 
-    function getFunctionDeclaration(syntaxNode: SyntaxNode) -> existing FunctionDeclaration {
+    function getFunctionDeclaration(syntaxNode: SyntaxNode): existing FunctionDeclaration {
         if syntaxNode is FunctionDeclaration
             return syntaxNode as FunctionDeclaration
 
@@ -2352,7 +2352,7 @@ class CppVisitor : SyntaxVisitor {
     function closeThrowExpression(throwExpression: ThrowExpression) {
     }
 
-    function openBreakExpression(breakExpression: BreakExpression) -> bool {
+    function openBreakExpression(breakExpression: BreakExpression): bool {
         sourceFile.append("break")
 
         return true
@@ -2361,7 +2361,7 @@ class CppVisitor : SyntaxVisitor {
     function closeBreakExpression(breakExpression: BreakExpression) {
     }
 
-    function openInitializerCall(initializerCall: InitializerCall) -> bool {
+    function openInitializerCall(initializerCall: InitializerCall): bool {
         if initializerCall.typeToInitialize is ArrayType {
             if !initializerIsBoundOrAssigned(initializerCall) {
                 let arrayType: ArrayType = (initializerCall.typeToInitialize) as ArrayType
@@ -2458,7 +2458,7 @@ class CppVisitor : SyntaxVisitor {
         return true
     }
 
-    function initializerIsBoundOrAssigned(initializerCall: InitializerCall) -> bool {
+    function initializerIsBoundOrAssigned(initializerCall: InitializerCall): bool {
         if initializerCall.parent is PostfixExpression {
             let postfixExpression: PostfixExpression = (initializerCall.parent) as PostfixExpression
             if (postfixExpression.parent.parent.parent is Assignment) || (postfixExpression.parent.parent.parent is Initializer)
@@ -2475,14 +2475,14 @@ class CppVisitor : SyntaxVisitor {
         sourceFile.append("this")
     }
 
-    function openSuperDot(superDot: SuperDot) -> bool {
+    function openSuperDot(superDot: SuperDot): bool {
         return true
     }
 
     function closeSuperDot(superDot: SuperDot) {
     }
 
-    function openSuperSubscript(superSubscript: SuperSubscript) -> bool {
+    function openSuperSubscript(superSubscript: SuperSubscript): bool {
         return true
     }
 
@@ -2493,7 +2493,7 @@ class CppVisitor : SyntaxVisitor {
         sourceFile.append("nullptr")
     }
 
-    function openElseClause(elseClause: ElseClause) -> bool {
+    function openElseClause(elseClause: ElseClause): bool {
         indentSource();
         sourceFile.append("else")
         if elseClause.alternative is SimpleExpression {
@@ -2514,7 +2514,7 @@ class CppVisitor : SyntaxVisitor {
     function closeElseClause(elseClause: ElseClause) {
     }
 
-    function openCurliedSwitchBody(curliedSwitchBody: CurliedSwitchBody) -> bool {
+    function openCurliedSwitchBody(curliedSwitchBody: CurliedSwitchBody): bool {
         sourceFile.append(") {\n")
         sourceIndentLevel++
 
@@ -2527,14 +2527,14 @@ class CppVisitor : SyntaxVisitor {
         sourceFile.append("}\n")
     }
 
-    function openNakedSwitchBody(nakedSwitchBody: NakedSwitchBody) -> bool {
+    function openNakedSwitchBody(nakedSwitchBody: NakedSwitchBody): bool {
         return true
     }
 
     function closeNakedSwitchBody(nakedSwitchBody: NakedSwitchBody) {
     }
 
-    function openSwitchCase(switchCase: SwitchCase) -> bool {
+    function openSwitchCase(switchCase: SwitchCase): bool {
         indentSource()
         return true
     }
@@ -2542,7 +2542,7 @@ class CppVisitor : SyntaxVisitor {
     function closeSwitchCase(switchCase: SwitchCase) {
     }
 
-    function openItemCaseLabel(itemCaseLabel: ItemCaseLabel) -> bool {
+    function openItemCaseLabel(itemCaseLabel: ItemCaseLabel): bool {
         sourceFile.append("case ")
         return true
     }
@@ -2554,7 +2554,7 @@ class CppVisitor : SyntaxVisitor {
         sourceFile.append("default: ")
     }
 
-    function openCaseItem(caseItem: CaseItem) -> bool {
+    function openCaseItem(caseItem: CaseItem): bool {
         sourceFile.append("case ")
 
         return true
@@ -2567,7 +2567,7 @@ class CppVisitor : SyntaxVisitor {
     function visitWildcardPattern(wildcardPattern: WildcardPattern) {
     }
 
-    function openIdentifierPattern(identifierPattern: IdentifierPattern) -> bool {
+    function openIdentifierPattern(identifierPattern: IdentifierPattern): bool {
         if identifierPattern.parent is PatternInitializer {
             let patternInitializer: PatternInitializer = (identifierPattern.parent) as PatternInitializer
             if isCatchingPatternInitializer(patternInitializer)
@@ -2598,7 +2598,7 @@ class CppVisitor : SyntaxVisitor {
         return false
     }
 
-    function isCatchingPatternInitializer(patternInitializer: PatternInitializer) -> bool {
+    function isCatchingPatternInitializer(patternInitializer: PatternInitializer): bool {
         if patternInitializer.initializer != null {
             if patternInitializer.initializer.expression is SimpleExpression {
                 let simpleExpression: SimpleExpression = (patternInitializer.initializer.expression) as SimpleExpression
@@ -2636,14 +2636,14 @@ class CppVisitor : SyntaxVisitor {
     function closeIdentifierPattern(identifierPattern: IdentifierPattern) {
     }
 
-    function openTuplePattern(tuplePattern: TuplePattern) -> bool {
+    function openTuplePattern(tuplePattern: TuplePattern): bool {
         return true
     }
 
     function closeTuplePattern(tuplePattern: TuplePattern) {
     }
 
-    function openExpressionPattern(expressionPattern: ExpressionPattern) -> bool {
+    function openExpressionPattern(expressionPattern: ExpressionPattern): bool {
         return true
     }
 
@@ -2652,14 +2652,14 @@ class CppVisitor : SyntaxVisitor {
             sourceFile.append(": ")
     }
 
-    function openTuplePatternElement(tuplePatternElement: TuplePatternElement) -> bool {
+    function openTuplePatternElement(tuplePatternElement: TuplePatternElement): bool {
         return true
     }
 
     function closeTuplePatternElement(tuplePatternElement: TuplePatternElement) {
     }
 
-    function openBlockCaseContent(blockCaseContent: BlockCaseContent) -> bool {
+    function openBlockCaseContent(blockCaseContent: BlockCaseContent): bool {
         sourceFile.append("{\n")
         sourceIndentLevel++
 
@@ -2693,7 +2693,7 @@ class CppVisitor : SyntaxVisitor {
     function visitSuperMember(superMember: SuperMember) {
     }
 
-    function openTypeIdentifier(typeIdentifier: TypeIdentifier) -> bool {
+    function openTypeIdentifier(typeIdentifier: TypeIdentifier): bool {
         if !suppressHeader
             appendCppTypeName(headerFile, typeIdentifier)
 
@@ -2714,14 +2714,14 @@ class CppVisitor : SyntaxVisitor {
         return true
     }
 
-    function inArrayType(typeIdentifier: TypeIdentifier) -> bool {
+    function inArrayType(typeIdentifier: TypeIdentifier): bool {
         if typeIdentifier.parent is ArrayType
             return true
 
         return false
     }
 
-    function inTypeQuery(typeIdentifier: TypeIdentifier) -> bool {
+    function inTypeQuery(typeIdentifier: TypeIdentifier): bool {
         if typeIdentifier.parent is TypeQuery
             return true
 
@@ -2747,7 +2747,7 @@ class CppVisitor : SyntaxVisitor {
     function closeTypeIdentifier(typeIdentifier: TypeIdentifier) {
     }
 
-    function openArrayType(arrayType: ArrayType) -> bool {
+    function openArrayType(arrayType: ArrayType): bool {
         if !sourceIndentLevel {
             if constDeclaration {
                 headerFile.append("_Vector<")
@@ -2787,14 +2787,14 @@ class CppVisitor : SyntaxVisitor {
     function closeArrayType(arrayType: ArrayType) {
     }
 
-    function openTypeAnnotation(typeAnnotation: TypeAnnotation) -> bool {
+    function openTypeAnnotation(typeAnnotation: TypeAnnotation): bool {
         return true
     }
 
     function closeTypeAnnotation(typeAnnotation: TypeAnnotation) {
     }
 
-    function openSubtypeIdentifier(subtypeIdentifier: SubtypeIdentifier) -> bool {
+    function openSubtypeIdentifier(subtypeIdentifier: SubtypeIdentifier): bool {
         return true
     }
 
@@ -2804,14 +2804,14 @@ class CppVisitor : SyntaxVisitor {
     function visitOptionalType(optionalType: OptionalType) {
     }
 
-    function openTypeInheritanceClause(typeInheritanceClause: TypeInheritanceClause) -> bool {
+    function openTypeInheritanceClause(typeInheritanceClause: TypeInheritanceClause): bool {
         return true
     }
 
     function closeTypeInheritanceClause(typeInheritanceClause: TypeInheritanceClause) {
     }
 
-    function openInheritance(inheritance: Inheritance) -> bool {
+    function openInheritance(inheritance: Inheritance): bool {
         return false
     }
 

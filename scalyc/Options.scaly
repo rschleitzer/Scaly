@@ -10,7 +10,7 @@ class Options {
         directory = dir
     }
 
-    static function parseArguments(args: [String]) -> Options throws OptionsError {
+    static function parseArguments(args: [String]): Options throws OptionsError {
         let length: unsigned = args.length()
         mutable output: String = null
         mutable dir: String = null

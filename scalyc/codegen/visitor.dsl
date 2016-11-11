@@ -11,7 +11,7 @@
     (apply-to-selected-children "syntax" (lambda (syntax) (if (abstract? syntax) "" ($
         (if (has-syntax-children? syntax)
             ($ "
-    function open"(id syntax)"("(string-firstchar-downcase (id syntax))": "(id syntax)") -> bool"
+    function open"(id syntax)"("(string-firstchar-downcase (id syntax))": "(id syntax)"): bool"
                 (if concrete
                     " {
         return true

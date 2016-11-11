@@ -1,96 +1,96 @@
 class MyVisitor : SyntaxVisitor {
-    function openProgram(program: Program) -> bool {
+    function openProgram(program: Program): bool {
         return true
     }
 
     function closeProgram(program: Program) {
     }
 
-    function openCompilationUnit(compilationUnit: CompilationUnit) -> bool {
+    function openCompilationUnit(compilationUnit: CompilationUnit): bool {
         return true
     }
 
     function closeCompilationUnit(compilationUnit: CompilationUnit) {
     }
 
-    function openTerminatedStatement(terminatedStatement: TerminatedStatement) -> bool {
+    function openTerminatedStatement(terminatedStatement: TerminatedStatement): bool {
         return true
     }
 
     function closeTerminatedStatement(terminatedStatement: TerminatedStatement) {
     }
 
-    function openUseDeclaration(useDeclaration: UseDeclaration) -> bool {
+    function openUseDeclaration(useDeclaration: UseDeclaration): bool {
         return true
     }
 
     function closeUseDeclaration(useDeclaration: UseDeclaration) {
     }
 
-    function openConstantDeclaration(constantDeclaration: ConstantDeclaration) -> bool {
+    function openConstantDeclaration(constantDeclaration: ConstantDeclaration): bool {
         return true
     }
 
     function closeConstantDeclaration(constantDeclaration: ConstantDeclaration) {
     }
 
-    function openVariableDeclaration(variableDeclaration: VariableDeclaration) -> bool {
+    function openVariableDeclaration(variableDeclaration: VariableDeclaration): bool {
         return true
     }
 
     function closeVariableDeclaration(variableDeclaration: VariableDeclaration) {
     }
 
-    function openMutableDeclaration(mutableDeclaration: MutableDeclaration) -> bool {
+    function openMutableDeclaration(mutableDeclaration: MutableDeclaration): bool {
         return true
     }
 
     function closeMutableDeclaration(mutableDeclaration: MutableDeclaration) {
     }
 
-    function openFunctionDeclaration(functionDeclaration: FunctionDeclaration) -> bool {
+    function openFunctionDeclaration(functionDeclaration: FunctionDeclaration): bool {
         return true
     }
 
     function closeFunctionDeclaration(functionDeclaration: FunctionDeclaration) {
     }
 
-    function openEnumDeclaration(enumDeclaration: EnumDeclaration) -> bool {
+    function openEnumDeclaration(enumDeclaration: EnumDeclaration): bool {
         return true
     }
 
     function closeEnumDeclaration(enumDeclaration: EnumDeclaration) {
     }
 
-    function openClassDeclaration(classDeclaration: ClassDeclaration) -> bool {
+    function openClassDeclaration(classDeclaration: ClassDeclaration): bool {
         return true
     }
 
     function closeClassDeclaration(classDeclaration: ClassDeclaration) {
     }
 
-    function openInitializerDeclaration(initializerDeclaration: InitializerDeclaration) -> bool {
+    function openInitializerDeclaration(initializerDeclaration: InitializerDeclaration): bool {
         return true
     }
 
     function closeInitializerDeclaration(initializerDeclaration: InitializerDeclaration) {
     }
 
-    function openCodeBlock(codeBlock: CodeBlock) -> bool {
+    function openCodeBlock(codeBlock: CodeBlock): bool {
         return true
     }
 
     function closeCodeBlock(codeBlock: CodeBlock) {
     }
 
-    function openSimpleExpression(simpleExpression: SimpleExpression) -> bool {
+    function openSimpleExpression(simpleExpression: SimpleExpression): bool {
         return true
     }
 
     function closeSimpleExpression(simpleExpression: SimpleExpression) {
     }
 
-    function openPathIdentifier(pathIdentifier: PathIdentifier) -> bool {
+    function openPathIdentifier(pathIdentifier: PathIdentifier): bool {
         return true
     }
 
@@ -100,28 +100,28 @@ class MyVisitor : SyntaxVisitor {
     function visitPathItem(pathItem: PathItem) {
     }
 
-    function openInitializer(initializer: Initializer) -> bool {
+    function openInitializer(initializer: Initializer): bool {
         return true
     }
 
     function closeInitializer(initializer: Initializer) {
     }
 
-    function openBindingInitializer(bindingInitializer: BindingInitializer) -> bool {
+    function openBindingInitializer(bindingInitializer: BindingInitializer): bool {
         return true
     }
 
     function closeBindingInitializer(bindingInitializer: BindingInitializer) {
     }
 
-    function openPatternInitializer(patternInitializer: PatternInitializer) -> bool {
+    function openPatternInitializer(patternInitializer: PatternInitializer): bool {
         return true
     }
 
     function closePatternInitializer(patternInitializer: PatternInitializer) {
     }
 
-    function openAdditionalInitializer(additionalInitializer: AdditionalInitializer) -> bool {
+    function openAdditionalInitializer(additionalInitializer: AdditionalInitializer): bool {
         return true
     }
 
@@ -137,14 +137,14 @@ class MyVisitor : SyntaxVisitor {
     function visitIdentifierFunction(identifierFunction: IdentifierFunction) {
     }
 
-    function openFunctionSignature(functionSignature: FunctionSignature) -> bool {
+    function openFunctionSignature(functionSignature: FunctionSignature): bool {
         return true
     }
 
     function closeFunctionSignature(functionSignature: FunctionSignature) {
     }
 
-    function openFunctionResult(functionResult: FunctionResult) -> bool {
+    function openFunctionResult(functionResult: FunctionResult): bool {
         return true
     }
 
@@ -154,35 +154,35 @@ class MyVisitor : SyntaxVisitor {
     function visitExistingClause(existingClause: ExistingClause) {
     }
 
-    function openParameterClause(parameterClause: ParameterClause) -> bool {
+    function openParameterClause(parameterClause: ParameterClause): bool {
         return true
     }
 
     function closeParameterClause(parameterClause: ParameterClause) {
     }
 
-    function openConstParameter(constParameter: ConstParameter) -> bool {
+    function openConstParameter(constParameter: ConstParameter): bool {
         return true
     }
 
     function closeConstParameter(constParameter: ConstParameter) {
     }
 
-    function openVarParameter(varParameter: VarParameter) -> bool {
+    function openVarParameter(varParameter: VarParameter): bool {
         return true
     }
 
     function closeVarParameter(varParameter: VarParameter) {
     }
 
-    function openThrowsClause(throwsClause: ThrowsClause) -> bool {
+    function openThrowsClause(throwsClause: ThrowsClause): bool {
         return true
     }
 
     function closeThrowsClause(throwsClause: ThrowsClause) {
     }
 
-    function openEnumMember(enumMember: EnumMember) -> bool {
+    function openEnumMember(enumMember: EnumMember): bool {
         return true
     }
 
@@ -192,21 +192,21 @@ class MyVisitor : SyntaxVisitor {
     function visitEnumCase(enumCase: EnumCase) {
     }
 
-    function openAdditionalCase(additionalCase: AdditionalCase) -> bool {
+    function openAdditionalCase(additionalCase: AdditionalCase): bool {
         return true
     }
 
     function closeAdditionalCase(additionalCase: AdditionalCase) {
     }
 
-    function openClassBody(classBody: ClassBody) -> bool {
+    function openClassBody(classBody: ClassBody): bool {
         return true
     }
 
     function closeClassBody(classBody: ClassBody) {
     }
 
-    function openGenericArgumentClause(genericArgumentClause: GenericArgumentClause) -> bool {
+    function openGenericArgumentClause(genericArgumentClause: GenericArgumentClause): bool {
         return true
     }
 
@@ -216,70 +216,70 @@ class MyVisitor : SyntaxVisitor {
     function visitGenericParameter(genericParameter: GenericParameter) {
     }
 
-    function openClassMember(classMember: ClassMember) -> bool {
+    function openClassMember(classMember: ClassMember): bool {
         return true
     }
 
     function closeClassMember(classMember: ClassMember) {
     }
 
-    function openPrefixExpression(prefixExpression: PrefixExpression) -> bool {
+    function openPrefixExpression(prefixExpression: PrefixExpression): bool {
         return true
     }
 
     function closePrefixExpression(prefixExpression: PrefixExpression) {
     }
 
-    function openPostfixExpression(postfixExpression: PostfixExpression) -> bool {
+    function openPostfixExpression(postfixExpression: PostfixExpression): bool {
         return true
     }
 
     function closePostfixExpression(postfixExpression: PostfixExpression) {
     }
 
-    function openBinaryOperation(binaryOperation: BinaryOperation) -> bool {
+    function openBinaryOperation(binaryOperation: BinaryOperation): bool {
         return true
     }
 
     function closeBinaryOperation(binaryOperation: BinaryOperation) {
     }
 
-    function openAssignment(assignment: Assignment) -> bool {
+    function openAssignment(assignment: Assignment): bool {
         return true
     }
 
     function closeAssignment(assignment: Assignment) {
     }
 
-    function openTypeQuery(typeQuery: TypeQuery) -> bool {
+    function openTypeQuery(typeQuery: TypeQuery): bool {
         return true
     }
 
     function closeTypeQuery(typeQuery: TypeQuery) {
     }
 
-    function openTypeCast(typeCast: TypeCast) -> bool {
+    function openTypeCast(typeCast: TypeCast): bool {
         return true
     }
 
     function closeTypeCast(typeCast: TypeCast) {
     }
 
-    function openCatchClause(catchClause: CatchClause) -> bool {
+    function openCatchClause(catchClause: CatchClause): bool {
         return true
     }
 
     function closeCatchClause(catchClause: CatchClause) {
     }
 
-    function openWildCardCatchPattern(wildCardCatchPattern: WildCardCatchPattern) -> bool {
+    function openWildCardCatchPattern(wildCardCatchPattern: WildCardCatchPattern): bool {
         return true
     }
 
     function closeWildCardCatchPattern(wildCardCatchPattern: WildCardCatchPattern) {
     }
 
-    function openIdentifierCatchPattern(identifierCatchPattern: IdentifierCatchPattern) -> bool {
+    function openIdentifierCatchPattern(identifierCatchPattern: IdentifierCatchPattern): bool {
         return true
     }
 
@@ -289,35 +289,35 @@ class MyVisitor : SyntaxVisitor {
     function visitOperatorPostfix(operatorPostfix: OperatorPostfix) {
     }
 
-    function openFunctionCall(functionCall: FunctionCall) -> bool {
+    function openFunctionCall(functionCall: FunctionCall): bool {
         return true
     }
 
     function closeFunctionCall(functionCall: FunctionCall) {
     }
 
-    function openExplicitMemberExpression(explicitMemberExpression: ExplicitMemberExpression) -> bool {
+    function openExplicitMemberExpression(explicitMemberExpression: ExplicitMemberExpression): bool {
         return true
     }
 
     function closeExplicitMemberExpression(explicitMemberExpression: ExplicitMemberExpression) {
     }
 
-    function openSubscript(subscript: Subscript) -> bool {
+    function openSubscript(subscript: Subscript): bool {
         return true
     }
 
     function closeSubscript(subscript: Subscript) {
     }
 
-    function openExpressionElement(expressionElement: ExpressionElement) -> bool {
+    function openExpressionElement(expressionElement: ExpressionElement): bool {
         return true
     }
 
     function closeExpressionElement(expressionElement: ExpressionElement) {
     }
 
-    function openNamedMemberPostfix(namedMemberPostfix: NamedMemberPostfix) -> bool {
+    function openNamedMemberPostfix(namedMemberPostfix: NamedMemberPostfix): bool {
         return true
     }
 
@@ -330,70 +330,70 @@ class MyVisitor : SyntaxVisitor {
     function visitLiteralExpression(literalExpression: LiteralExpression) {
     }
 
-    function openIfExpression(ifExpression: IfExpression) -> bool {
+    function openIfExpression(ifExpression: IfExpression): bool {
         return true
     }
 
     function closeIfExpression(ifExpression: IfExpression) {
     }
 
-    function openSwitchExpression(switchExpression: SwitchExpression) -> bool {
+    function openSwitchExpression(switchExpression: SwitchExpression): bool {
         return true
     }
 
     function closeSwitchExpression(switchExpression: SwitchExpression) {
     }
 
-    function openForExpression(forExpression: ForExpression) -> bool {
+    function openForExpression(forExpression: ForExpression): bool {
         return true
     }
 
     function closeForExpression(forExpression: ForExpression) {
     }
 
-    function openWhileExpression(whileExpression: WhileExpression) -> bool {
+    function openWhileExpression(whileExpression: WhileExpression): bool {
         return true
     }
 
     function closeWhileExpression(whileExpression: WhileExpression) {
     }
 
-    function openRepeatExpression(repeatExpression: RepeatExpression) -> bool {
+    function openRepeatExpression(repeatExpression: RepeatExpression): bool {
         return true
     }
 
     function closeRepeatExpression(repeatExpression: RepeatExpression) {
     }
 
-    function openParenthesizedExpression(parenthesizedExpression: ParenthesizedExpression) -> bool {
+    function openParenthesizedExpression(parenthesizedExpression: ParenthesizedExpression): bool {
         return true
     }
 
     function closeParenthesizedExpression(parenthesizedExpression: ParenthesizedExpression) {
     }
 
-    function openReturnExpression(returnExpression: ReturnExpression) -> bool {
+    function openReturnExpression(returnExpression: ReturnExpression): bool {
         return true
     }
 
     function closeReturnExpression(returnExpression: ReturnExpression) {
     }
 
-    function openThrowExpression(throwExpression: ThrowExpression) -> bool {
+    function openThrowExpression(throwExpression: ThrowExpression): bool {
         return true
     }
 
     function closeThrowExpression(throwExpression: ThrowExpression) {
     }
 
-    function openBreakExpression(breakExpression: BreakExpression) -> bool {
+    function openBreakExpression(breakExpression: BreakExpression): bool {
         return true
     }
 
     function closeBreakExpression(breakExpression: BreakExpression) {
     }
 
-    function openInitializerCall(initializerCall: InitializerCall) -> bool {
+    function openInitializerCall(initializerCall: InitializerCall): bool {
         return true
     }
 
@@ -403,14 +403,14 @@ class MyVisitor : SyntaxVisitor {
     function visitThisExpression(thisExpression: ThisExpression) {
     }
 
-    function openSuperDot(superDot: SuperDot) -> bool {
+    function openSuperDot(superDot: SuperDot): bool {
         return true
     }
 
     function closeSuperDot(superDot: SuperDot) {
     }
 
-    function openSuperSubscript(superSubscript: SuperSubscript) -> bool {
+    function openSuperSubscript(superSubscript: SuperSubscript): bool {
         return true
     }
 
@@ -420,35 +420,35 @@ class MyVisitor : SyntaxVisitor {
     function visitNullExpression(nullExpression: NullExpression) {
     }
 
-    function openElseClause(elseClause: ElseClause) -> bool {
+    function openElseClause(elseClause: ElseClause): bool {
         return true
     }
 
     function closeElseClause(elseClause: ElseClause) {
     }
 
-    function openCurliedSwitchBody(curliedSwitchBody: CurliedSwitchBody) -> bool {
+    function openCurliedSwitchBody(curliedSwitchBody: CurliedSwitchBody): bool {
         return true
     }
 
     function closeCurliedSwitchBody(curliedSwitchBody: CurliedSwitchBody) {
     }
 
-    function openNakedSwitchBody(nakedSwitchBody: NakedSwitchBody) -> bool {
+    function openNakedSwitchBody(nakedSwitchBody: NakedSwitchBody): bool {
         return true
     }
 
     function closeNakedSwitchBody(nakedSwitchBody: NakedSwitchBody) {
     }
 
-    function openSwitchCase(switchCase: SwitchCase) -> bool {
+    function openSwitchCase(switchCase: SwitchCase): bool {
         return true
     }
 
     function closeSwitchCase(switchCase: SwitchCase) {
     }
 
-    function openItemCaseLabel(itemCaseLabel: ItemCaseLabel) -> bool {
+    function openItemCaseLabel(itemCaseLabel: ItemCaseLabel): bool {
         return true
     }
 
@@ -458,7 +458,7 @@ class MyVisitor : SyntaxVisitor {
     function visitDefaultCaseLabel(defaultCaseLabel: DefaultCaseLabel) {
     }
 
-    function openCaseItem(caseItem: CaseItem) -> bool {
+    function openCaseItem(caseItem: CaseItem): bool {
         return true
     }
 
@@ -468,35 +468,35 @@ class MyVisitor : SyntaxVisitor {
     function visitWildcardPattern(wildcardPattern: WildcardPattern) {
     }
 
-    function openIdentifierPattern(identifierPattern: IdentifierPattern) -> bool {
+    function openIdentifierPattern(identifierPattern: IdentifierPattern): bool {
         return true
     }
 
     function closeIdentifierPattern(identifierPattern: IdentifierPattern) {
     }
 
-    function openTuplePattern(tuplePattern: TuplePattern) -> bool {
+    function openTuplePattern(tuplePattern: TuplePattern): bool {
         return true
     }
 
     function closeTuplePattern(tuplePattern: TuplePattern) {
     }
 
-    function openExpressionPattern(expressionPattern: ExpressionPattern) -> bool {
+    function openExpressionPattern(expressionPattern: ExpressionPattern): bool {
         return true
     }
 
     function closeExpressionPattern(expressionPattern: ExpressionPattern) {
     }
 
-    function openTuplePatternElement(tuplePatternElement: TuplePatternElement) -> bool {
+    function openTuplePatternElement(tuplePatternElement: TuplePatternElement): bool {
         return true
     }
 
     function closeTuplePatternElement(tuplePatternElement: TuplePatternElement) {
     }
 
-    function openBlockCaseContent(blockCaseContent: BlockCaseContent) -> bool {
+    function openBlockCaseContent(blockCaseContent: BlockCaseContent): bool {
         return true
     }
 
@@ -512,28 +512,28 @@ class MyVisitor : SyntaxVisitor {
     function visitSuperMember(superMember: SuperMember) {
     }
 
-    function openTypeIdentifier(typeIdentifier: TypeIdentifier) -> bool {
+    function openTypeIdentifier(typeIdentifier: TypeIdentifier): bool {
         return true
     }
 
     function closeTypeIdentifier(typeIdentifier: TypeIdentifier) {
     }
 
-    function openArrayType(arrayType: ArrayType) -> bool {
+    function openArrayType(arrayType: ArrayType): bool {
         return true
     }
 
     function closeArrayType(arrayType: ArrayType) {
     }
 
-    function openTypeAnnotation(typeAnnotation: TypeAnnotation) -> bool {
+    function openTypeAnnotation(typeAnnotation: TypeAnnotation): bool {
         return true
     }
 
     function closeTypeAnnotation(typeAnnotation: TypeAnnotation) {
     }
 
-    function openSubtypeIdentifier(subtypeIdentifier: SubtypeIdentifier) -> bool {
+    function openSubtypeIdentifier(subtypeIdentifier: SubtypeIdentifier): bool {
         return true
     }
 
@@ -543,14 +543,14 @@ class MyVisitor : SyntaxVisitor {
     function visitOptionalType(optionalType: OptionalType) {
     }
 
-    function openTypeInheritanceClause(typeInheritanceClause: TypeInheritanceClause) -> bool {
+    function openTypeInheritanceClause(typeInheritanceClause: TypeInheritanceClause): bool {
         return true
     }
 
     function closeTypeInheritanceClause(typeInheritanceClause: TypeInheritanceClause) {
     }
 
-    function openInheritance(inheritance: Inheritance) -> bool {
+    function openInheritance(inheritance: Inheritance): bool {
         return true
     }
 

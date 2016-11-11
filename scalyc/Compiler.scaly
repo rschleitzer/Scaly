@@ -30,7 +30,7 @@ class Compiler {
         visitor.execute(program)
     }
 
-    static function parseUnit(moduleName: String, text: String) -> CompilationUnit throws ParserError {
+    static function parseUnit(moduleName: String, text: String): CompilationUnit throws ParserError {
         mutable parser: Parser = Parser(moduleName, text)
         let compilationUnit: CompilationUnit = parser.parseCompilationUnit()
             catch _ (error: ParserError)

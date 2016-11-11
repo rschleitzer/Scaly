@@ -130,7 +130,7 @@
         <content link = ThrowsClause                   optional property = throwsClause
 
     <syntax id = FunctionResult
-        <content link = evaluatesTo
+        <content link = colon
         <content link = ExistingClause                 optional property = existingObject
         <content link = Type                                    property = resultType
 
@@ -533,6 +533,5 @@
     <punctuation id = dot               value = "."
     <punctuation id = questionMark      value = "?"
     <punctuation id = underscore        value = "_"
-    <punctuation id = evaluatesTo       value = "->"
 
 </language>

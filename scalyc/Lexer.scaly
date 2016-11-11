@@ -265,7 +265,7 @@ class Lexer {
         }
     }
 
-    function scanIdentifier() -> Identifier {
+    function scanIdentifier(): Identifier {
         mutable name: VarString = VarString(text.charAt(position))
 
         repeat {
@@ -286,7 +286,7 @@ class Lexer {
         while true
     }
 
-    function scanOperator(includeDots: bool) -> Operator {
+    function scanOperator(includeDots: bool): Operator {
         mutable whitespaceSkippedBefore: bool = whitespaceSkipped
 
         if !whitespaceSkippedBefore {
@@ -352,7 +352,7 @@ class Lexer {
         } while true
     }
 
-    function scanStringLiteral() -> Token {
+    function scanStringLiteral(): Token {
         mutable value: VarString = VarString("")
 
         repeat {
@@ -385,7 +385,7 @@ class Lexer {
         } while true
     }
 
-    function scanCharacterLiteral() -> Token {
+    function scanCharacterLiteral(): Token {
         mutable value: VarString = VarString("")
         repeat {
             position++ column++
@@ -416,7 +416,7 @@ class Lexer {
         while true
     }
 
-    function scanNumericLiteral() -> NumericLiteral {    
+    function scanNumericLiteral(): NumericLiteral {    
         mutable value: VarString = VarString(text.charAt(position))
 
         repeat {
@@ -433,7 +433,7 @@ class Lexer {
         } while true
     }
 
-    function skipWhitespace() -> bool {
+    function skipWhitespace(): bool {
         whitespaceSkipped = false
         repeat {
             if position == end
@@ -569,7 +569,7 @@ class Lexer {
         while true
     }
 
-    function parseKeyword(fixedString: String) -> bool {
+    function parseKeyword(fixedString: String): bool {
         if !(token is Identifier)
             return false
 
@@ -577,7 +577,7 @@ class Lexer {
         return identifier.name.equals(fixedString)
     }
 
-    function parseIdentifier() -> String? {
+    function parseIdentifier(): String? {
         if !(token is Identifier)
             return null
 
@@ -585,7 +585,7 @@ class Lexer {
         return String(identifier.name)
     }
 
-    function parsePunctuation(fixedString: String) -> bool {
+    function parsePunctuation(fixedString: String): bool {
         if !(token is Punctuation)
             return false
 
@@ -593,7 +593,7 @@ class Lexer {
         return punctuation.sign.equals(fixedString)
     }
 
-    function parseOperator() -> String? {
+    function parseOperator(): String? {
         if !(token is Operator)
             return null
 
@@ -601,7 +601,7 @@ class Lexer {
         return String(op.operation)
     }
 
-    function parseLiteral() -> Literal? {
+    function parseLiteral(): Literal? {
         if !(token is Literal)
             return null
 
@@ -624,7 +624,7 @@ class Lexer {
     }
 
 
-    function parsePrefixOperator() -> String? {
+    function parsePrefixOperator(): String? {
         if !(token is PrefixOperator)
             return null
 
@@ -632,7 +632,7 @@ class Lexer {
         return String(op.operation)
     }
 
-    function parseBinaryOperator() -> String? {
+    function parseBinaryOperator(): String? {
         if !(token is BinaryOperator) {
             if (token is Punctuation) && (((token as Punctuation).sign.equals("<")) || ((token as Punctuation).sign.equals(">"))) {
                 let op: Operator = token as Operator
@@ -647,7 +647,7 @@ class Lexer {
     }
 
 
-    function parsePostfixOperator() -> String? {
+    function parsePostfixOperator(): String? {
         if !(token is PostfixOperator)
             return null
 
@@ -655,15 +655,15 @@ class Lexer {
         return String(op.operation)
     }
 
-    function isAtEnd() -> bool {
+    function isAtEnd(): bool {
         return position == end
     }
 
-    function getPosition() -> Position {
+    function getPosition(): Position {
         return Position(line, column)
     }
 
-    function getPreviousPosition() -> Position {
+    function getPreviousPosition(): Position {
         return Position(previousLine, previousColumn)
     }
 }

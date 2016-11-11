@@ -50,7 +50,6 @@ Parser::Parser(String* theFileName, String* text) {
     dot = new(getPage()) String(".");
     questionMark = new(getPage()) String("?");
     underscore = new(getPage()) String("_");
-    evaluatesTo = new(getPage()) String("->");
 }
 
 _Result<CompilationUnit, ParserError> Parser::parseCompilationUnit(_Page* _rp, _Page* _ep) {
@@ -1094,12 +1093,12 @@ _Result<FunctionSignature, ParserError> Parser::parseFunctionSignature(_Page* _r
 _Result<FunctionResult, ParserError> Parser::parseFunctionResult(_Page* _rp, _Page* _ep) {
     _Region _region; _Page* _p = _region.get();
     Position* start = lexer->getPreviousPosition(_p);
-    Position* startEvaluatesTo1 = lexer->getPreviousPosition(_p);
-    bool successEvaluatesTo1 = lexer->parsePunctuation(evaluatesTo);
-    if (successEvaluatesTo1)
+    Position* startColon1 = lexer->getPreviousPosition(_p);
+    bool successColon1 = lexer->parsePunctuation(colon);
+    if (successColon1)
         lexer->advance();
     else
-        return _Result<FunctionResult, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_punctuationExpected(new(_ep) Position(startEvaluatesTo1), new(_ep) String(evaluatesTo))));
+        return _Result<FunctionResult, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_punctuationExpected(new(_ep) Position(startColon1), new(_ep) String(colon))));
     auto _existingObject_result = parseExistingClause(_rp, _ep);
     ExistingClause* existingObject = nullptr;
     if (_existingObject_result.succeeded()) {
