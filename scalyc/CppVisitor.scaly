@@ -35,14 +35,14 @@ class CppVisitor : SyntaxVisitor {
     init() {
 
         // null init of mutable members does not work yet
-        moduleName = String()
-        sourceFile = VarString()
-        headerFile = VarString()
-        mainHeaderFile = VarString()
-        projectFile = VarString()
+        moduleName = new String()
+        sourceFile = new VarString()
+        headerFile = new VarString()
+        mainHeaderFile = new VarString()
+        projectFile = new VarString()
         modules = new [CppModule]()
-        output = CppProgram()
-        module = CppModule()
+        output = new CppProgram()
+        module = new CppModule()
         inherits = new [Inherits]()
         classes = new [String]()
     }
@@ -52,7 +52,7 @@ class CppVisitor : SyntaxVisitor {
     }
 
     function openProgram(program: Program): bool {
-        mutable programDirectory: String = String(program.directory)
+        mutable programDirectory: String = new String(program.directory)
 
         if programDirectory == null || programDirectory.equals("") {
             programDirectory = String(".")
@@ -65,7 +65,7 @@ class CppVisitor : SyntaxVisitor {
         }
 
         {
-            mutable outputFilePath: VarString = VarString(programDirectory)
+            mutable outputFilePath: VarString = new VarString(programDirectory)
             outputFilePath.append("/")
             outputFilePath.append(program.name)
 
@@ -167,7 +167,7 @@ class CppVisitor : SyntaxVisitor {
             headerFile.append("\n\n}\n#endif // __scalyc__")
             headerFile.append(moduleName)
             headerFile.append("__\n")
-            let headerFilePath: VarString = VarString(outputFilePath)
+            let headerFilePath: VarString = new VarString(outputFilePath)
             headerFilePath.append(".h")
             File.writeFromString(headerFilePath, headerFile)
                 catch _ (error: fileError)
@@ -181,7 +181,7 @@ class CppVisitor : SyntaxVisitor {
         if isTopLevelFile(compilationUnit)
             sourceFile.append("\n}\n")
 
-        mutable sourceFilePath: VarString = VarString(outputFilePath)
+        mutable sourceFilePath: VarString = new VarString(outputFilePath)
         sourceFilePath.append(".cpp")
         File.writeFromString(sourceFilePath, sourceFile)
             catch _ (error: fileError)
@@ -1265,7 +1265,7 @@ class CppVisitor : SyntaxVisitor {
                         let leftSide: PostfixExpression = simpleExpression.prefixExpression.expression
                         if (leftSide.postfixes == 0) && (leftSide.primaryExpression is IdentifierExpression) {
                             let memberExpression: IdentifierExpression = (leftSide.primaryExpression) as IdentifierExpression
-                            mutable memberName: String = String(memberExpression.name)
+                            mutable memberName: String = new String(memberExpression.name)
                             var classDeclaration: ClassDeclaration = getClassDeclaration(assignment)
                             if classDeclaration != null {
                                 return String(memberName)
@@ -2273,7 +2273,7 @@ class CppVisitor : SyntaxVisitor {
         if functionDeclaration != null {
             let functionResult: FunctionResult = functionDeclaration.signature.result
             if functionResult != null {
-                let ret: VarString = VarString()
+                let ret: VarString = new VarString()
                 if functionResult.resultType is TypeIdentifier {
                     let typeIdentifier: TypeIdentifier = (functionResult.resultType) as TypeIdentifier
                     appendCppTypeName(ret, typeIdentifier)
@@ -2302,7 +2302,7 @@ class CppVisitor : SyntaxVisitor {
         if functionDeclaration != null {
             let throwsClause: ThrowsClause = functionDeclaration.signature.throwsClause
             if throwsClause != null {
-                let ret: VarString = VarString()
+                let ret: VarString = new VarString()
                 if throwsClause.throwsType is TypeIdentifier {
                     let typeIdentifier: TypeIdentifier = (throwsClause.throwsType) as TypeIdentifier
                     appendCppTypeName(ret, typeIdentifier)

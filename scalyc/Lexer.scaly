@@ -266,7 +266,7 @@ class Lexer {
     }
 
     function scanIdentifier(): Identifier {
-        mutable name: VarString = VarString(text.charAt(position))
+        mutable name: VarString = new VarString(text.charAt(position))
 
         repeat {
             position++ column++
@@ -299,7 +299,7 @@ class Lexer {
             }
         }
         
-        mutable operation: VarString = VarString(text.charAt(position))
+        mutable operation: VarString = new VarString(text.charAt(position))
 
         repeat {
             position++ column++
@@ -353,7 +353,7 @@ class Lexer {
     }
 
     function scanStringLiteral(): Token {
-        mutable value: VarString = VarString("")
+        mutable value: VarString = new VarString("")
 
         repeat {
             position++ column++
@@ -386,7 +386,7 @@ class Lexer {
     }
 
     function scanCharacterLiteral(): Token {
-        mutable value: VarString = VarString("")
+        mutable value: VarString = new VarString("")
         repeat {
             position++ column++
             if position == end
@@ -417,7 +417,7 @@ class Lexer {
     }
 
     function scanNumericLiteral(): NumericLiteral {    
-        mutable value: VarString = VarString(text.charAt(position))
+        mutable value: VarString = new VarString(text.charAt(position))
 
         repeat {
             position++ column++
