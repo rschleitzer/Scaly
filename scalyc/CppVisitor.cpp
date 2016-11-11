@@ -77,6 +77,9 @@ bool CppVisitor::openProgram(Program* program) {
 }
 
 void CppVisitor::closeProgram(Program* program) {
+    if (output != nullptr)
+        output->getPage()->clear();
+    output = new(output->getPage()) CppProgram(program->name, new(output->getPage()) String(projectFile), new(output->getPage()) String(mainHeaderFile), &_Vector<CppModule>::create(output->getPage(), *(modules)));
 }
 
 bool CppVisitor::openCompilationUnit(CompilationUnit* compilationUnit) {
@@ -2337,14 +2340,41 @@ bool CppVisitor::openInitializerCall(InitializerCall* initializerCall) {
                 sourceFile->append("&_Vector<");
                 sourceFile->append(typeId->name);
                 sourceFile->append(">::create(");
-                if (inThrow(initializerCall)) {
-                    sourceFile->append("_ep");
+                if ((inReturn(initializerCall)) || (inRetDeclaration(initializerCall))) {
+                    sourceFile->append("_rp");
                 }
                 else {
-                    if (inReturn(initializerCall))
-                        sourceFile->append("_rp");
-                    else
-                        sourceFile->append("_p");
+                    if (inThrow(initializerCall)) {
+                        sourceFile->append("_ep");
+                    }
+                    else {
+                        if (inAssignment(initializerCall)) {
+                            Assignment* assignment = getAssignment(initializerCall);
+                            if (assignment != nullptr) {
+                                _Region _region; _Page* _p = _region.get();
+                                ClassDeclaration* classDeclaration = getClassDeclaration(assignment);
+                                String* memberName = getMemberIfCreatingObject(_p, assignment);
+                                if (memberName != nullptr) {
+                                    if (isVariableMember(memberName, classDeclaration)) {
+                                        if (!inInitializer(assignment)) {
+                                            sourceFile->append(memberName);
+                                            sourceFile->append("->");
+                                        }
+                                        sourceFile->append("getPage()");
+                                        if (inInitializer(assignment)) {
+                                            sourceFile->append("->allocateExclusivePage()");
+                                        }
+                                    }
+                                    else {
+                                        sourceFile->append("getPage()");
+                                    }
+                                }
+                            }
+                        }
+                        else {
+                            sourceFile->append("_p");
+                        }
+                    }
                 }
                 sourceFile->append(", *");
                 initializerCall->arguments->accept(this);
@@ -2830,7 +2860,7 @@ void CppVisitor::buildProjectFileString(Program* program) {
     projectFile->append("      <General OutputFile=\"$(IntermediateDirectory)/$(ProjectName)\" IntermediateDirectory=\"../Debug\" ");
     projectFile->append("Command=\"./$(ProjectName)\" CommandArguments=\"-o ");
     projectFile->append(program->name);
-    projectFile->append(" -d ../scalyc");
+    projectFile->append(" -d output");
     {
         _Vector<CompilationUnit>* compilationUnits = program->compilationUnits;
         CompilationUnit* compilationUnit = nullptr;

@@ -100,7 +100,7 @@ class CppVisitor : SyntaxVisitor {
     }
     
     function closeProgram(program: Program) {
-        //output = CppProgram(program.name, String(projectFile), String(mainHeaderFile), [CppModule](modules))
+        output = CppProgram(program.name, String(projectFile), String(mainHeaderFile), [CppModule](modules))
         
     }
 
@@ -2370,14 +2370,40 @@ class CppVisitor : SyntaxVisitor {
                     sourceFile.append("&_Vector<")
                     sourceFile.append(typeId.name)
                     sourceFile.append(">::create(")
-                    if inThrow(initializerCall) {
-                        sourceFile.append("_ep")
+                    if (inReturn(initializerCall)) || (inRetDeclaration(initializerCall)) {
+                        sourceFile.append("_rp")
                     }
                     else {
-                        if inReturn(initializerCall)
-                            sourceFile.append("_rp")
-                        else
-                            sourceFile.append("_p")
+                        if inThrow(initializerCall) {
+                            sourceFile.append("_ep")
+                        }
+                        else {
+                            if inAssignment(initializerCall) {
+                                var assignment: Assignment = getAssignment(initializerCall)
+                                if assignment != null {
+                                    var classDeclaration: ClassDeclaration = getClassDeclaration(assignment)
+                                    mutable memberName: String = getMemberIfCreatingObject(assignment)
+                                    if memberName != null {
+                                        if isVariableMember(memberName, classDeclaration) {
+                                            if !inInitializer(assignment) {
+                                                sourceFile.append(memberName)
+                                                sourceFile.append("->")
+                                            }
+                                            sourceFile.append("getPage()")
+                                            if inInitializer(assignment) {
+                                                sourceFile.append("->allocateExclusivePage()")
+                                            }
+                                        }
+                                        else {
+                                            sourceFile.append("getPage()")
+                                        }
+                                    }
+                                }
+                            }
+                            else {
+                                sourceFile.append("_p")
+                            }
+                        }
                     }
                     sourceFile.append(", *")
                     initializerCall.arguments.accept(this)
@@ -2867,7 +2893,7 @@ class CppVisitor : SyntaxVisitor {
         projectFile.append("      <General OutputFile=\"$(IntermediateDirectory)/$(ProjectName)\" IntermediateDirectory=\"../Debug\" ")
         projectFile.append("Command=\"./$(ProjectName)\" CommandArguments=\"-o ")
         projectFile.append(program.name)
-        projectFile.append(" -d ../scalyc")
+        projectFile.append(" -d output")
         {
             let compilationUnits: [CompilationUnit] = program.compilationUnits
             for compilationUnit: CompilationUnit in compilationUnits {
