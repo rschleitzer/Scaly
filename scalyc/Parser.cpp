@@ -35,7 +35,7 @@ Parser::Parser(String* theFileName, String* text) {
     superKeyword = new(getPage()) String("super");
     thisKeyword = new(getPage()) String("this");
     nullKeyword = new(getPage()) String("null");
-    newKeyword = new (getPage()) String("new");
+    newKeyword = new(getPage()) String("new");
     semicolon = new(getPage()) String(";");
     equal = new(getPage()) String("=");
     leftAngular = new(getPage()) String("<");

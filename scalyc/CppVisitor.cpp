@@ -2426,6 +2426,90 @@ bool CppVisitor::openInitializerCall(InitializerCall* initializerCall) {
             sourceFile->append(") ");
         }
     }
+    else {
+        if (!initializerIsBoundOrAssigned(initializerCall)) {
+            if (initializerCall->typeToInitialize->_isTypeIdentifier()) {
+                TypeIdentifier* typeId = (TypeIdentifier*)(initializerCall->typeToInitialize);
+                sourceFile->append("new(");
+                if ((inReturn(initializerCall)) || (inRetDeclaration(initializerCall))) {
+                    sourceFile->append("_rp");
+                }
+                else {
+                    if (inThrow(initializerCall)) {
+                        sourceFile->append("_ep");
+                    }
+                    else {
+                        if (inAssignment(initializerCall)) {
+                            Assignment* assignment = getAssignment(initializerCall);
+                            if (assignment != nullptr) {
+                                _Region _region; _Page* _p = _region.get();
+                                ClassDeclaration* classDeclaration = getClassDeclaration(assignment);
+                                String* memberName = getMemberIfCreatingObject(_p, assignment);
+                                if (memberName != nullptr) {
+                                    sourceFile->append("getPage()");
+                                    if (isVariableMember(memberName, classDeclaration))
+                                        sourceFile->append("->allocateExclusivePage()");
+                                }
+                            }
+                        }
+                        else {
+                            sourceFile->append("_p");
+                        }
+                    }
+                }
+                sourceFile->append(") ");
+                sourceFile->append(typeId->name);
+                initializerCall->arguments->accept(this);
+                return false;
+            }
+        }
+        else {
+            if (initializerCall->parent->parent->parent->parent->_isAssignment()) {
+                _Region _region; _Page* _p = _region.get();
+                Assignment* assignment = (Assignment*)(initializerCall->parent->parent->parent->parent);
+                sourceFile->append("new(");
+                ClassDeclaration* classDeclaration = getClassDeclaration(assignment);
+                String* memberName = getMemberIfCreatingObject(_p, assignment);
+                if (memberName != nullptr) {
+                    sourceFile->append("getPage()");
+                    if (isVariableMember(memberName, classDeclaration))
+                        sourceFile->append("->allocateExclusivePage()");
+                }
+                else {
+                    SimpleExpression* simpleExpression = (SimpleExpression*)(assignment->parent);
+                    if (simpleExpression->prefixExpression->prefixOperator == nullptr) {
+                        PostfixExpression* leftSide = simpleExpression->prefixExpression->expression;
+                        if ((leftSide->postfixes == nullptr) && (leftSide->primaryExpression->_isIdentifierExpression())) {
+                            IdentifierExpression* memberExpression = (IdentifierExpression*)(leftSide->primaryExpression);
+                            String* memberName = memberExpression->name;
+                            ClassDeclaration* classDeclaration = getClassDeclaration(assignment);
+                            if ((classDeclaration != nullptr) && (memberName != nullptr)) {
+                                if (isVariableMember(memberName, classDeclaration)) {
+                                    sourceFile->append(memberName);
+                                    sourceFile->append("->");
+                                }
+                                sourceFile->append("getPage()");
+                            }
+                            else {
+                                sourceFile->append("_p");
+                            }
+                        }
+                        else {
+                            sourceFile->append("_p");
+                        }
+                    }
+                    else {
+                        sourceFile->append("_p");
+                    }
+                }
+            }
+            sourceFile->append(") ");
+            TypeIdentifier* typeId = (TypeIdentifier*)(initializerCall->typeToInitialize);
+            sourceFile->append(typeId->name);
+            initializerCall->arguments->accept(this);
+            return false;
+        }
+    }
     return true;
 }
 

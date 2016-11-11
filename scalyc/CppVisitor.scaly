@@ -2455,6 +2455,88 @@ class CppVisitor : SyntaxVisitor {
                 sourceFile.append(") ")
             }
         }
+        else {
+            if !initializerIsBoundOrAssigned(initializerCall) {
+                if initializerCall.typeToInitialize is TypeIdentifier {
+                    let typeId: TypeIdentifier = (initializerCall.typeToInitialize) as TypeIdentifier
+                    sourceFile.append("new(")
+                    if (inReturn(initializerCall)) || (inRetDeclaration(initializerCall)) {
+                        sourceFile.append("_rp")
+                    }
+                    else {
+                        if inThrow(initializerCall) {
+                            sourceFile.append("_ep")
+                        }
+                        else {
+                            if inAssignment(initializerCall) {
+                                var assignment: Assignment = getAssignment(initializerCall)
+                                if assignment != null {
+                                    var classDeclaration: ClassDeclaration = getClassDeclaration(assignment)
+                                    mutable memberName: String = getMemberIfCreatingObject(assignment)
+                                    if memberName != null {
+                                        sourceFile.append("getPage()")
+                                        if isVariableMember(memberName, classDeclaration)
+                                            sourceFile.append("->allocateExclusivePage()")
+                                    }
+                                }
+                            }
+                            else {
+                                sourceFile.append("_p")
+                            }
+                        }
+                    }
+                    sourceFile.append(") ")
+                    sourceFile.append(typeId.name)
+                    initializerCall.arguments.accept(this)
+                    return false
+                }
+            }
+            else {
+                if initializerCall.parent.parent.parent.parent is Assignment {
+                    let assignment: Assignment = (initializerCall.parent.parent.parent.parent) as Assignment
+                    sourceFile.append("new(")
+                    var classDeclaration: ClassDeclaration = getClassDeclaration(assignment)
+                    mutable memberName: String = getMemberIfCreatingObject(assignment)
+                    if memberName != null {
+                        sourceFile.append("getPage()")
+                        if isVariableMember(memberName, classDeclaration)
+                            sourceFile.append("->allocateExclusivePage()")
+                    }
+                    else {
+                        let simpleExpression: SimpleExpression = (assignment.parent) as SimpleExpression
+                        if simpleExpression.prefixExpression.prefixOperator == null {
+                            let leftSide: PostfixExpression = simpleExpression.prefixExpression.expression
+                            if (leftSide.postfixes == null) && (leftSide.primaryExpression is IdentifierExpression) {
+                                let memberExpression: IdentifierExpression = (leftSide.primaryExpression) as IdentifierExpression
+                                let memberName: String = memberExpression.name
+                                var classDeclaration: ClassDeclaration = getClassDeclaration(assignment)
+                                if (classDeclaration != null) && (memberName != null) {
+                                    if isVariableMember(memberName, classDeclaration) {
+                                        sourceFile.append(memberName)
+                                        sourceFile.append("->")
+                                    }
+                                    sourceFile.append("getPage()")
+                                }
+                                else {
+                                    sourceFile.append("_p")
+                                }
+                            }
+                            else {
+                                sourceFile.append("_p")
+                            }
+                        }
+                        else {
+                            sourceFile.append("_p")
+                        }
+                    }
+                }
+                sourceFile.append(") ")
+                let typeId: TypeIdentifier = (initializerCall.typeToInitialize) as TypeIdentifier
+                sourceFile.append(typeId.name)
+                initializerCall.arguments.accept(this)
+                return false
+            }
+        }
         return true
     }
 
