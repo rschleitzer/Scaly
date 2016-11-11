@@ -1299,6 +1299,12 @@ class CppVisitor : SyntaxVisitor {
                                 return String(typeIdentifier.name)
                             }
                         }
+                        else {
+                            if initializerCall.typeToInitialize is TypeIdentifier {
+                                let typeIdentifier: TypeIdentifier = (initializerCall.typeToInitialize) as TypeIdentifier
+                                return String(typeIdentifier.name)
+                            }
+                        }
                     }
                 }
             }

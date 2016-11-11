@@ -1272,6 +1272,12 @@ String* CppVisitor::getFunctionName(_Page* _rp, Assignment* assignment) {
                             return new(_rp) String(typeIdentifier->name);
                         }
                     }
+                    else {
+                        if (initializerCall->typeToInitialize->_isTypeIdentifier()) {
+                            TypeIdentifier* typeIdentifier = (TypeIdentifier*)(initializerCall->typeToInitialize);
+                            return new(_rp) String(typeIdentifier->name);
+                        }
+                    }
                 }
             }
         }
