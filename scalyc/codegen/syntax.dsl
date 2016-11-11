@@ -1,4 +1,4 @@
-(define (syntax-scaly) ($
+(define (syntax) ($
 
 "class SyntaxNode {
     let start: Position
@@ -90,53 +90,6 @@ class "(id syntax-node)" : "(if (base syntax-node) (base syntax-node) "SyntaxNod
 "   )))
 ))
 
-(define (syntax-h) ($
-
-"#ifndef __scalyc__Syntax__
-#define __scalyc__Syntax__
-#include \"scalyc.h\"
-using namespace scaly;
-namespace scalyc {
-
-class SyntaxNode : public Object {
-public:
-    Position* start;
-    Position* end;
-    SyntaxNode* parent;
-
-"   (apply-to-selected-children "syntax" (lambda (syntax-node) ($
-"    virtual bool _is"(id syntax-node)"();
-"   )))
-"};
-"
-    (apply-to-selected-children "syntax" (lambda (syntax-node) ($
-"
-class "(id syntax-node)" : public "(if (base syntax-node) (base syntax-node) "SyntaxNode")" {
-public:
-"       (if (abstract? syntax-node) "" ($
-"    "(id syntax-node)"("(constructor-parameters syntax-node)");
-"       ))
-"    virtual void accept(SyntaxVisitor* visitor);
-"
-        (apply-to-property-children-of syntax-node (lambda (content) ($
-"    "(property-declaration content)";
-"       )))
-        (if (top? syntax-node)
-"    String* fileName;
-"
-        "")
-"
-    virtual bool _is"(id syntax-node)"();
-"       (apply-to-nodelist (inheritors syntax-node) (lambda (inheritor) ($
-"    virtual bool _is"(attribute-string "link" inheritor)"();
-"       )))
-"};
-"   )))
-"
-}
-#endif // __scalyc__Syntax__
-"))
-
 (define (constructor-parameters syntax-node)
     ($
         (apply-to-property-children-of syntax-node (lambda (content) ($
@@ -186,7 +139,7 @@ public:
 "       (apply-to-property-children-of syntax-node (lambda (content) ($
 "    this->"(property content)" = "(property content)";
 "
-        )))))
+)))))
 
 (define (scaly-constructor-initializers syntax-node)
     ($
@@ -195,90 +148,5 @@ public:
 "       (apply-to-property-children-of syntax-node (lambda (content) ($
 "        this."(property content)" = "(property content)";
 "
-        )))))
+)))))
 
-(define (syntax-cpp) ($
-
-"#include \"scalyc.h\"
-using namespace scaly;
-namespace scalyc {
-
-"   (apply-to-selected-children "syntax" (lambda (syntax-node) ($
-"bool SyntaxNode::_is"(id syntax-node)"() { return false; }
-"   )))
-    (apply-to-selected-children "syntax" (lambda (syntax-node) ($
-"
-"
-       (if (abstract? syntax-node) "" ($
-
-(id syntax-node)"::"(id syntax-node)"("(constructor-parameters syntax-node)") {
-"     (if (program? syntax-node)
-"    start = new(getPage()) Position(0, 0);
-    end = new(getPage()) Position(0, 0);
-    this->name = name;
-    this->directory = directory;
-    this->compilationUnits = compilationUnits;
-    this->parent = nullptr;
-"
-            (constructor-initializers syntax-node)
-        )
-"}
-
-"      ))
-"void "(id syntax-node)"::accept(SyntaxVisitor* visitor) {
-"       (if (abstract? syntax-node) "" ($
-            (if (has-syntax-children? syntax-node)
-                ($
-"    if (!visitor->open"(id syntax-node)"(this))
-        return;
-"
-                    (apply-to-children-of syntax-node (lambda (content)
-                        (case (type content)
-                            (("syntax") ($
-                                (if (abstract? syntax-node) "" ($
-                                    (if (and (optional? content) (not (multiple? content))) ($
-"    if ("(property content)" != nullptr)
-"
-                                    )"")
-                                    (if (multiple? content)
-                                        ($
-"    if ("(property content)" != nullptr) {
-        "(link content)"* node = nullptr;
-        size_t _"(property content)"_length = "(property content)"->length();
-        for (size_t _i = 0; _i < _"(property content)"_length; _i++) {
-            node = *(*"(property content)")[_i];
-            node->accept(visitor);
-        }
-    }
-"
-                                        )
-                                        ($
-(if (optional? content) "    " "")"    "(property content)"->accept(visitor);
-"
-                                        )
-                                    )
-                                ))
-                            ))
-                            (else "")
-                        )
-                    ))
-"    visitor->close"(id syntax-node)"(this);
-"
-                )
-                ($
-"    visitor->visit"(id syntax-node)"(this);
-"
-                )
-            )
-       ))
-"}
-
-"       (apply-to-nodelist (inheritors syntax-node) (lambda (inheritor) ($
-"bool "(id syntax-node)"::_is"(attribute-string "link" inheritor)"() { return false; }
-"       )))
-"bool "(id syntax-node)"::_is"(id syntax-node)"() { return true; }
-"   )))
-"
-}
-"
-))
