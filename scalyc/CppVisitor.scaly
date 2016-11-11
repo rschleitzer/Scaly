@@ -4,12 +4,12 @@ class CppVisitor : SyntaxVisitor {
     mutable moduleName: String
     mutable sourceFile: VarString
     mutable headerFile: VarString
-
+    mutable module: CppModule
     mutable mainHeaderFile: VarString
     mutable projectFile: VarString
     
     mutable modules: [CppModule]
-
+    mutable output: CppProgram
 
     // Some rudimentary semantics cache
     mutable inherits: [Inherits]
@@ -41,6 +41,8 @@ class CppVisitor : SyntaxVisitor {
         mainHeaderFile = VarString()
         projectFile = VarString()
         modules = [CppModule]()
+        output = CppProgram()
+        module = CppModule()
         inherits = [Inherits]()
         classes = [String]()
     }
@@ -98,6 +100,8 @@ class CppVisitor : SyntaxVisitor {
     }
     
     function closeProgram(program: Program) {
+        //output = CppProgram(program.name, String(projectFile), String(mainHeaderFile), [CppModule](modules))
+        
     }
 
     function openCompilationUnit(compilationUnit: CompilationUnit) -> bool {
@@ -181,14 +185,10 @@ class CppVisitor : SyntaxVisitor {
         sourceFilePath.append(".cpp")
         File.writeFromString(sourceFilePath, sourceFile)
             catch _ (error: fileError)
-                return
-        
-        
-        // Fix member assignments
-        // let module: CppModule = CppModule()
-        // module.name = String(moduleName)
-        // module.header = String(headerFile)
-        // module.source = String(sourceFile)
+                return;
+
+        module = CppModule(String(moduleName), String(headerFile), String(sourceFile))
+        modules.push(module)
     }
     
     function isTopLevelFile(compilationUnit: CompilationUnit) -> bool {

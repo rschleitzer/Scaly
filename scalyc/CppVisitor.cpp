@@ -9,6 +9,8 @@ CppVisitor::CppVisitor() {
     mainHeaderFile = new(getPage()->allocateExclusivePage()) VarString();
     projectFile = new(getPage()->allocateExclusivePage()) VarString();
     modules = new(getPage()->allocateExclusivePage()) _Array<CppModule>();
+    output = new(getPage()->allocateExclusivePage()) CppProgram();
+    module = new(getPage()->allocateExclusivePage()) CppModule();
     inherits = new(getPage()->allocateExclusivePage()) _Array<Inherits>();
     classes = new(getPage()->allocateExclusivePage()) _Array<String>();
 }
@@ -156,6 +158,10 @@ void CppVisitor::closeCompilationUnit(CompilationUnit* compilationUnit) {
                 return;
         }
     }
+    if (module != nullptr)
+        module->getPage()->clear();
+    module = new(module->getPage()) CppModule(new(module->getPage()) String(moduleName), new(module->getPage()) String(headerFile), new(module->getPage()) String(sourceFile));
+    modules->push(module);
 }
 
 bool CppVisitor::isTopLevelFile(CompilationUnit* compilationUnit) {

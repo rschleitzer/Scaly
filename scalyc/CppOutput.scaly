@@ -3,9 +3,35 @@ class CppModule {
     let name: String
     let header: String
     let source: String
+    
+    init() {
+        this.name = null
+        this.header = null
+        this.source = null
+    }
+    
+    init(name: String, header: String, source: String) {
+        this.name = name
+        this.header = header
+        this.source = source
+    }
 }
 
 class CppProgram {
+
+    init() {
+        name = null
+        project = null
+        main = null
+        modules = null
+    }
+
+    init(name: String, project: String, main: String, modules: [CppModule]) {
+        this.name = name
+        this.project = project
+        this.main = main
+        this.modules = modules
+    }
 
     let name: String
     let project: String

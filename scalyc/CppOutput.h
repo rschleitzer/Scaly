@@ -9,11 +9,15 @@ public:
     String* name;
     String* header;
     String* source;
+    CppModule();
+    CppModule(String* name, String* header, String* source);
 
 };
 
 class CppProgram : public Object {
 public:
+    CppProgram();
+    CppProgram(String* name, String* project, String* main, _Vector<CppModule>* modules);
     String* name;
     String* project;
     String* main;
