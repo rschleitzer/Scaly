@@ -13,8 +13,8 @@ class "(id syntax-node)" : "(if (base syntax-node) (base syntax-node) "SyntaxNod
 "
     init("(scaly-syntax-constructor-parameters syntax-node)") {
 "     (if (program? syntax-node)
-"        start = Position(0, 0)
-        end = Position(0, 0)
+"        start = new Position(0, 0)
+        end = new Position(0, 0)
         this.name = name
         this.directory = directory
         this.compilationUnits = compilationUnits

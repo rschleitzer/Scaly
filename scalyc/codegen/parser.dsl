@@ -2,7 +2,7 @@
 
 "class Parser {
     init(theFileName: String, text: String) {
-        lexer = Lexer(text)
+        lexer = new Lexer(text)
         fileName = theFileName
 "   (apply-to-selected-children "keyword" (lambda (keyword) ($
 "        "(name keyword)" = new String(\""(id keyword)"\")

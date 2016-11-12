@@ -95,7 +95,7 @@ class Lexer {
     mutable column: unsigned
     
     init(theText: String) {
-        token = InvalidToken()
+        token = new InvalidToken()
         whitespaceSkipped = true
         text = theText
         end = text.getLength()
@@ -113,7 +113,7 @@ class Lexer {
         previousColumn = column
 
         if position == end {
-            token = EofToken()
+            token = new EofToken()
             return
         }
         
@@ -137,7 +137,7 @@ class Lexer {
                 token = scanCharacterLiteral()
 
             case '_', '(', ')', '{', '}', '[', ']', ',', ':', ';', '@', '#', '`': {
-                token = Punctuation(String(text.charAt(position)))
+                token = new Punctuation(String(text.charAt(position)))
                 position++ column++
             }
 
@@ -147,7 +147,7 @@ class Lexer {
             case '<', '>': {
                 position++ column++
                 if position == end {
-                    token = InvalidToken()
+                    token = new InvalidToken()
                 }
                 else {
                     switch text.charAt(position) {
@@ -156,7 +156,7 @@ class Lexer {
                             token = scanOperator(true)
                         }
                         default:
-                            token = Punctuation(String(c))
+                            token = new Punctuation(String(c))
                     }
                 }
             }
@@ -164,7 +164,7 @@ class Lexer {
             case '.': {
                 position++ column++
                 if position == end {
-                    token = InvalidToken()
+                    token = new InvalidToken()
                 }
                 else {
                     if text.charAt(position) == '.' {
@@ -172,7 +172,7 @@ class Lexer {
                         token = scanOperator(true)
                     }
                     else {
-                        token = Punctuation(String('.'))
+                        token = new Punctuation(String('.'))
                     }
                 }
             }
@@ -180,7 +180,7 @@ class Lexer {
             case '-': {
                 position++ column++
                 if position == end {
-                    token = InvalidToken()
+                    token = new InvalidToken()
                 }
                 else {
                     if text.charAt(position) != '>' {
@@ -188,7 +188,7 @@ class Lexer {
                         token = scanOperator(true)
                     }
                     else {
-                        token = Punctuation(String("->"))
+                        token = new Punctuation(String("->"))
                         position++ column++
                     }
                 }
@@ -197,7 +197,7 @@ class Lexer {
             case '!': {
                 position++ column++
                 if position == end {
-                    token = PostfixOperator(String("!"))
+                    token = new PostfixOperator(String("!"))
                 }
                 else {
                     switch text.charAt(position) {
@@ -212,7 +212,7 @@ class Lexer {
                                 token = scanOperator(true)
                             }
                             else {
-                                token = Punctuation(String("!"))
+                                token = new Punctuation(String("!"))
                             }
                         }
                     } 
@@ -222,7 +222,7 @@ class Lexer {
             case '?': {
                 position++ column++
                 if position == end {
-                    token = PostfixOperator(String("?"))
+                    token = new PostfixOperator(String("?"))
                 }
                 else {
                     switch text.charAt(position) {
@@ -236,7 +236,7 @@ class Lexer {
                                 token = scanOperator(true)
                             }
                             else {
-                                token = Punctuation(String("?"))
+                                token = new Punctuation(String("?"))
                             }
                         }
                     } 
@@ -246,7 +246,7 @@ class Lexer {
             case '=': {
                 position++ column++
                 if position == end {
-                    token = InvalidToken()
+                    token = new InvalidToken()
                 }
                 else {
                     switch text.charAt(position) {
@@ -255,13 +255,13 @@ class Lexer {
                             token = scanOperator(true)
                         }
                         default:
-                            token = Punctuation(String("="))
+                            token = new Punctuation(String("="))
                     }
                 }
             }
  
             default:
-                token = InvalidToken()
+                token = new InvalidToken()
         }
     }
 

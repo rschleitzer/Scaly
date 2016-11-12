@@ -21,17 +21,17 @@ class Compiler {
             index++
         }
 
-        mutable program: Program = Program(options.outputName, options.directory, new [CompilationUnit](compilationUnits))
+        mutable program: Program = new Program(options.outputName, options.directory, new [CompilationUnit](compilationUnits))
         for item: CompilationUnit in compilationUnits
             item.parent = program
         
-        mutable visitor: CppVisitor = CppVisitor()
+        mutable visitor: CppVisitor = new CppVisitor()
         
         visitor.execute(program)
     }
 
     static function parseUnit(moduleName: String, text: String): CompilationUnit throws ParserError {
-        mutable parser: Parser = Parser(moduleName, text)
+        mutable parser: Parser = new Parser(moduleName, text)
         let compilationUnit: CompilationUnit = parser.parseCompilationUnit()
             catch _ (error: ParserError)
                 throw error

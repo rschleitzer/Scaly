@@ -1,6 +1,6 @@
 class Parser {
     init(theFileName: String, text: String) {
-        lexer = Lexer(text)
+        lexer = new Lexer(text)
         fileName = theFileName
         useKeyword = new String("use")
         classKeyword = new String("class")

@@ -1700,66 +1700,7 @@ class CppVisitor : SyntaxVisitor {
     }
 
     function visitIdentifierExpression(identifierExpression: IdentifierExpression) {
-        if identifierExpression.parent is PostfixExpression {
-            var postfixExpression: PostfixExpression = (identifierExpression.parent) as PostfixExpression
-            if postfixExpression.postfixes != null {
-                if postfixExpression.postfixes.length() > 0 {
-                    let postfixes: [Postfix] = postfixExpression.postfixes
-                    if (isClass(identifierExpression.name)) && ((postfixes[0]) is FunctionCall) {
-                        sourceFile.append("new(")
-                        if (inReturn(identifierExpression)) || (inRetDeclaration(identifierExpression)) {
-                            sourceFile.append("_rp")
-                        }
-                        else {
-                            if inThrow(identifierExpression) {
-                                sourceFile.append("_ep")
-                            }
-                            else {
-                                if inAssignment(identifierExpression) {
-                                    var assignment: Assignment = getAssignment(identifierExpression)
-                                    if assignment != null {
-                                        var classDeclaration: ClassDeclaration = getClassDeclaration(assignment)
-                                        mutable memberName: String = getMemberIfCreatingObject(assignment)
-                                        if memberName != null {
-                                            if isVariableMember(memberName, classDeclaration) {
-                                                if !inInitializer(assignment) {
-                                                    sourceFile.append(memberName)
-                                                    sourceFile.append("->")
-                                                }
-                                                sourceFile.append("getPage()")
-                                                if inInitializer(assignment) {
-                                                    sourceFile.append("->allocateExclusivePage()")
-                                                }
-                                            }
-                                            else {
-                                                sourceFile.append("getPage()")
-                                            }
-                                        }
-                                    }
-                                }
-                                else {
-                                    sourceFile.append("_p")
-                                }
-                            }
-                        }
-                        sourceFile.append(") ")
-                        sourceFile.append(identifierExpression.name)
-                    }
-                    else {
-                        sourceFile.append(identifierExpression.name)
-                    }
-                }
-                else {
-                    sourceFile.append(identifierExpression.name)
-                }
-            }
-            else {
-                sourceFile.append(identifierExpression.name)
-            }
-        }
-        else {
-            sourceFile.append(identifierExpression.name)
-        }
+        sourceFile.append(identifierExpression.name)
         if identifierExpression.parent is PostfixExpression {
             let postfixExpression: PostfixExpression = (identifierExpression.parent) as PostfixExpression
             if postfixExpression.postfixes != null {

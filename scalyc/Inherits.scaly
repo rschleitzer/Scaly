@@ -7,7 +7,7 @@ class Inherits {
     mutable inheritors: [String]
 
     init(className: String) {
-        name = String(className)
+        name = new String(className)
         inheritors = new [String]()
     }
 }

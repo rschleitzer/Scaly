@@ -7,8 +7,8 @@ class SyntaxNode {
 class Program : SyntaxNode {
 
     init(name: String, directory: String, compilationUnits: [CompilationUnit]) {
-        start = Position(0, 0)
-        end = Position(0, 0)
+        start = new Position(0, 0)
+        end = new Position(0, 0)
         this.name = name
         this.directory = directory
         this.compilationUnits = compilationUnits
