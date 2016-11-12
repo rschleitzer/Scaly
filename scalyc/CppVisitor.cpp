@@ -2427,7 +2427,7 @@ bool CppVisitor::openInitializerCall(InitializerCall* initializerCall) {
             }
             else {
                 if (initializerCall->parent->parent->parent->parent->_isInitializer()) {
-                    sourceFile->append("new(_p");                    
+                    sourceFile->append("new(_p");
                 }
             } 
             sourceFile->append(") ");
