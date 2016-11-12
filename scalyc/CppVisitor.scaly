@@ -187,7 +187,7 @@ class CppVisitor : SyntaxVisitor {
             catch _ (error: fileError)
                 return;
 
-        module = CppModule(String(moduleName), new String(headerFile), new String(sourceFile))
+        module = new CppModule(new String(moduleName), new String(headerFile), new String(sourceFile))
         modules.push(module)
     }
     
@@ -1325,7 +1325,7 @@ class CppVisitor : SyntaxVisitor {
     function isVariableMember(memberName: String, classDeclaration: ClassDeclaration): bool {
         let classMembers: [ClassMember] = classDeclaration.body.members
         for member: ClassMember in classMembers {
-            mutable bindingInitializer: BindingInitializer = null
+            var bindingInitializer: BindingInitializer = null
             if member.declaration is MutableDeclaration {
                 let mutableDeclaration: MutableDeclaration = (member.declaration) as MutableDeclaration
                 bindingInitializer = mutableDeclaration.initializer
@@ -3011,14 +3011,14 @@ class CppVisitor : SyntaxVisitor {
     }
 
     function registerInheritance(className: String, baseName: String) {
-        mutable inherit: Inherits = null
+        var inherit: Inherits = null
         for inh: Inherits in inherits {
             if inh.name.equals(baseName)
              inherit = inh
         }
 
         if inherit == null {
-            inherit = Inherits(baseName)
+            inherit = new Inherits(baseName)
             inherits.push(inherit)
         }
         inherit.inheritors.push(className)
