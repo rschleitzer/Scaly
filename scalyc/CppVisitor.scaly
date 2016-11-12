@@ -8,12 +8,12 @@ class CppVisitor : SyntaxVisitor {
     mutable mainHeaderFile: VarString
     mutable projectFile: VarString
     
-    mutable modules: [CppModule]
+    mutable modules: CppModule[]
     mutable output: CppProgram
 
     // Some rudimentary semantics cache
-    mutable inherits: [Inherits]
-    mutable classes: [String]
+    mutable inherits: Inherits[]
+    mutable classes: String[]
 
     // indent level
     mutable headerIndentLevel: unsigned
@@ -40,11 +40,11 @@ class CppVisitor : SyntaxVisitor {
         headerFile = new VarString()
         mainHeaderFile = new VarString()
         projectFile = new VarString()
-        modules = new [CppModule]()
+        modules = new CppModule[]()
         output = new CppProgram()
         module = new CppModule()
-        inherits = new [Inherits]()
-        classes = new [String]()
+        inherits = new Inherits[]()
+        classes = new String[]()
     }
 
     function execute(program: Program) {
@@ -100,7 +100,7 @@ class CppVisitor : SyntaxVisitor {
     }
     
     function closeProgram(program: Program) {
-        output = new CppProgram(program.name, new String(projectFile), new String(mainHeaderFile), new [CppModule](modules))
+        output = new CppProgram(program.name, new String(projectFile), new String(mainHeaderFile), new CppModule[](modules))
         
     }
 
@@ -192,7 +192,7 @@ class CppVisitor : SyntaxVisitor {
     }
     
     function isTopLevelFile(compilationUnit: CompilationUnit): bool {
-        let statements: [TerminatedStatement] = compilationUnit.statements
+        let statements: TerminatedStatement[] = compilationUnit.statements
         for statement: TerminatedStatement in statements {
             if statement.statement is Expression
                 return true
@@ -206,7 +206,7 @@ class CppVisitor : SyntaxVisitor {
         if terminatedStatement.statement is SimpleExpression {
             let simpleExpression: SimpleExpression = terminatedStatement.statement as SimpleExpression
             if simpleExpression.prefixExpression.expression.primaryExpression is IdentifierExpression {
-                let binaryOps: [BinaryOp] = simpleExpression.binaryOps
+                let binaryOps: BinaryOp[] = simpleExpression.binaryOps
                 if binaryOps != null {
                     if binaryOps.length() == 1 {
                         let binaryOp: BinaryOp = binaryOps[0]
@@ -227,7 +227,7 @@ class CppVisitor : SyntaxVisitor {
                         }
                     }
                 }
-                let postfixes: [Postfix] postfixes = simpleExpression.prefixExpression.expression.postfixes
+                let postfixes: Postfix[] postfixes = simpleExpression.prefixExpression.expression.postfixes
                 if postfixes != null {
                     for postfix: Postfix in postfixes {
                         if postfix is FunctionCall {
@@ -304,7 +304,7 @@ class CppVisitor : SyntaxVisitor {
             if primaryExpression is IdentifierExpression {
                 let postfixExpression: PostfixExpression = expression.prefixExpression.expression
                 if postfixExpression.postfixes != null {
-                    let postfixes: [Postfix] = postfixExpression.postfixes
+                    let postfixes: Postfix[] = postfixExpression.postfixes
                     for postfix: Postfix in postfixes {
                         if postfix is FunctionCall {
                             let functionCall: FunctionCall = postfix as FunctionCall
@@ -379,7 +379,7 @@ class CppVisitor : SyntaxVisitor {
         }
 
         if functionDeclaration.modifiers != null {
-            let modifiers: [Modifier] = functionDeclaration.modifiers
+            let modifiers: Modifier[] = functionDeclaration.modifiers
             for modifier: Modifier in modifiers {
                 if modifier is StaticWord
                     staticFunction = true
@@ -418,7 +418,7 @@ class CppVisitor : SyntaxVisitor {
 
     function closeEnumDeclaration(enumDeclaration: EnumDeclaration) {
         let enumDeclarationName: String = enumDeclaration.name
-        let members: [EnumMember] = enumDeclaration.members
+        let members: EnumMember[] = enumDeclaration.members
 
         if members != null {
             headerFile.append("enum _")
@@ -498,13 +498,15 @@ class CppVisitor : SyntaxVisitor {
 
         headerFile.append(" : public ")
         if classDeclaration.typeInheritanceClause != null {
-            let inheritances: [Inheritance] = classDeclaration.typeInheritanceClause.inheritances
+            let inheritances: Inheritance[] = classDeclaration.typeInheritanceClause.inheritances
             var i: int = 0
             for inheritance: Inheritance in inheritances {
+
                 if i > 0
                     headerFile.append(", ");
-                    var typeIdentifier: TypeIdentifier = inheritance.typeIdentifier
-                headerFile.append(typeIdentifier.name)
+
+                headerFile.append(inheritance.type.name)
+
                 i++
             }
         }
@@ -532,7 +534,7 @@ class CppVisitor : SyntaxVisitor {
             sourceFile.append("() { return true; }\n\n")
         }
         {
-            mutable derivedClasses: [String] = new [String]()
+            mutable derivedClasses: String[] = new String[]()
             collectDerivedClasses(derivedClasses, new String(classDeclaration.name))
             for derivedClass: String in derivedClasses {
                 headerFile.append("\n")
@@ -590,7 +592,7 @@ class CppVisitor : SyntaxVisitor {
     }
 
     function localAllocations(codeBlock: CodeBlock): bool {
-        let terminatedStatements: [TerminatedStatement] = codeBlock.statements
+        let terminatedStatements: TerminatedStatement[] = codeBlock.statements
         if terminatedStatements != null {
             for terminatedStatement: TerminatedStatement in terminatedStatements {
                 if terminatedStatement.statement is MutableDeclaration
@@ -609,7 +611,7 @@ class CppVisitor : SyntaxVisitor {
                 let postfixExpression: PostfixExpression = prefixExpression.expression
                 if postfixExpression.primaryExpression is IdentifierExpression {
                     if postfixExpression.postfixes != null {
-                        let postfixes: [Postfix] = postfixExpression.postfixes
+                        let postfixes: Postfix[] = postfixExpression.postfixes
                         for postfix: Postfix in postfixes {
                             if postfix is FunctionCall {
                                 return postfix as FunctionCall
@@ -647,14 +649,14 @@ class CppVisitor : SyntaxVisitor {
 
     function openSimpleExpression(simpleExpression: SimpleExpression): bool {
         if simpleExpression.binaryOps != null {
-            let binaryOps: [BinaryOp] = simpleExpression.binaryOps
+            let binaryOps: BinaryOp[] = simpleExpression.binaryOps
             for binaryOp: BinaryOp in binaryOps {
                 if binaryOp is TypeCast {
                     let typeCast: TypeCast = binaryOp as TypeCast
-                    if  typeCast.objectType is TypeIdentifier {
-                        let typeIdentifier: TypeIdentifier = typeCast.objectType as TypeIdentifier
+                    if  typeCast.objectType is Type {
+                        let type: Type = typeCast.objectType as Type
                         sourceFile.append("(")
-                        sourceFile.append(typeIdentifier.name)
+                        sourceFile.append(type.name)
                         sourceFile.append("*)")
                         simpleExpression.prefixExpression.accept(this)
                         return false
@@ -759,62 +761,56 @@ class CppVisitor : SyntaxVisitor {
                 if !suppressSource
                     sourceFile.append("_Result<");
 
-                if functionSignature.result.resultType is TypeIdentifier {
-                    let typeId: TypeIdentifier = functionSignature.result.resultType as TypeIdentifier
-                    appendCppTypeName(headerFile, typeId)
+                if functionSignature.result.resultType is Type {
+                    let type: Type = functionSignature.result.resultType as Type
+                    appendCppTypeName(headerFile, type)
                     if !suppressSource
-                        appendCppTypeName(sourceFile, typeId)
+                        appendCppTypeName(sourceFile, type)
                 }
-                else { 
-                    if functionSignature.result.resultType is ArrayType {
-                        let arrayType: ArrayType = functionSignature.result.resultType as ArrayType
-                        if arrayType.elementType is TypeIdentifier {
-                            headerFile.append("_Vector<")
-                            let typeId: TypeIdentifier = arrayType.elementType as TypeIdentifier
-                            appendCppTypeName(headerFile, typeId)
-                            headerFile.append(">")
-                            if !suppressSource {
-                                sourceFile.append("_Vector<")
-                                appendCppTypeName(sourceFile, typeId)
-                                sourceFile.append(">")
-                            }
+                else {
+                    if hasArrayPostfix(functionSignature.result.resultType) {
+                        headerFile.append("_Vector<")
+                        let type: Type = functionSignature.result.resultType
+                        appendCppTypeName(headerFile, type)
+                        headerFile.append(">")
+                        if !suppressSource {
+                            sourceFile.append("_Vector<")
+                            appendCppTypeName(sourceFile, type)
+                            sourceFile.append(">")
                         }
                     }
                 }
                 headerFile.append(", ")
-                appendCppTypeName(headerFile, (functionSignature.throwsClause.throwsType) as TypeIdentifier)
+                appendCppTypeName(headerFile, (functionSignature.throwsClause.throwsType) as Type)
                 headerFile.append(">")
                 if !suppressSource {
                     sourceFile.append(", ")
-                    appendCppTypeName(sourceFile, (functionSignature.throwsClause.throwsType) as TypeIdentifier)
+                    appendCppTypeName(sourceFile, (functionSignature.throwsClause.throwsType) as Type)
                     sourceFile.append(">")
                 }
             }
             else {
-                if functionSignature.result.resultType is TypeIdentifier {
-                    let typeId: TypeIdentifier = functionSignature.result.resultType as TypeIdentifier
-                    appendCppTypeName(headerFile, typeId)
+                if functionSignature.result.resultType is Type {
+                    let type: Type = functionSignature.result.resultType as Type
+                    appendCppTypeName(headerFile, type)
                     if !suppressSource
-                        appendCppTypeName(sourceFile, typeId)
-                    if isClass(typeId.name) {
+                        appendCppTypeName(sourceFile, type)
+                    if isClass(type.name) {
                         headerFile.append("*")
                         if !suppressSource
                             sourceFile.append("*")
                     }
                 }
                 else {
-                    if functionSignature.result.resultType is ArrayType {
-                        let arrayType: ArrayType = functionSignature.result.resultType as ArrayType
-                        if arrayType.elementType is TypeIdentifier {
-                            headerFile.append("_Vector<")
-                            let typeId: TypeIdentifier = arrayType.elementType as TypeIdentifier
-                            appendCppTypeName(headerFile, typeId)
-                            headerFile.append(">")
-                            if !suppressSource {
-                                sourceFile.append("_Vector<")
-                                appendCppTypeName(sourceFile, typeId)
-                                sourceFile.append(">")
-                            }
+                    if hasArrayPostfix(functionSignature.result.resultType) {
+                        headerFile.append("_Vector<")
+                        let type: Type = functionSignature.result.resultType
+                        appendCppTypeName(headerFile, type)
+                        headerFile.append(">")
+                        if !suppressSource {
+                            sourceFile.append("_Vector<")
+                            appendCppTypeName(sourceFile, type)
+                            sourceFile.append(">")
                         }
                     }
                 }
@@ -838,9 +834,9 @@ class CppVisitor : SyntaxVisitor {
             sourceFile.append("(")
         }
         if functionSignature.result != null {
-            if functionSignature.result.resultType is TypeIdentifier {
-                let typeId: TypeIdentifier = functionSignature.result.resultType as TypeIdentifier
-                if isClass(typeId.name) {
+            if functionSignature.result.resultType is Type {
+                let type: Type = functionSignature.result.resultType as Type
+                if isClass(type.name) {
                     if functionSignature.result.existingObject == null {
                         headerFile.append("_Page* _rp")
                         if !suppressSource
@@ -854,7 +850,7 @@ class CppVisitor : SyntaxVisitor {
                 }
             }
             else {
-                if functionSignature.result.resultType is ArrayType {
+                if hasArrayPostfix(functionSignature.result.resultType) {
                     if functionSignature.result.existingObject == null {
                         headerFile.append("_Page* _rp")
                         if !suppressSource
@@ -881,6 +877,20 @@ class CppVisitor : SyntaxVisitor {
 
         return true
     }
+    
+    function hasArrayPostfix(type: Type): bool {
+
+        if type.postfixes == null
+            return false
+
+        let typePostfix: TypePostfix = postfixes[0]
+
+        if typePostfix is IndexedType()
+            return true
+
+        return false
+    }
+
 
     function closeFunctionSignature(functionSignature: FunctionSignature) {
         suppressHeader = true
@@ -1021,7 +1031,7 @@ class CppVisitor : SyntaxVisitor {
             sourceFile.append("\n")
             headerFile.append(";\n\n")
 
-            let parameters: [Parameter] = enumMember.parameterClause.parameters
+            let parameters: Parameter[] = enumMember.parameterClause.parameters
             if parameters != null {
                 sourceFile.append(": ")
                 var pos: unsigned = 0
@@ -1065,23 +1075,15 @@ class CppVisitor : SyntaxVisitor {
     }
 
     function appendCppType(mutable s: VarString, type: Type) {
-        if type is TypeIdentifier {
-            let typeId: TypeIdentifier = type as TypeIdentifier
-            appendCppTypeName(s, typeId)
-            if isClass(typeId.name) {
-                s.append("*")
-            }
+        if hasArrayPostfix(type) {
+            s.append("_Vector<")
+            appendCppTypeName(s, type)
+            s.append(">*")
         }
         else {
-            if type is ArrayType {
-                var arrayType: ArrayType = type as ArrayType
-                var type: Type = arrayType.elementType
-                if type is TypeIdentifier {
-                    var typeId: TypeIdentifier = type as TypeIdentifier
-                    s.append("_Vector<")
-                    appendCppTypeName(s, typeId)
-                    s.append(">*")
-                }
+            appendCppTypeName(s, type)
+            if isClass(type.name) {
+                s.append("*")
             }
         }
     }
@@ -1119,14 +1121,14 @@ class CppVisitor : SyntaxVisitor {
         }
     }
 
-    function collectDerivedClasses(mutable derivedClasses: [String], className: String) {
+    function collectDerivedClasses(mutable derivedClasses: String[], className: String) {
         for inherit: Inherits in inherits {
             if inherit.name.equals(className)
                 appendDerivedClasses(derivedClasses, inherit.inheritors)
         }
     }
 
-    function appendDerivedClasses(mutable derivedClasses: [String], mutable inheritors: [String]) {
+    function appendDerivedClasses(mutable derivedClasses: String[], mutable inheritors: String[]) {
         for inheritor: String in inheritors {
             derivedClasses.push(inheritor)
             collectDerivedClasses(derivedClasses, inheritor)
@@ -1168,7 +1170,7 @@ class CppVisitor : SyntaxVisitor {
 
     function openPostfixExpression(postfixExpression: PostfixExpression): bool {
         if postfixExpression.postfixes != null {
-            let postfixes: [Postfix] = postfixExpression.postfixes
+            let postfixes: Postfix[] = postfixExpression.postfixes
             if (postfixes[0]) is Subscript {
                 sourceFile.append("*(*")
             }
@@ -1268,18 +1270,13 @@ class CppVisitor : SyntaxVisitor {
                 else {
                     if rightSide.primaryExpression is ConstructorCall {
                         let initializerCall: ConstructorCall = (rightSide.primaryExpression) as ConstructorCall
-                        if initializerCall.typeToInitialize is ArrayType {
-                            let arrayType: ArrayType = (initializerCall.typeToInitialize) as ArrayType
-                            if arrayType.elementType is TypeIdentifier {
-                                let typeIdentifier: TypeIdentifier = (arrayType.elementType) as TypeIdentifier
-                                return new String(typeIdentifier.name)
-                            }
+                        if hasArrayPostfix(initializerCall.typeToInitialize) {
+                            let type: Type = initializerCall.typeToInitialize
+                            return new String(type.name)
                         }
                         else {
-                            if initializerCall.typeToInitialize is TypeIdentifier {
-                                let typeIdentifier: TypeIdentifier = (initializerCall.typeToInitialize) as TypeIdentifier
-                                return new String(typeIdentifier.name)
-                            }
+                            let type: Type = initializerCall.typeToInitialize
+                            return new String(type.name)
                         }
                     }
                 }
@@ -1294,7 +1291,7 @@ class CppVisitor : SyntaxVisitor {
         if classDeclaration == null
             return false
 
-        let members: [ClassMember] = classDeclaration.body.members
+        let members: ClassMember[] = classDeclaration.body.members
         if members == null
             return false
 
@@ -1323,7 +1320,7 @@ class CppVisitor : SyntaxVisitor {
     }
     
     function isVariableMember(memberName: String, classDeclaration: ClassDeclaration): bool {
-        let classMembers: [ClassMember] = classDeclaration.body.members
+        let classMembers: ClassMember[] = classDeclaration.body.members
         for member: ClassMember in classMembers {
             var bindingInitializer: BindingInitializer = null
             if member.declaration is MutableDeclaration {
@@ -1377,7 +1374,7 @@ class CppVisitor : SyntaxVisitor {
                     let patternInitializer: PatternInitializer = bindingInitializer.initializer
                     if patternInitializer.pattern is IdentifierPattern {
                         let identifierPattern: IdentifierPattern = (patternInitializer.pattern) as IdentifierPattern
-                        let catchClauses: [CatchClause] = functionCall.catchClauses
+                        let catchClauses: CatchClause[] = functionCall.catchClauses
                         if catchClauses[0] == catchClause {
                             sourceFile.append(";\n")
                             indentSource()
@@ -1420,7 +1417,7 @@ class CppVisitor : SyntaxVisitor {
                                 let bindingPattern: TuplePattern = catchClause.bindingPattern
                                 if bindingPattern.elements != null {
                                     if bindingPattern.elements.length() > 0 {
-                                        let elements: [TuplePatternElement] = bindingPattern.elements
+                                        let elements: TuplePatternElement[] = bindingPattern.elements
                                         let element: TuplePatternElement = elements[0]
                                         if element.pattern is IdentifierPattern {
                                             let pattern: IdentifierPattern = (element.pattern) as IdentifierPattern
@@ -1460,7 +1457,7 @@ class CppVisitor : SyntaxVisitor {
             {
                 var identifierExpression: IdentifierExpression = getIdentifierExpression((functionCall.parent) as PostfixExpression)
                 if identifierExpression != null {
-                    let catchClauses: [CatchClause] = functionCall.catchClauses
+                    let catchClauses: CatchClause[] = functionCall.catchClauses
                     if catchClauses[0] == catchClause {
                         sourceFile.append(";\n")
                         indentSource()
@@ -1496,7 +1493,7 @@ class CppVisitor : SyntaxVisitor {
                                     let bindingPattern: TuplePattern = catchClause.bindingPattern
                                     if bindingPattern.elements != null {
                                         if bindingPattern.elements.length() > 0 {
-                                            let elements: [TuplePatternElement] = bindingPattern.elements
+                                            let elements: TuplePatternElement[] = bindingPattern.elements
                                             let element: TuplePatternElement = elements[0]
                                             if element.pattern is IdentifierPattern {
                                                 let pattern: IdentifierPattern = (element.pattern) as IdentifierPattern
@@ -1526,7 +1523,7 @@ class CppVisitor : SyntaxVisitor {
                         sourceFile.append(";\n")
                     sourceIndentLevel--
                     
-                    let clauses: [CatchClause] = functionCall.catchClauses
+                    let clauses: CatchClause[] = functionCall.catchClauses
                     if clauses[functionCall.catchClauses.length() - 1] == catchClause {
                         sourceIndentLevel--
                         indentSource()
@@ -1558,14 +1555,14 @@ class CppVisitor : SyntaxVisitor {
         if catchClause.bindingPattern != null {
             if catchClause.bindingPattern.elements != null {
                 if catchClause.bindingPattern.elements.length() == 1 {
-                    let elements: [TuplePatternElement] = catchClause.bindingPattern.elements
+                    let elements: TuplePatternElement[] = catchClause.bindingPattern.elements
                     let element: TuplePatternElement = elements[0]
                     if element.pattern is IdentifierPattern {
                         let pattern: IdentifierPattern = (element.pattern) as IdentifierPattern
                         if pattern.annotationForType != null {
-                            if pattern.annotationForType.annotationForType is TypeIdentifier {
-                                let typeIdentifier: TypeIdentifier = (pattern.annotationForType.annotationForType) as TypeIdentifier
-                                return typeIdentifier.name
+                            if pattern.annotationForType.annotationForType is Type {
+                                let type: Type = (pattern.annotationForType.annotationForType) as Type
+                                return type.name
                             }
                         }
                     }
@@ -1610,7 +1607,7 @@ class CppVisitor : SyntaxVisitor {
             if postfixExpression.primaryExpression is IdentifierExpression {
                 let identifierExpression: IdentifierExpression = (postfixExpression.primaryExpression) as IdentifierExpression
                 if postfixExpression.postfixes.length() > 1 {
-                    let postfixes: [Postfix] = postfixExpression.postfixes
+                    let postfixes: Postfix[] = postfixExpression.postfixes
                     if (postfixes[0] == explicitMemberExpression as Postfix) && ((postfixes[1]) is FunctionCall) {
                         if isClass(identifierExpression.name) {
                             sourceFile.append("::")
@@ -1650,7 +1647,7 @@ class CppVisitor : SyntaxVisitor {
     function isLastExpressionElement(expressionElement: ExpressionElement): bool {
         if expressionElement.parent is ParenthesizedExpression {
             let parenthesizedExpression: ParenthesizedExpression = (expressionElement.parent) as ParenthesizedExpression
-            let expressionElements: [ExpressionElement] = parenthesizedExpression.expressionElements
+            let expressionElements: ExpressionElement[] = parenthesizedExpression.expressionElements
             let length: unsigned = expressionElements.length() - 1
             let i: unsigned = 0
             for element: ExpressionElement in expressionElements {
@@ -1662,7 +1659,7 @@ class CppVisitor : SyntaxVisitor {
 
         if expressionElement.parent is Subscript {
             let subscript: Subscript = (expressionElement.parent) as Subscript
-            let expressions: [ExpressionElement] = subscript.expressions
+            let expressions: ExpressionElement[] = subscript.expressions
             let length: unsigned = expressions.length() - 1
             let i: unsigned = 0
             for element: ExpressionElement in expressions {
@@ -1687,7 +1684,7 @@ class CppVisitor : SyntaxVisitor {
         if identifierExpression.parent is PostfixExpression {
             let postfixExpression: PostfixExpression = (identifierExpression.parent) as PostfixExpression
             if postfixExpression.postfixes != null {
-                let postfixes: [Postfix] = postfixExpression.postfixes
+                let postfixes: Postfix[] = postfixExpression.postfixes
                 if (postfixes[0]) is Subscript {
                     sourceFile.append(")")
                 }
@@ -2010,16 +2007,11 @@ class CppVisitor : SyntaxVisitor {
         if patternInitializer.pattern is IdentifierPattern {
             let identifierPattern: IdentifierPattern = (patternInitializer.pattern) as IdentifierPattern
             let type: Type = identifierPattern.annotationForType.annotationForType
-            if type is ArrayType
+            if hasArrayPostfix(type)
                 return true
 
-            if type is TypeIdentifier {
-                let typeIdentifier: TypeIdentifier = type as TypeIdentifier
-                if isClass(typeIdentifier.name) {
-                    if getFunctionCall(patternInitializer) != null
-                        return true;
-                }
-            }
+            if isClass(type.name) && (getFunctionCall(patternInitializer) != null)
+                return true
         }
         return false
     }
@@ -2134,7 +2126,7 @@ class CppVisitor : SyntaxVisitor {
                                     let bindingPattern: TuplePattern bindingPattern = catchClause.bindingPattern
                                     if bindingPattern.elements != null {
                                         if bindingPattern.elements.length() > 0 {
-                                            let elements: [TuplePatternElement] = bindingPattern.elements
+                                            let elements: TuplePatternElement[] = bindingPattern.elements
                                             let element: TuplePatternElement = elements[0]
                                             if element.pattern is IdentifierPattern {
                                                 let pattern: IdentifierPattern = (element.pattern) as IdentifierPattern
@@ -2197,21 +2189,18 @@ class CppVisitor : SyntaxVisitor {
             let functionResult: FunctionResult = functionDeclaration.signature.result
             if functionResult != null {
                 let ret: VarString = new VarString()
-                if functionResult.resultType is TypeIdentifier {
-                    let typeIdentifier: TypeIdentifier = (functionResult.resultType) as TypeIdentifier
-                    appendCppTypeName(ret, typeIdentifier)
+                if functionResult.resultType is Type {
+                    let type: Type = (functionResult.resultType) as Type
+                    appendCppTypeName(ret, type)
                     return new String(ret)
                 }
                 else {
-                    if functionResult.resultType is ArrayType {
-                        let arrayType: ArrayType = (functionResult.resultType) as ArrayType
-                        if arrayType.elementType is TypeIdentifier {
-                            let typeIdentifier: TypeIdentifier = (arrayType.elementType) as TypeIdentifier
-                            ret.append("_Vector<")
-                            appendCppTypeName(ret, typeIdentifier)
-                            ret.append(">")
-                            return new String(ret)
-                        }
+                    if hasArrayPostfix(functionResult.resultType) {
+                        let type: Type = functionResult.resultType
+                        ret.append("_Vector<")
+                        appendCppTypeName(ret, type)
+                        ret.append(">")
+                        return new String(ret)
                     }
                 }
             }
@@ -2226,21 +2215,18 @@ class CppVisitor : SyntaxVisitor {
             let throwsClause: ThrowsClause = functionDeclaration.signature.throwsClause
             if throwsClause != null {
                 let ret: VarString = new VarString()
-                if throwsClause.throwsType is TypeIdentifier {
-                    let typeIdentifier: TypeIdentifier = (throwsClause.throwsType) as TypeIdentifier
-                    appendCppTypeName(ret, typeIdentifier)
+                if throwsClause.throwsType is Type {
+                    let type: Type = (throwsClause.throwsType) as Type
+                    appendCppTypeName(ret, type)
                     return new String(ret)
                 }
                 else {
-                    if throwsClause.throwsType is ArrayType {
-                        let arrayType: ArrayType = (throwsClause.throwsType) as ArrayType
-                        if arrayType.elementType is TypeIdentifier {
-                            let typeIdentifier: TypeIdentifier = (arrayType.elementType) as TypeIdentifier
-                            ret.append("_Vector<")
-                            appendCppTypeName(ret, typeIdentifier)
-                            ret.append(">")
-                            return new String(ret)
-                        }
+                    if hasArrayPostfix(throwsClause.throwsType) {
+                        let type: Type = throwsClause.throwsType
+                        ret.append("_Vector<")
+                        appendCppTypeName(ret, type)
+                        ret.append(">")
+                        return new String(ret)
                     }
                 }
             }
@@ -2254,7 +2240,7 @@ class CppVisitor : SyntaxVisitor {
         if functionDeclaration != null {
             let functionResult: FunctionResult = functionDeclaration.signature.result
             if functionResult != null {
-                if functionResult.resultType is ArrayType
+                if hasArrayPostfix(functionResult.resultType)
                     return true
             }
         }    
@@ -2284,77 +2270,74 @@ class CppVisitor : SyntaxVisitor {
     function closeBreakExpression(breakExpression: BreakExpression) {
     }
 
-    function openConstructorCall(initializerCall: ConstructorCall): bool {
-        if initializerCall.typeToInitialize is ArrayType {
-            if !initializerIsBoundOrAssigned(initializerCall) {
-                let arrayType: ArrayType = (initializerCall.typeToInitialize) as ArrayType
-                if arrayType.elementType is TypeIdentifier {
-                    let typeId: TypeIdentifier = (arrayType.elementType) as TypeIdentifier
-                    sourceFile.append("&_Vector<")
-                    sourceFile.append(typeId.name)
-                    sourceFile.append(">::create(")
-                    if (inReturn(initializerCall)) || (inRetDeclaration(initializerCall)) {
-                        sourceFile.append("_rp")
+    function openConstructorCall(constructorCall: ConstructorCall) {
+        if hasArrayPostfix(constructorCall.typeToInitialize) {
+            if !initializerIsBoundOrAssigned(constructorCall) {
+                let type: Type = constructorCall.typeToInitialize
+                sourceFile.append("&_Vector<")
+                sourceFile.append(type.name)
+                sourceFile.append(">::create(")
+                if (inReturn(constructorCall)) || (inRetDeclaration(constructorCall)) {
+                    sourceFile.append("_rp")
+                }
+                else {
+                    if inThrow(constructorCall) {
+                        sourceFile.append("_ep")
                     }
                     else {
-                        if inThrow(initializerCall) {
-                            sourceFile.append("_ep")
-                        }
-                        else {
-                            if inAssignment(initializerCall) {
-                                var assignment: Assignment = getAssignment(initializerCall)
-                                if assignment != null {
-                                    var classDeclaration: ClassDeclaration = getClassDeclaration(assignment)
-                                    mutable memberName: String = getMemberIfCreatingObject(assignment)
-                                    if memberName != null {
-                                        if isVariableMember(memberName, classDeclaration) {
-                                            if !inInitializer(assignment) {
-                                                sourceFile.append(memberName)
-                                                sourceFile.append("->")
-                                            }
-                                            sourceFile.append("getPage()")
-                                            if inInitializer(assignment) {
-                                                sourceFile.append("->allocateExclusivePage()")
-                                            }
+                        if (inAssignment(constructorCall)) {
+                            let assignment: Assignment = getAssignment(constructorCall)
+                            if assignment != null {
+                                let classDeclaration: ClassDeclaration = getClassDeclaration(assignment)
+                                let memberName: String = getMemberIfCreatingObject(assignment)
+                                if memberName != null {
+                                    if isVariableMember(memberName, classDeclaration) {
+                                        if !inInitializer(assignment) {
+                                            sourceFile.append(memberName)
+                                            sourceFile.append("->")
                                         }
-                                        else {
-                                            sourceFile.append("getPage()")
+                                        sourceFile.append("getPage()")
+                                        if inInitializer(assignment) {
+                                            sourceFile.append("->allocateExclusivePage()")
                                         }
+                                    }
+                                    else {
+                                        sourceFile.append("getPage()")
                                     }
                                 }
                             }
-                            else {
-                                sourceFile.append("_p")
-                            }
+                        }
+                        else {
+                            sourceFile.append("_p")
                         }
                     }
-                    sourceFile.append(", *")
-                    initializerCall.arguments.accept(this)
-                    sourceFile.append(")")
-                    return false
                 }
+                sourceFile.append(", *")
+                constructorCall.arguments.accept(this)
+                sourceFile.append(")")
+                return false
             }
             else {
                 sourceFile.append("new(")
-                if inInitializer(initializerCall) {
+                if inInitializer(constructorCall) {
                     sourceFile.append("getPage()")
-                    if initializerCall.parent.parent.parent.parent is Assignment {
-                        let assignment: Assignment = (initializerCall.parent.parent.parent.parent) as Assignment
+                    if constructorCall.parent.parent.parent.parent is Assignment {
+                        let assignment: Assignment = (constructorCall.parent.parent.parent.parent) as Assignment
                         if inInitializer(assignment) {
                             sourceFile.append("->allocateExclusivePage()")
                         }
                     }
                 }
                 else {
-                    if initializerCall.parent.parent.parent.parent is Assignment {
-                        let assignment: Assignment = (initializerCall.parent.parent.parent.parent) as Assignment
+                    if constructorCall.parent.parent.parent.parent is Assignment {
+                        let assignment: Assignment = (constructorCall.parent.parent.parent.parent) as Assignment
                         let simpleExpression: SimpleExpression = (assignment.parent) as SimpleExpression
                         if simpleExpression.prefixExpression.prefixOperator == null {
                             let leftSide: PostfixExpression = simpleExpression.prefixExpression.expression
-                            if (leftSide.postfixes == null) && (leftSide.primaryExpression is IdentifierExpression) {
+                            if (leftSide.postfixes == nullptr) && (leftSide.primaryExpression is IdentifierExpression) {
                                 let memberExpression: IdentifierExpression = (leftSide.primaryExpression) as IdentifierExpression
                                 let memberName: String = memberExpression.name
-                                var classDeclaration: ClassDeclaration = getClassDeclaration(assignment)
+                                let classDeclaration: ClassDeclaration = getClassDeclaration(assignment)
                                 if (classDeclaration != null) && (memberName != null) && (isVariableMember(memberName, classDeclaration)) {
                                     sourceFile.append(memberName)
                                     sourceFile.append("->getPage()")
@@ -2379,23 +2362,23 @@ class CppVisitor : SyntaxVisitor {
             }
         }
         else {
-            if !initializerIsBoundOrAssigned(initializerCall) {
-                if initializerCall.typeToInitialize is TypeIdentifier {
-                    let typeId: TypeIdentifier = (initializerCall.typeToInitialize) as TypeIdentifier
+            if !initializerIsBoundOrAssigned(constructorCall) {
+                if constructorCall.typeToInitialize is Type {
+                    let type: Type = (constructorCall.typeToInitialize) as Type
                     sourceFile.append("new(")
-                    if (inReturn(initializerCall)) || (inRetDeclaration(initializerCall)) {
+                    if (inReturn(constructorCall)) || (inRetDeclaration(constructorCall)) {
                         sourceFile.append("_rp")
                     }
                     else {
-                        if inThrow(initializerCall) {
+                        if inThrow(constructorCall) {
                             sourceFile.append("_ep")
                         }
                         else {
-                            if inAssignment(initializerCall) {
-                                var assignment: Assignment = getAssignment(initializerCall)
+                            if inAssignment(constructorCall) {
+                                let assignment: Assignment = getAssignment(constructorCall)
                                 if assignment != null {
-                                    var classDeclaration: ClassDeclaration = getClassDeclaration(assignment)
-                                    mutable memberName: String = getMemberIfCreatingObject(assignment)
+                                    let classDeclaration: ClassDeclaration = getClassDeclaration(assignment)
+                                    let memberName: String = getMemberIfCreatingObject(assignment)
                                     if memberName != null {
                                         if isVariableMember(memberName, classDeclaration) {
                                             if !inInitializer(assignment) {
@@ -2419,17 +2402,17 @@ class CppVisitor : SyntaxVisitor {
                         }
                     }
                     sourceFile.append(") ")
-                    sourceFile.append(typeId.name)
-                    initializerCall.arguments.accept(this)
+                    sourceFile.append(type.name)
+                    constructorCall.arguments.accept(this)
                     return false
                 }
             }
             else {
-                if initializerCall.parent.parent.parent.parent is Assignment {
-                    let assignment: Assignment = (initializerCall.parent.parent.parent.parent) as Assignment
+                if constructorCall.parent.parent.parent.parent is Assignment {
+                    let assignment: Assignment = (constructorCall.parent.parent.parent.parent) as Assignment
                     sourceFile.append("new(")
-                    var classDeclaration: ClassDeclaration = getClassDeclaration(assignment)
-                    mutable memberName: String = getMemberIfCreatingObject(assignment)
+                    let classDeclaration: ClassDeclaration = getClassDeclaration(assignment)
+                    let memberName: String = getMemberIfCreatingObject(assignment)
                     if memberName != null {
                         if isVariableMember(memberName, classDeclaration) {
                             if !inInitializer(assignment) {
@@ -2452,7 +2435,7 @@ class CppVisitor : SyntaxVisitor {
                             if (leftSide.postfixes == null) && (leftSide.primaryExpression is IdentifierExpression) {
                                 let memberExpression: IdentifierExpression = (leftSide.primaryExpression) as IdentifierExpression
                                 let memberName: String = memberExpression.name
-                                var classDeclaration: ClassDeclaration = getClassDeclaration(assignment)
+                                let classDeclaration: ClassDeclaration = getClassDeclaration(assignment)
                                 if (classDeclaration != null) && (memberName != null) {
                                     if isVariableMember(memberName, classDeclaration) {
                                         sourceFile.append(memberName)
@@ -2474,27 +2457,30 @@ class CppVisitor : SyntaxVisitor {
                     }
                 }
                 else {
-                    if initializerCall.parent.parent.parent.parent is Initializer {
+                    if constructorCall.parent.parent.parent.parent is Initializer {
                         sourceFile.append("new(")
-                        if inReturn(initializerCall) || inRetDeclaration(initializerCall) {
+                        if inReturn(constructorCall) || inRetDeclaration(constructorCall) {
                             sourceFile.append("_rp")
                         }
                         else {
-                            if inThrow(initializerCall)
+                            if inThrow(constructorCall)
                                 sourceFile.append("_ep")
                             else
                                 sourceFile.append("_p")
                         }
                     }
-                } 
+                }
                 sourceFile.append(") ")
-                let typeId: TypeIdentifier = (initializerCall.typeToInitialize) as TypeIdentifier
-                sourceFile.append(typeId.name)
-                initializerCall.arguments.accept(this)
+                let type: Type = (constructorCall.typeToInitialize) as Type
+                sourceFile.append(type.name)
+                constructorCall.arguments.accept(this)
                 return false
             }
         }
         return true
+    }
+
+    function closeConstructorCall(constructorCall: ConstructorCall) {
     }
 
     function initializerIsBoundOrAssigned(initializerCall: ConstructorCall): bool {
@@ -2505,9 +2491,6 @@ class CppVisitor : SyntaxVisitor {
         }
 
         return false
-    }
-
-    function closeConstructorCall(initializerCall: ConstructorCall) {
     }
 
     function visitThisExpression(thisExpression: ThisExpression) {
@@ -2533,7 +2516,7 @@ class CppVisitor : SyntaxVisitor {
     }
 
     function openElseClause(elseClause: ElseClause): bool {
-        indentSource();
+        indentSource()
         sourceFile.append("else")
         if elseClause.alternative is SimpleExpression {
             sourceFile.append("\n")
@@ -2645,7 +2628,7 @@ class CppVisitor : SyntaxVisitor {
                 if postfixExpression.postfixes != null {
                     let functionCall: FunctionCall =  null
                     if postfixExpression.postfixes.length() > 0 {
-                        let postfixes: [Postfix] = postfixExpression.postfixes
+                        let postfixes: Postfix[] = postfixExpression.postfixes
                         let postfix: Postfix = postfixes[0]
                         if postfix is FunctionCall {
                             functionCall = postfix as FunctionCall
@@ -2732,98 +2715,87 @@ class CppVisitor : SyntaxVisitor {
     function visitSuperMember(superMember: SuperMember) {
     }
 
-    function openTypeIdentifier(typeIdentifier: TypeIdentifier): bool {
+    function openType(type: Type): bool {
+        if hasArrayPostfix(type) {
+            if !sourceIndentLevel {
+                if constDeclaration {
+                    headerFile.append("_Vector<")
+                    if !suppressSource
+                        sourceFile.append("_Vector<")
+                }
+                else {
+                    headerFile.append("_Array<")
+                    if !suppressSource
+                        sourceFile.append("_Array<")
+                }
+            }
+            else {
+                if constDeclaration {
+                    sourceFile.append("_Vector<")
+                }
+                else {
+                    if !inThrow(type)
+                        sourceFile.append("_Array<")
+                }
+            }
+        }
         if !suppressHeader
-            appendCppTypeName(headerFile, typeIdentifier)
+            appendCppTypeName(headerFile, type)
+        if (!suppressSource)
+            appendCppTypeName(sourceFile, type)
+ 
+       return true
+    }
 
-        if !suppressSource
-            appendCppTypeName(sourceFile, typeIdentifier)
+    function closeType(type: Type) {
+        if hasArrayPostfix(type) {
+            if !sourceIndentLevel {
+                headerFile.append(">*")
+                if !suppressSource {
+                    sourceFile.append(">")
+                    if !type.parent is ConstructorCall
+                        sourceFile.append("*")
+                }
+            }
+            else {
+                sourceFile.append(">")
+                if !type.parent is ConstructorCall
+                    sourceFile.append("*")
+            }
+        }
+        if isClass(type.name) && !hasArrayPostfix(type) && !inTypeQuery(type) {
 
-        if isClass(typeIdentifier.name) && !inArrayType(typeIdentifier) && !inTypeQuery(typeIdentifier) {
             if !suppressHeader
                 headerFile.append("*")
 
             if !suppressSource
                 sourceFile.append("*")
         }
-
-        if inTypeQuery(typeIdentifier)
+        if inTypeQuery(type)
             sourceFile.append("()")
-            
-        return true
     }
 
-    function inArrayType(typeIdentifier: TypeIdentifier): bool {
-        if typeIdentifier.parent is ArrayType
+    function inTypeQuery(type: Type): bool {
+        if type.parent is TypeQuery
             return true
 
         return false
     }
 
-    function inTypeQuery(typeIdentifier: TypeIdentifier): bool {
-        if typeIdentifier.parent is TypeQuery
-            return true
-
-        return false
-    }
-
-    function appendCppTypeName(mutable s: VarString, typeIdentifier: TypeIdentifier) {
-        let typeIdentifierName: String = typeIdentifier.name
-        if typeIdentifierName.equals("unsigned") {
+    function appendCppTypeName(mutable s: VarString, type: Type) {
+        let typeName: String = type.name
+        if typeName.equals("unsigned") {
             s.append("size_t")
             return
         }
         else {
-            if typeIdentifierName.equals("character") {
+            if typeName.equals("character") {
                 s.append("char")
                 return
             }
         }
 
-        s.append(typeIdentifierName)
-    }
-
-    function closeTypeIdentifier(typeIdentifier: TypeIdentifier) {
-    }
-
-    function openArrayType(arrayType: ArrayType): bool {
-        if !sourceIndentLevel {
-            if constDeclaration {
-                headerFile.append("_Vector<")
-                if !suppressSource
-                    sourceFile.append("_Vector<")
-            }
-            else {
-                headerFile.append("_Array<")
-                if !suppressSource
-                    sourceFile.append("_Array<")
-            }
-            arrayType.elementType.accept(this)
-            headerFile.append(">*")
-            if !suppressSource {
-                sourceFile.append(">")
-                if !arrayType.parent is ConstructorCall
-                    sourceFile.append("*")
-            }
-        }
-        else {
-            if constDeclaration {
-                sourceFile.append("_Vector<")
-            }
-            else {
-                if !inThrow(arrayType)
-                    sourceFile.append("_Array<")
-            }
-            arrayType.elementType.accept(this)
-            sourceFile.append(">")
-            if !arrayType.parent is ConstructorCall
-                sourceFile.append("*")
-        }
-
-        return false
-    }
-
-    function closeArrayType(arrayType: ArrayType) {
+        s.append(typeName)
     }
 
     function openTypeAnnotation(typeAnnotation: TypeAnnotation): bool {
@@ -2833,14 +2805,21 @@ class CppVisitor : SyntaxVisitor {
     function closeTypeAnnotation(typeAnnotation: TypeAnnotation) {
     }
 
-    function openSubtypeIdentifier(subtypeIdentifier: SubtypeIdentifier): bool {
+    function openSubtype(subtype: Subtype): bool {
         return true
     }
 
-    function closeSubtypeIdentifier(subtypeIdentifier: SubtypeIdentifier) {
+    function closeSubtype(subtype: Subtype) {
     }
 
     function visitOptionalType(optionalType: OptionalType) {
+    }
+
+    function openIndexedType(indexedType: IndexedType): bool {
+        return true
+    }
+
+    function closeIndexedType(indexedType: IndexedType) {
     }
 
     function openTypeInheritanceClause(typeInheritanceClause: TypeInheritanceClause): bool {
@@ -2863,7 +2842,7 @@ class CppVisitor : SyntaxVisitor {
         mainHeaderFile.append("__\n#define __scaly__")
         mainHeaderFile.append(program.name)
         mainHeaderFile.append("__\n\n#include \"Scaly.h\"\n")
-        let compilationUnits: [CompilationUnit] = program.compilationUnits
+        let compilationUnits: CompilationUnit[] = program.compilationUnits
         for compilationUnit: CompilationUnit in compilationUnits {
             mainHeaderFile.append("#include \"")
             mutable fileName: String = Path.getFileNameWithoutExtension(compilationUnit.fileName)
@@ -2898,22 +2877,22 @@ class CppVisitor : SyntaxVisitor {
         projectFile.append("  <Description/>\n  <Dependencies/>\n")
         projectFile.append("  <VirtualDirectory Name=\"src\">\n    <File Name=\"main.cpp\"/>\n")
         {
-            let compilationUnits: [CompilationUnit] = program.compilationUnits
+            let compilationUnits: CompilationUnit[] = program.compilationUnits
             for compilationUnit: CompilationUnit in compilationUnits {
                 projectFile.append("    <File Name=\"")
                 mutable fileName: String = Path.getFileNameWithoutExtension(compilationUnit.fileName)
                 projectFile.append(fileName)
-                projectFile.append(".cpp\"/>\n");
+                projectFile.append(".cpp\"/>\n")
             }
         }
         projectFile.append("  </VirtualDirectory>\n  <VirtualDirectory Name=\"include\">\n")
         {
-            let compilationUnits: [CompilationUnit] = program.compilationUnits
+            let compilationUnits: CompilationUnit[] = program.compilationUnits
             for compilationUnit: CompilationUnit in compilationUnits {
                 projectFile.append("    <File Name=\"")
                 mutable fileName: String = Path.getFileNameWithoutExtension(compilationUnit.fileName)
                 projectFile.append(fileName)
-                projectFile.append(".h\"/>\n");
+                projectFile.append(".h\"/>\n")
             }
         }
         projectFile.append("  </VirtualDirectory>\n  <Settings Type=\"Executable\">\n    <GlobalSettings>\n")
@@ -2934,7 +2913,7 @@ class CppVisitor : SyntaxVisitor {
         projectFile.append(program.name)
         projectFile.append(" -d output")
         {
-            let compilationUnits: [CompilationUnit] = program.compilationUnits
+            let compilationUnits: CompilationUnit[] = program.compilationUnits
             for compilationUnit: CompilationUnit in compilationUnits {
                 projectFile.append(" ../")
                 projectFile.append(program.name)
@@ -2984,14 +2963,14 @@ class CppVisitor : SyntaxVisitor {
     }
 
     function collectInheritances(program: Program) {
-        let compilationUnits: [CompilationUnit] = program.compilationUnits
+        let compilationUnits: CompilationUnit[] = program.compilationUnits
         for compilationUnit: CompilationUnit in compilationUnits
             collectInheritancesInCompilationUnit(compilationUnit)
     }
 
     function collectInheritancesInCompilationUnit(compilationUnit: CompilationUnit) {
         if compilationUnit.statements != null {
-            let statements: [TerminatedStatement] = compilationUnit.statements
+            let statements: TerminatedStatement[] = compilationUnit.statements
             for terminatedStatement: TerminatedStatement in statements {
                 if terminatedStatement.statement != null {
                     if terminatedStatement.statement is ClassDeclaration {
@@ -2999,9 +2978,9 @@ class CppVisitor : SyntaxVisitor {
                         classes.push(classDeclaration.name)
                         if classDeclaration.typeInheritanceClause != null {
                             let inheritanceClause: TypeInheritanceClause  = classDeclaration.typeInheritanceClause
-                            let inheritances: [Inheritance] = inheritanceClause.inheritances
+                            let inheritances: Inheritance[] = inheritanceClause.inheritances
                             for inheritance: Inheritance in inheritances {
-                                registerInheritance(classDeclaration.name, inheritance.typeIdentifier.name)
+                                registerInheritance(classDeclaration.name, inheritance.type.name)
                             }
                         }
                     }

@@ -512,18 +512,11 @@ class MyVisitor : SyntaxVisitor {
     function visitSuperMember(superMember: SuperMember) {
     }
 
-    function openTypeIdentifier(typeIdentifier: TypeIdentifier): bool {
+    function openType(type: Type): bool {
         return true
     }
 
-    function closeTypeIdentifier(typeIdentifier: TypeIdentifier) {
-    }
-
-    function openArrayType(arrayType: ArrayType): bool {
-        return true
-    }
-
-    function closeArrayType(arrayType: ArrayType) {
+    function closeType(type: Type) {
     }
 
     function openTypeAnnotation(typeAnnotation: TypeAnnotation): bool {
@@ -533,14 +526,21 @@ class MyVisitor : SyntaxVisitor {
     function closeTypeAnnotation(typeAnnotation: TypeAnnotation) {
     }
 
-    function openSubtypeIdentifier(subtypeIdentifier: SubtypeIdentifier): bool {
+    function openSubtype(subtype: Subtype): bool {
         return true
     }
 
-    function closeSubtypeIdentifier(subtypeIdentifier: SubtypeIdentifier) {
+    function closeSubtype(subtype: Subtype) {
     }
 
     function visitOptionalType(optionalType: OptionalType) {
+    }
+
+    function openIndexedType(indexedType: IndexedType): bool {
+        return true
+    }
+
+    function closeIndexedType(indexedType: IndexedType) {
     }
 
     function openTypeInheritanceClause(typeInheritanceClause: TypeInheritanceClause): bool {

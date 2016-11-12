@@ -125,13 +125,12 @@ public:
     virtual _Result<SuperConstructor, ParserError> parseSuperConstructor(_Page* _rp, _Page* _ep);
     virtual _Result<SuperMember, ParserError> parseSuperMember(_Page* _rp, _Page* _ep);
     virtual _Result<Type, ParserError> parseType(_Page* _rp, _Page* _ep);
-    virtual _Result<TypeIdentifier, ParserError> parseTypeIdentifier(_Page* _rp, _Page* _ep);
-    virtual _Result<ArrayType, ParserError> parseArrayType(_Page* _rp, _Page* _ep);
     virtual _Result<TypeAnnotation, ParserError> parseTypeAnnotation(_Page* _rp, _Page* _ep);
-    virtual _Result<SubtypeIdentifier, ParserError> parseSubtypeIdentifier(_Page* _rp, _Page* _ep);
+    virtual _Result<Subtype, ParserError> parseSubtype(_Page* _rp, _Page* _ep);
     virtual _Result<_Vector<TypePostfix>, ParserError> parseTypePostfixList(_Page* _rp, _Page* _ep);
     virtual _Result<TypePostfix, ParserError> parseTypePostfix(_Page* _rp, _Page* _ep);
     virtual _Result<OptionalType, ParserError> parseOptionalType(_Page* _rp, _Page* _ep);
+    virtual _Result<IndexedType, ParserError> parseIndexedType(_Page* _rp, _Page* _ep);
     virtual _Result<TypeInheritanceClause, ParserError> parseTypeInheritanceClause(_Page* _rp, _Page* _ep);
     virtual _Result<_Vector<Inheritance>, ParserError> parseInheritanceList(_Page* _rp, _Page* _ep);
     virtual _Result<Inheritance, ParserError> parseInheritance(_Page* _rp, _Page* _ep);

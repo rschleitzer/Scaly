@@ -4,10 +4,10 @@ class Inherits {
     let name: String
 
     // Classes which inherit from the class
-    mutable inheritors: [String]
+    mutable inheritors: String[]
 
     constructor(className: String) {
         name = new String(className)
-        inheritors = new [String]()
+        inheritors = new String[]()
     }
 }

@@ -1,7 +1,7 @@
 class Compiler {
     static function compileFiles(options: Options) throws CompilerError {
-        let files: [String] = options.files
-        mutable sources: [String] = new [String]();
+        let files: String[] = options.files
+        mutable sources: String[] = new String[]();
         for file: String in files {
             let source: String = File.readToString(file)
                 catch FileError.noSuchFileOrDirectory(error: noSuchFileOrDirectory) throw fileNotFound(file)
@@ -10,7 +10,7 @@ class Compiler {
             sources.push(source)
         }
 
-        mutable compilationUnits: [CompilationUnit] = new [CompilationUnit]();
+        mutable compilationUnits: CompilationUnit[] = new CompilationUnit[]();
         let index: unsigned = 0
         for source: String in sources {
             let moduleName: String = Path.getFileNameWithoutExtension(files[index])
@@ -21,7 +21,7 @@ class Compiler {
             index++
         }
 
-        mutable program: Program = new Program(options.outputName, options.directory, new [CompilationUnit](compilationUnits))
+        mutable program: Program = new Program(options.outputName, options.directory, new CompilationUnit[](compilationUnits))
         for item: CompilationUnit in compilationUnits
             item.parent = program
         

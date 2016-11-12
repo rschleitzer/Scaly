@@ -83,7 +83,7 @@ public:
     virtual bool _isReturnExpression();
     virtual bool _isThrowExpression();
     virtual bool _isBreakExpression();
-    virtual bool _isInitializerCall();
+    virtual bool _isConstructorCall();
     virtual bool _isThisExpression();
     virtual bool _isSuperExpression();
     virtual bool _isSuperDot();
@@ -111,12 +111,11 @@ public:
     virtual bool _isSuperConstructor();
     virtual bool _isSuperMember();
     virtual bool _isType();
-    virtual bool _isTypeIdentifier();
-    virtual bool _isArrayType();
     virtual bool _isTypeAnnotation();
-    virtual bool _isSubtypeIdentifier();
+    virtual bool _isSubtype();
     virtual bool _isTypePostfix();
     virtual bool _isOptionalType();
+    virtual bool _isIndexedType();
     virtual bool _isTypeInheritanceClause();
     virtual bool _isInheritance();
 };
@@ -732,7 +731,7 @@ public:
     virtual bool _isReturnExpression();
     virtual bool _isThrowExpression();
     virtual bool _isBreakExpression();
-    virtual bool _isInitializerCall();
+    virtual bool _isConstructorCall();
     virtual bool _isThisExpression();
     virtual bool _isSuperExpression();
     virtual bool _isSuperDot();
@@ -855,7 +854,7 @@ public:
     ParenthesizedExpression* arguments;
     _Vector<CatchClause>* catchClauses;
 
-    virtual bool _isInitializerCall();
+    virtual bool _isConstructorCall();
 };
 
 class ThisExpression : public PrimaryExpression {
@@ -1093,32 +1092,13 @@ public:
 
 class Type : public SyntaxNode {
 public:
-    virtual void accept(SyntaxVisitor* visitor);
-
-    virtual bool _isType();
-    virtual bool _isTypeIdentifier();
-    virtual bool _isArrayType();
-};
-
-class TypeIdentifier : public Type {
-public:
-    TypeIdentifier(String* name, SubtypeIdentifier* subType, _Vector<TypePostfix>* postfixes, Position* start, Position* end);
+    Type(String* name, Subtype* subType, _Vector<TypePostfix>* postfixes, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
     String* name;
-    SubtypeIdentifier* subType;
+    Subtype* subType;
     _Vector<TypePostfix>* postfixes;
 
-    virtual bool _isTypeIdentifier();
-};
-
-class ArrayType : public Type {
-public:
-    ArrayType(Type* elementType, _Vector<TypePostfix>* postfixes, Position* start, Position* end);
-    virtual void accept(SyntaxVisitor* visitor);
-    Type* elementType;
-    _Vector<TypePostfix>* postfixes;
-
-    virtual bool _isArrayType();
+    virtual bool _isType();
 };
 
 class TypeAnnotation : public SyntaxNode {
@@ -1130,13 +1110,13 @@ public:
     virtual bool _isTypeAnnotation();
 };
 
-class SubtypeIdentifier : public SyntaxNode {
+class Subtype : public SyntaxNode {
 public:
-    SubtypeIdentifier(TypeIdentifier* typeIdentifier, Position* start, Position* end);
+    Subtype(Type* type, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
-    TypeIdentifier* typeIdentifier;
+    Type* type;
 
-    virtual bool _isSubtypeIdentifier();
+    virtual bool _isSubtype();
 };
 
 class TypePostfix : public SyntaxNode {
@@ -1155,6 +1135,15 @@ public:
     virtual bool _isOptionalType();
 };
 
+class IndexedType : public TypePostfix {
+public:
+    IndexedType(Type* key, Position* start, Position* end);
+    virtual void accept(SyntaxVisitor* visitor);
+    Type* key;
+
+    virtual bool _isIndexedType();
+};
+
 class TypeInheritanceClause : public SyntaxNode {
 public:
     TypeInheritanceClause(_Vector<Inheritance>* inheritances, Position* start, Position* end);
@@ -1166,9 +1155,9 @@ public:
 
 class Inheritance : public SyntaxNode {
 public:
-    Inheritance(TypeIdentifier* typeIdentifier, Position* start, Position* end);
+    Inheritance(Type* type, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
-    TypeIdentifier* typeIdentifier;
+    Type* type;
 
     virtual bool _isInheritance();
 };

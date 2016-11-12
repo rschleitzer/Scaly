@@ -396,11 +396,11 @@ bool MyVisitor::openBreakExpression(BreakExpression* breakExpression) {
 void MyVisitor::closeBreakExpression(BreakExpression* breakExpression) {
 }
 
-bool MyVisitor::openInitializerCall(ConstructorCall* initializerCall) {
+bool MyVisitor::openConstructorCall(ConstructorCall* initializerCall) {
     return true;
 }
 
-void MyVisitor::closeInitializerCall(ConstructorCall* initializerCall) {
+void MyVisitor::closeConstructorCall(ConstructorCall* initializerCall) {
 }
 
 void MyVisitor::visitThisExpression(ThisExpression* thisExpression) {
@@ -515,18 +515,11 @@ void MyVisitor::visitSuperConstructor(SuperConstructor* superInit) {
 void MyVisitor::visitSuperMember(SuperMember* superMember) {
 }
 
-bool MyVisitor::openTypeIdentifier(TypeIdentifier* typeIdentifier) {
+bool MyVisitor::openTypeIdentifier(Type* type) {
     return true;
 }
 
-void MyVisitor::closeTypeIdentifier(TypeIdentifier* typeIdentifier) {
-}
-
-bool MyVisitor::openArrayType(ArrayType* arrayType) {
-    return true;
-}
-
-void MyVisitor::closeArrayType(ArrayType* arrayType) {
+void MyVisitor::closeType(Type* type) {
 }
 
 bool MyVisitor::openTypeAnnotation(TypeAnnotation* typeAnnotation) {
@@ -536,14 +529,21 @@ bool MyVisitor::openTypeAnnotation(TypeAnnotation* typeAnnotation) {
 void MyVisitor::closeTypeAnnotation(TypeAnnotation* typeAnnotation) {
 }
 
-bool MyVisitor::openSubtypeIdentifier(SubtypeIdentifier* subtypeIdentifier) {
+bool MyVisitor::openSubtype(Subtype* subtype) {
     return true;
 }
 
-void MyVisitor::closeSubtypeIdentifier(SubtypeIdentifier* subtypeIdentifier) {
+void MyVisitor::closeSubtype(Subtype* subtype) {
 }
 
 void MyVisitor::visitOptionalType(OptionalType* optionalType) {
+}
+
+bool MyVisitor::openIndexedType(IndexedType* indexedType) {
+    return true;
+}
+
+void MyVisitor::closeIndexedType(IndexedType* indexedType) {
 }
 
 bool MyVisitor::openTypeInheritanceClause(TypeInheritanceClause* typeInheritanceClause) {

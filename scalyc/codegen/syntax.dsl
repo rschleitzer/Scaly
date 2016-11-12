@@ -11,7 +11,7 @@
 class "(id syntax-node)" : "(if (base syntax-node) (base syntax-node) "SyntaxNode")" {
 "       (if (abstract? syntax-node) "" ($
 "
-    init("(scaly-syntax-constructor-parameters syntax-node)") {
+    constructor("(scaly-syntax-constructor-parameters syntax-node)") {
 "     (if (program? syntax-node)
 "        start = new Position(0, 0)
         end = new Position(0, 0)
@@ -74,7 +74,7 @@ class "(id syntax-node)" : "(if (base syntax-node) (base syntax-node) "SyntaxNod
             (if (property content) ($
 "    let "(property content)": "
             (case (type content)
-                (("syntax") ($ (if (multiple? content)"[" "")(link content)(if (multiple? content)"]" "")))
+                (("syntax") ($ (link content)(if (multiple? content)"[]" "")))
                 (("identifier" "operator" "prefixoperator" "binaryoperator" "postfixoperator") "String")
                 (("literal") "Literal")
                 (("keyword" "punctuation") "bool")
@@ -113,7 +113,7 @@ class "(id syntax-node)" : "(if (base syntax-node) (base syntax-node) "SyntaxNod
 
 (define (scaly-property-declaration content)
     (case (type content)
-        (("syntax") ($ (property content)": "(if (multiple? content)"[" "")(link content)(if (multiple? content)"]" "")))
+        (("syntax") ($ (property content)": "(link content)(if (multiple? content)"[]" "")))
         (("identifier" "operator" "prefixoperator" "binaryoperator" "postfixoperator") ($ (property content)": String"))
         (("literal") ($ (property content)": Literal"))
         (("keyword" "punctuation") ($ (property content)": bool"))))

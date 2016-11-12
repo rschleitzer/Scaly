@@ -451,41 +451,37 @@
     <syntax id = SuperMember                                    base = CommonSuperMember
         <content identifier                                     property = name
 
-    <syntax id = Type                                  abstract
-        <content link = ArrayType
-        <content link = TypeIdentifier
-
-    <syntax id = TypeIdentifier                                 base = Type
+    <syntax id = Type
         <content identifier                                     property = name
-        <content link = SubtypeIdentifier              optional property = subType
-        <content link = TypePostfix           multiple optional property = postfixes
-
-    <syntax id = ArrayType                                      base = Type
-        <content link = leftBracket
-        <content link = Type                                    property = elementType
-        <content link = rightBracket
+        <content link = Subtype                        optional property = subType
         <content link = TypePostfix           multiple optional property = postfixes
 
     <syntax id = TypeAnnotation
         <content link = colon
         <content link = Type                                    property = annotationForType
 
-    <syntax id = SubtypeIdentifier
+    <syntax id = Subtype
         <content link = dot
-        <content link = TypeIdentifier                          property = typeIdentifier
+        <content link = Type                                    property = type
 
     <syntax id = TypePostfix                  multiple abstract
         <content link = OptionalType
+        <content link = IndexedType
 
     <syntax id = OptionalType                                   base = TypePostfix
         <content link = questionMark
+
+    <syntax id = IndexedType                                    base = TypePostfix
+        <content link = leftBracket
+        <content link = Type                           optional property = key
+        <content link = rightBracket
 
     <syntax id = TypeInheritanceClause
         <content link = colon
         <content link = Inheritance           multiple optional property = inheritances
 
     <syntax id = Inheritance                  multiple
-        <content link = TypeIdentifier                          property = typeIdentifier
+        <content link = Type                                    property = type
         <content link = comma                          optional
 
     <keyword id = use

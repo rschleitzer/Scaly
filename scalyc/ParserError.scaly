@@ -4,6 +4,6 @@ enum ParserError {
     case keywordExpected(position: Position, keyword: String)
     case punctuationExpected(position: Position, punctuation: String)
     case operatorExpected(position: Position)
-    case unableToParse(position: Position, errors: [ParserError])
+    case unableToParse(position: Position, errors: ParserError[])
     case notAtEnd(position: Position)
 }

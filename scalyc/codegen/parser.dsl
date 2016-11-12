@@ -1,7 +1,7 @@
 (define (parser) ($
 
 "class Parser {
-    init(theFileName: String, text: String) {
+    constructor(theFileName: String, text: String) {
         lexer = new Lexer(text)
         fileName = theFileName
 "   (apply-to-selected-children "keyword" (lambda (keyword) ($
@@ -15,13 +15,13 @@
     (apply-to-selected-children "syntax" (lambda (syntax) (if (program? syntax) "" ($
         (if (multiple? syntax) ($
 "
-    function parse"(id syntax)"List(): ["(id syntax)"] throws ParserError {
-        mutable ret: ["(id syntax)"]? = null
+    function parse"(id syntax)"List(): "(id syntax)"[] throws ParserError {
+        mutable ret: "(id syntax)"[]? = null
         while true {
             let node: "(id syntax)" = parse"(id syntax)"()
                 catch _ break;
             if ret == null
-                ret = new ["(id syntax)"]()
+                ret = new "(id syntax)"[]()
             ret.push(node)
         }
         return ret
@@ -32,7 +32,7 @@
         (if (abstract? syntax)
             ($
 "
-        mutable errors: [ParserError] = new [ParserError]()
+        mutable errors: ParserError[] = new ParserError[]()
         mutable start: Position = lexer.getPreviousPosition()
 "                (apply-to-children-of syntax (lambda (content) ($
 "
@@ -47,7 +47,7 @@
 "
                 )))
 "
-        throw unableToParse(new Position(start), new [ParserError](errors))
+        throw unableToParse(new Position(start), new ParserError[](errors))
 "
             )
             ($ ; non-abstract syntax
@@ -56,7 +56,7 @@
 "                (apply-to-children-of syntax (lambda (content) ($
                    (if (string=? "syntax" (type content))
                         ($ ; non-terminals
-"        let "(property content)": "(if (multiple? content) "[" "")(link content)(if (multiple? content) "]" "")" = parse"(link content)(if (multiple? content) "List" "")"() catch _ "
+"        let "(property content)": "(link content)(if (multiple? content) "[]" "")" = parse"(link content)(if (multiple? content) "List" "")"() catch _ "
                     (if (optional? content)
                         "null
 "                       ($ "(error)

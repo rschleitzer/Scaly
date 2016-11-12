@@ -489,8 +489,8 @@ bool CppVisitor::openClassDeclaration(ClassDeclaration* classDeclaration) {
             {
                 if (i > 0)
                     headerFile->append(", ");
-                TypeIdentifier* typeIdentifier = inheritance->typeIdentifier;
-                headerFile->append(typeIdentifier->name);
+                Type* type = inheritance->type;
+                headerFile->append(type->name);
                 i++;
             }
         }
@@ -649,10 +649,10 @@ bool CppVisitor::openSimpleExpression(SimpleExpression* simpleExpression) {
             {
                 if (binaryOp->_isTypeCast()) {
                     TypeCast* typeCast = (TypeCast*)binaryOp;
-                    if (typeCast->objectType->_isTypeIdentifier()) {
-                        TypeIdentifier* typeIdentifier = (TypeIdentifier*)typeCast->objectType;
+                    if (typeCast->objectType->_isType()) {
+                        Type* type = (Type*)typeCast->objectType;
                         sourceFile->append("(");
-                        sourceFile->append(typeIdentifier->name);
+                        sourceFile->append(type->name);
                         sourceFile->append("*)");
                         simpleExpression->prefixExpression->accept(this);
                         return false;
@@ -749,62 +749,56 @@ bool CppVisitor::openFunctionSignature(FunctionSignature* functionSignature) {
             headerFile->append("_Result<");
             if (!suppressSource)
                 sourceFile->append("_Result<");
-            if (functionSignature->result->resultType->_isTypeIdentifier()) {
-                TypeIdentifier* typeId = (TypeIdentifier*)functionSignature->result->resultType;
-                appendCppTypeName(headerFile, typeId);
+            if (functionSignature->result->resultType->_isType()) {
+                Type* type = (Type*)functionSignature->result->resultType;
+                appendCppTypeName(headerFile, type);
                 if (!suppressSource)
-                    appendCppTypeName(sourceFile, typeId);
+                    appendCppTypeName(sourceFile, type);
             }
             else {
-                if (functionSignature->result->resultType->_isArrayType()) {
-                    ArrayType* arrayType = (ArrayType*)functionSignature->result->resultType;
-                    if (arrayType->elementType->_isTypeIdentifier()) {
-                        headerFile->append("_Vector<");
-                        TypeIdentifier* typeId = (TypeIdentifier*)arrayType->elementType;
-                        appendCppTypeName(headerFile, typeId);
-                        headerFile->append(">");
-                        if (!suppressSource) {
-                            sourceFile->append("_Vector<");
-                            appendCppTypeName(sourceFile, typeId);
-                            sourceFile->append(">");
-                        }
+                if (hasArrayPostfix(functionSignature->result->resultType)) {
+                    headerFile->append("_Vector<");
+                    Type* type = functionSignature->result->resultType;
+                    appendCppTypeName(headerFile, type);
+                    headerFile->append(">");
+                    if (!suppressSource) {
+                        sourceFile->append("_Vector<");
+                        appendCppTypeName(sourceFile, type);
+                        sourceFile->append(">");
                     }
                 }
             }
             headerFile->append(", ");
-            appendCppTypeName(headerFile, (TypeIdentifier*)(functionSignature->throwsClause->throwsType));
+            appendCppTypeName(headerFile, (Type*)(functionSignature->throwsClause->throwsType));
             headerFile->append(">");
             if (!suppressSource) {
                 sourceFile->append(", ");
-                appendCppTypeName(sourceFile, (TypeIdentifier*)(functionSignature->throwsClause->throwsType));
+                appendCppTypeName(sourceFile, (Type*)(functionSignature->throwsClause->throwsType));
                 sourceFile->append(">");
             }
         }
         else {
-            if (functionSignature->result->resultType->_isTypeIdentifier()) {
-                TypeIdentifier* typeId = (TypeIdentifier*)functionSignature->result->resultType;
-                appendCppTypeName(headerFile, typeId);
+            if (functionSignature->result->resultType->_isType()) {
+                Type* type = (Type*)functionSignature->result->resultType;
+                appendCppTypeName(headerFile, type);
                 if (!suppressSource)
-                    appendCppTypeName(sourceFile, typeId);
-                if (isClass(typeId->name)) {
+                    appendCppTypeName(sourceFile, type);
+                if (isClass(type->name)) {
                     headerFile->append("*");
                     if (!suppressSource)
                         sourceFile->append("*");
                 }
             }
             else {
-                if (functionSignature->result->resultType->_isArrayType()) {
-                    ArrayType* arrayType = (ArrayType*)functionSignature->result->resultType;
-                    if (arrayType->elementType->_isTypeIdentifier()) {
-                        headerFile->append("_Vector<");
-                        TypeIdentifier* typeId = (TypeIdentifier*)arrayType->elementType;
-                        appendCppTypeName(headerFile, typeId);
-                        headerFile->append(">");
-                        if (!suppressSource) {
-                            sourceFile->append("_Vector<");
-                            appendCppTypeName(sourceFile, typeId);
-                            sourceFile->append(">");
-                        }
+                if (hasArrayPostfix(functionSignature->result->resultType)) {
+                    headerFile->append("_Vector<");
+                    Type* type = functionSignature->result->resultType;
+                    appendCppTypeName(headerFile, type);
+                    headerFile->append(">");
+                    if (!suppressSource) {
+                        sourceFile->append("_Vector<");
+                        appendCppTypeName(sourceFile, type);
+                        sourceFile->append(">");
                     }
                 }
             }
@@ -827,9 +821,9 @@ bool CppVisitor::openFunctionSignature(FunctionSignature* functionSignature) {
         sourceFile->append("(");
     }
     if (functionSignature->result != nullptr) {
-        if (functionSignature->result->resultType->_isTypeIdentifier()) {
-            TypeIdentifier* typeId = (TypeIdentifier*)functionSignature->result->resultType;
-            if (isClass(typeId->name)) {
+        if (functionSignature->result->resultType->_isType()) {
+            Type* type = (Type*)functionSignature->result->resultType;
+            if (isClass(type->name)) {
                 if (functionSignature->result->existingObject == nullptr) {
                     headerFile->append("_Page* _rp");
                     if (!suppressSource)
@@ -843,7 +837,7 @@ bool CppVisitor::openFunctionSignature(FunctionSignature* functionSignature) {
             }
         }
         else {
-            if (functionSignature->result->resultType->_isArrayType()) {
+            if (hasArrayPostfix(functionSignature->result->resultType)) {
                 if (functionSignature->result->existingObject == nullptr) {
                     headerFile->append("_Page* _rp");
                     if (!suppressSource)
@@ -868,6 +862,15 @@ bool CppVisitor::openFunctionSignature(FunctionSignature* functionSignature) {
         }
     }
     return true;
+}
+
+bool CppVisitor::hasArrayPostfix(Type* type) {
+    if (type->postfixes == nullptr)
+        return false;
+    TypePostfix* typePostfix = *(*(type->postfixes))[0];
+    if (typePostfix->_isIndexedType())
+        return true;
+    return false;
 }
 
 void CppVisitor::closeFunctionSignature(FunctionSignature* functionSignature) {
@@ -1040,23 +1043,15 @@ void CppVisitor::closeEnumMember(EnumMember* enumMember) {
 }
 
 void CppVisitor::appendCppType(VarString* s, Type* type) {
-    if (type->_isTypeIdentifier()) {
-        TypeIdentifier* typeId = (TypeIdentifier*)type;
-        appendCppTypeName(s, typeId);
-        if (isClass(typeId->name)) {
-            s->append("*");
-        }
+    if (hasArrayPostfix(type)) {
+        s->append("_Vector<");
+        appendCppTypeName(s, type);
+        s->append(">*");
     }
     else {
-        if (type->_isArrayType()) {
-            ArrayType* arrayType = (ArrayType*)type;
-            Type* type = arrayType->elementType;
-            if (type->_isTypeIdentifier()) {
-                TypeIdentifier* typeId = (TypeIdentifier*)type;
-                s->append("_Vector<");
-                appendCppTypeName(s, typeId);
-                s->append(">*");
-            }
+        appendCppTypeName(s, type);
+        if (isClass(type->name)) {
+            s->append("*");
         }
     }
 }
@@ -1239,20 +1234,15 @@ String* CppVisitor::getFunctionName(_Page* _rp, Assignment* assignment) {
                 return new(_rp) String(classExpression->name);
             }
             else {
-                if (rightSide->primaryExpression->_isInitializerCall()) {
+                if (rightSide->primaryExpression->_isConstructorCall()) {
                     ConstructorCall* initializerCall = (ConstructorCall*)(rightSide->primaryExpression);
-                    if (initializerCall->typeToInitialize->_isArrayType()) {
-                        ArrayType* arrayType = (ArrayType*)(initializerCall->typeToInitialize);
-                        if (arrayType->elementType->_isTypeIdentifier()) {
-                            TypeIdentifier* typeIdentifier = (TypeIdentifier*)(arrayType->elementType);
-                            return new(_rp) String(typeIdentifier->name);
-                        }
+                    if (hasArrayPostfix(initializerCall->typeToInitialize)) {
+                        Type* type = initializerCall->typeToInitialize;
+                        return new(_rp) String(type->name);
                     }
                     else {
-                        if (initializerCall->typeToInitialize->_isTypeIdentifier()) {
-                            TypeIdentifier* typeIdentifier = (TypeIdentifier*)(initializerCall->typeToInitialize);
-                            return new(_rp) String(typeIdentifier->name);
-                        }
+                        Type* type = initializerCall->typeToInitialize;
+                        return new(_rp) String(type->name);
                     }
                 }
             }
@@ -1531,9 +1521,9 @@ String* CppVisitor::getErrorType(CatchClause* catchClause) {
                 if (element->pattern->_isIdentifierPattern()) {
                     IdentifierPattern* pattern = (IdentifierPattern*)(element->pattern);
                     if (pattern->annotationForType != nullptr) {
-                        if (pattern->annotationForType->annotationForType->_isTypeIdentifier()) {
-                            TypeIdentifier* typeIdentifier = (TypeIdentifier*)(pattern->annotationForType->annotationForType);
-                            return typeIdentifier->name;
+                        if (pattern->annotationForType->annotationForType->_isType()) {
+                            Type* type = (Type*)(pattern->annotationForType->annotationForType);
+                            return type->name;
                         }
                     }
                 }
@@ -1990,15 +1980,10 @@ bool CppVisitor::boundToObject(BindingInitializer* bindingInitializer) {
     if (patternInitializer->pattern->_isIdentifierPattern()) {
         IdentifierPattern* identifierPattern = (IdentifierPattern*)(patternInitializer->pattern);
         Type* type = identifierPattern->annotationForType->annotationForType;
-        if (type->_isArrayType())
+        if (hasArrayPostfix(type))
             return true;
-        if (type->_isTypeIdentifier()) {
-            TypeIdentifier* typeIdentifier = (TypeIdentifier*)type;
-            if (isClass(typeIdentifier->name)) {
-                if (getFunctionCall(patternInitializer) != nullptr)
-                    return true;
-            }
-        }
+        if (isClass(type->name) && (getFunctionCall(patternInitializer) != nullptr))
+            return true;
     }
     return false;
 }
@@ -2172,21 +2157,18 @@ String* CppVisitor::getReturnType(_Page* _rp, SyntaxNode* syntaxNode) {
         FunctionResult* functionResult = functionDeclaration->signature->result;
         if (functionResult != nullptr) {
             VarString* ret = new(_rp) VarString();
-            if (functionResult->resultType->_isTypeIdentifier()) {
-                TypeIdentifier* typeIdentifier = (TypeIdentifier*)(functionResult->resultType);
-                appendCppTypeName(ret, typeIdentifier);
+            if (functionResult->resultType->_isType()) {
+                Type* type = (Type*)(functionResult->resultType);
+                appendCppTypeName(ret, type);
                 return new(_rp) String(ret);
             }
             else {
-                if (functionResult->resultType->_isArrayType()) {
-                    ArrayType* arrayType = (ArrayType*)(functionResult->resultType);
-                    if (arrayType->elementType->_isTypeIdentifier()) {
-                        TypeIdentifier* typeIdentifier = (TypeIdentifier*)(arrayType->elementType);
-                        ret->append("_Vector<");
-                        appendCppTypeName(ret, typeIdentifier);
-                        ret->append(">");
-                        return new(_rp) String(ret);
-                    }
+                if (hasArrayPostfix(functionResult->resultType)) {
+                    Type* type = functionResult->resultType;
+                    ret->append("_Vector<");
+                    appendCppTypeName(ret, type);
+                    ret->append(">");
+                    return new(_rp) String(ret);
                 }
             }
         }
@@ -2200,21 +2182,18 @@ String* CppVisitor::getThrownType(_Page* _rp, SyntaxNode* syntaxNode) {
         ThrowsClause* throwsClause = functionDeclaration->signature->throwsClause;
         if (throwsClause != nullptr) {
             VarString* ret = new(_rp) VarString();
-            if (throwsClause->throwsType->_isTypeIdentifier()) {
-                TypeIdentifier* typeIdentifier = (TypeIdentifier*)(throwsClause->throwsType);
-                appendCppTypeName(ret, typeIdentifier);
+            if (throwsClause->throwsType->_isType()) {
+                Type* type = (Type*)(throwsClause->throwsType);
+                appendCppTypeName(ret, type);
                 return new(_rp) String(ret);
             }
             else {
-                if (throwsClause->throwsType->_isArrayType()) {
-                    ArrayType* arrayType = (ArrayType*)(throwsClause->throwsType);
-                    if (arrayType->elementType->_isTypeIdentifier()) {
-                        TypeIdentifier* typeIdentifier = (TypeIdentifier*)(arrayType->elementType);
-                        ret->append("_Vector<");
-                        appendCppTypeName(ret, typeIdentifier);
-                        ret->append(">");
-                        return new(_rp) String(ret);
-                    }
+                if (hasArrayPostfix(throwsClause->throwsType)) {
+                    Type* type = throwsClause->throwsType;
+                    ret->append("_Vector<");
+                    appendCppTypeName(ret, type);
+                    ret->append(">");
+                    return new(_rp) String(ret);
                 }
             }
         }
@@ -2227,7 +2206,7 @@ bool CppVisitor::returnsArray(SyntaxNode* syntaxNode) {
     if (functionDeclaration != nullptr) {
         FunctionResult* functionResult = functionDeclaration->signature->result;
         if (functionResult != nullptr) {
-            if (functionResult->resultType->_isArrayType())
+            if (hasArrayPostfix(functionResult->resultType))
                 return true;
         }
     }
@@ -2253,71 +2232,68 @@ bool CppVisitor::openBreakExpression(BreakExpression* breakExpression) {
 void CppVisitor::closeBreakExpression(BreakExpression* breakExpression) {
 }
 
-bool CppVisitor::openInitializerCall(ConstructorCall* initializerCall) {
-    if (initializerCall->typeToInitialize->_isArrayType()) {
-        if (!initializerIsBoundOrAssigned(initializerCall)) {
-            ArrayType* arrayType = (ArrayType*)(initializerCall->typeToInitialize);
-            if (arrayType->elementType->_isTypeIdentifier()) {
-                TypeIdentifier* typeId = (TypeIdentifier*)(arrayType->elementType);
-                sourceFile->append("&_Vector<");
-                sourceFile->append(typeId->name);
-                sourceFile->append(">::create(");
-                if ((inReturn(initializerCall)) || (inRetDeclaration(initializerCall))) {
-                    sourceFile->append("_rp");
+bool CppVisitor::openConstructorCall(ConstructorCall* constructorCall) {
+    if (hasArrayPostfix(constructorCall->typeToInitialize)) {
+        if (!initializerIsBoundOrAssigned(constructorCall)) {
+            Type* type = constructorCall->typeToInitialize;
+            sourceFile->append("&_Vector<");
+            sourceFile->append(type->name);
+            sourceFile->append(">::create(");
+            if ((inReturn(constructorCall)) || (inRetDeclaration(constructorCall))) {
+                sourceFile->append("_rp");
+            }
+            else {
+                if (inThrow(constructorCall)) {
+                    sourceFile->append("_ep");
                 }
                 else {
-                    if (inThrow(initializerCall)) {
-                        sourceFile->append("_ep");
-                    }
-                    else {
-                        if (inAssignment(initializerCall)) {
-                            Assignment* assignment = getAssignment(initializerCall);
-                            if (assignment != nullptr) {
-                                _Region _region; _Page* _p = _region.get();
-                                ClassDeclaration* classDeclaration = getClassDeclaration(assignment);
-                                String* memberName = getMemberIfCreatingObject(_p, assignment);
-                                if (memberName != nullptr) {
-                                    if (isVariableMember(memberName, classDeclaration)) {
-                                        if (!inInitializer(assignment)) {
-                                            sourceFile->append(memberName);
-                                            sourceFile->append("->");
-                                        }
-                                        sourceFile->append("getPage()");
-                                        if (inInitializer(assignment)) {
-                                            sourceFile->append("->allocateExclusivePage()");
-                                        }
+                    if (inAssignment(constructorCall)) {
+                        Assignment* assignment = getAssignment(constructorCall);
+                        if (assignment != nullptr) {
+                            _Region _region; _Page* _p = _region.get();
+                            ClassDeclaration* classDeclaration = getClassDeclaration(assignment);
+                            String* memberName = getMemberIfCreatingObject(_p, assignment);
+                            if (memberName != nullptr) {
+                                if (isVariableMember(memberName, classDeclaration)) {
+                                    if (!inInitializer(assignment)) {
+                                        sourceFile->append(memberName);
+                                        sourceFile->append("->");
                                     }
-                                    else {
-                                        sourceFile->append("getPage()");
+                                    sourceFile->append("getPage()");
+                                    if (inInitializer(assignment)) {
+                                        sourceFile->append("->allocateExclusivePage()");
                                     }
+                                }
+                                else {
+                                    sourceFile->append("getPage()");
                                 }
                             }
                         }
-                        else {
-                            sourceFile->append("_p");
-                        }
+                    }
+                    else {
+                        sourceFile->append("_p");
                     }
                 }
-                sourceFile->append(", *");
-                initializerCall->arguments->accept(this);
-                sourceFile->append(")");
-                return false;
             }
+            sourceFile->append(", *");
+            constructorCall->arguments->accept(this);
+            sourceFile->append(")");
+            return false;
         }
         else {
             sourceFile->append("new(");
-            if (inInitializer(initializerCall)) {
+            if (inInitializer(constructorCall)) {
                 sourceFile->append("getPage()");
-                if (initializerCall->parent->parent->parent->parent->_isAssignment()) {
-                    Assignment* assignment = (Assignment*)(initializerCall->parent->parent->parent->parent);
+                if (constructorCall->parent->parent->parent->parent->_isAssignment()) {
+                    Assignment* assignment = (Assignment*)(constructorCall->parent->parent->parent->parent);
                     if (inInitializer(assignment)) {
                         sourceFile->append("->allocateExclusivePage()");
                     }
                 }
             }
             else {
-                if (initializerCall->parent->parent->parent->parent->_isAssignment()) {
-                    Assignment* assignment = (Assignment*)(initializerCall->parent->parent->parent->parent);
+                if (constructorCall->parent->parent->parent->parent->_isAssignment()) {
+                    Assignment* assignment = (Assignment*)(constructorCall->parent->parent->parent->parent);
                     SimpleExpression* simpleExpression = (SimpleExpression*)(assignment->parent);
                     if (simpleExpression->prefixExpression->prefixOperator == nullptr) {
                         PostfixExpression* leftSide = simpleExpression->prefixExpression->expression;
@@ -2349,20 +2325,20 @@ bool CppVisitor::openInitializerCall(ConstructorCall* initializerCall) {
         }
     }
     else {
-        if (!initializerIsBoundOrAssigned(initializerCall)) {
-            if (initializerCall->typeToInitialize->_isTypeIdentifier()) {
-                TypeIdentifier* typeId = (TypeIdentifier*)(initializerCall->typeToInitialize);
+        if (!initializerIsBoundOrAssigned(constructorCall)) {
+            if (constructorCall->typeToInitialize->_isType()) {
+                Type* type = (Type*)(constructorCall->typeToInitialize);
                 sourceFile->append("new(");
-                if ((inReturn(initializerCall)) || (inRetDeclaration(initializerCall))) {
+                if ((inReturn(constructorCall)) || (inRetDeclaration(constructorCall))) {
                     sourceFile->append("_rp");
                 }
                 else {
-                    if (inThrow(initializerCall)) {
+                    if (inThrow(constructorCall)) {
                         sourceFile->append("_ep");
                     }
                     else {
-                        if (inAssignment(initializerCall)) {
-                            Assignment* assignment = getAssignment(initializerCall);
+                        if (inAssignment(constructorCall)) {
+                            Assignment* assignment = getAssignment(constructorCall);
                             if (assignment != nullptr) {
                                 _Region _region; _Page* _p = _region.get();
                                 ClassDeclaration* classDeclaration = getClassDeclaration(assignment);
@@ -2390,15 +2366,15 @@ bool CppVisitor::openInitializerCall(ConstructorCall* initializerCall) {
                     }
                 }
                 sourceFile->append(") ");
-                sourceFile->append(typeId->name);
-                initializerCall->arguments->accept(this);
+                sourceFile->append(type->name);
+                constructorCall->arguments->accept(this);
                 return false;
             }
         }
         else {
-            if (initializerCall->parent->parent->parent->parent->_isAssignment()) {
+            if (constructorCall->parent->parent->parent->parent->_isAssignment()) {
                 _Region _region; _Page* _p = _region.get();
-                Assignment* assignment = (Assignment*)(initializerCall->parent->parent->parent->parent);
+                Assignment* assignment = (Assignment*)(constructorCall->parent->parent->parent->parent);
                 sourceFile->append("new(");
                 ClassDeclaration* classDeclaration = getClassDeclaration(assignment);
                 String* memberName = getMemberIfCreatingObject(_p, assignment);
@@ -2446,13 +2422,13 @@ bool CppVisitor::openInitializerCall(ConstructorCall* initializerCall) {
                 }
             }
             else {
-                if (initializerCall->parent->parent->parent->parent->_isInitializer()) {
+                if (constructorCall->parent->parent->parent->parent->_isInitializer()) {
                     sourceFile->append("new(");
-                    if (inReturn(initializerCall) || inRetDeclaration(initializerCall)) {
+                    if (inReturn(constructorCall) || inRetDeclaration(constructorCall)) {
                         sourceFile->append("_rp");
                     }
                     else {
-                        if (inThrow(initializerCall))
+                        if (inThrow(constructorCall))
                             sourceFile->append("_ep");
                         else
                             sourceFile->append("_p");
@@ -2460,25 +2436,25 @@ bool CppVisitor::openInitializerCall(ConstructorCall* initializerCall) {
                 }
             }
             sourceFile->append(") ");
-            TypeIdentifier* typeId = (TypeIdentifier*)(initializerCall->typeToInitialize);
-            sourceFile->append(typeId->name);
-            initializerCall->arguments->accept(this);
+            Type* type = (Type*)(constructorCall->typeToInitialize);
+            sourceFile->append(type->name);
+            constructorCall->arguments->accept(this);
             return false;
         }
     }
     return true;
 }
 
-bool CppVisitor::initializerIsBoundOrAssigned(ConstructorCall* initializerCall) {
-    if (initializerCall->parent->_isPostfixExpression()) {
-        PostfixExpression* postfixExpression = (PostfixExpression*)(initializerCall->parent);
+bool CppVisitor::initializerIsBoundOrAssigned(ConstructorCall* constructorCall) {
+    if (constructorCall->parent->_isPostfixExpression()) {
+        PostfixExpression* postfixExpression = (PostfixExpression*)(constructorCall->parent);
         if ((postfixExpression->parent->parent->parent->_isAssignment()) || (postfixExpression->parent->parent->parent->_isInitializer()))
             return true;
     }
     return false;
 }
 
-void CppVisitor::closeInitializerCall(ConstructorCall* initializerCall) {
+void CppVisitor::closeConstructorCall(ConstructorCall* constructorCall) {
 }
 
 void CppVisitor::visitThisExpression(ThisExpression* thisExpression) {
@@ -2691,89 +2667,82 @@ void CppVisitor::visitSuperConstructor(SuperConstructor* superInit) {
 void CppVisitor::visitSuperMember(SuperMember* superMember) {
 }
 
-bool CppVisitor::openTypeIdentifier(TypeIdentifier* typeIdentifier) {
+bool CppVisitor::openType(Type* type) {
+    if (hasArrayPostfix(type)) {
+        if (!sourceIndentLevel) {
+            if (constDeclaration) {
+                headerFile->append("_Vector<");
+                if (!suppressSource)
+                    sourceFile->append("_Vector<");
+            }
+            else {
+                headerFile->append("_Array<");
+                if (!suppressSource)
+                    sourceFile->append("_Array<");
+            }
+        }
+        else {
+            if (constDeclaration) {
+                sourceFile->append("_Vector<");
+            }
+            else {
+                if (!inThrow(type))
+                    sourceFile->append("_Array<");
+            }
+        }
+    }
     if (!suppressHeader)
-        appendCppTypeName(headerFile, typeIdentifier);
+        appendCppTypeName(headerFile, type);
     if (!suppressSource)
-        appendCppTypeName(sourceFile, typeIdentifier);
-    if (isClass(typeIdentifier->name) && !inArrayType(typeIdentifier) && !inTypeQuery(typeIdentifier)) {
+        appendCppTypeName(sourceFile, type);
+    return true;
+}
+
+void CppVisitor::closeType(Type* type) {
+    if (hasArrayPostfix(type)) {
+        if (!sourceIndentLevel) {
+            headerFile->append(">*");
+            if (!suppressSource) {
+                sourceFile->append(">");
+                if (!type->parent->_isConstructorCall())
+                    sourceFile->append("*");
+            }
+        }
+        else {
+            sourceFile->append(">");
+            if (!type->parent->_isConstructorCall())
+                sourceFile->append("*");
+        }
+    }
+    if (isClass(type->name) && !hasArrayPostfix(type) && !inTypeQuery(type)) {
         if (!suppressHeader)
             headerFile->append("*");
         if (!suppressSource)
             sourceFile->append("*");
     }
-    if (inTypeQuery(typeIdentifier))
+    if (inTypeQuery(type))
         sourceFile->append("()");
-    return true;
 }
 
-bool CppVisitor::inArrayType(TypeIdentifier* typeIdentifier) {
-    if (typeIdentifier->parent->_isArrayType())
+bool CppVisitor::inTypeQuery(Type* type) {
+    if (type->parent->_isTypeQuery())
         return true;
     return false;
 }
 
-bool CppVisitor::inTypeQuery(TypeIdentifier* typeIdentifier) {
-    if (typeIdentifier->parent->_isTypeQuery())
-        return true;
-    return false;
-}
-
-void CppVisitor::appendCppTypeName(VarString* s, TypeIdentifier* typeIdentifier) {
-    String* typeIdentifierName = typeIdentifier->name;
-    if (typeIdentifierName->equals("unsigned")) {
+void CppVisitor::appendCppTypeName(VarString* s, Type* type) {
+    String* typeName = type->name;
+    if (typeName->equals("unsigned")) {
         s->append("size_t");
         return;
     }
     else {
-        if (typeIdentifierName->equals("character")) {
+        if (typeName->equals("character")) {
             s->append("char");
             return;
         }
     }
-    s->append(typeIdentifierName);
-}
-
-void CppVisitor::closeTypeIdentifier(TypeIdentifier* typeIdentifier) {
-}
-
-bool CppVisitor::openArrayType(ArrayType* arrayType) {
-    if (!sourceIndentLevel) {
-        if (constDeclaration) {
-            headerFile->append("_Vector<");
-            if (!suppressSource)
-                sourceFile->append("_Vector<");
-        }
-        else {
-            headerFile->append("_Array<");
-            if (!suppressSource)
-                sourceFile->append("_Array<");
-        }
-        arrayType->elementType->accept(this);
-        headerFile->append(">*");
-        if (!suppressSource) {
-            sourceFile->append(">");
-            if (!arrayType->parent->_isInitializerCall())
-                sourceFile->append("*");
-        }
-    }
-    else {
-        if (constDeclaration) {
-            sourceFile->append("_Vector<");
-        }
-        else {
-            if (!inThrow(arrayType))
-                sourceFile->append("_Array<");
-        }
-        arrayType->elementType->accept(this);
-        sourceFile->append(">");
-        if (!arrayType->parent->_isInitializerCall())
-            sourceFile->append("*");
-    }
-    return false;
-}
-
-void CppVisitor::closeArrayType(ArrayType* arrayType) {
+    s->append(typeName);
 }
 
 bool CppVisitor::openTypeAnnotation(TypeAnnotation* typeAnnotation) {
@@ -2783,14 +2752,21 @@ bool CppVisitor::openTypeAnnotation(TypeAnnotation* typeAnnotation) {
 void CppVisitor::closeTypeAnnotation(TypeAnnotation* typeAnnotation) {
 }
 
-bool CppVisitor::openSubtypeIdentifier(SubtypeIdentifier* subtypeIdentifier) {
+bool CppVisitor::openSubtype(Subtype* subtype) {
     return true;
 }
 
-void CppVisitor::closeSubtypeIdentifier(SubtypeIdentifier* subtypeIdentifier) {
+void CppVisitor::closeSubtype(Subtype* subtype) {
 }
 
 void CppVisitor::visitOptionalType(OptionalType* optionalType) {
+}
+
+bool CppVisitor::openIndexedType(IndexedType* indexedType) {
+    return true;
+}
+
+void CppVisitor::closeIndexedType(IndexedType* indexedType) {
 }
 
 bool CppVisitor::openTypeInheritanceClause(TypeInheritanceClause* typeInheritanceClause) {
@@ -2987,7 +2963,7 @@ void CppVisitor::collectInheritancesInCompilationUnit(CompilationUnit* compilati
                             for (size_t _i = 0; _i < _inheritances_length; _i++) {
                                 inheritance = *(*inheritances)[_i];
                                 {
-                                    registerInheritance(classDeclaration->name, inheritance->typeIdentifier->name);
+                                    registerInheritance(classDeclaration->name, inheritance->type->name);
                                 }
                             }
                         }

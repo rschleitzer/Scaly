@@ -3683,52 +3683,15 @@ _Result<SuperMember, ParserError> Parser::parseSuperMember(_Page* _rp, _Page* _e
 
 _Result<Type, ParserError> Parser::parseType(_Page* _rp, _Page* _ep) {
     _Region _region; _Page* _p = _region.get();
-    _Array<ParserError>* errors = new(_p) _Array<ParserError>();
-    Position* start = lexer->getPreviousPosition(_p);
-    {
-        auto _node_result = parseArrayType(_rp, _ep);
-        ArrayType* node = nullptr;
-        if (_node_result.succeeded()) {
-            node = _node_result.getResult();
-        }
-        else {
-            auto error = _node_result.getError();
-            {
-                errors->push(error);
-            }
-        }
-        if (node != nullptr)
-            return _Result<Type, ParserError>(node);
-    }
-    {
-        auto _node_result = parseTypeIdentifier(_rp, _ep);
-        TypeIdentifier* node = nullptr;
-        if (_node_result.succeeded()) {
-            node = _node_result.getResult();
-        }
-        else {
-            auto error = _node_result.getError();
-            {
-                errors->push(error);
-            }
-        }
-        if (node != nullptr)
-            return _Result<Type, ParserError>(node);
-    }
-    return _Result<Type, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_unableToParse(new(_ep) Position(start), &_Vector<ParserError>::create(_ep, *(errors)))));
-}
-
-_Result<TypeIdentifier, ParserError> Parser::parseTypeIdentifier(_Page* _rp, _Page* _ep) {
-    _Region _region; _Page* _p = _region.get();
     Position* start = lexer->getPreviousPosition(_p);
     Position* startName = lexer->getPreviousPosition(_p);
     String* name = lexer->parseIdentifier(_rp);
     if ((name != nullptr) && isIdentifier(name))
         lexer->advance();
     else
-        return _Result<TypeIdentifier, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_identifierExpected(new(_ep) Position(startName))));
-    auto _subType_result = parseSubtypeIdentifier(_rp, _ep);
-    SubtypeIdentifier* subType = nullptr;
+        return _Result<Type, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_identifierExpected(new(_ep) Position(startName))));
+    auto _subType_result = parseSubtype(_rp, _ep);
+    Subtype* subType = nullptr;
     if (_subType_result.succeeded()) {
         subType = _subType_result.getResult();
     }
@@ -3744,7 +3707,7 @@ _Result<TypeIdentifier, ParserError> Parser::parseTypeIdentifier(_Page* _rp, _Pa
         postfixes = nullptr;
     }
     Position* end = lexer->getPosition(_p);
-    TypeIdentifier* ret = new(_rp) TypeIdentifier(name, subType, postfixes, new(_rp) Position(start), new(_rp) Position(end));
+    Type* ret = new(_rp) Type(name, subType, postfixes, new(_rp) Position(start), new(_rp) Position(end));
     if (subType != nullptr)
         subType->parent = ret;
     if (postfixes != nullptr) {
@@ -3755,53 +3718,7 @@ _Result<TypeIdentifier, ParserError> Parser::parseTypeIdentifier(_Page* _rp, _Pa
             item->parent = ret;
         }
     }
-    return _Result<TypeIdentifier, ParserError>(ret);
-}
-
-_Result<ArrayType, ParserError> Parser::parseArrayType(_Page* _rp, _Page* _ep) {
-    _Region _region; _Page* _p = _region.get();
-    Position* start = lexer->getPreviousPosition(_p);
-    Position* startLeftBracket1 = lexer->getPreviousPosition(_p);
-    bool successLeftBracket1 = lexer->parsePunctuation(leftBracket);
-    if (successLeftBracket1)
-        lexer->advance();
-    else
-        return _Result<ArrayType, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_punctuationExpected(new(_ep) Position(startLeftBracket1), new(_ep) String(leftBracket))));
-    auto _elementType_result = parseType(_rp, _ep);
-    Type* elementType = nullptr;
-    if (_elementType_result.succeeded()) {
-        elementType = _elementType_result.getResult();
-    }
-    else {
-        auto error = _elementType_result.getError();
-        return _Result<ArrayType, ParserError>(error);
-    }
-    Position* startRightBracket3 = lexer->getPreviousPosition(_p);
-    bool successRightBracket3 = lexer->parsePunctuation(rightBracket);
-    if (successRightBracket3)
-        lexer->advance();
-    else
-        return _Result<ArrayType, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_punctuationExpected(new(_ep) Position(startRightBracket3), new(_ep) String(rightBracket))));
-    auto _postfixes_result = parseTypePostfixList(_rp, _ep);
-    _Vector<TypePostfix>* postfixes = nullptr;
-    if (_postfixes_result.succeeded()) {
-        postfixes = _postfixes_result.getResult();
-    }
-    else {
-        postfixes = nullptr;
-    }
-    Position* end = lexer->getPosition(_p);
-    ArrayType* ret = new(_rp) ArrayType(elementType, postfixes, new(_rp) Position(start), new(_rp) Position(end));
-    elementType->parent = ret;
-    if (postfixes != nullptr) {
-        TypePostfix* item = nullptr;
-        size_t _postfixes_length = postfixes->length();
-        for (size_t _i = 0; _i < _postfixes_length; _i++) {
-            item = *(*postfixes)[_i];
-            item->parent = ret;
-        }
-    }
-    return _Result<ArrayType, ParserError>(ret);
+    return _Result<Type, ParserError>(ret);
 }
 
 _Result<TypeAnnotation, ParserError> Parser::parseTypeAnnotation(_Page* _rp, _Page* _ep) {
@@ -3828,7 +3745,7 @@ _Result<TypeAnnotation, ParserError> Parser::parseTypeAnnotation(_Page* _rp, _Pa
     return _Result<TypeAnnotation, ParserError>(ret);
 }
 
-_Result<SubtypeIdentifier, ParserError> Parser::parseSubtypeIdentifier(_Page* _rp, _Page* _ep) {
+_Result<Subtype, ParserError> Parser::parseSubtype(_Page* _rp, _Page* _ep) {
     _Region _region; _Page* _p = _region.get();
     Position* start = lexer->getPreviousPosition(_p);
     Position* startDot1 = lexer->getPreviousPosition(_p);
@@ -3836,20 +3753,20 @@ _Result<SubtypeIdentifier, ParserError> Parser::parseSubtypeIdentifier(_Page* _r
     if (successDot1)
         lexer->advance();
     else
-        return _Result<SubtypeIdentifier, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_punctuationExpected(new(_ep) Position(startDot1), new(_ep) String(dot))));
-    auto _typeIdentifier_result = parseTypeIdentifier(_rp, _ep);
-    TypeIdentifier* typeIdentifier = nullptr;
-    if (_typeIdentifier_result.succeeded()) {
-        typeIdentifier = _typeIdentifier_result.getResult();
+        return _Result<Subtype, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_punctuationExpected(new(_ep) Position(startDot1), new(_ep) String(dot))));
+    auto _type_result = parseType(_rp, _ep);
+    Type* type = nullptr;
+    if (_type_result.succeeded()) {
+        type = _type_result.getResult();
     }
     else {
-        auto error = _typeIdentifier_result.getError();
-        return _Result<SubtypeIdentifier, ParserError>(error);
+        auto error = _type_result.getError();
+        return _Result<Subtype, ParserError>(error);
     }
     Position* end = lexer->getPosition(_p);
-    SubtypeIdentifier* ret = new(_rp) SubtypeIdentifier(typeIdentifier, new(_rp) Position(start), new(_rp) Position(end));
-    typeIdentifier->parent = ret;
-    return _Result<SubtypeIdentifier, ParserError>(ret);
+    Subtype* ret = new(_rp) Subtype(type, new(_rp) Position(start), new(_rp) Position(end));
+    type->parent = ret;
+    return _Result<Subtype, ParserError>(ret);
 }
 
 _Result<_Vector<TypePostfix>, ParserError> Parser::parseTypePostfixList(_Page* _rp, _Page* _ep) {
@@ -3890,6 +3807,21 @@ _Result<TypePostfix, ParserError> Parser::parseTypePostfix(_Page* _rp, _Page* _e
         if (node != nullptr)
             return _Result<TypePostfix, ParserError>(node);
     }
+    {
+        auto _node_result = parseIndexedType(_rp, _ep);
+        IndexedType* node = nullptr;
+        if (_node_result.succeeded()) {
+            node = _node_result.getResult();
+        }
+        else {
+            auto error = _node_result.getError();
+            {
+                errors->push(error);
+            }
+        }
+        if (node != nullptr)
+            return _Result<TypePostfix, ParserError>(node);
+    }
     return _Result<TypePostfix, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_unableToParse(new(_ep) Position(start), &_Vector<ParserError>::create(_ep, *(errors)))));
 }
 
@@ -3905,6 +3837,33 @@ _Result<OptionalType, ParserError> Parser::parseOptionalType(_Page* _rp, _Page* 
     Position* end = lexer->getPosition(_p);
     OptionalType* ret = new(_rp) OptionalType(new(_rp) Position(start), new(_rp) Position(end));
     return _Result<OptionalType, ParserError>(ret);
+}
+
+_Result<IndexedType, ParserError> Parser::parseIndexedType(_Page* _rp, _Page* _ep) {
+    _Region _region; _Page* _p = _region.get();
+    Position* start = lexer->getPreviousPosition(_p);
+    Position* startLeftBracket1 = lexer->getPreviousPosition(_p);
+    bool successLeftBracket1 = lexer->parsePunctuation(leftBracket);
+    if (successLeftBracket1)
+        lexer->advance();
+    else
+        return _Result<IndexedType, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_punctuationExpected(new(_ep) Position(startLeftBracket1), new(_ep) String(leftBracket))));
+    auto _key_result = parseType(_rp, _ep);
+    Type* key = nullptr;
+    if (_key_result.succeeded()) {
+        key = _key_result.getResult();
+    }
+    Position* startRightBracket3 = lexer->getPreviousPosition(_p);
+    bool successRightBracket3 = lexer->parsePunctuation(rightBracket);
+    if (successRightBracket3)
+        lexer->advance();
+    else
+        return _Result<IndexedType, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_punctuationExpected(new(_ep) Position(startRightBracket3), new(_ep) String(rightBracket))));
+    Position* end = lexer->getPosition(_p);
+    IndexedType* ret = new(_rp) IndexedType(key, new(_rp) Position(start), new(_rp) Position(end));
+    if (key != nullptr)
+        key->parent = ret;
+    return _Result<IndexedType, ParserError>(ret);
 }
 
 _Result<TypeInheritanceClause, ParserError> Parser::parseTypeInheritanceClause(_Page* _rp, _Page* _ep) {
@@ -3959,21 +3918,21 @@ _Result<_Vector<Inheritance>, ParserError> Parser::parseInheritanceList(_Page* _
 _Result<Inheritance, ParserError> Parser::parseInheritance(_Page* _rp, _Page* _ep) {
     _Region _region; _Page* _p = _region.get();
     Position* start = lexer->getPreviousPosition(_p);
-    auto _typeIdentifier_result = parseTypeIdentifier(_rp, _ep);
-    TypeIdentifier* typeIdentifier = nullptr;
-    if (_typeIdentifier_result.succeeded()) {
-        typeIdentifier = _typeIdentifier_result.getResult();
+    auto _type_result = parseType(_rp, _ep);
+    Type* type = nullptr;
+    if (_type_result.succeeded()) {
+        type = _type_result.getResult();
     }
     else {
-        auto error = _typeIdentifier_result.getError();
+        auto error = _type_result.getError();
         return _Result<Inheritance, ParserError>(error);
     }
     bool successComma2 = lexer->parsePunctuation(comma);
     if (successComma2)
         lexer->advance();
     Position* end = lexer->getPosition(_p);
-    Inheritance* ret = new(_rp) Inheritance(typeIdentifier, new(_rp) Position(start), new(_rp) Position(end));
-    typeIdentifier->parent = ret;
+    Inheritance* ret = new(_rp) Inheritance(type, new(_rp) Position(start), new(_rp) Position(end));
+    type->parent = ret;
     return _Result<Inheritance, ParserError>(ret);
 }
 

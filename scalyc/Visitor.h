@@ -206,17 +206,15 @@ class SuperMember;
 
 class Type;
 
-class TypeIdentifier;
-
-class ArrayType;
-
 class TypeAnnotation;
 
-class SubtypeIdentifier;
+class Subtype;
 
 class TypePostfix;
 
 class OptionalType;
+
+class IndexedType;
 
 class TypeInheritanceClause;
 
@@ -338,8 +336,8 @@ public:
     virtual void closeThrowExpression(ThrowExpression* throwExpression) = 0;
     virtual bool openBreakExpression(BreakExpression* breakExpression) = 0;
     virtual void closeBreakExpression(BreakExpression* breakExpression) = 0;
-    virtual bool openInitializerCall(ConstructorCall* initializerCall) = 0;
-    virtual void closeInitializerCall(ConstructorCall* initializerCall) = 0;
+    virtual bool openConstructorCall(ConstructorCall* initializerCall) = 0;
+    virtual void closeConstructorCall(ConstructorCall* initializerCall) = 0;
     virtual void visitThisExpression(ThisExpression* thisExpression) = 0;
     virtual bool openSuperDot(SuperDot* superDot) = 0;
     virtual void closeSuperDot(SuperDot* superDot) = 0;
@@ -373,15 +371,15 @@ public:
     virtual void visitEmptyCaseContent(EmptyCaseContent* emptyCaseContent) = 0;
     virtual void visitSuperConstructor(SuperConstructor* superInit) = 0;
     virtual void visitSuperMember(SuperMember* superMember) = 0;
-    virtual bool openTypeIdentifier(TypeIdentifier* typeIdentifier) = 0;
-    virtual void closeTypeIdentifier(TypeIdentifier* typeIdentifier) = 0;
-    virtual bool openArrayType(ArrayType* arrayType) = 0;
-    virtual void closeArrayType(ArrayType* arrayType) = 0;
+    virtual bool openType(Type* type) = 0;
+    virtual void closeType(Type* type) = 0;
     virtual bool openTypeAnnotation(TypeAnnotation* typeAnnotation) = 0;
     virtual void closeTypeAnnotation(TypeAnnotation* typeAnnotation) = 0;
-    virtual bool openSubtypeIdentifier(SubtypeIdentifier* subtypeIdentifier) = 0;
-    virtual void closeSubtypeIdentifier(SubtypeIdentifier* subtypeIdentifier) = 0;
+    virtual bool openSubtype(Subtype* subtype) = 0;
+    virtual void closeSubtype(Subtype* subtype) = 0;
     virtual void visitOptionalType(OptionalType* optionalType) = 0;
+    virtual bool openIndexedType(IndexedType* indexedType) = 0;
+    virtual void closeIndexedType(IndexedType* indexedType) = 0;
     virtual bool openTypeInheritanceClause(TypeInheritanceClause* typeInheritanceClause) = 0;
     virtual void closeTypeInheritanceClause(TypeInheritanceClause* typeInheritanceClause) = 0;
     virtual bool openInheritance(Inheritance* inheritance) = 0;

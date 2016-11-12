@@ -75,7 +75,7 @@ bool SyntaxNode::_isParenthesizedExpression() { return false; }
 bool SyntaxNode::_isReturnExpression() { return false; }
 bool SyntaxNode::_isThrowExpression() { return false; }
 bool SyntaxNode::_isBreakExpression() { return false; }
-bool SyntaxNode::_isInitializerCall() { return false; }
+bool SyntaxNode::_isConstructorCall() { return false; }
 bool SyntaxNode::_isThisExpression() { return false; }
 bool SyntaxNode::_isSuperExpression() { return false; }
 bool SyntaxNode::_isSuperDot() { return false; }
@@ -103,12 +103,11 @@ bool SyntaxNode::_isCommonSuperMember() { return false; }
 bool SyntaxNode::_isSuperConstructor() { return false; }
 bool SyntaxNode::_isSuperMember() { return false; }
 bool SyntaxNode::_isType() { return false; }
-bool SyntaxNode::_isTypeIdentifier() { return false; }
-bool SyntaxNode::_isArrayType() { return false; }
 bool SyntaxNode::_isTypeAnnotation() { return false; }
-bool SyntaxNode::_isSubtypeIdentifier() { return false; }
+bool SyntaxNode::_isSubtype() { return false; }
 bool SyntaxNode::_isTypePostfix() { return false; }
 bool SyntaxNode::_isOptionalType() { return false; }
+bool SyntaxNode::_isIndexedType() { return false; }
 bool SyntaxNode::_isTypeInheritanceClause() { return false; }
 bool SyntaxNode::_isInheritance() { return false; }
 
@@ -1140,7 +1139,7 @@ bool PrimaryExpression::_isParenthesizedExpression() { return false; }
 bool PrimaryExpression::_isReturnExpression() { return false; }
 bool PrimaryExpression::_isThrowExpression() { return false; }
 bool PrimaryExpression::_isBreakExpression() { return false; }
-bool PrimaryExpression::_isInitializerCall() { return false; }
+bool PrimaryExpression::_isConstructorCall() { return false; }
 bool PrimaryExpression::_isThisExpression() { return false; }
 bool PrimaryExpression::_isSuperExpression() { return false; }
 bool PrimaryExpression::_isSuperDot() { return false; }
@@ -1343,7 +1342,7 @@ ConstructorCall::ConstructorCall(Type* typeToInitialize, ParenthesizedExpression
 }
 
 void ConstructorCall::accept(SyntaxVisitor* visitor) {
-    if (!visitor->openInitializerCall(this))
+    if (!visitor->openConstructorCall(this))
         return;
     typeToInitialize->accept(visitor);
     arguments->accept(visitor);
@@ -1355,10 +1354,10 @@ void ConstructorCall::accept(SyntaxVisitor* visitor) {
             node->accept(visitor);
         }
     }
-    visitor->closeInitializerCall(this);
+    visitor->closeConstructorCall(this);
 }
 
-bool ConstructorCall::_isInitializerCall() { return true; }
+bool ConstructorCall::_isConstructorCall() { return true; }
 
 ThisExpression::ThisExpression(Position* start, Position* end) {
     this->start = start;
@@ -1724,15 +1723,7 @@ void SuperMember::accept(SyntaxVisitor* visitor) {
 
 bool SuperMember::_isSuperMember() { return true; }
 
-void Type::accept(SyntaxVisitor* visitor) {
-}
-
-bool Type::_isType() { return true; }
-
-bool Type::_isTypeIdentifier() { return false; }
-bool Type::_isArrayType() { return false; }
-
-TypeIdentifier::TypeIdentifier(String* name, SubtypeIdentifier* subType, _Vector<TypePostfix>* postfixes, Position* start, Position* end) {
+Type::Type(String* name, Subtype* subType, _Vector<TypePostfix>* postfixes, Position* start, Position* end) {
     this->start = start;
     this->end = end;
     this->name = name;
@@ -1740,8 +1731,8 @@ TypeIdentifier::TypeIdentifier(String* name, SubtypeIdentifier* subType, _Vector
     this->postfixes = postfixes;
 }
 
-void TypeIdentifier::accept(SyntaxVisitor* visitor) {
-    if (!visitor->openTypeIdentifier(this))
+void Type::accept(SyntaxVisitor* visitor) {
+    if (!visitor->openType(this))
         return;
     if (subType != nullptr)
         subType->accept(visitor);
@@ -1753,34 +1744,10 @@ void TypeIdentifier::accept(SyntaxVisitor* visitor) {
             node->accept(visitor);
         }
     }
-    visitor->closeTypeIdentifier(this);
+    visitor->closeType(this);
 }
 
-bool TypeIdentifier::_isTypeIdentifier() { return true; }
-
-ArrayType::ArrayType(Type* elementType, _Vector<TypePostfix>* postfixes, Position* start, Position* end) {
-    this->start = start;
-    this->end = end;
-    this->elementType = elementType;
-    this->postfixes = postfixes;
-}
-
-void ArrayType::accept(SyntaxVisitor* visitor) {
-    if (!visitor->openArrayType(this))
-        return;
-    elementType->accept(visitor);
-    if (postfixes != nullptr) {
-        TypePostfix* node = nullptr;
-        size_t _postfixes_length = postfixes->length();
-        for (size_t _i = 0; _i < _postfixes_length; _i++) {
-            node = *(*postfixes)[_i];
-            node->accept(visitor);
-        }
-    }
-    visitor->closeArrayType(this);
-}
-
-bool ArrayType::_isArrayType() { return true; }
+bool Type::_isType() { return true; }
 
 TypeAnnotation::TypeAnnotation(Type* annotationForType, Position* start, Position* end) {
     this->start = start;
@@ -1797,20 +1764,20 @@ void TypeAnnotation::accept(SyntaxVisitor* visitor) {
 
 bool TypeAnnotation::_isTypeAnnotation() { return true; }
 
-SubtypeIdentifier::SubtypeIdentifier(TypeIdentifier* typeIdentifier, Position* start, Position* end) {
+Subtype::Subtype(Type* type, Position* start, Position* end) {
     this->start = start;
     this->end = end;
-    this->typeIdentifier = typeIdentifier;
+    this->type = type;
 }
 
-void SubtypeIdentifier::accept(SyntaxVisitor* visitor) {
-    if (!visitor->openSubtypeIdentifier(this))
+void Subtype::accept(SyntaxVisitor* visitor) {
+    if (!visitor->openSubtype(this))
         return;
-    typeIdentifier->accept(visitor);
-    visitor->closeSubtypeIdentifier(this);
+    type->accept(visitor);
+    visitor->closeSubtype(this);
 }
 
-bool SubtypeIdentifier::_isSubtypeIdentifier() { return true; }
+bool Subtype::_isSubtype() { return true; }
 
 void TypePostfix::accept(SyntaxVisitor* visitor) {
 }
@@ -1829,6 +1796,22 @@ void OptionalType::accept(SyntaxVisitor* visitor) {
 }
 
 bool OptionalType::_isOptionalType() { return true; }
+
+IndexedType::IndexedType(Type* key, Position* start, Position* end) {
+    this->start = start;
+    this->end = end;
+    this->key = key;
+}
+
+void IndexedType::accept(SyntaxVisitor* visitor) {
+    if (!visitor->openIndexedType(this))
+        return;
+    if (key != nullptr)
+        key->accept(visitor);
+    visitor->closeIndexedType(this);
+}
+
+bool IndexedType::_isIndexedType() { return true; }
 
 TypeInheritanceClause::TypeInheritanceClause(_Vector<Inheritance>* inheritances, Position* start, Position* end) {
     this->start = start;
@@ -1852,16 +1835,16 @@ void TypeInheritanceClause::accept(SyntaxVisitor* visitor) {
 
 bool TypeInheritanceClause::_isTypeInheritanceClause() { return true; }
 
-Inheritance::Inheritance(TypeIdentifier* typeIdentifier, Position* start, Position* end) {
+Inheritance::Inheritance(Type* type, Position* start, Position* end) {
     this->start = start;
     this->end = end;
-    this->typeIdentifier = typeIdentifier;
+    this->type = type;
 }
 
 void Inheritance::accept(SyntaxVisitor* visitor) {
     if (!visitor->openInheritance(this))
         return;
-    typeIdentifier->accept(visitor);
+    type->accept(visitor);
     visitor->closeInheritance(this);
 }
 

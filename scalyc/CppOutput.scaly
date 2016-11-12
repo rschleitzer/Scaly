@@ -26,7 +26,7 @@ class CppProgram {
         modules = null
     }
 
-    constructor(name: String, project: String, main: String, modules: [CppModule]) {
+    constructor(name: String, project: String, main: String, modules: CppModule[]) {
         this.name = name
         this.project = project
         this.main = main
@@ -36,5 +36,5 @@ class CppProgram {
     let name: String
     let project: String
     let main: String
-    let modules: [CppModule]
+    let modules: CppModule[]
 }
