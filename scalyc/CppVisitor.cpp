@@ -749,24 +749,22 @@ bool CppVisitor::openFunctionSignature(FunctionSignature* functionSignature) {
             headerFile->append("_Result<");
             if (!suppressSource)
                 sourceFile->append("_Result<");
-            if (functionSignature->result->resultType->_isType()) {
+            if (hasArrayPostfix(functionSignature->result->resultType)) {
+                headerFile->append("_Vector<");
+                Type* type = functionSignature->result->resultType;
+                appendCppTypeName(headerFile, type);
+                headerFile->append(">");
+                if (!suppressSource) {
+                    sourceFile->append("_Vector<");
+                    appendCppTypeName(sourceFile, type);
+                    sourceFile->append(">");
+                }
+            }
+            else {
                 Type* type = (Type*)functionSignature->result->resultType;
                 appendCppTypeName(headerFile, type);
                 if (!suppressSource)
                     appendCppTypeName(sourceFile, type);
-            }
-            else {
-                if (hasArrayPostfix(functionSignature->result->resultType)) {
-                    headerFile->append("_Vector<");
-                    Type* type = functionSignature->result->resultType;
-                    appendCppTypeName(headerFile, type);
-                    headerFile->append(">");
-                    if (!suppressSource) {
-                        sourceFile->append("_Vector<");
-                        appendCppTypeName(sourceFile, type);
-                        sourceFile->append(">");
-                    }
-                }
             }
             headerFile->append(", ");
             appendCppTypeName(headerFile, (Type*)(functionSignature->throwsClause->throwsType));
@@ -778,7 +776,18 @@ bool CppVisitor::openFunctionSignature(FunctionSignature* functionSignature) {
             }
         }
         else {
-            if (functionSignature->result->resultType->_isType()) {
+            if (hasArrayPostfix(functionSignature->result->resultType)) {
+                headerFile->append("_Vector<");
+                Type* type = functionSignature->result->resultType;
+                appendCppTypeName(headerFile, type);
+                headerFile->append(">");
+                if (!suppressSource) {
+                    sourceFile->append("_Vector<");
+                    appendCppTypeName(sourceFile, type);
+                    sourceFile->append(">");
+                }
+            }
+            else {
                 Type* type = (Type*)functionSignature->result->resultType;
                 appendCppTypeName(headerFile, type);
                 if (!suppressSource)
@@ -787,19 +796,6 @@ bool CppVisitor::openFunctionSignature(FunctionSignature* functionSignature) {
                     headerFile->append("*");
                     if (!suppressSource)
                         sourceFile->append("*");
-                }
-            }
-            else {
-                if (hasArrayPostfix(functionSignature->result->resultType)) {
-                    headerFile->append("_Vector<");
-                    Type* type = functionSignature->result->resultType;
-                    appendCppTypeName(headerFile, type);
-                    headerFile->append(">");
-                    if (!suppressSource) {
-                        sourceFile->append("_Vector<");
-                        appendCppTypeName(sourceFile, type);
-                        sourceFile->append(">");
-                    }
                 }
             }
         }

@@ -761,24 +761,22 @@ class CppVisitor : SyntaxVisitor {
                 if !suppressSource
                     sourceFile.append("_Result<");
 
-                if functionSignature.result.resultType is Type {
+                if hasArrayPostfix(functionSignature.result.resultType) {
+                    headerFile.append("_Vector<")
+                    let type: Type = functionSignature.result.resultType
+                    appendCppTypeName(headerFile, type)
+                    headerFile.append(">")
+                    if !suppressSource {
+                        sourceFile.append("_Vector<")
+                        appendCppTypeName(sourceFile, type)
+                        sourceFile.append(">")
+                    }
+                }
+                else {
                     let type: Type = functionSignature.result.resultType as Type
                     appendCppTypeName(headerFile, type)
                     if !suppressSource
                         appendCppTypeName(sourceFile, type)
-                }
-                else {
-                    if hasArrayPostfix(functionSignature.result.resultType) {
-                        headerFile.append("_Vector<")
-                        let type: Type = functionSignature.result.resultType
-                        appendCppTypeName(headerFile, type)
-                        headerFile.append(">")
-                        if !suppressSource {
-                            sourceFile.append("_Vector<")
-                            appendCppTypeName(sourceFile, type)
-                            sourceFile.append(">")
-                        }
-                    }
                 }
                 headerFile.append(", ")
                 appendCppTypeName(headerFile, (functionSignature.throwsClause.throwsType) as Type)
@@ -790,7 +788,18 @@ class CppVisitor : SyntaxVisitor {
                 }
             }
             else {
-                if functionSignature.result.resultType is Type {
+                if hasArrayPostfix(functionSignature.result.resultType) {
+                    headerFile.append("_Vector<")
+                    let type: Type = functionSignature.result.resultType
+                    appendCppTypeName(headerFile, type)
+                    headerFile.append(">")
+                    if !suppressSource {
+                        sourceFile.append("_Vector<")
+                        appendCppTypeName(sourceFile, type)
+                        sourceFile.append(">")
+                    }
+                }
+                else {
                     let type: Type = functionSignature.result.resultType as Type
                     appendCppTypeName(headerFile, type)
                     if !suppressSource
@@ -799,19 +808,6 @@ class CppVisitor : SyntaxVisitor {
                         headerFile.append("*")
                         if !suppressSource
                             sourceFile.append("*")
-                    }
-                }
-                else {
-                    if hasArrayPostfix(functionSignature.result.resultType) {
-                        headerFile.append("_Vector<")
-                        let type: Type = functionSignature.result.resultType
-                        appendCppTypeName(headerFile, type)
-                        headerFile.append(">")
-                        if !suppressSource {
-                            sourceFile.append("_Vector<")
-                            appendCppTypeName(sourceFile, type)
-                            sourceFile.append(">")
-                        }
                     }
                 }
             }
