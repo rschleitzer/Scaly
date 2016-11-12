@@ -583,25 +583,8 @@ bool CppVisitor::localAllocations(CodeBlock* codeBlock) {
         for (size_t _i = 0; _i < _terminatedStatements_length; _i++) {
             terminatedStatement = *(*terminatedStatements)[_i];
             {
-                BindingInitializer* bindingInitializer = nullptr;
-                Statement* statement = terminatedStatement->statement;
-                if (statement->_isMutableDeclaration()) {
-                    MutableDeclaration* mutableDeclaration = (MutableDeclaration*)statement;
-                    bindingInitializer = mutableDeclaration->initializer;
-                }
-                if (bindingInitializer != nullptr) {
-                    if (bindingInitializer->initializer != nullptr) {
-                        PatternInitializer* patternInitializer = bindingInitializer->initializer;
-                        Expression* expression = patternInitializer->initializer->expression;
-                        if (expression->_isSimpleExpression()) {
-                            SimpleExpression* simpleExpression = (SimpleExpression*)expression;
-                            PostfixExpression* postfixExpression = simpleExpression->prefixExpression->expression;
-                            if (postfixExpression->primaryExpression->_isInitializerCall()) {
-                                return true;
-                            }
-                        }
-                    }
-                }
+                if (terminatedStatement->statement->_isMutableDeclaration())
+                    return true;
             }
         }
     }
