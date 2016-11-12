@@ -272,7 +272,7 @@ class Lexer {
             position++ column++
             
             if position == end
-                return Identifier(new String(name))
+                return new Identifier(new String(name))
             
             let c: character = text.charAt(position)
             if  ((c >= 'a') && (c <= 'z')) || 
@@ -281,7 +281,7 @@ class Lexer {
                  (c == '_')
                 name.append(text.charAt(position))
             else
-                return Identifier(new String(name))
+                return new Identifier(new String(name))
         }            
         while true
     }
@@ -305,9 +305,9 @@ class Lexer {
             position++ column++
             if position == end {
                 if whitespaceSkippedBefore
-                    return BinaryOperator(new String(operation))
+                    return new BinaryOperator(new String(operation))
                 else
-                    return PostfixOperator(new String(operation))
+                    return new PostfixOperator(new String(operation))
             }
 
             if includeDots && (text.charAt(position) == '.') {
@@ -327,7 +327,7 @@ class Lexer {
                     position = lastPosition
                     line = lastLine
                     column = lastColumn
-                    mutable whitespaceSkippedAfter: bool = whitespaceSkipped
+                    var whitespaceSkippedAfter: bool = whitespaceSkipped
 
                     if !whitespaceSkippedAfter {
                         switch text.charAt(position) {
@@ -340,13 +340,13 @@ class Lexer {
 
                     if (whitespaceSkippedBefore &&  whitespaceSkippedAfter) || 
                       (!whitespaceSkippedBefore && !whitespaceSkippedAfter)
-                        return BinaryOperator(new String(operation))
+                        return new BinaryOperator(new String(operation))
                         
                     if (!whitespaceSkippedBefore && whitespaceSkippedAfter)
-                        return PostfixOperator(new String(operation))
+                        return new PostfixOperator(new String(operation))
                         
                     if (whitespaceSkippedBefore && !whitespaceSkippedAfter)
-                        return PrefixOperator(new String(operation))
+                        return new PrefixOperator(new String(operation))
                 }
             }
         } while true
@@ -358,12 +358,12 @@ class Lexer {
         repeat {
             position++ column++
             if position == end
-                return InvalidToken()
+                return new InvalidToken()
 
             switch text.charAt(position) {
                 case '\"': {
                     position++ column++
-                    return StringLiteral(new String(value))
+                    return new StringLiteral(new String(value))
                 }
                 case '\\': {
                     position++ column++
@@ -376,7 +376,7 @@ class Lexer {
                         case 'r': value.append("\\r")
                         case 't': value.append("\\t")
                         case '0': value.append("\\0")
-                        default: return InvalidToken()
+                        default: return new InvalidToken()
                     }
                 }
                 default:
@@ -390,12 +390,12 @@ class Lexer {
         repeat {
             position++ column++
             if position == end
-                return InvalidToken()
+                return new InvalidToken()
 
             switch text.charAt(position) {
                 case '\'': {
                     position++ column++
-                    return CharacterLiteral(new String(value))
+                    return new CharacterLiteral(new String(value))
                 }
                 case '\\': {
                     position++ column++
@@ -405,7 +405,7 @@ class Lexer {
                         case 'r': value.append('\r')
                         case 't': value.append('\t')
                         case '0': value.append('\0')
-                        default: return InvalidToken()
+                        default: return new InvalidToken()
                     }
                 }
                 default: {
@@ -423,13 +423,13 @@ class Lexer {
             position++ column++
             
             if position == end
-                return NumericLiteral(new String(value))
+                return new NumericLiteral(new String(value))
             
             let c: character = text.charAt(position)
             if (c >= '0') && (c <= '9')
                 value.append(text.charAt(position))
             else
-                return NumericLiteral(new String(value))
+                return new NumericLiteral(new String(value))
         } while true
     }
 
@@ -582,7 +582,7 @@ class Lexer {
             return null
 
         let identifier: Identifier = token as Identifier
-        return String(identifier.name)
+        return new String(identifier.name)
     }
 
     function parsePunctuation(fixedString: String): bool {
@@ -598,7 +598,7 @@ class Lexer {
             return null
 
         let op: Operator = token as Operator
-        return String(op.operation)
+        return new String(op.operation)
     }
 
     function parseLiteral(): Literal? {
@@ -607,17 +607,17 @@ class Lexer {
 
         if token is StringLiteral {
             let stringLiteral: StringLiteral = token as StringLiteral
-            return StringLiteral(new String(stringLiteral.string))
+            return new StringLiteral(new String(stringLiteral.string))
         }
 
         if token is CharacterLiteral {
             let characterLiteral: CharacterLiteral = token as CharacterLiteral
-            return CharacterLiteral(new String(characterLiteral.value))
+            return new CharacterLiteral(new String(characterLiteral.value))
         }
 
         if token is NumericLiteral {
             let numericLiteral: NumericLiteral = token as NumericLiteral
-            return NumericLiteral(new String(numericLiteral.value))
+            return new NumericLiteral(new String(numericLiteral.value))
         }
 
         return null
@@ -629,21 +629,21 @@ class Lexer {
             return null
 
         let op: Operator = token as Operator
-        return String(op.operation)
+        return new String(op.operation)
     }
 
     function parseBinaryOperator(): String? {
         if !(token is BinaryOperator) {
             if (token is Punctuation) && (((token as Punctuation).sign.equals("<")) || ((token as Punctuation).sign.equals(">"))) {
                 let op: Operator = token as Operator
-                return String(op.operation)
+                return new String(op.operation)
             }
 
             return null
         }
 
         let op: Operator = token as Operator
-        return String(op.operation)
+        return new String(op.operation)
     }
 
 
@@ -652,7 +652,7 @@ class Lexer {
             return null
 
         let op: Operator = token as Operator
-        return String(op.operation)
+        return new String(op.operation)
     }
 
     function isAtEnd(): bool {
@@ -660,10 +660,10 @@ class Lexer {
     }
 
     function getPosition(): Position {
-        return Position(line, column)
+        return new Position(line, column)
     }
 
     function getPreviousPosition(): Position {
-        return Position(previousLine, previousColumn)
+        return new Position(previousLine, previousColumn)
     }
 }

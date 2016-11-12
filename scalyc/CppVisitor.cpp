@@ -2368,9 +2368,19 @@ bool CppVisitor::openInitializerCall(InitializerCall* initializerCall) {
                                 ClassDeclaration* classDeclaration = getClassDeclaration(assignment);
                                 String* memberName = getMemberIfCreatingObject(_p, assignment);
                                 if (memberName != nullptr) {
-                                    sourceFile->append("getPage()");
-                                    if (isVariableMember(memberName, classDeclaration))
-                                        sourceFile->append("->allocateExclusivePage()");
+                                    if (isVariableMember(memberName, classDeclaration)) {
+                                        if (!inInitializer(assignment)) {
+                                            sourceFile->append(memberName);
+                                            sourceFile->append("->");
+                                        }
+                                        sourceFile->append("getPage()");
+                                        if (inInitializer(assignment)) {
+                                            sourceFile->append("->allocateExclusivePage()");
+                                        }
+                                    }
+                                    else {
+                                        sourceFile->append("getPage()");
+                                    }
                                 }
                             }
                         }
@@ -2393,9 +2403,19 @@ bool CppVisitor::openInitializerCall(InitializerCall* initializerCall) {
                 ClassDeclaration* classDeclaration = getClassDeclaration(assignment);
                 String* memberName = getMemberIfCreatingObject(_p, assignment);
                 if (memberName != nullptr) {
-                    sourceFile->append("getPage()");
-                    if (isVariableMember(memberName, classDeclaration))
-                        sourceFile->append("->allocateExclusivePage()");
+                    if (isVariableMember(memberName, classDeclaration)) {
+                        if (!inInitializer(assignment)) {
+                            sourceFile->append(memberName);
+                            sourceFile->append("->");
+                        }
+                        sourceFile->append("getPage()");
+                        if (inInitializer(assignment)) {
+                            sourceFile->append("->allocateExclusivePage()");
+                        }
+                    }
+                    else {
+                        sourceFile->append("getPage()");
+                    }
                 }
                 else {
                     SimpleExpression* simpleExpression = (SimpleExpression*)(assignment->parent);

@@ -2397,9 +2397,19 @@ class CppVisitor : SyntaxVisitor {
                                     var classDeclaration: ClassDeclaration = getClassDeclaration(assignment)
                                     mutable memberName: String = getMemberIfCreatingObject(assignment)
                                     if memberName != null {
-                                        sourceFile.append("getPage()")
-                                        if isVariableMember(memberName, classDeclaration)
-                                            sourceFile.append("->allocateExclusivePage()")
+                                        if isVariableMember(memberName, classDeclaration) {
+                                            if !inInitializer(assignment) {
+                                                sourceFile.append(memberName)
+                                                sourceFile.append("->")
+                                            }
+                                            sourceFile.append("getPage()")
+                                            if inInitializer(assignment) {
+                                                sourceFile.append("->allocateExclusivePage()")
+                                            }
+                                        }
+                                        else {
+                                            sourceFile.append("getPage()")
+                                        }
                                     }
                                 }
                             }
@@ -2421,9 +2431,19 @@ class CppVisitor : SyntaxVisitor {
                     var classDeclaration: ClassDeclaration = getClassDeclaration(assignment)
                     mutable memberName: String = getMemberIfCreatingObject(assignment)
                     if memberName != null {
-                        sourceFile.append("getPage()")
-                        if isVariableMember(memberName, classDeclaration)
-                            sourceFile.append("->allocateExclusivePage()")
+                        if isVariableMember(memberName, classDeclaration) {
+                            if !inInitializer(assignment) {
+                                sourceFile.append(memberName)
+                                sourceFile.append("->")
+                            }
+                            sourceFile.append("getPage()")
+                            if inInitializer(assignment) {
+                                sourceFile.append("->allocateExclusivePage()")
+                            }
+                        }
+                        else {
+                            sourceFile.append("getPage()")
+                        }
                     }
                     else {
                         let simpleExpression: SimpleExpression = (assignment.parent) as SimpleExpression
