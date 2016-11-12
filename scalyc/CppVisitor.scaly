@@ -100,7 +100,7 @@ class CppVisitor : SyntaxVisitor {
     }
     
     function closeProgram(program: Program) {
-        output = CppProgram(program.name, String(projectFile), String(mainHeaderFile), new [CppModule](modules))
+        output = CppProgram(program.name, new String(projectFile), new String(mainHeaderFile), new [CppModule](modules))
         
     }
 
@@ -187,7 +187,7 @@ class CppVisitor : SyntaxVisitor {
             catch _ (error: fileError)
                 return;
 
-        module = CppModule(String(moduleName), String(headerFile), String(sourceFile))
+        module = CppModule(String(moduleName), new String(headerFile), new String(sourceFile))
         modules.push(module)
     }
     
@@ -533,7 +533,7 @@ class CppVisitor : SyntaxVisitor {
         }
         {
             mutable derivedClasses: [String] = new [String]()
-            collectDerivedClasses(derivedClasses, String(classDeclaration.name))
+            collectDerivedClasses(derivedClasses, new String(classDeclaration.name))
             for derivedClass: String in derivedClasses {
                 headerFile.append("\n")
                 indentHeader()
@@ -1244,7 +1244,7 @@ class CppVisitor : SyntaxVisitor {
                             mutable memberName: String = new String(memberExpression.name)
                             var classDeclaration: ClassDeclaration = getClassDeclaration(assignment)
                             if classDeclaration != null {
-                                return String(memberName)
+                                return new String(memberName)
                             }
                         }
                     }
@@ -1263,7 +1263,7 @@ class CppVisitor : SyntaxVisitor {
                 let rightSide: PostfixExpression = prefixExpression.expression
                 if rightSide.primaryExpression is IdentifierExpression {
                     let classExpression: IdentifierExpression = (rightSide.primaryExpression) as IdentifierExpression
-                    return String(classExpression.name)
+                    return new String(classExpression.name)
                 }
                 else {
                     if rightSide.primaryExpression is InitializerCall {
@@ -1272,13 +1272,13 @@ class CppVisitor : SyntaxVisitor {
                             let arrayType: ArrayType = (initializerCall.typeToInitialize) as ArrayType
                             if arrayType.elementType is TypeIdentifier {
                                 let typeIdentifier: TypeIdentifier = (arrayType.elementType) as TypeIdentifier
-                                return String(typeIdentifier.name)
+                                return new String(typeIdentifier.name)
                             }
                         }
                         else {
                             if initializerCall.typeToInitialize is TypeIdentifier {
                                 let typeIdentifier: TypeIdentifier = (initializerCall.typeToInitialize) as TypeIdentifier
-                                return String(typeIdentifier.name)
+                                return new String(typeIdentifier.name)
                             }
                         }
                     }
@@ -2200,7 +2200,7 @@ class CppVisitor : SyntaxVisitor {
                 if functionResult.resultType is TypeIdentifier {
                     let typeIdentifier: TypeIdentifier = (functionResult.resultType) as TypeIdentifier
                     appendCppTypeName(ret, typeIdentifier)
-                    return String(ret)
+                    return new String(ret)
                 }
                 else {
                     if functionResult.resultType is ArrayType {
@@ -2210,7 +2210,7 @@ class CppVisitor : SyntaxVisitor {
                             ret.append("_Vector<")
                             appendCppTypeName(ret, typeIdentifier)
                             ret.append(">")
-                            return String(ret)
+                            return new String(ret)
                         }
                     }
                 }
@@ -2229,7 +2229,7 @@ class CppVisitor : SyntaxVisitor {
                 if throwsClause.throwsType is TypeIdentifier {
                     let typeIdentifier: TypeIdentifier = (throwsClause.throwsType) as TypeIdentifier
                     appendCppTypeName(ret, typeIdentifier)
-                    return String(ret)
+                    return new String(ret)
                 }
                 else {
                     if throwsClause.throwsType is ArrayType {
@@ -2239,7 +2239,7 @@ class CppVisitor : SyntaxVisitor {
                             ret.append("_Vector<")
                             appendCppTypeName(ret, typeIdentifier)
                             ret.append(">")
-                            return String(ret)
+                            return new String(ret)
                         }
                     }
                 }
