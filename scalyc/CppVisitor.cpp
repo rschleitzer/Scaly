@@ -2425,6 +2425,11 @@ bool CppVisitor::openInitializerCall(InitializerCall* initializerCall) {
                     }
                 }
             }
+            else {
+                if (initializerCall->parent->parent->parent->parent->_isInitializer()) {
+                    sourceFile->append("new(_p");                    
+                }
+            } 
             sourceFile->append(") ");
             TypeIdentifier* typeId = (TypeIdentifier*)(initializerCall->typeToInitialize);
             sourceFile->append(typeId->name);

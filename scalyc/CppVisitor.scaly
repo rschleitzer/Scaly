@@ -2453,6 +2453,11 @@ class CppVisitor : SyntaxVisitor {
                         }
                     }
                 }
+                else {
+                    if initializerCall.parent.parent.parent.parent is Initializer {
+                        sourceFile.append("new(_p")
+                    }
+                } 
                 sourceFile.append(") ")
                 let typeId: TypeIdentifier = (initializerCall.typeToInitialize) as TypeIdentifier
                 sourceFile.append(typeId.name)
