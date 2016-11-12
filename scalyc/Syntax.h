@@ -22,7 +22,7 @@ public:
     virtual bool _isFunctionDeclaration();
     virtual bool _isEnumDeclaration();
     virtual bool _isClassDeclaration();
-    virtual bool _isInitializerDeclaration();
+    virtual bool _isConstructorDeclaration();
     virtual bool _isExpression();
     virtual bool _isCodeBlock();
     virtual bool _isSimpleExpression();
@@ -108,7 +108,7 @@ public:
     virtual bool _isBlockCaseContent();
     virtual bool _isEmptyCaseContent();
     virtual bool _isCommonSuperMember();
-    virtual bool _isSuperInit();
+    virtual bool _isSuperConstructor();
     virtual bool _isSuperMember();
     virtual bool _isType();
     virtual bool _isTypeIdentifier();
@@ -164,7 +164,7 @@ public:
     virtual bool _isFunctionDeclaration();
     virtual bool _isEnumDeclaration();
     virtual bool _isClassDeclaration();
-    virtual bool _isInitializerDeclaration();
+    virtual bool _isConstructorDeclaration();
     virtual bool _isExpression();
     virtual bool _isCodeBlock();
     virtual bool _isSimpleExpression();
@@ -182,7 +182,7 @@ public:
     virtual bool _isFunctionDeclaration();
     virtual bool _isEnumDeclaration();
     virtual bool _isClassDeclaration();
-    virtual bool _isInitializerDeclaration();
+    virtual bool _isConstructorDeclaration();
 };
 
 class Expression : public Statement {
@@ -265,16 +265,16 @@ public:
     virtual bool _isClassDeclaration();
 };
 
-class InitializerDeclaration : public Declaration {
+class ConstructorDeclaration : public Declaration {
 public:
-    InitializerDeclaration(_Vector<Modifier>* modifiers, ParameterClause* parameterClause, ThrowsClause* throwsClause, Expression* body, Position* start, Position* end);
+    ConstructorDeclaration(_Vector<Modifier>* modifiers, ParameterClause* parameterClause, ThrowsClause* throwsClause, Expression* body, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
     _Vector<Modifier>* modifiers;
     ParameterClause* parameterClause;
     ThrowsClause* throwsClause;
     Expression* body;
 
-    virtual bool _isInitializerDeclaration();
+    virtual bool _isConstructorDeclaration();
 };
 
 class CodeBlock : public Expression {
@@ -847,9 +847,9 @@ public:
     virtual bool _isBreakExpression();
 };
 
-class InitializerCall : public PrimaryExpression {
+class ConstructorCall : public PrimaryExpression {
 public:
-    InitializerCall(Type* typeToInitialize, ParenthesizedExpression* arguments, _Vector<CatchClause>* catchClauses, Position* start, Position* end);
+    ConstructorCall(Type* typeToInitialize, ParenthesizedExpression* arguments, _Vector<CatchClause>* catchClauses, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
     Type* typeToInitialize;
     ParenthesizedExpression* arguments;
@@ -1070,16 +1070,16 @@ public:
     virtual void accept(SyntaxVisitor* visitor);
 
     virtual bool _isCommonSuperMember();
-    virtual bool _isSuperInit();
+    virtual bool _isSuperConstructor();
     virtual bool _isSuperMember();
 };
 
-class SuperInit : public CommonSuperMember {
+class SuperConstructor : public CommonSuperMember {
 public:
-    SuperInit(Position* start, Position* end);
+    SuperConstructor(Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
 
-    virtual bool _isSuperInit();
+    virtual bool _isSuperConstructor();
 };
 
 class SuperMember : public CommonSuperMember {

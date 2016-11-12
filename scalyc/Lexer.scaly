@@ -1,10 +1,10 @@
 class Position {
-    init(line: unsigned, column: unsigned) {
+    constructor(line: unsigned, column: unsigned) {
         this.line = line
         this.column = column
     }
 
-    init(position: Position) {
+    constructor(position: Position) {
         this.line = position.line
         this.column = position.column
     }
@@ -23,7 +23,7 @@ class InvalidToken : Token {
 }
 
 class Identifier : Token {
-    init(name: String) {
+    constructor(name: String) {
         this.name = name
     }
     let name: String
@@ -33,28 +33,28 @@ class Literal : Token {
 }
 
 class StringLiteral : Literal {
-    init(theString: String) {
+    constructor(theString: String) {
         string = theString
     }
     let string: String
 }
 
 class CharacterLiteral : Literal {
-    init(theString: String) {
+    constructor(theString: String) {
         value = theString
     }
     let value: String
 }
 
 class NumericLiteral : Literal {
-    init(theValue: String) {
+    constructor(theValue: String) {
         value = theValue
     }
     let value: String
 }
 
 class Punctuation : Token {
-    init(theSign: String) {
+    constructor(theSign: String) {
         sign = theSign
     }
     let sign: String
@@ -65,19 +65,19 @@ class Operator : Token {
 }
 
 class PrefixOperator : Operator {
-    init(theOperation: String) {
+    constructor(theOperation: String) {
         operation = theOperation
     }
 }
 
 class BinaryOperator : Operator {
-    init(theOperation: String) {
+    constructor(theOperation: String) {
         operation = theOperation
     }
 }
 
 class PostfixOperator : Operator {
-    init(theOperation: String) {
+    constructor(theOperation: String) {
         operation = theOperation
     }
 }
@@ -94,7 +94,7 @@ class Lexer {
     mutable line: unsigned
     mutable column: unsigned
     
-    init(theText: String) {
+    constructor(theText: String) {
         token = new InvalidToken()
         whitespaceSkipped = true
         text = theText

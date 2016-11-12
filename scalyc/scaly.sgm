@@ -25,7 +25,7 @@
         <content link = FunctionDeclaration
         <content link = EnumDeclaration
         <content link = ClassDeclaration
-        <content link = InitializerDeclaration
+        <content link = ConstructorDeclaration
 
     <syntax id = Expression                            abstract base = Statement
         <content link = CodeBlock
@@ -69,9 +69,9 @@
         <content link = TypeInheritanceClause          optional property = typeInheritanceClause
         <content link = ClassBody                      optional property = body
 
-    <syntax id = InitializerDeclaration                         base = Declaration
+    <syntax id = ConstructorDeclaration                         base = Declaration
         <content link = Modifier              multiple optional property = modifiers
-        <content link = init
+        <content link = constructor
         <content link = ParameterClause                         property = parameterClause
         <content link = ThrowsClause                   optional property = throwsClause
         <content link = Expression                              property = body
@@ -285,7 +285,7 @@
         <content link = ReturnExpression
         <content link = ThrowExpression
         <content link = BreakExpression
-        <content link = InitializerCall
+        <content link = ConstructorCall
         <content link = ThisExpression
         <content link = SuperExpression
         <content link = NullExpression
@@ -343,7 +343,7 @@
         <content link = break
         <content link = Expression                     optional property = expression
 
-    <syntax id = InitializerCall                                base = PrimaryExpression
+    <syntax id = ConstructorCall                                base = PrimaryExpression
         <content link = new
         <content link = Type                                    property = typeToInitialize
         <content link = ParenthesizedExpression                 property = arguments
@@ -442,11 +442,11 @@
         <content link = semicolon
 
     <syntax id = CommonSuperMember                     abstract
-        <content link = SuperInit
+        <content link = SuperConstructor
         <content link = SuperMember
 
-    <syntax id = SuperInit                                      base = CommonSuperMember
-        <content link = init
+    <syntax id = SuperConstructor                               base = CommonSuperMember
+        <content link = constructor
 
     <syntax id = SuperMember                                    base = CommonSuperMember
         <content identifier                                     property = name
@@ -513,7 +513,7 @@
     <keyword id = mutable
     <keyword id = is
     <keyword id = as
-    <keyword id = init
+    <keyword id = constructor
     <keyword id = enum
     <keyword id = super
     <keyword id = this

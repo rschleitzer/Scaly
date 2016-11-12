@@ -20,7 +20,7 @@ public:
     virtual _Result<FunctionDeclaration, ParserError> parseFunctionDeclaration(_Page* _rp, _Page* _ep);
     virtual _Result<EnumDeclaration, ParserError> parseEnumDeclaration(_Page* _rp, _Page* _ep);
     virtual _Result<ClassDeclaration, ParserError> parseClassDeclaration(_Page* _rp, _Page* _ep);
-    virtual _Result<InitializerDeclaration, ParserError> parseInitializerDeclaration(_Page* _rp, _Page* _ep);
+    virtual _Result<ConstructorDeclaration, ParserError> parseConstructorDeclaration(_Page* _rp, _Page* _ep);
     virtual _Result<CodeBlock, ParserError> parseCodeBlock(_Page* _rp, _Page* _ep);
     virtual _Result<SimpleExpression, ParserError> parseSimpleExpression(_Page* _rp, _Page* _ep);
     virtual _Result<_Vector<PathIdentifier>, ParserError> parsePathIdentifierList(_Page* _rp, _Page* _ep);
@@ -94,7 +94,7 @@ public:
     virtual _Result<ReturnExpression, ParserError> parseReturnExpression(_Page* _rp, _Page* _ep);
     virtual _Result<ThrowExpression, ParserError> parseThrowExpression(_Page* _rp, _Page* _ep);
     virtual _Result<BreakExpression, ParserError> parseBreakExpression(_Page* _rp, _Page* _ep);
-    virtual _Result<InitializerCall, ParserError> parseInitializerCall(_Page* _rp, _Page* _ep);
+    virtual _Result<ConstructorCall, ParserError> parseInitializerCall(_Page* _rp, _Page* _ep);
     virtual _Result<ThisExpression, ParserError> parseThisExpression(_Page* _rp, _Page* _ep);
     virtual _Result<SuperExpression, ParserError> parseSuperExpression(_Page* _rp, _Page* _ep);
     virtual _Result<SuperDot, ParserError> parseSuperDot(_Page* _rp, _Page* _ep);
@@ -122,7 +122,7 @@ public:
     virtual _Result<BlockCaseContent, ParserError> parseBlockCaseContent(_Page* _rp, _Page* _ep);
     virtual _Result<EmptyCaseContent, ParserError> parseEmptyCaseContent(_Page* _rp, _Page* _ep);
     virtual _Result<CommonSuperMember, ParserError> parseCommonSuperMember(_Page* _rp, _Page* _ep);
-    virtual _Result<SuperInit, ParserError> parseSuperInit(_Page* _rp, _Page* _ep);
+    virtual _Result<SuperConstructor, ParserError> parseSuperConstructor(_Page* _rp, _Page* _ep);
     virtual _Result<SuperMember, ParserError> parseSuperMember(_Page* _rp, _Page* _ep);
     virtual _Result<Type, ParserError> parseType(_Page* _rp, _Page* _ep);
     virtual _Result<TypeIdentifier, ParserError> parseTypeIdentifier(_Page* _rp, _Page* _ep);

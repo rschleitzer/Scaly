@@ -1,5 +1,5 @@
 class Parser {
-    init(theFileName: String, text: String) {
+    constructor(theFileName: String, text: String) {
         lexer = new Lexer(text)
         fileName = theFileName
         useKeyword = new String("use")
@@ -27,7 +27,7 @@ class Parser {
         mutableKeyword = new String("mutable")
         isKeyword = new String("is")
         asKeyword = new String("as")
-        initKeyword = new String("init")
+        constructorKeyword = new String("constructor")
         enumKeyword = new String("enum")
         superKeyword = new String("super")
         thisKeyword = new String("this")
@@ -189,7 +189,7 @@ class Parser {
         }
 
         {
-            let node: InitializerDeclaration = parseInitializerDeclaration() catch _ (error) {
+            let node: ConstructorDeclaration = parseConstructorDeclaration() catch _ (error) {
                 errors.push(error)
             }
 
@@ -404,15 +404,15 @@ class Parser {
         return ret
     }
 
-    function parseInitializerDeclaration(): InitializerDeclaration throws ParserError {
+    function parseConstructorDeclaration(): ConstructorDeclaration throws ParserError {
         mutable start: Position = lexer.getPreviousPosition()
         let modifiers: [Modifier] = parseModifierList() catch _ null
-        mutable startInit2: Position = lexer.getPreviousPosition()
-        let successInit2: bool = lexer.parseKeyword(initKeyword)
-        if successInit2
+        mutable startConstructor2: Position = lexer.getPreviousPosition()
+        let successConstructor2: bool = lexer.parseKeyword(constructorKeyword)
+        if successConstructor2
             lexer.advance()
         else
-            throw keywordExpected(new Position(startInit2), new String(initKeyword))
+            throw keywordExpected(new Position(startConstructor2), new String(constructorKeyword))
 
         let parameterClause: ParameterClause = parseParameterClause() catch _ (error)
             throw error
@@ -420,7 +420,7 @@ class Parser {
         let body: Expression = parseExpression() catch _ (error)
             throw error
         mutable end: Position = lexer.getPosition()
-        var ret: InitializerDeclaration = new InitializerDeclaration(modifiers, parameterClause, throwsClause, body, new Position(start), new Position(end))
+        var ret: ConstructorDeclaration = new ConstructorDeclaration(modifiers, parameterClause, throwsClause, body, new Position(start), new Position(end))
         if modifiers != null {
             for item: Modifier in modifiers
                 item.parent = ret
@@ -1650,7 +1650,7 @@ class Parser {
         }
 
         {
-            let node: InitializerCall = parseInitializerCall() catch _ (error) {
+            let node: ConstructorCall = parseConstructorCall() catch _ (error) {
                 errors.push(error)
             }
 
@@ -1927,7 +1927,7 @@ class Parser {
         return ret
     }
 
-    function parseInitializerCall(): InitializerCall throws ParserError {
+    function parseConstructorCall(): ConstructorCall throws ParserError {
         mutable start: Position = lexer.getPreviousPosition()
         mutable startNew1: Position = lexer.getPreviousPosition()
         let successNew1: bool = lexer.parseKeyword(newKeyword)
@@ -1942,7 +1942,7 @@ class Parser {
             throw error
         let catchClauses: [CatchClause] = parseCatchClauseList() catch _ null
         mutable end: Position = lexer.getPosition()
-        var ret: InitializerCall = new InitializerCall(typeToInitialize, arguments, catchClauses, new Position(start), new Position(end))
+        var ret: ConstructorCall = new ConstructorCall(typeToInitialize, arguments, catchClauses, new Position(start), new Position(end))
         typeToInitialize.parent = ret
         arguments.parent = ret
         if catchClauses != null {
@@ -2469,7 +2469,7 @@ class Parser {
         mutable start: Position = lexer.getPreviousPosition()
 
         {
-            let node: SuperInit = parseSuperInit() catch _ (error) {
+            let node: SuperConstructor = parseSuperConstructor() catch _ (error) {
                 errors.push(error)
             }
 
@@ -2489,17 +2489,17 @@ class Parser {
         throw unableToParse(new Position(start), new [ParserError](errors))
     }
 
-    function parseSuperInit(): SuperInit throws ParserError {
+    function parseSuperConstructor(): SuperConstructor throws ParserError {
         mutable start: Position = lexer.getPreviousPosition()
-        mutable startInit1: Position = lexer.getPreviousPosition()
-        let successInit1: bool = lexer.parseKeyword(initKeyword)
-        if successInit1
+        mutable startConstructor1: Position = lexer.getPreviousPosition()
+        let successConstructor1: bool = lexer.parseKeyword(constructorKeyword)
+        if successConstructor1
             lexer.advance()
         else
-            throw keywordExpected(new Position(startInit1), new String(initKeyword))
+            throw keywordExpected(new Position(startConstructor1), new String(constructorKeyword))
 
         mutable end: Position = lexer.getPosition()
-        var ret: SuperInit = new SuperInit(new Position(start), new Position(end))
+        var ret: SuperConstructor = new SuperConstructor(new Position(start), new Position(end))
 
         return ret
     }
@@ -2802,7 +2802,7 @@ class Parser {
         if id.equals(asKeyword)
             return false
 
-        if id.equals(initKeyword)
+        if id.equals(constructorKeyword)
             return false
 
         if id.equals(enumKeyword)
@@ -2851,7 +2851,7 @@ class Parser {
     let mutableKeyword: String
     let isKeyword: String
     let asKeyword: String
-    let initKeyword: String
+    let constructorKeyword: String
     let enumKeyword: String
     let superKeyword: String
     let thisKeyword: String

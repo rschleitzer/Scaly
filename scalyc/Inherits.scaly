@@ -6,7 +6,7 @@ class Inherits {
     // Classes which inherit from the class
     mutable inheritors: [String]
 
-    init(className: String) {
+    constructor(className: String) {
         name = new String(className)
         inheritors = new [String]()
     }

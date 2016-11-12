@@ -52,8 +52,8 @@ public:
     virtual void closeEnumDeclaration(EnumDeclaration* enumDeclaration);
     virtual bool openClassDeclaration(ClassDeclaration* classDeclaration);
     virtual void closeClassDeclaration(ClassDeclaration* classDeclaration);
-    virtual bool openInitializerDeclaration(InitializerDeclaration* initializerDeclaration);
-    virtual void closeInitializerDeclaration(InitializerDeclaration* initializerDeclaration);
+    virtual bool openConstructorDeclaration(ConstructorDeclaration* initializerDeclaration);
+    virtual void closeConstructorDeclaration(ConstructorDeclaration* initializerDeclaration);
     virtual bool openCodeBlock(CodeBlock* codeBlock);
     virtual bool localAllocations(CodeBlock* codeBlock);
     virtual FunctionCall* getFunctionCall(PatternInitializer* patternInitializer);
@@ -182,9 +182,9 @@ public:
     virtual void closeThrowExpression(ThrowExpression* throwExpression);
     virtual bool openBreakExpression(BreakExpression* breakExpression);
     virtual void closeBreakExpression(BreakExpression* breakExpression);
-    virtual bool openInitializerCall(InitializerCall* initializerCall);
-    virtual bool initializerIsBoundOrAssigned(InitializerCall* initializerCall);
-    virtual void closeInitializerCall(InitializerCall* initializerCall);
+    virtual bool openInitializerCall(ConstructorCall* initializerCall);
+    virtual bool initializerIsBoundOrAssigned(ConstructorCall* initializerCall);
+    virtual void closeInitializerCall(ConstructorCall* initializerCall);
     virtual void visitThisExpression(ThisExpression* thisExpression);
     virtual bool openSuperDot(SuperDot* superDot);
     virtual void closeSuperDot(SuperDot* superDot);
@@ -217,7 +217,7 @@ public:
     virtual bool openBlockCaseContent(BlockCaseContent* blockCaseContent);
     virtual void closeBlockCaseContent(BlockCaseContent* blockCaseContent);
     virtual void visitEmptyCaseContent(EmptyCaseContent* emptyCaseContent);
-    virtual void visitSuperInit(SuperInit* superInit);
+    virtual void visitSuperConstructor(SuperConstructor* superInit);
     virtual void visitSuperMember(SuperMember* superMember);
     virtual bool openTypeIdentifier(TypeIdentifier* typeIdentifier);
     virtual bool inArrayType(TypeIdentifier* typeIdentifier);

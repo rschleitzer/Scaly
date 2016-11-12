@@ -546,7 +546,7 @@ void CppVisitor::closeClassDeclaration(ClassDeclaration* classDeclaration) {
     headerFile->append("\n};");
 }
 
-bool CppVisitor::openInitializerDeclaration(InitializerDeclaration* initializerDeclaration) {
+bool CppVisitor::openConstructorDeclaration(ConstructorDeclaration* initializerDeclaration) {
     if (!initializerDeclaration->parent->parent->parent->_isClassDeclaration())
         return false;
     String* classDeclarationName = ((Program*)(initializerDeclaration->parent->parent->parent))->name;
@@ -559,7 +559,7 @@ bool CppVisitor::openInitializerDeclaration(InitializerDeclaration* initializerD
     return true;
 }
 
-void CppVisitor::closeInitializerDeclaration(InitializerDeclaration* initializerDeclaration) {
+void CppVisitor::closeConstructorDeclaration(ConstructorDeclaration* initializerDeclaration) {
     sourceFile->append("\n");
     suppressHeader = false;
 }
@@ -1178,7 +1178,7 @@ bool CppVisitor::openAssignment(Assignment* assignment) {
 }
 
 bool CppVisitor::inInitializer(SyntaxNode* node) {
-    if (node->_isInitializerDeclaration())
+    if (node->_isConstructorDeclaration())
         return true;
     if (node->parent == nullptr)
         return false;
@@ -1240,7 +1240,7 @@ String* CppVisitor::getFunctionName(_Page* _rp, Assignment* assignment) {
             }
             else {
                 if (rightSide->primaryExpression->_isInitializerCall()) {
-                    InitializerCall* initializerCall = (InitializerCall*)(rightSide->primaryExpression);
+                    ConstructorCall* initializerCall = (ConstructorCall*)(rightSide->primaryExpression);
                     if (initializerCall->typeToInitialize->_isArrayType()) {
                         ArrayType* arrayType = (ArrayType*)(initializerCall->typeToInitialize);
                         if (arrayType->elementType->_isTypeIdentifier()) {
@@ -2253,7 +2253,7 @@ bool CppVisitor::openBreakExpression(BreakExpression* breakExpression) {
 void CppVisitor::closeBreakExpression(BreakExpression* breakExpression) {
 }
 
-bool CppVisitor::openInitializerCall(InitializerCall* initializerCall) {
+bool CppVisitor::openInitializerCall(ConstructorCall* initializerCall) {
     if (initializerCall->typeToInitialize->_isArrayType()) {
         if (!initializerIsBoundOrAssigned(initializerCall)) {
             ArrayType* arrayType = (ArrayType*)(initializerCall->typeToInitialize);
@@ -2469,7 +2469,7 @@ bool CppVisitor::openInitializerCall(InitializerCall* initializerCall) {
     return true;
 }
 
-bool CppVisitor::initializerIsBoundOrAssigned(InitializerCall* initializerCall) {
+bool CppVisitor::initializerIsBoundOrAssigned(ConstructorCall* initializerCall) {
     if (initializerCall->parent->_isPostfixExpression()) {
         PostfixExpression* postfixExpression = (PostfixExpression*)(initializerCall->parent);
         if ((postfixExpression->parent->parent->parent->_isAssignment()) || (postfixExpression->parent->parent->parent->_isInitializer()))
@@ -2478,7 +2478,7 @@ bool CppVisitor::initializerIsBoundOrAssigned(InitializerCall* initializerCall) 
     return false;
 }
 
-void CppVisitor::closeInitializerCall(InitializerCall* initializerCall) {
+void CppVisitor::closeInitializerCall(ConstructorCall* initializerCall) {
 }
 
 void CppVisitor::visitThisExpression(ThisExpression* thisExpression) {
@@ -2685,7 +2685,7 @@ void CppVisitor::closeBlockCaseContent(BlockCaseContent* blockCaseContent) {
 void CppVisitor::visitEmptyCaseContent(EmptyCaseContent* emptyCaseContent) {
 }
 
-void CppVisitor::visitSuperInit(SuperInit* superInit) {
+void CppVisitor::visitSuperConstructor(SuperConstructor* superInit) {
 }
 
 void CppVisitor::visitSuperMember(SuperMember* superMember) {

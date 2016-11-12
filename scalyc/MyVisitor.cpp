@@ -72,11 +72,11 @@ bool MyVisitor::openClassDeclaration(ClassDeclaration* classDeclaration) {
 void MyVisitor::closeClassDeclaration(ClassDeclaration* classDeclaration) {
 }
 
-bool MyVisitor::openInitializerDeclaration(InitializerDeclaration* initializerDeclaration) {
+bool MyVisitor::openConstructorDeclaration(ConstructorDeclaration* initializerDeclaration) {
     return true;
 }
 
-void MyVisitor::closeInitializerDeclaration(InitializerDeclaration* initializerDeclaration) {
+void MyVisitor::closeConstructorDeclaration(ConstructorDeclaration* initializerDeclaration) {
 }
 
 bool MyVisitor::openCodeBlock(CodeBlock* codeBlock) {
@@ -396,11 +396,11 @@ bool MyVisitor::openBreakExpression(BreakExpression* breakExpression) {
 void MyVisitor::closeBreakExpression(BreakExpression* breakExpression) {
 }
 
-bool MyVisitor::openInitializerCall(InitializerCall* initializerCall) {
+bool MyVisitor::openInitializerCall(ConstructorCall* initializerCall) {
     return true;
 }
 
-void MyVisitor::closeInitializerCall(InitializerCall* initializerCall) {
+void MyVisitor::closeInitializerCall(ConstructorCall* initializerCall) {
 }
 
 void MyVisitor::visitThisExpression(ThisExpression* thisExpression) {
@@ -509,7 +509,7 @@ void MyVisitor::closeBlockCaseContent(BlockCaseContent* blockCaseContent) {
 void MyVisitor::visitEmptyCaseContent(EmptyCaseContent* emptyCaseContent) {
 }
 
-void MyVisitor::visitSuperInit(SuperInit* superInit) {
+void MyVisitor::visitSuperConstructor(SuperConstructor* superInit) {
 }
 
 void MyVisitor::visitSuperMember(SuperMember* superMember) {

@@ -14,7 +14,7 @@ bool SyntaxNode::_isMutableDeclaration() { return false; }
 bool SyntaxNode::_isFunctionDeclaration() { return false; }
 bool SyntaxNode::_isEnumDeclaration() { return false; }
 bool SyntaxNode::_isClassDeclaration() { return false; }
-bool SyntaxNode::_isInitializerDeclaration() { return false; }
+bool SyntaxNode::_isConstructorDeclaration() { return false; }
 bool SyntaxNode::_isExpression() { return false; }
 bool SyntaxNode::_isCodeBlock() { return false; }
 bool SyntaxNode::_isSimpleExpression() { return false; }
@@ -100,7 +100,7 @@ bool SyntaxNode::_isCaseContent() { return false; }
 bool SyntaxNode::_isBlockCaseContent() { return false; }
 bool SyntaxNode::_isEmptyCaseContent() { return false; }
 bool SyntaxNode::_isCommonSuperMember() { return false; }
-bool SyntaxNode::_isSuperInit() { return false; }
+bool SyntaxNode::_isSuperConstructor() { return false; }
 bool SyntaxNode::_isSuperMember() { return false; }
 bool SyntaxNode::_isType() { return false; }
 bool SyntaxNode::_isTypeIdentifier() { return false; }
@@ -187,7 +187,7 @@ bool Statement::_isMutableDeclaration() { return false; }
 bool Statement::_isFunctionDeclaration() { return false; }
 bool Statement::_isEnumDeclaration() { return false; }
 bool Statement::_isClassDeclaration() { return false; }
-bool Statement::_isInitializerDeclaration() { return false; }
+bool Statement::_isConstructorDeclaration() { return false; }
 bool Statement::_isExpression() { return false; }
 bool Statement::_isCodeBlock() { return false; }
 bool Statement::_isSimpleExpression() { return false; }
@@ -204,7 +204,7 @@ bool Declaration::_isMutableDeclaration() { return false; }
 bool Declaration::_isFunctionDeclaration() { return false; }
 bool Declaration::_isEnumDeclaration() { return false; }
 bool Declaration::_isClassDeclaration() { return false; }
-bool Declaration::_isInitializerDeclaration() { return false; }
+bool Declaration::_isConstructorDeclaration() { return false; }
 
 void Expression::accept(SyntaxVisitor* visitor) {
 }
@@ -358,7 +358,7 @@ void ClassDeclaration::accept(SyntaxVisitor* visitor) {
 
 bool ClassDeclaration::_isClassDeclaration() { return true; }
 
-InitializerDeclaration::InitializerDeclaration(_Vector<Modifier>* modifiers, ParameterClause* parameterClause, ThrowsClause* throwsClause, Expression* body, Position* start, Position* end) {
+ConstructorDeclaration::ConstructorDeclaration(_Vector<Modifier>* modifiers, ParameterClause* parameterClause, ThrowsClause* throwsClause, Expression* body, Position* start, Position* end) {
     this->start = start;
     this->end = end;
     this->modifiers = modifiers;
@@ -367,8 +367,8 @@ InitializerDeclaration::InitializerDeclaration(_Vector<Modifier>* modifiers, Par
     this->body = body;
 }
 
-void InitializerDeclaration::accept(SyntaxVisitor* visitor) {
-    if (!visitor->openInitializerDeclaration(this))
+void ConstructorDeclaration::accept(SyntaxVisitor* visitor) {
+    if (!visitor->openConstructorDeclaration(this))
         return;
     if (modifiers != nullptr) {
         Modifier* node = nullptr;
@@ -382,10 +382,10 @@ void InitializerDeclaration::accept(SyntaxVisitor* visitor) {
     if (throwsClause != nullptr)
         throwsClause->accept(visitor);
     body->accept(visitor);
-    visitor->closeInitializerDeclaration(this);
+    visitor->closeConstructorDeclaration(this);
 }
 
-bool InitializerDeclaration::_isInitializerDeclaration() { return true; }
+bool ConstructorDeclaration::_isConstructorDeclaration() { return true; }
 
 CodeBlock::CodeBlock(_Vector<TerminatedStatement>* statements, Position* start, Position* end) {
     this->start = start;
@@ -1334,7 +1334,7 @@ void BreakExpression::accept(SyntaxVisitor* visitor) {
 
 bool BreakExpression::_isBreakExpression() { return true; }
 
-InitializerCall::InitializerCall(Type* typeToInitialize, ParenthesizedExpression* arguments, _Vector<CatchClause>* catchClauses, Position* start, Position* end) {
+ConstructorCall::ConstructorCall(Type* typeToInitialize, ParenthesizedExpression* arguments, _Vector<CatchClause>* catchClauses, Position* start, Position* end) {
     this->start = start;
     this->end = end;
     this->typeToInitialize = typeToInitialize;
@@ -1342,7 +1342,7 @@ InitializerCall::InitializerCall(Type* typeToInitialize, ParenthesizedExpression
     this->catchClauses = catchClauses;
 }
 
-void InitializerCall::accept(SyntaxVisitor* visitor) {
+void ConstructorCall::accept(SyntaxVisitor* visitor) {
     if (!visitor->openInitializerCall(this))
         return;
     typeToInitialize->accept(visitor);
@@ -1358,7 +1358,7 @@ void InitializerCall::accept(SyntaxVisitor* visitor) {
     visitor->closeInitializerCall(this);
 }
 
-bool InitializerCall::_isInitializerCall() { return true; }
+bool ConstructorCall::_isInitializerCall() { return true; }
 
 ThisExpression::ThisExpression(Position* start, Position* end) {
     this->start = start;
@@ -1698,19 +1698,19 @@ void CommonSuperMember::accept(SyntaxVisitor* visitor) {
 
 bool CommonSuperMember::_isCommonSuperMember() { return true; }
 
-bool CommonSuperMember::_isSuperInit() { return false; }
+bool CommonSuperMember::_isSuperConstructor() { return false; }
 bool CommonSuperMember::_isSuperMember() { return false; }
 
-SuperInit::SuperInit(Position* start, Position* end) {
+SuperConstructor::SuperConstructor(Position* start, Position* end) {
     this->start = start;
     this->end = end;
 }
 
-void SuperInit::accept(SyntaxVisitor* visitor) {
-    visitor->visitSuperInit(this);
+void SuperConstructor::accept(SyntaxVisitor* visitor) {
+    visitor->visitSuperConstructor(this);
 }
 
-bool SuperInit::_isSuperInit() { return true; }
+bool SuperConstructor::_isSuperConstructor() { return true; }
 
 SuperMember::SuperMember(String* name, Position* start, Position* end) {
     this->start = start;

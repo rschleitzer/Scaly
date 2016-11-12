@@ -69,11 +69,11 @@ class MyVisitor : SyntaxVisitor {
     function closeClassDeclaration(classDeclaration: ClassDeclaration) {
     }
 
-    function openInitializerDeclaration(initializerDeclaration: InitializerDeclaration): bool {
+    function openConstructorDeclaration(constructorDeclaration: ConstructorDeclaration): bool {
         return true
     }
 
-    function closeInitializerDeclaration(initializerDeclaration: InitializerDeclaration) {
+    function closeConstructorDeclaration(constructorDeclaration: ConstructorDeclaration) {
     }
 
     function openCodeBlock(codeBlock: CodeBlock): bool {
@@ -393,11 +393,11 @@ class MyVisitor : SyntaxVisitor {
     function closeBreakExpression(breakExpression: BreakExpression) {
     }
 
-    function openInitializerCall(initializerCall: InitializerCall): bool {
+    function openConstructorCall(constructorCall: ConstructorCall): bool {
         return true
     }
 
-    function closeInitializerCall(initializerCall: InitializerCall) {
+    function closeConstructorCall(constructorCall: ConstructorCall) {
     }
 
     function visitThisExpression(thisExpression: ThisExpression) {
@@ -506,7 +506,7 @@ class MyVisitor : SyntaxVisitor {
     function visitEmptyCaseContent(emptyCaseContent: EmptyCaseContent) {
     }
 
-    function visitSuperInit(superInit: SuperInit) {
+    function visitSuperConstructor(superConstructor: SuperConstructor) {
     }
 
     function visitSuperMember(superMember: SuperMember) {

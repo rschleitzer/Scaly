@@ -32,9 +32,9 @@ class CppVisitor : SyntaxVisitor {
     mutable suppressSource: bool
     mutable suppressHeader: bool
 
-    init() {
+    constructor() {
 
-        // null init of mutable members does not work yet
+        // null constructor of mutable members does not work yet
         moduleName = new String()
         sourceFile = new VarString()
         headerFile = new VarString()
@@ -553,7 +553,7 @@ class CppVisitor : SyntaxVisitor {
         headerFile.append("\n};")
     }
 
-    function openInitializerDeclaration(initializerDeclaration: InitializerDeclaration): bool {
+    function openConstructorDeclaration(initializerDeclaration: ConstructorDeclaration): bool {
 
         if !initializerDeclaration.parent.parent.parent is ClassDeclaration
             return false
@@ -571,7 +571,7 @@ class CppVisitor : SyntaxVisitor {
         return true
     }
 
-    function closeInitializerDeclaration(initializerDeclaration: InitializerDeclaration) {
+    function closeConstructorDeclaration(initializerDeclaration: ConstructorDeclaration) {
         sourceFile.append("\n")
         suppressHeader = false
     }
@@ -1198,7 +1198,7 @@ class CppVisitor : SyntaxVisitor {
     }
 
     function inInitializer(node: SyntaxNode): bool {
-        if node is InitializerDeclaration
+        if node is ConstructorDeclaration
             return true
 
         if node.parent == null
@@ -1266,8 +1266,8 @@ class CppVisitor : SyntaxVisitor {
                     return new String(classExpression.name)
                 }
                 else {
-                    if rightSide.primaryExpression is InitializerCall {
-                        let initializerCall: InitializerCall = (rightSide.primaryExpression) as InitializerCall
+                    if rightSide.primaryExpression is ConstructorCall {
+                        let initializerCall: ConstructorCall = (rightSide.primaryExpression) as ConstructorCall
                         if initializerCall.typeToInitialize is ArrayType {
                             let arrayType: ArrayType = (initializerCall.typeToInitialize) as ArrayType
                             if arrayType.elementType is TypeIdentifier {
@@ -2284,7 +2284,7 @@ class CppVisitor : SyntaxVisitor {
     function closeBreakExpression(breakExpression: BreakExpression) {
     }
 
-    function openInitializerCall(initializerCall: InitializerCall): bool {
+    function openConstructorCall(initializerCall: ConstructorCall): bool {
         if initializerCall.typeToInitialize is ArrayType {
             if !initializerIsBoundOrAssigned(initializerCall) {
                 let arrayType: ArrayType = (initializerCall.typeToInitialize) as ArrayType
@@ -2497,7 +2497,7 @@ class CppVisitor : SyntaxVisitor {
         return true
     }
 
-    function initializerIsBoundOrAssigned(initializerCall: InitializerCall): bool {
+    function initializerIsBoundOrAssigned(initializerCall: ConstructorCall): bool {
         if initializerCall.parent is PostfixExpression {
             let postfixExpression: PostfixExpression = (initializerCall.parent) as PostfixExpression
             if (postfixExpression.parent.parent.parent is Assignment) || (postfixExpression.parent.parent.parent is Initializer)
@@ -2507,7 +2507,7 @@ class CppVisitor : SyntaxVisitor {
         return false
     }
 
-    function closeInitializerCall(initializerCall: InitializerCall) {
+    function closeConstructorCall(initializerCall: ConstructorCall) {
     }
 
     function visitThisExpression(thisExpression: ThisExpression) {
@@ -2726,7 +2726,7 @@ class CppVisitor : SyntaxVisitor {
     function visitEmptyCaseContent(emptyCaseContent: EmptyCaseContent) {
     }
 
-    function visitSuperInit(superInit: SuperInit) {
+    function visitSuperConstructor(superInit: SuperConstructor) {
     }
 
     function visitSuperMember(superMember: SuperMember) {
@@ -2802,7 +2802,7 @@ class CppVisitor : SyntaxVisitor {
             headerFile.append(">*")
             if !suppressSource {
                 sourceFile.append(">")
-                if !arrayType.parent is InitializerCall
+                if !arrayType.parent is ConstructorCall
                     sourceFile.append("*")
             }
         }
@@ -2816,7 +2816,7 @@ class CppVisitor : SyntaxVisitor {
             }
             arrayType.elementType.accept(this)
             sourceFile.append(">")
-            if !arrayType.parent is InitializerCall
+            if !arrayType.parent is ConstructorCall
                 sourceFile.append("*")
         }
 

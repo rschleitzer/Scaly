@@ -4,13 +4,13 @@ class CppModule {
     let header: String
     let source: String
     
-    init() {
+    constructor() {
         this.name = null
         this.header = null
         this.source = null
     }
     
-    init(name: String, header: String, source: String) {
+    constructor(name: String, header: String, source: String) {
         this.name = name
         this.header = header
         this.source = source
@@ -19,14 +19,14 @@ class CppModule {
 
 class CppProgram {
 
-    init() {
+    constructor() {
         name = null
         project = null
         main = null
         modules = null
     }
 
-    init(name: String, project: String, main: String, modules: [CppModule]) {
+    constructor(name: String, project: String, main: String, modules: [CppModule]) {
         this.name = name
         this.project = project
         this.main = main

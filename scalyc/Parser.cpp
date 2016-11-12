@@ -30,7 +30,7 @@ Parser::Parser(String* theFileName, String* text) {
     mutableKeyword = new(getPage()) String("mutable");
     isKeyword = new(getPage()) String("is");
     asKeyword = new(getPage()) String("as");
-    initKeyword = new(getPage()) String("init");
+    initKeyword = new(getPage()) String("constructor");
     enumKeyword = new(getPage()) String("enum");
     superKeyword = new(getPage()) String("super");
     thisKeyword = new(getPage()) String("this");
@@ -272,8 +272,8 @@ _Result<Declaration, ParserError> Parser::parseDeclaration(_Page* _rp, _Page* _e
             return _Result<Declaration, ParserError>(node);
     }
     {
-        auto _node_result = parseInitializerDeclaration(_rp, _ep);
-        InitializerDeclaration* node = nullptr;
+        auto _node_result = parseConstructorDeclaration(_rp, _ep);
+        ConstructorDeclaration* node = nullptr;
         if (_node_result.succeeded()) {
             node = _node_result.getResult();
         }
@@ -597,7 +597,7 @@ _Result<ClassDeclaration, ParserError> Parser::parseClassDeclaration(_Page* _rp,
     return _Result<ClassDeclaration, ParserError>(ret);
 }
 
-_Result<InitializerDeclaration, ParserError> Parser::parseInitializerDeclaration(_Page* _rp, _Page* _ep) {
+_Result<ConstructorDeclaration, ParserError> Parser::parseConstructorDeclaration(_Page* _rp, _Page* _ep) {
     _Region _region; _Page* _p = _region.get();
     Position* start = lexer->getPreviousPosition(_p);
     auto _modifiers_result = parseModifierList(_rp, _ep);
@@ -613,7 +613,7 @@ _Result<InitializerDeclaration, ParserError> Parser::parseInitializerDeclaration
     if (successInit2)
         lexer->advance();
     else
-        return _Result<InitializerDeclaration, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_keywordExpected(new(_ep) Position(startInit2), new(_ep) String(initKeyword))));
+        return _Result<ConstructorDeclaration, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_keywordExpected(new(_ep) Position(startInit2), new(_ep) String(initKeyword))));
     auto _parameterClause_result = parseParameterClause(_rp, _ep);
     ParameterClause* parameterClause = nullptr;
     if (_parameterClause_result.succeeded()) {
@@ -621,7 +621,7 @@ _Result<InitializerDeclaration, ParserError> Parser::parseInitializerDeclaration
     }
     else {
         auto error = _parameterClause_result.getError();
-        return _Result<InitializerDeclaration, ParserError>(error);
+        return _Result<ConstructorDeclaration, ParserError>(error);
     }
     auto _throwsClause_result = parseThrowsClause(_rp, _ep);
     ThrowsClause* throwsClause = nullptr;
@@ -638,10 +638,10 @@ _Result<InitializerDeclaration, ParserError> Parser::parseInitializerDeclaration
     }
     else {
         auto error = _body_result.getError();
-        return _Result<InitializerDeclaration, ParserError>(error);
+        return _Result<ConstructorDeclaration, ParserError>(error);
     }
     Position* end = lexer->getPosition(_p);
-    InitializerDeclaration* ret = new(_rp) InitializerDeclaration(modifiers, parameterClause, throwsClause, body, new(_rp) Position(start), new(_rp) Position(end));
+    ConstructorDeclaration* ret = new(_rp) ConstructorDeclaration(modifiers, parameterClause, throwsClause, body, new(_rp) Position(start), new(_rp) Position(end));
     if (modifiers != nullptr) {
         Modifier* item = nullptr;
         size_t _modifiers_length = modifiers->length();
@@ -654,7 +654,7 @@ _Result<InitializerDeclaration, ParserError> Parser::parseInitializerDeclaration
     if (throwsClause != nullptr)
         throwsClause->parent = ret;
     body->parent = ret;
-    return _Result<InitializerDeclaration, ParserError>(ret);
+    return _Result<ConstructorDeclaration, ParserError>(ret);
 }
 
 _Result<CodeBlock, ParserError> Parser::parseCodeBlock(_Page* _rp, _Page* _ep) {
@@ -2446,7 +2446,7 @@ _Result<PrimaryExpression, ParserError> Parser::parsePrimaryExpression(_Page* _r
     }
     {
         auto _node_result = parseInitializerCall(_rp, _ep);
-        InitializerCall* node = nullptr;
+        ConstructorCall* node = nullptr;
         if (_node_result.succeeded()) {
             node = _node_result.getResult();
         }
@@ -2855,7 +2855,7 @@ _Result<BreakExpression, ParserError> Parser::parseBreakExpression(_Page* _rp, _
     return _Result<BreakExpression, ParserError>(ret);
 }
 
-_Result<InitializerCall, ParserError> Parser::parseInitializerCall(_Page* _rp, _Page* _ep) {
+_Result<ConstructorCall, ParserError> Parser::parseInitializerCall(_Page* _rp, _Page* _ep) {
     _Region _region; _Page* _p = _region.get();
     Position* start = lexer->getPreviousPosition(_p);
     Position* startNew1 = lexer->getPreviousPosition(_p);
@@ -2863,7 +2863,7 @@ _Result<InitializerCall, ParserError> Parser::parseInitializerCall(_Page* _rp, _
     if (successNew1)
         lexer->advance();
     else
-        return _Result<InitializerCall, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_keywordExpected(new(_ep) Position(startNew1), new(_ep) String(newKeyword))));
+        return _Result<ConstructorCall, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_keywordExpected(new(_ep) Position(startNew1), new(_ep) String(newKeyword))));
     auto _typeToInitialize_result = parseType(_rp, _ep);
     Type* typeToInitialize = nullptr;
     if (_typeToInitialize_result.succeeded()) {
@@ -2871,7 +2871,7 @@ _Result<InitializerCall, ParserError> Parser::parseInitializerCall(_Page* _rp, _
     }
     else {
         auto error = _typeToInitialize_result.getError();
-        return _Result<InitializerCall, ParserError>(error);
+        return _Result<ConstructorCall, ParserError>(error);
     }
     auto _arguments_result = parseParenthesizedExpression(_rp, _ep);
     ParenthesizedExpression* arguments = nullptr;
@@ -2880,7 +2880,7 @@ _Result<InitializerCall, ParserError> Parser::parseInitializerCall(_Page* _rp, _
     }
     else {
         auto error = _arguments_result.getError();
-        return _Result<InitializerCall, ParserError>(error);
+        return _Result<ConstructorCall, ParserError>(error);
     }
     auto _catchClauses_result = parseCatchClauseList(_rp, _ep);
     _Vector<CatchClause>* catchClauses = nullptr;
@@ -2891,7 +2891,7 @@ _Result<InitializerCall, ParserError> Parser::parseInitializerCall(_Page* _rp, _
         catchClauses = nullptr;
     }
     Position* end = lexer->getPosition(_p);
-    InitializerCall* ret = new(_rp) InitializerCall(typeToInitialize, arguments, catchClauses, new(_rp) Position(start), new(_rp) Position(end));
+    ConstructorCall* ret = new(_rp) ConstructorCall(typeToInitialize, arguments, catchClauses, new(_rp) Position(start), new(_rp) Position(end));
     typeToInitialize->parent = ret;
     arguments->parent = ret;
     if (catchClauses != nullptr) {
@@ -2902,7 +2902,7 @@ _Result<InitializerCall, ParserError> Parser::parseInitializerCall(_Page* _rp, _
             item->parent = ret;
         }
     }
-    return _Result<InitializerCall, ParserError>(ret);
+    return _Result<ConstructorCall, ParserError>(ret);
 }
 
 _Result<ThisExpression, ParserError> Parser::parseThisExpression(_Page* _rp, _Page* _ep) {
@@ -3621,8 +3621,8 @@ _Result<CommonSuperMember, ParserError> Parser::parseCommonSuperMember(_Page* _r
     _Array<ParserError>* errors = new(_p) _Array<ParserError>();
     Position* start = lexer->getPreviousPosition(_p);
     {
-        auto _node_result = parseSuperInit(_rp, _ep);
-        SuperInit* node = nullptr;
+        auto _node_result = parseSuperConstructor(_rp, _ep);
+        SuperConstructor* node = nullptr;
         if (_node_result.succeeded()) {
             node = _node_result.getResult();
         }
@@ -3653,7 +3653,7 @@ _Result<CommonSuperMember, ParserError> Parser::parseCommonSuperMember(_Page* _r
     return _Result<CommonSuperMember, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_unableToParse(new(_ep) Position(start), &_Vector<ParserError>::create(_ep, *(errors)))));
 }
 
-_Result<SuperInit, ParserError> Parser::parseSuperInit(_Page* _rp, _Page* _ep) {
+_Result<SuperConstructor, ParserError> Parser::parseSuperConstructor(_Page* _rp, _Page* _ep) {
     _Region _region; _Page* _p = _region.get();
     Position* start = lexer->getPreviousPosition(_p);
     Position* startInit1 = lexer->getPreviousPosition(_p);
@@ -3661,10 +3661,10 @@ _Result<SuperInit, ParserError> Parser::parseSuperInit(_Page* _rp, _Page* _ep) {
     if (successInit1)
         lexer->advance();
     else
-        return _Result<SuperInit, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_keywordExpected(new(_ep) Position(startInit1), new(_ep) String(initKeyword))));
+        return _Result<SuperConstructor, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_keywordExpected(new(_ep) Position(startInit1), new(_ep) String(initKeyword))));
     Position* end = lexer->getPosition(_p);
-    SuperInit* ret = new(_rp) SuperInit(new(_rp) Position(start), new(_rp) Position(end));
-    return _Result<SuperInit, ParserError>(ret);
+    SuperConstructor* ret = new(_rp) SuperConstructor(new(_rp) Position(start), new(_rp) Position(end));
+    return _Result<SuperConstructor, ParserError>(ret);
 }
 
 _Result<SuperMember, ParserError> Parser::parseSuperMember(_Page* _rp, _Page* _ep) {
