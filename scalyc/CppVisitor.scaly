@@ -883,9 +883,10 @@ class CppVisitor : SyntaxVisitor {
         if type.postfixes == null
             return false
 
+        let postfixes: TypePostfix[] = type.postfixes
         let typePostfix: TypePostfix = postfixes[0]
 
-        if typePostfix is IndexedType()
+        if typePostfix is IndexedType
             return true
 
         return false
@@ -2270,7 +2271,7 @@ class CppVisitor : SyntaxVisitor {
     function closeBreakExpression(breakExpression: BreakExpression) {
     }
 
-    function openConstructorCall(constructorCall: ConstructorCall) {
+    function openConstructorCall(constructorCall: ConstructorCall): bool {
         if hasArrayPostfix(constructorCall.typeToInitialize) {
             if !initializerIsBoundOrAssigned(constructorCall) {
                 let type: Type = constructorCall.typeToInitialize
@@ -2285,10 +2286,10 @@ class CppVisitor : SyntaxVisitor {
                         sourceFile.append("_ep")
                     }
                     else {
-                        if (inAssignment(constructorCall)) {
-                            let assignment: Assignment = getAssignment(constructorCall)
+                        if inAssignment(constructorCall) {
+                            var assignment: Assignment = getAssignment(constructorCall)
                             if assignment != null {
-                                let classDeclaration: ClassDeclaration = getClassDeclaration(assignment)
+                                var classDeclaration: ClassDeclaration = getClassDeclaration(assignment)
                                 let memberName: String = getMemberIfCreatingObject(assignment)
                                 if memberName != null {
                                     if isVariableMember(memberName, classDeclaration) {
@@ -2337,7 +2338,7 @@ class CppVisitor : SyntaxVisitor {
                             if (leftSide.postfixes == nullptr) && (leftSide.primaryExpression is IdentifierExpression) {
                                 let memberExpression: IdentifierExpression = (leftSide.primaryExpression) as IdentifierExpression
                                 let memberName: String = memberExpression.name
-                                let classDeclaration: ClassDeclaration = getClassDeclaration(assignment)
+                                var classDeclaration: ClassDeclaration = getClassDeclaration(assignment)
                                 if (classDeclaration != null) && (memberName != null) && (isVariableMember(memberName, classDeclaration)) {
                                     sourceFile.append(memberName)
                                     sourceFile.append("->getPage()")
