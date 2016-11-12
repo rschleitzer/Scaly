@@ -592,19 +592,12 @@ bool CppVisitor::localAllocations(CodeBlock* codeBlock) {
                 if (bindingInitializer != nullptr) {
                     if (bindingInitializer->initializer != nullptr) {
                         PatternInitializer* patternInitializer = bindingInitializer->initializer;
-                        if (patternInitializer->pattern->_isIdentifierPattern()) {
-                            IdentifierPattern* identifierPattern = (IdentifierPattern*)patternInitializer->pattern;
-                            if (identifierPattern->annotationForType != nullptr) {
-                                Type* type = identifierPattern->annotationForType->annotationForType;
-                                if (type->_isArrayType())
-                                    return true;
-                                if (type->_isTypeIdentifier()) {
-                                    TypeIdentifier* typeIdentifier = (TypeIdentifier*)type;
-                                    if (isClass(typeIdentifier->name)) {
-                                        if (getFunctionCall(patternInitializer) != nullptr)
-                                            return true;
-                                    }
-                                }
+                        Expression* expression = patternInitializer->initializer->expression;
+                        if (expression->_isSimpleExpression()) {
+                            SimpleExpression* simpleExpression = (SimpleExpression*)expression;
+                            PostfixExpression* postfixExpression = simpleExpression->prefixExpression->expression;
+                            if (postfixExpression->primaryExpression->_isInitializerCall()) {
+                                return true;
                             }
                         }
                     }

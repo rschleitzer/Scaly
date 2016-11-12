@@ -602,19 +602,12 @@ class CppVisitor : SyntaxVisitor {
                 if bindingInitializer != null {
                     if bindingInitializer.initializer != null {
                         let patternInitializer: PatternInitializer = bindingInitializer.initializer
-                        if patternInitializer.pattern is IdentifierPattern {
-                            let identifierPattern: IdentifierPattern = patternInitializer.pattern as IdentifierPattern
-                            if identifierPattern.annotationForType != null {
-                                let type: Type = identifierPattern.annotationForType.annotationForType
-                                if type is ArrayType
-                                    return true
-                                if type is TypeIdentifier {
-                                    let typeIdentifier: TypeIdentifier = type as TypeIdentifier
-                                    if isClass(typeIdentifier.name) {
-                                        if getFunctionCall(patternInitializer) != null
-                                            return true
-                                    }
-                                }
+                        let expression: Expression = patternInitializer.initializer.expression
+                        if expression is SimpleExpression {
+                            let simpleExpression: SimpleExpression = expression as SimpleExpression
+                            let postfixExpression: PostfixExpression = simpleExpression.prefixExpression.expression
+                            if postfixExpression.primaryExpression is InitializerCall {
+                                return true;
                             }
                         }
                     }
