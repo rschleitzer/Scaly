@@ -47,7 +47,7 @@
 "
                 )))
 "
-        throw unableToParse(Position(start), new [ParserError](errors))
+        throw unableToParse(new Position(start), new [ParserError](errors))
 "
             )
             ($ ; non-abstract syntax
@@ -62,14 +62,14 @@
 "                       ($ "(error)
             throw "(if (string=? (type content) "syntax") "error" ($ "ParserError."
                 (case (type content) (("keyword") "Keyword") (("punctuation") "Punctuation")(("identifier") "Identifier")(("literal") "Literal")(("prefixoperator" "binaryoperator" "postfixoperator") "Operator"))
-                "Expected(start"(case (type content) (("keyword" "punctuation") ($ ", String("((if (string=? (type content) "keyword") name-of-link link) content)")"))(else ""))"))"))"
+                "Expected(start"(case (type content) (("keyword" "punctuation") ($ ", new String("((if (string=? (type content) "keyword") name-of-link link) content)")"))(else ""))"))"))"
 "                       )
                     )
                            (if (top? syntax) ($
 "        if "(property content)" != null {
             if !isAtEnd() {
                 mutable current: Position = lexer.getPosition()
-                throw notAtEnd(Position(current))
+                throw notAtEnd(new Position(current))
             }
         }
 "                           )"")
@@ -88,7 +88,7 @@
 "        else
             throw "
         (case (type content) (("keyword") "keyword") (("punctuation") "punctuation")(("identifier") "identifier")(("literal") "literal")(("prefixoperator" "binaryoperator" "postfixoperator") "operator"))
-        "Expected(Position(start"(if (property content) (string-firstchar-upcase (property content)) ($ (string-firstchar-upcase (link content))(number->string (child-number content))))(case (type content) (("keyword" "punctuation") ($ "), String("((if (string=? (type content) "keyword") name-of-link link) content)")"))(else ")"))")
+        "Expected(new Position(start"(if (property content) (string-firstchar-upcase (property content)) ($ (string-firstchar-upcase (link content))(number->string (child-number content))))(case (type content) (("keyword" "punctuation") ($ "), new String("((if (string=? (type content) "keyword") name-of-link link) content)")"))(else ")"))")
 
 "                           ))
                         )
@@ -100,7 +100,7 @@
                     (property content)(if (properties-remaining? content syntax) ", " "")
                 )))
                 (if (node-list-empty? (properties syntax)) "" ", ")
-                "Position(start), Position(end))
+                "new Position(start), new Position(end))
 "                (if (top? syntax) ($
 "        ret.fileName = fileName
 "               )"")
