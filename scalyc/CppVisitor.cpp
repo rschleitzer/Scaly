@@ -1673,7 +1673,67 @@ void CppVisitor::closeNamedMemberPostfix(NamedMemberPostfix* namedMemberPostfix)
 }
 
 void CppVisitor::visitIdentifierExpression(IdentifierExpression* identifierExpression) {
-    sourceFile->append(identifierExpression->name);
+    if (identifierExpression->parent->_isPostfixExpression()) {
+        PostfixExpression* postfixExpression = (PostfixExpression*)(identifierExpression->parent);
+        if (postfixExpression->postfixes != nullptr) {
+            if (postfixExpression->postfixes->length() > 0) {
+                _Vector<Postfix>* postfixes = postfixExpression->postfixes;
+                if ((isClass(identifierExpression->name)) && ((*(*postfixes)[0])->_isFunctionCall())) {
+                    sourceFile->append("new(");
+                    if ((inReturn(identifierExpression)) || (inRetDeclaration(identifierExpression))) {
+                        sourceFile->append("_rp");
+                    }
+                    else {
+                        if (inThrow(identifierExpression)) {
+                            sourceFile->append("_ep");
+                        }
+                        else {
+                            if (inAssignment(identifierExpression)) {
+                                Assignment* assignment = getAssignment(identifierExpression);
+                                if (assignment != nullptr) {
+                                    _Region _region; _Page* _p = _region.get();
+                                    ClassDeclaration* classDeclaration = getClassDeclaration(assignment);
+                                    String* memberName = getMemberIfCreatingObject(_p, assignment);
+                                    if (memberName != nullptr) {
+                                        if (isVariableMember(memberName, classDeclaration)) {
+                                            if (!inInitializer(assignment)) {
+                                                sourceFile->append(memberName);
+                                                sourceFile->append("->");
+                                            }
+                                            sourceFile->append("getPage()");
+                                            if (inInitializer(assignment)) {
+                                                sourceFile->append("->allocateExclusivePage()");
+                                            }
+                                        }
+                                        else {
+                                            sourceFile->append("getPage()");
+                                        }
+                                    }
+                                }
+                            }
+                            else {
+                                sourceFile->append("_p");
+                            }
+                        }
+                    }
+                    sourceFile->append(") ");
+                    sourceFile->append(identifierExpression->name);
+                }
+                else {
+                    sourceFile->append(identifierExpression->name);
+                }
+            }
+            else {
+                sourceFile->append(identifierExpression->name);
+            }
+        }
+        else {
+            sourceFile->append(identifierExpression->name);
+        }
+    }
+    else {
+        sourceFile->append(identifierExpression->name);
+    }
     if (identifierExpression->parent->_isPostfixExpression()) {
         PostfixExpression* postfixExpression = (PostfixExpression*)(identifierExpression->parent);
         if (postfixExpression->postfixes != nullptr) {

@@ -47,21 +47,21 @@ CompilerError* Compiler::compileFiles(_Page* _ep, Options* options) {
             index++;
         }
     }
-    Program* program = ) Program(options->outputName, options->directory, &_Vector<CompilationUnit>::create(_p, *(compilationUnits)));
+    Program* program = new(_p) Program(options->outputName, options->directory, &_Vector<CompilationUnit>::create(_p, *(compilationUnits)));
     CompilationUnit* item = nullptr;
     size_t _compilationUnits_length = compilationUnits->length();
     for (size_t _i = 0; _i < _compilationUnits_length; _i++) {
         item = *(*compilationUnits)[_i];
         item->parent = program;
     }
-    CppVisitor* visitor = ) CppVisitor();
+    CppVisitor* visitor = new(_p) CppVisitor();
     visitor->execute(program);
     return nullptr;
 }
 
 _Result<CompilationUnit, ParserError> Compiler::parseUnit(_Page* _rp, _Page* _ep, String* moduleName, String* text) {
     _Region _region; _Page* _p = _region.get();
-    Parser* parser = ) Parser(moduleName, text);
+    Parser* parser = new(_p) Parser(moduleName, text);
     auto _compilationUnit_result = parser->parseCompilationUnit(_rp, _ep);
     CompilationUnit* compilationUnit = nullptr;
     if (_compilationUnit_result.succeeded()) {

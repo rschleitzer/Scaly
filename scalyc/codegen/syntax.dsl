@@ -149,4 +149,3 @@ class "(id syntax-node)" : "(if (base syntax-node) (base syntax-node) "SyntaxNod
 "        this."(property content)" = "(property content)";
 "
 )))))
-
