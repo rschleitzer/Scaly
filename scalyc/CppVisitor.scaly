@@ -2290,7 +2290,7 @@ class CppVisitor : SyntaxVisitor {
                             var assignment: Assignment = getAssignment(constructorCall)
                             if assignment != null {
                                 var classDeclaration: ClassDeclaration = getClassDeclaration(assignment)
-                                var memberName: String = getMemberIfCreatingObject(assignment)
+                                mutable memberName: String = getMemberIfCreatingObject(assignment)
                                 if memberName != null {
                                     if isVariableMember(memberName, classDeclaration) {
                                         if !inInitializer(assignment) {
@@ -2378,8 +2378,8 @@ class CppVisitor : SyntaxVisitor {
                             if inAssignment(constructorCall) {
                                 var assignment: Assignment = getAssignment(constructorCall)
                                 if assignment != null {
-                                    let classDeclaration: ClassDeclaration = getClassDeclaration(assignment)
-                                    let memberName: String = getMemberIfCreatingObject(assignment)
+                                    var classDeclaration: ClassDeclaration = getClassDeclaration(assignment)
+                                    mutable memberName: String = getMemberIfCreatingObject(assignment)
                                     if memberName != null {
                                         if isVariableMember(memberName, classDeclaration) {
                                             if !inInitializer(assignment) {
@@ -2413,7 +2413,7 @@ class CppVisitor : SyntaxVisitor {
                     let assignment: Assignment = (constructorCall.parent.parent.parent.parent) as Assignment
                     sourceFile.append("new(")
                     var classDeclaration: ClassDeclaration = getClassDeclaration(assignment)
-                    let memberName: String = getMemberIfCreatingObject(assignment)
+                    mutable memberName: String = getMemberIfCreatingObject(assignment)
                     if memberName != null {
                         if isVariableMember(memberName, classDeclaration) {
                             if !inInitializer(assignment) {
@@ -2436,7 +2436,7 @@ class CppVisitor : SyntaxVisitor {
                             if (leftSide.postfixes == null) && (leftSide.primaryExpression is IdentifierExpression) {
                                 let memberExpression: IdentifierExpression = (leftSide.primaryExpression) as IdentifierExpression
                                 let memberName: String = memberExpression.name
-                                let classDeclaration: ClassDeclaration = getClassDeclaration(assignment)
+                                var classDeclaration: ClassDeclaration = getClassDeclaration(assignment)
                                 if (classDeclaration != null) && (memberName != null) {
                                     if isVariableMember(memberName, classDeclaration) {
                                         sourceFile.append(memberName)
