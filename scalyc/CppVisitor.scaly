@@ -2290,7 +2290,7 @@ class CppVisitor : SyntaxVisitor {
                             var assignment: Assignment = getAssignment(constructorCall)
                             if assignment != null {
                                 var classDeclaration: ClassDeclaration = getClassDeclaration(assignment)
-                                let memberName: String = getMemberIfCreatingObject(assignment)
+                                var memberName: String = getMemberIfCreatingObject(assignment)
                                 if memberName != null {
                                     if isVariableMember(memberName, classDeclaration) {
                                         if !inInitializer(assignment) {
@@ -2376,7 +2376,7 @@ class CppVisitor : SyntaxVisitor {
                         }
                         else {
                             if inAssignment(constructorCall) {
-                                let assignment: Assignment = getAssignment(constructorCall)
+                                var assignment: Assignment = getAssignment(constructorCall)
                                 if assignment != null {
                                     let classDeclaration: ClassDeclaration = getClassDeclaration(assignment)
                                     let memberName: String = getMemberIfCreatingObject(assignment)
@@ -2412,7 +2412,7 @@ class CppVisitor : SyntaxVisitor {
                 if constructorCall.parent.parent.parent.parent is Assignment {
                     let assignment: Assignment = (constructorCall.parent.parent.parent.parent) as Assignment
                     sourceFile.append("new(")
-                    let classDeclaration: ClassDeclaration = getClassDeclaration(assignment)
+                    var classDeclaration: ClassDeclaration = getClassDeclaration(assignment)
                     let memberName: String = getMemberIfCreatingObject(assignment)
                     if memberName != null {
                         if isVariableMember(memberName, classDeclaration) {
