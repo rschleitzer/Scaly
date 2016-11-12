@@ -100,7 +100,7 @@ class CppVisitor : SyntaxVisitor {
     }
     
     function closeProgram(program: Program) {
-        output = CppProgram(program.name, new String(projectFile), new String(mainHeaderFile), new [CppModule](modules))
+        output = new CppProgram(program.name, new String(projectFile), new String(mainHeaderFile), new [CppModule](modules))
         
     }
 
@@ -2455,7 +2455,16 @@ class CppVisitor : SyntaxVisitor {
                 }
                 else {
                     if initializerCall.parent.parent.parent.parent is Initializer {
-                        sourceFile.append("new(_p")
+                        sourceFile.append("new(")
+                        if inReturn(initializerCall) || inRetDeclaration(initializerCall) {
+                            sourceFile.append("_rp")
+                        }
+                        else {
+                            if inThrow(initializerCall)
+                                sourceFile.append("_ep")
+                            else
+                                sourceFile.append("_p")
+                        }
                     }
                 } 
                 sourceFile.append(") ")

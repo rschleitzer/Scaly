@@ -2427,9 +2427,18 @@ bool CppVisitor::openInitializerCall(InitializerCall* initializerCall) {
             }
             else {
                 if (initializerCall->parent->parent->parent->parent->_isInitializer()) {
-                    sourceFile->append("new(_p");
+                    sourceFile->append("new(");
+                    if (inReturn(initializerCall) || inRetDeclaration(initializerCall)) {
+                        sourceFile->append("_rp");
+                    }
+                    else {
+                        if (inThrow(initializerCall))
+                            sourceFile->append("_ep");
+                        else
+                            sourceFile->append("_p");
+                    }
                 }
-            } 
+            }
             sourceFile->append(") ");
             TypeIdentifier* typeId = (TypeIdentifier*)(initializerCall->typeToInitialize);
             sourceFile->append(typeId->name);
