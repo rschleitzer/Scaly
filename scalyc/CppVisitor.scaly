@@ -2186,19 +2186,16 @@ class CppVisitor : SyntaxVisitor {
             let functionResult: FunctionResult = functionDeclaration.signature.result
             if functionResult != null {
                 let ret: VarString = new VarString()
-                if functionResult.resultType is Type {
-                    let type: Type = (functionResult.resultType) as Type
+                if hasArrayPostfix(functionResult.resultType) {
+                    let type: Type = functionResult.resultType
+                    ret.append("_Vector<")
                     appendCppTypeName(ret, type)
+                    ret.append(">")
                     return new String(ret)
                 }
                 else {
-                    if hasArrayPostfix(functionResult.resultType) {
-                        let type: Type = functionResult.resultType
-                        ret.append("_Vector<")
-                        appendCppTypeName(ret, type)
-                        ret.append(">")
-                        return new String(ret)
-                    }
+                    appendCppTypeName(ret, functionResult.resultType)
+                    return new String(ret)
                 }
             }
         }
@@ -2212,19 +2209,16 @@ class CppVisitor : SyntaxVisitor {
             let throwsClause: ThrowsClause = functionDeclaration.signature.throwsClause
             if throwsClause != null {
                 let ret: VarString = new VarString()
-                if throwsClause.throwsType is Type {
-                    let type: Type = (throwsClause.throwsType) as Type
+                if hasArrayPostfix(throwsClause.throwsType) {
+                    let type: Type = throwsClause.throwsType
+                    ret.append("_Vector<")
                     appendCppTypeName(ret, type)
+                    ret.append(">")
                     return new String(ret)
                 }
                 else {
-                    if hasArrayPostfix(throwsClause.throwsType) {
-                        let type: Type = throwsClause.throwsType
-                        ret.append("_Vector<")
-                        appendCppTypeName(ret, type)
-                        ret.append(">")
-                        return new String(ret)
-                    }
+                    appendCppTypeName(ret, throwsClause.throwsType)
+                    return new String(ret)
                 }
             }
         }

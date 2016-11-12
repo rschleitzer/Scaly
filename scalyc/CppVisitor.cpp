@@ -2153,19 +2153,16 @@ String* CppVisitor::getReturnType(_Page* _rp, SyntaxNode* syntaxNode) {
         FunctionResult* functionResult = functionDeclaration->signature->result;
         if (functionResult != nullptr) {
             VarString* ret = new(_rp) VarString();
-            if (functionResult->resultType->_isType()) {
-                Type* type = (Type*)(functionResult->resultType);
+            if (hasArrayPostfix(functionResult->resultType)) {
+                Type* type = functionResult->resultType;
+                ret->append("_Vector<");
                 appendCppTypeName(ret, type);
+                ret->append(">");
                 return new(_rp) String(ret);
             }
             else {
-                if (hasArrayPostfix(functionResult->resultType)) {
-                    Type* type = functionResult->resultType;
-                    ret->append("_Vector<");
-                    appendCppTypeName(ret, type);
-                    ret->append(">");
-                    return new(_rp) String(ret);
-                }
+                appendCppTypeName(ret, functionResult->resultType);
+                return new(_rp) String(ret);
             }
         }
     }
@@ -2178,19 +2175,16 @@ String* CppVisitor::getThrownType(_Page* _rp, SyntaxNode* syntaxNode) {
         ThrowsClause* throwsClause = functionDeclaration->signature->throwsClause;
         if (throwsClause != nullptr) {
             VarString* ret = new(_rp) VarString();
-            if (throwsClause->throwsType->_isType()) {
-                Type* type = (Type*)(throwsClause->throwsType);
+            if (hasArrayPostfix(throwsClause->throwsType)) {
+                Type* type = throwsClause->throwsType;
+                ret->append("_Vector<");
                 appendCppTypeName(ret, type);
+                ret->append(">");
                 return new(_rp) String(ret);
             }
             else {
-                if (hasArrayPostfix(throwsClause->throwsType)) {
-                    Type* type = throwsClause->throwsType;
-                    ret->append("_Vector<");
-                    appendCppTypeName(ret, type);
-                    ret->append(">");
-                    return new(_rp) String(ret);
-                }
+                appendCppTypeName(ret, throwsClause->throwsType);
+                return new(_rp) String(ret);
             }
         }
     }
