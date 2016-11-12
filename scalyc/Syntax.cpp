@@ -1785,6 +1785,7 @@ void TypePostfix::accept(SyntaxVisitor* visitor) {
 bool TypePostfix::_isTypePostfix() { return true; }
 
 bool TypePostfix::_isOptionalType() { return false; }
+bool TypePostfix::_isIndexedType() { return false; }
 
 OptionalType::OptionalType(Position* start, Position* end) {
     this->start = start;

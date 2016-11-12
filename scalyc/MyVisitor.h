@@ -26,8 +26,8 @@ public:
     virtual void closeEnumDeclaration(EnumDeclaration* enumDeclaration);
     virtual bool openClassDeclaration(ClassDeclaration* classDeclaration);
     virtual void closeClassDeclaration(ClassDeclaration* classDeclaration);
-    virtual bool openConstructorDeclaration(ConstructorDeclaration* initializerDeclaration);
-    virtual void closeConstructorDeclaration(ConstructorDeclaration* initializerDeclaration);
+    virtual bool openConstructorDeclaration(ConstructorDeclaration* constructorDeclaration);
+    virtual void closeConstructorDeclaration(ConstructorDeclaration* constructorDeclaration);
     virtual bool openCodeBlock(CodeBlock* codeBlock);
     virtual void closeCodeBlock(CodeBlock* codeBlock);
     virtual bool openSimpleExpression(SimpleExpression* simpleExpression);
@@ -120,8 +120,8 @@ public:
     virtual void closeThrowExpression(ThrowExpression* throwExpression);
     virtual bool openBreakExpression(BreakExpression* breakExpression);
     virtual void closeBreakExpression(BreakExpression* breakExpression);
-    virtual bool openConstructorCall(ConstructorCall* initializerCall);
-    virtual void closeConstructorCall(ConstructorCall* initializerCall);
+    virtual bool openConstructorCall(ConstructorCall* constructorCall);
+    virtual void closeConstructorCall(ConstructorCall* constructorCall);
     virtual void visitThisExpression(ThisExpression* thisExpression);
     virtual bool openSuperDot(SuperDot* superDot);
     virtual void closeSuperDot(SuperDot* superDot);
@@ -153,9 +153,9 @@ public:
     virtual bool openBlockCaseContent(BlockCaseContent* blockCaseContent);
     virtual void closeBlockCaseContent(BlockCaseContent* blockCaseContent);
     virtual void visitEmptyCaseContent(EmptyCaseContent* emptyCaseContent);
-    virtual void visitSuperConstructor(SuperConstructor* superInit);
+    virtual void visitSuperConstructor(SuperConstructor* superConstructor);
     virtual void visitSuperMember(SuperMember* superMember);
-    virtual bool openTypeIdentifier(Type* type);
+    virtual bool openType(Type* type);
     virtual void closeType(Type* type);
     virtual bool openTypeAnnotation(TypeAnnotation* typeAnnotation);
     virtual void closeTypeAnnotation(TypeAnnotation* typeAnnotation);

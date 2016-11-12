@@ -1125,6 +1125,7 @@ public:
 
     virtual bool _isTypePostfix();
     virtual bool _isOptionalType();
+    virtual bool _isIndexedType();
 };
 
 class OptionalType : public TypePostfix {

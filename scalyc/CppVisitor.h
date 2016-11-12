@@ -183,8 +183,8 @@ public:
     virtual void closeThrowExpression(ThrowExpression* throwExpression);
     virtual bool openBreakExpression(BreakExpression* breakExpression);
     virtual void closeBreakExpression(BreakExpression* breakExpression);
-    virtual bool openConstructorCall(ConstructorCall* initializerCall);
-    virtual void closeConstructorCall(ConstructorCall* initializerCall);
+    virtual bool openConstructorCall(ConstructorCall* constructorCall);
+    virtual void closeConstructorCall(ConstructorCall* constructorCall);
     virtual bool initializerIsBoundOrAssigned(ConstructorCall* initializerCall);
     virtual void visitThisExpression(ThisExpression* thisExpression);
     virtual bool openSuperDot(SuperDot* superDot);
@@ -221,9 +221,9 @@ public:
     virtual void visitSuperConstructor(SuperConstructor* superInit);
     virtual void visitSuperMember(SuperMember* superMember);
     virtual bool openType(Type* type);
+    virtual void closeType(Type* type);
     virtual bool inTypeQuery(Type* type);
     virtual void appendCppTypeName(VarString* s, Type* type);
-    virtual void closeType(Type* type);
     virtual bool openTypeAnnotation(TypeAnnotation* typeAnnotation);
     virtual void closeTypeAnnotation(TypeAnnotation* typeAnnotation);
     virtual bool openSubtype(Subtype* subtype);

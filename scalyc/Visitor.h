@@ -242,8 +242,8 @@ public:
     virtual void closeEnumDeclaration(EnumDeclaration* enumDeclaration) = 0;
     virtual bool openClassDeclaration(ClassDeclaration* classDeclaration) = 0;
     virtual void closeClassDeclaration(ClassDeclaration* classDeclaration) = 0;
-    virtual bool openConstructorDeclaration(ConstructorDeclaration* initializerDeclaration) = 0;
-    virtual void closeConstructorDeclaration(ConstructorDeclaration* initializerDeclaration) = 0;
+    virtual bool openConstructorDeclaration(ConstructorDeclaration* constructorDeclaration) = 0;
+    virtual void closeConstructorDeclaration(ConstructorDeclaration* constructorDeclaration) = 0;
     virtual bool openCodeBlock(CodeBlock* codeBlock) = 0;
     virtual void closeCodeBlock(CodeBlock* codeBlock) = 0;
     virtual bool openSimpleExpression(SimpleExpression* simpleExpression) = 0;
@@ -336,8 +336,8 @@ public:
     virtual void closeThrowExpression(ThrowExpression* throwExpression) = 0;
     virtual bool openBreakExpression(BreakExpression* breakExpression) = 0;
     virtual void closeBreakExpression(BreakExpression* breakExpression) = 0;
-    virtual bool openConstructorCall(ConstructorCall* initializerCall) = 0;
-    virtual void closeConstructorCall(ConstructorCall* initializerCall) = 0;
+    virtual bool openConstructorCall(ConstructorCall* constructorCall) = 0;
+    virtual void closeConstructorCall(ConstructorCall* constructorCall) = 0;
     virtual void visitThisExpression(ThisExpression* thisExpression) = 0;
     virtual bool openSuperDot(SuperDot* superDot) = 0;
     virtual void closeSuperDot(SuperDot* superDot) = 0;
@@ -369,7 +369,7 @@ public:
     virtual bool openBlockCaseContent(BlockCaseContent* blockCaseContent) = 0;
     virtual void closeBlockCaseContent(BlockCaseContent* blockCaseContent) = 0;
     virtual void visitEmptyCaseContent(EmptyCaseContent* emptyCaseContent) = 0;
-    virtual void visitSuperConstructor(SuperConstructor* superInit) = 0;
+    virtual void visitSuperConstructor(SuperConstructor* superConstructor) = 0;
     virtual void visitSuperMember(SuperMember* superMember) = 0;
     virtual bool openType(Type* type) = 0;
     virtual void closeType(Type* type) = 0;

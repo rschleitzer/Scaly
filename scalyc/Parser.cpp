@@ -30,7 +30,7 @@ Parser::Parser(String* theFileName, String* text) {
     mutableKeyword = new(getPage()) String("mutable");
     isKeyword = new(getPage()) String("is");
     asKeyword = new(getPage()) String("as");
-    initKeyword = new(getPage()) String("constructor");
+    constructorKeyword = new(getPage()) String("constructor");
     enumKeyword = new(getPage()) String("enum");
     superKeyword = new(getPage()) String("super");
     thisKeyword = new(getPage()) String("this");
@@ -608,12 +608,12 @@ _Result<ConstructorDeclaration, ParserError> Parser::parseConstructorDeclaration
     else {
         modifiers = nullptr;
     }
-    Position* startInit2 = lexer->getPreviousPosition(_p);
-    bool successInit2 = lexer->parseKeyword(initKeyword);
-    if (successInit2)
+    Position* startConstructor2 = lexer->getPreviousPosition(_p);
+    bool successConstructor2 = lexer->parseKeyword(constructorKeyword);
+    if (successConstructor2)
         lexer->advance();
     else
-        return _Result<ConstructorDeclaration, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_keywordExpected(new(_ep) Position(startInit2), new(_ep) String(initKeyword))));
+        return _Result<ConstructorDeclaration, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_keywordExpected(new(_ep) Position(startConstructor2), new(_ep) String(constructorKeyword))));
     auto _parameterClause_result = parseParameterClause(_rp, _ep);
     ParameterClause* parameterClause = nullptr;
     if (_parameterClause_result.succeeded()) {
@@ -2445,7 +2445,7 @@ _Result<PrimaryExpression, ParserError> Parser::parsePrimaryExpression(_Page* _r
             return _Result<PrimaryExpression, ParserError>(node);
     }
     {
-        auto _node_result = parseInitializerCall(_rp, _ep);
+        auto _node_result = parseConstructorCall(_rp, _ep);
         ConstructorCall* node = nullptr;
         if (_node_result.succeeded()) {
             node = _node_result.getResult();
@@ -2855,7 +2855,7 @@ _Result<BreakExpression, ParserError> Parser::parseBreakExpression(_Page* _rp, _
     return _Result<BreakExpression, ParserError>(ret);
 }
 
-_Result<ConstructorCall, ParserError> Parser::parseInitializerCall(_Page* _rp, _Page* _ep) {
+_Result<ConstructorCall, ParserError> Parser::parseConstructorCall(_Page* _rp, _Page* _ep) {
     _Region _region; _Page* _p = _region.get();
     Position* start = lexer->getPreviousPosition(_p);
     Position* startNew1 = lexer->getPreviousPosition(_p);
@@ -3656,12 +3656,12 @@ _Result<CommonSuperMember, ParserError> Parser::parseCommonSuperMember(_Page* _r
 _Result<SuperConstructor, ParserError> Parser::parseSuperConstructor(_Page* _rp, _Page* _ep) {
     _Region _region; _Page* _p = _region.get();
     Position* start = lexer->getPreviousPosition(_p);
-    Position* startInit1 = lexer->getPreviousPosition(_p);
-    bool successInit1 = lexer->parseKeyword(initKeyword);
-    if (successInit1)
+    Position* startConstructor1 = lexer->getPreviousPosition(_p);
+    bool successConstructor1 = lexer->parseKeyword(constructorKeyword);
+    if (successConstructor1)
         lexer->advance();
     else
-        return _Result<SuperConstructor, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_keywordExpected(new(_ep) Position(startInit1), new(_ep) String(initKeyword))));
+        return _Result<SuperConstructor, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_keywordExpected(new(_ep) Position(startConstructor1), new(_ep) String(constructorKeyword))));
     Position* end = lexer->getPosition(_p);
     SuperConstructor* ret = new(_rp) SuperConstructor(new(_rp) Position(start), new(_rp) Position(end));
     return _Result<SuperConstructor, ParserError>(ret);
@@ -3853,6 +3853,9 @@ _Result<IndexedType, ParserError> Parser::parseIndexedType(_Page* _rp, _Page* _e
     if (_key_result.succeeded()) {
         key = _key_result.getResult();
     }
+    else {
+        key = nullptr;
+    }
     Position* startRightBracket3 = lexer->getPreviousPosition(_p);
     bool successRightBracket3 = lexer->parsePunctuation(rightBracket);
     if (successRightBracket3)
@@ -3991,7 +3994,7 @@ bool Parser::isIdentifier(String* id) {
         return false;
     if (id->equals(asKeyword))
         return false;
-    if (id->equals(initKeyword))
+    if (id->equals(constructorKeyword))
         return false;
     if (id->equals(enumKeyword))
         return false;

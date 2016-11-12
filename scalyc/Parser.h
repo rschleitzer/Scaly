@@ -94,7 +94,7 @@ public:
     virtual _Result<ReturnExpression, ParserError> parseReturnExpression(_Page* _rp, _Page* _ep);
     virtual _Result<ThrowExpression, ParserError> parseThrowExpression(_Page* _rp, _Page* _ep);
     virtual _Result<BreakExpression, ParserError> parseBreakExpression(_Page* _rp, _Page* _ep);
-    virtual _Result<ConstructorCall, ParserError> parseInitializerCall(_Page* _rp, _Page* _ep);
+    virtual _Result<ConstructorCall, ParserError> parseConstructorCall(_Page* _rp, _Page* _ep);
     virtual _Result<ThisExpression, ParserError> parseThisExpression(_Page* _rp, _Page* _ep);
     virtual _Result<SuperExpression, ParserError> parseSuperExpression(_Page* _rp, _Page* _ep);
     virtual _Result<SuperDot, ParserError> parseSuperDot(_Page* _rp, _Page* _ep);
@@ -163,7 +163,7 @@ public:
     String* mutableKeyword;
     String* isKeyword;
     String* asKeyword;
-    String* initKeyword;
+    String* constructorKeyword;
     String* enumKeyword;
     String* superKeyword;
     String* thisKeyword;

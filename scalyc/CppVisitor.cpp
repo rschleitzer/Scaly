@@ -489,8 +489,7 @@ bool CppVisitor::openClassDeclaration(ClassDeclaration* classDeclaration) {
             {
                 if (i > 0)
                     headerFile->append(", ");
-                Type* type = inheritance->type;
-                headerFile->append(type->name);
+                headerFile->append(inheritance->type->name);
                 i++;
             }
         }
@@ -863,7 +862,8 @@ bool CppVisitor::openFunctionSignature(FunctionSignature* functionSignature) {
 bool CppVisitor::hasArrayPostfix(Type* type) {
     if (type->postfixes == nullptr)
         return false;
-    TypePostfix* typePostfix = *(*(type->postfixes))[0];
+    _Vector<TypePostfix>* postfixes = type->postfixes;
+    TypePostfix* typePostfix = *(*postfixes)[0];
     if (typePostfix->_isIndexedType())
         return true;
     return false;
@@ -2435,16 +2435,16 @@ bool CppVisitor::openConstructorCall(ConstructorCall* constructorCall) {
     return true;
 }
 
-bool CppVisitor::initializerIsBoundOrAssigned(ConstructorCall* constructorCall) {
-    if (constructorCall->parent->_isPostfixExpression()) {
-        PostfixExpression* postfixExpression = (PostfixExpression*)(constructorCall->parent);
+void CppVisitor::closeConstructorCall(ConstructorCall* constructorCall) {
+}
+
+bool CppVisitor::initializerIsBoundOrAssigned(ConstructorCall* initializerCall) {
+    if (initializerCall->parent->_isPostfixExpression()) {
+        PostfixExpression* postfixExpression = (PostfixExpression*)(initializerCall->parent);
         if ((postfixExpression->parent->parent->parent->_isAssignment()) || (postfixExpression->parent->parent->parent->_isInitializer()))
             return true;
     }
     return false;
-}
-
-void CppVisitor::closeConstructorCall(ConstructorCall* constructorCall) {
 }
 
 void CppVisitor::visitThisExpression(ThisExpression* thisExpression) {
@@ -2683,7 +2683,7 @@ bool CppVisitor::openType(Type* type) {
     }
     if (!suppressHeader)
         appendCppTypeName(headerFile, type);
-    if (!suppressSource)
+    if ((!suppressSource))
         appendCppTypeName(sourceFile, type);
     return true;
 }
