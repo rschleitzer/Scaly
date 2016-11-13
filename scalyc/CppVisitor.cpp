@@ -32,7 +32,7 @@ bool CppVisitor::openProgram(Program* program) {
         if (_Directory_error) {
             switch (_Directory_error->getErrorCode()) {
                 default:
-                    return (false);
+                    return false;
             }
         }
     }
@@ -51,7 +51,7 @@ bool CppVisitor::openProgram(Program* program) {
                 if (_File_error) {
                     switch (_File_error->getErrorCode()) {
                         default:
-                            return (false);
+                            return false;
                     }
                 }
             }
@@ -66,14 +66,14 @@ bool CppVisitor::openProgram(Program* program) {
                 if (_File_error) {
                     switch (_File_error->getErrorCode()) {
                         default:
-                            return (false);
+                            return false;
                     }
                 }
             }
         }
         collectInheritances(program);
     }
-    return (true);
+    return true;
 }
 
 void CppVisitor::closeProgram(Program* program) {
@@ -89,7 +89,7 @@ bool CppVisitor::openCompilationUnit(CompilationUnit* compilationUnit) {
     declaringClassMember = false;
     inParameterClause = false;
     if (!(compilationUnit->parent->_isProgram()))
-        return (false);
+        return false;
     string* programName = ((Program*)(compilationUnit->parent))->name;
     if (!moduleName->equals(programName)) {
         if (headerFile != nullptr)
@@ -120,7 +120,7 @@ bool CppVisitor::openCompilationUnit(CompilationUnit* compilationUnit) {
     sourceFile->append(" {\n\n");
     if (isTopLevelFile(compilationUnit))
         sourceFile->append("int _main(_Vector<string>* args) {\n_Region _rp; _Page* _p = _rp.get();\n\n");
-    return (true);
+    return true;
 }
 
 void CppVisitor::closeCompilationUnit(CompilationUnit* compilationUnit) {
@@ -175,10 +175,10 @@ bool CppVisitor::isTopLevelFile(CompilationUnit* compilationUnit) {
         statement = *(*statements)[_i];
         {
             if (statement->statement->_isExpression())
-                return (true);
+                return true;
         }
     }
-    return (false);
+    return false;
 }
 
 bool CppVisitor::openTerminatedStatement(TerminatedStatement* terminatedStatement) {
@@ -230,7 +230,7 @@ bool CppVisitor::openTerminatedStatement(TerminatedStatement* terminatedStatemen
             }
         }
     }
-    return (true);
+    return true;
 }
 
 void CppVisitor::closeTerminatedStatement(TerminatedStatement* terminatedStatement) {
@@ -304,7 +304,7 @@ void CppVisitor::closeTerminatedStatement(TerminatedStatement* terminatedStateme
 }
 
 bool CppVisitor::openUseDeclaration(UseDeclaration* useDeclaration) {
-    return (true);
+    return true;
 }
 
 void CppVisitor::closeUseDeclaration(UseDeclaration* useDeclaration) {
@@ -314,7 +314,7 @@ bool CppVisitor::openConstantDeclaration(ConstantDeclaration* constantDeclaratio
     constDeclaration = true;
     if (constantDeclaration->parent->parent->parent->_isClassDeclaration())
         suppressSource = true;
-    return (true);
+    return true;
 }
 
 void CppVisitor::closeConstantDeclaration(ConstantDeclaration* constantDeclaration) {
@@ -325,7 +325,7 @@ void CppVisitor::closeConstantDeclaration(ConstantDeclaration* constantDeclarati
 bool CppVisitor::openVariableDeclaration(VariableDeclaration* variableDeclaration) {
     if (variableDeclaration->parent->parent->parent->_isClassDeclaration())
         suppressSource = true;
-    return (true);
+    return true;
 }
 
 void CppVisitor::closeVariableDeclaration(VariableDeclaration* variableDeclaration) {
@@ -335,7 +335,7 @@ void CppVisitor::closeVariableDeclaration(VariableDeclaration* variableDeclarati
 bool CppVisitor::openMutableDeclaration(MutableDeclaration* mutableDeclaration) {
     if (mutableDeclaration->parent->parent->parent->_isClassDeclaration())
         suppressSource = true;
-    return (true);
+    return true;
 }
 
 void CppVisitor::closeMutableDeclaration(MutableDeclaration* mutableDeclaration) {
@@ -363,7 +363,7 @@ bool CppVisitor::openFunctionDeclaration(FunctionDeclaration* functionDeclaratio
             }
         }
     }
-    return (true);
+    return true;
 }
 
 void CppVisitor::closeFunctionDeclaration(FunctionDeclaration* functionDeclaration) {
@@ -386,7 +386,7 @@ bool CppVisitor::openEnumDeclaration(EnumDeclaration* enumDeclaration) {
     sourceFile->append("::getErrorCode() {\n    return (long)errorCode;\n}\n\nvoid* ");
     sourceFile->append(enumDeclarationName);
     sourceFile->append("::getErrorInfo() {\n    return errorInfo;\n}\n\n");
-    return (true);
+    return true;
 }
 
 void CppVisitor::closeEnumDeclaration(EnumDeclaration* enumDeclaration) {
@@ -476,7 +476,7 @@ bool CppVisitor::openClassDeclaration(ClassDeclaration* classDeclaration) {
     headerFile->append(classDeclaration->name);
     if (classDeclaration->body == nullptr) {
         headerFile->append(";");
-        return (false);
+        return false;
     }
     headerFile->append(" : public ");
     if (classDeclaration->typeInheritanceClause != nullptr) {
@@ -500,7 +500,7 @@ bool CppVisitor::openClassDeclaration(ClassDeclaration* classDeclaration) {
     headerFile->append(" {\n");
     headerFile->append("public:");
     headerIndentLevel++;
-    return (true);
+    return true;
 }
 
 void CppVisitor::closeClassDeclaration(ClassDeclaration* classDeclaration) {
@@ -547,7 +547,7 @@ void CppVisitor::closeClassDeclaration(ClassDeclaration* classDeclaration) {
 
 bool CppVisitor::openConstructorDeclaration(ConstructorDeclaration* initializerDeclaration) {
     if (!initializerDeclaration->parent->parent->parent->_isClassDeclaration())
-        return (false);
+        return false;
     string* classDeclarationName = ((Program*)(initializerDeclaration->parent->parent->parent))->name;
     headerFile->append(classDeclarationName);
     headerFile->append("(");
@@ -555,7 +555,7 @@ bool CppVisitor::openConstructorDeclaration(ConstructorDeclaration* initializerD
     sourceFile->append("::");
     sourceFile->append(classDeclarationName);
     sourceFile->append("(");
-    return (true);
+    return true;
 }
 
 void CppVisitor::closeConstructorDeclaration(ConstructorDeclaration* initializerDeclaration) {
@@ -571,7 +571,7 @@ bool CppVisitor::openCodeBlock(CodeBlock* codeBlock) {
         sourceFile->append("_Region _region; _Page* _p = _region.get();\n");
     }
     suppressHeader = true;
-    return (true);
+    return true;
 }
 
 bool CppVisitor::localAllocations(CodeBlock* codeBlock) {
@@ -583,11 +583,11 @@ bool CppVisitor::localAllocations(CodeBlock* codeBlock) {
             terminatedStatement = *(*terminatedStatements)[_i];
             {
                 if (terminatedStatement->statement->_isMutableDeclaration())
-                    return (true);
+                    return true;
             }
         }
     }
-    return (false);
+    return false;
 }
 
 FunctionCall* CppVisitor::getFunctionCall(PatternInitializer* patternInitializer) {
@@ -606,7 +606,7 @@ FunctionCall* CppVisitor::getFunctionCall(PatternInitializer* patternInitializer
                         postfix = *(*postfixes)[_i];
                         {
                             if (postfix->_isFunctionCall()) {
-                                return ((FunctionCall*)postfix);
+                                return (FunctionCall*)postfix;
                             }
                         }
                     }
@@ -614,13 +614,13 @@ FunctionCall* CppVisitor::getFunctionCall(PatternInitializer* patternInitializer
             }
         }
     }
-    return (nullptr);
+    return nullptr;
 }
 
 bool CppVisitor::isCatchingFunctionCall(PatternInitializer* patternInitializer) {
     if (catchesError(getFunctionCall(patternInitializer)))
-        return (true);
-    return (false);
+        return true;
+    return false;
 }
 
 void CppVisitor::closeCodeBlock(CodeBlock* codeBlock) {
@@ -654,20 +654,20 @@ bool CppVisitor::openSimpleExpression(SimpleExpression* simpleExpression) {
                         sourceFile->append(type->name);
                         sourceFile->append("*)");
                         simpleExpression->prefixExpression->accept(this);
-                        return (false);
+                        return false;
                     }
                 }
             }
         }
     }
-    return (true);
+    return true;
 }
 
 void CppVisitor::closeSimpleExpression(SimpleExpression* simpleExpression) {
 }
 
 bool CppVisitor::openPathIdentifier(PathIdentifier* pathIdentifier) {
-    return (true);
+    return true;
 }
 
 void CppVisitor::closePathIdentifier(PathIdentifier* pathIdentifier) {
@@ -678,7 +678,7 @@ void CppVisitor::visitPathItem(PathItem* pathItem) {
 
 bool CppVisitor::openInitializer(Initializer* initializer) {
     sourceFile->append(" = ");
-    return (true);
+    return true;
 }
 
 void CppVisitor::closeInitializer(Initializer* initializer) {
@@ -686,7 +686,7 @@ void CppVisitor::closeInitializer(Initializer* initializer) {
 
 bool CppVisitor::openBindingInitializer(BindingInitializer* bindingInitializer) {
     firstBindingInitializer = true;
-    return (true);
+    return true;
 }
 
 void CppVisitor::closeBindingInitializer(BindingInitializer* bindingInitializer) {
@@ -697,14 +697,14 @@ bool CppVisitor::openPatternInitializer(PatternInitializer* patternInitializer) 
         headerFile->append(", ");
     else
         firstBindingInitializer = false;
-    return (true);
+    return true;
 }
 
 void CppVisitor::closePatternInitializer(PatternInitializer* patternInitializer) {
 }
 
 bool CppVisitor::openAdditionalInitializer(AdditionalInitializer* additionalInitializer) {
-    return (true);
+    return true;
 }
 
 void CppVisitor::closeAdditionalInitializer(AdditionalInitializer* additionalInitializer) {
@@ -721,10 +721,10 @@ void CppVisitor::visitIdentifierFunction(IdentifierFunction* identifierFunction)
 
 bool CppVisitor::openFunctionSignature(FunctionSignature* functionSignature) {
     if (!functionSignature->parent->_isFunctionDeclaration())
-        return (false);
+        return false;
     FunctionName* functionName = ((FunctionDeclaration*)functionSignature->parent)->name;
     if (!functionName->_isIdentifierFunction())
-        return (false);
+        return false;
     string* identifierFunctionName = ((IdentifierFunction*)functionName)->name;
     if (staticFunction)
         headerFile->append("static ");
@@ -856,17 +856,17 @@ bool CppVisitor::openFunctionSignature(FunctionSignature* functionSignature) {
                 sourceFile->append(", ");
         }
     }
-    return (true);
+    return true;
 }
 
 bool CppVisitor::hasArrayPostfix(Type* type) {
     if (type->postfixes == nullptr)
-        return (false);
+        return false;
     _Vector<TypePostfix>* postfixes = type->postfixes;
     TypePostfix* typePostfix = *(*postfixes)[0];
     if (typePostfix->_isIndexedType())
-        return (true);
-    return (false);
+        return true;
+    return false;
 }
 
 void CppVisitor::closeFunctionSignature(FunctionSignature* functionSignature) {
@@ -874,7 +874,7 @@ void CppVisitor::closeFunctionSignature(FunctionSignature* functionSignature) {
 }
 
 bool CppVisitor::openFunctionResult(FunctionResult* functionResult) {
-    return (false);
+    return false;
 }
 
 void CppVisitor::closeFunctionResult(FunctionResult* functionResult) {
@@ -886,7 +886,7 @@ void CppVisitor::visitExistingClause(ExistingClause* existingClause) {
 bool CppVisitor::openParameterClause(ParameterClause* parameterClause) {
     firstParameter = true;
     inParameterClause = true;
-    return (true);
+    return true;
 }
 
 void CppVisitor::closeParameterClause(ParameterClause* parameterClause) {
@@ -901,7 +901,7 @@ bool CppVisitor::openConstParameter(ConstParameter* constParameter) {
     constDeclaration = true;
     writeParameter(constParameterName, constParameter->parameterType);
     constDeclaration = false;
-    return (false);
+    return false;
 }
 
 void CppVisitor::writeParameter(string* name, Type* parameterType) {
@@ -924,7 +924,7 @@ void CppVisitor::writeParameter(string* name, Type* parameterType) {
 
 bool CppVisitor::isClass(string* name) {
     if ((name->equals("string") || name->equals("VarString") || name->equals("File") || name->equals("Directory") || name->equals("Path") || name->equals("DirectoryError") || name->equals("FileError") || name->equals("ParserError") || name->equals("CppError") || name->equals("CompilerError"))) {
-        return (true);
+        return true;
     }
     string* className = nullptr;
     size_t _classes_length = classes->length();
@@ -932,11 +932,11 @@ bool CppVisitor::isClass(string* name) {
         className = *(*classes)[_i];
         {
             if (className->equals(name)) {
-                return (true);
+                return true;
             }
         }
     }
-    return (false);
+    return false;
 }
 
 void CppVisitor::closeConstParameter(ConstParameter* constParameter) {
@@ -945,7 +945,7 @@ void CppVisitor::closeConstParameter(ConstParameter* constParameter) {
 
 bool CppVisitor::openVarParameter(VarParameter* varParameter) {
     writeParameter(varParameter->name, varParameter->parameterType);
-    return (false);
+    return false;
 }
 
 void CppVisitor::closeVarParameter(VarParameter* varParameter) {
@@ -954,7 +954,7 @@ void CppVisitor::closeVarParameter(VarParameter* varParameter) {
 }
 
 bool CppVisitor::openThrowsClause(ThrowsClause* throwsClause) {
-    return (false);
+    return false;
 }
 
 void CppVisitor::closeThrowsClause(ThrowsClause* throwsClause) {
@@ -962,7 +962,7 @@ void CppVisitor::closeThrowsClause(ThrowsClause* throwsClause) {
 
 bool CppVisitor::openEnumMember(EnumMember* enumMember) {
     if (!enumMember->parent->_isEnumDeclaration())
-        return (false);
+        return false;
     string* enumDeclarationName = ((EnumDeclaration*)(enumMember->parent))->name;
     if (enumMember->parameterClause) {
         headerFile->append("\nclass _");
@@ -985,7 +985,7 @@ bool CppVisitor::openEnumMember(EnumMember* enumMember) {
         sourceFile->append("(");
     }
     inEnumMember = true;
-    return (true);
+    return true;
 }
 
 void CppVisitor::closeEnumMember(EnumMember* enumMember) {
@@ -1056,14 +1056,14 @@ void CppVisitor::visitEnumCase(EnumCase* enumCase) {
 }
 
 bool CppVisitor::openAdditionalCase(AdditionalCase* additionalCase) {
-    return (true);
+    return true;
 }
 
 void CppVisitor::closeAdditionalCase(AdditionalCase* additionalCase) {
 }
 
 bool CppVisitor::openClassBody(ClassBody* classBody) {
-    return (true);
+    return true;
 }
 
 void CppVisitor::closeClassBody(ClassBody* classBody) {
@@ -1110,7 +1110,7 @@ void CppVisitor::appendDerivedClasses(_Array<string>* derivedClasses, _Array<str
 }
 
 bool CppVisitor::openGenericArgumentClause(GenericArgumentClause* genericArgumentClause) {
-    return (true);
+    return true;
 }
 
 void CppVisitor::closeGenericArgumentClause(GenericArgumentClause* genericArgumentClause) {
@@ -1123,7 +1123,7 @@ bool CppVisitor::openClassMember(ClassMember* classMember) {
     headerFile->append("\n");
     indentHeader();
     declaringClassMember = true;
-    return (true);
+    return true;
 }
 
 void CppVisitor::closeClassMember(ClassMember* classMember) {
@@ -1134,7 +1134,7 @@ void CppVisitor::closeClassMember(ClassMember* classMember) {
 bool CppVisitor::openPrefixExpression(PrefixExpression* prefixExpression) {
     if (prefixExpression->prefixOperator != nullptr)
         sourceFile->append(prefixExpression->prefixOperator);
-    return (true);
+    return true;
 }
 
 void CppVisitor::closePrefixExpression(PrefixExpression* prefixExpression) {
@@ -1147,7 +1147,7 @@ bool CppVisitor::openPostfixExpression(PostfixExpression* postfixExpression) {
             sourceFile->append("*(*");
         }
     }
-    return (true);
+    return true;
 }
 
 void CppVisitor::closePostfixExpression(PostfixExpression* postfixExpression) {
@@ -1157,7 +1157,7 @@ bool CppVisitor::openBinaryOperation(BinaryOperation* binaryOperation) {
     sourceFile->append(" ");
     sourceFile->append(binaryOperation->binaryOperator);
     sourceFile->append(" ");
-    return (true);
+    return true;
 }
 
 void CppVisitor::closeBinaryOperation(BinaryOperation* binaryOperation) {
@@ -1165,37 +1165,37 @@ void CppVisitor::closeBinaryOperation(BinaryOperation* binaryOperation) {
 
 bool CppVisitor::openAssignment(Assignment* assignment) {
     sourceFile->append(" = ");
-    return (true);
+    return true;
 }
 
 bool CppVisitor::inInitializer(SyntaxNode* node) {
     if (node->_isConstructorDeclaration())
-        return (true);
+        return true;
     if (node->parent == nullptr)
-        return (false);
-    return (inInitializer(node->parent));
+        return false;
+    return inInitializer(node->parent);
 }
 
 bool CppVisitor::inReturn(SyntaxNode* node) {
     if (node->_isReturnExpression())
-        return (true);
+        return true;
     if (node->parent == nullptr)
-        return (false);
-    return (inReturn(node->parent));
+        return false;
+    return inReturn(node->parent);
 }
 
 bool CppVisitor::inThrow(SyntaxNode* node) {
     if (node->_isThrowExpression())
-        return (true);
+        return true;
     if (node->parent == nullptr)
-        return (false);
-    return (inThrow(node->parent));
+        return false;
+    return inThrow(node->parent);
 }
 
 string* CppVisitor::getMemberIfCreatingObject(_Page* _rp, Assignment* assignment) {
     string* functionName = getFunctionName(_rp, assignment);
     if (functionName == nullptr) {
-        return (nullptr);
+        return nullptr;
     }
     if (assignment->expression->_isSimpleExpression()) {
         if (isClass(functionName) || isCreatingObject(functionName, assignment)) {
@@ -1209,14 +1209,14 @@ string* CppVisitor::getMemberIfCreatingObject(_Page* _rp, Assignment* assignment
                         string* memberName = new(_p) string(memberExpression->name);
                         ClassDeclaration* classDeclaration = getClassDeclaration(assignment);
                         if (classDeclaration != nullptr) {
-                            return (new(_rp) string(memberName));
+                            return new(_rp) string(memberName);
                         }
                     }
                 }
             }
         }
     }
-    return (nullptr);
+    return nullptr;
 }
 
 string* CppVisitor::getFunctionName(_Page* _rp, Assignment* assignment) {
@@ -1227,33 +1227,33 @@ string* CppVisitor::getFunctionName(_Page* _rp, Assignment* assignment) {
             PostfixExpression* rightSide = prefixExpression->expression;
             if (rightSide->primaryExpression->_isIdentifierExpression()) {
                 IdentifierExpression* classExpression = (IdentifierExpression*)(rightSide->primaryExpression);
-                return (new(_rp) string(classExpression->name));
+                return new(_rp) string(classExpression->name);
             }
             else {
                 if (rightSide->primaryExpression->_isConstructorCall()) {
                     ConstructorCall* initializerCall = (ConstructorCall*)(rightSide->primaryExpression);
                     if (hasArrayPostfix(initializerCall->typeToInitialize)) {
                         Type* type = initializerCall->typeToInitialize;
-                        return (new(_rp) string(type->name));
+                        return new(_rp) string(type->name);
                     }
                     else {
                         Type* type = initializerCall->typeToInitialize;
-                        return (new(_rp) string(type->name));
+                        return new(_rp) string(type->name);
                     }
                 }
             }
         }
     }
-    return (nullptr);
+    return nullptr;
 }
 
 bool CppVisitor::isCreatingObject(string* functionName, SyntaxNode* node) {
     ClassDeclaration* classDeclaration = getClassDeclaration(node);
     if (classDeclaration == nullptr)
-        return (false);
+        return false;
     _Vector<ClassMember>* members = classDeclaration->body->members;
     if (members == nullptr)
-        return (false);
+        return false;
     ClassMember* member = nullptr;
     size_t _members_length = members->length();
     for (size_t _i = 0; _i < _members_length; _i++) {
@@ -1264,20 +1264,20 @@ bool CppVisitor::isCreatingObject(string* functionName, SyntaxNode* node) {
                 if (functionDeclaration->name->_isIdentifierFunction()) {
                     IdentifierFunction* identifierFunction = (IdentifierFunction*)(functionDeclaration->name);
                     if (identifierFunction->name->equals(functionName))
-                        return (true);
+                        return true;
                 }
             }
         }
     }
-    return (false);
+    return false;
 }
 
 ClassDeclaration* CppVisitor::getClassDeclaration(SyntaxNode* node) {
     if (node->_isClassDeclaration())
-        return ((ClassDeclaration*)node);
+        return (ClassDeclaration*)node;
     if (node->parent != nullptr)
-        return (getClassDeclaration(node->parent));
-    return (nullptr);
+        return getClassDeclaration(node->parent);
+    return nullptr;
 }
 
 bool CppVisitor::isVariableMember(string* memberName, ClassDeclaration* classDeclaration) {
@@ -1302,11 +1302,11 @@ bool CppVisitor::isVariableMember(string* memberName, ClassDeclaration* classDec
             if (patternInitializer->pattern->_isIdentifierPattern()) {
                 IdentifierPattern* identifierPattern = (IdentifierPattern*)(patternInitializer->pattern);
                 if (identifierPattern->identifier->equals(memberName))
-                    return (true);
+                    return true;
             }
         }
     }
-    return (false);
+    return false;
 }
 
 void CppVisitor::closeAssignment(Assignment* assignment) {
@@ -1314,14 +1314,14 @@ void CppVisitor::closeAssignment(Assignment* assignment) {
 
 bool CppVisitor::openTypeQuery(TypeQuery* typeQuery) {
     sourceFile->append("->_is");
-    return (true);
+    return true;
 }
 
 void CppVisitor::closeTypeQuery(TypeQuery* typeQuery) {
 }
 
 bool CppVisitor::openTypeCast(TypeCast* typeCast) {
-    return (true);
+    return true;
 }
 
 void CppVisitor::closeTypeCast(TypeCast* typeCast) {
@@ -1493,7 +1493,7 @@ bool CppVisitor::openCatchClause(CatchClause* catchClause) {
             }
         }
     }
-    return (false);
+    return false;
 }
 
 IdentifierExpression* CppVisitor::getIdentifierExpression(PostfixExpression* postfixExpression) {
@@ -1501,11 +1501,11 @@ IdentifierExpression* CppVisitor::getIdentifierExpression(PostfixExpression* pos
         if (postfixExpression->parent->_isPrefixExpression()) {
             PrefixExpression* prefixExpression = (PrefixExpression*)(postfixExpression->parent);
             if (prefixExpression->expression->primaryExpression->_isIdentifierExpression()) {
-                return ((IdentifierExpression*)(prefixExpression->expression->primaryExpression));
+                return (IdentifierExpression*)(prefixExpression->expression->primaryExpression);
             }
         }
     }
-    return (nullptr);
+    return nullptr;
 }
 
 string* CppVisitor::getErrorType(CatchClause* catchClause) {
@@ -1519,28 +1519,28 @@ string* CppVisitor::getErrorType(CatchClause* catchClause) {
                     if (pattern->annotationForType != nullptr) {
                         if (pattern->annotationForType->annotationForType->_isType()) {
                             Type* type = (Type*)(pattern->annotationForType->annotationForType);
-                            return (type->name);
+                            return type->name;
                         }
                     }
                 }
             }
         }
     }
-    return (nullptr);
+    return nullptr;
 }
 
 void CppVisitor::closeCatchClause(CatchClause* catchClause) {
 }
 
 bool CppVisitor::openWildCardCatchPattern(WildCardCatchPattern* wildCardCatchPattern) {
-    return (true);
+    return true;
 }
 
 void CppVisitor::closeWildCardCatchPattern(WildCardCatchPattern* wildCardCatchPattern) {
 }
 
 bool CppVisitor::openIdentifierCatchPattern(IdentifierCatchPattern* identifierCatchPattern) {
-    return (true);
+    return true;
 }
 
 void CppVisitor::closeIdentifierCatchPattern(IdentifierCatchPattern* identifierCatchPattern) {
@@ -1551,7 +1551,7 @@ void CppVisitor::visitOperatorPostfix(OperatorPostfix* operatorPostfix) {
 }
 
 bool CppVisitor::openFunctionCall(FunctionCall* functionCall) {
-    return (true);
+    return true;
 }
 
 void CppVisitor::closeFunctionCall(FunctionCall* functionCall) {
@@ -1567,14 +1567,14 @@ bool CppVisitor::openExplicitMemberExpression(ExplicitMemberExpression* explicit
                 if (((Postfix*)*(*postfixes)[0]) && ((*(*postfixes)[1])->_isFunctionCall())) {
                     if (isClass(identifierExpression->name)) {
                         sourceFile->append("::");
-                        return (true);
+                        return true;
                     }
                 }
             }
         }
     }
     sourceFile->append("->");
-    return (true);
+    return true;
 }
 
 void CppVisitor::closeExplicitMemberExpression(ExplicitMemberExpression* explicitMemberExpression) {
@@ -1582,7 +1582,7 @@ void CppVisitor::closeExplicitMemberExpression(ExplicitMemberExpression* explici
 
 bool CppVisitor::openSubscript(Subscript* subscript) {
     sourceFile->append("[");
-    return (true);
+    return true;
 }
 
 void CppVisitor::closeSubscript(Subscript* subscript) {
@@ -1590,7 +1590,7 @@ void CppVisitor::closeSubscript(Subscript* subscript) {
 }
 
 bool CppVisitor::openExpressionElement(ExpressionElement* expressionElement) {
-    return (true);
+    return true;
 }
 
 void CppVisitor::closeExpressionElement(ExpressionElement* expressionElement) {
@@ -1610,7 +1610,7 @@ bool CppVisitor::isLastExpressionElement(ExpressionElement* expressionElement) {
             element = *(*expressionElements)[_i];
             {
                 if ((element == expressionElement) && (i == length))
-                    return (true);
+                    return true;
                 i++;
             }
         }
@@ -1626,16 +1626,16 @@ bool CppVisitor::isLastExpressionElement(ExpressionElement* expressionElement) {
             element = *(*expressions)[_i];
             {
                 if ((element == expressionElement) && (i == length))
-                    return (true);
+                    return true;
                 i++;
             }
         }
     }
-    return (false);
+    return false;
 }
 
 bool CppVisitor::openNamedMemberPostfix(NamedMemberPostfix* namedMemberPostfix) {
-    return (true);
+    return true;
 }
 
 void CppVisitor::closeNamedMemberPostfix(NamedMemberPostfix* namedMemberPostfix) {
@@ -1656,25 +1656,25 @@ void CppVisitor::visitIdentifierExpression(IdentifierExpression* identifierExpre
 
 bool CppVisitor::inAssignment(SyntaxNode* syntaxNode) {
     if (syntaxNode->_isAssignment())
-        return (true);
+        return true;
     SyntaxNode* parentNode = syntaxNode->parent;
     if (parentNode == nullptr)
-        return (false);
-    return (inAssignment(parentNode));
+        return false;
+    return inAssignment(parentNode);
 }
 
 Assignment* CppVisitor::getAssignment(SyntaxNode* syntaxNode) {
     if (syntaxNode->_isAssignment())
-        return ((Assignment*)syntaxNode);
+        return (Assignment*)syntaxNode;
     SyntaxNode* parentNode = syntaxNode->parent;
     if (parentNode == nullptr)
-        return (nullptr);
-    return (getAssignment(parentNode));
+        return nullptr;
+    return getAssignment(parentNode);
 }
 
 bool CppVisitor::inRetDeclaration(SyntaxNode* syntaxNode) {
     if (syntaxNode == nullptr)
-        return (false);
+        return false;
     BindingInitializer* bindingInitializer = nullptr;
     do {
         if (syntaxNode->_isBindingInitializer()) {
@@ -1685,15 +1685,15 @@ bool CppVisitor::inRetDeclaration(SyntaxNode* syntaxNode) {
     }
     while (syntaxNode != nullptr);
     if (bindingInitializer == nullptr)
-        return (false);
+        return false;
     if (bindingInitializer->initializer != nullptr) {
         PatternInitializer* patternInitializer = bindingInitializer->initializer;
         if (patternInitializer->pattern->_isIdentifierPattern()) {
             IdentifierPattern* identifierPattern = (IdentifierPattern*)(patternInitializer->pattern);
-            return (identifierPattern->identifier->equals("ret"));
+            return identifierPattern->identifier->equals("ret");
         }
     }
-    return (false);
+    return false;
 }
 
 void CppVisitor::visitLiteralExpression(LiteralExpression* literalExpression) {
@@ -1782,7 +1782,7 @@ bool CppVisitor::openIfExpression(IfExpression* ifExpression) {
             ifExpression->elseClause->accept(this);
         }
     }
-    return (false);
+    return false;
 }
 
 void CppVisitor::closeIfExpression(IfExpression* ifExpression) {
@@ -1790,7 +1790,7 @@ void CppVisitor::closeIfExpression(IfExpression* ifExpression) {
 
 bool CppVisitor::openSwitchExpression(SwitchExpression* switchExpression) {
     sourceFile->append("switch (");
-    return (true);
+    return true;
 }
 
 void CppVisitor::closeSwitchExpression(SwitchExpression* switchExpression) {
@@ -1836,7 +1836,7 @@ bool CppVisitor::openForExpression(ForExpression* forExpression) {
             }
         }
     }
-    return (false);
+    return false;
 }
 
 void CppVisitor::closeForExpression(ForExpression* forExpression) {
@@ -1858,7 +1858,7 @@ bool CppVisitor::openWhileExpression(WhileExpression* whileExpression) {
         sourceFile->append(" ");
         whileExpression->code->accept(this);
     }
-    return (false);
+    return false;
 }
 
 void CppVisitor::closeWhileExpression(WhileExpression* whileExpression) {
@@ -1882,7 +1882,7 @@ bool CppVisitor::openRepeatExpression(RepeatExpression* repeatExpression) {
     sourceFile->append("while (");
     repeatExpression->condition->accept(this);
     sourceFile->append(")");
-    return (false);
+    return false;
 }
 
 void CppVisitor::closeRepeatExpression(RepeatExpression* repeatExpression) {
@@ -1947,29 +1947,29 @@ bool CppVisitor::openParenthesizedExpression(ParenthesizedExpression* parenthesi
         if (parameterInserted && (parenthesizedExpression->expressionElements != nullptr))
             sourceFile->append(", ");
     }
-    return (true);
+    return true;
 }
 
 bool CppVisitor::assignedToMutableObject(FunctionCall* functionCall) {
     BindingInitializer* bindingInitializer = getBindingInitializer(functionCall);
     if (bindingInitializer == nullptr)
-        return (false);
+        return false;
     if (bindingInitializer->parent->_isMutableDeclaration()) {
         if (boundToObject(bindingInitializer))
-            return (true);
+            return true;
     }
-    return (false);
+    return false;
 }
 
 bool CppVisitor::assignedToConstantObject(FunctionCall* functionCall) {
     BindingInitializer* bindingInitializer = getBindingInitializer(functionCall);
     if (bindingInitializer == nullptr)
-        return (false);
+        return false;
     if (bindingInitializer->parent->_isConstantDeclaration()) {
         if (boundToObject(bindingInitializer))
-            return (true);
+            return true;
     }
-    return (false);
+    return false;
 }
 
 bool CppVisitor::boundToObject(BindingInitializer* bindingInitializer) {
@@ -1978,11 +1978,11 @@ bool CppVisitor::boundToObject(BindingInitializer* bindingInitializer) {
         IdentifierPattern* identifierPattern = (IdentifierPattern*)(patternInitializer->pattern);
         Type* type = identifierPattern->annotationForType->annotationForType;
         if (hasArrayPostfix(type))
-            return (true);
+            return true;
         if (isClass(type->name) && (getFunctionCall(patternInitializer) != nullptr))
-            return (true);
+            return true;
     }
-    return (false);
+    return false;
 }
 
 BindingInitializer* CppVisitor::getBindingInitializer(FunctionCall* functionCall) {
@@ -1993,12 +1993,12 @@ BindingInitializer* CppVisitor::getBindingInitializer(FunctionCall* functionCall
             if (initializer->parent->_isPatternInitializer()) {
                 PatternInitializer* patternInitializer = (PatternInitializer*)(initializer->parent);
                 if (patternInitializer->parent->_isBindingInitializer()) {
-                    return ((BindingInitializer*)(patternInitializer->parent));
+                    return (BindingInitializer*)(patternInitializer->parent);
                 }
             }
         }
     }
-    return (nullptr);
+    return nullptr;
 }
 
 bool CppVisitor::callsInitializer(FunctionCall* functionCall) {
@@ -2008,20 +2008,20 @@ bool CppVisitor::callsInitializer(FunctionCall* functionCall) {
             if (postfixExpression->primaryExpression->_isIdentifierExpression()) {
                 IdentifierExpression* identifierExpression = (IdentifierExpression*)(postfixExpression->primaryExpression);
                 if (isClass(identifierExpression->name)) {
-                    return (true);
+                    return true;
                 }
             }
         }
     }
-    return (false);
+    return false;
 }
 
 bool CppVisitor::catchesError(FunctionCall* functionCall) {
     if (functionCall == nullptr)
-        return (false);
+        return false;
     if (functionCall->catchClauses != nullptr)
-        return (true);
-    return (false);
+        return true;
+    return false;
 }
 
 void CppVisitor::closeParenthesizedExpression(ParenthesizedExpression* parenthesizedExpression) {
@@ -2055,7 +2055,7 @@ bool CppVisitor::openReturnExpression(ReturnExpression* returnExpression) {
         if (thrownType != nullptr)
             sourceFile->append(")");
     }
-    return (false);
+    return false;
 }
 
 void CppVisitor::closeReturnExpression(ReturnExpression* returnExpression) {
@@ -2070,7 +2070,7 @@ bool CppVisitor::openThrowExpression(ThrowExpression* throwExpression) {
     _Region _region; _Page* _p = _region.get();
     string* thrownType = getThrownType(_p, throwExpression);
     if (thrownType == nullptr)
-        return (false);
+        return false;
     sourceFile->append("return ");
     string* returnType = getReturnType(_p, throwExpression);
     if (returnType != nullptr) {
@@ -2131,22 +2131,22 @@ bool CppVisitor::openThrowExpression(ThrowExpression* throwExpression) {
     }
     if (returnType != nullptr)
         sourceFile->append(")");
-    return (false);
+    return false;
 }
 
 bool CppVisitor::inWildcardCatchClause(ThrowExpression* throwExpression) {
     CatchClause* catchClause = getCatchClause(throwExpression);
     if ((catchClause != nullptr) && (catchClause->catchPattern->_isWildCardCatchPattern()))
-        return (true);
-    return (false);
+        return true;
+    return false;
 }
 
 CatchClause* CppVisitor::getCatchClause(SyntaxNode* syntaxNode) {
     if (syntaxNode->_isCatchClause())
-        return ((CatchClause*)syntaxNode);
+        return (CatchClause*)syntaxNode;
     if (syntaxNode->parent == nullptr)
-        return (nullptr);
-    return (getCatchClause(syntaxNode->parent));
+        return nullptr;
+    return getCatchClause(syntaxNode->parent);
 }
 
 string* CppVisitor::getReturnType(_Page* _rp, SyntaxNode* syntaxNode) {
@@ -2160,15 +2160,15 @@ string* CppVisitor::getReturnType(_Page* _rp, SyntaxNode* syntaxNode) {
                 ret->append("_Vector<");
                 appendCppTypeName(ret, type);
                 ret->append(">");
-                return (new(_rp) string(ret));
+                return new(_rp) string(ret);
             }
             else {
                 appendCppTypeName(ret, functionResult->resultType);
-                return (new(_rp) string(ret));
+                return new(_rp) string(ret);
             }
         }
     }
-    return (nullptr);
+    return nullptr;
 }
 
 string* CppVisitor::getThrownType(_Page* _rp, SyntaxNode* syntaxNode) {
@@ -2182,15 +2182,15 @@ string* CppVisitor::getThrownType(_Page* _rp, SyntaxNode* syntaxNode) {
                 ret->append("_Vector<");
                 appendCppTypeName(ret, type);
                 ret->append(">");
-                return (new(_rp) string(ret));
+                return new(_rp) string(ret);
             }
             else {
                 appendCppTypeName(ret, throwsClause->throwsType);
-                return (new(_rp) string(ret));
+                return new(_rp) string(ret);
             }
         }
     }
-    return (nullptr);
+    return nullptr;
 }
 
 bool CppVisitor::returnsArray(SyntaxNode* syntaxNode) {
@@ -2199,18 +2199,18 @@ bool CppVisitor::returnsArray(SyntaxNode* syntaxNode) {
         FunctionResult* functionResult = functionDeclaration->signature->result;
         if (functionResult != nullptr) {
             if (hasArrayPostfix(functionResult->resultType))
-                return (true);
+                return true;
         }
     }
-    return (false);
+    return false;
 }
 
 FunctionDeclaration* CppVisitor::getFunctionDeclaration(SyntaxNode* syntaxNode) {
     if (syntaxNode->_isFunctionDeclaration())
-        return ((FunctionDeclaration*)syntaxNode);
+        return (FunctionDeclaration*)syntaxNode;
     if (syntaxNode->parent == nullptr)
-        return (nullptr);
-    return (getFunctionDeclaration(syntaxNode->parent));
+        return nullptr;
+    return getFunctionDeclaration(syntaxNode->parent);
 }
 
 void CppVisitor::closeThrowExpression(ThrowExpression* throwExpression) {
@@ -2218,7 +2218,7 @@ void CppVisitor::closeThrowExpression(ThrowExpression* throwExpression) {
 
 bool CppVisitor::openBreakExpression(BreakExpression* breakExpression) {
     sourceFile->append("break");
-    return (true);
+    return true;
 }
 
 void CppVisitor::closeBreakExpression(BreakExpression* breakExpression) {
@@ -2270,7 +2270,7 @@ bool CppVisitor::openConstructorCall(ConstructorCall* constructorCall) {
             sourceFile->append(", *");
             constructorCall->arguments->accept(this);
             sourceFile->append(")");
-            return (false);
+            return false;
         }
         else {
             sourceFile->append("new(");
@@ -2360,7 +2360,7 @@ bool CppVisitor::openConstructorCall(ConstructorCall* constructorCall) {
                 sourceFile->append(") ");
                 sourceFile->append(type->name);
                 constructorCall->arguments->accept(this);
-                return (false);
+                return false;
             }
         }
         else {
@@ -2431,10 +2431,10 @@ bool CppVisitor::openConstructorCall(ConstructorCall* constructorCall) {
             Type* type = (Type*)(constructorCall->typeToInitialize);
             sourceFile->append(type->name);
             constructorCall->arguments->accept(this);
-            return (false);
+            return false;
         }
     }
-    return (true);
+    return true;
 }
 
 void CppVisitor::closeConstructorCall(ConstructorCall* constructorCall) {
@@ -2444,9 +2444,9 @@ bool CppVisitor::initializerIsBoundOrAssigned(ConstructorCall* initializerCall) 
     if (initializerCall->parent->_isPostfixExpression()) {
         PostfixExpression* postfixExpression = (PostfixExpression*)(initializerCall->parent);
         if ((postfixExpression->parent->parent->parent->_isAssignment()) || (postfixExpression->parent->parent->parent->_isInitializer()))
-            return (true);
+            return true;
     }
-    return (false);
+    return false;
 }
 
 void CppVisitor::visitThisExpression(ThisExpression* thisExpression) {
@@ -2454,14 +2454,14 @@ void CppVisitor::visitThisExpression(ThisExpression* thisExpression) {
 }
 
 bool CppVisitor::openSuperDot(SuperDot* superDot) {
-    return (true);
+    return true;
 }
 
 void CppVisitor::closeSuperDot(SuperDot* superDot) {
 }
 
 bool CppVisitor::openSuperSubscript(SuperSubscript* superSubscript) {
-    return (true);
+    return true;
 }
 
 void CppVisitor::closeSuperSubscript(SuperSubscript* superSubscript) {
@@ -2485,7 +2485,7 @@ bool CppVisitor::openElseClause(ElseClause* elseClause) {
         sourceFile->append(" ");
         elseClause->alternative->accept(this);
     }
-    return (false);
+    return false;
 }
 
 void CppVisitor::closeElseClause(ElseClause* elseClause) {
@@ -2494,7 +2494,7 @@ void CppVisitor::closeElseClause(ElseClause* elseClause) {
 bool CppVisitor::openCurliedSwitchBody(CurliedSwitchBody* curliedSwitchBody) {
     sourceFile->append(") {\n");
     sourceIndentLevel++;
-    return (true);
+    return true;
 }
 
 void CppVisitor::closeCurliedSwitchBody(CurliedSwitchBody* curliedSwitchBody) {
@@ -2504,7 +2504,7 @@ void CppVisitor::closeCurliedSwitchBody(CurliedSwitchBody* curliedSwitchBody) {
 }
 
 bool CppVisitor::openNakedSwitchBody(NakedSwitchBody* nakedSwitchBody) {
-    return (true);
+    return true;
 }
 
 void CppVisitor::closeNakedSwitchBody(NakedSwitchBody* nakedSwitchBody) {
@@ -2512,7 +2512,7 @@ void CppVisitor::closeNakedSwitchBody(NakedSwitchBody* nakedSwitchBody) {
 
 bool CppVisitor::openSwitchCase(SwitchCase* switchCase) {
     indentSource();
-    return (true);
+    return true;
 }
 
 void CppVisitor::closeSwitchCase(SwitchCase* switchCase) {
@@ -2520,7 +2520,7 @@ void CppVisitor::closeSwitchCase(SwitchCase* switchCase) {
 
 bool CppVisitor::openItemCaseLabel(ItemCaseLabel* itemCaseLabel) {
     sourceFile->append("case ");
-    return (true);
+    return true;
 }
 
 void CppVisitor::closeItemCaseLabel(ItemCaseLabel* itemCaseLabel) {
@@ -2532,7 +2532,7 @@ void CppVisitor::visitDefaultCaseLabel(DefaultCaseLabel* defaultCaseLabel) {
 
 bool CppVisitor::openCaseItem(CaseItem* caseItem) {
     sourceFile->append("case ");
-    return (true);
+    return true;
 }
 
 void CppVisitor::closeCaseItem(CaseItem* caseItem) {
@@ -2549,7 +2549,7 @@ bool CppVisitor::openIdentifierPattern(IdentifierPattern* identifierPattern) {
             sourceFile->append("auto _");
             sourceFile->append(identifierPattern->identifier);
             sourceFile->append("_result");
-            return (false);
+            return false;
         }
     }
     if (identifierPattern->annotationForType != nullptr) {
@@ -2563,7 +2563,7 @@ bool CppVisitor::openIdentifierPattern(IdentifierPattern* identifierPattern) {
         headerFile->append(identifierPattern->identifier);
     if (!suppressSource)
         sourceFile->append(identifierPattern->identifier);
-    return (false);
+    return false;
 }
 
 bool CppVisitor::isCatchingPatternInitializer(PatternInitializer* patternInitializer) {
@@ -2592,26 +2592,26 @@ bool CppVisitor::isCatchingPatternInitializer(PatternInitializer* patternInitial
                 }
                 if (functionCall != nullptr) {
                     if (functionCall->catchClauses != nullptr)
-                        return (true);
+                        return true;
                 }
             }
         }
     }
-    return (false);
+    return false;
 }
 
 void CppVisitor::closeIdentifierPattern(IdentifierPattern* identifierPattern) {
 }
 
 bool CppVisitor::openTuplePattern(TuplePattern* tuplePattern) {
-    return (true);
+    return true;
 }
 
 void CppVisitor::closeTuplePattern(TuplePattern* tuplePattern) {
 }
 
 bool CppVisitor::openExpressionPattern(ExpressionPattern* expressionPattern) {
-    return (true);
+    return true;
 }
 
 void CppVisitor::closeExpressionPattern(ExpressionPattern* expressionPattern) {
@@ -2620,7 +2620,7 @@ void CppVisitor::closeExpressionPattern(ExpressionPattern* expressionPattern) {
 }
 
 bool CppVisitor::openTuplePatternElement(TuplePatternElement* tuplePatternElement) {
-    return (true);
+    return true;
 }
 
 void CppVisitor::closeTuplePatternElement(TuplePatternElement* tuplePatternElement) {
@@ -2629,7 +2629,7 @@ void CppVisitor::closeTuplePatternElement(TuplePatternElement* tuplePatternEleme
 bool CppVisitor::openBlockCaseContent(BlockCaseContent* blockCaseContent) {
     sourceFile->append("{\n");
     sourceIndentLevel++;
-    return (true);
+    return true;
 }
 
 void CppVisitor::closeBlockCaseContent(BlockCaseContent* blockCaseContent) {
@@ -2687,7 +2687,7 @@ bool CppVisitor::openType(Type* type) {
         appendCppTypeName(headerFile, type);
     if ((!suppressSource))
         appendCppTypeName(sourceFile, type);
-    return (true);
+    return true;
 }
 
 void CppVisitor::closeType(Type* type) {
@@ -2718,8 +2718,8 @@ void CppVisitor::closeType(Type* type) {
 
 bool CppVisitor::inTypeQuery(Type* type) {
     if (type->parent->_isTypeQuery())
-        return (true);
-    return (false);
+        return true;
+    return false;
 }
 
 void CppVisitor::appendCppTypeName(VarString* s, Type* type) {
@@ -2738,14 +2738,14 @@ void CppVisitor::appendCppTypeName(VarString* s, Type* type) {
 }
 
 bool CppVisitor::openTypeAnnotation(TypeAnnotation* typeAnnotation) {
-    return (true);
+    return true;
 }
 
 void CppVisitor::closeTypeAnnotation(TypeAnnotation* typeAnnotation) {
 }
 
 bool CppVisitor::openSubtype(Subtype* subtype) {
-    return (true);
+    return true;
 }
 
 void CppVisitor::closeSubtype(Subtype* subtype) {
@@ -2755,21 +2755,21 @@ void CppVisitor::visitOptionalType(OptionalType* optionalType) {
 }
 
 bool CppVisitor::openIndexedType(IndexedType* indexedType) {
-    return (true);
+    return true;
 }
 
 void CppVisitor::closeIndexedType(IndexedType* indexedType) {
 }
 
 bool CppVisitor::openTypeInheritanceClause(TypeInheritanceClause* typeInheritanceClause) {
-    return (true);
+    return true;
 }
 
 void CppVisitor::closeTypeInheritanceClause(TypeInheritanceClause* typeInheritanceClause) {
 }
 
 bool CppVisitor::openInheritance(Inheritance* inheritance) {
-    return (false);
+    return false;
 }
 
 void CppVisitor::closeInheritance(Inheritance* inheritance) {

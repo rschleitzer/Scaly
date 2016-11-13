@@ -383,12 +383,12 @@ Identifier* Lexer::scanIdentifier(_Page* _rp) {
         position++;
         column++;
         if (position == end)
-            return (new(_rp) Identifier(new(_rp) string(name)));
+            return new(_rp) Identifier(new(_rp) string(name));
         char c = text->charAt(position);
         if (((c >= 'a') && (c <= 'z')) || ((c >= 'A') && (c <= 'Z')) || ((c >= '0') && (c <= '9')) || (c == '_'))
             name->append(text->charAt(position));
         else
-            return (new(_rp) Identifier(new(_rp) string(name)));
+            return new(_rp) Identifier(new(_rp) string(name));
     }
     while (true);
 }
@@ -411,9 +411,9 @@ Operator* Lexer::scanOperator(_Page* _rp, bool includeDots) {
         column++;
         if (position == end) {
             if (whitespaceSkippedBefore)
-                return (new(_rp) BinaryOperator(new(_rp) string(operation)));
+                return new(_rp) BinaryOperator(new(_rp) string(operation));
             else
-                return (new(_rp) PostfixOperator(new(_rp) string(operation)));
+                return new(_rp) PostfixOperator(new(_rp) string(operation));
         }
         if (includeDots && (text->charAt(position) == '.')) {
             operation->append(text->charAt(position));
@@ -448,11 +448,11 @@ Operator* Lexer::scanOperator(_Page* _rp, bool includeDots) {
                         }
                     }
                     if ((whitespaceSkippedBefore && whitespaceSkippedAfter) || (!whitespaceSkippedBefore && !whitespaceSkippedAfter))
-                        return (new(_rp) BinaryOperator(new(_rp) string(operation)));
+                        return new(_rp) BinaryOperator(new(_rp) string(operation));
                     if ((!whitespaceSkippedBefore && whitespaceSkippedAfter))
-                        return (new(_rp) PostfixOperator(new(_rp) string(operation)));
+                        return new(_rp) PostfixOperator(new(_rp) string(operation));
                     if ((whitespaceSkippedBefore && !whitespaceSkippedAfter))
-                        return (new(_rp) PrefixOperator(new(_rp) string(operation)));
+                        return new(_rp) PrefixOperator(new(_rp) string(operation));
                 }
             }
         }
@@ -467,13 +467,13 @@ Token* Lexer::scanStringLiteral(_Page* _rp) {
         position++;
         column++;
         if (position == end)
-            return (new(_rp) InvalidToken());
+            return new(_rp) InvalidToken();
         switch (text->charAt(position)) {
             case '\"': {
                 {
                     position++;
                     column++;
-                    return (new(_rp) StringLiteral(new(_rp) string(value)));
+                    return new(_rp) StringLiteral(new(_rp) string(value));
                 }
                 break;
             }
@@ -512,7 +512,7 @@ Token* Lexer::scanStringLiteral(_Page* _rp) {
                         }
 
                         default: {
-                            return (new(_rp) InvalidToken());
+                            return new(_rp) InvalidToken();
                         }
                     }
                 }
@@ -534,13 +534,13 @@ Token* Lexer::scanCharacterLiteral(_Page* _rp) {
         position++;
         column++;
         if (position == end)
-            return (new(_rp) InvalidToken());
+            return new(_rp) InvalidToken();
         switch (text->charAt(position)) {
             case '\'': {
                 {
                     position++;
                     column++;
-                    return (new(_rp) CharacterLiteral(new(_rp) string(value)));
+                    return new(_rp) CharacterLiteral(new(_rp) string(value));
                 }
                 break;
             }
@@ -576,7 +576,7 @@ Token* Lexer::scanCharacterLiteral(_Page* _rp) {
                         }
 
                         default: {
-                            return (new(_rp) InvalidToken());
+                            return new(_rp) InvalidToken();
                         }
                     }
                 }
@@ -600,12 +600,12 @@ NumericLiteral* Lexer::scanNumericLiteral(_Page* _rp) {
         position++;
         column++;
         if (position == end)
-            return (new(_rp) NumericLiteral(new(_rp) string(value)));
+            return new(_rp) NumericLiteral(new(_rp) string(value));
         char c = text->charAt(position);
         if ((c >= '0') && (c <= '9'))
             value->append(text->charAt(position));
         else
-            return (new(_rp) NumericLiteral(new(_rp) string(value)));
+            return new(_rp) NumericLiteral(new(_rp) string(value));
     }
     while (true);
 }
@@ -614,7 +614,7 @@ bool Lexer::skipWhitespace() {
     whitespaceSkipped = false;
     do {
         if (position == end)
-            return (true);
+            return true;
         switch (text->charAt(position)) {
             case ' ': {
                 {
@@ -661,7 +661,7 @@ bool Lexer::skipWhitespace() {
                     position++;
                     column++;
                     if (position == end)
-                        return (whitespaceSkipped);
+                        return whitespaceSkipped;
                     if (text->charAt(position) == '/') {
                         whitespaceSkipped = true;
                         handleSingleLineComment();
@@ -672,14 +672,14 @@ bool Lexer::skipWhitespace() {
                             handleMultiLineComment();
                         }
                         else
-                            return (whitespaceSkipped);
+                            return whitespaceSkipped;
                     }
                 }
                 break;
             }
 
             default: {
-                return (whitespaceSkipped);
+                return whitespaceSkipped;
             }
         }
     }
@@ -815,86 +815,86 @@ void Lexer::handleMultiLineComment() {
 
 bool Lexer::parseKeyword(string* fixedString) {
     if (!(token->_isIdentifier()))
-        return (false);
+        return false;
     Identifier* identifier = (Identifier*)token;
-    return (identifier->name->equals(fixedString));
+    return identifier->name->equals(fixedString);
 }
 
 string* Lexer::parseIdentifier(_Page* _rp) {
     if (!(token->_isIdentifier()))
-        return (nullptr);
+        return nullptr;
     Identifier* identifier = (Identifier*)token;
-    return (new(_rp) string(identifier->name));
+    return new(_rp) string(identifier->name);
 }
 
 bool Lexer::parsePunctuation(string* fixedString) {
     if (!(token->_isPunctuation()))
-        return (false);
+        return false;
     Punctuation* punctuation = (Punctuation*)token;
-    return (punctuation->sign->equals(fixedString));
+    return punctuation->sign->equals(fixedString);
 }
 
 string* Lexer::parseOperator(_Page* _rp) {
     if (!(token->_isOperator()))
-        return (nullptr);
+        return nullptr;
     Operator* op = (Operator*)token;
-    return (new(_rp) string(op->operation));
+    return new(_rp) string(op->operation);
 }
 
 Literal* Lexer::parseLiteral(_Page* _rp) {
     if (!(token->_isLiteral()))
-        return (nullptr);
+        return nullptr;
     if (token->_isStringLiteral()) {
         StringLiteral* stringLiteral = (StringLiteral*)token;
-        return (new(_rp) StringLiteral(new(_rp) string(stringLiteral->value)));
+        return new(_rp) StringLiteral(new(_rp) string(stringLiteral->value));
     }
     if (token->_isCharacterLiteral()) {
         CharacterLiteral* characterLiteral = (CharacterLiteral*)token;
-        return (new(_rp) CharacterLiteral(new(_rp) string(characterLiteral->value)));
+        return new(_rp) CharacterLiteral(new(_rp) string(characterLiteral->value));
     }
     if (token->_isNumericLiteral()) {
         NumericLiteral* numericLiteral = (NumericLiteral*)token;
-        return (new(_rp) NumericLiteral(new(_rp) string(numericLiteral->value)));
+        return new(_rp) NumericLiteral(new(_rp) string(numericLiteral->value));
     }
-    return (nullptr);
+    return nullptr;
 }
 
 string* Lexer::parsePrefixOperator(_Page* _rp) {
     if (!(token->_isPrefixOperator()))
-        return (nullptr);
+        return nullptr;
     Operator* op = (Operator*)token;
-    return (new(_rp) string(op->operation));
+    return new(_rp) string(op->operation);
 }
 
 string* Lexer::parseBinaryOperator(_Page* _rp) {
     if (!(token->_isBinaryOperator())) {
         if ((token->_isPunctuation()) && ((((Punctuation*)token)->sign->equals("<")) || (((Punctuation*)token)->sign->equals(">")))) {
             Operator* op = (Operator*)token;
-            return (new(_rp) string(op->operation));
+            return new(_rp) string(op->operation);
         }
-        return (nullptr);
+        return nullptr;
     }
     Operator* op = (Operator*)token;
-    return (new(_rp) string(op->operation));
+    return new(_rp) string(op->operation);
 }
 
 string* Lexer::parsePostfixOperator(_Page* _rp) {
     if (!(token->_isPostfixOperator()))
-        return (nullptr);
+        return nullptr;
     Operator* op = (Operator*)token;
-    return (new(_rp) string(op->operation));
+    return new(_rp) string(op->operation);
 }
 
 bool Lexer::isAtEnd() {
-    return (position == end);
+    return position == end;
 }
 
 Position* Lexer::getPosition(_Page* _rp) {
-    return (new(_rp) Position(line, column));
+    return new(_rp) Position(line, column);
 }
 
 Position* Lexer::getPreviousPosition(_Page* _rp) {
-    return (new(_rp) Position(previousLine, previousColumn));
+    return new(_rp) Position(previousLine, previousColumn);
 }
 
 
