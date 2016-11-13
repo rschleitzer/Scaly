@@ -7,7 +7,7 @@
 "
 "   ))
 
-"class "(if concrete "MyVisitor : " "")"SyntaxVisitor {"
+"class "(if concrete "MyVisitor extends " "")"SyntaxVisitor {"
     (apply-to-selected-children "syntax" (lambda (syntax) (if (abstract? syntax) "" ($
         (if (has-syntax-children? syntax)
             ($ "

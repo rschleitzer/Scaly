@@ -1,4 +1,4 @@
-class MyVisitor : SyntaxVisitor {
+class MyVisitor extends SyntaxVisitor {
     function openProgram(program: Program): bool {
         return true
     }

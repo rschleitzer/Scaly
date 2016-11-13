@@ -36,6 +36,7 @@ Parser::Parser(String* theFileName, String* text) {
     thisKeyword = new(getPage()) String("this");
     nullKeyword = new(getPage()) String("null");
     newKeyword = new(getPage()) String("new");
+    extendsKeyword = new(getPage()) String("extends");
     semicolon = new(getPage()) String(";");
     equal = new(getPage()) String("=");
     leftAngular = new(getPage()) String("<");
@@ -3872,12 +3873,12 @@ _Result<IndexedType, ParserError> Parser::parseIndexedType(_Page* _rp, _Page* _e
 _Result<TypeInheritanceClause, ParserError> Parser::parseTypeInheritanceClause(_Page* _rp, _Page* _ep) {
     _Region _region; _Page* _p = _region.get();
     Position* start = lexer->getPreviousPosition(_p);
-    Position* startColon1 = lexer->getPreviousPosition(_p);
-    bool successColon1 = lexer->parsePunctuation(colon);
-    if (successColon1)
+    Position* startExtends1 = lexer->getPreviousPosition(_p);
+    bool successExtends1 = lexer->parseKeyword(extendsKeyword);
+    if (successExtends1)
         lexer->advance();
     else
-        return _Result<TypeInheritanceClause, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_punctuationExpected(new(_ep) Position(startColon1), new(_ep) String(colon))));
+        return _Result<TypeInheritanceClause, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_punctuationExpected(new(_ep) Position(startExtends1), new(_ep) String(colon))));
     auto _inheritances_result = parseInheritanceList(_rp, _ep);
     _Vector<Inheritance>* inheritances = nullptr;
     if (_inheritances_result.succeeded()) {
@@ -4005,6 +4006,8 @@ bool Parser::isIdentifier(String* id) {
     if (id->equals(nullKeyword))
         return false;
     if (id->equals(newKeyword))
+        return false;
+    if (id->equals(extendsKeyword))
         return false;
     return true;
 }

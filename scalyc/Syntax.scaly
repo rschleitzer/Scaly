@@ -4,7 +4,7 @@ class SyntaxNode {
     var parent: SyntaxNode
 }
 
-class Program : SyntaxNode {
+class Program extends SyntaxNode {
 
     constructor(name: String, directory: String, compilationUnits: CompilationUnit[]) {
         start = new Position(0, 0)
@@ -30,7 +30,7 @@ class Program : SyntaxNode {
     let compilationUnits: CompilationUnit[]?
 }
 
-class CompilationUnit : SyntaxNode {
+class CompilationUnit extends SyntaxNode {
 
     constructor(statements: TerminatedStatement[], start: Position, end: Position) {
         this.start = start;
@@ -52,7 +52,7 @@ class CompilationUnit : SyntaxNode {
     let fileName: String
 }
 
-class TerminatedStatement : SyntaxNode {
+class TerminatedStatement extends SyntaxNode {
 
     constructor(statement: Statement, start: Position, end: Position) {
         this.start = start;
@@ -70,28 +70,28 @@ class TerminatedStatement : SyntaxNode {
     let statement: Statement?
 }
 
-class Statement : SyntaxNode {
+class Statement extends SyntaxNode {
 
     function accept(mutable visitor: SyntaxVisitor) {
     }
 
 }
 
-class Declaration : Statement {
+class Declaration extends Statement {
 
     override function accept(mutable visitor: SyntaxVisitor) {
     }
 
 }
 
-class Expression : Statement {
+class Expression extends Statement {
 
     override function accept(mutable visitor: SyntaxVisitor) {
     }
 
 }
 
-class UseDeclaration : Declaration {
+class UseDeclaration extends Declaration {
 
     constructor(importModule: PathItem, importExtensions: PathIdentifier[], start: Position, end: Position) {
         this.start = start;
@@ -115,7 +115,7 @@ class UseDeclaration : Declaration {
     let importExtensions: PathIdentifier[]?
 }
 
-class ConstantDeclaration : Declaration {
+class ConstantDeclaration extends Declaration {
 
     constructor(initializer: BindingInitializer, start: Position, end: Position) {
         this.start = start;
@@ -133,7 +133,7 @@ class ConstantDeclaration : Declaration {
     let initializer: BindingInitializer?
 }
 
-class VariableDeclaration : Declaration {
+class VariableDeclaration extends Declaration {
 
     constructor(initializer: BindingInitializer, start: Position, end: Position) {
         this.start = start;
@@ -151,7 +151,7 @@ class VariableDeclaration : Declaration {
     let initializer: BindingInitializer?
 }
 
-class MutableDeclaration : Declaration {
+class MutableDeclaration extends Declaration {
 
     constructor(initializer: BindingInitializer, start: Position, end: Position) {
         this.start = start;
@@ -169,7 +169,7 @@ class MutableDeclaration : Declaration {
     let initializer: BindingInitializer?
 }
 
-class FunctionDeclaration : Declaration {
+class FunctionDeclaration extends Declaration {
 
     constructor(modifiers: Modifier[], name: FunctionName, signature: FunctionSignature, body: Expression, start: Position, end: Position) {
         this.start = start;
@@ -200,7 +200,7 @@ class FunctionDeclaration : Declaration {
     let body: Expression?
 }
 
-class EnumDeclaration : Declaration {
+class EnumDeclaration extends Declaration {
 
     constructor(name: String, members: EnumMember[], start: Position, end: Position) {
         this.start = start;
@@ -223,7 +223,7 @@ class EnumDeclaration : Declaration {
     let members: EnumMember[]?
 }
 
-class ClassDeclaration : Declaration {
+class ClassDeclaration extends Declaration {
 
     constructor(name: String, genericArgumentClause: GenericArgumentClause, typeInheritanceClause: TypeInheritanceClause, body: ClassBody, start: Position, end: Position) {
         this.start = start;
@@ -252,7 +252,7 @@ class ClassDeclaration : Declaration {
     let body: ClassBody?
 }
 
-class ConstructorDeclaration : Declaration {
+class ConstructorDeclaration extends Declaration {
 
     constructor(modifiers: Modifier[], parameterClause: ParameterClause, throwsClause: ThrowsClause, body: Expression, start: Position, end: Position) {
         this.start = start;
@@ -283,7 +283,7 @@ class ConstructorDeclaration : Declaration {
     let body: Expression?
 }
 
-class CodeBlock : Expression {
+class CodeBlock extends Expression {
 
     constructor(statements: TerminatedStatement[], start: Position, end: Position) {
         this.start = start;
@@ -304,7 +304,7 @@ class CodeBlock : Expression {
     let statements: TerminatedStatement[]?
 }
 
-class SimpleExpression : Expression {
+class SimpleExpression extends Expression {
 
     constructor(prefixExpression: PrefixExpression, binaryOps: BinaryOp[], start: Position, end: Position) {
         this.start = start;
@@ -328,7 +328,7 @@ class SimpleExpression : Expression {
     let binaryOps: BinaryOp[]?
 }
 
-class PathIdentifier : SyntaxNode {
+class PathIdentifier extends SyntaxNode {
 
     constructor(extension: PathItem, start: Position, end: Position) {
         this.start = start;
@@ -346,7 +346,7 @@ class PathIdentifier : SyntaxNode {
     let extension: PathItem?
 }
 
-class PathItem : SyntaxNode {
+class PathItem extends SyntaxNode {
 
     constructor(name: String, start: Position, end: Position) {
         this.start = start;
@@ -361,7 +361,7 @@ class PathItem : SyntaxNode {
     let name: String?
 }
 
-class Initializer : SyntaxNode {
+class Initializer extends SyntaxNode {
 
     constructor(expression: Expression, start: Position, end: Position) {
         this.start = start;
@@ -379,7 +379,7 @@ class Initializer : SyntaxNode {
     let expression: Expression?
 }
 
-class BindingInitializer : SyntaxNode {
+class BindingInitializer extends SyntaxNode {
 
     constructor(initializer: PatternInitializer, additionalInitializers: AdditionalInitializer[], start: Position, end: Position) {
         this.start = start;
@@ -403,7 +403,7 @@ class BindingInitializer : SyntaxNode {
     let additionalInitializers: AdditionalInitializer[]?
 }
 
-class PatternInitializer : SyntaxNode {
+class PatternInitializer extends SyntaxNode {
 
     constructor(pattern: Pattern, initializer: Initializer, start: Position, end: Position) {
         this.start = start;
@@ -425,7 +425,7 @@ class PatternInitializer : SyntaxNode {
     let initializer: Initializer?
 }
 
-class AdditionalInitializer : SyntaxNode {
+class AdditionalInitializer extends SyntaxNode {
 
     constructor(pattern: PatternInitializer, start: Position, end: Position) {
         this.start = start;
@@ -443,14 +443,14 @@ class AdditionalInitializer : SyntaxNode {
     let pattern: PatternInitializer?
 }
 
-class Modifier : SyntaxNode {
+class Modifier extends SyntaxNode {
 
     function accept(mutable visitor: SyntaxVisitor) {
     }
 
 }
 
-class OverrideWord : Modifier {
+class OverrideWord extends Modifier {
 
     constructor(start: Position, end: Position) {
         this.start = start;
@@ -463,7 +463,7 @@ class OverrideWord : Modifier {
 
 }
 
-class StaticWord : Modifier {
+class StaticWord extends Modifier {
 
     constructor(start: Position, end: Position) {
         this.start = start;
@@ -476,14 +476,14 @@ class StaticWord : Modifier {
 
 }
 
-class FunctionName : SyntaxNode {
+class FunctionName extends SyntaxNode {
 
     function accept(mutable visitor: SyntaxVisitor) {
     }
 
 }
 
-class IdentifierFunction : FunctionName {
+class IdentifierFunction extends FunctionName {
 
     constructor(name: String, start: Position, end: Position) {
         this.start = start;
@@ -498,7 +498,7 @@ class IdentifierFunction : FunctionName {
     let name: String?
 }
 
-class FunctionSignature : SyntaxNode {
+class FunctionSignature extends SyntaxNode {
 
     constructor(parameterClause: ParameterClause, result: FunctionResult, throwsClause: ThrowsClause, start: Position, end: Position) {
         this.start = start;
@@ -524,7 +524,7 @@ class FunctionSignature : SyntaxNode {
     let throwsClause: ThrowsClause?
 }
 
-class FunctionResult : SyntaxNode {
+class FunctionResult extends SyntaxNode {
 
     constructor(existingObject: ExistingClause, resultType: Type, start: Position, end: Position) {
         this.start = start;
@@ -546,7 +546,7 @@ class FunctionResult : SyntaxNode {
     let resultType: Type?
 }
 
-class ExistingClause : SyntaxNode {
+class ExistingClause extends SyntaxNode {
 
     constructor(start: Position, end: Position) {
         this.start = start;
@@ -559,7 +559,7 @@ class ExistingClause : SyntaxNode {
 
 }
 
-class ParameterClause : SyntaxNode {
+class ParameterClause extends SyntaxNode {
 
     constructor(parameters: Parameter[], start: Position, end: Position) {
         this.start = start;
@@ -580,14 +580,14 @@ class ParameterClause : SyntaxNode {
     let parameters: Parameter[]?
 }
 
-class Parameter : SyntaxNode {
+class Parameter extends SyntaxNode {
 
     function accept(mutable visitor: SyntaxVisitor) {
     }
 
 }
 
-class ConstParameter : Parameter {
+class ConstParameter extends Parameter {
 
     constructor(name: String, parameterType: Type, start: Position, end: Position) {
         this.start = start;
@@ -607,7 +607,7 @@ class ConstParameter : Parameter {
     let parameterType: Type?
 }
 
-class VarParameter : Parameter {
+class VarParameter extends Parameter {
 
     constructor(name: String, parameterType: Type, start: Position, end: Position) {
         this.start = start;
@@ -627,7 +627,7 @@ class VarParameter : Parameter {
     let parameterType: Type?
 }
 
-class ThrowsClause : SyntaxNode {
+class ThrowsClause extends SyntaxNode {
 
     constructor(throwsType: Type, start: Position, end: Position) {
         this.start = start;
@@ -645,7 +645,7 @@ class ThrowsClause : SyntaxNode {
     let throwsType: Type?
 }
 
-class EnumMember : SyntaxNode {
+class EnumMember extends SyntaxNode {
 
     constructor(enumCase: EnumCase, additionalCases: AdditionalCase[], parameterClause: ParameterClause, start: Position, end: Position) {
         this.start = start;
@@ -673,7 +673,7 @@ class EnumMember : SyntaxNode {
     let parameterClause: ParameterClause?
 }
 
-class EnumCase : SyntaxNode {
+class EnumCase extends SyntaxNode {
 
     constructor(name: String, start: Position, end: Position) {
         this.start = start;
@@ -688,7 +688,7 @@ class EnumCase : SyntaxNode {
     let name: String?
 }
 
-class AdditionalCase : SyntaxNode {
+class AdditionalCase extends SyntaxNode {
 
     constructor(enumCase: EnumCase, start: Position, end: Position) {
         this.start = start;
@@ -706,7 +706,7 @@ class AdditionalCase : SyntaxNode {
     let enumCase: EnumCase?
 }
 
-class ClassBody : SyntaxNode {
+class ClassBody extends SyntaxNode {
 
     constructor(members: ClassMember[], start: Position, end: Position) {
         this.start = start;
@@ -727,7 +727,7 @@ class ClassBody : SyntaxNode {
     let members: ClassMember[]?
 }
 
-class GenericArgumentClause : SyntaxNode {
+class GenericArgumentClause extends SyntaxNode {
 
     constructor(genericParameters: GenericParameter[], start: Position, end: Position) {
         this.start = start;
@@ -748,7 +748,7 @@ class GenericArgumentClause : SyntaxNode {
     let genericParameters: GenericParameter[]?
 }
 
-class GenericParameter : SyntaxNode {
+class GenericParameter extends SyntaxNode {
 
     constructor(typeName: String, start: Position, end: Position) {
         this.start = start;
@@ -763,7 +763,7 @@ class GenericParameter : SyntaxNode {
     let typeName: String?
 }
 
-class ClassMember : SyntaxNode {
+class ClassMember extends SyntaxNode {
 
     constructor(declaration: Declaration, start: Position, end: Position) {
         this.start = start;
@@ -781,7 +781,7 @@ class ClassMember : SyntaxNode {
     let declaration: Declaration?
 }
 
-class PrefixExpression : SyntaxNode {
+class PrefixExpression extends SyntaxNode {
 
     constructor(prefixOperator: String, expression: PostfixExpression, start: Position, end: Position) {
         this.start = start;
@@ -801,7 +801,7 @@ class PrefixExpression : SyntaxNode {
     let expression: PostfixExpression?
 }
 
-class PostfixExpression : SyntaxNode {
+class PostfixExpression extends SyntaxNode {
 
     constructor(primaryExpression: PrimaryExpression, postfixes: Postfix[], start: Position, end: Position) {
         this.start = start;
@@ -825,14 +825,14 @@ class PostfixExpression : SyntaxNode {
     let postfixes: Postfix[]?
 }
 
-class BinaryOp : SyntaxNode {
+class BinaryOp extends SyntaxNode {
 
     function accept(mutable visitor: SyntaxVisitor) {
     }
 
 }
 
-class BinaryOperation : BinaryOp {
+class BinaryOperation extends BinaryOp {
 
     constructor(binaryOperator: String, expression: PrefixExpression, start: Position, end: Position) {
         this.start = start;
@@ -852,7 +852,7 @@ class BinaryOperation : BinaryOp {
     let expression: PrefixExpression?
 }
 
-class Assignment : BinaryOp {
+class Assignment extends BinaryOp {
 
     constructor(expression: Expression, start: Position, end: Position) {
         this.start = start;
@@ -870,7 +870,7 @@ class Assignment : BinaryOp {
     let expression: Expression?
 }
 
-class TypeQuery : BinaryOp {
+class TypeQuery extends BinaryOp {
 
     constructor(objectType: Type, start: Position, end: Position) {
         this.start = start;
@@ -888,7 +888,7 @@ class TypeQuery : BinaryOp {
     let objectType: Type?
 }
 
-class TypeCast : BinaryOp {
+class TypeCast extends BinaryOp {
 
     constructor(objectType: Type, start: Position, end: Position) {
         this.start = start;
@@ -906,7 +906,7 @@ class TypeCast : BinaryOp {
     let objectType: Type?
 }
 
-class CatchClause : SyntaxNode {
+class CatchClause extends SyntaxNode {
 
     constructor(catchPattern: CatchPattern, bindingPattern: TuplePattern, expression: Expression, start: Position, end: Position) {
         this.start = start;
@@ -931,14 +931,14 @@ class CatchClause : SyntaxNode {
     let expression: Expression?
 }
 
-class CatchPattern : SyntaxNode {
+class CatchPattern extends SyntaxNode {
 
     function accept(mutable visitor: SyntaxVisitor) {
     }
 
 }
 
-class WildCardCatchPattern : CatchPattern {
+class WildCardCatchPattern extends CatchPattern {
 
     constructor(pattern: WildcardPattern, start: Position, end: Position) {
         this.start = start;
@@ -956,7 +956,7 @@ class WildCardCatchPattern : CatchPattern {
     let pattern: WildcardPattern?
 }
 
-class IdentifierCatchPattern : CatchPattern {
+class IdentifierCatchPattern extends CatchPattern {
 
     constructor(name: String, member: ExplicitMemberExpression, start: Position, end: Position) {
         this.start = start;
@@ -977,14 +977,14 @@ class IdentifierCatchPattern : CatchPattern {
     let member: ExplicitMemberExpression?
 }
 
-class Postfix : SyntaxNode {
+class Postfix extends SyntaxNode {
 
     function accept(mutable visitor: SyntaxVisitor) {
     }
 
 }
 
-class OperatorPostfix : Postfix {
+class OperatorPostfix extends Postfix {
 
     constructor(postfixOperator: String, start: Position, end: Position) {
         this.start = start;
@@ -999,7 +999,7 @@ class OperatorPostfix : Postfix {
     let postfixOperator: String?
 }
 
-class FunctionCall : Postfix {
+class FunctionCall extends Postfix {
 
     constructor(arguments: ParenthesizedExpression, catchClauses: CatchClause[], start: Position, end: Position) {
         this.start = start;
@@ -1023,7 +1023,7 @@ class FunctionCall : Postfix {
     let catchClauses: CatchClause[]?
 }
 
-class ExplicitMemberExpression : Postfix {
+class ExplicitMemberExpression extends Postfix {
 
     constructor(memberPostfix: MemberPostfix, start: Position, end: Position) {
         this.start = start;
@@ -1041,7 +1041,7 @@ class ExplicitMemberExpression : Postfix {
     let memberPostfix: MemberPostfix?
 }
 
-class Subscript : Postfix {
+class Subscript extends Postfix {
 
     constructor(expressions: ExpressionElement[], start: Position, end: Position) {
         this.start = start;
@@ -1062,7 +1062,7 @@ class Subscript : Postfix {
     let expressions: ExpressionElement[]?
 }
 
-class ExpressionElement : SyntaxNode {
+class ExpressionElement extends SyntaxNode {
 
     constructor(expression: Expression, start: Position, end: Position) {
         this.start = start;
@@ -1080,14 +1080,14 @@ class ExpressionElement : SyntaxNode {
     let expression: Expression?
 }
 
-class MemberPostfix : SyntaxNode {
+class MemberPostfix extends SyntaxNode {
 
     function accept(mutable visitor: SyntaxVisitor) {
     }
 
 }
 
-class NamedMemberPostfix : MemberPostfix {
+class NamedMemberPostfix extends MemberPostfix {
 
     constructor(identifier: IdentifierExpression, start: Position, end: Position) {
         this.start = start;
@@ -1105,14 +1105,14 @@ class NamedMemberPostfix : MemberPostfix {
     let identifier: IdentifierExpression?
 }
 
-class PrimaryExpression : SyntaxNode {
+class PrimaryExpression extends SyntaxNode {
 
     function accept(mutable visitor: SyntaxVisitor) {
     }
 
 }
 
-class IdentifierExpression : PrimaryExpression {
+class IdentifierExpression extends PrimaryExpression {
 
     constructor(name: String, start: Position, end: Position) {
         this.start = start;
@@ -1127,7 +1127,7 @@ class IdentifierExpression : PrimaryExpression {
     let name: String?
 }
 
-class LiteralExpression : PrimaryExpression {
+class LiteralExpression extends PrimaryExpression {
 
     constructor(literal: Literal, start: Position, end: Position) {
         this.start = start;
@@ -1142,7 +1142,7 @@ class LiteralExpression : PrimaryExpression {
     let literal: Literal?
 }
 
-class IfExpression : PrimaryExpression {
+class IfExpression extends PrimaryExpression {
 
     constructor(condition: Expression, consequent: Expression, elseClause: ElseClause, start: Position, end: Position) {
         this.start = start;
@@ -1167,7 +1167,7 @@ class IfExpression : PrimaryExpression {
     let elseClause: ElseClause?
 }
 
-class SwitchExpression : PrimaryExpression {
+class SwitchExpression extends PrimaryExpression {
 
     constructor(expression: Expression, body: SwitchBody, start: Position, end: Position) {
         this.start = start;
@@ -1188,7 +1188,7 @@ class SwitchExpression : PrimaryExpression {
     let body: SwitchBody?
 }
 
-class ForExpression : PrimaryExpression {
+class ForExpression extends PrimaryExpression {
 
     constructor(pattern: Pattern, expression: Expression, code: Expression, start: Position, end: Position) {
         this.start = start;
@@ -1212,7 +1212,7 @@ class ForExpression : PrimaryExpression {
     let code: Expression?
 }
 
-class WhileExpression : PrimaryExpression {
+class WhileExpression extends PrimaryExpression {
 
     constructor(condition: Expression, code: Expression, start: Position, end: Position) {
         this.start = start;
@@ -1233,7 +1233,7 @@ class WhileExpression : PrimaryExpression {
     let code: Expression?
 }
 
-class RepeatExpression : PrimaryExpression {
+class RepeatExpression extends PrimaryExpression {
 
     constructor(code: Expression, condition: Expression, start: Position, end: Position) {
         this.start = start;
@@ -1254,7 +1254,7 @@ class RepeatExpression : PrimaryExpression {
     let condition: Expression?
 }
 
-class ParenthesizedExpression : PrimaryExpression {
+class ParenthesizedExpression extends PrimaryExpression {
 
     constructor(expressionElements: ExpressionElement[], start: Position, end: Position) {
         this.start = start;
@@ -1275,7 +1275,7 @@ class ParenthesizedExpression : PrimaryExpression {
     let expressionElements: ExpressionElement[]?
 }
 
-class ReturnExpression : PrimaryExpression {
+class ReturnExpression extends PrimaryExpression {
 
     constructor(expression: Expression, start: Position, end: Position) {
         this.start = start;
@@ -1294,7 +1294,7 @@ class ReturnExpression : PrimaryExpression {
     let expression: Expression?
 }
 
-class ThrowExpression : PrimaryExpression {
+class ThrowExpression extends PrimaryExpression {
 
     constructor(error: IdentifierExpression, arguments: ParenthesizedExpression, start: Position, end: Position) {
         this.start = start;
@@ -1317,7 +1317,7 @@ class ThrowExpression : PrimaryExpression {
     let arguments: ParenthesizedExpression?
 }
 
-class BreakExpression : PrimaryExpression {
+class BreakExpression extends PrimaryExpression {
 
     constructor(expression: Expression, start: Position, end: Position) {
         this.start = start;
@@ -1336,7 +1336,7 @@ class BreakExpression : PrimaryExpression {
     let expression: Expression?
 }
 
-class ConstructorCall : PrimaryExpression {
+class ConstructorCall extends PrimaryExpression {
 
     constructor(typeToInitialize: Type, arguments: ParenthesizedExpression, catchClauses: CatchClause[], start: Position, end: Position) {
         this.start = start;
@@ -1363,7 +1363,7 @@ class ConstructorCall : PrimaryExpression {
     let catchClauses: CatchClause[]?
 }
 
-class ThisExpression : PrimaryExpression {
+class ThisExpression extends PrimaryExpression {
 
     constructor(start: Position, end: Position) {
         this.start = start;
@@ -1376,14 +1376,14 @@ class ThisExpression : PrimaryExpression {
 
 }
 
-class SuperExpression : PrimaryExpression {
+class SuperExpression extends PrimaryExpression {
 
     override function accept(mutable visitor: SyntaxVisitor) {
     }
 
 }
 
-class SuperDot : SuperExpression {
+class SuperDot extends SuperExpression {
 
     constructor(member: CommonSuperMember, start: Position, end: Position) {
         this.start = start;
@@ -1401,7 +1401,7 @@ class SuperDot : SuperExpression {
     let member: CommonSuperMember?
 }
 
-class SuperSubscript : SuperExpression {
+class SuperSubscript extends SuperExpression {
 
     constructor(subscript: Subscript, start: Position, end: Position) {
         this.start = start;
@@ -1419,7 +1419,7 @@ class SuperSubscript : SuperExpression {
     let subscript: Subscript?
 }
 
-class NullExpression : PrimaryExpression {
+class NullExpression extends PrimaryExpression {
 
     constructor(start: Position, end: Position) {
         this.start = start;
@@ -1432,7 +1432,7 @@ class NullExpression : PrimaryExpression {
 
 }
 
-class ElseClause : SyntaxNode {
+class ElseClause extends SyntaxNode {
 
     constructor(alternative: Expression, start: Position, end: Position) {
         this.start = start;
@@ -1450,14 +1450,14 @@ class ElseClause : SyntaxNode {
     let alternative: Expression?
 }
 
-class SwitchBody : SyntaxNode {
+class SwitchBody extends SyntaxNode {
 
     function accept(mutable visitor: SyntaxVisitor) {
     }
 
 }
 
-class CurliedSwitchBody : SwitchBody {
+class CurliedSwitchBody extends SwitchBody {
 
     constructor(cases: SwitchCase[], start: Position, end: Position) {
         this.start = start;
@@ -1478,7 +1478,7 @@ class CurliedSwitchBody : SwitchBody {
     let cases: SwitchCase[]?
 }
 
-class NakedSwitchBody : SwitchBody {
+class NakedSwitchBody extends SwitchBody {
 
     constructor(cases: SwitchCase[], start: Position, end: Position) {
         this.start = start;
@@ -1499,7 +1499,7 @@ class NakedSwitchBody : SwitchBody {
     let cases: SwitchCase[]?
 }
 
-class SwitchCase : SyntaxNode {
+class SwitchCase extends SyntaxNode {
 
     constructor(label: CaseLabel, content: CaseContent, start: Position, end: Position) {
         this.start = start;
@@ -1520,14 +1520,14 @@ class SwitchCase : SyntaxNode {
     let content: CaseContent?
 }
 
-class CaseLabel : SyntaxNode {
+class CaseLabel extends SyntaxNode {
 
     function accept(mutable visitor: SyntaxVisitor) {
     }
 
 }
 
-class ItemCaseLabel : CaseLabel {
+class ItemCaseLabel extends CaseLabel {
 
     constructor(pattern: Pattern, additionalPatterns: CaseItem[], start: Position, end: Position) {
         this.start = start;
@@ -1551,7 +1551,7 @@ class ItemCaseLabel : CaseLabel {
     let additionalPatterns: CaseItem[]?
 }
 
-class DefaultCaseLabel : CaseLabel {
+class DefaultCaseLabel extends CaseLabel {
 
     constructor(start: Position, end: Position) {
         this.start = start;
@@ -1564,7 +1564,7 @@ class DefaultCaseLabel : CaseLabel {
 
 }
 
-class CaseItem : SyntaxNode {
+class CaseItem extends SyntaxNode {
 
     constructor(pattern: Pattern, start: Position, end: Position) {
         this.start = start;
@@ -1582,14 +1582,14 @@ class CaseItem : SyntaxNode {
     let pattern: Pattern?
 }
 
-class Pattern : SyntaxNode {
+class Pattern extends SyntaxNode {
 
     function accept(mutable visitor: SyntaxVisitor) {
     }
 
 }
 
-class WildcardPattern : Pattern {
+class WildcardPattern extends Pattern {
 
     constructor(start: Position, end: Position) {
         this.start = start;
@@ -1602,7 +1602,7 @@ class WildcardPattern : Pattern {
 
 }
 
-class IdentifierPattern : Pattern {
+class IdentifierPattern extends Pattern {
 
     constructor(identifier: String, annotationForType: TypeAnnotation, start: Position, end: Position) {
         this.start = start;
@@ -1623,7 +1623,7 @@ class IdentifierPattern : Pattern {
     let annotationForType: TypeAnnotation?
 }
 
-class TuplePattern : Pattern {
+class TuplePattern extends Pattern {
 
     constructor(elements: TuplePatternElement[], start: Position, end: Position) {
         this.start = start;
@@ -1644,7 +1644,7 @@ class TuplePattern : Pattern {
     let elements: TuplePatternElement[]?
 }
 
-class ExpressionPattern : Pattern {
+class ExpressionPattern extends Pattern {
 
     constructor(expression: Expression, start: Position, end: Position) {
         this.start = start;
@@ -1662,7 +1662,7 @@ class ExpressionPattern : Pattern {
     let expression: Expression?
 }
 
-class TuplePatternElement : SyntaxNode {
+class TuplePatternElement extends SyntaxNode {
 
     constructor(pattern: Pattern, start: Position, end: Position) {
         this.start = start;
@@ -1680,14 +1680,14 @@ class TuplePatternElement : SyntaxNode {
     let pattern: Pattern?
 }
 
-class CaseContent : SyntaxNode {
+class CaseContent extends SyntaxNode {
 
     function accept(mutable visitor: SyntaxVisitor) {
     }
 
 }
 
-class BlockCaseContent : CaseContent {
+class BlockCaseContent extends CaseContent {
 
     constructor(statements: TerminatedStatement[], start: Position, end: Position) {
         this.start = start;
@@ -1708,7 +1708,7 @@ class BlockCaseContent : CaseContent {
     let statements: TerminatedStatement[]?
 }
 
-class EmptyCaseContent : CaseContent {
+class EmptyCaseContent extends CaseContent {
 
     constructor(start: Position, end: Position) {
         this.start = start;
@@ -1721,14 +1721,14 @@ class EmptyCaseContent : CaseContent {
 
 }
 
-class CommonSuperMember : SyntaxNode {
+class CommonSuperMember extends SyntaxNode {
 
     function accept(mutable visitor: SyntaxVisitor) {
     }
 
 }
 
-class SuperConstructor : CommonSuperMember {
+class SuperConstructor extends CommonSuperMember {
 
     constructor(start: Position, end: Position) {
         this.start = start;
@@ -1741,7 +1741,7 @@ class SuperConstructor : CommonSuperMember {
 
 }
 
-class SuperMember : CommonSuperMember {
+class SuperMember extends CommonSuperMember {
 
     constructor(name: String, start: Position, end: Position) {
         this.start = start;
@@ -1756,7 +1756,7 @@ class SuperMember : CommonSuperMember {
     let name: String?
 }
 
-class Type : SyntaxNode {
+class Type extends SyntaxNode {
 
     constructor(name: String, subType: Subtype, postfixes: TypePostfix[], start: Position, end: Position) {
         this.start = start;
@@ -1783,7 +1783,7 @@ class Type : SyntaxNode {
     let postfixes: TypePostfix[]?
 }
 
-class TypeAnnotation : SyntaxNode {
+class TypeAnnotation extends SyntaxNode {
 
     constructor(annotationForType: Type, start: Position, end: Position) {
         this.start = start;
@@ -1801,7 +1801,7 @@ class TypeAnnotation : SyntaxNode {
     let annotationForType: Type?
 }
 
-class Subtype : SyntaxNode {
+class Subtype extends SyntaxNode {
 
     constructor(type: Type, start: Position, end: Position) {
         this.start = start;
@@ -1819,14 +1819,14 @@ class Subtype : SyntaxNode {
     let type: Type?
 }
 
-class TypePostfix : SyntaxNode {
+class TypePostfix extends SyntaxNode {
 
     function accept(mutable visitor: SyntaxVisitor) {
     }
 
 }
 
-class OptionalType : TypePostfix {
+class OptionalType extends TypePostfix {
 
     constructor(start: Position, end: Position) {
         this.start = start;
@@ -1839,7 +1839,7 @@ class OptionalType : TypePostfix {
 
 }
 
-class IndexedType : TypePostfix {
+class IndexedType extends TypePostfix {
 
     constructor(key: Type, start: Position, end: Position) {
         this.start = start;
@@ -1858,7 +1858,7 @@ class IndexedType : TypePostfix {
     let key: Type?
 }
 
-class TypeInheritanceClause : SyntaxNode {
+class TypeInheritanceClause extends SyntaxNode {
 
     constructor(inheritances: Inheritance[], start: Position, end: Position) {
         this.start = start;
@@ -1879,7 +1879,7 @@ class TypeInheritanceClause : SyntaxNode {
     let inheritances: Inheritance[]?
 }
 
-class Inheritance : SyntaxNode {
+class Inheritance extends SyntaxNode {
 
     constructor(type: Type, start: Position, end: Position) {
         this.start = start;

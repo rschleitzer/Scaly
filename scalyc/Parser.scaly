@@ -33,6 +33,7 @@ class Parser {
         thisKeyword = new String("this")
         nullKeyword = new String("null")
         newKeyword = new String("new")
+        extendsKeyword = new String("extends")
         semicolon = new String(";")
         equal = new String("=")
         leftAngular = new String("<")
@@ -2657,12 +2658,12 @@ class Parser {
 
     function parseTypeInheritanceClause(): TypeInheritanceClause throws ParserError {
         mutable start: Position = lexer.getPreviousPosition()
-        mutable startColon1: Position = lexer.getPreviousPosition()
-        let successColon1: bool = lexer.parsePunctuation(colon)
-        if successColon1
+        mutable startExtends1: Position = lexer.getPreviousPosition()
+        let successExtends1: bool = lexer.parseKeyword(extendsKeyword)
+        if successExtends1
             lexer.advance()
         else
-            throw punctuationExpected(new Position(startColon1), new String(colon))
+            throw keywordExpected(new Position(startExtends1), new String(extendsKeyword))
 
         let inheritances: Inheritance[] = parseInheritanceList() catch _ null
         mutable end: Position = lexer.getPosition()
@@ -2799,6 +2800,9 @@ class Parser {
         if id.equals(newKeyword)
             return false
 
+        if id.equals(extendsKeyword)
+            return false
+
         return true
     }
 
@@ -2836,6 +2840,7 @@ class Parser {
     let thisKeyword: String
     let nullKeyword: String
     let newKeyword: String
+    let extendsKeyword: String
     let semicolon: String
     let equal: String
     let leftAngular: String

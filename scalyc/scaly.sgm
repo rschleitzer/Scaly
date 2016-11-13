@@ -477,7 +477,7 @@
         <content link = rightBracket
 
     <syntax id = TypeInheritanceClause
-        <content link = colon
+        <content link = extends
         <content link = Inheritance           multiple optional property = inheritances
 
     <syntax id = Inheritance                  multiple
@@ -515,6 +515,7 @@
     <keyword id = this
     <keyword id = null
     <keyword id = new
+    <keyword id = extends
 
     <punctuation id = semicolon         value = ";"
     <punctuation id = equal             value = "="

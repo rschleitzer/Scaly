@@ -16,67 +16,67 @@ class Position {
 class Token {
 }
 
-class EofToken : Token {
+class EofToken extends Token {
 }
 
-class InvalidToken : Token {
+class InvalidToken extends Token {
 }
 
-class Identifier : Token {
+class Identifier extends Token {
     constructor(name: String) {
         this.name = name
     }
     let name: String
 }
 
-class Literal : Token {
+class Literal extends Token {
 }
 
-class StringLiteral : Literal {
+class StringLiteral extends Literal {
     constructor(theString: String) {
         string = theString
     }
     let string: String
 }
 
-class CharacterLiteral : Literal {
+class CharacterLiteral extends Literal {
     constructor(theString: String) {
         value = theString
     }
     let value: String
 }
 
-class NumericLiteral : Literal {
+class NumericLiteral extends Literal {
     constructor(theValue: String) {
         value = theValue
     }
     let value: String
 }
 
-class Punctuation : Token {
+class Punctuation extends Token {
     constructor(theSign: String) {
         sign = theSign
     }
     let sign: String
 }
 
-class Operator : Token {
+class Operator extends Token {
     let operation: String
 }
 
-class PrefixOperator : Operator {
+class PrefixOperator extends Operator {
     constructor(theOperation: String) {
         operation = theOperation
     }
 }
 
-class BinaryOperator : Operator {
+class BinaryOperator extends Operator {
     constructor(theOperation: String) {
         operation = theOperation
     }
 }
 
-class PostfixOperator : Operator {
+class PostfixOperator extends Operator {
     constructor(theOperation: String) {
         operation = theOperation
     }

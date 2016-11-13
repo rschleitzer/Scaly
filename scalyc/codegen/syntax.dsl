@@ -8,7 +8,7 @@
 "
     (apply-to-selected-children "syntax" (lambda (syntax-node) ($
 "
-class "(id syntax-node)" : "(if (base syntax-node) (base syntax-node) "SyntaxNode")" {
+class "(id syntax-node)" extends "(if (base syntax-node) (base syntax-node) "SyntaxNode")" {
 "       (if (abstract? syntax-node) "" ($
 "
     constructor("(scaly-syntax-constructor-parameters syntax-node)") {
