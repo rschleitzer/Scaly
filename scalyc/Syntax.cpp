@@ -1282,7 +1282,7 @@ void ParenthesizedExpression::accept(SyntaxVisitor* visitor) {
 
 bool ParenthesizedExpression::_isParenthesizedExpression() { return (true); }
 
-ReturnExpression::ReturnExpression(Expression* expression, Position* start, Position* end) {
+ReturnExpression::ReturnExpression(ParenthesizedExpression* expression, Position* start, Position* end) {
     this->start = start;
     this->end = end;
     this->expression = expression;

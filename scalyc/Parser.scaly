@@ -1880,7 +1880,7 @@ class Parser {
         else
             throw keywordExpected(new Position(startReturn1), new string(returnKeyword))
 
-        let expression: Expression = parseExpression() catch _ null
+        let expression: ParenthesizedExpression = parseParenthesizedExpression() catch _ null
         mutable end: Position = lexer.getPosition()
         var ret: ReturnExpression = new ReturnExpression(expression, new Position(start), new Position(end))
        if expression != null

@@ -2783,8 +2783,8 @@ _Result<ReturnExpression, ParserError> Parser::parseReturnExpression(_Page* _rp,
         lexer->advance();
     else
         return _Result<ReturnExpression, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_keywordExpected(new(_ep) Position(startReturn1), new(_ep) string(returnKeyword))));
-    auto _expression_result = parseExpression(_rp, _ep);
-    Expression* expression = nullptr;
+    auto _expression_result = parseParenthesizedExpression(_rp, _ep);
+    ParenthesizedExpression* expression = nullptr;
     if (_expression_result.succeeded()) {
         expression = _expression_result.getResult();
     }

@@ -820,9 +820,9 @@ public:
 
 class ReturnExpression : public PrimaryExpression {
 public:
-    ReturnExpression(Expression* expression, Position* start, Position* end);
+    ReturnExpression(ParenthesizedExpression* expression, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
-    Expression* expression;
+    ParenthesizedExpression* expression;
 
     virtual bool _isReturnExpression();
 };

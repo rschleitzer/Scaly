@@ -1277,7 +1277,7 @@ class ParenthesizedExpression extends PrimaryExpression {
 
 class ReturnExpression extends PrimaryExpression {
 
-    constructor(expression: Expression, start: Position, end: Position) {
+    constructor(expression: ParenthesizedExpression, start: Position, end: Position) {
         this.start = start
         this.end = end
         this.expression = expression
@@ -1291,7 +1291,7 @@ class ReturnExpression extends PrimaryExpression {
         visitor.closeReturnExpression(this)
     }
 
-    let expression: Expression?
+    let expression: ParenthesizedExpression?
 }
 
 class ThrowExpression extends PrimaryExpression {

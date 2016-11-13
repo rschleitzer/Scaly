@@ -332,7 +332,7 @@
 
     <syntax id = ReturnExpression                               base = PrimaryExpression
         <content link = return
-        <content link = Expression                     optional property = expression
+        <content link = ParenthesizedExpression        optional property = expression
 
     <syntax id = ThrowExpression                                base = PrimaryExpression
         <content link = throw
