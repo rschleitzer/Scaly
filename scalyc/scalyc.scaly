@@ -1,11 +1,11 @@
 if args.length() < 1 {
-    return 1
+    return(1)
 }
 else {
     let options: Options = Options.parseArguments(args)
-        catch OptionsError.invalidOption(error: invalidOption) return 2
-        catch OptionsError.noOutputOption(error: noOutputOption) return 3
-        catch OptionsError.noFilesToCompile(error: noFilesToCompile) return 4
+        catch OptionsError.invalidOption(error: invalidOption) return(2)
+        catch OptionsError.noOutputOption(error: noOutputOption) return(3)
+        catch OptionsError.noFilesToCompile(error: noFilesToCompile) return(4)
 
-    Compiler.compileFiles(options) catch _ (error: OptionsError) return 5
+    Compiler.compileFiles(options) catch _ (error: OptionsError) return(5)
 }

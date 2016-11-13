@@ -71,7 +71,7 @@ _Result<CompilationUnit, ParserError> Compiler::parseUnit(_Page* _rp, _Page* _ep
         auto error = _compilationUnit_result.getError();
         return _Result<CompilationUnit, ParserError>(error);
     }
-    return _Result<CompilationUnit, ParserError>(compilationUnit);
+    return _Result<CompilationUnit, ParserError>((compilationUnit));
 }
 
 

@@ -272,7 +272,7 @@ class Lexer {
             position++ column++
             
             if position == end
-                return new Identifier(new string(name))
+                return(new Identifier(new string(name)))
             
             let c: char = text.charAt(position)
             if  ((c >= 'a') && (c <= 'z')) || 
@@ -281,7 +281,7 @@ class Lexer {
                  (c == '_')
                 name.append(text.charAt(position))
             else
-                return new Identifier(new string(name))
+                return(new Identifier(new string(name)))
         }            
         while true
     }
@@ -305,9 +305,9 @@ class Lexer {
             position++ column++
             if position == end {
                 if whitespaceSkippedBefore
-                    return new BinaryOperator(new string(operation))
+                    return(new BinaryOperator(new string(operation)))
                 else
-                    return new PostfixOperator(new string(operation))
+                    return(new PostfixOperator(new string(operation)))
             }
 
             if includeDots && (text.charAt(position) == '.') {
@@ -340,13 +340,13 @@ class Lexer {
 
                     if (whitespaceSkippedBefore &&  whitespaceSkippedAfter) || 
                       (!whitespaceSkippedBefore && !whitespaceSkippedAfter)
-                        return new BinaryOperator(new string(operation))
+                        return(new BinaryOperator(new string(operation)))
                         
                     if (!whitespaceSkippedBefore && whitespaceSkippedAfter)
-                        return new PostfixOperator(new string(operation))
+                        return(new PostfixOperator(new string(operation)))
                         
                     if (whitespaceSkippedBefore && !whitespaceSkippedAfter)
-                        return new PrefixOperator(new string(operation))
+                        return(new PrefixOperator(new string(operation)))
                 }
             }
         } while true
@@ -358,12 +358,12 @@ class Lexer {
         repeat {
             position++ column++
             if position == end
-                return new InvalidToken()
+                return(new InvalidToken())
 
             switch text.charAt(position) {
                 case '\"': {
                     position++ column++
-                    return new StringLiteral(new string(value))
+                    return(new StringLiteral(new string(value)))
                 }
                 case '\\': {
                     position++ column++
@@ -376,7 +376,7 @@ class Lexer {
                         case 'r': value.append("\\r")
                         case 't': value.append("\\t")
                         case '0': value.append("\\0")
-                        default: return new InvalidToken()
+                        default: return(new InvalidToken())
                     }
                 }
                 default:
@@ -390,12 +390,12 @@ class Lexer {
         repeat {
             position++ column++
             if position == end
-                return new InvalidToken()
+                return(new InvalidToken())
 
             switch text.charAt(position) {
                 case '\'': {
                     position++ column++
-                    return new CharacterLiteral(new string(value))
+                    return(new CharacterLiteral(new string(value)))
                 }
                 case '\\': {
                     position++ column++
@@ -405,7 +405,7 @@ class Lexer {
                         case 'r': value.append('\r')
                         case 't': value.append('\t')
                         case '0': value.append('\0')
-                        default: return new InvalidToken()
+                        default: return(new InvalidToken())
                     }
                 }
                 default: {
@@ -423,13 +423,13 @@ class Lexer {
             position++ column++
             
             if position == end
-                return new NumericLiteral(new string(value))
+                return(new NumericLiteral(new string(value)))
             
             let c: char = text.charAt(position)
             if (c >= '0') && (c <= '9')
                 value.append(text.charAt(position))
             else
-                return new NumericLiteral(new string(value))
+                return(new NumericLiteral(new string(value)))
         } while true
     }
 
@@ -437,7 +437,7 @@ class Lexer {
         whitespaceSkipped = false
         repeat {
             if position == end
-                return true
+                return(true)
 
             switch text.charAt(position) {
                 case ' ': {
@@ -464,7 +464,7 @@ class Lexer {
                     position++ column++
 
                     if position == end
-                        return whitespaceSkipped
+                        return(whitespaceSkipped)
                         
                     if text.charAt(position) == '/' { 
                         whitespaceSkipped = true
@@ -476,11 +476,11 @@ class Lexer {
                             handleMultiLineComment()
                         }
                         else
-                            return whitespaceSkipped
+                            return(whitespaceSkipped)
                     }
                 }
                 default:
-                    return whitespaceSkipped
+                    return(whitespaceSkipped)
             }
         } 
         while true
@@ -571,99 +571,99 @@ class Lexer {
 
     function parseKeyword(fixedString: string): bool {
         if !(token is Identifier)
-            return false
+            return(false)
 
         let identifier: Identifier = token as Identifier
-        return identifier.name.equals(fixedString)
+        return(identifier.name.equals(fixedString))
     }
 
     function parseIdentifier(): string? {
         if !(token is Identifier)
-            return null
+            return(null)
 
         let identifier: Identifier = token as Identifier
-        return new string(identifier.name)
+        return(new string(identifier.name))
     }
 
     function parsePunctuation(fixedString: string): bool {
         if !(token is Punctuation)
-            return false
+            return(false)
 
         let punctuation: Punctuation = token as Punctuation
-        return punctuation.sign.equals(fixedString)
+        return(punctuation.sign.equals(fixedString))
     }
 
     function parseOperator(): string? {
         if !(token is Operator)
-            return null
+            return(null)
 
         let op: Operator = token as Operator
-        return new string(op.operation)
+        return(new string(op.operation))
     }
 
     function parseLiteral(): Literal? {
         if !(token is Literal)
-            return null
+            return(null)
 
         if token is StringLiteral {
             let stringLiteral: StringLiteral = token as StringLiteral
-            return new StringLiteral(new string(stringLiteral.value))
+            return(new StringLiteral(new string(stringLiteral.value)))
         }
 
         if token is CharacterLiteral {
             let characterLiteral: CharacterLiteral = token as CharacterLiteral
-            return new CharacterLiteral(new string(characterLiteral.value))
+            return(new CharacterLiteral(new string(characterLiteral.value)))
         }
 
         if token is NumericLiteral {
             let numericLiteral: NumericLiteral = token as NumericLiteral
-            return new NumericLiteral(new string(numericLiteral.value))
+            return(new NumericLiteral(new string(numericLiteral.value)))
         }
 
-        return null
+        return(null)
     }
 
 
     function parsePrefixOperator(): string? {
         if !(token is PrefixOperator)
-            return null
+            return(null)
 
         let op: Operator = token as Operator
-        return new string(op.operation)
+        return(new string(op.operation))
     }
 
     function parseBinaryOperator(): string? {
         if !(token is BinaryOperator) {
             if (token is Punctuation) && (((token as Punctuation).sign.equals("<")) || ((token as Punctuation).sign.equals(">"))) {
                 let op: Operator = token as Operator
-                return new string(op.operation)
+                return(new string(op.operation))
             }
 
-            return null
+            return(null)
         }
 
         let op: Operator = token as Operator
-        return new string(op.operation)
+        return(new string(op.operation))
     }
 
 
     function parsePostfixOperator(): string? {
         if !(token is PostfixOperator)
-            return null
+            return(null)
 
         let op: Operator = token as Operator
-        return new string(op.operation)
+        return(new string(op.operation))
     }
 
     function isAtEnd(): bool {
-        return position == end
+        return(position == end)
     }
 
     function getPosition(): Position {
-        return new Position(line, column)
+        return(new Position(line, column))
     }
 
     function getPreviousPosition(): Position {
-        return new Position(previousLine, previousColumn)
+        return(new Position(previousLine, previousColumn))
     }
 }

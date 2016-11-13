@@ -24,7 +24,7 @@
                 ret = new "(id syntax)"[]()
             ret.push(node)
         }
-        return ret
+        return(ret)
     }
 "       )"")
 "
@@ -42,7 +42,7 @@
             }
 
             if node != null
-                return node
+                return(node)
         }
 "
                 )))
@@ -121,7 +121,7 @@
                     )
                 ))
 "
-        return ret
+        return(ret)
 "
             ) ; $
         ) ; abstract or not
@@ -129,17 +129,17 @@
 "   ))))
 "
     function isAtEnd(): bool {
-        return lexer.isAtEnd()
+        return(lexer.isAtEnd())
     }
 
     function isIdentifier(id: string): bool {"
    (apply-to-selected-children "keyword" (lambda (keyword) ($
 "
         if id.equals("(name keyword)")
-            return false
+            return(false)
 "   )))
 "
-        return true
+        return(true)
     }
 
     mutable lexer: Lexer

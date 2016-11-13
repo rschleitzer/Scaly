@@ -2,114 +2,114 @@
 using namespace scaly;
 namespace scalyc {
 
-bool SyntaxNode::_isProgram() { return false; }
-bool SyntaxNode::_isCompilationUnit() { return false; }
-bool SyntaxNode::_isTerminatedStatement() { return false; }
-bool SyntaxNode::_isStatement() { return false; }
-bool SyntaxNode::_isDeclaration() { return false; }
-bool SyntaxNode::_isUseDeclaration() { return false; }
-bool SyntaxNode::_isConstantDeclaration() { return false; }
-bool SyntaxNode::_isVariableDeclaration() { return false; }
-bool SyntaxNode::_isMutableDeclaration() { return false; }
-bool SyntaxNode::_isFunctionDeclaration() { return false; }
-bool SyntaxNode::_isEnumDeclaration() { return false; }
-bool SyntaxNode::_isClassDeclaration() { return false; }
-bool SyntaxNode::_isConstructorDeclaration() { return false; }
-bool SyntaxNode::_isExpression() { return false; }
-bool SyntaxNode::_isCodeBlock() { return false; }
-bool SyntaxNode::_isSimpleExpression() { return false; }
-bool SyntaxNode::_isPathIdentifier() { return false; }
-bool SyntaxNode::_isPathItem() { return false; }
-bool SyntaxNode::_isInitializer() { return false; }
-bool SyntaxNode::_isBindingInitializer() { return false; }
-bool SyntaxNode::_isPatternInitializer() { return false; }
-bool SyntaxNode::_isAdditionalInitializer() { return false; }
-bool SyntaxNode::_isModifier() { return false; }
-bool SyntaxNode::_isOverrideWord() { return false; }
-bool SyntaxNode::_isStaticWord() { return false; }
-bool SyntaxNode::_isFunctionName() { return false; }
-bool SyntaxNode::_isIdentifierFunction() { return false; }
-bool SyntaxNode::_isFunctionSignature() { return false; }
-bool SyntaxNode::_isFunctionResult() { return false; }
-bool SyntaxNode::_isExistingClause() { return false; }
-bool SyntaxNode::_isParameterClause() { return false; }
-bool SyntaxNode::_isParameter() { return false; }
-bool SyntaxNode::_isConstParameter() { return false; }
-bool SyntaxNode::_isVarParameter() { return false; }
-bool SyntaxNode::_isThrowsClause() { return false; }
-bool SyntaxNode::_isEnumMember() { return false; }
-bool SyntaxNode::_isEnumCase() { return false; }
-bool SyntaxNode::_isAdditionalCase() { return false; }
-bool SyntaxNode::_isClassBody() { return false; }
-bool SyntaxNode::_isGenericArgumentClause() { return false; }
-bool SyntaxNode::_isGenericParameter() { return false; }
-bool SyntaxNode::_isClassMember() { return false; }
-bool SyntaxNode::_isPrefixExpression() { return false; }
-bool SyntaxNode::_isPostfixExpression() { return false; }
-bool SyntaxNode::_isBinaryOp() { return false; }
-bool SyntaxNode::_isBinaryOperation() { return false; }
-bool SyntaxNode::_isAssignment() { return false; }
-bool SyntaxNode::_isTypeQuery() { return false; }
-bool SyntaxNode::_isTypeCast() { return false; }
-bool SyntaxNode::_isCatchClause() { return false; }
-bool SyntaxNode::_isCatchPattern() { return false; }
-bool SyntaxNode::_isWildCardCatchPattern() { return false; }
-bool SyntaxNode::_isIdentifierCatchPattern() { return false; }
-bool SyntaxNode::_isPostfix() { return false; }
-bool SyntaxNode::_isOperatorPostfix() { return false; }
-bool SyntaxNode::_isFunctionCall() { return false; }
-bool SyntaxNode::_isExplicitMemberExpression() { return false; }
-bool SyntaxNode::_isSubscript() { return false; }
-bool SyntaxNode::_isExpressionElement() { return false; }
-bool SyntaxNode::_isMemberPostfix() { return false; }
-bool SyntaxNode::_isNamedMemberPostfix() { return false; }
-bool SyntaxNode::_isPrimaryExpression() { return false; }
-bool SyntaxNode::_isIdentifierExpression() { return false; }
-bool SyntaxNode::_isLiteralExpression() { return false; }
-bool SyntaxNode::_isIfExpression() { return false; }
-bool SyntaxNode::_isSwitchExpression() { return false; }
-bool SyntaxNode::_isForExpression() { return false; }
-bool SyntaxNode::_isWhileExpression() { return false; }
-bool SyntaxNode::_isRepeatExpression() { return false; }
-bool SyntaxNode::_isParenthesizedExpression() { return false; }
-bool SyntaxNode::_isReturnExpression() { return false; }
-bool SyntaxNode::_isThrowExpression() { return false; }
-bool SyntaxNode::_isBreakExpression() { return false; }
-bool SyntaxNode::_isConstructorCall() { return false; }
-bool SyntaxNode::_isThisExpression() { return false; }
-bool SyntaxNode::_isSuperExpression() { return false; }
-bool SyntaxNode::_isSuperDot() { return false; }
-bool SyntaxNode::_isSuperSubscript() { return false; }
-bool SyntaxNode::_isNullExpression() { return false; }
-bool SyntaxNode::_isElseClause() { return false; }
-bool SyntaxNode::_isSwitchBody() { return false; }
-bool SyntaxNode::_isCurliedSwitchBody() { return false; }
-bool SyntaxNode::_isNakedSwitchBody() { return false; }
-bool SyntaxNode::_isSwitchCase() { return false; }
-bool SyntaxNode::_isCaseLabel() { return false; }
-bool SyntaxNode::_isItemCaseLabel() { return false; }
-bool SyntaxNode::_isDefaultCaseLabel() { return false; }
-bool SyntaxNode::_isCaseItem() { return false; }
-bool SyntaxNode::_isPattern() { return false; }
-bool SyntaxNode::_isWildcardPattern() { return false; }
-bool SyntaxNode::_isIdentifierPattern() { return false; }
-bool SyntaxNode::_isTuplePattern() { return false; }
-bool SyntaxNode::_isExpressionPattern() { return false; }
-bool SyntaxNode::_isTuplePatternElement() { return false; }
-bool SyntaxNode::_isCaseContent() { return false; }
-bool SyntaxNode::_isBlockCaseContent() { return false; }
-bool SyntaxNode::_isEmptyCaseContent() { return false; }
-bool SyntaxNode::_isCommonSuperMember() { return false; }
-bool SyntaxNode::_isSuperConstructor() { return false; }
-bool SyntaxNode::_isSuperMember() { return false; }
-bool SyntaxNode::_isType() { return false; }
-bool SyntaxNode::_isTypeAnnotation() { return false; }
-bool SyntaxNode::_isSubtype() { return false; }
-bool SyntaxNode::_isTypePostfix() { return false; }
-bool SyntaxNode::_isOptionalType() { return false; }
-bool SyntaxNode::_isIndexedType() { return false; }
-bool SyntaxNode::_isTypeInheritanceClause() { return false; }
-bool SyntaxNode::_isInheritance() { return false; }
+bool SyntaxNode::_isProgram() { return (false); }
+bool SyntaxNode::_isCompilationUnit() { return (false); }
+bool SyntaxNode::_isTerminatedStatement() { return (false); }
+bool SyntaxNode::_isStatement() { return (false); }
+bool SyntaxNode::_isDeclaration() { return (false); }
+bool SyntaxNode::_isUseDeclaration() { return (false); }
+bool SyntaxNode::_isConstantDeclaration() { return (false); }
+bool SyntaxNode::_isVariableDeclaration() { return (false); }
+bool SyntaxNode::_isMutableDeclaration() { return (false); }
+bool SyntaxNode::_isFunctionDeclaration() { return (false); }
+bool SyntaxNode::_isEnumDeclaration() { return (false); }
+bool SyntaxNode::_isClassDeclaration() { return (false); }
+bool SyntaxNode::_isConstructorDeclaration() { return (false); }
+bool SyntaxNode::_isExpression() { return (false); }
+bool SyntaxNode::_isCodeBlock() { return (false); }
+bool SyntaxNode::_isSimpleExpression() { return (false); }
+bool SyntaxNode::_isPathIdentifier() { return (false); }
+bool SyntaxNode::_isPathItem() { return (false); }
+bool SyntaxNode::_isInitializer() { return (false); }
+bool SyntaxNode::_isBindingInitializer() { return (false); }
+bool SyntaxNode::_isPatternInitializer() { return (false); }
+bool SyntaxNode::_isAdditionalInitializer() { return (false); }
+bool SyntaxNode::_isModifier() { return (false); }
+bool SyntaxNode::_isOverrideWord() { return (false); }
+bool SyntaxNode::_isStaticWord() { return (false); }
+bool SyntaxNode::_isFunctionName() { return (false); }
+bool SyntaxNode::_isIdentifierFunction() { return (false); }
+bool SyntaxNode::_isFunctionSignature() { return (false); }
+bool SyntaxNode::_isFunctionResult() { return (false); }
+bool SyntaxNode::_isExistingClause() { return (false); }
+bool SyntaxNode::_isParameterClause() { return (false); }
+bool SyntaxNode::_isParameter() { return (false); }
+bool SyntaxNode::_isConstParameter() { return (false); }
+bool SyntaxNode::_isVarParameter() { return (false); }
+bool SyntaxNode::_isThrowsClause() { return (false); }
+bool SyntaxNode::_isEnumMember() { return (false); }
+bool SyntaxNode::_isEnumCase() { return (false); }
+bool SyntaxNode::_isAdditionalCase() { return (false); }
+bool SyntaxNode::_isClassBody() { return (false); }
+bool SyntaxNode::_isGenericArgumentClause() { return (false); }
+bool SyntaxNode::_isGenericParameter() { return (false); }
+bool SyntaxNode::_isClassMember() { return (false); }
+bool SyntaxNode::_isPrefixExpression() { return (false); }
+bool SyntaxNode::_isPostfixExpression() { return (false); }
+bool SyntaxNode::_isBinaryOp() { return (false); }
+bool SyntaxNode::_isBinaryOperation() { return (false); }
+bool SyntaxNode::_isAssignment() { return (false); }
+bool SyntaxNode::_isTypeQuery() { return (false); }
+bool SyntaxNode::_isTypeCast() { return (false); }
+bool SyntaxNode::_isCatchClause() { return (false); }
+bool SyntaxNode::_isCatchPattern() { return (false); }
+bool SyntaxNode::_isWildCardCatchPattern() { return (false); }
+bool SyntaxNode::_isIdentifierCatchPattern() { return (false); }
+bool SyntaxNode::_isPostfix() { return (false); }
+bool SyntaxNode::_isOperatorPostfix() { return (false); }
+bool SyntaxNode::_isFunctionCall() { return (false); }
+bool SyntaxNode::_isExplicitMemberExpression() { return (false); }
+bool SyntaxNode::_isSubscript() { return (false); }
+bool SyntaxNode::_isExpressionElement() { return (false); }
+bool SyntaxNode::_isMemberPostfix() { return (false); }
+bool SyntaxNode::_isNamedMemberPostfix() { return (false); }
+bool SyntaxNode::_isPrimaryExpression() { return (false); }
+bool SyntaxNode::_isIdentifierExpression() { return (false); }
+bool SyntaxNode::_isLiteralExpression() { return (false); }
+bool SyntaxNode::_isIfExpression() { return (false); }
+bool SyntaxNode::_isSwitchExpression() { return (false); }
+bool SyntaxNode::_isForExpression() { return (false); }
+bool SyntaxNode::_isWhileExpression() { return (false); }
+bool SyntaxNode::_isRepeatExpression() { return (false); }
+bool SyntaxNode::_isParenthesizedExpression() { return (false); }
+bool SyntaxNode::_isReturnExpression() { return (false); }
+bool SyntaxNode::_isThrowExpression() { return (false); }
+bool SyntaxNode::_isBreakExpression() { return (false); }
+bool SyntaxNode::_isConstructorCall() { return (false); }
+bool SyntaxNode::_isThisExpression() { return (false); }
+bool SyntaxNode::_isSuperExpression() { return (false); }
+bool SyntaxNode::_isSuperDot() { return (false); }
+bool SyntaxNode::_isSuperSubscript() { return (false); }
+bool SyntaxNode::_isNullExpression() { return (false); }
+bool SyntaxNode::_isElseClause() { return (false); }
+bool SyntaxNode::_isSwitchBody() { return (false); }
+bool SyntaxNode::_isCurliedSwitchBody() { return (false); }
+bool SyntaxNode::_isNakedSwitchBody() { return (false); }
+bool SyntaxNode::_isSwitchCase() { return (false); }
+bool SyntaxNode::_isCaseLabel() { return (false); }
+bool SyntaxNode::_isItemCaseLabel() { return (false); }
+bool SyntaxNode::_isDefaultCaseLabel() { return (false); }
+bool SyntaxNode::_isCaseItem() { return (false); }
+bool SyntaxNode::_isPattern() { return (false); }
+bool SyntaxNode::_isWildcardPattern() { return (false); }
+bool SyntaxNode::_isIdentifierPattern() { return (false); }
+bool SyntaxNode::_isTuplePattern() { return (false); }
+bool SyntaxNode::_isExpressionPattern() { return (false); }
+bool SyntaxNode::_isTuplePatternElement() { return (false); }
+bool SyntaxNode::_isCaseContent() { return (false); }
+bool SyntaxNode::_isBlockCaseContent() { return (false); }
+bool SyntaxNode::_isEmptyCaseContent() { return (false); }
+bool SyntaxNode::_isCommonSuperMember() { return (false); }
+bool SyntaxNode::_isSuperConstructor() { return (false); }
+bool SyntaxNode::_isSuperMember() { return (false); }
+bool SyntaxNode::_isType() { return (false); }
+bool SyntaxNode::_isTypeAnnotation() { return (false); }
+bool SyntaxNode::_isSubtype() { return (false); }
+bool SyntaxNode::_isTypePostfix() { return (false); }
+bool SyntaxNode::_isOptionalType() { return (false); }
+bool SyntaxNode::_isIndexedType() { return (false); }
+bool SyntaxNode::_isTypeInheritanceClause() { return (false); }
+bool SyntaxNode::_isInheritance() { return (false); }
 
 Program::Program(string* name, string* directory, _Vector<CompilationUnit>* compilationUnits) {
     start = new(getPage()) Position(0, 0);
@@ -134,7 +134,7 @@ void Program::accept(SyntaxVisitor* visitor) {
     visitor->closeProgram(this);
 }
 
-bool Program::_isProgram() { return true; }
+bool Program::_isProgram() { return (true); }
 
 CompilationUnit::CompilationUnit(_Vector<TerminatedStatement>* statements, Position* start, Position* end) {
     this->start = start;
@@ -156,7 +156,7 @@ void CompilationUnit::accept(SyntaxVisitor* visitor) {
     visitor->closeCompilationUnit(this);
 }
 
-bool CompilationUnit::_isCompilationUnit() { return true; }
+bool CompilationUnit::_isCompilationUnit() { return (true); }
 
 TerminatedStatement::TerminatedStatement(Statement* statement, Position* start, Position* end) {
     this->start = start;
@@ -171,47 +171,47 @@ void TerminatedStatement::accept(SyntaxVisitor* visitor) {
     visitor->closeTerminatedStatement(this);
 }
 
-bool TerminatedStatement::_isTerminatedStatement() { return true; }
+bool TerminatedStatement::_isTerminatedStatement() { return (true); }
 
 void Statement::accept(SyntaxVisitor* visitor) {
 }
 
-bool Statement::_isStatement() { return true; }
+bool Statement::_isStatement() { return (true); }
 
-bool Statement::_isDeclaration() { return false; }
-bool Statement::_isUseDeclaration() { return false; }
-bool Statement::_isConstantDeclaration() { return false; }
-bool Statement::_isVariableDeclaration() { return false; }
-bool Statement::_isMutableDeclaration() { return false; }
-bool Statement::_isFunctionDeclaration() { return false; }
-bool Statement::_isEnumDeclaration() { return false; }
-bool Statement::_isClassDeclaration() { return false; }
-bool Statement::_isConstructorDeclaration() { return false; }
-bool Statement::_isExpression() { return false; }
-bool Statement::_isCodeBlock() { return false; }
-bool Statement::_isSimpleExpression() { return false; }
+bool Statement::_isDeclaration() { return (false); }
+bool Statement::_isUseDeclaration() { return (false); }
+bool Statement::_isConstantDeclaration() { return (false); }
+bool Statement::_isVariableDeclaration() { return (false); }
+bool Statement::_isMutableDeclaration() { return (false); }
+bool Statement::_isFunctionDeclaration() { return (false); }
+bool Statement::_isEnumDeclaration() { return (false); }
+bool Statement::_isClassDeclaration() { return (false); }
+bool Statement::_isConstructorDeclaration() { return (false); }
+bool Statement::_isExpression() { return (false); }
+bool Statement::_isCodeBlock() { return (false); }
+bool Statement::_isSimpleExpression() { return (false); }
 
 void Declaration::accept(SyntaxVisitor* visitor) {
 }
 
-bool Declaration::_isDeclaration() { return true; }
+bool Declaration::_isDeclaration() { return (true); }
 
-bool Declaration::_isUseDeclaration() { return false; }
-bool Declaration::_isConstantDeclaration() { return false; }
-bool Declaration::_isVariableDeclaration() { return false; }
-bool Declaration::_isMutableDeclaration() { return false; }
-bool Declaration::_isFunctionDeclaration() { return false; }
-bool Declaration::_isEnumDeclaration() { return false; }
-bool Declaration::_isClassDeclaration() { return false; }
-bool Declaration::_isConstructorDeclaration() { return false; }
+bool Declaration::_isUseDeclaration() { return (false); }
+bool Declaration::_isConstantDeclaration() { return (false); }
+bool Declaration::_isVariableDeclaration() { return (false); }
+bool Declaration::_isMutableDeclaration() { return (false); }
+bool Declaration::_isFunctionDeclaration() { return (false); }
+bool Declaration::_isEnumDeclaration() { return (false); }
+bool Declaration::_isClassDeclaration() { return (false); }
+bool Declaration::_isConstructorDeclaration() { return (false); }
 
 void Expression::accept(SyntaxVisitor* visitor) {
 }
 
-bool Expression::_isExpression() { return true; }
+bool Expression::_isExpression() { return (true); }
 
-bool Expression::_isCodeBlock() { return false; }
-bool Expression::_isSimpleExpression() { return false; }
+bool Expression::_isCodeBlock() { return (false); }
+bool Expression::_isSimpleExpression() { return (false); }
 
 UseDeclaration::UseDeclaration(PathItem* importModule, _Vector<PathIdentifier>* importExtensions, Position* start, Position* end) {
     this->start = start;
@@ -235,7 +235,7 @@ void UseDeclaration::accept(SyntaxVisitor* visitor) {
     visitor->closeUseDeclaration(this);
 }
 
-bool UseDeclaration::_isUseDeclaration() { return true; }
+bool UseDeclaration::_isUseDeclaration() { return (true); }
 
 ConstantDeclaration::ConstantDeclaration(BindingInitializer* initializer, Position* start, Position* end) {
     this->start = start;
@@ -250,7 +250,7 @@ void ConstantDeclaration::accept(SyntaxVisitor* visitor) {
     visitor->closeConstantDeclaration(this);
 }
 
-bool ConstantDeclaration::_isConstantDeclaration() { return true; }
+bool ConstantDeclaration::_isConstantDeclaration() { return (true); }
 
 VariableDeclaration::VariableDeclaration(BindingInitializer* initializer, Position* start, Position* end) {
     this->start = start;
@@ -265,7 +265,7 @@ void VariableDeclaration::accept(SyntaxVisitor* visitor) {
     visitor->closeVariableDeclaration(this);
 }
 
-bool VariableDeclaration::_isVariableDeclaration() { return true; }
+bool VariableDeclaration::_isVariableDeclaration() { return (true); }
 
 MutableDeclaration::MutableDeclaration(BindingInitializer* initializer, Position* start, Position* end) {
     this->start = start;
@@ -280,7 +280,7 @@ void MutableDeclaration::accept(SyntaxVisitor* visitor) {
     visitor->closeMutableDeclaration(this);
 }
 
-bool MutableDeclaration::_isMutableDeclaration() { return true; }
+bool MutableDeclaration::_isMutableDeclaration() { return (true); }
 
 FunctionDeclaration::FunctionDeclaration(_Vector<Modifier>* modifiers, FunctionName* name, FunctionSignature* signature, Expression* body, Position* start, Position* end) {
     this->start = start;
@@ -309,7 +309,7 @@ void FunctionDeclaration::accept(SyntaxVisitor* visitor) {
     visitor->closeFunctionDeclaration(this);
 }
 
-bool FunctionDeclaration::_isFunctionDeclaration() { return true; }
+bool FunctionDeclaration::_isFunctionDeclaration() { return (true); }
 
 EnumDeclaration::EnumDeclaration(string* name, _Vector<EnumMember>* members, Position* start, Position* end) {
     this->start = start;
@@ -332,7 +332,7 @@ void EnumDeclaration::accept(SyntaxVisitor* visitor) {
     visitor->closeEnumDeclaration(this);
 }
 
-bool EnumDeclaration::_isEnumDeclaration() { return true; }
+bool EnumDeclaration::_isEnumDeclaration() { return (true); }
 
 ClassDeclaration::ClassDeclaration(string* name, GenericArgumentClause* genericArgumentClause, TypeInheritanceClause* typeInheritanceClause, ClassBody* body, Position* start, Position* end) {
     this->start = start;
@@ -355,7 +355,7 @@ void ClassDeclaration::accept(SyntaxVisitor* visitor) {
     visitor->closeClassDeclaration(this);
 }
 
-bool ClassDeclaration::_isClassDeclaration() { return true; }
+bool ClassDeclaration::_isClassDeclaration() { return (true); }
 
 ConstructorDeclaration::ConstructorDeclaration(_Vector<Modifier>* modifiers, ParameterClause* parameterClause, ThrowsClause* throwsClause, Expression* body, Position* start, Position* end) {
     this->start = start;
@@ -384,7 +384,7 @@ void ConstructorDeclaration::accept(SyntaxVisitor* visitor) {
     visitor->closeConstructorDeclaration(this);
 }
 
-bool ConstructorDeclaration::_isConstructorDeclaration() { return true; }
+bool ConstructorDeclaration::_isConstructorDeclaration() { return (true); }
 
 CodeBlock::CodeBlock(_Vector<TerminatedStatement>* statements, Position* start, Position* end) {
     this->start = start;
@@ -406,7 +406,7 @@ void CodeBlock::accept(SyntaxVisitor* visitor) {
     visitor->closeCodeBlock(this);
 }
 
-bool CodeBlock::_isCodeBlock() { return true; }
+bool CodeBlock::_isCodeBlock() { return (true); }
 
 SimpleExpression::SimpleExpression(PrefixExpression* prefixExpression, _Vector<BinaryOp>* binaryOps, Position* start, Position* end) {
     this->start = start;
@@ -430,7 +430,7 @@ void SimpleExpression::accept(SyntaxVisitor* visitor) {
     visitor->closeSimpleExpression(this);
 }
 
-bool SimpleExpression::_isSimpleExpression() { return true; }
+bool SimpleExpression::_isSimpleExpression() { return (true); }
 
 PathIdentifier::PathIdentifier(PathItem* extension, Position* start, Position* end) {
     this->start = start;
@@ -445,7 +445,7 @@ void PathIdentifier::accept(SyntaxVisitor* visitor) {
     visitor->closePathIdentifier(this);
 }
 
-bool PathIdentifier::_isPathIdentifier() { return true; }
+bool PathIdentifier::_isPathIdentifier() { return (true); }
 
 PathItem::PathItem(string* name, Position* start, Position* end) {
     this->start = start;
@@ -457,7 +457,7 @@ void PathItem::accept(SyntaxVisitor* visitor) {
     visitor->visitPathItem(this);
 }
 
-bool PathItem::_isPathItem() { return true; }
+bool PathItem::_isPathItem() { return (true); }
 
 Initializer::Initializer(Expression* expression, Position* start, Position* end) {
     this->start = start;
@@ -472,7 +472,7 @@ void Initializer::accept(SyntaxVisitor* visitor) {
     visitor->closeInitializer(this);
 }
 
-bool Initializer::_isInitializer() { return true; }
+bool Initializer::_isInitializer() { return (true); }
 
 BindingInitializer::BindingInitializer(PatternInitializer* initializer, _Vector<AdditionalInitializer>* additionalInitializers, Position* start, Position* end) {
     this->start = start;
@@ -496,7 +496,7 @@ void BindingInitializer::accept(SyntaxVisitor* visitor) {
     visitor->closeBindingInitializer(this);
 }
 
-bool BindingInitializer::_isBindingInitializer() { return true; }
+bool BindingInitializer::_isBindingInitializer() { return (true); }
 
 PatternInitializer::PatternInitializer(Pattern* pattern, Initializer* initializer, Position* start, Position* end) {
     this->start = start;
@@ -514,7 +514,7 @@ void PatternInitializer::accept(SyntaxVisitor* visitor) {
     visitor->closePatternInitializer(this);
 }
 
-bool PatternInitializer::_isPatternInitializer() { return true; }
+bool PatternInitializer::_isPatternInitializer() { return (true); }
 
 AdditionalInitializer::AdditionalInitializer(PatternInitializer* pattern, Position* start, Position* end) {
     this->start = start;
@@ -529,15 +529,15 @@ void AdditionalInitializer::accept(SyntaxVisitor* visitor) {
     visitor->closeAdditionalInitializer(this);
 }
 
-bool AdditionalInitializer::_isAdditionalInitializer() { return true; }
+bool AdditionalInitializer::_isAdditionalInitializer() { return (true); }
 
 void Modifier::accept(SyntaxVisitor* visitor) {
 }
 
-bool Modifier::_isModifier() { return true; }
+bool Modifier::_isModifier() { return (true); }
 
-bool Modifier::_isOverrideWord() { return false; }
-bool Modifier::_isStaticWord() { return false; }
+bool Modifier::_isOverrideWord() { return (false); }
+bool Modifier::_isStaticWord() { return (false); }
 
 OverrideWord::OverrideWord(Position* start, Position* end) {
     this->start = start;
@@ -548,7 +548,7 @@ void OverrideWord::accept(SyntaxVisitor* visitor) {
     visitor->visitOverrideWord(this);
 }
 
-bool OverrideWord::_isOverrideWord() { return true; }
+bool OverrideWord::_isOverrideWord() { return (true); }
 
 StaticWord::StaticWord(Position* start, Position* end) {
     this->start = start;
@@ -559,14 +559,14 @@ void StaticWord::accept(SyntaxVisitor* visitor) {
     visitor->visitStaticWord(this);
 }
 
-bool StaticWord::_isStaticWord() { return true; }
+bool StaticWord::_isStaticWord() { return (true); }
 
 void FunctionName::accept(SyntaxVisitor* visitor) {
 }
 
-bool FunctionName::_isFunctionName() { return true; }
+bool FunctionName::_isFunctionName() { return (true); }
 
-bool FunctionName::_isIdentifierFunction() { return false; }
+bool FunctionName::_isIdentifierFunction() { return (false); }
 
 IdentifierFunction::IdentifierFunction(string* name, Position* start, Position* end) {
     this->start = start;
@@ -578,7 +578,7 @@ void IdentifierFunction::accept(SyntaxVisitor* visitor) {
     visitor->visitIdentifierFunction(this);
 }
 
-bool IdentifierFunction::_isIdentifierFunction() { return true; }
+bool IdentifierFunction::_isIdentifierFunction() { return (true); }
 
 FunctionSignature::FunctionSignature(ParameterClause* parameterClause, FunctionResult* result, ThrowsClause* throwsClause, Position* start, Position* end) {
     this->start = start;
@@ -599,7 +599,7 @@ void FunctionSignature::accept(SyntaxVisitor* visitor) {
     visitor->closeFunctionSignature(this);
 }
 
-bool FunctionSignature::_isFunctionSignature() { return true; }
+bool FunctionSignature::_isFunctionSignature() { return (true); }
 
 FunctionResult::FunctionResult(ExistingClause* existingObject, Type* resultType, Position* start, Position* end) {
     this->start = start;
@@ -617,7 +617,7 @@ void FunctionResult::accept(SyntaxVisitor* visitor) {
     visitor->closeFunctionResult(this);
 }
 
-bool FunctionResult::_isFunctionResult() { return true; }
+bool FunctionResult::_isFunctionResult() { return (true); }
 
 ExistingClause::ExistingClause(Position* start, Position* end) {
     this->start = start;
@@ -628,7 +628,7 @@ void ExistingClause::accept(SyntaxVisitor* visitor) {
     visitor->visitExistingClause(this);
 }
 
-bool ExistingClause::_isExistingClause() { return true; }
+bool ExistingClause::_isExistingClause() { return (true); }
 
 ParameterClause::ParameterClause(_Vector<Parameter>* parameters, Position* start, Position* end) {
     this->start = start;
@@ -650,15 +650,15 @@ void ParameterClause::accept(SyntaxVisitor* visitor) {
     visitor->closeParameterClause(this);
 }
 
-bool ParameterClause::_isParameterClause() { return true; }
+bool ParameterClause::_isParameterClause() { return (true); }
 
 void Parameter::accept(SyntaxVisitor* visitor) {
 }
 
-bool Parameter::_isParameter() { return true; }
+bool Parameter::_isParameter() { return (true); }
 
-bool Parameter::_isConstParameter() { return false; }
-bool Parameter::_isVarParameter() { return false; }
+bool Parameter::_isConstParameter() { return (false); }
+bool Parameter::_isVarParameter() { return (false); }
 
 ConstParameter::ConstParameter(string* name, Type* parameterType, Position* start, Position* end) {
     this->start = start;
@@ -674,7 +674,7 @@ void ConstParameter::accept(SyntaxVisitor* visitor) {
     visitor->closeConstParameter(this);
 }
 
-bool ConstParameter::_isConstParameter() { return true; }
+bool ConstParameter::_isConstParameter() { return (true); }
 
 VarParameter::VarParameter(string* name, Type* parameterType, Position* start, Position* end) {
     this->start = start;
@@ -690,7 +690,7 @@ void VarParameter::accept(SyntaxVisitor* visitor) {
     visitor->closeVarParameter(this);
 }
 
-bool VarParameter::_isVarParameter() { return true; }
+bool VarParameter::_isVarParameter() { return (true); }
 
 ThrowsClause::ThrowsClause(Type* throwsType, Position* start, Position* end) {
     this->start = start;
@@ -705,7 +705,7 @@ void ThrowsClause::accept(SyntaxVisitor* visitor) {
     visitor->closeThrowsClause(this);
 }
 
-bool ThrowsClause::_isThrowsClause() { return true; }
+bool ThrowsClause::_isThrowsClause() { return (true); }
 
 EnumMember::EnumMember(EnumCase* enumCase, _Vector<AdditionalCase>* additionalCases, ParameterClause* parameterClause, Position* start, Position* end) {
     this->start = start;
@@ -732,7 +732,7 @@ void EnumMember::accept(SyntaxVisitor* visitor) {
     visitor->closeEnumMember(this);
 }
 
-bool EnumMember::_isEnumMember() { return true; }
+bool EnumMember::_isEnumMember() { return (true); }
 
 EnumCase::EnumCase(string* name, Position* start, Position* end) {
     this->start = start;
@@ -744,7 +744,7 @@ void EnumCase::accept(SyntaxVisitor* visitor) {
     visitor->visitEnumCase(this);
 }
 
-bool EnumCase::_isEnumCase() { return true; }
+bool EnumCase::_isEnumCase() { return (true); }
 
 AdditionalCase::AdditionalCase(EnumCase* enumCase, Position* start, Position* end) {
     this->start = start;
@@ -759,7 +759,7 @@ void AdditionalCase::accept(SyntaxVisitor* visitor) {
     visitor->closeAdditionalCase(this);
 }
 
-bool AdditionalCase::_isAdditionalCase() { return true; }
+bool AdditionalCase::_isAdditionalCase() { return (true); }
 
 ClassBody::ClassBody(_Vector<ClassMember>* members, Position* start, Position* end) {
     this->start = start;
@@ -781,7 +781,7 @@ void ClassBody::accept(SyntaxVisitor* visitor) {
     visitor->closeClassBody(this);
 }
 
-bool ClassBody::_isClassBody() { return true; }
+bool ClassBody::_isClassBody() { return (true); }
 
 GenericArgumentClause::GenericArgumentClause(_Vector<GenericParameter>* genericParameters, Position* start, Position* end) {
     this->start = start;
@@ -803,7 +803,7 @@ void GenericArgumentClause::accept(SyntaxVisitor* visitor) {
     visitor->closeGenericArgumentClause(this);
 }
 
-bool GenericArgumentClause::_isGenericArgumentClause() { return true; }
+bool GenericArgumentClause::_isGenericArgumentClause() { return (true); }
 
 GenericParameter::GenericParameter(string* typeName, Position* start, Position* end) {
     this->start = start;
@@ -815,7 +815,7 @@ void GenericParameter::accept(SyntaxVisitor* visitor) {
     visitor->visitGenericParameter(this);
 }
 
-bool GenericParameter::_isGenericParameter() { return true; }
+bool GenericParameter::_isGenericParameter() { return (true); }
 
 ClassMember::ClassMember(Declaration* declaration, Position* start, Position* end) {
     this->start = start;
@@ -830,7 +830,7 @@ void ClassMember::accept(SyntaxVisitor* visitor) {
     visitor->closeClassMember(this);
 }
 
-bool ClassMember::_isClassMember() { return true; }
+bool ClassMember::_isClassMember() { return (true); }
 
 PrefixExpression::PrefixExpression(string* prefixOperator, PostfixExpression* expression, Position* start, Position* end) {
     this->start = start;
@@ -846,7 +846,7 @@ void PrefixExpression::accept(SyntaxVisitor* visitor) {
     visitor->closePrefixExpression(this);
 }
 
-bool PrefixExpression::_isPrefixExpression() { return true; }
+bool PrefixExpression::_isPrefixExpression() { return (true); }
 
 PostfixExpression::PostfixExpression(PrimaryExpression* primaryExpression, _Vector<Postfix>* postfixes, Position* start, Position* end) {
     this->start = start;
@@ -870,17 +870,17 @@ void PostfixExpression::accept(SyntaxVisitor* visitor) {
     visitor->closePostfixExpression(this);
 }
 
-bool PostfixExpression::_isPostfixExpression() { return true; }
+bool PostfixExpression::_isPostfixExpression() { return (true); }
 
 void BinaryOp::accept(SyntaxVisitor* visitor) {
 }
 
-bool BinaryOp::_isBinaryOp() { return true; }
+bool BinaryOp::_isBinaryOp() { return (true); }
 
-bool BinaryOp::_isBinaryOperation() { return false; }
-bool BinaryOp::_isAssignment() { return false; }
-bool BinaryOp::_isTypeQuery() { return false; }
-bool BinaryOp::_isTypeCast() { return false; }
+bool BinaryOp::_isBinaryOperation() { return (false); }
+bool BinaryOp::_isAssignment() { return (false); }
+bool BinaryOp::_isTypeQuery() { return (false); }
+bool BinaryOp::_isTypeCast() { return (false); }
 
 BinaryOperation::BinaryOperation(string* binaryOperator, PrefixExpression* expression, Position* start, Position* end) {
     this->start = start;
@@ -896,7 +896,7 @@ void BinaryOperation::accept(SyntaxVisitor* visitor) {
     visitor->closeBinaryOperation(this);
 }
 
-bool BinaryOperation::_isBinaryOperation() { return true; }
+bool BinaryOperation::_isBinaryOperation() { return (true); }
 
 Assignment::Assignment(Expression* expression, Position* start, Position* end) {
     this->start = start;
@@ -911,7 +911,7 @@ void Assignment::accept(SyntaxVisitor* visitor) {
     visitor->closeAssignment(this);
 }
 
-bool Assignment::_isAssignment() { return true; }
+bool Assignment::_isAssignment() { return (true); }
 
 TypeQuery::TypeQuery(Type* objectType, Position* start, Position* end) {
     this->start = start;
@@ -926,7 +926,7 @@ void TypeQuery::accept(SyntaxVisitor* visitor) {
     visitor->closeTypeQuery(this);
 }
 
-bool TypeQuery::_isTypeQuery() { return true; }
+bool TypeQuery::_isTypeQuery() { return (true); }
 
 TypeCast::TypeCast(Type* objectType, Position* start, Position* end) {
     this->start = start;
@@ -941,7 +941,7 @@ void TypeCast::accept(SyntaxVisitor* visitor) {
     visitor->closeTypeCast(this);
 }
 
-bool TypeCast::_isTypeCast() { return true; }
+bool TypeCast::_isTypeCast() { return (true); }
 
 CatchClause::CatchClause(CatchPattern* catchPattern, TuplePattern* bindingPattern, Expression* expression, Position* start, Position* end) {
     this->start = start;
@@ -961,15 +961,15 @@ void CatchClause::accept(SyntaxVisitor* visitor) {
     visitor->closeCatchClause(this);
 }
 
-bool CatchClause::_isCatchClause() { return true; }
+bool CatchClause::_isCatchClause() { return (true); }
 
 void CatchPattern::accept(SyntaxVisitor* visitor) {
 }
 
-bool CatchPattern::_isCatchPattern() { return true; }
+bool CatchPattern::_isCatchPattern() { return (true); }
 
-bool CatchPattern::_isWildCardCatchPattern() { return false; }
-bool CatchPattern::_isIdentifierCatchPattern() { return false; }
+bool CatchPattern::_isWildCardCatchPattern() { return (false); }
+bool CatchPattern::_isIdentifierCatchPattern() { return (false); }
 
 WildCardCatchPattern::WildCardCatchPattern(WildcardPattern* pattern, Position* start, Position* end) {
     this->start = start;
@@ -984,7 +984,7 @@ void WildCardCatchPattern::accept(SyntaxVisitor* visitor) {
     visitor->closeWildCardCatchPattern(this);
 }
 
-bool WildCardCatchPattern::_isWildCardCatchPattern() { return true; }
+bool WildCardCatchPattern::_isWildCardCatchPattern() { return (true); }
 
 IdentifierCatchPattern::IdentifierCatchPattern(string* name, ExplicitMemberExpression* member, Position* start, Position* end) {
     this->start = start;
@@ -1001,17 +1001,17 @@ void IdentifierCatchPattern::accept(SyntaxVisitor* visitor) {
     visitor->closeIdentifierCatchPattern(this);
 }
 
-bool IdentifierCatchPattern::_isIdentifierCatchPattern() { return true; }
+bool IdentifierCatchPattern::_isIdentifierCatchPattern() { return (true); }
 
 void Postfix::accept(SyntaxVisitor* visitor) {
 }
 
-bool Postfix::_isPostfix() { return true; }
+bool Postfix::_isPostfix() { return (true); }
 
-bool Postfix::_isOperatorPostfix() { return false; }
-bool Postfix::_isFunctionCall() { return false; }
-bool Postfix::_isExplicitMemberExpression() { return false; }
-bool Postfix::_isSubscript() { return false; }
+bool Postfix::_isOperatorPostfix() { return (false); }
+bool Postfix::_isFunctionCall() { return (false); }
+bool Postfix::_isExplicitMemberExpression() { return (false); }
+bool Postfix::_isSubscript() { return (false); }
 
 OperatorPostfix::OperatorPostfix(string* postfixOperator, Position* start, Position* end) {
     this->start = start;
@@ -1023,7 +1023,7 @@ void OperatorPostfix::accept(SyntaxVisitor* visitor) {
     visitor->visitOperatorPostfix(this);
 }
 
-bool OperatorPostfix::_isOperatorPostfix() { return true; }
+bool OperatorPostfix::_isOperatorPostfix() { return (true); }
 
 FunctionCall::FunctionCall(ParenthesizedExpression* arguments, _Vector<CatchClause>* catchClauses, Position* start, Position* end) {
     this->start = start;
@@ -1047,7 +1047,7 @@ void FunctionCall::accept(SyntaxVisitor* visitor) {
     visitor->closeFunctionCall(this);
 }
 
-bool FunctionCall::_isFunctionCall() { return true; }
+bool FunctionCall::_isFunctionCall() { return (true); }
 
 ExplicitMemberExpression::ExplicitMemberExpression(MemberPostfix* memberPostfix, Position* start, Position* end) {
     this->start = start;
@@ -1062,7 +1062,7 @@ void ExplicitMemberExpression::accept(SyntaxVisitor* visitor) {
     visitor->closeExplicitMemberExpression(this);
 }
 
-bool ExplicitMemberExpression::_isExplicitMemberExpression() { return true; }
+bool ExplicitMemberExpression::_isExplicitMemberExpression() { return (true); }
 
 Subscript::Subscript(_Vector<ExpressionElement>* expressions, Position* start, Position* end) {
     this->start = start;
@@ -1084,7 +1084,7 @@ void Subscript::accept(SyntaxVisitor* visitor) {
     visitor->closeSubscript(this);
 }
 
-bool Subscript::_isSubscript() { return true; }
+bool Subscript::_isSubscript() { return (true); }
 
 ExpressionElement::ExpressionElement(Expression* expression, Position* start, Position* end) {
     this->start = start;
@@ -1099,14 +1099,14 @@ void ExpressionElement::accept(SyntaxVisitor* visitor) {
     visitor->closeExpressionElement(this);
 }
 
-bool ExpressionElement::_isExpressionElement() { return true; }
+bool ExpressionElement::_isExpressionElement() { return (true); }
 
 void MemberPostfix::accept(SyntaxVisitor* visitor) {
 }
 
-bool MemberPostfix::_isMemberPostfix() { return true; }
+bool MemberPostfix::_isMemberPostfix() { return (true); }
 
-bool MemberPostfix::_isNamedMemberPostfix() { return false; }
+bool MemberPostfix::_isNamedMemberPostfix() { return (false); }
 
 NamedMemberPostfix::NamedMemberPostfix(IdentifierExpression* identifier, Position* start, Position* end) {
     this->start = start;
@@ -1121,30 +1121,30 @@ void NamedMemberPostfix::accept(SyntaxVisitor* visitor) {
     visitor->closeNamedMemberPostfix(this);
 }
 
-bool NamedMemberPostfix::_isNamedMemberPostfix() { return true; }
+bool NamedMemberPostfix::_isNamedMemberPostfix() { return (true); }
 
 void PrimaryExpression::accept(SyntaxVisitor* visitor) {
 }
 
-bool PrimaryExpression::_isPrimaryExpression() { return true; }
+bool PrimaryExpression::_isPrimaryExpression() { return (true); }
 
-bool PrimaryExpression::_isIdentifierExpression() { return false; }
-bool PrimaryExpression::_isLiteralExpression() { return false; }
-bool PrimaryExpression::_isIfExpression() { return false; }
-bool PrimaryExpression::_isSwitchExpression() { return false; }
-bool PrimaryExpression::_isForExpression() { return false; }
-bool PrimaryExpression::_isWhileExpression() { return false; }
-bool PrimaryExpression::_isRepeatExpression() { return false; }
-bool PrimaryExpression::_isParenthesizedExpression() { return false; }
-bool PrimaryExpression::_isReturnExpression() { return false; }
-bool PrimaryExpression::_isThrowExpression() { return false; }
-bool PrimaryExpression::_isBreakExpression() { return false; }
-bool PrimaryExpression::_isConstructorCall() { return false; }
-bool PrimaryExpression::_isThisExpression() { return false; }
-bool PrimaryExpression::_isSuperExpression() { return false; }
-bool PrimaryExpression::_isSuperDot() { return false; }
-bool PrimaryExpression::_isSuperSubscript() { return false; }
-bool PrimaryExpression::_isNullExpression() { return false; }
+bool PrimaryExpression::_isIdentifierExpression() { return (false); }
+bool PrimaryExpression::_isLiteralExpression() { return (false); }
+bool PrimaryExpression::_isIfExpression() { return (false); }
+bool PrimaryExpression::_isSwitchExpression() { return (false); }
+bool PrimaryExpression::_isForExpression() { return (false); }
+bool PrimaryExpression::_isWhileExpression() { return (false); }
+bool PrimaryExpression::_isRepeatExpression() { return (false); }
+bool PrimaryExpression::_isParenthesizedExpression() { return (false); }
+bool PrimaryExpression::_isReturnExpression() { return (false); }
+bool PrimaryExpression::_isThrowExpression() { return (false); }
+bool PrimaryExpression::_isBreakExpression() { return (false); }
+bool PrimaryExpression::_isConstructorCall() { return (false); }
+bool PrimaryExpression::_isThisExpression() { return (false); }
+bool PrimaryExpression::_isSuperExpression() { return (false); }
+bool PrimaryExpression::_isSuperDot() { return (false); }
+bool PrimaryExpression::_isSuperSubscript() { return (false); }
+bool PrimaryExpression::_isNullExpression() { return (false); }
 
 IdentifierExpression::IdentifierExpression(string* name, Position* start, Position* end) {
     this->start = start;
@@ -1156,7 +1156,7 @@ void IdentifierExpression::accept(SyntaxVisitor* visitor) {
     visitor->visitIdentifierExpression(this);
 }
 
-bool IdentifierExpression::_isIdentifierExpression() { return true; }
+bool IdentifierExpression::_isIdentifierExpression() { return (true); }
 
 LiteralExpression::LiteralExpression(Literal* literal, Position* start, Position* end) {
     this->start = start;
@@ -1168,7 +1168,7 @@ void LiteralExpression::accept(SyntaxVisitor* visitor) {
     visitor->visitLiteralExpression(this);
 }
 
-bool LiteralExpression::_isLiteralExpression() { return true; }
+bool LiteralExpression::_isLiteralExpression() { return (true); }
 
 IfExpression::IfExpression(Expression* condition, Expression* consequent, ElseClause* elseClause, Position* start, Position* end) {
     this->start = start;
@@ -1188,7 +1188,7 @@ void IfExpression::accept(SyntaxVisitor* visitor) {
     visitor->closeIfExpression(this);
 }
 
-bool IfExpression::_isIfExpression() { return true; }
+bool IfExpression::_isIfExpression() { return (true); }
 
 SwitchExpression::SwitchExpression(Expression* expression, SwitchBody* body, Position* start, Position* end) {
     this->start = start;
@@ -1205,7 +1205,7 @@ void SwitchExpression::accept(SyntaxVisitor* visitor) {
     visitor->closeSwitchExpression(this);
 }
 
-bool SwitchExpression::_isSwitchExpression() { return true; }
+bool SwitchExpression::_isSwitchExpression() { return (true); }
 
 ForExpression::ForExpression(Pattern* pattern, Expression* expression, Expression* code, Position* start, Position* end) {
     this->start = start;
@@ -1224,7 +1224,7 @@ void ForExpression::accept(SyntaxVisitor* visitor) {
     visitor->closeForExpression(this);
 }
 
-bool ForExpression::_isForExpression() { return true; }
+bool ForExpression::_isForExpression() { return (true); }
 
 WhileExpression::WhileExpression(Expression* condition, Expression* code, Position* start, Position* end) {
     this->start = start;
@@ -1241,7 +1241,7 @@ void WhileExpression::accept(SyntaxVisitor* visitor) {
     visitor->closeWhileExpression(this);
 }
 
-bool WhileExpression::_isWhileExpression() { return true; }
+bool WhileExpression::_isWhileExpression() { return (true); }
 
 RepeatExpression::RepeatExpression(Expression* code, Expression* condition, Position* start, Position* end) {
     this->start = start;
@@ -1258,7 +1258,7 @@ void RepeatExpression::accept(SyntaxVisitor* visitor) {
     visitor->closeRepeatExpression(this);
 }
 
-bool RepeatExpression::_isRepeatExpression() { return true; }
+bool RepeatExpression::_isRepeatExpression() { return (true); }
 
 ParenthesizedExpression::ParenthesizedExpression(_Vector<ExpressionElement>* expressionElements, Position* start, Position* end) {
     this->start = start;
@@ -1280,7 +1280,7 @@ void ParenthesizedExpression::accept(SyntaxVisitor* visitor) {
     visitor->closeParenthesizedExpression(this);
 }
 
-bool ParenthesizedExpression::_isParenthesizedExpression() { return true; }
+bool ParenthesizedExpression::_isParenthesizedExpression() { return (true); }
 
 ReturnExpression::ReturnExpression(Expression* expression, Position* start, Position* end) {
     this->start = start;
@@ -1296,7 +1296,7 @@ void ReturnExpression::accept(SyntaxVisitor* visitor) {
     visitor->closeReturnExpression(this);
 }
 
-bool ReturnExpression::_isReturnExpression() { return true; }
+bool ReturnExpression::_isReturnExpression() { return (true); }
 
 ThrowExpression::ThrowExpression(IdentifierExpression* error, ParenthesizedExpression* arguments, Position* start, Position* end) {
     this->start = start;
@@ -1314,7 +1314,7 @@ void ThrowExpression::accept(SyntaxVisitor* visitor) {
     visitor->closeThrowExpression(this);
 }
 
-bool ThrowExpression::_isThrowExpression() { return true; }
+bool ThrowExpression::_isThrowExpression() { return (true); }
 
 BreakExpression::BreakExpression(Expression* expression, Position* start, Position* end) {
     this->start = start;
@@ -1330,7 +1330,7 @@ void BreakExpression::accept(SyntaxVisitor* visitor) {
     visitor->closeBreakExpression(this);
 }
 
-bool BreakExpression::_isBreakExpression() { return true; }
+bool BreakExpression::_isBreakExpression() { return (true); }
 
 ConstructorCall::ConstructorCall(Type* typeToInitialize, ParenthesizedExpression* arguments, _Vector<CatchClause>* catchClauses, Position* start, Position* end) {
     this->start = start;
@@ -1356,7 +1356,7 @@ void ConstructorCall::accept(SyntaxVisitor* visitor) {
     visitor->closeConstructorCall(this);
 }
 
-bool ConstructorCall::_isConstructorCall() { return true; }
+bool ConstructorCall::_isConstructorCall() { return (true); }
 
 ThisExpression::ThisExpression(Position* start, Position* end) {
     this->start = start;
@@ -1367,15 +1367,15 @@ void ThisExpression::accept(SyntaxVisitor* visitor) {
     visitor->visitThisExpression(this);
 }
 
-bool ThisExpression::_isThisExpression() { return true; }
+bool ThisExpression::_isThisExpression() { return (true); }
 
 void SuperExpression::accept(SyntaxVisitor* visitor) {
 }
 
-bool SuperExpression::_isSuperExpression() { return true; }
+bool SuperExpression::_isSuperExpression() { return (true); }
 
-bool SuperExpression::_isSuperDot() { return false; }
-bool SuperExpression::_isSuperSubscript() { return false; }
+bool SuperExpression::_isSuperDot() { return (false); }
+bool SuperExpression::_isSuperSubscript() { return (false); }
 
 SuperDot::SuperDot(CommonSuperMember* member, Position* start, Position* end) {
     this->start = start;
@@ -1390,7 +1390,7 @@ void SuperDot::accept(SyntaxVisitor* visitor) {
     visitor->closeSuperDot(this);
 }
 
-bool SuperDot::_isSuperDot() { return true; }
+bool SuperDot::_isSuperDot() { return (true); }
 
 SuperSubscript::SuperSubscript(Subscript* subscript, Position* start, Position* end) {
     this->start = start;
@@ -1405,7 +1405,7 @@ void SuperSubscript::accept(SyntaxVisitor* visitor) {
     visitor->closeSuperSubscript(this);
 }
 
-bool SuperSubscript::_isSuperSubscript() { return true; }
+bool SuperSubscript::_isSuperSubscript() { return (true); }
 
 NullExpression::NullExpression(Position* start, Position* end) {
     this->start = start;
@@ -1416,7 +1416,7 @@ void NullExpression::accept(SyntaxVisitor* visitor) {
     visitor->visitNullExpression(this);
 }
 
-bool NullExpression::_isNullExpression() { return true; }
+bool NullExpression::_isNullExpression() { return (true); }
 
 ElseClause::ElseClause(Expression* alternative, Position* start, Position* end) {
     this->start = start;
@@ -1431,15 +1431,15 @@ void ElseClause::accept(SyntaxVisitor* visitor) {
     visitor->closeElseClause(this);
 }
 
-bool ElseClause::_isElseClause() { return true; }
+bool ElseClause::_isElseClause() { return (true); }
 
 void SwitchBody::accept(SyntaxVisitor* visitor) {
 }
 
-bool SwitchBody::_isSwitchBody() { return true; }
+bool SwitchBody::_isSwitchBody() { return (true); }
 
-bool SwitchBody::_isCurliedSwitchBody() { return false; }
-bool SwitchBody::_isNakedSwitchBody() { return false; }
+bool SwitchBody::_isCurliedSwitchBody() { return (false); }
+bool SwitchBody::_isNakedSwitchBody() { return (false); }
 
 CurliedSwitchBody::CurliedSwitchBody(_Vector<SwitchCase>* cases, Position* start, Position* end) {
     this->start = start;
@@ -1461,7 +1461,7 @@ void CurliedSwitchBody::accept(SyntaxVisitor* visitor) {
     visitor->closeCurliedSwitchBody(this);
 }
 
-bool CurliedSwitchBody::_isCurliedSwitchBody() { return true; }
+bool CurliedSwitchBody::_isCurliedSwitchBody() { return (true); }
 
 NakedSwitchBody::NakedSwitchBody(_Vector<SwitchCase>* cases, Position* start, Position* end) {
     this->start = start;
@@ -1483,7 +1483,7 @@ void NakedSwitchBody::accept(SyntaxVisitor* visitor) {
     visitor->closeNakedSwitchBody(this);
 }
 
-bool NakedSwitchBody::_isNakedSwitchBody() { return true; }
+bool NakedSwitchBody::_isNakedSwitchBody() { return (true); }
 
 SwitchCase::SwitchCase(CaseLabel* label, CaseContent* content, Position* start, Position* end) {
     this->start = start;
@@ -1500,15 +1500,15 @@ void SwitchCase::accept(SyntaxVisitor* visitor) {
     visitor->closeSwitchCase(this);
 }
 
-bool SwitchCase::_isSwitchCase() { return true; }
+bool SwitchCase::_isSwitchCase() { return (true); }
 
 void CaseLabel::accept(SyntaxVisitor* visitor) {
 }
 
-bool CaseLabel::_isCaseLabel() { return true; }
+bool CaseLabel::_isCaseLabel() { return (true); }
 
-bool CaseLabel::_isItemCaseLabel() { return false; }
-bool CaseLabel::_isDefaultCaseLabel() { return false; }
+bool CaseLabel::_isItemCaseLabel() { return (false); }
+bool CaseLabel::_isDefaultCaseLabel() { return (false); }
 
 ItemCaseLabel::ItemCaseLabel(Pattern* pattern, _Vector<CaseItem>* additionalPatterns, Position* start, Position* end) {
     this->start = start;
@@ -1532,7 +1532,7 @@ void ItemCaseLabel::accept(SyntaxVisitor* visitor) {
     visitor->closeItemCaseLabel(this);
 }
 
-bool ItemCaseLabel::_isItemCaseLabel() { return true; }
+bool ItemCaseLabel::_isItemCaseLabel() { return (true); }
 
 DefaultCaseLabel::DefaultCaseLabel(Position* start, Position* end) {
     this->start = start;
@@ -1543,7 +1543,7 @@ void DefaultCaseLabel::accept(SyntaxVisitor* visitor) {
     visitor->visitDefaultCaseLabel(this);
 }
 
-bool DefaultCaseLabel::_isDefaultCaseLabel() { return true; }
+bool DefaultCaseLabel::_isDefaultCaseLabel() { return (true); }
 
 CaseItem::CaseItem(Pattern* pattern, Position* start, Position* end) {
     this->start = start;
@@ -1558,17 +1558,17 @@ void CaseItem::accept(SyntaxVisitor* visitor) {
     visitor->closeCaseItem(this);
 }
 
-bool CaseItem::_isCaseItem() { return true; }
+bool CaseItem::_isCaseItem() { return (true); }
 
 void Pattern::accept(SyntaxVisitor* visitor) {
 }
 
-bool Pattern::_isPattern() { return true; }
+bool Pattern::_isPattern() { return (true); }
 
-bool Pattern::_isWildcardPattern() { return false; }
-bool Pattern::_isIdentifierPattern() { return false; }
-bool Pattern::_isTuplePattern() { return false; }
-bool Pattern::_isExpressionPattern() { return false; }
+bool Pattern::_isWildcardPattern() { return (false); }
+bool Pattern::_isIdentifierPattern() { return (false); }
+bool Pattern::_isTuplePattern() { return (false); }
+bool Pattern::_isExpressionPattern() { return (false); }
 
 WildcardPattern::WildcardPattern(Position* start, Position* end) {
     this->start = start;
@@ -1579,7 +1579,7 @@ void WildcardPattern::accept(SyntaxVisitor* visitor) {
     visitor->visitWildcardPattern(this);
 }
 
-bool WildcardPattern::_isWildcardPattern() { return true; }
+bool WildcardPattern::_isWildcardPattern() { return (true); }
 
 IdentifierPattern::IdentifierPattern(string* identifier, TypeAnnotation* annotationForType, Position* start, Position* end) {
     this->start = start;
@@ -1596,7 +1596,7 @@ void IdentifierPattern::accept(SyntaxVisitor* visitor) {
     visitor->closeIdentifierPattern(this);
 }
 
-bool IdentifierPattern::_isIdentifierPattern() { return true; }
+bool IdentifierPattern::_isIdentifierPattern() { return (true); }
 
 TuplePattern::TuplePattern(_Vector<TuplePatternElement>* elements, Position* start, Position* end) {
     this->start = start;
@@ -1618,7 +1618,7 @@ void TuplePattern::accept(SyntaxVisitor* visitor) {
     visitor->closeTuplePattern(this);
 }
 
-bool TuplePattern::_isTuplePattern() { return true; }
+bool TuplePattern::_isTuplePattern() { return (true); }
 
 ExpressionPattern::ExpressionPattern(Expression* expression, Position* start, Position* end) {
     this->start = start;
@@ -1633,7 +1633,7 @@ void ExpressionPattern::accept(SyntaxVisitor* visitor) {
     visitor->closeExpressionPattern(this);
 }
 
-bool ExpressionPattern::_isExpressionPattern() { return true; }
+bool ExpressionPattern::_isExpressionPattern() { return (true); }
 
 TuplePatternElement::TuplePatternElement(Pattern* pattern, Position* start, Position* end) {
     this->start = start;
@@ -1648,15 +1648,15 @@ void TuplePatternElement::accept(SyntaxVisitor* visitor) {
     visitor->closeTuplePatternElement(this);
 }
 
-bool TuplePatternElement::_isTuplePatternElement() { return true; }
+bool TuplePatternElement::_isTuplePatternElement() { return (true); }
 
 void CaseContent::accept(SyntaxVisitor* visitor) {
 }
 
-bool CaseContent::_isCaseContent() { return true; }
+bool CaseContent::_isCaseContent() { return (true); }
 
-bool CaseContent::_isBlockCaseContent() { return false; }
-bool CaseContent::_isEmptyCaseContent() { return false; }
+bool CaseContent::_isBlockCaseContent() { return (false); }
+bool CaseContent::_isEmptyCaseContent() { return (false); }
 
 BlockCaseContent::BlockCaseContent(_Vector<TerminatedStatement>* statements, Position* start, Position* end) {
     this->start = start;
@@ -1678,7 +1678,7 @@ void BlockCaseContent::accept(SyntaxVisitor* visitor) {
     visitor->closeBlockCaseContent(this);
 }
 
-bool BlockCaseContent::_isBlockCaseContent() { return true; }
+bool BlockCaseContent::_isBlockCaseContent() { return (true); }
 
 EmptyCaseContent::EmptyCaseContent(Position* start, Position* end) {
     this->start = start;
@@ -1689,15 +1689,15 @@ void EmptyCaseContent::accept(SyntaxVisitor* visitor) {
     visitor->visitEmptyCaseContent(this);
 }
 
-bool EmptyCaseContent::_isEmptyCaseContent() { return true; }
+bool EmptyCaseContent::_isEmptyCaseContent() { return (true); }
 
 void CommonSuperMember::accept(SyntaxVisitor* visitor) {
 }
 
-bool CommonSuperMember::_isCommonSuperMember() { return true; }
+bool CommonSuperMember::_isCommonSuperMember() { return (true); }
 
-bool CommonSuperMember::_isSuperConstructor() { return false; }
-bool CommonSuperMember::_isSuperMember() { return false; }
+bool CommonSuperMember::_isSuperConstructor() { return (false); }
+bool CommonSuperMember::_isSuperMember() { return (false); }
 
 SuperConstructor::SuperConstructor(Position* start, Position* end) {
     this->start = start;
@@ -1708,7 +1708,7 @@ void SuperConstructor::accept(SyntaxVisitor* visitor) {
     visitor->visitSuperConstructor(this);
 }
 
-bool SuperConstructor::_isSuperConstructor() { return true; }
+bool SuperConstructor::_isSuperConstructor() { return (true); }
 
 SuperMember::SuperMember(string* name, Position* start, Position* end) {
     this->start = start;
@@ -1720,7 +1720,7 @@ void SuperMember::accept(SyntaxVisitor* visitor) {
     visitor->visitSuperMember(this);
 }
 
-bool SuperMember::_isSuperMember() { return true; }
+bool SuperMember::_isSuperMember() { return (true); }
 
 Type::Type(string* name, Subtype* subType, _Vector<TypePostfix>* postfixes, Position* start, Position* end) {
     this->start = start;
@@ -1746,7 +1746,7 @@ void Type::accept(SyntaxVisitor* visitor) {
     visitor->closeType(this);
 }
 
-bool Type::_isType() { return true; }
+bool Type::_isType() { return (true); }
 
 TypeAnnotation::TypeAnnotation(Type* annotationForType, Position* start, Position* end) {
     this->start = start;
@@ -1761,7 +1761,7 @@ void TypeAnnotation::accept(SyntaxVisitor* visitor) {
     visitor->closeTypeAnnotation(this);
 }
 
-bool TypeAnnotation::_isTypeAnnotation() { return true; }
+bool TypeAnnotation::_isTypeAnnotation() { return (true); }
 
 Subtype::Subtype(Type* type, Position* start, Position* end) {
     this->start = start;
@@ -1776,15 +1776,15 @@ void Subtype::accept(SyntaxVisitor* visitor) {
     visitor->closeSubtype(this);
 }
 
-bool Subtype::_isSubtype() { return true; }
+bool Subtype::_isSubtype() { return (true); }
 
 void TypePostfix::accept(SyntaxVisitor* visitor) {
 }
 
-bool TypePostfix::_isTypePostfix() { return true; }
+bool TypePostfix::_isTypePostfix() { return (true); }
 
-bool TypePostfix::_isOptionalType() { return false; }
-bool TypePostfix::_isIndexedType() { return false; }
+bool TypePostfix::_isOptionalType() { return (false); }
+bool TypePostfix::_isIndexedType() { return (false); }
 
 OptionalType::OptionalType(Position* start, Position* end) {
     this->start = start;
@@ -1795,7 +1795,7 @@ void OptionalType::accept(SyntaxVisitor* visitor) {
     visitor->visitOptionalType(this);
 }
 
-bool OptionalType::_isOptionalType() { return true; }
+bool OptionalType::_isOptionalType() { return (true); }
 
 IndexedType::IndexedType(Type* key, Position* start, Position* end) {
     this->start = start;
@@ -1811,7 +1811,7 @@ void IndexedType::accept(SyntaxVisitor* visitor) {
     visitor->closeIndexedType(this);
 }
 
-bool IndexedType::_isIndexedType() { return true; }
+bool IndexedType::_isIndexedType() { return (true); }
 
 TypeInheritanceClause::TypeInheritanceClause(_Vector<Inheritance>* inheritances, Position* start, Position* end) {
     this->start = start;
@@ -1833,7 +1833,7 @@ void TypeInheritanceClause::accept(SyntaxVisitor* visitor) {
     visitor->closeTypeInheritanceClause(this);
 }
 
-bool TypeInheritanceClause::_isTypeInheritanceClause() { return true; }
+bool TypeInheritanceClause::_isTypeInheritanceClause() { return (true); }
 
 Inheritance::Inheritance(Type* type, Position* start, Position* end) {
     this->start = start;
@@ -1848,7 +1848,7 @@ void Inheritance::accept(SyntaxVisitor* visitor) {
     visitor->closeInheritance(this);
 }
 
-bool Inheritance::_isInheritance() { return true; }
+bool Inheritance::_isInheritance() { return (true); }
 
 
 }

@@ -35,6 +35,6 @@ class Compiler {
         let compilationUnit: CompilationUnit = parser.parseCompilationUnit()
             catch _ (error: ParserError)
                 throw error
-        return compilationUnit
+        return(compilationUnit)
     }
 }

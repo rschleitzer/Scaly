@@ -61,7 +61,7 @@ class CppVisitor extends SyntaxVisitor {
         if !Directory.exists(programDirectory) {
             Directory.create(programDirectory)
                 catch _ (error: dirError())
-                    return false
+                    return(false)
         }
 
         {
@@ -77,7 +77,7 @@ class CppVisitor extends SyntaxVisitor {
                     projectFilePath.append(".project")
                     File.writeFromString(projectFilePath , projectFile)
                         catch _ (error: fileError)
-                            return false
+                            return(false)
                 }
             }
 
@@ -89,14 +89,14 @@ class CppVisitor extends SyntaxVisitor {
                     headerFilePath.append(".h")
                     File.writeFromString(headerFilePath, mainHeaderFile)
                         catch _ (error: fileError)
-                            return false
+                            return(false)
                 }
             }
 
             collectInheritances(program)
         }
 
-        return true
+        return(true)
     }
     
     function closeProgram(program: Program) {
@@ -112,7 +112,7 @@ class CppVisitor extends SyntaxVisitor {
         inParameterClause = false
 
         if !(compilationUnit.parent is Program)
-            return false
+            return(false)
 
         let programName: string = ((compilationUnit.parent) as Program).name
 
@@ -146,7 +146,7 @@ class CppVisitor extends SyntaxVisitor {
         if isTopLevelFile(compilationUnit)
             sourceFile.append("int _main(_Vector<string>* args) {\n_Region _rp; _Page* _p = _rp.get();\n\n")
 
-        return true
+        return(true)
     }
 
     function closeCompilationUnit(compilationUnit: CompilationUnit) {
@@ -195,10 +195,10 @@ class CppVisitor extends SyntaxVisitor {
         let statements: TerminatedStatement[] = compilationUnit.statements
         for statement: TerminatedStatement in statements {
             if statement.statement is Expression
-                return true
+                return(true)
         }
             
-        return false
+        return(false)
     }
 
     function openTerminatedStatement(terminatedStatement: TerminatedStatement): bool {
@@ -243,7 +243,7 @@ class CppVisitor extends SyntaxVisitor {
                 }
             }
         }
-        return true
+        return(true)
     }
 
     function closeTerminatedStatement(terminatedStatement: TerminatedStatement) {
@@ -323,7 +323,7 @@ class CppVisitor extends SyntaxVisitor {
     }
 
     function openUseDeclaration(useDeclaration: UseDeclaration): bool {
-        return true
+        return(true)
     }
 
     function closeUseDeclaration(useDeclaration: UseDeclaration) {
@@ -335,7 +335,7 @@ class CppVisitor extends SyntaxVisitor {
         if constantDeclaration.parent.parent.parent is ClassDeclaration
             suppressSource = true
             
-        return true
+        return(true)
     }
 
     function closeConstantDeclaration(constantDeclaration: ConstantDeclaration) {
@@ -348,7 +348,7 @@ class CppVisitor extends SyntaxVisitor {
         if variableDeclaration.parent.parent.parent is ClassDeclaration
             suppressSource = true
 
-        return true
+        return(true)
     }
 
     function closeVariableDeclaration(variableDeclaration: VariableDeclaration) {
@@ -360,7 +360,7 @@ class CppVisitor extends SyntaxVisitor {
         if mutableDeclaration.parent.parent.parent is ClassDeclaration
             suppressSource = true
 
-        return true
+        return(true)
     }
 
     function closeMutableDeclaration(mutableDeclaration: MutableDeclaration) {
@@ -386,7 +386,7 @@ class CppVisitor extends SyntaxVisitor {
             }
         }
 
-        return true
+        return(true)
     }
 
     function closeFunctionDeclaration(functionDeclaration: FunctionDeclaration) {
@@ -413,7 +413,7 @@ class CppVisitor extends SyntaxVisitor {
         sourceFile.append(enumDeclarationName)
         sourceFile.append("::getErrorInfo() {\n    return errorInfo;\n}\n\n")
 
-        return true
+        return(true)
     }
 
     function closeEnumDeclaration(enumDeclaration: EnumDeclaration) {
@@ -493,7 +493,7 @@ class CppVisitor extends SyntaxVisitor {
         headerFile.append(classDeclaration.name)
         if classDeclaration.body == null {
             headerFile.append(";")
-            return false
+            return(false)
         }
 
         headerFile.append(" : public ")
@@ -516,7 +516,7 @@ class CppVisitor extends SyntaxVisitor {
         headerFile.append(" {\n")
         headerFile.append("public:")
         headerIndentLevel++
-        return true
+        return(true)
     }
 
     function closeClassDeclaration(classDeclaration: ClassDeclaration) {
@@ -531,7 +531,7 @@ class CppVisitor extends SyntaxVisitor {
             sourceFile.append(classDeclaration.name)
             sourceFile.append("::_is")
             sourceFile.append(classDeclaration.name)
-            sourceFile.append("() { return true; }\n\n")
+            sourceFile.append("() { return (true); }\n\n")
         }
         {
             mutable derivedClasses: string[] = new string[]()
@@ -548,7 +548,7 @@ class CppVisitor extends SyntaxVisitor {
                 sourceFile.append(classDeclaration.name)
                 sourceFile.append("::_is")
                 sourceFile.append(derivedClass)
-                sourceFile.append("() { return false; }\n")
+                sourceFile.append("() { return (false); }\n")
             }
             if derivedClasses.length() > 0
                 sourceFile.append("\n")
@@ -560,7 +560,7 @@ class CppVisitor extends SyntaxVisitor {
     function openConstructorDeclaration(initializerDeclaration: ConstructorDeclaration): bool {
 
         if !initializerDeclaration.parent.parent.parent is ClassDeclaration
-            return false
+            return(false)
 
         let classDeclarationName: string = ((initializerDeclaration.parent.parent.parent) as Program).name
 
@@ -572,7 +572,7 @@ class CppVisitor extends SyntaxVisitor {
         sourceFile.append(classDeclarationName)
         sourceFile.append("(")
         
-        return true
+        return(true)
     }
 
     function closeConstructorDeclaration(initializerDeclaration: ConstructorDeclaration) {
@@ -590,7 +590,7 @@ class CppVisitor extends SyntaxVisitor {
         }
 
         suppressHeader = true
-        return true
+        return(true)
     }
 
     function localAllocations(codeBlock: CodeBlock): bool {
@@ -598,10 +598,10 @@ class CppVisitor extends SyntaxVisitor {
         if terminatedStatements != null {
             for terminatedStatement: TerminatedStatement in terminatedStatements {
                 if terminatedStatement.statement is MutableDeclaration
-                    return true
+                    return(true)
             }
         }
-        return false
+        return(false)
     }
 
     function getFunctionCall(patternInitializer: PatternInitializer): existing FunctionCall {
@@ -616,21 +616,21 @@ class CppVisitor extends SyntaxVisitor {
                         let postfixes: Postfix[] = postfixExpression.postfixes
                         for postfix: Postfix in postfixes {
                             if postfix is FunctionCall {
-                                return postfix as FunctionCall
+                                return(postfix as FunctionCall)
                             }
                         }
                     }
                 }
             }
         }
-        return null
+        return(null)
     }
 
     function isCatchingFunctionCall(patternInitializer: PatternInitializer): bool {
         if catchesError(getFunctionCall(patternInitializer))
-            return true
+            return(true)
 
-        return false
+        return(false)
     }
 
     function closeCodeBlock(codeBlock: CodeBlock) {
@@ -661,19 +661,19 @@ class CppVisitor extends SyntaxVisitor {
                         sourceFile.append(type.name)
                         sourceFile.append("*)")
                         simpleExpression.prefixExpression.accept(this)
-                        return false
+                        return(false)
                     }
                 }
             }
         }
-        return true
+        return(true)
     }
 
     function closeSimpleExpression(simpleExpression: SimpleExpression) {
     }
 
     function openPathIdentifier(pathIdentifier: PathIdentifier): bool {
-        return true
+        return(true)
     }
 
     function closePathIdentifier(pathIdentifier: PathIdentifier) {
@@ -684,7 +684,7 @@ class CppVisitor extends SyntaxVisitor {
 
     function openInitializer(initializer: Initializer): bool {
         sourceFile.append(" = ")
-        return true
+        return(true)
     }
 
     function closeInitializer(initializer: Initializer) {
@@ -692,7 +692,7 @@ class CppVisitor extends SyntaxVisitor {
 
     function openBindingInitializer(bindingInitializer: BindingInitializer): bool {
         firstBindingInitializer = true
-        return true
+        return(true)
     }
 
     function closeBindingInitializer(bindingInitializer: BindingInitializer) {
@@ -704,14 +704,14 @@ class CppVisitor extends SyntaxVisitor {
         else
             firstBindingInitializer = false
 
-        return true
+        return(true)
     }
 
     function closePatternInitializer(patternInitializer: PatternInitializer) {
     }
 
     function openAdditionalInitializer(additionalInitializer: AdditionalInitializer): bool {
-        return true
+        return(true)
     }
 
     function closeAdditionalInitializer(additionalInitializer: AdditionalInitializer) {
@@ -729,11 +729,11 @@ class CppVisitor extends SyntaxVisitor {
     function openFunctionSignature(functionSignature: FunctionSignature): bool {
 
         if !functionSignature.parent is FunctionDeclaration
-            return false
+            return(false)
 
         let functionName: FunctionName = (functionSignature.parent as FunctionDeclaration).name
         if !functionName is IdentifierFunction
-            return false
+            return(false)
 
         let identifierFunctionName: string = (functionName as IdentifierFunction).name
 
@@ -873,21 +873,21 @@ class CppVisitor extends SyntaxVisitor {
             }
         }
 
-        return true
+        return(true)
     }
     
     function hasArrayPostfix(type: Type): bool {
 
         if type.postfixes == null
-            return false
+            return(false)
 
         let postfixes: TypePostfix[] = type.postfixes
         let typePostfix: TypePostfix = postfixes[0]
 
         if typePostfix is IndexedType
-            return true
+            return(true)
 
-        return false
+        return(false)
     }
 
 
@@ -896,7 +896,7 @@ class CppVisitor extends SyntaxVisitor {
     }
 
     function openFunctionResult(functionResult: FunctionResult): bool {
-        return false
+        return(false)
     }
 
     function closeFunctionResult(functionResult: FunctionResult) {
@@ -909,7 +909,7 @@ class CppVisitor extends SyntaxVisitor {
         firstParameter = true
         inParameterClause = true
 
-        return true
+        return(true)
     }
 
     function closeParameterClause(parameterClause: ParameterClause) {
@@ -927,7 +927,7 @@ class CppVisitor extends SyntaxVisitor {
         writeParameter(constParameterName, constParameter.parameterType)
         constDeclaration = false
 
-        return false
+        return(false)
     }
 
     function writeParameter(name: string, parameterType: Type) {
@@ -962,16 +962,16 @@ class CppVisitor extends SyntaxVisitor {
             ||  name.equals("CompilerError")
            )
         {
-            return true
+            return(true)
         }
 
         for className: string in classes {
             if className.equals(name) {
-                return true
+                return(true)
             }
         }
 
-        return false
+        return(false)
     }
 
     function closeConstParameter(constParameter: ConstParameter) {
@@ -980,7 +980,7 @@ class CppVisitor extends SyntaxVisitor {
 
     function openVarParameter(varParameter: VarParameter): bool {
         writeParameter(varParameter.name, varParameter.parameterType)
-        return false
+        return(false)
     }
 
     function closeVarParameter(varParameter: VarParameter) {
@@ -989,7 +989,7 @@ class CppVisitor extends SyntaxVisitor {
     }
 
     function openThrowsClause(throwsClause: ThrowsClause): bool {
-        return false
+        return(false)
     }
 
     function closeThrowsClause(throwsClause: ThrowsClause) {
@@ -997,7 +997,7 @@ class CppVisitor extends SyntaxVisitor {
 
     function openEnumMember(enumMember: EnumMember): bool {
         if !enumMember.parent is EnumDeclaration
-            return false
+            return(false)
 
         let enumDeclarationName: string = ((enumMember.parent) as EnumDeclaration).name
         if enumMember.parameterClause {
@@ -1022,7 +1022,7 @@ class CppVisitor extends SyntaxVisitor {
         }
 
         inEnumMember = true
-        return true
+        return(true)
     }
 
     function closeEnumMember(enumMember: EnumMember) {
@@ -1091,14 +1091,14 @@ class CppVisitor extends SyntaxVisitor {
     }
 
     function openAdditionalCase(additionalCase: AdditionalCase): bool {
-        return true
+        return(true)
     }
 
     function closeAdditionalCase(additionalCase: AdditionalCase) {
     }
 
     function openClassBody(classBody: ClassBody): bool {
-        return true
+        return(true)
     }
 
     function closeClassBody(classBody: ClassBody) {
@@ -1135,7 +1135,7 @@ class CppVisitor extends SyntaxVisitor {
     }
 
     function openGenericArgumentClause(genericArgumentClause: GenericArgumentClause): bool {
-        return true
+        return(true)
     }
 
     function closeGenericArgumentClause(genericArgumentClause: GenericArgumentClause) {
@@ -1149,7 +1149,7 @@ class CppVisitor extends SyntaxVisitor {
         indentHeader()
         declaringClassMember = true
 
-        return true
+        return(true)
     }
 
     function closeClassMember(classMember: ClassMember) {
@@ -1161,7 +1161,7 @@ class CppVisitor extends SyntaxVisitor {
         if prefixExpression.prefixOperator != null
             sourceFile.append(prefixExpression.prefixOperator)
 
-        return true
+        return(true)
     }
 
     function closePrefixExpression(prefixExpression: PrefixExpression) {
@@ -1175,7 +1175,7 @@ class CppVisitor extends SyntaxVisitor {
             }
         }
 
-        return true
+        return(true)
     }
 
     function closePostfixExpression(postfixExpression: PostfixExpression) {
@@ -1186,7 +1186,7 @@ class CppVisitor extends SyntaxVisitor {
         sourceFile.append(binaryOperation.binaryOperator)
         sourceFile.append(" ")
 
-        return true
+        return(true)
     }
 
     function closeBinaryOperation(binaryOperation: BinaryOperation) {
@@ -1195,43 +1195,43 @@ class CppVisitor extends SyntaxVisitor {
     function openAssignment(assignment: Assignment): bool {
         sourceFile.append(" = ")
 
-        return true
+        return(true)
     }
 
     function inInitializer(node: SyntaxNode): bool {
         if node is ConstructorDeclaration
-            return true
+            return(true)
 
         if node.parent == null
-            return false
+            return(false)
 
-        return inInitializer(node.parent)
+        return(inInitializer(node.parent))
     }
 
     function inReturn(node: SyntaxNode): bool {
         if node is ReturnExpression
-            return true
+            return(true)
 
         if node.parent == null
-            return false
+            return(false)
 
-        return inReturn(node.parent)
+        return(inReturn(node.parent))
     }
 
     function inThrow(node: SyntaxNode): bool {
         if node is ThrowExpression
-            return true
+            return(true)
 
         if node.parent == null
-            return false
+            return(false)
 
-        return inThrow(node.parent)
+        return(inThrow(node.parent))
     }
 
     function getMemberIfCreatingObject(assignment: Assignment): string {
         let functionName: string = getFunctionName(assignment)
         if functionName == null {
-            return null
+            return(null)
         }
 
         if assignment.expression is SimpleExpression {
@@ -1245,7 +1245,7 @@ class CppVisitor extends SyntaxVisitor {
                             mutable memberName: string = new string(memberExpression.name)
                             var classDeclaration: ClassDeclaration = getClassDeclaration(assignment)
                             if classDeclaration != null {
-                                return new string(memberName)
+                                return(new string(memberName))
                             }
                         }
                     }
@@ -1253,7 +1253,7 @@ class CppVisitor extends SyntaxVisitor {
             }
         }
         
-        return null
+        return(null)
     }
 
     function getFunctionName(assignment: Assignment): string {
@@ -1264,35 +1264,35 @@ class CppVisitor extends SyntaxVisitor {
                 let rightSide: PostfixExpression = prefixExpression.expression
                 if rightSide.primaryExpression is IdentifierExpression {
                     let classExpression: IdentifierExpression = (rightSide.primaryExpression) as IdentifierExpression
-                    return new string(classExpression.name)
+                    return(new string(classExpression.name))
                 }
                 else {
                     if rightSide.primaryExpression is ConstructorCall {
                         let initializerCall: ConstructorCall = (rightSide.primaryExpression) as ConstructorCall
                         if hasArrayPostfix(initializerCall.typeToInitialize) {
                             let type: Type = initializerCall.typeToInitialize
-                            return new string(type.name)
+                            return(new string(type.name))
                         }
                         else {
                             let type: Type = initializerCall.typeToInitialize
-                            return new string(type.name)
+                            return(new string(type.name))
                         }
                     }
                 }
             }
         }
 
-        return null
+        return(null)
     }
     
     function isCreatingObject(functionName: string, node: SyntaxNode): bool {
         var classDeclaration: ClassDeclaration = getClassDeclaration(node)
         if classDeclaration == null
-            return false
+            return(false)
 
         let members: ClassMember[] = classDeclaration.body.members
         if members == null
-            return false
+            return(false)
 
         for member: ClassMember in members {
             if member.declaration is FunctionDeclaration {
@@ -1300,22 +1300,22 @@ class CppVisitor extends SyntaxVisitor {
                 if functionDeclaration.name is IdentifierFunction {
                     let identifierFunction: IdentifierFunction = (functionDeclaration.name) as IdentifierFunction
                     if identifierFunction.name.equals(functionName)
-                        return true
+                        return(true)
                 }
             } 
         }
 
-        return false
+        return(false)
     }
 
     function getClassDeclaration(node: SyntaxNode): existing ClassDeclaration {
         if node is ClassDeclaration
-            return node as ClassDeclaration
+            return(node as ClassDeclaration)
 
         if node.parent != null
-            return getClassDeclaration(node.parent)
+            return(getClassDeclaration(node.parent))
         
-        return null
+        return(null)
     }
     
     function isVariableMember(memberName: string, classDeclaration: ClassDeclaration): bool {
@@ -1338,11 +1338,11 @@ class CppVisitor extends SyntaxVisitor {
             if patternInitializer.pattern is IdentifierPattern {
                 let identifierPattern: IdentifierPattern = (patternInitializer.pattern) as IdentifierPattern
                 if identifierPattern.identifier.equals(memberName)
-                    return true
+                    return(true)
             }
         }
 
-        return false
+        return(false)
     }
 
     function closeAssignment(assignment: Assignment) {
@@ -1351,14 +1351,14 @@ class CppVisitor extends SyntaxVisitor {
     function openTypeQuery(typeQuery: TypeQuery): bool {
         sourceFile.append("->_is")
 
-        return true
+        return(true)
     }
 
     function closeTypeQuery(typeQuery: TypeQuery) {
     }
 
     function openTypeCast(typeCast: TypeCast): bool {
-        return true
+        return(true)
     }
 
     function closeTypeCast(typeCast: TypeCast) {
@@ -1534,7 +1534,7 @@ class CppVisitor extends SyntaxVisitor {
                 }
             }
         }
-        return false
+        return(false)
     }
 
     function getIdentifierExpression(postfixExpression: PostfixExpression): existing IdentifierExpression {
@@ -1542,12 +1542,12 @@ class CppVisitor extends SyntaxVisitor {
             if postfixExpression.parent is PrefixExpression {
                 let prefixExpression: PrefixExpression = (postfixExpression.parent) as PrefixExpression
                 if prefixExpression.expression.primaryExpression is IdentifierExpression {
-                    return (prefixExpression.expression.primaryExpression) as IdentifierExpression
+                    return((prefixExpression.expression.primaryExpression) as IdentifierExpression)
                 }
             }
         }
 
-        return null
+        return(null)
     }
 
     function getErrorType(catchClause: CatchClause): existing string {
@@ -1561,7 +1561,7 @@ class CppVisitor extends SyntaxVisitor {
                         if pattern.annotationForType != null {
                             if pattern.annotationForType.annotationForType is Type {
                                 let type: Type = (pattern.annotationForType.annotationForType) as Type
-                                return type.name
+                                return(type.name)
                             }
                         }
                     }
@@ -1569,21 +1569,21 @@ class CppVisitor extends SyntaxVisitor {
             }
         }
 
-        return null
+        return(null)
     }
 
     function closeCatchClause(catchClause: CatchClause) {
     }
 
     function openWildCardCatchPattern(wildCardCatchPattern: WildCardCatchPattern): bool {
-        return true
+        return(true)
     }
 
     function closeWildCardCatchPattern(wildCardCatchPattern: WildCardCatchPattern) {
     }
 
     function openIdentifierCatchPattern(identifierCatchPattern: IdentifierCatchPattern): bool {
-        return true
+        return(true)
     }
 
     function closeIdentifierCatchPattern(identifierCatchPattern: IdentifierCatchPattern) {
@@ -1594,7 +1594,7 @@ class CppVisitor extends SyntaxVisitor {
     }
 
     function openFunctionCall(functionCall: FunctionCall): bool {
-        return true
+        return(true)
     }
 
     function closeFunctionCall(functionCall: FunctionCall) {
@@ -1610,7 +1610,7 @@ class CppVisitor extends SyntaxVisitor {
                     if (postfixes[0] == explicitMemberExpression as Postfix) && ((postfixes[1]) is FunctionCall) {
                         if isClass(identifierExpression.name) {
                             sourceFile.append("::")
-                            return true
+                            return(true)
                         }
                     }
                 }
@@ -1618,7 +1618,7 @@ class CppVisitor extends SyntaxVisitor {
         }
         sourceFile.append("->")
 
-        return true
+        return(true)
     }
 
     function closeExplicitMemberExpression(explicitMemberExpression: ExplicitMemberExpression) {
@@ -1627,7 +1627,7 @@ class CppVisitor extends SyntaxVisitor {
     function openSubscript(subscript: Subscript): bool {
         sourceFile.append("[")
 
-        return true
+        return(true)
     }
 
     function closeSubscript(subscript: Subscript) {
@@ -1635,7 +1635,7 @@ class CppVisitor extends SyntaxVisitor {
     }
 
     function openExpressionElement(expressionElement: ExpressionElement): bool {
-        return true
+        return(true)
     }
 
     function closeExpressionElement(expressionElement: ExpressionElement) {
@@ -1651,7 +1651,7 @@ class CppVisitor extends SyntaxVisitor {
             let i: ulong = 0
             for element: ExpressionElement in expressionElements {
                 if (element == expressionElement) && (i == length)
-                    return true
+                    return(true)
                 i++
             }
         }
@@ -1663,16 +1663,16 @@ class CppVisitor extends SyntaxVisitor {
             let i: ulong = 0
             for element: ExpressionElement in expressions {
                 if (element == expressionElement) && (i == length)
-                    return true
+                    return(true)
                 i++
             }
         }
 
-        return false
+        return(false)
     }
 
     function openNamedMemberPostfix(namedMemberPostfix: NamedMemberPostfix): bool {
-        return true
+        return(true)
     }
 
     function closeNamedMemberPostfix(namedMemberPostfix: NamedMemberPostfix) {
@@ -1693,29 +1693,29 @@ class CppVisitor extends SyntaxVisitor {
 
     function inAssignment(syntaxNode: SyntaxNode): bool {
         if syntaxNode is Assignment
-            return true
+            return(true)
 
         let parentNode: SyntaxNode = syntaxNode.parent
         if parentNode == null
-            return false
+            return(false)
 
-        return inAssignment(parentNode)
+        return(inAssignment(parentNode))
     }
 
     function getAssignment(syntaxNode: SyntaxNode): existing Assignment {
         if syntaxNode is Assignment
-            return syntaxNode as Assignment
+            return(syntaxNode as Assignment)
 
         let parentNode: SyntaxNode = syntaxNode.parent
         if parentNode == null
-            return null
+            return(null)
 
-        return getAssignment(parentNode)
+        return(getAssignment(parentNode))
     }
 
     function inRetDeclaration(syntaxNode: SyntaxNode): bool {
         if syntaxNode == null
-            return false
+            return(false)
 
         var bindingInitializer: BindingInitializer = null
 
@@ -1729,17 +1729,17 @@ class CppVisitor extends SyntaxVisitor {
         while syntaxNode != null
 
         if bindingInitializer == null
-            return false
+            return(false)
 
         if bindingInitializer.initializer != null {
             let patternInitializer: PatternInitializer = bindingInitializer.initializer
             if patternInitializer.pattern is IdentifierPattern {
                 let identifierPattern: IdentifierPattern = (patternInitializer.pattern) as IdentifierPattern
-                return identifierPattern.identifier.equals("ret")
+                return(identifierPattern.identifier.equals("ret"))
             }
         }
 
-        return false
+        return(false)
     }
 
     function visitLiteralExpression(literalExpression: LiteralExpression) {
@@ -1807,7 +1807,7 @@ class CppVisitor extends SyntaxVisitor {
             }
         }
 
-        return false
+        return(false)
     }
 
     function closeIfExpression(ifExpression: IfExpression) {
@@ -1816,7 +1816,7 @@ class CppVisitor extends SyntaxVisitor {
     function openSwitchExpression(switchExpression: SwitchExpression): bool {
         sourceFile.append("switch (")
 
-        return true
+        return(true)
     }
 
     function closeSwitchExpression(switchExpression: SwitchExpression) {
@@ -1862,7 +1862,7 @@ class CppVisitor extends SyntaxVisitor {
                 }
             }
         }
-        return false
+        return(false)
     }
 
     function closeForExpression(forExpression: ForExpression) {
@@ -1885,7 +1885,7 @@ class CppVisitor extends SyntaxVisitor {
             whileExpression.code.accept(this)
         }
 
-        return false
+        return(false)
     }
 
     function closeWhileExpression(whileExpression: WhileExpression) {
@@ -1910,7 +1910,7 @@ class CppVisitor extends SyntaxVisitor {
         repeatExpression.condition.accept(this)
         sourceFile.append(")")
 
-        return false
+        return(false)
     }
 
     function closeRepeatExpression(repeatExpression: RepeatExpression) {
@@ -1972,33 +1972,33 @@ class CppVisitor extends SyntaxVisitor {
             if parameterInserted && (parenthesizedExpression.expressionElements != null)
                 sourceFile.append(", ")
         }
-        return true
+        return(true)
     }
 
     function assignedToMutableObject(functionCall: FunctionCall): bool {
         var bindingInitializer: BindingInitializer = getBindingInitializer(functionCall)
         if bindingInitializer == null
-            return false
+            return(false)
 
         if bindingInitializer.parent is MutableDeclaration {
             if boundToObject(bindingInitializer)
-                return true
+                return(true)
         }
 
-        return false
+        return(false)
     }
 
     function assignedToConstantObject(functionCall: FunctionCall): bool {
         var bindingInitializer: BindingInitializer = getBindingInitializer(functionCall)
         if bindingInitializer == null
-            return false
+            return(false)
 
         if bindingInitializer.parent is ConstantDeclaration {
             if boundToObject(bindingInitializer)
-                return true
+                return(true)
         }
 
-        return false
+        return(false)
     }
 
     function boundToObject(bindingInitializer: BindingInitializer): bool {
@@ -2007,12 +2007,12 @@ class CppVisitor extends SyntaxVisitor {
             let identifierPattern: IdentifierPattern = (patternInitializer.pattern) as IdentifierPattern
             let type: Type = identifierPattern.annotationForType.annotationForType
             if hasArrayPostfix(type)
-                return true
+                return(true)
 
             if isClass(type.name) && (getFunctionCall(patternInitializer) != null)
-                return true
+                return(true)
         }
-        return false
+        return(false)
     }
 
     function getBindingInitializer(functionCall: FunctionCall): existing BindingInitializer {
@@ -2023,13 +2023,13 @@ class CppVisitor extends SyntaxVisitor {
                 if initializer.parent is PatternInitializer {
                     let patternInitializer: PatternInitializer = (initializer.parent) as PatternInitializer
                     if patternInitializer.parent is BindingInitializer {
-                        return (patternInitializer.parent) as BindingInitializer
+                        return((patternInitializer.parent) as BindingInitializer)
                     }
                 }
             }
         }
 
-        return null
+        return(null)
     }
 
     function callsInitializer(functionCall: FunctionCall): bool {
@@ -2039,23 +2039,23 @@ class CppVisitor extends SyntaxVisitor {
                 if postfixExpression.primaryExpression is IdentifierExpression {
                     let identifierExpression: IdentifierExpression = (postfixExpression.primaryExpression) as IdentifierExpression
                     if isClass(identifierExpression.name) {
-                        return true
+                        return(true)
                     }
                 }
             }
         }
 
-        return false
+        return(false)
     }
 
     function catchesError(functionCall: FunctionCall): bool {
         if functionCall == null
-            return false
+            return(false)
 
         if functionCall.catchClauses != null
-            return true
+            return(true)
 
-        return false
+        return(false)
     }
 
     function closeParenthesizedExpression(parenthesizedExpression: ParenthesizedExpression) {
@@ -2087,7 +2087,7 @@ class CppVisitor extends SyntaxVisitor {
             if thrownType != null
                 sourceFile.append(")")
         }
-        return false
+        return(false)
     }
 
     function closeReturnExpression(returnExpression: ReturnExpression) {
@@ -2100,7 +2100,7 @@ class CppVisitor extends SyntaxVisitor {
     function openThrowExpression(throwExpression: ThrowExpression): bool {
         mutable thrownType: string = getThrownType(throwExpression)
         if thrownType == null
-            return false
+            return(false)
 
         sourceFile.append("return ")
         mutable returnType: string = getReturnType(throwExpression)
@@ -2161,25 +2161,25 @@ class CppVisitor extends SyntaxVisitor {
         }
         if returnType != null
             sourceFile.append(")")
-        return false
+        return(false)
     }
 
     function inWildcardCatchClause(throwExpression: ThrowExpression): bool {
         var catchClause: CatchClause = getCatchClause(throwExpression)
         if (catchClause != null) && (catchClause.catchPattern is WildCardCatchPattern)
-            return true
+            return(true)
 
-        return false
+        return(false)
     }
 
     function getCatchClause(syntaxNode: SyntaxNode): existing CatchClause {
         if syntaxNode is CatchClause
-            return syntaxNode as CatchClause
+            return(syntaxNode as CatchClause)
 
         if syntaxNode.parent == null
-            return null
+            return(null)
 
-        return getCatchClause(syntaxNode.parent)
+        return(getCatchClause(syntaxNode.parent))
     }
 
     function getReturnType(syntaxNode: SyntaxNode): string {
@@ -2193,16 +2193,16 @@ class CppVisitor extends SyntaxVisitor {
                     ret.append("_Vector<")
                     appendCppTypeName(ret, type)
                     ret.append(">")
-                    return new string(ret)
+                    return(new string(ret))
                 }
                 else {
                     appendCppTypeName(ret, functionResult.resultType)
-                    return new string(ret)
+                    return(new string(ret))
                 }
             }
         }
         
-        return null
+        return(null)
     }
     
     function getThrownType(syntaxNode: SyntaxNode): string {
@@ -2216,16 +2216,16 @@ class CppVisitor extends SyntaxVisitor {
                     ret.append("_Vector<")
                     appendCppTypeName(ret, type)
                     ret.append(">")
-                    return new string(ret)
+                    return(new string(ret))
                 }
                 else {
                     appendCppTypeName(ret, throwsClause.throwsType)
-                    return new string(ret)
+                    return(new string(ret))
                 }
             }
         }
         
-        return nullptr
+        return(null)
     }
 
     function returnsArray(syntaxNode: SyntaxNode): bool {
@@ -2234,21 +2234,21 @@ class CppVisitor extends SyntaxVisitor {
             let functionResult: FunctionResult = functionDeclaration.signature.result
             if functionResult != null {
                 if hasArrayPostfix(functionResult.resultType)
-                    return true
+                    return(true)
             }
         }    
 
-        return false
+        return(false)
     }
 
     function getFunctionDeclaration(syntaxNode: SyntaxNode): existing FunctionDeclaration {
         if syntaxNode is FunctionDeclaration
-            return syntaxNode as FunctionDeclaration
+            return(syntaxNode as FunctionDeclaration)
 
         if syntaxNode.parent == null
-            return null
+            return(null)
 
-        return getFunctionDeclaration(syntaxNode.parent)
+        return(getFunctionDeclaration(syntaxNode.parent))
     }
 
     function closeThrowExpression(throwExpression: ThrowExpression) {
@@ -2257,7 +2257,7 @@ class CppVisitor extends SyntaxVisitor {
     function openBreakExpression(breakExpression: BreakExpression): bool {
         sourceFile.append("break")
 
-        return true
+        return(true)
     }
 
     function closeBreakExpression(breakExpression: BreakExpression) {
@@ -2308,7 +2308,7 @@ class CppVisitor extends SyntaxVisitor {
                 sourceFile.append(", *")
                 constructorCall.arguments.accept(this)
                 sourceFile.append(")")
-                return false
+                return(false)
             }
             else {
                 sourceFile.append("new(")
@@ -2397,7 +2397,7 @@ class CppVisitor extends SyntaxVisitor {
                     sourceFile.append(") ")
                     sourceFile.append(type.name)
                     constructorCall.arguments.accept(this)
-                    return false
+                    return(false)
                 }
             }
             else {
@@ -2467,10 +2467,10 @@ class CppVisitor extends SyntaxVisitor {
                 let type: Type = (constructorCall.typeToInitialize) as Type
                 sourceFile.append(type.name)
                 constructorCall.arguments.accept(this)
-                return false
+                return(false)
             }
         }
-        return true
+        return(true)
     }
 
     function closeConstructorCall(constructorCall: ConstructorCall) {
@@ -2480,10 +2480,10 @@ class CppVisitor extends SyntaxVisitor {
         if initializerCall.parent is PostfixExpression {
             let postfixExpression: PostfixExpression = (initializerCall.parent) as PostfixExpression
             if (postfixExpression.parent.parent.parent is Assignment) || (postfixExpression.parent.parent.parent is Initializer)
-                return true
+                return(true)
         }
 
-        return false
+        return(false)
     }
 
     function visitThisExpression(thisExpression: ThisExpression) {
@@ -2491,14 +2491,14 @@ class CppVisitor extends SyntaxVisitor {
     }
 
     function openSuperDot(superDot: SuperDot): bool {
-        return true
+        return(true)
     }
 
     function closeSuperDot(superDot: SuperDot) {
     }
 
     function openSuperSubscript(superSubscript: SuperSubscript): bool {
-        return true
+        return(true)
     }
 
     function closeSuperSubscript(superSubscript: SuperSubscript) {
@@ -2523,7 +2523,7 @@ class CppVisitor extends SyntaxVisitor {
             elseClause.alternative.accept(this)
         }
         
-        return false
+        return(false)
     }
 
     function closeElseClause(elseClause: ElseClause) {
@@ -2533,7 +2533,7 @@ class CppVisitor extends SyntaxVisitor {
         sourceFile.append(") {\n")
         sourceIndentLevel++
 
-        return true
+        return(true)
     }
 
     function closeCurliedSwitchBody(curliedSwitchBody: CurliedSwitchBody) {
@@ -2543,7 +2543,7 @@ class CppVisitor extends SyntaxVisitor {
     }
 
     function openNakedSwitchBody(nakedSwitchBody: NakedSwitchBody): bool {
-        return true
+        return(true)
     }
 
     function closeNakedSwitchBody(nakedSwitchBody: NakedSwitchBody) {
@@ -2551,7 +2551,7 @@ class CppVisitor extends SyntaxVisitor {
 
     function openSwitchCase(switchCase: SwitchCase): bool {
         indentSource()
-        return true
+        return(true)
     }
 
     function closeSwitchCase(switchCase: SwitchCase) {
@@ -2559,7 +2559,7 @@ class CppVisitor extends SyntaxVisitor {
 
     function openItemCaseLabel(itemCaseLabel: ItemCaseLabel): bool {
         sourceFile.append("case ")
-        return true
+        return(true)
     }
 
     function closeItemCaseLabel(itemCaseLabel: ItemCaseLabel) {
@@ -2572,7 +2572,7 @@ class CppVisitor extends SyntaxVisitor {
     function openCaseItem(caseItem: CaseItem): bool {
         sourceFile.append("case ")
 
-        return true
+        return(true)
     }
 
     function closeCaseItem(caseItem: CaseItem) {
@@ -2590,7 +2590,7 @@ class CppVisitor extends SyntaxVisitor {
                 sourceFile.append("auto _")
                 sourceFile.append(identifierPattern.identifier)
                 sourceFile.append("_result")
-                return false
+                return(false)
             }
         }
 
@@ -2610,7 +2610,7 @@ class CppVisitor extends SyntaxVisitor {
         if !suppressSource
             sourceFile.append(identifierPattern.identifier)
 
-        return false
+        return(false)
     }
 
     function isCatchingPatternInitializer(patternInitializer: PatternInitializer): bool {
@@ -2639,27 +2639,27 @@ class CppVisitor extends SyntaxVisitor {
                     }
                     if functionCall != null {
                         if functionCall.catchClauses != null
-                            return true
+                            return(true)
                     }
                 }
             }
         }
 
-        return false
+        return(false)
     }
 
     function closeIdentifierPattern(identifierPattern: IdentifierPattern) {
     }
 
     function openTuplePattern(tuplePattern: TuplePattern): bool {
-        return true
+        return(true)
     }
 
     function closeTuplePattern(tuplePattern: TuplePattern) {
     }
 
     function openExpressionPattern(expressionPattern: ExpressionPattern): bool {
-        return true
+        return(true)
     }
 
     function closeExpressionPattern(expressionPattern: ExpressionPattern) {
@@ -2668,7 +2668,7 @@ class CppVisitor extends SyntaxVisitor {
     }
 
     function openTuplePatternElement(tuplePatternElement: TuplePatternElement): bool {
-        return true
+        return(true)
     }
 
     function closeTuplePatternElement(tuplePatternElement: TuplePatternElement) {
@@ -2678,7 +2678,7 @@ class CppVisitor extends SyntaxVisitor {
         sourceFile.append("{\n")
         sourceIndentLevel++
 
-        return true
+        return(true)
     }
 
     function closeBlockCaseContent(blockCaseContent: BlockCaseContent) {
@@ -2737,7 +2737,7 @@ class CppVisitor extends SyntaxVisitor {
         if (!suppressSource)
             appendCppTypeName(sourceFile, type)
  
-       return true
+       return(true)
     }
 
     function closeType(type: Type) {
@@ -2770,9 +2770,9 @@ class CppVisitor extends SyntaxVisitor {
 
     function inTypeQuery(type: Type): bool {
         if type.parent is TypeQuery
-            return true
+            return(true)
 
-        return false
+        return(false)
     }
 
     function appendCppTypeName(mutable s: VarString, type: Type) {
@@ -2792,14 +2792,14 @@ class CppVisitor extends SyntaxVisitor {
     }
 
     function openTypeAnnotation(typeAnnotation: TypeAnnotation): bool {
-        return true
+        return(true)
     }
 
     function closeTypeAnnotation(typeAnnotation: TypeAnnotation) {
     }
 
     function openSubtype(subtype: Subtype): bool {
-        return true
+        return(true)
     }
 
     function closeSubtype(subtype: Subtype) {
@@ -2809,21 +2809,21 @@ class CppVisitor extends SyntaxVisitor {
     }
 
     function openIndexedType(indexedType: IndexedType): bool {
-        return true
+        return(true)
     }
 
     function closeIndexedType(indexedType: IndexedType) {
     }
 
     function openTypeInheritanceClause(typeInheritanceClause: TypeInheritanceClause): bool {
-        return true
+        return(true)
     }
 
     function closeTypeInheritanceClause(typeInheritanceClause: TypeInheritanceClause) {
     }
 
     function openInheritance(inheritance: Inheritance): bool {
-        return false
+        return(false)
     }
 
     function closeInheritance(inheritance: Inheritance) {

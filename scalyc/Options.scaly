@@ -47,7 +47,7 @@ class Options {
         if input.length() == 0
             throw noFilesToCompile
 
-        return new Options(new string[](input), output, dir)
+        return(new Options(new string[](input), output, dir))
     }
 }
 
