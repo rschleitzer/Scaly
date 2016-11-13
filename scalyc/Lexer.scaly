@@ -489,7 +489,7 @@ class Lexer {
     function handleSingleLineComment() {
         repeat {
             if position == end
-                return;
+                return
                 
             switch text.charAt(position) {
                 case '\t': {
@@ -519,7 +519,7 @@ class Lexer {
     function handleMultiLineComment() {
         repeat {
             if position == end
-                return;
+                return
                 
             switch text.charAt(position) {
                 case '/': {

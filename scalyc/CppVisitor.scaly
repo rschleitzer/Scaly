@@ -185,7 +185,7 @@ class CppVisitor extends SyntaxVisitor {
         sourceFilePath.append(".cpp")
         File.writeFromString(sourceFilePath, sourceFile)
             catch _ (error: fileError)
-                return;
+                return
 
         module = new CppModule(new string(moduleName), new string(headerFile), new string(sourceFile))
         modules.push(module)
@@ -249,10 +249,10 @@ class CppVisitor extends SyntaxVisitor {
     function closeTerminatedStatement(terminatedStatement: TerminatedStatement) {
 
         if terminatedStatement.statement is ClassDeclaration
-            return;
+            return
 
         if terminatedStatement.statement is EnumDeclaration
-            return;
+            return
 
         {
             let bindingInitializer: BindingInitializer = null
@@ -290,16 +290,16 @@ class CppVisitor extends SyntaxVisitor {
             let primaryExpression: PrimaryExpression = expression.prefixExpression.expression.primaryExpression
 
             if primaryExpression is IfExpression
-                return;
+                return
 
             if primaryExpression is SwitchExpression
-                return;
+                return
 
             if primaryExpression is ForExpression
-                return;
+                return
 
             if primaryExpression is WhileExpression
-                return;
+                return
 
             if primaryExpression is IdentifierExpression {
                 let postfixExpression: PostfixExpression = expression.prefixExpression.expression
@@ -317,7 +317,7 @@ class CppVisitor extends SyntaxVisitor {
         }
 
         if terminatedStatement.statement is CodeBlock
-            return;
+            return
             
         sourceFile.append(";\n")
     }

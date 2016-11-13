@@ -30,7 +30,7 @@ class "(id syntax-node)" extends "(if (base syntax-node) (base syntax-node) "Syn
             (if (has-syntax-children? syntax-node)
                 ($
 "        if !visitor.open"(id syntax-node)"(this)
-            return;
+            return
 "
                     (apply-to-children-of syntax-node (lambda (content)
                         (case (type content)

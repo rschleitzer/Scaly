@@ -17,7 +17,7 @@ class Program extends SyntaxNode {
 
     function accept(mutable visitor: SyntaxVisitor) {
         if !visitor.openProgram(this)
-            return;
+            return
         if compilationUnits != null {
             for node: CompilationUnit in compilationUnits
                 node.accept(visitor)
@@ -40,7 +40,7 @@ class CompilationUnit extends SyntaxNode {
 
     function accept(mutable visitor: SyntaxVisitor) {
         if !visitor.openCompilationUnit(this)
-            return;
+            return
         if statements != null {
             for node: TerminatedStatement in statements
                 node.accept(visitor)
@@ -62,7 +62,7 @@ class TerminatedStatement extends SyntaxNode {
 
     function accept(mutable visitor: SyntaxVisitor) {
         if !visitor.openTerminatedStatement(this)
-            return;
+            return
         statement.accept(visitor)
         visitor.closeTerminatedStatement(this)
     }
@@ -102,7 +102,7 @@ class UseDeclaration extends Declaration {
 
     override function accept(mutable visitor: SyntaxVisitor) {
         if !visitor.openUseDeclaration(this)
-            return;
+            return
         importModule.accept(visitor)
         if importExtensions != null {
             for node: PathIdentifier in importExtensions
@@ -125,7 +125,7 @@ class ConstantDeclaration extends Declaration {
 
     override function accept(mutable visitor: SyntaxVisitor) {
         if !visitor.openConstantDeclaration(this)
-            return;
+            return
         initializer.accept(visitor)
         visitor.closeConstantDeclaration(this)
     }
@@ -143,7 +143,7 @@ class VariableDeclaration extends Declaration {
 
     override function accept(mutable visitor: SyntaxVisitor) {
         if !visitor.openVariableDeclaration(this)
-            return;
+            return
         initializer.accept(visitor)
         visitor.closeVariableDeclaration(this)
     }
@@ -161,7 +161,7 @@ class MutableDeclaration extends Declaration {
 
     override function accept(mutable visitor: SyntaxVisitor) {
         if !visitor.openMutableDeclaration(this)
-            return;
+            return
         initializer.accept(visitor)
         visitor.closeMutableDeclaration(this)
     }
@@ -182,7 +182,7 @@ class FunctionDeclaration extends Declaration {
 
     override function accept(mutable visitor: SyntaxVisitor) {
         if !visitor.openFunctionDeclaration(this)
-            return;
+            return
         if modifiers != null {
             for node: Modifier in modifiers
                 node.accept(visitor)
@@ -211,7 +211,7 @@ class EnumDeclaration extends Declaration {
 
     override function accept(mutable visitor: SyntaxVisitor) {
         if !visitor.openEnumDeclaration(this)
-            return;
+            return
         if members != null {
             for node: EnumMember in members
                 node.accept(visitor)
@@ -236,7 +236,7 @@ class ClassDeclaration extends Declaration {
 
     override function accept(mutable visitor: SyntaxVisitor) {
         if !visitor.openClassDeclaration(this)
-            return;
+            return
         if genericArgumentClause != null
             genericArgumentClause.accept(visitor)
         if typeInheritanceClause != null
@@ -265,7 +265,7 @@ class ConstructorDeclaration extends Declaration {
 
     override function accept(mutable visitor: SyntaxVisitor) {
         if !visitor.openConstructorDeclaration(this)
-            return;
+            return
         if modifiers != null {
             for node: Modifier in modifiers
                 node.accept(visitor)
@@ -293,7 +293,7 @@ class CodeBlock extends Expression {
 
     override function accept(mutable visitor: SyntaxVisitor) {
         if !visitor.openCodeBlock(this)
-            return;
+            return
         if statements != null {
             for node: TerminatedStatement in statements
                 node.accept(visitor)
@@ -315,7 +315,7 @@ class SimpleExpression extends Expression {
 
     override function accept(mutable visitor: SyntaxVisitor) {
         if !visitor.openSimpleExpression(this)
-            return;
+            return
         prefixExpression.accept(visitor)
         if binaryOps != null {
             for node: BinaryOp in binaryOps
@@ -338,7 +338,7 @@ class PathIdentifier extends SyntaxNode {
 
     function accept(mutable visitor: SyntaxVisitor) {
         if !visitor.openPathIdentifier(this)
-            return;
+            return
         extension.accept(visitor)
         visitor.closePathIdentifier(this)
     }
@@ -371,7 +371,7 @@ class Initializer extends SyntaxNode {
 
     function accept(mutable visitor: SyntaxVisitor) {
         if !visitor.openInitializer(this)
-            return;
+            return
         expression.accept(visitor)
         visitor.closeInitializer(this)
     }
@@ -390,7 +390,7 @@ class BindingInitializer extends SyntaxNode {
 
     function accept(mutable visitor: SyntaxVisitor) {
         if !visitor.openBindingInitializer(this)
-            return;
+            return
         initializer.accept(visitor)
         if additionalInitializers != null {
             for node: AdditionalInitializer in additionalInitializers
@@ -414,7 +414,7 @@ class PatternInitializer extends SyntaxNode {
 
     function accept(mutable visitor: SyntaxVisitor) {
         if !visitor.openPatternInitializer(this)
-            return;
+            return
         pattern.accept(visitor)
         if initializer != null
             initializer.accept(visitor)
@@ -435,7 +435,7 @@ class AdditionalInitializer extends SyntaxNode {
 
     function accept(mutable visitor: SyntaxVisitor) {
         if !visitor.openAdditionalInitializer(this)
-            return;
+            return
         pattern.accept(visitor)
         visitor.closeAdditionalInitializer(this)
     }
@@ -510,7 +510,7 @@ class FunctionSignature extends SyntaxNode {
 
     function accept(mutable visitor: SyntaxVisitor) {
         if !visitor.openFunctionSignature(this)
-            return;
+            return
         parameterClause.accept(visitor)
         if result != null
             result.accept(visitor)
@@ -535,7 +535,7 @@ class FunctionResult extends SyntaxNode {
 
     function accept(mutable visitor: SyntaxVisitor) {
         if !visitor.openFunctionResult(this)
-            return;
+            return
         if existingObject != null
             existingObject.accept(visitor)
         resultType.accept(visitor)
@@ -569,7 +569,7 @@ class ParameterClause extends SyntaxNode {
 
     function accept(mutable visitor: SyntaxVisitor) {
         if !visitor.openParameterClause(this)
-            return;
+            return
         if parameters != null {
             for node: Parameter in parameters
                 node.accept(visitor)
@@ -598,7 +598,7 @@ class ConstParameter extends Parameter {
 
     override function accept(mutable visitor: SyntaxVisitor) {
         if !visitor.openConstParameter(this)
-            return;
+            return
         parameterType.accept(visitor)
         visitor.closeConstParameter(this)
     }
@@ -618,7 +618,7 @@ class VarParameter extends Parameter {
 
     override function accept(mutable visitor: SyntaxVisitor) {
         if !visitor.openVarParameter(this)
-            return;
+            return
         parameterType.accept(visitor)
         visitor.closeVarParameter(this)
     }
@@ -637,7 +637,7 @@ class ThrowsClause extends SyntaxNode {
 
     function accept(mutable visitor: SyntaxVisitor) {
         if !visitor.openThrowsClause(this)
-            return;
+            return
         throwsType.accept(visitor)
         visitor.closeThrowsClause(this)
     }
@@ -657,7 +657,7 @@ class EnumMember extends SyntaxNode {
 
     function accept(mutable visitor: SyntaxVisitor) {
         if !visitor.openEnumMember(this)
-            return;
+            return
         enumCase.accept(visitor)
         if additionalCases != null {
             for node: AdditionalCase in additionalCases
@@ -698,7 +698,7 @@ class AdditionalCase extends SyntaxNode {
 
     function accept(mutable visitor: SyntaxVisitor) {
         if !visitor.openAdditionalCase(this)
-            return;
+            return
         enumCase.accept(visitor)
         visitor.closeAdditionalCase(this)
     }
@@ -716,7 +716,7 @@ class ClassBody extends SyntaxNode {
 
     function accept(mutable visitor: SyntaxVisitor) {
         if !visitor.openClassBody(this)
-            return;
+            return
         if members != null {
             for node: ClassMember in members
                 node.accept(visitor)
@@ -737,7 +737,7 @@ class GenericArgumentClause extends SyntaxNode {
 
     function accept(mutable visitor: SyntaxVisitor) {
         if !visitor.openGenericArgumentClause(this)
-            return;
+            return
         if genericParameters != null {
             for node: GenericParameter in genericParameters
                 node.accept(visitor)
@@ -773,7 +773,7 @@ class ClassMember extends SyntaxNode {
 
     function accept(mutable visitor: SyntaxVisitor) {
         if !visitor.openClassMember(this)
-            return;
+            return
         declaration.accept(visitor)
         visitor.closeClassMember(this)
     }
@@ -792,7 +792,7 @@ class PrefixExpression extends SyntaxNode {
 
     function accept(mutable visitor: SyntaxVisitor) {
         if !visitor.openPrefixExpression(this)
-            return;
+            return
         expression.accept(visitor)
         visitor.closePrefixExpression(this)
     }
@@ -812,7 +812,7 @@ class PostfixExpression extends SyntaxNode {
 
     function accept(mutable visitor: SyntaxVisitor) {
         if !visitor.openPostfixExpression(this)
-            return;
+            return
         primaryExpression.accept(visitor)
         if postfixes != null {
             for node: Postfix in postfixes
@@ -843,7 +843,7 @@ class BinaryOperation extends BinaryOp {
 
     override function accept(mutable visitor: SyntaxVisitor) {
         if !visitor.openBinaryOperation(this)
-            return;
+            return
         expression.accept(visitor)
         visitor.closeBinaryOperation(this)
     }
@@ -862,7 +862,7 @@ class Assignment extends BinaryOp {
 
     override function accept(mutable visitor: SyntaxVisitor) {
         if !visitor.openAssignment(this)
-            return;
+            return
         expression.accept(visitor)
         visitor.closeAssignment(this)
     }
@@ -880,7 +880,7 @@ class TypeQuery extends BinaryOp {
 
     override function accept(mutable visitor: SyntaxVisitor) {
         if !visitor.openTypeQuery(this)
-            return;
+            return
         objectType.accept(visitor)
         visitor.closeTypeQuery(this)
     }
@@ -898,7 +898,7 @@ class TypeCast extends BinaryOp {
 
     override function accept(mutable visitor: SyntaxVisitor) {
         if !visitor.openTypeCast(this)
-            return;
+            return
         objectType.accept(visitor)
         visitor.closeTypeCast(this)
     }
@@ -918,7 +918,7 @@ class CatchClause extends SyntaxNode {
 
     function accept(mutable visitor: SyntaxVisitor) {
         if !visitor.openCatchClause(this)
-            return;
+            return
         catchPattern.accept(visitor)
         if bindingPattern != null
             bindingPattern.accept(visitor)
@@ -948,7 +948,7 @@ class WildCardCatchPattern extends CatchPattern {
 
     override function accept(mutable visitor: SyntaxVisitor) {
         if !visitor.openWildCardCatchPattern(this)
-            return;
+            return
         pattern.accept(visitor)
         visitor.closeWildCardCatchPattern(this)
     }
@@ -967,7 +967,7 @@ class IdentifierCatchPattern extends CatchPattern {
 
     override function accept(mutable visitor: SyntaxVisitor) {
         if !visitor.openIdentifierCatchPattern(this)
-            return;
+            return
         if member != null
             member.accept(visitor)
         visitor.closeIdentifierCatchPattern(this)
@@ -1010,7 +1010,7 @@ class FunctionCall extends Postfix {
 
     override function accept(mutable visitor: SyntaxVisitor) {
         if !visitor.openFunctionCall(this)
-            return;
+            return
         arguments.accept(visitor)
         if catchClauses != null {
             for node: CatchClause in catchClauses
@@ -1033,7 +1033,7 @@ class ExplicitMemberExpression extends Postfix {
 
     override function accept(mutable visitor: SyntaxVisitor) {
         if !visitor.openExplicitMemberExpression(this)
-            return;
+            return
         memberPostfix.accept(visitor)
         visitor.closeExplicitMemberExpression(this)
     }
@@ -1051,7 +1051,7 @@ class Subscript extends Postfix {
 
     override function accept(mutable visitor: SyntaxVisitor) {
         if !visitor.openSubscript(this)
-            return;
+            return
         if expressions != null {
             for node: ExpressionElement in expressions
                 node.accept(visitor)
@@ -1072,7 +1072,7 @@ class ExpressionElement extends SyntaxNode {
 
     function accept(mutable visitor: SyntaxVisitor) {
         if !visitor.openExpressionElement(this)
-            return;
+            return
         expression.accept(visitor)
         visitor.closeExpressionElement(this)
     }
@@ -1097,7 +1097,7 @@ class NamedMemberPostfix extends MemberPostfix {
 
     override function accept(mutable visitor: SyntaxVisitor) {
         if !visitor.openNamedMemberPostfix(this)
-            return;
+            return
         identifier.accept(visitor)
         visitor.closeNamedMemberPostfix(this)
     }
@@ -1154,7 +1154,7 @@ class IfExpression extends PrimaryExpression {
 
     override function accept(mutable visitor: SyntaxVisitor) {
         if !visitor.openIfExpression(this)
-            return;
+            return
         condition.accept(visitor)
         consequent.accept(visitor)
         if elseClause != null
@@ -1178,7 +1178,7 @@ class SwitchExpression extends PrimaryExpression {
 
     override function accept(mutable visitor: SyntaxVisitor) {
         if !visitor.openSwitchExpression(this)
-            return;
+            return
         expression.accept(visitor)
         body.accept(visitor)
         visitor.closeSwitchExpression(this)
@@ -1200,7 +1200,7 @@ class ForExpression extends PrimaryExpression {
 
     override function accept(mutable visitor: SyntaxVisitor) {
         if !visitor.openForExpression(this)
-            return;
+            return
         pattern.accept(visitor)
         expression.accept(visitor)
         code.accept(visitor)
@@ -1223,7 +1223,7 @@ class WhileExpression extends PrimaryExpression {
 
     override function accept(mutable visitor: SyntaxVisitor) {
         if !visitor.openWhileExpression(this)
-            return;
+            return
         condition.accept(visitor)
         code.accept(visitor)
         visitor.closeWhileExpression(this)
@@ -1244,7 +1244,7 @@ class RepeatExpression extends PrimaryExpression {
 
     override function accept(mutable visitor: SyntaxVisitor) {
         if !visitor.openRepeatExpression(this)
-            return;
+            return
         code.accept(visitor)
         condition.accept(visitor)
         visitor.closeRepeatExpression(this)
@@ -1264,7 +1264,7 @@ class ParenthesizedExpression extends PrimaryExpression {
 
     override function accept(mutable visitor: SyntaxVisitor) {
         if !visitor.openParenthesizedExpression(this)
-            return;
+            return
         if expressionElements != null {
             for node: ExpressionElement in expressionElements
                 node.accept(visitor)
@@ -1285,7 +1285,7 @@ class ReturnExpression extends PrimaryExpression {
 
     override function accept(mutable visitor: SyntaxVisitor) {
         if !visitor.openReturnExpression(this)
-            return;
+            return
         if expression != null
             expression.accept(visitor)
         visitor.closeReturnExpression(this)
@@ -1305,7 +1305,7 @@ class ThrowExpression extends PrimaryExpression {
 
     override function accept(mutable visitor: SyntaxVisitor) {
         if !visitor.openThrowExpression(this)
-            return;
+            return
         error.accept(visitor)
         if arguments != null
             arguments.accept(visitor)
@@ -1326,7 +1326,7 @@ class BreakExpression extends PrimaryExpression {
 
     override function accept(mutable visitor: SyntaxVisitor) {
         if !visitor.openBreakExpression(this)
-            return;
+            return
         if expression != null
             expression.accept(visitor)
         visitor.closeBreakExpression(this)
@@ -1347,7 +1347,7 @@ class ConstructorCall extends PrimaryExpression {
 
     override function accept(mutable visitor: SyntaxVisitor) {
         if !visitor.openConstructorCall(this)
-            return;
+            return
         typeToInitialize.accept(visitor)
         arguments.accept(visitor)
         if catchClauses != null {
@@ -1392,7 +1392,7 @@ class SuperDot extends SuperExpression {
 
     override function accept(mutable visitor: SyntaxVisitor) {
         if !visitor.openSuperDot(this)
-            return;
+            return
         member.accept(visitor)
         visitor.closeSuperDot(this)
     }
@@ -1410,7 +1410,7 @@ class SuperSubscript extends SuperExpression {
 
     override function accept(mutable visitor: SyntaxVisitor) {
         if !visitor.openSuperSubscript(this)
-            return;
+            return
         subscript.accept(visitor)
         visitor.closeSuperSubscript(this)
     }
@@ -1441,7 +1441,7 @@ class ElseClause extends SyntaxNode {
 
     function accept(mutable visitor: SyntaxVisitor) {
         if !visitor.openElseClause(this)
-            return;
+            return
         alternative.accept(visitor)
         visitor.closeElseClause(this)
     }
@@ -1466,7 +1466,7 @@ class CurliedSwitchBody extends SwitchBody {
 
     override function accept(mutable visitor: SyntaxVisitor) {
         if !visitor.openCurliedSwitchBody(this)
-            return;
+            return
         if cases != null {
             for node: SwitchCase in cases
                 node.accept(visitor)
@@ -1487,7 +1487,7 @@ class NakedSwitchBody extends SwitchBody {
 
     override function accept(mutable visitor: SyntaxVisitor) {
         if !visitor.openNakedSwitchBody(this)
-            return;
+            return
         if cases != null {
             for node: SwitchCase in cases
                 node.accept(visitor)
@@ -1509,7 +1509,7 @@ class SwitchCase extends SyntaxNode {
 
     function accept(mutable visitor: SyntaxVisitor) {
         if !visitor.openSwitchCase(this)
-            return;
+            return
         label.accept(visitor)
         content.accept(visitor)
         visitor.closeSwitchCase(this)
@@ -1537,7 +1537,7 @@ class ItemCaseLabel extends CaseLabel {
 
     override function accept(mutable visitor: SyntaxVisitor) {
         if !visitor.openItemCaseLabel(this)
-            return;
+            return
         pattern.accept(visitor)
         if additionalPatterns != null {
             for node: CaseItem in additionalPatterns
@@ -1573,7 +1573,7 @@ class CaseItem extends SyntaxNode {
 
     function accept(mutable visitor: SyntaxVisitor) {
         if !visitor.openCaseItem(this)
-            return;
+            return
         pattern.accept(visitor)
         visitor.closeCaseItem(this)
     }
@@ -1612,7 +1612,7 @@ class IdentifierPattern extends Pattern {
 
     override function accept(mutable visitor: SyntaxVisitor) {
         if !visitor.openIdentifierPattern(this)
-            return;
+            return
         if annotationForType != null
             annotationForType.accept(visitor)
         visitor.closeIdentifierPattern(this)
@@ -1632,7 +1632,7 @@ class TuplePattern extends Pattern {
 
     override function accept(mutable visitor: SyntaxVisitor) {
         if !visitor.openTuplePattern(this)
-            return;
+            return
         if elements != null {
             for node: TuplePatternElement in elements
                 node.accept(visitor)
@@ -1653,7 +1653,7 @@ class ExpressionPattern extends Pattern {
 
     override function accept(mutable visitor: SyntaxVisitor) {
         if !visitor.openExpressionPattern(this)
-            return;
+            return
         expression.accept(visitor)
         visitor.closeExpressionPattern(this)
     }
@@ -1671,7 +1671,7 @@ class TuplePatternElement extends SyntaxNode {
 
     function accept(mutable visitor: SyntaxVisitor) {
         if !visitor.openTuplePatternElement(this)
-            return;
+            return
         pattern.accept(visitor)
         visitor.closeTuplePatternElement(this)
     }
@@ -1696,7 +1696,7 @@ class BlockCaseContent extends CaseContent {
 
     override function accept(mutable visitor: SyntaxVisitor) {
         if !visitor.openBlockCaseContent(this)
-            return;
+            return
         if statements != null {
             for node: TerminatedStatement in statements
                 node.accept(visitor)
@@ -1767,7 +1767,7 @@ class Type extends SyntaxNode {
 
     function accept(mutable visitor: SyntaxVisitor) {
         if !visitor.openType(this)
-            return;
+            return
         if subType != null
             subType.accept(visitor)
         if postfixes != null {
@@ -1792,7 +1792,7 @@ class TypeAnnotation extends SyntaxNode {
 
     function accept(mutable visitor: SyntaxVisitor) {
         if !visitor.openTypeAnnotation(this)
-            return;
+            return
         annotationForType.accept(visitor)
         visitor.closeTypeAnnotation(this)
     }
@@ -1810,7 +1810,7 @@ class Subtype extends SyntaxNode {
 
     function accept(mutable visitor: SyntaxVisitor) {
         if !visitor.openSubtype(this)
-            return;
+            return
         type.accept(visitor)
         visitor.closeSubtype(this)
     }
@@ -1848,7 +1848,7 @@ class IndexedType extends TypePostfix {
 
     override function accept(mutable visitor: SyntaxVisitor) {
         if !visitor.openIndexedType(this)
-            return;
+            return
         if key != null
             key.accept(visitor)
         visitor.closeIndexedType(this)
@@ -1867,7 +1867,7 @@ class TypeInheritanceClause extends SyntaxNode {
 
     function accept(mutable visitor: SyntaxVisitor) {
         if !visitor.openTypeInheritanceClause(this)
-            return;
+            return
         if inheritances != null {
             for node: Inheritance in inheritances
                 node.accept(visitor)
@@ -1888,7 +1888,7 @@ class Inheritance extends SyntaxNode {
 
     function accept(mutable visitor: SyntaxVisitor) {
         if !visitor.openInheritance(this)
-            return;
+            return
         type.accept(visitor)
         visitor.closeInheritance(this)
     }
