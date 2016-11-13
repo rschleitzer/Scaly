@@ -1,7 +1,7 @@
 class Compiler {
     static function compileFiles(options: Options) throws CompilerError {
         let files: string[] = options.files
-        mutable sources: string[] = new string[]();
+        mutable sources: string[] = new string[]()
         for file: string in files {
             let source: string = File.readToString(file)
                 catch FileError.noSuchFileOrDirectory(error: noSuchFileOrDirectory) throw fileNotFound(file)
@@ -10,14 +10,14 @@ class Compiler {
             sources.push(source)
         }
 
-        mutable compilationUnits: CompilationUnit[] = new CompilationUnit[]();
+        mutable compilationUnits: CompilationUnit[] = new CompilationUnit[]()
         let index: ulong = 0
         for source: string in sources {
             let moduleName: string = Path.getFileNameWithoutExtension(files[index])
             let compilationUnit: CompilationUnit = parseUnit(moduleName, source)
                 catch _ (error: CompilerError) throw syntaxError(error)
 
-            compilationUnits.push(compilationUnit);
+            compilationUnits.push(compilationUnit)
             index++
         }
 

@@ -503,7 +503,7 @@ class CppVisitor extends SyntaxVisitor {
             for inheritance: Inheritance in inheritances {
 
                 if i > 0
-                    headerFile.append(", ");
+                    headerFile.append(", ")
 
                 headerFile.append(inheritance.type.name)
 
@@ -538,13 +538,15 @@ class CppVisitor extends SyntaxVisitor {
             collectDerivedClasses(derivedClasses, new string(classDeclaration.name))
             for derivedClass: string in derivedClasses {
                 headerFile.append("\n")
+
                 indentHeader()
                 headerFile.append("virtual bool _is")
                 headerFile.append(derivedClass)
                 headerFile.append("();")
-                sourceFile.append("bool ");
-                sourceFile.append(classDeclaration.name);
-                sourceFile.append("::_is");
+
+                sourceFile.append("bool ")
+                sourceFile.append(classDeclaration.name)
+                sourceFile.append("::_is")
                 sourceFile.append(derivedClass)
                 sourceFile.append("() { return false; }\n")
             }
@@ -759,7 +761,7 @@ class CppVisitor extends SyntaxVisitor {
                 headerFile.append("_Result<")
 
                 if !suppressSource
-                    sourceFile.append("_Result<");
+                    sourceFile.append("_Result<")
 
                 if hasArrayPostfix(functionSignature.result.resultType) {
                     headerFile.append("_Vector<")
@@ -939,10 +941,10 @@ class CppVisitor extends SyntaxVisitor {
         }
 
         parameterType.accept(this)
-        headerFile.append(" ");
-        headerFile.append(name);
+        headerFile.append(" ")
+        headerFile.append(name)
         if !suppressSource {
-            sourceFile.append(" ");
+            sourceFile.append(" ")
             sourceFile.append(name)
         }
     }
@@ -1002,11 +1004,11 @@ class CppVisitor extends SyntaxVisitor {
             headerFile.append("\nclass _")
             headerFile.append(enumDeclarationName)
             headerFile.append("_")
-            headerFile.append(enumMember.enumCase.name);
+            headerFile.append(enumMember.enumCase.name)
             headerFile.append(" : public Object {\npublic:\n    _")
             headerFile.append(enumDeclarationName)
             headerFile.append("_")
-            headerFile.append(enumMember.enumCase.name);
+            headerFile.append(enumMember.enumCase.name)
             headerFile.append("(")
             sourceFile.append("_")
             sourceFile.append(enumDeclarationName)
@@ -1769,11 +1771,11 @@ class CppVisitor extends SyntaxVisitor {
                                 case '\t': sourceFile.append("\\t")
                                 case '\0': sourceFile.append("\\0")
                                 case '\\': sourceFile.append("\\\\")
-                                default:   sourceFile.append(characterLiteral.value);                                    
+                                default:   sourceFile.append(characterLiteral.value)                                    
                             }
                         }
                     }
-                    sourceFile.append("\'");
+                    sourceFile.append("\'")
                 }
             }
         }

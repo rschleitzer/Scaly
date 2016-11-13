@@ -33,9 +33,9 @@ class Program extends SyntaxNode {
 class CompilationUnit extends SyntaxNode {
 
     constructor(statements: TerminatedStatement[], start: Position, end: Position) {
-        this.start = start;
-        this.end = end;
-        this.statements = statements;
+        this.start = start
+        this.end = end
+        this.statements = statements
     }
 
     function accept(mutable visitor: SyntaxVisitor) {
@@ -55,9 +55,9 @@ class CompilationUnit extends SyntaxNode {
 class TerminatedStatement extends SyntaxNode {
 
     constructor(statement: Statement, start: Position, end: Position) {
-        this.start = start;
-        this.end = end;
-        this.statement = statement;
+        this.start = start
+        this.end = end
+        this.statement = statement
     }
 
     function accept(mutable visitor: SyntaxVisitor) {
@@ -94,10 +94,10 @@ class Expression extends Statement {
 class UseDeclaration extends Declaration {
 
     constructor(importModule: PathItem, importExtensions: PathIdentifier[], start: Position, end: Position) {
-        this.start = start;
-        this.end = end;
-        this.importModule = importModule;
-        this.importExtensions = importExtensions;
+        this.start = start
+        this.end = end
+        this.importModule = importModule
+        this.importExtensions = importExtensions
     }
 
     override function accept(mutable visitor: SyntaxVisitor) {
@@ -118,9 +118,9 @@ class UseDeclaration extends Declaration {
 class ConstantDeclaration extends Declaration {
 
     constructor(initializer: BindingInitializer, start: Position, end: Position) {
-        this.start = start;
-        this.end = end;
-        this.initializer = initializer;
+        this.start = start
+        this.end = end
+        this.initializer = initializer
     }
 
     override function accept(mutable visitor: SyntaxVisitor) {
@@ -136,9 +136,9 @@ class ConstantDeclaration extends Declaration {
 class VariableDeclaration extends Declaration {
 
     constructor(initializer: BindingInitializer, start: Position, end: Position) {
-        this.start = start;
-        this.end = end;
-        this.initializer = initializer;
+        this.start = start
+        this.end = end
+        this.initializer = initializer
     }
 
     override function accept(mutable visitor: SyntaxVisitor) {
@@ -154,9 +154,9 @@ class VariableDeclaration extends Declaration {
 class MutableDeclaration extends Declaration {
 
     constructor(initializer: BindingInitializer, start: Position, end: Position) {
-        this.start = start;
-        this.end = end;
-        this.initializer = initializer;
+        this.start = start
+        this.end = end
+        this.initializer = initializer
     }
 
     override function accept(mutable visitor: SyntaxVisitor) {
@@ -172,12 +172,12 @@ class MutableDeclaration extends Declaration {
 class FunctionDeclaration extends Declaration {
 
     constructor(modifiers: Modifier[], name: FunctionName, signature: FunctionSignature, body: Expression, start: Position, end: Position) {
-        this.start = start;
-        this.end = end;
-        this.modifiers = modifiers;
-        this.name = name;
-        this.signature = signature;
-        this.body = body;
+        this.start = start
+        this.end = end
+        this.modifiers = modifiers
+        this.name = name
+        this.signature = signature
+        this.body = body
     }
 
     override function accept(mutable visitor: SyntaxVisitor) {
@@ -203,10 +203,10 @@ class FunctionDeclaration extends Declaration {
 class EnumDeclaration extends Declaration {
 
     constructor(name: string, members: EnumMember[], start: Position, end: Position) {
-        this.start = start;
-        this.end = end;
-        this.name = name;
-        this.members = members;
+        this.start = start
+        this.end = end
+        this.name = name
+        this.members = members
     }
 
     override function accept(mutable visitor: SyntaxVisitor) {
@@ -226,12 +226,12 @@ class EnumDeclaration extends Declaration {
 class ClassDeclaration extends Declaration {
 
     constructor(name: string, genericArgumentClause: GenericArgumentClause, typeInheritanceClause: TypeInheritanceClause, body: ClassBody, start: Position, end: Position) {
-        this.start = start;
-        this.end = end;
-        this.name = name;
-        this.genericArgumentClause = genericArgumentClause;
-        this.typeInheritanceClause = typeInheritanceClause;
-        this.body = body;
+        this.start = start
+        this.end = end
+        this.name = name
+        this.genericArgumentClause = genericArgumentClause
+        this.typeInheritanceClause = typeInheritanceClause
+        this.body = body
     }
 
     override function accept(mutable visitor: SyntaxVisitor) {
@@ -255,12 +255,12 @@ class ClassDeclaration extends Declaration {
 class ConstructorDeclaration extends Declaration {
 
     constructor(modifiers: Modifier[], parameterClause: ParameterClause, throwsClause: ThrowsClause, body: Expression, start: Position, end: Position) {
-        this.start = start;
-        this.end = end;
-        this.modifiers = modifiers;
-        this.parameterClause = parameterClause;
-        this.throwsClause = throwsClause;
-        this.body = body;
+        this.start = start
+        this.end = end
+        this.modifiers = modifiers
+        this.parameterClause = parameterClause
+        this.throwsClause = throwsClause
+        this.body = body
     }
 
     override function accept(mutable visitor: SyntaxVisitor) {
@@ -286,9 +286,9 @@ class ConstructorDeclaration extends Declaration {
 class CodeBlock extends Expression {
 
     constructor(statements: TerminatedStatement[], start: Position, end: Position) {
-        this.start = start;
-        this.end = end;
-        this.statements = statements;
+        this.start = start
+        this.end = end
+        this.statements = statements
     }
 
     override function accept(mutable visitor: SyntaxVisitor) {
@@ -307,10 +307,10 @@ class CodeBlock extends Expression {
 class SimpleExpression extends Expression {
 
     constructor(prefixExpression: PrefixExpression, binaryOps: BinaryOp[], start: Position, end: Position) {
-        this.start = start;
-        this.end = end;
-        this.prefixExpression = prefixExpression;
-        this.binaryOps = binaryOps;
+        this.start = start
+        this.end = end
+        this.prefixExpression = prefixExpression
+        this.binaryOps = binaryOps
     }
 
     override function accept(mutable visitor: SyntaxVisitor) {
@@ -331,9 +331,9 @@ class SimpleExpression extends Expression {
 class PathIdentifier extends SyntaxNode {
 
     constructor(extension: PathItem, start: Position, end: Position) {
-        this.start = start;
-        this.end = end;
-        this.extension = extension;
+        this.start = start
+        this.end = end
+        this.extension = extension
     }
 
     function accept(mutable visitor: SyntaxVisitor) {
@@ -349,9 +349,9 @@ class PathIdentifier extends SyntaxNode {
 class PathItem extends SyntaxNode {
 
     constructor(name: string, start: Position, end: Position) {
-        this.start = start;
-        this.end = end;
-        this.name = name;
+        this.start = start
+        this.end = end
+        this.name = name
     }
 
     function accept(mutable visitor: SyntaxVisitor) {
@@ -364,9 +364,9 @@ class PathItem extends SyntaxNode {
 class Initializer extends SyntaxNode {
 
     constructor(expression: Expression, start: Position, end: Position) {
-        this.start = start;
-        this.end = end;
-        this.expression = expression;
+        this.start = start
+        this.end = end
+        this.expression = expression
     }
 
     function accept(mutable visitor: SyntaxVisitor) {
@@ -382,10 +382,10 @@ class Initializer extends SyntaxNode {
 class BindingInitializer extends SyntaxNode {
 
     constructor(initializer: PatternInitializer, additionalInitializers: AdditionalInitializer[], start: Position, end: Position) {
-        this.start = start;
-        this.end = end;
-        this.initializer = initializer;
-        this.additionalInitializers = additionalInitializers;
+        this.start = start
+        this.end = end
+        this.initializer = initializer
+        this.additionalInitializers = additionalInitializers
     }
 
     function accept(mutable visitor: SyntaxVisitor) {
@@ -406,10 +406,10 @@ class BindingInitializer extends SyntaxNode {
 class PatternInitializer extends SyntaxNode {
 
     constructor(pattern: Pattern, initializer: Initializer, start: Position, end: Position) {
-        this.start = start;
-        this.end = end;
-        this.pattern = pattern;
-        this.initializer = initializer;
+        this.start = start
+        this.end = end
+        this.pattern = pattern
+        this.initializer = initializer
     }
 
     function accept(mutable visitor: SyntaxVisitor) {
@@ -428,9 +428,9 @@ class PatternInitializer extends SyntaxNode {
 class AdditionalInitializer extends SyntaxNode {
 
     constructor(pattern: PatternInitializer, start: Position, end: Position) {
-        this.start = start;
-        this.end = end;
-        this.pattern = pattern;
+        this.start = start
+        this.end = end
+        this.pattern = pattern
     }
 
     function accept(mutable visitor: SyntaxVisitor) {
@@ -453,8 +453,8 @@ class Modifier extends SyntaxNode {
 class OverrideWord extends Modifier {
 
     constructor(start: Position, end: Position) {
-        this.start = start;
-        this.end = end;
+        this.start = start
+        this.end = end
     }
 
     override function accept(mutable visitor: SyntaxVisitor) {
@@ -466,8 +466,8 @@ class OverrideWord extends Modifier {
 class StaticWord extends Modifier {
 
     constructor(start: Position, end: Position) {
-        this.start = start;
-        this.end = end;
+        this.start = start
+        this.end = end
     }
 
     override function accept(mutable visitor: SyntaxVisitor) {
@@ -486,9 +486,9 @@ class FunctionName extends SyntaxNode {
 class IdentifierFunction extends FunctionName {
 
     constructor(name: string, start: Position, end: Position) {
-        this.start = start;
-        this.end = end;
-        this.name = name;
+        this.start = start
+        this.end = end
+        this.name = name
     }
 
     override function accept(mutable visitor: SyntaxVisitor) {
@@ -501,11 +501,11 @@ class IdentifierFunction extends FunctionName {
 class FunctionSignature extends SyntaxNode {
 
     constructor(parameterClause: ParameterClause, result: FunctionResult, throwsClause: ThrowsClause, start: Position, end: Position) {
-        this.start = start;
-        this.end = end;
-        this.parameterClause = parameterClause;
-        this.result = result;
-        this.throwsClause = throwsClause;
+        this.start = start
+        this.end = end
+        this.parameterClause = parameterClause
+        this.result = result
+        this.throwsClause = throwsClause
     }
 
     function accept(mutable visitor: SyntaxVisitor) {
@@ -527,10 +527,10 @@ class FunctionSignature extends SyntaxNode {
 class FunctionResult extends SyntaxNode {
 
     constructor(existingObject: ExistingClause, resultType: Type, start: Position, end: Position) {
-        this.start = start;
-        this.end = end;
-        this.existingObject = existingObject;
-        this.resultType = resultType;
+        this.start = start
+        this.end = end
+        this.existingObject = existingObject
+        this.resultType = resultType
     }
 
     function accept(mutable visitor: SyntaxVisitor) {
@@ -549,8 +549,8 @@ class FunctionResult extends SyntaxNode {
 class ExistingClause extends SyntaxNode {
 
     constructor(start: Position, end: Position) {
-        this.start = start;
-        this.end = end;
+        this.start = start
+        this.end = end
     }
 
     function accept(mutable visitor: SyntaxVisitor) {
@@ -562,9 +562,9 @@ class ExistingClause extends SyntaxNode {
 class ParameterClause extends SyntaxNode {
 
     constructor(parameters: Parameter[], start: Position, end: Position) {
-        this.start = start;
-        this.end = end;
-        this.parameters = parameters;
+        this.start = start
+        this.end = end
+        this.parameters = parameters
     }
 
     function accept(mutable visitor: SyntaxVisitor) {
@@ -590,10 +590,10 @@ class Parameter extends SyntaxNode {
 class ConstParameter extends Parameter {
 
     constructor(name: string, parameterType: Type, start: Position, end: Position) {
-        this.start = start;
-        this.end = end;
-        this.name = name;
-        this.parameterType = parameterType;
+        this.start = start
+        this.end = end
+        this.name = name
+        this.parameterType = parameterType
     }
 
     override function accept(mutable visitor: SyntaxVisitor) {
@@ -610,10 +610,10 @@ class ConstParameter extends Parameter {
 class VarParameter extends Parameter {
 
     constructor(name: string, parameterType: Type, start: Position, end: Position) {
-        this.start = start;
-        this.end = end;
-        this.name = name;
-        this.parameterType = parameterType;
+        this.start = start
+        this.end = end
+        this.name = name
+        this.parameterType = parameterType
     }
 
     override function accept(mutable visitor: SyntaxVisitor) {
@@ -630,9 +630,9 @@ class VarParameter extends Parameter {
 class ThrowsClause extends SyntaxNode {
 
     constructor(throwsType: Type, start: Position, end: Position) {
-        this.start = start;
-        this.end = end;
-        this.throwsType = throwsType;
+        this.start = start
+        this.end = end
+        this.throwsType = throwsType
     }
 
     function accept(mutable visitor: SyntaxVisitor) {
@@ -648,11 +648,11 @@ class ThrowsClause extends SyntaxNode {
 class EnumMember extends SyntaxNode {
 
     constructor(enumCase: EnumCase, additionalCases: AdditionalCase[], parameterClause: ParameterClause, start: Position, end: Position) {
-        this.start = start;
-        this.end = end;
-        this.enumCase = enumCase;
-        this.additionalCases = additionalCases;
-        this.parameterClause = parameterClause;
+        this.start = start
+        this.end = end
+        this.enumCase = enumCase
+        this.additionalCases = additionalCases
+        this.parameterClause = parameterClause
     }
 
     function accept(mutable visitor: SyntaxVisitor) {
@@ -676,9 +676,9 @@ class EnumMember extends SyntaxNode {
 class EnumCase extends SyntaxNode {
 
     constructor(name: string, start: Position, end: Position) {
-        this.start = start;
-        this.end = end;
-        this.name = name;
+        this.start = start
+        this.end = end
+        this.name = name
     }
 
     function accept(mutable visitor: SyntaxVisitor) {
@@ -691,9 +691,9 @@ class EnumCase extends SyntaxNode {
 class AdditionalCase extends SyntaxNode {
 
     constructor(enumCase: EnumCase, start: Position, end: Position) {
-        this.start = start;
-        this.end = end;
-        this.enumCase = enumCase;
+        this.start = start
+        this.end = end
+        this.enumCase = enumCase
     }
 
     function accept(mutable visitor: SyntaxVisitor) {
@@ -709,9 +709,9 @@ class AdditionalCase extends SyntaxNode {
 class ClassBody extends SyntaxNode {
 
     constructor(members: ClassMember[], start: Position, end: Position) {
-        this.start = start;
-        this.end = end;
-        this.members = members;
+        this.start = start
+        this.end = end
+        this.members = members
     }
 
     function accept(mutable visitor: SyntaxVisitor) {
@@ -730,9 +730,9 @@ class ClassBody extends SyntaxNode {
 class GenericArgumentClause extends SyntaxNode {
 
     constructor(genericParameters: GenericParameter[], start: Position, end: Position) {
-        this.start = start;
-        this.end = end;
-        this.genericParameters = genericParameters;
+        this.start = start
+        this.end = end
+        this.genericParameters = genericParameters
     }
 
     function accept(mutable visitor: SyntaxVisitor) {
@@ -751,9 +751,9 @@ class GenericArgumentClause extends SyntaxNode {
 class GenericParameter extends SyntaxNode {
 
     constructor(typeName: string, start: Position, end: Position) {
-        this.start = start;
-        this.end = end;
-        this.typeName = typeName;
+        this.start = start
+        this.end = end
+        this.typeName = typeName
     }
 
     function accept(mutable visitor: SyntaxVisitor) {
@@ -766,9 +766,9 @@ class GenericParameter extends SyntaxNode {
 class ClassMember extends SyntaxNode {
 
     constructor(declaration: Declaration, start: Position, end: Position) {
-        this.start = start;
-        this.end = end;
-        this.declaration = declaration;
+        this.start = start
+        this.end = end
+        this.declaration = declaration
     }
 
     function accept(mutable visitor: SyntaxVisitor) {
@@ -784,10 +784,10 @@ class ClassMember extends SyntaxNode {
 class PrefixExpression extends SyntaxNode {
 
     constructor(prefixOperator: string, expression: PostfixExpression, start: Position, end: Position) {
-        this.start = start;
-        this.end = end;
-        this.prefixOperator = prefixOperator;
-        this.expression = expression;
+        this.start = start
+        this.end = end
+        this.prefixOperator = prefixOperator
+        this.expression = expression
     }
 
     function accept(mutable visitor: SyntaxVisitor) {
@@ -804,10 +804,10 @@ class PrefixExpression extends SyntaxNode {
 class PostfixExpression extends SyntaxNode {
 
     constructor(primaryExpression: PrimaryExpression, postfixes: Postfix[], start: Position, end: Position) {
-        this.start = start;
-        this.end = end;
-        this.primaryExpression = primaryExpression;
-        this.postfixes = postfixes;
+        this.start = start
+        this.end = end
+        this.primaryExpression = primaryExpression
+        this.postfixes = postfixes
     }
 
     function accept(mutable visitor: SyntaxVisitor) {
@@ -835,10 +835,10 @@ class BinaryOp extends SyntaxNode {
 class BinaryOperation extends BinaryOp {
 
     constructor(binaryOperator: string, expression: PrefixExpression, start: Position, end: Position) {
-        this.start = start;
-        this.end = end;
-        this.binaryOperator = binaryOperator;
-        this.expression = expression;
+        this.start = start
+        this.end = end
+        this.binaryOperator = binaryOperator
+        this.expression = expression
     }
 
     override function accept(mutable visitor: SyntaxVisitor) {
@@ -855,9 +855,9 @@ class BinaryOperation extends BinaryOp {
 class Assignment extends BinaryOp {
 
     constructor(expression: Expression, start: Position, end: Position) {
-        this.start = start;
-        this.end = end;
-        this.expression = expression;
+        this.start = start
+        this.end = end
+        this.expression = expression
     }
 
     override function accept(mutable visitor: SyntaxVisitor) {
@@ -873,9 +873,9 @@ class Assignment extends BinaryOp {
 class TypeQuery extends BinaryOp {
 
     constructor(objectType: Type, start: Position, end: Position) {
-        this.start = start;
-        this.end = end;
-        this.objectType = objectType;
+        this.start = start
+        this.end = end
+        this.objectType = objectType
     }
 
     override function accept(mutable visitor: SyntaxVisitor) {
@@ -891,9 +891,9 @@ class TypeQuery extends BinaryOp {
 class TypeCast extends BinaryOp {
 
     constructor(objectType: Type, start: Position, end: Position) {
-        this.start = start;
-        this.end = end;
-        this.objectType = objectType;
+        this.start = start
+        this.end = end
+        this.objectType = objectType
     }
 
     override function accept(mutable visitor: SyntaxVisitor) {
@@ -909,11 +909,11 @@ class TypeCast extends BinaryOp {
 class CatchClause extends SyntaxNode {
 
     constructor(catchPattern: CatchPattern, bindingPattern: TuplePattern, expression: Expression, start: Position, end: Position) {
-        this.start = start;
-        this.end = end;
-        this.catchPattern = catchPattern;
-        this.bindingPattern = bindingPattern;
-        this.expression = expression;
+        this.start = start
+        this.end = end
+        this.catchPattern = catchPattern
+        this.bindingPattern = bindingPattern
+        this.expression = expression
     }
 
     function accept(mutable visitor: SyntaxVisitor) {
@@ -941,9 +941,9 @@ class CatchPattern extends SyntaxNode {
 class WildCardCatchPattern extends CatchPattern {
 
     constructor(pattern: WildcardPattern, start: Position, end: Position) {
-        this.start = start;
-        this.end = end;
-        this.pattern = pattern;
+        this.start = start
+        this.end = end
+        this.pattern = pattern
     }
 
     override function accept(mutable visitor: SyntaxVisitor) {
@@ -959,10 +959,10 @@ class WildCardCatchPattern extends CatchPattern {
 class IdentifierCatchPattern extends CatchPattern {
 
     constructor(name: string, member: ExplicitMemberExpression, start: Position, end: Position) {
-        this.start = start;
-        this.end = end;
-        this.name = name;
-        this.member = member;
+        this.start = start
+        this.end = end
+        this.name = name
+        this.member = member
     }
 
     override function accept(mutable visitor: SyntaxVisitor) {
@@ -987,9 +987,9 @@ class Postfix extends SyntaxNode {
 class OperatorPostfix extends Postfix {
 
     constructor(postfixOperator: string, start: Position, end: Position) {
-        this.start = start;
-        this.end = end;
-        this.postfixOperator = postfixOperator;
+        this.start = start
+        this.end = end
+        this.postfixOperator = postfixOperator
     }
 
     override function accept(mutable visitor: SyntaxVisitor) {
@@ -1002,10 +1002,10 @@ class OperatorPostfix extends Postfix {
 class FunctionCall extends Postfix {
 
     constructor(arguments: ParenthesizedExpression, catchClauses: CatchClause[], start: Position, end: Position) {
-        this.start = start;
-        this.end = end;
-        this.arguments = arguments;
-        this.catchClauses = catchClauses;
+        this.start = start
+        this.end = end
+        this.arguments = arguments
+        this.catchClauses = catchClauses
     }
 
     override function accept(mutable visitor: SyntaxVisitor) {
@@ -1026,9 +1026,9 @@ class FunctionCall extends Postfix {
 class ExplicitMemberExpression extends Postfix {
 
     constructor(memberPostfix: MemberPostfix, start: Position, end: Position) {
-        this.start = start;
-        this.end = end;
-        this.memberPostfix = memberPostfix;
+        this.start = start
+        this.end = end
+        this.memberPostfix = memberPostfix
     }
 
     override function accept(mutable visitor: SyntaxVisitor) {
@@ -1044,9 +1044,9 @@ class ExplicitMemberExpression extends Postfix {
 class Subscript extends Postfix {
 
     constructor(expressions: ExpressionElement[], start: Position, end: Position) {
-        this.start = start;
-        this.end = end;
-        this.expressions = expressions;
+        this.start = start
+        this.end = end
+        this.expressions = expressions
     }
 
     override function accept(mutable visitor: SyntaxVisitor) {
@@ -1065,9 +1065,9 @@ class Subscript extends Postfix {
 class ExpressionElement extends SyntaxNode {
 
     constructor(expression: Expression, start: Position, end: Position) {
-        this.start = start;
-        this.end = end;
-        this.expression = expression;
+        this.start = start
+        this.end = end
+        this.expression = expression
     }
 
     function accept(mutable visitor: SyntaxVisitor) {
@@ -1090,9 +1090,9 @@ class MemberPostfix extends SyntaxNode {
 class NamedMemberPostfix extends MemberPostfix {
 
     constructor(identifier: IdentifierExpression, start: Position, end: Position) {
-        this.start = start;
-        this.end = end;
-        this.identifier = identifier;
+        this.start = start
+        this.end = end
+        this.identifier = identifier
     }
 
     override function accept(mutable visitor: SyntaxVisitor) {
@@ -1115,9 +1115,9 @@ class PrimaryExpression extends SyntaxNode {
 class IdentifierExpression extends PrimaryExpression {
 
     constructor(name: string, start: Position, end: Position) {
-        this.start = start;
-        this.end = end;
-        this.name = name;
+        this.start = start
+        this.end = end
+        this.name = name
     }
 
     override function accept(mutable visitor: SyntaxVisitor) {
@@ -1130,9 +1130,9 @@ class IdentifierExpression extends PrimaryExpression {
 class LiteralExpression extends PrimaryExpression {
 
     constructor(literal: Literal, start: Position, end: Position) {
-        this.start = start;
-        this.end = end;
-        this.literal = literal;
+        this.start = start
+        this.end = end
+        this.literal = literal
     }
 
     override function accept(mutable visitor: SyntaxVisitor) {
@@ -1145,11 +1145,11 @@ class LiteralExpression extends PrimaryExpression {
 class IfExpression extends PrimaryExpression {
 
     constructor(condition: Expression, consequent: Expression, elseClause: ElseClause, start: Position, end: Position) {
-        this.start = start;
-        this.end = end;
-        this.condition = condition;
-        this.consequent = consequent;
-        this.elseClause = elseClause;
+        this.start = start
+        this.end = end
+        this.condition = condition
+        this.consequent = consequent
+        this.elseClause = elseClause
     }
 
     override function accept(mutable visitor: SyntaxVisitor) {
@@ -1170,10 +1170,10 @@ class IfExpression extends PrimaryExpression {
 class SwitchExpression extends PrimaryExpression {
 
     constructor(expression: Expression, body: SwitchBody, start: Position, end: Position) {
-        this.start = start;
-        this.end = end;
-        this.expression = expression;
-        this.body = body;
+        this.start = start
+        this.end = end
+        this.expression = expression
+        this.body = body
     }
 
     override function accept(mutable visitor: SyntaxVisitor) {
@@ -1191,11 +1191,11 @@ class SwitchExpression extends PrimaryExpression {
 class ForExpression extends PrimaryExpression {
 
     constructor(pattern: Pattern, expression: Expression, code: Expression, start: Position, end: Position) {
-        this.start = start;
-        this.end = end;
-        this.pattern = pattern;
-        this.expression = expression;
-        this.code = code;
+        this.start = start
+        this.end = end
+        this.pattern = pattern
+        this.expression = expression
+        this.code = code
     }
 
     override function accept(mutable visitor: SyntaxVisitor) {
@@ -1215,10 +1215,10 @@ class ForExpression extends PrimaryExpression {
 class WhileExpression extends PrimaryExpression {
 
     constructor(condition: Expression, code: Expression, start: Position, end: Position) {
-        this.start = start;
-        this.end = end;
-        this.condition = condition;
-        this.code = code;
+        this.start = start
+        this.end = end
+        this.condition = condition
+        this.code = code
     }
 
     override function accept(mutable visitor: SyntaxVisitor) {
@@ -1236,10 +1236,10 @@ class WhileExpression extends PrimaryExpression {
 class RepeatExpression extends PrimaryExpression {
 
     constructor(code: Expression, condition: Expression, start: Position, end: Position) {
-        this.start = start;
-        this.end = end;
-        this.code = code;
-        this.condition = condition;
+        this.start = start
+        this.end = end
+        this.code = code
+        this.condition = condition
     }
 
     override function accept(mutable visitor: SyntaxVisitor) {
@@ -1257,9 +1257,9 @@ class RepeatExpression extends PrimaryExpression {
 class ParenthesizedExpression extends PrimaryExpression {
 
     constructor(expressionElements: ExpressionElement[], start: Position, end: Position) {
-        this.start = start;
-        this.end = end;
-        this.expressionElements = expressionElements;
+        this.start = start
+        this.end = end
+        this.expressionElements = expressionElements
     }
 
     override function accept(mutable visitor: SyntaxVisitor) {
@@ -1278,9 +1278,9 @@ class ParenthesizedExpression extends PrimaryExpression {
 class ReturnExpression extends PrimaryExpression {
 
     constructor(expression: Expression, start: Position, end: Position) {
-        this.start = start;
-        this.end = end;
-        this.expression = expression;
+        this.start = start
+        this.end = end
+        this.expression = expression
     }
 
     override function accept(mutable visitor: SyntaxVisitor) {
@@ -1297,10 +1297,10 @@ class ReturnExpression extends PrimaryExpression {
 class ThrowExpression extends PrimaryExpression {
 
     constructor(error: IdentifierExpression, arguments: ParenthesizedExpression, start: Position, end: Position) {
-        this.start = start;
-        this.end = end;
-        this.error = error;
-        this.arguments = arguments;
+        this.start = start
+        this.end = end
+        this.error = error
+        this.arguments = arguments
     }
 
     override function accept(mutable visitor: SyntaxVisitor) {
@@ -1320,9 +1320,9 @@ class ThrowExpression extends PrimaryExpression {
 class BreakExpression extends PrimaryExpression {
 
     constructor(expression: Expression, start: Position, end: Position) {
-        this.start = start;
-        this.end = end;
-        this.expression = expression;
+        this.start = start
+        this.end = end
+        this.expression = expression
     }
 
     override function accept(mutable visitor: SyntaxVisitor) {
@@ -1339,11 +1339,11 @@ class BreakExpression extends PrimaryExpression {
 class ConstructorCall extends PrimaryExpression {
 
     constructor(typeToInitialize: Type, arguments: ParenthesizedExpression, catchClauses: CatchClause[], start: Position, end: Position) {
-        this.start = start;
-        this.end = end;
-        this.typeToInitialize = typeToInitialize;
-        this.arguments = arguments;
-        this.catchClauses = catchClauses;
+        this.start = start
+        this.end = end
+        this.typeToInitialize = typeToInitialize
+        this.arguments = arguments
+        this.catchClauses = catchClauses
     }
 
     override function accept(mutable visitor: SyntaxVisitor) {
@@ -1366,8 +1366,8 @@ class ConstructorCall extends PrimaryExpression {
 class ThisExpression extends PrimaryExpression {
 
     constructor(start: Position, end: Position) {
-        this.start = start;
-        this.end = end;
+        this.start = start
+        this.end = end
     }
 
     override function accept(mutable visitor: SyntaxVisitor) {
@@ -1386,9 +1386,9 @@ class SuperExpression extends PrimaryExpression {
 class SuperDot extends SuperExpression {
 
     constructor(member: CommonSuperMember, start: Position, end: Position) {
-        this.start = start;
-        this.end = end;
-        this.member = member;
+        this.start = start
+        this.end = end
+        this.member = member
     }
 
     override function accept(mutable visitor: SyntaxVisitor) {
@@ -1404,9 +1404,9 @@ class SuperDot extends SuperExpression {
 class SuperSubscript extends SuperExpression {
 
     constructor(subscript: Subscript, start: Position, end: Position) {
-        this.start = start;
-        this.end = end;
-        this.subscript = subscript;
+        this.start = start
+        this.end = end
+        this.subscript = subscript
     }
 
     override function accept(mutable visitor: SyntaxVisitor) {
@@ -1422,8 +1422,8 @@ class SuperSubscript extends SuperExpression {
 class NullExpression extends PrimaryExpression {
 
     constructor(start: Position, end: Position) {
-        this.start = start;
-        this.end = end;
+        this.start = start
+        this.end = end
     }
 
     override function accept(mutable visitor: SyntaxVisitor) {
@@ -1435,9 +1435,9 @@ class NullExpression extends PrimaryExpression {
 class ElseClause extends SyntaxNode {
 
     constructor(alternative: Expression, start: Position, end: Position) {
-        this.start = start;
-        this.end = end;
-        this.alternative = alternative;
+        this.start = start
+        this.end = end
+        this.alternative = alternative
     }
 
     function accept(mutable visitor: SyntaxVisitor) {
@@ -1460,9 +1460,9 @@ class SwitchBody extends SyntaxNode {
 class CurliedSwitchBody extends SwitchBody {
 
     constructor(cases: SwitchCase[], start: Position, end: Position) {
-        this.start = start;
-        this.end = end;
-        this.cases = cases;
+        this.start = start
+        this.end = end
+        this.cases = cases
     }
 
     override function accept(mutable visitor: SyntaxVisitor) {
@@ -1481,9 +1481,9 @@ class CurliedSwitchBody extends SwitchBody {
 class NakedSwitchBody extends SwitchBody {
 
     constructor(cases: SwitchCase[], start: Position, end: Position) {
-        this.start = start;
-        this.end = end;
-        this.cases = cases;
+        this.start = start
+        this.end = end
+        this.cases = cases
     }
 
     override function accept(mutable visitor: SyntaxVisitor) {
@@ -1502,10 +1502,10 @@ class NakedSwitchBody extends SwitchBody {
 class SwitchCase extends SyntaxNode {
 
     constructor(label: CaseLabel, content: CaseContent, start: Position, end: Position) {
-        this.start = start;
-        this.end = end;
-        this.label = label;
-        this.content = content;
+        this.start = start
+        this.end = end
+        this.label = label
+        this.content = content
     }
 
     function accept(mutable visitor: SyntaxVisitor) {
@@ -1530,10 +1530,10 @@ class CaseLabel extends SyntaxNode {
 class ItemCaseLabel extends CaseLabel {
 
     constructor(pattern: Pattern, additionalPatterns: CaseItem[], start: Position, end: Position) {
-        this.start = start;
-        this.end = end;
-        this.pattern = pattern;
-        this.additionalPatterns = additionalPatterns;
+        this.start = start
+        this.end = end
+        this.pattern = pattern
+        this.additionalPatterns = additionalPatterns
     }
 
     override function accept(mutable visitor: SyntaxVisitor) {
@@ -1554,8 +1554,8 @@ class ItemCaseLabel extends CaseLabel {
 class DefaultCaseLabel extends CaseLabel {
 
     constructor(start: Position, end: Position) {
-        this.start = start;
-        this.end = end;
+        this.start = start
+        this.end = end
     }
 
     override function accept(mutable visitor: SyntaxVisitor) {
@@ -1567,9 +1567,9 @@ class DefaultCaseLabel extends CaseLabel {
 class CaseItem extends SyntaxNode {
 
     constructor(pattern: Pattern, start: Position, end: Position) {
-        this.start = start;
-        this.end = end;
-        this.pattern = pattern;
+        this.start = start
+        this.end = end
+        this.pattern = pattern
     }
 
     function accept(mutable visitor: SyntaxVisitor) {
@@ -1592,8 +1592,8 @@ class Pattern extends SyntaxNode {
 class WildcardPattern extends Pattern {
 
     constructor(start: Position, end: Position) {
-        this.start = start;
-        this.end = end;
+        this.start = start
+        this.end = end
     }
 
     override function accept(mutable visitor: SyntaxVisitor) {
@@ -1605,10 +1605,10 @@ class WildcardPattern extends Pattern {
 class IdentifierPattern extends Pattern {
 
     constructor(identifier: string, annotationForType: TypeAnnotation, start: Position, end: Position) {
-        this.start = start;
-        this.end = end;
-        this.identifier = identifier;
-        this.annotationForType = annotationForType;
+        this.start = start
+        this.end = end
+        this.identifier = identifier
+        this.annotationForType = annotationForType
     }
 
     override function accept(mutable visitor: SyntaxVisitor) {
@@ -1626,9 +1626,9 @@ class IdentifierPattern extends Pattern {
 class TuplePattern extends Pattern {
 
     constructor(elements: TuplePatternElement[], start: Position, end: Position) {
-        this.start = start;
-        this.end = end;
-        this.elements = elements;
+        this.start = start
+        this.end = end
+        this.elements = elements
     }
 
     override function accept(mutable visitor: SyntaxVisitor) {
@@ -1647,9 +1647,9 @@ class TuplePattern extends Pattern {
 class ExpressionPattern extends Pattern {
 
     constructor(expression: Expression, start: Position, end: Position) {
-        this.start = start;
-        this.end = end;
-        this.expression = expression;
+        this.start = start
+        this.end = end
+        this.expression = expression
     }
 
     override function accept(mutable visitor: SyntaxVisitor) {
@@ -1665,9 +1665,9 @@ class ExpressionPattern extends Pattern {
 class TuplePatternElement extends SyntaxNode {
 
     constructor(pattern: Pattern, start: Position, end: Position) {
-        this.start = start;
-        this.end = end;
-        this.pattern = pattern;
+        this.start = start
+        this.end = end
+        this.pattern = pattern
     }
 
     function accept(mutable visitor: SyntaxVisitor) {
@@ -1690,9 +1690,9 @@ class CaseContent extends SyntaxNode {
 class BlockCaseContent extends CaseContent {
 
     constructor(statements: TerminatedStatement[], start: Position, end: Position) {
-        this.start = start;
-        this.end = end;
-        this.statements = statements;
+        this.start = start
+        this.end = end
+        this.statements = statements
     }
 
     override function accept(mutable visitor: SyntaxVisitor) {
@@ -1711,8 +1711,8 @@ class BlockCaseContent extends CaseContent {
 class EmptyCaseContent extends CaseContent {
 
     constructor(start: Position, end: Position) {
-        this.start = start;
-        this.end = end;
+        this.start = start
+        this.end = end
     }
 
     override function accept(mutable visitor: SyntaxVisitor) {
@@ -1731,8 +1731,8 @@ class CommonSuperMember extends SyntaxNode {
 class SuperConstructor extends CommonSuperMember {
 
     constructor(start: Position, end: Position) {
-        this.start = start;
-        this.end = end;
+        this.start = start
+        this.end = end
     }
 
     override function accept(mutable visitor: SyntaxVisitor) {
@@ -1744,9 +1744,9 @@ class SuperConstructor extends CommonSuperMember {
 class SuperMember extends CommonSuperMember {
 
     constructor(name: string, start: Position, end: Position) {
-        this.start = start;
-        this.end = end;
-        this.name = name;
+        this.start = start
+        this.end = end
+        this.name = name
     }
 
     override function accept(mutable visitor: SyntaxVisitor) {
@@ -1759,11 +1759,11 @@ class SuperMember extends CommonSuperMember {
 class Type extends SyntaxNode {
 
     constructor(name: string, subType: Subtype, postfixes: TypePostfix[], start: Position, end: Position) {
-        this.start = start;
-        this.end = end;
-        this.name = name;
-        this.subType = subType;
-        this.postfixes = postfixes;
+        this.start = start
+        this.end = end
+        this.name = name
+        this.subType = subType
+        this.postfixes = postfixes
     }
 
     function accept(mutable visitor: SyntaxVisitor) {
@@ -1786,9 +1786,9 @@ class Type extends SyntaxNode {
 class TypeAnnotation extends SyntaxNode {
 
     constructor(annotationForType: Type, start: Position, end: Position) {
-        this.start = start;
-        this.end = end;
-        this.annotationForType = annotationForType;
+        this.start = start
+        this.end = end
+        this.annotationForType = annotationForType
     }
 
     function accept(mutable visitor: SyntaxVisitor) {
@@ -1804,9 +1804,9 @@ class TypeAnnotation extends SyntaxNode {
 class Subtype extends SyntaxNode {
 
     constructor(type: Type, start: Position, end: Position) {
-        this.start = start;
-        this.end = end;
-        this.type = type;
+        this.start = start
+        this.end = end
+        this.type = type
     }
 
     function accept(mutable visitor: SyntaxVisitor) {
@@ -1829,8 +1829,8 @@ class TypePostfix extends SyntaxNode {
 class OptionalType extends TypePostfix {
 
     constructor(start: Position, end: Position) {
-        this.start = start;
-        this.end = end;
+        this.start = start
+        this.end = end
     }
 
     override function accept(mutable visitor: SyntaxVisitor) {
@@ -1842,9 +1842,9 @@ class OptionalType extends TypePostfix {
 class IndexedType extends TypePostfix {
 
     constructor(key: Type, start: Position, end: Position) {
-        this.start = start;
-        this.end = end;
-        this.key = key;
+        this.start = start
+        this.end = end
+        this.key = key
     }
 
     override function accept(mutable visitor: SyntaxVisitor) {
@@ -1861,9 +1861,9 @@ class IndexedType extends TypePostfix {
 class TypeInheritanceClause extends SyntaxNode {
 
     constructor(inheritances: Inheritance[], start: Position, end: Position) {
-        this.start = start;
-        this.end = end;
-        this.inheritances = inheritances;
+        this.start = start
+        this.end = end
+        this.inheritances = inheritances
     }
 
     function accept(mutable visitor: SyntaxVisitor) {
@@ -1882,9 +1882,9 @@ class TypeInheritanceClause extends SyntaxNode {
 class Inheritance extends SyntaxNode {
 
     constructor(type: Type, start: Position, end: Position) {
-        this.start = start;
-        this.end = end;
-        this.type = type;
+        this.start = start
+        this.end = end
+        this.type = type
     }
 
     function accept(mutable visitor: SyntaxVisitor) {

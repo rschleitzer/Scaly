@@ -369,7 +369,7 @@ class Lexer {
                     position++ column++
                     switch text.charAt(position) {
                         case '\"', '\\', '\'': {
-                            value.append('\\');
+                            value.append('\\')
                             value.append(text.charAt(position))
                         }
                         case 'n': value.append("\\n")

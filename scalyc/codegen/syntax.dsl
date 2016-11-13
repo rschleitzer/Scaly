@@ -20,7 +20,7 @@ class "(id syntax-node)" extends "(if (base syntax-node) (base syntax-node) "Syn
         this.compilationUnits = compilationUnits
         this.parent = null
 "
-            (scaly-constructor-initializers syntax-node)
+            (constructor-initializers syntax-node)
         )
 "    }
 "       ))
@@ -134,18 +134,9 @@ class "(id syntax-node)" extends "(if (base syntax-node) (base syntax-node) "Syn
 
 (define (constructor-initializers syntax-node)
     ($
-"    this->start = start;
-    this->end = end;
+"        this.start = start
+        this.end = end
 "       (apply-to-property-children-of syntax-node (lambda (content) ($
-"    this->"(property content)" = "(property content)";
-"
-)))))
-
-(define (scaly-constructor-initializers syntax-node)
-    ($
-"        this.start = start;
-        this.end = end;
-"       (apply-to-property-children-of syntax-node (lambda (content) ($
-"        this."(property content)" = "(property content)";
+"        this."(property content)" = "(property content)"
 "
 )))))
