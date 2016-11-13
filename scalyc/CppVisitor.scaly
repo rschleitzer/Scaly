@@ -1750,7 +1750,7 @@ class CppVisitor extends SyntaxVisitor {
             if literal is StringLiteral {
                 let stringLiteral: StringLiteral = literal as StringLiteral
                 sourceFile.append("\"")
-                sourceFile.append(stringLiteral.string)
+                sourceFile.append(stringLiteral.value)
                 sourceFile.append("\"")
             }
             else {

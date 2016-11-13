@@ -34,9 +34,9 @@ class Literal extends Token {
 
 class StringLiteral extends Literal {
     constructor(theString: string) {
-        string = theString
+        value = theString
     }
-    let string: string
+    let value: string
 }
 
 class CharacterLiteral extends Literal {
@@ -607,7 +607,7 @@ class Lexer {
 
         if token is StringLiteral {
             let stringLiteral: StringLiteral = token as StringLiteral
-            return new StringLiteral(new string(stringLiteral.string))
+            return new StringLiteral(new string(stringLiteral.value))
         }
 
         if token is CharacterLiteral {
