@@ -117,7 +117,7 @@ class Lexer {
             return
         }
         
-        let c: character = text.charAt(position)
+        let c: char = text.charAt(position)
         
         if ((c >= 'a') && (c <= 'z')) || ((c >= 'A') && (c <= 'Z')) {
             token = scanIdentifier()
@@ -274,7 +274,7 @@ class Lexer {
             if position == end
                 return new Identifier(new string(name))
             
-            let c: character = text.charAt(position)
+            let c: char = text.charAt(position)
             if  ((c >= 'a') && (c <= 'z')) || 
                 ((c >= 'A') && (c <= 'Z')) || 
                 ((c >= '0') && (c <= '9')) || 
@@ -425,7 +425,7 @@ class Lexer {
             if position == end
                 return new NumericLiteral(new string(value))
             
-            let c: character = text.charAt(position)
+            let c: char = text.charAt(position)
             if (c >= '0') && (c <= '9')
                 value.append(text.charAt(position))
             else

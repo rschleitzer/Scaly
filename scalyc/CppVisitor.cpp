@@ -2727,7 +2727,7 @@ void CppVisitor::appendCppTypeName(VarString* s, Type* type) {
         return;
     }
     else {
-        if (typeName->equals("character")) {
+        if (typeName->equals("char")) {
             s->append("char");
             return;
         }

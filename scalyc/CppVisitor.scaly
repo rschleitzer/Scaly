@@ -2780,7 +2780,7 @@ class CppVisitor extends SyntaxVisitor {
             return
         }
         else {
-            if typeName.equals("character") {
+            if typeName.equals("char") {
                 s.append("char")
                 return
             }
