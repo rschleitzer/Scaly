@@ -1917,7 +1917,8 @@ class CppVisitor extends SyntaxVisitor {
     }
 
     function openParenthesizedExpression(parenthesizedExpression: ParenthesizedExpression): bool {
-        sourceFile.append("(")
+        if !(parenthesizedExpression.parent) is ReturnExpression
+            sourceFile.append("(")
         if parenthesizedExpression.parent is FunctionCall {
             let functionCall: FunctionCall = (parenthesizedExpression.parent) as FunctionCall
             if functionCall.parent is PostfixExpression {
@@ -2059,7 +2060,8 @@ class CppVisitor extends SyntaxVisitor {
     }
 
     function closeParenthesizedExpression(parenthesizedExpression: ParenthesizedExpression) {
-        sourceFile.append(")")
+        if !(parenthesizedExpression.parent) is ReturnExpression
+            sourceFile.append(")")
     }
 
     function openReturnExpression(returnExpression: ReturnExpression): bool {

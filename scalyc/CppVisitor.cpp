@@ -1889,7 +1889,8 @@ void CppVisitor::closeRepeatExpression(RepeatExpression* repeatExpression) {
 }
 
 bool CppVisitor::openParenthesizedExpression(ParenthesizedExpression* parenthesizedExpression) {
-    sourceFile->append("(");
+    if (!(parenthesizedExpression->parent)->_isReturnExpression())
+        sourceFile->append("(");
     if (parenthesizedExpression->parent->_isFunctionCall()) {
         FunctionCall* functionCall = (FunctionCall*)(parenthesizedExpression->parent);
         if (functionCall->parent->_isPostfixExpression()) {
@@ -2024,7 +2025,8 @@ bool CppVisitor::catchesError(FunctionCall* functionCall) {
 }
 
 void CppVisitor::closeParenthesizedExpression(ParenthesizedExpression* parenthesizedExpression) {
-    sourceFile->append(")");
+    if (!(parenthesizedExpression->parent)->_isReturnExpression())
+        sourceFile->append(")");
 }
 
 bool CppVisitor::openReturnExpression(ReturnExpression* returnExpression) {
