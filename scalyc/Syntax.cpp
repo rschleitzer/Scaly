@@ -1308,8 +1308,7 @@ ThrowExpression::ThrowExpression(IdentifierExpression* error, ParenthesizedExpre
 void ThrowExpression::accept(SyntaxVisitor* visitor) {
     if (!visitor->openThrowExpression(this))
         return;
-    if (error != nullptr)
-        error->accept(visitor);
+    error->accept(visitor);
     if (arguments != nullptr)
         arguments->accept(visitor);
     visitor->closeThrowExpression(this);

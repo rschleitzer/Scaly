@@ -1306,8 +1306,7 @@ class ThrowExpression extends PrimaryExpression {
     override function accept(mutable visitor: SyntaxVisitor) {
         if !visitor.openThrowExpression(this)
             return;
-        if error != null
-            error.accept(visitor)
+        error.accept(visitor)
         if arguments != null
             arguments.accept(visitor)
         visitor.closeThrowExpression(this)

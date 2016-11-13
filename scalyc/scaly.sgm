@@ -336,7 +336,7 @@
 
     <syntax id = ThrowExpression                                base = PrimaryExpression
         <content link = throw
-        <content link = IdentifierExpression           optional property = error
+        <content link = IdentifierExpression                    property = error
         <content link = ParenthesizedExpression        optional property = arguments
 
     <syntax id = BreakExpression                                base = PrimaryExpression

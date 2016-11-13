@@ -2813,7 +2813,8 @@ _Result<ThrowExpression, ParserError> Parser::parseThrowExpression(_Page* _rp, _
         error = _error_result.getResult();
     }
     else {
-        error = nullptr;
+        auto error = _error_result.getError();
+        return _Result<ThrowExpression, ParserError>(error);
     }
     auto _arguments_result = parseParenthesizedExpression(_rp, _ep);
     ParenthesizedExpression* arguments = nullptr;
@@ -2825,8 +2826,7 @@ _Result<ThrowExpression, ParserError> Parser::parseThrowExpression(_Page* _rp, _
     }
     Position* end = lexer->getPosition(_p);
     ThrowExpression* ret = new(_rp) ThrowExpression(error, arguments, new(_rp) Position(start), new(_rp) Position(end));
-    if (error != nullptr)
-        error->parent = ret;
+    error->parent = ret;
     if (arguments != nullptr)
         arguments->parent = ret;
     return _Result<ThrowExpression, ParserError>(ret);
