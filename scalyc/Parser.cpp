@@ -3878,7 +3878,7 @@ _Result<TypeInheritanceClause, ParserError> Parser::parseTypeInheritanceClause(_
     if (successExtends1)
         lexer->advance();
     else
-        return _Result<TypeInheritanceClause, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_punctuationExpected(new(_ep) Position(startExtends1), new(_ep) String(colon))));
+        return _Result<TypeInheritanceClause, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_keywordExpected(new(_ep) Position(startExtends1), new(_ep) String(extendsKeyword))));
     auto _inheritances_result = parseInheritanceList(_rp, _ep);
     _Vector<Inheritance>* inheritances = nullptr;
     if (_inheritances_result.succeeded()) {
