@@ -44,8 +44,8 @@ public:
 
 class Identifier : public Token {
 public:
-    Identifier(String* name);
-    String* name;
+    Identifier(string* name);
+    string* name;
 
     virtual bool _isIdentifier();
 };
@@ -61,39 +61,39 @@ public:
 
 class StringLiteral : public Literal {
 public:
-    StringLiteral(String* theString);
-    String* string;
+    StringLiteral(string* theString);
+    string* value;
 
     virtual bool _isStringLiteral();
 };
 
 class CharacterLiteral : public Literal {
 public:
-    CharacterLiteral(String* theString);
-    String* value;
+    CharacterLiteral(string* theString);
+    string* value;
 
     virtual bool _isCharacterLiteral();
 };
 
 class NumericLiteral : public Literal {
 public:
-    NumericLiteral(String* theValue);
-    String* value;
+    NumericLiteral(string* theValue);
+    string* value;
 
     virtual bool _isNumericLiteral();
 };
 
 class Punctuation : public Token {
 public:
-    Punctuation(String* theSign);
-    String* sign;
+    Punctuation(string* theSign);
+    string* sign;
 
     virtual bool _isPunctuation();
 };
 
 class Operator : public Token {
 public:
-    String* operation;
+    string* operation;
 
     virtual bool _isOperator();
     virtual bool _isPrefixOperator();
@@ -103,21 +103,21 @@ public:
 
 class PrefixOperator : public Operator {
 public:
-    PrefixOperator(String* theOperation);
+    PrefixOperator(string* theOperation);
 
     virtual bool _isPrefixOperator();
 };
 
 class BinaryOperator : public Operator {
 public:
-    BinaryOperator(String* theOperation);
+    BinaryOperator(string* theOperation);
 
     virtual bool _isBinaryOperator();
 };
 
 class PostfixOperator : public Operator {
 public:
-    PostfixOperator(String* theOperation);
+    PostfixOperator(string* theOperation);
 
     virtual bool _isPostfixOperator();
 };
@@ -126,14 +126,14 @@ class Lexer : public Object {
 public:
     Token* token;
     bool whitespaceSkipped;
-    String* text;
+    string* text;
     size_t position;
     size_t end;
     size_t previousLine;
     size_t previousColumn;
     size_t line;
     size_t column;
-    Lexer(String* theText);
+    Lexer(string* theText);
     virtual void advance();
     virtual Identifier* scanIdentifier(_Page* _rp);
     virtual Operator* scanOperator(_Page* _rp, bool includeDots);
@@ -143,14 +143,14 @@ public:
     virtual bool skipWhitespace();
     virtual void handleSingleLineComment();
     virtual void handleMultiLineComment();
-    virtual bool parseKeyword(String* fixedString);
-    virtual String* parseIdentifier(_Page* _rp);
-    virtual bool parsePunctuation(String* fixedString);
-    virtual String* parseOperator(_Page* _rp);
+    virtual bool parseKeyword(string* fixedString);
+    virtual string* parseIdentifier(_Page* _rp);
+    virtual bool parsePunctuation(string* fixedString);
+    virtual string* parseOperator(_Page* _rp);
     virtual Literal* parseLiteral(_Page* _rp);
-    virtual String* parsePrefixOperator(_Page* _rp);
-    virtual String* parseBinaryOperator(_Page* _rp);
-    virtual String* parsePostfixOperator(_Page* _rp);
+    virtual string* parsePrefixOperator(_Page* _rp);
+    virtual string* parseBinaryOperator(_Page* _rp);
+    virtual string* parsePostfixOperator(_Page* _rp);
     virtual bool isAtEnd();
     virtual Position* getPosition(_Page* _rp);
     virtual Position* getPreviousPosition(_Page* _rp);

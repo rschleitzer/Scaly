@@ -6,7 +6,7 @@ namespace scalyc {
 
 class CppVisitor : public SyntaxVisitor {
 public:
-    String* moduleName;
+    string* moduleName;
     VarString* sourceFile;
     VarString* headerFile;
     CppModule* module;
@@ -15,7 +15,7 @@ public:
     _Array<CppModule>* modules;
     CppProgram* output;
     _Array<Inherits>* inherits;
-    _Array<String>* classes;
+    _Array<string>* classes;
     size_t headerIndentLevel;
     size_t sourceIndentLevel;
     bool firstParameter;
@@ -84,8 +84,8 @@ public:
     virtual bool openParameterClause(ParameterClause* parameterClause);
     virtual void closeParameterClause(ParameterClause* parameterClause);
     virtual bool openConstParameter(ConstParameter* constParameter);
-    virtual void writeParameter(String* name, Type* parameterType);
-    virtual bool isClass(String* name);
+    virtual void writeParameter(string* name, Type* parameterType);
+    virtual bool isClass(string* name);
     virtual void closeConstParameter(ConstParameter* constParameter);
     virtual bool openVarParameter(VarParameter* varParameter);
     virtual void closeVarParameter(VarParameter* varParameter);
@@ -101,8 +101,8 @@ public:
     virtual void closeClassBody(ClassBody* classBody);
     virtual void indentHeader();
     virtual void indentSource();
-    virtual void collectDerivedClasses(_Array<String>* derivedClasses, String* className);
-    virtual void appendDerivedClasses(_Array<String>* derivedClasses, _Array<String>* inheritors);
+    virtual void collectDerivedClasses(_Array<string>* derivedClasses, string* className);
+    virtual void appendDerivedClasses(_Array<string>* derivedClasses, _Array<string>* inheritors);
     virtual bool openGenericArgumentClause(GenericArgumentClause* genericArgumentClause);
     virtual void closeGenericArgumentClause(GenericArgumentClause* genericArgumentClause);
     virtual void visitGenericParameter(GenericParameter* genericParameter);
@@ -118,11 +118,11 @@ public:
     virtual bool inInitializer(SyntaxNode* node);
     virtual bool inReturn(SyntaxNode* node);
     virtual bool inThrow(SyntaxNode* node);
-    virtual String* getMemberIfCreatingObject(_Page* _rp, Assignment* assignment);
-    virtual String* getFunctionName(_Page* _rp, Assignment* assignment);
-    virtual bool isCreatingObject(String* functionName, SyntaxNode* node);
+    virtual string* getMemberIfCreatingObject(_Page* _rp, Assignment* assignment);
+    virtual string* getFunctionName(_Page* _rp, Assignment* assignment);
+    virtual bool isCreatingObject(string* functionName, SyntaxNode* node);
     virtual ClassDeclaration* getClassDeclaration(SyntaxNode* node);
-    virtual bool isVariableMember(String* memberName, ClassDeclaration* classDeclaration);
+    virtual bool isVariableMember(string* memberName, ClassDeclaration* classDeclaration);
     virtual void closeAssignment(Assignment* assignment);
     virtual bool openTypeQuery(TypeQuery* typeQuery);
     virtual void closeTypeQuery(TypeQuery* typeQuery);
@@ -130,7 +130,7 @@ public:
     virtual void closeTypeCast(TypeCast* typeCast);
     virtual bool openCatchClause(CatchClause* catchClause);
     virtual IdentifierExpression* getIdentifierExpression(PostfixExpression* postfixExpression);
-    virtual String* getErrorType(CatchClause* catchClause);
+    virtual string* getErrorType(CatchClause* catchClause);
     virtual void closeCatchClause(CatchClause* catchClause);
     virtual bool openWildCardCatchPattern(WildCardCatchPattern* wildCardCatchPattern);
     virtual void closeWildCardCatchPattern(WildCardCatchPattern* wildCardCatchPattern);
@@ -176,8 +176,8 @@ public:
     virtual bool openThrowExpression(ThrowExpression* throwExpression);
     virtual bool inWildcardCatchClause(ThrowExpression* throwExpression);
     virtual CatchClause* getCatchClause(SyntaxNode* syntaxNode);
-    virtual String* getReturnType(_Page* _rp, SyntaxNode* syntaxNode);
-    virtual String* getThrownType(_Page* _rp, SyntaxNode* syntaxNode);
+    virtual string* getReturnType(_Page* _rp, SyntaxNode* syntaxNode);
+    virtual string* getThrownType(_Page* _rp, SyntaxNode* syntaxNode);
     virtual bool returnsArray(SyntaxNode* syntaxNode);
     virtual FunctionDeclaration* getFunctionDeclaration(SyntaxNode* syntaxNode);
     virtual void closeThrowExpression(ThrowExpression* throwExpression);
@@ -239,7 +239,7 @@ public:
     virtual void buildProjectFileString(Program* program);
     virtual void collectInheritances(Program* program);
     virtual void collectInheritancesInCompilationUnit(CompilationUnit* compilationUnit);
-    virtual void registerInheritance(String* className, String* baseName);
+    virtual void registerInheritance(string* className, string* baseName);
 
     virtual bool _isCppVisitor();
 };

@@ -75,7 +75,7 @@ class "(id syntax-node)" extends "(if (base syntax-node) (base syntax-node) "Syn
 "    let "(property content)": "
             (case (type content)
                 (("syntax") ($ (link content)(if (multiple? content)"[]" "")))
-                (("identifier" "operator" "prefixoperator" "binaryoperator" "postfixoperator") "String")
+                (("identifier" "operator" "prefixoperator" "binaryoperator" "postfixoperator") "string")
                 (("literal") "Literal")
                 (("keyword" "punctuation") "bool")
             )
@@ -83,7 +83,7 @@ class "(id syntax-node)" extends "(if (base syntax-node) (base syntax-node) "Syn
 "           )"")
         )))
         (if (top? syntax-node)
-"    let fileName: String
+"    let fileName: string
 "
         "")
 "}
@@ -100,7 +100,7 @@ class "(id syntax-node)" extends "(if (base syntax-node) (base syntax-node) "Syn
 (define (property-declaration content)
     (case (type content)
         (("syntax") ($ (if (multiple? content)"_Vector<" "")(link content)(if (multiple? content)">" "")"* "(property content)))
-        (("identifier" "operator" "prefixoperator" "binaryoperator" "postfixoperator") ($ "String* "(property content)))
+        (("identifier" "operator" "prefixoperator" "binaryoperator" "postfixoperator") ($ "string* "(property content)))
         (("literal") ($ "Literal* "(property content)))
         (("keyword" "punctuation") ($ "bool "(property content)))))
 
@@ -114,7 +114,7 @@ class "(id syntax-node)" extends "(if (base syntax-node) (base syntax-node) "Syn
 (define (scaly-property-declaration content)
     (case (type content)
         (("syntax") ($ (property content)": "(link content)(if (multiple? content)"[]" "")))
-        (("identifier" "operator" "prefixoperator" "binaryoperator" "postfixoperator") ($ (property content)": String"))
+        (("identifier" "operator" "prefixoperator" "binaryoperator" "postfixoperator") ($ (property content)": string"))
         (("literal") ($ (property content)": Literal"))
         (("keyword" "punctuation") ($ (property content)": bool"))))
 

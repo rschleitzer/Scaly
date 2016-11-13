@@ -7,7 +7,7 @@ public:
     VarString();
     VarString(const char* theString);
     VarString(VarString* theString);
-    VarString(String* theString);
+    VarString(string* theString);
     VarString(size_t theLength);
     VarString(size_t theLength, size_t theCapacity);
     VarString(char c);
@@ -17,10 +17,10 @@ public:
     void append(char c);
     void append(const char* theString);
     void append(VarString* theString);
-    void append(String* theString);
+    void append(string* theString);
     bool operator == (const char* theString);
     bool equals(const char* theString);
-    bool equals(String* theString);
+    bool equals(string* theString);
     bool operator != (const char* theString);
     bool operator == (const VarString& theString);
     bool operator != (const VarString& theString);
@@ -31,7 +31,7 @@ private:
     bool extend(size_t size);
     void allocate(size_t size);
 
-    char* string;
+    char* buffer;
     size_t length;
     size_t capacity;
 };

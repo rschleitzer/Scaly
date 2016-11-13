@@ -111,7 +111,7 @@ bool SyntaxNode::_isIndexedType() { return false; }
 bool SyntaxNode::_isTypeInheritanceClause() { return false; }
 bool SyntaxNode::_isInheritance() { return false; }
 
-Program::Program(String* name, String* directory, _Vector<CompilationUnit>* compilationUnits) {
+Program::Program(string* name, string* directory, _Vector<CompilationUnit>* compilationUnits) {
     start = new(getPage()) Position(0, 0);
     end = new(getPage()) Position(0, 0);
     this->name = name;
@@ -311,7 +311,7 @@ void FunctionDeclaration::accept(SyntaxVisitor* visitor) {
 
 bool FunctionDeclaration::_isFunctionDeclaration() { return true; }
 
-EnumDeclaration::EnumDeclaration(String* name, _Vector<EnumMember>* members, Position* start, Position* end) {
+EnumDeclaration::EnumDeclaration(string* name, _Vector<EnumMember>* members, Position* start, Position* end) {
     this->start = start;
     this->end = end;
     this->name = name;
@@ -334,7 +334,7 @@ void EnumDeclaration::accept(SyntaxVisitor* visitor) {
 
 bool EnumDeclaration::_isEnumDeclaration() { return true; }
 
-ClassDeclaration::ClassDeclaration(String* name, GenericArgumentClause* genericArgumentClause, TypeInheritanceClause* typeInheritanceClause, ClassBody* body, Position* start, Position* end) {
+ClassDeclaration::ClassDeclaration(string* name, GenericArgumentClause* genericArgumentClause, TypeInheritanceClause* typeInheritanceClause, ClassBody* body, Position* start, Position* end) {
     this->start = start;
     this->end = end;
     this->name = name;
@@ -447,7 +447,7 @@ void PathIdentifier::accept(SyntaxVisitor* visitor) {
 
 bool PathIdentifier::_isPathIdentifier() { return true; }
 
-PathItem::PathItem(String* name, Position* start, Position* end) {
+PathItem::PathItem(string* name, Position* start, Position* end) {
     this->start = start;
     this->end = end;
     this->name = name;
@@ -568,7 +568,7 @@ bool FunctionName::_isFunctionName() { return true; }
 
 bool FunctionName::_isIdentifierFunction() { return false; }
 
-IdentifierFunction::IdentifierFunction(String* name, Position* start, Position* end) {
+IdentifierFunction::IdentifierFunction(string* name, Position* start, Position* end) {
     this->start = start;
     this->end = end;
     this->name = name;
@@ -660,7 +660,7 @@ bool Parameter::_isParameter() { return true; }
 bool Parameter::_isConstParameter() { return false; }
 bool Parameter::_isVarParameter() { return false; }
 
-ConstParameter::ConstParameter(String* name, Type* parameterType, Position* start, Position* end) {
+ConstParameter::ConstParameter(string* name, Type* parameterType, Position* start, Position* end) {
     this->start = start;
     this->end = end;
     this->name = name;
@@ -676,7 +676,7 @@ void ConstParameter::accept(SyntaxVisitor* visitor) {
 
 bool ConstParameter::_isConstParameter() { return true; }
 
-VarParameter::VarParameter(String* name, Type* parameterType, Position* start, Position* end) {
+VarParameter::VarParameter(string* name, Type* parameterType, Position* start, Position* end) {
     this->start = start;
     this->end = end;
     this->name = name;
@@ -734,7 +734,7 @@ void EnumMember::accept(SyntaxVisitor* visitor) {
 
 bool EnumMember::_isEnumMember() { return true; }
 
-EnumCase::EnumCase(String* name, Position* start, Position* end) {
+EnumCase::EnumCase(string* name, Position* start, Position* end) {
     this->start = start;
     this->end = end;
     this->name = name;
@@ -805,7 +805,7 @@ void GenericArgumentClause::accept(SyntaxVisitor* visitor) {
 
 bool GenericArgumentClause::_isGenericArgumentClause() { return true; }
 
-GenericParameter::GenericParameter(String* typeName, Position* start, Position* end) {
+GenericParameter::GenericParameter(string* typeName, Position* start, Position* end) {
     this->start = start;
     this->end = end;
     this->typeName = typeName;
@@ -832,7 +832,7 @@ void ClassMember::accept(SyntaxVisitor* visitor) {
 
 bool ClassMember::_isClassMember() { return true; }
 
-PrefixExpression::PrefixExpression(String* prefixOperator, PostfixExpression* expression, Position* start, Position* end) {
+PrefixExpression::PrefixExpression(string* prefixOperator, PostfixExpression* expression, Position* start, Position* end) {
     this->start = start;
     this->end = end;
     this->prefixOperator = prefixOperator;
@@ -882,7 +882,7 @@ bool BinaryOp::_isAssignment() { return false; }
 bool BinaryOp::_isTypeQuery() { return false; }
 bool BinaryOp::_isTypeCast() { return false; }
 
-BinaryOperation::BinaryOperation(String* binaryOperator, PrefixExpression* expression, Position* start, Position* end) {
+BinaryOperation::BinaryOperation(string* binaryOperator, PrefixExpression* expression, Position* start, Position* end) {
     this->start = start;
     this->end = end;
     this->binaryOperator = binaryOperator;
@@ -986,7 +986,7 @@ void WildCardCatchPattern::accept(SyntaxVisitor* visitor) {
 
 bool WildCardCatchPattern::_isWildCardCatchPattern() { return true; }
 
-IdentifierCatchPattern::IdentifierCatchPattern(String* name, ExplicitMemberExpression* member, Position* start, Position* end) {
+IdentifierCatchPattern::IdentifierCatchPattern(string* name, ExplicitMemberExpression* member, Position* start, Position* end) {
     this->start = start;
     this->end = end;
     this->name = name;
@@ -1013,7 +1013,7 @@ bool Postfix::_isFunctionCall() { return false; }
 bool Postfix::_isExplicitMemberExpression() { return false; }
 bool Postfix::_isSubscript() { return false; }
 
-OperatorPostfix::OperatorPostfix(String* postfixOperator, Position* start, Position* end) {
+OperatorPostfix::OperatorPostfix(string* postfixOperator, Position* start, Position* end) {
     this->start = start;
     this->end = end;
     this->postfixOperator = postfixOperator;
@@ -1146,7 +1146,7 @@ bool PrimaryExpression::_isSuperDot() { return false; }
 bool PrimaryExpression::_isSuperSubscript() { return false; }
 bool PrimaryExpression::_isNullExpression() { return false; }
 
-IdentifierExpression::IdentifierExpression(String* name, Position* start, Position* end) {
+IdentifierExpression::IdentifierExpression(string* name, Position* start, Position* end) {
     this->start = start;
     this->end = end;
     this->name = name;
@@ -1582,7 +1582,7 @@ void WildcardPattern::accept(SyntaxVisitor* visitor) {
 
 bool WildcardPattern::_isWildcardPattern() { return true; }
 
-IdentifierPattern::IdentifierPattern(String* identifier, TypeAnnotation* annotationForType, Position* start, Position* end) {
+IdentifierPattern::IdentifierPattern(string* identifier, TypeAnnotation* annotationForType, Position* start, Position* end) {
     this->start = start;
     this->end = end;
     this->identifier = identifier;
@@ -1711,7 +1711,7 @@ void SuperConstructor::accept(SyntaxVisitor* visitor) {
 
 bool SuperConstructor::_isSuperConstructor() { return true; }
 
-SuperMember::SuperMember(String* name, Position* start, Position* end) {
+SuperMember::SuperMember(string* name, Position* start, Position* end) {
     this->start = start;
     this->end = end;
     this->name = name;
@@ -1723,7 +1723,7 @@ void SuperMember::accept(SyntaxVisitor* visitor) {
 
 bool SuperMember::_isSuperMember() { return true; }
 
-Type::Type(String* name, Subtype* subType, _Vector<TypePostfix>* postfixes, Position* start, Position* end) {
+Type::Type(string* name, Subtype* subType, _Vector<TypePostfix>* postfixes, Position* start, Position* end) {
     this->start = start;
     this->end = end;
     this->name = name;

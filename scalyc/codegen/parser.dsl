@@ -1,14 +1,14 @@
 (define (parser) ($
 
 "class Parser {
-    constructor(theFileName: String, text: String) {
+    constructor(theFileName: string, text: string) {
         lexer = new Lexer(text)
         fileName = theFileName
 "   (apply-to-selected-children "keyword" (lambda (keyword) ($
-"        "(name keyword)" = new String(\""(id keyword)"\")
+"        "(name keyword)" = new string(\""(id keyword)"\")
 "   )))
     (apply-to-selected-children "punctuation" (lambda (punctuation) ($
-"        "(id punctuation)" = new String(\""(value punctuation)"\")
+"        "(id punctuation)" = new string(\""(value punctuation)"\")
 "   )))
 "    }
 "
@@ -62,7 +62,7 @@
 "                       ($ "(error)
             throw "(if (string=? (type content) "syntax") "error" ($ "ParserError."
                 (case (type content) (("keyword") "Keyword") (("punctuation") "Punctuation")(("identifier") "Identifier")(("literal") "Literal")(("prefixoperator" "binaryoperator" "postfixoperator") "Operator"))
-                "Expected(start"(case (type content) (("keyword" "punctuation") ($ ", new String("((if (string=? (type content) "keyword") name-of-link link) content)")"))(else ""))"))"))"
+                "Expected(start"(case (type content) (("keyword" "punctuation") ($ ", new string("((if (string=? (type content) "keyword") name-of-link link) content)")"))(else ""))"))"))"
 "                       )
                     )
                            (if (top? syntax) ($
@@ -78,7 +78,7 @@
                             (if (optional? content) "" ($
 "        mutable start"(if (property content) (string-firstchar-upcase (property content)) ($ (string-firstchar-upcase (link content))(number->string (child-number content))))": Position = lexer.getPreviousPosition()
 "                           ))
-"        let "(case (type content) (("keyword" "punctuation") ($ "success"(if (property content) (string-firstchar-upcase (property content)) ($ (string-firstchar-upcase (link content))(number->string (child-number content))))": bool"))(("literal") "literal: Literal?")(else ($ (property content)": String?")))
+"        let "(case (type content) (("keyword" "punctuation") ($ "success"(if (property content) (string-firstchar-upcase (property content)) ($ (string-firstchar-upcase (link content))(number->string (child-number content))))": bool"))(("literal") "literal: Literal?")(else ($ (property content)": string?")))
             " = lexer.parse"
             (case (type content)(("prefixoperator") "PrefixOperator")(("binaryoperator") "BinaryOperator")(("postfixoperator") "PostfixOperator")(("identifier") "Identifier")(("literal") "Literal")(("keyword") "Keyword")(("punctuation") "Punctuation"))
             "("(case (type content)(("keyword") (name-of-link content)) (("punctuation") (link content)) (else ""))")
@@ -88,7 +88,7 @@
 "        else
             throw "
         (case (type content) (("keyword") "keyword") (("punctuation") "punctuation")(("identifier") "identifier")(("literal") "literal")(("prefixoperator" "binaryoperator" "postfixoperator") "operator"))
-        "Expected(new Position(start"(if (property content) (string-firstchar-upcase (property content)) ($ (string-firstchar-upcase (link content))(number->string (child-number content))))(case (type content) (("keyword" "punctuation") ($ "), new String("((if (string=? (type content) "keyword") name-of-link link) content)")"))(else ")"))")
+        "Expected(new Position(start"(if (property content) (string-firstchar-upcase (property content)) ($ (string-firstchar-upcase (link content))(number->string (child-number content))))(case (type content) (("keyword" "punctuation") ($ "), new string("((if (string=? (type content) "keyword") name-of-link link) content)")"))(else ")"))")
 
 "                           ))
                         )
@@ -132,7 +132,7 @@
         return lexer.isAtEnd()
     }
 
-    function isIdentifier(id: String): bool {"
+    function isIdentifier(id: string): bool {"
    (apply-to-selected-children "keyword" (lambda (keyword) ($
 "
         if id.equals("(name keyword)")
@@ -143,13 +143,13 @@
     }
 
     mutable lexer: Lexer
-    let fileName: String
+    let fileName: string
 
 "   (apply-to-selected-children "keyword" (lambda (keyword) ($
-"    let "(name keyword)": String
+"    let "(name keyword)": string
 "   )))
     (apply-to-selected-children "punctuation" (lambda (punctuation) ($
-"    let "(id punctuation)": String
+"    let "(id punctuation)": string
 "   )))
 "}
 "

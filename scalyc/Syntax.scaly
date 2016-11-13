@@ -6,7 +6,7 @@ class SyntaxNode {
 
 class Program extends SyntaxNode {
 
-    constructor(name: String, directory: String, compilationUnits: CompilationUnit[]) {
+    constructor(name: string, directory: string, compilationUnits: CompilationUnit[]) {
         start = new Position(0, 0)
         end = new Position(0, 0)
         this.name = name
@@ -25,8 +25,8 @@ class Program extends SyntaxNode {
         visitor.closeProgram(this)
     }
 
-    let name: String?
-    let directory: String?
+    let name: string?
+    let directory: string?
     let compilationUnits: CompilationUnit[]?
 }
 
@@ -49,7 +49,7 @@ class CompilationUnit extends SyntaxNode {
     }
 
     let statements: TerminatedStatement[]?
-    let fileName: String
+    let fileName: string
 }
 
 class TerminatedStatement extends SyntaxNode {
@@ -202,7 +202,7 @@ class FunctionDeclaration extends Declaration {
 
 class EnumDeclaration extends Declaration {
 
-    constructor(name: String, members: EnumMember[], start: Position, end: Position) {
+    constructor(name: string, members: EnumMember[], start: Position, end: Position) {
         this.start = start;
         this.end = end;
         this.name = name;
@@ -219,13 +219,13 @@ class EnumDeclaration extends Declaration {
         visitor.closeEnumDeclaration(this)
     }
 
-    let name: String?
+    let name: string?
     let members: EnumMember[]?
 }
 
 class ClassDeclaration extends Declaration {
 
-    constructor(name: String, genericArgumentClause: GenericArgumentClause, typeInheritanceClause: TypeInheritanceClause, body: ClassBody, start: Position, end: Position) {
+    constructor(name: string, genericArgumentClause: GenericArgumentClause, typeInheritanceClause: TypeInheritanceClause, body: ClassBody, start: Position, end: Position) {
         this.start = start;
         this.end = end;
         this.name = name;
@@ -246,7 +246,7 @@ class ClassDeclaration extends Declaration {
         visitor.closeClassDeclaration(this)
     }
 
-    let name: String?
+    let name: string?
     let genericArgumentClause: GenericArgumentClause?
     let typeInheritanceClause: TypeInheritanceClause?
     let body: ClassBody?
@@ -348,7 +348,7 @@ class PathIdentifier extends SyntaxNode {
 
 class PathItem extends SyntaxNode {
 
-    constructor(name: String, start: Position, end: Position) {
+    constructor(name: string, start: Position, end: Position) {
         this.start = start;
         this.end = end;
         this.name = name;
@@ -358,7 +358,7 @@ class PathItem extends SyntaxNode {
         visitor.visitPathItem(this)
     }
 
-    let name: String?
+    let name: string?
 }
 
 class Initializer extends SyntaxNode {
@@ -485,7 +485,7 @@ class FunctionName extends SyntaxNode {
 
 class IdentifierFunction extends FunctionName {
 
-    constructor(name: String, start: Position, end: Position) {
+    constructor(name: string, start: Position, end: Position) {
         this.start = start;
         this.end = end;
         this.name = name;
@@ -495,7 +495,7 @@ class IdentifierFunction extends FunctionName {
         visitor.visitIdentifierFunction(this)
     }
 
-    let name: String?
+    let name: string?
 }
 
 class FunctionSignature extends SyntaxNode {
@@ -589,7 +589,7 @@ class Parameter extends SyntaxNode {
 
 class ConstParameter extends Parameter {
 
-    constructor(name: String, parameterType: Type, start: Position, end: Position) {
+    constructor(name: string, parameterType: Type, start: Position, end: Position) {
         this.start = start;
         this.end = end;
         this.name = name;
@@ -603,13 +603,13 @@ class ConstParameter extends Parameter {
         visitor.closeConstParameter(this)
     }
 
-    let name: String?
+    let name: string?
     let parameterType: Type?
 }
 
 class VarParameter extends Parameter {
 
-    constructor(name: String, parameterType: Type, start: Position, end: Position) {
+    constructor(name: string, parameterType: Type, start: Position, end: Position) {
         this.start = start;
         this.end = end;
         this.name = name;
@@ -623,7 +623,7 @@ class VarParameter extends Parameter {
         visitor.closeVarParameter(this)
     }
 
-    let name: String?
+    let name: string?
     let parameterType: Type?
 }
 
@@ -675,7 +675,7 @@ class EnumMember extends SyntaxNode {
 
 class EnumCase extends SyntaxNode {
 
-    constructor(name: String, start: Position, end: Position) {
+    constructor(name: string, start: Position, end: Position) {
         this.start = start;
         this.end = end;
         this.name = name;
@@ -685,7 +685,7 @@ class EnumCase extends SyntaxNode {
         visitor.visitEnumCase(this)
     }
 
-    let name: String?
+    let name: string?
 }
 
 class AdditionalCase extends SyntaxNode {
@@ -750,7 +750,7 @@ class GenericArgumentClause extends SyntaxNode {
 
 class GenericParameter extends SyntaxNode {
 
-    constructor(typeName: String, start: Position, end: Position) {
+    constructor(typeName: string, start: Position, end: Position) {
         this.start = start;
         this.end = end;
         this.typeName = typeName;
@@ -760,7 +760,7 @@ class GenericParameter extends SyntaxNode {
         visitor.visitGenericParameter(this)
     }
 
-    let typeName: String?
+    let typeName: string?
 }
 
 class ClassMember extends SyntaxNode {
@@ -783,7 +783,7 @@ class ClassMember extends SyntaxNode {
 
 class PrefixExpression extends SyntaxNode {
 
-    constructor(prefixOperator: String, expression: PostfixExpression, start: Position, end: Position) {
+    constructor(prefixOperator: string, expression: PostfixExpression, start: Position, end: Position) {
         this.start = start;
         this.end = end;
         this.prefixOperator = prefixOperator;
@@ -797,7 +797,7 @@ class PrefixExpression extends SyntaxNode {
         visitor.closePrefixExpression(this)
     }
 
-    let prefixOperator: String?
+    let prefixOperator: string?
     let expression: PostfixExpression?
 }
 
@@ -834,7 +834,7 @@ class BinaryOp extends SyntaxNode {
 
 class BinaryOperation extends BinaryOp {
 
-    constructor(binaryOperator: String, expression: PrefixExpression, start: Position, end: Position) {
+    constructor(binaryOperator: string, expression: PrefixExpression, start: Position, end: Position) {
         this.start = start;
         this.end = end;
         this.binaryOperator = binaryOperator;
@@ -848,7 +848,7 @@ class BinaryOperation extends BinaryOp {
         visitor.closeBinaryOperation(this)
     }
 
-    let binaryOperator: String?
+    let binaryOperator: string?
     let expression: PrefixExpression?
 }
 
@@ -958,7 +958,7 @@ class WildCardCatchPattern extends CatchPattern {
 
 class IdentifierCatchPattern extends CatchPattern {
 
-    constructor(name: String, member: ExplicitMemberExpression, start: Position, end: Position) {
+    constructor(name: string, member: ExplicitMemberExpression, start: Position, end: Position) {
         this.start = start;
         this.end = end;
         this.name = name;
@@ -973,7 +973,7 @@ class IdentifierCatchPattern extends CatchPattern {
         visitor.closeIdentifierCatchPattern(this)
     }
 
-    let name: String?
+    let name: string?
     let member: ExplicitMemberExpression?
 }
 
@@ -986,7 +986,7 @@ class Postfix extends SyntaxNode {
 
 class OperatorPostfix extends Postfix {
 
-    constructor(postfixOperator: String, start: Position, end: Position) {
+    constructor(postfixOperator: string, start: Position, end: Position) {
         this.start = start;
         this.end = end;
         this.postfixOperator = postfixOperator;
@@ -996,7 +996,7 @@ class OperatorPostfix extends Postfix {
         visitor.visitOperatorPostfix(this)
     }
 
-    let postfixOperator: String?
+    let postfixOperator: string?
 }
 
 class FunctionCall extends Postfix {
@@ -1114,7 +1114,7 @@ class PrimaryExpression extends SyntaxNode {
 
 class IdentifierExpression extends PrimaryExpression {
 
-    constructor(name: String, start: Position, end: Position) {
+    constructor(name: string, start: Position, end: Position) {
         this.start = start;
         this.end = end;
         this.name = name;
@@ -1124,7 +1124,7 @@ class IdentifierExpression extends PrimaryExpression {
         visitor.visitIdentifierExpression(this)
     }
 
-    let name: String?
+    let name: string?
 }
 
 class LiteralExpression extends PrimaryExpression {
@@ -1604,7 +1604,7 @@ class WildcardPattern extends Pattern {
 
 class IdentifierPattern extends Pattern {
 
-    constructor(identifier: String, annotationForType: TypeAnnotation, start: Position, end: Position) {
+    constructor(identifier: string, annotationForType: TypeAnnotation, start: Position, end: Position) {
         this.start = start;
         this.end = end;
         this.identifier = identifier;
@@ -1619,7 +1619,7 @@ class IdentifierPattern extends Pattern {
         visitor.closeIdentifierPattern(this)
     }
 
-    let identifier: String?
+    let identifier: string?
     let annotationForType: TypeAnnotation?
 }
 
@@ -1743,7 +1743,7 @@ class SuperConstructor extends CommonSuperMember {
 
 class SuperMember extends CommonSuperMember {
 
-    constructor(name: String, start: Position, end: Position) {
+    constructor(name: string, start: Position, end: Position) {
         this.start = start;
         this.end = end;
         this.name = name;
@@ -1753,12 +1753,12 @@ class SuperMember extends CommonSuperMember {
         visitor.visitSuperMember(this)
     }
 
-    let name: String?
+    let name: string?
 }
 
 class Type extends SyntaxNode {
 
-    constructor(name: String, subType: Subtype, postfixes: TypePostfix[], start: Position, end: Position) {
+    constructor(name: string, subType: Subtype, postfixes: TypePostfix[], start: Position, end: Position) {
         this.start = start;
         this.end = end;
         this.name = name;
@@ -1778,7 +1778,7 @@ class Type extends SyntaxNode {
         visitor.closeType(this)
     }
 
-    let name: String?
+    let name: string?
     let subType: Subtype?
     let postfixes: TypePostfix[]?
 }

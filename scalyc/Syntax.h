@@ -122,10 +122,10 @@ public:
 
 class Program : public SyntaxNode {
 public:
-    Program(String* name, String* directory, _Vector<CompilationUnit>* compilationUnits);
+    Program(string* name, string* directory, _Vector<CompilationUnit>* compilationUnits);
     virtual void accept(SyntaxVisitor* visitor);
-    String* name;
-    String* directory;
+    string* name;
+    string* directory;
     _Vector<CompilationUnit>* compilationUnits;
 
     virtual bool _isProgram();
@@ -136,7 +136,7 @@ public:
     CompilationUnit(_Vector<TerminatedStatement>* statements, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
     _Vector<TerminatedStatement>* statements;
-    String* fileName;
+    string* fileName;
 
     virtual bool _isCompilationUnit();
 };
@@ -244,9 +244,9 @@ public:
 
 class EnumDeclaration : public Declaration {
 public:
-    EnumDeclaration(String* name, _Vector<EnumMember>* members, Position* start, Position* end);
+    EnumDeclaration(string* name, _Vector<EnumMember>* members, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
-    String* name;
+    string* name;
     _Vector<EnumMember>* members;
 
     virtual bool _isEnumDeclaration();
@@ -254,9 +254,9 @@ public:
 
 class ClassDeclaration : public Declaration {
 public:
-    ClassDeclaration(String* name, GenericArgumentClause* genericArgumentClause, TypeInheritanceClause* typeInheritanceClause, ClassBody* body, Position* start, Position* end);
+    ClassDeclaration(string* name, GenericArgumentClause* genericArgumentClause, TypeInheritanceClause* typeInheritanceClause, ClassBody* body, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
-    String* name;
+    string* name;
     GenericArgumentClause* genericArgumentClause;
     TypeInheritanceClause* typeInheritanceClause;
     ClassBody* body;
@@ -306,9 +306,9 @@ public:
 
 class PathItem : public SyntaxNode {
 public:
-    PathItem(String* name, Position* start, Position* end);
+    PathItem(string* name, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
-    String* name;
+    string* name;
 
     virtual bool _isPathItem();
 };
@@ -386,9 +386,9 @@ public:
 
 class IdentifierFunction : public FunctionName {
 public:
-    IdentifierFunction(String* name, Position* start, Position* end);
+    IdentifierFunction(string* name, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
-    String* name;
+    string* name;
 
     virtual bool _isIdentifierFunction();
 };
@@ -442,9 +442,9 @@ public:
 
 class ConstParameter : public Parameter {
 public:
-    ConstParameter(String* name, Type* parameterType, Position* start, Position* end);
+    ConstParameter(string* name, Type* parameterType, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
-    String* name;
+    string* name;
     Type* parameterType;
 
     virtual bool _isConstParameter();
@@ -452,9 +452,9 @@ public:
 
 class VarParameter : public Parameter {
 public:
-    VarParameter(String* name, Type* parameterType, Position* start, Position* end);
+    VarParameter(string* name, Type* parameterType, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
-    String* name;
+    string* name;
     Type* parameterType;
 
     virtual bool _isVarParameter();
@@ -482,9 +482,9 @@ public:
 
 class EnumCase : public SyntaxNode {
 public:
-    EnumCase(String* name, Position* start, Position* end);
+    EnumCase(string* name, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
-    String* name;
+    string* name;
 
     virtual bool _isEnumCase();
 };
@@ -518,9 +518,9 @@ public:
 
 class GenericParameter : public SyntaxNode {
 public:
-    GenericParameter(String* typeName, Position* start, Position* end);
+    GenericParameter(string* typeName, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
-    String* typeName;
+    string* typeName;
 
     virtual bool _isGenericParameter();
 };
@@ -536,9 +536,9 @@ public:
 
 class PrefixExpression : public SyntaxNode {
 public:
-    PrefixExpression(String* prefixOperator, PostfixExpression* expression, Position* start, Position* end);
+    PrefixExpression(string* prefixOperator, PostfixExpression* expression, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
-    String* prefixOperator;
+    string* prefixOperator;
     PostfixExpression* expression;
 
     virtual bool _isPrefixExpression();
@@ -567,9 +567,9 @@ public:
 
 class BinaryOperation : public BinaryOp {
 public:
-    BinaryOperation(String* binaryOperator, PrefixExpression* expression, Position* start, Position* end);
+    BinaryOperation(string* binaryOperator, PrefixExpression* expression, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
-    String* binaryOperator;
+    string* binaryOperator;
     PrefixExpression* expression;
 
     virtual bool _isBinaryOperation();
@@ -633,9 +633,9 @@ public:
 
 class IdentifierCatchPattern : public CatchPattern {
 public:
-    IdentifierCatchPattern(String* name, ExplicitMemberExpression* member, Position* start, Position* end);
+    IdentifierCatchPattern(string* name, ExplicitMemberExpression* member, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
-    String* name;
+    string* name;
     ExplicitMemberExpression* member;
 
     virtual bool _isIdentifierCatchPattern();
@@ -654,9 +654,9 @@ public:
 
 class OperatorPostfix : public Postfix {
 public:
-    OperatorPostfix(String* postfixOperator, Position* start, Position* end);
+    OperatorPostfix(string* postfixOperator, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
-    String* postfixOperator;
+    string* postfixOperator;
 
     virtual bool _isOperatorPostfix();
 };
@@ -741,9 +741,9 @@ public:
 
 class IdentifierExpression : public PrimaryExpression {
 public:
-    IdentifierExpression(String* name, Position* start, Position* end);
+    IdentifierExpression(string* name, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
-    String* name;
+    string* name;
 
     virtual bool _isIdentifierExpression();
 };
@@ -1003,9 +1003,9 @@ public:
 
 class IdentifierPattern : public Pattern {
 public:
-    IdentifierPattern(String* identifier, TypeAnnotation* annotationForType, Position* start, Position* end);
+    IdentifierPattern(string* identifier, TypeAnnotation* annotationForType, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
-    String* identifier;
+    string* identifier;
     TypeAnnotation* annotationForType;
 
     virtual bool _isIdentifierPattern();
@@ -1083,18 +1083,18 @@ public:
 
 class SuperMember : public CommonSuperMember {
 public:
-    SuperMember(String* name, Position* start, Position* end);
+    SuperMember(string* name, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
-    String* name;
+    string* name;
 
     virtual bool _isSuperMember();
 };
 
 class Type : public SyntaxNode {
 public:
-    Type(String* name, Subtype* subType, _Vector<TypePostfix>* postfixes, Position* start, Position* end);
+    Type(string* name, Subtype* subType, _Vector<TypePostfix>* postfixes, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
-    String* name;
+    string* name;
     Subtype* subType;
     _Vector<TypePostfix>* postfixes;
 

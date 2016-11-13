@@ -4,30 +4,30 @@ namespace scaly {
 
 class VarString;
 
-class String : public Object {
+class string : public Object {
 public:
-    String();
-    String(const char c);
-    String(const char* theString);
-    String(String* theString);
-    String(VarString* theString);
-    String(size_t theLength);
+    string();
+    string(const char c);
+    string(const char* theString);
+    string(string* theString);
+    string(VarString* theString);
+    string(size_t theLength);
     char* getNativeString() const;
     size_t getLength();
     char charAt(size_t i);
     bool equals(const char* theString);
     bool notEquals(const char* theString);
-    bool equals(String* theString);
-    bool notEquals(String* theString);
+    bool equals(string* theString);
+    bool notEquals(string* theString);
     bool equals(VarString* theString);
     bool notEquals(VarString* theString);
-    _Array<String>& Split(_Page* _rp, char c);
+    _Array<string>& Split(_Page* _rp, char c);
 
 private:
     // Disable copy constuctor
-    String(const String&);
+    string(const string&);
 
-    char* string;
+    char* buffer;
     size_t length;
 };
 

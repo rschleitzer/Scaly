@@ -2,18 +2,18 @@
 using namespace scaly;
 namespace scalyc {
 
-Options::Options(_Vector<String>* input, String* output, String* dir) {
+Options::Options(_Vector<string>* input, string* output, string* dir) {
     files = input;
     outputName = output;
     directory = dir;
 }
 
-_Result<Options, OptionsError> Options::parseArguments(_Page* _rp, _Page* _ep, _Vector<String>* args) {
+_Result<Options, OptionsError> Options::parseArguments(_Page* _rp, _Page* _ep, _Vector<string>* args) {
     _Region _region; _Page* _p = _region.get();
     size_t length = args->length();
-    String* output = nullptr;
-    String* dir = nullptr;
-    _Array<String>* input = new(_p) _Array<String>();
+    string* output = nullptr;
+    string* dir = nullptr;
+    _Array<string>* input = new(_p) _Array<string>();
     size_t i = 0;
     do {
         if (length < 2 || (*(*args)[i])->charAt(0) != '-') {
@@ -55,7 +55,7 @@ _Result<Options, OptionsError> Options::parseArguments(_Page* _rp, _Page* _ep, _
         return _Result<Options, OptionsError>(new(_ep) OptionsError(_OptionsErrorCode_noOutputOption));
     if (input->length() == 0)
         return _Result<Options, OptionsError>(new(_ep) OptionsError(_OptionsErrorCode_noFilesToCompile));
-    return _Result<Options, OptionsError>(new(_rp) Options(&_Vector<String>::create(_rp, *(input)), output, dir));
+    return _Result<Options, OptionsError>(new(_rp) Options(&_Vector<string>::create(_rp, *(input)), output, dir));
 }
 
 

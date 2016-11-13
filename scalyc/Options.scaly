@@ -1,20 +1,20 @@
 class Options {
 
-    let files: String[]
-    let outputName: String
-    let directory: String
+    let files: string[]
+    let outputName: string
+    let directory: string
 
-    constructor(input: String[], output: String, dir: String) {
+    constructor(input: string[], output: string, dir: string) {
         files = input
         outputName = output
         directory = dir
     }
 
-    static function parseArguments(args: String[]): Options throws OptionsError {
+    static function parseArguments(args: string[]): Options throws OptionsError {
         let length: unsigned = args.length()
-        mutable output: String = null
-        mutable dir: String = null
-        mutable input: String[] = new String[]()
+        mutable output: string = null
+        mutable dir: string = null
+        mutable input: string[] = new string[]()
         mutable i: unsigned = 0
         repeat {
             if length < 2 || (args[i]).charAt(0) != '-' {
@@ -47,7 +47,7 @@ class Options {
         if input.length() == 0
             throw noFilesToCompile
 
-        return new Options(new String[](input), output, dir)
+        return new Options(new string[](input), output, dir)
     }
 }
 

@@ -4,15 +4,15 @@ namespace scalyc {
 
 CompilerError* Compiler::compileFiles(_Page* _ep, Options* options) {
     _Region _region; _Page* _p = _region.get();
-    _Vector<String>* files = options->files;
-    _Array<String>* sources = new(_p) _Array<String>();
-    String* file = nullptr;
+    _Vector<string>* files = options->files;
+    _Array<string>* sources = new(_p) _Array<string>();
+    string* file = nullptr;
     size_t _files_length = files->length();
     for (size_t _i = 0; _i < _files_length; _i++) {
         file = *(*files)[_i];
         {
             auto _source_result = File::readToString(_p, _ep, file);
-            String* source = nullptr;
+            string* source = nullptr;
             if (_source_result.succeeded()) {
                 source = _source_result.getResult();
             }
@@ -28,12 +28,12 @@ CompilerError* Compiler::compileFiles(_Page* _ep, Options* options) {
     }
     _Array<CompilationUnit>* compilationUnits = new(_p) _Array<CompilationUnit>();
     size_t index = 0;
-    String* source = nullptr;
+    string* source = nullptr;
     size_t _sources_length = sources->length();
     for (size_t _i = 0; _i < _sources_length; _i++) {
         source = *(*sources)[_i];
         {
-            String* moduleName = Path::getFileNameWithoutExtension(_p, *(*files)[index]);
+            string* moduleName = Path::getFileNameWithoutExtension(_p, *(*files)[index]);
             auto _compilationUnit_result = parseUnit(_p, _ep, moduleName, source);
             CompilationUnit* compilationUnit = nullptr;
             if (_compilationUnit_result.succeeded()) {
@@ -59,7 +59,7 @@ CompilerError* Compiler::compileFiles(_Page* _ep, Options* options) {
     return nullptr;
 }
 
-_Result<CompilationUnit, ParserError> Compiler::parseUnit(_Page* _rp, _Page* _ep, String* moduleName, String* text) {
+_Result<CompilationUnit, ParserError> Compiler::parseUnit(_Page* _rp, _Page* _ep, string* moduleName, string* text) {
     _Region _region; _Page* _p = _region.get();
     Parser* parser = new(_p) Parser(moduleName, text);
     auto _compilationUnit_result = parser->parseCompilationUnit(_rp, _ep);

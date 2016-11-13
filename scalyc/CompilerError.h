@@ -8,16 +8,16 @@ class CompilerError;
 
 class _CompilerError_fileNotFound : public Object {
 public:
-    _CompilerError_fileNotFound(String* file);
+    _CompilerError_fileNotFound(string* file);
 
-    String* file;
+    string* file;
 };
 
 class _CompilerError_unableToReadFile : public Object {
 public:
-    _CompilerError_unableToReadFile(String* file, FileError* error);
+    _CompilerError_unableToReadFile(string* file, FileError* error);
 
-    String* file;
+    string* file;
     FileError* error;
 };
 
@@ -30,9 +30,9 @@ public:
 
 class _CompilerError_unableToCreateOutputDirectory : public Object {
 public:
-    _CompilerError_unableToCreateOutputDirectory(String* directory, DirectoryError* error);
+    _CompilerError_unableToCreateOutputDirectory(string* directory, DirectoryError* error);
 
-    String* directory;
+    string* directory;
     DirectoryError* error;
 };
 enum _CompilerErrorCode {

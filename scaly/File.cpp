@@ -10,20 +10,20 @@ void* FileError::getErrorInfo() {
     return 0;
 }
 
-_Result<String, FileError> File::readToString(_Page* _rp, _Page* _ep, String* path) {
+_Result<string, FileError> File::readToString(_Page* _rp, _Page* _ep, string* path) {
     FILE* file = fopen(path->getNativeString(), "rb");
     if (!file) {
         _FileErrorCode fileErrorCode = _FileErrorCode_unknownError;
         switch (errno) {
             case ENOENT: fileErrorCode = _FileErrorCode_noSuchFileOrDirectory; break;
         }
-        return _Result<String, FileError>(new(_ep) FileError(fileErrorCode));
+        return _Result<string, FileError>(new(_ep) FileError(fileErrorCode));
     }
     
     fseek(file, 0, SEEK_END);
     long size = ftell(file);
     rewind(file);
-    String* ret = new(_rp) String((size_t)size);
+    string* ret = new(_rp) string((size_t)size);
     char* buffer = ret->getNativeString();
     fread (buffer, 1, size, file);
     fclose (file);

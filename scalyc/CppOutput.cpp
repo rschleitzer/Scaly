@@ -8,7 +8,7 @@ CppModule::CppModule() {
     this->source = nullptr;
 }
 
-CppModule::CppModule(String* name, String* header, String* source) {
+CppModule::CppModule(string* name, string* header, string* source) {
     this->name = name;
     this->header = header;
     this->source = source;
@@ -21,7 +21,7 @@ CppProgram::CppProgram() {
     modules = nullptr;
 }
 
-CppProgram::CppProgram(String* name, String* project, String* main, _Vector<CppModule>* modules) {
+CppProgram::CppProgram(string* name, string* project, string* main, _Vector<CppModule>* modules) {
     this->name = name;
     this->project = project;
     this->main = main;

@@ -1,6 +1,6 @@
 enum OptionsError {
-    case invalidOption(option: String)
-    case unknownOption(option: String)
+    case invalidOption(option: string)
+    case unknownOption(option: string)
     case noOutputOption
     case noFilesToCompile
 }

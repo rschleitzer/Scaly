@@ -1,8 +1,8 @@
 class CppModule {
 
-    let name: String
-    let header: String
-    let source: String
+    let name: string
+    let header: string
+    let source: string
     
     constructor() {
         this.name = null
@@ -10,7 +10,7 @@ class CppModule {
         this.source = null
     }
     
-    constructor(name: String, header: String, source: String) {
+    constructor(name: string, header: string, source: string) {
         this.name = name
         this.header = header
         this.source = source
@@ -26,15 +26,15 @@ class CppProgram {
         modules = null
     }
 
-    constructor(name: String, project: String, main: String, modules: CppModule[]) {
+    constructor(name: string, project: string, main: string, modules: CppModule[]) {
         this.name = name
         this.project = project
         this.main = main
         this.modules = modules
     }
 
-    let name: String
-    let project: String
-    let main: String
+    let name: string
+    let project: string
+    let main: string
     let modules: CppModule[]
 }

@@ -10,14 +10,14 @@ void* CompilerError::getErrorInfo() {
     return errorInfo;
 }
 
-_CompilerError_fileNotFound::_CompilerError_fileNotFound(String* file) 
+_CompilerError_fileNotFound::_CompilerError_fileNotFound(string* file) 
 : file(file) { }
 
 _CompilerError_fileNotFound* CompilerError::get_fileNotFound() {
     return (_CompilerError_fileNotFound*)errorInfo;
 }
 
-_CompilerError_unableToReadFile::_CompilerError_unableToReadFile(String* file, FileError* error) 
+_CompilerError_unableToReadFile::_CompilerError_unableToReadFile(string* file, FileError* error) 
 : file(file), error(error) { }
 
 _CompilerError_unableToReadFile* CompilerError::get_unableToReadFile() {
@@ -31,7 +31,7 @@ _CompilerError_syntaxError* CompilerError::get_syntaxError() {
     return (_CompilerError_syntaxError*)errorInfo;
 }
 
-_CompilerError_unableToCreateOutputDirectory::_CompilerError_unableToCreateOutputDirectory(String* directory, DirectoryError* error) 
+_CompilerError_unableToCreateOutputDirectory::_CompilerError_unableToCreateOutputDirectory(string* directory, DirectoryError* error) 
 : directory(directory), error(error) { }
 
 _CompilerError_unableToCreateOutputDirectory* CompilerError::get_unableToCreateOutputDirectory() {

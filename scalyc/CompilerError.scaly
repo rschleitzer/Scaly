@@ -1,6 +1,6 @@
 enum CompilerError {
-    case fileNotFound(file: String)
-    case unableToReadFile(file: String, error: FileError)
+    case fileNotFound(file: string)
+    case unableToReadFile(file: string, error: FileError)
     case syntaxError(error: ParserError)
-    case unableToCreateOutputDirectory(directory: String, error: DirectoryError)
+    case unableToCreateOutputDirectory(directory: string, error: DirectoryError)
 }

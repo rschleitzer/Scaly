@@ -1,29 +1,29 @@
 #include "Scaly.h"
 namespace scaly {
 
-String* Path::getFileNameWithoutExtension(_Page* _rp, String* path) {
-    String* fileName = getFileName(_rp, path);
+string* Path::getFileNameWithoutExtension(_Page* _rp, string* path) {
+    string* fileName = getFileName(_rp, path);
     if (!fileName)
         return 0;
     
-    _Array<String>& fileNameComponents = fileName->Split(_rp, '.');
+    _Array<string>& fileNameComponents = fileName->Split(_rp, '.');
     size_t fileNameComponentsLength = fileNameComponents.length();
     if (fileNameComponentsLength == 1)
-        return new(_rp) String(path);
+        return new(_rp) string(path);
         
     VarString* ret = new(_rp) VarString();
     for (size_t _i = 0; _i < fileNameComponentsLength - 1; _i++)
         ret->append(*fileNameComponents[_i]);
         
-    return new(_rp) String(ret);
+    return new(_rp) string(ret);
 }
 
-String* Path::getFileName(_Page* _rp, String* path) {
+string* Path::getFileName(_Page* _rp, string* path) {
     if (!path->getLength())
         return 0;
     if (path->charAt(path->getLength() - 1) == '/')
         return 0;
-    _Array<String>& pathComponents = path->Split(_rp, '/');
+    _Array<string>& pathComponents = path->Split(_rp, '/');
     return *pathComponents[pathComponents.length() - 1];
 }
 

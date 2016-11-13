@@ -6,9 +6,9 @@ namespace scalyc {
 
 class Inherits : public Object {
 public:
-    String* name;
-    _Array<String>* inheritors;
-    Inherits(String* className);
+    string* name;
+    _Array<string>* inheritors;
+    Inherits(string* className);
 
 };
 

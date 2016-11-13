@@ -22,8 +22,8 @@ private:
 
 class Directory {
 public:
-    static bool exists(String* path);
-    static DirectoryError* create(_Page *_ep, String* path);
+    static bool exists(string* path);
+    static DirectoryError* create(_Page *_ep, string* path);
 };
 
 }

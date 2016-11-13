@@ -24,14 +24,14 @@ _ParserError_literalExpected* ParserError::get_literalExpected() {
     return (_ParserError_literalExpected*)errorInfo;
 }
 
-_ParserError_keywordExpected::_ParserError_keywordExpected(Position* position, String* keyword) 
+_ParserError_keywordExpected::_ParserError_keywordExpected(Position* position, string* keyword) 
 : position(position), keyword(keyword) { }
 
 _ParserError_keywordExpected* ParserError::get_keywordExpected() {
     return (_ParserError_keywordExpected*)errorInfo;
 }
 
-_ParserError_punctuationExpected::_ParserError_punctuationExpected(Position* position, String* punctuation) 
+_ParserError_punctuationExpected::_ParserError_punctuationExpected(Position* position, string* punctuation) 
 : position(position), punctuation(punctuation) { }
 
 _ParserError_punctuationExpected* ParserError::get_punctuationExpected() {

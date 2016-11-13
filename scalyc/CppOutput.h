@@ -6,21 +6,21 @@ namespace scalyc {
 
 class CppModule : public Object {
 public:
-    String* name;
-    String* header;
-    String* source;
+    string* name;
+    string* header;
+    string* source;
     CppModule();
-    CppModule(String* name, String* header, String* source);
+    CppModule(string* name, string* header, string* source);
 
 };
 
 class CppProgram : public Object {
 public:
     CppProgram();
-    CppProgram(String* name, String* project, String* main, _Vector<CppModule>* modules);
-    String* name;
-    String* project;
-    String* main;
+    CppProgram(string* name, string* project, string* main, _Vector<CppModule>* modules);
+    string* name;
+    string* project;
+    string* main;
     _Vector<CppModule>* modules;
 
 };

@@ -10,7 +10,7 @@ void* DirectoryError::getErrorInfo() {
     return 0;
 }
 
-bool Directory::exists(String* path) {
+bool Directory::exists(string* path) {
     struct stat sb;
 
     if (stat(path->getNativeString(), &sb) == 0 && S_ISDIR(sb.st_mode))
@@ -19,7 +19,7 @@ bool Directory::exists(String* path) {
         return false;
 }
 
-DirectoryError* Directory::create(_Page* _ep, String* path) {
+DirectoryError* Directory::create(_Page* _ep, string* path) {
     if (mkdir(path->getNativeString(), 0777) == -1) {
         _DirectoryErrorCode fileErrorCode = _DirectoryErrorCode_unknownError;
         switch (errno) {

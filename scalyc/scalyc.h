@@ -20,7 +20,7 @@
 
 using namespace scaly;
 namespace scalyc {
-int _main(_Vector<String>* arguments);
+int _main(_Vector<string>* arguments);
 }
 
 #endif // __scaly__scalyc__

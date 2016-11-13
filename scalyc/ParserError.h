@@ -22,18 +22,18 @@ public:
 
 class _ParserError_keywordExpected : public Object {
 public:
-    _ParserError_keywordExpected(Position* position, String* keyword);
+    _ParserError_keywordExpected(Position* position, string* keyword);
 
     Position* position;
-    String* keyword;
+    string* keyword;
 };
 
 class _ParserError_punctuationExpected : public Object {
 public:
-    _ParserError_punctuationExpected(Position* position, String* punctuation);
+    _ParserError_punctuationExpected(Position* position, string* punctuation);
 
     Position* position;
-    String* punctuation;
+    string* punctuation;
 };
 
 class _ParserError_operatorExpected : public Object {

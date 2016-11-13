@@ -2,7 +2,7 @@
 using namespace scaly;
 namespace scalyc {
 
-int _main(_Vector<String>* args) {
+int _main(_Vector<string>* args) {
 _Region _rp; _Page* _p = _rp.get();
 
 if (args->length() < 1) {
