@@ -11,7 +11,7 @@ class Compiler {
         }
 
         mutable compilationUnits: CompilationUnit[] = new CompilationUnit[]();
-        let index: unsigned = 0
+        let index: ulong = 0
         for source: string in sources {
             let moduleName: string = Path.getFileNameWithoutExtension(files[index])
             let compilationUnit: CompilationUnit = parseUnit(moduleName, source)

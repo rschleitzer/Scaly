@@ -16,7 +16,7 @@ public:
 
 private:
     static size_t findLowestZeroBit64(size_t index);
-    static unsigned findLowestZeroBit32(unsigned index);
+    static size_t findLowestZeroBit32(size_t index);
 
     char* chunkBase;
     size_t* allocationMap;

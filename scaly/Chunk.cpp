@@ -63,7 +63,7 @@ size_t _Chunk::findLowestZeroBit64(size_t index) {
         bucket = findLowestZeroBit32(lowerHalf); }
     return bucket; }
 
-unsigned _Chunk::findLowestZeroBit32(unsigned index) {
+size_t _Chunk::findLowestZeroBit32(size_t index) {
     if ((index & 0xFFFF) != 0xFFFF) {
         index &= 0xFFFF;
         if ((index & 0xFF) < 0xFF) {

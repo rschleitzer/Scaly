@@ -2722,7 +2722,7 @@ bool CppVisitor::inTypeQuery(Type* type) {
 
 void CppVisitor::appendCppTypeName(VarString* s, Type* type) {
     string* typeName = type->name;
-    if (typeName->equals("unsigned")) {
+    if (typeName->equals("ulong")) {
         s->append("size_t");
         return;
     }

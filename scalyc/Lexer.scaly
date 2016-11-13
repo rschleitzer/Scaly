@@ -1,5 +1,5 @@
 class Position {
-    constructor(line: unsigned, column: unsigned) {
+    constructor(line: ulong, column: ulong) {
         this.line = line
         this.column = column
     }
@@ -9,8 +9,8 @@ class Position {
         this.column = position.column
     }
 
-    let line: unsigned
-    let column: unsigned
+    let line: ulong
+    let column: ulong
 }
 
 class Token {
@@ -87,12 +87,12 @@ class Lexer {
     mutable token: Token?
     mutable whitespaceSkipped: bool
     let text: string
-    mutable position: unsigned
-    let end: unsigned
-    mutable previousLine: unsigned
-    mutable previousColumn: unsigned
-    mutable line: unsigned
-    mutable column: unsigned
+    mutable position: ulong
+    let end: ulong
+    mutable previousLine: ulong
+    mutable previousColumn: ulong
+    mutable line: ulong
+    mutable column: ulong
     
     constructor(theText: string) {
         token = new InvalidToken()
@@ -320,9 +320,9 @@ class Lexer {
                     operation.append(text.charAt(position))
 
                 default: {
-                    let lastPosition: unsigned = position
-                    let lastLine: unsigned = line
-                    let lastColumn: unsigned = column
+                    let lastPosition: ulong = position
+                    let lastLine: ulong = line
+                    let lastColumn: ulong = column
                     skipWhitespace()
                     position = lastPosition
                     line = lastLine
