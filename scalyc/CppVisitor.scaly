@@ -2676,17 +2676,17 @@ class CppVisitor extends SyntaxVisitor {
     function closeTuplePatternElement(tuplePatternElement: TuplePatternElement) {
     }
 
-    function openBlockCaseContent(blockCaseContent: BlockCaseContent): bool {
+    function openCaseContent(caseContent: CaseContent): bool {
         sourceFile.append("{\n")
         sourceIndentLevel++
 
         return(true)
     }
 
-    function closeBlockCaseContent(blockCaseContent: BlockCaseContent) {
+    function closeCaseContent(caseContent: CaseContent) {
         var additionalLineFeed: bool = true
-        if blockCaseContent.parent is SwitchCase {
-            let switchCase: SwitchCase = blockCaseContent.parent as SwitchCase
+        if caseContent.parent is SwitchCase {
+            let switchCase: SwitchCase = caseContent.parent as SwitchCase
             if !switchCase.label is DefaultCaseLabel {
                 indentSource()
                 sourceFile.append("break;\n")
