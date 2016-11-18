@@ -37,7 +37,6 @@ Parser::Parser(string* theFileName, string* text) {
     nullKeyword = new(getPage()) string("null");
     newKeyword = new(getPage()) string("new");
     extendsKeyword = new(getPage()) string("extends");
-    semicolon = new(getPage()) string(";");
     equal = new(getPage()) string("=");
     leftAngular = new(getPage()) string("<");
     rightAngular = new(getPage()) string(">");
@@ -117,9 +116,6 @@ _Result<TerminatedStatement, ParserError> Parser::parseTerminatedStatement(_Page
         auto error = _statement_result.getError();
         return _Result<TerminatedStatement, ParserError>(error);
     }
-    bool successSemicolon2 = lexer->parsePunctuation(semicolon);
-    if (successSemicolon2)
-        lexer->advance();
     Position* end = lexer->getPosition(_p);
     TerminatedStatement* ret = new(_rp) TerminatedStatement(statement, new(_rp) Position(start), new(_rp) Position(end));
     statement->parent = ret;

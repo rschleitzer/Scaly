@@ -168,7 +168,6 @@ public:
     string* nullKeyword;
     string* newKeyword;
     string* extendsKeyword;
-    string* semicolon;
     string* equal;
     string* leftAngular;
     string* rightAngular;

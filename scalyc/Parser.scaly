@@ -34,7 +34,6 @@ class Parser {
         nullKeyword = new string("null")
         newKeyword = new string("new")
         extendsKeyword = new string("extends")
-        semicolon = new string(";")
         equal = new string("=")
         leftAngular = new string("<")
         rightAngular = new string(">")
@@ -87,9 +86,6 @@ class Parser {
         mutable start: Position = lexer.getPreviousPosition()
         let statement: Statement = parseStatement() catch _ (error)
             throw error
-        let successSemicolon2: bool = lexer.parsePunctuation(semicolon)
-        if successSemicolon2
-            lexer.advance()
         mutable end: Position = lexer.getPosition()
         var ret: TerminatedStatement = new TerminatedStatement(statement, new Position(start), new Position(end))
         statement.parent = ret
@@ -2798,7 +2794,6 @@ class Parser {
     let nullKeyword: string
     let newKeyword: string
     let extendsKeyword: string
-    let semicolon: string
     let equal: string
     let leftAngular: string
     let rightAngular: string
