@@ -1,7 +1,7 @@
 (define (visitor concrete) ($
     (if concrete "" ($
         (apply-to-selected-children "syntax" (lambda (syntax-node) ($
-"class "(id syntax-node)";
+"class "(id syntax-node)"
 "
         )))
 "
@@ -17,7 +17,7 @@
         return(true)
     }
 "
-                    ";"
+                    ""
                 )
 
 "
@@ -26,14 +26,14 @@
                     " {
     }
 "
-                    ";"
+                    ""
                 )
             )
             ($ "
     function visit"(id syntax)"("(string-firstchar-downcase (id syntax))": "(id syntax)")"
                 (if concrete " {
     }
-"                  ";"
+"                  ""
                 )
             )
         )
