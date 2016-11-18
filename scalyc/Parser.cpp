@@ -3543,43 +3543,6 @@ _Result<TuplePatternElement, ParserError> Parser::parseTuplePatternElement(_Page
 
 _Result<CaseContent, ParserError> Parser::parseCaseContent(_Page* _rp, _Page* _ep) {
     _Region _region; _Page* _p = _region.get();
-    _Array<ParserError>* errors = new(_p) _Array<ParserError>();
-    Position* start = lexer->getPreviousPosition(_p);
-    {
-        auto _node_result = parseBlockCaseContent(_rp, _ep);
-        BlockCaseContent* node = nullptr;
-        if (_node_result.succeeded()) {
-            node = _node_result.getResult();
-        }
-        else {
-            auto error = _node_result.getError();
-            {
-                errors->push(error);
-            }
-        }
-        if (node != nullptr)
-            return _Result<CaseContent, ParserError>(node);
-    }
-    {
-        auto _node_result = parseEmptyCaseContent(_rp, _ep);
-        EmptyCaseContent* node = nullptr;
-        if (_node_result.succeeded()) {
-            node = _node_result.getResult();
-        }
-        else {
-            auto error = _node_result.getError();
-            {
-                errors->push(error);
-            }
-        }
-        if (node != nullptr)
-            return _Result<CaseContent, ParserError>(node);
-    }
-    return _Result<CaseContent, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_unableToParse(new(_ep) Position(start), &_Vector<ParserError>::create(_ep, *(errors)))));
-}
-
-_Result<BlockCaseContent, ParserError> Parser::parseBlockCaseContent(_Page* _rp, _Page* _ep) {
-    _Region _region; _Page* _p = _region.get();
     Position* start = lexer->getPreviousPosition(_p);
     auto _statements_result = parseTerminatedStatementList(_rp, _ep);
     _Vector<TerminatedStatement>* statements = nullptr;
@@ -3588,10 +3551,10 @@ _Result<BlockCaseContent, ParserError> Parser::parseBlockCaseContent(_Page* _rp,
     }
     else {
         auto error = _statements_result.getError();
-        return _Result<BlockCaseContent, ParserError>(error);
+        return _Result<CaseContent, ParserError>(error);
     }
     Position* end = lexer->getPosition(_p);
-    BlockCaseContent* ret = new(_rp) BlockCaseContent(statements, new(_rp) Position(start), new(_rp) Position(end));
+    CaseContent* ret = new(_rp) CaseContent(statements, new(_rp) Position(start), new(_rp) Position(end));
     if (statements != nullptr) {
         TerminatedStatement* item = nullptr;
         size_t _statements_length = statements->length();
@@ -3600,21 +3563,7 @@ _Result<BlockCaseContent, ParserError> Parser::parseBlockCaseContent(_Page* _rp,
             item->parent = ret;
         }
     }
-    return _Result<BlockCaseContent, ParserError>(ret);
-}
-
-_Result<EmptyCaseContent, ParserError> Parser::parseEmptyCaseContent(_Page* _rp, _Page* _ep) {
-    _Region _region; _Page* _p = _region.get();
-    Position* start = lexer->getPreviousPosition(_p);
-    Position* startSemicolon1 = lexer->getPreviousPosition(_p);
-    bool successSemicolon1 = lexer->parsePunctuation(semicolon);
-    if (successSemicolon1)
-        lexer->advance();
-    else
-        return _Result<EmptyCaseContent, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_punctuationExpected(new(_ep) Position(startSemicolon1), new(_ep) string(semicolon))));
-    Position* end = lexer->getPosition(_p);
-    EmptyCaseContent* ret = new(_rp) EmptyCaseContent(new(_rp) Position(start), new(_rp) Position(end));
-    return _Result<EmptyCaseContent, ParserError>(ret);
+    return _Result<CaseContent, ParserError>(ret);
 }
 
 _Result<CommonSuperMember, ParserError> Parser::parseCommonSuperMember(_Page* _rp, _Page* _ep) {

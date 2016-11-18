@@ -97,8 +97,6 @@ bool SyntaxNode::_isTuplePattern() { return (false); }
 bool SyntaxNode::_isExpressionPattern() { return (false); }
 bool SyntaxNode::_isTuplePatternElement() { return (false); }
 bool SyntaxNode::_isCaseContent() { return (false); }
-bool SyntaxNode::_isBlockCaseContent() { return (false); }
-bool SyntaxNode::_isEmptyCaseContent() { return (false); }
 bool SyntaxNode::_isCommonSuperMember() { return (false); }
 bool SyntaxNode::_isSuperConstructor() { return (false); }
 bool SyntaxNode::_isSuperMember() { return (false); }
@@ -1650,22 +1648,14 @@ void TuplePatternElement::accept(SyntaxVisitor* visitor) {
 
 bool TuplePatternElement::_isTuplePatternElement() { return (true); }
 
-void CaseContent::accept(SyntaxVisitor* visitor) {
-}
-
-bool CaseContent::_isCaseContent() { return (true); }
-
-bool CaseContent::_isBlockCaseContent() { return (false); }
-bool CaseContent::_isEmptyCaseContent() { return (false); }
-
-BlockCaseContent::BlockCaseContent(_Vector<TerminatedStatement>* statements, Position* start, Position* end) {
+CaseContent::CaseContent(_Vector<TerminatedStatement>* statements, Position* start, Position* end) {
     this->start = start;
     this->end = end;
     this->statements = statements;
 }
 
-void BlockCaseContent::accept(SyntaxVisitor* visitor) {
-    if (!visitor->openBlockCaseContent(this))
+void CaseContent::accept(SyntaxVisitor* visitor) {
+    if (!visitor->openCaseContent(this))
         return;
     if (statements != nullptr) {
         TerminatedStatement* node = nullptr;
@@ -1675,21 +1665,10 @@ void BlockCaseContent::accept(SyntaxVisitor* visitor) {
             node->accept(visitor);
         }
     }
-    visitor->closeBlockCaseContent(this);
+    visitor->closeCaseContent(this);
 }
 
-bool BlockCaseContent::_isBlockCaseContent() { return (true); }
-
-EmptyCaseContent::EmptyCaseContent(Position* start, Position* end) {
-    this->start = start;
-    this->end = end;
-}
-
-void EmptyCaseContent::accept(SyntaxVisitor* visitor) {
-    visitor->visitEmptyCaseContent(this);
-}
-
-bool EmptyCaseContent::_isEmptyCaseContent() { return (true); }
+bool CaseContent::_isCaseContent() { return (true); }
 
 void CommonSuperMember::accept(SyntaxVisitor* visitor) {
 }

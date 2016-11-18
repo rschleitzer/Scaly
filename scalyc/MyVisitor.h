@@ -150,9 +150,8 @@ public:
     virtual void closeExpressionPattern(ExpressionPattern* expressionPattern);
     virtual bool openTuplePatternElement(TuplePatternElement* tuplePatternElement);
     virtual void closeTuplePatternElement(TuplePatternElement* tuplePatternElement);
-    virtual bool openBlockCaseContent(BlockCaseContent* blockCaseContent);
-    virtual void closeBlockCaseContent(BlockCaseContent* blockCaseContent);
-    virtual void visitEmptyCaseContent(EmptyCaseContent* emptyCaseContent);
+    virtual bool openCaseContent(CaseContent* caseContent);
+    virtual void closeCaseContent(CaseContent* caseContent);
     virtual void visitSuperConstructor(SuperConstructor* superConstructor);
     virtual void visitSuperMember(SuperMember* superMember);
     virtual bool openType(Type* type);

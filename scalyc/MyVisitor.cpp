@@ -499,14 +499,11 @@ bool MyVisitor::openTuplePatternElement(TuplePatternElement* tuplePatternElement
 void MyVisitor::closeTuplePatternElement(TuplePatternElement* tuplePatternElement) {
 }
 
-bool MyVisitor::openBlockCaseContent(BlockCaseContent* blockCaseContent) {
+bool MyVisitor::openCaseContent(CaseContent* caseContent) {
     return true;
 }
 
-void MyVisitor::closeBlockCaseContent(BlockCaseContent* blockCaseContent) {
-}
-
-void MyVisitor::visitEmptyCaseContent(EmptyCaseContent* emptyCaseContent) {
+void MyVisitor::closeCaseContent(CaseContent* caseContent) {
 }
 
 void MyVisitor::visitSuperConstructor(SuperConstructor* superConstructor) {

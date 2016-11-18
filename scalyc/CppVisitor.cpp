@@ -2626,16 +2626,16 @@ bool CppVisitor::openTuplePatternElement(TuplePatternElement* tuplePatternElemen
 void CppVisitor::closeTuplePatternElement(TuplePatternElement* tuplePatternElement) {
 }
 
-bool CppVisitor::openBlockCaseContent(BlockCaseContent* blockCaseContent) {
+bool CppVisitor::openCaseContent(CaseContent* caseContent) {
     sourceFile->append("{\n");
     sourceIndentLevel++;
     return true;
 }
 
-void CppVisitor::closeBlockCaseContent(BlockCaseContent* blockCaseContent) {
+void CppVisitor::closeCaseContent(CaseContent* caseContent) {
     bool additionalLineFeed = true;
-    if (blockCaseContent->parent->_isSwitchCase()) {
-        SwitchCase* switchCase = (SwitchCase*)blockCaseContent->parent;
+    if (caseContent->parent->_isSwitchCase()) {
+        SwitchCase* switchCase = (SwitchCase*)caseContent->parent;
         if (!switchCase->label->_isDefaultCaseLabel()) {
             indentSource();
             sourceFile->append("break;\n");
@@ -2648,9 +2648,6 @@ void CppVisitor::closeBlockCaseContent(BlockCaseContent* blockCaseContent) {
     sourceFile->append("}\n");
     if (additionalLineFeed)
         sourceFile->append("\n");
-}
-
-void CppVisitor::visitEmptyCaseContent(EmptyCaseContent* emptyCaseContent) {
 }
 
 void CppVisitor::visitSuperConstructor(SuperConstructor* superInit) {

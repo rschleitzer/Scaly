@@ -496,14 +496,11 @@ class MyVisitor extends SyntaxVisitor {
     function closeTuplePatternElement(tuplePatternElement: TuplePatternElement) {
     }
 
-    function openBlockCaseContent(blockCaseContent: BlockCaseContent): bool {
+    function openCaseContent(caseContent: CaseContent): bool {
         return(true)
     }
 
-    function closeBlockCaseContent(blockCaseContent: BlockCaseContent) {
-    }
-
-    function visitEmptyCaseContent(emptyCaseContent: EmptyCaseContent) {
+    function closeCaseContent(caseContent: CaseContent) {
     }
 
     function visitSuperConstructor(superConstructor: SuperConstructor) {

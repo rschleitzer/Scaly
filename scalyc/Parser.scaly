@@ -2412,55 +2412,15 @@ class Parser {
     }
 
     function parseCaseContent(): CaseContent throws ParserError {
-        mutable errors: ParserError[] = new ParserError[]()
-        mutable start: Position = lexer.getPreviousPosition()
-
-        {
-            let node: BlockCaseContent = parseBlockCaseContent() catch _ (error) {
-                errors.push(error)
-            }
-
-            if node != null
-                return(node)
-        }
-
-        {
-            let node: EmptyCaseContent = parseEmptyCaseContent() catch _ (error) {
-                errors.push(error)
-            }
-
-            if node != null
-                return(node)
-        }
-
-        throw unableToParse(new Position(start), new ParserError[](errors))
-    }
-
-    function parseBlockCaseContent(): BlockCaseContent throws ParserError {
         mutable start: Position = lexer.getPreviousPosition()
         let statements: TerminatedStatement[] = parseTerminatedStatementList() catch _ (error)
             throw error
         mutable end: Position = lexer.getPosition()
-        var ret: BlockCaseContent = new BlockCaseContent(statements, new Position(start), new Position(end))
+        var ret: CaseContent = new CaseContent(statements, new Position(start), new Position(end))
         if statements != null {
             for item: TerminatedStatement in statements
                 item.parent = ret
         }
-
-        return(ret)
-    }
-
-    function parseEmptyCaseContent(): EmptyCaseContent throws ParserError {
-        mutable start: Position = lexer.getPreviousPosition()
-        mutable startSemicolon1: Position = lexer.getPreviousPosition()
-        let successSemicolon1: bool = lexer.parsePunctuation(semicolon)
-        if successSemicolon1
-            lexer.advance()
-        else
-            throw punctuationExpected(new Position(startSemicolon1), new string(semicolon))
-
-        mutable end: Position = lexer.getPosition()
-        var ret: EmptyCaseContent = new EmptyCaseContent(new Position(start), new Position(end))
 
         return(ret)
     }

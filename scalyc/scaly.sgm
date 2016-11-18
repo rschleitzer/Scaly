@@ -431,15 +431,8 @@
         <content link = Pattern                                 property = pattern
         <content link = comma                          optional
 
-    <syntax id = CaseContent                           abstract
-        <content link = BlockCaseContent
-        <content link = EmptyCaseContent
-
-    <syntax id = BlockCaseContent                               base = CaseContent
+    <syntax id = CaseContent
         <content link = TerminatedStatement   multiple          property = statements
-
-    <syntax id = EmptyCaseContent                               base = CaseContent
-        <content link = semicolon
 
     <syntax id = CommonSuperMember                     abstract
         <content link = SuperConstructor

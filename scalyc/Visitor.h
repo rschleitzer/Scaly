@@ -194,10 +194,6 @@ class TuplePatternElement;
 
 class CaseContent;
 
-class BlockCaseContent;
-
-class EmptyCaseContent;
-
 class CommonSuperMember;
 
 class SuperConstructor;
@@ -366,9 +362,8 @@ public:
     virtual void closeExpressionPattern(ExpressionPattern* expressionPattern) = 0;
     virtual bool openTuplePatternElement(TuplePatternElement* tuplePatternElement) = 0;
     virtual void closeTuplePatternElement(TuplePatternElement* tuplePatternElement) = 0;
-    virtual bool openBlockCaseContent(BlockCaseContent* blockCaseContent) = 0;
-    virtual void closeBlockCaseContent(BlockCaseContent* blockCaseContent) = 0;
-    virtual void visitEmptyCaseContent(EmptyCaseContent* emptyCaseContent) = 0;
+    virtual bool openCaseContent(CaseContent* caseContent) = 0;
+    virtual void closeCaseContent(CaseContent* caseContent) = 0;
     virtual void visitSuperConstructor(SuperConstructor* superConstructor) = 0;
     virtual void visitSuperMember(SuperMember* superMember) = 0;
     virtual bool openType(Type* type) = 0;

@@ -1681,43 +1681,23 @@ class TuplePatternElement extends SyntaxNode {
 
 class CaseContent extends SyntaxNode {
 
-    function accept(mutable visitor: SyntaxVisitor) {
-    }
-
-}
-
-class BlockCaseContent extends CaseContent {
-
     constructor(statements: TerminatedStatement[], start: Position, end: Position) {
         this.start = start
         this.end = end
         this.statements = statements
     }
 
-    override function accept(mutable visitor: SyntaxVisitor) {
-        if !visitor.openBlockCaseContent(this)
+    function accept(mutable visitor: SyntaxVisitor) {
+        if !visitor.openCaseContent(this)
             return
         if statements != null {
             for node: TerminatedStatement in statements
                 node.accept(visitor)
         }
-        visitor.closeBlockCaseContent(this)
+        visitor.closeCaseContent(this)
     }
 
     let statements: TerminatedStatement[]?
-}
-
-class EmptyCaseContent extends CaseContent {
-
-    constructor(start: Position, end: Position) {
-        this.start = start
-        this.end = end
-    }
-
-    override function accept(mutable visitor: SyntaxVisitor) {
-        visitor.visitEmptyCaseContent(this)
-    }
-
 }
 
 class CommonSuperMember extends SyntaxNode {

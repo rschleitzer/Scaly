@@ -105,8 +105,6 @@ public:
     virtual bool _isExpressionPattern();
     virtual bool _isTuplePatternElement();
     virtual bool _isCaseContent();
-    virtual bool _isBlockCaseContent();
-    virtual bool _isEmptyCaseContent();
     virtual bool _isCommonSuperMember();
     virtual bool _isSuperConstructor();
     virtual bool _isSuperMember();
@@ -1040,28 +1038,11 @@ public:
 
 class CaseContent : public SyntaxNode {
 public:
-    virtual void accept(SyntaxVisitor* visitor);
-
-    virtual bool _isCaseContent();
-    virtual bool _isBlockCaseContent();
-    virtual bool _isEmptyCaseContent();
-};
-
-class BlockCaseContent : public CaseContent {
-public:
-    BlockCaseContent(_Vector<TerminatedStatement>* statements, Position* start, Position* end);
+    CaseContent(_Vector<TerminatedStatement>* statements, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
     _Vector<TerminatedStatement>* statements;
 
-    virtual bool _isBlockCaseContent();
-};
-
-class EmptyCaseContent : public CaseContent {
-public:
-    EmptyCaseContent(Position* start, Position* end);
-    virtual void accept(SyntaxVisitor* visitor);
-
-    virtual bool _isEmptyCaseContent();
+    virtual bool _isCaseContent();
 };
 
 class CommonSuperMember : public SyntaxNode {

@@ -119,8 +119,6 @@ public:
     virtual _Result<_Vector<TuplePatternElement>, ParserError> parseTuplePatternElementList(_Page* _rp, _Page* _ep);
     virtual _Result<TuplePatternElement, ParserError> parseTuplePatternElement(_Page* _rp, _Page* _ep);
     virtual _Result<CaseContent, ParserError> parseCaseContent(_Page* _rp, _Page* _ep);
-    virtual _Result<BlockCaseContent, ParserError> parseBlockCaseContent(_Page* _rp, _Page* _ep);
-    virtual _Result<EmptyCaseContent, ParserError> parseEmptyCaseContent(_Page* _rp, _Page* _ep);
     virtual _Result<CommonSuperMember, ParserError> parseCommonSuperMember(_Page* _rp, _Page* _ep);
     virtual _Result<SuperConstructor, ParserError> parseSuperConstructor(_Page* _rp, _Page* _ep);
     virtual _Result<SuperMember, ParserError> parseSuperMember(_Page* _rp, _Page* _ep);
