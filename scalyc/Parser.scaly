@@ -1105,9 +1105,6 @@ class Parser {
         mutable start: Position = lexer.getPreviousPosition()
         let declaration: Declaration = parseDeclaration() catch _ (error)
             throw error
-        let successSemicolon2: bool = lexer.parsePunctuation(semicolon)
-        if successSemicolon2
-            lexer.advance()
         mutable end: Position = lexer.getPosition()
         var ret: ClassMember = new ClassMember(declaration, new Position(start), new Position(end))
         declaration.parent = ret

@@ -1613,9 +1613,6 @@ _Result<ClassMember, ParserError> Parser::parseClassMember(_Page* _rp, _Page* _e
         auto error = _declaration_result.getError();
         return _Result<ClassMember, ParserError>(error);
     }
-    bool successSemicolon2 = lexer->parsePunctuation(semicolon);
-    if (successSemicolon2)
-        lexer->advance();
     Position* end = lexer->getPosition(_p);
     ClassMember* ret = new(_rp) ClassMember(declaration, new(_rp) Position(start), new(_rp) Position(end));
     declaration->parent = ret;
