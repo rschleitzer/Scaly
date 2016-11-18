@@ -837,9 +837,9 @@ public:
 
 class BreakExpression : public PrimaryExpression {
 public:
-    BreakExpression(Expression* expression, Position* start, Position* end);
+    BreakExpression(ParenthesizedExpression* expression, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
-    Expression* expression;
+    ParenthesizedExpression* expression;
 
     virtual bool _isBreakExpression();
 };

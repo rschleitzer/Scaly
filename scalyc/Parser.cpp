@@ -2841,8 +2841,8 @@ _Result<BreakExpression, ParserError> Parser::parseBreakExpression(_Page* _rp, _
         lexer->advance();
     else
         return _Result<BreakExpression, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_keywordExpected(new(_ep) Position(startBreak1), new(_ep) string(breakKeyword))));
-    auto _expression_result = parseExpression(_rp, _ep);
-    Expression* expression = nullptr;
+    auto _expression_result = parseParenthesizedExpression(_rp, _ep);
+    ParenthesizedExpression* expression = nullptr;
     if (_expression_result.succeeded()) {
         expression = _expression_result.getResult();
     }

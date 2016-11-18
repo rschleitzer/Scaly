@@ -341,7 +341,7 @@
 
     <syntax id = BreakExpression                                base = PrimaryExpression
         <content link = break
-        <content link = Expression                     optional property = expression
+        <content link = ParenthesizedExpression                 optional property = expression
 
     <syntax id = ConstructorCall                                base = PrimaryExpression
         <content link = new

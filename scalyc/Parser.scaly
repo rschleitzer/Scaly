@@ -1919,7 +1919,7 @@ class Parser {
         else
             throw keywordExpected(new Position(startBreak1), new string(breakKeyword))
 
-        let expression: Expression = parseExpression() catch _ null
+        let expression: ParenthesizedExpression = parseParenthesizedExpression() catch _ null
         mutable end: Position = lexer.getPosition()
         var ret: BreakExpression = new BreakExpression(expression, new Position(start), new Position(end))
        if expression != null

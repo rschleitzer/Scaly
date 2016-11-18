@@ -1314,7 +1314,7 @@ void ThrowExpression::accept(SyntaxVisitor* visitor) {
 
 bool ThrowExpression::_isThrowExpression() { return (true); }
 
-BreakExpression::BreakExpression(Expression* expression, Position* start, Position* end) {
+BreakExpression::BreakExpression(ParenthesizedExpression* expression, Position* start, Position* end) {
     this->start = start;
     this->end = end;
     this->expression = expression;
