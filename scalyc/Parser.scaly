@@ -52,7 +52,7 @@ class Parser {
 
     function parseCompilationUnit(): CompilationUnit throws ParserError {
         mutable start: Position = lexer.getPreviousPosition()
-        let statements: TerminatedStatement[] = parseTerminatedStatementList() catch _ null
+        let statements: Statement[] = parseStatementList() catch _ null
         if statements != null {
             if !isAtEnd() {
                 mutable current: Position = lexer.getPosition()
@@ -63,33 +63,22 @@ class Parser {
         var ret: CompilationUnit = new CompilationUnit(statements, new Position(start), new Position(end))
         ret.fileName = fileName
         if statements != null {
-            for item: TerminatedStatement in statements
+            for item: Statement in statements
                 item.parent = ret
         }
 
         return(ret)
     }
 
-    function parseTerminatedStatementList(): TerminatedStatement[] throws ParserError {
-        mutable ret: TerminatedStatement[]? = null
+    function parseStatementList(): Statement[] throws ParserError {
+        mutable ret: Statement[]? = null
         while true {
-            let node: TerminatedStatement = parseTerminatedStatement()
+            let node: Statement = parseStatement()
                 catch _ break
             if ret == null
-                ret = new TerminatedStatement[]()
+                ret = new Statement[]()
             ret.push(node)
         }
-        return(ret)
-    }
-
-    function parseTerminatedStatement(): TerminatedStatement throws ParserError {
-        mutable start: Position = lexer.getPreviousPosition()
-        let statement: Statement = parseStatement() catch _ (error)
-            throw error
-        mutable end: Position = lexer.getPosition()
-        var ret: TerminatedStatement = new TerminatedStatement(statement, new Position(start), new Position(end))
-        statement.parent = ret
-
         return(ret)
     }
 
@@ -439,7 +428,7 @@ class Parser {
         else
             throw punctuationExpected(new Position(startLeftCurly1), new string(leftCurly))
 
-        let statements: TerminatedStatement[] = parseTerminatedStatementList() catch _ (error)
+        let statements: Statement[] = parseStatementList() catch _ (error)
             throw error
         mutable startRightCurly3: Position = lexer.getPreviousPosition()
         let successRightCurly3: bool = lexer.parsePunctuation(rightCurly)
@@ -451,7 +440,7 @@ class Parser {
         mutable end: Position = lexer.getPosition()
         var ret: CodeBlock = new CodeBlock(statements, new Position(start), new Position(end))
         if statements != null {
-            for item: TerminatedStatement in statements
+            for item: Statement in statements
                 item.parent = ret
         }
 
@@ -2406,12 +2395,12 @@ class Parser {
 
     function parseCaseContent(): CaseContent throws ParserError {
         mutable start: Position = lexer.getPreviousPosition()
-        let statements: TerminatedStatement[] = parseTerminatedStatementList() catch _ (error)
+        let statements: Statement[] = parseStatementList() catch _ (error)
             throw error
         mutable end: Position = lexer.getPosition()
         var ret: CaseContent = new CaseContent(statements, new Position(start), new Position(end))
         if statements != null {
-            for item: TerminatedStatement in statements
+            for item: Statement in statements
                 item.parent = ret
         }
 

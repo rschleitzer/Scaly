@@ -168,23 +168,23 @@ void CppVisitor::closeCompilationUnit(CompilationUnit* compilationUnit) {
 }
 
 bool CppVisitor::isTopLevelFile(CompilationUnit* compilationUnit) {
-    _Vector<TerminatedStatement>* statements = compilationUnit->statements;
-    TerminatedStatement* statement = nullptr;
+    _Vector<Statement>* statements = compilationUnit->statements;
+    Statement* statement = nullptr;
     size_t _statements_length = statements->length();
     for (size_t _i = 0; _i < _statements_length; _i++) {
         statement = *(*statements)[_i];
         {
-            if (statement->statement->_isExpression())
+            if (statement->_isExpression())
                 return true;
         }
     }
     return false;
 }
 
-bool CppVisitor::openTerminatedStatement(TerminatedStatement* terminatedStatement) {
+bool CppVisitor::openStatement(Statement* statement) {
     indentSource();
-    if (terminatedStatement->statement->_isSimpleExpression()) {
-        SimpleExpression* simpleExpression = (SimpleExpression*)terminatedStatement->statement;
+    if (statement->_isSimpleExpression()) {
+        SimpleExpression* simpleExpression = (SimpleExpression*)statement;
         if (simpleExpression->prefixExpression->expression->primaryExpression->_isIdentifierExpression()) {
             _Vector<BinaryOp>* binaryOps = simpleExpression->binaryOps;
             if (binaryOps != nullptr) {
@@ -233,28 +233,28 @@ bool CppVisitor::openTerminatedStatement(TerminatedStatement* terminatedStatemen
     return true;
 }
 
-void CppVisitor::closeTerminatedStatement(TerminatedStatement* terminatedStatement) {
-    if (terminatedStatement->statement->_isClassDeclaration())
+void CppVisitor::closeStatement(Statement* statement) {
+    if (statement->_isClassDeclaration())
         return;
-    if (terminatedStatement->statement->_isEnumDeclaration())
+    if (statement->_isEnumDeclaration())
         return;
     {
         BindingInitializer* bindingInitializer = nullptr;
-        if (terminatedStatement->statement->_isConstantDeclaration()) {
+        if (statement->_isConstantDeclaration()) {
             {
-                ConstantDeclaration* constantDeclaration = (ConstantDeclaration*)terminatedStatement->statement;
+                ConstantDeclaration* constantDeclaration = (ConstantDeclaration*)statement;
                 if (constantDeclaration->initializer->_isBindingInitializer()) {
                     bindingInitializer = constantDeclaration->initializer;
                 }
             }
             {
-                VariableDeclaration* variableDeclaration = (VariableDeclaration*)terminatedStatement->statement;
+                VariableDeclaration* variableDeclaration = (VariableDeclaration*)statement;
                 if (variableDeclaration->initializer->_isBindingInitializer()) {
                     bindingInitializer = variableDeclaration->initializer;
                 }
             }
             {
-                MutableDeclaration* mutableDeclaration = (MutableDeclaration*)terminatedStatement->statement;
+                MutableDeclaration* mutableDeclaration = (MutableDeclaration*)statement;
                 if (mutableDeclaration->initializer->_isBindingInitializer()) {
                     bindingInitializer = mutableDeclaration->initializer;
                 }
@@ -268,8 +268,8 @@ void CppVisitor::closeTerminatedStatement(TerminatedStatement* terminatedStateme
             }
         }
     }
-    if (terminatedStatement->statement->_isSimpleExpression()) {
-        SimpleExpression* expression = (SimpleExpression*)terminatedStatement->statement;
+    if (statement->_isSimpleExpression()) {
+        SimpleExpression* expression = (SimpleExpression*)statement;
         PrimaryExpression* primaryExpression = expression->prefixExpression->expression->primaryExpression;
         if (primaryExpression->_isIfExpression())
             return;
@@ -298,7 +298,7 @@ void CppVisitor::closeTerminatedStatement(TerminatedStatement* terminatedStateme
             }
         }
     }
-    if (terminatedStatement->statement->_isCodeBlock())
+    if (statement->_isCodeBlock())
         return;
     sourceFile->append(";\n");
 }
@@ -575,14 +575,14 @@ bool CppVisitor::openCodeBlock(CodeBlock* codeBlock) {
 }
 
 bool CppVisitor::localAllocations(CodeBlock* codeBlock) {
-    _Vector<TerminatedStatement>* terminatedStatements = codeBlock->statements;
-    if (terminatedStatements != nullptr) {
-        TerminatedStatement* terminatedStatement = nullptr;
-        size_t _terminatedStatements_length = terminatedStatements->length();
-        for (size_t _i = 0; _i < _terminatedStatements_length; _i++) {
-            terminatedStatement = *(*terminatedStatements)[_i];
+    _Vector<Statement>* statements = codeBlock->statements;
+    if (statements != nullptr) {
+        Statement* statement = nullptr;
+        size_t _statements_length = statements->length();
+        for (size_t _i = 0; _i < _statements_length; _i++) {
+            statement = *(*statements)[_i];
             {
-                if (terminatedStatement->statement->_isMutableDeclaration())
+                if (statement->_isMutableDeclaration())
                     return true;
             }
         }
@@ -2934,15 +2934,15 @@ void CppVisitor::collectInheritances(Program* program) {
 
 void CppVisitor::collectInheritancesInCompilationUnit(CompilationUnit* compilationUnit) {
     if (compilationUnit->statements != nullptr) {
-        _Vector<TerminatedStatement>* statements = compilationUnit->statements;
-        TerminatedStatement* terminatedStatement = nullptr;
+        _Vector<Statement>* statements = compilationUnit->statements;
+        Statement* statement = nullptr;
         size_t _statements_length = statements->length();
         for (size_t _i = 0; _i < _statements_length; _i++) {
-            terminatedStatement = *(*statements)[_i];
+            statement = *(*statements)[_i];
             {
-                if (terminatedStatement->statement != nullptr) {
-                    if (terminatedStatement->statement->_isClassDeclaration()) {
-                        ClassDeclaration* classDeclaration = (ClassDeclaration*)terminatedStatement->statement;
+                if (statement != nullptr) {
+                    if (statement->_isClassDeclaration()) {
+                        ClassDeclaration* classDeclaration = (ClassDeclaration*)statement;
                         classes->push(classDeclaration->name);
                         if (classDeclaration->typeInheritanceClause != nullptr) {
                             TypeInheritanceClause* inheritanceClause = classDeclaration->typeInheritanceClause;

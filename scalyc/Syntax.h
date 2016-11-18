@@ -12,7 +12,6 @@ public:
 
     virtual bool _isProgram();
     virtual bool _isCompilationUnit();
-    virtual bool _isTerminatedStatement();
     virtual bool _isStatement();
     virtual bool _isDeclaration();
     virtual bool _isUseDeclaration();
@@ -131,21 +130,12 @@ public:
 
 class CompilationUnit : public SyntaxNode {
 public:
-    CompilationUnit(_Vector<TerminatedStatement>* statements, Position* start, Position* end);
+    CompilationUnit(_Vector<Statement>* statements, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
-    _Vector<TerminatedStatement>* statements;
+    _Vector<Statement>* statements;
     string* fileName;
 
     virtual bool _isCompilationUnit();
-};
-
-class TerminatedStatement : public SyntaxNode {
-public:
-    TerminatedStatement(Statement* statement, Position* start, Position* end);
-    virtual void accept(SyntaxVisitor* visitor);
-    Statement* statement;
-
-    virtual bool _isTerminatedStatement();
 };
 
 class Statement : public SyntaxNode {
@@ -276,9 +266,9 @@ public:
 
 class CodeBlock : public Expression {
 public:
-    CodeBlock(_Vector<TerminatedStatement>* statements, Position* start, Position* end);
+    CodeBlock(_Vector<Statement>* statements, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
-    _Vector<TerminatedStatement>* statements;
+    _Vector<Statement>* statements;
 
     virtual bool _isCodeBlock();
 };
@@ -1038,9 +1028,9 @@ public:
 
 class CaseContent : public SyntaxNode {
 public:
-    CaseContent(_Vector<TerminatedStatement>* statements, Position* start, Position* end);
+    CaseContent(_Vector<Statement>* statements, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
-    _Vector<TerminatedStatement>* statements;
+    _Vector<Statement>* statements;
 
     virtual bool _isCaseContent();
 };

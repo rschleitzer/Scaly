@@ -4,7 +4,6 @@ namespace scalyc {
 
 bool SyntaxNode::_isProgram() { return (false); }
 bool SyntaxNode::_isCompilationUnit() { return (false); }
-bool SyntaxNode::_isTerminatedStatement() { return (false); }
 bool SyntaxNode::_isStatement() { return (false); }
 bool SyntaxNode::_isDeclaration() { return (false); }
 bool SyntaxNode::_isUseDeclaration() { return (false); }
@@ -134,7 +133,7 @@ void Program::accept(SyntaxVisitor* visitor) {
 
 bool Program::_isProgram() { return (true); }
 
-CompilationUnit::CompilationUnit(_Vector<TerminatedStatement>* statements, Position* start, Position* end) {
+CompilationUnit::CompilationUnit(_Vector<Statement>* statements, Position* start, Position* end) {
     this->start = start;
     this->end = end;
     this->statements = statements;
@@ -144,7 +143,7 @@ void CompilationUnit::accept(SyntaxVisitor* visitor) {
     if (!visitor->openCompilationUnit(this))
         return;
     if (statements != nullptr) {
-        TerminatedStatement* node = nullptr;
+        Statement* node = nullptr;
         size_t _statements_length = statements->length();
         for (size_t _i = 0; _i < _statements_length; _i++) {
             node = *(*statements)[_i];
@@ -155,21 +154,6 @@ void CompilationUnit::accept(SyntaxVisitor* visitor) {
 }
 
 bool CompilationUnit::_isCompilationUnit() { return (true); }
-
-TerminatedStatement::TerminatedStatement(Statement* statement, Position* start, Position* end) {
-    this->start = start;
-    this->end = end;
-    this->statement = statement;
-}
-
-void TerminatedStatement::accept(SyntaxVisitor* visitor) {
-    if (!visitor->openTerminatedStatement(this))
-        return;
-    statement->accept(visitor);
-    visitor->closeTerminatedStatement(this);
-}
-
-bool TerminatedStatement::_isTerminatedStatement() { return (true); }
 
 void Statement::accept(SyntaxVisitor* visitor) {
 }
@@ -384,7 +368,7 @@ void ConstructorDeclaration::accept(SyntaxVisitor* visitor) {
 
 bool ConstructorDeclaration::_isConstructorDeclaration() { return (true); }
 
-CodeBlock::CodeBlock(_Vector<TerminatedStatement>* statements, Position* start, Position* end) {
+CodeBlock::CodeBlock(_Vector<Statement>* statements, Position* start, Position* end) {
     this->start = start;
     this->end = end;
     this->statements = statements;
@@ -394,7 +378,7 @@ void CodeBlock::accept(SyntaxVisitor* visitor) {
     if (!visitor->openCodeBlock(this))
         return;
     if (statements != nullptr) {
-        TerminatedStatement* node = nullptr;
+        Statement* node = nullptr;
         size_t _statements_length = statements->length();
         for (size_t _i = 0; _i < _statements_length; _i++) {
             node = *(*statements)[_i];
@@ -1648,7 +1632,7 @@ void TuplePatternElement::accept(SyntaxVisitor* visitor) {
 
 bool TuplePatternElement::_isTuplePatternElement() { return (true); }
 
-CaseContent::CaseContent(_Vector<TerminatedStatement>* statements, Position* start, Position* end) {
+CaseContent::CaseContent(_Vector<Statement>* statements, Position* start, Position* end) {
     this->start = start;
     this->end = end;
     this->statements = statements;
@@ -1658,7 +1642,7 @@ void CaseContent::accept(SyntaxVisitor* visitor) {
     if (!visitor->openCaseContent(this))
         return;
     if (statements != nullptr) {
-        TerminatedStatement* node = nullptr;
+        Statement* node = nullptr;
         size_t _statements_length = statements->length();
         for (size_t _i = 0; _i < _statements_length; _i++) {
             node = *(*statements)[_i];

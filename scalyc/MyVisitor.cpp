@@ -16,13 +16,6 @@ bool MyVisitor::openCompilationUnit(CompilationUnit* compilationUnit) {
 void MyVisitor::closeCompilationUnit(CompilationUnit* compilationUnit) {
 }
 
-bool MyVisitor::openTerminatedStatement(TerminatedStatement* terminatedStatement) {
-    return true;
-}
-
-void MyVisitor::closeTerminatedStatement(TerminatedStatement* terminatedStatement) {
-}
-
 bool MyVisitor::openUseDeclaration(UseDeclaration* useDeclaration) {
     return true;
 }

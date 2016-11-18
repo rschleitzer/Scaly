@@ -56,8 +56,8 @@ Parser::Parser(string* theFileName, string* text) {
 _Result<CompilationUnit, ParserError> Parser::parseCompilationUnit(_Page* _rp, _Page* _ep) {
     _Region _region; _Page* _p = _region.get();
     Position* start = lexer->getPreviousPosition(_p);
-    auto _statements_result = parseTerminatedStatementList(_rp, _ep);
-    _Vector<TerminatedStatement>* statements = nullptr;
+    auto _statements_result = parseStatementList(_rp, _ep);
+    _Vector<Statement>* statements = nullptr;
     if (_statements_result.succeeded()) {
         statements = _statements_result.getResult();
     }
@@ -75,7 +75,7 @@ _Result<CompilationUnit, ParserError> Parser::parseCompilationUnit(_Page* _rp, _
     CompilationUnit* ret = new(_rp) CompilationUnit(statements, new(_rp) Position(start), new(_rp) Position(end));
     ret->fileName = fileName;
     if (statements != nullptr) {
-        TerminatedStatement* item = nullptr;
+        Statement* item = nullptr;
         size_t _statements_length = statements->length();
         for (size_t _i = 0; _i < _statements_length; _i++) {
             item = *(*statements)[_i];
@@ -85,12 +85,12 @@ _Result<CompilationUnit, ParserError> Parser::parseCompilationUnit(_Page* _rp, _
     return _Result<CompilationUnit, ParserError>(ret);
 }
 
-_Result<_Vector<TerminatedStatement>, ParserError> Parser::parseTerminatedStatementList(_Page* _rp, _Page* _ep) {
+_Result<_Vector<Statement>, ParserError> Parser::parseStatementList(_Page* _rp, _Page* _ep) {
     _Region _region; _Page* _p = _region.get();
-    _Array<TerminatedStatement>* ret = nullptr;
+    _Array<Statement>* ret = nullptr;
     while (true) {
-        auto _node_result = parseTerminatedStatement(_rp, _ep);
-        TerminatedStatement* node = nullptr;
+        auto _node_result = parseStatement(_rp, _ep);
+        Statement* node = nullptr;
         if (_node_result.succeeded()) {
             node = _node_result.getResult();
         }
@@ -98,28 +98,10 @@ _Result<_Vector<TerminatedStatement>, ParserError> Parser::parseTerminatedStatem
             break;
         }
         if (ret == nullptr)
-            ret = new(_p) _Array<TerminatedStatement>();
+            ret = new(_p) _Array<Statement>();
         ret->push(node);
     }
-    return _Result<_Vector<TerminatedStatement>, ParserError>(ret ? &_Vector<TerminatedStatement>::create(_rp, *ret) : 0);
-}
-
-_Result<TerminatedStatement, ParserError> Parser::parseTerminatedStatement(_Page* _rp, _Page* _ep) {
-    _Region _region; _Page* _p = _region.get();
-    Position* start = lexer->getPreviousPosition(_p);
-    auto _statement_result = parseStatement(_rp, _ep);
-    Statement* statement = nullptr;
-    if (_statement_result.succeeded()) {
-        statement = _statement_result.getResult();
-    }
-    else {
-        auto error = _statement_result.getError();
-        return _Result<TerminatedStatement, ParserError>(error);
-    }
-    Position* end = lexer->getPosition(_p);
-    TerminatedStatement* ret = new(_rp) TerminatedStatement(statement, new(_rp) Position(start), new(_rp) Position(end));
-    statement->parent = ret;
-    return _Result<TerminatedStatement, ParserError>(ret);
+    return _Result<_Vector<Statement>, ParserError>(ret ? &_Vector<Statement>::create(_rp, *ret) : 0);
 }
 
 _Result<Statement, ParserError> Parser::parseStatement(_Page* _rp, _Page* _ep) {
@@ -663,8 +645,8 @@ _Result<CodeBlock, ParserError> Parser::parseCodeBlock(_Page* _rp, _Page* _ep) {
         lexer->advance();
     else
         return _Result<CodeBlock, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_punctuationExpected(new(_ep) Position(startLeftCurly1), new(_ep) string(leftCurly))));
-    auto _statements_result = parseTerminatedStatementList(_rp, _ep);
-    _Vector<TerminatedStatement>* statements = nullptr;
+    auto _statements_result = parseStatementList(_rp, _ep);
+    _Vector<Statement>* statements = nullptr;
     if (_statements_result.succeeded()) {
         statements = _statements_result.getResult();
     }
@@ -681,7 +663,7 @@ _Result<CodeBlock, ParserError> Parser::parseCodeBlock(_Page* _rp, _Page* _ep) {
     Position* end = lexer->getPosition(_p);
     CodeBlock* ret = new(_rp) CodeBlock(statements, new(_rp) Position(start), new(_rp) Position(end));
     if (statements != nullptr) {
-        TerminatedStatement* item = nullptr;
+        Statement* item = nullptr;
         size_t _statements_length = statements->length();
         for (size_t _i = 0; _i < _statements_length; _i++) {
             item = *(*statements)[_i];
@@ -3537,8 +3519,8 @@ _Result<TuplePatternElement, ParserError> Parser::parseTuplePatternElement(_Page
 _Result<CaseContent, ParserError> Parser::parseCaseContent(_Page* _rp, _Page* _ep) {
     _Region _region; _Page* _p = _region.get();
     Position* start = lexer->getPreviousPosition(_p);
-    auto _statements_result = parseTerminatedStatementList(_rp, _ep);
-    _Vector<TerminatedStatement>* statements = nullptr;
+    auto _statements_result = parseStatementList(_rp, _ep);
+    _Vector<Statement>* statements = nullptr;
     if (_statements_result.succeeded()) {
         statements = _statements_result.getResult();
     }
@@ -3549,7 +3531,7 @@ _Result<CaseContent, ParserError> Parser::parseCaseContent(_Page* _rp, _Page* _e
     Position* end = lexer->getPosition(_p);
     CaseContent* ret = new(_rp) CaseContent(statements, new(_rp) Position(start), new(_rp) Position(end));
     if (statements != nullptr) {
-        TerminatedStatement* item = nullptr;
+        Statement* item = nullptr;
         size_t _statements_length = statements->length();
         for (size_t _i = 0; _i < _statements_length; _i++) {
             item = *(*statements)[_i];

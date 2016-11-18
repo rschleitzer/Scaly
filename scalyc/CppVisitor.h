@@ -36,8 +36,8 @@ public:
     virtual bool openCompilationUnit(CompilationUnit* compilationUnit);
     virtual void closeCompilationUnit(CompilationUnit* compilationUnit);
     virtual bool isTopLevelFile(CompilationUnit* compilationUnit);
-    virtual bool openTerminatedStatement(TerminatedStatement* terminatedStatement);
-    virtual void closeTerminatedStatement(TerminatedStatement* terminatedStatement);
+    virtual bool openStatement(Statement* statement);
+    virtual void closeStatement(Statement* statement);
     virtual bool openUseDeclaration(UseDeclaration* useDeclaration);
     virtual void closeUseDeclaration(UseDeclaration* useDeclaration);
     virtual bool openConstantDeclaration(ConstantDeclaration* constantDeclaration);

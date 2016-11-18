@@ -7,12 +7,9 @@
         <content link = CompilationUnit       multiple          property = compilationUnits
 
     <syntax id = CompilationUnit                                top
-        <content link = TerminatedStatement   multiple optional property = statements
+        <content link = Statement             multiple optional property = statements
 
-    <syntax id = TerminatedStatement          multiple
-        <content link = Statement                               property = statement
-
-    <syntax id = Statement                             abstract
+    <syntax id = Statement                    multiple abstract
         <content link = Declaration
         <content link = Expression
 
@@ -77,7 +74,7 @@
 
     <syntax id = CodeBlock                                      base = Expression
         <content link = leftCurly
-        <content link = TerminatedStatement   multiple          property = statements
+        <content link = Statement   multiple                    property = statements
         <content link = rightCurly
 
     <syntax id = SimpleExpression                               base = Expression
@@ -430,7 +427,7 @@
         <content link = comma                          optional
 
     <syntax id = CaseContent
-        <content link = TerminatedStatement   multiple          property = statements
+        <content link = Statement             multiple          property = statements
 
     <syntax id = CommonSuperMember                     abstract
         <content link = SuperConstructor

@@ -8,8 +8,7 @@ class Parser : public Object {
 public:
     Parser(string* theFileName, string* text);
     virtual _Result<CompilationUnit, ParserError> parseCompilationUnit(_Page* _rp, _Page* _ep);
-    virtual _Result<_Vector<TerminatedStatement>, ParserError> parseTerminatedStatementList(_Page* _rp, _Page* _ep);
-    virtual _Result<TerminatedStatement, ParserError> parseTerminatedStatement(_Page* _rp, _Page* _ep);
+    virtual _Result<_Vector<Statement>, ParserError> parseStatementList(_Page* _rp, _Page* _ep);
     virtual _Result<Statement, ParserError> parseStatement(_Page* _rp, _Page* _ep);
     virtual _Result<Declaration, ParserError> parseDeclaration(_Page* _rp, _Page* _ep);
     virtual _Result<Expression, ParserError> parseExpression(_Page* _rp, _Page* _ep);

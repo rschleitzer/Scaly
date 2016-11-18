@@ -1,6 +1,5 @@
 class Program
 class CompilationUnit
-class TerminatedStatement
 class Statement
 class Declaration
 class Expression
@@ -110,8 +109,6 @@ class SyntaxVisitor {
     function closeProgram(program: Program)
     function openCompilationUnit(compilationUnit: CompilationUnit): bool
     function closeCompilationUnit(compilationUnit: CompilationUnit)
-    function openTerminatedStatement(terminatedStatement: TerminatedStatement): bool
-    function closeTerminatedStatement(terminatedStatement: TerminatedStatement)
     function openUseDeclaration(useDeclaration: UseDeclaration): bool
     function closeUseDeclaration(useDeclaration: UseDeclaration)
     function openConstantDeclaration(constantDeclaration: ConstantDeclaration): bool

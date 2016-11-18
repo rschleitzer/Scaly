@@ -32,7 +32,7 @@ class Program extends SyntaxNode {
 
 class CompilationUnit extends SyntaxNode {
 
-    constructor(statements: TerminatedStatement[], start: Position, end: Position) {
+    constructor(statements: Statement[], start: Position, end: Position) {
         this.start = start
         this.end = end
         this.statements = statements
@@ -42,32 +42,14 @@ class CompilationUnit extends SyntaxNode {
         if !visitor.openCompilationUnit(this)
             return
         if statements != null {
-            for node: TerminatedStatement in statements
+            for node: Statement in statements
                 node.accept(visitor)
         }
         visitor.closeCompilationUnit(this)
     }
 
-    let statements: TerminatedStatement[]?
+    let statements: Statement[]?
     let fileName: string
-}
-
-class TerminatedStatement extends SyntaxNode {
-
-    constructor(statement: Statement, start: Position, end: Position) {
-        this.start = start
-        this.end = end
-        this.statement = statement
-    }
-
-    function accept(mutable visitor: SyntaxVisitor) {
-        if !visitor.openTerminatedStatement(this)
-            return
-        statement.accept(visitor)
-        visitor.closeTerminatedStatement(this)
-    }
-
-    let statement: Statement?
 }
 
 class Statement extends SyntaxNode {
@@ -285,7 +267,7 @@ class ConstructorDeclaration extends Declaration {
 
 class CodeBlock extends Expression {
 
-    constructor(statements: TerminatedStatement[], start: Position, end: Position) {
+    constructor(statements: Statement[], start: Position, end: Position) {
         this.start = start
         this.end = end
         this.statements = statements
@@ -295,13 +277,13 @@ class CodeBlock extends Expression {
         if !visitor.openCodeBlock(this)
             return
         if statements != null {
-            for node: TerminatedStatement in statements
+            for node: Statement in statements
                 node.accept(visitor)
         }
         visitor.closeCodeBlock(this)
     }
 
-    let statements: TerminatedStatement[]?
+    let statements: Statement[]?
 }
 
 class SimpleExpression extends Expression {
@@ -1681,7 +1663,7 @@ class TuplePatternElement extends SyntaxNode {
 
 class CaseContent extends SyntaxNode {
 
-    constructor(statements: TerminatedStatement[], start: Position, end: Position) {
+    constructor(statements: Statement[], start: Position, end: Position) {
         this.start = start
         this.end = end
         this.statements = statements
@@ -1691,13 +1673,13 @@ class CaseContent extends SyntaxNode {
         if !visitor.openCaseContent(this)
             return
         if statements != null {
-            for node: TerminatedStatement in statements
+            for node: Statement in statements
                 node.accept(visitor)
         }
         visitor.closeCaseContent(this)
     }
 
-    let statements: TerminatedStatement[]?
+    let statements: Statement[]?
 }
 
 class CommonSuperMember extends SyntaxNode {

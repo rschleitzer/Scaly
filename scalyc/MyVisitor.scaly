@@ -13,13 +13,6 @@ class MyVisitor extends SyntaxVisitor {
     function closeCompilationUnit(compilationUnit: CompilationUnit) {
     }
 
-    function openTerminatedStatement(terminatedStatement: TerminatedStatement): bool {
-        return(true)
-    }
-
-    function closeTerminatedStatement(terminatedStatement: TerminatedStatement) {
-    }
-
     function openUseDeclaration(useDeclaration: UseDeclaration): bool {
         return(true)
     }
