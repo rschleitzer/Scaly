@@ -75,7 +75,7 @@ class Parser {
         mutable ret: TerminatedStatement[]? = null
         while true {
             let node: TerminatedStatement = parseTerminatedStatement()
-                catch _ break;
+                catch _ break
             if ret == null
                 ret = new TerminatedStatement[]()
             ret.push(node)
@@ -482,7 +482,7 @@ class Parser {
         mutable ret: PathIdentifier[]? = null
         while true {
             let node: PathIdentifier = parsePathIdentifier()
-                catch _ break;
+                catch _ break
             if ret == null
                 ret = new PathIdentifier[]()
             ret.push(node)
@@ -561,7 +561,7 @@ class Parser {
         mutable ret: PatternInitializer[]? = null
         while true {
             let node: PatternInitializer = parsePatternInitializer()
-                catch _ break;
+                catch _ break
             if ret == null
                 ret = new PatternInitializer[]()
             ret.push(node)
@@ -587,7 +587,7 @@ class Parser {
         mutable ret: AdditionalInitializer[]? = null
         while true {
             let node: AdditionalInitializer = parseAdditionalInitializer()
-                catch _ break;
+                catch _ break
             if ret == null
                 ret = new AdditionalInitializer[]()
             ret.push(node)
@@ -617,7 +617,7 @@ class Parser {
         mutable ret: Modifier[]? = null
         while true {
             let node: Modifier = parseModifier()
-                catch _ break;
+                catch _ break
             if ret == null
                 ret = new Modifier[]()
             ret.push(node)
@@ -768,7 +768,7 @@ class Parser {
         mutable ret: ParameterClause[]? = null
         while true {
             let node: ParameterClause = parseParameterClause()
-                catch _ break;
+                catch _ break
             if ret == null
                 ret = new ParameterClause[]()
             ret.push(node)
@@ -807,7 +807,7 @@ class Parser {
         mutable ret: Parameter[]? = null
         while true {
             let node: Parameter = parseParameter()
-                catch _ break;
+                catch _ break
             if ret == null
                 ret = new Parameter[]()
             ret.push(node)
@@ -928,7 +928,7 @@ class Parser {
         mutable ret: EnumMember[]? = null
         while true {
             let node: EnumMember = parseEnumMember()
-                catch _ break;
+                catch _ break
             if ret == null
                 ret = new EnumMember[]()
             ret.push(node)
@@ -981,7 +981,7 @@ class Parser {
         mutable ret: AdditionalCase[]? = null
         while true {
             let node: AdditionalCase = parseAdditionalCase()
-                catch _ break;
+                catch _ break
             if ret == null
                 ret = new AdditionalCase[]()
             ret.push(node)
@@ -1066,7 +1066,7 @@ class Parser {
         mutable ret: GenericParameter[]? = null
         while true {
             let node: GenericParameter = parseGenericParameter()
-                catch _ break;
+                catch _ break
             if ret == null
                 ret = new GenericParameter[]()
             ret.push(node)
@@ -1093,7 +1093,7 @@ class Parser {
         mutable ret: ClassMember[]? = null
         while true {
             let node: ClassMember = parseClassMember()
-                catch _ break;
+                catch _ break
             if ret == null
                 ret = new ClassMember[]()
             ret.push(node)
@@ -1149,7 +1149,7 @@ class Parser {
         mutable ret: BinaryOp[]? = null
         while true {
             let node: BinaryOp = parseBinaryOp()
-                catch _ break;
+                catch _ break
             if ret == null
                 ret = new BinaryOp[]()
             ret.push(node)
@@ -1276,7 +1276,7 @@ class Parser {
         mutable ret: CatchClause[]? = null
         while true {
             let node: CatchClause = parseCatchClause()
-                catch _ break;
+                catch _ break
             if ret == null
                 ret = new CatchClause[]()
             ret.push(node)
@@ -1366,7 +1366,7 @@ class Parser {
         mutable ret: Postfix[]? = null
         while true {
             let node: Postfix = parsePostfix()
-                catch _ break;
+                catch _ break
             if ret == null
                 ret = new Postfix[]()
             ret.push(node)
@@ -1498,7 +1498,7 @@ class Parser {
         mutable ret: ExpressionElement[]? = null
         while true {
             let node: ExpressionElement = parseExpressionElement()
-                catch _ break;
+                catch _ break
             if ret == null
                 ret = new ExpressionElement[]()
             ret.push(node)
@@ -2141,7 +2141,7 @@ class Parser {
         mutable ret: SwitchCase[]? = null
         while true {
             let node: SwitchCase = parseSwitchCase()
-                catch _ break;
+                catch _ break
             if ret == null
                 ret = new SwitchCase[]()
             ret.push(node)
@@ -2244,7 +2244,7 @@ class Parser {
         mutable ret: CaseItem[]? = null
         while true {
             let node: CaseItem = parseCaseItem()
-                catch _ break;
+                catch _ break
             if ret == null
                 ret = new CaseItem[]()
             ret.push(node)
@@ -2389,7 +2389,7 @@ class Parser {
         mutable ret: TuplePatternElement[]? = null
         while true {
             let node: TuplePatternElement = parseTuplePatternElement()
-                catch _ break;
+                catch _ break
             if ret == null
                 ret = new TuplePatternElement[]()
             ret.push(node)
@@ -2543,7 +2543,7 @@ class Parser {
         mutable ret: TypePostfix[]? = null
         while true {
             let node: TypePostfix = parseTypePostfix()
-                catch _ break;
+                catch _ break
             if ret == null
                 ret = new TypePostfix[]()
             ret.push(node)
@@ -2640,7 +2640,7 @@ class Parser {
         mutable ret: Inheritance[]? = null
         while true {
             let node: Inheritance = parseInheritance()
-                catch _ break;
+                catch _ break
             if ret == null
                 ret = new Inheritance[]()
             ret.push(node)

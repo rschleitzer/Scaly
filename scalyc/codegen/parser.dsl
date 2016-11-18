@@ -19,7 +19,7 @@
         mutable ret: "(id syntax)"[]? = null
         while true {
             let node: "(id syntax)" = parse"(id syntax)"()
-                catch _ break;
+                catch _ break
             if ret == null
                 ret = new "(id syntax)"[]()
             ret.push(node)
