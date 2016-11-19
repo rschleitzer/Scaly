@@ -651,6 +651,8 @@ bool CppVisitor::openBindingInitializer(BindingInitializer* bindingInitializer) 
 }
 
 void CppVisitor::closeBindingInitializer(BindingInitializer* bindingInitializer) {
+    if (isCatchingFunctionCall(bindingInitializer->initializer))
+        return;
     if (bindingInitializer->parent->parent->_isCodeBlock() || bindingInitializer->parent->parent->_isCaseContent() || bindingInitializer->parent->parent->_isCompilationUnit())
         sourceFile->append(";\n");
 }
