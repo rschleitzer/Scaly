@@ -442,7 +442,7 @@ void CppVisitor::closeConstructorDeclaration(ConstructorDeclaration* initializer
 }
 
 bool CppVisitor::openCodeBlock(CodeBlock* codeBlock) {
-    if (codeBlock->parent->_isCaseContent())
+    if ((codeBlock->parent->_isCaseContent()) || (codeBlock->parent->_isCodeBlock()))
         indentSource();
     sourceFile->append("{\n");
     sourceIndentLevel++;
