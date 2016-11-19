@@ -564,8 +564,7 @@ bool CppVisitor::openSimpleExpression(SimpleExpression* simpleExpression) {
             }
         }
         if (simpleExpression->parent->_isCodeBlock() || simpleExpression->parent->_isCaseContent() || simpleExpression->parent->_isCompilationUnit()) {
-            _Vector<Postfix>* postfixes;
-            postfixes = simpleExpression->prefixExpression->expression->postfixes;
+            _Vector<Postfix>* postfixes = simpleExpression->prefixExpression->expression->postfixes;
             if (postfixes != nullptr) {
                 Postfix* postfix = nullptr;
                 size_t _postfixes_length = postfixes->length();
@@ -586,7 +585,6 @@ bool CppVisitor::openSimpleExpression(SimpleExpression* simpleExpression) {
             }
         }
     }
-
     return true;
 }
 
@@ -643,7 +641,6 @@ void CppVisitor::closeInitializer(Initializer* initializer) {
 bool CppVisitor::openBindingInitializer(BindingInitializer* bindingInitializer) {
     if (bindingInitializer->parent->parent->_isCodeBlock() || bindingInitializer->parent->parent->_isCaseContent() || bindingInitializer->parent->parent->_isCompilationUnit())
         indentSource();
-
     firstBindingInitializer = true;
     return true;
 }
@@ -2898,20 +2895,18 @@ void CppVisitor::collectInheritancesInCompilationUnit(CompilationUnit* compilati
         for (size_t _i = 0; _i < _statements_length; _i++) {
             statement = *(*statements)[_i];
             {
-                if (statement != nullptr) {
-                    if (statement->_isClassDeclaration()) {
-                        ClassDeclaration* classDeclaration = (ClassDeclaration*)statement;
-                        classes->push(classDeclaration->name);
-                        if (classDeclaration->typeInheritanceClause != nullptr) {
-                            TypeInheritanceClause* inheritanceClause = classDeclaration->typeInheritanceClause;
-                            _Vector<Inheritance>* inheritances = inheritanceClause->inheritances;
-                            Inheritance* inheritance = nullptr;
-                            size_t _inheritances_length = inheritances->length();
-                            for (size_t _i = 0; _i < _inheritances_length; _i++) {
-                                inheritance = *(*inheritances)[_i];
-                                {
-                                    registerInheritance(classDeclaration->name, inheritance->type->name);
-                                }
+                if (statement->_isClassDeclaration()) {
+                    ClassDeclaration* classDeclaration = (ClassDeclaration*)statement;
+                    classes->push(classDeclaration->name);
+                    if (classDeclaration->typeInheritanceClause != nullptr) {
+                        TypeInheritanceClause* inheritanceClause = classDeclaration->typeInheritanceClause;
+                        _Vector<Inheritance>* inheritances = inheritanceClause->inheritances;
+                        Inheritance* inheritance = nullptr;
+                        size_t _inheritances_length = inheritances->length();
+                        for (size_t _i = 0; _i < _inheritances_length; _i++) {
+                            inheritance = *(*inheritances)[_i];
+                            {
+                                registerInheritance(classDeclaration->name, inheritance->type->name);
                             }
                         }
                     }
@@ -2933,8 +2928,6 @@ void CppVisitor::registerInheritance(string* className, string* baseName) {
         }
     }
     if (inherit == nullptr) {
-        if (inherit != nullptr)
-            inherit->getPage()->clear();
         inherit = new(getPage()) Inherits(baseName);
         inherits->push(inherit);
     }
