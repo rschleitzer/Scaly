@@ -1197,14 +1197,8 @@ string* CppVisitor::getFunctionName(_Page* _rp, Assignment* assignment) {
             else {
                 if (rightSide->primaryExpression->_isConstructorCall()) {
                     ConstructorCall* initializerCall = (ConstructorCall*)(rightSide->primaryExpression);
-                    if (hasArrayPostfix(initializerCall->typeToInitialize)) {
-                        Type* type = initializerCall->typeToInitialize;
-                        return new(_rp) string(type->name);
-                    }
-                    else {
-                        Type* type = initializerCall->typeToInitialize;
-                        return new(_rp) string(type->name);
-                    }
+                    Type* type = initializerCall->typeToInitialize;
+                    return new(_rp) string(type->name);
                 }
             }
         }
