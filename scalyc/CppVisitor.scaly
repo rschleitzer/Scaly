@@ -192,134 +192,13 @@ class CppVisitor extends SyntaxVisitor {
     }
     
     function isTopLevelFile(compilationUnit: CompilationUnit): bool {
-        let statements: TerminatedStatement[] = compilationUnit.statements
-        for statement: TerminatedStatement in statements {
-            if statement.statement is Expression
+        let statements: Statement[] = compilationUnit.statements
+        for statement: Statement in statements {
+            if statement is Expression
                 return(true)
         }
             
         return(false)
-    }
-
-    function openTerminatedStatement(terminatedStatement: TerminatedStatement): bool {
-        indentSource()
-        if terminatedStatement.statement is SimpleExpression {
-            let simpleExpression: SimpleExpression = terminatedStatement.statement as SimpleExpression
-            if simpleExpression.prefixExpression.expression.primaryExpression is IdentifierExpression {
-                let binaryOps: BinaryOp[] = simpleExpression.binaryOps
-                if binaryOps != null {
-                    if binaryOps.length() == 1 {
-                        let binaryOp: BinaryOp = binaryOps[0]
-                        if binaryOp is Assignment {
-                            let assignment: Assignment = binaryOp as Assignment
-                            mutable memberName: string = getMemberIfCreatingObject(assignment)
-                            if (memberName != null) && (!inInitializer(assignment)) {
-                                sourceFile.append("if (")
-                                sourceFile.append(memberName)
-                                sourceFile.append(" != nullptr)\n")
-                                sourceIndentLevel++
-                                this.indentSource()
-                                sourceFile.append(memberName)
-                                sourceFile.append("->getPage()->clear();\n")
-                                sourceIndentLevel--
-                                this.indentSource()
-                            }
-                        }
-                    }
-                }
-                let postfixes: Postfix[] postfixes = simpleExpression.prefixExpression.expression.postfixes
-                if postfixes != null {
-                    for postfix: Postfix in postfixes {
-                        if postfix is FunctionCall {
-                            let functionCall: FunctionCall = postfix as FunctionCall
-                            if functionCall.catchClauses != null {
-                                let identifierExpression: IdentifierExpression = simpleExpression.prefixExpression.expression.primaryExpression as IdentifierExpression
-                                sourceFile.append("auto _")
-                                sourceFile.append(identifierExpression.name)
-                                sourceFile.append("_error = ")
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        return(true)
-    }
-
-    function closeTerminatedStatement(terminatedStatement: TerminatedStatement) {
-
-        if terminatedStatement.statement is ClassDeclaration
-            return
-
-        if terminatedStatement.statement is EnumDeclaration
-            return
-
-        {
-            let bindingInitializer: BindingInitializer = null
-            if terminatedStatement.statement is ConstantDeclaration {
-                {
-                    let constantDeclaration: ConstantDeclaration = terminatedStatement.statement as ConstantDeclaration
-                    if constantDeclaration.initializer is BindingInitializer {
-                        bindingInitializer = constantDeclaration.initializer
-                    }
-                }
-                {
-                    let variableDeclaration: VariableDeclaration = terminatedStatement.statement as VariableDeclaration
-                    if variableDeclaration.initializer is BindingInitializer {
-                        bindingInitializer = variableDeclaration.initializer
-                    }
-                }
-                {
-                    let mutableDeclaration: MutableDeclaration = terminatedStatement.statement as MutableDeclaration
-                    if mutableDeclaration.initializer is BindingInitializer {
-                        bindingInitializer = mutableDeclaration.initializer
-                    }
-                }
-            }
-            if bindingInitializer != null {
-                if bindingInitializer.initializer is PatternInitializer {
-                    let patternInitializer: PatternInitializer = bindingInitializer.initializer as PatternInitializer
-                    if isCatchingFunctionCall(patternInitializer)
-                        return
-                }
-            }
-        }
-
-        if terminatedStatement.statement is SimpleExpression {
-            let expression: SimpleExpression = terminatedStatement.statement as SimpleExpression
-            let primaryExpression: PrimaryExpression = expression.prefixExpression.expression.primaryExpression
-
-            if primaryExpression is IfExpression
-                return
-
-            if primaryExpression is SwitchExpression
-                return
-
-            if primaryExpression is ForExpression
-                return
-
-            if primaryExpression is WhileExpression
-                return
-
-            if primaryExpression is IdentifierExpression {
-                let postfixExpression: PostfixExpression = expression.prefixExpression.expression
-                if postfixExpression.postfixes != null {
-                    let postfixes: Postfix[] = postfixExpression.postfixes
-                    for postfix: Postfix in postfixes {
-                        if postfix is FunctionCall {
-                            let functionCall: FunctionCall = postfix as FunctionCall
-                            if catchesError(functionCall)
-                                return
-                        }
-                    }
-                }
-            }
-        }
-
-        if terminatedStatement.statement is CodeBlock
-            return
-            
-        sourceFile.append(";\n")
     }
 
     function openUseDeclaration(useDeclaration: UseDeclaration): bool {
@@ -581,6 +460,10 @@ class CppVisitor extends SyntaxVisitor {
     }
 
     function openCodeBlock(codeBlock: CodeBlock): bool {
+
+        if (codeBlock.parent is CaseContent) || (codeBlock.parent is CodeBlock())
+            indentSource()
+
         sourceFile.append("{\n")
         sourceIndentLevel++
 
@@ -594,10 +477,10 @@ class CppVisitor extends SyntaxVisitor {
     }
 
     function localAllocations(codeBlock: CodeBlock): bool {
-        let terminatedStatements: TerminatedStatement[] = codeBlock.statements
-        if terminatedStatements != null {
-            for terminatedStatement: TerminatedStatement in terminatedStatements {
-                if terminatedStatement.statement is MutableDeclaration
+        let statements: Statement[] = codeBlock.statements
+        if statements != null {
+            for statement: Statement in statements {
+                if statement is MutableDeclaration
                     return(true)
             }
         }
@@ -650,6 +533,10 @@ class CppVisitor extends SyntaxVisitor {
     }
 
     function openSimpleExpression(simpleExpression: SimpleExpression): bool {
+
+        if simpleExpression.parent is CodeBlock || simpleExpression.parent is CaseContent() || simpleExpression.parent is CompilationUnit
+            indentSource()
+
         if simpleExpression.binaryOps != null {
             let binaryOps: BinaryOp[] = simpleExpression.binaryOps
             for binaryOp: BinaryOp in binaryOps {
@@ -666,10 +553,80 @@ class CppVisitor extends SyntaxVisitor {
                 }
             }
         }
+
+        if simpleExpression.prefixExpression.expression.primaryExpression is IdentifierExpression {
+            let binaryOps: BinaryOp[] = simpleExpression.binaryOps
+            if binaryOps != null {
+                if binaryOps.length() == 1 {
+                    let binaryOp: BinaryOp = binaryOps[0]
+                    if binaryOp is Assignment {
+                        let assignment: Assignment = binaryOp as Assignment
+                        var memberName: string = getMemberIfCreatingObject(assignment)
+                        if (memberName != null) && (!inInitializer(assignment)) {
+                            sourceFile.append("if (")
+                            sourceFile.append(memberName)
+                            sourceFile.append(" != nullptr)\n")
+                            sourceIndentLevel++
+                            this.indentSource()
+                            sourceFile.append(memberName)
+                            sourceFile.append("->getPage()->clear();\n")
+                            sourceIndentLevel--
+                            this.indentSource()
+                        }
+                    }
+                }
+            }
+            if simpleExpression.parent is CodeBlock || simpleExpression.parent is CaseContent || simpleExpression.parent isCompilationUnit {
+                let postfixes: Postfix[] = simpleExpression.prefixExpression.expression.postfixes
+                if postfixes != null {
+                    for postfix: Postfix in postfixes {
+                        if postfix is FunctionCall {
+                            let functionCall: FunctionCall = postfix as FunctionCall
+                            if functionCall.catchClauses != null {
+                                let identifierExpression: IdentifierExpression = (simpleExpression.prefixExpression.expression.primaryExpression) as IdentifierExpression
+                                sourceFile.append("auto _")
+                                sourceFile.append(identifierExpression.name)
+                                sourceFile.append("_error = ")
+                            }
+                        }
+                    }
+                }
+            }
+        }
         return(true)
     }
 
     function closeSimpleExpression(simpleExpression: SimpleExpression) {
+
+        let primaryExpression: PrimaryExpression = simpleExpression.prefixExpression.expression.primaryExpression
+
+        if primaryExpression is IfExpression
+            return
+
+        if primaryExpression is SwitchExpression
+            return
+
+        if primaryExpression is ForExpression
+            return
+
+        if primaryExpression is WhileExpression
+            return
+
+        if primaryExpression is IdentifierExpression {
+            let postfixExpression: PostfixExpression = simpleExpression.prefixExpression.expression
+            if postfixExpression.postfixes != null {
+                let postfixes: Postfix[] = postfixExpression.postfixes
+                for postfix: Postfix in postfixes {
+                    if postfix is FunctionCall {
+                        let functionCall: FunctionCall = postfix as FunctionCall
+                        if catchesError(functionCall)
+                            return
+                    }
+                }
+            }
+        }
+        if simpleExpression.parent is CodeBlock || simpleExpression.parent is CaseContent || simpleExpression.parent is CompilationUnit
+            sourceFile.append(";\n")
     }
 
     function openPathIdentifier(pathIdentifier: PathIdentifier): bool {
@@ -691,11 +648,21 @@ class CppVisitor extends SyntaxVisitor {
     }
 
     function openBindingInitializer(bindingInitializer: BindingInitializer): bool {
+
+        if bindingInitializer.parent.parent is CodeBlock || bindingInitializer.parent.parent is CaseContent || bindingInitializer.parent.parent is CompilationUnit
+            indentSource()
+
         firstBindingInitializer = true
         return(true)
     }
 
     function closeBindingInitializer(bindingInitializer: BindingInitializer) {
+
+        if isCatchingFunctionCall(bindingInitializer.initializer)
+            return
+
+        if bindingInitializer.parent.parent is CodeBlock || bindingInitializer.parent.parent is CaseContent || bindingInitializer.parent.parent is CompilationUnit
+            sourceFile.append(";\n")
     }
 
     function openPatternInitializer(patternInitializer: PatternInitializer): bool {
@@ -1245,7 +1212,8 @@ class CppVisitor extends SyntaxVisitor {
                             mutable memberName: string = new string(memberExpression.name)
                             var classDeclaration: ClassDeclaration = getClassDeclaration(assignment)
                             if classDeclaration != null {
-                                return(new string(memberName))
+                                if isVariableMember(memberName, classDeclaration)
+                                    return(new string(memberName))
                             }
                         }
                     }
@@ -1269,14 +1237,8 @@ class CppVisitor extends SyntaxVisitor {
                 else {
                     if rightSide.primaryExpression is ConstructorCall {
                         let initializerCall: ConstructorCall = (rightSide.primaryExpression) as ConstructorCall
-                        if hasArrayPostfix(initializerCall.typeToInitialize) {
-                            let type: Type = initializerCall.typeToInitialize
-                            return(new string(type.name))
-                        }
-                        else {
-                            let type: Type = initializerCall.typeToInitialize
-                            return(new string(type.name))
-                        }
+                        let type: Type = initializerCall.typeToInitialize
+                        return(new string(type.name))
                     }
                 }
             }
@@ -1538,7 +1500,7 @@ class CppVisitor extends SyntaxVisitor {
     }
 
     function getIdentifierExpression(postfixExpression: PostfixExpression): existing IdentifierExpression {
-        if postfixExpression.parent.parent.parent.parent is CodeBlock {
+        if postfixExpression.parent.parent.parent is CodeBlock {
             if postfixExpression.parent is PrefixExpression {
                 let prefixExpression: PrefixExpression = (postfixExpression.parent) as PrefixExpression
                 if prefixExpression.expression.primaryExpression is IdentifierExpression {
@@ -2962,18 +2924,16 @@ class CppVisitor extends SyntaxVisitor {
 
     function collectInheritancesInCompilationUnit(compilationUnit: CompilationUnit) {
         if compilationUnit.statements != null {
-            let statements: TerminatedStatement[] = compilationUnit.statements
-            for terminatedStatement: TerminatedStatement in statements {
-                if terminatedStatement.statement != null {
-                    if terminatedStatement.statement is ClassDeclaration {
-                        let classDeclaration: ClassDeclaration = terminatedStatement.statement as ClassDeclaration
-                        classes.push(classDeclaration.name)
-                        if classDeclaration.typeInheritanceClause != null {
-                            let inheritanceClause: TypeInheritanceClause  = classDeclaration.typeInheritanceClause
-                            let inheritances: Inheritance[] = inheritanceClause.inheritances
-                            for inheritance: Inheritance in inheritances {
-                                registerInheritance(classDeclaration.name, inheritance.type.name)
-                            }
+            let statements: Statement[] = compilationUnit.statements
+            for statement: Statement in statements {
+                if statement is ClassDeclaration {
+                    let classDeclaration: ClassDeclaration = statement as ClassDeclaration
+                    classes.push(classDeclaration.name)
+                    if classDeclaration.typeInheritanceClause != null {
+                        let inheritanceClause: TypeInheritanceClause  = classDeclaration.typeInheritanceClause
+                        let inheritances: Inheritance[] = inheritanceClause.inheritances
+                        for inheritance: Inheritance in inheritances {
+                            registerInheritance(classDeclaration.name, inheritance.type.name)
                         }
                     }
                 }

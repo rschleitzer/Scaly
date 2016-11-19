@@ -23,8 +23,6 @@ bool CppVisitor::openProgram(Program* program) {
     _Region _region; _Page* _p = _region.get();
     string* programDirectory = new(_p) string(program->directory);
     if (programDirectory == nullptr || programDirectory->equals("")) {
-        if (programDirectory != nullptr)
-            programDirectory->getPage()->clear();
         programDirectory = new(getPage()) string(".");
     }
     if (!Directory::exists(programDirectory)) {
