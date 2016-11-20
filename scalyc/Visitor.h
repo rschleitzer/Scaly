@@ -50,8 +50,6 @@ class FunctionSignature;
 
 class FunctionResult;
 
-class ExistingClause;
-
 class ParameterClause;
 
 class Parameter;
@@ -222,7 +220,6 @@ public:
     virtual void closeFunctionSignature(FunctionSignature* functionSignature) = 0;
     virtual bool openFunctionResult(FunctionResult* functionResult) = 0;
     virtual void closeFunctionResult(FunctionResult* functionResult) = 0;
-    virtual void visitExistingClause(ExistingClause* existingClause) = 0;
     virtual bool openParameterClause(ParameterClause* parameterClause) = 0;
     virtual void closeParameterClause(ParameterClause* parameterClause) = 0;
     virtual bool openConstParameter(ConstParameter* constParameter) = 0;

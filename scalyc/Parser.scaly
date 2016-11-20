@@ -18,7 +18,6 @@ class Parser {
         throwKeyword = new string("throw")
         breakKeyword = new string("break")
         throwsKeyword = new string("throws")
-        existingKeyword = new string("existing")
         overrideKeyword = new string("override")
         staticKeyword = new string("static")
         letKeyword = new string("let")
@@ -603,29 +602,11 @@ class Parser {
         else
             throw punctuationExpected(new Position(startColon1), new string(colon))
 
-        let existingObject: ExistingClause = parseExistingClause() catch _ null
         let resultType: Type = parseType() catch _ (error)
             throw error
         mutable end: Position = lexer.getPosition()
-        var ret: FunctionResult = new FunctionResult(existingObject, resultType, new Position(start), new Position(end))
-        if existingObject != null
-            existingObject.parent = ret
+        var ret: FunctionResult = new FunctionResult(resultType, new Position(start), new Position(end))
         resultType.parent = ret
-
-        return(ret)
-    }
-
-    function parseExistingClause(): ExistingClause throws ParserError {
-        mutable start: Position = lexer.getPreviousPosition()
-        mutable startExisting1: Position = lexer.getPreviousPosition()
-        let successExisting1: bool = lexer.parseKeyword(existingKeyword)
-        if successExisting1
-            lexer.advance()
-        else
-            throw keywordExpected(new Position(startExisting1), new string(existingKeyword))
-
-        mutable end: Position = lexer.getPosition()
-        var ret: ExistingClause = new ExistingClause(new Position(start), new Position(end))
 
         return(ret)
     }
@@ -2371,9 +2352,6 @@ class Parser {
         if id.equals(throwsKeyword)
             return(false)
 
-        if id.equals(existingKeyword)
-            return(false)
-
         if id.equals(overrideKeyword)
             return(false)
 
@@ -2435,7 +2413,6 @@ class Parser {
     let throwKeyword: string
     let breakKeyword: string
     let throwsKeyword: string
-    let existingKeyword: string
     let overrideKeyword: string
     let staticKeyword: string
     let letKeyword: string

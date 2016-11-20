@@ -384,36 +384,20 @@ class FunctionSignature extends SyntaxNode {
 
 class FunctionResult extends SyntaxNode {
 
-    constructor(existingObject: ExistingClause, resultType: Type, start: Position, end: Position) {
+    constructor(resultType: Type, start: Position, end: Position) {
         this.start = start
         this.end = end
-        this.existingObject = existingObject
         this.resultType = resultType
     }
 
     function accept(mutable visitor: SyntaxVisitor) {
         if !visitor.openFunctionResult(this)
             return
-        if existingObject != null
-            existingObject.accept(visitor)
         resultType.accept(visitor)
         visitor.closeFunctionResult(this)
     }
 
-    let existingObject: ExistingClause    let resultType: Type}
-
-class ExistingClause extends SyntaxNode {
-
-    constructor(start: Position, end: Position) {
-        this.start = start
-        this.end = end
-    }
-
-    function accept(mutable visitor: SyntaxVisitor) {
-        visitor.visitExistingClause(this)
-    }
-
-}
+    let resultType: Type}
 
 class ParameterClause extends SyntaxNode {
 

@@ -33,7 +33,6 @@ public:
     virtual bool _isStaticWord();
     virtual bool _isFunctionSignature();
     virtual bool _isFunctionResult();
-    virtual bool _isExistingClause();
     virtual bool _isParameterClause();
     virtual bool _isParameter();
     virtual bool _isConstParameter();
@@ -329,20 +328,11 @@ public:
 
 class FunctionResult : public SyntaxNode {
 public:
-    FunctionResult(ExistingClause* existingObject, Type* resultType, Position* start, Position* end);
+    FunctionResult(Type* resultType, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
-    ExistingClause* existingObject;
     Type* resultType;
 
     virtual bool _isFunctionResult();
-};
-
-class ExistingClause : public SyntaxNode {
-public:
-    ExistingClause(Position* start, Position* end);
-    virtual void accept(SyntaxVisitor* visitor);
-
-    virtual bool _isExistingClause();
 };
 
 class ParameterClause : public SyntaxNode {

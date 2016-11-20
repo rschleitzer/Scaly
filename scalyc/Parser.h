@@ -33,7 +33,6 @@ public:
     virtual _Result<StaticWord, ParserError> parseStaticWord(_Page* _rp, _Page* _ep);
     virtual _Result<FunctionSignature, ParserError> parseFunctionSignature(_Page* _rp, _Page* _ep);
     virtual _Result<FunctionResult, ParserError> parseFunctionResult(_Page* _rp, _Page* _ep);
-    virtual _Result<ExistingClause, ParserError> parseExistingClause(_Page* _rp, _Page* _ep);
     virtual _Result<_Vector<ParameterClause>, ParserError> parseParameterClauseList(_Page* _rp, _Page* _ep);
     virtual _Result<ParameterClause, ParserError> parseParameterClause(_Page* _rp, _Page* _ep);
     virtual _Result<_Vector<Parameter>, ParserError> parseParameterList(_Page* _rp, _Page* _ep);
@@ -134,7 +133,6 @@ public:
     string* throwKeyword;
     string* breakKeyword;
     string* throwsKeyword;
-    string* existingKeyword;
     string* overrideKeyword;
     string* staticKeyword;
     string* letKeyword;

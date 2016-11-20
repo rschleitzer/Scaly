@@ -105,11 +105,7 @@
 
     <syntax id = FunctionResult
         <content link = colon
-        <content link = ExistingClause                 optional property = existingObject
         <content link = Type                                    property = resultType
-
-    <syntax id = ExistingClause
-        <content link = existing>
 
     <syntax id = ParameterClause              multiple
         <content link = leftParen
@@ -429,7 +425,6 @@
     <keyword id = throw
     <keyword id = break
     <keyword id = throws
-    <keyword id = existing
     <keyword id = override
     <keyword id = static
     <keyword id = let

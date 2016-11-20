@@ -21,7 +21,6 @@ class OverrideWord
 class StaticWord
 class FunctionSignature
 class FunctionResult
-class ExistingClause
 class ParameterClause
 class Parameter
 class ConstParameter
@@ -126,7 +125,6 @@ class SyntaxVisitor {
     function closeFunctionSignature(functionSignature: FunctionSignature)
     function openFunctionResult(functionResult: FunctionResult): bool
     function closeFunctionResult(functionResult: FunctionResult)
-    function visitExistingClause(existingClause: ExistingClause)
     function openParameterClause(parameterClause: ParameterClause): bool
     function closeParameterClause(parameterClause: ParameterClause)
     function openConstParameter(constParameter: ConstParameter): bool

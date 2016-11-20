@@ -124,9 +124,6 @@ class MyVisitor extends SyntaxVisitor {
     function closeFunctionResult(functionResult: FunctionResult) {
     }
 
-    function visitExistingClause(existingClause: ExistingClause) {
-    }
-
     function openParameterClause(parameterClause: ParameterClause): bool {
         return(true)
     }

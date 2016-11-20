@@ -802,9 +802,6 @@ bool CppVisitor::openFunctionResult(FunctionResult* functionResult) {
 void CppVisitor::closeFunctionResult(FunctionResult* functionResult) {
 }
 
-void CppVisitor::visitExistingClause(ExistingClause* existingClause) {
-}
-
 bool CppVisitor::openParameterClause(ParameterClause* parameterClause) {
     firstParameter = true;
     inParameterClause = true;

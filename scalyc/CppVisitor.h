@@ -72,7 +72,6 @@ public:
     virtual void closeFunctionSignature(FunctionSignature* functionSignature);
     virtual bool openFunctionResult(FunctionResult* functionResult);
     virtual void closeFunctionResult(FunctionResult* functionResult);
-    virtual void visitExistingClause(ExistingClause* existingClause);
     virtual bool openParameterClause(ParameterClause* parameterClause);
     virtual void closeParameterClause(ParameterClause* parameterClause);
     virtual bool openConstParameter(ConstParameter* constParameter);
