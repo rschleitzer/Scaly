@@ -1532,6 +1532,7 @@ class CppVisitor extends SyntaxVisitor {
                     if (postfixes[0] == explicitMemberExpression as Postfix) && ((postfixes[1]) is FunctionCall) {
                         if isClass(identifierExpression.name) {
                             sourceFile.append("::")
+                            sourceFile.append(memberExpression.member)
                             return
                         }
                     }

@@ -1483,6 +1483,7 @@ void CppVisitor::visitMemberExpression(MemberExpression* memberExpression) {
                 if (((Postfix*)*(*postfixes)[0]) && ((*(*postfixes)[1])->_isFunctionCall())) {
                     if (isClass(identifierExpression->name)) {
                         sourceFile->append("::");
+                        sourceFile->append(memberExpression->member);
                         return;
                     }
                 }
