@@ -32,7 +32,6 @@ Parser::Parser(string* theFileName, string* text) {
     asKeyword = new(getPage()) string("as");
     constructorKeyword = new(getPage()) string("constructor");
     enumKeyword = new(getPage()) string("enum");
-    superKeyword = new(getPage()) string("super");
     thisKeyword = new(getPage()) string("this");
     nullKeyword = new(getPage()) string("null");
     newKeyword = new(getPage()) string("new");
@@ -2147,21 +2146,6 @@ _Result<PrimaryExpression, ParserError> Parser::parsePrimaryExpression(_Page* _r
             return _Result<PrimaryExpression, ParserError>(node);
     }
     {
-        auto _node_result = parseSuperExpression(_rp, _ep);
-        SuperExpression* node = nullptr;
-        if (_node_result.succeeded()) {
-            node = _node_result.getResult();
-        }
-        else {
-            auto error = _node_result.getError();
-            {
-                errors->push(error);
-            }
-        }
-        if (node != nullptr)
-            return _Result<PrimaryExpression, ParserError>(node);
-    }
-    {
         auto _node_result = parseNullExpression(_rp, _ep);
         NullExpression* node = nullptr;
         if (_node_result.succeeded()) {
@@ -2589,97 +2573,6 @@ _Result<ThisExpression, ParserError> Parser::parseThisExpression(_Page* _rp, _Pa
     Position* end = lexer->getPosition(_p);
     ThisExpression* ret = new(_rp) ThisExpression(new(_rp) Position(start), new(_rp) Position(end));
     return _Result<ThisExpression, ParserError>(ret);
-}
-
-_Result<SuperExpression, ParserError> Parser::parseSuperExpression(_Page* _rp, _Page* _ep) {
-    _Region _region; _Page* _p = _region.get();
-    _Array<ParserError>* errors = new(_p) _Array<ParserError>();
-    Position* start = lexer->getPreviousPosition(_p);
-    {
-        auto _node_result = parseSuperDot(_rp, _ep);
-        SuperDot* node = nullptr;
-        if (_node_result.succeeded()) {
-            node = _node_result.getResult();
-        }
-        else {
-            auto error = _node_result.getError();
-            {
-                errors->push(error);
-            }
-        }
-        if (node != nullptr)
-            return _Result<SuperExpression, ParserError>(node);
-    }
-    {
-        auto _node_result = parseSuperSubscript(_rp, _ep);
-        SuperSubscript* node = nullptr;
-        if (_node_result.succeeded()) {
-            node = _node_result.getResult();
-        }
-        else {
-            auto error = _node_result.getError();
-            {
-                errors->push(error);
-            }
-        }
-        if (node != nullptr)
-            return _Result<SuperExpression, ParserError>(node);
-    }
-    return _Result<SuperExpression, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_unableToParse(new(_ep) Position(start), &_Vector<ParserError>::create(_ep, *(errors)))));
-}
-
-_Result<SuperDot, ParserError> Parser::parseSuperDot(_Page* _rp, _Page* _ep) {
-    _Region _region; _Page* _p = _region.get();
-    Position* start = lexer->getPreviousPosition(_p);
-    Position* startSuper1 = lexer->getPreviousPosition(_p);
-    bool successSuper1 = lexer->parseKeyword(superKeyword);
-    if (successSuper1)
-        lexer->advance();
-    else
-        return _Result<SuperDot, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_keywordExpected(new(_ep) Position(startSuper1), new(_ep) string(superKeyword))));
-    Position* startDot2 = lexer->getPreviousPosition(_p);
-    bool successDot2 = lexer->parsePunctuation(dot);
-    if (successDot2)
-        lexer->advance();
-    else
-        return _Result<SuperDot, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_punctuationExpected(new(_ep) Position(startDot2), new(_ep) string(dot))));
-    auto _member_result = parseCommonSuperMember(_rp, _ep);
-    CommonSuperMember* member = nullptr;
-    if (_member_result.succeeded()) {
-        member = _member_result.getResult();
-    }
-    else {
-        auto error = _member_result.getError();
-        return _Result<SuperDot, ParserError>(error);
-    }
-    Position* end = lexer->getPosition(_p);
-    SuperDot* ret = new(_rp) SuperDot(member, new(_rp) Position(start), new(_rp) Position(end));
-    member->parent = ret;
-    return _Result<SuperDot, ParserError>(ret);
-}
-
-_Result<SuperSubscript, ParserError> Parser::parseSuperSubscript(_Page* _rp, _Page* _ep) {
-    _Region _region; _Page* _p = _region.get();
-    Position* start = lexer->getPreviousPosition(_p);
-    Position* startSuper1 = lexer->getPreviousPosition(_p);
-    bool successSuper1 = lexer->parseKeyword(superKeyword);
-    if (successSuper1)
-        lexer->advance();
-    else
-        return _Result<SuperSubscript, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_keywordExpected(new(_ep) Position(startSuper1), new(_ep) string(superKeyword))));
-    auto _subscript_result = parseSubscript(_rp, _ep);
-    Subscript* subscript = nullptr;
-    if (_subscript_result.succeeded()) {
-        subscript = _subscript_result.getResult();
-    }
-    else {
-        auto error = _subscript_result.getError();
-        return _Result<SuperSubscript, ParserError>(error);
-    }
-    Position* end = lexer->getPosition(_p);
-    SuperSubscript* ret = new(_rp) SuperSubscript(subscript, new(_rp) Position(start), new(_rp) Position(end));
-    subscript->parent = ret;
-    return _Result<SuperSubscript, ParserError>(ret);
 }
 
 _Result<NullExpression, ParserError> Parser::parseNullExpression(_Page* _rp, _Page* _ep) {
@@ -3237,71 +3130,6 @@ _Result<CaseContent, ParserError> Parser::parseCaseContent(_Page* _rp, _Page* _e
     return _Result<CaseContent, ParserError>(ret);
 }
 
-_Result<CommonSuperMember, ParserError> Parser::parseCommonSuperMember(_Page* _rp, _Page* _ep) {
-    _Region _region; _Page* _p = _region.get();
-    _Array<ParserError>* errors = new(_p) _Array<ParserError>();
-    Position* start = lexer->getPreviousPosition(_p);
-    {
-        auto _node_result = parseSuperConstructor(_rp, _ep);
-        SuperConstructor* node = nullptr;
-        if (_node_result.succeeded()) {
-            node = _node_result.getResult();
-        }
-        else {
-            auto error = _node_result.getError();
-            {
-                errors->push(error);
-            }
-        }
-        if (node != nullptr)
-            return _Result<CommonSuperMember, ParserError>(node);
-    }
-    {
-        auto _node_result = parseSuperMember(_rp, _ep);
-        SuperMember* node = nullptr;
-        if (_node_result.succeeded()) {
-            node = _node_result.getResult();
-        }
-        else {
-            auto error = _node_result.getError();
-            {
-                errors->push(error);
-            }
-        }
-        if (node != nullptr)
-            return _Result<CommonSuperMember, ParserError>(node);
-    }
-    return _Result<CommonSuperMember, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_unableToParse(new(_ep) Position(start), &_Vector<ParserError>::create(_ep, *(errors)))));
-}
-
-_Result<SuperConstructor, ParserError> Parser::parseSuperConstructor(_Page* _rp, _Page* _ep) {
-    _Region _region; _Page* _p = _region.get();
-    Position* start = lexer->getPreviousPosition(_p);
-    Position* startConstructor1 = lexer->getPreviousPosition(_p);
-    bool successConstructor1 = lexer->parseKeyword(constructorKeyword);
-    if (successConstructor1)
-        lexer->advance();
-    else
-        return _Result<SuperConstructor, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_keywordExpected(new(_ep) Position(startConstructor1), new(_ep) string(constructorKeyword))));
-    Position* end = lexer->getPosition(_p);
-    SuperConstructor* ret = new(_rp) SuperConstructor(new(_rp) Position(start), new(_rp) Position(end));
-    return _Result<SuperConstructor, ParserError>(ret);
-}
-
-_Result<SuperMember, ParserError> Parser::parseSuperMember(_Page* _rp, _Page* _ep) {
-    _Region _region; _Page* _p = _region.get();
-    Position* start = lexer->getPreviousPosition(_p);
-    Position* startName = lexer->getPreviousPosition(_p);
-    string* name = lexer->parseIdentifier(_rp);
-    if ((name != nullptr) && isIdentifier(name))
-        lexer->advance();
-    else
-        return _Result<SuperMember, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_identifierExpected(new(_ep) Position(startName))));
-    Position* end = lexer->getPosition(_p);
-    SuperMember* ret = new(_rp) SuperMember(name, new(_rp) Position(start), new(_rp) Position(end));
-    return _Result<SuperMember, ParserError>(ret);
-}
-
 _Result<Type, ParserError> Parser::parseType(_Page* _rp, _Page* _ep) {
     _Region _region; _Page* _p = _region.get();
     Position* start = lexer->getPreviousPosition(_p);
@@ -3618,8 +3446,6 @@ bool Parser::isIdentifier(string* id) {
     if (id->equals(constructorKeyword))
         return false;
     if (id->equals(enumKeyword))
-        return false;
-    if (id->equals(superKeyword))
         return false;
     if (id->equals(thisKeyword))
         return false;

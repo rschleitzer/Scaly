@@ -63,9 +63,6 @@ class ThrowExpression
 class BreakExpression
 class ConstructorCall
 class ThisExpression
-class SuperExpression
-class SuperDot
-class SuperSubscript
 class NullExpression
 class ElseClause
 class SwitchBody
@@ -83,9 +80,6 @@ class TuplePattern
 class ExpressionPattern
 class TuplePatternElement
 class CaseContent
-class CommonSuperMember
-class SuperConstructor
-class SuperMember
 class Type
 class TypeAnnotation
 class Subtype
@@ -199,10 +193,6 @@ class SyntaxVisitor {
     function openConstructorCall(constructorCall: ConstructorCall): bool
     function closeConstructorCall(constructorCall: ConstructorCall)
     function visitThisExpression(thisExpression: ThisExpression)
-    function openSuperDot(superDot: SuperDot): bool
-    function closeSuperDot(superDot: SuperDot)
-    function openSuperSubscript(superSubscript: SuperSubscript): bool
-    function closeSuperSubscript(superSubscript: SuperSubscript)
     function visitNullExpression(nullExpression: NullExpression)
     function openElseClause(elseClause: ElseClause): bool
     function closeElseClause(elseClause: ElseClause)
@@ -228,8 +218,6 @@ class SyntaxVisitor {
     function closeTuplePatternElement(tuplePatternElement: TuplePatternElement)
     function openCaseContent(caseContent: CaseContent): bool
     function closeCaseContent(caseContent: CaseContent)
-    function visitSuperConstructor(superConstructor: SuperConstructor)
-    function visitSuperMember(superMember: SuperMember)
     function openType(type: Type): bool
     function closeType(type: Type)
     function openTypeAnnotation(typeAnnotation: TypeAnnotation): bool

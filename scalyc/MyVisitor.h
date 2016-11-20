@@ -109,10 +109,6 @@ public:
     virtual bool openConstructorCall(ConstructorCall* constructorCall);
     virtual void closeConstructorCall(ConstructorCall* constructorCall);
     virtual void visitThisExpression(ThisExpression* thisExpression);
-    virtual bool openSuperDot(SuperDot* superDot);
-    virtual void closeSuperDot(SuperDot* superDot);
-    virtual bool openSuperSubscript(SuperSubscript* superSubscript);
-    virtual void closeSuperSubscript(SuperSubscript* superSubscript);
     virtual void visitNullExpression(NullExpression* nullExpression);
     virtual bool openElseClause(ElseClause* elseClause);
     virtual void closeElseClause(ElseClause* elseClause);
@@ -138,8 +134,6 @@ public:
     virtual void closeTuplePatternElement(TuplePatternElement* tuplePatternElement);
     virtual bool openCaseContent(CaseContent* caseContent);
     virtual void closeCaseContent(CaseContent* caseContent);
-    virtual void visitSuperConstructor(SuperConstructor* superConstructor);
-    virtual void visitSuperMember(SuperMember* superMember);
     virtual bool openType(Type* type);
     virtual void closeType(Type* type);
     virtual bool openTypeAnnotation(TypeAnnotation* typeAnnotation);

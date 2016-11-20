@@ -355,20 +355,6 @@ class MyVisitor extends SyntaxVisitor {
     function visitThisExpression(thisExpression: ThisExpression) {
     }
 
-    function openSuperDot(superDot: SuperDot): bool {
-        return(true)
-    }
-
-    function closeSuperDot(superDot: SuperDot) {
-    }
-
-    function openSuperSubscript(superSubscript: SuperSubscript): bool {
-        return(true)
-    }
-
-    function closeSuperSubscript(superSubscript: SuperSubscript) {
-    }
-
     function visitNullExpression(nullExpression: NullExpression) {
     }
 
@@ -453,12 +439,6 @@ class MyVisitor extends SyntaxVisitor {
     }
 
     function closeCaseContent(caseContent: CaseContent) {
-    }
-
-    function visitSuperConstructor(superConstructor: SuperConstructor) {
-    }
-
-    function visitSuperMember(superMember: SuperMember) {
     }
 
     function openType(type: Type): bool {

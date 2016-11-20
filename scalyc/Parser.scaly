@@ -29,7 +29,6 @@ class Parser {
         asKeyword = new string("as")
         constructorKeyword = new string("constructor")
         enumKeyword = new string("enum")
-        superKeyword = new string("super")
         thisKeyword = new string("this")
         nullKeyword = new string("null")
         newKeyword = new string("new")
@@ -1456,15 +1455,6 @@ class Parser {
         }
 
         {
-            let node: SuperExpression = parseSuperExpression() catch _ (error) {
-                errors.push(error)
-            }
-
-            if node != null
-                return(node)
-        }
-
-        {
             let node: NullExpression = parseNullExpression() catch _ (error) {
                 errors.push(error)
             }
@@ -1752,74 +1742,6 @@ class Parser {
 
         mutable end: Position = lexer.getPosition()
         var ret: ThisExpression = new ThisExpression(new Position(start), new Position(end))
-
-        return(ret)
-    }
-
-    function parseSuperExpression(): SuperExpression throws ParserError {
-        mutable errors: ParserError[] = new ParserError[]()
-        mutable start: Position = lexer.getPreviousPosition()
-
-        {
-            let node: SuperDot = parseSuperDot() catch _ (error) {
-                errors.push(error)
-            }
-
-            if node != null
-                return(node)
-        }
-
-        {
-            let node: SuperSubscript = parseSuperSubscript() catch _ (error) {
-                errors.push(error)
-            }
-
-            if node != null
-                return(node)
-        }
-
-        throw unableToParse(new Position(start), new ParserError[](errors))
-    }
-
-    function parseSuperDot(): SuperDot throws ParserError {
-        mutable start: Position = lexer.getPreviousPosition()
-        mutable startSuper1: Position = lexer.getPreviousPosition()
-        let successSuper1: bool = lexer.parseKeyword(superKeyword)
-        if successSuper1
-            lexer.advance()
-        else
-            throw keywordExpected(new Position(startSuper1), new string(superKeyword))
-
-        mutable startDot2: Position = lexer.getPreviousPosition()
-        let successDot2: bool = lexer.parsePunctuation(dot)
-        if successDot2
-            lexer.advance()
-        else
-            throw punctuationExpected(new Position(startDot2), new string(dot))
-
-        let member: CommonSuperMember = parseCommonSuperMember() catch _ (error)
-            throw error
-        mutable end: Position = lexer.getPosition()
-        var ret: SuperDot = new SuperDot(member, new Position(start), new Position(end))
-        member.parent = ret
-
-        return(ret)
-    }
-
-    function parseSuperSubscript(): SuperSubscript throws ParserError {
-        mutable start: Position = lexer.getPreviousPosition()
-        mutable startSuper1: Position = lexer.getPreviousPosition()
-        let successSuper1: bool = lexer.parseKeyword(superKeyword)
-        if successSuper1
-            lexer.advance()
-        else
-            throw keywordExpected(new Position(startSuper1), new string(superKeyword))
-
-        let subscript: Subscript = parseSubscript() catch _ (error)
-            throw error
-        mutable end: Position = lexer.getPosition()
-        var ret: SuperSubscript = new SuperSubscript(subscript, new Position(start), new Position(end))
-        subscript.parent = ret
 
         return(ret)
     }
@@ -2212,61 +2134,6 @@ class Parser {
         return(ret)
     }
 
-    function parseCommonSuperMember(): CommonSuperMember throws ParserError {
-        mutable errors: ParserError[] = new ParserError[]()
-        mutable start: Position = lexer.getPreviousPosition()
-
-        {
-            let node: SuperConstructor = parseSuperConstructor() catch _ (error) {
-                errors.push(error)
-            }
-
-            if node != null
-                return(node)
-        }
-
-        {
-            let node: SuperMember = parseSuperMember() catch _ (error) {
-                errors.push(error)
-            }
-
-            if node != null
-                return(node)
-        }
-
-        throw unableToParse(new Position(start), new ParserError[](errors))
-    }
-
-    function parseSuperConstructor(): SuperConstructor throws ParserError {
-        mutable start: Position = lexer.getPreviousPosition()
-        mutable startConstructor1: Position = lexer.getPreviousPosition()
-        let successConstructor1: bool = lexer.parseKeyword(constructorKeyword)
-        if successConstructor1
-            lexer.advance()
-        else
-            throw keywordExpected(new Position(startConstructor1), new string(constructorKeyword))
-
-        mutable end: Position = lexer.getPosition()
-        var ret: SuperConstructor = new SuperConstructor(new Position(start), new Position(end))
-
-        return(ret)
-    }
-
-    function parseSuperMember(): SuperMember throws ParserError {
-        mutable start: Position = lexer.getPreviousPosition()
-        mutable startName: Position = lexer.getPreviousPosition()
-        let name: string? = lexer.parseIdentifier()
-        if (name != null) && isIdentifier(name)
-            lexer.advance()
-        else
-            throw identifierExpected(new Position(startName))
-
-        mutable end: Position = lexer.getPosition()
-        var ret: SuperMember = new SuperMember(name, new Position(start), new Position(end))
-
-        return(ret)
-    }
-
     function parseType(): Type throws ParserError {
         mutable start: Position = lexer.getPreviousPosition()
         mutable startName: Position = lexer.getPreviousPosition()
@@ -2535,9 +2402,6 @@ class Parser {
         if id.equals(enumKeyword)
             return(false)
 
-        if id.equals(superKeyword)
-            return(false)
-
         if id.equals(thisKeyword)
             return(false)
 
@@ -2583,7 +2447,6 @@ class Parser {
     let asKeyword: string
     let constructorKeyword: string
     let enumKeyword: string
-    let superKeyword: string
     let thisKeyword: string
     let nullKeyword: string
     let newKeyword: string

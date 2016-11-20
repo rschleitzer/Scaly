@@ -134,12 +134,6 @@ class ConstructorCall;
 
 class ThisExpression;
 
-class SuperExpression;
-
-class SuperDot;
-
-class SuperSubscript;
-
 class NullExpression;
 
 class ElseClause;
@@ -173,12 +167,6 @@ class ExpressionPattern;
 class TuplePatternElement;
 
 class CaseContent;
-
-class CommonSuperMember;
-
-class SuperConstructor;
-
-class SuperMember;
 
 class Type;
 
@@ -301,10 +289,6 @@ public:
     virtual bool openConstructorCall(ConstructorCall* constructorCall) = 0;
     virtual void closeConstructorCall(ConstructorCall* constructorCall) = 0;
     virtual void visitThisExpression(ThisExpression* thisExpression) = 0;
-    virtual bool openSuperDot(SuperDot* superDot) = 0;
-    virtual void closeSuperDot(SuperDot* superDot) = 0;
-    virtual bool openSuperSubscript(SuperSubscript* superSubscript) = 0;
-    virtual void closeSuperSubscript(SuperSubscript* superSubscript) = 0;
     virtual void visitNullExpression(NullExpression* nullExpression) = 0;
     virtual bool openElseClause(ElseClause* elseClause) = 0;
     virtual void closeElseClause(ElseClause* elseClause) = 0;
@@ -330,8 +314,6 @@ public:
     virtual void closeTuplePatternElement(TuplePatternElement* tuplePatternElement) = 0;
     virtual bool openCaseContent(CaseContent* caseContent) = 0;
     virtual void closeCaseContent(CaseContent* caseContent) = 0;
-    virtual void visitSuperConstructor(SuperConstructor* superConstructor) = 0;
-    virtual void visitSuperMember(SuperMember* superMember) = 0;
     virtual bool openType(Type* type) = 0;
     virtual void closeType(Type* type) = 0;
     virtual bool openTypeAnnotation(TypeAnnotation* typeAnnotation) = 0;

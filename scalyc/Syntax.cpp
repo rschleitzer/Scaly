@@ -67,9 +67,6 @@ bool SyntaxNode::_isThrowExpression() { return (false); }
 bool SyntaxNode::_isBreakExpression() { return (false); }
 bool SyntaxNode::_isConstructorCall() { return (false); }
 bool SyntaxNode::_isThisExpression() { return (false); }
-bool SyntaxNode::_isSuperExpression() { return (false); }
-bool SyntaxNode::_isSuperDot() { return (false); }
-bool SyntaxNode::_isSuperSubscript() { return (false); }
 bool SyntaxNode::_isNullExpression() { return (false); }
 bool SyntaxNode::_isElseClause() { return (false); }
 bool SyntaxNode::_isSwitchBody() { return (false); }
@@ -87,9 +84,6 @@ bool SyntaxNode::_isTuplePattern() { return (false); }
 bool SyntaxNode::_isExpressionPattern() { return (false); }
 bool SyntaxNode::_isTuplePatternElement() { return (false); }
 bool SyntaxNode::_isCaseContent() { return (false); }
-bool SyntaxNode::_isCommonSuperMember() { return (false); }
-bool SyntaxNode::_isSuperConstructor() { return (false); }
-bool SyntaxNode::_isSuperMember() { return (false); }
 bool SyntaxNode::_isType() { return (false); }
 bool SyntaxNode::_isTypeAnnotation() { return (false); }
 bool SyntaxNode::_isSubtype() { return (false); }
@@ -967,9 +961,6 @@ bool PrimaryExpression::_isThrowExpression() { return (false); }
 bool PrimaryExpression::_isBreakExpression() { return (false); }
 bool PrimaryExpression::_isConstructorCall() { return (false); }
 bool PrimaryExpression::_isThisExpression() { return (false); }
-bool PrimaryExpression::_isSuperExpression() { return (false); }
-bool PrimaryExpression::_isSuperDot() { return (false); }
-bool PrimaryExpression::_isSuperSubscript() { return (false); }
 bool PrimaryExpression::_isNullExpression() { return (false); }
 
 IdentifierExpression::IdentifierExpression(string* name, Position* start, Position* end) {
@@ -1194,44 +1185,6 @@ void ThisExpression::accept(SyntaxVisitor* visitor) {
 }
 
 bool ThisExpression::_isThisExpression() { return (true); }
-
-void SuperExpression::accept(SyntaxVisitor* visitor) {
-}
-
-bool SuperExpression::_isSuperExpression() { return (true); }
-
-bool SuperExpression::_isSuperDot() { return (false); }
-bool SuperExpression::_isSuperSubscript() { return (false); }
-
-SuperDot::SuperDot(CommonSuperMember* member, Position* start, Position* end) {
-    this->start = start;
-    this->end = end;
-    this->member = member;
-}
-
-void SuperDot::accept(SyntaxVisitor* visitor) {
-    if (!visitor->openSuperDot(this))
-        return;
-    member->accept(visitor);
-    visitor->closeSuperDot(this);
-}
-
-bool SuperDot::_isSuperDot() { return (true); }
-
-SuperSubscript::SuperSubscript(Subscript* subscript, Position* start, Position* end) {
-    this->start = start;
-    this->end = end;
-    this->subscript = subscript;
-}
-
-void SuperSubscript::accept(SyntaxVisitor* visitor) {
-    if (!visitor->openSuperSubscript(this))
-        return;
-    subscript->accept(visitor);
-    visitor->closeSuperSubscript(this);
-}
-
-bool SuperSubscript::_isSuperSubscript() { return (true); }
 
 NullExpression::NullExpression(Position* start, Position* end) {
     this->start = start;
@@ -1497,37 +1450,6 @@ void CaseContent::accept(SyntaxVisitor* visitor) {
 }
 
 bool CaseContent::_isCaseContent() { return (true); }
-
-void CommonSuperMember::accept(SyntaxVisitor* visitor) {
-}
-
-bool CommonSuperMember::_isCommonSuperMember() { return (true); }
-
-bool CommonSuperMember::_isSuperConstructor() { return (false); }
-bool CommonSuperMember::_isSuperMember() { return (false); }
-
-SuperConstructor::SuperConstructor(Position* start, Position* end) {
-    this->start = start;
-    this->end = end;
-}
-
-void SuperConstructor::accept(SyntaxVisitor* visitor) {
-    visitor->visitSuperConstructor(this);
-}
-
-bool SuperConstructor::_isSuperConstructor() { return (true); }
-
-SuperMember::SuperMember(string* name, Position* start, Position* end) {
-    this->start = start;
-    this->end = end;
-    this->name = name;
-}
-
-void SuperMember::accept(SyntaxVisitor* visitor) {
-    visitor->visitSuperMember(this);
-}
-
-bool SuperMember::_isSuperMember() { return (true); }
 
 Type::Type(string* name, Subtype* subType, _Vector<TypePostfix>* postfixes, Position* start, Position* end) {
     this->start = start;

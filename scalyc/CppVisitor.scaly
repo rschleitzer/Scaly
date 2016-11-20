@@ -2403,20 +2403,6 @@ class CppVisitor extends SyntaxVisitor {
         sourceFile.append("this")
     }
 
-    function openSuperDot(superDot: SuperDot): bool {
-        return(true)
-    }
-
-    function closeSuperDot(superDot: SuperDot) {
-    }
-
-    function openSuperSubscript(superSubscript: SuperSubscript): bool {
-        return(true)
-    }
-
-    function closeSuperSubscript(superSubscript: SuperSubscript) {
-    }
-
     function visitNullExpression(nullExpression: NullExpression) {
         sourceFile.append("nullptr")
     }
@@ -2610,12 +2596,6 @@ class CppVisitor extends SyntaxVisitor {
         sourceFile.append("}\n")
         if additionalLineFeed
             sourceFile.append("\n")
-    }
-
-    function visitSuperConstructor(superInit: SuperConstructor) {
-    }
-
-    function visitSuperMember(superMember: SuperMember) {
     }
 
     function openType(type: Type): bool {

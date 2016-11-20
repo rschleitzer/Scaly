@@ -84,9 +84,6 @@ public:
     virtual _Result<BreakExpression, ParserError> parseBreakExpression(_Page* _rp, _Page* _ep);
     virtual _Result<ConstructorCall, ParserError> parseConstructorCall(_Page* _rp, _Page* _ep);
     virtual _Result<ThisExpression, ParserError> parseThisExpression(_Page* _rp, _Page* _ep);
-    virtual _Result<SuperExpression, ParserError> parseSuperExpression(_Page* _rp, _Page* _ep);
-    virtual _Result<SuperDot, ParserError> parseSuperDot(_Page* _rp, _Page* _ep);
-    virtual _Result<SuperSubscript, ParserError> parseSuperSubscript(_Page* _rp, _Page* _ep);
     virtual _Result<NullExpression, ParserError> parseNullExpression(_Page* _rp, _Page* _ep);
     virtual _Result<ElseClause, ParserError> parseElseClause(_Page* _rp, _Page* _ep);
     virtual _Result<SwitchBody, ParserError> parseSwitchBody(_Page* _rp, _Page* _ep);
@@ -107,9 +104,6 @@ public:
     virtual _Result<_Vector<TuplePatternElement>, ParserError> parseTuplePatternElementList(_Page* _rp, _Page* _ep);
     virtual _Result<TuplePatternElement, ParserError> parseTuplePatternElement(_Page* _rp, _Page* _ep);
     virtual _Result<CaseContent, ParserError> parseCaseContent(_Page* _rp, _Page* _ep);
-    virtual _Result<CommonSuperMember, ParserError> parseCommonSuperMember(_Page* _rp, _Page* _ep);
-    virtual _Result<SuperConstructor, ParserError> parseSuperConstructor(_Page* _rp, _Page* _ep);
-    virtual _Result<SuperMember, ParserError> parseSuperMember(_Page* _rp, _Page* _ep);
     virtual _Result<Type, ParserError> parseType(_Page* _rp, _Page* _ep);
     virtual _Result<TypeAnnotation, ParserError> parseTypeAnnotation(_Page* _rp, _Page* _ep);
     virtual _Result<Subtype, ParserError> parseSubtype(_Page* _rp, _Page* _ep);
@@ -151,7 +145,6 @@ public:
     string* asKeyword;
     string* constructorKeyword;
     string* enumKeyword;
-    string* superKeyword;
     string* thisKeyword;
     string* nullKeyword;
     string* newKeyword;

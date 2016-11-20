@@ -75,9 +75,6 @@ public:
     virtual bool _isBreakExpression();
     virtual bool _isConstructorCall();
     virtual bool _isThisExpression();
-    virtual bool _isSuperExpression();
-    virtual bool _isSuperDot();
-    virtual bool _isSuperSubscript();
     virtual bool _isNullExpression();
     virtual bool _isElseClause();
     virtual bool _isSwitchBody();
@@ -95,9 +92,6 @@ public:
     virtual bool _isExpressionPattern();
     virtual bool _isTuplePatternElement();
     virtual bool _isCaseContent();
-    virtual bool _isCommonSuperMember();
-    virtual bool _isSuperConstructor();
-    virtual bool _isSuperMember();
     virtual bool _isType();
     virtual bool _isTypeAnnotation();
     virtual bool _isSubtype();
@@ -627,9 +621,6 @@ public:
     virtual bool _isBreakExpression();
     virtual bool _isConstructorCall();
     virtual bool _isThisExpression();
-    virtual bool _isSuperExpression();
-    virtual bool _isSuperDot();
-    virtual bool _isSuperSubscript();
     virtual bool _isNullExpression();
 };
 
@@ -757,33 +748,6 @@ public:
     virtual void accept(SyntaxVisitor* visitor);
 
     virtual bool _isThisExpression();
-};
-
-class SuperExpression : public PrimaryExpression {
-public:
-    virtual void accept(SyntaxVisitor* visitor);
-
-    virtual bool _isSuperExpression();
-    virtual bool _isSuperDot();
-    virtual bool _isSuperSubscript();
-};
-
-class SuperDot : public SuperExpression {
-public:
-    SuperDot(CommonSuperMember* member, Position* start, Position* end);
-    virtual void accept(SyntaxVisitor* visitor);
-    CommonSuperMember* member;
-
-    virtual bool _isSuperDot();
-};
-
-class SuperSubscript : public SuperExpression {
-public:
-    SuperSubscript(Subscript* subscript, Position* start, Position* end);
-    virtual void accept(SyntaxVisitor* visitor);
-    Subscript* subscript;
-
-    virtual bool _isSuperSubscript();
 };
 
 class NullExpression : public PrimaryExpression {
@@ -939,32 +903,6 @@ public:
     _Vector<Statement>* statements;
 
     virtual bool _isCaseContent();
-};
-
-class CommonSuperMember : public SyntaxNode {
-public:
-    virtual void accept(SyntaxVisitor* visitor);
-
-    virtual bool _isCommonSuperMember();
-    virtual bool _isSuperConstructor();
-    virtual bool _isSuperMember();
-};
-
-class SuperConstructor : public CommonSuperMember {
-public:
-    SuperConstructor(Position* start, Position* end);
-    virtual void accept(SyntaxVisitor* visitor);
-
-    virtual bool _isSuperConstructor();
-};
-
-class SuperMember : public CommonSuperMember {
-public:
-    SuperMember(string* name, Position* start, Position* end);
-    virtual void accept(SyntaxVisitor* visitor);
-    string* name;
-
-    virtual bool _isSuperMember();
 };
 
 class Type : public SyntaxNode {

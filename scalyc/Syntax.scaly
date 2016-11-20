@@ -1199,49 +1199,6 @@ class ThisExpression extends PrimaryExpression {
 
 }
 
-class SuperExpression extends PrimaryExpression {
-
-    override function accept(mutable visitor: SyntaxVisitor) {
-    }
-
-}
-
-class SuperDot extends SuperExpression {
-
-    constructor(member: CommonSuperMember, start: Position, end: Position) {
-        this.start = start
-        this.end = end
-        this.member = member
-    }
-
-    override function accept(mutable visitor: SyntaxVisitor) {
-        if !visitor.openSuperDot(this)
-            return
-        member.accept(visitor)
-        visitor.closeSuperDot(this)
-    }
-
-    let member: CommonSuperMember?
-}
-
-class SuperSubscript extends SuperExpression {
-
-    constructor(subscript: Subscript, start: Position, end: Position) {
-        this.start = start
-        this.end = end
-        this.subscript = subscript
-    }
-
-    override function accept(mutable visitor: SyntaxVisitor) {
-        if !visitor.openSuperSubscript(this)
-            return
-        subscript.accept(visitor)
-        visitor.closeSuperSubscript(this)
-    }
-
-    let subscript: Subscript?
-}
-
 class NullExpression extends PrimaryExpression {
 
     constructor(start: Position, end: Position) {
@@ -1522,41 +1479,6 @@ class CaseContent extends SyntaxNode {
     }
 
     let statements: Statement[]?
-}
-
-class CommonSuperMember extends SyntaxNode {
-
-    function accept(mutable visitor: SyntaxVisitor) {
-    }
-
-}
-
-class SuperConstructor extends CommonSuperMember {
-
-    constructor(start: Position, end: Position) {
-        this.start = start
-        this.end = end
-    }
-
-    override function accept(mutable visitor: SyntaxVisitor) {
-        visitor.visitSuperConstructor(this)
-    }
-
-}
-
-class SuperMember extends CommonSuperMember {
-
-    constructor(name: string, start: Position, end: Position) {
-        this.start = start
-        this.end = end
-        this.name = name
-    }
-
-    override function accept(mutable visitor: SyntaxVisitor) {
-        visitor.visitSuperMember(this)
-    }
-
-    let name: string?
 }
 
 class Type extends SyntaxNode {

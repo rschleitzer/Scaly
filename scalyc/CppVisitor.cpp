@@ -2360,20 +2360,6 @@ void CppVisitor::visitThisExpression(ThisExpression* thisExpression) {
     sourceFile->append("this");
 }
 
-bool CppVisitor::openSuperDot(SuperDot* superDot) {
-    return true;
-}
-
-void CppVisitor::closeSuperDot(SuperDot* superDot) {
-}
-
-bool CppVisitor::openSuperSubscript(SuperSubscript* superSubscript) {
-    return true;
-}
-
-void CppVisitor::closeSuperSubscript(SuperSubscript* superSubscript) {
-}
-
 void CppVisitor::visitNullExpression(NullExpression* nullExpression) {
     sourceFile->append("nullptr");
 }
@@ -2555,12 +2541,6 @@ void CppVisitor::closeCaseContent(CaseContent* caseContent) {
     sourceFile->append("}\n");
     if (additionalLineFeed)
         sourceFile->append("\n");
-}
-
-void CppVisitor::visitSuperConstructor(SuperConstructor* superInit) {
-}
-
-void CppVisitor::visitSuperMember(SuperMember* superMember) {
 }
 
 bool CppVisitor::openType(Type* type) {

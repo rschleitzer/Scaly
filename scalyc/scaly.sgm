@@ -246,7 +246,6 @@
         <content link = BreakExpression
         <content link = ConstructorCall
         <content link = ThisExpression
-        <content link = SuperExpression
         <content link = NullExpression
 
     <syntax id = IdentifierExpression                           base = PrimaryExpression
@@ -310,19 +309,6 @@
 
     <syntax id = ThisExpression                                 base = PrimaryExpression
         <content link = this
-
-    <syntax id = SuperExpression                       abstract base = PrimaryExpression
-        <content link = SuperDot
-        <content link = SuperSubscript
-
-    <syntax id = SuperDot                                       base = SuperExpression
-        <content link = super
-        <content link = dot
-        <content link = CommonSuperMember                       property = member
-
-    <syntax id = SuperSubscript                                 base = SuperExpression
-        <content link = super
-        <content link = Subscript                               property = subscript
 
     <syntax id = NullExpression                                 base = PrimaryExpression
         <content link = null
@@ -393,16 +379,6 @@
     <syntax id = CaseContent
         <content link = Statement             multiple          property = statements
 
-    <syntax id = CommonSuperMember                     abstract
-        <content link = SuperConstructor
-        <content link = SuperMember
-
-    <syntax id = SuperConstructor                               base = CommonSuperMember
-        <content link = constructor
-
-    <syntax id = SuperMember                                    base = CommonSuperMember
-        <content identifier                                     property = name
-
     <syntax id = Type
         <content identifier                                     property = name
         <content link = Subtype                        optional property = subType
@@ -463,7 +439,6 @@
     <keyword id = as
     <keyword id = constructor
     <keyword id = enum
-    <keyword id = super
     <keyword id = this
     <keyword id = null
     <keyword id = new

@@ -358,20 +358,6 @@ void MyVisitor::closeConstructorCall(ConstructorCall* constructorCall) {
 void MyVisitor::visitThisExpression(ThisExpression* thisExpression) {
 }
 
-bool MyVisitor::openSuperDot(SuperDot* superDot) {
-    return true;
-}
-
-void MyVisitor::closeSuperDot(SuperDot* superDot) {
-}
-
-bool MyVisitor::openSuperSubscript(SuperSubscript* superSubscript) {
-    return true;
-}
-
-void MyVisitor::closeSuperSubscript(SuperSubscript* superSubscript) {
-}
-
 void MyVisitor::visitNullExpression(NullExpression* nullExpression) {
 }
 
@@ -456,12 +442,6 @@ bool MyVisitor::openCaseContent(CaseContent* caseContent) {
 }
 
 void MyVisitor::closeCaseContent(CaseContent* caseContent) {
-}
-
-void MyVisitor::visitSuperConstructor(SuperConstructor* superConstructor) {
-}
-
-void MyVisitor::visitSuperMember(SuperMember* superMember) {
 }
 
 bool MyVisitor::openType(Type* type) {
