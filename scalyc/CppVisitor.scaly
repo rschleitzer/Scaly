@@ -201,13 +201,6 @@ class CppVisitor extends SyntaxVisitor {
         return(false)
     }
 
-    function openUseDeclaration(useDeclaration: UseDeclaration): bool {
-        return(true)
-    }
-
-    function closeUseDeclaration(useDeclaration: UseDeclaration) {
-    }
-
     function openConstantDeclaration(constantDeclaration: ConstantDeclaration): bool {
         constDeclaration = true
 
@@ -627,16 +620,6 @@ class CppVisitor extends SyntaxVisitor {
         }
         if simpleExpression.parent is CodeBlock || simpleExpression.parent is CaseContent || simpleExpression.parent is CompilationUnit
             sourceFile.append(";\n")
-    }
-
-    function openPathIdentifier(pathIdentifier: PathIdentifier): bool {
-        return(true)
-    }
-
-    function closePathIdentifier(pathIdentifier: PathIdentifier) {
-    }
-
-    function visitPathItem(pathItem: PathItem) {
     }
 
     function openInitializer(initializer: Initializer): bool {
