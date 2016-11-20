@@ -1401,7 +1401,6 @@ class CppVisitor extends SyntaxVisitor {
                         sourceFile.append(identifierCatchPattern.name)
                         sourceFile.append("Code_")
                         if identifierCatchPattern.member != null {
-                            let namedMemberPostfix: NamedMemberPostfix = (identifierCatchPattern.member.memberPostfix) as NamedMemberPostfix
                             sourceFile.append(identifierCatchPattern.member.member)
                             sourceFile.append(":\n")
                             sourceIndentLevel++
@@ -1588,13 +1587,6 @@ class CppVisitor extends SyntaxVisitor {
         }
 
         return(false)
-    }
-
-    function openNamedMemberPostfix(namedMemberPostfix: NamedMemberPostfix): bool {
-        return(true)
-    }
-
-    function closeNamedMemberPostfix(namedMemberPostfix: NamedMemberPostfix) {
     }
 
     function visitIdentifierExpression(identifierExpression: IdentifierExpression) {
@@ -2548,7 +2540,7 @@ class CppVisitor extends SyntaxVisitor {
                             functionCall = postfix as FunctionCall
                         }
                         else {
-                            if postfix is ExplicitMemberExpression {
+                            if postfix is MemberExpression {
                                 if postfixExpression.postfixes.length() > 1 {
                                     let postfix: Postfix = postfixes[1]
                                     if postfix is FunctionCall {
