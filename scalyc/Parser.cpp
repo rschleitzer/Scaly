@@ -5,7 +5,6 @@ namespace scalyc {
 Parser::Parser(string* theFileName, string* text) {
     lexer = new(getPage()->allocateExclusivePage()) Lexer(text);
     fileName = theFileName;
-    useKeyword = new(getPage()) string("use");
     classKeyword = new(getPage()) string("class");
     functionKeyword = new(getPage()) string("function");
     ifKeyword = new(getPage()) string("if");
@@ -3363,8 +3362,6 @@ bool Parser::isAtEnd() {
 }
 
 bool Parser::isIdentifier(string* id) {
-    if (id->equals(useKeyword))
-        return false;
     if (id->equals(classKeyword))
         return false;
     if (id->equals(functionKeyword))

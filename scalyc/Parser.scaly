@@ -262,7 +262,7 @@ class Parser {
             throw keywordExpected(new Position(startFunction2), new string(functionKeyword))
 
         mutable startName: Position = lexer.getPreviousPosition()
-        let name: string? = lexer.parseIdentifier()
+        let name: string = lexer.parseIdentifier()
         if (name != null) && isIdentifier(name)
             lexer.advance()
         else
@@ -294,7 +294,7 @@ class Parser {
             throw keywordExpected(new Position(startEnum1), new string(enumKeyword))
 
         mutable startName: Position = lexer.getPreviousPosition()
-        let name: string? = lexer.parseIdentifier()
+        let name: string = lexer.parseIdentifier()
         if (name != null) && isIdentifier(name)
             lexer.advance()
         else
@@ -336,7 +336,7 @@ class Parser {
             throw keywordExpected(new Position(startClass1), new string(classKeyword))
 
         mutable startName: Position = lexer.getPreviousPosition()
-        let name: string? = lexer.parseIdentifier()
+        let name: string = lexer.parseIdentifier()
         if (name != null) && isIdentifier(name)
             lexer.advance()
         else
@@ -711,7 +711,7 @@ class Parser {
         if successLet1
             lexer.advance()
         mutable startName: Position = lexer.getPreviousPosition()
-        let name: string? = lexer.parseIdentifier()
+        let name: string = lexer.parseIdentifier()
         if (name != null) && isIdentifier(name)
             lexer.advance()
         else
@@ -746,7 +746,7 @@ class Parser {
             throw keywordExpected(new Position(startMutable1), new string(mutableKeyword))
 
         mutable startName: Position = lexer.getPreviousPosition()
-        let name: string? = lexer.parseIdentifier()
+        let name: string = lexer.parseIdentifier()
         if (name != null) && isIdentifier(name)
             lexer.advance()
         else
@@ -830,7 +830,7 @@ class Parser {
     function parseEnumCase(): EnumCase throws ParserError {
         mutable start: Position = lexer.getPreviousPosition()
         mutable startName: Position = lexer.getPreviousPosition()
-        let name: string? = lexer.parseIdentifier()
+        let name: string = lexer.parseIdentifier()
         if (name != null) && isIdentifier(name)
             lexer.advance()
         else
@@ -924,7 +924,7 @@ class Parser {
 
     function parsePrefixExpression(): PrefixExpression throws ParserError {
         mutable start: Position = lexer.getPreviousPosition()
-        let prefixOperator: string? = lexer.parsePrefixOperator()
+        let prefixOperator: string = lexer.parsePrefixOperator()
         if prefixOperator != null
             lexer.advance()
         let expression: PostfixExpression = parsePostfixExpression() catch _ (error)
@@ -1010,7 +1010,7 @@ class Parser {
     function parseBinaryOperation(): BinaryOperation throws ParserError {
         mutable start: Position = lexer.getPreviousPosition()
         mutable startBinaryOperator: Position = lexer.getPreviousPosition()
-        let binaryOperator: string? = lexer.parseBinaryOperator()
+        let binaryOperator: string = lexer.parseBinaryOperator()
         if binaryOperator != null
             lexer.advance()
         else
@@ -1154,7 +1154,7 @@ class Parser {
     function parseIdentifierCatchPattern(): IdentifierCatchPattern throws ParserError {
         mutable start: Position = lexer.getPreviousPosition()
         mutable startName: Position = lexer.getPreviousPosition()
-        let name: string? = lexer.parseIdentifier()
+        let name: string = lexer.parseIdentifier()
         if (name != null) && isIdentifier(name)
             lexer.advance()
         else
@@ -1227,7 +1227,7 @@ class Parser {
     function parseOperatorPostfix(): OperatorPostfix throws ParserError {
         mutable start: Position = lexer.getPreviousPosition()
         mutable startPostfixOperator: Position = lexer.getPreviousPosition()
-        let postfixOperator: string? = lexer.parsePostfixOperator()
+        let postfixOperator: string = lexer.parsePostfixOperator()
         if postfixOperator != null
             lexer.advance()
         else
@@ -1265,7 +1265,7 @@ class Parser {
             throw punctuationExpected(new Position(startDot1), new string(dot))
 
         mutable startMember: Position = lexer.getPreviousPosition()
-        let member: string? = lexer.parseIdentifier()
+        let member: string = lexer.parseIdentifier()
         if (member != null) && isIdentifier(member)
             lexer.advance()
         else
@@ -1467,7 +1467,7 @@ class Parser {
     function parseIdentifierExpression(): IdentifierExpression throws ParserError {
         mutable start: Position = lexer.getPreviousPosition()
         mutable startName: Position = lexer.getPreviousPosition()
-        let name: string? = lexer.parseIdentifier()
+        let name: string = lexer.parseIdentifier()
         if (name != null) && isIdentifier(name)
             lexer.advance()
         else
@@ -1482,7 +1482,7 @@ class Parser {
     function parseLiteralExpression(): LiteralExpression throws ParserError {
         mutable start: Position = lexer.getPreviousPosition()
         mutable startLiteral: Position = lexer.getPreviousPosition()
-        let literal: Literal? = lexer.parseLiteral()
+        let literal: Literal = lexer.parseLiteral()
         if literal != null
             lexer.advance()
         else
@@ -2038,7 +2038,7 @@ class Parser {
     function parseIdentifierPattern(): IdentifierPattern throws ParserError {
         mutable start: Position = lexer.getPreviousPosition()
         mutable startIdentifier: Position = lexer.getPreviousPosition()
-        let identifier: string? = lexer.parseIdentifier()
+        let identifier: string = lexer.parseIdentifier()
         if (identifier != null) && isIdentifier(identifier)
             lexer.advance()
         else
@@ -2135,7 +2135,7 @@ class Parser {
     function parseType(): Type throws ParserError {
         mutable start: Position = lexer.getPreviousPosition()
         mutable startName: Position = lexer.getPreviousPosition()
-        let name: string? = lexer.parseIdentifier()
+        let name: string = lexer.parseIdentifier()
         if (name != null) && isIdentifier(name)
             lexer.advance()
         else

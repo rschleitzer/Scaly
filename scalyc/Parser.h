@@ -117,7 +117,6 @@ public:
     virtual bool isIdentifier(string* id);
     Lexer* lexer;
     string* fileName;
-    string* useKeyword;
     string* classKeyword;
     string* functionKeyword;
     string* ifKeyword;

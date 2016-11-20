@@ -84,7 +84,7 @@ class PostfixOperator extends Operator {
 
 class Lexer {
 
-    mutable token: Token?
+    mutable token: Token
     mutable whitespaceSkipped: bool
     let text: string
     mutable position: number
@@ -577,7 +577,7 @@ class Lexer {
         return(identifier.name.equals(fixedString))
     }
 
-    function parseIdentifier(): string? {
+    function parseIdentifier(): string {
         if !(token is Identifier)
             return(null)
 
@@ -593,7 +593,7 @@ class Lexer {
         return(punctuation.sign.equals(fixedString))
     }
 
-    function parseOperator(): string? {
+    function parseOperator(): string {
         if !(token is Operator)
             return(null)
 
@@ -601,7 +601,7 @@ class Lexer {
         return(new string(op.operation))
     }
 
-    function parseLiteral(): Literal? {
+    function parseLiteral(): Literal {
         if !(token is Literal)
             return(null)
 
@@ -624,7 +624,7 @@ class Lexer {
     }
 
 
-    function parsePrefixOperator(): string? {
+    function parsePrefixOperator(): string {
         if !(token is PrefixOperator)
             return(null)
 
@@ -632,7 +632,7 @@ class Lexer {
         return(new string(op.operation))
     }
 
-    function parseBinaryOperator(): string? {
+    function parseBinaryOperator(): string {
         if !(token is BinaryOperator) {
             if (token is Punctuation) && (((token as Punctuation).sign.equals("<")) || ((token as Punctuation).sign.equals(">"))) {
                 let op: Operator = token as Operator
@@ -647,7 +647,7 @@ class Lexer {
     }
 
 
-    function parsePostfixOperator(): string? {
+    function parsePostfixOperator(): string {
         if !(token is PostfixOperator)
             return(null)
 
