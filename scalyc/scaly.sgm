@@ -394,11 +394,16 @@
 
     <syntax id = TypePostfix                  multiple abstract
         <content link = IndexedType
+        <content link = Age
 
     <syntax id = IndexedType                                    base = TypePostfix
         <content link = leftBracket
         <content link = Type                           optional property = key
         <content link = rightBracket
+
+    <syntax id = Age                                            base = TypePostfix
+        <content link = at
+        <content literal                               optional property = age
 
     <syntax id = TypeInheritanceClause
         <content link = extends
@@ -450,5 +455,6 @@
     <punctuation id = colon             value = ":"
     <punctuation id = dot               value = "."
     <punctuation id = underscore        value = "_"
+    <punctuation id = at                value = "@"
 
 </language>

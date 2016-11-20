@@ -85,6 +85,7 @@ class TypeAnnotation
 class Subtype
 class TypePostfix
 class IndexedType
+class Age
 class TypeInheritanceClause
 class Inheritance
 
@@ -225,6 +226,7 @@ class SyntaxVisitor {
     function closeSubtype(subtype: Subtype)
     function openIndexedType(indexedType: IndexedType): bool
     function closeIndexedType(indexedType: IndexedType)
+    function visitAge(age: Age)
     function openTypeInheritanceClause(typeInheritanceClause: TypeInheritanceClause): bool
     function closeTypeInheritanceClause(typeInheritanceClause: TypeInheritanceClause)
     function openInheritance(inheritance: Inheritance): bool

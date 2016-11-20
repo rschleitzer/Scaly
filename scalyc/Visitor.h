@@ -178,6 +178,8 @@ class TypePostfix;
 
 class IndexedType;
 
+class Age;
+
 class TypeInheritanceClause;
 
 class Inheritance;
@@ -320,6 +322,7 @@ public:
     virtual void closeSubtype(Subtype* subtype) = 0;
     virtual bool openIndexedType(IndexedType* indexedType) = 0;
     virtual void closeIndexedType(IndexedType* indexedType) = 0;
+    virtual void visitAge(Age* age) = 0;
     virtual bool openTypeInheritanceClause(TypeInheritanceClause* typeInheritanceClause) = 0;
     virtual void closeTypeInheritanceClause(TypeInheritanceClause* typeInheritanceClause) = 0;
     virtual bool openInheritance(Inheritance* inheritance) = 0;

@@ -2642,6 +2642,9 @@ bool CppVisitor::openIndexedType(IndexedType* indexedType) {
 void CppVisitor::closeIndexedType(IndexedType* indexedType) {
 }
 
+void CppVisitor::visitAge(Age* age) {
+}
+
 bool CppVisitor::openTypeInheritanceClause(TypeInheritanceClause* typeInheritanceClause) {
     return true;
 }

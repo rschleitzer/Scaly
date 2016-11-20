@@ -89,6 +89,7 @@ bool SyntaxNode::_isTypeAnnotation() { return (false); }
 bool SyntaxNode::_isSubtype() { return (false); }
 bool SyntaxNode::_isTypePostfix() { return (false); }
 bool SyntaxNode::_isIndexedType() { return (false); }
+bool SyntaxNode::_isAge() { return (false); }
 bool SyntaxNode::_isTypeInheritanceClause() { return (false); }
 bool SyntaxNode::_isInheritance() { return (false); }
 
@@ -1512,6 +1513,7 @@ void TypePostfix::accept(SyntaxVisitor* visitor) {
 bool TypePostfix::_isTypePostfix() { return (true); }
 
 bool TypePostfix::_isIndexedType() { return (false); }
+bool TypePostfix::_isAge() { return (false); }
 
 IndexedType::IndexedType(Type* key, Position* start, Position* end) {
     this->start = start;
@@ -1528,6 +1530,18 @@ void IndexedType::accept(SyntaxVisitor* visitor) {
 }
 
 bool IndexedType::_isIndexedType() { return (true); }
+
+Age::Age(Literal* age, Position* start, Position* end) {
+    this->start = start;
+    this->end = end;
+    this->age = age;
+}
+
+void Age::accept(SyntaxVisitor* visitor) {
+    visitor->visitAge(this);
+}
+
+bool Age::_isAge() { return (true); }
 
 TypeInheritanceClause::TypeInheritanceClause(_Vector<Inheritance>* inheritances, Position* start, Position* end) {
     this->start = start;

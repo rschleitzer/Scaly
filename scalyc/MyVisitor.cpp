@@ -472,6 +472,9 @@ bool MyVisitor::openIndexedType(IndexedType* indexedType) {
 void MyVisitor::closeIndexedType(IndexedType* indexedType) {
 }
 
+void MyVisitor::visitAge(Age* age) {
+}
+
 bool MyVisitor::openTypeInheritanceClause(TypeInheritanceClause* typeInheritanceClause) {
     return true;
 }

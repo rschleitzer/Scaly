@@ -46,6 +46,7 @@ Parser::Parser(string* theFileName, string* text) {
     colon = new(getPage()) string(":");
     dot = new(getPage()) string(".");
     underscore = new(getPage()) string("_");
+    at = new(getPage()) string("@");
 }
 
 _Result<CompilationUnit, ParserError> Parser::parseCompilationUnit(_Page* _rp, _Page* _ep) {
@@ -3254,6 +3255,21 @@ _Result<TypePostfix, ParserError> Parser::parseTypePostfix(_Page* _rp, _Page* _e
         if (node != nullptr)
             return _Result<TypePostfix, ParserError>(node);
     }
+    {
+        auto _node_result = parseAge(_rp, _ep);
+        Age* node = nullptr;
+        if (_node_result.succeeded()) {
+            node = _node_result.getResult();
+        }
+        else {
+            auto error = _node_result.getError();
+            {
+                errors->push(error);
+            }
+        }
+        if (node != nullptr)
+            return _Result<TypePostfix, ParserError>(node);
+    }
     return _Result<TypePostfix, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_unableToParse(new(_ep) Position(start), &_Vector<ParserError>::create(_ep, *(errors)))));
 }
 
@@ -3285,6 +3301,23 @@ _Result<IndexedType, ParserError> Parser::parseIndexedType(_Page* _rp, _Page* _e
     if (key != nullptr)
         key->parent = ret;
     return _Result<IndexedType, ParserError>(ret);
+}
+
+_Result<Age, ParserError> Parser::parseAge(_Page* _rp, _Page* _ep) {
+    _Region _region; _Page* _p = _region.get();
+    Position* start = lexer->getPreviousPosition(_p);
+    Position* startAt1 = lexer->getPreviousPosition(_p);
+    bool successAt1 = lexer->parsePunctuation(at);
+    if (successAt1)
+        lexer->advance();
+    else
+        return _Result<Age, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_punctuationExpected(new(_ep) Position(startAt1), new(_ep) string(at))));
+    Literal* age = lexer->parseLiteral(_rp);
+    if (age != nullptr)
+        lexer->advance();
+    Position* end = lexer->getPosition(_p);
+    Age* ret = new(_rp) Age(age, new(_rp) Position(start), new(_rp) Position(end));
+    return _Result<Age, ParserError>(ret);
 }
 
 _Result<TypeInheritanceClause, ParserError> Parser::parseTypeInheritanceClause(_Page* _rp, _Page* _ep) {

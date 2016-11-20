@@ -97,6 +97,7 @@ public:
     virtual bool _isSubtype();
     virtual bool _isTypePostfix();
     virtual bool _isIndexedType();
+    virtual bool _isAge();
     virtual bool _isTypeInheritanceClause();
     virtual bool _isInheritance();
 };
@@ -939,6 +940,7 @@ public:
 
     virtual bool _isTypePostfix();
     virtual bool _isIndexedType();
+    virtual bool _isAge();
 };
 
 class IndexedType : public TypePostfix {
@@ -948,6 +950,15 @@ public:
     Type* key;
 
     virtual bool _isIndexedType();
+};
+
+class Age : public TypePostfix {
+public:
+    Age(Literal* age, Position* start, Position* end);
+    virtual void accept(SyntaxVisitor* visitor);
+    Literal* age;
+
+    virtual bool _isAge();
 };
 
 class TypeInheritanceClause : public SyntaxNode {

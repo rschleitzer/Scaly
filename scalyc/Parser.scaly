@@ -43,6 +43,7 @@ class Parser {
         colon = new string(":")
         dot = new string(".")
         underscore = new string("_")
+        at = new string("@")
     }
 
     function parseCompilationUnit(): CompilationUnit throws ParserError {
@@ -2216,6 +2217,15 @@ class Parser {
                 return(node)
         }
 
+        {
+            let node: Age = parseAge() catch _ (error) {
+                errors.push(error)
+            }
+
+            if node != null
+                return(node)
+        }
+
         throw unableToParse(new Position(start), new ParserError[](errors))
     }
 
@@ -2240,6 +2250,24 @@ class Parser {
         var ret: IndexedType = new IndexedType(key, new Position(start), new Position(end))
         if key != null
             key.parent = ret
+
+        return(ret)
+    }
+
+    function parseAge(): Age throws ParserError {
+        mutable start: Position = lexer.getPreviousPosition()
+        mutable startAt1: Position = lexer.getPreviousPosition()
+        let successAt1: bool = lexer.parsePunctuation(at)
+        if successAt1
+            lexer.advance()
+        else
+            throw punctuationExpected(new Position(startAt1), new string(at))
+
+        let literal: Literal = lexer.parseLiteral()
+        if age != null
+            lexer.advance()
+        mutable end: Position = lexer.getPosition()
+        var ret: Age = new Age(age, new Position(start), new Position(end))
 
         return(ret)
     }
@@ -2432,4 +2460,5 @@ class Parser {
     let colon: string
     let dot: string
     let underscore: string
+    let at: string
 }
