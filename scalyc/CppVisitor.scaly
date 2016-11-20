@@ -673,20 +673,12 @@ class CppVisitor extends SyntaxVisitor {
     function visitStaticWord(staticWord: StaticWord) {
     }
 
-    function visitIdentifierFunction(identifierFunction: IdentifierFunction) {
-    }
-
     function openFunctionSignature(functionSignature: FunctionSignature): bool {
 
         if !functionSignature.parent is FunctionDeclaration
             return(false)
 
-        let functionName: FunctionName = (functionSignature.parent as FunctionDeclaration).name
-        if !functionName is IdentifierFunction
-            return(false)
-
-        let identifierFunctionName: string = (functionName as IdentifierFunction).name
-
+        let functionName: string = (functionSignature.parent as FunctionDeclaration).name
         if staticFunction
             headerFile.append("static ")
         else
@@ -775,10 +767,10 @@ class CppVisitor extends SyntaxVisitor {
                 sourceFile.append("::")
             }
         }
-        headerFile.append(identifierFunctionName)
+        headerFile.append(functionName)
         headerFile.append("(")
         if !suppressSource {
-            sourceFile.append(identifierFunctionName)
+            sourceFile.append(functionName)
             sourceFile.append("(")
         }
         if functionSignature.result != null {
@@ -1232,11 +1224,8 @@ class CppVisitor extends SyntaxVisitor {
         for member: ClassMember in members {
             if member.declaration is FunctionDeclaration {
                 let functionDeclaration: FunctionDeclaration = (member.declaration) as FunctionDeclaration
-                if functionDeclaration.name is IdentifierFunction {
-                    let identifierFunction: IdentifierFunction = (functionDeclaration.name) as IdentifierFunction
-                    if identifierFunction.name.equals(functionName)
-                        return(true)
-                }
+                if functionDeclaration.name.equals(functionName)
+                    return(true)
             } 
         }
 
