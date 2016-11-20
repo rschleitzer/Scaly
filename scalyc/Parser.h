@@ -12,7 +12,6 @@ public:
     virtual _Result<Statement, ParserError> parseStatement(_Page* _rp, _Page* _ep);
     virtual _Result<Declaration, ParserError> parseDeclaration(_Page* _rp, _Page* _ep);
     virtual _Result<Expression, ParserError> parseExpression(_Page* _rp, _Page* _ep);
-    virtual _Result<UseDeclaration, ParserError> parseUseDeclaration(_Page* _rp, _Page* _ep);
     virtual _Result<ConstantDeclaration, ParserError> parseConstantDeclaration(_Page* _rp, _Page* _ep);
     virtual _Result<VariableDeclaration, ParserError> parseVariableDeclaration(_Page* _rp, _Page* _ep);
     virtual _Result<MutableDeclaration, ParserError> parseMutableDeclaration(_Page* _rp, _Page* _ep);
@@ -22,9 +21,6 @@ public:
     virtual _Result<ConstructorDeclaration, ParserError> parseConstructorDeclaration(_Page* _rp, _Page* _ep);
     virtual _Result<CodeBlock, ParserError> parseCodeBlock(_Page* _rp, _Page* _ep);
     virtual _Result<SimpleExpression, ParserError> parseSimpleExpression(_Page* _rp, _Page* _ep);
-    virtual _Result<_Vector<PathIdentifier>, ParserError> parsePathIdentifierList(_Page* _rp, _Page* _ep);
-    virtual _Result<PathIdentifier, ParserError> parsePathIdentifier(_Page* _rp, _Page* _ep);
-    virtual _Result<PathItem, ParserError> parsePathItem(_Page* _rp, _Page* _ep);
     virtual _Result<Initializer, ParserError> parseInitializer(_Page* _rp, _Page* _ep);
     virtual _Result<BindingInitializer, ParserError> parseBindingInitializer(_Page* _rp, _Page* _ep);
     virtual _Result<_Vector<PatternInitializer>, ParserError> parsePatternInitializerList(_Page* _rp, _Page* _ep);

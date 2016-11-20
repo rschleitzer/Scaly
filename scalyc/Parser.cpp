@@ -146,21 +146,6 @@ _Result<Declaration, ParserError> Parser::parseDeclaration(_Page* _rp, _Page* _e
     _Array<ParserError>* errors = new(_p) _Array<ParserError>();
     Position* start = lexer->getPreviousPosition(_p);
     {
-        auto _node_result = parseUseDeclaration(_rp, _ep);
-        UseDeclaration* node = nullptr;
-        if (_node_result.succeeded()) {
-            node = _node_result.getResult();
-        }
-        else {
-            auto error = _node_result.getError();
-            {
-                errors->push(error);
-            }
-        }
-        if (node != nullptr)
-            return _Result<Declaration, ParserError>(node);
-    }
-    {
         auto _node_result = parseConstantDeclaration(_rp, _ep);
         ConstantDeclaration* node = nullptr;
         if (_node_result.succeeded()) {
@@ -303,46 +288,6 @@ _Result<Expression, ParserError> Parser::parseExpression(_Page* _rp, _Page* _ep)
             return _Result<Expression, ParserError>(node);
     }
     return _Result<Expression, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_unableToParse(new(_ep) Position(start), &_Vector<ParserError>::create(_ep, *(errors)))));
-}
-
-_Result<UseDeclaration, ParserError> Parser::parseUseDeclaration(_Page* _rp, _Page* _ep) {
-    _Region _region; _Page* _p = _region.get();
-    Position* start = lexer->getPreviousPosition(_p);
-    Position* startUse1 = lexer->getPreviousPosition(_p);
-    bool successUse1 = lexer->parseKeyword(useKeyword);
-    if (successUse1)
-        lexer->advance();
-    else
-        return _Result<UseDeclaration, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_keywordExpected(new(_ep) Position(startUse1), new(_ep) string(useKeyword))));
-    auto _importModule_result = parsePathItem(_rp, _ep);
-    PathItem* importModule = nullptr;
-    if (_importModule_result.succeeded()) {
-        importModule = _importModule_result.getResult();
-    }
-    else {
-        auto error = _importModule_result.getError();
-        return _Result<UseDeclaration, ParserError>(error);
-    }
-    auto _importExtensions_result = parsePathIdentifierList(_rp, _ep);
-    _Vector<PathIdentifier>* importExtensions = nullptr;
-    if (_importExtensions_result.succeeded()) {
-        importExtensions = _importExtensions_result.getResult();
-    }
-    else {
-        importExtensions = nullptr;
-    }
-    Position* end = lexer->getPosition(_p);
-    UseDeclaration* ret = new(_rp) UseDeclaration(importModule, importExtensions, new(_rp) Position(start), new(_rp) Position(end));
-    importModule->parent = ret;
-    if (importExtensions != nullptr) {
-        PathIdentifier* item = nullptr;
-        size_t _importExtensions_length = importExtensions->length();
-        for (size_t _i = 0; _i < _importExtensions_length; _i++) {
-            item = *(*importExtensions)[_i];
-            item->parent = ret;
-        }
-    }
-    return _Result<UseDeclaration, ParserError>(ret);
 }
 
 _Result<ConstantDeclaration, ParserError> Parser::parseConstantDeclaration(_Page* _rp, _Page* _ep) {
@@ -705,63 +650,6 @@ _Result<SimpleExpression, ParserError> Parser::parseSimpleExpression(_Page* _rp,
         }
     }
     return _Result<SimpleExpression, ParserError>(ret);
-}
-
-_Result<_Vector<PathIdentifier>, ParserError> Parser::parsePathIdentifierList(_Page* _rp, _Page* _ep) {
-    _Region _region; _Page* _p = _region.get();
-    _Array<PathIdentifier>* ret = nullptr;
-    while (true) {
-        auto _node_result = parsePathIdentifier(_rp, _ep);
-        PathIdentifier* node = nullptr;
-        if (_node_result.succeeded()) {
-            node = _node_result.getResult();
-        }
-        else {
-            break;
-        }
-        if (ret == nullptr)
-            ret = new(_p) _Array<PathIdentifier>();
-        ret->push(node);
-    }
-    return _Result<_Vector<PathIdentifier>, ParserError>(ret ? &_Vector<PathIdentifier>::create(_rp, *ret) : 0);
-}
-
-_Result<PathIdentifier, ParserError> Parser::parsePathIdentifier(_Page* _rp, _Page* _ep) {
-    _Region _region; _Page* _p = _region.get();
-    Position* start = lexer->getPreviousPosition(_p);
-    Position* startDot1 = lexer->getPreviousPosition(_p);
-    bool successDot1 = lexer->parsePunctuation(dot);
-    if (successDot1)
-        lexer->advance();
-    else
-        return _Result<PathIdentifier, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_punctuationExpected(new(_ep) Position(startDot1), new(_ep) string(dot))));
-    auto _extension_result = parsePathItem(_rp, _ep);
-    PathItem* extension = nullptr;
-    if (_extension_result.succeeded()) {
-        extension = _extension_result.getResult();
-    }
-    else {
-        auto error = _extension_result.getError();
-        return _Result<PathIdentifier, ParserError>(error);
-    }
-    Position* end = lexer->getPosition(_p);
-    PathIdentifier* ret = new(_rp) PathIdentifier(extension, new(_rp) Position(start), new(_rp) Position(end));
-    extension->parent = ret;
-    return _Result<PathIdentifier, ParserError>(ret);
-}
-
-_Result<PathItem, ParserError> Parser::parsePathItem(_Page* _rp, _Page* _ep) {
-    _Region _region; _Page* _p = _region.get();
-    Position* start = lexer->getPreviousPosition(_p);
-    Position* startName = lexer->getPreviousPosition(_p);
-    string* name = lexer->parseIdentifier(_rp);
-    if ((name != nullptr) && isIdentifier(name))
-        lexer->advance();
-    else
-        return _Result<PathItem, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_identifierExpected(new(_ep) Position(startName))));
-    Position* end = lexer->getPosition(_p);
-    PathItem* ret = new(_rp) PathItem(name, new(_rp) Position(start), new(_rp) Position(end));
-    return _Result<PathItem, ParserError>(ret);
 }
 
 _Result<Initializer, ParserError> Parser::parseInitializer(_Page* _rp, _Page* _ep) {

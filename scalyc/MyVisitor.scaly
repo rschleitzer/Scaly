@@ -13,13 +13,6 @@ class MyVisitor extends SyntaxVisitor {
     function closeCompilationUnit(compilationUnit: CompilationUnit) {
     }
 
-    function openUseDeclaration(useDeclaration: UseDeclaration): bool {
-        return(true)
-    }
-
-    function closeUseDeclaration(useDeclaration: UseDeclaration) {
-    }
-
     function openConstantDeclaration(constantDeclaration: ConstantDeclaration): bool {
         return(true)
     }
@@ -81,16 +74,6 @@ class MyVisitor extends SyntaxVisitor {
     }
 
     function closeSimpleExpression(simpleExpression: SimpleExpression) {
-    }
-
-    function openPathIdentifier(pathIdentifier: PathIdentifier): bool {
-        return(true)
-    }
-
-    function closePathIdentifier(pathIdentifier: PathIdentifier) {
-    }
-
-    function visitPathItem(pathItem: PathItem) {
     }
 
     function openInitializer(initializer: Initializer): bool {

@@ -112,15 +112,6 @@ class Parser {
         mutable start: Position = lexer.getPreviousPosition()
 
         {
-            let node: UseDeclaration = parseUseDeclaration() catch _ (error) {
-                errors.push(error)
-            }
-
-            if node != null
-                return(node)
-        }
-
-        {
             let node: ConstantDeclaration = parseConstantDeclaration() catch _ (error) {
                 errors.push(error)
             }
@@ -209,29 +200,6 @@ class Parser {
         }
 
         throw unableToParse(new Position(start), new ParserError[](errors))
-    }
-
-    function parseUseDeclaration(): UseDeclaration throws ParserError {
-        mutable start: Position = lexer.getPreviousPosition()
-        mutable startUse1: Position = lexer.getPreviousPosition()
-        let successUse1: bool = lexer.parseKeyword(useKeyword)
-        if successUse1
-            lexer.advance()
-        else
-            throw keywordExpected(new Position(startUse1), new string(useKeyword))
-
-        let importModule: PathItem = parsePathItem() catch _ (error)
-            throw error
-        let importExtensions: PathIdentifier[] = parsePathIdentifierList() catch _ null
-        mutable end: Position = lexer.getPosition()
-        var ret: UseDeclaration = new UseDeclaration(importModule, importExtensions, new Position(start), new Position(end))
-        importModule.parent = ret
-        if importExtensions != null {
-            for item: PathIdentifier in importExtensions
-                item.parent = ret
-        }
-
-        return(ret)
     }
 
     function parseConstantDeclaration(): ConstantDeclaration throws ParserError {
@@ -459,51 +427,6 @@ class Parser {
             for item: BinaryOp in binaryOps
                 item.parent = ret
         }
-
-        return(ret)
-    }
-
-    function parsePathIdentifierList(): PathIdentifier[] throws ParserError {
-        mutable ret: PathIdentifier[]? = null
-        while true {
-            let node: PathIdentifier = parsePathIdentifier()
-                catch _ break
-            if ret == null
-                ret = new PathIdentifier[]()
-            ret.push(node)
-        }
-        return(ret)
-    }
-
-    function parsePathIdentifier(): PathIdentifier throws ParserError {
-        mutable start: Position = lexer.getPreviousPosition()
-        mutable startDot1: Position = lexer.getPreviousPosition()
-        let successDot1: bool = lexer.parsePunctuation(dot)
-        if successDot1
-            lexer.advance()
-        else
-            throw punctuationExpected(new Position(startDot1), new string(dot))
-
-        let extension: PathItem = parsePathItem() catch _ (error)
-            throw error
-        mutable end: Position = lexer.getPosition()
-        var ret: PathIdentifier = new PathIdentifier(extension, new Position(start), new Position(end))
-        extension.parent = ret
-
-        return(ret)
-    }
-
-    function parsePathItem(): PathItem throws ParserError {
-        mutable start: Position = lexer.getPreviousPosition()
-        mutable startName: Position = lexer.getPreviousPosition()
-        let name: string? = lexer.parseIdentifier()
-        if (name != null) && isIdentifier(name)
-            lexer.advance()
-        else
-            throw identifierExpected(new Position(startName))
-
-        mutable end: Position = lexer.getPosition()
-        var ret: PathItem = new PathItem(name, new Position(start), new Position(end))
 
         return(ret)
     }

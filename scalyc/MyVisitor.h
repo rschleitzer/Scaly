@@ -10,8 +10,6 @@ public:
     virtual void closeProgram(Program* program);
     virtual bool openCompilationUnit(CompilationUnit* compilationUnit);
     virtual void closeCompilationUnit(CompilationUnit* compilationUnit);
-    virtual bool openUseDeclaration(UseDeclaration* useDeclaration);
-    virtual void closeUseDeclaration(UseDeclaration* useDeclaration);
     virtual bool openConstantDeclaration(ConstantDeclaration* constantDeclaration);
     virtual void closeConstantDeclaration(ConstantDeclaration* constantDeclaration);
     virtual bool openVariableDeclaration(VariableDeclaration* variableDeclaration);
@@ -30,9 +28,6 @@ public:
     virtual void closeCodeBlock(CodeBlock* codeBlock);
     virtual bool openSimpleExpression(SimpleExpression* simpleExpression);
     virtual void closeSimpleExpression(SimpleExpression* simpleExpression);
-    virtual bool openPathIdentifier(PathIdentifier* pathIdentifier);
-    virtual void closePathIdentifier(PathIdentifier* pathIdentifier);
-    virtual void visitPathItem(PathItem* pathItem);
     virtual bool openInitializer(Initializer* initializer);
     virtual void closeInitializer(Initializer* initializer);
     virtual bool openBindingInitializer(BindingInitializer* bindingInitializer);

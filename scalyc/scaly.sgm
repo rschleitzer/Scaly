@@ -14,7 +14,6 @@
         <content link = Expression
 
     <syntax id = Declaration                           abstract base = Statement
-        <content link = UseDeclaration
         <content link = ConstantDeclaration
         <content link = VariableDeclaration
         <content link = MutableDeclaration
@@ -26,11 +25,6 @@
     <syntax id = Expression                            abstract base = Statement
         <content link = CodeBlock
         <content link = SimpleExpression
-
-    <syntax id = UseDeclaration                                 base = Declaration
-        <content link = use
-        <content link = PathItem                                property = importModule
-        <content link = PathIdentifier        multiple optional property = importExtensions
 
     <syntax id = ConstantDeclaration                            base = Declaration
         <content link = let
@@ -80,13 +74,6 @@
     <syntax id = SimpleExpression                               base = Expression
         <content link = PrefixExpression                        property = prefixExpression
         <content link = BinaryOp              multiple optional property = binaryOps
-
-    <syntax id = PathIdentifier               multiple
-        <content link = dot
-        <content link = PathItem                                property = extension
-
-    <syntax id = PathItem
-        <content identifier                                     property = name
 
     <syntax id = Initializer
         <content link = equal

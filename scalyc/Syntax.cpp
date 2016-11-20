@@ -6,7 +6,6 @@ bool SyntaxNode::_isProgram() { return (false); }
 bool SyntaxNode::_isCompilationUnit() { return (false); }
 bool SyntaxNode::_isStatement() { return (false); }
 bool SyntaxNode::_isDeclaration() { return (false); }
-bool SyntaxNode::_isUseDeclaration() { return (false); }
 bool SyntaxNode::_isConstantDeclaration() { return (false); }
 bool SyntaxNode::_isVariableDeclaration() { return (false); }
 bool SyntaxNode::_isMutableDeclaration() { return (false); }
@@ -17,8 +16,6 @@ bool SyntaxNode::_isConstructorDeclaration() { return (false); }
 bool SyntaxNode::_isExpression() { return (false); }
 bool SyntaxNode::_isCodeBlock() { return (false); }
 bool SyntaxNode::_isSimpleExpression() { return (false); }
-bool SyntaxNode::_isPathIdentifier() { return (false); }
-bool SyntaxNode::_isPathItem() { return (false); }
 bool SyntaxNode::_isInitializer() { return (false); }
 bool SyntaxNode::_isBindingInitializer() { return (false); }
 bool SyntaxNode::_isPatternInitializer() { return (false); }
@@ -161,7 +158,6 @@ void Statement::accept(SyntaxVisitor* visitor) {
 bool Statement::_isStatement() { return (true); }
 
 bool Statement::_isDeclaration() { return (false); }
-bool Statement::_isUseDeclaration() { return (false); }
 bool Statement::_isConstantDeclaration() { return (false); }
 bool Statement::_isVariableDeclaration() { return (false); }
 bool Statement::_isMutableDeclaration() { return (false); }
@@ -178,7 +174,6 @@ void Declaration::accept(SyntaxVisitor* visitor) {
 
 bool Declaration::_isDeclaration() { return (true); }
 
-bool Declaration::_isUseDeclaration() { return (false); }
 bool Declaration::_isConstantDeclaration() { return (false); }
 bool Declaration::_isVariableDeclaration() { return (false); }
 bool Declaration::_isMutableDeclaration() { return (false); }
@@ -194,30 +189,6 @@ bool Expression::_isExpression() { return (true); }
 
 bool Expression::_isCodeBlock() { return (false); }
 bool Expression::_isSimpleExpression() { return (false); }
-
-UseDeclaration::UseDeclaration(PathItem* importModule, _Vector<PathIdentifier>* importExtensions, Position* start, Position* end) {
-    this->start = start;
-    this->end = end;
-    this->importModule = importModule;
-    this->importExtensions = importExtensions;
-}
-
-void UseDeclaration::accept(SyntaxVisitor* visitor) {
-    if (!visitor->openUseDeclaration(this))
-        return;
-    importModule->accept(visitor);
-    if (importExtensions != nullptr) {
-        PathIdentifier* node = nullptr;
-        size_t _importExtensions_length = importExtensions->length();
-        for (size_t _i = 0; _i < _importExtensions_length; _i++) {
-            node = *(*importExtensions)[_i];
-            node->accept(visitor);
-        }
-    }
-    visitor->closeUseDeclaration(this);
-}
-
-bool UseDeclaration::_isUseDeclaration() { return (true); }
 
 ConstantDeclaration::ConstantDeclaration(BindingInitializer* initializer, Position* start, Position* end) {
     this->start = start;
@@ -413,33 +384,6 @@ void SimpleExpression::accept(SyntaxVisitor* visitor) {
 }
 
 bool SimpleExpression::_isSimpleExpression() { return (true); }
-
-PathIdentifier::PathIdentifier(PathItem* extension, Position* start, Position* end) {
-    this->start = start;
-    this->end = end;
-    this->extension = extension;
-}
-
-void PathIdentifier::accept(SyntaxVisitor* visitor) {
-    if (!visitor->openPathIdentifier(this))
-        return;
-    extension->accept(visitor);
-    visitor->closePathIdentifier(this);
-}
-
-bool PathIdentifier::_isPathIdentifier() { return (true); }
-
-PathItem::PathItem(string* name, Position* start, Position* end) {
-    this->start = start;
-    this->end = end;
-    this->name = name;
-}
-
-void PathItem::accept(SyntaxVisitor* visitor) {
-    visitor->visitPathItem(this);
-}
-
-bool PathItem::_isPathItem() { return (true); }
 
 Initializer::Initializer(Expression* expression, Position* start, Position* end) {
     this->start = start;

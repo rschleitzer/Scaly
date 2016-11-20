@@ -179,13 +179,6 @@ bool CppVisitor::isTopLevelFile(CompilationUnit* compilationUnit) {
     return false;
 }
 
-bool CppVisitor::openUseDeclaration(UseDeclaration* useDeclaration) {
-    return true;
-}
-
-void CppVisitor::closeUseDeclaration(UseDeclaration* useDeclaration) {
-}
-
 bool CppVisitor::openConstantDeclaration(ConstantDeclaration* constantDeclaration) {
     constDeclaration = true;
     if (constantDeclaration->parent->parent->parent->_isClassDeclaration())
@@ -618,16 +611,6 @@ void CppVisitor::closeSimpleExpression(SimpleExpression* simpleExpression) {
     }
     if (simpleExpression->parent->_isCodeBlock() || simpleExpression->parent->_isCaseContent() || simpleExpression->parent->_isCompilationUnit())
         sourceFile->append(";\n");
-}
-
-bool CppVisitor::openPathIdentifier(PathIdentifier* pathIdentifier) {
-    return true;
-}
-
-void CppVisitor::closePathIdentifier(PathIdentifier* pathIdentifier) {
-}
-
-void CppVisitor::visitPathItem(PathItem* pathItem) {
 }
 
 bool CppVisitor::openInitializer(Initializer* initializer) {

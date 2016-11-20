@@ -16,13 +16,6 @@ bool MyVisitor::openCompilationUnit(CompilationUnit* compilationUnit) {
 void MyVisitor::closeCompilationUnit(CompilationUnit* compilationUnit) {
 }
 
-bool MyVisitor::openUseDeclaration(UseDeclaration* useDeclaration) {
-    return true;
-}
-
-void MyVisitor::closeUseDeclaration(UseDeclaration* useDeclaration) {
-}
-
 bool MyVisitor::openConstantDeclaration(ConstantDeclaration* constantDeclaration) {
     return true;
 }
@@ -84,16 +77,6 @@ bool MyVisitor::openSimpleExpression(SimpleExpression* simpleExpression) {
 }
 
 void MyVisitor::closeSimpleExpression(SimpleExpression* simpleExpression) {
-}
-
-bool MyVisitor::openPathIdentifier(PathIdentifier* pathIdentifier) {
-    return true;
-}
-
-void MyVisitor::closePathIdentifier(PathIdentifier* pathIdentifier) {
-}
-
-void MyVisitor::visitPathItem(PathItem* pathItem) {
 }
 
 bool MyVisitor::openInitializer(Initializer* initializer) {

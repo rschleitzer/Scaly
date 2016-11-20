@@ -14,8 +14,6 @@ class Declaration;
 
 class Expression;
 
-class UseDeclaration;
-
 class ConstantDeclaration;
 
 class VariableDeclaration;
@@ -33,10 +31,6 @@ class ConstructorDeclaration;
 class CodeBlock;
 
 class SimpleExpression;
-
-class PathIdentifier;
-
-class PathItem;
 
 class Initializer;
 
@@ -220,8 +214,6 @@ public:
     virtual void closeProgram(Program* program) = 0;
     virtual bool openCompilationUnit(CompilationUnit* compilationUnit) = 0;
     virtual void closeCompilationUnit(CompilationUnit* compilationUnit) = 0;
-    virtual bool openUseDeclaration(UseDeclaration* useDeclaration) = 0;
-    virtual void closeUseDeclaration(UseDeclaration* useDeclaration) = 0;
     virtual bool openConstantDeclaration(ConstantDeclaration* constantDeclaration) = 0;
     virtual void closeConstantDeclaration(ConstantDeclaration* constantDeclaration) = 0;
     virtual bool openVariableDeclaration(VariableDeclaration* variableDeclaration) = 0;
@@ -240,9 +232,6 @@ public:
     virtual void closeCodeBlock(CodeBlock* codeBlock) = 0;
     virtual bool openSimpleExpression(SimpleExpression* simpleExpression) = 0;
     virtual void closeSimpleExpression(SimpleExpression* simpleExpression) = 0;
-    virtual bool openPathIdentifier(PathIdentifier* pathIdentifier) = 0;
-    virtual void closePathIdentifier(PathIdentifier* pathIdentifier) = 0;
-    virtual void visitPathItem(PathItem* pathItem) = 0;
     virtual bool openInitializer(Initializer* initializer) = 0;
     virtual void closeInitializer(Initializer* initializer) = 0;
     virtual bool openBindingInitializer(BindingInitializer* bindingInitializer) = 0;

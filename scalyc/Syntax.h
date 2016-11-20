@@ -14,7 +14,6 @@ public:
     virtual bool _isCompilationUnit();
     virtual bool _isStatement();
     virtual bool _isDeclaration();
-    virtual bool _isUseDeclaration();
     virtual bool _isConstantDeclaration();
     virtual bool _isVariableDeclaration();
     virtual bool _isMutableDeclaration();
@@ -25,8 +24,6 @@ public:
     virtual bool _isExpression();
     virtual bool _isCodeBlock();
     virtual bool _isSimpleExpression();
-    virtual bool _isPathIdentifier();
-    virtual bool _isPathItem();
     virtual bool _isInitializer();
     virtual bool _isBindingInitializer();
     virtual bool _isPatternInitializer();
@@ -144,7 +141,6 @@ public:
 
     virtual bool _isStatement();
     virtual bool _isDeclaration();
-    virtual bool _isUseDeclaration();
     virtual bool _isConstantDeclaration();
     virtual bool _isVariableDeclaration();
     virtual bool _isMutableDeclaration();
@@ -162,7 +158,6 @@ public:
     virtual void accept(SyntaxVisitor* visitor);
 
     virtual bool _isDeclaration();
-    virtual bool _isUseDeclaration();
     virtual bool _isConstantDeclaration();
     virtual bool _isVariableDeclaration();
     virtual bool _isMutableDeclaration();
@@ -179,16 +174,6 @@ public:
     virtual bool _isExpression();
     virtual bool _isCodeBlock();
     virtual bool _isSimpleExpression();
-};
-
-class UseDeclaration : public Declaration {
-public:
-    UseDeclaration(PathItem* importModule, _Vector<PathIdentifier>* importExtensions, Position* start, Position* end);
-    virtual void accept(SyntaxVisitor* visitor);
-    PathItem* importModule;
-    _Vector<PathIdentifier>* importExtensions;
-
-    virtual bool _isUseDeclaration();
 };
 
 class ConstantDeclaration : public Declaration {
@@ -281,24 +266,6 @@ public:
     _Vector<BinaryOp>* binaryOps;
 
     virtual bool _isSimpleExpression();
-};
-
-class PathIdentifier : public SyntaxNode {
-public:
-    PathIdentifier(PathItem* extension, Position* start, Position* end);
-    virtual void accept(SyntaxVisitor* visitor);
-    PathItem* extension;
-
-    virtual bool _isPathIdentifier();
-};
-
-class PathItem : public SyntaxNode {
-public:
-    PathItem(string* name, Position* start, Position* end);
-    virtual void accept(SyntaxVisitor* visitor);
-    string* name;
-
-    virtual bool _isPathItem();
 };
 
 class Initializer : public SyntaxNode {

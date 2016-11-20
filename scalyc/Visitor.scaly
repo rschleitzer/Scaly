@@ -3,7 +3,6 @@ class CompilationUnit
 class Statement
 class Declaration
 class Expression
-class UseDeclaration
 class ConstantDeclaration
 class VariableDeclaration
 class MutableDeclaration
@@ -13,8 +12,6 @@ class ClassDeclaration
 class ConstructorDeclaration
 class CodeBlock
 class SimpleExpression
-class PathIdentifier
-class PathItem
 class Initializer
 class BindingInitializer
 class PatternInitializer
@@ -109,8 +106,6 @@ class SyntaxVisitor {
     function closeProgram(program: Program)
     function openCompilationUnit(compilationUnit: CompilationUnit): bool
     function closeCompilationUnit(compilationUnit: CompilationUnit)
-    function openUseDeclaration(useDeclaration: UseDeclaration): bool
-    function closeUseDeclaration(useDeclaration: UseDeclaration)
     function openConstantDeclaration(constantDeclaration: ConstantDeclaration): bool
     function closeConstantDeclaration(constantDeclaration: ConstantDeclaration)
     function openVariableDeclaration(variableDeclaration: VariableDeclaration): bool
@@ -129,9 +124,6 @@ class SyntaxVisitor {
     function closeCodeBlock(codeBlock: CodeBlock)
     function openSimpleExpression(simpleExpression: SimpleExpression): bool
     function closeSimpleExpression(simpleExpression: SimpleExpression)
-    function openPathIdentifier(pathIdentifier: PathIdentifier): bool
-    function closePathIdentifier(pathIdentifier: PathIdentifier)
-    function visitPathItem(pathItem: PathItem)
     function openInitializer(initializer: Initializer): bool
     function closeInitializer(initializer: Initializer)
     function openBindingInitializer(bindingInitializer: BindingInitializer): bool

@@ -73,30 +73,6 @@ class Expression extends Statement {
 
 }
 
-class UseDeclaration extends Declaration {
-
-    constructor(importModule: PathItem, importExtensions: PathIdentifier[], start: Position, end: Position) {
-        this.start = start
-        this.end = end
-        this.importModule = importModule
-        this.importExtensions = importExtensions
-    }
-
-    override function accept(mutable visitor: SyntaxVisitor) {
-        if !visitor.openUseDeclaration(this)
-            return
-        importModule.accept(visitor)
-        if importExtensions != null {
-            for node: PathIdentifier in importExtensions
-                node.accept(visitor)
-        }
-        visitor.closeUseDeclaration(this)
-    }
-
-    let importModule: PathItem?
-    let importExtensions: PathIdentifier[]?
-}
-
 class ConstantDeclaration extends Declaration {
 
     constructor(initializer: BindingInitializer, start: Position, end: Position) {
@@ -308,39 +284,6 @@ class SimpleExpression extends Expression {
 
     let prefixExpression: PrefixExpression?
     let binaryOps: BinaryOp[]?
-}
-
-class PathIdentifier extends SyntaxNode {
-
-    constructor(extension: PathItem, start: Position, end: Position) {
-        this.start = start
-        this.end = end
-        this.extension = extension
-    }
-
-    function accept(mutable visitor: SyntaxVisitor) {
-        if !visitor.openPathIdentifier(this)
-            return
-        extension.accept(visitor)
-        visitor.closePathIdentifier(this)
-    }
-
-    let extension: PathItem?
-}
-
-class PathItem extends SyntaxNode {
-
-    constructor(name: string, start: Position, end: Position) {
-        this.start = start
-        this.end = end
-        this.name = name
-    }
-
-    function accept(mutable visitor: SyntaxVisitor) {
-        visitor.visitPathItem(this)
-    }
-
-    let name: string?
 }
 
 class Initializer extends SyntaxNode {
