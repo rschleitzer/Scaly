@@ -311,7 +311,7 @@ class Parser {
         }
         name.parent = ret
         signature.parent = ret
-       if body != null
+        if body != null
             body.parent = ret
 
         return(ret)
@@ -380,11 +380,11 @@ class Parser {
         let body: ClassBody = parseClassBody() catch _ null
         mutable end: Position = lexer.getPosition()
         var ret: ClassDeclaration = new ClassDeclaration(name, genericArgumentClause, typeInheritanceClause, body, new Position(start), new Position(end))
-       if genericArgumentClause != null
+        if genericArgumentClause != null
             genericArgumentClause.parent = ret
-       if typeInheritanceClause != null
+        if typeInheritanceClause != null
             typeInheritanceClause.parent = ret
-       if body != null
+        if body != null
             body.parent = ret
 
         return(ret)
@@ -412,7 +412,7 @@ class Parser {
                 item.parent = ret
         }
         parameterClause.parent = ret
-       if throwsClause != null
+        if throwsClause != null
             throwsClause.parent = ret
         body.parent = ret
 
@@ -562,7 +562,7 @@ class Parser {
         mutable end: Position = lexer.getPosition()
         var ret: PatternInitializer = new PatternInitializer(pattern, initializer, new Position(start), new Position(end))
         pattern.parent = ret
-       if initializer != null
+        if initializer != null
             initializer.parent = ret
 
         return(ret)
@@ -705,9 +705,9 @@ class Parser {
         mutable end: Position = lexer.getPosition()
         var ret: FunctionSignature = new FunctionSignature(parameterClause, result, throwsClause, new Position(start), new Position(end))
         parameterClause.parent = ret
-       if result != null
+        if result != null
             result.parent = ret
-       if throwsClause != null
+        if throwsClause != null
             throwsClause.parent = ret
 
         return(ret)
@@ -727,7 +727,7 @@ class Parser {
             throw error
         mutable end: Position = lexer.getPosition()
         var ret: FunctionResult = new FunctionResult(existingObject, resultType, new Position(start), new Position(end))
-       if existingObject != null
+        if existingObject != null
             existingObject.parent = ret
         resultType.parent = ret
 
@@ -941,7 +941,7 @@ class Parser {
             for item: AdditionalCase in additionalCases
                 item.parent = ret
         }
-       if parameterClause != null
+        if parameterClause != null
             parameterClause.parent = ret
 
         return(ret)
@@ -1283,7 +1283,7 @@ class Parser {
         mutable end: Position = lexer.getPosition()
         var ret: CatchClause = new CatchClause(catchPattern, bindingPattern, expression, new Position(start), new Position(end))
         catchPattern.parent = ret
-       if bindingPattern != null
+        if bindingPattern != null
             bindingPattern.parent = ret
         expression.parent = ret
 
@@ -1338,7 +1338,7 @@ class Parser {
         let member: ExplicitMemberExpression = parseExplicitMemberExpression() catch _ null
         mutable end: Position = lexer.getPosition()
         var ret: IdentifierCatchPattern = new IdentifierCatchPattern(name, member, new Position(start), new Position(end))
-       if member != null
+        if member != null
             member.parent = ret
 
         return(ret)
@@ -1719,7 +1719,7 @@ class Parser {
         var ret: IfExpression = new IfExpression(condition, consequent, elseClause, new Position(start), new Position(end))
         condition.parent = ret
         consequent.parent = ret
-       if elseClause != null
+        if elseClause != null
             elseClause.parent = ret
 
         return(ret)
@@ -1865,7 +1865,7 @@ class Parser {
         let expression: ParenthesizedExpression = parseParenthesizedExpression() catch _ null
         mutable end: Position = lexer.getPosition()
         var ret: ReturnExpression = new ReturnExpression(expression, new Position(start), new Position(end))
-       if expression != null
+        if expression != null
             expression.parent = ret
 
         return(ret)
@@ -1886,7 +1886,7 @@ class Parser {
         mutable end: Position = lexer.getPosition()
         var ret: ThrowExpression = new ThrowExpression(error, arguments, new Position(start), new Position(end))
         error.parent = ret
-       if arguments != null
+        if arguments != null
             arguments.parent = ret
 
         return(ret)
@@ -1904,7 +1904,7 @@ class Parser {
         let expression: ParenthesizedExpression = parseParenthesizedExpression() catch _ null
         mutable end: Position = lexer.getPosition()
         var ret: BreakExpression = new BreakExpression(expression, new Position(start), new Position(end))
-       if expression != null
+        if expression != null
             expression.parent = ret
 
         return(ret)
@@ -2322,7 +2322,7 @@ class Parser {
         let annotationForType: TypeAnnotation = parseTypeAnnotation() catch _ null
         mutable end: Position = lexer.getPosition()
         var ret: IdentifierPattern = new IdentifierPattern(identifier, annotationForType, new Position(start), new Position(end))
-       if annotationForType != null
+        if annotationForType != null
             annotationForType.parent = ret
 
         return(ret)
@@ -2475,7 +2475,7 @@ class Parser {
         let postfixes: TypePostfix[] = parseTypePostfixList() catch _ null
         mutable end: Position = lexer.getPosition()
         var ret: Type = new Type(name, subType, postfixes, new Position(start), new Position(end))
-       if subType != null
+        if subType != null
             subType.parent = ret
         if postfixes != null {
             for item: TypePostfix in postfixes
@@ -2592,7 +2592,7 @@ class Parser {
 
         mutable end: Position = lexer.getPosition()
         var ret: IndexedType = new IndexedType(key, new Position(start), new Position(end))
-       if key != null
+        if key != null
             key.parent = ret
 
         return(ret)

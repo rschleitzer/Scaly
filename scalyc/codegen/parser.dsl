@@ -114,7 +114,7 @@
 "                       )
                         (if (string=? "syntax" (type content)) ($
                             (if (optional? content) ($
-"       if "(property content)" != null
+"        if "(property content)" != null
     "                       )"")
 "        "(property content)".parent = ret
 "                       )"")
