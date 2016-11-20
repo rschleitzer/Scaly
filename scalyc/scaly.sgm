@@ -408,7 +408,6 @@
         <content link = Type                                    property = type
         <content link = comma                          optional
 
-    <keyword id = use
     <keyword id = class
     <keyword id = function
     <keyword id = if

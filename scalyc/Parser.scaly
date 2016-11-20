@@ -2,7 +2,6 @@ class Parser {
     constructor(theFileName: string, text: string) {
         lexer = new Lexer(text)
         fileName = theFileName
-        useKeyword = new string("use")
         classKeyword = new string("class")
         functionKeyword = new string("function")
         ifKeyword = new string("if")
@@ -2296,9 +2295,6 @@ class Parser {
     }
 
     function isIdentifier(id: string): bool {
-        if id.equals(useKeyword)
-            return(false)
-
         if id.equals(classKeyword)
             return(false)
 
@@ -2395,7 +2391,6 @@ class Parser {
     mutable lexer: Lexer
     let fileName: string
 
-    let useKeyword: string
     let classKeyword: string
     let functionKeyword: string
     let ifKeyword: string
