@@ -1771,28 +1771,28 @@ bool CppVisitor::openWhileExpression(WhileExpression* whileExpression) {
 void CppVisitor::closeWhileExpression(WhileExpression* whileExpression) {
 }
 
-bool CppVisitor::openRepeatExpression(RepeatExpression* repeatExpression) {
+bool CppVisitor::openDoExpression(DoExpression* doExpression) {
     sourceFile->append("do");
-    if (repeatExpression->code->_isSimpleExpression()) {
+    if (doExpression->code->_isSimpleExpression()) {
         sourceFile->append("\n");
         sourceIndentLevel++;
         indentSource();
-        repeatExpression->code->accept(this);
+        doExpression->code->accept(this);
         sourceFile->append(";");
         sourceIndentLevel--;
     }
     else {
         sourceFile->append(" ");
-        repeatExpression->code->accept(this);
+        doExpression->code->accept(this);
     }
     indentSource();
     sourceFile->append("while (");
-    repeatExpression->condition->accept(this);
+    doExpression->condition->accept(this);
     sourceFile->append(")");
     return false;
 }
 
-void CppVisitor::closeRepeatExpression(RepeatExpression* repeatExpression) {
+void CppVisitor::closeDoExpression(DoExpression* doExpression) {
 }
 
 bool CppVisitor::openParenthesizedExpression(ParenthesizedExpression* parenthesizedExpression) {

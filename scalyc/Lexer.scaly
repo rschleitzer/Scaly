@@ -268,7 +268,7 @@ class Lexer {
     function scanIdentifier(): Identifier {
         mutable name: VarString = new VarString(text.charAt(position))
 
-        repeat {
+        do {
             position++ column++
             
             if position == end
@@ -301,7 +301,7 @@ class Lexer {
         
         mutable operation: VarString = new VarString(text.charAt(position))
 
-        repeat {
+        do {
             position++ column++
             if position == end {
                 if whitespaceSkippedBefore
@@ -355,7 +355,7 @@ class Lexer {
     function scanStringLiteral(): Token {
         mutable value: VarString = new VarString("")
 
-        repeat {
+        do {
             position++ column++
             if position == end
                 return(new InvalidToken())
@@ -387,7 +387,7 @@ class Lexer {
 
     function scanCharacterLiteral(): Token {
         mutable value: VarString = new VarString("")
-        repeat {
+        do {
             position++ column++
             if position == end
                 return(new InvalidToken())
@@ -419,7 +419,7 @@ class Lexer {
     function scanNumericLiteral(): NumericLiteral {    
         mutable value: VarString = new VarString(text.charAt(position))
 
-        repeat {
+        do {
             position++ column++
             
             if position == end
@@ -435,7 +435,7 @@ class Lexer {
 
     function skipWhitespace(): bool {
         whitespaceSkipped = false
-        repeat {
+        do {
             if position == end
                 return(true)
 
@@ -487,7 +487,7 @@ class Lexer {
     }
     
     function handleSingleLineComment() {
-        repeat {
+        do {
             if position == end
                 return
                 
@@ -517,7 +517,7 @@ class Lexer {
     }
 
     function handleMultiLineComment() {
-        repeat {
+        do {
             if position == end
                 return
                 

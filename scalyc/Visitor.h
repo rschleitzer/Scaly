@@ -120,7 +120,7 @@ class ForExpression;
 
 class WhileExpression;
 
-class RepeatExpression;
+class DoExpression;
 
 class ParenthesizedExpression;
 
@@ -288,8 +288,8 @@ public:
     virtual void closeForExpression(ForExpression* forExpression) = 0;
     virtual bool openWhileExpression(WhileExpression* whileExpression) = 0;
     virtual void closeWhileExpression(WhileExpression* whileExpression) = 0;
-    virtual bool openRepeatExpression(RepeatExpression* repeatExpression) = 0;
-    virtual void closeRepeatExpression(RepeatExpression* repeatExpression) = 0;
+    virtual bool openDoExpression(DoExpression* doExpression) = 0;
+    virtual void closeDoExpression(DoExpression* doExpression) = 0;
     virtual bool openParenthesizedExpression(ParenthesizedExpression* parenthesizedExpression) = 0;
     virtual void closeParenthesizedExpression(ParenthesizedExpression* parenthesizedExpression) = 0;
     virtual bool openReturnExpression(ReturnExpression* returnExpression) = 0;

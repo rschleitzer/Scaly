@@ -310,11 +310,11 @@ class MyVisitor extends SyntaxVisitor {
     function closeWhileExpression(whileExpression: WhileExpression) {
     }
 
-    function openRepeatExpression(repeatExpression: RepeatExpression): bool {
+    function openRepeatExpression(doExpression: RepeatExpression): bool {
         return(true)
     }
 
-    function closeRepeatExpression(repeatExpression: RepeatExpression) {
+    function closeRepeatExpression(doExpression: RepeatExpression) {
     }
 
     function openParenthesizedExpression(parenthesizedExpression: ParenthesizedExpression): bool {

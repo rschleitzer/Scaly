@@ -147,8 +147,8 @@ public:
     virtual void closeForExpression(ForExpression* forExpression);
     virtual bool openWhileExpression(WhileExpression* whileExpression);
     virtual void closeWhileExpression(WhileExpression* whileExpression);
-    virtual bool openRepeatExpression(RepeatExpression* repeatExpression);
-    virtual void closeRepeatExpression(RepeatExpression* repeatExpression);
+    virtual bool openDoExpression(DoExpression* doExpression);
+    virtual void closeDoExpression(DoExpression* doExpression);
     virtual bool openParenthesizedExpression(ParenthesizedExpression* parenthesizedExpression);
     virtual bool assignedToMutableObject(FunctionCall* functionCall);
     virtual bool assignedToConstantObject(FunctionCall* functionCall);

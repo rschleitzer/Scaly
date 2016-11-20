@@ -60,7 +60,7 @@ bool SyntaxNode::_isIfExpression() { return (false); }
 bool SyntaxNode::_isSwitchExpression() { return (false); }
 bool SyntaxNode::_isForExpression() { return (false); }
 bool SyntaxNode::_isWhileExpression() { return (false); }
-bool SyntaxNode::_isRepeatExpression() { return (false); }
+bool SyntaxNode::_isDoExpression() { return (false); }
 bool SyntaxNode::_isParenthesizedExpression() { return (false); }
 bool SyntaxNode::_isReturnExpression() { return (false); }
 bool SyntaxNode::_isThrowExpression() { return (false); }
@@ -960,7 +960,7 @@ bool PrimaryExpression::_isIfExpression() { return (false); }
 bool PrimaryExpression::_isSwitchExpression() { return (false); }
 bool PrimaryExpression::_isForExpression() { return (false); }
 bool PrimaryExpression::_isWhileExpression() { return (false); }
-bool PrimaryExpression::_isRepeatExpression() { return (false); }
+bool PrimaryExpression::_isDoExpression() { return (false); }
 bool PrimaryExpression::_isParenthesizedExpression() { return (false); }
 bool PrimaryExpression::_isReturnExpression() { return (false); }
 bool PrimaryExpression::_isThrowExpression() { return (false); }
@@ -1069,22 +1069,22 @@ void WhileExpression::accept(SyntaxVisitor* visitor) {
 
 bool WhileExpression::_isWhileExpression() { return (true); }
 
-RepeatExpression::RepeatExpression(Expression* code, Expression* condition, Position* start, Position* end) {
+DoExpression::DoExpression(Expression* code, Expression* condition, Position* start, Position* end) {
     this->start = start;
     this->end = end;
     this->code = code;
     this->condition = condition;
 }
 
-void RepeatExpression::accept(SyntaxVisitor* visitor) {
-    if (!visitor->openRepeatExpression(this))
+void DoExpression::accept(SyntaxVisitor* visitor) {
+    if (!visitor->openDoExpression(this))
         return;
     code->accept(visitor);
     condition->accept(visitor);
-    visitor->closeRepeatExpression(this);
+    visitor->closeDoExpression(this);
 }
 
-bool RepeatExpression::_isRepeatExpression() { return (true); }
+bool DoExpression::_isDoExpression() { return (true); }
 
 ParenthesizedExpression::ParenthesizedExpression(_Vector<ExpressionElement>* expressionElements, Position* start, Position* end) {
     this->start = start;

@@ -313,11 +313,11 @@ bool MyVisitor::openWhileExpression(WhileExpression* whileExpression) {
 void MyVisitor::closeWhileExpression(WhileExpression* whileExpression) {
 }
 
-bool MyVisitor::openRepeatExpression(RepeatExpression* repeatExpression) {
+bool MyVisitor::openDoExpression(DoExpression* doExpression) {
     return true;
 }
 
-void MyVisitor::closeRepeatExpression(RepeatExpression* repeatExpression) {
+void MyVisitor::closeDoExpression(DoExpression* doExpression) {
 }
 
 bool MyVisitor::openParenthesizedExpression(ParenthesizedExpression* parenthesizedExpression) {

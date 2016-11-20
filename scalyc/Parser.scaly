@@ -14,7 +14,7 @@ class Parser {
         forKeyword = new string("for")
         inKeyword = new string("in")
         whileKeyword = new string("while")
-        repeatKeyword = new string("repeat")
+        doKeyword = new string("do")
         returnKeyword = new string("return")
         throwKeyword = new string("throw")
         breakKeyword = new string("break")
@@ -1606,11 +1606,11 @@ class Parser {
     function parseRepeatExpression(): RepeatExpression throws ParserError {
         mutable start: Position = lexer.getPreviousPosition()
         mutable startRepeat1: Position = lexer.getPreviousPosition()
-        let successRepeat1: bool = lexer.parseKeyword(repeatKeyword)
+        let successRepeat1: bool = lexer.parseKeyword(doKeyword)
         if successRepeat1
             lexer.advance()
         else
-            throw keywordExpected(new Position(startRepeat1), new string(repeatKeyword))
+            throw keywordExpected(new Position(startRepeat1), new string(doKeyword))
 
         let code: Expression = parseExpression() catch _ (error)
             throw error
@@ -2490,7 +2490,7 @@ class Parser {
         if id.equals(whileKeyword)
             return(false)
 
-        if id.equals(repeatKeyword)
+        if id.equals(doKeyword)
             return(false)
 
         if id.equals(returnKeyword)
@@ -2568,7 +2568,7 @@ class Parser {
     let forKeyword: string
     let inKeyword: string
     let whileKeyword: string
-    let repeatKeyword: string
+    let doKeyword: string
     let returnKeyword: string
     let throwKeyword: string
     let breakKeyword: string

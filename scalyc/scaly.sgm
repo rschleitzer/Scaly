@@ -278,8 +278,8 @@
         <content link = Expression                              property = condition
         <content link = Expression                              property = code
 
-    <syntax id = RepeatExpression                               base = PrimaryExpression
-        <content link = repeat
+    <syntax id = DoExpression                                   base = PrimaryExpression
+        <content link = do
         <content link = Expression                              property = code
         <content link = while
         <content link = Expression                              property = condition
@@ -448,7 +448,7 @@
     <keyword id = for
     <keyword id = in
     <keyword id = while
-    <keyword id = repeat
+    <keyword id = do
     <keyword id = return
     <keyword id = throw
     <keyword id = break

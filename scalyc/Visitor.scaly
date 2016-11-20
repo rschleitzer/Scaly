@@ -186,8 +186,8 @@ class SyntaxVisitor {
     function closeForExpression(forExpression: ForExpression)
     function openWhileExpression(whileExpression: WhileExpression): bool
     function closeWhileExpression(whileExpression: WhileExpression)
-    function openRepeatExpression(repeatExpression: RepeatExpression): bool
-    function closeRepeatExpression(repeatExpression: RepeatExpression)
+    function openRepeatExpression(doExpression: RepeatExpression): bool
+    function closeRepeatExpression(doExpression: RepeatExpression)
     function openParenthesizedExpression(parenthesizedExpression: ParenthesizedExpression): bool
     function closeParenthesizedExpression(parenthesizedExpression: ParenthesizedExpression)
     function openReturnExpression(returnExpression: ReturnExpression): bool

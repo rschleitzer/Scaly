@@ -1630,7 +1630,7 @@ class CppVisitor extends SyntaxVisitor {
 
         var bindingInitializer: BindingInitializer = null
 
-        repeat {
+        do {
             if syntaxNode is BindingInitializer {
                 bindingInitializer = (syntaxNode as BindingInitializer)
                 break
@@ -1802,29 +1802,29 @@ class CppVisitor extends SyntaxVisitor {
     function closeWhileExpression(whileExpression: WhileExpression) {
     }
 
-    function openRepeatExpression(repeatExpression: RepeatExpression): bool {
+    function openDoExpression(doExpression: DoExpression): bool {
         sourceFile.append("do")
-        if repeatExpression.code is SimpleExpression {
+        if doExpression.code is SimpleExpression {
             sourceFile.append("\n")
             sourceIndentLevel++
             indentSource()
-            repeatExpression.code.accept(this)
+            doExpression.code.accept(this)
             sourceFile.append(";")
             sourceIndentLevel--
         }
         else {
             sourceFile.append(" ")
-            repeatExpression.code.accept(this)
+            doExpression.code.accept(this)
         }
         indentSource()
         sourceFile.append("while (")
-        repeatExpression.condition.accept(this)
+        doExpression.condition.accept(this)
         sourceFile.append(")")
 
         return(false)
     }
 
-    function closeRepeatExpression(repeatExpression: RepeatExpression) {
+    function closeDoExpression(doExpression: DoExpression) {
     }
 
     function openParenthesizedExpression(parenthesizedExpression: ParenthesizedExpression): bool {

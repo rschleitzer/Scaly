@@ -96,8 +96,8 @@ public:
     virtual void closeForExpression(ForExpression* forExpression);
     virtual bool openWhileExpression(WhileExpression* whileExpression);
     virtual void closeWhileExpression(WhileExpression* whileExpression);
-    virtual bool openRepeatExpression(RepeatExpression* repeatExpression);
-    virtual void closeRepeatExpression(RepeatExpression* repeatExpression);
+    virtual bool openDoExpression(DoExpression* doExpression);
+    virtual void closeDoExpression(DoExpression* doExpression);
     virtual bool openParenthesizedExpression(ParenthesizedExpression* parenthesizedExpression);
     virtual void closeParenthesizedExpression(ParenthesizedExpression* parenthesizedExpression);
     virtual bool openReturnExpression(ReturnExpression* returnExpression);

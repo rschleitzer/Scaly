@@ -16,7 +16,7 @@ class Options {
         mutable dir: string = null
         mutable input: string[] = new string[]()
         mutable i: number = 0
-        repeat {
+        do {
             if length < 2 || (args[i]).charAt(0) != '-' {
                 input.push(args[i])
                 i++

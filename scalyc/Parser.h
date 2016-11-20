@@ -77,7 +77,7 @@ public:
     virtual _Result<SwitchExpression, ParserError> parseSwitchExpression(_Page* _rp, _Page* _ep);
     virtual _Result<ForExpression, ParserError> parseForExpression(_Page* _rp, _Page* _ep);
     virtual _Result<WhileExpression, ParserError> parseWhileExpression(_Page* _rp, _Page* _ep);
-    virtual _Result<RepeatExpression, ParserError> parseRepeatExpression(_Page* _rp, _Page* _ep);
+    virtual _Result<DoExpression, ParserError> parseDoExpression(_Page* _rp, _Page* _ep);
     virtual _Result<ParenthesizedExpression, ParserError> parseParenthesizedExpression(_Page* _rp, _Page* _ep);
     virtual _Result<ReturnExpression, ParserError> parseReturnExpression(_Page* _rp, _Page* _ep);
     virtual _Result<ThrowExpression, ParserError> parseThrowExpression(_Page* _rp, _Page* _ep);
@@ -136,7 +136,7 @@ public:
     string* forKeyword;
     string* inKeyword;
     string* whileKeyword;
-    string* repeatKeyword;
+    string* doKeyword;
     string* returnKeyword;
     string* throwKeyword;
     string* breakKeyword;

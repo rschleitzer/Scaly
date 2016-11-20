@@ -17,7 +17,7 @@ Parser::Parser(string* theFileName, string* text) {
     forKeyword = new(getPage()) string("for");
     inKeyword = new(getPage()) string("in");
     whileKeyword = new(getPage()) string("while");
-    repeatKeyword = new(getPage()) string("repeat");
+    doKeyword = new(getPage()) string("do");
     returnKeyword = new(getPage()) string("return");
     throwKeyword = new(getPage()) string("throw");
     breakKeyword = new(getPage()) string("break");
@@ -2042,8 +2042,8 @@ _Result<PrimaryExpression, ParserError> Parser::parsePrimaryExpression(_Page* _r
             return _Result<PrimaryExpression, ParserError>(node);
     }
     {
-        auto _node_result = parseRepeatExpression(_rp, _ep);
-        RepeatExpression* node = nullptr;
+        auto _node_result = parseDoExpression(_rp, _ep);
+        DoExpression* node = nullptr;
         if (_node_result.succeeded()) {
             node = _node_result.getResult();
         }
@@ -2369,15 +2369,15 @@ _Result<WhileExpression, ParserError> Parser::parseWhileExpression(_Page* _rp, _
     return _Result<WhileExpression, ParserError>(ret);
 }
 
-_Result<RepeatExpression, ParserError> Parser::parseRepeatExpression(_Page* _rp, _Page* _ep) {
+_Result<DoExpression, ParserError> Parser::parseDoExpression(_Page* _rp, _Page* _ep) {
     _Region _region; _Page* _p = _region.get();
     Position* start = lexer->getPreviousPosition(_p);
-    Position* startRepeat1 = lexer->getPreviousPosition(_p);
-    bool successRepeat1 = lexer->parseKeyword(repeatKeyword);
-    if (successRepeat1)
+    Position* startDo1 = lexer->getPreviousPosition(_p);
+    bool successDo1 = lexer->parseKeyword(doKeyword);
+    if (successDo1)
         lexer->advance();
     else
-        return _Result<RepeatExpression, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_keywordExpected(new(_ep) Position(startRepeat1), new(_ep) string(repeatKeyword))));
+        return _Result<DoExpression, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_keywordExpected(new(_ep) Position(startDo1), new(_ep) string(doKeyword))));
     auto _code_result = parseExpression(_rp, _ep);
     Expression* code = nullptr;
     if (_code_result.succeeded()) {
@@ -2385,14 +2385,14 @@ _Result<RepeatExpression, ParserError> Parser::parseRepeatExpression(_Page* _rp,
     }
     else {
         auto error = _code_result.getError();
-        return _Result<RepeatExpression, ParserError>(error);
+        return _Result<DoExpression, ParserError>(error);
     }
     Position* startWhile3 = lexer->getPreviousPosition(_p);
     bool successWhile3 = lexer->parseKeyword(whileKeyword);
     if (successWhile3)
         lexer->advance();
     else
-        return _Result<RepeatExpression, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_keywordExpected(new(_ep) Position(startWhile3), new(_ep) string(whileKeyword))));
+        return _Result<DoExpression, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_keywordExpected(new(_ep) Position(startWhile3), new(_ep) string(whileKeyword))));
     auto _condition_result = parseExpression(_rp, _ep);
     Expression* condition = nullptr;
     if (_condition_result.succeeded()) {
@@ -2400,13 +2400,13 @@ _Result<RepeatExpression, ParserError> Parser::parseRepeatExpression(_Page* _rp,
     }
     else {
         auto error = _condition_result.getError();
-        return _Result<RepeatExpression, ParserError>(error);
+        return _Result<DoExpression, ParserError>(error);
     }
     Position* end = lexer->getPosition(_p);
-    RepeatExpression* ret = new(_rp) RepeatExpression(code, condition, new(_rp) Position(start), new(_rp) Position(end));
+    DoExpression* ret = new(_rp) DoExpression(code, condition, new(_rp) Position(start), new(_rp) Position(end));
     code->parent = ret;
     condition->parent = ret;
-    return _Result<RepeatExpression, ParserError>(ret);
+    return _Result<DoExpression, ParserError>(ret);
 }
 
 _Result<ParenthesizedExpression, ParserError> Parser::parseParenthesizedExpression(_Page* _rp, _Page* _ep) {
@@ -3589,7 +3589,7 @@ bool Parser::isIdentifier(string* id) {
         return false;
     if (id->equals(whileKeyword))
         return false;
-    if (id->equals(repeatKeyword))
+    if (id->equals(doKeyword))
         return false;
     if (id->equals(returnKeyword))
         return false;

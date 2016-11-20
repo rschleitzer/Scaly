@@ -68,7 +68,7 @@ public:
     virtual bool _isSwitchExpression();
     virtual bool _isForExpression();
     virtual bool _isWhileExpression();
-    virtual bool _isRepeatExpression();
+    virtual bool _isDoExpression();
     virtual bool _isParenthesizedExpression();
     virtual bool _isReturnExpression();
     virtual bool _isThrowExpression();
@@ -620,7 +620,7 @@ public:
     virtual bool _isSwitchExpression();
     virtual bool _isForExpression();
     virtual bool _isWhileExpression();
-    virtual bool _isRepeatExpression();
+    virtual bool _isDoExpression();
     virtual bool _isParenthesizedExpression();
     virtual bool _isReturnExpression();
     virtual bool _isThrowExpression();
@@ -693,14 +693,14 @@ public:
     virtual bool _isWhileExpression();
 };
 
-class RepeatExpression : public PrimaryExpression {
+class DoExpression : public PrimaryExpression {
 public:
-    RepeatExpression(Expression* code, Expression* condition, Position* start, Position* end);
+    DoExpression(Expression* code, Expression* condition, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
     Expression* code;
     Expression* condition;
 
-    virtual bool _isRepeatExpression();
+    virtual bool _isDoExpression();
 };
 
 class ParenthesizedExpression : public PrimaryExpression {
