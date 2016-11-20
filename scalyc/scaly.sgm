@@ -441,8 +441,6 @@
     <keyword id = extends
 
     <punctuation id = equal             value = "="
-<!--<punctuation id = leftAngular       value = "&lt;"
-    <punctuation id = rightAngular      value = ">" -->
     <punctuation id = comma             value = ","
     <punctuation id = leftParen         value = "("
     <punctuation id = rightParen        value = ")"
