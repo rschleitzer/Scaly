@@ -465,9 +465,6 @@ bool MyVisitor::openSubtype(Subtype* subtype) {
 void MyVisitor::closeSubtype(Subtype* subtype) {
 }
 
-void MyVisitor::visitOptionalType(OptionalType* optionalType) {
-}
-
 bool MyVisitor::openIndexedType(IndexedType* indexedType) {
     return true;
 }

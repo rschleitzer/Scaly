@@ -140,7 +140,6 @@ public:
     virtual void closeTypeAnnotation(TypeAnnotation* typeAnnotation);
     virtual bool openSubtype(Subtype* subtype);
     virtual void closeSubtype(Subtype* subtype);
-    virtual void visitOptionalType(OptionalType* optionalType);
     virtual bool openIndexedType(IndexedType* indexedType);
     virtual void closeIndexedType(IndexedType* indexedType);
     virtual bool openTypeInheritanceClause(TypeInheritanceClause* typeInheritanceClause);

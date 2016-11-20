@@ -88,7 +88,6 @@ bool SyntaxNode::_isType() { return (false); }
 bool SyntaxNode::_isTypeAnnotation() { return (false); }
 bool SyntaxNode::_isSubtype() { return (false); }
 bool SyntaxNode::_isTypePostfix() { return (false); }
-bool SyntaxNode::_isOptionalType() { return (false); }
 bool SyntaxNode::_isIndexedType() { return (false); }
 bool SyntaxNode::_isTypeInheritanceClause() { return (false); }
 bool SyntaxNode::_isInheritance() { return (false); }
@@ -1512,19 +1511,7 @@ void TypePostfix::accept(SyntaxVisitor* visitor) {
 
 bool TypePostfix::_isTypePostfix() { return (true); }
 
-bool TypePostfix::_isOptionalType() { return (false); }
 bool TypePostfix::_isIndexedType() { return (false); }
-
-OptionalType::OptionalType(Position* start, Position* end) {
-    this->start = start;
-    this->end = end;
-}
-
-void OptionalType::accept(SyntaxVisitor* visitor) {
-    visitor->visitOptionalType(this);
-}
-
-bool OptionalType::_isOptionalType() { return (true); }
 
 IndexedType::IndexedType(Type* key, Position* start, Position* end) {
     this->start = start;

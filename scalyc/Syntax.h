@@ -96,7 +96,6 @@ public:
     virtual bool _isTypeAnnotation();
     virtual bool _isSubtype();
     virtual bool _isTypePostfix();
-    virtual bool _isOptionalType();
     virtual bool _isIndexedType();
     virtual bool _isTypeInheritanceClause();
     virtual bool _isInheritance();
@@ -939,16 +938,7 @@ public:
     virtual void accept(SyntaxVisitor* visitor);
 
     virtual bool _isTypePostfix();
-    virtual bool _isOptionalType();
     virtual bool _isIndexedType();
-};
-
-class OptionalType : public TypePostfix {
-public:
-    OptionalType(Position* start, Position* end);
-    virtual void accept(SyntaxVisitor* visitor);
-
-    virtual bool _isOptionalType();
 };
 
 class IndexedType : public TypePostfix {

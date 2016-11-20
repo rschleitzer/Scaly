@@ -2635,9 +2635,6 @@ bool CppVisitor::openSubtype(Subtype* subtype) {
 void CppVisitor::closeSubtype(Subtype* subtype) {
 }
 
-void CppVisitor::visitOptionalType(OptionalType* optionalType) {
-}
-
 bool CppVisitor::openIndexedType(IndexedType* indexedType) {
     return true;
 }

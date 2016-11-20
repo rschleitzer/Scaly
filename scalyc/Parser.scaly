@@ -43,7 +43,6 @@ class Parser {
         rightBracket = new string("]")
         colon = new string(":")
         dot = new string(".")
-        questionMark = new string("?")
         underscore = new string("_")
     }
 
@@ -2210,15 +2209,6 @@ class Parser {
         mutable start: Position = lexer.getPreviousPosition()
 
         {
-            let node: OptionalType = parseOptionalType() catch _ (error) {
-                errors.push(error)
-            }
-
-            if node != null
-                return(node)
-        }
-
-        {
             let node: IndexedType = parseIndexedType() catch _ (error) {
                 errors.push(error)
             }
@@ -2228,21 +2218,6 @@ class Parser {
         }
 
         throw unableToParse(new Position(start), new ParserError[](errors))
-    }
-
-    function parseOptionalType(): OptionalType throws ParserError {
-        mutable start: Position = lexer.getPreviousPosition()
-        mutable startQuestionMark1: Position = lexer.getPreviousPosition()
-        let successQuestionMark1: bool = lexer.parsePunctuation(questionMark)
-        if successQuestionMark1
-            lexer.advance()
-        else
-            throw punctuationExpected(new Position(startQuestionMark1), new string(questionMark))
-
-        mutable end: Position = lexer.getPosition()
-        var ret: OptionalType = new OptionalType(new Position(start), new Position(end))
-
-        return(ret)
     }
 
     function parseIndexedType(): IndexedType throws ParserError {
@@ -2461,6 +2436,5 @@ class Parser {
     let rightBracket: string
     let colon: string
     let dot: string
-    let questionMark: string
     let underscore: string
 }

@@ -109,7 +109,6 @@ public:
     virtual _Result<Subtype, ParserError> parseSubtype(_Page* _rp, _Page* _ep);
     virtual _Result<_Vector<TypePostfix>, ParserError> parseTypePostfixList(_Page* _rp, _Page* _ep);
     virtual _Result<TypePostfix, ParserError> parseTypePostfix(_Page* _rp, _Page* _ep);
-    virtual _Result<OptionalType, ParserError> parseOptionalType(_Page* _rp, _Page* _ep);
     virtual _Result<IndexedType, ParserError> parseIndexedType(_Page* _rp, _Page* _ep);
     virtual _Result<TypeInheritanceClause, ParserError> parseTypeInheritanceClause(_Page* _rp, _Page* _ep);
     virtual _Result<_Vector<Inheritance>, ParserError> parseInheritanceList(_Page* _rp, _Page* _ep);
@@ -159,7 +158,6 @@ public:
     string* rightBracket;
     string* colon;
     string* dot;
-    string* questionMark;
     string* underscore;
 
 };

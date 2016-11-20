@@ -2695,9 +2695,6 @@ class CppVisitor extends SyntaxVisitor {
     function closeSubtype(subtype: Subtype) {
     }
 
-    function visitOptionalType(optionalType: OptionalType) {
-    }
-
     function openIndexedType(indexedType: IndexedType): bool {
         return(true)
     }

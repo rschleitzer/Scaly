@@ -176,8 +176,6 @@ class Subtype;
 
 class TypePostfix;
 
-class OptionalType;
-
 class IndexedType;
 
 class TypeInheritanceClause;
@@ -320,7 +318,6 @@ public:
     virtual void closeTypeAnnotation(TypeAnnotation* typeAnnotation) = 0;
     virtual bool openSubtype(Subtype* subtype) = 0;
     virtual void closeSubtype(Subtype* subtype) = 0;
-    virtual void visitOptionalType(OptionalType* optionalType) = 0;
     virtual bool openIndexedType(IndexedType* indexedType) = 0;
     virtual void closeIndexedType(IndexedType* indexedType) = 0;
     virtual bool openTypeInheritanceClause(TypeInheritanceClause* typeInheritanceClause) = 0;

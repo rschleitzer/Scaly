@@ -1444,19 +1444,6 @@ class TypePostfix extends SyntaxNode {
 
 }
 
-class OptionalType extends TypePostfix {
-
-    constructor(start: Position, end: Position) {
-        this.start = start
-        this.end = end
-    }
-
-    override function accept(mutable visitor: SyntaxVisitor) {
-        visitor.visitOptionalType(this)
-    }
-
-}
-
 class IndexedType extends TypePostfix {
 
     constructor(key: Type, start: Position, end: Position) {

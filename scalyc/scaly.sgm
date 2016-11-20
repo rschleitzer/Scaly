@@ -393,11 +393,7 @@
         <content link = Type                                    property = type
 
     <syntax id = TypePostfix                  multiple abstract
-        <content link = OptionalType
         <content link = IndexedType
-
-    <syntax id = OptionalType                                   base = TypePostfix
-        <content link = questionMark
 
     <syntax id = IndexedType                                    base = TypePostfix
         <content link = leftBracket
@@ -456,7 +452,6 @@
     <punctuation id = rightBracket      value = "]"
     <punctuation id = colon             value = ":"
     <punctuation id = dot               value = "."
-    <punctuation id = questionMark      value = "?"
     <punctuation id = underscore        value = "_"
 
 </language>

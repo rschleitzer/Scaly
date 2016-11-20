@@ -46,7 +46,6 @@ Parser::Parser(string* theFileName, string* text) {
     rightBracket = new(getPage()) string("]");
     colon = new(getPage()) string(":");
     dot = new(getPage()) string(".");
-    questionMark = new(getPage()) string("?");
     underscore = new(getPage()) string("_");
 }
 
@@ -3242,21 +3241,6 @@ _Result<TypePostfix, ParserError> Parser::parseTypePostfix(_Page* _rp, _Page* _e
     _Array<ParserError>* errors = new(_p) _Array<ParserError>();
     Position* start = lexer->getPreviousPosition(_p);
     {
-        auto _node_result = parseOptionalType(_rp, _ep);
-        OptionalType* node = nullptr;
-        if (_node_result.succeeded()) {
-            node = _node_result.getResult();
-        }
-        else {
-            auto error = _node_result.getError();
-            {
-                errors->push(error);
-            }
-        }
-        if (node != nullptr)
-            return _Result<TypePostfix, ParserError>(node);
-    }
-    {
         auto _node_result = parseIndexedType(_rp, _ep);
         IndexedType* node = nullptr;
         if (_node_result.succeeded()) {
@@ -3272,20 +3256,6 @@ _Result<TypePostfix, ParserError> Parser::parseTypePostfix(_Page* _rp, _Page* _e
             return _Result<TypePostfix, ParserError>(node);
     }
     return _Result<TypePostfix, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_unableToParse(new(_ep) Position(start), &_Vector<ParserError>::create(_ep, *(errors)))));
-}
-
-_Result<OptionalType, ParserError> Parser::parseOptionalType(_Page* _rp, _Page* _ep) {
-    _Region _region; _Page* _p = _region.get();
-    Position* start = lexer->getPreviousPosition(_p);
-    Position* startQuestionMark1 = lexer->getPreviousPosition(_p);
-    bool successQuestionMark1 = lexer->parsePunctuation(questionMark);
-    if (successQuestionMark1)
-        lexer->advance();
-    else
-        return _Result<OptionalType, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_punctuationExpected(new(_ep) Position(startQuestionMark1), new(_ep) string(questionMark))));
-    Position* end = lexer->getPosition(_p);
-    OptionalType* ret = new(_rp) OptionalType(new(_rp) Position(start), new(_rp) Position(end));
-    return _Result<OptionalType, ParserError>(ret);
 }
 
 _Result<IndexedType, ParserError> Parser::parseIndexedType(_Page* _rp, _Page* _ep) {
