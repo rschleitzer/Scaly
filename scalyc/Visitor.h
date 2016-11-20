@@ -46,10 +46,6 @@ class OverrideWord;
 
 class StaticWord;
 
-class FunctionName;
-
-class IdentifierFunction;
-
 class FunctionSignature;
 
 class FunctionResult;
@@ -238,7 +234,6 @@ public:
     virtual void closeAdditionalInitializer(AdditionalInitializer* additionalInitializer) = 0;
     virtual void visitOverrideWord(OverrideWord* overrideWord) = 0;
     virtual void visitStaticWord(StaticWord* staticWord) = 0;
-    virtual void visitIdentifierFunction(IdentifierFunction* identifierFunction) = 0;
     virtual bool openFunctionSignature(FunctionSignature* functionSignature) = 0;
     virtual void closeFunctionSignature(FunctionSignature* functionSignature) = 0;
     virtual bool openFunctionResult(FunctionResult* functionResult) = 0;

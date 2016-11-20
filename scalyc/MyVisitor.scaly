@@ -110,9 +110,6 @@ class MyVisitor extends SyntaxVisitor {
     function visitStaticWord(staticWord: StaticWord) {
     }
 
-    function visitIdentifierFunction(identifierFunction: IdentifierFunction) {
-    }
-
     function openFunctionSignature(functionSignature: FunctionSignature): bool {
         return(true)
     }

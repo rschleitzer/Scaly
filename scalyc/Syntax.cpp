@@ -23,8 +23,6 @@ bool SyntaxNode::_isAdditionalInitializer() { return (false); }
 bool SyntaxNode::_isModifier() { return (false); }
 bool SyntaxNode::_isOverrideWord() { return (false); }
 bool SyntaxNode::_isStaticWord() { return (false); }
-bool SyntaxNode::_isFunctionName() { return (false); }
-bool SyntaxNode::_isIdentifierFunction() { return (false); }
 bool SyntaxNode::_isFunctionSignature() { return (false); }
 bool SyntaxNode::_isFunctionResult() { return (false); }
 bool SyntaxNode::_isExistingClause() { return (false); }
@@ -233,7 +231,7 @@ void MutableDeclaration::accept(SyntaxVisitor* visitor) {
 
 bool MutableDeclaration::_isMutableDeclaration() { return (true); }
 
-FunctionDeclaration::FunctionDeclaration(_Vector<Modifier>* modifiers, FunctionName* name, FunctionSignature* signature, Expression* body, Position* start, Position* end) {
+FunctionDeclaration::FunctionDeclaration(_Vector<Modifier>* modifiers, string* name, FunctionSignature* signature, Expression* body, Position* start, Position* end) {
     this->start = start;
     this->end = end;
     this->modifiers = modifiers;
@@ -253,7 +251,6 @@ void FunctionDeclaration::accept(SyntaxVisitor* visitor) {
             node->accept(visitor);
         }
     }
-    name->accept(visitor);
     signature->accept(visitor);
     if (body != nullptr)
         body->accept(visitor);
@@ -469,25 +466,6 @@ void StaticWord::accept(SyntaxVisitor* visitor) {
 }
 
 bool StaticWord::_isStaticWord() { return (true); }
-
-void FunctionName::accept(SyntaxVisitor* visitor) {
-}
-
-bool FunctionName::_isFunctionName() { return (true); }
-
-bool FunctionName::_isIdentifierFunction() { return (false); }
-
-IdentifierFunction::IdentifierFunction(string* name, Position* start, Position* end) {
-    this->start = start;
-    this->end = end;
-    this->name = name;
-}
-
-void IdentifierFunction::accept(SyntaxVisitor* visitor) {
-    visitor->visitIdentifierFunction(this);
-}
-
-bool IdentifierFunction::_isIdentifierFunction() { return (true); }
 
 FunctionSignature::FunctionSignature(ParameterClause* parameterClause, FunctionResult* result, ThrowsClause* throwsClause, Position* start, Position* end) {
     this->start = start;

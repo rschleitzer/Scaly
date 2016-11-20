@@ -31,8 +31,6 @@ public:
     virtual _Result<Modifier, ParserError> parseModifier(_Page* _rp, _Page* _ep);
     virtual _Result<OverrideWord, ParserError> parseOverrideWord(_Page* _rp, _Page* _ep);
     virtual _Result<StaticWord, ParserError> parseStaticWord(_Page* _rp, _Page* _ep);
-    virtual _Result<FunctionName, ParserError> parseFunctionName(_Page* _rp, _Page* _ep);
-    virtual _Result<IdentifierFunction, ParserError> parseIdentifierFunction(_Page* _rp, _Page* _ep);
     virtual _Result<FunctionSignature, ParserError> parseFunctionSignature(_Page* _rp, _Page* _ep);
     virtual _Result<FunctionResult, ParserError> parseFunctionResult(_Page* _rp, _Page* _ep);
     virtual _Result<ExistingClause, ParserError> parseExistingClause(_Page* _rp, _Page* _ep);

@@ -264,8 +264,13 @@ class Parser {
         else
             throw keywordExpected(new Position(startFunction2), new string(functionKeyword))
 
-        let name: FunctionName = parseFunctionName() catch _ (error)
-            throw error
+        mutable startName: Position = lexer.getPreviousPosition()
+        let name: string? = lexer.parseIdentifier()
+        if (name != null) && isIdentifier(name)
+            lexer.advance()
+        else
+            throw identifierExpected(new Position(startName))
+
         let signature: FunctionSignature = parseFunctionSignature() catch _ (error)
             throw error
         let body: Expression = parseExpression() catch _ null
@@ -275,7 +280,6 @@ class Parser {
             for item: Modifier in modifiers
                 item.parent = ret
         }
-        name.parent = ret
         signature.parent = ret
         if body != null
             body.parent = ret
@@ -571,37 +575,6 @@ class Parser {
 
         mutable end: Position = lexer.getPosition()
         var ret: StaticWord = new StaticWord(new Position(start), new Position(end))
-
-        return(ret)
-    }
-
-    function parseFunctionName(): FunctionName throws ParserError {
-        mutable errors: ParserError[] = new ParserError[]()
-        mutable start: Position = lexer.getPreviousPosition()
-
-        {
-            let node: IdentifierFunction = parseIdentifierFunction() catch _ (error) {
-                errors.push(error)
-            }
-
-            if node != null
-                return(node)
-        }
-
-        throw unableToParse(new Position(start), new ParserError[](errors))
-    }
-
-    function parseIdentifierFunction(): IdentifierFunction throws ParserError {
-        mutable start: Position = lexer.getPreviousPosition()
-        mutable startName: Position = lexer.getPreviousPosition()
-        let name: string? = lexer.parseIdentifier()
-        if (name != null) && isIdentifier(name)
-            lexer.advance()
-        else
-            throw identifierExpected(new Position(startName))
-
-        mutable end: Position = lexer.getPosition()
-        var ret: IdentifierFunction = new IdentifierFunction(name, new Position(start), new Position(end))
 
         return(ret)
     }

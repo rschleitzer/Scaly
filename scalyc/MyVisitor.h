@@ -38,7 +38,6 @@ public:
     virtual void closeAdditionalInitializer(AdditionalInitializer* additionalInitializer);
     virtual void visitOverrideWord(OverrideWord* overrideWord);
     virtual void visitStaticWord(StaticWord* staticWord);
-    virtual void visitIdentifierFunction(IdentifierFunction* identifierFunction);
     virtual bool openFunctionSignature(FunctionSignature* functionSignature);
     virtual void closeFunctionSignature(FunctionSignature* functionSignature);
     virtual bool openFunctionResult(FunctionResult* functionResult);

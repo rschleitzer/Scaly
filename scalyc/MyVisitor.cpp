@@ -113,9 +113,6 @@ void MyVisitor::visitOverrideWord(OverrideWord* overrideWord) {
 void MyVisitor::visitStaticWord(StaticWord* staticWord) {
 }
 
-void MyVisitor::visitIdentifierFunction(IdentifierFunction* identifierFunction) {
-}
-
 bool MyVisitor::openFunctionSignature(FunctionSignature* functionSignature) {
     return true;
 }

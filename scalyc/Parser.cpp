@@ -377,15 +377,12 @@ _Result<FunctionDeclaration, ParserError> Parser::parseFunctionDeclaration(_Page
         lexer->advance();
     else
         return _Result<FunctionDeclaration, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_keywordExpected(new(_ep) Position(startFunction2), new(_ep) string(functionKeyword))));
-    auto _name_result = parseFunctionName(_rp, _ep);
-    FunctionName* name = nullptr;
-    if (_name_result.succeeded()) {
-        name = _name_result.getResult();
-    }
-    else {
-        auto error = _name_result.getError();
-        return _Result<FunctionDeclaration, ParserError>(error);
-    }
+    Position* startName = lexer->getPreviousPosition(_p);
+    string* name = lexer->parseIdentifier(_rp);
+    if ((name != nullptr) && isIdentifier(name))
+        lexer->advance();
+    else
+        return _Result<FunctionDeclaration, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_identifierExpected(new(_ep) Position(startName))));
     auto _signature_result = parseFunctionSignature(_rp, _ep);
     FunctionSignature* signature = nullptr;
     if (_signature_result.succeeded()) {
@@ -413,7 +410,6 @@ _Result<FunctionDeclaration, ParserError> Parser::parseFunctionDeclaration(_Page
             item->parent = ret;
         }
     }
-    name->parent = ret;
     signature->parent = ret;
     if (body != nullptr)
         body->parent = ret;
@@ -844,42 +840,6 @@ _Result<StaticWord, ParserError> Parser::parseStaticWord(_Page* _rp, _Page* _ep)
     Position* end = lexer->getPosition(_p);
     StaticWord* ret = new(_rp) StaticWord(new(_rp) Position(start), new(_rp) Position(end));
     return _Result<StaticWord, ParserError>(ret);
-}
-
-_Result<FunctionName, ParserError> Parser::parseFunctionName(_Page* _rp, _Page* _ep) {
-    _Region _region; _Page* _p = _region.get();
-    _Array<ParserError>* errors = new(_p) _Array<ParserError>();
-    Position* start = lexer->getPreviousPosition(_p);
-    {
-        auto _node_result = parseIdentifierFunction(_rp, _ep);
-        IdentifierFunction* node = nullptr;
-        if (_node_result.succeeded()) {
-            node = _node_result.getResult();
-        }
-        else {
-            auto error = _node_result.getError();
-            {
-                errors->push(error);
-            }
-        }
-        if (node != nullptr)
-            return _Result<FunctionName, ParserError>(node);
-    }
-    return _Result<FunctionName, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_unableToParse(new(_ep) Position(start), &_Vector<ParserError>::create(_ep, *(errors)))));
-}
-
-_Result<IdentifierFunction, ParserError> Parser::parseIdentifierFunction(_Page* _rp, _Page* _ep) {
-    _Region _region; _Page* _p = _region.get();
-    Position* start = lexer->getPreviousPosition(_p);
-    Position* startName = lexer->getPreviousPosition(_p);
-    string* name = lexer->parseIdentifier(_rp);
-    if ((name != nullptr) && isIdentifier(name))
-        lexer->advance();
-    else
-        return _Result<IdentifierFunction, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_identifierExpected(new(_ep) Position(startName))));
-    Position* end = lexer->getPosition(_p);
-    IdentifierFunction* ret = new(_rp) IdentifierFunction(name, new(_rp) Position(start), new(_rp) Position(end));
-    return _Result<IdentifierFunction, ParserError>(ret);
 }
 
 _Result<FunctionSignature, ParserError> Parser::parseFunctionSignature(_Page* _rp, _Page* _ep) {

@@ -19,8 +19,6 @@ class AdditionalInitializer
 class Modifier
 class OverrideWord
 class StaticWord
-class FunctionName
-class IdentifierFunction
 class FunctionSignature
 class FunctionResult
 class ExistingClause
@@ -132,7 +130,6 @@ class SyntaxVisitor {
     function closeAdditionalInitializer(additionalInitializer: AdditionalInitializer)
     function visitOverrideWord(overrideWord: OverrideWord)
     function visitStaticWord(staticWord: StaticWord)
-    function visitIdentifierFunction(identifierFunction: IdentifierFunction)
     function openFunctionSignature(functionSignature: FunctionSignature): bool
     function closeFunctionSignature(functionSignature: FunctionSignature)
     function openFunctionResult(functionResult: FunctionResult): bool

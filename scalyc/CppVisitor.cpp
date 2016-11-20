@@ -659,16 +659,10 @@ void CppVisitor::visitOverrideWord(OverrideWord* overrideWord) {
 void CppVisitor::visitStaticWord(StaticWord* staticWord) {
 }
 
-void CppVisitor::visitIdentifierFunction(IdentifierFunction* identifierFunction) {
-}
-
 bool CppVisitor::openFunctionSignature(FunctionSignature* functionSignature) {
     if (!functionSignature->parent->_isFunctionDeclaration())
         return false;
-    FunctionName* functionName = ((FunctionDeclaration*)functionSignature->parent)->name;
-    if (!functionName->_isIdentifierFunction())
-        return false;
-    string* identifierFunctionName = ((IdentifierFunction*)functionName)->name;
+    string* functionName = ((FunctionDeclaration*)functionSignature->parent)->name;
     if (staticFunction)
         headerFile->append("static ");
     else
@@ -752,10 +746,10 @@ bool CppVisitor::openFunctionSignature(FunctionSignature* functionSignature) {
             sourceFile->append("::");
         }
     }
-    headerFile->append(identifierFunctionName);
+    headerFile->append(functionName);
     headerFile->append("(");
     if (!suppressSource) {
-        sourceFile->append(identifierFunctionName);
+        sourceFile->append(functionName);
         sourceFile->append("(");
     }
     if (functionSignature->result != nullptr) {
@@ -1189,11 +1183,8 @@ bool CppVisitor::isCreatingObject(string* functionName, SyntaxNode* node) {
         {
             if (member->declaration->_isFunctionDeclaration()) {
                 FunctionDeclaration* functionDeclaration = (FunctionDeclaration*)(member->declaration);
-                if (functionDeclaration->name->_isIdentifierFunction()) {
-                    IdentifierFunction* identifierFunction = (IdentifierFunction*)(functionDeclaration->name);
-                    if (identifierFunction->name->equals(functionName))
-                        return true;
-                }
+                if (functionDeclaration->name->equals(functionName))
+                    return true;
             }
         }
     }

@@ -129,7 +129,7 @@ class MutableDeclaration extends Declaration {
 
 class FunctionDeclaration extends Declaration {
 
-    constructor(modifiers: Modifier[], name: FunctionName, signature: FunctionSignature, body: Expression, start: Position, end: Position) {
+    constructor(modifiers: Modifier[], name: string, signature: FunctionSignature, body: Expression, start: Position, end: Position) {
         this.start = start
         this.end = end
         this.modifiers = modifiers
@@ -145,7 +145,6 @@ class FunctionDeclaration extends Declaration {
             for node: Modifier in modifiers
                 node.accept(visitor)
         }
-        name.accept(visitor)
         signature.accept(visitor)
         if body != null
             body.accept(visitor)
@@ -153,7 +152,7 @@ class FunctionDeclaration extends Declaration {
     }
 
     let modifiers: Modifier[]?
-    let name: FunctionName?
+    let name: string?
     let signature: FunctionSignature?
     let body: Expression?
 }
@@ -385,28 +384,6 @@ class StaticWord extends Modifier {
         visitor.visitStaticWord(this)
     }
 
-}
-
-class FunctionName extends SyntaxNode {
-
-    function accept(mutable visitor: SyntaxVisitor) {
-    }
-
-}
-
-class IdentifierFunction extends FunctionName {
-
-    constructor(name: string, start: Position, end: Position) {
-        this.start = start
-        this.end = end
-        this.name = name
-    }
-
-    override function accept(mutable visitor: SyntaxVisitor) {
-        visitor.visitIdentifierFunction(this)
-    }
-
-    let name: string?
 }
 
 class FunctionSignature extends SyntaxNode {

@@ -31,8 +31,6 @@ public:
     virtual bool _isModifier();
     virtual bool _isOverrideWord();
     virtual bool _isStaticWord();
-    virtual bool _isFunctionName();
-    virtual bool _isIdentifierFunction();
     virtual bool _isFunctionSignature();
     virtual bool _isFunctionResult();
     virtual bool _isExistingClause();
@@ -203,10 +201,10 @@ public:
 
 class FunctionDeclaration : public Declaration {
 public:
-    FunctionDeclaration(_Vector<Modifier>* modifiers, FunctionName* name, FunctionSignature* signature, Expression* body, Position* start, Position* end);
+    FunctionDeclaration(_Vector<Modifier>* modifiers, string* name, FunctionSignature* signature, Expression* body, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
     _Vector<Modifier>* modifiers;
-    FunctionName* name;
+    string* name;
     FunctionSignature* signature;
     Expression* body;
 
@@ -324,23 +322,6 @@ public:
     virtual void accept(SyntaxVisitor* visitor);
 
     virtual bool _isStaticWord();
-};
-
-class FunctionName : public SyntaxNode {
-public:
-    virtual void accept(SyntaxVisitor* visitor);
-
-    virtual bool _isFunctionName();
-    virtual bool _isIdentifierFunction();
-};
-
-class IdentifierFunction : public FunctionName {
-public:
-    IdentifierFunction(string* name, Position* start, Position* end);
-    virtual void accept(SyntaxVisitor* visitor);
-    string* name;
-
-    virtual bool _isIdentifierFunction();
 };
 
 class FunctionSignature : public SyntaxNode {

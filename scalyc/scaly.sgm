@@ -41,7 +41,7 @@
     <syntax id = FunctionDeclaration                            base = Declaration
         <content link = Modifier              multiple optional property = modifiers
         <content link = function
-        <content link = FunctionName                            property = name
+        <content identifier                                     property = name
         <content link = FunctionSignature                       property = signature
         <content link = Expression                     optional property = body
 
@@ -97,12 +97,6 @@
 
     <syntax id = StaticWord                                     base = Modifier
         <content link = static
-
-    <syntax id = FunctionName                          abstract
-        <content link = IdentifierFunction
-
-    <syntax id = IdentifierFunction                             base = FunctionName
-        <content identifier                                     property = name
 
     <syntax id = FunctionSignature
         <content link = ParameterClause                         property = parameterClause
