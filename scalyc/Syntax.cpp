@@ -305,11 +305,10 @@ void ClassDeclaration::accept(SyntaxVisitor* visitor) {
 
 bool ClassDeclaration::_isClassDeclaration() { return (true); }
 
-ConstructorDeclaration::ConstructorDeclaration(ParameterClause* parameterClause, ThrowsClause* throwsClause, Expression* body, Position* start, Position* end) {
+ConstructorDeclaration::ConstructorDeclaration(ParameterClause* parameterClause, Expression* body, Position* start, Position* end) {
     this->start = start;
     this->end = end;
     this->parameterClause = parameterClause;
-    this->throwsClause = throwsClause;
     this->body = body;
 }
 
@@ -317,8 +316,6 @@ void ConstructorDeclaration::accept(SyntaxVisitor* visitor) {
     if (!visitor->openConstructorDeclaration(this))
         return;
     parameterClause->accept(visitor);
-    if (throwsClause != nullptr)
-        throwsClause->accept(visitor);
     body->accept(visitor);
     visitor->closeConstructorDeclaration(this);
 }

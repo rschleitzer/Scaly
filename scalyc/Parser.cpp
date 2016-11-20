@@ -527,14 +527,6 @@ _Result<ConstructorDeclaration, ParserError> Parser::parseConstructorDeclaration
         auto error = _parameterClause_result.getError();
         return _Result<ConstructorDeclaration, ParserError>(error);
     }
-    auto _throwsClause_result = parseThrowsClause(_rp, _ep);
-    ThrowsClause* throwsClause = nullptr;
-    if (_throwsClause_result.succeeded()) {
-        throwsClause = _throwsClause_result.getResult();
-    }
-    else {
-        throwsClause = nullptr;
-    }
     auto _body_result = parseExpression(_rp, _ep);
     Expression* body = nullptr;
     if (_body_result.succeeded()) {
@@ -545,10 +537,8 @@ _Result<ConstructorDeclaration, ParserError> Parser::parseConstructorDeclaration
         return _Result<ConstructorDeclaration, ParserError>(error);
     }
     Position* end = lexer->getPosition(_p);
-    ConstructorDeclaration* ret = new(_rp) ConstructorDeclaration(parameterClause, throwsClause, body, new(_rp) Position(start), new(_rp) Position(end));
+    ConstructorDeclaration* ret = new(_rp) ConstructorDeclaration(parameterClause, body, new(_rp) Position(start), new(_rp) Position(end));
     parameterClause->parent = ret;
-    if (throwsClause != nullptr)
-        throwsClause->parent = ret;
     body->parent = ret;
     return _Result<ConstructorDeclaration, ParserError>(ret);
 }

@@ -236,10 +236,9 @@ public:
 
 class ConstructorDeclaration : public Declaration {
 public:
-    ConstructorDeclaration(ParameterClause* parameterClause, ThrowsClause* throwsClause, Expression* body, Position* start, Position* end);
+    ConstructorDeclaration(ParameterClause* parameterClause, Expression* body, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
     ParameterClause* parameterClause;
-    ThrowsClause* throwsClause;
     Expression* body;
 
     virtual bool _isConstructorDeclaration();

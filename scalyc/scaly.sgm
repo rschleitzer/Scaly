@@ -61,7 +61,6 @@
     <syntax id = ConstructorDeclaration                         base = Declaration
         <content link = constructor
         <content link = ParameterClause                         property = parameterClause
-        <content link = ThrowsClause                   optional property = throwsClause
         <content link = Expression                              property = body
 
     <syntax id = CodeBlock                                      base = Expression

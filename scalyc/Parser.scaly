@@ -364,14 +364,11 @@ class Parser {
 
         let parameterClause: ParameterClause = parseParameterClause() catch _ (error)
             throw error
-        let throwsClause: ThrowsClause = parseThrowsClause() catch _ null
         let body: Expression = parseExpression() catch _ (error)
             throw error
         mutable end: Position = lexer.getPosition()
-        var ret: ConstructorDeclaration = new ConstructorDeclaration(parameterClause, throwsClause, body, new Position(start), new Position(end))
+        var ret: ConstructorDeclaration = new ConstructorDeclaration(parameterClause, body, new Position(start), new Position(end))
         parameterClause.parent = ret
-        if throwsClause != null
-            throwsClause.parent = ret
         body.parent = ret
 
         return(ret)
