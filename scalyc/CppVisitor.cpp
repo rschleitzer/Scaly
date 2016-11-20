@@ -753,32 +753,17 @@ bool CppVisitor::openFunctionSignature(FunctionSignature* functionSignature) {
         sourceFile->append("(");
     }
     if (functionSignature->result != nullptr) {
-        if (functionSignature->result->resultType->_isType()) {
-            Type* type = (Type*)functionSignature->result->resultType;
-            if (isClass(type->name)) {
-                if (functionSignature->result->existingObject == nullptr) {
-                    headerFile->append("_Page* _rp");
+        Type* type = (Type*)functionSignature->result->resultType;
+        if (isClass(type->name)) {
+            _Vector<TypePostfix>* typePostfixes = type->postfixes;
+            if ((typePostfixes == nullptr) || !((*(*typePostfixes)[typePostfixes->length() - 1])->_isAge())) {
+                headerFile->append("_Page* _rp");
+                if (!suppressSource)
+                    sourceFile->append("_Page* _rp");
+                if ((functionSignature->parameterClause->parameters) || (functionSignature->throwsClause)) {
+                    headerFile->append(", ");
                     if (!suppressSource)
-                        sourceFile->append("_Page* _rp");
-                    if ((functionSignature->parameterClause->parameters) || (functionSignature->throwsClause)) {
-                        headerFile->append(", ");
-                        if (!suppressSource)
-                            sourceFile->append(", ");
-                    }
-                }
-            }
-        }
-        else {
-            if (hasArrayPostfix(functionSignature->result->resultType)) {
-                if (functionSignature->result->existingObject == nullptr) {
-                    headerFile->append("_Page* _rp");
-                    if (!suppressSource)
-                        sourceFile->append("_Page* _rp");
-                    if ((functionSignature->parameterClause->parameters != nullptr) || (functionSignature->throwsClause != nullptr)) {
-                        headerFile->append(", ");
-                        if (!suppressSource)
-                            sourceFile->append(", ");
-                    }
+                        sourceFile->append(", ");
                 }
             }
         }
