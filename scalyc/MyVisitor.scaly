@@ -182,16 +182,6 @@ class MyVisitor extends SyntaxVisitor {
     function closeClassBody(classBody: ClassBody) {
     }
 
-    function openGenericArgumentClause(genericArgumentClause: GenericArgumentClause): bool {
-        return(true)
-    }
-
-    function closeGenericArgumentClause(genericArgumentClause: GenericArgumentClause) {
-    }
-
-    function visitGenericParameter(genericParameter: GenericParameter) {
-    }
-
     function openClassMember(classMember: ClassMember): bool {
         return(true)
     }

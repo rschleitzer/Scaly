@@ -33,8 +33,6 @@ class EnumMember
 class EnumCase
 class AdditionalCase
 class ClassBody
-class GenericArgumentClause
-class GenericParameter
 class ClassMember
 class PrefixExpression
 class PostfixExpression
@@ -155,9 +153,6 @@ class SyntaxVisitor {
     function closeAdditionalCase(additionalCase: AdditionalCase)
     function openClassBody(classBody: ClassBody): bool
     function closeClassBody(classBody: ClassBody)
-    function openGenericArgumentClause(genericArgumentClause: GenericArgumentClause): bool
-    function closeGenericArgumentClause(genericArgumentClause: GenericArgumentClause)
-    function visitGenericParameter(genericParameter: GenericParameter)
     function openClassMember(classMember: ClassMember): bool
     function closeClassMember(classMember: ClassMember)
     function openPrefixExpression(prefixExpression: PrefixExpression): bool

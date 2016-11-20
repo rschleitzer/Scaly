@@ -74,10 +74,6 @@ class AdditionalCase;
 
 class ClassBody;
 
-class GenericArgumentClause;
-
-class GenericParameter;
-
 class ClassMember;
 
 class PrefixExpression;
@@ -263,9 +259,6 @@ public:
     virtual void closeAdditionalCase(AdditionalCase* additionalCase) = 0;
     virtual bool openClassBody(ClassBody* classBody) = 0;
     virtual void closeClassBody(ClassBody* classBody) = 0;
-    virtual bool openGenericArgumentClause(GenericArgumentClause* genericArgumentClause) = 0;
-    virtual void closeGenericArgumentClause(GenericArgumentClause* genericArgumentClause) = 0;
-    virtual void visitGenericParameter(GenericParameter* genericParameter) = 0;
     virtual bool openClassMember(ClassMember* classMember) = 0;
     virtual void closeClassMember(ClassMember* classMember) = 0;
     virtual bool openPrefixExpression(PrefixExpression* prefixExpression) = 0;

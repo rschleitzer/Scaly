@@ -1084,16 +1084,6 @@ class CppVisitor extends SyntaxVisitor {
         }
     }
 
-    function openGenericArgumentClause(genericArgumentClause: GenericArgumentClause): bool {
-        return(true)
-    }
-
-    function closeGenericArgumentClause(genericArgumentClause: GenericArgumentClause) {
-    }
-
-    function visitGenericParameter(genericParameter: GenericParameter) {
-    }
-
     function openClassMember(classMember: ClassMember): bool {
         headerFile.append("\n")
         indentHeader()

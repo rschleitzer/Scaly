@@ -185,16 +185,6 @@ bool MyVisitor::openClassBody(ClassBody* classBody) {
 void MyVisitor::closeClassBody(ClassBody* classBody) {
 }
 
-bool MyVisitor::openGenericArgumentClause(GenericArgumentClause* genericArgumentClause) {
-    return true;
-}
-
-void MyVisitor::closeGenericArgumentClause(GenericArgumentClause* genericArgumentClause) {
-}
-
-void MyVisitor::visitGenericParameter(GenericParameter* genericParameter) {
-}
-
 bool MyVisitor::openClassMember(ClassMember* classMember) {
     return true;
 }

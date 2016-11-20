@@ -55,7 +55,6 @@
     <syntax id = ClassDeclaration                               base = Declaration
         <content link = class
         <content identifier                                     property = name
-        <content link = GenericArgumentClause          optional property = genericArgumentClause
         <content link = TypeInheritanceClause          optional property = typeInheritanceClause
         <content link = ClassBody                      optional property = body
 
@@ -163,14 +162,6 @@
         <content link = leftCurly
         <content link = ClassMember           multiple optional property = members
         <content link = rightCurly
-
-    <syntax id = GenericArgumentClause
-        <content link = leftAngular
-        <content link = GenericParameter      multiple          property = genericParameters
-        <content link = rightAngular
-
-    <syntax id = GenericParameter multiple
-        <content identifier                                     property = typeName
 
     <syntax id = ClassMember                  multiple
         <content link = Declaration                             property = declaration
@@ -492,8 +483,8 @@
     <keyword id = extends
 
     <punctuation id = equal             value = "="
-    <punctuation id = leftAngular       value = "&lt;"
-    <punctuation id = rightAngular      value = ">"
+<!--<punctuation id = leftAngular       value = "&lt;"
+    <punctuation id = rightAngular      value = ">" -->
     <punctuation id = comma             value = ","
     <punctuation id = leftParen         value = "("
     <punctuation id = rightParen        value = ")"

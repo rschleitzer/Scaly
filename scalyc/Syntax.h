@@ -45,8 +45,6 @@ public:
     virtual bool _isEnumCase();
     virtual bool _isAdditionalCase();
     virtual bool _isClassBody();
-    virtual bool _isGenericArgumentClause();
-    virtual bool _isGenericParameter();
     virtual bool _isClassMember();
     virtual bool _isPrefixExpression();
     virtual bool _isPostfixExpression();
@@ -227,10 +225,9 @@ public:
 
 class ClassDeclaration : public Declaration {
 public:
-    ClassDeclaration(string* name, GenericArgumentClause* genericArgumentClause, TypeInheritanceClause* typeInheritanceClause, ClassBody* body, Position* start, Position* end);
+    ClassDeclaration(string* name, TypeInheritanceClause* typeInheritanceClause, ClassBody* body, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
     string* name;
-    GenericArgumentClause* genericArgumentClause;
     TypeInheritanceClause* typeInheritanceClause;
     ClassBody* body;
 
@@ -459,24 +456,6 @@ public:
     _Vector<ClassMember>* members;
 
     virtual bool _isClassBody();
-};
-
-class GenericArgumentClause : public SyntaxNode {
-public:
-    GenericArgumentClause(_Vector<GenericParameter>* genericParameters, Position* start, Position* end);
-    virtual void accept(SyntaxVisitor* visitor);
-    _Vector<GenericParameter>* genericParameters;
-
-    virtual bool _isGenericArgumentClause();
-};
-
-class GenericParameter : public SyntaxNode {
-public:
-    GenericParameter(string* typeName, Position* start, Position* end);
-    virtual void accept(SyntaxVisitor* visitor);
-    string* typeName;
-
-    virtual bool _isGenericParameter();
 };
 
 class ClassMember : public SyntaxNode {

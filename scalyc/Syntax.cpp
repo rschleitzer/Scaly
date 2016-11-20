@@ -37,8 +37,6 @@ bool SyntaxNode::_isEnumMember() { return (false); }
 bool SyntaxNode::_isEnumCase() { return (false); }
 bool SyntaxNode::_isAdditionalCase() { return (false); }
 bool SyntaxNode::_isClassBody() { return (false); }
-bool SyntaxNode::_isGenericArgumentClause() { return (false); }
-bool SyntaxNode::_isGenericParameter() { return (false); }
 bool SyntaxNode::_isClassMember() { return (false); }
 bool SyntaxNode::_isPrefixExpression() { return (false); }
 bool SyntaxNode::_isPostfixExpression() { return (false); }
@@ -287,11 +285,10 @@ void EnumDeclaration::accept(SyntaxVisitor* visitor) {
 
 bool EnumDeclaration::_isEnumDeclaration() { return (true); }
 
-ClassDeclaration::ClassDeclaration(string* name, GenericArgumentClause* genericArgumentClause, TypeInheritanceClause* typeInheritanceClause, ClassBody* body, Position* start, Position* end) {
+ClassDeclaration::ClassDeclaration(string* name, TypeInheritanceClause* typeInheritanceClause, ClassBody* body, Position* start, Position* end) {
     this->start = start;
     this->end = end;
     this->name = name;
-    this->genericArgumentClause = genericArgumentClause;
     this->typeInheritanceClause = typeInheritanceClause;
     this->body = body;
 }
@@ -299,8 +296,6 @@ ClassDeclaration::ClassDeclaration(string* name, GenericArgumentClause* genericA
 void ClassDeclaration::accept(SyntaxVisitor* visitor) {
     if (!visitor->openClassDeclaration(this))
         return;
-    if (genericArgumentClause != nullptr)
-        genericArgumentClause->accept(visitor);
     if (typeInheritanceClause != nullptr)
         typeInheritanceClause->accept(visitor);
     if (body != nullptr)
@@ -699,40 +694,6 @@ void ClassBody::accept(SyntaxVisitor* visitor) {
 }
 
 bool ClassBody::_isClassBody() { return (true); }
-
-GenericArgumentClause::GenericArgumentClause(_Vector<GenericParameter>* genericParameters, Position* start, Position* end) {
-    this->start = start;
-    this->end = end;
-    this->genericParameters = genericParameters;
-}
-
-void GenericArgumentClause::accept(SyntaxVisitor* visitor) {
-    if (!visitor->openGenericArgumentClause(this))
-        return;
-    if (genericParameters != nullptr) {
-        GenericParameter* node = nullptr;
-        size_t _genericParameters_length = genericParameters->length();
-        for (size_t _i = 0; _i < _genericParameters_length; _i++) {
-            node = *(*genericParameters)[_i];
-            node->accept(visitor);
-        }
-    }
-    visitor->closeGenericArgumentClause(this);
-}
-
-bool GenericArgumentClause::_isGenericArgumentClause() { return (true); }
-
-GenericParameter::GenericParameter(string* typeName, Position* start, Position* end) {
-    this->start = start;
-    this->end = end;
-    this->typeName = typeName;
-}
-
-void GenericParameter::accept(SyntaxVisitor* visitor) {
-    visitor->visitGenericParameter(this);
-}
-
-bool GenericParameter::_isGenericParameter() { return (true); }
 
 ClassMember::ClassMember(Declaration* declaration, Position* start, Position* end) {
     this->start = start;

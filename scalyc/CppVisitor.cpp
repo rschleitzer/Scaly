@@ -1052,16 +1052,6 @@ void CppVisitor::appendDerivedClasses(_Array<string>* derivedClasses, _Array<str
     }
 }
 
-bool CppVisitor::openGenericArgumentClause(GenericArgumentClause* genericArgumentClause) {
-    return true;
-}
-
-void CppVisitor::closeGenericArgumentClause(GenericArgumentClause* genericArgumentClause) {
-}
-
-void CppVisitor::visitGenericParameter(GenericParameter* genericParameter) {
-}
-
 bool CppVisitor::openClassMember(ClassMember* classMember) {
     headerFile->append("\n");
     indentHeader();

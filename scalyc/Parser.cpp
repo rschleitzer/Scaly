@@ -38,8 +38,6 @@ Parser::Parser(string* theFileName, string* text) {
     newKeyword = new(getPage()) string("new");
     extendsKeyword = new(getPage()) string("extends");
     equal = new(getPage()) string("=");
-    leftAngular = new(getPage()) string("<");
-    rightAngular = new(getPage()) string(">");
     comma = new(getPage()) string(",");
     leftParen = new(getPage()) string("(");
     rightParen = new(getPage()) string(")");
@@ -486,14 +484,6 @@ _Result<ClassDeclaration, ParserError> Parser::parseClassDeclaration(_Page* _rp,
         lexer->advance();
     else
         return _Result<ClassDeclaration, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_identifierExpected(new(_ep) Position(startName))));
-    auto _genericArgumentClause_result = parseGenericArgumentClause(_rp, _ep);
-    GenericArgumentClause* genericArgumentClause = nullptr;
-    if (_genericArgumentClause_result.succeeded()) {
-        genericArgumentClause = _genericArgumentClause_result.getResult();
-    }
-    else {
-        genericArgumentClause = nullptr;
-    }
     auto _typeInheritanceClause_result = parseTypeInheritanceClause(_rp, _ep);
     TypeInheritanceClause* typeInheritanceClause = nullptr;
     if (_typeInheritanceClause_result.succeeded()) {
@@ -511,9 +501,7 @@ _Result<ClassDeclaration, ParserError> Parser::parseClassDeclaration(_Page* _rp,
         body = nullptr;
     }
     Position* end = lexer->getPosition(_p);
-    ClassDeclaration* ret = new(_rp) ClassDeclaration(name, genericArgumentClause, typeInheritanceClause, body, new(_rp) Position(start), new(_rp) Position(end));
-    if (genericArgumentClause != nullptr)
-        genericArgumentClause->parent = ret;
+    ClassDeclaration* ret = new(_rp) ClassDeclaration(name, typeInheritanceClause, body, new(_rp) Position(start), new(_rp) Position(end));
     if (typeInheritanceClause != nullptr)
         typeInheritanceClause->parent = ret;
     if (body != nullptr)
@@ -1360,76 +1348,6 @@ _Result<ClassBody, ParserError> Parser::parseClassBody(_Page* _rp, _Page* _ep) {
         }
     }
     return _Result<ClassBody, ParserError>(ret);
-}
-
-_Result<GenericArgumentClause, ParserError> Parser::parseGenericArgumentClause(_Page* _rp, _Page* _ep) {
-    _Region _region; _Page* _p = _region.get();
-    Position* start = lexer->getPreviousPosition(_p);
-    Position* startLeftAngular1 = lexer->getPreviousPosition(_p);
-    bool successLeftAngular1 = lexer->parsePunctuation(leftAngular);
-    if (successLeftAngular1)
-        lexer->advance();
-    else
-        return _Result<GenericArgumentClause, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_punctuationExpected(new(_ep) Position(startLeftAngular1), new(_ep) string(leftAngular))));
-    auto _genericParameters_result = parseGenericParameterList(_rp, _ep);
-    _Vector<GenericParameter>* genericParameters = nullptr;
-    if (_genericParameters_result.succeeded()) {
-        genericParameters = _genericParameters_result.getResult();
-    }
-    else {
-        auto error = _genericParameters_result.getError();
-        return _Result<GenericArgumentClause, ParserError>(error);
-    }
-    Position* startRightAngular3 = lexer->getPreviousPosition(_p);
-    bool successRightAngular3 = lexer->parsePunctuation(rightAngular);
-    if (successRightAngular3)
-        lexer->advance();
-    else
-        return _Result<GenericArgumentClause, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_punctuationExpected(new(_ep) Position(startRightAngular3), new(_ep) string(rightAngular))));
-    Position* end = lexer->getPosition(_p);
-    GenericArgumentClause* ret = new(_rp) GenericArgumentClause(genericParameters, new(_rp) Position(start), new(_rp) Position(end));
-    if (genericParameters != nullptr) {
-        GenericParameter* item = nullptr;
-        size_t _genericParameters_length = genericParameters->length();
-        for (size_t _i = 0; _i < _genericParameters_length; _i++) {
-            item = *(*genericParameters)[_i];
-            item->parent = ret;
-        }
-    }
-    return _Result<GenericArgumentClause, ParserError>(ret);
-}
-
-_Result<_Vector<GenericParameter>, ParserError> Parser::parseGenericParameterList(_Page* _rp, _Page* _ep) {
-    _Region _region; _Page* _p = _region.get();
-    _Array<GenericParameter>* ret = nullptr;
-    while (true) {
-        auto _node_result = parseGenericParameter(_rp, _ep);
-        GenericParameter* node = nullptr;
-        if (_node_result.succeeded()) {
-            node = _node_result.getResult();
-        }
-        else {
-            break;
-        }
-        if (ret == nullptr)
-            ret = new(_p) _Array<GenericParameter>();
-        ret->push(node);
-    }
-    return _Result<_Vector<GenericParameter>, ParserError>(ret ? &_Vector<GenericParameter>::create(_rp, *ret) : 0);
-}
-
-_Result<GenericParameter, ParserError> Parser::parseGenericParameter(_Page* _rp, _Page* _ep) {
-    _Region _region; _Page* _p = _region.get();
-    Position* start = lexer->getPreviousPosition(_p);
-    Position* startTypeName = lexer->getPreviousPosition(_p);
-    string* typeName = lexer->parseIdentifier(_rp);
-    if ((typeName != nullptr) && isIdentifier(typeName))
-        lexer->advance();
-    else
-        return _Result<GenericParameter, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_identifierExpected(new(_ep) Position(startTypeName))));
-    Position* end = lexer->getPosition(_p);
-    GenericParameter* ret = new(_rp) GenericParameter(typeName, new(_rp) Position(start), new(_rp) Position(end));
-    return _Result<GenericParameter, ParserError>(ret);
 }
 
 _Result<_Vector<ClassMember>, ParserError> Parser::parseClassMemberList(_Page* _rp, _Page* _ep) {

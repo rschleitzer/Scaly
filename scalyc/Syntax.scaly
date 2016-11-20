@@ -183,11 +183,10 @@ class EnumDeclaration extends Declaration {
 
 class ClassDeclaration extends Declaration {
 
-    constructor(name: string, genericArgumentClause: GenericArgumentClause, typeInheritanceClause: TypeInheritanceClause, body: ClassBody, start: Position, end: Position) {
+    constructor(name: string, typeInheritanceClause: TypeInheritanceClause, body: ClassBody, start: Position, end: Position) {
         this.start = start
         this.end = end
         this.name = name
-        this.genericArgumentClause = genericArgumentClause
         this.typeInheritanceClause = typeInheritanceClause
         this.body = body
     }
@@ -195,8 +194,6 @@ class ClassDeclaration extends Declaration {
     override function accept(mutable visitor: SyntaxVisitor) {
         if !visitor.openClassDeclaration(this)
             return
-        if genericArgumentClause != null
-            genericArgumentClause.accept(visitor)
         if typeInheritanceClause != null
             typeInheritanceClause.accept(visitor)
         if body != null
@@ -205,7 +202,6 @@ class ClassDeclaration extends Declaration {
     }
 
     let name: string?
-    let genericArgumentClause: GenericArgumentClause?
     let typeInheritanceClause: TypeInheritanceClause?
     let body: ClassBody?
 }
@@ -644,42 +640,6 @@ class ClassBody extends SyntaxNode {
     }
 
     let members: ClassMember[]?
-}
-
-class GenericArgumentClause extends SyntaxNode {
-
-    constructor(genericParameters: GenericParameter[], start: Position, end: Position) {
-        this.start = start
-        this.end = end
-        this.genericParameters = genericParameters
-    }
-
-    function accept(mutable visitor: SyntaxVisitor) {
-        if !visitor.openGenericArgumentClause(this)
-            return
-        if genericParameters != null {
-            for node: GenericParameter in genericParameters
-                node.accept(visitor)
-        }
-        visitor.closeGenericArgumentClause(this)
-    }
-
-    let genericParameters: GenericParameter[]?
-}
-
-class GenericParameter extends SyntaxNode {
-
-    constructor(typeName: string, start: Position, end: Position) {
-        this.start = start
-        this.end = end
-        this.typeName = typeName
-    }
-
-    function accept(mutable visitor: SyntaxVisitor) {
-        visitor.visitGenericParameter(this)
-    }
-
-    let typeName: string?
 }
 
 class ClassMember extends SyntaxNode {

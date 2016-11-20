@@ -96,9 +96,6 @@ public:
     virtual void indentSource();
     virtual void collectDerivedClasses(_Array<string>* derivedClasses, string* className);
     virtual void appendDerivedClasses(_Array<string>* derivedClasses, _Array<string>* inheritors);
-    virtual bool openGenericArgumentClause(GenericArgumentClause* genericArgumentClause);
-    virtual void closeGenericArgumentClause(GenericArgumentClause* genericArgumentClause);
-    virtual void visitGenericParameter(GenericParameter* genericParameter);
     virtual bool openClassMember(ClassMember* classMember);
     virtual void closeClassMember(ClassMember* classMember);
     virtual bool openPrefixExpression(PrefixExpression* prefixExpression);

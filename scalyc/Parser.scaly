@@ -35,8 +35,6 @@ class Parser {
         newKeyword = new string("new")
         extendsKeyword = new string("extends")
         equal = new string("=")
-        leftAngular = new string("<")
-        rightAngular = new string(">")
         comma = new string(",")
         leftParen = new string("(")
         rightParen = new string(")")
@@ -343,13 +341,10 @@ class Parser {
         else
             throw identifierExpected(new Position(startName))
 
-        let genericArgumentClause: GenericArgumentClause = parseGenericArgumentClause() catch _ null
         let typeInheritanceClause: TypeInheritanceClause = parseTypeInheritanceClause() catch _ null
         let body: ClassBody = parseClassBody() catch _ null
         mutable end: Position = lexer.getPosition()
-        var ret: ClassDeclaration = new ClassDeclaration(name, genericArgumentClause, typeInheritanceClause, body, new Position(start), new Position(end))
-        if genericArgumentClause != null
-            genericArgumentClause.parent = ret
+        var ret: ClassDeclaration = new ClassDeclaration(name, typeInheritanceClause, body, new Position(start), new Position(end))
         if typeInheritanceClause != null
             typeInheritanceClause.parent = ret
         if body != null
@@ -933,61 +928,6 @@ class Parser {
             for item: ClassMember in members
                 item.parent = ret
         }
-
-        return(ret)
-    }
-
-    function parseGenericArgumentClause(): GenericArgumentClause throws ParserError {
-        mutable start: Position = lexer.getPreviousPosition()
-        mutable startLeftAngular1: Position = lexer.getPreviousPosition()
-        let successLeftAngular1: bool = lexer.parsePunctuation(leftAngular)
-        if successLeftAngular1
-            lexer.advance()
-        else
-            throw punctuationExpected(new Position(startLeftAngular1), new string(leftAngular))
-
-        let genericParameters: GenericParameter[] = parseGenericParameterList() catch _ (error)
-            throw error
-        mutable startRightAngular3: Position = lexer.getPreviousPosition()
-        let successRightAngular3: bool = lexer.parsePunctuation(rightAngular)
-        if successRightAngular3
-            lexer.advance()
-        else
-            throw punctuationExpected(new Position(startRightAngular3), new string(rightAngular))
-
-        mutable end: Position = lexer.getPosition()
-        var ret: GenericArgumentClause = new GenericArgumentClause(genericParameters, new Position(start), new Position(end))
-        if genericParameters != null {
-            for item: GenericParameter in genericParameters
-                item.parent = ret
-        }
-
-        return(ret)
-    }
-
-    function parseGenericParameterList(): GenericParameter[] throws ParserError {
-        mutable ret: GenericParameter[]? = null
-        while true {
-            let node: GenericParameter = parseGenericParameter()
-                catch _ break
-            if ret == null
-                ret = new GenericParameter[]()
-            ret.push(node)
-        }
-        return(ret)
-    }
-
-    function parseGenericParameter(): GenericParameter throws ParserError {
-        mutable start: Position = lexer.getPreviousPosition()
-        mutable startTypeName: Position = lexer.getPreviousPosition()
-        let typeName: string? = lexer.parseIdentifier()
-        if (typeName != null) && isIdentifier(typeName)
-            lexer.advance()
-        else
-            throw identifierExpected(new Position(startTypeName))
-
-        mutable end: Position = lexer.getPosition()
-        var ret: GenericParameter = new GenericParameter(typeName, new Position(start), new Position(end))
 
         return(ret)
     }
@@ -2702,8 +2642,6 @@ class Parser {
     let newKeyword: string
     let extendsKeyword: string
     let equal: string
-    let leftAngular: string
-    let rightAngular: string
     let comma: string
     let leftParen: string
     let rightParen: string

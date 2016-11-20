@@ -49,9 +49,6 @@ public:
     virtual _Result<_Vector<AdditionalCase>, ParserError> parseAdditionalCaseList(_Page* _rp, _Page* _ep);
     virtual _Result<AdditionalCase, ParserError> parseAdditionalCase(_Page* _rp, _Page* _ep);
     virtual _Result<ClassBody, ParserError> parseClassBody(_Page* _rp, _Page* _ep);
-    virtual _Result<GenericArgumentClause, ParserError> parseGenericArgumentClause(_Page* _rp, _Page* _ep);
-    virtual _Result<_Vector<GenericParameter>, ParserError> parseGenericParameterList(_Page* _rp, _Page* _ep);
-    virtual _Result<GenericParameter, ParserError> parseGenericParameter(_Page* _rp, _Page* _ep);
     virtual _Result<_Vector<ClassMember>, ParserError> parseClassMemberList(_Page* _rp, _Page* _ep);
     virtual _Result<ClassMember, ParserError> parseClassMember(_Page* _rp, _Page* _ep);
     virtual _Result<PrefixExpression, ParserError> parsePrefixExpression(_Page* _rp, _Page* _ep);
@@ -164,8 +161,6 @@ public:
     string* newKeyword;
     string* extendsKeyword;
     string* equal;
-    string* leftAngular;
-    string* rightAngular;
     string* comma;
     string* leftParen;
     string* rightParen;
