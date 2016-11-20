@@ -239,9 +239,8 @@ public:
 
 class ConstructorDeclaration : public Declaration {
 public:
-    ConstructorDeclaration(_Vector<Modifier>* modifiers, ParameterClause* parameterClause, ThrowsClause* throwsClause, Expression* body, Position* start, Position* end);
+    ConstructorDeclaration(ParameterClause* parameterClause, ThrowsClause* throwsClause, Expression* body, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
-    _Vector<Modifier>* modifiers;
     ParameterClause* parameterClause;
     ThrowsClause* throwsClause;
     Expression* body;

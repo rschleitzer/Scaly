@@ -524,20 +524,12 @@ _Result<ClassDeclaration, ParserError> Parser::parseClassDeclaration(_Page* _rp,
 _Result<ConstructorDeclaration, ParserError> Parser::parseConstructorDeclaration(_Page* _rp, _Page* _ep) {
     _Region _region; _Page* _p = _region.get();
     Position* start = lexer->getPreviousPosition(_p);
-    auto _modifiers_result = parseModifierList(_rp, _ep);
-    _Vector<Modifier>* modifiers = nullptr;
-    if (_modifiers_result.succeeded()) {
-        modifiers = _modifiers_result.getResult();
-    }
-    else {
-        modifiers = nullptr;
-    }
-    Position* startConstructor2 = lexer->getPreviousPosition(_p);
-    bool successConstructor2 = lexer->parseKeyword(constructorKeyword);
-    if (successConstructor2)
+    Position* startConstructor1 = lexer->getPreviousPosition(_p);
+    bool successConstructor1 = lexer->parseKeyword(constructorKeyword);
+    if (successConstructor1)
         lexer->advance();
     else
-        return _Result<ConstructorDeclaration, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_keywordExpected(new(_ep) Position(startConstructor2), new(_ep) string(constructorKeyword))));
+        return _Result<ConstructorDeclaration, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_keywordExpected(new(_ep) Position(startConstructor1), new(_ep) string(constructorKeyword))));
     auto _parameterClause_result = parseParameterClause(_rp, _ep);
     ParameterClause* parameterClause = nullptr;
     if (_parameterClause_result.succeeded()) {
@@ -565,15 +557,7 @@ _Result<ConstructorDeclaration, ParserError> Parser::parseConstructorDeclaration
         return _Result<ConstructorDeclaration, ParserError>(error);
     }
     Position* end = lexer->getPosition(_p);
-    ConstructorDeclaration* ret = new(_rp) ConstructorDeclaration(modifiers, parameterClause, throwsClause, body, new(_rp) Position(start), new(_rp) Position(end));
-    if (modifiers != nullptr) {
-        Modifier* item = nullptr;
-        size_t _modifiers_length = modifiers->length();
-        for (size_t _i = 0; _i < _modifiers_length; _i++) {
-            item = *(*modifiers)[_i];
-            item->parent = ret;
-        }
-    }
+    ConstructorDeclaration* ret = new(_rp) ConstructorDeclaration(parameterClause, throwsClause, body, new(_rp) Position(start), new(_rp) Position(end));
     parameterClause->parent = ret;
     if (throwsClause != nullptr)
         throwsClause->parent = ret;

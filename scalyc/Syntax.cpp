@@ -310,10 +310,9 @@ void ClassDeclaration::accept(SyntaxVisitor* visitor) {
 
 bool ClassDeclaration::_isClassDeclaration() { return (true); }
 
-ConstructorDeclaration::ConstructorDeclaration(_Vector<Modifier>* modifiers, ParameterClause* parameterClause, ThrowsClause* throwsClause, Expression* body, Position* start, Position* end) {
+ConstructorDeclaration::ConstructorDeclaration(ParameterClause* parameterClause, ThrowsClause* throwsClause, Expression* body, Position* start, Position* end) {
     this->start = start;
     this->end = end;
-    this->modifiers = modifiers;
     this->parameterClause = parameterClause;
     this->throwsClause = throwsClause;
     this->body = body;
@@ -322,14 +321,6 @@ ConstructorDeclaration::ConstructorDeclaration(_Vector<Modifier>* modifiers, Par
 void ConstructorDeclaration::accept(SyntaxVisitor* visitor) {
     if (!visitor->openConstructorDeclaration(this))
         return;
-    if (modifiers != nullptr) {
-        Modifier* node = nullptr;
-        size_t _modifiers_length = modifiers->length();
-        for (size_t _i = 0; _i < _modifiers_length; _i++) {
-            node = *(*modifiers)[_i];
-            node->accept(visitor);
-        }
-    }
     parameterClause->accept(visitor);
     if (throwsClause != nullptr)
         throwsClause->accept(visitor);

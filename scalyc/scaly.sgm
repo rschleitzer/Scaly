@@ -60,7 +60,6 @@
         <content link = ClassBody                      optional property = body
 
     <syntax id = ConstructorDeclaration                         base = Declaration
-        <content link = Modifier              multiple optional property = modifiers
         <content link = constructor
         <content link = ParameterClause                         property = parameterClause
         <content link = ThrowsClause                   optional property = throwsClause

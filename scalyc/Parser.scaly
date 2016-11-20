@@ -360,13 +360,12 @@ class Parser {
 
     function parseConstructorDeclaration(): ConstructorDeclaration throws ParserError {
         mutable start: Position = lexer.getPreviousPosition()
-        let modifiers: Modifier[] = parseModifierList() catch _ null
-        mutable startConstructor2: Position = lexer.getPreviousPosition()
-        let successConstructor2: bool = lexer.parseKeyword(constructorKeyword)
-        if successConstructor2
+        mutable startConstructor1: Position = lexer.getPreviousPosition()
+        let successConstructor1: bool = lexer.parseKeyword(constructorKeyword)
+        if successConstructor1
             lexer.advance()
         else
-            throw keywordExpected(new Position(startConstructor2), new string(constructorKeyword))
+            throw keywordExpected(new Position(startConstructor1), new string(constructorKeyword))
 
         let parameterClause: ParameterClause = parseParameterClause() catch _ (error)
             throw error
@@ -374,11 +373,7 @@ class Parser {
         let body: Expression = parseExpression() catch _ (error)
             throw error
         mutable end: Position = lexer.getPosition()
-        var ret: ConstructorDeclaration = new ConstructorDeclaration(modifiers, parameterClause, throwsClause, body, new Position(start), new Position(end))
-        if modifiers != null {
-            for item: Modifier in modifiers
-                item.parent = ret
-        }
+        var ret: ConstructorDeclaration = new ConstructorDeclaration(parameterClause, throwsClause, body, new Position(start), new Position(end))
         parameterClause.parent = ret
         if throwsClause != null
             throwsClause.parent = ret

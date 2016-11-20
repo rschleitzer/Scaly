@@ -212,10 +212,9 @@ class ClassDeclaration extends Declaration {
 
 class ConstructorDeclaration extends Declaration {
 
-    constructor(modifiers: Modifier[], parameterClause: ParameterClause, throwsClause: ThrowsClause, body: Expression, start: Position, end: Position) {
+    constructor(parameterClause: ParameterClause, throwsClause: ThrowsClause, body: Expression, start: Position, end: Position) {
         this.start = start
         this.end = end
-        this.modifiers = modifiers
         this.parameterClause = parameterClause
         this.throwsClause = throwsClause
         this.body = body
@@ -224,10 +223,6 @@ class ConstructorDeclaration extends Declaration {
     override function accept(mutable visitor: SyntaxVisitor) {
         if !visitor.openConstructorDeclaration(this)
             return
-        if modifiers != null {
-            for node: Modifier in modifiers
-                node.accept(visitor)
-        }
         parameterClause.accept(visitor)
         if throwsClause != null
             throwsClause.accept(visitor)
@@ -235,7 +230,6 @@ class ConstructorDeclaration extends Declaration {
         visitor.closeConstructorDeclaration(this)
     }
 
-    let modifiers: Modifier[]?
     let parameterClause: ParameterClause?
     let throwsClause: ThrowsClause?
     let body: Expression?
