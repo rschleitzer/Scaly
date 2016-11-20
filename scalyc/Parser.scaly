@@ -1393,7 +1393,7 @@ class Parser {
         }
 
         {
-            let node: RepeatExpression = parseRepeatExpression() catch _ (error) {
+            let node: DoExpression = parseDoExpression() catch _ (error) {
                 errors.push(error)
             }
 
@@ -1603,14 +1603,14 @@ class Parser {
         return(ret)
     }
 
-    function parseRepeatExpression(): RepeatExpression throws ParserError {
+    function parseDoExpression(): DoExpression throws ParserError {
         mutable start: Position = lexer.getPreviousPosition()
-        mutable startRepeat1: Position = lexer.getPreviousPosition()
-        let successRepeat1: bool = lexer.parseKeyword(doKeyword)
-        if successRepeat1
+        mutable startDo1: Position = lexer.getPreviousPosition()
+        let successDo1: bool = lexer.parseKeyword(doKeyword)
+        if successDo1
             lexer.advance()
         else
-            throw keywordExpected(new Position(startRepeat1), new string(doKeyword))
+            throw keywordExpected(new Position(startDo1), new string(doKeyword))
 
         let code: Expression = parseExpression() catch _ (error)
             throw error
@@ -1624,7 +1624,7 @@ class Parser {
         let condition: Expression = parseExpression() catch _ (error)
             throw error
         mutable end: Position = lexer.getPosition()
-        var ret: RepeatExpression = new RepeatExpression(code, condition, new Position(start), new Position(end))
+        var ret: DoExpression = new DoExpression(code, condition, new Position(start), new Position(end))
         code.parent = ret
         condition.parent = ret
 

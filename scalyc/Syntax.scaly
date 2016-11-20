@@ -1057,7 +1057,7 @@ class WhileExpression extends PrimaryExpression {
     let code: Expression?
 }
 
-class RepeatExpression extends PrimaryExpression {
+class DoExpression extends PrimaryExpression {
 
     constructor(code: Expression, condition: Expression, start: Position, end: Position) {
         this.start = start
@@ -1067,11 +1067,11 @@ class RepeatExpression extends PrimaryExpression {
     }
 
     override function accept(mutable visitor: SyntaxVisitor) {
-        if !visitor.openRepeatExpression(this)
+        if !visitor.openDoExpression(this)
             return
         code.accept(visitor)
         condition.accept(visitor)
-        visitor.closeRepeatExpression(this)
+        visitor.closeDoExpression(this)
     }
 
     let code: Expression?

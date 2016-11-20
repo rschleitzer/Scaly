@@ -239,7 +239,7 @@
         <content link = SwitchExpression
         <content link = ForExpression
         <content link = WhileExpression
-        <content link = RepeatExpression
+        <content link = DoExpression
         <content link = ParenthesizedExpression
         <content link = ReturnExpression
         <content link = ThrowExpression

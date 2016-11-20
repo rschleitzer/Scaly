@@ -56,7 +56,7 @@ class IfExpression
 class SwitchExpression
 class ForExpression
 class WhileExpression
-class RepeatExpression
+class DoExpression
 class ParenthesizedExpression
 class ReturnExpression
 class ThrowExpression
@@ -186,8 +186,8 @@ class SyntaxVisitor {
     function closeForExpression(forExpression: ForExpression)
     function openWhileExpression(whileExpression: WhileExpression): bool
     function closeWhileExpression(whileExpression: WhileExpression)
-    function openRepeatExpression(doExpression: RepeatExpression): bool
-    function closeRepeatExpression(doExpression: RepeatExpression)
+    function openDoExpression(doExpression: DoExpression): bool
+    function closeDoExpression(doExpression: DoExpression)
     function openParenthesizedExpression(parenthesizedExpression: ParenthesizedExpression): bool
     function closeParenthesizedExpression(parenthesizedExpression: ParenthesizedExpression)
     function openReturnExpression(returnExpression: ReturnExpression): bool
