@@ -81,14 +81,11 @@ public:
     virtual void visitOperatorPostfix(OperatorPostfix* operatorPostfix);
     virtual bool openFunctionCall(FunctionCall* functionCall);
     virtual void closeFunctionCall(FunctionCall* functionCall);
-    virtual bool openExplicitMemberExpression(ExplicitMemberExpression* explicitMemberExpression);
-    virtual void closeExplicitMemberExpression(ExplicitMemberExpression* explicitMemberExpression);
+    virtual void visitMemberExpression(MemberExpression* memberExpression);
     virtual bool openSubscript(Subscript* subscript);
     virtual void closeSubscript(Subscript* subscript);
     virtual bool openExpressionElement(ExpressionElement* expressionElement);
     virtual void closeExpressionElement(ExpressionElement* expressionElement);
-    virtual bool openNamedMemberPostfix(NamedMemberPostfix* namedMemberPostfix);
-    virtual void closeNamedMemberPostfix(NamedMemberPostfix* namedMemberPostfix);
     virtual void visitIdentifierExpression(IdentifierExpression* identifierExpression);
     virtual void visitLiteralExpression(LiteralExpression* literalExpression);
     virtual bool openIfExpression(IfExpression* ifExpression);

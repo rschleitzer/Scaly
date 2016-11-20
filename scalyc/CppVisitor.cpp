@@ -1357,38 +1357,35 @@ bool CppVisitor::openCatchClause(CatchClause* catchClause) {
                     sourceFile->append(identifierCatchPattern->name);
                     sourceFile->append("Code_");
                     if (identifierCatchPattern->member != nullptr) {
-                        if (identifierCatchPattern->member->memberPostfix->_isNamedMemberPostfix()) {
-                            NamedMemberPostfix* namedMemberPostfix = (NamedMemberPostfix*)(identifierCatchPattern->member->memberPostfix);
-                            sourceFile->append(namedMemberPostfix->identifier->name);
-                            sourceFile->append(":\n");
-                            sourceIndentLevel++;
-                            indentSource();
-                            sourceFile->append("_");
-                            sourceFile->append(identifierCatchPattern->name);
-                            sourceFile->append("_");
-                            sourceFile->append(namedMemberPostfix->identifier->name);
-                            sourceFile->append("* ");
-                            if (catchClause->bindingPattern != nullptr) {
-                                TuplePattern* bindingPattern = catchClause->bindingPattern;
-                                if (bindingPattern->elements != nullptr) {
-                                    if (bindingPattern->elements->length() > 0) {
-                                        _Vector<TuplePatternElement>* elements = bindingPattern->elements;
-                                        TuplePatternElement* element = *(*elements)[0];
-                                        if (element->pattern->_isIdentifierPattern()) {
-                                            IdentifierPattern* pattern = (IdentifierPattern*)(element->pattern);
-                                            sourceFile->append(pattern->identifier);
-                                            sourceFile->append(" = _");
-                                            sourceFile->append(identifierExpression->name);
-                                            sourceFile->append("_error.get_");
-                                            sourceFile->append(namedMemberPostfix->identifier->name);
-                                            sourceFile->append("();");
-                                        }
+                        sourceFile->append(identifierCatchPattern->member->member);
+                        sourceFile->append(":\n");
+                        sourceIndentLevel++;
+                        indentSource();
+                        sourceFile->append("_");
+                        sourceFile->append(identifierCatchPattern->name);
+                        sourceFile->append("_");
+                        sourceFile->append(identifierCatchPattern->member->member);
+                        sourceFile->append("* ");
+                        if (catchClause->bindingPattern != nullptr) {
+                            TuplePattern* bindingPattern = catchClause->bindingPattern;
+                            if (bindingPattern->elements != nullptr) {
+                                if (bindingPattern->elements->length() > 0) {
+                                    _Vector<TuplePatternElement>* elements = bindingPattern->elements;
+                                    TuplePatternElement* element = *(*elements)[0];
+                                    if (element->pattern->_isIdentifierPattern()) {
+                                        IdentifierPattern* pattern = (IdentifierPattern*)(element->pattern);
+                                        sourceFile->append(pattern->identifier);
+                                        sourceFile->append(" = _");
+                                        sourceFile->append(identifierExpression->name);
+                                        sourceFile->append("_error.get_");
+                                        sourceFile->append(identifierCatchPattern->member->member);
+                                        sourceFile->append("();");
                                     }
                                 }
                             }
-                            sourceFile->append("\n");
-                            sourceIndentLevel--;
                         }
+                        sourceFile->append("\n");
+                        sourceIndentLevel--;
                     }
                 }
                 if (catchClause->catchPattern->_isWildCardCatchPattern()) {
@@ -1476,9 +1473,9 @@ bool CppVisitor::openFunctionCall(FunctionCall* functionCall) {
 void CppVisitor::closeFunctionCall(FunctionCall* functionCall) {
 }
 
-bool CppVisitor::openExplicitMemberExpression(ExplicitMemberExpression* explicitMemberExpression) {
-    if (explicitMemberExpression->parent->_isPostfixExpression()) {
-        PostfixExpression* postfixExpression = (PostfixExpression*)(explicitMemberExpression->parent);
+void CppVisitor::visitMemberExpression(MemberExpression* memberExpression) {
+    if (memberExpression->parent->_isPostfixExpression()) {
+        PostfixExpression* postfixExpression = (PostfixExpression*)(memberExpression->parent);
         if (postfixExpression->primaryExpression->_isIdentifierExpression()) {
             IdentifierExpression* identifierExpression = (IdentifierExpression*)(postfixExpression->primaryExpression);
             if (postfixExpression->postfixes->length() > 1) {
@@ -1486,17 +1483,13 @@ bool CppVisitor::openExplicitMemberExpression(ExplicitMemberExpression* explicit
                 if (((Postfix*)*(*postfixes)[0]) && ((*(*postfixes)[1])->_isFunctionCall())) {
                     if (isClass(identifierExpression->name)) {
                         sourceFile->append("::");
-                        return true;
+                        return;
                     }
                 }
             }
         }
     }
     sourceFile->append("->");
-    return true;
-}
-
-void CppVisitor::closeExplicitMemberExpression(ExplicitMemberExpression* explicitMemberExpression) {
 }
 
 bool CppVisitor::openSubscript(Subscript* subscript) {
@@ -1551,13 +1544,6 @@ bool CppVisitor::isLastExpressionElement(ExpressionElement* expressionElement) {
         }
     }
     return false;
-}
-
-bool CppVisitor::openNamedMemberPostfix(NamedMemberPostfix* namedMemberPostfix) {
-    return true;
-}
-
-void CppVisitor::closeNamedMemberPostfix(NamedMemberPostfix* namedMemberPostfix) {
 }
 
 void CppVisitor::visitIdentifierExpression(IdentifierExpression* identifierExpression) {
@@ -2499,7 +2485,7 @@ bool CppVisitor::isCatchingPatternInitializer(PatternInitializer* patternInitial
                         functionCall = (FunctionCall*)postfix;
                     }
                     else {
-                        if (postfix->_isExplicitMemberExpression()) {
+                        if (postfix->_isMemberExpression()) {
                             if (postfixExpression->postfixes->length() > 1) {
                                 Postfix* postfix = *(*postfixes)[1];
                                 if (postfix->_isFunctionCall()) {

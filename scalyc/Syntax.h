@@ -58,11 +58,9 @@ public:
     virtual bool _isPostfix();
     virtual bool _isOperatorPostfix();
     virtual bool _isFunctionCall();
-    virtual bool _isExplicitMemberExpression();
+    virtual bool _isMemberExpression();
     virtual bool _isSubscript();
     virtual bool _isExpressionElement();
-    virtual bool _isMemberPostfix();
-    virtual bool _isNamedMemberPostfix();
     virtual bool _isPrimaryExpression();
     virtual bool _isIdentifierExpression();
     virtual bool _isLiteralExpression();
@@ -546,10 +544,10 @@ public:
 
 class IdentifierCatchPattern : public CatchPattern {
 public:
-    IdentifierCatchPattern(string* name, ExplicitMemberExpression* member, Position* start, Position* end);
+    IdentifierCatchPattern(string* name, MemberExpression* member, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
     string* name;
-    ExplicitMemberExpression* member;
+    MemberExpression* member;
 
     virtual bool _isIdentifierCatchPattern();
 };
@@ -561,7 +559,7 @@ public:
     virtual bool _isPostfix();
     virtual bool _isOperatorPostfix();
     virtual bool _isFunctionCall();
-    virtual bool _isExplicitMemberExpression();
+    virtual bool _isMemberExpression();
     virtual bool _isSubscript();
 };
 
@@ -584,13 +582,13 @@ public:
     virtual bool _isFunctionCall();
 };
 
-class ExplicitMemberExpression : public Postfix {
+class MemberExpression : public Postfix {
 public:
-    ExplicitMemberExpression(MemberPostfix* memberPostfix, Position* start, Position* end);
+    MemberExpression(string* member, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
-    MemberPostfix* memberPostfix;
+    string* member;
 
-    virtual bool _isExplicitMemberExpression();
+    virtual bool _isMemberExpression();
 };
 
 class Subscript : public Postfix {
@@ -609,23 +607,6 @@ public:
     Expression* expression;
 
     virtual bool _isExpressionElement();
-};
-
-class MemberPostfix : public SyntaxNode {
-public:
-    virtual void accept(SyntaxVisitor* visitor);
-
-    virtual bool _isMemberPostfix();
-    virtual bool _isNamedMemberPostfix();
-};
-
-class NamedMemberPostfix : public MemberPostfix {
-public:
-    NamedMemberPostfix(IdentifierExpression* identifier, Position* start, Position* end);
-    virtual void accept(SyntaxVisitor* visitor);
-    IdentifierExpression* identifier;
-
-    virtual bool _isNamedMemberPostfix();
 };
 
 class PrimaryExpression : public SyntaxNode {

@@ -46,11 +46,9 @@ class IdentifierCatchPattern
 class Postfix
 class OperatorPostfix
 class FunctionCall
-class ExplicitMemberExpression
+class MemberExpression
 class Subscript
 class ExpressionElement
-class MemberPostfix
-class NamedMemberPostfix
 class PrimaryExpression
 class IdentifierExpression
 class LiteralExpression
@@ -173,14 +171,11 @@ class SyntaxVisitor {
     function visitOperatorPostfix(operatorPostfix: OperatorPostfix)
     function openFunctionCall(functionCall: FunctionCall): bool
     function closeFunctionCall(functionCall: FunctionCall)
-    function openExplicitMemberExpression(explicitMemberExpression: ExplicitMemberExpression): bool
-    function closeExplicitMemberExpression(explicitMemberExpression: ExplicitMemberExpression)
+    function visitMemberExpression(memberExpression: MemberExpression)
     function openSubscript(subscript: Subscript): bool
     function closeSubscript(subscript: Subscript)
     function openExpressionElement(expressionElement: ExpressionElement): bool
     function closeExpressionElement(expressionElement: ExpressionElement)
-    function openNamedMemberPostfix(namedMemberPostfix: NamedMemberPostfix): bool
-    function closeNamedMemberPostfix(namedMemberPostfix: NamedMemberPostfix)
     function visitIdentifierExpression(identifierExpression: IdentifierExpression)
     function visitLiteralExpression(literalExpression: LiteralExpression)
     function openIfExpression(ifExpression: IfExpression): bool

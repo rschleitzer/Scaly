@@ -259,11 +259,7 @@ class MyVisitor extends SyntaxVisitor {
     function closeFunctionCall(functionCall: FunctionCall) {
     }
 
-    function openExplicitMemberExpression(explicitMemberExpression: ExplicitMemberExpression): bool {
-        return(true)
-    }
-
-    function closeExplicitMemberExpression(explicitMemberExpression: ExplicitMemberExpression) {
+    function visitMemberExpression(memberExpression: MemberExpression) {
     }
 
     function openSubscript(subscript: Subscript): bool {
@@ -278,13 +274,6 @@ class MyVisitor extends SyntaxVisitor {
     }
 
     function closeExpressionElement(expressionElement: ExpressionElement) {
-    }
-
-    function openNamedMemberPostfix(namedMemberPostfix: NamedMemberPostfix): bool {
-        return(true)
-    }
-
-    function closeNamedMemberPostfix(namedMemberPostfix: NamedMemberPostfix) {
     }
 
     function visitIdentifierExpression(identifierExpression: IdentifierExpression) {

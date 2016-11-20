@@ -262,11 +262,7 @@ bool MyVisitor::openFunctionCall(FunctionCall* functionCall) {
 void MyVisitor::closeFunctionCall(FunctionCall* functionCall) {
 }
 
-bool MyVisitor::openExplicitMemberExpression(ExplicitMemberExpression* explicitMemberExpression) {
-    return true;
-}
-
-void MyVisitor::closeExplicitMemberExpression(ExplicitMemberExpression* explicitMemberExpression) {
+void MyVisitor::visitMemberExpression(MemberExpression* memberExpression) {
 }
 
 bool MyVisitor::openSubscript(Subscript* subscript) {
@@ -281,13 +277,6 @@ bool MyVisitor::openExpressionElement(ExpressionElement* expressionElement) {
 }
 
 void MyVisitor::closeExpressionElement(ExpressionElement* expressionElement) {
-}
-
-bool MyVisitor::openNamedMemberPostfix(NamedMemberPostfix* namedMemberPostfix) {
-    return true;
-}
-
-void MyVisitor::closeNamedMemberPostfix(NamedMemberPostfix* namedMemberPostfix) {
 }
 
 void MyVisitor::visitIdentifierExpression(IdentifierExpression* identifierExpression) {

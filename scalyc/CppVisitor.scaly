@@ -1401,38 +1401,36 @@ class CppVisitor extends SyntaxVisitor {
                         sourceFile.append(identifierCatchPattern.name)
                         sourceFile.append("Code_")
                         if identifierCatchPattern.member != null {
-                            if identifierCatchPattern.member.memberPostfix is NamedMemberPostfix {
-                                let namedMemberPostfix: NamedMemberPostfix = (identifierCatchPattern.member.memberPostfix) as NamedMemberPostfix
-                                sourceFile.append(namedMemberPostfix.identifier.name)
-                                sourceFile.append(":\n")
-                                sourceIndentLevel++
-                                indentSource()
-                                sourceFile.append("_")
-                                sourceFile.append(identifierCatchPattern.name)
-                                sourceFile.append("_")
-                                sourceFile.append(namedMemberPostfix.identifier.name)                            
-                                sourceFile.append("* ")
-                                if catchClause.bindingPattern != null {
-                                    let bindingPattern: TuplePattern = catchClause.bindingPattern
-                                    if bindingPattern.elements != null {
-                                        if bindingPattern.elements.length() > 0 {
-                                            let elements: TuplePatternElement[] = bindingPattern.elements
-                                            let element: TuplePatternElement = elements[0]
-                                            if element.pattern is IdentifierPattern {
-                                                let pattern: IdentifierPattern = (element.pattern) as IdentifierPattern
-                                                sourceFile.append(pattern.identifier)                    
-                                                sourceFile.append(" = _")
-                                                sourceFile.append(identifierExpression.name)
-                                                sourceFile.append("_error.get_")
-                                                sourceFile.append(namedMemberPostfix.identifier.name)                            
-                                                sourceFile.append("();")
-                                            }
+                            let namedMemberPostfix: NamedMemberPostfix = (identifierCatchPattern.member.memberPostfix) as NamedMemberPostfix
+                            sourceFile.append(identifierCatchPattern.member.member)
+                            sourceFile.append(":\n")
+                            sourceIndentLevel++
+                            indentSource()
+                            sourceFile.append("_")
+                            sourceFile.append(identifierCatchPattern.name)
+                            sourceFile.append("_")
+                            sourceFile.append(identifierCatchPattern.member.member)                            
+                            sourceFile.append("* ")
+                            if catchClause.bindingPattern != null {
+                                let bindingPattern: TuplePattern = catchClause.bindingPattern
+                                if bindingPattern.elements != null {
+                                    if bindingPattern.elements.length() > 0 {
+                                        let elements: TuplePatternElement[] = bindingPattern.elements
+                                        let element: TuplePatternElement = elements[0]
+                                        if element.pattern is IdentifierPattern {
+                                            let pattern: IdentifierPattern = (element.pattern) as IdentifierPattern
+                                            sourceFile.append(pattern.identifier)                    
+                                            sourceFile.append(" = _")
+                                            sourceFile.append(identifierExpression.name)
+                                            sourceFile.append("_error.get_")
+                                            sourceFile.append(identifierCatchPattern.member.member)                            
+                                            sourceFile.append("();")
                                         }
                                     }
                                 }
-                                sourceFile.append("\n")
-                                sourceIndentLevel--
                             }
+                            sourceFile.append("\n")
+                            sourceIndentLevel--
                         }
                     }
                     if catchClause.catchPattern is WildCardCatchPattern {
@@ -1524,9 +1522,9 @@ class CppVisitor extends SyntaxVisitor {
     function closeFunctionCall(functionCall: FunctionCall) {
     }
 
-    function openExplicitMemberExpression(explicitMemberExpression: ExplicitMemberExpression): bool {
-        if explicitMemberExpression.parent is PostfixExpression {
-            let postfixExpression: PostfixExpression = (explicitMemberExpression.parent) as PostfixExpression
+    function visitMemberExpression(memberExpression: MemberExpression) {
+        if memberExpression.parent is PostfixExpression {
+            let postfixExpression: PostfixExpression = (memberExpression.parent) as PostfixExpression
             if postfixExpression.primaryExpression is IdentifierExpression {
                 let identifierExpression: IdentifierExpression = (postfixExpression.primaryExpression) as IdentifierExpression
                 if postfixExpression.postfixes.length() > 1 {
@@ -1534,7 +1532,7 @@ class CppVisitor extends SyntaxVisitor {
                     if (postfixes[0] == explicitMemberExpression as Postfix) && ((postfixes[1]) is FunctionCall) {
                         if isClass(identifierExpression.name) {
                             sourceFile.append("::")
-                            return(true)
+                            return
                         }
                     }
                 }
@@ -1542,10 +1540,6 @@ class CppVisitor extends SyntaxVisitor {
         }
         sourceFile.append("->")
 
-        return(true)
-    }
-
-    function closeExplicitMemberExpression(explicitMemberExpression: ExplicitMemberExpression) {
     }
 
     function openSubscript(subscript: Subscript): bool {

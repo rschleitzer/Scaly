@@ -1163,7 +1163,7 @@ class Parser {
         else
             throw identifierExpected(new Position(startName))
 
-        let member: ExplicitMemberExpression = parseExplicitMemberExpression() catch _ null
+        let member: MemberExpression = parseMemberExpression() catch _ null
         mutable end: Position = lexer.getPosition()
         var ret: IdentifierCatchPattern = new IdentifierCatchPattern(name, member, new Position(start), new Position(end))
         if member != null
@@ -1207,7 +1207,7 @@ class Parser {
         }
 
         {
-            let node: ExplicitMemberExpression = parseExplicitMemberExpression() catch _ (error) {
+            let node: MemberExpression = parseMemberExpression() catch _ (error) {
                 errors.push(error)
             }
 
@@ -1258,7 +1258,7 @@ class Parser {
         return(ret)
     }
 
-    function parseExplicitMemberExpression(): ExplicitMemberExpression throws ParserError {
+    function parseMemberExpression(): MemberExpression throws ParserError {
         mutable start: Position = lexer.getPreviousPosition()
         mutable startDot1: Position = lexer.getPreviousPosition()
         let successDot1: bool = lexer.parsePunctuation(dot)
@@ -1267,11 +1267,15 @@ class Parser {
         else
             throw punctuationExpected(new Position(startDot1), new string(dot))
 
-        let memberPostfix: MemberPostfix = parseMemberPostfix() catch _ (error)
-            throw error
+        mutable startMember: Position = lexer.getPreviousPosition()
+        let member: string? = lexer.parseIdentifier()
+        if (member != null) && isIdentifier(member)
+            lexer.advance()
+        else
+            throw identifierExpected(new Position(startMember))
+
         mutable end: Position = lexer.getPosition()
-        var ret: ExplicitMemberExpression = new ExplicitMemberExpression(memberPostfix, new Position(start), new Position(end))
-        memberPostfix.parent = ret
+        var ret: MemberExpression = new MemberExpression(member, new Position(start), new Position(end))
 
         return(ret)
     }
@@ -1326,33 +1330,6 @@ class Parser {
         mutable end: Position = lexer.getPosition()
         var ret: ExpressionElement = new ExpressionElement(expression, new Position(start), new Position(end))
         expression.parent = ret
-
-        return(ret)
-    }
-
-    function parseMemberPostfix(): MemberPostfix throws ParserError {
-        mutable errors: ParserError[] = new ParserError[]()
-        mutable start: Position = lexer.getPreviousPosition()
-
-        {
-            let node: NamedMemberPostfix = parseNamedMemberPostfix() catch _ (error) {
-                errors.push(error)
-            }
-
-            if node != null
-                return(node)
-        }
-
-        throw unableToParse(new Position(start), new ParserError[](errors))
-    }
-
-    function parseNamedMemberPostfix(): NamedMemberPostfix throws ParserError {
-        mutable start: Position = lexer.getPreviousPosition()
-        let identifier: IdentifierExpression = parseIdentifierExpression() catch _ (error)
-            throw error
-        mutable end: Position = lexer.getPosition()
-        var ret: NamedMemberPostfix = new NamedMemberPostfix(identifier, new Position(start), new Position(end))
-        identifier.parent = ret
 
         return(ret)
     }

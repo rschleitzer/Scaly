@@ -810,7 +810,7 @@ class WildCardCatchPattern extends CatchPattern {
 
 class IdentifierCatchPattern extends CatchPattern {
 
-    constructor(name: string, member: ExplicitMemberExpression, start: Position, end: Position) {
+    constructor(name: string, member: MemberExpression, start: Position, end: Position) {
         this.start = start
         this.end = end
         this.name = name
@@ -826,7 +826,7 @@ class IdentifierCatchPattern extends CatchPattern {
     }
 
     let name: string?
-    let member: ExplicitMemberExpression?
+    let member: MemberExpression?
 }
 
 class Postfix extends SyntaxNode {
@@ -875,22 +875,19 @@ class FunctionCall extends Postfix {
     let catchClauses: CatchClause[]?
 }
 
-class ExplicitMemberExpression extends Postfix {
+class MemberExpression extends Postfix {
 
-    constructor(memberPostfix: MemberPostfix, start: Position, end: Position) {
+    constructor(member: string, start: Position, end: Position) {
         this.start = start
         this.end = end
-        this.memberPostfix = memberPostfix
+        this.member = member
     }
 
     override function accept(mutable visitor: SyntaxVisitor) {
-        if !visitor.openExplicitMemberExpression(this)
-            return
-        memberPostfix.accept(visitor)
-        visitor.closeExplicitMemberExpression(this)
+        visitor.visitMemberExpression(this)
     }
 
-    let memberPostfix: MemberPostfix?
+    let member: string?
 }
 
 class Subscript extends Postfix {
@@ -930,31 +927,6 @@ class ExpressionElement extends SyntaxNode {
     }
 
     let expression: Expression?
-}
-
-class MemberPostfix extends SyntaxNode {
-
-    function accept(mutable visitor: SyntaxVisitor) {
-    }
-
-}
-
-class NamedMemberPostfix extends MemberPostfix {
-
-    constructor(identifier: IdentifierExpression, start: Position, end: Position) {
-        this.start = start
-        this.end = end
-        this.identifier = identifier
-    }
-
-    override function accept(mutable visitor: SyntaxVisitor) {
-        if !visitor.openNamedMemberPostfix(this)
-            return
-        identifier.accept(visitor)
-        visitor.closeNamedMemberPostfix(this)
-    }
-
-    let identifier: IdentifierExpression?
 }
 
 class PrimaryExpression extends SyntaxNode {

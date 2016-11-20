@@ -50,11 +50,9 @@ bool SyntaxNode::_isIdentifierCatchPattern() { return (false); }
 bool SyntaxNode::_isPostfix() { return (false); }
 bool SyntaxNode::_isOperatorPostfix() { return (false); }
 bool SyntaxNode::_isFunctionCall() { return (false); }
-bool SyntaxNode::_isExplicitMemberExpression() { return (false); }
+bool SyntaxNode::_isMemberExpression() { return (false); }
 bool SyntaxNode::_isSubscript() { return (false); }
 bool SyntaxNode::_isExpressionElement() { return (false); }
-bool SyntaxNode::_isMemberPostfix() { return (false); }
-bool SyntaxNode::_isNamedMemberPostfix() { return (false); }
 bool SyntaxNode::_isPrimaryExpression() { return (false); }
 bool SyntaxNode::_isIdentifierExpression() { return (false); }
 bool SyntaxNode::_isLiteralExpression() { return (false); }
@@ -839,7 +837,7 @@ void WildCardCatchPattern::accept(SyntaxVisitor* visitor) {
 
 bool WildCardCatchPattern::_isWildCardCatchPattern() { return (true); }
 
-IdentifierCatchPattern::IdentifierCatchPattern(string* name, ExplicitMemberExpression* member, Position* start, Position* end) {
+IdentifierCatchPattern::IdentifierCatchPattern(string* name, MemberExpression* member, Position* start, Position* end) {
     this->start = start;
     this->end = end;
     this->name = name;
@@ -863,7 +861,7 @@ bool Postfix::_isPostfix() { return (true); }
 
 bool Postfix::_isOperatorPostfix() { return (false); }
 bool Postfix::_isFunctionCall() { return (false); }
-bool Postfix::_isExplicitMemberExpression() { return (false); }
+bool Postfix::_isMemberExpression() { return (false); }
 bool Postfix::_isSubscript() { return (false); }
 
 OperatorPostfix::OperatorPostfix(string* postfixOperator, Position* start, Position* end) {
@@ -902,20 +900,17 @@ void FunctionCall::accept(SyntaxVisitor* visitor) {
 
 bool FunctionCall::_isFunctionCall() { return (true); }
 
-ExplicitMemberExpression::ExplicitMemberExpression(MemberPostfix* memberPostfix, Position* start, Position* end) {
+MemberExpression::MemberExpression(string* member, Position* start, Position* end) {
     this->start = start;
     this->end = end;
-    this->memberPostfix = memberPostfix;
+    this->member = member;
 }
 
-void ExplicitMemberExpression::accept(SyntaxVisitor* visitor) {
-    if (!visitor->openExplicitMemberExpression(this))
-        return;
-    memberPostfix->accept(visitor);
-    visitor->closeExplicitMemberExpression(this);
+void MemberExpression::accept(SyntaxVisitor* visitor) {
+    visitor->visitMemberExpression(this);
 }
 
-bool ExplicitMemberExpression::_isExplicitMemberExpression() { return (true); }
+bool MemberExpression::_isMemberExpression() { return (true); }
 
 Subscript::Subscript(_Vector<ExpressionElement>* expressions, Position* start, Position* end) {
     this->start = start;
@@ -953,28 +948,6 @@ void ExpressionElement::accept(SyntaxVisitor* visitor) {
 }
 
 bool ExpressionElement::_isExpressionElement() { return (true); }
-
-void MemberPostfix::accept(SyntaxVisitor* visitor) {
-}
-
-bool MemberPostfix::_isMemberPostfix() { return (true); }
-
-bool MemberPostfix::_isNamedMemberPostfix() { return (false); }
-
-NamedMemberPostfix::NamedMemberPostfix(IdentifierExpression* identifier, Position* start, Position* end) {
-    this->start = start;
-    this->end = end;
-    this->identifier = identifier;
-}
-
-void NamedMemberPostfix::accept(SyntaxVisitor* visitor) {
-    if (!visitor->openNamedMemberPostfix(this))
-        return;
-    identifier->accept(visitor);
-    visitor->closeNamedMemberPostfix(this);
-}
-
-bool NamedMemberPostfix::_isNamedMemberPostfix() { return (true); }
 
 void PrimaryExpression::accept(SyntaxVisitor* visitor) {
 }

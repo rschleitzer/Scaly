@@ -100,15 +100,11 @@ class OperatorPostfix;
 
 class FunctionCall;
 
-class ExplicitMemberExpression;
+class MemberExpression;
 
 class Subscript;
 
 class ExpressionElement;
-
-class MemberPostfix;
-
-class NamedMemberPostfix;
 
 class PrimaryExpression;
 
@@ -277,14 +273,11 @@ public:
     virtual void visitOperatorPostfix(OperatorPostfix* operatorPostfix) = 0;
     virtual bool openFunctionCall(FunctionCall* functionCall) = 0;
     virtual void closeFunctionCall(FunctionCall* functionCall) = 0;
-    virtual bool openExplicitMemberExpression(ExplicitMemberExpression* explicitMemberExpression) = 0;
-    virtual void closeExplicitMemberExpression(ExplicitMemberExpression* explicitMemberExpression) = 0;
+    virtual void visitMemberExpression(MemberExpression* memberExpression) = 0;
     virtual bool openSubscript(Subscript* subscript) = 0;
     virtual void closeSubscript(Subscript* subscript) = 0;
     virtual bool openExpressionElement(ExpressionElement* expressionElement) = 0;
     virtual void closeExpressionElement(ExpressionElement* expressionElement) = 0;
-    virtual bool openNamedMemberPostfix(NamedMemberPostfix* namedMemberPostfix) = 0;
-    virtual void closeNamedMemberPostfix(NamedMemberPostfix* namedMemberPostfix) = 0;
     virtual void visitIdentifierExpression(IdentifierExpression* identifierExpression) = 0;
     virtual void visitLiteralExpression(LiteralExpression* literalExpression) = 0;
     virtual bool openIfExpression(IfExpression* ifExpression) = 0;

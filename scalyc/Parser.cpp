@@ -1701,8 +1701,8 @@ _Result<IdentifierCatchPattern, ParserError> Parser::parseIdentifierCatchPattern
         lexer->advance();
     else
         return _Result<IdentifierCatchPattern, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_identifierExpected(new(_ep) Position(startName))));
-    auto _member_result = parseExplicitMemberExpression(_rp, _ep);
-    ExplicitMemberExpression* member = nullptr;
+    auto _member_result = parseMemberExpression(_rp, _ep);
+    MemberExpression* member = nullptr;
     if (_member_result.succeeded()) {
         member = _member_result.getResult();
     }
@@ -1770,8 +1770,8 @@ _Result<Postfix, ParserError> Parser::parsePostfix(_Page* _rp, _Page* _ep) {
             return _Result<Postfix, ParserError>(node);
     }
     {
-        auto _node_result = parseExplicitMemberExpression(_rp, _ep);
-        ExplicitMemberExpression* node = nullptr;
+        auto _node_result = parseMemberExpression(_rp, _ep);
+        MemberExpression* node = nullptr;
         if (_node_result.succeeded()) {
             node = _node_result.getResult();
         }
@@ -1850,7 +1850,7 @@ _Result<FunctionCall, ParserError> Parser::parseFunctionCall(_Page* _rp, _Page* 
     return _Result<FunctionCall, ParserError>(ret);
 }
 
-_Result<ExplicitMemberExpression, ParserError> Parser::parseExplicitMemberExpression(_Page* _rp, _Page* _ep) {
+_Result<MemberExpression, ParserError> Parser::parseMemberExpression(_Page* _rp, _Page* _ep) {
     _Region _region; _Page* _p = _region.get();
     Position* start = lexer->getPreviousPosition(_p);
     Position* startDot1 = lexer->getPreviousPosition(_p);
@@ -1858,20 +1858,16 @@ _Result<ExplicitMemberExpression, ParserError> Parser::parseExplicitMemberExpres
     if (successDot1)
         lexer->advance();
     else
-        return _Result<ExplicitMemberExpression, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_punctuationExpected(new(_ep) Position(startDot1), new(_ep) string(dot))));
-    auto _memberPostfix_result = parseMemberPostfix(_rp, _ep);
-    MemberPostfix* memberPostfix = nullptr;
-    if (_memberPostfix_result.succeeded()) {
-        memberPostfix = _memberPostfix_result.getResult();
-    }
-    else {
-        auto error = _memberPostfix_result.getError();
-        return _Result<ExplicitMemberExpression, ParserError>(error);
-    }
+        return _Result<MemberExpression, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_punctuationExpected(new(_ep) Position(startDot1), new(_ep) string(dot))));
+    Position* startMember = lexer->getPreviousPosition(_p);
+    string* member = lexer->parseIdentifier(_rp);
+    if ((member != nullptr) && isIdentifier(member))
+        lexer->advance();
+    else
+        return _Result<MemberExpression, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_identifierExpected(new(_ep) Position(startMember))));
     Position* end = lexer->getPosition(_p);
-    ExplicitMemberExpression* ret = new(_rp) ExplicitMemberExpression(memberPostfix, new(_rp) Position(start), new(_rp) Position(end));
-    memberPostfix->parent = ret;
-    return _Result<ExplicitMemberExpression, ParserError>(ret);
+    MemberExpression* ret = new(_rp) MemberExpression(member, new(_rp) Position(start), new(_rp) Position(end));
+    return _Result<MemberExpression, ParserError>(ret);
 }
 
 _Result<Subscript, ParserError> Parser::parseSubscript(_Page* _rp, _Page* _ep) {
@@ -1949,46 +1945,6 @@ _Result<ExpressionElement, ParserError> Parser::parseExpressionElement(_Page* _r
     ExpressionElement* ret = new(_rp) ExpressionElement(expression, new(_rp) Position(start), new(_rp) Position(end));
     expression->parent = ret;
     return _Result<ExpressionElement, ParserError>(ret);
-}
-
-_Result<MemberPostfix, ParserError> Parser::parseMemberPostfix(_Page* _rp, _Page* _ep) {
-    _Region _region; _Page* _p = _region.get();
-    _Array<ParserError>* errors = new(_p) _Array<ParserError>();
-    Position* start = lexer->getPreviousPosition(_p);
-    {
-        auto _node_result = parseNamedMemberPostfix(_rp, _ep);
-        NamedMemberPostfix* node = nullptr;
-        if (_node_result.succeeded()) {
-            node = _node_result.getResult();
-        }
-        else {
-            auto error = _node_result.getError();
-            {
-                errors->push(error);
-            }
-        }
-        if (node != nullptr)
-            return _Result<MemberPostfix, ParserError>(node);
-    }
-    return _Result<MemberPostfix, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_unableToParse(new(_ep) Position(start), &_Vector<ParserError>::create(_ep, *(errors)))));
-}
-
-_Result<NamedMemberPostfix, ParserError> Parser::parseNamedMemberPostfix(_Page* _rp, _Page* _ep) {
-    _Region _region; _Page* _p = _region.get();
-    Position* start = lexer->getPreviousPosition(_p);
-    auto _identifier_result = parseIdentifierExpression(_rp, _ep);
-    IdentifierExpression* identifier = nullptr;
-    if (_identifier_result.succeeded()) {
-        identifier = _identifier_result.getResult();
-    }
-    else {
-        auto error = _identifier_result.getError();
-        return _Result<NamedMemberPostfix, ParserError>(error);
-    }
-    Position* end = lexer->getPosition(_p);
-    NamedMemberPostfix* ret = new(_rp) NamedMemberPostfix(identifier, new(_rp) Position(start), new(_rp) Position(end));
-    identifier->parent = ret;
-    return _Result<NamedMemberPostfix, ParserError>(ret);
 }
 
 _Result<PrimaryExpression, ParserError> Parser::parsePrimaryExpression(_Page* _rp, _Page* _ep) {

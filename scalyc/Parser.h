@@ -66,12 +66,10 @@ public:
     virtual _Result<Postfix, ParserError> parsePostfix(_Page* _rp, _Page* _ep);
     virtual _Result<OperatorPostfix, ParserError> parseOperatorPostfix(_Page* _rp, _Page* _ep);
     virtual _Result<FunctionCall, ParserError> parseFunctionCall(_Page* _rp, _Page* _ep);
-    virtual _Result<ExplicitMemberExpression, ParserError> parseExplicitMemberExpression(_Page* _rp, _Page* _ep);
+    virtual _Result<MemberExpression, ParserError> parseMemberExpression(_Page* _rp, _Page* _ep);
     virtual _Result<Subscript, ParserError> parseSubscript(_Page* _rp, _Page* _ep);
     virtual _Result<_Vector<ExpressionElement>, ParserError> parseExpressionElementList(_Page* _rp, _Page* _ep);
     virtual _Result<ExpressionElement, ParserError> parseExpressionElement(_Page* _rp, _Page* _ep);
-    virtual _Result<MemberPostfix, ParserError> parseMemberPostfix(_Page* _rp, _Page* _ep);
-    virtual _Result<NamedMemberPostfix, ParserError> parseNamedMemberPostfix(_Page* _rp, _Page* _ep);
     virtual _Result<PrimaryExpression, ParserError> parsePrimaryExpression(_Page* _rp, _Page* _ep);
     virtual _Result<IdentifierExpression, ParserError> parseIdentifierExpression(_Page* _rp, _Page* _ep);
     virtual _Result<LiteralExpression, ParserError> parseLiteralExpression(_Page* _rp, _Page* _ep);

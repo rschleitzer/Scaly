@@ -204,12 +204,12 @@
 
     <syntax id = IdentifierCatchPattern                         base = CatchPattern
         <content identifier                                     property = name
-        <content link = ExplicitMemberExpression       optional property = member
+        <content link = MemberExpression               optional property = member
 
     <syntax id = Postfix                      multiple abstract
         <content link = OperatorPostfix
         <content link = FunctionCall
-        <content link = ExplicitMemberExpression
+        <content link = MemberExpression
         <content link = Subscript
 
     <syntax id = OperatorPostfix                                base = Postfix
@@ -219,9 +219,9 @@
         <content link = ParenthesizedExpression                 property = arguments
         <content link = CatchClause           multiple optional property = catchClauses
 
-    <syntax id = ExplicitMemberExpression                       base = Postfix
+    <syntax id = MemberExpression                               base = Postfix
         <content link = dot
-        <content link = MemberPostfix                           property = memberPostfix
+        <content identifier                                     property = member
 
     <syntax id = Subscript                                      base = Postfix
         <content link = leftBracket
@@ -231,12 +231,6 @@
     <syntax id = ExpressionElement            multiple
         <content link = Expression                              property = expression
         <content link = comma                          optional
-
-    <syntax id = MemberPostfix                         abstract
-        <content link = NamedMemberPostfix
-
-    <syntax id = NamedMemberPostfix                             base = MemberPostfix
-        <content link = IdentifierExpression                    property = identifier
 
     <syntax id = PrimaryExpression                     abstract
         <content link = IdentifierExpression
