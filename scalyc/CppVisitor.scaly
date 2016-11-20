@@ -2702,6 +2702,9 @@ class CppVisitor extends SyntaxVisitor {
     function closeIndexedType(indexedType: IndexedType) {
     }
 
+    function visitAge(age: Age) {
+    }
+
     function openTypeInheritanceClause(typeInheritanceClause: TypeInheritanceClause): bool {
         return(true)
     }

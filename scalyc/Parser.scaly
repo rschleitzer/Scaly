@@ -2263,7 +2263,7 @@ class Parser {
         else
             throw punctuationExpected(new Position(startAt1), new string(at))
 
-        let literal: Literal = lexer.parseLiteral()
+        let age: Literal = lexer.parseLiteral()
         if age != null
             lexer.advance()
         mutable end: Position = lexer.getPosition()
