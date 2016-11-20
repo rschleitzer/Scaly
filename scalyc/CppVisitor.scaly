@@ -1539,7 +1539,7 @@ class CppVisitor extends SyntaxVisitor {
             }
         }
         sourceFile.append("->")
-
+        sourceFile.append(memberExpression.member)
     }
 
     function openSubscript(subscript: Subscript): bool {

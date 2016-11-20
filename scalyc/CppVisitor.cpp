@@ -1490,6 +1490,7 @@ void CppVisitor::visitMemberExpression(MemberExpression* memberExpression) {
         }
     }
     sourceFile->append("->");
+    sourceFile->append(memberExpression->member);
 }
 
 bool CppVisitor::openSubscript(Subscript* subscript) {
