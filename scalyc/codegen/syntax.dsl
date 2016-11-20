@@ -73,14 +73,13 @@ class "(id syntax-node)" extends "(if (base syntax-node) (base syntax-node) "Syn
         (apply-to-children-of syntax-node (lambda (content) ($
             (if (property content) ($
 "    let "(property content)": "
-            (case (type content)
-                (("syntax") ($ (link content)(if (multiple? content)"[]" "")))
-                (("identifier" "operator" "prefixoperator" "binaryoperator" "postfixoperator") "string")
-                (("literal") "Literal")
-                (("keyword" "punctuation") "bool")
-            )
-"?
-"           )"")
+                (case (type content)
+                    (("syntax") ($ (link content)(if (multiple? content)"[]" "")))
+                    (("identifier" "operator" "prefixoperator" "binaryoperator" "postfixoperator") "string")
+                    (("literal") "Literal")
+                    (("keyword" "punctuation") "bool")
+                )
+""          )"")
         )))
         (if (top? syntax-node)
 "    let fileName: string

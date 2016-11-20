@@ -25,10 +25,7 @@ class Program extends SyntaxNode {
         visitor.closeProgram(this)
     }
 
-    let name: string?
-    let directory: string?
-    let compilationUnits: CompilationUnit[]?
-}
+    let name: string    let directory: string    let compilationUnits: CompilationUnit[]}
 
 class CompilationUnit extends SyntaxNode {
 
@@ -48,8 +45,7 @@ class CompilationUnit extends SyntaxNode {
         visitor.closeCompilationUnit(this)
     }
 
-    let statements: Statement[]?
-    let fileName: string
+    let statements: Statement[]    let fileName: string
 }
 
 class Statement extends SyntaxNode {
@@ -88,8 +84,7 @@ class ConstantDeclaration extends Declaration {
         visitor.closeConstantDeclaration(this)
     }
 
-    let initializer: BindingInitializer?
-}
+    let initializer: BindingInitializer}
 
 class VariableDeclaration extends Declaration {
 
@@ -106,8 +101,7 @@ class VariableDeclaration extends Declaration {
         visitor.closeVariableDeclaration(this)
     }
 
-    let initializer: BindingInitializer?
-}
+    let initializer: BindingInitializer}
 
 class MutableDeclaration extends Declaration {
 
@@ -124,8 +118,7 @@ class MutableDeclaration extends Declaration {
         visitor.closeMutableDeclaration(this)
     }
 
-    let initializer: BindingInitializer?
-}
+    let initializer: BindingInitializer}
 
 class FunctionDeclaration extends Declaration {
 
@@ -151,11 +144,7 @@ class FunctionDeclaration extends Declaration {
         visitor.closeFunctionDeclaration(this)
     }
 
-    let modifiers: Modifier[]?
-    let name: string?
-    let signature: FunctionSignature?
-    let body: Expression?
-}
+    let modifiers: Modifier[]    let name: string    let signature: FunctionSignature    let body: Expression}
 
 class EnumDeclaration extends Declaration {
 
@@ -176,9 +165,7 @@ class EnumDeclaration extends Declaration {
         visitor.closeEnumDeclaration(this)
     }
 
-    let name: string?
-    let members: EnumMember[]?
-}
+    let name: string    let members: EnumMember[]}
 
 class ClassDeclaration extends Declaration {
 
@@ -200,10 +187,7 @@ class ClassDeclaration extends Declaration {
         visitor.closeClassDeclaration(this)
     }
 
-    let name: string?
-    let typeInheritanceClause: TypeInheritanceClause?
-    let body: ClassBody?
-}
+    let name: string    let typeInheritanceClause: TypeInheritanceClause    let body: ClassBody}
 
 class ConstructorDeclaration extends Declaration {
 
@@ -222,9 +206,7 @@ class ConstructorDeclaration extends Declaration {
         visitor.closeConstructorDeclaration(this)
     }
 
-    let parameterClause: ParameterClause?
-    let body: Expression?
-}
+    let parameterClause: ParameterClause    let body: Expression}
 
 class CodeBlock extends Expression {
 
@@ -244,8 +226,7 @@ class CodeBlock extends Expression {
         visitor.closeCodeBlock(this)
     }
 
-    let statements: Statement[]?
-}
+    let statements: Statement[]}
 
 class SimpleExpression extends Expression {
 
@@ -267,9 +248,7 @@ class SimpleExpression extends Expression {
         visitor.closeSimpleExpression(this)
     }
 
-    let prefixExpression: PrefixExpression?
-    let binaryOps: BinaryOp[]?
-}
+    let prefixExpression: PrefixExpression    let binaryOps: BinaryOp[]}
 
 class Initializer extends SyntaxNode {
 
@@ -286,8 +265,7 @@ class Initializer extends SyntaxNode {
         visitor.closeInitializer(this)
     }
 
-    let expression: Expression?
-}
+    let expression: Expression}
 
 class BindingInitializer extends SyntaxNode {
 
@@ -309,9 +287,7 @@ class BindingInitializer extends SyntaxNode {
         visitor.closeBindingInitializer(this)
     }
 
-    let initializer: PatternInitializer?
-    let additionalInitializers: AdditionalInitializer[]?
-}
+    let initializer: PatternInitializer    let additionalInitializers: AdditionalInitializer[]}
 
 class PatternInitializer extends SyntaxNode {
 
@@ -331,9 +307,7 @@ class PatternInitializer extends SyntaxNode {
         visitor.closePatternInitializer(this)
     }
 
-    let pattern: Pattern?
-    let initializer: Initializer?
-}
+    let pattern: Pattern    let initializer: Initializer}
 
 class AdditionalInitializer extends SyntaxNode {
 
@@ -350,8 +324,7 @@ class AdditionalInitializer extends SyntaxNode {
         visitor.closeAdditionalInitializer(this)
     }
 
-    let pattern: PatternInitializer?
-}
+    let pattern: PatternInitializer}
 
 class Modifier extends SyntaxNode {
 
@@ -407,10 +380,7 @@ class FunctionSignature extends SyntaxNode {
         visitor.closeFunctionSignature(this)
     }
 
-    let parameterClause: ParameterClause?
-    let result: FunctionResult?
-    let throwsClause: ThrowsClause?
-}
+    let parameterClause: ParameterClause    let result: FunctionResult    let throwsClause: ThrowsClause}
 
 class FunctionResult extends SyntaxNode {
 
@@ -430,9 +400,7 @@ class FunctionResult extends SyntaxNode {
         visitor.closeFunctionResult(this)
     }
 
-    let existingObject: ExistingClause?
-    let resultType: Type?
-}
+    let existingObject: ExistingClause    let resultType: Type}
 
 class ExistingClause extends SyntaxNode {
 
@@ -465,8 +433,7 @@ class ParameterClause extends SyntaxNode {
         visitor.closeParameterClause(this)
     }
 
-    let parameters: Parameter[]?
-}
+    let parameters: Parameter[]}
 
 class Parameter extends SyntaxNode {
 
@@ -491,9 +458,7 @@ class ConstParameter extends Parameter {
         visitor.closeConstParameter(this)
     }
 
-    let name: string?
-    let parameterType: Type?
-}
+    let name: string    let parameterType: Type}
 
 class VarParameter extends Parameter {
 
@@ -511,9 +476,7 @@ class VarParameter extends Parameter {
         visitor.closeVarParameter(this)
     }
 
-    let name: string?
-    let parameterType: Type?
-}
+    let name: string    let parameterType: Type}
 
 class ThrowsClause extends SyntaxNode {
 
@@ -530,8 +493,7 @@ class ThrowsClause extends SyntaxNode {
         visitor.closeThrowsClause(this)
     }
 
-    let throwsType: Type?
-}
+    let throwsType: Type}
 
 class EnumMember extends SyntaxNode {
 
@@ -556,10 +518,7 @@ class EnumMember extends SyntaxNode {
         visitor.closeEnumMember(this)
     }
 
-    let enumCase: EnumCase?
-    let additionalCases: AdditionalCase[]?
-    let parameterClause: ParameterClause?
-}
+    let enumCase: EnumCase    let additionalCases: AdditionalCase[]    let parameterClause: ParameterClause}
 
 class EnumCase extends SyntaxNode {
 
@@ -573,8 +532,7 @@ class EnumCase extends SyntaxNode {
         visitor.visitEnumCase(this)
     }
 
-    let name: string?
-}
+    let name: string}
 
 class AdditionalCase extends SyntaxNode {
 
@@ -591,8 +549,7 @@ class AdditionalCase extends SyntaxNode {
         visitor.closeAdditionalCase(this)
     }
 
-    let enumCase: EnumCase?
-}
+    let enumCase: EnumCase}
 
 class ClassBody extends SyntaxNode {
 
@@ -612,8 +569,7 @@ class ClassBody extends SyntaxNode {
         visitor.closeClassBody(this)
     }
 
-    let members: ClassMember[]?
-}
+    let members: ClassMember[]}
 
 class ClassMember extends SyntaxNode {
 
@@ -630,8 +586,7 @@ class ClassMember extends SyntaxNode {
         visitor.closeClassMember(this)
     }
 
-    let declaration: Declaration?
-}
+    let declaration: Declaration}
 
 class PrefixExpression extends SyntaxNode {
 
@@ -649,9 +604,7 @@ class PrefixExpression extends SyntaxNode {
         visitor.closePrefixExpression(this)
     }
 
-    let prefixOperator: string?
-    let expression: PostfixExpression?
-}
+    let prefixOperator: string    let expression: PostfixExpression}
 
 class PostfixExpression extends SyntaxNode {
 
@@ -673,9 +626,7 @@ class PostfixExpression extends SyntaxNode {
         visitor.closePostfixExpression(this)
     }
 
-    let primaryExpression: PrimaryExpression?
-    let postfixes: Postfix[]?
-}
+    let primaryExpression: PrimaryExpression    let postfixes: Postfix[]}
 
 class BinaryOp extends SyntaxNode {
 
@@ -700,9 +651,7 @@ class BinaryOperation extends BinaryOp {
         visitor.closeBinaryOperation(this)
     }
 
-    let binaryOperator: string?
-    let expression: PrefixExpression?
-}
+    let binaryOperator: string    let expression: PrefixExpression}
 
 class Assignment extends BinaryOp {
 
@@ -719,8 +668,7 @@ class Assignment extends BinaryOp {
         visitor.closeAssignment(this)
     }
 
-    let expression: Expression?
-}
+    let expression: Expression}
 
 class TypeQuery extends BinaryOp {
 
@@ -737,8 +685,7 @@ class TypeQuery extends BinaryOp {
         visitor.closeTypeQuery(this)
     }
 
-    let objectType: Type?
-}
+    let objectType: Type}
 
 class TypeCast extends BinaryOp {
 
@@ -755,8 +702,7 @@ class TypeCast extends BinaryOp {
         visitor.closeTypeCast(this)
     }
 
-    let objectType: Type?
-}
+    let objectType: Type}
 
 class CatchClause extends SyntaxNode {
 
@@ -778,10 +724,7 @@ class CatchClause extends SyntaxNode {
         visitor.closeCatchClause(this)
     }
 
-    let catchPattern: CatchPattern?
-    let bindingPattern: TuplePattern?
-    let expression: Expression?
-}
+    let catchPattern: CatchPattern    let bindingPattern: TuplePattern    let expression: Expression}
 
 class CatchPattern extends SyntaxNode {
 
@@ -805,8 +748,7 @@ class WildCardCatchPattern extends CatchPattern {
         visitor.closeWildCardCatchPattern(this)
     }
 
-    let pattern: WildcardPattern?
-}
+    let pattern: WildcardPattern}
 
 class IdentifierCatchPattern extends CatchPattern {
 
@@ -825,9 +767,7 @@ class IdentifierCatchPattern extends CatchPattern {
         visitor.closeIdentifierCatchPattern(this)
     }
 
-    let name: string?
-    let member: MemberExpression?
-}
+    let name: string    let member: MemberExpression}
 
 class Postfix extends SyntaxNode {
 
@@ -848,8 +788,7 @@ class OperatorPostfix extends Postfix {
         visitor.visitOperatorPostfix(this)
     }
 
-    let postfixOperator: string?
-}
+    let postfixOperator: string}
 
 class FunctionCall extends Postfix {
 
@@ -871,9 +810,7 @@ class FunctionCall extends Postfix {
         visitor.closeFunctionCall(this)
     }
 
-    let arguments: ParenthesizedExpression?
-    let catchClauses: CatchClause[]?
-}
+    let arguments: ParenthesizedExpression    let catchClauses: CatchClause[]}
 
 class MemberExpression extends Postfix {
 
@@ -887,8 +824,7 @@ class MemberExpression extends Postfix {
         visitor.visitMemberExpression(this)
     }
 
-    let member: string?
-}
+    let member: string}
 
 class Subscript extends Postfix {
 
@@ -908,8 +844,7 @@ class Subscript extends Postfix {
         visitor.closeSubscript(this)
     }
 
-    let expressions: ExpressionElement[]?
-}
+    let expressions: ExpressionElement[]}
 
 class ExpressionElement extends SyntaxNode {
 
@@ -926,8 +861,7 @@ class ExpressionElement extends SyntaxNode {
         visitor.closeExpressionElement(this)
     }
 
-    let expression: Expression?
-}
+    let expression: Expression}
 
 class PrimaryExpression extends SyntaxNode {
 
@@ -948,8 +882,7 @@ class IdentifierExpression extends PrimaryExpression {
         visitor.visitIdentifierExpression(this)
     }
 
-    let name: string?
-}
+    let name: string}
 
 class LiteralExpression extends PrimaryExpression {
 
@@ -963,8 +896,7 @@ class LiteralExpression extends PrimaryExpression {
         visitor.visitLiteralExpression(this)
     }
 
-    let literal: Literal?
-}
+    let literal: Literal}
 
 class IfExpression extends PrimaryExpression {
 
@@ -986,10 +918,7 @@ class IfExpression extends PrimaryExpression {
         visitor.closeIfExpression(this)
     }
 
-    let condition: Expression?
-    let consequent: Expression?
-    let elseClause: ElseClause?
-}
+    let condition: Expression    let consequent: Expression    let elseClause: ElseClause}
 
 class SwitchExpression extends PrimaryExpression {
 
@@ -1008,9 +937,7 @@ class SwitchExpression extends PrimaryExpression {
         visitor.closeSwitchExpression(this)
     }
 
-    let expression: Expression?
-    let body: SwitchBody?
-}
+    let expression: Expression    let body: SwitchBody}
 
 class ForExpression extends PrimaryExpression {
 
@@ -1031,10 +958,7 @@ class ForExpression extends PrimaryExpression {
         visitor.closeForExpression(this)
     }
 
-    let pattern: Pattern?
-    let expression: Expression?
-    let code: Expression?
-}
+    let pattern: Pattern    let expression: Expression    let code: Expression}
 
 class WhileExpression extends PrimaryExpression {
 
@@ -1053,9 +977,7 @@ class WhileExpression extends PrimaryExpression {
         visitor.closeWhileExpression(this)
     }
 
-    let condition: Expression?
-    let code: Expression?
-}
+    let condition: Expression    let code: Expression}
 
 class DoExpression extends PrimaryExpression {
 
@@ -1074,9 +996,7 @@ class DoExpression extends PrimaryExpression {
         visitor.closeDoExpression(this)
     }
 
-    let code: Expression?
-    let condition: Expression?
-}
+    let code: Expression    let condition: Expression}
 
 class ParenthesizedExpression extends PrimaryExpression {
 
@@ -1096,8 +1016,7 @@ class ParenthesizedExpression extends PrimaryExpression {
         visitor.closeParenthesizedExpression(this)
     }
 
-    let expressionElements: ExpressionElement[]?
-}
+    let expressionElements: ExpressionElement[]}
 
 class ReturnExpression extends PrimaryExpression {
 
@@ -1115,8 +1034,7 @@ class ReturnExpression extends PrimaryExpression {
         visitor.closeReturnExpression(this)
     }
 
-    let expression: ParenthesizedExpression?
-}
+    let expression: ParenthesizedExpression}
 
 class ThrowExpression extends PrimaryExpression {
 
@@ -1136,9 +1054,7 @@ class ThrowExpression extends PrimaryExpression {
         visitor.closeThrowExpression(this)
     }
 
-    let error: IdentifierExpression?
-    let arguments: ParenthesizedExpression?
-}
+    let error: IdentifierExpression    let arguments: ParenthesizedExpression}
 
 class BreakExpression extends PrimaryExpression {
 
@@ -1156,8 +1072,7 @@ class BreakExpression extends PrimaryExpression {
         visitor.closeBreakExpression(this)
     }
 
-    let expression: ParenthesizedExpression?
-}
+    let expression: ParenthesizedExpression}
 
 class ConstructorCall extends PrimaryExpression {
 
@@ -1181,10 +1096,7 @@ class ConstructorCall extends PrimaryExpression {
         visitor.closeConstructorCall(this)
     }
 
-    let typeToInitialize: Type?
-    let arguments: ParenthesizedExpression?
-    let catchClauses: CatchClause[]?
-}
+    let typeToInitialize: Type    let arguments: ParenthesizedExpression    let catchClauses: CatchClause[]}
 
 class ThisExpression extends PrimaryExpression {
 
@@ -1227,8 +1139,7 @@ class ElseClause extends SyntaxNode {
         visitor.closeElseClause(this)
     }
 
-    let alternative: Expression?
-}
+    let alternative: Expression}
 
 class SwitchBody extends SyntaxNode {
 
@@ -1255,8 +1166,7 @@ class CurliedSwitchBody extends SwitchBody {
         visitor.closeCurliedSwitchBody(this)
     }
 
-    let cases: SwitchCase[]?
-}
+    let cases: SwitchCase[]}
 
 class NakedSwitchBody extends SwitchBody {
 
@@ -1276,8 +1186,7 @@ class NakedSwitchBody extends SwitchBody {
         visitor.closeNakedSwitchBody(this)
     }
 
-    let cases: SwitchCase[]?
-}
+    let cases: SwitchCase[]}
 
 class SwitchCase extends SyntaxNode {
 
@@ -1296,9 +1205,7 @@ class SwitchCase extends SyntaxNode {
         visitor.closeSwitchCase(this)
     }
 
-    let label: CaseLabel?
-    let content: CaseContent?
-}
+    let label: CaseLabel    let content: CaseContent}
 
 class CaseLabel extends SyntaxNode {
 
@@ -1327,9 +1234,7 @@ class ItemCaseLabel extends CaseLabel {
         visitor.closeItemCaseLabel(this)
     }
 
-    let pattern: Pattern?
-    let additionalPatterns: CaseItem[]?
-}
+    let pattern: Pattern    let additionalPatterns: CaseItem[]}
 
 class DefaultCaseLabel extends CaseLabel {
 
@@ -1359,8 +1264,7 @@ class CaseItem extends SyntaxNode {
         visitor.closeCaseItem(this)
     }
 
-    let pattern: Pattern?
-}
+    let pattern: Pattern}
 
 class Pattern extends SyntaxNode {
 
@@ -1399,9 +1303,7 @@ class IdentifierPattern extends Pattern {
         visitor.closeIdentifierPattern(this)
     }
 
-    let identifier: string?
-    let annotationForType: TypeAnnotation?
-}
+    let identifier: string    let annotationForType: TypeAnnotation}
 
 class TuplePattern extends Pattern {
 
@@ -1421,8 +1323,7 @@ class TuplePattern extends Pattern {
         visitor.closeTuplePattern(this)
     }
 
-    let elements: TuplePatternElement[]?
-}
+    let elements: TuplePatternElement[]}
 
 class ExpressionPattern extends Pattern {
 
@@ -1439,8 +1340,7 @@ class ExpressionPattern extends Pattern {
         visitor.closeExpressionPattern(this)
     }
 
-    let expression: Expression?
-}
+    let expression: Expression}
 
 class TuplePatternElement extends SyntaxNode {
 
@@ -1457,8 +1357,7 @@ class TuplePatternElement extends SyntaxNode {
         visitor.closeTuplePatternElement(this)
     }
 
-    let pattern: Pattern?
-}
+    let pattern: Pattern}
 
 class CaseContent extends SyntaxNode {
 
@@ -1478,8 +1377,7 @@ class CaseContent extends SyntaxNode {
         visitor.closeCaseContent(this)
     }
 
-    let statements: Statement[]?
-}
+    let statements: Statement[]}
 
 class Type extends SyntaxNode {
 
@@ -1503,10 +1401,7 @@ class Type extends SyntaxNode {
         visitor.closeType(this)
     }
 
-    let name: string?
-    let subType: Subtype?
-    let postfixes: TypePostfix[]?
-}
+    let name: string    let subType: Subtype    let postfixes: TypePostfix[]}
 
 class TypeAnnotation extends SyntaxNode {
 
@@ -1523,8 +1418,7 @@ class TypeAnnotation extends SyntaxNode {
         visitor.closeTypeAnnotation(this)
     }
 
-    let annotationForType: Type?
-}
+    let annotationForType: Type}
 
 class Subtype extends SyntaxNode {
 
@@ -1541,8 +1435,7 @@ class Subtype extends SyntaxNode {
         visitor.closeSubtype(this)
     }
 
-    let type: Type?
-}
+    let type: Type}
 
 class TypePostfix extends SyntaxNode {
 
@@ -1580,8 +1473,7 @@ class IndexedType extends TypePostfix {
         visitor.closeIndexedType(this)
     }
 
-    let key: Type?
-}
+    let key: Type}
 
 class TypeInheritanceClause extends SyntaxNode {
 
@@ -1601,8 +1493,7 @@ class TypeInheritanceClause extends SyntaxNode {
         visitor.closeTypeInheritanceClause(this)
     }
 
-    let inheritances: Inheritance[]?
-}
+    let inheritances: Inheritance[]}
 
 class Inheritance extends SyntaxNode {
 
@@ -1619,5 +1510,4 @@ class Inheritance extends SyntaxNode {
         visitor.closeInheritance(this)
     }
 
-    let type: Type?
-}
+    let type: Type}

@@ -16,7 +16,7 @@
         (if (multiple? syntax) ($
 "
     function parse"(id syntax)"List(): "(id syntax)"[] throws ParserError {
-        mutable ret: "(id syntax)"[]? = null
+        mutable ret: "(id syntax)"[] = null
         while true {
             let node: "(id syntax)" = parse"(id syntax)"()
                 catch _ break

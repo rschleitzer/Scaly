@@ -68,7 +68,7 @@ class Parser {
     }
 
     function parseStatementList(): Statement[] throws ParserError {
-        mutable ret: Statement[]? = null
+        mutable ret: Statement[] = null
         while true {
             let node: Statement = parseStatement()
                 catch _ break
@@ -456,7 +456,7 @@ class Parser {
     }
 
     function parsePatternInitializerList(): PatternInitializer[] throws ParserError {
-        mutable ret: PatternInitializer[]? = null
+        mutable ret: PatternInitializer[] = null
         while true {
             let node: PatternInitializer = parsePatternInitializer()
                 catch _ break
@@ -482,7 +482,7 @@ class Parser {
     }
 
     function parseAdditionalInitializerList(): AdditionalInitializer[] throws ParserError {
-        mutable ret: AdditionalInitializer[]? = null
+        mutable ret: AdditionalInitializer[] = null
         while true {
             let node: AdditionalInitializer = parseAdditionalInitializer()
                 catch _ break
@@ -512,7 +512,7 @@ class Parser {
     }
 
     function parseModifierList(): Modifier[] throws ParserError {
-        mutable ret: Modifier[]? = null
+        mutable ret: Modifier[] = null
         while true {
             let node: Modifier = parseModifier()
                 catch _ break
@@ -632,7 +632,7 @@ class Parser {
     }
 
     function parseParameterClauseList(): ParameterClause[] throws ParserError {
-        mutable ret: ParameterClause[]? = null
+        mutable ret: ParameterClause[] = null
         while true {
             let node: ParameterClause = parseParameterClause()
                 catch _ break
@@ -671,7 +671,7 @@ class Parser {
     }
 
     function parseParameterList(): Parameter[] throws ParserError {
-        mutable ret: Parameter[]? = null
+        mutable ret: Parameter[] = null
         while true {
             let node: Parameter = parseParameter()
                 catch _ break
@@ -792,7 +792,7 @@ class Parser {
     }
 
     function parseEnumMemberList(): EnumMember[] throws ParserError {
-        mutable ret: EnumMember[]? = null
+        mutable ret: EnumMember[] = null
         while true {
             let node: EnumMember = parseEnumMember()
                 catch _ break
@@ -845,7 +845,7 @@ class Parser {
     }
 
     function parseAdditionalCaseList(): AdditionalCase[] throws ParserError {
-        mutable ret: AdditionalCase[]? = null
+        mutable ret: AdditionalCase[] = null
         while true {
             let node: AdditionalCase = parseAdditionalCase()
                 catch _ break
@@ -902,7 +902,7 @@ class Parser {
     }
 
     function parseClassMemberList(): ClassMember[] throws ParserError {
-        mutable ret: ClassMember[]? = null
+        mutable ret: ClassMember[] = null
         while true {
             let node: ClassMember = parseClassMember()
                 catch _ break
@@ -955,7 +955,7 @@ class Parser {
     }
 
     function parseBinaryOpList(): BinaryOp[] throws ParserError {
-        mutable ret: BinaryOp[]? = null
+        mutable ret: BinaryOp[] = null
         while true {
             let node: BinaryOp = parseBinaryOp()
                 catch _ break
@@ -1082,7 +1082,7 @@ class Parser {
     }
 
     function parseCatchClauseList(): CatchClause[] throws ParserError {
-        mutable ret: CatchClause[]? = null
+        mutable ret: CatchClause[] = null
         while true {
             let node: CatchClause = parseCatchClause()
                 catch _ break
@@ -1172,7 +1172,7 @@ class Parser {
     }
 
     function parsePostfixList(): Postfix[] throws ParserError {
-        mutable ret: Postfix[]? = null
+        mutable ret: Postfix[] = null
         while true {
             let node: Postfix = parsePostfix()
                 catch _ break
@@ -1308,7 +1308,7 @@ class Parser {
     }
 
     function parseExpressionElementList(): ExpressionElement[] throws ParserError {
-        mutable ret: ExpressionElement[]? = null
+        mutable ret: ExpressionElement[] = null
         while true {
             let node: ExpressionElement = parseExpressionElement()
                 catch _ break
@@ -1847,7 +1847,7 @@ class Parser {
     }
 
     function parseSwitchCaseList(): SwitchCase[] throws ParserError {
-        mutable ret: SwitchCase[]? = null
+        mutable ret: SwitchCase[] = null
         while true {
             let node: SwitchCase = parseSwitchCase()
                 catch _ break
@@ -1950,7 +1950,7 @@ class Parser {
     }
 
     function parseCaseItemList(): CaseItem[] throws ParserError {
-        mutable ret: CaseItem[]? = null
+        mutable ret: CaseItem[] = null
         while true {
             let node: CaseItem = parseCaseItem()
                 catch _ break
@@ -2095,7 +2095,7 @@ class Parser {
     }
 
     function parseTuplePatternElementList(): TuplePatternElement[] throws ParserError {
-        mutable ret: TuplePatternElement[]? = null
+        mutable ret: TuplePatternElement[] = null
         while true {
             let node: TuplePatternElement = parseTuplePatternElement()
                 catch _ break
@@ -2194,7 +2194,7 @@ class Parser {
     }
 
     function parseTypePostfixList(): TypePostfix[] throws ParserError {
-        mutable ret: TypePostfix[]? = null
+        mutable ret: TypePostfix[] = null
         while true {
             let node: TypePostfix = parseTypePostfix()
                 catch _ break
@@ -2291,7 +2291,7 @@ class Parser {
     }
 
     function parseInheritanceList(): Inheritance[] throws ParserError {
-        mutable ret: Inheritance[]? = null
+        mutable ret: Inheritance[] = null
         while true {
             let node: Inheritance = parseInheritance()
                 catch _ break
