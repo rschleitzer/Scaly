@@ -11,11 +11,11 @@ class Options {
     }
 
     static function parseArguments(args: string[]): Options throws OptionsError {
-        let length: ulong = args.length()
+        let length: number = args.length()
         mutable output: string = null
         mutable dir: string = null
         mutable input: string[] = new string[]()
-        mutable i: ulong = 0
+        mutable i: number = 0
         repeat {
             if length < 2 || (args[i]).charAt(0) != '-' {
                 input.push(args[i])

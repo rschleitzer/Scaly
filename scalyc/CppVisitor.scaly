@@ -16,8 +16,8 @@ class CppVisitor extends SyntaxVisitor {
     mutable classes: string[]
 
     // indent level
-    mutable headerIndentLevel: ulong
-    mutable sourceIndentLevel: ulong
+    mutable headerIndentLevel: number
+    mutable sourceIndentLevel: number
 
     // Some state during building some constructs
     mutable firstParameter: bool
@@ -1000,7 +1000,7 @@ class CppVisitor extends SyntaxVisitor {
             let parameters: Parameter[] = enumMember.parameterClause.parameters
             if parameters != null {
                 sourceFile.append(": ")
-                var pos: ulong = 0
+                var pos: number = 0
                 for parameter: Parameter in parameters {
                     if parameter is ConstParameter {
                         let constParameter: ConstParameter = parameter as ConstParameter
@@ -1072,7 +1072,7 @@ class CppVisitor extends SyntaxVisitor {
     }
 
     function indentHeader() {
-        var i: ulong = 0
+        var i: number = 0
         while i < headerIndentLevel {
             headerFile.append("    ")
             i++
@@ -1080,7 +1080,7 @@ class CppVisitor extends SyntaxVisitor {
     }
 
     function indentSource() {
-        var i: ulong = 0
+        var i: number = 0
         while i < sourceIndentLevel {
             sourceFile.append("    ")
             i++
@@ -1609,8 +1609,8 @@ class CppVisitor extends SyntaxVisitor {
         if expressionElement.parent is ParenthesizedExpression {
             let parenthesizedExpression: ParenthesizedExpression = (expressionElement.parent) as ParenthesizedExpression
             let expressionElements: ExpressionElement[] = parenthesizedExpression.expressionElements
-            let length: ulong = expressionElements.length() - 1
-            let i: ulong = 0
+            let length: number = expressionElements.length() - 1
+            let i: number = 0
             for element: ExpressionElement in expressionElements {
                 if (element == expressionElement) && (i == length)
                     return(true)
@@ -1621,8 +1621,8 @@ class CppVisitor extends SyntaxVisitor {
         if expressionElement.parent is Subscript {
             let subscript: Subscript = (expressionElement.parent) as Subscript
             let expressions: ExpressionElement[] = subscript.expressions
-            let length: ulong = expressions.length() - 1
-            let i: ulong = 0
+            let length: number = expressions.length() - 1
+            let i: number = 0
             for element: ExpressionElement in expressions {
                 if (element == expressionElement) && (i == length)
                     return(true)
@@ -2738,7 +2738,7 @@ class CppVisitor extends SyntaxVisitor {
 
     function appendCppTypeName(mutable s: VarString, type: Type) {
         let typeName: string = type.name
-        if typeName.equals("ulong") {
+        if typeName.equals("number") {
             s.append("size_t")
             return
         }
