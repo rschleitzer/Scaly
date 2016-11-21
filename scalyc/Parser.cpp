@@ -3287,11 +3287,8 @@ _Result<Age, ParserError> Parser::parseAge(_Page* _rp, _Page* _ep) {
         lexer->advance();
     else
         return _Result<Age, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_punctuationExpected(new(_ep) Position(startAt1), new(_ep) string(at))));
-    Literal* age = lexer->parseLiteral(_rp);
-    if (age != nullptr)
-        lexer->advance();
     Position* end = lexer->getPosition(_p);
-    Age* ret = new(_rp) Age(age, new(_rp) Position(start), new(_rp) Position(end));
+    Age* ret = new(_rp) Age(new(_rp) Position(start), new(_rp) Position(end));
     return _Result<Age, ParserError>(ret);
 }
 

@@ -1516,10 +1516,9 @@ void IndexedType::accept(SyntaxVisitor* visitor) {
 
 bool IndexedType::_isIndexedType() { return (true); }
 
-Age::Age(Literal* age, Position* start, Position* end) {
+Age::Age(Position* start, Position* end) {
     this->start = start;
     this->end = end;
-    this->age = age;
 }
 
 void Age::accept(SyntaxVisitor* visitor) {

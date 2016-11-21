@@ -1448,17 +1448,16 @@ class IndexedType extends TypePostfix {
 
 class Age extends TypePostfix {
 
-    constructor(age: Literal, start: Position, end: Position) {
+    constructor(start: Position, end: Position) {
         this.start = start
         this.end = end
-        this.age = age
     }
 
     override function accept(mutable visitor: SyntaxVisitor) {
         visitor.visitAge(this)
     }
 
-    let age: Literal}
+}
 
 class TypeInheritanceClause extends SyntaxNode {
 

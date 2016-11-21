@@ -944,9 +944,8 @@ public:
 
 class Age : public TypePostfix {
 public:
-    Age(Literal* age, Position* start, Position* end);
+    Age(Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
-    Literal* age;
 
     virtual bool _isAge();
 };

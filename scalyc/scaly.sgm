@@ -399,7 +399,6 @@
 
     <syntax id = Age                                            base = TypePostfix
         <content link = at
-        <content literal                               optional property = age
 
     <syntax id = TypeInheritanceClause
         <content link = extends
