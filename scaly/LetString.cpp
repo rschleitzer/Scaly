@@ -15,24 +15,25 @@ string::string(const char c) {
 string::string(const char* theString) {
     length = strlen(theString);
     buffer = (char*)getPage()->allocateObject(length + 1);
-    strcpy(buffer, theString);
+    copyNativeString(theString, length);
 }
 
 string::string(string* theString) {
     length = theString->getLength();
     buffer = (char*)getPage()->allocateObject(length + 1);
-    strcpy(buffer, theString->getNativeString());
+    copyNativeString(theString->getNativeString(), length);
 }
 
 string::string(VarString* theString) {
     length = theString->getLength();
     buffer = (char*)getPage()->allocateObject(length + 1);
-    strcpy(buffer, theString->getNativeString());
+    copyNativeString(theString->getNativeString(), length);
 }
 
 string::string(size_t theLength) {
     length = theLength;
     buffer = (char*)getPage()->allocateObject(length + 1);
+    buffer[length] = 0;
 }
 
 char* string::getNativeString() const {
@@ -96,6 +97,13 @@ _Array<string>& string::Split(_Page* _rp, char c) {
         ret->push(new(_rp) string(part));
 
     return *ret;
+}
+
+void string::copyNativeString(const char* theString, size_t length) {
+    if (length == 0)
+        buffer[0] = 0;
+    else
+        strcpy(buffer, theString);
 }
 
 }

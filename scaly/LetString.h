@@ -26,6 +26,7 @@ public:
 private:
     // Disable copy constuctor
     string(const string&);
+    void copyNativeString(const char* theString, size_t length);
 
     char* buffer;
     size_t length;
