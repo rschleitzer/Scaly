@@ -145,8 +145,6 @@ void CppVisitor::closeCompilationUnit(CompilationUnit* compilationUnit) {
             }
         }
     }
-    if (isTopLevelFile(compilationUnit))
-        sourceFile->append("\nreturn 0;\n");
     sourceFile->append("\n}\n");
     if (isTopLevelFile(compilationUnit))
         sourceFile->append("\n}\n");
