@@ -7,7 +7,6 @@ CppVisitor::CppVisitor() {
     sourceFile = new(getPage()->allocateExclusivePage()) VarString();
     headerFile = new(getPage()->allocateExclusivePage()) VarString();
     mainHeaderFile = new(getPage()->allocateExclusivePage()) VarString();
-    mainSourceFile = new(getPage()->allocateExclusivePage()) VarString();
     projectFile = new(getPage()->allocateExclusivePage()) VarString();
     modules = new(getPage()->allocateExclusivePage()) _Array<CppModule>();
     output = new(getPage()->allocateExclusivePage()) CppProgram();
@@ -70,21 +69,6 @@ bool CppVisitor::openProgram(Program* program) {
                 }
             }
         }
-        {
-            buildMainSourceFileString(program);
-            {
-                _Region _region; _Page* _p = _region.get();
-                VarString* sourceFilePath = new(_p) VarString(programDirectory);
-                sourceFilePath->append("/main.cpp");
-                auto _File_error = File::writeFromString(_p, sourceFilePath, mainSourceFile);
-                if (_File_error) {
-                    switch (_File_error->getErrorCode()) {
-                        default:
-                            return false;
-                    }
-                }
-            }
-        }
         collectInheritances(program);
     }
     return true;
@@ -129,7 +113,35 @@ bool CppVisitor::openCompilationUnit(CompilationUnit* compilationUnit) {
     sourceFile = new(sourceFile->getPage()) VarString(0, 4096);
     sourceFile->append("#include \"");
     sourceFile->append(programName);
-    sourceFile->append(".h\"\nusing namespace scaly;\nnamespace ");
+    sourceFile->append(".h\"\nusing namespace scaly;\n");
+    if (isTopLevelFile(compilationUnit)) {
+        sourceFile->append("namespace scaly {\n\n");
+        sourceFile->append("extern __thread _Page* __CurrentPage;\n");
+        sourceFile->append("extern __thread _Task* __CurrentTask;\n\n");
+        sourceFile->append("}\n\n");
+        sourceFile->append("int main(int argc, char** argv) {\n");
+        sourceFile->append("    // Allocate the root page for the main thread\n");
+        sourceFile->append("    _Page* page = 0;\n");
+        sourceFile->append("    posix_memalign((void**)&page, _pageSize, _pageSize * _maxStackPages);\n");
+        sourceFile->append("    if (!page)\n");
+        sourceFile->append("        return -1;\n");
+        sourceFile->append("    new (page) _Page();\n");
+        sourceFile->append("    __CurrentPage = page;\n\n");
+        sourceFile->append("    _Task* task = new(page) _Task();\n");
+        sourceFile->append("    __CurrentTask = task;\n\n");
+        sourceFile->append("    // Collect the arguments into a string Vector\n");
+        sourceFile->append("    _Vector<string>* arguments = &_Vector<string>::createUninitialized(__CurrentPage, argc - 1);\n");
+        sourceFile->append("    for (int i = 1; i < argc; i++)\n");
+        sourceFile->append("        *(*arguments)[i - 1] = new(__CurrentPage) string(argv[i]);\n\n");
+        sourceFile->append("    // Call Scaly's top-level code\n");
+        sourceFile->append("    int ret = scalyc::_main(arguments);\n\n");
+        sourceFile->append("    // Only for monitoring, debugging and stuff\n");
+        sourceFile->append("    __CurrentTask->dispose();\n\n");
+        sourceFile->append("    // Give back the return code of the top-level code\n");
+        sourceFile->append("    return ret;\n");
+        sourceFile->append("}\n");
+    }
+    sourceFile->append("namespace ");
     sourceFile->append(programName);
     sourceFile->append(" {\n\n");
     if (isTopLevelFile(compilationUnit))
@@ -2708,35 +2720,6 @@ void CppVisitor::buildMainHeaderFileString(Program* program) {
     mainHeaderFile->append("__\n");
 }
 
-void CppVisitor::buildMainSourceFileString(Program* program) {
-    mainSourceFile->append("#include \"scalyc.h\"\nusing namespace scaly;\nnamespace scaly {\n\n");
-    mainSourceFile->append("extern __thread _Page* __CurrentPage;\n");
-    mainSourceFile->append("extern __thread _Task* __CurrentTask;\n\n}\n\n");
-    mainSourceFile->append("int main(int argc, char** argv) {\n");
-    mainSourceFile->append("    // Allocate the root page for the main thread\n");
-    mainSourceFile->append("    _Page* page = 0;\n");
-    mainSourceFile->append("    posix_memalign((void**)&page, _pageSize, _pageSize * _maxStackPages);\n");
-    mainSourceFile->append("    if (!page)\n");
-    mainSourceFile->append("        return -1;\n");
-    mainSourceFile->append("    new (page) _Page();\n");
-    mainSourceFile->append("    __CurrentPage = page;\n\n");
-    mainSourceFile->append("    _Task* task = new(page) _Task();\n");
-    mainSourceFile->append("    __CurrentTask = task;\n\n");
-    mainSourceFile->append("    // Collect the arguments into a string Vector\n");
-    mainSourceFile->append("    _Vector<string>* arguments = &_Vector<string>::createUninitialized(__CurrentPage, argc - 1);\n");
-    mainSourceFile->append("    for (int i = 1; i < argc; i++)\n");
-    mainSourceFile->append("        *(*arguments)[i - 1] = new(__CurrentPage) string(argv[i]);\n\n");
-    mainSourceFile->append("    // Call Scaly's top-level code\n");
-    mainSourceFile->append("    int ret = ");
-    mainSourceFile->append(program->name);
-    mainSourceFile->append("::_main(arguments);\n\n");
-    mainSourceFile->append("    // Only for monitoring, debugging and stuff\n");
-    mainSourceFile->append("    __CurrentTask->dispose();\n\n");
-    mainSourceFile->append("    // Give back the return code of the top-level code\n");
-    mainSourceFile->append("    return ret;\n");
-    mainSourceFile->append("}");
-}
-
 void CppVisitor::buildProjectFileString(Program* program) {
     projectFile->append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
     projectFile->append("<CodeLite_Project Name=\"");
@@ -2758,7 +2741,7 @@ void CppVisitor::buildProjectFileString(Program* program) {
     projectFile->append("  \"parentProject\": \"\"\n");
     projectFile->append(" }]]]>\n    </Plugin>\n  </Plugins>\n");
     projectFile->append("  <Description/>\n  <Dependencies/>\n");
-    projectFile->append("  <VirtualDirectory Name=\"src\">\n    <File Name=\"main.cpp\"/>\n");
+    projectFile->append("  <VirtualDirectory Name=\"src\">\n");
     {
         _Vector<CompilationUnit>* compilationUnits = program->compilationUnits;
         CompilationUnit* compilationUnit = nullptr;
@@ -2860,7 +2843,8 @@ void CppVisitor::buildProjectFileString(Program* program) {
     projectFile->append("      </CustomBuild>\n      <AdditionalRules>\n        <CustomPostBuild/>\n");
     projectFile->append("        <CustomPreBuild/>\n      </AdditionalRules>\n      <Completion EnableCpp11=\"no\" EnableCpp14=\"no\">\n");
     projectFile->append("        <ClangCmpFlagsC/>\n        <ClangCmpFlags/>\n        <ClangPP/>\n");
-    projectFile->append("        <SearchPaths/>\n      </Completion>\n    </Configuration>\n  </Settings>\n</CodeLite_Project>\n");
+    projectFile->append("        <SearchPaths/>\n      </Completion>\n    </Configuration>\n  </Settings>\n");
+    projectFile->append("  <Dependencies Name=\"Debug\"/>\n  <Dependencies Name=\"Release\"/>\n</CodeLite_Project>\n");
 }
 
 void CppVisitor::collectInheritances(Program* program) {

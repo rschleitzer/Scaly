@@ -6,7 +6,6 @@ class CppVisitor extends SyntaxVisitor {
     mutable headerFile: VarString
     mutable module: CppModule
     mutable mainHeaderFile: VarString
-    mutable mainSourceFile: VarString
     mutable projectFile: VarString
     
     mutable modules: CppModule[]
@@ -40,7 +39,6 @@ class CppVisitor extends SyntaxVisitor {
         sourceFile = new VarString()
         headerFile = new VarString()
         mainHeaderFile = new VarString()
-        mainSourceFile = new VarString()
         projectFile = new VarString()
         modules = new CppModule[]()
         output = new CppProgram()
@@ -95,17 +93,6 @@ class CppVisitor extends SyntaxVisitor {
                 }
             }
 
-            // Build and write the main source file
-            {
-                buildMainSourceFileString(program)
-                {
-                    mutable sourceFilePath: VarString  = new VarString(programDirectory)
-                    sourceFilePath.append("/main.cpp")
-                    File.writeFromString(sourceFilePath, mainSourceFile)
-                        catch _ (error: fileError)
-                            return(false)
-                }
-            }
             collectInheritances(program)
         }
 
@@ -2804,35 +2791,6 @@ class CppVisitor extends SyntaxVisitor {
         mainHeaderFile.append(program.name)
         mainHeaderFile.append("__\n")
     }
-
-    function buildMainSourceFileString(program: Program) {
-       mainSourceFile.append("#include \"scalyc.h\"\nusing namespace scaly;\nnamespace scaly {\n\n")
-       mainSourceFile.append("extern __thread _Page* __CurrentPage;\n")
-       mainSourceFile.append("extern __thread _Task* __CurrentTask;\n\n}\n\n")
-       mainSourceFile.append("int main(int argc, char** argv) {\n")
-       mainSourceFile.append("    // Allocate the root page for the main thread\n")
-       mainSourceFile.append("    _Page* page = 0;\n")
-       mainSourceFile.append("    posix_memalign((void**)&page, _pageSize, _pageSize * _maxStackPages);\n")
-       mainSourceFile.append("    if (!page)\n")
-       mainSourceFile.append("        return -1;\n")
-       mainSourceFile.append("    new (page) _Page();\n")
-       mainSourceFile.append("    __CurrentPage = page;\n\n")
-       mainSourceFile.append("    _Task* task = new(page) _Task();\n")
-       mainSourceFile.append("    __CurrentTask = task;\n\n")
-       mainSourceFile.append("    // Collect the arguments into a string Vector\n")
-       mainSourceFile.append("    _Vector<string>* arguments = &_Vector<string>::createUninitialized(__CurrentPage, argc - 1);\n")
-       mainSourceFile.append("    for (int i = 1; i < argc; i++)\n")
-       mainSourceFile.append("        *(*arguments)[i - 1] = new(__CurrentPage) string(argv[i]);\n\n")
-       mainSourceFile.append("    // Call Scaly's top-level code\n")
-       mainSourceFile.append("    int ret = ")
-       mainSourceFile.append(program.name)
-       mainSourceFile.append("::_main(arguments);\n\n")
-       mainSourceFile.append("    // Only for monitoring, debugging and stuff\n")
-       mainSourceFile.append("    __CurrentTask->dispose();\n\n")
-       mainSourceFile.append("    // Give back the return code of the top-level code\n")
-       mainSourceFile.append("    return ret;\n")
-       mainSourceFile.append("}")
-    }
     
     function buildProjectFileString(program: Program) {
         projectFile.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n")
@@ -2939,8 +2897,8 @@ class CppVisitor extends SyntaxVisitor {
         projectFile.append("      </CustomBuild>\n      <AdditionalRules>\n        <CustomPostBuild/>\n")
         projectFile.append("        <CustomPreBuild/>\n      </AdditionalRules>\n      <Completion EnableCpp11=\"no\" EnableCpp14=\"no\">\n")
         projectFile.append("        <ClangCmpFlagsC/>\n        <ClangCmpFlags/>\n        <ClangPP/>\n")
-        projectFile.append("        <SearchPaths/>\n      </Completion>\n    </Configuration>\n  </Settings>\n"
-        projectFile.append("  <Dependencies Name="Debug"/>\n  <Dependencies Name="Release"/>\n</CodeLite_Project>\n")
+        projectFile.append("        <SearchPaths/>\n      </Completion>\n    </Configuration>\n  </Settings>\n")
+        projectFile.append("  <Dependencies Name=\"Debug\"/>\n  <Dependencies Name=\"Release\"/>\n</CodeLite_Project>\n")
     }
 
     function collectInheritances(program: Program) {
