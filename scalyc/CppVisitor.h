@@ -11,6 +11,7 @@ public:
     VarString* headerFile;
     CppModule* module;
     VarString* mainHeaderFile;
+    VarString* mainSourceFile;
     VarString* projectFile;
     _Array<CppModule>* modules;
     CppProgram* output;
@@ -215,6 +216,7 @@ public:
     virtual bool openInheritance(Inheritance* inheritance);
     virtual void closeInheritance(Inheritance* inheritance);
     virtual void buildMainHeaderFileString(Program* program);
+    virtual void buildMainSourceFileString(Program* program);
     virtual void buildProjectFileString(Program* program);
     virtual void collectInheritances(Program* program);
     virtual void collectInheritancesInCompilationUnit(CompilationUnit* compilationUnit);

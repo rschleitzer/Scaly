@@ -7,6 +7,7 @@ CppVisitor::CppVisitor() {
     sourceFile = new(getPage()->allocateExclusivePage()) VarString();
     headerFile = new(getPage()->allocateExclusivePage()) VarString();
     mainHeaderFile = new(getPage()->allocateExclusivePage()) VarString();
+    mainSourceFile = new(getPage()->allocateExclusivePage()) VarString();
     projectFile = new(getPage()->allocateExclusivePage()) VarString();
     modules = new(getPage()->allocateExclusivePage()) _Array<CppModule>();
     output = new(getPage()->allocateExclusivePage()) CppProgram();
@@ -61,6 +62,21 @@ bool CppVisitor::openProgram(Program* program) {
                 VarString* headerFilePath = new(_p) VarString(outputFilePath);
                 headerFilePath->append(".h");
                 auto _File_error = File::writeFromString(_p, headerFilePath, mainHeaderFile);
+                if (_File_error) {
+                    switch (_File_error->getErrorCode()) {
+                        default:
+                            return false;
+                    }
+                }
+            }
+        }
+        {
+            buildMainSourceFileString(program);
+            {
+                _Region _region; _Page* _p = _region.get();
+                VarString* sourceFilePath = new(_p) VarString(programDirectory);
+                sourceFilePath->append("/main.cpp");
+                auto _File_error = File::writeFromString(_p, sourceFilePath, mainSourceFile);
                 if (_File_error) {
                     switch (_File_error->getErrorCode()) {
                         default:
@@ -2687,7 +2703,38 @@ void CppVisitor::buildMainHeaderFileString(Program* program) {
     }
     mainHeaderFile->append("\nusing namespace scaly;\nnamespace ");
     mainHeaderFile->append(program->name);
-    mainHeaderFile->append(" {\nint _main(_Vector<string>* arguments);\n}\n\n#endif // __scaly__scalyc__\n");
+    mainHeaderFile->append(" {\nint _main(_Vector<string>* arguments);\n}\n\n#endif // __scaly__");
+    mainHeaderFile->append(program->name);
+    mainHeaderFile->append("__\n");
+}
+
+void CppVisitor::buildMainSourceFileString(Program* program) {
+    mainSourceFile->append("#include \"scalyc.h\"\nusing namespace scaly;\nnamespace scaly {\n\n");
+    mainSourceFile->append("extern __thread _Page* __CurrentPage;\n");
+    mainSourceFile->append("extern __thread _Task* __CurrentTask;\n\n}\n\n");
+    mainSourceFile->append("int main(int argc, char** argv) {\n");
+    mainSourceFile->append("    // Allocate the root page for the main thread\n");
+    mainSourceFile->append("    _Page* page = 0;\n");
+    mainSourceFile->append("    posix_memalign((void**)&page, _pageSize, _pageSize * _maxStackPages);\n");
+    mainSourceFile->append("    if (!page)\n");
+    mainSourceFile->append("        return -1;\n");
+    mainSourceFile->append("    new (page) _Page();\n");
+    mainSourceFile->append("    __CurrentPage = page;\n\n");
+    mainSourceFile->append("    _Task* task = new(page) _Task();\n");
+    mainSourceFile->append("    __CurrentTask = task;\n\n");
+    mainSourceFile->append("    // Collect the arguments into a string Vector\n");
+    mainSourceFile->append("    _Vector<string>* arguments = &_Vector<string>::createUninitialized(__CurrentPage, argc - 1);\n");
+    mainSourceFile->append("    for (int i = 1; i < argc; i++)\n");
+    mainSourceFile->append("        *(*arguments)[i - 1] = new(__CurrentPage) string(argv[i]);\n\n");
+    mainSourceFile->append("    // Call Scaly's top-level code\n");
+    mainSourceFile->append("    int ret = ");
+    mainSourceFile->append(program->name);
+    mainSourceFile->append("::_main(arguments);\n\n");
+    mainSourceFile->append("    // Only for monitoring, debugging and stuff\n");
+    mainSourceFile->append("    __CurrentTask->dispose();\n\n");
+    mainSourceFile->append("    // Give back the return code of the top-level code\n");
+    mainSourceFile->append("    return ret;\n");
+    mainSourceFile->append("}");
 }
 
 void CppVisitor::buildProjectFileString(Program* program) {
