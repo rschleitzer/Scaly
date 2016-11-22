@@ -2909,7 +2909,8 @@ class CppVisitor extends SyntaxVisitor {
         projectFile.append("      </CustomBuild>\n      <AdditionalRules>\n        <CustomPostBuild/>\n")
         projectFile.append("        <CustomPreBuild/>\n      </AdditionalRules>\n      <Completion EnableCpp11=\"no\" EnableCpp14=\"no\">\n")
         projectFile.append("        <ClangCmpFlagsC/>\n        <ClangCmpFlags/>\n        <ClangPP/>\n")
-        projectFile.append("        <SearchPaths/>\n      </Completion>\n    </Configuration>\n  </Settings>\n</CodeLite_Project>\n")
+        projectFile.append("        <SearchPaths/>\n      </Completion>\n    </Configuration>\n  </Settings>\n"
+        projectFile.append("  <Dependencies Name="Debug"/>\n  <Dependencies Name="Release"/>\n</CodeLite_Project>\n")
     }
 
     function collectInheritances(program: Program) {
