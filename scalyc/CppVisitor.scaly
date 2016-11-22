@@ -498,7 +498,7 @@ class CppVisitor extends SyntaxVisitor {
                 }
             }
         }
-        return(null)
+        null
     }
 
     function isCatchingFunctionCall(patternInitializer: PatternInitializer): bool {
@@ -1160,7 +1160,7 @@ class CppVisitor extends SyntaxVisitor {
         if node.parent == null
             return(false)
 
-        return(inInitializer(node.parent))
+        inInitializer(node.parent)
     }
 
     function inReturn(node: SyntaxNode): bool {
@@ -1170,7 +1170,7 @@ class CppVisitor extends SyntaxVisitor {
         if node.parent == null
             return(false)
 
-        return(inReturn(node.parent))
+        inReturn(node.parent)
     }
 
     function inThrow(node: SyntaxNode): bool {
@@ -1180,7 +1180,7 @@ class CppVisitor extends SyntaxVisitor {
         if node.parent == null
             return(false)
 
-        return(inThrow(node.parent))
+        inThrow(node.parent)
     }
 
     function getMemberIfCreatingObject(assignment: Assignment): string {
@@ -1209,7 +1209,7 @@ class CppVisitor extends SyntaxVisitor {
             }
         }
         
-        return(null)
+        null
     }
 
     function getFunctionName(assignment: Assignment): string {
@@ -1232,7 +1232,7 @@ class CppVisitor extends SyntaxVisitor {
             }
         }
 
-        return(null)
+        null
     }
     
     function isCreatingObject(functionName: string, node: SyntaxNode): bool {
@@ -1262,7 +1262,7 @@ class CppVisitor extends SyntaxVisitor {
         if node.parent != null
             return(getClassDeclaration(node.parent))
         
-        return(null)
+        null
     }
     
     function isVariableMember(memberName: string, classDeclaration: ClassDeclaration): bool {
@@ -1491,7 +1491,7 @@ class CppVisitor extends SyntaxVisitor {
             }
         }
 
-        return(null)
+        null
     }
 
     function getErrorType(catchClause: CatchClause): string@ {
@@ -1513,7 +1513,7 @@ class CppVisitor extends SyntaxVisitor {
             }
         }
 
-        return(null)
+        null
     }
 
     function closeCatchClause(catchClause: CatchClause) {
@@ -1633,7 +1633,7 @@ class CppVisitor extends SyntaxVisitor {
         if parentNode == null
             return(false)
 
-        return(inAssignment(parentNode))
+        inAssignment(parentNode)
     }
 
     function getAssignment(syntaxNode: SyntaxNode): Assignment@ {
@@ -1644,7 +1644,7 @@ class CppVisitor extends SyntaxVisitor {
         if parentNode == null
             return(null)
 
-        return(getAssignment(parentNode))
+        getAssignment(parentNode)
     }
 
     function inRetDeclaration(syntaxNode: SyntaxNode): bool {
@@ -1964,7 +1964,7 @@ class CppVisitor extends SyntaxVisitor {
             }
         }
 
-        return(null)
+        null
     }
 
     function callsInitializer(functionCall: FunctionCall): bool {
@@ -2138,7 +2138,7 @@ class CppVisitor extends SyntaxVisitor {
             }
         }
         
-        return(null)
+        null
     }
     
     function getThrownType(syntaxNode: SyntaxNode): string {
@@ -2161,7 +2161,7 @@ class CppVisitor extends SyntaxVisitor {
             }
         }
         
-        return(null)
+        null
     }
 
     function returnsArray(syntaxNode: SyntaxNode): bool {
