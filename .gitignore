@@ -4,6 +4,8 @@ scaly/scaly.mk
 scaly/scaly.txt
 scalyc/scalyc.mk
 scalyc/scalyc.txt
+shortest/shortest.mk
+shortest/shortest.txt
 .build-debug
 .codelite
 Makefile
