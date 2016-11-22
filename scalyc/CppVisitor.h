@@ -56,6 +56,7 @@ public:
     virtual bool isCatchingFunctionCall(PatternInitializer* patternInitializer);
     virtual void closeCodeBlock(CodeBlock* codeBlock);
     virtual bool openSimpleExpression(SimpleExpression* simpleExpression);
+    virtual void prependReturn(SimpleExpression* simpleExpression);
     virtual void closeSimpleExpression(SimpleExpression* simpleExpression);
     virtual bool openInitializer(Initializer* initializer);
     virtual void closeInitializer(Initializer* initializer);

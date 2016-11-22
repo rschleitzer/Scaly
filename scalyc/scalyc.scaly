@@ -10,4 +10,4 @@ else {
     Compiler.compileFiles(options) catch _ (error: OptionsError) return(5)
 }
 
-return(0)
+0

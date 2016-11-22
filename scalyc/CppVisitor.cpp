@@ -508,8 +508,29 @@ void CppVisitor::closeCodeBlock(CodeBlock* codeBlock) {
 }
 
 bool CppVisitor::openSimpleExpression(SimpleExpression* simpleExpression) {
-    if (simpleExpression->parent->_isCodeBlock() || simpleExpression->parent->_isCaseContent() || simpleExpression->parent->_isCompilationUnit())
+    Statement* statement = (Statement*)simpleExpression;
+    if (statement->parent->_isCodeBlock() || statement->parent->_isCaseContent() || statement->parent->_isCompilationUnit())
         indentSource();
+    if (statement->parent->_isFunctionDeclaration())
+        prependReturn(simpleExpression);
+    if (statement->parent->_isCompilationUnit()) {
+        CompilationUnit* unit = (CompilationUnit*)statement->parent;
+        _Vector<Statement>* statements = unit->statements;
+        if (*(*statements)[statements->length() - 1] == statement)
+            prependReturn(simpleExpression);
+    }
+    if (statement->parent->_isCodeBlock()) {
+        CodeBlock* block = (CodeBlock*)statement->parent;
+        if (block->parent->_isFunctionDeclaration()) {
+            _Vector<Statement>* statements = block->statements;
+            if (*(*statements)[statements->length() - 1] == statement) {
+                _Region _region; _Page* _p = _region.get();
+                string* returnType = getReturnType(_p, statement);
+                if (returnType != nullptr)
+                    prependReturn(simpleExpression);
+            }
+        }
+    }
     if (simpleExpression->binaryOps != nullptr) {
         _Vector<BinaryOp>* binaryOps = simpleExpression->binaryOps;
         BinaryOp* binaryOp = nullptr;
@@ -577,6 +598,12 @@ bool CppVisitor::openSimpleExpression(SimpleExpression* simpleExpression) {
         }
     }
     return true;
+}
+
+void CppVisitor::prependReturn(SimpleExpression* simpleExpression) {
+    PrimaryExpression* expression = simpleExpression->prefixExpression->expression->primaryExpression;
+    if ((!expression->_isReturnExpression()) && (!expression->_isThrowExpression()) && (!expression->_isWhileExpression()) && (!expression->_isDoExpression()))
+        sourceFile->append("return ");
 }
 
 void CppVisitor::closeSimpleExpression(SimpleExpression* simpleExpression) {

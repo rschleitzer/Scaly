@@ -524,9 +524,36 @@ class CppVisitor extends SyntaxVisitor {
 
     function openSimpleExpression(simpleExpression: SimpleExpression): bool {
 
-        if simpleExpression.parent is CodeBlock || simpleExpression.parent is CaseContent || simpleExpression.parent is CompilationUnit
+        let statement: Statement = simpleExpression as Statement
+        if statement.parent is CodeBlock || statement.parent is CaseContent || statement.parent is CompilationUnit
             indentSource()
 
+        // Prepend a return if this expression is the only one of a function
+        if statement.parent is FunctionDeclaration
+            prependReturn(simpleExpression)
+        
+        // Prepend a return if this expression is the last one of global code
+        if statement.parent is CompilationUnit {
+            let unit: CompilationUnit = statement.parent as CompilationUnit
+            let statements: Statement[] = unit.statements
+            if statements[statements.length() - 1] == statement
+                prependReturn(simpleExpression)
+        }
+        
+        // Prepend a return if this expression is the last one in the enclosing block if that block is the root block of a function declaration
+        if statement.parent is CodeBlock {
+            let block: CodeBlock = statement.parent as CodeBlock
+            if block.parent is FunctionDeclaration {
+                let statements: Statement[] = block.statements
+                if statements[statements.length() - 1] == statement {
+                    mutable returnType: string = getReturnType(statement)
+                    if returnType != null
+                        prependReturn(simpleExpression)
+                }
+            }
+        }
+
+        // Prefix type cast if any
         if simpleExpression.binaryOps != null {
             let binaryOps: BinaryOp[] = simpleExpression.binaryOps
             for binaryOp: BinaryOp in binaryOps {
@@ -546,6 +573,8 @@ class CppVisitor extends SyntaxVisitor {
 
         if simpleExpression.prefixExpression.expression.primaryExpression is IdentifierExpression {
             let binaryOps: BinaryOp[] = simpleExpression.binaryOps
+
+            // If we assign to a member then clear the exclusive page of that member
             if binaryOps != null {
                 if binaryOps.length() == 1 {
                     let binaryOp: BinaryOp = binaryOps[0]
@@ -566,6 +595,8 @@ class CppVisitor extends SyntaxVisitor {
                     }
                 }
             }
+
+            // Prefix the error result for a catching function call
             if simpleExpression.parent is CodeBlock || simpleExpression.parent is CaseContent || simpleExpression.parent is CompilationUnit {
                 let postfixes: Postfix[] = simpleExpression.prefixExpression.expression.postfixes
                 if postfixes != null {
@@ -573,6 +604,7 @@ class CppVisitor extends SyntaxVisitor {
                         if postfix is FunctionCall {
                             let functionCall: FunctionCall = postfix as FunctionCall
                             if functionCall.catchClauses != null {
+
                                 let identifierExpression: IdentifierExpression = simpleExpression.prefixExpression.expression.primaryExpression as IdentifierExpression
                                 sourceFile.append("auto _")
                                 sourceFile.append(identifierExpression.name)
@@ -584,6 +616,15 @@ class CppVisitor extends SyntaxVisitor {
             }
         }
         return(true)
+    }
+
+    function prependReturn(simpleExpression: SimpleExpression) {
+        let expression: PrimaryExpression = simpleExpression.prefixExpression.expression.primaryExpression
+        if (!expression is ReturnExpression) 
+        && (!expression is ThrowExpression) 
+        && (!expression is WhileExpression) 
+        && (!expression is DoExpression)
+            sourceFile.append("return ")
     }
 
     function closeSimpleExpression(simpleExpression: SimpleExpression) {
