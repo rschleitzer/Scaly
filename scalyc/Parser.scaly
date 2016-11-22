@@ -74,6 +74,7 @@ class Parser {
                 ret = new Statement[]()
             ret.push(node)
         }
+
         return(ret)
     }
 
@@ -462,6 +463,7 @@ class Parser {
                 ret = new PatternInitializer[]()
             ret.push(node)
         }
+
         return(ret)
     }
 
@@ -488,6 +490,7 @@ class Parser {
                 ret = new AdditionalInitializer[]()
             ret.push(node)
         }
+
         return(ret)
     }
 
@@ -518,6 +521,7 @@ class Parser {
                 ret = new Modifier[]()
             ret.push(node)
         }
+
         return(ret)
     }
 
@@ -620,6 +624,7 @@ class Parser {
                 ret = new ParameterClause[]()
             ret.push(node)
         }
+
         return(ret)
     }
 
@@ -659,6 +664,7 @@ class Parser {
                 ret = new Parameter[]()
             ret.push(node)
         }
+
         return(ret)
     }
 
@@ -780,6 +786,7 @@ class Parser {
                 ret = new EnumMember[]()
             ret.push(node)
         }
+
         return(ret)
     }
 
@@ -833,6 +840,7 @@ class Parser {
                 ret = new AdditionalCase[]()
             ret.push(node)
         }
+
         return(ret)
     }
 
@@ -890,6 +898,7 @@ class Parser {
                 ret = new ClassMember[]()
             ret.push(node)
         }
+
         return(ret)
     }
 
@@ -943,6 +952,7 @@ class Parser {
                 ret = new BinaryOp[]()
             ret.push(node)
         }
+
         return(ret)
     }
 
@@ -1070,6 +1080,7 @@ class Parser {
                 ret = new CatchClause[]()
             ret.push(node)
         }
+
         return(ret)
     }
 
@@ -1160,6 +1171,7 @@ class Parser {
                 ret = new Postfix[]()
             ret.push(node)
         }
+
         return(ret)
     }
 
@@ -1296,6 +1308,7 @@ class Parser {
                 ret = new ExpressionElement[]()
             ret.push(node)
         }
+
         return(ret)
     }
 
@@ -1835,6 +1848,7 @@ class Parser {
                 ret = new SwitchCase[]()
             ret.push(node)
         }
+
         return(ret)
     }
 
@@ -1938,6 +1952,7 @@ class Parser {
                 ret = new CaseItem[]()
             ret.push(node)
         }
+
         return(ret)
     }
 
@@ -2083,6 +2098,7 @@ class Parser {
                 ret = new TuplePatternElement[]()
             ret.push(node)
         }
+
         return(ret)
     }
 
@@ -2182,6 +2198,7 @@ class Parser {
                 ret = new TypePostfix[]()
             ret.push(node)
         }
+
         return(ret)
     }
 
@@ -2279,6 +2296,7 @@ class Parser {
                 ret = new Inheritance[]()
             ret.push(node)
         }
+
         return(ret)
     }
 

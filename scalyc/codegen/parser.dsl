@@ -24,6 +24,7 @@
                 ret = new "(id syntax)"[]()
             ret.push(node)
         }
+
         return(ret)
     }
 "       )"")

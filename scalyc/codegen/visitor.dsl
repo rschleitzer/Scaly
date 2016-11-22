@@ -14,7 +14,7 @@
     function open"(id syntax)"("(string-firstchar-downcase (id syntax))": "(id syntax)"): bool"
                 (if concrete
                     " {
-        return(true)
+        true
     }
 "
                     ""
