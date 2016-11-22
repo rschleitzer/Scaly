@@ -2823,6 +2823,9 @@ class CppVisitor extends SyntaxVisitor {
                 mutable fileName: string = Path.getFileNameWithoutExtension(compilationUnit.fileName)
                 projectFile.append(fileName)
                 projectFile.append(".cpp\"/>\n")
+                projectFile.append("    <File Name=\"")
+                projectFile.append(fileName)
+                projectFile.append(".scaly\"/>\n")
             }
         }
         projectFile.append("  </VirtualDirectory>\n  <VirtualDirectory Name=\"include\">\n")

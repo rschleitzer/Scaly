@@ -30,20 +30,35 @@
   <Dependencies/>
   <VirtualDirectory Name="src">
     <File Name="Lexer.cpp"/>
+    <File Name="Lexer.scaly"/>
     <File Name="Visitor.cpp"/>
+    <File Name="Visitor.scaly"/>
     <File Name="Syntax.cpp"/>
+    <File Name="Syntax.scaly"/>
     <File Name="MyVisitor.cpp"/>
+    <File Name="MyVisitor.scaly"/>
     <File Name="CppError.cpp"/>
+    <File Name="CppError.scaly"/>
     <File Name="Inherits.cpp"/>
+    <File Name="Inherits.scaly"/>
     <File Name="CppOutput.cpp"/>
+    <File Name="CppOutput.scaly"/>
     <File Name="CppVisitor.cpp"/>
+    <File Name="CppVisitor.scaly"/>
     <File Name="ParserError.cpp"/>
+    <File Name="ParserError.scaly"/>
     <File Name="Parser.cpp"/>
+    <File Name="Parser.scaly"/>
     <File Name="OptionsError.cpp"/>
+    <File Name="OptionsError.scaly"/>
     <File Name="CompilerError.cpp"/>
+    <File Name="CompilerError.scaly"/>
     <File Name="Options.cpp"/>
+    <File Name="Options.scaly"/>
     <File Name="Compiler.cpp"/>
+    <File Name="Compiler.scaly"/>
     <File Name="scalyc.cpp"/>
+    <File Name="scalyc.scaly"/>
   </VirtualDirectory>
   <VirtualDirectory Name="include">
     <File Name="Lexer.h"/>

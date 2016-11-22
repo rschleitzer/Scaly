@@ -2756,6 +2756,9 @@ void CppVisitor::buildProjectFileString(Program* program) {
                 string* fileName = Path::getFileNameWithoutExtension(_p, compilationUnit->fileName);
                 projectFile->append(fileName);
                 projectFile->append(".cpp\"/>\n");
+                projectFile->append("    <File Name=\"");
+                projectFile->append(fileName);
+                projectFile->append(".scaly\"/>\n");
             }
         }
     }

@@ -30,6 +30,7 @@
   <Dependencies/>
   <VirtualDirectory Name="src">
     <File Name="shortest.cpp"/>
+    <File Name="shortest.scaly"/>
   </VirtualDirectory>
   <VirtualDirectory Name="include">
     <File Name="shortest.h"/>
