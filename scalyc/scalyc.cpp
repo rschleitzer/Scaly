@@ -33,6 +33,7 @@ int main(int argc, char** argv) {
     // Give back the return code of the top-level code
     return ret;
 }
+
 namespace scalyc {
 
 int _main(_Vector<string>* args) {

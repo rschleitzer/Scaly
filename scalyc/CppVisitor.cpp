@@ -139,7 +139,7 @@ bool CppVisitor::openCompilationUnit(CompilationUnit* compilationUnit) {
         sourceFile->append("    __CurrentTask->dispose();\n\n");
         sourceFile->append("    // Give back the return code of the top-level code\n");
         sourceFile->append("    return ret;\n");
-        sourceFile->append("}\n");
+        sourceFile->append("}\n\n");
     }
     sourceFile->append("namespace ");
     sourceFile->append(programName);
@@ -2773,7 +2773,8 @@ void CppVisitor::buildProjectFileString(Program* program) {
             }
         }
     }
-    projectFile->append("  </VirtualDirectory>\n  <Settings Type=\"Executable\">\n    <GlobalSettings>\n");
+    projectFile->append("  </VirtualDirectory>\n  <Dependencies Name=\"Debug\"/>\n  <Dependencies Name=\"Release\"/>\n");
+    projectFile->append("  <Settings Type=\"Executable\">\n    <GlobalSettings>\n");
     projectFile->append("      <Compiler Options=\"\" C_Options=\"\" Assembler=\"\">\n");
     projectFile->append("        <IncludePath Value=\".\"/>\n      </Compiler>\n      <Linker Options=\"\">\n");
     projectFile->append("        <LibraryPath Value=\".\"/>\n      </Linker>\n      <ResourceCompiler Options=\"\"/>\n");
