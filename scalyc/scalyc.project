@@ -29,7 +29,6 @@
   <Description/>
   <Dependencies/>
   <VirtualDirectory Name="src">
-    <File Name="main.cpp"/>
     <File Name="Lexer.cpp"/>
     <File Name="Visitor.cpp"/>
     <File Name="Syntax.cpp"/>

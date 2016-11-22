@@ -152,7 +152,37 @@ class CppVisitor extends SyntaxVisitor {
         sourceFile = new VarString(0, 4096)
         sourceFile.append("#include \"")
         sourceFile.append(programName)
-        sourceFile.append(".h\"\nusing namespace scaly;\nnamespace ")
+        sourceFile.append(".h\"\nusing namespace scaly;\n")
+        
+        if isTopLevelFile(compilationUnit) {
+            sourceFile.append("namespace scaly {\n\n")
+            sourceFile.append("extern __thread _Page* __CurrentPage;\n")
+            sourceFile.append("extern __thread _Task* __CurrentTask;\n\n")
+            sourceFile.append("}\n\n")
+            sourceFile.append("int main(int argc, char** argv) {\n")
+            sourceFile.append("    // Allocate the root page for the main thread\n")
+            sourceFile.append("    _Page* page = 0;\n")
+            sourceFile.append("    posix_memalign((void**)&page, _pageSize, _pageSize * _maxStackPages);\n")
+            sourceFile.append("    if (!page)\n")
+            sourceFile.append("        return -1;\n")
+            sourceFile.append("    new (page) _Page();\n")
+            sourceFile.append("    __CurrentPage = page;\n\n")
+            sourceFile.append("    _Task* task = new(page) _Task();\n")
+            sourceFile.append("    __CurrentTask = task;\n\n")
+            sourceFile.append("    // Collect the arguments into a string Vector\n")
+            sourceFile.append("    _Vector<string>* arguments = &_Vector<string>::createUninitialized(__CurrentPage, argc - 1);\n")
+            sourceFile.append("    for (int i = 1; i < argc; i++)\n")
+            sourceFile.append("        *(*arguments)[i - 1] = new(__CurrentPage) string(argv[i]);\n\n")
+            sourceFile.append("    // Call Scaly's top-level code\n")
+            sourceFile.append("    int ret = scalyc::_main(arguments);\n\n")
+            sourceFile.append("    // Only for monitoring, debugging and stuff\n")
+            sourceFile.append("    __CurrentTask->dispose();\n\n")
+            sourceFile.append("    // Give back the return code of the top-level code\n")
+            sourceFile.append("    return ret;\n")
+            sourceFile.append("}\n")
+        }
+        
+        sourceFile.append("namespace ")
         sourceFile.append(programName)
         sourceFile.append(" {\n\n")
         
@@ -2825,7 +2855,7 @@ class CppVisitor extends SyntaxVisitor {
         projectFile.append("  \"parentProject\": \"\"\n")
         projectFile.append(" }]]]>\n    </Plugin>\n  </Plugins>\n")
         projectFile.append("  <Description/>\n  <Dependencies/>\n")
-        projectFile.append("  <VirtualDirectory Name=\"src\">\n    <File Name=\"main.cpp\"/>\n")
+        projectFile.append("  <VirtualDirectory Name=\"src\">\n")
         {
             let compilationUnits: CompilationUnit[] = program.compilationUnits
             for compilationUnit: CompilationUnit in compilationUnits {
