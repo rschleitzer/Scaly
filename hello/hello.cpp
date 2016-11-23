@@ -37,9 +37,9 @@ int main(int argc, char** argv) {
 namespace hello {
 
 int _main(_Vector<string>* args) {
+_Region _rp; _Page* _p = _rp.get();
 
-print("Hello world!\n");
-return 0;
+return print("Hello world!\n");
 
 }
 

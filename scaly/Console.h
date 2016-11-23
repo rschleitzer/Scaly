@@ -2,8 +2,8 @@
 #define __Scaly__Console__
 namespace scaly {
 
-void print(const char* message);
-void print(string* message);
+size_t print(const char* message);
+size_t print(string* message);
 
 }
 

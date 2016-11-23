@@ -2,11 +2,13 @@
 #include <cstdio>
 namespace scaly {
 
-void print(const char* message) {
-    fputs(message, stdout);
+size_t print(const char* message) {
+    if (fputs(message, stdout) >= 0)
+        return 0;
+    return 1;
 }
 
-void print(string* message) {
+size_t print(string* message) {
     return print(message->getNativeString());
 }
 
