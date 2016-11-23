@@ -6,6 +6,8 @@ scalyc/scalyc.mk
 scalyc/scalyc.txt
 shortest/shortest.mk
 shortest/shortest.txt
+hello/hello.mk
+hell/hello.txt
 .build-debug
 .codelite
 Makefile

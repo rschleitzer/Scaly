@@ -1,12 +1,21 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<CodeLite_Project Name="scaly" InternalType="Library">
+<CodeLite_Project Name="hello" InternalType="Console">
   <Plugins>
     <Plugin Name="qmake">
-      <![CDATA[00010001N0005Debug000000000000]]>
+      <![CDATA[00020001N0005Debug0000000000000001N0007Release000000000000]]>
     </Plugin>
     <Plugin Name="CMakePlugin">
       <![CDATA[[{
   "name": "Debug",
+  "enabled": false,
+  "buildDirectory": "build",
+  "sourceDirectory": "$(ProjectPath)",
+  "generator": "",
+  "buildType": "",
+  "arguments": [],
+  "parentProject": ""
+ }, {
+  "name": "Release",
   "enabled": false,
   "buildDirectory": "build",
   "sourceDirectory": "$(ProjectPath)",
@@ -20,39 +29,15 @@
   <Description/>
   <Dependencies/>
   <VirtualDirectory Name="src">
-    <File Name="Page.cpp"/>
-    <File Name="Object.cpp"/>
-    <File Name="Scaly.cpp"/>
-    <File Name="Region.cpp"/>
-    <File Name="File.cpp"/>
-    <File Name="Directory.cpp"/>
-    <File Name="Path.cpp"/>
-    <File Name="Task.cpp"/>
-    <File Name="VarString.cpp"/>
-    <File Name="LetString.cpp"/>
-    <File Name="Chunk.cpp"/>
-    <File Name="Pool.cpp"/>
-    <File Name="Console.cpp"/>
+    <File Name="hello.cpp"/>
+    <File Name="hello.scaly"/>
   </VirtualDirectory>
   <VirtualDirectory Name="include">
-    <File Name="Scaly.h"/>
-    <File Name="Array.h"/>
-    <File Name="Object.h"/>
-    <File Name="Page.h"/>
-    <File Name="Region.h"/>
-    <File Name="File.h"/>
-    <File Name="Result.h"/>
-    <File Name="Directory.h"/>
-    <File Name="Path.h"/>
-    <File Name="Task.h"/>
-    <File Name="VarString.h"/>
-    <File Name="LetString.h"/>
-    <File Name="Vector.h"/>
-    <File Name="Chunk.h"/>
-    <File Name="Pool.h"/>
-    <File Name="Console.h"/>
+    <File Name="hello.h"/>
   </VirtualDirectory>
-  <Settings Type="Static Library">
+  <Dependencies Name="Debug"/>
+  <Dependencies Name="Release"/>
+  <Settings Type="Executable">
     <GlobalSettings>
       <Compiler Options="" C_Options="" Assembler="">
         <IncludePath Value="."/>
@@ -62,13 +47,17 @@
       </Linker>
       <ResourceCompiler Options=""/>
     </GlobalSettings>
-    <Configuration Name="Debug" CompilerType="GCC" DebuggerType="GNU gdb debugger" Type="Static Library" BuildCmpWithGlobalSettings="append" BuildLnkWithGlobalSettings="append" BuildResWithGlobalSettings="append">
-      <Compiler Options="-g;-std=c++11" C_Options="-g" Assembler="" Required="yes" PreCompiledHeader="" PCHInCommandLine="no" PCHFlags="" PCHFlagsPolicy="0">
+    <Configuration Name="Debug" CompilerType="GCC" DebuggerType="GNU gdb debugger" Type="Executable" BuildCmpWithGlobalSettings="append" BuildLnkWithGlobalSettings="append" BuildResWithGlobalSettings="append">
+      <Compiler Options="-g;-O0;-std=c++11;-Wall" C_Options="-g;-O0;-Wall" Assembler="" Required="yes" PreCompiledHeader="" PCHInCommandLine="no" PCHFlags="" PCHFlagsPolicy="0">
         <IncludePath Value="."/>
+        <IncludePath Value="../scaly"/>
       </Compiler>
-      <Linker Options="" Required="yes"/>
+      <Linker Options="" Required="yes">
+        <LibraryPath Value="../Debug"/>
+        <Library Value="libscaly"/>
+      </Linker>
       <ResourceCompiler Options="" Required="no"/>
-      <General OutputFile="$(IntermediateDirectory)/lib$(ProjectName).a" IntermediateDirectory="../Debug" Command="" CommandArguments="" UseSeparateDebugArgs="no" DebugArguments="" WorkingDirectory="$(IntermediateDirectory)" PauseExecWhenProcTerminates="yes" IsGUIProgram="no" IsEnabled="yes"/>
+      <General OutputFile="$(IntermediateDirectory)/$(ProjectName)" IntermediateDirectory="../Debug" Command="./$(ProjectName)" CommandArguments="-o hello -d output ../hello/hello.scaly" UseSeparateDebugArgs="no" DebugArguments="" WorkingDirectory="$(IntermediateDirectory)" PauseExecWhenProcTerminates="yes" IsGUIProgram="no" IsEnabled="yes"/>
       <Environment EnvVarSetName="&lt;Use Defaults&gt;" DbgSetName="&lt;Use Defaults&gt;">
         <![CDATA[]]>
       </Environment>
@@ -86,7 +75,7 @@
         <PreprocessFileCommand/>
         <SingleFileCommand/>
         <MakefileGenerationCommand/>
-        <ThirdPartyToolName/>
+        <ThirdPartyToolName>None</ThirdPartyToolName>
         <WorkingDirectory/>
       </CustomBuild>
       <AdditionalRules>
@@ -100,17 +89,21 @@
         <SearchPaths/>
       </Completion>
     </Configuration>
-    <Configuration Name="Release" CompilerType="GCC" DebuggerType="GNU gdb debugger" Type="Static Library" BuildCmpWithGlobalSettings="append" BuildLnkWithGlobalSettings="append" BuildResWithGlobalSettings="append">
-      <Compiler Options="" C_Options="" Assembler="" Required="yes" PreCompiledHeader="" PCHInCommandLine="no" PCHFlags="" PCHFlagsPolicy="0">
+    <Configuration Name="Release" CompilerType="GCC" DebuggerType="GNU gdb debugger" Type="Executable" BuildCmpWithGlobalSettings="append" BuildLnkWithGlobalSettings="append" BuildResWithGlobalSettings="append">
+      <Compiler Options="-O2;-Wall" C_Options="-O2;-Wall" Assembler="" Required="yes" PreCompiledHeader="" PCHInCommandLine="no" PCHFlags="" PCHFlagsPolicy="0">
         <IncludePath Value="."/>
+        <Preprocessor Value="NDEBUG"/>
       </Compiler>
-      <Linker Options="" Required="yes"/>
+      <Linker Options="" Required="yes">
+        <LibraryPath Value="../Release"/>
+        <Library Value="libscaly"/>
+      </Linker>
       <ResourceCompiler Options="" Required="no"/>
-      <General OutputFile="$(IntermediateDirectory)/lib$(ProjectName).a" IntermediateDirectory="../Release" Command="" CommandArguments="" UseSeparateDebugArgs="no" DebugArguments="" WorkingDirectory="$(IntermediateDirectory)" PauseExecWhenProcTerminates="yes" IsGUIProgram="no" IsEnabled="yes"/>
+      <General OutputFile="$(IntermediateDirectory)/$(ProjectName)" IntermediateDirectory="../Release" Command="./$(ProjectName)" CommandArguments="" UseSeparateDebugArgs="no" DebugArguments="" WorkingDirectory="$(IntermediateDirectory)" PauseExecWhenProcTerminates="yes" IsGUIProgram="no" IsEnabled="yes"/>
       <Environment EnvVarSetName="&lt;Use Defaults&gt;" DbgSetName="&lt;Use Defaults&gt;">
         <![CDATA[]]>
       </Environment>
-      <Debugger IsRemote="no" RemoteHostName="" RemoteHostPort="" DebuggerPath="" IsExtended="no">
+      <Debugger IsRemote="no" RemoteHostName="" RemoteHostPort="" DebuggerPath="" IsExtended="yes">
         <DebuggerSearchPaths/>
         <PostConnectCommands/>
         <StartupCommands/>
@@ -124,7 +117,7 @@
         <PreprocessFileCommand/>
         <SingleFileCommand/>
         <MakefileGenerationCommand/>
-        <ThirdPartyToolName/>
+        <ThirdPartyToolName>None</ThirdPartyToolName>
         <WorkingDirectory/>
       </CustomBuild>
       <AdditionalRules>

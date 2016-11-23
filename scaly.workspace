@@ -3,18 +3,21 @@
   <Project Name="scaly" Path="scaly/scaly.project" Active="No"/>
   <Project Name="scalyc" Path="scalyc/scalyc.project" Active="Yes"/>
   <Project Name="shortest" Path="shortest/shortest.project" Active="No"/>
+  <Project Name="hello" Path="hello/hello.project" Active="No"/>
   <BuildMatrix>
     <WorkspaceConfiguration Name="Debug" Selected="yes">
       <Environment/>
       <Project Name="scaly" ConfigName="Debug"/>
       <Project Name="scalyc" ConfigName="Debug"/>
       <Project Name="shortest" ConfigName="Debug"/>
+      <Project Name="hello" ConfigName="Debug"/>
     </WorkspaceConfiguration>
     <WorkspaceConfiguration Name="Release" Selected="yes">
       <Environment/>
       <Project Name="scaly" ConfigName="Release"/>
       <Project Name="scalyc" ConfigName="Release"/>
       <Project Name="shortest" ConfigName="Release"/>
+      <Project Name="hello" ConfigName="Release"/>
     </WorkspaceConfiguration>
   </BuildMatrix>
 </CodeLite_Workspace>

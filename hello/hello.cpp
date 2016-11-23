@@ -1,4 +1,4 @@
-#include "shortest.h"
+#include "hello.h"
 using namespace scaly;
 namespace scaly {
 
@@ -25,7 +25,7 @@ int main(int argc, char** argv) {
         *(*arguments)[i - 1] = new(__CurrentPage) string(argv[i]);
 
     // Call Scaly's top-level code
-    int ret = shortest::_main(arguments);
+    int ret = hello::_main(arguments);
 
     // Only for monitoring, debugging and stuff
     __CurrentTask->dispose();
@@ -34,11 +34,11 @@ int main(int argc, char** argv) {
     return ret;
 }
 
-namespace shortest {
+namespace hello {
 
 int _main(_Vector<string>* args) {
-//_Region _rp; _Page* _p = _rp.get();
 
+print("Hello world!\n");
 return 0;
 
 }
