@@ -37,8 +37,8 @@ public:
     OptionsError(_OptionsError_unknownOption* unknownOption)
     : errorCode(_OptionsErrorCode_unknownOption), errorInfo(unknownOption) {}
 
-    long getErrorCode();
-    void* getErrorInfo();
+    long _getErrorCode();
+    void* _getErrorInfo();
 
     _OptionsError_invalidOption* get_invalidOption();
     _OptionsError_unknownOption* get_unknownOption();

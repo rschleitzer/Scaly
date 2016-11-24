@@ -12,8 +12,8 @@ public:
     DirectoryError(_DirectoryErrorCode fileErrorCode)
     : errorCode(fileErrorCode) {}
     
-    long getErrorCode();
-    void* getErrorInfo();
+    long _getErrorCode();
+    void* _getErrorInfo();
 
 private:
     _DirectoryErrorCode errorCode;

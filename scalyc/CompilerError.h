@@ -59,8 +59,8 @@ public:
     CompilerError(_CompilerError_unableToCreateOutputDirectory* unableToCreateOutputDirectory)
     : errorCode(_CompilerErrorCode_unableToCreateOutputDirectory), errorInfo(unableToCreateOutputDirectory) {}
 
-    long getErrorCode();
-    void* getErrorInfo();
+    long _getErrorCode();
+    void* _getErrorInfo();
 
     _CompilerError_fileNotFound* get_fileNotFound();
     _CompilerError_unableToReadFile* get_unableToReadFile();

@@ -2,11 +2,11 @@
 #include <cstdio>
 namespace scaly {
 
-long FileError::getErrorCode() {
+long FileError::_getErrorCode() {
     return errorCode;
 }
 
-void* FileError::getErrorInfo() {
+void* FileError::_getErrorInfo() {
     return 0;
 }
 

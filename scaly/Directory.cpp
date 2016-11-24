@@ -2,11 +2,11 @@
 #include <sys/stat.h>
 namespace scaly {
 
-long DirectoryError::getErrorCode() {
+long DirectoryError::_getErrorCode() {
     return errorCode;
 }
 
-void* DirectoryError::getErrorInfo() {
+void* DirectoryError::_getErrorInfo() {
     return 0;
 }
 

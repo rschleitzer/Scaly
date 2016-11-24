@@ -48,18 +48,18 @@ else {
     if (_options_result.succeeded()) {
         options = _options_result.getResult();
     }
-    else if (_options_result.getErrorCode() == _OptionsErrorCode_invalidOption) {
+    else if (_options_result._getErrorCode() == _OptionsErrorCode_invalidOption) {
         return 2;
     }
-    else if (_options_result.getErrorCode() == _OptionsErrorCode_noOutputOption) {
+    else if (_options_result._getErrorCode() == _OptionsErrorCode_noOutputOption) {
         return 3;
     }
-    else if (_options_result.getErrorCode() == _OptionsErrorCode_noFilesToCompile) {
+    else if (_options_result._getErrorCode() == _OptionsErrorCode_noFilesToCompile) {
         return 4;
     }
     auto _Compiler_error = Compiler::compileFiles(_p, options);
     if (_Compiler_error) {
-        switch (_Compiler_error->getErrorCode()) {
+        switch (_Compiler_error->_getErrorCode()) {
             default:
                 return 5;
         }

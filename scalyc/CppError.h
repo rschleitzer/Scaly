@@ -25,8 +25,8 @@ public:
     CppError(_CppError_unableToCreateOutputDirectory* unableToCreateOutputDirectory)
     : errorCode(_CppErrorCode_unableToCreateOutputDirectory), errorInfo(unableToCreateOutputDirectory) {}
 
-    long getErrorCode();
-    void* getErrorInfo();
+    long _getErrorCode();
+    void* _getErrorInfo();
 
     _CppError_unableToCreateOutputDirectory* get_unableToCreateOutputDirectory();
 

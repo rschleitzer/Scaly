@@ -93,8 +93,8 @@ public:
     ParserError(_ParserError_notAtEnd* notAtEnd)
     : errorCode(_ParserErrorCode_notAtEnd), errorInfo(notAtEnd) {}
 
-    long getErrorCode();
-    void* getErrorInfo();
+    long _getErrorCode();
+    void* _getErrorInfo();
 
     _ParserError_identifierExpected* get_identifierExpected();
     _ParserError_literalExpected* get_literalExpected();

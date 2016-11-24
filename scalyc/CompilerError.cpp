@@ -2,11 +2,11 @@
 using namespace scaly;
 namespace scalyc {
 
-long CompilerError::getErrorCode() {
+long CompilerError::_getErrorCode() {
     return (long)errorCode;
 }
 
-void* CompilerError::getErrorInfo() {
+void* CompilerError::_getErrorInfo() {
     return errorInfo;
 }
 

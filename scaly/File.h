@@ -12,8 +12,8 @@ public:
     FileError(_FileErrorCode fileErrorCode)
     : errorCode(fileErrorCode) {}
     
-    long getErrorCode();
-    void* getErrorInfo();
+    long _getErrorCode();
+    void* _getErrorInfo();
 
 private:
     _FileErrorCode errorCode;

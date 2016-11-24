@@ -28,7 +28,7 @@ bool CppVisitor::openProgram(Program* program) {
     if (!Directory::exists(programDirectory)) {
         auto _Directory_error = Directory::create(_p, programDirectory);
         if (_Directory_error) {
-            switch (_Directory_error->getErrorCode()) {
+            switch (_Directory_error->_getErrorCode()) {
                 default:
                     return false;
             }
@@ -47,7 +47,7 @@ bool CppVisitor::openProgram(Program* program) {
                 projectFilePath->append(".project");
                 auto _File_error = File::writeFromString(_p, projectFilePath, projectFile);
                 if (_File_error) {
-                    switch (_File_error->getErrorCode()) {
+                    switch (_File_error->_getErrorCode()) {
                         default:
                             return false;
                     }
@@ -62,7 +62,7 @@ bool CppVisitor::openProgram(Program* program) {
                 headerFilePath->append(".h");
                 auto _File_error = File::writeFromString(_p, headerFilePath, mainHeaderFile);
                 if (_File_error) {
-                    switch (_File_error->getErrorCode()) {
+                    switch (_File_error->_getErrorCode()) {
                         default:
                             return false;
                     }
@@ -169,7 +169,7 @@ void CppVisitor::closeCompilationUnit(CompilationUnit* compilationUnit) {
         headerFilePath->append(".h");
         auto _File_error = File::writeFromString(_p, headerFilePath, headerFile);
         if (_File_error) {
-            switch (_File_error->getErrorCode()) {
+            switch (_File_error->_getErrorCode()) {
                 default:
                     return;
             }
@@ -182,7 +182,7 @@ void CppVisitor::closeCompilationUnit(CompilationUnit* compilationUnit) {
     sourceFilePath->append(".cpp");
     auto _File_error = File::writeFromString(_p, sourceFilePath, sourceFile);
     if (_File_error) {
-        switch (_File_error->getErrorCode()) {
+        switch (_File_error->_getErrorCode()) {
             default:
                 return;
         }
@@ -280,9 +280,9 @@ bool CppVisitor::openEnumDeclaration(EnumDeclaration* enumDeclaration) {
     headerFile->append(";\n");
     sourceFile->append("long ");
     sourceFile->append(enumDeclarationName);
-    sourceFile->append("::getErrorCode() {\n    return (long)errorCode;\n}\n\nvoid* ");
+    sourceFile->append("::_getErrorCode() {\n    return (long)errorCode;\n}\n\nvoid* ");
     sourceFile->append(enumDeclarationName);
-    sourceFile->append("::getErrorInfo() {\n    return errorInfo;\n}\n\n");
+    sourceFile->append("::_getErrorInfo() {\n    return errorInfo;\n}\n\n");
     return true;
 }
 
@@ -344,7 +344,7 @@ void CppVisitor::closeEnumDeclaration(EnumDeclaration* enumDeclaration) {
             }
         }
     }
-    headerFile->append("    long getErrorCode();\n    void* getErrorInfo();\n\n");
+    headerFile->append("    long _getErrorCode();\n    void* _getErrorInfo();\n\n");
     if (members != nullptr) {
         EnumMember* member = nullptr;
         size_t _members_length = members->length();
@@ -1320,7 +1320,7 @@ bool CppVisitor::openCatchClause(CatchClause* catchClause) {
                         IdentifierCatchPattern* identifierCatchPattern = (IdentifierCatchPattern*)(catchClause->catchPattern);
                         sourceFile->append(" if (_");
                         sourceFile->append(identifierPattern->identifier);
-                        sourceFile->append("_result.getErrorCode() == _");
+                        sourceFile->append("_result._getErrorCode() == _");
                         sourceFile->append(identifierCatchPattern->name);
                         sourceFile->append("Code_");
                         string* errorType = getErrorType(catchClause);
@@ -1384,7 +1384,7 @@ bool CppVisitor::openCatchClause(CatchClause* catchClause) {
                     indentSource();
                     sourceFile->append("switch (_");
                     sourceFile->append(identifierExpression->name);
-                    sourceFile->append("_error->getErrorCode()) {\n");
+                    sourceFile->append("_error->_getErrorCode()) {\n");
                     sourceIndentLevel++;
                 }
                 indentSource();
@@ -2795,7 +2795,8 @@ void CppVisitor::buildProjectFileString(Program* program) {
     projectFile->append("      <General OutputFile=\"$(IntermediateDirectory)/$(ProjectName)\" IntermediateDirectory=\"../Debug\" ");
     projectFile->append("Command=\"./$(ProjectName)\" CommandArguments=\"-o ");
     projectFile->append(program->name);
-    projectFile->append(" -d output");
+    projectFile->append(" -d ../");
+    projectFile->append(program->name);
     {
         _Vector<CompilationUnit>* compilationUnits = program->compilationUnits;
         CompilationUnit* compilationUnit = nullptr;

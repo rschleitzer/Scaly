@@ -11,7 +11,7 @@ public:
         
     // The operation failed
     _Result(E* error)
-    : errorCode((long)(error->getErrorCode())), payload(error->getErrorInfo()) {}
+    : errorCode((long)(error->_getErrorCode())), payload(error->_getErrorInfo()) {}
     
     bool succeeded() {
         return errorCode == 0;
@@ -21,7 +21,7 @@ public:
         return (R*)payload;
     }
     
-    long getErrorCode() {
+    long _getErrorCode() {
         return errorCode;
     }
     
