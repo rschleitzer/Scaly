@@ -2786,7 +2786,7 @@ void CppVisitor::buildMainHeaderFileString(Program* program) {
     }
     mainHeaderFile->append("\nusing namespace scaly;\nnamespace ");
     mainHeaderFile->append(program->name);
-    mainHeaderFile->append(" {\nint _main(_Vector<string>* arguments);\n}\n\n#endif // __scaly__");
+    mainHeaderFile->append(" {\nFileError* _main(_Page* page, _Vector<string>* arguments);\n}\n\n#endif // __scaly__");
     mainHeaderFile->append(program->name);
     mainHeaderFile->append("__\n");
 }
