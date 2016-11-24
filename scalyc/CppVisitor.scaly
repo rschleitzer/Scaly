@@ -2003,6 +2003,21 @@ class CppVisitor extends SyntaxVisitor {
                     parameterInserted = true
                 }
             }
+            
+            if functionCall.catchClauses == null {
+                if functionCall.parent is PostfixExpression {
+                    let postfixExpression: PostfixExpression = (functionCall.parent) as PostfixExpression
+                    if postfixExpression.primaryExpression is IdentifierExpression {
+                        let identifierExpression: IdentifierExpression = (postfixExpression.primaryExpression) as IdentifierExpression
+                        // Fix when print is recognized as external function
+                        if identifierExpression.name.equals("print") {
+                            sourceFile.append("_p")
+                            parameterInserted = true
+                        }
+                    }
+                }
+            }
+
             if parameterInserted && (parenthesizedExpression.expressionElements != null)
                 sourceFile.append(", ")
         }

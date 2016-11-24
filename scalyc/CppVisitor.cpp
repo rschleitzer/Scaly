@@ -1957,6 +1957,18 @@ bool CppVisitor::openParenthesizedExpression(ParenthesizedExpression* parenthesi
                 parameterInserted = true;
             }
         }
+        if (functionCall->catchClauses == nullptr) {
+            if (functionCall->parent->_isPostfixExpression()) {
+                PostfixExpression* postfixExpression = (PostfixExpression*)(functionCall->parent);
+                if (postfixExpression->primaryExpression->_isIdentifierExpression()) {
+                    IdentifierExpression* identifierExpression = (IdentifierExpression*)(postfixExpression->primaryExpression);
+                    if (identifierExpression->name->equals("print")) {
+                        sourceFile->append("_p");
+                        parameterInserted = true;
+                    }
+                }
+            }
+        }
         if (parameterInserted && (parenthesizedExpression->expressionElements != nullptr))
             sourceFile->append(", ");
     }
