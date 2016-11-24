@@ -6,7 +6,7 @@
 
 using namespace scaly;
 namespace hello {
-int _main(_Vector<string>* arguments);
+FileError* _main(_Page* _ep,  _Vector<string>* args);
 }
 
 #endif // __scaly__hello__

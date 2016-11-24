@@ -23,10 +23,10 @@ const size_t _maxStackPages = 0x100;
 #include "Result.h"
 #include "LetString.h"
 #include "VarString.h"
-#include "Console.h"
 #include "Path.h"
 #include "File.h"
 #include "Directory.h"
+#include "Console.h"
 
 namespace scaly {
 char* align(char*);

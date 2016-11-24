@@ -25,7 +25,20 @@ int main(int argc, char** argv) {
         *(*arguments)[i - 1] = new(__CurrentPage) string(argv[i]);
 
     // Call Scaly's top-level code
-    int ret = hello::_main(arguments);
+    auto _File_error = hello::_main(page, arguments);
+    int ret = 0;
+
+    // Convert Scaly's error enum back to OS errno values
+    if (_File_error) {
+        switch(_File_error->_getErrorCode()) {
+            case _FileErrorCode_noSuchFileOrDirectory:
+                ret = ENOENT;
+                break;
+            default:
+                ret = -1;
+                break;
+        }
+    }
 
     // Only for monitoring, debugging and stuff
     __CurrentTask->dispose();
@@ -36,10 +49,16 @@ int main(int argc, char** argv) {
 
 namespace hello {
 
-int _main(_Vector<string>* args) {
+FileError* _main(_Page* _ep,  _Vector<string>* args) {
 _Region _rp; _Page* _p = _rp.get();
 
-return print("Hello world!\n");
+{
+    auto _File_error = print(_p, "Hello world!\n");;
+    if (_File_error)
+        return _File_error;
+}
+
+return 0;
 
 }
 
