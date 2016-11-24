@@ -563,8 +563,11 @@ class CppVisitor extends SyntaxVisitor {
             indentSource()
 
         // Prepend a return if this expression is the only one of a function
-        if statement.parent is FunctionDeclaration
-            prependReturn(simpleExpression)
+        if statement.parent is FunctionDeclaration {
+            mutable returnType: string = getReturnType(statement)
+            if returnType != null
+                prependReturn(simpleExpression)
+        }
         
         // Prepend a return if this expression is the last one of global code
         if statement.parent is CompilationUnit {

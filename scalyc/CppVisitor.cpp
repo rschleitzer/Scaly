@@ -541,8 +541,12 @@ bool CppVisitor::openSimpleExpression(SimpleExpression* simpleExpression) {
     Statement* statement = (Statement*)simpleExpression;
     if (statement->parent->_isCodeBlock() || statement->parent->_isCaseContent() || statement->parent->_isCompilationUnit())
         indentSource();
-    if (statement->parent->_isFunctionDeclaration())
-        prependReturn(simpleExpression);
+    if (statement->parent->_isFunctionDeclaration()) {
+        _Region _region; _Page* _p = _region.get();
+        string* returnType = getReturnType(_p, statement);
+        if (returnType != nullptr)
+            prependReturn(simpleExpression);
+    }
     if (statement->parent->_isCompilationUnit()) {
         CompilationUnit* unit = (CompilationUnit*)statement->parent;
         _Vector<Statement>* statements = unit->statements;
