@@ -179,7 +179,7 @@ class CppVisitor extends SyntaxVisitor {
         sourceFile.append(" {\n\n")
         
         if isTopLevelFile(compilationUnit)
-            sourceFile.append("FileError* _main(_Page* _ep,  _Vector<string>* args) {\n_Region _rp; _Page* _p = _rp.get();\n\n")
+            sourceFile.append("FileError* _main(_Page* _ep,  _Vector<string>* arguments) {\n_Region _rp; _Page* _p = _rp.get();\n\n")
 
         true
     }
@@ -219,7 +219,7 @@ class CppVisitor extends SyntaxVisitor {
                     let simpleExpression: SimpleExpression = statement as SimpleExpression
                     let primaryExpression: PrimaryExpression = simpleExpression.prefixExpression.expression.primaryExpression
                     if (!(primaryExpression is ReturnExpression)) && (!(primaryExpression is LiteralExpression))
-                        sourceFile.append("return nullptr;\n")
+                        sourceFile.append("\nreturn nullptr;\n")
                 }
             }
 
@@ -2016,7 +2016,7 @@ class CppVisitor extends SyntaxVisitor {
                         let identifierExpression: IdentifierExpression = (postfixExpression.primaryExpression) as IdentifierExpression
                         // Fix when print is recognized as external function
                         if identifierExpression.name.equals("print") {
-                            sourceFile.append("_p")
+                            sourceFile.append("_ep")
                             parameterInserted = true
                         }
                     }

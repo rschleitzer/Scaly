@@ -49,16 +49,16 @@ int main(int argc, char** argv) {
 
 namespace hello {
 
-FileError* _main(_Page* _ep,  _Vector<string>* args) {
+FileError* _main(_Page* _ep,  _Vector<string>* arguments) {
 _Region _rp; _Page* _p = _rp.get();
 
 {
-    auto _File_error = print(_p, "Hello world!\n");
+    auto _File_error = print(_ep, "Hello world!\n");
     if (_File_error)
         return _File_error;
 }
 
-return 0;
+return nullptr;
 
 }
 

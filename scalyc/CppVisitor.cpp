@@ -150,7 +150,7 @@ bool CppVisitor::openCompilationUnit(CompilationUnit* compilationUnit) {
     sourceFile->append(programName);
     sourceFile->append(" {\n\n");
     if (isTopLevelFile(compilationUnit))
-        sourceFile->append("FileError* _main(_Page* _ep,  _Vector<string>* args) {\n_Region _rp; _Page* _p = _rp.get();\n\n");
+        sourceFile->append("FileError* _main(_Page* _ep,  _Vector<string>* arguments) {\n_Region _rp; _Page* _p = _rp.get();\n\n");
     return true;
 }
 
@@ -186,7 +186,7 @@ void CppVisitor::closeCompilationUnit(CompilationUnit* compilationUnit) {
                 SimpleExpression* simpleExpression = (SimpleExpression*)statement;
                 PrimaryExpression* primaryExpression = simpleExpression->prefixExpression->expression->primaryExpression;
                 if ((!(primaryExpression->_isReturnExpression())) && (!(primaryExpression->_isLiteralExpression())))
-                    sourceFile->append("return nullptr;\n");
+                    sourceFile->append("\nreturn nullptr;\n");
             }
         }
         sourceFile->append("\n}\n");
@@ -1966,7 +1966,7 @@ bool CppVisitor::openParenthesizedExpression(ParenthesizedExpression* parenthesi
                 if (postfixExpression->primaryExpression->_isIdentifierExpression()) {
                     IdentifierExpression* identifierExpression = (IdentifierExpression*)(postfixExpression->primaryExpression);
                     if (identifierExpression->name->equals("print")) {
-                        sourceFile->append("_p");
+                        sourceFile->append("_ep");
                         parameterInserted = true;
                     }
                 }
