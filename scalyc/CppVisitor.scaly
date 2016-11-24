@@ -209,9 +209,24 @@ class CppVisitor extends SyntaxVisitor {
                     return
         }
 
-        sourceFile.append("\n}\n")
         if isTopLevelFile(compilationUnit)
+        {
+            // Insert the return 0 if the last statement is not a return or a literal
+            let statements: Statement[] = compilationUnit.statements
+            if statements.length() > 0 {
+                let statement: Statement = statements[statements.length() - 1]
+                if statement is SimpleExpression {
+                    let simpleExpression: SimpleExpression = statement as SimpleExpression
+                    let primaryExpression: PrimaryExpression = simpleExpression.prefixExpression.expression.primaryExpression
+                    if (!(primaryExpression is ReturnExpression)) && (!(primaryExpression is LiteralExpression))
+                        sourceFile.append("return nullptr;\n")
+                }
+            }
+
             sourceFile.append("\n}\n")
+        }
+
+        sourceFile.append("\n}\n")
 
         mutable sourceFilePath: VarString = new VarString(outputFilePath)
         sourceFilePath.append(".cpp")
@@ -652,7 +667,6 @@ class CppVisitor extends SyntaxVisitor {
         if simpleExpression.parent is CompilationUnit {
 
             // Prefix the error result for a global function call which throws FileError
-            var checkError: bool = false
             let postfixes: Postfix[] = simpleExpression.prefixExpression.expression.postfixes
             if postfixes != null {
                 for postfix: Postfix in postfixes {
@@ -669,21 +683,12 @@ class CppVisitor extends SyntaxVisitor {
                                         sourceIndentLevel++
                                         indentSource()
                                         sourceFile.append("auto _File_error = ")
-                                        checkError = true
                                     }
                                 }
                             }
                         }
                     }
                 }
-            }
-            if !checkError {
-
-                // Prepend a return if this expression is the last one of global code
-                let unit: CompilationUnit = statement.parent as CompilationUnit
-                let statements: Statement[] = unit.statements
-                if statements[statements.length() - 1] == statement
-                    prependReturn(simpleExpression)
             }
         }
 

@@ -178,9 +178,20 @@ void CppVisitor::closeCompilationUnit(CompilationUnit* compilationUnit) {
             }
         }
     }
-    sourceFile->append("\n}\n");
-    if (isTopLevelFile(compilationUnit))
+    if (isTopLevelFile(compilationUnit)) {
+        _Vector<Statement>* statements = compilationUnit->statements;
+        if (statements->length() > 0) {
+            Statement* statement = *(*statements)[statements->length() - 1];
+            if (statement->_isSimpleExpression()) {
+                SimpleExpression* simpleExpression = (SimpleExpression*)statement;
+                PrimaryExpression* primaryExpression = simpleExpression->prefixExpression->expression->primaryExpression;
+                if ((!(primaryExpression->_isReturnExpression())) && (!(primaryExpression->_isLiteralExpression())))
+                    sourceFile->append("return nullptr;\n");
+            }
+        }
         sourceFile->append("\n}\n");
+    }
+    sourceFile->append("\n}\n");
     VarString* sourceFilePath = new(_p) VarString(outputFilePath);
     sourceFilePath->append(".cpp");
     auto _File_error = File::writeFromString(_p, sourceFilePath, sourceFile);
@@ -629,7 +640,6 @@ bool CppVisitor::openSimpleExpression(SimpleExpression* simpleExpression) {
         }
     }
     if (simpleExpression->parent->_isCompilationUnit()) {
-        bool checkError = false;
         _Vector<Postfix>* postfixes = simpleExpression->prefixExpression->expression->postfixes;
         if (postfixes != nullptr) {
             Postfix* postfix = nullptr;
@@ -649,7 +659,6 @@ bool CppVisitor::openSimpleExpression(SimpleExpression* simpleExpression) {
                                         sourceIndentLevel++;
                                         indentSource();
                                         sourceFile->append("auto _File_error = ");
-                                        checkError = true;
                                     }
                                 }
                             }
@@ -657,12 +666,6 @@ bool CppVisitor::openSimpleExpression(SimpleExpression* simpleExpression) {
                     }
                 }
             }
-        }
-        if (!checkError) {
-            CompilationUnit* unit = (CompilationUnit*)statement->parent;
-            _Vector<Statement>* statements = unit->statements;
-            if (*(*statements)[statements->length() - 1] == statement)
-                prependReturn(simpleExpression);
         }
     }
     return true;
