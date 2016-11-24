@@ -161,9 +161,12 @@ class CppVisitor extends SyntaxVisitor {
             sourceFile.append("    for (int i = 1; i < argc; i++)\n")
             sourceFile.append("        *(*arguments)[i - 1] = new(__CurrentPage) string(argv[i]);\n\n")
             sourceFile.append("    // Call Scaly's top-level code\n")
-            sourceFile.append("    int ret = ")
+            sourceFile.append("    auto _File_error = ")
             sourceFile.append(programName)
-            sourceFile.append("::_main(arguments);\n\n")
+            sourceFile.append("::_main(page, arguments);\n    int ret = 0;\n\n    // Convert Scaly's error enum back to OS errno values\n")
+            sourceFile.append("    if (_File_error) {\n        switch(_File_error->_getErrorCode()) {\n")
+            sourceFile.append("            case _FileErrorCode_noSuchFileOrDirectory:\n                ret = ENOENT;\n")
+            sourceFile.append("                break;\n            default:\n                ret = -1;\n                break;\n        }\n    }\n\n")
             sourceFile.append("    // Only for monitoring, debugging and stuff\n")
             sourceFile.append("    __CurrentTask->dispose();\n\n")
             sourceFile.append("    // Give back the return code of the top-level code\n")
@@ -176,7 +179,7 @@ class CppVisitor extends SyntaxVisitor {
         sourceFile.append(" {\n\n")
         
         if isTopLevelFile(compilationUnit)
-            sourceFile.append("int _main(_Vector<string>* args) {\n_Region _rp; _Page* _p = _rp.get();\n\n")
+            sourceFile.append("FileError* _main(_Page* _ep,  _Vector<string>* args) {\n_Region _rp; _Page* _p = _rp.get();\n\n")
 
         true
     }
@@ -569,14 +572,6 @@ class CppVisitor extends SyntaxVisitor {
                 prependReturn(simpleExpression)
         }
         
-        // Prepend a return if this expression is the last one of global code
-        if statement.parent is CompilationUnit {
-            let unit: CompilationUnit = statement.parent as CompilationUnit
-            let statements: Statement[] = unit.statements
-            if statements[statements.length() - 1] == statement
-                prependReturn(simpleExpression)
-        }
-        
         // Prepend a return if this expression is the last one in the enclosing block if that block is the root block of a function declaration
         if statement.parent is CodeBlock {
             let block: CodeBlock = statement.parent as CodeBlock
@@ -634,14 +629,13 @@ class CppVisitor extends SyntaxVisitor {
             }
 
             // Prefix the error result for a catching function call
-            if simpleExpression.parent is CodeBlock || simpleExpression.parent is CaseContent || simpleExpression.parent is CompilationUnit {
+            if simpleExpression.parent is CodeBlock || simpleExpression.parent is CaseContent {
                 let postfixes: Postfix[] = simpleExpression.prefixExpression.expression.postfixes
                 if postfixes != null {
                     for postfix: Postfix in postfixes {
                         if postfix is FunctionCall {
                             let functionCall: FunctionCall = postfix as FunctionCall
                             if functionCall.catchClauses != null {
-
                                 let identifierExpression: IdentifierExpression = simpleExpression.prefixExpression.expression.primaryExpression as IdentifierExpression
                                 sourceFile.append("auto _")
                                 sourceFile.append(identifierExpression.name)
@@ -650,6 +644,46 @@ class CppVisitor extends SyntaxVisitor {
                         }
                     }
                 }
+            }
+            
+            
+        }
+
+        if simpleExpression.parent is CompilationUnit {
+
+            // Prefix the error result for a global function call which throws FileError
+            var checkError: bool = false
+            let postfixes: Postfix[] = simpleExpression.prefixExpression.expression.postfixes
+            if postfixes != null {
+                for postfix: Postfix in postfixes {
+                    if postfix is FunctionCall {
+                        let functionCall: FunctionCall = postfix as FunctionCall
+                        if functionCall.catchClauses == null {
+                            if functionCall.parent is PostfixExpression {
+                                let postfixExpression: PostfixExpression = (functionCall.parent) as PostfixExpression
+                                if postfixExpression.primaryExpression is IdentifierExpression {
+                                    let identifierExpression: IdentifierExpression = (postfixExpression.primaryExpression) as IdentifierExpression
+                                    // Fix when print is recognized as external function
+                                    if identifierExpression.name.equals("print") {
+                                        sourceFile.append("{\n")
+                                        sourceIndentLevel++
+                                        indentSource()
+                                        sourceFile.append("auto _File_error = ")
+                                        checkError = true
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            if !checkError {
+
+                // Prepend a return if this expression is the last one of global code
+                let unit: CompilationUnit = statement.parent as CompilationUnit
+                let statements: Statement[] = unit.statements
+                if statements[statements.length() - 1] == statement
+                    prependReturn(simpleExpression)
             }
         }
 
@@ -696,6 +730,36 @@ class CppVisitor extends SyntaxVisitor {
         }
         if simpleExpression.parent is CodeBlock || simpleExpression.parent is CaseContent || simpleExpression.parent is CompilationUnit
             sourceFile.append(";\n")
+            
+        if simpleExpression.parent is CompilationUnit {
+
+            // Check and return the error result for a global function call which throws FileError
+            let postfixes: Postfix[] = simpleExpression.prefixExpression.expression.postfixes
+            if postfixes != null {
+                for postfix: Postfix in postfixes {
+                    if postfix is FunctionCall {
+                        let functionCall: FunctionCall = postfix as FunctionCall
+                        if functionCall.catchClauses == null {
+                            if functionCall.parent is PostfixExpression {
+                                let postfixExpression: PostfixExpression = (functionCall.parent) as PostfixExpression
+                                if postfixExpression.primaryExpression is IdentifierExpression {
+                                    let identifierExpression: IdentifierExpression = (postfixExpression.primaryExpression) as IdentifierExpression
+                                    // Fix when print is recognized as external function
+                                    if identifierExpression.name.equals("print") {
+                                        indentSource()
+                                        sourceFile.append("if (_File_error)\n")
+                                        indentSource()
+                                        sourceFile.append("    return _File_error;\n")
+                                        sourceIndentLevel--
+                                        sourceFile.append("}\n")
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 
     function openInitializer(initializer: Initializer): bool {

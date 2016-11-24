@@ -53,7 +53,7 @@ FileError* _main(_Page* _ep,  _Vector<string>* args) {
 _Region _rp; _Page* _p = _rp.get();
 
 {
-    auto _File_error = print(_p, "Hello world!\n");;
+    auto _File_error = print(_p, "Hello world!\n");
     if (_File_error)
         return _File_error;
 }

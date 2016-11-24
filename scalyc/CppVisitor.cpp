@@ -134,9 +134,12 @@ bool CppVisitor::openCompilationUnit(CompilationUnit* compilationUnit) {
         sourceFile->append("    for (int i = 1; i < argc; i++)\n");
         sourceFile->append("        *(*arguments)[i - 1] = new(__CurrentPage) string(argv[i]);\n\n");
         sourceFile->append("    // Call Scaly's top-level code\n");
-        sourceFile->append("    int ret = ");
+        sourceFile->append("    auto _File_error = ");
         sourceFile->append(programName);
-        sourceFile->append("::_main(arguments);\n\n");
+        sourceFile->append("::_main(page, arguments);\n    int ret = 0;\n\n    // Convert Scaly's error enum back to OS errno values\n");
+        sourceFile->append("    if (_File_error) {\n        switch(_File_error->_getErrorCode()) {\n");
+        sourceFile->append("            case _FileErrorCode_noSuchFileOrDirectory:\n                ret = ENOENT;\n");
+        sourceFile->append("                break;\n            default:\n                ret = -1;\n                break;\n        }\n    }\n\n");
         sourceFile->append("    // Only for monitoring, debugging and stuff\n");
         sourceFile->append("    __CurrentTask->dispose();\n\n");
         sourceFile->append("    // Give back the return code of the top-level code\n");
@@ -147,7 +150,7 @@ bool CppVisitor::openCompilationUnit(CompilationUnit* compilationUnit) {
     sourceFile->append(programName);
     sourceFile->append(" {\n\n");
     if (isTopLevelFile(compilationUnit))
-        sourceFile->append("int _main(_Vector<string>* args) {\n_Region _rp; _Page* _p = _rp.get();\n\n");
+        sourceFile->append("FileError* _main(_Page* _ep,  _Vector<string>* args) {\n_Region _rp; _Page* _p = _rp.get();\n\n");
     return true;
 }
 
@@ -547,12 +550,6 @@ bool CppVisitor::openSimpleExpression(SimpleExpression* simpleExpression) {
         if (returnType != nullptr)
             prependReturn(simpleExpression);
     }
-    if (statement->parent->_isCompilationUnit()) {
-        CompilationUnit* unit = (CompilationUnit*)statement->parent;
-        _Vector<Statement>* statements = unit->statements;
-        if (*(*statements)[statements->length() - 1] == statement)
-            prependReturn(simpleExpression);
-    }
     if (statement->parent->_isCodeBlock()) {
         CodeBlock* block = (CodeBlock*)statement->parent;
         if (block->parent->_isFunctionDeclaration()) {
@@ -609,7 +606,7 @@ bool CppVisitor::openSimpleExpression(SimpleExpression* simpleExpression) {
                 }
             }
         }
-        if (simpleExpression->parent->_isCodeBlock() || simpleExpression->parent->_isCaseContent() || simpleExpression->parent->_isCompilationUnit()) {
+        if (simpleExpression->parent->_isCodeBlock() || simpleExpression->parent->_isCaseContent()) {
             _Vector<Postfix>* postfixes = simpleExpression->prefixExpression->expression->postfixes;
             if (postfixes != nullptr) {
                 Postfix* postfix = nullptr;
@@ -629,6 +626,43 @@ bool CppVisitor::openSimpleExpression(SimpleExpression* simpleExpression) {
                     }
                 }
             }
+        }
+    }
+    if (simpleExpression->parent->_isCompilationUnit()) {
+        bool checkError = false;
+        _Vector<Postfix>* postfixes = simpleExpression->prefixExpression->expression->postfixes;
+        if (postfixes != nullptr) {
+            Postfix* postfix = nullptr;
+            size_t _postfixes_length = postfixes->length();
+            for (size_t _i = 0; _i < _postfixes_length; _i++) {
+                postfix = *(*postfixes)[_i];
+                {
+                    if (postfix->_isFunctionCall()) {
+                        FunctionCall* functionCall = (FunctionCall*)postfix;
+                        if (functionCall->catchClauses == nullptr) {
+                            if (functionCall->parent->_isPostfixExpression()) {
+                                PostfixExpression* postfixExpression = (PostfixExpression*)(functionCall->parent);
+                                if (postfixExpression->primaryExpression->_isIdentifierExpression()) {
+                                    IdentifierExpression* identifierExpression = (IdentifierExpression*)(postfixExpression->primaryExpression);
+                                    if (identifierExpression->name->equals("print")) {
+                                        sourceFile->append("{\n");
+                                        sourceIndentLevel++;
+                                        indentSource();
+                                        sourceFile->append("auto _File_error = ");
+                                        checkError = true;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        if (!checkError) {
+            CompilationUnit* unit = (CompilationUnit*)statement->parent;
+            _Vector<Statement>* statements = unit->statements;
+            if (*(*statements)[statements->length() - 1] == statement)
+                prependReturn(simpleExpression);
         }
     }
     return true;
@@ -670,6 +704,37 @@ void CppVisitor::closeSimpleExpression(SimpleExpression* simpleExpression) {
     }
     if (simpleExpression->parent->_isCodeBlock() || simpleExpression->parent->_isCaseContent() || simpleExpression->parent->_isCompilationUnit())
         sourceFile->append(";\n");
+    if (simpleExpression->parent->_isCompilationUnit()) {
+        _Vector<Postfix>* postfixes = simpleExpression->prefixExpression->expression->postfixes;
+        if (postfixes != nullptr) {
+            Postfix* postfix = nullptr;
+            size_t _postfixes_length = postfixes->length();
+            for (size_t _i = 0; _i < _postfixes_length; _i++) {
+                postfix = *(*postfixes)[_i];
+                {
+                    if (postfix->_isFunctionCall()) {
+                        FunctionCall* functionCall = (FunctionCall*)postfix;
+                        if (functionCall->catchClauses == nullptr) {
+                            if (functionCall->parent->_isPostfixExpression()) {
+                                PostfixExpression* postfixExpression = (PostfixExpression*)(functionCall->parent);
+                                if (postfixExpression->primaryExpression->_isIdentifierExpression()) {
+                                    IdentifierExpression* identifierExpression = (IdentifierExpression*)(postfixExpression->primaryExpression);
+                                    if (identifierExpression->name->equals("print")) {
+                                        indentSource();
+                                        sourceFile->append("if (_File_error)\n");
+                                        indentSource();
+                                        sourceFile->append("    return _File_error;\n");
+                                        sourceIndentLevel--;
+                                        sourceFile->append("}\n");
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
 
 bool CppVisitor::openInitializer(Initializer* initializer) {
