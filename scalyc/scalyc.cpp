@@ -25,7 +25,20 @@ int main(int argc, char** argv) {
         *(*arguments)[i - 1] = new(__CurrentPage) string(argv[i]);
 
     // Call Scaly's top-level code
-    int ret = scalyc::_main(arguments);
+    auto _File_error = scalyc::_main(page, arguments);
+    int ret = 0;
+
+    // Convert Scaly's error enum back to OS errno values
+    if (_File_error) {
+        switch(_File_error->_getErrorCode()) {
+            case _FileErrorCode_noSuchFileOrDirectory:
+                ret = ENOENT;
+                break;
+            default:
+                ret = -1;
+                break;
+        }
+    }
 
     // Only for monitoring, debugging and stuff
     __CurrentTask->dispose();
@@ -36,11 +49,11 @@ int main(int argc, char** argv) {
 
 namespace scalyc {
 
-int _main(_Vector<string>* args) {
+FileError* _main(_Page* _ep,  _Vector<string>* args) {
 _Region _rp; _Page* _p = _rp.get();
 
 if (args->length() < 1) {
-    return 1;
+    return nullptr;
 }
 else {
     auto _options_result = Options::parseArguments(_p, _p, args);
@@ -49,19 +62,19 @@ else {
         options = _options_result.getResult();
     }
     else if (_options_result._getErrorCode() == _OptionsErrorCode_invalidOption) {
-        return 2;
+        return nullptr;
     }
     else if (_options_result._getErrorCode() == _OptionsErrorCode_noOutputOption) {
-        return 3;
+        return nullptr;
     }
     else if (_options_result._getErrorCode() == _OptionsErrorCode_noFilesToCompile) {
-        return 4;
+        return nullptr;
     }
     auto _Compiler_error = Compiler::compileFiles(_p, options);
     if (_Compiler_error) {
         switch (_Compiler_error->_getErrorCode()) {
             default:
-                return 5;
+                return nullptr;
         }
     }
 }
