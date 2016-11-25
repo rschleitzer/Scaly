@@ -15,7 +15,7 @@ _Result<Options, OptionsError> Options::parseArguments(_Page* _rp, _Page* _ep, _
     string* dir = nullptr;
     _Array<string>* input = new(_p) _Array<string>();
     size_t i = 0;
-    do {
+    while (i < length) {
         if (length < 2 || (*(*args)[i])->charAt(0) != '-') {
             input->push(*(*args)[i]);
             i++;
@@ -50,7 +50,6 @@ _Result<Options, OptionsError> Options::parseArguments(_Page* _rp, _Page* _ep, _
         }
         i++;
     }
-    while (i < length);
     if (output == nullptr)
         return _Result<Options, OptionsError>(new(_ep) OptionsError(_OptionsErrorCode_noOutputOption));
     if (input->length() == 0)

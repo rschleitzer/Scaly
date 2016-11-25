@@ -16,7 +16,7 @@ class Options {
         mutable dir: string = null
         mutable input: string[] = new string[]()
         mutable i: number = 0
-        do {
+        while i < length {
             if length < 2 || (args[i]).charAt(0) != '-' {
                 input.push(args[i])
                 i++
@@ -41,7 +41,7 @@ class Options {
                     throw unknownOption(args[i])
             }
             i++
-        } while i < length
+        }
         if output == null
             throw noOutputOption
         if input.length() == 0
