@@ -30,7 +30,10 @@ bool CppVisitor::openProgram(Program* program) {
         if (_Directory_error) {
             switch (_Directory_error->_getErrorCode()) {
                 default:
+                {
                     return false;
+                    break;
+                }
             }
         }
     }
@@ -49,7 +52,10 @@ bool CppVisitor::openProgram(Program* program) {
                 if (_File_error) {
                     switch (_File_error->_getErrorCode()) {
                         default:
+                        {
                             return false;
+                            break;
+                        }
                     }
                 }
             }
@@ -64,7 +70,10 @@ bool CppVisitor::openProgram(Program* program) {
                 if (_File_error) {
                     switch (_File_error->_getErrorCode()) {
                         default:
+                        {
                             return false;
+                            break;
+                        }
                     }
                 }
             }
@@ -174,7 +183,10 @@ void CppVisitor::closeCompilationUnit(CompilationUnit* compilationUnit) {
         if (_File_error) {
             switch (_File_error->_getErrorCode()) {
                 default:
+                {
                     return;
+                    break;
+                }
             }
         }
     }
@@ -198,7 +210,10 @@ void CppVisitor::closeCompilationUnit(CompilationUnit* compilationUnit) {
     if (_File_error) {
         switch (_File_error->_getErrorCode()) {
             default:
+            {
                 return;
+                break;
+            }
         }
     }
     if (module != nullptr)
@@ -1503,13 +1518,19 @@ bool CppVisitor::openCatchClause(CatchClause* catchClause) {
                 }
                 if (catchClause->catchPattern->_isWildCardCatchPattern()) {
                     sourceFile->append("default:\n");
+                    indentSource();
+                    sourceFile->append("{\n");
                 }
                 sourceIndentLevel++;
                 indentSource();
                 catchClause->expression->accept(this);
                 if (catchClause->expression->_isSimpleExpression())
                     sourceFile->append(";\n");
+                indentSource();
+                sourceFile->append("break;\n");
                 sourceIndentLevel--;
+                indentSource();
+                sourceFile->append("}\n");
                 _Vector<CatchClause>* clauses = functionCall->catchClauses;
                 if (*(*clauses)[functionCall->catchClauses->length() - 1] == catchClause) {
                     sourceIndentLevel--;

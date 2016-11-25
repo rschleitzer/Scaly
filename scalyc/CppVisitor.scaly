@@ -1564,6 +1564,8 @@ class CppVisitor extends SyntaxVisitor {
                     }
                     if catchClause.catchPattern is WildCardCatchPattern {
                         sourceFile.append("default:\n")
+                        indentSource()
+                        sourceFile.append("{\n")
                     }
                     
                     sourceIndentLevel++
@@ -1571,7 +1573,11 @@ class CppVisitor extends SyntaxVisitor {
                     catchClause.expression.accept(this)
                     if catchClause.expression is SimpleExpression
                         sourceFile.append(";\n")
+                    indentSource()
+                    sourceFile.append("break;\n")
                     sourceIndentLevel--
+                    indentSource()
+                    sourceFile.append("}\n")
                     
                     let clauses: CatchClause[] = functionCall.catchClauses
                     if clauses[functionCall.catchClauses.length() - 1] == catchClause {
