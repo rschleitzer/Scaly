@@ -1470,6 +1470,8 @@ bool CppVisitor::openCatchClause(CatchClause* catchClause) {
                     if (identifierCatchPattern->member != nullptr) {
                         sourceFile->append(identifierCatchPattern->member->member);
                         sourceFile->append(":\n");
+                        indentSource();
+                        sourceFile->append("{\n");
                         sourceIndentLevel++;
                         indentSource();
                         sourceFile->append("_");

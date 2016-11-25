@@ -1531,6 +1531,8 @@ class CppVisitor extends SyntaxVisitor {
                         if identifierCatchPattern.member != null {
                             sourceFile.append(identifierCatchPattern.member.member)
                             sourceFile.append(":\n")
+                            indentSource()
+                            sourceFile.append("{\n")
                             sourceIndentLevel++
                             indentSource()
                             sourceFile.append("_")
