@@ -26,14 +26,14 @@ class Options {
                 case 'o': {
                     i++
                     if i == length
-                        throw invalidOption(args[i])
+                        throw invalidOption(args[i - 1])
                     else
                         output = args[i]
                 }
                 case 'd': {
                     i++
                     if i == length
-                        throw invalidOption(args[i])
+                        throw invalidOption(args[i - 1])
                     else
                         dir = args[i]
                 }

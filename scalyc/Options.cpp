@@ -26,7 +26,7 @@ _Result<Options, OptionsError> Options::parseArguments(_Page* _rp, _Page* _ep, _
                 {
                     i++;
                     if (i == length)
-                        return _Result<Options, OptionsError>(new(_ep) OptionsError(new(_ep) _OptionsError_invalidOption(*(*args)[i])));
+                        return _Result<Options, OptionsError>(new(_ep) OptionsError(new(_ep) _OptionsError_invalidOption(*(*args)[i - 1])));
                     else
                         output = *(*args)[i];
                 }
@@ -37,7 +37,7 @@ _Result<Options, OptionsError> Options::parseArguments(_Page* _rp, _Page* _ep, _
                 {
                     i++;
                     if (i == length)
-                        return _Result<Options, OptionsError>(new(_ep) OptionsError(new(_ep) _OptionsError_invalidOption(*(*args)[i])));
+                        return _Result<Options, OptionsError>(new(_ep) OptionsError(new(_ep) _OptionsError_invalidOption(*(*args)[i - 1])));
                     else
                         dir = *(*args)[i];
                 }
