@@ -1571,10 +1571,20 @@ class CppVisitor extends SyntaxVisitor {
                     sourceIndentLevel++
                     indentSource()
                     catchClause.expression.accept(this)
-                    if catchClause.expression is SimpleExpression
-                        sourceFile.append(";\n")
-                    indentSource()
-                    sourceFile.append("break;\n")
+                    {
+                        var insertBreak: bool = true
+                        if catchClause.expression is SimpleExpression {
+                            let simpleExpression: SimpleExpression = catchClause.expression as SimpleExpression
+                            if simpleExpression.prefixExpression.expression.primaryExpression is ReturnExpression {
+                                sourceFile.append(";\n")
+                                insertBreak = false
+                            }
+                        }
+                        if insertBreak {
+                            indentSource()
+                            sourceFile.append("break;\n")
+                        }
+                    }
                     sourceIndentLevel--
                     indentSource()
                     sourceFile.append("}\n")

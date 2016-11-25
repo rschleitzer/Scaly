@@ -32,7 +32,6 @@ bool CppVisitor::openProgram(Program* program) {
                 default:
                 {
                     return false;
-                    break;
                 }
             }
         }
@@ -54,7 +53,6 @@ bool CppVisitor::openProgram(Program* program) {
                         default:
                         {
                             return false;
-                            break;
                         }
                     }
                 }
@@ -72,7 +70,6 @@ bool CppVisitor::openProgram(Program* program) {
                         default:
                         {
                             return false;
-                            break;
                         }
                     }
                 }
@@ -185,7 +182,6 @@ void CppVisitor::closeCompilationUnit(CompilationUnit* compilationUnit) {
                 default:
                 {
                     return;
-                    break;
                 }
             }
         }
@@ -212,7 +208,6 @@ void CppVisitor::closeCompilationUnit(CompilationUnit* compilationUnit) {
             default:
             {
                 return;
-                break;
             }
         }
     }
@@ -1524,10 +1519,20 @@ bool CppVisitor::openCatchClause(CatchClause* catchClause) {
                 sourceIndentLevel++;
                 indentSource();
                 catchClause->expression->accept(this);
-                if (catchClause->expression->_isSimpleExpression())
-                    sourceFile->append(";\n");
-                indentSource();
-                sourceFile->append("break;\n");
+                {
+                    bool insertBreak = true;
+                    if (catchClause->expression->_isSimpleExpression()) {
+                        SimpleExpression* simpleExpression = (SimpleExpression*)catchClause->expression;
+                        if (simpleExpression->prefixExpression->expression->primaryExpression->_isReturnExpression()) {
+                            sourceFile->append(";\n");
+                            insertBreak = false;
+                        }
+                    }
+                    if (insertBreak) {
+                        indentSource();
+                        sourceFile->append("break;\n");
+                    }
+                }
                 sourceIndentLevel--;
                 indentSource();
                 sourceFile->append("}\n");
