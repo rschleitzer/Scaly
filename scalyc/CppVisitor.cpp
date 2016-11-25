@@ -223,6 +223,8 @@ bool CppVisitor::isTopLevelFile(CompilationUnit* compilationUnit) {
 
 bool CppVisitor::openConstantDeclaration(ConstantDeclaration* constantDeclaration) {
     constDeclaration = true;
+    if (constantDeclaration->parent->parent->parent == nullptr)
+        return true;
     if (constantDeclaration->parent->parent->parent->_isClassDeclaration())
         suppressSource = true;
     return true;
@@ -617,7 +619,7 @@ bool CppVisitor::openSimpleExpression(SimpleExpression* simpleExpression) {
                 }
             }
         }
-        if (simpleExpression->parent->_isCodeBlock() || simpleExpression->parent->_isCaseContent()) {
+        if (simpleExpression->parent->_isCodeBlock() || simpleExpression->parent->_isCaseContent() || simpleExpression->parent->_isCompilationUnit()) {
             _Vector<Postfix>* postfixes = simpleExpression->prefixExpression->expression->postfixes;
             if (postfixes != nullptr) {
                 Postfix* postfix = nullptr;

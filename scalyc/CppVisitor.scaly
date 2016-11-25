@@ -251,6 +251,9 @@ class CppVisitor extends SyntaxVisitor {
     function openConstantDeclaration(constantDeclaration: ConstantDeclaration): bool {
         constDeclaration = true
 
+        if constantDeclaration.parent.parent.parent == null
+            return(true)
+
         if constantDeclaration.parent.parent.parent is ClassDeclaration
             suppressSource = true
             
@@ -644,7 +647,7 @@ class CppVisitor extends SyntaxVisitor {
             }
 
             // Prefix the error result for a catching function call
-            if simpleExpression.parent is CodeBlock || simpleExpression.parent is CaseContent {
+            if simpleExpression.parent is CodeBlock || simpleExpression.parent is CaseContent || simpleExpression.parent is CompilationUnit {
                 let postfixes: Postfix[] = simpleExpression.prefixExpression.expression.postfixes
                 if postfixes != null {
                     for postfix: Postfix in postfixes {
@@ -660,8 +663,6 @@ class CppVisitor extends SyntaxVisitor {
                     }
                 }
             }
-            
-            
         }
 
         if simpleExpression.parent is CompilationUnit {
