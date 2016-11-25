@@ -1,8 +1,27 @@
 let options: Options = Options.parseArguments(arguments)
-    catch OptionsError.invalidOption(error: invalidOption) return
-    catch OptionsError.noOutputOption(error: noOutputOption) return
-    catch OptionsError.noFilesToCompile(error: noFilesToCompile) return
+    catch OptionsError.invalidOption(error: invalidOption) {
+        print("Invalid option.\n")
+        return
+    }
+    catch OptionsError.noOutputOption(error: noOutputOption) {
+        print("No output option.\n")
+        return
+    }
+    catch OptionsError.noFilesToCompile(error: noFilesToCompile) {
+        print("No files to compile.\n")
+        return
+    }
 
-Compiler.compileFiles(options) catch _ (error: OptionsError) return
+Compiler.compileFiles(options)
+    catch CompilerError.fileNotFound(file) {
+        print("File ")
+        print(file.file)
+        print(" not found.\n")
+        return
+    }
+    catch _ (error: CompilerError) {
+        print("Compiler error.\n")
+        return
+    }
 
 

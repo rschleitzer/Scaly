@@ -1488,7 +1488,7 @@ bool CppVisitor::openCatchClause(CatchClause* catchClause) {
                                         sourceFile->append(pattern->identifier);
                                         sourceFile->append(" = _");
                                         sourceFile->append(identifierExpression->name);
-                                        sourceFile->append("_error.get_");
+                                        sourceFile->append("_error->get_");
                                         sourceFile->append(identifierCatchPattern->member->member);
                                         sourceFile->append("();");
                                     }

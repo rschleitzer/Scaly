@@ -58,19 +58,45 @@ if (_options_result.succeeded()) {
     options = _options_result.getResult();
 }
 else if (_options_result._getErrorCode() == _OptionsErrorCode_invalidOption) {
-    return nullptr;
+    {
+        print(_ep, "Invalid option.\n");
+        return nullptr;
+    }
 }
 else if (_options_result._getErrorCode() == _OptionsErrorCode_noOutputOption) {
-    return nullptr;
+    {
+        print(_ep, "No output option.\n");
+        return nullptr;
+    }
 }
 else if (_options_result._getErrorCode() == _OptionsErrorCode_noFilesToCompile) {
-    return nullptr;
+    {
+        print(_ep, "No files to compile.\n");
+        return nullptr;
+    }
 }
 auto _Compiler_error = Compiler::compileFiles(_p, options);
 if (_Compiler_error) {
     switch (_Compiler_error->_getErrorCode()) {
+        case _CompilerErrorCode_fileNotFound:
+        {
+            _CompilerError_fileNotFound* file = _Compiler_error->get_fileNotFound();
+            {
+                print(_ep, "File ");
+                print(_ep, file->file);
+                print(_ep, " not found.\n");
+                return nullptr;
+            }
+            break;
+        }
         default:
-            return nullptr;
+        {
+            {
+                print(_ep, "Compiler error.\n");
+                return nullptr;
+            }
+            break;
+        }
     }
 }
 
