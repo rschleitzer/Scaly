@@ -52,30 +52,25 @@ namespace scalyc {
 FileError* _main(_Page* _ep,  _Vector<string>* arguments) {
 _Region _rp; _Page* _p = _rp.get();
 
-if (arguments->length() < 1) {
+auto _options_result = Options::parseArguments(_p, _p, arguments);
+Options* options = nullptr;
+if (_options_result.succeeded()) {
+    options = _options_result.getResult();
+}
+else if (_options_result._getErrorCode() == _OptionsErrorCode_invalidOption) {
     return nullptr;
 }
-else {
-    auto _options_result = Options::parseArguments(_p, _p, arguments);
-    Options* options = nullptr;
-    if (_options_result.succeeded()) {
-        options = _options_result.getResult();
-    }
-    else if (_options_result._getErrorCode() == _OptionsErrorCode_invalidOption) {
-        return nullptr;
-    }
-    else if (_options_result._getErrorCode() == _OptionsErrorCode_noOutputOption) {
-        return nullptr;
-    }
-    else if (_options_result._getErrorCode() == _OptionsErrorCode_noFilesToCompile) {
-        return nullptr;
-    }
-    auto _Compiler_error = Compiler::compileFiles(_p, options);
-    if (_Compiler_error) {
-        switch (_Compiler_error->_getErrorCode()) {
-            default:
-                return nullptr;
-        }
+else if (_options_result._getErrorCode() == _OptionsErrorCode_noOutputOption) {
+    return nullptr;
+}
+else if (_options_result._getErrorCode() == _OptionsErrorCode_noFilesToCompile) {
+    return nullptr;
+}
+auto _Compiler_error = Compiler::compileFiles(_p, options);
+if (_Compiler_error) {
+    switch (_Compiler_error->_getErrorCode()) {
+        default:
+            return nullptr;
     }
 }
 

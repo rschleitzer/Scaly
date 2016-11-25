@@ -1587,7 +1587,7 @@ class CppVisitor extends SyntaxVisitor {
     }
 
     function getIdentifierExpression(postfixExpression: PostfixExpression): IdentifierExpression@ {
-        if postfixExpression.parent.parent.parent is CodeBlock {
+        if postfixExpression.parent.parent.parent is CodeBlock || postfixExpression.parent.parent.parent is CompilationUnit {
             if postfixExpression.parent is PrefixExpression {
                 let prefixExpression: PrefixExpression = (postfixExpression.parent) as PrefixExpression
                 if prefixExpression.expression.primaryExpression is IdentifierExpression {

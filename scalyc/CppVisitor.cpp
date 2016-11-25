@@ -1524,7 +1524,7 @@ bool CppVisitor::openCatchClause(CatchClause* catchClause) {
 }
 
 IdentifierExpression* CppVisitor::getIdentifierExpression(PostfixExpression* postfixExpression) {
-    if (postfixExpression->parent->parent->parent->_isCodeBlock()) {
+    if (postfixExpression->parent->parent->parent->_isCodeBlock() || postfixExpression->parent->parent->parent->_isCompilationUnit()) {
         if (postfixExpression->parent->_isPrefixExpression()) {
             PrefixExpression* prefixExpression = (PrefixExpression*)(postfixExpression->parent);
             if (prefixExpression->expression->primaryExpression->_isIdentifierExpression()) {
