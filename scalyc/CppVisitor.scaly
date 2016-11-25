@@ -2142,7 +2142,28 @@ class CppVisitor extends SyntaxVisitor {
             if thrownType != null
                 sourceFile.append(")")
         }
+        else {
+            if inTopLevelCode(returnExpression)
+                sourceFile.append(" nullptr")
+        }
         false
+    }
+    
+    function inTopLevelCode(syntaxNode: SyntaxNode):bool {
+
+        if syntaxNode == null
+            return(false)
+
+        if syntaxNode is FunctionDeclaration
+            return(false)
+
+        if syntaxNode is CompilationUnit
+            return(true)
+            
+        if syntaxNode.parent == null
+            return(false)
+
+        return(inTopLevelCode(syntaxNode.parent))
     }
 
     function closeReturnExpression(returnExpression: ReturnExpression) {

@@ -158,6 +158,7 @@ public:
     virtual bool catchesError(FunctionCall* functionCall);
     virtual void closeParenthesizedExpression(ParenthesizedExpression* parenthesizedExpression);
     virtual bool openReturnExpression(ReturnExpression* returnExpression);
+    virtual bool inTopLevelCode(SyntaxNode* syntaxNode);
     virtual void closeReturnExpression(ReturnExpression* returnExpression);
     virtual bool openThrowExpression(ThrowExpression* throwExpression);
     virtual bool inWildcardCatchClause(ThrowExpression* throwExpression);

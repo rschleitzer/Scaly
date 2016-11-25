@@ -2083,7 +2083,23 @@ bool CppVisitor::openReturnExpression(ReturnExpression* returnExpression) {
         if (thrownType != nullptr)
             sourceFile->append(")");
     }
+    else {
+        if (inTopLevelCode(returnExpression))
+            sourceFile->append(" nullptr");
+    }
     return false;
+}
+
+bool CppVisitor::inTopLevelCode(SyntaxNode* syntaxNode) {
+    if (syntaxNode == nullptr)
+        return false;
+    if (syntaxNode->_isFunctionDeclaration())
+        return false;
+    if (syntaxNode->_isCompilationUnit())
+        return true;
+    if (syntaxNode->parent == nullptr)
+        return false;
+    return inTopLevelCode(syntaxNode->parent);
 }
 
 void CppVisitor::closeReturnExpression(ReturnExpression* returnExpression) {
