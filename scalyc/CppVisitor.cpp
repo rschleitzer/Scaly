@@ -520,7 +520,7 @@ bool CppVisitor::localAllocations(CodeBlock* codeBlock) {
                     VariableDeclaration* variableDeclaration = (VariableDeclaration*)statement;
                     bindingInitializer = variableDeclaration->initializer;
                 }
-                if (isLocalBinding(bindingInitializer))
+                if (isRootBinding(bindingInitializer))
                     return true;
             }
         }
@@ -1976,7 +1976,7 @@ bool CppVisitor::openParenthesizedExpression(ParenthesizedExpression* parenthesi
         }
         bool parameterInserted = false;
         if (!callsInitializer(functionCall)) {
-            if (assignedToLocalObject(functionCall)) {
+            if (assignedToRootObject(functionCall)) {
                 sourceFile->append("_p");
                 parameterInserted = true;
             }
@@ -2018,14 +2018,14 @@ bool CppVisitor::openParenthesizedExpression(ParenthesizedExpression* parenthesi
     return true;
 }
 
-bool CppVisitor::assignedToLocalObject(FunctionCall* functionCall) {
+bool CppVisitor::assignedToRootObject(FunctionCall* functionCall) {
     BindingInitializer* bindingInitializer = getBindingInitializer(functionCall);
     if (bindingInitializer == nullptr)
         return false;
-    return isLocalBinding(bindingInitializer);
+    return isRootBinding(bindingInitializer);
 }
 
-bool CppVisitor::isLocalBinding(BindingInitializer* bindingInitializer) {
+bool CppVisitor::isRootBinding(BindingInitializer* bindingInitializer) {
     if (bindingInitializer == nullptr)
         return false;
     PatternInitializer* patternInitializer = bindingInitializer->initializer;
@@ -2034,7 +2034,7 @@ bool CppVisitor::isLocalBinding(BindingInitializer* bindingInitializer) {
         Type* type = identifierPattern->annotationForType->annotationForType;
         if (type->lifeTime == nullptr)
             return false;
-        if (type->lifeTime->_isLocal())
+        if (type->lifeTime->_isRoot())
             return true;
     }
     return false;
@@ -2836,7 +2836,7 @@ void CppVisitor::visitPointer(Pointer* pointer) {
     sourceFile->append("*");
 }
 
-void CppVisitor::visitLocal(Local* local) {
+void CppVisitor::visitRoot(Root* local) {
 }
 
 void CppVisitor::visitReference(Reference* age) {

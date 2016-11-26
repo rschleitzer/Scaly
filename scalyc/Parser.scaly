@@ -2278,7 +2278,7 @@ class Parser {
         mutable start: Position$ = lexer.getPreviousPosition()
 
         {
-            let node: Local = parseLocal() catch _ (error) {
+            let node: Root = parseRoot() catch _ (error) {
                 errors.push(error)
             }
 
@@ -2307,7 +2307,7 @@ class Parser {
         throw unableToParse(new Position(start), new ParserError[](errors))
     }
 
-    function parseLocal(): Local throws ParserError {
+    function parseRoot(): Root throws ParserError {
         mutable start: Position$ = lexer.getPreviousPosition()
         mutable startDollar1: Position$ = lexer.getPreviousPosition()
         let successDollar1: bool = lexer.parsePunctuation(dollar)
@@ -2317,7 +2317,7 @@ class Parser {
             throw punctuationExpected(new Position(startDollar1), new string(dollar))
 
         mutable end: Position$ = lexer.getPosition()
-        var ret: Local = new Local(new Position(start), new Position(end))
+        var ret: Root = new Root(new Position(start), new Position(end))
 
         return(ret)
     }

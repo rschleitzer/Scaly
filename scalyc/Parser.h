@@ -111,7 +111,7 @@ public:
     virtual _Result<IndexedType, ParserError> parseIndexedType(_Page* _rp, _Page* _ep);
     virtual _Result<Pointer, ParserError> parsePointer(_Page* _rp, _Page* _ep);
     virtual _Result<LifeTime, ParserError> parseLifeTime(_Page* _rp, _Page* _ep);
-    virtual _Result<Local, ParserError> parseLocal(_Page* _rp, _Page* _ep);
+    virtual _Result<Root, ParserError> parseRoot(_Page* _rp, _Page* _ep);
     virtual _Result<Reference, ParserError> parseReference(_Page* _rp, _Page* _ep);
     virtual _Result<Thrown, ParserError> parseThrown(_Page* _rp, _Page* _ep);
     virtual _Result<TypeInheritanceClause, ParserError> parseTypeInheritanceClause(_Page* _rp, _Page* _ep);

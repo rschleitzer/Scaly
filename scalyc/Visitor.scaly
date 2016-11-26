@@ -86,7 +86,7 @@ class TypePostfix
 class IndexedType
 class Pointer
 class LifeTime
-class Local
+class Root
 class Reference
 class Thrown
 class TypeInheritanceClause
@@ -229,7 +229,7 @@ class SyntaxVisitor {
     function openIndexedType(indexedType: IndexedType): bool
     function closeIndexedType(indexedType: IndexedType)
     function visitPointer(pointer: Pointer)
-    function visitLocal(local: Local)
+    function visitRoot(local: Root)
     function visitReference(reference: Reference)
     function visitThrown(thrown: Thrown)
     function openTypeInheritanceClause(typeInheritanceClause: TypeInheritanceClause): bool

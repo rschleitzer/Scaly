@@ -538,7 +538,7 @@ class CppVisitor extends SyntaxVisitor {
                     let variableDeclaration: VariableDeclaration = statement as VariableDeclaration
                     bindingInitializer = variableDeclaration.initializer
                 }
-                if isLocalBinding(bindingInitializer)
+                if isRootBinding(bindingInitializer)
                     return(true)
             }
         }
@@ -2015,7 +2015,7 @@ class CppVisitor extends SyntaxVisitor {
 
             let parameterInserted: bool = false
             if !callsInitializer(functionCall) {
-                if assignedToLocalObject(functionCall) {
+                if assignedToRootObject(functionCall) {
                     sourceFile.append("_p")
                     parameterInserted = true
                 }
@@ -2059,15 +2059,15 @@ class CppVisitor extends SyntaxVisitor {
         true
     }
 
-    function assignedToLocalObject(functionCall: FunctionCall): bool {
+    function assignedToRootObject(functionCall: FunctionCall): bool {
         var bindingInitializer: BindingInitializer = getBindingInitializer(functionCall)
         if bindingInitializer == null
             return(false)
         
-        isLocalBinding(bindingInitializer)
+        isRootBinding(bindingInitializer)
     }
     
-    function isLocalBinding(bindingInitializer: BindingInitializer): bool {
+    function isRootBinding(bindingInitializer: BindingInitializer): bool {
  
        if bindingInitializer == null
             return(false)
@@ -2080,7 +2080,7 @@ class CppVisitor extends SyntaxVisitor {
             if type.lifeTime == null
                 return(false)
 
-            if type.lifeTime is Local
+            if type.lifeTime is Root
                 return(true)
         }
         
@@ -2919,7 +2919,7 @@ class CppVisitor extends SyntaxVisitor {
         sourceFile.append("*")
     }
 
-    function visitLocal(local: Local) {
+    function visitRoot(local: Root) {
     }
 
     function visitReference(age: Reference) {

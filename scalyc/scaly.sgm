@@ -402,11 +402,11 @@
         <content link = circumflex
     
     <syntax id = LifeTime                              abstract
-        <content link = Local
+        <content link = Root
         <content link = Reference
         <content link = Thrown
 
-    <syntax id = Local                                          base = LifeTime
+    <syntax id = Root                                           base = LifeTime
         <content link = dollar
 
     <syntax id = Reference                                      base = LifeTime

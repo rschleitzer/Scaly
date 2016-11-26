@@ -150,8 +150,8 @@ public:
     virtual bool openDoExpression(DoExpression* doExpression);
     virtual void closeDoExpression(DoExpression* doExpression);
     virtual bool openParenthesizedExpression(ParenthesizedExpression* parenthesizedExpression);
-    virtual bool assignedToLocalObject(FunctionCall* functionCall);
-    virtual bool isLocalBinding(BindingInitializer* bindingInitializer);
+    virtual bool assignedToRootObject(FunctionCall* functionCall);
+    virtual bool isRootBinding(BindingInitializer* bindingInitializer);
     virtual bool assignedToReturnedObject(FunctionCall* functionCall);
     virtual bool boundToObject(BindingInitializer* bindingInitializer);
     virtual BindingInitializer* getBindingInitializer(FunctionCall* functionCall);
@@ -212,7 +212,7 @@ public:
     virtual bool openIndexedType(IndexedType* indexedType);
     virtual void closeIndexedType(IndexedType* indexedType);
     virtual void visitPointer(Pointer* pointer);
-    virtual void visitLocal(Local* local);
+    virtual void visitRoot(Root* local);
     virtual void visitReference(Reference* age);
     virtual void visitThrown(Thrown* thrown);
     virtual bool openTypeInheritanceClause(TypeInheritanceClause* typeInheritanceClause);

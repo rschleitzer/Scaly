@@ -3310,8 +3310,8 @@ _Result<LifeTime, ParserError> Parser::parseLifeTime(_Page* _rp, _Page* _ep) {
     _Array<ParserError>* errors = new(_p) _Array<ParserError>();
     Position* start = lexer->getPreviousPosition(_p);
     {
-        auto _node_result = parseLocal(_rp, _ep);
-        Local* node = nullptr;
+        auto _node_result = parseRoot(_rp, _ep);
+        Root* node = nullptr;
         if (_node_result.succeeded()) {
             node = _node_result.getResult();
         }
@@ -3357,7 +3357,7 @@ _Result<LifeTime, ParserError> Parser::parseLifeTime(_Page* _rp, _Page* _ep) {
     return _Result<LifeTime, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_unableToParse(new(_ep) Position(start), &_Vector<ParserError>::create(_ep, *(errors)))));
 }
 
-_Result<Local, ParserError> Parser::parseLocal(_Page* _rp, _Page* _ep) {
+_Result<Root, ParserError> Parser::parseRoot(_Page* _rp, _Page* _ep) {
     _Region _region; _Page* _p = _region.get();
     Position* start = lexer->getPreviousPosition(_p);
     Position* startDollar1 = lexer->getPreviousPosition(_p);
@@ -3365,10 +3365,10 @@ _Result<Local, ParserError> Parser::parseLocal(_Page* _rp, _Page* _ep) {
     if (successDollar1)
         lexer->advance();
     else
-        return _Result<Local, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_punctuationExpected(new(_ep) Position(startDollar1), new(_ep) string(dollar))));
+        return _Result<Root, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_punctuationExpected(new(_ep) Position(startDollar1), new(_ep) string(dollar))));
     Position* end = lexer->getPosition(_p);
-    Local* ret = new(_rp) Local(new(_rp) Position(start), new(_rp) Position(end));
-    return _Result<Local, ParserError>(ret);
+    Root* ret = new(_rp) Root(new(_rp) Position(start), new(_rp) Position(end));
+    return _Result<Root, ParserError>(ret);
 }
 
 _Result<Reference, ParserError> Parser::parseReference(_Page* _rp, _Page* _ep) {
