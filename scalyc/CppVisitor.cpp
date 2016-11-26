@@ -907,8 +907,8 @@ bool CppVisitor::openFunctionSignature(FunctionSignature* functionSignature) {
     if (functionSignature->result != nullptr) {
         Type* type = (Type*)functionSignature->result->resultType;
         if (isClass(type->name)) {
-            LifeTime* region = type->region;
-            if ((region == nullptr) || !(region->_isReference())) {
+            LifeTime* lifeTime = type->lifeTime;
+            if ((lifeTime == nullptr) || !(lifeTime->_isReference())) {
                 headerFile->append("_Page* _rp");
                 if (!suppressSource)
                     sourceFile->append("_Page* _rp");
@@ -2032,9 +2032,9 @@ bool CppVisitor::isLocalBinding(BindingInitializer* bindingInitializer) {
     if (patternInitializer->pattern->_isIdentifierPattern()) {
         IdentifierPattern* identifierPattern = (IdentifierPattern*)(patternInitializer->pattern);
         Type* type = identifierPattern->annotationForType->annotationForType;
-        if (type->region == nullptr)
+        if (type->lifeTime == nullptr)
             return false;
-        if (type->region->_isLocal())
+        if (type->lifeTime->_isLocal())
             return true;
     }
     return false;
@@ -2058,7 +2058,7 @@ bool CppVisitor::boundToObject(BindingInitializer* bindingInitializer) {
     if (patternInitializer->pattern->_isIdentifierPattern()) {
         IdentifierPattern* identifierPattern = (IdentifierPattern*)(patternInitializer->pattern);
         Type* type = identifierPattern->annotationForType->annotationForType;
-        if (type->region != nullptr)
+        if (type->lifeTime != nullptr)
             return false;
         if (isClass(type->name) && (getFunctionCall(patternInitializer) != nullptr))
             return true;

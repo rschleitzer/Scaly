@@ -935,8 +935,8 @@ class CppVisitor extends SyntaxVisitor {
         if functionSignature.result != null {
             let type: Type = functionSignature.result.resultType as Type
             if isClass(type.name) {
-                let region: LifeTime = type.region
-                if (region == null) || !(region is Reference) {
+                let lifeTime: LifeTime = type.lifeTime
+                if (lifeTime == null) || !(lifeTime is Reference) {
                     headerFile.append("_Page* _rp")
                     if !suppressSource
                         sourceFile.append("_Page* _rp")
@@ -2077,10 +2077,10 @@ class CppVisitor extends SyntaxVisitor {
             let identifierPattern: IdentifierPattern = (patternInitializer.pattern) as IdentifierPattern
             let type: Type = identifierPattern.annotationForType.annotationForType
 
-            if type.region == null
+            if type.lifeTime == null
                 return(false)
 
-            if type.region is Local
+            if type.lifeTime is Local
                 return(true)
         }
         
@@ -2110,7 +2110,7 @@ class CppVisitor extends SyntaxVisitor {
             let identifierPattern: IdentifierPattern = (patternInitializer.pattern) as IdentifierPattern
             let type: Type = identifierPattern.annotationForType.annotationForType
             
-            if type.region != null
+            if type.lifeTime != null
                 return(false)
 
             if isClass(type.name) && (getFunctionCall(patternInitializer) != null)

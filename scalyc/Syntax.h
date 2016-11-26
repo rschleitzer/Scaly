@@ -901,12 +901,12 @@ public:
 
 class Type : public SyntaxNode {
 public:
-    Type(string* name, Subtype* subType, _Vector<TypePostfix>* postfixes, LifeTime* region, Position* start, Position* end);
+    Type(string* name, Subtype* subType, _Vector<TypePostfix>* postfixes, LifeTime* lifeTime, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
     string* name;
     Subtype* subType;
     _Vector<TypePostfix>* postfixes;
-    LifeTime* region;
+    LifeTime* lifeTime;
 
     virtual bool _isType();
 };

@@ -3132,16 +3132,16 @@ _Result<Type, ParserError> Parser::parseType(_Page* _rp, _Page* _ep) {
     else {
         postfixes = nullptr;
     }
-    auto _region_result = parseLifeTime(_rp, _ep);
-    LifeTime* region = nullptr;
-    if (_region_result.succeeded()) {
-        region = _region_result.getResult();
+    auto _lifeTime_result = parseLifeTime(_rp, _ep);
+    LifeTime* lifeTime = nullptr;
+    if (_lifeTime_result.succeeded()) {
+        lifeTime = _lifeTime_result.getResult();
     }
     else {
-        region = nullptr;
+        lifeTime = nullptr;
     }
     Position* end = lexer->getPosition(_p);
-    Type* ret = new(_rp) Type(name, subType, postfixes, region, new(_rp) Position(start), new(_rp) Position(end));
+    Type* ret = new(_rp) Type(name, subType, postfixes, lifeTime, new(_rp) Position(start), new(_rp) Position(end));
     if (subType != nullptr)
         subType->parent = ret;
     if (postfixes != nullptr) {
@@ -3152,8 +3152,8 @@ _Result<Type, ParserError> Parser::parseType(_Page* _rp, _Page* _ep) {
             item->parent = ret;
         }
     }
-    if (region != nullptr)
-        region->parent = ret;
+    if (lifeTime != nullptr)
+        lifeTime->parent = ret;
     return _Result<Type, ParserError>(ret);
 }
 

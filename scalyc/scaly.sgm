@@ -379,7 +379,7 @@
         <content identifier                                     property = name
         <content link = Subtype                        optional property = subType
         <content link = TypePostfix           multiple optional property = postfixes
-        <content link = LifeTime                       optional property = region
+        <content link = LifeTime                       optional property = lifeTime
 
     <syntax id = TypeAnnotation
         <content link = colon

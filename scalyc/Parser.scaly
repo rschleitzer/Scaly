@@ -2144,17 +2144,17 @@ class Parser {
 
         let subType: Subtype = parseSubtype() catch _ null
         let postfixes: TypePostfix[] = parseTypePostfixList() catch _ null
-        let region: LifeTime = parseLifeTime() catch _ null
+        let lifeTime: LifeTime = parseLifeTime() catch _ null
         mutable end: Position$ = lexer.getPosition()
-        var ret: Type = new Type(name, subType, postfixes, region, new Position(start), new Position(end))
+        var ret: Type = new Type(name, subType, postfixes, lifeTime, new Position(start), new Position(end))
         if subType != null
             subType.parent = ret
         if postfixes != null {
             for item: TypePostfix in postfixes
                 item.parent = ret
         }
-        if region != null
-            region.parent = ret
+        if lifeTime != null
+            lifeTime.parent = ret
 
         return(ret)
     }

@@ -1440,13 +1440,13 @@ void CaseContent::accept(SyntaxVisitor* visitor) {
 
 bool CaseContent::_isCaseContent() { return (true); }
 
-Type::Type(string* name, Subtype* subType, _Vector<TypePostfix>* postfixes, LifeTime* region, Position* start, Position* end) {
+Type::Type(string* name, Subtype* subType, _Vector<TypePostfix>* postfixes, LifeTime* lifeTime, Position* start, Position* end) {
     this->start = start;
     this->end = end;
     this->name = name;
     this->subType = subType;
     this->postfixes = postfixes;
-    this->region = region;
+    this->lifeTime = lifeTime;
 }
 
 void Type::accept(SyntaxVisitor* visitor) {
@@ -1462,8 +1462,8 @@ void Type::accept(SyntaxVisitor* visitor) {
             node->accept(visitor);
         }
     }
-    if (region != nullptr)
-        region->accept(visitor);
+    if (lifeTime != nullptr)
+        lifeTime->accept(visitor);
     visitor->closeType(this);
 }
 

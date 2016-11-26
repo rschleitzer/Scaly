@@ -1365,13 +1365,13 @@ class CaseContent extends SyntaxNode {
 
 class Type extends SyntaxNode {
 
-    constructor(name: string, subType: Subtype, postfixes: TypePostfix[], region: LifeTime, start: Position, end: Position) {
+    constructor(name: string, subType: Subtype, postfixes: TypePostfix[], lifeTime: LifeTime, start: Position, end: Position) {
         this.start = start
         this.end = end
         this.name = name
         this.subType = subType
         this.postfixes = postfixes
-        this.region = region
+        this.lifeTime = lifeTime
     }
 
     function accept(mutable visitor: SyntaxVisitor) {
@@ -1383,12 +1383,12 @@ class Type extends SyntaxNode {
             for node: TypePostfix in postfixes
                 node.accept(visitor)
         }
-        if region != null
-            region.accept(visitor)
+        if lifeTime != null
+            lifeTime.accept(visitor)
         visitor.closeType(this)
     }
 
-    let name: string    let subType: Subtype    let postfixes: TypePostfix[]    let region: LifeTime}
+    let name: string    let subType: Subtype    let postfixes: TypePostfix[]    let lifeTime: LifeTime}
 
 class TypeAnnotation extends SyntaxNode {
 
