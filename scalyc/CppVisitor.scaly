@@ -532,7 +532,7 @@ class CppVisitor extends SyntaxVisitor {
         false
     }
 
-    function getFunctionCall(patternInitializer: PatternInitializer): FunctionCall@ {
+    function getFunctionCall(patternInitializer: PatternInitializer@): FunctionCall@ {
         if patternInitializer.initializer != null {
             let expression: Expression = patternInitializer.initializer.expression
             if expression is SimpleExpression {
@@ -1360,7 +1360,7 @@ class CppVisitor extends SyntaxVisitor {
         false
     }
 
-    function getClassDeclaration(node: SyntaxNode): ClassDeclaration@ {
+    function getClassDeclaration(node: SyntaxNode@): ClassDeclaration@ {
         if node is ClassDeclaration
             return(node as ClassDeclaration)
 
@@ -1604,7 +1604,7 @@ class CppVisitor extends SyntaxVisitor {
         false
     }
 
-    function getIdentifierExpression(postfixExpression: PostfixExpression): IdentifierExpression@ {
+    function getIdentifierExpression(postfixExpression: PostfixExpression@): IdentifierExpression@ {
         if postfixExpression.parent.parent.parent is CodeBlock || postfixExpression.parent.parent.parent is CompilationUnit {
             if postfixExpression.parent is PrefixExpression {
                 let prefixExpression: PrefixExpression = (postfixExpression.parent) as PrefixExpression
@@ -1617,7 +1617,7 @@ class CppVisitor extends SyntaxVisitor {
         null
     }
 
-    function getErrorType(catchClause: CatchClause): string@ {
+    function getErrorType(catchClause: CatchClause@): string@ {
         if catchClause.bindingPattern != null {
             if catchClause.bindingPattern.elements != null {
                 if catchClause.bindingPattern.elements.length() == 1 {
@@ -1759,7 +1759,7 @@ class CppVisitor extends SyntaxVisitor {
         inAssignment(parentNode)
     }
 
-    function getAssignment(syntaxNode: SyntaxNode): Assignment@ {
+    function getAssignment(syntaxNode: SyntaxNode@): Assignment@ {
         if syntaxNode is Assignment
             return(syntaxNode as Assignment)
 
@@ -2088,7 +2088,7 @@ class CppVisitor extends SyntaxVisitor {
         false
     }
 
-    function getBindingInitializer(functionCall: FunctionCall): BindingInitializer@ {
+    function getBindingInitializer(functionCall: FunctionCall@): BindingInitializer@ {
         if functionCall.parent is PostfixExpression {
             let postfixExpression: PostfixExpression = (functionCall.parent) as PostfixExpression
             if postfixExpression.parent.parent.parent is Initializer {
@@ -2267,7 +2267,7 @@ class CppVisitor extends SyntaxVisitor {
         false
     }
 
-    function getCatchClause(syntaxNode: SyntaxNode): CatchClause@ {
+    function getCatchClause(syntaxNode: SyntaxNode@): CatchClause@ {
         if syntaxNode is CatchClause
             return(syntaxNode as CatchClause)
 
@@ -2336,7 +2336,7 @@ class CppVisitor extends SyntaxVisitor {
         false
     }
 
-    function getFunctionDeclaration(syntaxNode: SyntaxNode): FunctionDeclaration@ {
+    function getFunctionDeclaration(syntaxNode: SyntaxNode@): FunctionDeclaration@ {
         if syntaxNode is FunctionDeclaration
             return(syntaxNode as FunctionDeclaration)
 
