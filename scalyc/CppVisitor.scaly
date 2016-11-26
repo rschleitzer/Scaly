@@ -1315,7 +1315,7 @@ class CppVisitor extends SyntaxVisitor {
                         let leftSide: PostfixExpression = simpleExpression.prefixExpression.expression
                         if (leftSide.postfixes == 0) && (leftSide.primaryExpression is IdentifierExpression) {
                             let memberExpression: IdentifierExpression = (leftSide.primaryExpression) as IdentifierExpression
-                            mutable memberName: string$ = new string(memberExpression.name)
+                            let memberName: string$ = new string(memberExpression.name)
                             var classDeclaration: ClassDeclaration = getClassDeclaration(assignment)
                             if classDeclaration != null {
                                 if isVariableMember(memberName, classDeclaration)
@@ -1998,7 +1998,7 @@ class CppVisitor extends SyntaxVisitor {
                     if !isClass(identifierExpression.name) {
                         if postfixExpression.parent.parent.parent is Assignment {
                             let assignment: Assignment = (postfixExpression.parent.parent.parent) as Assignment
-                            mutable member: string$ = getMemberIfCreatingObject(assignment)
+                            let member: string$ = getMemberIfCreatingObject(assignment)
                             if member != null {
                                 var classDeclaration: ClassDeclaration = getClassDeclaration(assignment)
                                 if isVariableMember(member, classDeclaration) {
@@ -2038,7 +2038,7 @@ class CppVisitor extends SyntaxVisitor {
                 if !inThrow(functionCall) {
                     if parameterInserted
                         sourceFile.append(", ")
-                    mutable thrownType: string$ = getThrownType(functionCall)
+                    let thrownType: string$ = getThrownType(functionCall)
                     if thrownType == null
                         sourceFile.append("_p")
                     else
@@ -2201,8 +2201,8 @@ class CppVisitor extends SyntaxVisitor {
         sourceFile.append("return")
         if returnExpression.expression != null {
             sourceFile.append(" ")
-            mutable returnType: string$ = getReturnType(returnExpression)
-            mutable thrownType: string$ = getThrownType(returnExpression)
+            let returnType: string$ = getReturnType(returnExpression)
+            let thrownType: string$ = getThrownType(returnExpression)
             if thrownType != null {
                 sourceFile.append("_Result<")
                 if returnType != null
@@ -2247,19 +2247,19 @@ class CppVisitor extends SyntaxVisitor {
     }
 
     function closeReturnExpression(returnExpression: ReturnExpression) {
-        mutable returnType: string$ = getReturnType(returnExpression)
+        let returnType: string$ = getReturnType(returnExpression)
         if returnType != null {
             sourceFile.append(")")
         }
     }
 
     function openThrowExpression(throwExpression: ThrowExpression): bool {
-        mutable thrownType: string$ = getThrownType(throwExpression)
+        let thrownType: string$ = getThrownType(throwExpression)
         if thrownType == null
             return(false)
 
         sourceFile.append("return ")
-        mutable returnType: string$ = getReturnType(throwExpression)
+        let returnType: string$ = getReturnType(throwExpression)
         if returnType != null {
             sourceFile.append("_Result<")
             sourceFile.append(returnType)
@@ -2438,7 +2438,7 @@ class CppVisitor extends SyntaxVisitor {
                             var assignment: Assignment = getAssignment(constructorCall)
                             if assignment != null {
                                 var classDeclaration: ClassDeclaration = getClassDeclaration(assignment)
-                                mutable memberName: string$ = getMemberIfCreatingObject(assignment)
+                                let memberName: string$ = getMemberIfCreatingObject(assignment)
                                 if memberName != null {
                                     if isVariableMember(memberName, classDeclaration) {
                                         if !inInitializer(assignment) {
@@ -2527,7 +2527,7 @@ class CppVisitor extends SyntaxVisitor {
                                 var assignment: Assignment = getAssignment(constructorCall)
                                 if assignment != null {
                                     var classDeclaration: ClassDeclaration = getClassDeclaration(assignment)
-                                    mutable memberName: string$ = getMemberIfCreatingObject(assignment)
+                                    let memberName: string$ = getMemberIfCreatingObject(assignment)
                                     if memberName != null {
                                         if isVariableMember(memberName, classDeclaration) {
                                             if !inInitializer(assignment) {
@@ -2561,7 +2561,7 @@ class CppVisitor extends SyntaxVisitor {
                     let assignment: Assignment = (constructorCall.parent.parent.parent.parent) as Assignment
                     sourceFile.append("new(")
                     var classDeclaration: ClassDeclaration = getClassDeclaration(assignment)
-                    mutable memberName: string$ = getMemberIfCreatingObject(assignment)
+                    let memberName: string$ = getMemberIfCreatingObject(assignment)
                     if memberName != null {
                         if isVariableMember(memberName, classDeclaration) {
                             if !inInitializer(assignment) {
@@ -2984,7 +2984,7 @@ class CppVisitor extends SyntaxVisitor {
         let compilationUnits: CompilationUnit[] = program.compilationUnits
         for compilationUnit: CompilationUnit in compilationUnits {
             mainHeaderFile.append("#include \"")
-            mutable fileName: string$ = Path.getFileNameWithoutExtension(compilationUnit.fileName)
+            let fileName: string$ = Path.getFileNameWithoutExtension(compilationUnit.fileName)
             mainHeaderFile.append(fileName)
             mainHeaderFile.append(".h\"\n")
         }
@@ -3021,7 +3021,7 @@ class CppVisitor extends SyntaxVisitor {
             let compilationUnits: CompilationUnit[] = program.compilationUnits
             for compilationUnit: CompilationUnit in compilationUnits {
                 projectFile.append("    <File Name=\"")
-                mutable fileName: string$ = Path.getFileNameWithoutExtension(compilationUnit.fileName)
+                let fileName: string$ = Path.getFileNameWithoutExtension(compilationUnit.fileName)
                 projectFile.append(fileName)
                 projectFile.append(".cpp\"/>\n")
                 projectFile.append("    <File Name=\"")
@@ -3034,7 +3034,7 @@ class CppVisitor extends SyntaxVisitor {
             let compilationUnits: CompilationUnit[] = program.compilationUnits
             for compilationUnit: CompilationUnit in compilationUnits {
                 projectFile.append("    <File Name=\"")
-                mutable fileName: string$ = Path.getFileNameWithoutExtension(compilationUnit.fileName)
+                let fileName: string$ = Path.getFileNameWithoutExtension(compilationUnit.fileName)
                 projectFile.append(fileName)
                 projectFile.append(".h\"/>\n")
             }
@@ -3064,7 +3064,7 @@ class CppVisitor extends SyntaxVisitor {
                 projectFile.append(" ../")
                 projectFile.append(program.name)
                 projectFile.append("/")
-                mutable fileName: string$ = Path.getFileNameWithoutExtension(compilationUnit.fileName)
+                let fileName: string$ = Path.getFileNameWithoutExtension(compilationUnit.fileName)
                 projectFile.append(fileName)
                 projectFile.append(".scaly")
             }
