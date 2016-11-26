@@ -91,6 +91,7 @@ bool SyntaxNode::_isIndexedType() { return (false); }
 bool SyntaxNode::_isPointer() { return (false); }
 bool SyntaxNode::_isLifeTime() { return (false); }
 bool SyntaxNode::_isRoot() { return (false); }
+bool SyntaxNode::_isLocal() { return (false); }
 bool SyntaxNode::_isReference() { return (false); }
 bool SyntaxNode::_isThrown() { return (false); }
 bool SyntaxNode::_isTypeInheritanceClause() { return (false); }
@@ -1540,6 +1541,7 @@ void LifeTime::accept(SyntaxVisitor* visitor) {
 bool LifeTime::_isLifeTime() { return (true); }
 
 bool LifeTime::_isRoot() { return (false); }
+bool LifeTime::_isLocal() { return (false); }
 bool LifeTime::_isReference() { return (false); }
 bool LifeTime::_isThrown() { return (false); }
 
@@ -1553,6 +1555,18 @@ void Root::accept(SyntaxVisitor* visitor) {
 }
 
 bool Root::_isRoot() { return (true); }
+
+Local::Local(string* location, Position* start, Position* end) {
+    this->start = start;
+    this->end = end;
+    this->location = location;
+}
+
+void Local::accept(SyntaxVisitor* visitor) {
+    visitor->visitLocal(this);
+}
+
+bool Local::_isLocal() { return (true); }
 
 Reference::Reference(Literal* age, Position* start, Position* end) {
     this->start = start;

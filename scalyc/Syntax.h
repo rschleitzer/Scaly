@@ -99,6 +99,7 @@ public:
     virtual bool _isPointer();
     virtual bool _isLifeTime();
     virtual bool _isRoot();
+    virtual bool _isLocal();
     virtual bool _isReference();
     virtual bool _isThrown();
     virtual bool _isTypeInheritanceClause();
@@ -961,6 +962,7 @@ public:
 
     virtual bool _isLifeTime();
     virtual bool _isRoot();
+    virtual bool _isLocal();
     virtual bool _isReference();
     virtual bool _isThrown();
 };
@@ -971,6 +973,15 @@ public:
     virtual void accept(SyntaxVisitor* visitor);
 
     virtual bool _isRoot();
+};
+
+class Local : public LifeTime {
+public:
+    Local(string* location, Position* start, Position* end);
+    virtual void accept(SyntaxVisitor* visitor);
+    string* location;
+
+    virtual bool _isLocal();
 };
 
 class Reference : public LifeTime {

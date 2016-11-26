@@ -49,6 +49,7 @@ Parser::Parser(string* theFileName, string* text) {
     dollar = new(getPage()) string("$");
     at = new(getPage()) string("@");
     hash = new(getPage()) string("#");
+    tilde = new(getPage()) string("~");
 }
 
 _Result<CompilationUnit, ParserError> Parser::parseCompilationUnit(_Page* _rp, _Page* _ep) {
@@ -3325,6 +3326,21 @@ _Result<LifeTime, ParserError> Parser::parseLifeTime(_Page* _rp, _Page* _ep) {
             return _Result<LifeTime, ParserError>(node);
     }
     {
+        auto _node_result = parseLocal(_rp, _ep);
+        Local* node = nullptr;
+        if (_node_result.succeeded()) {
+            node = _node_result.getResult();
+        }
+        else {
+            auto error = _node_result.getError();
+            {
+                errors->push(error);
+            }
+        }
+        if (node != nullptr)
+            return _Result<LifeTime, ParserError>(node);
+    }
+    {
         auto _node_result = parseReference(_rp, _ep);
         Reference* node = nullptr;
         if (_node_result.succeeded()) {
@@ -3369,6 +3385,26 @@ _Result<Root, ParserError> Parser::parseRoot(_Page* _rp, _Page* _ep) {
     Position* end = lexer->getPosition(_p);
     Root* ret = new(_rp) Root(new(_rp) Position(start), new(_rp) Position(end));
     return _Result<Root, ParserError>(ret);
+}
+
+_Result<Local, ParserError> Parser::parseLocal(_Page* _rp, _Page* _ep) {
+    _Region _region; _Page* _p = _region.get();
+    Position* start = lexer->getPreviousPosition(_p);
+    Position* startTilde1 = lexer->getPreviousPosition(_p);
+    bool successTilde1 = lexer->parsePunctuation(tilde);
+    if (successTilde1)
+        lexer->advance();
+    else
+        return _Result<Local, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_punctuationExpected(new(_ep) Position(startTilde1), new(_ep) string(tilde))));
+    Position* startLocation = lexer->getPreviousPosition(_p);
+    string* location = lexer->parseIdentifier(_rp);
+    if ((location != nullptr) && isIdentifier(location))
+        lexer->advance();
+    else
+        return _Result<Local, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_identifierExpected(new(_ep) Position(startLocation))));
+    Position* end = lexer->getPosition(_p);
+    Local* ret = new(_rp) Local(location, new(_rp) Position(start), new(_rp) Position(end));
+    return _Result<Local, ParserError>(ret);
 }
 
 _Result<Reference, ParserError> Parser::parseReference(_Page* _rp, _Page* _ep) {

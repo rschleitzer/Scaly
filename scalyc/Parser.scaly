@@ -46,6 +46,7 @@ class Parser {
         dollar = new string("$")
         at = new string("@")
         hash = new string("#")
+        tilde = new string("~")
     }
 
     function parseCompilationUnit(): CompilationUnit throws ParserError {
@@ -2287,6 +2288,15 @@ class Parser {
         }
 
         {
+            let node: Local = parseLocal() catch _ (error) {
+                errors.push(error)
+            }
+
+            if node != null
+                return(node)
+        }
+
+        {
             let node: Reference = parseReference() catch _ (error) {
                 errors.push(error)
             }
@@ -2318,6 +2328,28 @@ class Parser {
 
         mutable end: Position$ = lexer.getPosition()
         var ret: Root = new Root(new Position(start), new Position(end))
+
+        return(ret)
+    }
+
+    function parseLocal(): Local throws ParserError {
+        mutable start: Position$ = lexer.getPreviousPosition()
+        mutable startTilde1: Position$ = lexer.getPreviousPosition()
+        let successTilde1: bool = lexer.parsePunctuation(tilde)
+        if successTilde1
+            lexer.advance()
+        else
+            throw punctuationExpected(new Position(startTilde1), new string(tilde))
+
+        mutable startLocation: Position$ = lexer.getPreviousPosition()
+        let location: string = lexer.parseIdentifier()
+        if (location != null) && isIdentifier(location)
+            lexer.advance()
+        else
+            throw identifierExpected(new Position(startLocation))
+
+        mutable end: Position$ = lexer.getPosition()
+        var ret: Local = new Local(location, new Position(start), new Position(end))
 
         return(ret)
     }
@@ -2544,4 +2576,5 @@ class Parser {
     let dollar: string
     let at: string
     let hash: string
+    let tilde: string
 }

@@ -2919,7 +2919,10 @@ class CppVisitor extends SyntaxVisitor {
         sourceFile.append("*")
     }
 
-    function visitRoot(local: Root) {
+    function visitRoot(root: Root) {
+    }
+
+    function visitLocal(local: Local) {
     }
 
     function visitReference(age: Reference) {

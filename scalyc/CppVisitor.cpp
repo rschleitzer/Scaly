@@ -2836,7 +2836,10 @@ void CppVisitor::visitPointer(Pointer* pointer) {
     sourceFile->append("*");
 }
 
-void CppVisitor::visitRoot(Root* local) {
+void CppVisitor::visitRoot(Root* root) {
+}
+
+void CppVisitor::visitLocal(Local* local) {
 }
 
 void CppVisitor::visitReference(Reference* age) {

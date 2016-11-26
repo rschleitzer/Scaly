@@ -1482,6 +1482,20 @@ class Root extends LifeTime {
 
 }
 
+class Local extends LifeTime {
+
+    constructor(location: string, start: Position, end: Position) {
+        this.start = start
+        this.end = end
+        this.location = location
+    }
+
+    override function accept(mutable visitor: SyntaxVisitor) {
+        visitor.visitLocal(this)
+    }
+
+    let location: string}
+
 class Reference extends LifeTime {
 
     constructor(age: Literal, start: Position, end: Position) {

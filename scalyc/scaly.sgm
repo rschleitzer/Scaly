@@ -403,11 +403,16 @@
     
     <syntax id = LifeTime                              abstract
         <content link = Root
+        <content link = Local
         <content link = Reference
         <content link = Thrown
 
     <syntax id = Root                                           base = LifeTime
         <content link = dollar
+
+    <syntax id = Local                                          base = LifeTime
+        <content link = tilde
+        <content identifier                                     property = location
 
     <syntax id = Reference                                      base = LifeTime
         <content link = at
@@ -469,5 +474,6 @@
     <punctuation id = dollar            value = "$"
     <punctuation id = at                value = "@"
     <punctuation id = hash              value = "#"
+    <punctuation id = tilde             value = "~"
 
 </language>
