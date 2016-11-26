@@ -399,7 +399,7 @@
         <content link = rightBracket
 
     <syntax id = Pointer                                        base = TypePostfix
-        <content link = star
+        <content link = circumflex
     
     <syntax id = Region                                abstract
         <content link = Returned
@@ -461,8 +461,8 @@
     <punctuation id = colon             value = ":"
     <punctuation id = dot               value = "."
     <punctuation id = underscore        value = "_"
+    <punctuation id = circumflex        value = "^"
     <punctuation id = at                value = "@"
     <punctuation id = hash              value = "#"
-    <punctuation id = star              value = "*"
 
 </language>

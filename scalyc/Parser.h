@@ -162,7 +162,7 @@ public:
     string* underscore;
     string* at;
     string* hash;
-    string* star;
+    string* circumflex;
 
 };
 

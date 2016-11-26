@@ -47,7 +47,7 @@ Parser::Parser(string* theFileName, string* text) {
     underscore = new(getPage()) string("_");
     at = new(getPage()) string("@");
     hash = new(getPage()) string("#");
-    star = new(getPage()) string("*");
+    circumflex = new(getPage()) string("^");
 }
 
 _Result<CompilationUnit, ParserError> Parser::parseCompilationUnit(_Page* _rp, _Page* _ep) {
@@ -3293,12 +3293,12 @@ _Result<IndexedType, ParserError> Parser::parseIndexedType(_Page* _rp, _Page* _e
 _Result<Pointer, ParserError> Parser::parsePointer(_Page* _rp, _Page* _ep) {
     _Region _region; _Page* _p = _region.get();
     Position* start = lexer->getPreviousPosition(_p);
-    Position* startStar1 = lexer->getPreviousPosition(_p);
-    bool successStar1 = lexer->parsePunctuation(star);
-    if (successStar1)
+    Position* startCircumflex1 = lexer->getPreviousPosition(_p);
+    bool successCircumflex1 = lexer->parsePunctuation(circumflex);
+    if (successCircumflex1)
         lexer->advance();
     else
-        return _Result<Pointer, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_punctuationExpected(new(_ep) Position(startStar1), new(_ep) string(star))));
+        return _Result<Pointer, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_punctuationExpected(new(_ep) Position(startCircumflex1), new(_ep) string(circumflex))));
     Position* end = lexer->getPosition(_p);
     Pointer* ret = new(_rp) Pointer(new(_rp) Position(start), new(_rp) Position(end));
     return _Result<Pointer, ParserError>(ret);

@@ -44,7 +44,7 @@ class Parser {
         underscore = new string("_")
         at = new string("@")
         hash = new string("#")
-        star = new string("*")
+        circumflex = new string("^")
     }
 
     function parseCompilationUnit(): CompilationUnit throws ParserError {
@@ -2259,12 +2259,12 @@ class Parser {
 
     function parsePointer(): Pointer throws ParserError {
         mutable start: Position = lexer.getPreviousPosition()
-        mutable startStar1: Position = lexer.getPreviousPosition()
-        let successStar1: bool = lexer.parsePunctuation(star)
-        if successStar1
+        mutable startCircumflex1: Position = lexer.getPreviousPosition()
+        let successCircumflex1: bool = lexer.parsePunctuation(circumflex)
+        if successCircumflex1
             lexer.advance()
         else
-            throw punctuationExpected(new Position(startStar1), new string(star))
+            throw punctuationExpected(new Position(startCircumflex1), new string(circumflex))
 
         mutable end: Position = lexer.getPosition()
         var ret: Pointer = new Pointer(new Position(start), new Position(end))
@@ -2517,5 +2517,5 @@ class Parser {
     let underscore: string
     let at: string
     let hash: string
-    let star: string
+    let circumflex: string
 }
