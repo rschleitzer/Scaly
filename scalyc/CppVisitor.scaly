@@ -228,7 +228,7 @@ class CppVisitor extends SyntaxVisitor {
 
         sourceFile.append("\n}\n")
 
-        mutable sourceFilePath: VarString = new VarString(outputFilePath)
+        mutable sourceFilePath: VarString$ = new VarString(outputFilePath)
         sourceFilePath.append(".cpp")
         File.writeFromString(sourceFilePath, sourceFile)
             catch _ (error: fileError)
@@ -598,7 +598,7 @@ class CppVisitor extends SyntaxVisitor {
 
         // Prepend a return if this expression is the only one of a function
         if statement.parent is FunctionDeclaration {
-            mutable returnType: string$ = getReturnType(statement)
+            let returnType: string$ = getReturnType(statement)
             if returnType != null
                 prependReturn(simpleExpression)
         }
@@ -609,7 +609,7 @@ class CppVisitor extends SyntaxVisitor {
             if block.parent is FunctionDeclaration {
                 let statements: Statement[] = block.statements
                 if statements[statements.length() - 1] == statement {
-                    mutable returnType: string$ = getReturnType(statement)
+                    let returnType: string$ = getReturnType(statement)
                     if returnType != null
                         prependReturn(simpleExpression)
                 }
@@ -643,7 +643,7 @@ class CppVisitor extends SyntaxVisitor {
                     let binaryOp: BinaryOp = binaryOps[0]
                     if binaryOp is Assignment {
                         let assignment: Assignment = binaryOp as Assignment
-                        mutable memberName: string$ = getMemberIfCreatingObject(assignment)
+                        let memberName: string$ = getMemberIfCreatingObject(assignment)
                         if (memberName != null) && (!inInitializer(assignment)) {
                             sourceFile.append("if (")
                             sourceFile.append(memberName)
