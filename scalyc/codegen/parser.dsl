@@ -33,8 +33,8 @@
         (if (abstract? syntax)
             ($
 "
-        mutable errors: ParserError[] = new ParserError[]()
-        mutable start: Position = lexer.getPreviousPosition()
+        mutable errors: ParserError[]$ = new ParserError[]()
+        mutable start: Position$ = lexer.getPreviousPosition()
 "                (apply-to-children-of syntax (lambda (content) ($
 "
         {
@@ -53,7 +53,7 @@
             )
             ($ ; non-abstract syntax
 "
-        mutable start: Position = lexer.getPreviousPosition()
+        mutable start: Position$ = lexer.getPreviousPosition()
 "                (apply-to-children-of syntax (lambda (content) ($
                    (if (string=? "syntax" (type content))
                         ($ ; non-terminals
@@ -69,7 +69,7 @@
                            (if (top? syntax) ($
 "        if "(property content)" != null {
             if !isAtEnd() {
-                mutable current: Position = lexer.getPosition()
+                mutable current: Position$ = lexer.getPosition()
                 throw notAtEnd(new Position(current))
             }
         }
@@ -77,7 +77,7 @@
                         )
                         ($ ; terminals
                             (if (optional? content) "" ($
-"        mutable start"(if (property content) (string-firstchar-upcase (property content)) ($ (string-firstchar-upcase (link content))(number->string (child-number content))))": Position = lexer.getPreviousPosition()
+"        mutable start"(if (property content) (string-firstchar-upcase (property content)) ($ (string-firstchar-upcase (link content))(number->string (child-number content))))": Position$ = lexer.getPreviousPosition()
 "                           ))
 "        let "(case (type content) (("keyword" "punctuation") ($ "success"(if (property content) (string-firstchar-upcase (property content)) ($ (string-firstchar-upcase (link content))(number->string (child-number content))))": bool"))(("literal") ($ (property content)": Literal"))(else ($ (property content)": string")))
             " = lexer.parse"
@@ -95,7 +95,7 @@
                         )
                     ) ; syntax or terminal
                 ))) ; apply to children of syntax
-"        mutable end: Position = lexer.getPosition()
+"        mutable end: Position$ = lexer.getPosition()
         var ret: "(id syntax)" = new "(id syntax)"("
                 (apply-to-property-children-of syntax (lambda (content) ($
                     (property content)(if (properties-remaining? content syntax) ", " "")
