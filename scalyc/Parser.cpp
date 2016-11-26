@@ -46,9 +46,9 @@ Parser::Parser(string* theFileName, string* text) {
     dot = new(getPage()) string(".");
     underscore = new(getPage()) string("_");
     circumflex = new(getPage()) string("^");
+    dollar = new(getPage()) string("$");
     at = new(getPage()) string("@");
     hash = new(getPage()) string("#");
-    dollar = new(getPage()) string("$");
 }
 
 _Result<CompilationUnit, ParserError> Parser::parseCompilationUnit(_Page* _rp, _Page* _ep) {
@@ -3132,8 +3132,8 @@ _Result<Type, ParserError> Parser::parseType(_Page* _rp, _Page* _ep) {
     else {
         postfixes = nullptr;
     }
-    auto _region_result = parseRegion(_rp, _ep);
-    Region* region = nullptr;
+    auto _region_result = parseLifeTime(_rp, _ep);
+    LifeTime* region = nullptr;
     if (_region_result.succeeded()) {
         region = _region_result.getResult();
     }
@@ -3305,7 +3305,7 @@ _Result<Pointer, ParserError> Parser::parsePointer(_Page* _rp, _Page* _ep) {
     return _Result<Pointer, ParserError>(ret);
 }
 
-_Result<Region, ParserError> Parser::parseRegion(_Page* _rp, _Page* _ep) {
+_Result<LifeTime, ParserError> Parser::parseLifeTime(_Page* _rp, _Page* _ep) {
     _Region _region; _Page* _p = _region.get();
     _Array<ParserError>* errors = new(_p) _Array<ParserError>();
     Position* start = lexer->getPreviousPosition(_p);
@@ -3322,7 +3322,7 @@ _Result<Region, ParserError> Parser::parseRegion(_Page* _rp, _Page* _ep) {
             }
         }
         if (node != nullptr)
-            return _Result<Region, ParserError>(node);
+            return _Result<LifeTime, ParserError>(node);
     }
     {
         auto _node_result = parseReference(_rp, _ep);
@@ -3337,7 +3337,7 @@ _Result<Region, ParserError> Parser::parseRegion(_Page* _rp, _Page* _ep) {
             }
         }
         if (node != nullptr)
-            return _Result<Region, ParserError>(node);
+            return _Result<LifeTime, ParserError>(node);
     }
     {
         auto _node_result = parseThrown(_rp, _ep);
@@ -3352,9 +3352,9 @@ _Result<Region, ParserError> Parser::parseRegion(_Page* _rp, _Page* _ep) {
             }
         }
         if (node != nullptr)
-            return _Result<Region, ParserError>(node);
+            return _Result<LifeTime, ParserError>(node);
     }
-    return _Result<Region, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_unableToParse(new(_ep) Position(start), &_Vector<ParserError>::create(_ep, *(errors)))));
+    return _Result<LifeTime, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_unableToParse(new(_ep) Position(start), &_Vector<ParserError>::create(_ep, *(errors)))));
 }
 
 _Result<Local, ParserError> Parser::parseLocal(_Page* _rp, _Page* _ep) {

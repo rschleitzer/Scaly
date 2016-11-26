@@ -97,7 +97,7 @@ public:
     virtual bool _isTypePostfix();
     virtual bool _isIndexedType();
     virtual bool _isPointer();
-    virtual bool _isRegion();
+    virtual bool _isLifeTime();
     virtual bool _isLocal();
     virtual bool _isReference();
     virtual bool _isThrown();
@@ -901,12 +901,12 @@ public:
 
 class Type : public SyntaxNode {
 public:
-    Type(string* name, Subtype* subType, _Vector<TypePostfix>* postfixes, Region* region, Position* start, Position* end);
+    Type(string* name, Subtype* subType, _Vector<TypePostfix>* postfixes, LifeTime* region, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
     string* name;
     Subtype* subType;
     _Vector<TypePostfix>* postfixes;
-    Region* region;
+    LifeTime* region;
 
     virtual bool _isType();
 };
@@ -955,17 +955,17 @@ public:
     virtual bool _isPointer();
 };
 
-class Region : public SyntaxNode {
+class LifeTime : public SyntaxNode {
 public:
     virtual void accept(SyntaxVisitor* visitor);
 
-    virtual bool _isRegion();
+    virtual bool _isLifeTime();
     virtual bool _isLocal();
     virtual bool _isReference();
     virtual bool _isThrown();
 };
 
-class Local : public Region {
+class Local : public LifeTime {
 public:
     Local(Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
@@ -973,7 +973,7 @@ public:
     virtual bool _isLocal();
 };
 
-class Reference : public Region {
+class Reference : public LifeTime {
 public:
     Reference(Literal* age, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
@@ -982,7 +982,7 @@ public:
     virtual bool _isReference();
 };
 
-class Thrown : public Region {
+class Thrown : public LifeTime {
 public:
     Thrown(Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);

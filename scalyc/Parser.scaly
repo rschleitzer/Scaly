@@ -43,9 +43,9 @@ class Parser {
         dot = new string(".")
         underscore = new string("_")
         circumflex = new string("^")
+        dollar = new string("$")
         at = new string("@")
         hash = new string("#")
-        dollar = new string("$")
     }
 
     function parseCompilationUnit(): CompilationUnit throws ParserError {
@@ -2144,7 +2144,7 @@ class Parser {
 
         let subType: Subtype = parseSubtype() catch _ null
         let postfixes: TypePostfix[] = parseTypePostfixList() catch _ null
-        let region: Region = parseRegion() catch _ null
+        let region: LifeTime = parseLifeTime() catch _ null
         mutable end: Position = lexer.getPosition()
         var ret: Type = new Type(name, subType, postfixes, region, new Position(start), new Position(end))
         if subType != null
@@ -2273,7 +2273,7 @@ class Parser {
         return(ret)
     }
 
-    function parseRegion(): Region throws ParserError {
+    function parseLifeTime(): LifeTime throws ParserError {
         mutable errors: ParserError[] = new ParserError[]()
         mutable start: Position = lexer.getPreviousPosition()
 
@@ -2541,7 +2541,7 @@ class Parser {
     let dot: string
     let underscore: string
     let circumflex: string
+    let dollar: string
     let at: string
     let hash: string
-    let dollar: string
 }

@@ -1365,7 +1365,7 @@ class CaseContent extends SyntaxNode {
 
 class Type extends SyntaxNode {
 
-    constructor(name: string, subType: Subtype, postfixes: TypePostfix[], region: Region, start: Position, end: Position) {
+    constructor(name: string, subType: Subtype, postfixes: TypePostfix[], region: LifeTime, start: Position, end: Position) {
         this.start = start
         this.end = end
         this.name = name
@@ -1388,7 +1388,7 @@ class Type extends SyntaxNode {
         visitor.closeType(this)
     }
 
-    let name: string    let subType: Subtype    let postfixes: TypePostfix[]    let region: Region}
+    let name: string    let subType: Subtype    let postfixes: TypePostfix[]    let region: LifeTime}
 
 class TypeAnnotation extends SyntaxNode {
 
@@ -1462,14 +1462,14 @@ class Pointer extends TypePostfix {
 
 }
 
-class Region extends SyntaxNode {
+class LifeTime extends SyntaxNode {
 
     function accept(mutable visitor: SyntaxVisitor) {
     }
 
 }
 
-class Local extends Region {
+class Local extends LifeTime {
 
     constructor(start: Position, end: Position) {
         this.start = start
@@ -1482,7 +1482,7 @@ class Local extends Region {
 
 }
 
-class Reference extends Region {
+class Reference extends LifeTime {
 
     constructor(age: Literal, start: Position, end: Position) {
         this.start = start
@@ -1496,7 +1496,7 @@ class Reference extends Region {
 
     let age: Literal}
 
-class Thrown extends Region {
+class Thrown extends LifeTime {
 
     constructor(start: Position, end: Position) {
         this.start = start

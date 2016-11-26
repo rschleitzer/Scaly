@@ -922,7 +922,7 @@ class CppVisitor extends SyntaxVisitor {
         if functionSignature.result != null {
             let type: Type = functionSignature.result.resultType as Type
             if isClass(type.name) {
-                let region: Region = type.region
+                let region: LifeTime = type.region
                 if (region == null) || !(region is Reference) {
                     headerFile.append("_Page* _rp")
                     if !suppressSource

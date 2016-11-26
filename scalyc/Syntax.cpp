@@ -89,7 +89,7 @@ bool SyntaxNode::_isSubtype() { return (false); }
 bool SyntaxNode::_isTypePostfix() { return (false); }
 bool SyntaxNode::_isIndexedType() { return (false); }
 bool SyntaxNode::_isPointer() { return (false); }
-bool SyntaxNode::_isRegion() { return (false); }
+bool SyntaxNode::_isLifeTime() { return (false); }
 bool SyntaxNode::_isLocal() { return (false); }
 bool SyntaxNode::_isReference() { return (false); }
 bool SyntaxNode::_isThrown() { return (false); }
@@ -1440,7 +1440,7 @@ void CaseContent::accept(SyntaxVisitor* visitor) {
 
 bool CaseContent::_isCaseContent() { return (true); }
 
-Type::Type(string* name, Subtype* subType, _Vector<TypePostfix>* postfixes, Region* region, Position* start, Position* end) {
+Type::Type(string* name, Subtype* subType, _Vector<TypePostfix>* postfixes, LifeTime* region, Position* start, Position* end) {
     this->start = start;
     this->end = end;
     this->name = name;
@@ -1534,14 +1534,14 @@ void Pointer::accept(SyntaxVisitor* visitor) {
 
 bool Pointer::_isPointer() { return (true); }
 
-void Region::accept(SyntaxVisitor* visitor) {
+void LifeTime::accept(SyntaxVisitor* visitor) {
 }
 
-bool Region::_isRegion() { return (true); }
+bool LifeTime::_isLifeTime() { return (true); }
 
-bool Region::_isLocal() { return (false); }
-bool Region::_isReference() { return (false); }
-bool Region::_isThrown() { return (false); }
+bool LifeTime::_isLocal() { return (false); }
+bool LifeTime::_isReference() { return (false); }
+bool LifeTime::_isThrown() { return (false); }
 
 Local::Local(Position* start, Position* end) {
     this->start = start;

@@ -379,7 +379,7 @@
         <content identifier                                     property = name
         <content link = Subtype                        optional property = subType
         <content link = TypePostfix           multiple optional property = postfixes
-        <content link = Region                         optional property = region
+        <content link = LifeTime                       optional property = region
 
     <syntax id = TypeAnnotation
         <content link = colon
@@ -401,19 +401,19 @@
     <syntax id = Pointer                                        base = TypePostfix
         <content link = circumflex
     
-    <syntax id = Region                                abstract
+    <syntax id = LifeTime                              abstract
         <content link = Local
         <content link = Reference
         <content link = Thrown
 
-    <syntax id = Local                                          base = Region
+    <syntax id = Local                                          base = LifeTime
         <content link = dollar
 
-    <syntax id = Reference                                      base = Region
+    <syntax id = Reference                                      base = LifeTime
         <content link = at
         <content literal                               optional property = age
 
-    <syntax id = Thrown                                         base = Region
+    <syntax id = Thrown                                         base = LifeTime
         <content link = hash
 
     <syntax id = TypeInheritanceClause

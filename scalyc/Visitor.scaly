@@ -85,7 +85,7 @@ class Subtype
 class TypePostfix
 class IndexedType
 class Pointer
-class Region
+class LifeTime
 class Local
 class Reference
 class Thrown

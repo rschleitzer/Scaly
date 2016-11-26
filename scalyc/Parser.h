@@ -110,7 +110,7 @@ public:
     virtual _Result<TypePostfix, ParserError> parseTypePostfix(_Page* _rp, _Page* _ep);
     virtual _Result<IndexedType, ParserError> parseIndexedType(_Page* _rp, _Page* _ep);
     virtual _Result<Pointer, ParserError> parsePointer(_Page* _rp, _Page* _ep);
-    virtual _Result<Region, ParserError> parseRegion(_Page* _rp, _Page* _ep);
+    virtual _Result<LifeTime, ParserError> parseLifeTime(_Page* _rp, _Page* _ep);
     virtual _Result<Local, ParserError> parseLocal(_Page* _rp, _Page* _ep);
     virtual _Result<Reference, ParserError> parseReference(_Page* _rp, _Page* _ep);
     virtual _Result<Thrown, ParserError> parseThrown(_Page* _rp, _Page* _ep);
@@ -162,9 +162,9 @@ public:
     string* dot;
     string* underscore;
     string* circumflex;
+    string* dollar;
     string* at;
     string* hash;
-    string* dollar;
 
 };
 

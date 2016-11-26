@@ -894,7 +894,7 @@ bool CppVisitor::openFunctionSignature(FunctionSignature* functionSignature) {
     if (functionSignature->result != nullptr) {
         Type* type = (Type*)functionSignature->result->resultType;
         if (isClass(type->name)) {
-            Region* region = type->region;
+            LifeTime* region = type->region;
             if ((region == nullptr) || !(region->_isReference())) {
                 headerFile->append("_Page* _rp");
                 if (!suppressSource)

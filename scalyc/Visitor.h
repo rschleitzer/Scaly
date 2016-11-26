@@ -178,7 +178,7 @@ class IndexedType;
 
 class Pointer;
 
-class Region;
+class LifeTime;
 
 class Local;
 
