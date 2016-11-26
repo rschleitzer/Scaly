@@ -1985,6 +1985,14 @@ bool CppVisitor::openParenthesizedExpression(ParenthesizedExpression* parenthesi
                     sourceFile->append("_rp");
                     parameterInserted = true;
                 }
+                else {
+                    string* identifier = getLocalPage(functionCall);
+                    if (identifier != nullptr) {
+                        sourceFile->append(identifier);
+                        sourceFile->append("->getPage()");
+                        parameterInserted = true;
+                    }
+                }
             }
         }
         if (catchesError(functionCall)) {
@@ -2023,6 +2031,24 @@ bool CppVisitor::assignedToRootObject(FunctionCall* functionCall) {
     if (bindingInitializer == nullptr)
         return false;
     return isRootBinding(bindingInitializer);
+}
+
+string* CppVisitor::getLocalPage(FunctionCall* functionCall) {
+    BindingInitializer* bindingInitializer = getBindingInitializer(functionCall);
+    if (bindingInitializer == nullptr)
+        return nullptr;
+    PatternInitializer* patternInitializer = bindingInitializer->initializer;
+    if (patternInitializer->pattern->_isIdentifierPattern()) {
+        IdentifierPattern* identifierPattern = (IdentifierPattern*)(patternInitializer->pattern);
+        Type* type = identifierPattern->annotationForType->annotationForType;
+        if (type->lifeTime == nullptr)
+            return nullptr;
+        if (type->lifeTime->_isLocal()) {
+            Local* local = (Local*)type->lifeTime;
+            return local->location;
+        }
+    }
+    return nullptr;
 }
 
 bool CppVisitor::isRootBinding(BindingInitializer* bindingInitializer) {

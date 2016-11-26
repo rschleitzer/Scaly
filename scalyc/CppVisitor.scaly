@@ -2024,6 +2024,14 @@ class CppVisitor extends SyntaxVisitor {
                         sourceFile.append("_rp")
                         parameterInserted = true
                     }
+                    else {
+                        let identifier: string@ = getLocalPage(functionCall)
+                        if identifier != null {
+                            sourceFile.append(identifier)
+                            sourceFile.append("->getPage()")
+                            parameterInserted = true
+                        }
+                    }
                 }
             }
             if catchesError(functionCall) {
@@ -2065,6 +2073,28 @@ class CppVisitor extends SyntaxVisitor {
             return(false)
         
         isRootBinding(bindingInitializer)
+    }
+    
+    function getLocalPage(functionCall: FunctionCall@): string@ {
+        var bindingInitializer: BindingInitializer = getBindingInitializer(functionCall) 
+        if bindingInitializer == null
+            return(null)
+            
+        let patternInitializer: PatternInitializer = bindingInitializer.initializer
+        if patternInitializer.pattern is IdentifierPattern {
+            let identifierPattern: IdentifierPattern = (patternInitializer.pattern) as IdentifierPattern
+            let type: Type = identifierPattern.annotationForType.annotationForType
+
+            if type.lifeTime == null
+                return(null)
+
+            if type.lifeTime is Local {
+                let local: Local = type.lifeTime as Local
+                return (local.location)
+            }
+        }
+        
+        null
     }
     
     function isRootBinding(bindingInitializer: BindingInitializer): bool {

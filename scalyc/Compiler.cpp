@@ -11,7 +11,7 @@ CompilerError* Compiler::compileFiles(_Page* _ep, Options* options) {
     for (size_t _i = 0; _i < _files_length; _i++) {
         file = *(*files)[_i];
         {
-            auto _source_result = File::readToString(_p, _ep, file);
+            auto _source_result = File::readToString(sources->getPage(), _ep, file);
             string* source = nullptr;
             if (_source_result.succeeded()) {
                 source = _source_result.getResult();
@@ -33,8 +33,8 @@ CompilerError* Compiler::compileFiles(_Page* _ep, Options* options) {
     for (size_t _i = 0; _i < _sources_length; _i++) {
         source = *(*sources)[_i];
         {
-            string* moduleName = Path::getFileNameWithoutExtension(_p, *(*files)[index]);
-            auto _compilationUnit_result = parseUnit(_p, _ep, moduleName, source);
+            string* moduleName = Path::getFileNameWithoutExtension(compilationUnits->getPage(), *(*files)[index]);
+            auto _compilationUnit_result = parseUnit(compilationUnits->getPage(), _ep, moduleName, source);
             CompilationUnit* compilationUnit = nullptr;
             if (_compilationUnit_result.succeeded()) {
                 compilationUnit = _compilationUnit_result.getResult();

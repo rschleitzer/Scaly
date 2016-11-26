@@ -151,6 +151,7 @@ public:
     virtual void closeDoExpression(DoExpression* doExpression);
     virtual bool openParenthesizedExpression(ParenthesizedExpression* parenthesizedExpression);
     virtual bool assignedToRootObject(FunctionCall* functionCall);
+    virtual string* getLocalPage(FunctionCall* functionCall);
     virtual bool isRootBinding(BindingInitializer* bindingInitializer);
     virtual bool assignedToReturnedObject(FunctionCall* functionCall);
     virtual bool boundToObject(BindingInitializer* bindingInitializer);
