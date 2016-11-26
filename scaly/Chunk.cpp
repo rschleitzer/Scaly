@@ -2,16 +2,19 @@
 namespace scaly{
 
 _Chunk* _Chunk::create() {
+
+    // Allocate the raw memory of the chunk
     _Page* page = 0;
     posix_memalign((void**)&page, _pageSize, _pageSize * numberOfPages);
     if (!page)
         return 0;
+
+    // Our page is the first at the start of the chunk where we create the _Chunk object.
     page->reset();
     new(page) _Chunk();
 }
 
 _Chunk::_Chunk() {
-    chunkBase = (char*) getPage();
     size_t numberOfBytesInMap = numberOfPagesInBucket * sizeof(size_t);
     allocationMap = (size_t*)getPage()->allocateObject(numberOfBytesInMap);
     memset(allocationMap, 0, numberOfBytesInMap);
@@ -49,7 +52,7 @@ _Page* _Chunk::allocatePage() {
     if (allocationMap[bucket] == 0xFFFFFFFFFFFFFFFF)
         allocationIndex |= (size_t)1 << bucket;
     size_t chunkBaseOffset = pageIndex * _pageSize;
-    char* page = chunkBase + chunkBaseOffset;
+    char* page = (char*) getPage() + chunkBaseOffset;
     return (_Page*)page; }
 
 size_t _Chunk::findLowestZeroBit64(size_t index) {
@@ -107,10 +110,10 @@ size_t _Chunk::findLowestZeroBit32(size_t index) {
 
 bool _Chunk::deallocatePage(_Page* page) {
     // Check whether this page is from us
-    if (((char*)page < chunkBase) || (char*)page >= (chunkBase + _pageSize * numberOfPages))
+    if (((char*)page < (char*)getPage()) || (char*)page >= ((char*)getPage() + _pageSize * numberOfPages))
         return false;
 
-    size_t pageIndex = ((char*)page - chunkBase) / _pageSize;
+    size_t pageIndex = ((char*)page - (char*)getPage()) / _pageSize;
     size_t pagePositionInBucket = (pageIndex & ~(numberOfPagesInBucket)) % numberOfPagesInBucket;
     size_t bucket = pageIndex / numberOfPagesInBucket;
     // Clear the allocation bit in the map
@@ -121,5 +124,5 @@ bool _Chunk::deallocatePage(_Page* page) {
 }
 
 void _Chunk::dispose() {
-    free(chunkBase); }
+    free(getPage()); }
 }
