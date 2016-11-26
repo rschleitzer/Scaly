@@ -14,7 +14,7 @@ class Options {
         let length: number = args.length()
         mutable output: string = null
         mutable dir: string = null
-        mutable input: string[] = new string[]()
+        mutable input: string[]$ = new string[]()
         mutable i: number = 0
         while i < length {
             if length < 2 || (args[i]).charAt(0) != '-' {

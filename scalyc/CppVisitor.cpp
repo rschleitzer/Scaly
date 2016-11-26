@@ -507,7 +507,20 @@ bool CppVisitor::localAllocations(CodeBlock* codeBlock) {
         for (size_t _i = 0; _i < _statements_length; _i++) {
             statement = *(*statements)[_i];
             {
-                if (statement->_isMutableDeclaration())
+                BindingInitializer* bindingInitializer = nullptr;
+                if (statement->_isConstantDeclaration()) {
+                    ConstantDeclaration* constantDeclaration = (ConstantDeclaration*)statement;
+                    bindingInitializer = constantDeclaration->initializer;
+                }
+                if (statement->_isMutableDeclaration()) {
+                    MutableDeclaration* mutableDeclaration = (MutableDeclaration*)statement;
+                    bindingInitializer = mutableDeclaration->initializer;
+                }
+                if (statement->_isVariableDeclaration()) {
+                    VariableDeclaration* variableDeclaration = (VariableDeclaration*)statement;
+                    bindingInitializer = variableDeclaration->initializer;
+                }
+                if (isLocalBinding(bindingInitializer))
                     return true;
             }
         }
@@ -1963,7 +1976,7 @@ bool CppVisitor::openParenthesizedExpression(ParenthesizedExpression* parenthesi
         }
         bool parameterInserted = false;
         if (!callsInitializer(functionCall)) {
-            if (assignedToMutableObject(functionCall)) {
+            if (assignedToLocalObject(functionCall)) {
                 sourceFile->append("_p");
                 parameterInserted = true;
             }
@@ -2008,12 +2021,23 @@ bool CppVisitor::openParenthesizedExpression(ParenthesizedExpression* parenthesi
     return true;
 }
 
-bool CppVisitor::assignedToMutableObject(FunctionCall* functionCall) {
+bool CppVisitor::assignedToLocalObject(FunctionCall* functionCall) {
     BindingInitializer* bindingInitializer = getBindingInitializer(functionCall);
     if (bindingInitializer == nullptr)
         return false;
-    if (bindingInitializer->parent->_isMutableDeclaration()) {
-        if (boundToObject(bindingInitializer))
+    return isLocalBinding(bindingInitializer);
+}
+
+bool CppVisitor::isLocalBinding(BindingInitializer* bindingInitializer) {
+    if (bindingInitializer == nullptr)
+        return false;
+    PatternInitializer* patternInitializer = bindingInitializer->initializer;
+    if (patternInitializer->pattern->_isIdentifierPattern()) {
+        IdentifierPattern* identifierPattern = (IdentifierPattern*)(patternInitializer->pattern);
+        Type* type = identifierPattern->annotationForType->annotationForType;
+        if (type->region == nullptr)
+            return false;
+        if (type->region->_isLocal())
             return true;
     }
     return false;

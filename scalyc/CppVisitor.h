@@ -150,7 +150,8 @@ public:
     virtual bool openDoExpression(DoExpression* doExpression);
     virtual void closeDoExpression(DoExpression* doExpression);
     virtual bool openParenthesizedExpression(ParenthesizedExpression* parenthesizedExpression);
-    virtual bool assignedToMutableObject(FunctionCall* functionCall);
+    virtual bool assignedToLocalObject(FunctionCall* functionCall);
+    virtual bool isLocalBinding(BindingInitializer* bindingInitializer);
     virtual bool assignedToConstantObject(FunctionCall* functionCall);
     virtual bool boundToObject(BindingInitializer* bindingInitializer);
     virtual BindingInitializer* getBindingInitializer(FunctionCall* functionCall);

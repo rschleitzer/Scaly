@@ -52,7 +52,7 @@ class CppVisitor extends SyntaxVisitor {
     }
 
     function openProgram(program: Program): bool {
-        mutable programDirectory: string = new string(program.directory)
+        mutable programDirectory: string$ = new string(program.directory)
 
         if programDirectory == null || programDirectory.equals("") {
             programDirectory = new string(".")
@@ -65,7 +65,7 @@ class CppVisitor extends SyntaxVisitor {
         }
 
         {
-            mutable outputFilePath: VarString = new VarString(programDirectory)
+            mutable outputFilePath: VarString$ = new VarString(programDirectory)
             outputFilePath.append("/")
             outputFilePath.append(program.name)
 
@@ -73,7 +73,7 @@ class CppVisitor extends SyntaxVisitor {
             {
                 buildProjectFileString(program)
                 {
-                    mutable projectFilePath: VarString  = new VarString(outputFilePath)
+                    mutable projectFilePath: VarString$  = new VarString(outputFilePath)
                     projectFilePath.append(".project")
                     File.writeFromString(projectFilePath , projectFile)
                         catch _ (error: fileError)
@@ -85,7 +85,7 @@ class CppVisitor extends SyntaxVisitor {
             {
                 buildMainHeaderFileString(program)
                 {
-                    mutable headerFilePath: VarString  = new VarString(outputFilePath)
+                    mutable headerFilePath: VarString$  = new VarString(outputFilePath)
                     headerFilePath.append(".h")
                     File.writeFromString(headerFilePath, mainHeaderFile)
                         catch _ (error: fileError)
@@ -193,7 +193,7 @@ class CppVisitor extends SyntaxVisitor {
 
         // Close and write cpp file
 
-        mutable outputFilePath: VarString  = new VarString(programDirectory)
+        mutable outputFilePath: VarString$  = new VarString(programDirectory)
         outputFilePath.append('/')
         let fileNameWithoutExtension: string = Path.getFileNameWithoutExtension(compilationUnit.fileName)
         outputFilePath.append(fileNameWithoutExtension)
@@ -457,7 +457,7 @@ class CppVisitor extends SyntaxVisitor {
             sourceFile.append("() { return (true); }\n\n")
         }
         {
-            mutable derivedClasses: string[] = new string[]()
+            mutable derivedClasses: string[]$ = new string[]()
             collectDerivedClasses(derivedClasses, new string(classDeclaration.name))
             for derivedClass: string in derivedClasses {
                 headerFile.append("\n")
@@ -525,7 +525,20 @@ class CppVisitor extends SyntaxVisitor {
         let statements: Statement[] = codeBlock.statements
         if statements != null {
             for statement: Statement in statements {
-                if statement is MutableDeclaration
+                var bindingInitializer: BindingInitializer = null
+                if statement is ConstantDeclaration {
+                    let constantDeclaration: ConstantDeclaration = statement as ConstantDeclaration
+                    bindingInitializer = constantDeclaration.initializer
+                }
+                if statement is MutableDeclaration {
+                    let mutableDeclaration: MutableDeclaration = statement as MutableDeclaration
+                    bindingInitializer = mutableDeclaration.initializer
+                }
+                if statement is VariableDeclaration {
+                    let variableDeclaration: VariableDeclaration = statement as VariableDeclaration
+                    bindingInitializer = variableDeclaration.initializer
+                }
+                if isLocalBinding(bindingInitializer)
                     return(true)
             }
         }
@@ -2002,7 +2015,7 @@ class CppVisitor extends SyntaxVisitor {
 
             let parameterInserted: bool = false
             if !callsInitializer(functionCall) {
-                if assignedToMutableObject(functionCall) {
+                if assignedToLocalObject(functionCall) {
                     sourceFile.append("_p")
                     parameterInserted = true
                 }
@@ -2048,18 +2061,34 @@ class CppVisitor extends SyntaxVisitor {
         true
     }
 
-    function assignedToMutableObject(functionCall: FunctionCall): bool {
+    function assignedToLocalObject(functionCall: FunctionCall): bool {
         var bindingInitializer: BindingInitializer = getBindingInitializer(functionCall)
         if bindingInitializer == null
             return(false)
+        
+        isLocalBinding(bindingInitializer)
+    }
+    
+    function isLocalBinding(bindingInitializer: BindingInitializer): bool {
+ 
+       if bindingInitializer == null
+            return(false)
+            
+        let patternInitializer: PatternInitializer = bindingInitializer.initializer
+        if patternInitializer.pattern is IdentifierPattern {
+            let identifierPattern: IdentifierPattern = (patternInitializer.pattern) as IdentifierPattern
+            let type: Type = identifierPattern.annotationForType.annotationForType
 
-        if bindingInitializer.parent is MutableDeclaration {
-            if boundToObject(bindingInitializer)
+            if type.region == null
+                return(false)
+
+            if type.region is Local
                 return(true)
         }
-
+        
         false
     }
+
 
     function assignedToConstantObject(functionCall: FunctionCall): bool {
         var bindingInitializer: BindingInitializer = getBindingInitializer(functionCall)

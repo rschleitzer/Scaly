@@ -1,7 +1,7 @@
 class Compiler {
     static function compileFiles(options: Options) throws CompilerError {
         let files: string[] = options.files
-        mutable sources: string[] = new string[]()
+        mutable sources: string[]$ = new string[]()
         for file: string in files {
             let source: string = File.readToString(file)
                 catch FileError.noSuchFileOrDirectory(error: noSuchFileOrDirectory) throw fileNotFound(file)
@@ -31,7 +31,7 @@ class Compiler {
     }
 
     static function parseUnit(moduleName: string, text: string): CompilationUnit throws ParserError {
-        mutable parser: Parser = new Parser(moduleName, text)
+        mutable parser: Parser$ = new Parser(moduleName, text)
         let compilationUnit: CompilationUnit = parser.parseCompilationUnit()
             catch _ (error: ParserError)
                 throw error
