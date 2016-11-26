@@ -195,7 +195,7 @@ class CppVisitor extends SyntaxVisitor {
 
         mutable outputFilePath: VarString$  = new VarString(programDirectory)
         outputFilePath.append('/')
-        let fileNameWithoutExtension: string = Path.getFileNameWithoutExtension(compilationUnit.fileName)
+        let fileNameWithoutExtension: string$ = Path.getFileNameWithoutExtension(compilationUnit.fileName)
         outputFilePath.append(fileNameWithoutExtension)
 
         if !moduleName.equals(programName) {
@@ -2019,13 +2019,11 @@ class CppVisitor extends SyntaxVisitor {
                     sourceFile.append("_p")
                     parameterInserted = true
                 }
-                if assignedToConstantObject(functionCall) {
-                    mutable returnType: string$ = getReturnType(functionCall)
-                    if returnType != null
+                else {
+                    if assignedToReturnedObject(functionCall) {
                         sourceFile.append("_rp")
-                    else
-                        sourceFile.append("_p")
-                    parameterInserted = true
+                        parameterInserted = true
+                    }
                 }
             }
             if catchesError(functionCall) {
@@ -2089,8 +2087,7 @@ class CppVisitor extends SyntaxVisitor {
         false
     }
 
-
-    function assignedToConstantObject(functionCall: FunctionCall): bool {
+    function assignedToReturnedObject(functionCall: FunctionCall): bool {
         var bindingInitializer: BindingInitializer = getBindingInitializer(functionCall)
         if bindingInitializer == null
             return(false)
@@ -2104,12 +2101,17 @@ class CppVisitor extends SyntaxVisitor {
     }
 
     function boundToObject(bindingInitializer: BindingInitializer): bool {
+        
+        if bindingInitializer == null
+            return(false)
+
         let patternInitializer: PatternInitializer = bindingInitializer.initializer
         if patternInitializer.pattern is IdentifierPattern {
             let identifierPattern: IdentifierPattern = (patternInitializer.pattern) as IdentifierPattern
             let type: Type = identifierPattern.annotationForType.annotationForType
-            if hasArrayPostfix(type)
-                return(true)
+            
+            if type.region != null
+                return(false)
 
             if isClass(type.name) && (getFunctionCall(patternInitializer) != null)
                 return(true)

@@ -3,7 +3,7 @@ class Compiler {
         let files: string[] = options.files
         mutable sources: string[]$ = new string[]()
         for file: string in files {
-            let source: string = File.readToString(file)
+            let source: string$ = File.readToString(file)
                 catch FileError.noSuchFileOrDirectory(error: noSuchFileOrDirectory) throw fileNotFound(file)
                 catch _ (error: FileError) throw unableToReadFile(file, error)
                 
@@ -13,8 +13,8 @@ class Compiler {
         mutable compilationUnits: CompilationUnit[] = new CompilationUnit[]()
         let index: number = 0
         for source: string in sources {
-            let moduleName: string = Path.getFileNameWithoutExtension(files[index])
-            let compilationUnit: CompilationUnit = parseUnit(moduleName, source)
+            let moduleName: string$ = Path.getFileNameWithoutExtension(files[index])
+            let compilationUnit: CompilationUnit$ = parseUnit(moduleName, source)
                 catch _ (error: CompilerError) throw syntaxError(error)
 
             compilationUnits.push(compilationUnit)

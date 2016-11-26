@@ -152,7 +152,7 @@ public:
     virtual bool openParenthesizedExpression(ParenthesizedExpression* parenthesizedExpression);
     virtual bool assignedToLocalObject(FunctionCall* functionCall);
     virtual bool isLocalBinding(BindingInitializer* bindingInitializer);
-    virtual bool assignedToConstantObject(FunctionCall* functionCall);
+    virtual bool assignedToReturnedObject(FunctionCall* functionCall);
     virtual bool boundToObject(BindingInitializer* bindingInitializer);
     virtual BindingInitializer* getBindingInitializer(FunctionCall* functionCall);
     virtual bool callsInitializer(FunctionCall* functionCall);

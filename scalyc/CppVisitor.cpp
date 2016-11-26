@@ -1980,14 +1980,11 @@ bool CppVisitor::openParenthesizedExpression(ParenthesizedExpression* parenthesi
                 sourceFile->append("_p");
                 parameterInserted = true;
             }
-            if (assignedToConstantObject(functionCall)) {
-                _Region _region; _Page* _p = _region.get();
-                string* returnType = getReturnType(_p, functionCall);
-                if (returnType != nullptr)
+            else {
+                if (assignedToReturnedObject(functionCall)) {
                     sourceFile->append("_rp");
-                else
-                    sourceFile->append("_p");
-                parameterInserted = true;
+                    parameterInserted = true;
+                }
             }
         }
         if (catchesError(functionCall)) {
@@ -2043,7 +2040,7 @@ bool CppVisitor::isLocalBinding(BindingInitializer* bindingInitializer) {
     return false;
 }
 
-bool CppVisitor::assignedToConstantObject(FunctionCall* functionCall) {
+bool CppVisitor::assignedToReturnedObject(FunctionCall* functionCall) {
     BindingInitializer* bindingInitializer = getBindingInitializer(functionCall);
     if (bindingInitializer == nullptr)
         return false;
@@ -2055,12 +2052,14 @@ bool CppVisitor::assignedToConstantObject(FunctionCall* functionCall) {
 }
 
 bool CppVisitor::boundToObject(BindingInitializer* bindingInitializer) {
+    if (bindingInitializer == nullptr)
+        return false;
     PatternInitializer* patternInitializer = bindingInitializer->initializer;
     if (patternInitializer->pattern->_isIdentifierPattern()) {
         IdentifierPattern* identifierPattern = (IdentifierPattern*)(patternInitializer->pattern);
         Type* type = identifierPattern->annotationForType->annotationForType;
-        if (hasArrayPostfix(type))
-            return true;
+        if (type->region != nullptr)
+            return false;
         if (isClass(type->name) && (getFunctionCall(patternInitializer) != nullptr))
             return true;
     }

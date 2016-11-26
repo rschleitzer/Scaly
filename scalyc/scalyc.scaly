@@ -1,4 +1,4 @@
-let options: Options = Options.parseArguments(arguments)
+let options: Options$ = Options.parseArguments(arguments)
     catch OptionsError.invalidOption(error: invalidOption) {
         print("Invalid option.\n")
         return
