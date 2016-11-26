@@ -210,7 +210,9 @@ public:
     virtual void closeSubtype(Subtype* subtype);
     virtual bool openIndexedType(IndexedType* indexedType);
     virtual void closeIndexedType(IndexedType* indexedType);
-    virtual void visitAge(Age* age);
+    virtual void visitReturned(Returned* age);
+    virtual void visitThrown(Thrown* thrown);
+    virtual void visitPointer(Pointer* pointer);
     virtual bool openTypeInheritanceClause(TypeInheritanceClause* typeInheritanceClause);
     virtual void closeTypeInheritanceClause(TypeInheritanceClause* typeInheritanceClause);
     virtual bool openInheritance(Inheritance* inheritance);

@@ -96,7 +96,9 @@ public:
     virtual bool _isSubtype();
     virtual bool _isTypePostfix();
     virtual bool _isIndexedType();
-    virtual bool _isAge();
+    virtual bool _isReturned();
+    virtual bool _isThrown();
+    virtual bool _isPointer();
     virtual bool _isTypeInheritanceClause();
     virtual bool _isInheritance();
 };
@@ -930,7 +932,9 @@ public:
 
     virtual bool _isTypePostfix();
     virtual bool _isIndexedType();
-    virtual bool _isAge();
+    virtual bool _isReturned();
+    virtual bool _isThrown();
+    virtual bool _isPointer();
 };
 
 class IndexedType : public TypePostfix {
@@ -942,12 +946,28 @@ public:
     virtual bool _isIndexedType();
 };
 
-class Age : public TypePostfix {
+class Returned : public TypePostfix {
 public:
-    Age(Position* start, Position* end);
+    Returned(Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
 
-    virtual bool _isAge();
+    virtual bool _isReturned();
+};
+
+class Thrown : public TypePostfix {
+public:
+    Thrown(Position* start, Position* end);
+    virtual void accept(SyntaxVisitor* visitor);
+
+    virtual bool _isThrown();
+};
+
+class Pointer : public TypePostfix {
+public:
+    Pointer(Position* start, Position* end);
+    virtual void accept(SyntaxVisitor* visitor);
+
+    virtual bool _isPointer();
 };
 
 class TypeInheritanceClause : public SyntaxNode {

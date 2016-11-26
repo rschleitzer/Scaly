@@ -46,6 +46,8 @@ Parser::Parser(string* theFileName, string* text) {
     dot = new(getPage()) string(".");
     underscore = new(getPage()) string("_");
     at = new(getPage()) string("@");
+    exclamationMark = new(getPage()) string("!");
+    star = new(getPage()) string("*");
 }
 
 _Result<CompilationUnit, ParserError> Parser::parseCompilationUnit(_Page* _rp, _Page* _ep) {
@@ -3231,8 +3233,38 @@ _Result<TypePostfix, ParserError> Parser::parseTypePostfix(_Page* _rp, _Page* _e
             return _Result<TypePostfix, ParserError>(node);
     }
     {
-        auto _node_result = parseAge(_rp, _ep);
-        Age* node = nullptr;
+        auto _node_result = parsePointer(_rp, _ep);
+        Pointer* node = nullptr;
+        if (_node_result.succeeded()) {
+            node = _node_result.getResult();
+        }
+        else {
+            auto error = _node_result.getError();
+            {
+                errors->push(error);
+            }
+        }
+        if (node != nullptr)
+            return _Result<TypePostfix, ParserError>(node);
+    }
+    {
+        auto _node_result = parseReturned(_rp, _ep);
+        Returned* node = nullptr;
+        if (_node_result.succeeded()) {
+            node = _node_result.getResult();
+        }
+        else {
+            auto error = _node_result.getError();
+            {
+                errors->push(error);
+            }
+        }
+        if (node != nullptr)
+            return _Result<TypePostfix, ParserError>(node);
+    }
+    {
+        auto _node_result = parseThrown(_rp, _ep);
+        Thrown* node = nullptr;
         if (_node_result.succeeded()) {
             node = _node_result.getResult();
         }
@@ -3278,7 +3310,7 @@ _Result<IndexedType, ParserError> Parser::parseIndexedType(_Page* _rp, _Page* _e
     return _Result<IndexedType, ParserError>(ret);
 }
 
-_Result<Age, ParserError> Parser::parseAge(_Page* _rp, _Page* _ep) {
+_Result<Returned, ParserError> Parser::parseReturned(_Page* _rp, _Page* _ep) {
     _Region _region; _Page* _p = _region.get();
     Position* start = lexer->getPreviousPosition(_p);
     Position* startAt1 = lexer->getPreviousPosition(_p);
@@ -3286,10 +3318,38 @@ _Result<Age, ParserError> Parser::parseAge(_Page* _rp, _Page* _ep) {
     if (successAt1)
         lexer->advance();
     else
-        return _Result<Age, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_punctuationExpected(new(_ep) Position(startAt1), new(_ep) string(at))));
+        return _Result<Returned, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_punctuationExpected(new(_ep) Position(startAt1), new(_ep) string(at))));
     Position* end = lexer->getPosition(_p);
-    Age* ret = new(_rp) Age(new(_rp) Position(start), new(_rp) Position(end));
-    return _Result<Age, ParserError>(ret);
+    Returned* ret = new(_rp) Returned(new(_rp) Position(start), new(_rp) Position(end));
+    return _Result<Returned, ParserError>(ret);
+}
+
+_Result<Thrown, ParserError> Parser::parseThrown(_Page* _rp, _Page* _ep) {
+    _Region _region; _Page* _p = _region.get();
+    Position* start = lexer->getPreviousPosition(_p);
+    Position* startExclamationMark1 = lexer->getPreviousPosition(_p);
+    bool successExclamationMark1 = lexer->parsePunctuation(exclamationMark);
+    if (successExclamationMark1)
+        lexer->advance();
+    else
+        return _Result<Thrown, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_punctuationExpected(new(_ep) Position(startExclamationMark1), new(_ep) string(exclamationMark))));
+    Position* end = lexer->getPosition(_p);
+    Thrown* ret = new(_rp) Thrown(new(_rp) Position(start), new(_rp) Position(end));
+    return _Result<Thrown, ParserError>(ret);
+}
+
+_Result<Pointer, ParserError> Parser::parsePointer(_Page* _rp, _Page* _ep) {
+    _Region _region; _Page* _p = _region.get();
+    Position* start = lexer->getPreviousPosition(_p);
+    Position* startStar1 = lexer->getPreviousPosition(_p);
+    bool successStar1 = lexer->parsePunctuation(star);
+    if (successStar1)
+        lexer->advance();
+    else
+        return _Result<Pointer, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_punctuationExpected(new(_ep) Position(startStar1), new(_ep) string(star))));
+    Position* end = lexer->getPosition(_p);
+    Pointer* ret = new(_rp) Pointer(new(_rp) Position(start), new(_rp) Position(end));
+    return _Result<Pointer, ParserError>(ret);
 }
 
 _Result<TypeInheritanceClause, ParserError> Parser::parseTypeInheritanceClause(_Page* _rp, _Page* _ep) {

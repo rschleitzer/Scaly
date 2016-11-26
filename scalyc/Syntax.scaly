@@ -1446,7 +1446,7 @@ class IndexedType extends TypePostfix {
 
     let key: Type}
 
-class Age extends TypePostfix {
+class Returned extends TypePostfix {
 
     constructor(start: Position, end: Position) {
         this.start = start
@@ -1454,7 +1454,33 @@ class Age extends TypePostfix {
     }
 
     override function accept(mutable visitor: SyntaxVisitor) {
-        visitor.visitAge(this)
+        visitor.visitReturned(this)
+    }
+
+}
+
+class Thrown extends TypePostfix {
+
+    constructor(start: Position, end: Position) {
+        this.start = start
+        this.end = end
+    }
+
+    override function accept(mutable visitor: SyntaxVisitor) {
+        visitor.visitThrown(this)
+    }
+
+}
+
+class Pointer extends TypePostfix {
+
+    constructor(start: Position, end: Position) {
+        this.start = start
+        this.end = end
+    }
+
+    override function accept(mutable visitor: SyntaxVisitor) {
+        visitor.visitPointer(this)
     }
 
 }

@@ -895,7 +895,7 @@ bool CppVisitor::openFunctionSignature(FunctionSignature* functionSignature) {
         Type* type = (Type*)functionSignature->result->resultType;
         if (isClass(type->name)) {
             _Vector<TypePostfix>* typePostfixes = type->postfixes;
-            if ((typePostfixes == nullptr) || !((*(*typePostfixes)[typePostfixes->length() - 1])->_isAge())) {
+            if ((typePostfixes == nullptr) || !((*(*typePostfixes)[typePostfixes->length() - 1])->_isReturned())) {
                 headerFile->append("_Page* _rp");
                 if (!suppressSource)
                     sourceFile->append("_Page* _rp");
@@ -2809,7 +2809,14 @@ bool CppVisitor::openIndexedType(IndexedType* indexedType) {
 void CppVisitor::closeIndexedType(IndexedType* indexedType) {
 }
 
-void CppVisitor::visitAge(Age* age) {
+void CppVisitor::visitReturned(Returned* age) {
+}
+
+void CppVisitor::visitThrown(Thrown* thrown) {
+}
+
+void CppVisitor::visitPointer(Pointer* pointer) {
+    sourceFile->append("*");
 }
 
 bool CppVisitor::openTypeInheritanceClause(TypeInheritanceClause* typeInheritanceClause) {

@@ -91,7 +91,7 @@ _Page* _Page::allocateExclusivePage() {
         return currentPage->allocateExclusivePage();
 
     // Check first whether we need an ordinary extension
-    if ((_Page**)getNextObject() == getLastExtensionPageLocation()) {
+    if ((_Page**)getNextObject() == getNextExtensionPageLocation()) {
         // Allocate an extension page with default size
         _Page* defaultExtensionPage = allocateExtensionPage();
         // Make it our new current

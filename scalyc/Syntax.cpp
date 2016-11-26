@@ -88,7 +88,9 @@ bool SyntaxNode::_isTypeAnnotation() { return (false); }
 bool SyntaxNode::_isSubtype() { return (false); }
 bool SyntaxNode::_isTypePostfix() { return (false); }
 bool SyntaxNode::_isIndexedType() { return (false); }
-bool SyntaxNode::_isAge() { return (false); }
+bool SyntaxNode::_isReturned() { return (false); }
+bool SyntaxNode::_isThrown() { return (false); }
+bool SyntaxNode::_isPointer() { return (false); }
 bool SyntaxNode::_isTypeInheritanceClause() { return (false); }
 bool SyntaxNode::_isInheritance() { return (false); }
 
@@ -1498,7 +1500,9 @@ void TypePostfix::accept(SyntaxVisitor* visitor) {
 bool TypePostfix::_isTypePostfix() { return (true); }
 
 bool TypePostfix::_isIndexedType() { return (false); }
-bool TypePostfix::_isAge() { return (false); }
+bool TypePostfix::_isReturned() { return (false); }
+bool TypePostfix::_isThrown() { return (false); }
+bool TypePostfix::_isPointer() { return (false); }
 
 IndexedType::IndexedType(Type* key, Position* start, Position* end) {
     this->start = start;
@@ -1516,16 +1520,38 @@ void IndexedType::accept(SyntaxVisitor* visitor) {
 
 bool IndexedType::_isIndexedType() { return (true); }
 
-Age::Age(Position* start, Position* end) {
+Returned::Returned(Position* start, Position* end) {
     this->start = start;
     this->end = end;
 }
 
-void Age::accept(SyntaxVisitor* visitor) {
-    visitor->visitAge(this);
+void Returned::accept(SyntaxVisitor* visitor) {
+    visitor->visitReturned(this);
 }
 
-bool Age::_isAge() { return (true); }
+bool Returned::_isReturned() { return (true); }
+
+Thrown::Thrown(Position* start, Position* end) {
+    this->start = start;
+    this->end = end;
+}
+
+void Thrown::accept(SyntaxVisitor* visitor) {
+    visitor->visitThrown(this);
+}
+
+bool Thrown::_isThrown() { return (true); }
+
+Pointer::Pointer(Position* start, Position* end) {
+    this->start = start;
+    this->end = end;
+}
+
+void Pointer::accept(SyntaxVisitor* visitor) {
+    visitor->visitPointer(this);
+}
+
+bool Pointer::_isPointer() { return (true); }
 
 TypeInheritanceClause::TypeInheritanceClause(_Vector<Inheritance>* inheritances, Position* start, Position* end) {
     this->start = start;
