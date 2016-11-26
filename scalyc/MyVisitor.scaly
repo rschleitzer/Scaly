@@ -469,6 +469,9 @@ class MyVisitor extends SyntaxVisitor {
     function visitPointer(pointer: Pointer) {
     }
 
+    function visitLocal(local: Local) {
+    }
+
     function visitReference(reference: Reference) {
     }
 

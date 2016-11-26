@@ -472,6 +472,9 @@ void MyVisitor::closeIndexedType(IndexedType* indexedType) {
 void MyVisitor::visitPointer(Pointer* pointer) {
 }
 
+void MyVisitor::visitLocal(Local* local) {
+}
+
 void MyVisitor::visitReference(Reference* reference) {
 }
 

@@ -211,6 +211,7 @@ public:
     virtual bool openIndexedType(IndexedType* indexedType);
     virtual void closeIndexedType(IndexedType* indexedType);
     virtual void visitPointer(Pointer* pointer);
+    virtual void visitLocal(Local* local);
     virtual void visitReference(Reference* age);
     virtual void visitThrown(Thrown* thrown);
     virtual bool openTypeInheritanceClause(TypeInheritanceClause* typeInheritanceClause);

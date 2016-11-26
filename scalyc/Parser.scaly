@@ -45,6 +45,7 @@ class Parser {
         circumflex = new string("^")
         at = new string("@")
         hash = new string("#")
+        dollar = new string("$")
     }
 
     function parseCompilationUnit(): CompilationUnit throws ParserError {
@@ -2277,6 +2278,15 @@ class Parser {
         mutable start: Position = lexer.getPreviousPosition()
 
         {
+            let node: Local = parseLocal() catch _ (error) {
+                errors.push(error)
+            }
+
+            if node != null
+                return(node)
+        }
+
+        {
             let node: Reference = parseReference() catch _ (error) {
                 errors.push(error)
             }
@@ -2295,6 +2305,21 @@ class Parser {
         }
 
         throw unableToParse(new Position(start), new ParserError[](errors))
+    }
+
+    function parseLocal(): Local throws ParserError {
+        mutable start: Position = lexer.getPreviousPosition()
+        mutable startDollar1: Position = lexer.getPreviousPosition()
+        let successDollar1: bool = lexer.parsePunctuation(dollar)
+        if successDollar1
+            lexer.advance()
+        else
+            throw punctuationExpected(new Position(startDollar1), new string(dollar))
+
+        mutable end: Position = lexer.getPosition()
+        var ret: Local = new Local(new Position(start), new Position(end))
+
+        return(ret)
     }
 
     function parseReference(): Reference throws ParserError {
@@ -2518,4 +2543,5 @@ class Parser {
     let circumflex: string
     let at: string
     let hash: string
+    let dollar: string
 }

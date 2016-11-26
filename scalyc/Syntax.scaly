@@ -1469,6 +1469,19 @@ class Region extends SyntaxNode {
 
 }
 
+class Local extends Region {
+
+    constructor(start: Position, end: Position) {
+        this.start = start
+        this.end = end
+    }
+
+    override function accept(mutable visitor: SyntaxVisitor) {
+        visitor.visitLocal(this)
+    }
+
+}
+
 class Reference extends Region {
 
     constructor(age: Literal, start: Position, end: Position) {

@@ -48,6 +48,7 @@ Parser::Parser(string* theFileName, string* text) {
     circumflex = new(getPage()) string("^");
     at = new(getPage()) string("@");
     hash = new(getPage()) string("#");
+    dollar = new(getPage()) string("$");
 }
 
 _Result<CompilationUnit, ParserError> Parser::parseCompilationUnit(_Page* _rp, _Page* _ep) {
@@ -3309,6 +3310,21 @@ _Result<Region, ParserError> Parser::parseRegion(_Page* _rp, _Page* _ep) {
     _Array<ParserError>* errors = new(_p) _Array<ParserError>();
     Position* start = lexer->getPreviousPosition(_p);
     {
+        auto _node_result = parseLocal(_rp, _ep);
+        Local* node = nullptr;
+        if (_node_result.succeeded()) {
+            node = _node_result.getResult();
+        }
+        else {
+            auto error = _node_result.getError();
+            {
+                errors->push(error);
+            }
+        }
+        if (node != nullptr)
+            return _Result<Region, ParserError>(node);
+    }
+    {
         auto _node_result = parseReference(_rp, _ep);
         Reference* node = nullptr;
         if (_node_result.succeeded()) {
@@ -3339,6 +3355,20 @@ _Result<Region, ParserError> Parser::parseRegion(_Page* _rp, _Page* _ep) {
             return _Result<Region, ParserError>(node);
     }
     return _Result<Region, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_unableToParse(new(_ep) Position(start), &_Vector<ParserError>::create(_ep, *(errors)))));
+}
+
+_Result<Local, ParserError> Parser::parseLocal(_Page* _rp, _Page* _ep) {
+    _Region _region; _Page* _p = _region.get();
+    Position* start = lexer->getPreviousPosition(_p);
+    Position* startDollar1 = lexer->getPreviousPosition(_p);
+    bool successDollar1 = lexer->parsePunctuation(dollar);
+    if (successDollar1)
+        lexer->advance();
+    else
+        return _Result<Local, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_punctuationExpected(new(_ep) Position(startDollar1), new(_ep) string(dollar))));
+    Position* end = lexer->getPosition(_p);
+    Local* ret = new(_rp) Local(new(_rp) Position(start), new(_rp) Position(end));
+    return _Result<Local, ParserError>(ret);
 }
 
 _Result<Reference, ParserError> Parser::parseReference(_Page* _rp, _Page* _ep) {

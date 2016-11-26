@@ -402,8 +402,12 @@
         <content link = circumflex
     
     <syntax id = Region                                abstract
+        <content link = Local
         <content link = Reference
         <content link = Thrown
+
+    <syntax id = Local                                          base = Region
+        <content link = dollar
 
     <syntax id = Reference                                      base = Region
         <content link = at
@@ -462,6 +466,7 @@
     <punctuation id = dot               value = "."
     <punctuation id = underscore        value = "_"
     <punctuation id = circumflex        value = "^"
+    <punctuation id = dollar            value = "$"
     <punctuation id = at                value = "@"
     <punctuation id = hash              value = "#"
 

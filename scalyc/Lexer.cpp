@@ -140,7 +140,7 @@ void Lexer::advance() {
             break;
         }
 
-        case '_': case '(': case ')': case '{': case '}': case '[': case ']': case ',': case ':': case ';': case '@': case '#': case '^': case '`': {
+        case '_': case '(': case ')': case '{': case '}': case '[': case ']': case ',': case ':': case ';': case '@': case '#': case '^': case '`': case '$': {
             {
                 if (token != nullptr)
                     token->getPage()->clear();

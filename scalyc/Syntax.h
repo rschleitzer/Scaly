@@ -98,6 +98,7 @@ public:
     virtual bool _isIndexedType();
     virtual bool _isPointer();
     virtual bool _isRegion();
+    virtual bool _isLocal();
     virtual bool _isReference();
     virtual bool _isThrown();
     virtual bool _isTypeInheritanceClause();
@@ -959,8 +960,17 @@ public:
     virtual void accept(SyntaxVisitor* visitor);
 
     virtual bool _isRegion();
+    virtual bool _isLocal();
     virtual bool _isReference();
     virtual bool _isThrown();
+};
+
+class Local : public Region {
+public:
+    Local(Position* start, Position* end);
+    virtual void accept(SyntaxVisitor* visitor);
+
+    virtual bool _isLocal();
 };
 
 class Reference : public Region {
