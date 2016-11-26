@@ -2888,6 +2888,9 @@ class CppVisitor extends SyntaxVisitor {
         sourceFile.append("*")
     }
 
+    function visitLocal(local: Local) {
+    }
+
     function visitReference(age: Reference) {
     }
 
