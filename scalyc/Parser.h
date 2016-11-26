@@ -161,7 +161,7 @@ public:
     string* dot;
     string* underscore;
     string* at;
-    string* exclamationMark;
+    string* hash;
     string* star;
 
 };

@@ -410,7 +410,7 @@
         <content literal                               optional property = age
 
     <syntax id = Thrown                                         base = Region
-        <content link = exclamationMark
+        <content link = hash
 
     <syntax id = TypeInheritanceClause
         <content link = extends
@@ -462,7 +462,7 @@
     <punctuation id = dot               value = "."
     <punctuation id = underscore        value = "_"
     <punctuation id = at                value = "@"
-    <punctuation id = exclamationMark   value = "!"
+    <punctuation id = hash              value = "#"
     <punctuation id = star              value = "*"
 
 </language>

@@ -46,7 +46,7 @@ Parser::Parser(string* theFileName, string* text) {
     dot = new(getPage()) string(".");
     underscore = new(getPage()) string("_");
     at = new(getPage()) string("@");
-    exclamationMark = new(getPage()) string("!");
+    hash = new(getPage()) string("#");
     star = new(getPage()) string("*");
 }
 
@@ -3361,12 +3361,12 @@ _Result<Returned, ParserError> Parser::parseReturned(_Page* _rp, _Page* _ep) {
 _Result<Thrown, ParserError> Parser::parseThrown(_Page* _rp, _Page* _ep) {
     _Region _region; _Page* _p = _region.get();
     Position* start = lexer->getPreviousPosition(_p);
-    Position* startExclamationMark1 = lexer->getPreviousPosition(_p);
-    bool successExclamationMark1 = lexer->parsePunctuation(exclamationMark);
-    if (successExclamationMark1)
+    Position* startHash1 = lexer->getPreviousPosition(_p);
+    bool successHash1 = lexer->parsePunctuation(hash);
+    if (successHash1)
         lexer->advance();
     else
-        return _Result<Thrown, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_punctuationExpected(new(_ep) Position(startExclamationMark1), new(_ep) string(exclamationMark))));
+        return _Result<Thrown, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_punctuationExpected(new(_ep) Position(startHash1), new(_ep) string(hash))));
     Position* end = lexer->getPosition(_p);
     Thrown* ret = new(_rp) Thrown(new(_rp) Position(start), new(_rp) Position(end));
     return _Result<Thrown, ParserError>(ret);

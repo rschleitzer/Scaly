@@ -43,7 +43,7 @@ class Parser {
         dot = new string(".")
         underscore = new string("_")
         at = new string("@")
-        exclamationMark = new string("!")
+        hash = new string("#")
         star = new string("*")
     }
 
@@ -2317,12 +2317,12 @@ class Parser {
 
     function parseThrown(): Thrown throws ParserError {
         mutable start: Position = lexer.getPreviousPosition()
-        mutable startExclamationMark1: Position = lexer.getPreviousPosition()
-        let successExclamationMark1: bool = lexer.parsePunctuation(exclamationMark)
-        if successExclamationMark1
+        mutable startHash1: Position = lexer.getPreviousPosition()
+        let successHash1: bool = lexer.parsePunctuation(hash)
+        if successHash1
             lexer.advance()
         else
-            throw punctuationExpected(new Position(startExclamationMark1), new string(exclamationMark))
+            throw punctuationExpected(new Position(startHash1), new string(hash))
 
         mutable end: Position = lexer.getPosition()
         var ret: Thrown = new Thrown(new Position(start), new Position(end))
@@ -2516,6 +2516,6 @@ class Parser {
     let dot: string
     let underscore: string
     let at: string
-    let exclamationMark: string
+    let hash: string
     let star: string
 }
