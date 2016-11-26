@@ -1469,7 +1469,7 @@ class Region extends SyntaxNode {
 
 }
 
-class Returned extends Region {
+class Reference extends Region {
 
     constructor(age: Literal, start: Position, end: Position) {
         this.start = start
@@ -1478,7 +1478,7 @@ class Returned extends Region {
     }
 
     override function accept(mutable visitor: SyntaxVisitor) {
-        visitor.visitReturned(this)
+        visitor.visitReference(this)
     }
 
     let age: Literal}

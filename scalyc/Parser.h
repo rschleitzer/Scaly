@@ -111,7 +111,7 @@ public:
     virtual _Result<IndexedType, ParserError> parseIndexedType(_Page* _rp, _Page* _ep);
     virtual _Result<Pointer, ParserError> parsePointer(_Page* _rp, _Page* _ep);
     virtual _Result<Region, ParserError> parseRegion(_Page* _rp, _Page* _ep);
-    virtual _Result<Returned, ParserError> parseReturned(_Page* _rp, _Page* _ep);
+    virtual _Result<Reference, ParserError> parseReference(_Page* _rp, _Page* _ep);
     virtual _Result<Thrown, ParserError> parseThrown(_Page* _rp, _Page* _ep);
     virtual _Result<TypeInheritanceClause, ParserError> parseTypeInheritanceClause(_Page* _rp, _Page* _ep);
     virtual _Result<_Vector<Inheritance>, ParserError> parseInheritanceList(_Page* _rp, _Page* _ep);
@@ -160,9 +160,9 @@ public:
     string* colon;
     string* dot;
     string* underscore;
+    string* circumflex;
     string* at;
     string* hash;
-    string* circumflex;
 
 };
 

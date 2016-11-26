@@ -895,7 +895,7 @@ bool CppVisitor::openFunctionSignature(FunctionSignature* functionSignature) {
         Type* type = (Type*)functionSignature->result->resultType;
         if (isClass(type->name)) {
             Region* region = type->region;
-            if ((region == nullptr) || !(region->_isReturned())) {
+            if ((region == nullptr) || !(region->_isReference())) {
                 headerFile->append("_Page* _rp");
                 if (!suppressSource)
                     sourceFile->append("_Page* _rp");
@@ -2813,7 +2813,7 @@ void CppVisitor::visitPointer(Pointer* pointer) {
     sourceFile->append("*");
 }
 
-void CppVisitor::visitReturned(Returned* age) {
+void CppVisitor::visitReference(Reference* age) {
 }
 
 void CppVisitor::visitThrown(Thrown* thrown) {

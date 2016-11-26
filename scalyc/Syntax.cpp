@@ -90,7 +90,7 @@ bool SyntaxNode::_isTypePostfix() { return (false); }
 bool SyntaxNode::_isIndexedType() { return (false); }
 bool SyntaxNode::_isPointer() { return (false); }
 bool SyntaxNode::_isRegion() { return (false); }
-bool SyntaxNode::_isReturned() { return (false); }
+bool SyntaxNode::_isReference() { return (false); }
 bool SyntaxNode::_isThrown() { return (false); }
 bool SyntaxNode::_isTypeInheritanceClause() { return (false); }
 bool SyntaxNode::_isInheritance() { return (false); }
@@ -1538,20 +1538,20 @@ void Region::accept(SyntaxVisitor* visitor) {
 
 bool Region::_isRegion() { return (true); }
 
-bool Region::_isReturned() { return (false); }
+bool Region::_isReference() { return (false); }
 bool Region::_isThrown() { return (false); }
 
-Returned::Returned(Literal* age, Position* start, Position* end) {
+Reference::Reference(Literal* age, Position* start, Position* end) {
     this->start = start;
     this->end = end;
     this->age = age;
 }
 
-void Returned::accept(SyntaxVisitor* visitor) {
-    visitor->visitReturned(this);
+void Reference::accept(SyntaxVisitor* visitor) {
+    visitor->visitReference(this);
 }
 
-bool Returned::_isReturned() { return (true); }
+bool Reference::_isReference() { return (true); }
 
 Thrown::Thrown(Position* start, Position* end) {
     this->start = start;

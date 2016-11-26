@@ -402,10 +402,10 @@
         <content link = circumflex
     
     <syntax id = Region                                abstract
-        <content link = Returned
+        <content link = Reference
         <content link = Thrown
 
-    <syntax id = Returned                                       base = Region
+    <syntax id = Reference                                      base = Region
         <content link = at
         <content literal                               optional property = age
 

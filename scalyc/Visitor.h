@@ -180,7 +180,7 @@ class Pointer;
 
 class Region;
 
-class Returned;
+class Reference;
 
 class Thrown;
 
@@ -326,7 +326,7 @@ public:
     virtual bool openIndexedType(IndexedType* indexedType) = 0;
     virtual void closeIndexedType(IndexedType* indexedType) = 0;
     virtual void visitPointer(Pointer* pointer) = 0;
-    virtual void visitReturned(Returned* returned) = 0;
+    virtual void visitReference(Reference* reference) = 0;
     virtual void visitThrown(Thrown* thrown) = 0;
     virtual bool openTypeInheritanceClause(TypeInheritanceClause* typeInheritanceClause) = 0;
     virtual void closeTypeInheritanceClause(TypeInheritanceClause* typeInheritanceClause) = 0;

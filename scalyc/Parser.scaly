@@ -42,9 +42,9 @@ class Parser {
         colon = new string(":")
         dot = new string(".")
         underscore = new string("_")
+        circumflex = new string("^")
         at = new string("@")
         hash = new string("#")
-        circumflex = new string("^")
     }
 
     function parseCompilationUnit(): CompilationUnit throws ParserError {
@@ -2277,7 +2277,7 @@ class Parser {
         mutable start: Position = lexer.getPreviousPosition()
 
         {
-            let node: Returned = parseReturned() catch _ (error) {
+            let node: Reference = parseReference() catch _ (error) {
                 errors.push(error)
             }
 
@@ -2297,7 +2297,7 @@ class Parser {
         throw unableToParse(new Position(start), new ParserError[](errors))
     }
 
-    function parseReturned(): Returned throws ParserError {
+    function parseReference(): Reference throws ParserError {
         mutable start: Position = lexer.getPreviousPosition()
         mutable startAt1: Position = lexer.getPreviousPosition()
         let successAt1: bool = lexer.parsePunctuation(at)
@@ -2310,7 +2310,7 @@ class Parser {
         if age != null
             lexer.advance()
         mutable end: Position = lexer.getPosition()
-        var ret: Returned = new Returned(age, new Position(start), new Position(end))
+        var ret: Reference = new Reference(age, new Position(start), new Position(end))
 
         return(ret)
     }
@@ -2515,7 +2515,7 @@ class Parser {
     let colon: string
     let dot: string
     let underscore: string
+    let circumflex: string
     let at: string
     let hash: string
-    let circumflex: string
 }

@@ -98,7 +98,7 @@ public:
     virtual bool _isIndexedType();
     virtual bool _isPointer();
     virtual bool _isRegion();
-    virtual bool _isReturned();
+    virtual bool _isReference();
     virtual bool _isThrown();
     virtual bool _isTypeInheritanceClause();
     virtual bool _isInheritance();
@@ -959,17 +959,17 @@ public:
     virtual void accept(SyntaxVisitor* visitor);
 
     virtual bool _isRegion();
-    virtual bool _isReturned();
+    virtual bool _isReference();
     virtual bool _isThrown();
 };
 
-class Returned : public Region {
+class Reference : public Region {
 public:
-    Returned(Literal* age, Position* start, Position* end);
+    Reference(Literal* age, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
     Literal* age;
 
-    virtual bool _isReturned();
+    virtual bool _isReference();
 };
 
 class Thrown : public Region {

@@ -45,9 +45,9 @@ Parser::Parser(string* theFileName, string* text) {
     colon = new(getPage()) string(":");
     dot = new(getPage()) string(".");
     underscore = new(getPage()) string("_");
+    circumflex = new(getPage()) string("^");
     at = new(getPage()) string("@");
     hash = new(getPage()) string("#");
-    circumflex = new(getPage()) string("^");
 }
 
 _Result<CompilationUnit, ParserError> Parser::parseCompilationUnit(_Page* _rp, _Page* _ep) {
@@ -3309,8 +3309,8 @@ _Result<Region, ParserError> Parser::parseRegion(_Page* _rp, _Page* _ep) {
     _Array<ParserError>* errors = new(_p) _Array<ParserError>();
     Position* start = lexer->getPreviousPosition(_p);
     {
-        auto _node_result = parseReturned(_rp, _ep);
-        Returned* node = nullptr;
+        auto _node_result = parseReference(_rp, _ep);
+        Reference* node = nullptr;
         if (_node_result.succeeded()) {
             node = _node_result.getResult();
         }
@@ -3341,7 +3341,7 @@ _Result<Region, ParserError> Parser::parseRegion(_Page* _rp, _Page* _ep) {
     return _Result<Region, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_unableToParse(new(_ep) Position(start), &_Vector<ParserError>::create(_ep, *(errors)))));
 }
 
-_Result<Returned, ParserError> Parser::parseReturned(_Page* _rp, _Page* _ep) {
+_Result<Reference, ParserError> Parser::parseReference(_Page* _rp, _Page* _ep) {
     _Region _region; _Page* _p = _region.get();
     Position* start = lexer->getPreviousPosition(_p);
     Position* startAt1 = lexer->getPreviousPosition(_p);
@@ -3349,13 +3349,13 @@ _Result<Returned, ParserError> Parser::parseReturned(_Page* _rp, _Page* _ep) {
     if (successAt1)
         lexer->advance();
     else
-        return _Result<Returned, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_punctuationExpected(new(_ep) Position(startAt1), new(_ep) string(at))));
+        return _Result<Reference, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_punctuationExpected(new(_ep) Position(startAt1), new(_ep) string(at))));
     Literal* age = lexer->parseLiteral(_rp);
     if (age != nullptr)
         lexer->advance();
     Position* end = lexer->getPosition(_p);
-    Returned* ret = new(_rp) Returned(age, new(_rp) Position(start), new(_rp) Position(end));
-    return _Result<Returned, ParserError>(ret);
+    Reference* ret = new(_rp) Reference(age, new(_rp) Position(start), new(_rp) Position(end));
+    return _Result<Reference, ParserError>(ret);
 }
 
 _Result<Thrown, ParserError> Parser::parseThrown(_Page* _rp, _Page* _ep) {

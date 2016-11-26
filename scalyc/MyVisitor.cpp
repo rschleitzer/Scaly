@@ -472,7 +472,7 @@ void MyVisitor::closeIndexedType(IndexedType* indexedType) {
 void MyVisitor::visitPointer(Pointer* pointer) {
 }
 
-void MyVisitor::visitReturned(Returned* returned) {
+void MyVisitor::visitReference(Reference* reference) {
 }
 
 void MyVisitor::visitThrown(Thrown* thrown) {
