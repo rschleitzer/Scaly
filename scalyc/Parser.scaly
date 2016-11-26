@@ -2143,14 +2143,17 @@ class Parser {
 
         let subType: Subtype = parseSubtype() catch _ null
         let postfixes: TypePostfix[] = parseTypePostfixList() catch _ null
+        let region: Region = parseRegion() catch _ null
         mutable end: Position = lexer.getPosition()
-        var ret: Type = new Type(name, subType, postfixes, new Position(start), new Position(end))
+        var ret: Type = new Type(name, subType, postfixes, region, new Position(start), new Position(end))
         if subType != null
             subType.parent = ret
         if postfixes != null {
             for item: TypePostfix in postfixes
                 item.parent = ret
         }
+        if region != null
+            region.parent = ret
 
         return(ret)
     }
@@ -2226,24 +2229,6 @@ class Parser {
                 return(node)
         }
 
-        {
-            let node: Returned = parseReturned() catch _ (error) {
-                errors.push(error)
-            }
-
-            if node != null
-                return(node)
-        }
-
-        {
-            let node: Thrown = parseThrown() catch _ (error) {
-                errors.push(error)
-            }
-
-            if node != null
-                return(node)
-        }
-
         throw unableToParse(new Position(start), new ParserError[](errors))
     }
 
@@ -2272,6 +2257,46 @@ class Parser {
         return(ret)
     }
 
+    function parsePointer(): Pointer throws ParserError {
+        mutable start: Position = lexer.getPreviousPosition()
+        mutable startStar1: Position = lexer.getPreviousPosition()
+        let successStar1: bool = lexer.parsePunctuation(star)
+        if successStar1
+            lexer.advance()
+        else
+            throw punctuationExpected(new Position(startStar1), new string(star))
+
+        mutable end: Position = lexer.getPosition()
+        var ret: Pointer = new Pointer(new Position(start), new Position(end))
+
+        return(ret)
+    }
+
+    function parseRegion(): Region throws ParserError {
+        mutable errors: ParserError[] = new ParserError[]()
+        mutable start: Position = lexer.getPreviousPosition()
+
+        {
+            let node: Returned = parseReturned() catch _ (error) {
+                errors.push(error)
+            }
+
+            if node != null
+                return(node)
+        }
+
+        {
+            let node: Thrown = parseThrown() catch _ (error) {
+                errors.push(error)
+            }
+
+            if node != null
+                return(node)
+        }
+
+        throw unableToParse(new Position(start), new ParserError[](errors))
+    }
+
     function parseReturned(): Returned throws ParserError {
         mutable start: Position = lexer.getPreviousPosition()
         mutable startAt1: Position = lexer.getPreviousPosition()
@@ -2281,8 +2306,11 @@ class Parser {
         else
             throw punctuationExpected(new Position(startAt1), new string(at))
 
+        let age: Literal = lexer.parseLiteral()
+        if age != null
+            lexer.advance()
         mutable end: Position = lexer.getPosition()
-        var ret: Returned = new Returned(new Position(start), new Position(end))
+        var ret: Returned = new Returned(age, new Position(start), new Position(end))
 
         return(ret)
     }
@@ -2298,21 +2326,6 @@ class Parser {
 
         mutable end: Position = lexer.getPosition()
         var ret: Thrown = new Thrown(new Position(start), new Position(end))
-
-        return(ret)
-    }
-
-    function parsePointer(): Pointer throws ParserError {
-        mutable start: Position = lexer.getPreviousPosition()
-        mutable startStar1: Position = lexer.getPreviousPosition()
-        let successStar1: bool = lexer.parsePunctuation(star)
-        if successStar1
-            lexer.advance()
-        else
-            throw punctuationExpected(new Position(startStar1), new string(star))
-
-        mutable end: Position = lexer.getPosition()
-        var ret: Pointer = new Pointer(new Position(start), new Position(end))
 
         return(ret)
     }

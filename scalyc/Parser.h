@@ -109,9 +109,10 @@ public:
     virtual _Result<_Vector<TypePostfix>, ParserError> parseTypePostfixList(_Page* _rp, _Page* _ep);
     virtual _Result<TypePostfix, ParserError> parseTypePostfix(_Page* _rp, _Page* _ep);
     virtual _Result<IndexedType, ParserError> parseIndexedType(_Page* _rp, _Page* _ep);
+    virtual _Result<Pointer, ParserError> parsePointer(_Page* _rp, _Page* _ep);
+    virtual _Result<Region, ParserError> parseRegion(_Page* _rp, _Page* _ep);
     virtual _Result<Returned, ParserError> parseReturned(_Page* _rp, _Page* _ep);
     virtual _Result<Thrown, ParserError> parseThrown(_Page* _rp, _Page* _ep);
-    virtual _Result<Pointer, ParserError> parsePointer(_Page* _rp, _Page* _ep);
     virtual _Result<TypeInheritanceClause, ParserError> parseTypeInheritanceClause(_Page* _rp, _Page* _ep);
     virtual _Result<_Vector<Inheritance>, ParserError> parseInheritanceList(_Page* _rp, _Page* _ep);
     virtual _Result<Inheritance, ParserError> parseInheritance(_Page* _rp, _Page* _ep);

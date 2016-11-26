@@ -466,13 +466,13 @@ class MyVisitor extends SyntaxVisitor {
     function closeIndexedType(indexedType: IndexedType) {
     }
 
+    function visitPointer(pointer: Pointer) {
+    }
+
     function visitReturned(returned: Returned) {
     }
 
     function visitThrown(thrown: Thrown) {
-    }
-
-    function visitPointer(pointer: Pointer) {
     }
 
     function openTypeInheritanceClause(typeInheritanceClause: TypeInheritanceClause): bool {

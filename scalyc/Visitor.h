@@ -176,11 +176,13 @@ class TypePostfix;
 
 class IndexedType;
 
+class Pointer;
+
+class Region;
+
 class Returned;
 
 class Thrown;
-
-class Pointer;
 
 class TypeInheritanceClause;
 
@@ -323,9 +325,9 @@ public:
     virtual void closeSubtype(Subtype* subtype) = 0;
     virtual bool openIndexedType(IndexedType* indexedType) = 0;
     virtual void closeIndexedType(IndexedType* indexedType) = 0;
+    virtual void visitPointer(Pointer* pointer) = 0;
     virtual void visitReturned(Returned* returned) = 0;
     virtual void visitThrown(Thrown* thrown) = 0;
-    virtual void visitPointer(Pointer* pointer) = 0;
     virtual bool openTypeInheritanceClause(TypeInheritanceClause* typeInheritanceClause) = 0;
     virtual void closeTypeInheritanceClause(TypeInheritanceClause* typeInheritanceClause) = 0;
     virtual bool openInheritance(Inheritance* inheritance) = 0;

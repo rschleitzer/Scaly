@@ -1365,12 +1365,13 @@ class CaseContent extends SyntaxNode {
 
 class Type extends SyntaxNode {
 
-    constructor(name: string, subType: Subtype, postfixes: TypePostfix[], start: Position, end: Position) {
+    constructor(name: string, subType: Subtype, postfixes: TypePostfix[], region: Region, start: Position, end: Position) {
         this.start = start
         this.end = end
         this.name = name
         this.subType = subType
         this.postfixes = postfixes
+        this.region = region
     }
 
     function accept(mutable visitor: SyntaxVisitor) {
@@ -1382,10 +1383,12 @@ class Type extends SyntaxNode {
             for node: TypePostfix in postfixes
                 node.accept(visitor)
         }
+        if region != null
+            region.accept(visitor)
         visitor.closeType(this)
     }
 
-    let name: string    let subType: Subtype    let postfixes: TypePostfix[]}
+    let name: string    let subType: Subtype    let postfixes: TypePostfix[]    let region: Region}
 
 class TypeAnnotation extends SyntaxNode {
 
@@ -1446,32 +1449,6 @@ class IndexedType extends TypePostfix {
 
     let key: Type}
 
-class Returned extends TypePostfix {
-
-    constructor(start: Position, end: Position) {
-        this.start = start
-        this.end = end
-    }
-
-    override function accept(mutable visitor: SyntaxVisitor) {
-        visitor.visitReturned(this)
-    }
-
-}
-
-class Thrown extends TypePostfix {
-
-    constructor(start: Position, end: Position) {
-        this.start = start
-        this.end = end
-    }
-
-    override function accept(mutable visitor: SyntaxVisitor) {
-        visitor.visitThrown(this)
-    }
-
-}
-
 class Pointer extends TypePostfix {
 
     constructor(start: Position, end: Position) {
@@ -1481,6 +1458,40 @@ class Pointer extends TypePostfix {
 
     override function accept(mutable visitor: SyntaxVisitor) {
         visitor.visitPointer(this)
+    }
+
+}
+
+class Region extends SyntaxNode {
+
+    function accept(mutable visitor: SyntaxVisitor) {
+    }
+
+}
+
+class Returned extends Region {
+
+    constructor(age: Literal, start: Position, end: Position) {
+        this.start = start
+        this.end = end
+        this.age = age
+    }
+
+    override function accept(mutable visitor: SyntaxVisitor) {
+        visitor.visitReturned(this)
+    }
+
+    let age: Literal}
+
+class Thrown extends Region {
+
+    constructor(start: Position, end: Position) {
+        this.start = start
+        this.end = end
+    }
+
+    override function accept(mutable visitor: SyntaxVisitor) {
+        visitor.visitThrown(this)
     }
 
 }

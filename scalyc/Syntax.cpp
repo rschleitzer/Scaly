@@ -88,9 +88,10 @@ bool SyntaxNode::_isTypeAnnotation() { return (false); }
 bool SyntaxNode::_isSubtype() { return (false); }
 bool SyntaxNode::_isTypePostfix() { return (false); }
 bool SyntaxNode::_isIndexedType() { return (false); }
+bool SyntaxNode::_isPointer() { return (false); }
+bool SyntaxNode::_isRegion() { return (false); }
 bool SyntaxNode::_isReturned() { return (false); }
 bool SyntaxNode::_isThrown() { return (false); }
-bool SyntaxNode::_isPointer() { return (false); }
 bool SyntaxNode::_isTypeInheritanceClause() { return (false); }
 bool SyntaxNode::_isInheritance() { return (false); }
 
@@ -1438,12 +1439,13 @@ void CaseContent::accept(SyntaxVisitor* visitor) {
 
 bool CaseContent::_isCaseContent() { return (true); }
 
-Type::Type(string* name, Subtype* subType, _Vector<TypePostfix>* postfixes, Position* start, Position* end) {
+Type::Type(string* name, Subtype* subType, _Vector<TypePostfix>* postfixes, Region* region, Position* start, Position* end) {
     this->start = start;
     this->end = end;
     this->name = name;
     this->subType = subType;
     this->postfixes = postfixes;
+    this->region = region;
 }
 
 void Type::accept(SyntaxVisitor* visitor) {
@@ -1459,6 +1461,8 @@ void Type::accept(SyntaxVisitor* visitor) {
             node->accept(visitor);
         }
     }
+    if (region != nullptr)
+        region->accept(visitor);
     visitor->closeType(this);
 }
 
@@ -1500,8 +1504,6 @@ void TypePostfix::accept(SyntaxVisitor* visitor) {
 bool TypePostfix::_isTypePostfix() { return (true); }
 
 bool TypePostfix::_isIndexedType() { return (false); }
-bool TypePostfix::_isReturned() { return (false); }
-bool TypePostfix::_isThrown() { return (false); }
 bool TypePostfix::_isPointer() { return (false); }
 
 IndexedType::IndexedType(Type* key, Position* start, Position* end) {
@@ -1520,9 +1522,29 @@ void IndexedType::accept(SyntaxVisitor* visitor) {
 
 bool IndexedType::_isIndexedType() { return (true); }
 
-Returned::Returned(Position* start, Position* end) {
+Pointer::Pointer(Position* start, Position* end) {
     this->start = start;
     this->end = end;
+}
+
+void Pointer::accept(SyntaxVisitor* visitor) {
+    visitor->visitPointer(this);
+}
+
+bool Pointer::_isPointer() { return (true); }
+
+void Region::accept(SyntaxVisitor* visitor) {
+}
+
+bool Region::_isRegion() { return (true); }
+
+bool Region::_isReturned() { return (false); }
+bool Region::_isThrown() { return (false); }
+
+Returned::Returned(Literal* age, Position* start, Position* end) {
+    this->start = start;
+    this->end = end;
+    this->age = age;
 }
 
 void Returned::accept(SyntaxVisitor* visitor) {
@@ -1541,17 +1563,6 @@ void Thrown::accept(SyntaxVisitor* visitor) {
 }
 
 bool Thrown::_isThrown() { return (true); }
-
-Pointer::Pointer(Position* start, Position* end) {
-    this->start = start;
-    this->end = end;
-}
-
-void Pointer::accept(SyntaxVisitor* visitor) {
-    visitor->visitPointer(this);
-}
-
-bool Pointer::_isPointer() { return (true); }
 
 TypeInheritanceClause::TypeInheritanceClause(_Vector<Inheritance>* inheritances, Position* start, Position* end) {
     this->start = start;

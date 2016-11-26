@@ -922,8 +922,8 @@ class CppVisitor extends SyntaxVisitor {
         if functionSignature.result != null {
             let type: Type = functionSignature.result.resultType as Type
             if isClass(type.name) {
-                let typePostfixes: TypePostfix[] = type.postfixes
-                if (typePostfixes == null) || !((typePostfixes[typePostfixes.length() - 1]) is Returned) {
+                let region: Region = type.region
+                if (region == null) || !(region is Returned) {
                     headerFile.append("_Page* _rp")
                     if !suppressSource
                         sourceFile.append("_Page* _rp")
@@ -2884,14 +2884,14 @@ class CppVisitor extends SyntaxVisitor {
     function closeIndexedType(indexedType: IndexedType) {
     }
 
+    function visitPointer(pointer: Pointer) {
+        sourceFile.append("*")
+    }
+
     function visitReturned(age: Returned) {
     }
 
     function visitThrown(thrown: Thrown) {
-    }
-
-    function visitPointer(pointer: Pointer) {
-        sourceFile.append("*")
     }
 
     function openTypeInheritanceClause(typeInheritanceClause: TypeInheritanceClause): bool {

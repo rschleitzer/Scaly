@@ -469,13 +469,13 @@ bool MyVisitor::openIndexedType(IndexedType* indexedType) {
 void MyVisitor::closeIndexedType(IndexedType* indexedType) {
 }
 
+void MyVisitor::visitPointer(Pointer* pointer) {
+}
+
 void MyVisitor::visitReturned(Returned* returned) {
 }
 
 void MyVisitor::visitThrown(Thrown* thrown) {
-}
-
-void MyVisitor::visitPointer(Pointer* pointer) {
 }
 
 bool MyVisitor::openTypeInheritanceClause(TypeInheritanceClause* typeInheritanceClause) {

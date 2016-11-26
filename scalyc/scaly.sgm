@@ -379,6 +379,7 @@
         <content identifier                                     property = name
         <content link = Subtype                        optional property = subType
         <content link = TypePostfix           multiple optional property = postfixes
+        <content link = Region                         optional property = region
 
     <syntax id = TypeAnnotation
         <content link = colon
@@ -391,22 +392,25 @@
     <syntax id = TypePostfix                  multiple abstract
         <content link = IndexedType
         <content link = Pointer
-        <content link = Returned
-        <content link = Thrown
 
     <syntax id = IndexedType                                    base = TypePostfix
         <content link = leftBracket
         <content link = Type                           optional property = key
         <content link = rightBracket
 
-    <syntax id = Returned                                       base = TypePostfix
-        <content link = at
-
-    <syntax id = Thrown                                         base = TypePostfix
-        <content link = exclamationMark
-
     <syntax id = Pointer                                        base = TypePostfix
         <content link = star
+    
+    <syntax id = Region                                abstract
+        <content link = Returned
+        <content link = Thrown
+
+    <syntax id = Returned                                       base = Region
+        <content link = at
+        <content literal                               optional property = age
+
+    <syntax id = Thrown                                         base = Region
+        <content link = exclamationMark
 
     <syntax id = TypeInheritanceClause
         <content link = extends

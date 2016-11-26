@@ -84,9 +84,10 @@ class TypeAnnotation
 class Subtype
 class TypePostfix
 class IndexedType
+class Pointer
+class Region
 class Returned
 class Thrown
-class Pointer
 class TypeInheritanceClause
 class Inheritance
 
@@ -226,9 +227,9 @@ class SyntaxVisitor {
     function closeSubtype(subtype: Subtype)
     function openIndexedType(indexedType: IndexedType): bool
     function closeIndexedType(indexedType: IndexedType)
+    function visitPointer(pointer: Pointer)
     function visitReturned(returned: Returned)
     function visitThrown(thrown: Thrown)
-    function visitPointer(pointer: Pointer)
     function openTypeInheritanceClause(typeInheritanceClause: TypeInheritanceClause): bool
     function closeTypeInheritanceClause(typeInheritanceClause: TypeInheritanceClause)
     function openInheritance(inheritance: Inheritance): bool

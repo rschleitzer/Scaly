@@ -96,9 +96,10 @@ public:
     virtual bool _isSubtype();
     virtual bool _isTypePostfix();
     virtual bool _isIndexedType();
+    virtual bool _isPointer();
+    virtual bool _isRegion();
     virtual bool _isReturned();
     virtual bool _isThrown();
-    virtual bool _isPointer();
     virtual bool _isTypeInheritanceClause();
     virtual bool _isInheritance();
 };
@@ -899,11 +900,12 @@ public:
 
 class Type : public SyntaxNode {
 public:
-    Type(string* name, Subtype* subType, _Vector<TypePostfix>* postfixes, Position* start, Position* end);
+    Type(string* name, Subtype* subType, _Vector<TypePostfix>* postfixes, Region* region, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
     string* name;
     Subtype* subType;
     _Vector<TypePostfix>* postfixes;
+    Region* region;
 
     virtual bool _isType();
 };
@@ -932,8 +934,6 @@ public:
 
     virtual bool _isTypePostfix();
     virtual bool _isIndexedType();
-    virtual bool _isReturned();
-    virtual bool _isThrown();
     virtual bool _isPointer();
 };
 
@@ -946,28 +946,38 @@ public:
     virtual bool _isIndexedType();
 };
 
-class Returned : public TypePostfix {
-public:
-    Returned(Position* start, Position* end);
-    virtual void accept(SyntaxVisitor* visitor);
-
-    virtual bool _isReturned();
-};
-
-class Thrown : public TypePostfix {
-public:
-    Thrown(Position* start, Position* end);
-    virtual void accept(SyntaxVisitor* visitor);
-
-    virtual bool _isThrown();
-};
-
 class Pointer : public TypePostfix {
 public:
     Pointer(Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
 
     virtual bool _isPointer();
+};
+
+class Region : public SyntaxNode {
+public:
+    virtual void accept(SyntaxVisitor* visitor);
+
+    virtual bool _isRegion();
+    virtual bool _isReturned();
+    virtual bool _isThrown();
+};
+
+class Returned : public Region {
+public:
+    Returned(Literal* age, Position* start, Position* end);
+    virtual void accept(SyntaxVisitor* visitor);
+    Literal* age;
+
+    virtual bool _isReturned();
+};
+
+class Thrown : public Region {
+public:
+    Thrown(Position* start, Position* end);
+    virtual void accept(SyntaxVisitor* visitor);
+
+    virtual bool _isThrown();
 };
 
 class TypeInheritanceClause : public SyntaxNode {
