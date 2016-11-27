@@ -104,7 +104,7 @@ public:
     virtual bool openBinaryOperation(BinaryOperation* binaryOperation);
     virtual void closeBinaryOperation(BinaryOperation* binaryOperation);
     virtual bool openAssignment(Assignment* assignment);
-    virtual bool inInitializer(SyntaxNode* node);
+    virtual bool inConstructor(SyntaxNode* node);
     virtual bool inReturn(SyntaxNode* node);
     virtual bool inThrow(SyntaxNode* node);
     virtual string* getMemberIfCreatingObject(_Page* _rp, Assignment* assignment);

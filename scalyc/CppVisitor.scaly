@@ -644,7 +644,7 @@ class CppVisitor extends SyntaxVisitor {
                     if binaryOp is Assignment {
                         let assignment: Assignment = binaryOp as Assignment
                         let memberName: string$ = getMemberIfCreatingObject(assignment)
-                        if (memberName != null) && (!inInitializer(assignment)) {
+                        if (memberName != null) && (!inConstructor(assignment)) {
                             sourceFile.append("if (")
                             sourceFile.append(memberName)
                             sourceFile.append(" != nullptr)\n")
@@ -1271,14 +1271,14 @@ class CppVisitor extends SyntaxVisitor {
         true
     }
 
-    function inInitializer(node: SyntaxNode): bool {
+    function inConstructor(node: SyntaxNode): bool {
         if node is ConstructorDeclaration
             return(true)
 
         if node.parent == null
             return(false)
 
-        inInitializer(node.parent)
+        inConstructor(node.parent)
     }
 
     function inReturn(node: SyntaxNode): bool {
@@ -2420,8 +2420,9 @@ class CppVisitor extends SyntaxVisitor {
     }
 
     function openConstructorCall(constructorCall: ConstructorCall): bool {
-        if hasArrayPostfix(constructorCall.typeToInitialize) {
-            if !initializerIsBoundOrAssigned(constructorCall) {
+        if !initializerIsBoundOrAssigned(constructorCall) {
+            if constructorCall.typeToInitialize is Type {
+                let type: Type = (constructorCall.typeToInitialize) as Type
                 sourceFile.append("new(")
                 if (inReturn(constructorCall)) || (inRetDeclaration(constructorCall)) {
                     sourceFile.append("_rp")
@@ -2438,12 +2439,12 @@ class CppVisitor extends SyntaxVisitor {
                                 let memberName: string$ = getMemberIfCreatingObject(assignment)
                                 if memberName != null {
                                     if isVariableMember(memberName, classDeclaration) {
-                                        if !inInitializer(assignment) {
+                                        if !inConstructor(assignment) {
                                             sourceFile.append(memberName)
                                             sourceFile.append("->")
                                         }
                                         sourceFile.append("getPage()")
-                                        if inInitializer(assignment) {
+                                        if inConstructor(assignment) {
                                             sourceFile.append("->allocateExclusivePage()")
                                         }
                                     }
@@ -2458,41 +2459,48 @@ class CppVisitor extends SyntaxVisitor {
                         }
                     }
                 }
-                let type: Type = constructorCall.typeToInitialize
-                sourceFile.append(") _Array<")
+                sourceFile.append(") ")
+                if hasArrayPostfix(constructorCall.typeToInitialize)
+                    sourceFile.append("_Array<")
                 sourceFile.append(type.name)
-                sourceFile.append(">")
+                if hasArrayPostfix(constructorCall.typeToInitialize)
+                    sourceFile.append(">")
                 constructorCall.arguments.accept(this)
                 return(false)
             }
-            else {
+        }
+        else {
+            if constructorCall.parent.parent.parent.parent is Assignment {
+                let assignment: Assignment = (constructorCall.parent.parent.parent.parent) as Assignment
                 sourceFile.append("new(")
-                if inInitializer(constructorCall) {
-                    sourceFile.append("getPage()")
-                    if constructorCall.parent.parent.parent.parent is Assignment {
-                        let assignment: Assignment = (constructorCall.parent.parent.parent.parent) as Assignment
-                        if inInitializer(assignment) {
+                var classDeclaration: ClassDeclaration = getClassDeclaration(assignment)
+                let memberName: string$ = getMemberIfCreatingObject(assignment)
+                if memberName != null {
+                    if isVariableMember(memberName, classDeclaration) {
+                        if !inConstructor(assignment) {
+                            sourceFile.append(memberName)
+                            sourceFile.append("->")
+                        }
+                        sourceFile.append("getPage()")
+                        if inConstructor(assignment) {
                             sourceFile.append("->allocateExclusivePage()")
                         }
                     }
                 }
                 else {
-                    if constructorCall.parent.parent.parent.parent is Assignment {
-                        let assignment: Assignment = (constructorCall.parent.parent.parent.parent) as Assignment
-                        let simpleExpression: SimpleExpression = (assignment.parent) as SimpleExpression
-                        if simpleExpression.prefixExpression.prefixOperator == null {
-                            let leftSide: PostfixExpression = simpleExpression.prefixExpression.expression
-                            if (leftSide.postfixes == nullptr) && (leftSide.primaryExpression is IdentifierExpression) {
-                                let memberExpression: IdentifierExpression = (leftSide.primaryExpression) as IdentifierExpression
-                                let memberName: string = memberExpression.name
-                                var classDeclaration: ClassDeclaration = getClassDeclaration(assignment)
-                                if (classDeclaration != null) && (memberName != null) && (isVariableMember(memberName, classDeclaration)) {
+                    let simpleExpression: SimpleExpression = (assignment.parent) as SimpleExpression
+                    if simpleExpression.prefixExpression.prefixOperator == null {
+                        let leftSide: PostfixExpression = simpleExpression.prefixExpression.expression
+                        if (leftSide.postfixes == null) && (leftSide.primaryExpression is IdentifierExpression) {
+                            let memberExpression: IdentifierExpression = (leftSide.primaryExpression) as IdentifierExpression
+                            let memberName: string = memberExpression.name
+                            var classDeclaration: ClassDeclaration = getClassDeclaration(assignment)
+                            if (classDeclaration != null) && (memberName != null) && !hasArrayPostfix(constructorCall.typeToInitialize) {
+                                if isVariableMember(memberName, classDeclaration) {
                                     sourceFile.append(memberName)
-                                    sourceFile.append("->getPage()")
+                                    sourceFile.append("->")
                                 }
-                                else {
-                                    sourceFile.append("_p")
-                                }
+                                sourceFile.append("getPage()")
                             }
                             else {
                                 sourceFile.append("_p")
@@ -2506,125 +2514,32 @@ class CppVisitor extends SyntaxVisitor {
                         sourceFile.append("_p")
                     }
                 }
-                sourceFile.append(") ")
             }
-        }
-        else {
-            if !initializerIsBoundOrAssigned(constructorCall) {
-                if constructorCall.typeToInitialize is Type {
-                    let type: Type = (constructorCall.typeToInitialize) as Type
+            else {
+                if constructorCall.parent.parent.parent.parent is Initializer {
                     sourceFile.append("new(")
-                    if (inReturn(constructorCall)) || (inRetDeclaration(constructorCall)) {
+                    if inReturn(constructorCall) || inRetDeclaration(constructorCall) {
                         sourceFile.append("_rp")
                     }
                     else {
-                        if inThrow(constructorCall) {
+                        if inThrow(constructorCall)
                             sourceFile.append("_ep")
-                        }
-                        else {
-                            if inAssignment(constructorCall) {
-                                var assignment: Assignment = getAssignment(constructorCall)
-                                if assignment != null {
-                                    var classDeclaration: ClassDeclaration = getClassDeclaration(assignment)
-                                    let memberName: string$ = getMemberIfCreatingObject(assignment)
-                                    if memberName != null {
-                                        if isVariableMember(memberName, classDeclaration) {
-                                            if !inInitializer(assignment) {
-                                                sourceFile.append(memberName)
-                                                sourceFile.append("->")
-                                            }
-                                            sourceFile.append("getPage()")
-                                            if inInitializer(assignment) {
-                                                sourceFile.append("->allocateExclusivePage()")
-                                            }
-                                        }
-                                        else {
-                                            sourceFile.append("getPage()")
-                                        }
-                                    }
-                                }
-                            }
-                            else {
-                                sourceFile.append("_p")
-                            }
-                        }
-                    }
-                    sourceFile.append(") ")
-                    sourceFile.append(type.name)
-                    constructorCall.arguments.accept(this)
-                    return(false)
-                }
-            }
-            else {
-                if constructorCall.parent.parent.parent.parent is Assignment {
-                    let assignment: Assignment = (constructorCall.parent.parent.parent.parent) as Assignment
-                    sourceFile.append("new(")
-                    var classDeclaration: ClassDeclaration = getClassDeclaration(assignment)
-                    let memberName: string$ = getMemberIfCreatingObject(assignment)
-                    if memberName != null {
-                        if isVariableMember(memberName, classDeclaration) {
-                            if !inInitializer(assignment) {
-                                sourceFile.append(memberName)
-                                sourceFile.append("->")
-                            }
-                            sourceFile.append("getPage()")
-                            if inInitializer(assignment) {
-                                sourceFile.append("->allocateExclusivePage()")
-                            }
-                        }
-                        else {
-                            sourceFile.append("getPage()")
-                        }
-                    }
-                    else {
-                        let simpleExpression: SimpleExpression = (assignment.parent) as SimpleExpression
-                        if simpleExpression.prefixExpression.prefixOperator == null {
-                            let leftSide: PostfixExpression = simpleExpression.prefixExpression.expression
-                            if (leftSide.postfixes == null) && (leftSide.primaryExpression is IdentifierExpression) {
-                                let memberExpression: IdentifierExpression = (leftSide.primaryExpression) as IdentifierExpression
-                                let memberName: string = memberExpression.name
-                                var classDeclaration: ClassDeclaration = getClassDeclaration(assignment)
-                                if (classDeclaration != null) && (memberName != null) {
-                                    if isVariableMember(memberName, classDeclaration) {
-                                        sourceFile.append(memberName)
-                                        sourceFile.append("->")
-                                    }
-                                    sourceFile.append("getPage()")
-                                }
-                                else {
-                                    sourceFile.append("_p")
-                                }
-                            }
-                            else {
-                                sourceFile.append("_p")
-                            }
-                        }
-                        else {
+                        else
                             sourceFile.append("_p")
-                        }
                     }
                 }
-                else {
-                    if constructorCall.parent.parent.parent.parent is Initializer {
-                        sourceFile.append("new(")
-                        if inReturn(constructorCall) || inRetDeclaration(constructorCall) {
-                            sourceFile.append("_rp")
-                        }
-                        else {
-                            if inThrow(constructorCall)
-                                sourceFile.append("_ep")
-                            else
-                                sourceFile.append("_p")
-                        }
-                    }
-                }
-                sourceFile.append(") ")
-                let type: Type = (constructorCall.typeToInitialize) as Type
-                sourceFile.append(type.name)
-                constructorCall.arguments.accept(this)
-                return(false)
             }
+            sourceFile.append(") ")
+            let type: Type = (constructorCall.typeToInitialize) as Type
+            if hasArrayPostfix(constructorCall.typeToInitialize)
+                sourceFile.append("_Array<")
+            sourceFile.append(type.name)
+            if hasArrayPostfix(constructorCall.typeToInitialize)
+                sourceFile.append(">")
+            constructorCall.arguments.accept(this)
+            return(false)
         }
+
         true
     }
 
@@ -3122,7 +3037,7 @@ class CppVisitor extends SyntaxVisitor {
     }
 
     function registerInheritance(className: string, baseName: string) {
-        var inherit: Inherits = null
+        var inherit: Inherits~inherits = null
         for inh: Inherits in inherits {
             if inh.name.equals(baseName)
              inherit = inh
