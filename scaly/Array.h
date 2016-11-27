@@ -19,14 +19,6 @@ public:
         memcpy(_rawArray, array->getRawArray(), _size * sizeof(T**));
     }
 
-    static _Array<T>& create(_Page* page, _Array<T>& array) {
-        size_t length = array.length();
-        _Array<T>& ret = *new(page) _Array<T>(length);
-        ret._size = length;
-        memcpy(ret.getRawArray(), array.getRawArray(), length * sizeof(T**));
-        return ret;
-    }
-
     T** operator [](size_t i) {
         if (i < _size)
             return _rawArray + i;

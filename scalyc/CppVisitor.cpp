@@ -2153,11 +2153,11 @@ bool CppVisitor::openReturnExpression(ReturnExpression* returnExpression) {
         }
         returnExpression->expression->accept(this);
         if (returnsArray(returnExpression)) {
-            sourceFile->append(" ? &");
+            sourceFile->append(" ? new(_rp) ");
             sourceFile->append(returnType);
-            sourceFile->append("::create(_rp, *");
+            sourceFile->append("(");
             returnExpression->expression->accept(this);
-            sourceFile->append(") : 0");
+            sourceFile->append(") : nullptr");
         }
         if (thrownType != nullptr)
             sourceFile->append(")");

@@ -100,7 +100,7 @@ _Result<_Array<Statement>, ParserError> Parser::parseStatementList(_Page* _rp, _
             ret = new(_p) _Array<Statement>();
         ret->push(node);
     }
-    return _Result<_Array<Statement>, ParserError>(ret ? &_Array<Statement>::create(_rp, *ret) : 0);
+    return _Result<_Array<Statement>, ParserError>(ret ? new(_rp) _Array<Statement>(ret) : nullptr);
 }
 
 _Result<Statement, ParserError> Parser::parseStatement(_Page* _rp, _Page* _ep) {
@@ -685,7 +685,7 @@ _Result<_Array<PatternInitializer>, ParserError> Parser::parsePatternInitializer
             ret = new(_p) _Array<PatternInitializer>();
         ret->push(node);
     }
-    return _Result<_Array<PatternInitializer>, ParserError>(ret ? &_Array<PatternInitializer>::create(_rp, *ret) : 0);
+    return _Result<_Array<PatternInitializer>, ParserError>(ret ? new(_rp) _Array<PatternInitializer>(ret) : nullptr);
 }
 
 _Result<PatternInitializer, ParserError> Parser::parsePatternInitializer(_Page* _rp, _Page* _ep) {
@@ -732,7 +732,7 @@ _Result<_Array<AdditionalInitializer>, ParserError> Parser::parseAdditionalIniti
             ret = new(_p) _Array<AdditionalInitializer>();
         ret->push(node);
     }
-    return _Result<_Array<AdditionalInitializer>, ParserError>(ret ? &_Array<AdditionalInitializer>::create(_rp, *ret) : 0);
+    return _Result<_Array<AdditionalInitializer>, ParserError>(ret ? new(_rp) _Array<AdditionalInitializer>(ret) : nullptr);
 }
 
 _Result<AdditionalInitializer, ParserError> Parser::parseAdditionalInitializer(_Page* _rp, _Page* _ep) {
@@ -775,7 +775,7 @@ _Result<_Array<Modifier>, ParserError> Parser::parseModifierList(_Page* _rp, _Pa
             ret = new(_p) _Array<Modifier>();
         ret->push(node);
     }
-    return _Result<_Array<Modifier>, ParserError>(ret ? &_Array<Modifier>::create(_rp, *ret) : 0);
+    return _Result<_Array<Modifier>, ParserError>(ret ? new(_rp) _Array<Modifier>(ret) : nullptr);
 }
 
 _Result<Modifier, ParserError> Parser::parseModifier(_Page* _rp, _Page* _ep) {
@@ -921,7 +921,7 @@ _Result<_Array<ParameterClause>, ParserError> Parser::parseParameterClauseList(_
             ret = new(_p) _Array<ParameterClause>();
         ret->push(node);
     }
-    return _Result<_Array<ParameterClause>, ParserError>(ret ? &_Array<ParameterClause>::create(_rp, *ret) : 0);
+    return _Result<_Array<ParameterClause>, ParserError>(ret ? new(_rp) _Array<ParameterClause>(ret) : nullptr);
 }
 
 _Result<ParameterClause, ParserError> Parser::parseParameterClause(_Page* _rp, _Page* _ep) {
@@ -976,7 +976,7 @@ _Result<_Array<Parameter>, ParserError> Parser::parseParameterList(_Page* _rp, _
             ret = new(_p) _Array<Parameter>();
         ret->push(node);
     }
-    return _Result<_Array<Parameter>, ParserError>(ret ? &_Array<Parameter>::create(_rp, *ret) : 0);
+    return _Result<_Array<Parameter>, ParserError>(ret ? new(_rp) _Array<Parameter>(ret) : nullptr);
 }
 
 _Result<Parameter, ParserError> Parser::parseParameter(_Page* _rp, _Page* _ep) {
@@ -1131,7 +1131,7 @@ _Result<_Array<EnumMember>, ParserError> Parser::parseEnumMemberList(_Page* _rp,
             ret = new(_p) _Array<EnumMember>();
         ret->push(node);
     }
-    return _Result<_Array<EnumMember>, ParserError>(ret ? &_Array<EnumMember>::create(_rp, *ret) : 0);
+    return _Result<_Array<EnumMember>, ParserError>(ret ? new(_rp) _Array<EnumMember>(ret) : nullptr);
 }
 
 _Result<EnumMember, ParserError> Parser::parseEnumMember(_Page* _rp, _Page* _ep) {
@@ -1214,7 +1214,7 @@ _Result<_Array<AdditionalCase>, ParserError> Parser::parseAdditionalCaseList(_Pa
             ret = new(_p) _Array<AdditionalCase>();
         ret->push(node);
     }
-    return _Result<_Array<AdditionalCase>, ParserError>(ret ? &_Array<AdditionalCase>::create(_rp, *ret) : 0);
+    return _Result<_Array<AdditionalCase>, ParserError>(ret ? new(_rp) _Array<AdditionalCase>(ret) : nullptr);
 }
 
 _Result<AdditionalCase, ParserError> Parser::parseAdditionalCase(_Page* _rp, _Page* _ep) {
@@ -1293,7 +1293,7 @@ _Result<_Array<ClassMember>, ParserError> Parser::parseClassMemberList(_Page* _r
             ret = new(_p) _Array<ClassMember>();
         ret->push(node);
     }
-    return _Result<_Array<ClassMember>, ParserError>(ret ? &_Array<ClassMember>::create(_rp, *ret) : 0);
+    return _Result<_Array<ClassMember>, ParserError>(ret ? new(_rp) _Array<ClassMember>(ret) : nullptr);
 }
 
 _Result<ClassMember, ParserError> Parser::parseClassMember(_Page* _rp, _Page* _ep) {
@@ -1385,7 +1385,7 @@ _Result<_Array<BinaryOp>, ParserError> Parser::parseBinaryOpList(_Page* _rp, _Pa
             ret = new(_p) _Array<BinaryOp>();
         ret->push(node);
     }
-    return _Result<_Array<BinaryOp>, ParserError>(ret ? &_Array<BinaryOp>::create(_rp, *ret) : 0);
+    return _Result<_Array<BinaryOp>, ParserError>(ret ? new(_rp) _Array<BinaryOp>(ret) : nullptr);
 }
 
 _Result<BinaryOp, ParserError> Parser::parseBinaryOp(_Page* _rp, _Page* _ep) {
@@ -1567,7 +1567,7 @@ _Result<_Array<CatchClause>, ParserError> Parser::parseCatchClauseList(_Page* _r
             ret = new(_p) _Array<CatchClause>();
         ret->push(node);
     }
-    return _Result<_Array<CatchClause>, ParserError>(ret ? &_Array<CatchClause>::create(_rp, *ret) : 0);
+    return _Result<_Array<CatchClause>, ParserError>(ret ? new(_rp) _Array<CatchClause>(ret) : nullptr);
 }
 
 _Result<CatchClause, ParserError> Parser::parseCatchClause(_Page* _rp, _Page* _ep) {
@@ -1709,7 +1709,7 @@ _Result<_Array<Postfix>, ParserError> Parser::parsePostfixList(_Page* _rp, _Page
             ret = new(_p) _Array<Postfix>();
         ret->push(node);
     }
-    return _Result<_Array<Postfix>, ParserError>(ret ? &_Array<Postfix>::create(_rp, *ret) : 0);
+    return _Result<_Array<Postfix>, ParserError>(ret ? new(_rp) _Array<Postfix>(ret) : nullptr);
 }
 
 _Result<Postfix, ParserError> Parser::parsePostfix(_Page* _rp, _Page* _ep) {
@@ -1900,7 +1900,7 @@ _Result<_Array<ExpressionElement>, ParserError> Parser::parseExpressionElementLi
             ret = new(_p) _Array<ExpressionElement>();
         ret->push(node);
     }
-    return _Result<_Array<ExpressionElement>, ParserError>(ret ? &_Array<ExpressionElement>::create(_rp, *ret) : 0);
+    return _Result<_Array<ExpressionElement>, ParserError>(ret ? new(_rp) _Array<ExpressionElement>(ret) : nullptr);
 }
 
 _Result<ExpressionElement, ParserError> Parser::parseExpressionElement(_Page* _rp, _Page* _ep) {
@@ -2706,7 +2706,7 @@ _Result<_Array<SwitchCase>, ParserError> Parser::parseSwitchCaseList(_Page* _rp,
             ret = new(_p) _Array<SwitchCase>();
         ret->push(node);
     }
-    return _Result<_Array<SwitchCase>, ParserError>(ret ? &_Array<SwitchCase>::create(_rp, *ret) : 0);
+    return _Result<_Array<SwitchCase>, ParserError>(ret ? new(_rp) _Array<SwitchCase>(ret) : nullptr);
 }
 
 _Result<SwitchCase, ParserError> Parser::parseSwitchCase(_Page* _rp, _Page* _ep) {
@@ -2856,7 +2856,7 @@ _Result<_Array<CaseItem>, ParserError> Parser::parseCaseItemList(_Page* _rp, _Pa
             ret = new(_p) _Array<CaseItem>();
         ret->push(node);
     }
-    return _Result<_Array<CaseItem>, ParserError>(ret ? &_Array<CaseItem>::create(_rp, *ret) : 0);
+    return _Result<_Array<CaseItem>, ParserError>(ret ? new(_rp) _Array<CaseItem>(ret) : nullptr);
 }
 
 _Result<CaseItem, ParserError> Parser::parseCaseItem(_Page* _rp, _Page* _ep) {
@@ -3059,7 +3059,7 @@ _Result<_Array<TuplePatternElement>, ParserError> Parser::parseTuplePatternEleme
             ret = new(_p) _Array<TuplePatternElement>();
         ret->push(node);
     }
-    return _Result<_Array<TuplePatternElement>, ParserError>(ret ? &_Array<TuplePatternElement>::create(_rp, *ret) : 0);
+    return _Result<_Array<TuplePatternElement>, ParserError>(ret ? new(_rp) _Array<TuplePatternElement>(ret) : nullptr);
 }
 
 _Result<TuplePatternElement, ParserError> Parser::parseTuplePatternElement(_Page* _rp, _Page* _ep) {
@@ -3222,7 +3222,7 @@ _Result<_Array<TypePostfix>, ParserError> Parser::parseTypePostfixList(_Page* _r
             ret = new(_p) _Array<TypePostfix>();
         ret->push(node);
     }
-    return _Result<_Array<TypePostfix>, ParserError>(ret ? &_Array<TypePostfix>::create(_rp, *ret) : 0);
+    return _Result<_Array<TypePostfix>, ParserError>(ret ? new(_rp) _Array<TypePostfix>(ret) : nullptr);
 }
 
 _Result<TypePostfix, ParserError> Parser::parseTypePostfix(_Page* _rp, _Page* _ep) {
@@ -3484,7 +3484,7 @@ _Result<_Array<Inheritance>, ParserError> Parser::parseInheritanceList(_Page* _r
             ret = new(_p) _Array<Inheritance>();
         ret->push(node);
     }
-    return _Result<_Array<Inheritance>, ParserError>(ret ? &_Array<Inheritance>::create(_rp, *ret) : 0);
+    return _Result<_Array<Inheritance>, ParserError>(ret ? new(_rp) _Array<Inheritance>(ret) : nullptr);
 }
 
 _Result<Inheritance, ParserError> Parser::parseInheritance(_Page* _rp, _Page* _ep) {
