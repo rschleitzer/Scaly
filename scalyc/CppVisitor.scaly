@@ -2457,14 +2457,6 @@ class CppVisitor extends SyntaxVisitor {
                     }
                 }
             }
-            sourceFile.append(") ")
-            if hasArrayPostfix(constructorCall.typeToInitialize)
-                sourceFile.append("_Array<")
-            sourceFile.append(constructorCall.typeToInitialize.name)
-            if hasArrayPostfix(constructorCall.typeToInitialize)
-                sourceFile.append(">")
-            constructorCall.arguments.accept(this)
-            return(false)
         }
         else {
             if constructorCall.parent.parent.parent.parent is Assignment {
@@ -2524,17 +2516,17 @@ class CppVisitor extends SyntaxVisitor {
                     }
                 }
             }
-            sourceFile.append(") ")
-            if hasArrayPostfix(constructorCall.typeToInitialize)
-                sourceFile.append("_Array<")
-            sourceFile.append(constructorCall.typeToInitialize.name)
-            if hasArrayPostfix(constructorCall.typeToInitialize)
-                sourceFile.append(">")
-            constructorCall.arguments.accept(this)
-            return(false)
         }
 
-        true
+        sourceFile.append(") ")
+        if hasArrayPostfix(constructorCall.typeToInitialize)
+            sourceFile.append("_Array<")
+        sourceFile.append(constructorCall.typeToInitialize.name)
+        if hasArrayPostfix(constructorCall.typeToInitialize)
+            sourceFile.append(">")
+        constructorCall.arguments.accept(this)
+
+        false
     }
 
     function closeConstructorCall(constructorCall: ConstructorCall) {
