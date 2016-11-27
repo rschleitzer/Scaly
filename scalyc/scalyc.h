@@ -5,7 +5,6 @@
 #include "Lexer.h"
 #include "Visitor.h"
 #include "Syntax.h"
-#include "CppError.h"
 #include "CppOutput.h"
 #include "CppVisitor.h"
 #include "HeaderVisitor.h"

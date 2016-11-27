@@ -4,3 +4,8 @@ enum CompilerError {
     case syntaxError(error: ParserError)
     case unableToCreateOutputDirectory(directory: string, error: DirectoryError)
 }
+
+enum CppError {
+    case unableToCreateOutputDirectory(directory: string, error: DirectoryError)
+}
+

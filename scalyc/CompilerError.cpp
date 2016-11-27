@@ -38,5 +38,20 @@ _CompilerError_unableToCreateOutputDirectory* CompilerError::get_unableToCreateO
     return (_CompilerError_unableToCreateOutputDirectory*)errorInfo;
 }
 
+long CppError::_getErrorCode() {
+    return (long)errorCode;
+}
+
+void* CppError::_getErrorInfo() {
+    return errorInfo;
+}
+
+_CppError_unableToCreateOutputDirectory::_CppError_unableToCreateOutputDirectory(string* directory, DirectoryError* error) 
+: directory(directory), error(error) { }
+
+_CppError_unableToCreateOutputDirectory* CppError::get_unableToCreateOutputDirectory() {
+    return (_CppError_unableToCreateOutputDirectory*)errorInfo;
+}
+
 
 }
