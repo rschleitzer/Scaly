@@ -54,7 +54,7 @@ _Result<Options, OptionsError> Options::parseArguments(_Page* _rp, _Page* _ep, _
         return _Result<Options, OptionsError>(new(_ep) OptionsError(_OptionsErrorCode_noOutputOption));
     if (input->length() == 0)
         return _Result<Options, OptionsError>(new(_ep) OptionsError(_OptionsErrorCode_noFilesToCompile));
-    return _Result<Options, OptionsError>(new(_rp) Options(&_Array<string>::create(_rp, *(input)), output, dir));
+    return _Result<Options, OptionsError>(new(_rp) Options(new(_rp) _Array<string>(input), output, dir));
 }
 
 

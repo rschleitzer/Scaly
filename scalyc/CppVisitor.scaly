@@ -2422,10 +2422,7 @@ class CppVisitor extends SyntaxVisitor {
     function openConstructorCall(constructorCall: ConstructorCall): bool {
         if hasArrayPostfix(constructorCall.typeToInitialize) {
             if !initializerIsBoundOrAssigned(constructorCall) {
-                let type: Type = constructorCall.typeToInitialize
-                sourceFile.append("&_Array<")
-                sourceFile.append(type.name)
-                sourceFile.append(">::create(")
+                sourceFile.append("new(")
                 if (inReturn(constructorCall)) || (inRetDeclaration(constructorCall)) {
                     sourceFile.append("_rp")
                 }
@@ -2461,9 +2458,11 @@ class CppVisitor extends SyntaxVisitor {
                         }
                     }
                 }
-                sourceFile.append(", *")
+                let type: Type = constructorCall.typeToInitialize
+                sourceFile.append(") _Array<")
+                sourceFile.append(type.name)
+                sourceFile.append(">")
                 constructorCall.arguments.accept(this)
-                sourceFile.append(")")
                 return(false)
             }
             else {

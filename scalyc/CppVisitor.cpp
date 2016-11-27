@@ -83,7 +83,7 @@ bool CppVisitor::openProgram(Program* program) {
 void CppVisitor::closeProgram(Program* program) {
     if (output != nullptr)
         output->getPage()->clear();
-    output = new(output->getPage()) CppProgram(program->name, new(output->getPage()) string(projectFile), new(output->getPage()) string(mainHeaderFile), &_Array<CppModule>::create(output->getPage(), *(modules)));
+    output = new(output->getPage()) CppProgram(program->name, new(output->getPage()) string(projectFile), new(output->getPage()) string(mainHeaderFile), new(output->getPage()) _Array<CppModule>(modules));
 }
 
 bool CppVisitor::openCompilationUnit(CompilationUnit* compilationUnit) {
@@ -2350,10 +2350,7 @@ void CppVisitor::closeBreakExpression(BreakExpression* breakExpression) {
 bool CppVisitor::openConstructorCall(ConstructorCall* constructorCall) {
     if (hasArrayPostfix(constructorCall->typeToInitialize)) {
         if (!initializerIsBoundOrAssigned(constructorCall)) {
-            Type* type = constructorCall->typeToInitialize;
-            sourceFile->append("&_Array<");
-            sourceFile->append(type->name);
-            sourceFile->append(">::create(");
+            sourceFile->append("new(");
             if ((inReturn(constructorCall)) || (inRetDeclaration(constructorCall))) {
                 sourceFile->append("_rp");
             }
@@ -2390,9 +2387,11 @@ bool CppVisitor::openConstructorCall(ConstructorCall* constructorCall) {
                     }
                 }
             }
-            sourceFile->append(", *");
+            Type* type = constructorCall->typeToInitialize;
+            sourceFile->append(") _Array<");
+            sourceFile->append(type->name);
+            sourceFile->append(">");
             constructorCall->arguments->accept(this);
-            sourceFile->append(")");
             return false;
         }
         else {

@@ -16,7 +16,7 @@ public:
     _Array<T>(_Array<T>* array)
     : _size(array->length()), _capacity(array->length()) {
         allocate();
-        memcpy(_rawArray, array.getRawArray(), length * sizeof(T**));
+        memcpy(_rawArray, array->getRawArray(), _size * sizeof(T**));
     }
 
     static _Array<T>& create(_Page* page, _Array<T>& array) {
