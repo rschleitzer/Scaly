@@ -89,20 +89,6 @@ class "(id syntax-node)" extends "(if (base syntax-node) (base syntax-node) "Syn
 "   )))
 ))
 
-(define (constructor-parameters syntax-node)
-    ($
-        (apply-to-property-children-of syntax-node (lambda (content) ($
-            (property-declaration content)(if (properties-remaining? content syntax-node) ", " "")
-        )))
-        (if (program? syntax-node) "" ($ (if (node-list-empty? (properties syntax-node)) "" ", ") "Position* start, Position* end"))))
-
-(define (property-declaration content)
-    (case (type content)
-        (("syntax") ($ (if (multiple? content)"_Vector<" "")(link content)(if (multiple? content)">" "")"* "(property content)))
-        (("identifier" "operator" "prefixoperator" "binaryoperator" "postfixoperator") ($ "string* "(property content)))
-        (("literal") ($ "Literal* "(property content)))
-        (("keyword" "punctuation") ($ "bool "(property content)))))
-
 (define (scaly-syntax-constructor-parameters syntax-node)
     ($
         (apply-to-property-children-of syntax-node (lambda (content) ($

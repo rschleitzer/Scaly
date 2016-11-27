@@ -13,6 +13,17 @@ public:
         allocate();
     }
 
+    static _Array<T>& createUninitialized(_Page* page, size_t theSize) {
+        return *new(page) _Array<T>(theSize);
+    }
+
+    static _Array<T>& create(_Page* page, _Array<T>& array) {
+        size_t length = array.length();
+        _Array<T>& ret = *new(page) _Array<T>(length);
+        memcpy(ret.getRawArray(), array.getRawArray(), length * sizeof(T**));
+        return ret;
+    }
+
     T** operator [](size_t i) {
         if (i < _size)
             return _rawArray + i;
