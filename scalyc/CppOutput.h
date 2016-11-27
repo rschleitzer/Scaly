@@ -17,11 +17,11 @@ public:
 class CppProgram : public Object {
 public:
     CppProgram();
-    CppProgram(string* name, string* project, string* main, _Vector<CppModule>* modules);
+    CppProgram(string* name, string* project, string* main, _Array<CppModule>* modules);
     string* name;
     string* project;
     string* main;
-    _Vector<CppModule>* modules;
+    _Array<CppModule>* modules;
 
 };
 

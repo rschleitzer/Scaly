@@ -108,20 +108,20 @@ public:
 
 class Program : public SyntaxNode {
 public:
-    Program(string* name, string* directory, _Vector<CompilationUnit>* compilationUnits);
+    Program(string* name, string* directory, _Array<CompilationUnit>* compilationUnits);
     virtual void accept(SyntaxVisitor* visitor);
     string* name;
     string* directory;
-    _Vector<CompilationUnit>* compilationUnits;
+    _Array<CompilationUnit>* compilationUnits;
 
     virtual bool _isProgram();
 };
 
 class CompilationUnit : public SyntaxNode {
 public:
-    CompilationUnit(_Vector<Statement>* statements, Position* start, Position* end);
+    CompilationUnit(_Array<Statement>* statements, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
-    _Vector<Statement>* statements;
+    _Array<Statement>* statements;
     string* fileName;
 
     virtual bool _isCompilationUnit();
@@ -197,9 +197,9 @@ public:
 
 class FunctionDeclaration : public Declaration {
 public:
-    FunctionDeclaration(_Vector<Modifier>* modifiers, string* name, FunctionSignature* signature, Expression* body, Position* start, Position* end);
+    FunctionDeclaration(_Array<Modifier>* modifiers, string* name, FunctionSignature* signature, Expression* body, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
-    _Vector<Modifier>* modifiers;
+    _Array<Modifier>* modifiers;
     string* name;
     FunctionSignature* signature;
     Expression* body;
@@ -209,10 +209,10 @@ public:
 
 class EnumDeclaration : public Declaration {
 public:
-    EnumDeclaration(string* name, _Vector<EnumMember>* members, Position* start, Position* end);
+    EnumDeclaration(string* name, _Array<EnumMember>* members, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
     string* name;
-    _Vector<EnumMember>* members;
+    _Array<EnumMember>* members;
 
     virtual bool _isEnumDeclaration();
 };
@@ -240,19 +240,19 @@ public:
 
 class CodeBlock : public Expression {
 public:
-    CodeBlock(_Vector<Statement>* statements, Position* start, Position* end);
+    CodeBlock(_Array<Statement>* statements, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
-    _Vector<Statement>* statements;
+    _Array<Statement>* statements;
 
     virtual bool _isCodeBlock();
 };
 
 class SimpleExpression : public Expression {
 public:
-    SimpleExpression(PrefixExpression* prefixExpression, _Vector<BinaryOp>* binaryOps, Position* start, Position* end);
+    SimpleExpression(PrefixExpression* prefixExpression, _Array<BinaryOp>* binaryOps, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
     PrefixExpression* prefixExpression;
-    _Vector<BinaryOp>* binaryOps;
+    _Array<BinaryOp>* binaryOps;
 
     virtual bool _isSimpleExpression();
 };
@@ -268,10 +268,10 @@ public:
 
 class BindingInitializer : public SyntaxNode {
 public:
-    BindingInitializer(PatternInitializer* initializer, _Vector<AdditionalInitializer>* additionalInitializers, Position* start, Position* end);
+    BindingInitializer(PatternInitializer* initializer, _Array<AdditionalInitializer>* additionalInitializers, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
     PatternInitializer* initializer;
-    _Vector<AdditionalInitializer>* additionalInitializers;
+    _Array<AdditionalInitializer>* additionalInitializers;
 
     virtual bool _isBindingInitializer();
 };
@@ -342,9 +342,9 @@ public:
 
 class ParameterClause : public SyntaxNode {
 public:
-    ParameterClause(_Vector<Parameter>* parameters, Position* start, Position* end);
+    ParameterClause(_Array<Parameter>* parameters, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
-    _Vector<Parameter>* parameters;
+    _Array<Parameter>* parameters;
 
     virtual bool _isParameterClause();
 };
@@ -389,10 +389,10 @@ public:
 
 class EnumMember : public SyntaxNode {
 public:
-    EnumMember(EnumCase* enumCase, _Vector<AdditionalCase>* additionalCases, ParameterClause* parameterClause, Position* start, Position* end);
+    EnumMember(EnumCase* enumCase, _Array<AdditionalCase>* additionalCases, ParameterClause* parameterClause, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
     EnumCase* enumCase;
-    _Vector<AdditionalCase>* additionalCases;
+    _Array<AdditionalCase>* additionalCases;
     ParameterClause* parameterClause;
 
     virtual bool _isEnumMember();
@@ -418,9 +418,9 @@ public:
 
 class ClassBody : public SyntaxNode {
 public:
-    ClassBody(_Vector<ClassMember>* members, Position* start, Position* end);
+    ClassBody(_Array<ClassMember>* members, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
-    _Vector<ClassMember>* members;
+    _Array<ClassMember>* members;
 
     virtual bool _isClassBody();
 };
@@ -446,10 +446,10 @@ public:
 
 class PostfixExpression : public SyntaxNode {
 public:
-    PostfixExpression(PrimaryExpression* primaryExpression, _Vector<Postfix>* postfixes, Position* start, Position* end);
+    PostfixExpression(PrimaryExpression* primaryExpression, _Array<Postfix>* postfixes, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
     PrimaryExpression* primaryExpression;
-    _Vector<Postfix>* postfixes;
+    _Array<Postfix>* postfixes;
 
     virtual bool _isPostfixExpression();
 };
@@ -563,10 +563,10 @@ public:
 
 class FunctionCall : public Postfix {
 public:
-    FunctionCall(ParenthesizedExpression* arguments, _Vector<CatchClause>* catchClauses, Position* start, Position* end);
+    FunctionCall(ParenthesizedExpression* arguments, _Array<CatchClause>* catchClauses, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
     ParenthesizedExpression* arguments;
-    _Vector<CatchClause>* catchClauses;
+    _Array<CatchClause>* catchClauses;
 
     virtual bool _isFunctionCall();
 };
@@ -582,9 +582,9 @@ public:
 
 class Subscript : public Postfix {
 public:
-    Subscript(_Vector<ExpressionElement>* expressions, Position* start, Position* end);
+    Subscript(_Array<ExpressionElement>* expressions, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
-    _Vector<ExpressionElement>* expressions;
+    _Array<ExpressionElement>* expressions;
 
     virtual bool _isSubscript();
 };
@@ -691,9 +691,9 @@ public:
 
 class ParenthesizedExpression : public PrimaryExpression {
 public:
-    ParenthesizedExpression(_Vector<ExpressionElement>* expressionElements, Position* start, Position* end);
+    ParenthesizedExpression(_Array<ExpressionElement>* expressionElements, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
-    _Vector<ExpressionElement>* expressionElements;
+    _Array<ExpressionElement>* expressionElements;
 
     virtual bool _isParenthesizedExpression();
 };
@@ -728,11 +728,11 @@ public:
 
 class ConstructorCall : public PrimaryExpression {
 public:
-    ConstructorCall(Type* typeToInitialize, ParenthesizedExpression* arguments, _Vector<CatchClause>* catchClauses, Position* start, Position* end);
+    ConstructorCall(Type* typeToInitialize, ParenthesizedExpression* arguments, _Array<CatchClause>* catchClauses, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
     Type* typeToInitialize;
     ParenthesizedExpression* arguments;
-    _Vector<CatchClause>* catchClauses;
+    _Array<CatchClause>* catchClauses;
 
     virtual bool _isConstructorCall();
 };
@@ -773,18 +773,18 @@ public:
 
 class CurliedSwitchBody : public SwitchBody {
 public:
-    CurliedSwitchBody(_Vector<SwitchCase>* cases, Position* start, Position* end);
+    CurliedSwitchBody(_Array<SwitchCase>* cases, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
-    _Vector<SwitchCase>* cases;
+    _Array<SwitchCase>* cases;
 
     virtual bool _isCurliedSwitchBody();
 };
 
 class NakedSwitchBody : public SwitchBody {
 public:
-    NakedSwitchBody(_Vector<SwitchCase>* cases, Position* start, Position* end);
+    NakedSwitchBody(_Array<SwitchCase>* cases, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
-    _Vector<SwitchCase>* cases;
+    _Array<SwitchCase>* cases;
 
     virtual bool _isNakedSwitchBody();
 };
@@ -810,10 +810,10 @@ public:
 
 class ItemCaseLabel : public CaseLabel {
 public:
-    ItemCaseLabel(Pattern* pattern, _Vector<CaseItem>* additionalPatterns, Position* start, Position* end);
+    ItemCaseLabel(Pattern* pattern, _Array<CaseItem>* additionalPatterns, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
     Pattern* pattern;
-    _Vector<CaseItem>* additionalPatterns;
+    _Array<CaseItem>* additionalPatterns;
 
     virtual bool _isItemCaseLabel();
 };
@@ -866,9 +866,9 @@ public:
 
 class TuplePattern : public Pattern {
 public:
-    TuplePattern(_Vector<TuplePatternElement>* elements, Position* start, Position* end);
+    TuplePattern(_Array<TuplePatternElement>* elements, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
-    _Vector<TuplePatternElement>* elements;
+    _Array<TuplePatternElement>* elements;
 
     virtual bool _isTuplePattern();
 };
@@ -893,20 +893,20 @@ public:
 
 class CaseContent : public SyntaxNode {
 public:
-    CaseContent(_Vector<Statement>* statements, Position* start, Position* end);
+    CaseContent(_Array<Statement>* statements, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
-    _Vector<Statement>* statements;
+    _Array<Statement>* statements;
 
     virtual bool _isCaseContent();
 };
 
 class Type : public SyntaxNode {
 public:
-    Type(string* name, Subtype* subType, _Vector<TypePostfix>* postfixes, LifeTime* lifeTime, Position* start, Position* end);
+    Type(string* name, Subtype* subType, _Array<TypePostfix>* postfixes, LifeTime* lifeTime, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
     string* name;
     Subtype* subType;
-    _Vector<TypePostfix>* postfixes;
+    _Array<TypePostfix>* postfixes;
     LifeTime* lifeTime;
 
     virtual bool _isType();
@@ -1003,9 +1003,9 @@ public:
 
 class TypeInheritanceClause : public SyntaxNode {
 public:
-    TypeInheritanceClause(_Vector<Inheritance>* inheritances, Position* start, Position* end);
+    TypeInheritanceClause(_Array<Inheritance>* inheritances, Position* start, Position* end);
     virtual void accept(SyntaxVisitor* visitor);
-    _Vector<Inheritance>* inheritances;
+    _Array<Inheritance>* inheritances;
 
     virtual bool _isTypeInheritanceClause();
 };

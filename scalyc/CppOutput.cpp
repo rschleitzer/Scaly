@@ -21,7 +21,7 @@ CppProgram::CppProgram() {
     modules = nullptr;
 }
 
-CppProgram::CppProgram(string* name, string* project, string* main, _Vector<CppModule>* modules) {
+CppProgram::CppProgram(string* name, string* project, string* main, _Array<CppModule>* modules) {
     this->name = name;
     this->project = project;
     this->main = main;

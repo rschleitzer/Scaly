@@ -157,9 +157,9 @@ class CppVisitor extends SyntaxVisitor {
             sourceFile.append("    _Task* task = new(page) _Task();\n")
             sourceFile.append("    __CurrentTask = task;\n\n")
             sourceFile.append("    // Collect the arguments into a string Vector\n")
-            sourceFile.append("    _Vector<string>* arguments = &_Vector<string>::createUninitialized(__CurrentPage, argc - 1);\n")
+            sourceFile.append("    _Array<string>* arguments = new(__CurrentPage) _Array<string>(argc - 1);\n")
             sourceFile.append("    for (int i = 1; i < argc; i++)\n")
-            sourceFile.append("        *(*arguments)[i - 1] = new(__CurrentPage) string(argv[i]);\n\n")
+            sourceFile.append("        arguments->push(new(__CurrentPage) string(argv[i]));\n\n")
             sourceFile.append("    // Call Scaly's top-level code\n")
             sourceFile.append("    auto _File_error = ")
             sourceFile.append(programName)
@@ -179,7 +179,7 @@ class CppVisitor extends SyntaxVisitor {
         sourceFile.append(" {\n\n")
         
         if isTopLevelFile(compilationUnit)
-            sourceFile.append("FileError* _main(_Page* _ep,  _Vector<string>* arguments) {\n_Region _rp; _Page* _p = _rp.get();\n\n")
+            sourceFile.append("FileError* _main(_Page* _ep,  _Array<string>* arguments) {\n_Region _rp; _Page* _p = _rp.get();\n\n")
 
         true
     }
@@ -865,12 +865,12 @@ class CppVisitor extends SyntaxVisitor {
                     sourceFile.append("_Result<")
 
                 if hasArrayPostfix(functionSignature.result.resultType) {
-                    headerFile.append("_Vector<")
+                    headerFile.append("_Array<")
                     let type: Type = functionSignature.result.resultType
                     appendCppTypeName(headerFile, type)
                     headerFile.append(">")
                     if !suppressSource {
-                        sourceFile.append("_Vector<")
+                        sourceFile.append("_Array<")
                         appendCppTypeName(sourceFile, type)
                         sourceFile.append(">")
                     }
@@ -892,12 +892,12 @@ class CppVisitor extends SyntaxVisitor {
             }
             else {
                 if hasArrayPostfix(functionSignature.result.resultType) {
-                    headerFile.append("_Vector<")
+                    headerFile.append("_Array<")
                     let type: Type = functionSignature.result.resultType
                     appendCppTypeName(headerFile, type)
                     headerFile.append(">")
                     if !suppressSource {
-                        sourceFile.append("_Vector<")
+                        sourceFile.append("_Array<")
                         appendCppTypeName(sourceFile, type)
                         sourceFile.append(">")
                     }
@@ -1158,7 +1158,7 @@ class CppVisitor extends SyntaxVisitor {
 
     function appendCppType(mutable s: VarString, type: Type) {
         if hasArrayPostfix(type) {
-            s.append("_Vector<")
+            s.append("_Array<")
             appendCppTypeName(s, type)
             s.append(">*")
         }
@@ -2346,7 +2346,7 @@ class CppVisitor extends SyntaxVisitor {
                 let ret: VarString = new VarString()
                 if hasArrayPostfix(functionResult.resultType) {
                     let type: Type = functionResult.resultType
-                    ret.append("_Vector<")
+                    ret.append("_Array<")
                     appendCppTypeName(ret, type)
                     ret.append(">")
                     return(new string(ret))
@@ -2369,7 +2369,7 @@ class CppVisitor extends SyntaxVisitor {
                 let ret: VarString = new VarString()
                 if hasArrayPostfix(throwsClause.throwsType) {
                     let type: Type = throwsClause.throwsType
-                    ret.append("_Vector<")
+                    ret.append("_Array<")
                     appendCppTypeName(ret, type)
                     ret.append(">")
                     return(new string(ret))
@@ -2423,7 +2423,7 @@ class CppVisitor extends SyntaxVisitor {
         if hasArrayPostfix(constructorCall.typeToInitialize) {
             if !initializerIsBoundOrAssigned(constructorCall) {
                 let type: Type = constructorCall.typeToInitialize
-                sourceFile.append("&_Vector<")
+                sourceFile.append("&_Array<")
                 sourceFile.append(type.name)
                 sourceFile.append(">::create(")
                 if (inReturn(constructorCall)) || (inRetDeclaration(constructorCall)) {
@@ -2844,25 +2844,13 @@ class CppVisitor extends SyntaxVisitor {
     function openType(type: Type): bool {
         if hasArrayPostfix(type) {
             if !sourceIndentLevel {
-                if constDeclaration {
-                    headerFile.append("_Vector<")
-                    if !suppressSource
-                        sourceFile.append("_Vector<")
-                }
-                else {
-                    headerFile.append("_Array<")
-                    if !suppressSource
-                        sourceFile.append("_Array<")
-                }
+                headerFile.append("_Array<")
+                if !suppressSource
+                    sourceFile.append("_Array<")
             }
             else {
-                if constDeclaration {
-                    sourceFile.append("_Vector<")
-                }
-                else {
-                    if !inThrow(type)
-                        sourceFile.append("_Array<")
-                }
+                if !inThrow(type)
+                    sourceFile.append("_Array<")
             }
         }
         if !suppressHeader
@@ -2990,7 +2978,7 @@ class CppVisitor extends SyntaxVisitor {
         }
         mainHeaderFile.append("\nusing namespace scaly;\nnamespace ")
         mainHeaderFile.append(program.name)
-        mainHeaderFile.append(" {\nFileError* _main(_Page* page, _Vector<string>* arguments);\n}\n\n#endif // __scaly__")
+        mainHeaderFile.append(" {\nFileError* _main(_Page* page, _Array<string>* arguments);\n}\n\n#endif // __scaly__")
         mainHeaderFile.append(program.name)
         mainHeaderFile.append("__\n")
     }

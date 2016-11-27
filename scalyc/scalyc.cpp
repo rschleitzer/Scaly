@@ -20,9 +20,9 @@ int main(int argc, char** argv) {
     __CurrentTask = task;
 
     // Collect the arguments into a string Vector
-    _Vector<string>* arguments = &_Vector<string>::createUninitialized(__CurrentPage, argc - 1);
+    _Array<string>* arguments = new(__CurrentPage) _Array<string>(argc - 1);
     for (int i = 1; i < argc; i++)
-        *(*arguments)[i - 1] = new(__CurrentPage) string(argv[i]);
+        arguments->push(new(__CurrentPage) string(argv[i]));
 
     // Call Scaly's top-level code
     auto _File_error = scalyc::_main(page, arguments);
@@ -49,7 +49,7 @@ int main(int argc, char** argv) {
 
 namespace scalyc {
 
-FileError* _main(_Page* _ep,  _Vector<string>* arguments) {
+FileError* _main(_Page* _ep,  _Array<string>* arguments) {
 _Region _rp; _Page* _p = _rp.get();
 
 auto _options_result = Options::parseArguments(_p, _p, arguments);

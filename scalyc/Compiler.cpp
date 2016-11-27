@@ -4,7 +4,7 @@ namespace scalyc {
 
 CompilerError* Compiler::compileFiles(_Page* _ep, Options* options) {
     _Region _region; _Page* _p = _region.get();
-    _Vector<string>* files = options->files;
+    _Array<string>* files = options->files;
     _Array<string>* sources = new(_p) _Array<string>();
     string* file = nullptr;
     size_t _files_length = files->length();
@@ -47,7 +47,7 @@ CompilerError* Compiler::compileFiles(_Page* _ep, Options* options) {
             index++;
         }
     }
-    Program* program = new(_p) Program(options->outputName, options->directory, &_Vector<CompilationUnit>::create(_p, *(compilationUnits)));
+    Program* program = new(_p) Program(options->outputName, options->directory, &_Array<CompilationUnit>::create(_p, *(compilationUnits)));
     CompilationUnit* item = nullptr;
     size_t _compilationUnits_length = compilationUnits->length();
     for (size_t _i = 0; _i < _compilationUnits_length; _i++) {

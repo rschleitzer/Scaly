@@ -45,7 +45,7 @@ _ParserError_operatorExpected* ParserError::get_operatorExpected() {
     return (_ParserError_operatorExpected*)errorInfo;
 }
 
-_ParserError_unableToParse::_ParserError_unableToParse(Position* position, _Vector<ParserError>* errors) 
+_ParserError_unableToParse::_ParserError_unableToParse(Position* position, _Array<ParserError>* errors) 
 : position(position), errors(errors) { }
 
 _ParserError_unableToParse* ParserError::get_unableToParse() {

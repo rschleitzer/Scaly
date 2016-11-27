@@ -20,7 +20,7 @@
 
 using namespace scaly;
 namespace scalyc {
-FileError* _main(_Page* page, _Vector<string>* arguments);
+FileError* _main(_Page* page, _Array<string>* arguments);
 }
 
 #endif // __scaly__scalyc__

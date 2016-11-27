@@ -45,10 +45,10 @@ public:
 
 class _ParserError_unableToParse : public Object {
 public:
-    _ParserError_unableToParse(Position* position, _Vector<ParserError>* errors);
+    _ParserError_unableToParse(Position* position, _Array<ParserError>* errors);
 
     Position* position;
-    _Vector<ParserError>* errors;
+    _Array<ParserError>* errors;
 };
 
 class _ParserError_notAtEnd : public Object {

@@ -20,6 +20,7 @@ public:
     static _Array<T>& create(_Page* page, _Array<T>& array) {
         size_t length = array.length();
         _Array<T>& ret = *new(page) _Array<T>(length);
+        ret._size = length;
         memcpy(ret.getRawArray(), array.getRawArray(), length * sizeof(T**));
         return ret;
     }

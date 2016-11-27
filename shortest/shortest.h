@@ -6,7 +6,7 @@
 
 using namespace scaly;
 namespace shortest {
-int _main(_Vector<string>* arguments);
+int _main(_Array<string>* arguments);
 }
 
 #endif // __scaly__shortest__

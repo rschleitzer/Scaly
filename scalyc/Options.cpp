@@ -2,13 +2,13 @@
 using namespace scaly;
 namespace scalyc {
 
-Options::Options(_Vector<string>* input, string* output, string* dir) {
+Options::Options(_Array<string>* input, string* output, string* dir) {
     files = input;
     outputName = output;
     directory = dir;
 }
 
-_Result<Options, OptionsError> Options::parseArguments(_Page* _rp, _Page* _ep, _Vector<string>* args) {
+_Result<Options, OptionsError> Options::parseArguments(_Page* _rp, _Page* _ep, _Array<string>* args) {
     _Region _region; _Page* _p = _region.get();
     size_t length = args->length();
     string* output = nullptr;
@@ -54,7 +54,7 @@ _Result<Options, OptionsError> Options::parseArguments(_Page* _rp, _Page* _ep, _
         return _Result<Options, OptionsError>(new(_ep) OptionsError(_OptionsErrorCode_noOutputOption));
     if (input->length() == 0)
         return _Result<Options, OptionsError>(new(_ep) OptionsError(_OptionsErrorCode_noFilesToCompile));
-    return _Result<Options, OptionsError>(new(_rp) Options(&_Vector<string>::create(_rp, *(input)), output, dir));
+    return _Result<Options, OptionsError>(new(_rp) Options(&_Array<string>::create(_rp, *(input)), output, dir));
 }
 
 
