@@ -340,7 +340,7 @@ public:
     virtual void closeInheritance(Inheritance* inheritance) = 0;
 
     virtual bool _isMyVisitor();
-    virtual bool _isCppVisitor();
+    virtual bool _isSourceVisitor();
 };
 
 }

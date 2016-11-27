@@ -43,8 +43,8 @@
     <File Name="Inherits.scaly"/>
     <File Name="CppOutput.cpp"/>
     <File Name="CppOutput.scaly"/>
-    <File Name="CppVisitor.cpp"/>
-    <File Name="CppVisitor.scaly"/>
+    <File Name="SourceVisitor.cpp"/>
+    <File Name="SourceVisitor.scaly"/>
     <File Name="ParserError.cpp"/>
     <File Name="ParserError.scaly"/>
     <File Name="Parser.cpp"/>
@@ -68,7 +68,7 @@
     <File Name="CppError.h"/>
     <File Name="Inherits.h"/>
     <File Name="CppOutput.h"/>
-    <File Name="CppVisitor.h"/>
+    <File Name="SourceVisitor.h"/>
     <File Name="ParserError.h"/>
     <File Name="Parser.h"/>
     <File Name="OptionsError.h"/>
@@ -99,7 +99,7 @@
         <Library Value="libscaly"/>
       </Linker>
       <ResourceCompiler Options="" Required="no"/>
-      <General OutputFile="$(IntermediateDirectory)/$(ProjectName)" IntermediateDirectory="../Debug" Command="./$(ProjectName)" CommandArguments="-o scalyc -d ../scalyc ../scalyc/Lexer.scaly ../scalyc/Visitor.scaly ../scalyc/Syntax.scaly ../scalyc/MyVisitor.scaly ../scalyc/CppError.scaly ../scalyc/Inherits.scaly ../scalyc/CppOutput.scaly ../scalyc/CppVisitor.scaly ../scalyc/ParserError.scaly ../scalyc/Parser.scaly ../scalyc/OptionsError.scaly ../scalyc/CompilerError.scaly ../scalyc/Options.scaly ../scalyc/Compiler.scaly ../scalyc/scalyc.scaly" UseSeparateDebugArgs="no" DebugArguments="" WorkingDirectory="$(IntermediateDirectory)" PauseExecWhenProcTerminates="yes" IsGUIProgram="no" IsEnabled="yes"/>
+      <General OutputFile="$(IntermediateDirectory)/$(ProjectName)" IntermediateDirectory="../Debug" Command="./$(ProjectName)" CommandArguments="-o scalyc -d ../scalyc ../scalyc/Lexer.scaly ../scalyc/Visitor.scaly ../scalyc/Syntax.scaly ../scalyc/MyVisitor.scaly ../scalyc/CppError.scaly ../scalyc/Inherits.scaly ../scalyc/CppOutput.scaly ../scalyc/SourceVisitor.scaly ../scalyc/ParserError.scaly ../scalyc/Parser.scaly ../scalyc/OptionsError.scaly ../scalyc/CompilerError.scaly ../scalyc/Options.scaly ../scalyc/Compiler.scaly ../scalyc/scalyc.scaly" UseSeparateDebugArgs="no" DebugArguments="" WorkingDirectory="$(IntermediateDirectory)" PauseExecWhenProcTerminates="yes" IsGUIProgram="no" IsEnabled="yes"/>
       <Environment EnvVarSetName="&lt;Use Defaults&gt;" DbgSetName="&lt;Use Defaults&gt;">
         <![CDATA[]]>
       </Environment>

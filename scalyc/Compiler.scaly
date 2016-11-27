@@ -25,7 +25,7 @@ class Compiler {
         for item: CompilationUnit in compilationUnits
             item.parent = program
         
-        mutable visitor: CppVisitor = new CppVisitor()
+        mutable visitor: SourceVisitor = new SourceVisitor()
         
         visitor.execute(program)
     }

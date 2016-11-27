@@ -54,7 +54,7 @@ CompilerError* Compiler::compileFiles(_Page* _ep, Options* options) {
         item = *(*compilationUnits)[_i];
         item->parent = program;
     }
-    CppVisitor* visitor = new(_p) CppVisitor();
+    SourceVisitor* visitor = new(_p) SourceVisitor();
     visitor->execute(program);
     return nullptr;
 }

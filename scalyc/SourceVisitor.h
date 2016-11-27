@@ -1,10 +1,10 @@
-#ifndef __scalyc__CppVisitor__
-#define __scalyc__CppVisitor__
+#ifndef __scalyc__SourceVisitor__
+#define __scalyc__SourceVisitor__
 #include "scalyc.h"
 using namespace scaly;
 namespace scalyc {
 
-class CppVisitor : public SyntaxVisitor {
+class SourceVisitor : public SyntaxVisitor {
 public:
     string* moduleName;
     VarString* sourceFile;
@@ -29,7 +29,7 @@ public:
     bool constDeclaration;
     bool suppressSource;
     bool suppressHeader;
-    CppVisitor();
+    SourceVisitor();
     virtual void execute(Program* program);
     virtual bool openProgram(Program* program);
     virtual void closeProgram(Program* program);
@@ -227,8 +227,8 @@ public:
     virtual void collectInheritancesInCompilationUnit(CompilationUnit* compilationUnit);
     virtual void registerInheritance(string* className, string* baseName);
 
-    virtual bool _isCppVisitor();
+    virtual bool _isSourceVisitor();
 };
 
 }
-#endif // __scalyc__CppVisitor__
+#endif // __scalyc__SourceVisitor__
