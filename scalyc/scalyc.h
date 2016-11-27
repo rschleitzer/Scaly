@@ -9,6 +9,8 @@
 #include "CppError.h"
 #include "Inherits.h"
 #include "CppOutput.h"
+#include "CppVisitor.h"
+#include "HeaderVisitor.h"
 #include "SourceVisitor.h"
 #include "ParserError.h"
 #include "Parser.h"

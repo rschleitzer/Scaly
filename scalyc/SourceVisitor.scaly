@@ -1,4 +1,4 @@
-class SourceVisitor extends SyntaxVisitor {
+class SourceVisitor extends CppVisitor {
 
     // Needed during building one module
     mutable moduleName: string
