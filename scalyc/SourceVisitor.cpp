@@ -13,9 +13,6 @@ SourceVisitor::SourceVisitor() {
     headerFile = new(getPage()->allocateExclusivePage()) VarString();
     mainHeaderFile = new(getPage()->allocateExclusivePage()) VarString();
     projectFile = new(getPage()->allocateExclusivePage()) VarString();
-    modules = new(getPage()->allocateExclusivePage()) _Array<CppModule>();
-    output = new(getPage()->allocateExclusivePage()) CppProgram();
-    module = new(getPage()->allocateExclusivePage()) CppModule();
     inherits = new(getPage()->allocateExclusivePage()) _Array<Inherits>();
     classes = new(getPage()->allocateExclusivePage()) _Array<string>();
 }
@@ -86,9 +83,6 @@ bool SourceVisitor::openProgram(Program* program) {
 }
 
 void SourceVisitor::closeProgram(Program* program) {
-    if (output != nullptr)
-        output->getPage()->clear();
-    output = new(output->getPage()) CppProgram(program->name, new(output->getPage()) string(projectFile), new(output->getPage()) string(mainHeaderFile), new(output->getPage()) _Array<CppModule>(modules));
 }
 
 bool SourceVisitor::openCompilationUnit(CompilationUnit* compilationUnit) {
@@ -216,10 +210,6 @@ void SourceVisitor::closeCompilationUnit(CompilationUnit* compilationUnit) {
             }
         }
     }
-    if (module != nullptr)
-        module->getPage()->clear();
-    module = new(module->getPage()) CppModule(new(module->getPage()) string(moduleName), new(module->getPage()) string(headerFile), new(module->getPage()) string(sourceFile));
-    modules->push(module);
 }
 
 bool SourceVisitor::isTopLevelFile(CompilationUnit* compilationUnit) {

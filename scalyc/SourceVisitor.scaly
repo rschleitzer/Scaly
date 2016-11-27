@@ -18,12 +18,8 @@ class SourceVisitor extends CppVisitor {
     mutable moduleName: string
     mutable sourceFile: VarString
     mutable headerFile: VarString
-    mutable module: CppModule
     mutable mainHeaderFile: VarString
     mutable projectFile: VarString
-    
-    mutable modules: CppModule[]
-    mutable output: CppProgram
 
     // Some rudimentary semantics cache
     mutable inherits: Inherits[]
@@ -114,8 +110,6 @@ class SourceVisitor extends CppVisitor {
     }
     
     function closeProgram(program: Program) {
-        output = new CppProgram(program.name, new string(projectFile), new string(mainHeaderFile), new CppModule[](modules))
-        
     }
 
     function openCompilationUnit(compilationUnit: CompilationUnit): bool {
@@ -247,9 +241,6 @@ class SourceVisitor extends CppVisitor {
         File.writeFromString(sourceFilePath, sourceFile)
             catch _ (error: fileError)
                 return
-
-        module = new CppModule(new string(moduleName), new string(headerFile), new string(sourceFile))
-        modules.push(module)
     }
     
     function isTopLevelFile(compilationUnit: CompilationUnit): bool {

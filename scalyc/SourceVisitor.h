@@ -17,11 +17,8 @@ public:
     string* moduleName;
     VarString* sourceFile;
     VarString* headerFile;
-    CppModule* module;
     VarString* mainHeaderFile;
     VarString* projectFile;
-    _Array<CppModule>* modules;
-    CppProgram* output;
     _Array<Inherits>* inherits;
     _Array<string>* classes;
     size_t headerIndentLevel;

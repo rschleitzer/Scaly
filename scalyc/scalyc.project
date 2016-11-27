@@ -35,8 +35,6 @@
     <File Name="Visitor.scaly"/>
     <File Name="Syntax.cpp"/>
     <File Name="Syntax.scaly"/>
-    <File Name="CppOutput.cpp"/>
-    <File Name="CppOutput.scaly"/>
     <File Name="CppVisitor.cpp"/>
     <File Name="CppVisitor.scaly"/>
     <File Name="HeaderVisitor.cpp"/>
@@ -60,7 +58,6 @@
     <File Name="Lexer.h"/>
     <File Name="Visitor.h"/>
     <File Name="Syntax.h"/>
-    <File Name="CppOutput.h"/>
     <File Name="CppVisitor.h"/>
     <File Name="HeaderVisitor.h"/>
     <File Name="SourceVisitor.h"/>
@@ -93,7 +90,7 @@
         <Library Value="libscaly"/>
       </Linker>
       <ResourceCompiler Options="" Required="no"/>
-      <General OutputFile="$(IntermediateDirectory)/$(ProjectName)" IntermediateDirectory="../Debug" Command="./$(ProjectName)" CommandArguments="-o scalyc -d ../scalyc ../scalyc/Lexer.scaly ../scalyc/Visitor.scaly ../scalyc/Syntax.scaly ../scalyc/CppOutput.scaly ../scalyc/CppVisitor.scaly ../scalyc/HeaderVisitor.scaly ../scalyc/SourceVisitor.scaly ../scalyc/CompilerError.scaly ../scalyc/Parser.scaly ../scalyc/OptionsError.scaly ../scalyc/Options.scaly ../scalyc/Compiler.scaly ../scalyc/scalyc.scaly" UseSeparateDebugArgs="no" DebugArguments="" WorkingDirectory="$(IntermediateDirectory)" PauseExecWhenProcTerminates="yes" IsGUIProgram="no" IsEnabled="yes"/>
+      <General OutputFile="$(IntermediateDirectory)/$(ProjectName)" IntermediateDirectory="../Debug" Command="./$(ProjectName)" CommandArguments="-o scalyc -d ../scalyc ../scalyc/Lexer.scaly ../scalyc/Visitor.scaly ../scalyc/Syntax.scaly ../scalyc/CppVisitor.scaly ../scalyc/HeaderVisitor.scaly ../scalyc/SourceVisitor.scaly ../scalyc/CompilerError.scaly ../scalyc/Parser.scaly ../scalyc/OptionsError.scaly ../scalyc/Options.scaly ../scalyc/Compiler.scaly ../scalyc/scalyc.scaly" UseSeparateDebugArgs="no" DebugArguments="" WorkingDirectory="$(IntermediateDirectory)" PauseExecWhenProcTerminates="yes" IsGUIProgram="no" IsEnabled="yes"/>
       <Environment EnvVarSetName="&lt;Use Defaults&gt;" DbgSetName="&lt;Use Defaults&gt;">
         <![CDATA[]]>
       </Environment>
