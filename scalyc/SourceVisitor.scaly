@@ -50,9 +50,6 @@ class SourceVisitor extends CppVisitor {
         headerFile = new VarString()
         mainHeaderFile = new VarString()
         projectFile = new VarString()
-        modules = new CppModule[]()
-        output = new CppProgram()
-        module = new CppModule()
         inherits = new Inherits[]()
         classes = new string[]()
     }
