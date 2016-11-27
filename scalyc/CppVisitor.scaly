@@ -2420,8 +2420,8 @@ class CppVisitor extends SyntaxVisitor {
     }
 
     function openConstructorCall(constructorCall: ConstructorCall): bool {
+        sourceFile.append("new(")
         if !initializerIsBoundOrAssigned(constructorCall) {
-            sourceFile.append("new(")
             if (inReturn(constructorCall)) || (inRetDeclaration(constructorCall)) {
                 sourceFile.append("_rp")
             }
@@ -2469,7 +2469,6 @@ class CppVisitor extends SyntaxVisitor {
         else {
             if constructorCall.parent.parent.parent.parent is Assignment {
                 let assignment: Assignment = (constructorCall.parent.parent.parent.parent) as Assignment
-                sourceFile.append("new(")
                 var classDeclaration: ClassDeclaration = getClassDeclaration(assignment)
                 let memberName: string$ = getMemberIfCreatingObject(assignment)
                 if memberName != null {
@@ -2514,7 +2513,6 @@ class CppVisitor extends SyntaxVisitor {
             }
             else {
                 if constructorCall.parent.parent.parent.parent is Initializer {
-                    sourceFile.append("new(")
                     if inReturn(constructorCall) || inRetDeclaration(constructorCall) {
                         sourceFile.append("_rp")
                     }

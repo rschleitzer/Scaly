@@ -2348,8 +2348,8 @@ void CppVisitor::closeBreakExpression(BreakExpression* breakExpression) {
 }
 
 bool CppVisitor::openConstructorCall(ConstructorCall* constructorCall) {
+    sourceFile->append("new(");
     if (!initializerIsBoundOrAssigned(constructorCall)) {
-        sourceFile->append("new(");
         if ((inReturn(constructorCall)) || (inRetDeclaration(constructorCall))) {
             sourceFile->append("_rp");
         }
@@ -2399,7 +2399,6 @@ bool CppVisitor::openConstructorCall(ConstructorCall* constructorCall) {
         if (constructorCall->parent->parent->parent->parent->_isAssignment()) {
             _Region _region; _Page* _p = _region.get();
             Assignment* assignment = (Assignment*)(constructorCall->parent->parent->parent->parent);
-            sourceFile->append("new(");
             ClassDeclaration* classDeclaration = getClassDeclaration(assignment);
             string* memberName = getMemberIfCreatingObject(_p, assignment);
             if (memberName != nullptr) {
@@ -2444,7 +2443,6 @@ bool CppVisitor::openConstructorCall(ConstructorCall* constructorCall) {
         }
         else {
             if (constructorCall->parent->parent->parent->parent->_isInitializer()) {
-                sourceFile->append("new(");
                 if (inReturn(constructorCall) || inRetDeclaration(constructorCall)) {
                     sourceFile->append("_rp");
                 }
