@@ -45,8 +45,6 @@
     <File Name="CompilerError.scaly"/>
     <File Name="Parser.cpp"/>
     <File Name="Parser.scaly"/>
-    <File Name="OptionsError.cpp"/>
-    <File Name="OptionsError.scaly"/>
     <File Name="Options.cpp"/>
     <File Name="Options.scaly"/>
     <File Name="Compiler.cpp"/>
@@ -63,7 +61,6 @@
     <File Name="SourceVisitor.h"/>
     <File Name="CompilerError.h"/>
     <File Name="Parser.h"/>
-    <File Name="OptionsError.h"/>
     <File Name="Options.h"/>
     <File Name="Compiler.h"/>
     <File Name="scalyc.h"/>
@@ -90,7 +87,7 @@
         <Library Value="libscaly"/>
       </Linker>
       <ResourceCompiler Options="" Required="no"/>
-      <General OutputFile="$(IntermediateDirectory)/$(ProjectName)" IntermediateDirectory="../Debug" Command="./$(ProjectName)" CommandArguments="-o scalyc -d ../scalyc ../scalyc/Lexer.scaly ../scalyc/Visitor.scaly ../scalyc/Syntax.scaly ../scalyc/CppVisitor.scaly ../scalyc/HeaderVisitor.scaly ../scalyc/SourceVisitor.scaly ../scalyc/CompilerError.scaly ../scalyc/Parser.scaly ../scalyc/OptionsError.scaly ../scalyc/Options.scaly ../scalyc/Compiler.scaly ../scalyc/scalyc.scaly" UseSeparateDebugArgs="no" DebugArguments="" WorkingDirectory="$(IntermediateDirectory)" PauseExecWhenProcTerminates="yes" IsGUIProgram="no" IsEnabled="yes"/>
+      <General OutputFile="$(IntermediateDirectory)/$(ProjectName)" IntermediateDirectory="../Debug" Command="./$(ProjectName)" CommandArguments="-o scalyc -d ../scalyc ../scalyc/Lexer.scaly ../scalyc/Visitor.scaly ../scalyc/Syntax.scaly ../scalyc/CppVisitor.scaly ../scalyc/HeaderVisitor.scaly ../scalyc/SourceVisitor.scaly ../scalyc/CompilerError.scaly ../scalyc/Parser.scaly ../scalyc/Options.scaly ../scalyc/Compiler.scaly ../scalyc/scalyc.scaly" UseSeparateDebugArgs="no" DebugArguments="" WorkingDirectory="$(IntermediateDirectory)" PauseExecWhenProcTerminates="yes" IsGUIProgram="no" IsEnabled="yes"/>
       <Environment EnvVarSetName="&lt;Use Defaults&gt;" DbgSetName="&lt;Use Defaults&gt;">
         <![CDATA[]]>
       </Environment>

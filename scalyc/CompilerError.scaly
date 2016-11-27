@@ -1,3 +1,10 @@
+enum OptionsError {
+    case invalidOption(option: string)
+    case unknownOption(option: string)
+    case noOutputOption
+    case noFilesToCompile
+}
+
 enum ParserError {
     case identifierExpected(position: Position)
     case literalExpected(position: Position)

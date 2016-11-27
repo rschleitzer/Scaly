@@ -1,7 +1,0 @@
-enum OptionsError {
-    case invalidOption(option: string)
-    case unknownOption(option: string)
-    case noOutputOption
-    case noFilesToCompile
-}
-
