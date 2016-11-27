@@ -152,6 +152,8 @@ public:
     virtual void closeInheritance(Inheritance* inheritance);
 
     virtual bool _isCppVisitor();
+    virtual bool _isHeaderVisitor();
+    virtual bool _isSourceVisitor();
 };
 
 }

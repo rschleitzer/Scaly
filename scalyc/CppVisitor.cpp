@@ -500,5 +500,8 @@ void CppVisitor::closeInheritance(Inheritance* inheritance) {
 
 bool CppVisitor::_isCppVisitor() { return (true); }
 
+bool CppVisitor::_isHeaderVisitor() { return (false); }
+bool CppVisitor::_isSourceVisitor() { return (false); }
+
 
 }
