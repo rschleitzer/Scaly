@@ -2455,10 +2455,9 @@ bool CppVisitor::openConstructorCall(ConstructorCall* constructorCall) {
             }
         }
         sourceFile->append(") ");
-        Type* type = (Type*)(constructorCall->typeToInitialize);
         if (hasArrayPostfix(constructorCall->typeToInitialize))
             sourceFile->append("_Array<");
-        sourceFile->append(type->name);
+        sourceFile->append(constructorCall->typeToInitialize->name);
         if (hasArrayPostfix(constructorCall->typeToInitialize))
             sourceFile->append(">");
         constructorCall->arguments->accept(this);

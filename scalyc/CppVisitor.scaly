@@ -2525,10 +2525,9 @@ class CppVisitor extends SyntaxVisitor {
                 }
             }
             sourceFile.append(") ")
-            let type: Type = (constructorCall.typeToInitialize) as Type
             if hasArrayPostfix(constructorCall.typeToInitialize)
                 sourceFile.append("_Array<")
-            sourceFile.append(type.name)
+            sourceFile.append(constructorCall.typeToInitialize.name)
             if hasArrayPostfix(constructorCall.typeToInitialize)
                 sourceFile.append(">")
             constructorCall.arguments.accept(this)
