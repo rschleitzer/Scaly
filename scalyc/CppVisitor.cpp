@@ -2652,13 +2652,10 @@ void CppVisitor::closeCaseContent(CaseContent* caseContent) {
 
 bool CppVisitor::openType(Type* type) {
     if (hasArrayPostfix(type)) {
+        if (!suppressSource)
+            sourceFile->append("_Array<");
         if (!sourceIndentLevel) {
             headerFile->append("_Array<");
-            if (!suppressSource)
-                sourceFile->append("_Array<");
-        }
-        else {
-            sourceFile->append("_Array<");
         }
     }
     if (!suppressHeader)
