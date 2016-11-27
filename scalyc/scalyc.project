@@ -43,12 +43,12 @@
     <File Name="HeaderVisitor.scaly"/>
     <File Name="SourceVisitor.cpp"/>
     <File Name="SourceVisitor.scaly"/>
+    <File Name="CompilerError.cpp"/>
+    <File Name="CompilerError.scaly"/>
     <File Name="Parser.cpp"/>
     <File Name="Parser.scaly"/>
     <File Name="OptionsError.cpp"/>
     <File Name="OptionsError.scaly"/>
-    <File Name="CompilerError.cpp"/>
-    <File Name="CompilerError.scaly"/>
     <File Name="Options.cpp"/>
     <File Name="Options.scaly"/>
     <File Name="Compiler.cpp"/>
@@ -64,15 +64,13 @@
     <File Name="CppVisitor.h"/>
     <File Name="HeaderVisitor.h"/>
     <File Name="SourceVisitor.h"/>
+    <File Name="CompilerError.h"/>
     <File Name="Parser.h"/>
     <File Name="OptionsError.h"/>
-    <File Name="CompilerError.h"/>
     <File Name="Options.h"/>
     <File Name="Compiler.h"/>
     <File Name="scalyc.h"/>
   </VirtualDirectory>
-  <Dependencies Name="Debug"/>
-  <Dependencies Name="Release"/>
   <Dependencies Name="Debug"/>
   <Dependencies Name="Release"/>
   <Settings Type="Executable">
@@ -170,4 +168,6 @@
       </Completion>
     </Configuration>
   </Settings>
+  <Dependencies Name="Debug"/>
+  <Dependencies Name="Release"/>
 </CodeLite_Project>
