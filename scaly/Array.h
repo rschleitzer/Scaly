@@ -12,9 +12,11 @@ public:
     : _size(0), _capacity(capacity) {
         allocate();
     }
-
-    static _Array<T>& createUninitialized(_Page* page, size_t theSize) {
-        return *new(page) _Array<T>(theSize);
+    
+    _Array<T>(_Array<T>* array)
+    : _size(array->length()), _capacity(array->length()) {
+        allocate();
+        memcpy(_rawArray, array.getRawArray(), length * sizeof(T**));
     }
 
     static _Array<T>& create(_Page* page, _Array<T>& array) {
