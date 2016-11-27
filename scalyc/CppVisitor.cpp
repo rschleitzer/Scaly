@@ -2349,7 +2349,6 @@ void CppVisitor::closeBreakExpression(BreakExpression* breakExpression) {
 
 bool CppVisitor::openConstructorCall(ConstructorCall* constructorCall) {
     if (!initializerIsBoundOrAssigned(constructorCall)) {
-        Type* type = (Type*)(constructorCall->typeToInitialize);
         sourceFile->append("new(");
         if ((inReturn(constructorCall)) || (inRetDeclaration(constructorCall))) {
             sourceFile->append("_rp");
@@ -2390,7 +2389,7 @@ bool CppVisitor::openConstructorCall(ConstructorCall* constructorCall) {
         sourceFile->append(") ");
         if (hasArrayPostfix(constructorCall->typeToInitialize))
             sourceFile->append("_Array<");
-        sourceFile->append(type->name);
+        sourceFile->append(constructorCall->typeToInitialize->name);
         if (hasArrayPostfix(constructorCall->typeToInitialize))
             sourceFile->append(">");
         constructorCall->arguments->accept(this);

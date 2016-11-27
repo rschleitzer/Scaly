@@ -2421,7 +2421,6 @@ class CppVisitor extends SyntaxVisitor {
 
     function openConstructorCall(constructorCall: ConstructorCall): bool {
         if !initializerIsBoundOrAssigned(constructorCall) {
-            let type: Type = (constructorCall.typeToInitialize) as Type
             sourceFile.append("new(")
             if (inReturn(constructorCall)) || (inRetDeclaration(constructorCall)) {
                 sourceFile.append("_rp")
@@ -2461,7 +2460,7 @@ class CppVisitor extends SyntaxVisitor {
             sourceFile.append(") ")
             if hasArrayPostfix(constructorCall.typeToInitialize)
                 sourceFile.append("_Array<")
-            sourceFile.append(type.name)
+            sourceFile.append(constructorCall.typeToInitialize.name)
             if hasArrayPostfix(constructorCall.typeToInitialize)
                 sourceFile.append(">")
             constructorCall.arguments.accept(this)
