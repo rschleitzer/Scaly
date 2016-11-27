@@ -2349,54 +2349,52 @@ void CppVisitor::closeBreakExpression(BreakExpression* breakExpression) {
 
 bool CppVisitor::openConstructorCall(ConstructorCall* constructorCall) {
     if (!initializerIsBoundOrAssigned(constructorCall)) {
-        if (constructorCall->typeToInitialize->_isType()) {
-            Type* type = (Type*)(constructorCall->typeToInitialize);
-            sourceFile->append("new(");
-            if ((inReturn(constructorCall)) || (inRetDeclaration(constructorCall))) {
-                sourceFile->append("_rp");
+        Type* type = (Type*)(constructorCall->typeToInitialize);
+        sourceFile->append("new(");
+        if ((inReturn(constructorCall)) || (inRetDeclaration(constructorCall))) {
+            sourceFile->append("_rp");
+        }
+        else {
+            if (inThrow(constructorCall)) {
+                sourceFile->append("_ep");
             }
             else {
-                if (inThrow(constructorCall)) {
-                    sourceFile->append("_ep");
-                }
-                else {
-                    if (inAssignment(constructorCall)) {
-                        Assignment* assignment = getAssignment(constructorCall);
-                        if (assignment != nullptr) {
-                            _Region _region; _Page* _p = _region.get();
-                            ClassDeclaration* classDeclaration = getClassDeclaration(assignment);
-                            string* memberName = getMemberIfCreatingObject(_p, assignment);
-                            if (memberName != nullptr) {
-                                if (isVariableMember(memberName, classDeclaration)) {
-                                    if (!inConstructor(assignment)) {
-                                        sourceFile->append(memberName);
-                                        sourceFile->append("->");
-                                    }
-                                    sourceFile->append("getPage()");
-                                    if (inConstructor(assignment)) {
-                                        sourceFile->append("->allocateExclusivePage()");
-                                    }
+                if (inAssignment(constructorCall)) {
+                    Assignment* assignment = getAssignment(constructorCall);
+                    if (assignment != nullptr) {
+                        _Region _region; _Page* _p = _region.get();
+                        ClassDeclaration* classDeclaration = getClassDeclaration(assignment);
+                        string* memberName = getMemberIfCreatingObject(_p, assignment);
+                        if (memberName != nullptr) {
+                            if (isVariableMember(memberName, classDeclaration)) {
+                                if (!inConstructor(assignment)) {
+                                    sourceFile->append(memberName);
+                                    sourceFile->append("->");
                                 }
-                                else {
-                                    sourceFile->append("getPage()");
+                                sourceFile->append("getPage()");
+                                if (inConstructor(assignment)) {
+                                    sourceFile->append("->allocateExclusivePage()");
                                 }
+                            }
+                            else {
+                                sourceFile->append("getPage()");
                             }
                         }
                     }
-                    else {
-                        sourceFile->append("_p");
-                    }
+                }
+                else {
+                    sourceFile->append("_p");
                 }
             }
-            sourceFile->append(") ");
-            if (hasArrayPostfix(constructorCall->typeToInitialize))
-                sourceFile->append("_Array<");
-            sourceFile->append(type->name);
-            if (hasArrayPostfix(constructorCall->typeToInitialize))
-                sourceFile->append(">");
-            constructorCall->arguments->accept(this);
-            return false;
         }
+        sourceFile->append(") ");
+        if (hasArrayPostfix(constructorCall->typeToInitialize))
+            sourceFile->append("_Array<");
+        sourceFile->append(type->name);
+        if (hasArrayPostfix(constructorCall->typeToInitialize))
+            sourceFile->append(">");
+        constructorCall->arguments->accept(this);
+        return false;
     }
     else {
         if (constructorCall->parent->parent->parent->parent->_isAssignment()) {
