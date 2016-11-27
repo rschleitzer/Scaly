@@ -2448,13 +2448,7 @@ bool CppVisitor::openConstructorCall(ConstructorCall* constructorCall) {
         }
     }
     sourceFile->append(") ");
-    if (hasArrayPostfix(constructorCall->typeToInitialize))
-        sourceFile->append("_Array<");
-    sourceFile->append(constructorCall->typeToInitialize->name);
-    if (hasArrayPostfix(constructorCall->typeToInitialize))
-        sourceFile->append(">");
-    constructorCall->arguments->accept(this);
-    return false;
+    return true;
 }
 
 void CppVisitor::closeConstructorCall(ConstructorCall* constructorCall) {
@@ -2664,8 +2658,7 @@ bool CppVisitor::openType(Type* type) {
                 sourceFile->append("_Array<");
         }
         else {
-            if (!inThrow(type))
-                sourceFile->append("_Array<");
+            sourceFile->append("_Array<");
         }
     }
     if (!suppressHeader)
@@ -2691,7 +2684,7 @@ void CppVisitor::closeType(Type* type) {
                 sourceFile->append("*");
         }
     }
-    if (isClass(type->name) && !hasArrayPostfix(type) && !inTypeQuery(type)) {
+    if (isClass(type->name) && !hasArrayPostfix(type) && !inTypeQuery(type) && !type->parent->_isConstructorCall()) {
         if (!suppressHeader)
             headerFile->append("*");
         if (!suppressSource)

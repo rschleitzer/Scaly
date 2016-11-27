@@ -2519,14 +2519,8 @@ class CppVisitor extends SyntaxVisitor {
         }
 
         sourceFile.append(") ")
-        if hasArrayPostfix(constructorCall.typeToInitialize)
-            sourceFile.append("_Array<")
-        sourceFile.append(constructorCall.typeToInitialize.name)
-        if hasArrayPostfix(constructorCall.typeToInitialize)
-            sourceFile.append(">")
-        constructorCall.arguments.accept(this)
 
-        false
+        true
     }
 
     function closeConstructorCall(constructorCall: ConstructorCall) {
@@ -2749,8 +2743,7 @@ class CppVisitor extends SyntaxVisitor {
                     sourceFile.append("_Array<")
             }
             else {
-                if !inThrow(type)
-                    sourceFile.append("_Array<")
+                sourceFile.append("_Array<")
             }
         }
         if !suppressHeader
@@ -2777,7 +2770,7 @@ class CppVisitor extends SyntaxVisitor {
                     sourceFile.append("*")
             }
         }
-        if isClass(type.name) && !hasArrayPostfix(type) && !inTypeQuery(type) {
+        if isClass(type.name) && !hasArrayPostfix(type) && !inTypeQuery(type) && !type.parent is ConstructorCall {
 
             if !suppressHeader
                 headerFile.append("*")
