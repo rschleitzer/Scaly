@@ -2,6 +2,10 @@
 using namespace scaly;
 namespace scalyc {
 
+void CppVisitor::execute(Program* program) {
+    program->accept(this);
+}
+
 bool CppVisitor::openProgram(Program* program) {
     return true;
 }

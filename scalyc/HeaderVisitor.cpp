@@ -2,6 +2,12 @@
 using namespace scaly;
 namespace scalyc {
 
+HeaderVisitor::HeaderVisitor() {
+    moduleName = new(getPage()) string();
+    headerFile = new(getPage()->allocateExclusivePage()) VarString();
+    mainHeaderFile = new(getPage()->allocateExclusivePage()) VarString();
+}
+
 bool HeaderVisitor::openProgram(Program* program) {
     return true;
 }

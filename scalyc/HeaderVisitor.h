@@ -6,6 +6,9 @@ namespace scalyc {
 
 class HeaderVisitor : public CppVisitor {
 public:
+    VarString* headerFile;
+    VarString* mainHeaderFile;
+    HeaderVisitor();
     virtual bool openProgram(Program* program);
     virtual void closeProgram(Program* program);
     virtual bool openCompilationUnit(CompilationUnit* compilationUnit);

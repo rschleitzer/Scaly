@@ -8,17 +8,13 @@ Inherits::Inherits(string* className) {
 }
 
 SourceVisitor::SourceVisitor() {
-    moduleName = new(getPage()->allocateExclusivePage()) string();
+    moduleName = new(getPage()) string();
     sourceFile = new(getPage()->allocateExclusivePage()) VarString();
     headerFile = new(getPage()->allocateExclusivePage()) VarString();
     mainHeaderFile = new(getPage()->allocateExclusivePage()) VarString();
     projectFile = new(getPage()->allocateExclusivePage()) VarString();
     inherits = new(getPage()->allocateExclusivePage()) _Array<Inherits>();
     classes = new(getPage()->allocateExclusivePage()) _Array<string>();
-}
-
-void SourceVisitor::execute(Program* program) {
-    program->accept(this);
 }
 
 bool SourceVisitor::openProgram(Program* program) {

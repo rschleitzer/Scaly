@@ -14,7 +14,6 @@ public:
 
 class SourceVisitor : public CppVisitor {
 public:
-    string* moduleName;
     VarString* sourceFile;
     VarString* headerFile;
     VarString* mainHeaderFile;
@@ -35,7 +34,6 @@ public:
     bool suppressSource;
     bool suppressHeader;
     SourceVisitor();
-    virtual void execute(Program* program);
     virtual bool openProgram(Program* program);
     virtual void closeProgram(Program* program);
     virtual bool openCompilationUnit(CompilationUnit* compilationUnit);

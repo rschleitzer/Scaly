@@ -14,8 +14,6 @@ class Inherits {
 
 class SourceVisitor extends CppVisitor {
 
-    // Needed during building one module
-    mutable moduleName: string
     mutable sourceFile: VarString
     mutable headerFile: VarString
     mutable mainHeaderFile: VarString
@@ -52,10 +50,6 @@ class SourceVisitor extends CppVisitor {
         projectFile = new VarString()
         inherits = new Inherits[]()
         classes = new string[]()
-    }
-
-    function execute(program: Program) {
-        program.accept(this)
     }
 
     function openProgram(program: Program): bool {

@@ -1,4 +1,16 @@
 class HeaderVisitor extends CppVisitor {
+    
+    mutable headerFile: VarString
+    mutable mainHeaderFile: VarString
+
+    constructor() {
+
+        // null constructor of mutable members does not work yet
+        moduleName = new string()
+        headerFile = new VarString()
+        mainHeaderFile = new VarString()
+    }
+
     function openProgram(program: Program): bool {
         true
     }

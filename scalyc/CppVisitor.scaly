@@ -1,4 +1,12 @@
 class CppVisitor extends SyntaxVisitor {
+
+    // Needed during building one module
+    mutable moduleName: string
+
+    function execute(program: Program) {
+        program.accept(this)
+    }
+
     function openProgram(program: Program): bool {
         true
     }

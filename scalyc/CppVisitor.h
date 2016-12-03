@@ -6,6 +6,8 @@ namespace scalyc {
 
 class CppVisitor : public SyntaxVisitor {
 public:
+    string* moduleName;
+    virtual void execute(Program* program);
     virtual bool openProgram(Program* program);
     virtual void closeProgram(Program* program);
     virtual bool openCompilationUnit(CompilationUnit* compilationUnit);

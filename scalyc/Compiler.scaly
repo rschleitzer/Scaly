@@ -24,10 +24,12 @@ class Compiler {
         let program: Program$ = new Program(options.outputName, options.directory, new CompilationUnit[](compilationUnits))
         for item: CompilationUnit in compilationUnits
             item.parent = program
-        
-        mutable visitor: SourceVisitor = new SourceVisitor()
-        
-        visitor.execute(program)
+
+        mutable headerVisitor: HeaderVisitor = new HeaderVisitor()        
+        headerVisitor.execute(program)
+
+        mutable sourceVisitor: SourceVisitor = new SourceVisitor()        
+        sourceVisitor.execute(program)
     }
 
     static function parseUnit(moduleName: string, text: string): CompilationUnit throws ParserError {
