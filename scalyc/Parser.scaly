@@ -1737,10 +1737,10 @@ class BreakExpression extends PrimaryExpression {
 
 class ConstructorCall extends PrimaryExpression {
 
-    constructor(typeToInitialize: Type, arguments: ParenthesizedExpression, catchClauses: CatchClause[], start: Position, end: Position) {
+    constructor(typeToConstruct: Type, arguments: ParenthesizedExpression, catchClauses: CatchClause[], start: Position, end: Position) {
         this.start = start
         this.end = end
-        this.typeToInitialize = typeToInitialize
+        this.typeToConstruct = typeToConstruct
         this.arguments = arguments
         this.catchClauses = catchClauses
     }
@@ -1748,7 +1748,7 @@ class ConstructorCall extends PrimaryExpression {
     override function accept(mutable visitor: Visitor) {
         if !visitor.openConstructorCall(this)
             return
-        typeToInitialize.accept(visitor)
+        typeToConstruct.accept(visitor)
         arguments.accept(visitor)
         if catchClauses != null {
             for node: CatchClause in catchClauses
@@ -1757,7 +1757,7 @@ class ConstructorCall extends PrimaryExpression {
         visitor.closeConstructorCall(this)
     }
 
-    let typeToInitialize: Type
+    let typeToConstruct: Type
     let arguments: ParenthesizedExpression
     let catchClauses: CatchClause[]
 }
@@ -3977,14 +3977,14 @@ class Parser {
         else
             throw keywordExpected(new Position(startNew1), new string(newKeyword))
 
-        let typeToInitialize: Type = parseType() catch _ (error)
+        let typeToConstruct: Type = parseType() catch _ (error)
             throw error
         let arguments: ParenthesizedExpression = parseParenthesizedExpression() catch _ (error)
             throw error
         let catchClauses: CatchClause[] = parseCatchClauseList() catch _ null
         let end: Position$ = lexer.getPosition()
-        var ret: ConstructorCall = new ConstructorCall(typeToInitialize, arguments, catchClauses, new Position(start), new Position(end))
-        typeToInitialize.parent = ret
+        var ret: ConstructorCall = new ConstructorCall(typeToConstruct, arguments, catchClauses, new Position(start), new Position(end))
+        typeToConstruct.parent = ret
         arguments.parent = ret
         if catchClauses != null {
             for item: CatchClause in catchClauses

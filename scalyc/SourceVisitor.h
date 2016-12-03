@@ -58,8 +58,8 @@ public:
     virtual bool inConstructor(SyntaxNode* node);
     virtual bool inReturn(SyntaxNode* node);
     virtual bool inThrow(SyntaxNode* node);
-    virtual string* getMemberIfCreatingObject(_Page* _rp, Assignment* assignment);
-    virtual string* getFunctionName(_Page* _rp, Assignment* assignment);
+    virtual string* getMemberIfCreatingObject(Assignment* assignment);
+    virtual string* getFunctionName(Assignment* assignment);
     virtual bool isCreatingObject(string* functionName, SyntaxNode* node);
     virtual ClassDeclaration* getClassDeclaration(SyntaxNode* node);
     virtual bool isVariableMember(string* memberName, ClassDeclaration* classDeclaration);

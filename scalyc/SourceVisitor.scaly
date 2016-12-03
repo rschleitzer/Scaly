@@ -392,7 +392,7 @@ class SourceVisitor extends CppVisitor {
                     let binaryOp: BinaryOp = binaryOps[0]
                     if binaryOp is Assignment {
                         let assignment: Assignment = binaryOp as Assignment
-                        let memberName: string$ = getMemberIfCreatingObject(assignment)
+                        let memberName: string@ = getMemberIfCreatingObject(assignment)
                         if (memberName != null) && (!inConstructor(assignment)) {
                             sourceFile.append("if (")
                             sourceFile.append(memberName)
@@ -843,8 +843,8 @@ class SourceVisitor extends CppVisitor {
         inThrow(node.parent)
     }
 
-    function getMemberIfCreatingObject(assignment: Assignment): string {
-        let functionName: string = getFunctionName(assignment)
+    function getMemberIfCreatingObject(assignment: Assignment@): string@ {
+        let functionName: string@ = getFunctionName(assignment)
         if functionName == null {
             return(null)
         }
@@ -857,11 +857,11 @@ class SourceVisitor extends CppVisitor {
                         let leftSide: PostfixExpression = simpleExpression.prefixExpression.expression
                         if (leftSide.postfixes == 0) && (leftSide.primaryExpression is IdentifierExpression) {
                             let memberExpression: IdentifierExpression = (leftSide.primaryExpression) as IdentifierExpression
-                            let memberName: string$ = new string(memberExpression.name)
+                            let memberName: string = memberExpression.name
                             var classDeclaration: ClassDeclaration = getClassDeclaration(assignment)
                             if classDeclaration != null {
                                 if isVariableMember(memberName, classDeclaration)
-                                    return(new string(memberName))
+                                    return(memberName)
                             }
                         }
                     }
@@ -872,7 +872,7 @@ class SourceVisitor extends CppVisitor {
         null
     }
 
-    function getFunctionName(assignment: Assignment): string {
+    function getFunctionName(assignment: Assignment@): string@ {
         if assignment.expression is SimpleExpression {
             let simpleExpression: SimpleExpression = (assignment.expression) as SimpleExpression
             let prefixExpression: PrefixExpression = simpleExpression.prefixExpression
@@ -880,13 +880,13 @@ class SourceVisitor extends CppVisitor {
                 let rightSide: PostfixExpression = prefixExpression.expression
                 if rightSide.primaryExpression is IdentifierExpression {
                     let classExpression: IdentifierExpression = (rightSide.primaryExpression) as IdentifierExpression
-                    return(new string(classExpression.name))
+                    return(classExpression.name)
                 }
                 else {
                     if rightSide.primaryExpression is ConstructorCall {
-                        let initializerCall: ConstructorCall = (rightSide.primaryExpression) as ConstructorCall
-                        let type: Type = initializerCall.typeToInitialize
-                        return(new string(type.name))
+                        let constructorCall: ConstructorCall = (rightSide.primaryExpression) as ConstructorCall
+                        let type: Type = constructorCall.typeToConstruct
+                        return(type.name)
                     }
                 }
             }
@@ -1487,7 +1487,7 @@ class SourceVisitor extends CppVisitor {
                     if !isClass(identifierExpression.name) {
                         if postfixExpression.parent.parent.parent is Assignment {
                             let assignment: Assignment = (postfixExpression.parent.parent.parent) as Assignment
-                            let member: string$ = getMemberIfCreatingObject(assignment)
+                            let member: string@ = getMemberIfCreatingObject(assignment)
                             if member != null {
                                 var classDeclaration: ClassDeclaration = getClassDeclaration(assignment)
                                 if isVariableMember(member, classDeclaration) {
@@ -1917,7 +1917,7 @@ class SourceVisitor extends CppVisitor {
                         var assignment: Assignment = getAssignment(constructorCall)
                         if assignment != null {
                             var classDeclaration: ClassDeclaration = getClassDeclaration(assignment)
-                            let memberName: string$ = getMemberIfCreatingObject(assignment)
+                            let memberName: string@ = getMemberIfCreatingObject(assignment)
                             if memberName != null {
                                 if isVariableMember(memberName, classDeclaration) {
                                     if !inConstructor(assignment) {
@@ -1945,7 +1945,7 @@ class SourceVisitor extends CppVisitor {
             if constructorCall.parent.parent.parent.parent is Assignment {
                 let assignment: Assignment = (constructorCall.parent.parent.parent.parent) as Assignment
                 var classDeclaration: ClassDeclaration = getClassDeclaration(assignment)
-                let memberName: string$ = getMemberIfCreatingObject(assignment)
+                let memberName: string@ = getMemberIfCreatingObject(assignment)
                 if memberName != null {
                     if isVariableMember(memberName, classDeclaration) {
                         if !inConstructor(assignment) {
@@ -1966,7 +1966,7 @@ class SourceVisitor extends CppVisitor {
                             let memberExpression: IdentifierExpression = (leftSide.primaryExpression) as IdentifierExpression
                             let memberName: string = memberExpression.name
                             var classDeclaration: ClassDeclaration = getClassDeclaration(assignment)
-                            if (classDeclaration != null) && (memberName != null) && !hasArrayPostfix(constructorCall.typeToInitialize) {
+                            if (classDeclaration != null) && (memberName != null) && !hasArrayPostfix(constructorCall.typeToConstruct) {
                                 if isVariableMember(memberName, classDeclaration) {
                                     sourceFile.append(memberName)
                                     sourceFile.append("->")

@@ -1639,10 +1639,10 @@ void BreakExpression::accept(Visitor* visitor) {
 
 bool BreakExpression::_isBreakExpression() { return (true); }
 
-ConstructorCall::ConstructorCall(Type* typeToInitialize, ParenthesizedExpression* arguments, _Array<CatchClause>* catchClauses, Position* start, Position* end) {
+ConstructorCall::ConstructorCall(Type* typeToConstruct, ParenthesizedExpression* arguments, _Array<CatchClause>* catchClauses, Position* start, Position* end) {
     this->start = start;
     this->end = end;
-    this->typeToInitialize = typeToInitialize;
+    this->typeToConstruct = typeToConstruct;
     this->arguments = arguments;
     this->catchClauses = catchClauses;
 }
@@ -1650,7 +1650,7 @@ ConstructorCall::ConstructorCall(Type* typeToInitialize, ParenthesizedExpression
 void ConstructorCall::accept(Visitor* visitor) {
     if (!visitor->openConstructorCall(this))
         return;
-    typeToInitialize->accept(visitor);
+    typeToConstruct->accept(visitor);
     arguments->accept(visitor);
     if (catchClauses != nullptr) {
         CatchClause* node = nullptr;
@@ -4624,13 +4624,13 @@ _Result<ConstructorCall, ParserError> Parser::parseConstructorCall(_Page* _rp, _
         lexer->advance();
     else
         return _Result<ConstructorCall, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_keywordExpected(new(_ep) Position(startNew1), new(_ep) string(newKeyword))));
-    auto _typeToInitialize_result = parseType(_rp, _ep);
-    Type* typeToInitialize = nullptr;
-    if (_typeToInitialize_result.succeeded()) {
-        typeToInitialize = _typeToInitialize_result.getResult();
+    auto _typeToConstruct_result = parseType(_rp, _ep);
+    Type* typeToConstruct = nullptr;
+    if (_typeToConstruct_result.succeeded()) {
+        typeToConstruct = _typeToConstruct_result.getResult();
     }
     else {
-        auto error = _typeToInitialize_result.getError();
+        auto error = _typeToConstruct_result.getError();
         return _Result<ConstructorCall, ParserError>(error);
     }
     auto _arguments_result = parseParenthesizedExpression(_rp, _ep);
@@ -4651,8 +4651,8 @@ _Result<ConstructorCall, ParserError> Parser::parseConstructorCall(_Page* _rp, _
         catchClauses = nullptr;
     }
     Position* end = lexer->getPosition(_p);
-    ConstructorCall* ret = new(_rp) ConstructorCall(typeToInitialize, arguments, catchClauses, new(_rp) Position(start), new(_rp) Position(end));
-    typeToInitialize->parent = ret;
+    ConstructorCall* ret = new(_rp) ConstructorCall(typeToConstruct, arguments, catchClauses, new(_rp) Position(start), new(_rp) Position(end));
+    typeToConstruct->parent = ret;
     arguments->parent = ret;
     if (catchClauses != nullptr) {
         CatchClause* item = nullptr;

@@ -1068,9 +1068,9 @@ public:
 
 class ConstructorCall : public PrimaryExpression {
 public:
-    ConstructorCall(Type* typeToInitialize, ParenthesizedExpression* arguments, _Array<CatchClause>* catchClauses, Position* start, Position* end);
+    ConstructorCall(Type* typeToConstruct, ParenthesizedExpression* arguments, _Array<CatchClause>* catchClauses, Position* start, Position* end);
     virtual void accept(Visitor* visitor);
-    Type* typeToInitialize;
+    Type* typeToConstruct;
     ParenthesizedExpression* arguments;
     _Array<CatchClause>* catchClauses;
 

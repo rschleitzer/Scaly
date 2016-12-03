@@ -366,9 +366,8 @@ bool SourceVisitor::openSimpleExpression(SimpleExpression* simpleExpression) {
             if (binaryOps->length() == 1) {
                 BinaryOp* binaryOp = *(*binaryOps)[0];
                 if (binaryOp->_isAssignment()) {
-                    _Region _region; _Page* _p = _region.get();
                     Assignment* assignment = (Assignment*)binaryOp;
-                    string* memberName = getMemberIfCreatingObject(_p, assignment);
+                    string* memberName = getMemberIfCreatingObject(assignment);
                     if ((memberName != nullptr) && (!inConstructor(assignment))) {
                         sourceFile->append("if (");
                         sourceFile->append(memberName);
@@ -797,8 +796,8 @@ bool SourceVisitor::inThrow(SyntaxNode* node) {
     return inThrow(node->parent);
 }
 
-string* SourceVisitor::getMemberIfCreatingObject(_Page* _rp, Assignment* assignment) {
-    string* functionName = getFunctionName(_rp, assignment);
+string* SourceVisitor::getMemberIfCreatingObject(Assignment* assignment) {
+    string* functionName = getFunctionName(assignment);
     if (functionName == nullptr) {
         return nullptr;
     }
@@ -809,13 +808,12 @@ string* SourceVisitor::getMemberIfCreatingObject(_Page* _rp, Assignment* assignm
                 if (simpleExpression->prefixExpression->prefixOperator == 0) {
                     PostfixExpression* leftSide = simpleExpression->prefixExpression->expression;
                     if ((leftSide->postfixes == 0) && (leftSide->primaryExpression->_isIdentifierExpression())) {
-                        _Region _region; _Page* _p = _region.get();
                         IdentifierExpression* memberExpression = (IdentifierExpression*)(leftSide->primaryExpression);
-                        string* memberName = new(_p) string(memberExpression->name);
+                        string* memberName = memberExpression->name;
                         ClassDeclaration* classDeclaration = getClassDeclaration(assignment);
                         if (classDeclaration != nullptr) {
                             if (isVariableMember(memberName, classDeclaration))
-                                return new(_rp) string(memberName);
+                                return memberName;
                         }
                     }
                 }
@@ -825,7 +823,7 @@ string* SourceVisitor::getMemberIfCreatingObject(_Page* _rp, Assignment* assignm
     return nullptr;
 }
 
-string* SourceVisitor::getFunctionName(_Page* _rp, Assignment* assignment) {
+string* SourceVisitor::getFunctionName(Assignment* assignment) {
     if (assignment->expression->_isSimpleExpression()) {
         SimpleExpression* simpleExpression = (SimpleExpression*)(assignment->expression);
         PrefixExpression* prefixExpression = simpleExpression->prefixExpression;
@@ -833,13 +831,13 @@ string* SourceVisitor::getFunctionName(_Page* _rp, Assignment* assignment) {
             PostfixExpression* rightSide = prefixExpression->expression;
             if (rightSide->primaryExpression->_isIdentifierExpression()) {
                 IdentifierExpression* classExpression = (IdentifierExpression*)(rightSide->primaryExpression);
-                return new(_rp) string(classExpression->name);
+                return classExpression->name;
             }
             else {
                 if (rightSide->primaryExpression->_isConstructorCall()) {
-                    ConstructorCall* initializerCall = (ConstructorCall*)(rightSide->primaryExpression);
-                    Type* type = initializerCall->typeToInitialize;
-                    return new(_rp) string(type->name);
+                    ConstructorCall* constructorCall = (ConstructorCall*)(rightSide->primaryExpression);
+                    Type* type = constructorCall->typeToConstruct;
+                    return type->name;
                 }
             }
         }
@@ -1449,9 +1447,8 @@ bool SourceVisitor::openParenthesizedExpression(ParenthesizedExpression* parenth
                 IdentifierExpression* identifierExpression = (IdentifierExpression*)(postfixExpression->primaryExpression);
                 if (!isClass(identifierExpression->name)) {
                     if (postfixExpression->parent->parent->parent->_isAssignment()) {
-                        _Region _region; _Page* _p = _region.get();
                         Assignment* assignment = (Assignment*)(postfixExpression->parent->parent->parent);
-                        string* member = getMemberIfCreatingObject(_p, assignment);
+                        string* member = getMemberIfCreatingObject(assignment);
                         if (member != nullptr) {
                             ClassDeclaration* classDeclaration = getClassDeclaration(assignment);
                             if (isVariableMember(member, classDeclaration)) {
@@ -1846,9 +1843,8 @@ bool SourceVisitor::openConstructorCall(ConstructorCall* constructorCall) {
                 if (inAssignment(constructorCall)) {
                     Assignment* assignment = getAssignment(constructorCall);
                     if (assignment != nullptr) {
-                        _Region _region; _Page* _p = _region.get();
                         ClassDeclaration* classDeclaration = getClassDeclaration(assignment);
-                        string* memberName = getMemberIfCreatingObject(_p, assignment);
+                        string* memberName = getMemberIfCreatingObject(assignment);
                         if (memberName != nullptr) {
                             if (isVariableMember(memberName, classDeclaration)) {
                                 if (!inConstructor(assignment)) {
@@ -1874,10 +1870,9 @@ bool SourceVisitor::openConstructorCall(ConstructorCall* constructorCall) {
     }
     else {
         if (constructorCall->parent->parent->parent->parent->_isAssignment()) {
-            _Region _region; _Page* _p = _region.get();
             Assignment* assignment = (Assignment*)(constructorCall->parent->parent->parent->parent);
             ClassDeclaration* classDeclaration = getClassDeclaration(assignment);
-            string* memberName = getMemberIfCreatingObject(_p, assignment);
+            string* memberName = getMemberIfCreatingObject(assignment);
             if (memberName != nullptr) {
                 if (isVariableMember(memberName, classDeclaration)) {
                     if (!inConstructor(assignment)) {
@@ -1898,7 +1893,7 @@ bool SourceVisitor::openConstructorCall(ConstructorCall* constructorCall) {
                         IdentifierExpression* memberExpression = (IdentifierExpression*)(leftSide->primaryExpression);
                         string* memberName = memberExpression->name;
                         ClassDeclaration* classDeclaration = getClassDeclaration(assignment);
-                        if ((classDeclaration != nullptr) && (memberName != nullptr) && !hasArrayPostfix(constructorCall->typeToInitialize)) {
+                        if ((classDeclaration != nullptr) && (memberName != nullptr) && !hasArrayPostfix(constructorCall->typeToConstruct)) {
                             if (isVariableMember(memberName, classDeclaration)) {
                                 sourceFile->append(memberName);
                                 sourceFile->append("->");

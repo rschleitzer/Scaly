@@ -299,7 +299,7 @@
 
     <syntax id = ConstructorCall                                base = PrimaryExpression
         <content link = new
-        <content link = Type                                    property = typeToInitialize
+        <content link = Type                                    property = typeToConstruct
         <content link = ParenthesizedExpression                 property = arguments
         <content link = CatchClause           multiple optional property = catchClauses
 
