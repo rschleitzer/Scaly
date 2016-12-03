@@ -8,6 +8,7 @@ class HeaderVisitor : public CppVisitor {
 public:
     VarString* headerFile;
     VarString* mainHeaderFile;
+    size_t headerIndentLevel;
     HeaderVisitor();
     virtual bool openProgram(Program* program);
     virtual void closeProgram(Program* program);

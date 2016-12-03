@@ -16,6 +16,8 @@ void HeaderVisitor::closeProgram(Program* program) {
 }
 
 bool HeaderVisitor::openCompilationUnit(CompilationUnit* compilationUnit) {
+    moduleName = compilationUnit->fileName;
+    headerIndentLevel = 0;
     return true;
 }
 

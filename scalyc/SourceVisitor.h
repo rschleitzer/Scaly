@@ -4,14 +4,6 @@
 using namespace scaly;
 namespace scalyc {
 
-class Inherits : public Object {
-public:
-    string* name;
-    _Array<string>* inheritors;
-    Inherits(string* className);
-
-};
-
 class SourceVisitor : public CppVisitor {
 public:
     VarString* sourceFile;

@@ -3,6 +3,9 @@ class HeaderVisitor extends CppVisitor {
     mutable headerFile: VarString
     mutable mainHeaderFile: VarString
 
+    // indent level
+    mutable headerIndentLevel: number
+
     constructor() {
 
         // null constructor of mutable members does not work yet
@@ -19,6 +22,9 @@ class HeaderVisitor extends CppVisitor {
     }
 
     function openCompilationUnit(compilationUnit: CompilationUnit): bool {
+        moduleName = compilationUnit.fileName
+        headerIndentLevel = 0
+
         true
     }
 
