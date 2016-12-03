@@ -5,7 +5,6 @@
 <!ENTITY rules      SYSTEM "rules.dsl"      >
 <!ENTITY helpers    SYSTEM "helpers.dsl"    >
 <!ENTITY fodeclare  SYSTEM "fodeclare.dsl"  >
-<!ENTITY switches   SYSTEM "switches.dsl"   >
 ]>
 <STYLE-SPECIFICATION>
 &syntax;
@@ -14,5 +13,4 @@
 &rules;
 &helpers;
 &fodeclare;
-&switches;
 </STYLE-SPECIFICATION>
