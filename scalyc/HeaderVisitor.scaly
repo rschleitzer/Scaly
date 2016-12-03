@@ -3,6 +3,10 @@ class HeaderVisitor extends CppVisitor {
     mutable headerFile: VarString
     mutable mainHeaderFile: VarString
 
+    // Some rudimentary semantics cache
+    mutable inherits: Inherits[]
+    mutable classes: string[]
+
     // indent level
     mutable headerIndentLevel: number
 
@@ -12,9 +16,43 @@ class HeaderVisitor extends CppVisitor {
         moduleName = new string()
         headerFile = new VarString()
         mainHeaderFile = new VarString()
+        inherits = new Inherits[]()
+        classes = new string[]()
     }
 
     function openProgram(program: Program): bool {
+        mutable programDirectory: string$ = new string(program.directory)
+
+        if programDirectory == null || programDirectory.equals("") {
+            programDirectory = new string(".")
+        }
+
+        if !Directory.exists(programDirectory) {
+            Directory.create(programDirectory)
+                catch _ (error: dirError())
+                    return(false)
+        }
+
+        {
+            mutable outputFilePath: VarString$ = new VarString(programDirectory)
+            outputFilePath.append("/")
+            outputFilePath.append(program.name)
+
+            // Build and write the main header file
+            {
+                buildMainHeaderFileString(program)
+                {
+                    mutable headerFilePath: VarString$  = new VarString(outputFilePath)
+                    headerFilePath.append(".h")
+                    File.writeFromString(headerFilePath, mainHeaderFile)
+                        catch _ (error: fileError)
+                            return(false)
+                }
+            }
+
+            collectInheritances(program)
+        }
+
         true
     }
 
@@ -511,5 +549,64 @@ class HeaderVisitor extends CppVisitor {
     }
 
     function closeInheritance(inheritance: Inheritance) {
+    }
+
+    function buildMainHeaderFileString(program: Program) {
+        mainHeaderFile.append("#ifndef __scaly__")
+        mainHeaderFile.append(program.name)
+        mainHeaderFile.append("__\n#define __scaly__")
+        mainHeaderFile.append(program.name)
+        mainHeaderFile.append("__\n\n#include \"Scaly.h\"\n")
+        let compilationUnits: CompilationUnit[] = program.compilationUnits
+        for compilationUnit: CompilationUnit in compilationUnits {
+            mainHeaderFile.append("#include \"")
+            let fileName: string$ = Path.getFileNameWithoutExtension(compilationUnit.fileName)
+            mainHeaderFile.append(fileName)
+            mainHeaderFile.append(".h\"\n")
+        }
+        mainHeaderFile.append("\nusing namespace scaly;\nnamespace ")
+        mainHeaderFile.append(program.name)
+        mainHeaderFile.append(" {\nFileError* _main(_Page* page, _Array<string>* arguments);\n}\n\n#endif // __scaly__")
+        mainHeaderFile.append(program.name)
+        mainHeaderFile.append("__\n")
+    }
+
+    function collectInheritances(program: Program) {
+        let compilationUnits: CompilationUnit[] = program.compilationUnits
+        for compilationUnit: CompilationUnit in compilationUnits
+            collectInheritancesInCompilationUnit(compilationUnit)
+    }
+
+    function collectInheritancesInCompilationUnit(compilationUnit: CompilationUnit) {
+        if compilationUnit.statements != null {
+            let statements: Statement[] = compilationUnit.statements
+            for statement: Statement in statements {
+                if statement is ClassDeclaration {
+                    let classDeclaration: ClassDeclaration = statement as ClassDeclaration
+                    classes.push(classDeclaration.name)
+                    if classDeclaration.typeInheritanceClause != null {
+                        let inheritanceClause: TypeInheritanceClause  = classDeclaration.typeInheritanceClause
+                        let inheritances: Inheritance[] = inheritanceClause.inheritances
+                        for inheritance: Inheritance in inheritances {
+                            registerInheritance(classDeclaration.name, inheritance.type.name)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    function registerInheritance(className: string, baseName: string) {
+        var inherit: Inherits~inherits = null
+        for inh: Inherits in inherits {
+            if inh.name.equals(baseName)
+             inherit = inh
+        }
+
+        if inherit == null {
+            inherit = new Inherits(baseName)
+            inherits.push(inherit)
+        }
+        inherit.inheritors.push(className)
     }
 }

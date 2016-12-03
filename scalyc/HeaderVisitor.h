@@ -8,6 +8,8 @@ class HeaderVisitor : public CppVisitor {
 public:
     VarString* headerFile;
     VarString* mainHeaderFile;
+    _Array<Inherits>* inherits;
+    _Array<string>* classes;
     size_t headerIndentLevel;
     HeaderVisitor();
     virtual bool openProgram(Program* program);
@@ -154,6 +156,10 @@ public:
     virtual void closeTypeInheritanceClause(TypeInheritanceClause* typeInheritanceClause);
     virtual bool openInheritance(Inheritance* inheritance);
     virtual void closeInheritance(Inheritance* inheritance);
+    virtual void buildMainHeaderFileString(Program* program);
+    virtual void collectInheritances(Program* program);
+    virtual void collectInheritancesInCompilationUnit(CompilationUnit* compilationUnit);
+    virtual void registerInheritance(string* className, string* baseName);
 
     virtual bool _isHeaderVisitor();
 };

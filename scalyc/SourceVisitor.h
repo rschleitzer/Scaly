@@ -216,7 +216,6 @@ public:
     virtual void closeTypeInheritanceClause(TypeInheritanceClause* typeInheritanceClause);
     virtual bool openInheritance(Inheritance* inheritance);
     virtual void closeInheritance(Inheritance* inheritance);
-    virtual void buildMainHeaderFileString(Program* program);
     virtual void buildProjectFileString(Program* program);
     virtual void collectInheritances(Program* program);
     virtual void collectInheritancesInCompilationUnit(CompilationUnit* compilationUnit);

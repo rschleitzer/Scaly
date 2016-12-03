@@ -6,9 +6,51 @@ HeaderVisitor::HeaderVisitor() {
     moduleName = new(getPage()) string();
     headerFile = new(getPage()->allocateExclusivePage()) VarString();
     mainHeaderFile = new(getPage()->allocateExclusivePage()) VarString();
+    inherits = new(getPage()->allocateExclusivePage()) _Array<Inherits>();
+    classes = new(getPage()->allocateExclusivePage()) _Array<string>();
 }
 
 bool HeaderVisitor::openProgram(Program* program) {
+    _Region _region; _Page* _p = _region.get();
+    string* programDirectory = new(_p) string(program->directory);
+    if (programDirectory == nullptr || programDirectory->equals("")) {
+        programDirectory = new(getPage()) string(".");
+    }
+    if (!Directory::exists(programDirectory)) {
+        auto _Directory_error = Directory::create(_p, programDirectory);
+        if (_Directory_error) {
+            switch (_Directory_error->_getErrorCode()) {
+                default:
+                {
+                    return false;
+                }
+            }
+        }
+    }
+    {
+        _Region _region; _Page* _p = _region.get();
+        VarString* outputFilePath = new(_p) VarString(programDirectory);
+        outputFilePath->append("/");
+        outputFilePath->append(program->name);
+        {
+            buildMainHeaderFileString(program);
+            {
+                _Region _region; _Page* _p = _region.get();
+                VarString* headerFilePath = new(_p) VarString(outputFilePath);
+                headerFilePath->append(".h");
+                auto _File_error = File::writeFromString(_p, headerFilePath, mainHeaderFile);
+                if (_File_error) {
+                    switch (_File_error->_getErrorCode()) {
+                        default:
+                        {
+                            return false;
+                        }
+                    }
+                }
+            }
+        }
+        collectInheritances(program);
+    }
     return true;
 }
 
@@ -504,6 +546,89 @@ bool HeaderVisitor::openInheritance(Inheritance* inheritance) {
 }
 
 void HeaderVisitor::closeInheritance(Inheritance* inheritance) {
+}
+
+void HeaderVisitor::buildMainHeaderFileString(Program* program) {
+    mainHeaderFile->append("#ifndef __scaly__");
+    mainHeaderFile->append(program->name);
+    mainHeaderFile->append("__\n#define __scaly__");
+    mainHeaderFile->append(program->name);
+    mainHeaderFile->append("__\n\n#include \"Scaly.h\"\n");
+    _Array<CompilationUnit>* compilationUnits = program->compilationUnits;
+    CompilationUnit* compilationUnit = nullptr;
+    size_t _compilationUnits_length = compilationUnits->length();
+    for (size_t _i = 0; _i < _compilationUnits_length; _i++) {
+        compilationUnit = *(*compilationUnits)[_i];
+        {
+            _Region _region; _Page* _p = _region.get();
+            mainHeaderFile->append("#include \"");
+            string* fileName = Path::getFileNameWithoutExtension(_p, compilationUnit->fileName);
+            mainHeaderFile->append(fileName);
+            mainHeaderFile->append(".h\"\n");
+        }
+    }
+    mainHeaderFile->append("\nusing namespace scaly;\nnamespace ");
+    mainHeaderFile->append(program->name);
+    mainHeaderFile->append(" {\nFileError* _main(_Page* page, _Array<string>* arguments);\n}\n\n#endif // __scaly__");
+    mainHeaderFile->append(program->name);
+    mainHeaderFile->append("__\n");
+}
+
+void HeaderVisitor::collectInheritances(Program* program) {
+    _Array<CompilationUnit>* compilationUnits = program->compilationUnits;
+    CompilationUnit* compilationUnit = nullptr;
+    size_t _compilationUnits_length = compilationUnits->length();
+    for (size_t _i = 0; _i < _compilationUnits_length; _i++) {
+        compilationUnit = *(*compilationUnits)[_i];
+        collectInheritancesInCompilationUnit(compilationUnit);
+    }
+}
+
+void HeaderVisitor::collectInheritancesInCompilationUnit(CompilationUnit* compilationUnit) {
+    if (compilationUnit->statements != nullptr) {
+        _Array<Statement>* statements = compilationUnit->statements;
+        Statement* statement = nullptr;
+        size_t _statements_length = statements->length();
+        for (size_t _i = 0; _i < _statements_length; _i++) {
+            statement = *(*statements)[_i];
+            {
+                if (statement->_isClassDeclaration()) {
+                    ClassDeclaration* classDeclaration = (ClassDeclaration*)statement;
+                    classes->push(classDeclaration->name);
+                    if (classDeclaration->typeInheritanceClause != nullptr) {
+                        TypeInheritanceClause* inheritanceClause = classDeclaration->typeInheritanceClause;
+                        _Array<Inheritance>* inheritances = inheritanceClause->inheritances;
+                        Inheritance* inheritance = nullptr;
+                        size_t _inheritances_length = inheritances->length();
+                        for (size_t _i = 0; _i < _inheritances_length; _i++) {
+                            inheritance = *(*inheritances)[_i];
+                            {
+                                registerInheritance(classDeclaration->name, inheritance->type->name);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+void HeaderVisitor::registerInheritance(string* className, string* baseName) {
+    Inherits* inherit = nullptr;
+    Inherits* inh = nullptr;
+    size_t _inherits_length = inherits->length();
+    for (size_t _i = 0; _i < _inherits_length; _i++) {
+        inh = *(*inherits)[_i];
+        {
+            if (inh->name->equals(baseName))
+                inherit = inh;
+        }
+    }
+    if (inherit == nullptr) {
+        inherit = new(getPage()) Inherits(baseName);
+        inherits->push(inherit);
+    }
+    inherit->inheritors->push(className);
 }
 
 bool HeaderVisitor::_isHeaderVisitor() { return (true); }

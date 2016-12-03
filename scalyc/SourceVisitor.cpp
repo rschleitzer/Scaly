@@ -18,17 +18,6 @@ bool SourceVisitor::openProgram(Program* program) {
     if (programDirectory == nullptr || programDirectory->equals("")) {
         programDirectory = new(getPage()) string(".");
     }
-    if (!Directory::exists(programDirectory)) {
-        auto _Directory_error = Directory::create(_p, programDirectory);
-        if (_Directory_error) {
-            switch (_Directory_error->_getErrorCode()) {
-                default:
-                {
-                    return false;
-                }
-            }
-        }
-    }
     {
         _Region _region; _Page* _p = _region.get();
         VarString* outputFilePath = new(_p) VarString(programDirectory);
@@ -41,23 +30,6 @@ bool SourceVisitor::openProgram(Program* program) {
                 VarString* projectFilePath = new(_p) VarString(outputFilePath);
                 projectFilePath->append(".project");
                 auto _File_error = File::writeFromString(_p, projectFilePath, projectFile);
-                if (_File_error) {
-                    switch (_File_error->_getErrorCode()) {
-                        default:
-                        {
-                            return false;
-                        }
-                    }
-                }
-            }
-        }
-        {
-            buildMainHeaderFileString(program);
-            {
-                _Region _region; _Page* _p = _region.get();
-                VarString* headerFilePath = new(_p) VarString(outputFilePath);
-                headerFilePath->append(".h");
-                auto _File_error = File::writeFromString(_p, headerFilePath, mainHeaderFile);
                 if (_File_error) {
                     switch (_File_error->_getErrorCode()) {
                         default:
@@ -2747,32 +2719,6 @@ bool SourceVisitor::openInheritance(Inheritance* inheritance) {
 }
 
 void SourceVisitor::closeInheritance(Inheritance* inheritance) {
-}
-
-void SourceVisitor::buildMainHeaderFileString(Program* program) {
-    mainHeaderFile->append("#ifndef __scaly__");
-    mainHeaderFile->append(program->name);
-    mainHeaderFile->append("__\n#define __scaly__");
-    mainHeaderFile->append(program->name);
-    mainHeaderFile->append("__\n\n#include \"Scaly.h\"\n");
-    _Array<CompilationUnit>* compilationUnits = program->compilationUnits;
-    CompilationUnit* compilationUnit = nullptr;
-    size_t _compilationUnits_length = compilationUnits->length();
-    for (size_t _i = 0; _i < _compilationUnits_length; _i++) {
-        compilationUnit = *(*compilationUnits)[_i];
-        {
-            _Region _region; _Page* _p = _region.get();
-            mainHeaderFile->append("#include \"");
-            string* fileName = Path::getFileNameWithoutExtension(_p, compilationUnit->fileName);
-            mainHeaderFile->append(fileName);
-            mainHeaderFile->append(".h\"\n");
-        }
-    }
-    mainHeaderFile->append("\nusing namespace scaly;\nnamespace ");
-    mainHeaderFile->append(program->name);
-    mainHeaderFile->append(" {\nFileError* _main(_Page* page, _Array<string>* arguments);\n}\n\n#endif // __scaly__");
-    mainHeaderFile->append(program->name);
-    mainHeaderFile->append("__\n");
 }
 
 void SourceVisitor::buildProjectFileString(Program* program) {

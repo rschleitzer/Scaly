@@ -45,12 +45,6 @@ class SourceVisitor extends CppVisitor {
             programDirectory = new string(".")
         }
 
-        if !Directory.exists(programDirectory) {
-            Directory.create(programDirectory)
-                catch _ (error: dirError())
-                    return(false)
-        }
-
         {
             mutable outputFilePath: VarString$ = new VarString(programDirectory)
             outputFilePath.append("/")
@@ -63,18 +57,6 @@ class SourceVisitor extends CppVisitor {
                     mutable projectFilePath: VarString$  = new VarString(outputFilePath)
                     projectFilePath.append(".project")
                     File.writeFromString(projectFilePath , projectFile)
-                        catch _ (error: fileError)
-                            return(false)
-                }
-            }
-
-            // Build and write the main header file
-            {
-                buildMainHeaderFileString(program)
-                {
-                    mutable headerFilePath: VarString$  = new VarString(outputFilePath)
-                    headerFilePath.append(".h")
-                    File.writeFromString(headerFilePath, mainHeaderFile)
                         catch _ (error: fileError)
                             return(false)
                 }
@@ -2833,26 +2815,6 @@ class SourceVisitor extends CppVisitor {
     }
 
     function closeInheritance(inheritance: Inheritance) {
-    }
-
-    function buildMainHeaderFileString(program: Program) {
-        mainHeaderFile.append("#ifndef __scaly__")
-        mainHeaderFile.append(program.name)
-        mainHeaderFile.append("__\n#define __scaly__")
-        mainHeaderFile.append(program.name)
-        mainHeaderFile.append("__\n\n#include \"Scaly.h\"\n")
-        let compilationUnits: CompilationUnit[] = program.compilationUnits
-        for compilationUnit: CompilationUnit in compilationUnits {
-            mainHeaderFile.append("#include \"")
-            let fileName: string$ = Path.getFileNameWithoutExtension(compilationUnit.fileName)
-            mainHeaderFile.append(fileName)
-            mainHeaderFile.append(".h\"\n")
-        }
-        mainHeaderFile.append("\nusing namespace scaly;\nnamespace ")
-        mainHeaderFile.append(program.name)
-        mainHeaderFile.append(" {\nFileError* _main(_Page* page, _Array<string>* arguments);\n}\n\n#endif // __scaly__")
-        mainHeaderFile.append(program.name)
-        mainHeaderFile.append("__\n")
     }
     
     function buildProjectFileString(program: Program) {
