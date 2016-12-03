@@ -10,7 +10,6 @@ public:
     VarString* mainHeaderFile;
     _Array<Inherits>* inherits;
     _Array<string>* classes;
-    size_t headerIndentLevel;
     HeaderVisitor();
     virtual bool openProgram(Program* program);
     virtual bool openCompilationUnit(CompilationUnit* compilationUnit);
@@ -36,7 +35,6 @@ public:
     virtual void closeVarParameter(VarParameter* varParameter);
     virtual bool openEnumMember(EnumMember* enumMember);
     virtual void closeEnumMember(EnumMember* enumMember);
-    virtual void indentHeader();
     virtual void collectDerivedClasses(_Array<string>* derivedClasses, string* className);
     virtual void appendDerivedClasses(_Array<string>* derivedClasses, _Array<string>* inheritors);
     virtual bool openClassMember(ClassMember* classMember);

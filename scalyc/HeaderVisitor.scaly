@@ -7,9 +7,6 @@ class HeaderVisitor extends CppVisitor {
     mutable inherits: Inherits[]
     mutable classes: string[]
 
-    // indent level
-    mutable headerIndentLevel: number
-
     constructor() {
 
         // null constructor of mutable members does not work yet
@@ -59,7 +56,6 @@ class HeaderVisitor extends CppVisitor {
     function openCompilationUnit(compilationUnit: CompilationUnit): bool {
 
         moduleName = compilationUnit.fileName
-        headerIndentLevel = 0
 
         if !(compilationUnit.parent is Program)
             return(false)
@@ -259,7 +255,6 @@ class HeaderVisitor extends CppVisitor {
         }
         headerFile.append(" {\n")
         headerFile.append("public:")
-        headerIndentLevel++
 
         true
     }
@@ -269,9 +264,7 @@ class HeaderVisitor extends CppVisitor {
         headerFile.append("\n")
 
         if classDeclaration.typeInheritanceClause != null {
-            headerFile.append("\n")
-            indentHeader()
-            headerFile.append("virtual bool _is")
+            headerFile.append("\n    virtual bool _is")
             headerFile.append(classDeclaration.name)
             headerFile.append("();")
         }
@@ -280,16 +273,12 @@ class HeaderVisitor extends CppVisitor {
             mutable derivedClasses: string[]$ = new string[]()
             collectDerivedClasses(derivedClasses, new string(classDeclaration.name))
             for derivedClass: string in derivedClasses {
-                headerFile.append("\n")
-
-                indentHeader()
-                headerFile.append("virtual bool _is")
+                headerFile.append("\n    virtual bool _is")
                 headerFile.append(derivedClass)
                 headerFile.append("();")
             }
         }
 
-        headerIndentLevel--
         headerFile.append("\n};")
     }
 
@@ -507,14 +496,6 @@ class HeaderVisitor extends CppVisitor {
         }
     }
 
-    function indentHeader() {
-        var i: number = 0
-        while i < headerIndentLevel {
-            headerFile.append("    ")
-            i++
-        }
-    }
-
     function collectDerivedClasses(mutable derivedClasses: string[], className: string) {
         for inherit: Inherits in inherits {
             if inherit.name.equals(className)
@@ -530,8 +511,7 @@ class HeaderVisitor extends CppVisitor {
     }
 
     function openClassMember(classMember: ClassMember): bool {
-        headerFile.append("\n")
-        indentHeader()
+        headerFile.append("\n    ")
 
         true
     }

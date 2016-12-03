@@ -56,7 +56,6 @@ bool HeaderVisitor::openProgram(Program* program) {
 
 bool HeaderVisitor::openCompilationUnit(CompilationUnit* compilationUnit) {
     moduleName = compilationUnit->fileName;
-    headerIndentLevel = 0;
     if (!(compilationUnit->parent->_isProgram()))
         return false;
     string* programName = ((Program*)(compilationUnit->parent))->name;
@@ -257,16 +256,13 @@ bool HeaderVisitor::openClassDeclaration(ClassDeclaration* classDeclaration) {
     }
     headerFile->append(" {\n");
     headerFile->append("public:");
-    headerIndentLevel++;
     return true;
 }
 
 void HeaderVisitor::closeClassDeclaration(ClassDeclaration* classDeclaration) {
     headerFile->append("\n");
     if (classDeclaration->typeInheritanceClause != nullptr) {
-        headerFile->append("\n");
-        indentHeader();
-        headerFile->append("virtual bool _is");
+        headerFile->append("\n    virtual bool _is");
         headerFile->append(classDeclaration->name);
         headerFile->append("();");
     }
@@ -279,15 +275,12 @@ void HeaderVisitor::closeClassDeclaration(ClassDeclaration* classDeclaration) {
         for (size_t _i = 0; _i < _derivedClasses_length; _i++) {
             derivedClass = *(*derivedClasses)[_i];
             {
-                headerFile->append("\n");
-                indentHeader();
-                headerFile->append("virtual bool _is");
+                headerFile->append("\n    virtual bool _is");
                 headerFile->append(derivedClass);
                 headerFile->append("();");
             }
         }
     }
-    headerIndentLevel--;
     headerFile->append("\n};");
 }
 
@@ -492,14 +485,6 @@ void HeaderVisitor::closeEnumMember(EnumMember* enumMember) {
     }
 }
 
-void HeaderVisitor::indentHeader() {
-    size_t i = 0;
-    while (i < headerIndentLevel) {
-        headerFile->append("    ");
-        i++;
-    }
-}
-
 void HeaderVisitor::collectDerivedClasses(_Array<string>* derivedClasses, string* className) {
     Inherits* inherit = nullptr;
     size_t _inherits_length = inherits->length();
@@ -525,8 +510,7 @@ void HeaderVisitor::appendDerivedClasses(_Array<string>* derivedClasses, _Array<
 }
 
 bool HeaderVisitor::openClassMember(ClassMember* classMember) {
-    headerFile->append("\n");
-    indentHeader();
+    headerFile->append("\n    ");
     return true;
 }
 
