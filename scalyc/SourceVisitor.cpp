@@ -371,11 +371,10 @@ bool SourceVisitor::openSimpleExpression(SimpleExpression* simpleExpression) {
                         sourceFile->append("if (");
                         sourceFile->append(memberName);
                         sourceFile->append(" != nullptr)\n");
-                        sourceIndentLevel++;
                         this->indentSource();
+                        sourceFile->append("    ");
                         sourceFile->append(memberName);
                         sourceFile->append("->getPage()->clear();\n");
-                        sourceIndentLevel--;
                         this->indentSource();
                     }
                 }
@@ -921,13 +920,12 @@ bool SourceVisitor::openCatchClause(CatchClause* catchClause) {
                         sourceFile->append("if (_");
                         sourceFile->append(identifierPattern->identifier);
                         sourceFile->append("_result.succeeded()) {\n");
-                        sourceIndentLevel++;
                         indentSource();
+                        sourceFile->append("    ");
                         sourceFile->append(identifierPattern->identifier);
                         sourceFile->append(" = _");
                         sourceFile->append(identifierPattern->identifier);
                         sourceFile->append("_result.getResult();\n");
-                        sourceIndentLevel--;
                         indentSource();
                         sourceFile->append("}\n");
                     }
@@ -955,14 +953,12 @@ bool SourceVisitor::openCatchClause(CatchClause* catchClause) {
                                     TuplePatternElement* element = *(*elements)[0];
                                     if (element->pattern->_isIdentifierPattern()) {
                                         IdentifierPattern* pattern = (IdentifierPattern*)(element->pattern);
-                                        sourceIndentLevel++;
                                         indentSource();
-                                        sourceFile->append("auto ");
+                                        sourceFile->append("    auto ");
                                         sourceFile->append(pattern->identifier);
                                         sourceFile->append(" = _");
                                         sourceFile->append(identifierPattern->identifier);
                                         sourceFile->append("_result.getError();\n");
-                                        sourceIndentLevel--;
                                     }
                                 }
                             }
