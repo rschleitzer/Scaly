@@ -79,7 +79,9 @@ class "(id syntax-node)" extends "(if (base syntax-node) (base syntax-node) "Syn
                     (("literal") "Literal")
                     (("keyword" "punctuation") "bool")
                 )
-""          )"")
+                "
+"
+          )"")
         )))
         (if (top? syntax-node)
 "    let fileName: string
