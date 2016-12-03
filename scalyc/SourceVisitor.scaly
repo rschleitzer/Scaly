@@ -437,10 +437,7 @@ class SourceVisitor extends CppVisitor {
                                     let identifierExpression: IdentifierExpression = (postfixExpression.primaryExpression) as IdentifierExpression
                                     // Fix when print is recognized as external function
                                     if identifierExpression.name.equals("print") {
-                                        sourceFile.append("{\n")
-                                        sourceIndentLevel++
-                                        indentSource()
-                                        sourceFile.append("auto _File_error = ")
+                                        sourceFile.append("{\n    auto _File_error = ")
                                     }
                                 }
                             }

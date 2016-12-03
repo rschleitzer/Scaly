@@ -418,10 +418,7 @@ bool SourceVisitor::openSimpleExpression(SimpleExpression* simpleExpression) {
                                 if (postfixExpression->primaryExpression->_isIdentifierExpression()) {
                                     IdentifierExpression* identifierExpression = (IdentifierExpression*)(postfixExpression->primaryExpression);
                                     if (identifierExpression->name->equals("print")) {
-                                        sourceFile->append("{\n");
-                                        sourceIndentLevel++;
-                                        indentSource();
-                                        sourceFile->append("auto _File_error = ");
+                                        sourceFile->append("{\n    auto _File_error = ");
                                     }
                                 }
                             }
