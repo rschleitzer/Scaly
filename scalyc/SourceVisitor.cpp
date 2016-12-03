@@ -46,7 +46,6 @@ bool SourceVisitor::openProgram(Program* program) {
 bool SourceVisitor::openCompilationUnit(CompilationUnit* compilationUnit) {
     moduleName = compilationUnit->fileName;
     sourceIndentLevel = 0;
-    inParameterClause = false;
     if (!(compilationUnit->parent->_isProgram()))
         return false;
     string* programName = ((Program*)(compilationUnit->parent))->name;
@@ -597,14 +596,8 @@ bool SourceVisitor::openFunctionResult(FunctionResult* functionResult) {
     return false;
 }
 
-bool SourceVisitor::openParameterClause(ParameterClause* parameterClause) {
-    inParameterClause = true;
-    return true;
-}
-
 void SourceVisitor::closeParameterClause(ParameterClause* parameterClause) {
     sourceFile->append(") ");
-    inParameterClause = false;
 }
 
 bool SourceVisitor::openConstParameter(ConstParameter* constParameter) {

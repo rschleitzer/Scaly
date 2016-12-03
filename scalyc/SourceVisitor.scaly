@@ -10,9 +10,6 @@ class SourceVisitor extends CppVisitor {
     // indent level
     mutable sourceIndentLevel: number
 
-    // Some state during building some constructs
-    mutable inParameterClause: bool
-
     constructor() {
 
         // null constructor of mutable members does not work yet
@@ -54,9 +51,9 @@ class SourceVisitor extends CppVisitor {
     }
 
     function openCompilationUnit(compilationUnit: CompilationUnit): bool {
+
         moduleName = compilationUnit.fileName
         sourceIndentLevel = 0
-        inParameterClause = false
 
         if !(compilationUnit.parent is Program)
             return(false)
@@ -631,17 +628,8 @@ class SourceVisitor extends CppVisitor {
         false
     }
 
-    function openParameterClause(parameterClause: ParameterClause): bool {
-        inParameterClause = true
-
-        true
-    }
-
     function closeParameterClause(parameterClause: ParameterClause) {
-
         sourceFile.append(") ")
-
-        inParameterClause = false
     }
 
     function openConstParameter(constParameter: ConstParameter): bool {

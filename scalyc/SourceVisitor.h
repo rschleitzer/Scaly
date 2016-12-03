@@ -11,7 +11,6 @@ public:
     _Array<Inherits>* inherits;
     _Array<string>* classes;
     size_t sourceIndentLevel;
-    bool inParameterClause;
     SourceVisitor();
     virtual bool openProgram(Program* program);
     virtual bool openCompilationUnit(CompilationUnit* compilationUnit);
@@ -38,7 +37,6 @@ public:
     virtual void closeBindingInitializer(BindingInitializer* bindingInitializer);
     virtual bool openFunctionSignature(FunctionSignature* functionSignature);
     virtual bool openFunctionResult(FunctionResult* functionResult);
-    virtual bool openParameterClause(ParameterClause* parameterClause);
     virtual void closeParameterClause(ParameterClause* parameterClause);
     virtual bool openConstParameter(ConstParameter* constParameter);
     virtual void writeParameter(string* name, Type* parameterType);
