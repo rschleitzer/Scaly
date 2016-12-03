@@ -2,9 +2,9 @@
 using namespace scaly;
 namespace scalyc {
 
-bool SyntaxVisitor::_isCppVisitor() { return (false); }
-bool SyntaxVisitor::_isHeaderVisitor() { return (false); }
-bool SyntaxVisitor::_isSourceVisitor() { return (false); }
+bool Visitor::_isCppVisitor() { return (false); }
+bool Visitor::_isHeaderVisitor() { return (false); }
+bool Visitor::_isSourceVisitor() { return (false); }
 
 bool SyntaxNode::_isProgram() { return (false); }
 bool SyntaxNode::_isCompilationUnit() { return (false); }
@@ -110,7 +110,7 @@ Program::Program(string* name, string* directory, _Array<CompilationUnit>* compi
     this->parent = nullptr;
 }
 
-void Program::accept(SyntaxVisitor* visitor) {
+void Program::accept(Visitor* visitor) {
     if (!visitor->openProgram(this))
         return;
     if (compilationUnits != nullptr) {
@@ -132,7 +132,7 @@ CompilationUnit::CompilationUnit(_Array<Statement>* statements, Position* start,
     this->statements = statements;
 }
 
-void CompilationUnit::accept(SyntaxVisitor* visitor) {
+void CompilationUnit::accept(Visitor* visitor) {
     if (!visitor->openCompilationUnit(this))
         return;
     if (statements != nullptr) {
@@ -148,7 +148,7 @@ void CompilationUnit::accept(SyntaxVisitor* visitor) {
 
 bool CompilationUnit::_isCompilationUnit() { return (true); }
 
-void Statement::accept(SyntaxVisitor* visitor) {
+void Statement::accept(Visitor* visitor) {
 }
 
 bool Statement::_isStatement() { return (true); }
@@ -165,7 +165,7 @@ bool Statement::_isExpression() { return (false); }
 bool Statement::_isCodeBlock() { return (false); }
 bool Statement::_isSimpleExpression() { return (false); }
 
-void Declaration::accept(SyntaxVisitor* visitor) {
+void Declaration::accept(Visitor* visitor) {
 }
 
 bool Declaration::_isDeclaration() { return (true); }
@@ -178,7 +178,7 @@ bool Declaration::_isEnumDeclaration() { return (false); }
 bool Declaration::_isClassDeclaration() { return (false); }
 bool Declaration::_isConstructorDeclaration() { return (false); }
 
-void Expression::accept(SyntaxVisitor* visitor) {
+void Expression::accept(Visitor* visitor) {
 }
 
 bool Expression::_isExpression() { return (true); }
@@ -192,7 +192,7 @@ ConstantDeclaration::ConstantDeclaration(BindingInitializer* initializer, Positi
     this->initializer = initializer;
 }
 
-void ConstantDeclaration::accept(SyntaxVisitor* visitor) {
+void ConstantDeclaration::accept(Visitor* visitor) {
     if (!visitor->openConstantDeclaration(this))
         return;
     initializer->accept(visitor);
@@ -207,7 +207,7 @@ VariableDeclaration::VariableDeclaration(BindingInitializer* initializer, Positi
     this->initializer = initializer;
 }
 
-void VariableDeclaration::accept(SyntaxVisitor* visitor) {
+void VariableDeclaration::accept(Visitor* visitor) {
     if (!visitor->openVariableDeclaration(this))
         return;
     initializer->accept(visitor);
@@ -222,7 +222,7 @@ MutableDeclaration::MutableDeclaration(BindingInitializer* initializer, Position
     this->initializer = initializer;
 }
 
-void MutableDeclaration::accept(SyntaxVisitor* visitor) {
+void MutableDeclaration::accept(Visitor* visitor) {
     if (!visitor->openMutableDeclaration(this))
         return;
     initializer->accept(visitor);
@@ -240,7 +240,7 @@ FunctionDeclaration::FunctionDeclaration(_Array<Modifier>* modifiers, string* na
     this->body = body;
 }
 
-void FunctionDeclaration::accept(SyntaxVisitor* visitor) {
+void FunctionDeclaration::accept(Visitor* visitor) {
     if (!visitor->openFunctionDeclaration(this))
         return;
     if (modifiers != nullptr) {
@@ -266,7 +266,7 @@ EnumDeclaration::EnumDeclaration(string* name, _Array<EnumMember>* members, Posi
     this->members = members;
 }
 
-void EnumDeclaration::accept(SyntaxVisitor* visitor) {
+void EnumDeclaration::accept(Visitor* visitor) {
     if (!visitor->openEnumDeclaration(this))
         return;
     if (members != nullptr) {
@@ -290,7 +290,7 @@ ClassDeclaration::ClassDeclaration(string* name, TypeInheritanceClause* typeInhe
     this->body = body;
 }
 
-void ClassDeclaration::accept(SyntaxVisitor* visitor) {
+void ClassDeclaration::accept(Visitor* visitor) {
     if (!visitor->openClassDeclaration(this))
         return;
     if (typeInheritanceClause != nullptr)
@@ -309,7 +309,7 @@ ConstructorDeclaration::ConstructorDeclaration(ParameterClause* parameterClause,
     this->body = body;
 }
 
-void ConstructorDeclaration::accept(SyntaxVisitor* visitor) {
+void ConstructorDeclaration::accept(Visitor* visitor) {
     if (!visitor->openConstructorDeclaration(this))
         return;
     parameterClause->accept(visitor);
@@ -325,7 +325,7 @@ CodeBlock::CodeBlock(_Array<Statement>* statements, Position* start, Position* e
     this->statements = statements;
 }
 
-void CodeBlock::accept(SyntaxVisitor* visitor) {
+void CodeBlock::accept(Visitor* visitor) {
     if (!visitor->openCodeBlock(this))
         return;
     if (statements != nullptr) {
@@ -348,7 +348,7 @@ SimpleExpression::SimpleExpression(PrefixExpression* prefixExpression, _Array<Bi
     this->binaryOps = binaryOps;
 }
 
-void SimpleExpression::accept(SyntaxVisitor* visitor) {
+void SimpleExpression::accept(Visitor* visitor) {
     if (!visitor->openSimpleExpression(this))
         return;
     prefixExpression->accept(visitor);
@@ -371,7 +371,7 @@ Initializer::Initializer(Expression* expression, Position* start, Position* end)
     this->expression = expression;
 }
 
-void Initializer::accept(SyntaxVisitor* visitor) {
+void Initializer::accept(Visitor* visitor) {
     if (!visitor->openInitializer(this))
         return;
     expression->accept(visitor);
@@ -387,7 +387,7 @@ BindingInitializer::BindingInitializer(PatternInitializer* initializer, _Array<A
     this->additionalInitializers = additionalInitializers;
 }
 
-void BindingInitializer::accept(SyntaxVisitor* visitor) {
+void BindingInitializer::accept(Visitor* visitor) {
     if (!visitor->openBindingInitializer(this))
         return;
     initializer->accept(visitor);
@@ -411,7 +411,7 @@ PatternInitializer::PatternInitializer(Pattern* pattern, Initializer* initialize
     this->initializer = initializer;
 }
 
-void PatternInitializer::accept(SyntaxVisitor* visitor) {
+void PatternInitializer::accept(Visitor* visitor) {
     if (!visitor->openPatternInitializer(this))
         return;
     pattern->accept(visitor);
@@ -428,7 +428,7 @@ AdditionalInitializer::AdditionalInitializer(PatternInitializer* pattern, Positi
     this->pattern = pattern;
 }
 
-void AdditionalInitializer::accept(SyntaxVisitor* visitor) {
+void AdditionalInitializer::accept(Visitor* visitor) {
     if (!visitor->openAdditionalInitializer(this))
         return;
     pattern->accept(visitor);
@@ -437,7 +437,7 @@ void AdditionalInitializer::accept(SyntaxVisitor* visitor) {
 
 bool AdditionalInitializer::_isAdditionalInitializer() { return (true); }
 
-void Modifier::accept(SyntaxVisitor* visitor) {
+void Modifier::accept(Visitor* visitor) {
 }
 
 bool Modifier::_isModifier() { return (true); }
@@ -450,7 +450,7 @@ OverrideWord::OverrideWord(Position* start, Position* end) {
     this->end = end;
 }
 
-void OverrideWord::accept(SyntaxVisitor* visitor) {
+void OverrideWord::accept(Visitor* visitor) {
     visitor->visitOverrideWord(this);
 }
 
@@ -461,7 +461,7 @@ StaticWord::StaticWord(Position* start, Position* end) {
     this->end = end;
 }
 
-void StaticWord::accept(SyntaxVisitor* visitor) {
+void StaticWord::accept(Visitor* visitor) {
     visitor->visitStaticWord(this);
 }
 
@@ -475,7 +475,7 @@ FunctionSignature::FunctionSignature(ParameterClause* parameterClause, FunctionR
     this->throwsClause = throwsClause;
 }
 
-void FunctionSignature::accept(SyntaxVisitor* visitor) {
+void FunctionSignature::accept(Visitor* visitor) {
     if (!visitor->openFunctionSignature(this))
         return;
     parameterClause->accept(visitor);
@@ -494,7 +494,7 @@ FunctionResult::FunctionResult(Type* resultType, Position* start, Position* end)
     this->resultType = resultType;
 }
 
-void FunctionResult::accept(SyntaxVisitor* visitor) {
+void FunctionResult::accept(Visitor* visitor) {
     if (!visitor->openFunctionResult(this))
         return;
     resultType->accept(visitor);
@@ -509,7 +509,7 @@ ParameterClause::ParameterClause(_Array<Parameter>* parameters, Position* start,
     this->parameters = parameters;
 }
 
-void ParameterClause::accept(SyntaxVisitor* visitor) {
+void ParameterClause::accept(Visitor* visitor) {
     if (!visitor->openParameterClause(this))
         return;
     if (parameters != nullptr) {
@@ -525,7 +525,7 @@ void ParameterClause::accept(SyntaxVisitor* visitor) {
 
 bool ParameterClause::_isParameterClause() { return (true); }
 
-void Parameter::accept(SyntaxVisitor* visitor) {
+void Parameter::accept(Visitor* visitor) {
 }
 
 bool Parameter::_isParameter() { return (true); }
@@ -540,7 +540,7 @@ ConstParameter::ConstParameter(string* name, Type* parameterType, Position* star
     this->parameterType = parameterType;
 }
 
-void ConstParameter::accept(SyntaxVisitor* visitor) {
+void ConstParameter::accept(Visitor* visitor) {
     if (!visitor->openConstParameter(this))
         return;
     parameterType->accept(visitor);
@@ -556,7 +556,7 @@ VarParameter::VarParameter(string* name, Type* parameterType, Position* start, P
     this->parameterType = parameterType;
 }
 
-void VarParameter::accept(SyntaxVisitor* visitor) {
+void VarParameter::accept(Visitor* visitor) {
     if (!visitor->openVarParameter(this))
         return;
     parameterType->accept(visitor);
@@ -571,7 +571,7 @@ ThrowsClause::ThrowsClause(Type* throwsType, Position* start, Position* end) {
     this->throwsType = throwsType;
 }
 
-void ThrowsClause::accept(SyntaxVisitor* visitor) {
+void ThrowsClause::accept(Visitor* visitor) {
     if (!visitor->openThrowsClause(this))
         return;
     throwsType->accept(visitor);
@@ -588,7 +588,7 @@ EnumMember::EnumMember(EnumCase* enumCase, _Array<AdditionalCase>* additionalCas
     this->parameterClause = parameterClause;
 }
 
-void EnumMember::accept(SyntaxVisitor* visitor) {
+void EnumMember::accept(Visitor* visitor) {
     if (!visitor->openEnumMember(this))
         return;
     enumCase->accept(visitor);
@@ -613,7 +613,7 @@ EnumCase::EnumCase(string* name, Position* start, Position* end) {
     this->name = name;
 }
 
-void EnumCase::accept(SyntaxVisitor* visitor) {
+void EnumCase::accept(Visitor* visitor) {
     visitor->visitEnumCase(this);
 }
 
@@ -625,7 +625,7 @@ AdditionalCase::AdditionalCase(EnumCase* enumCase, Position* start, Position* en
     this->enumCase = enumCase;
 }
 
-void AdditionalCase::accept(SyntaxVisitor* visitor) {
+void AdditionalCase::accept(Visitor* visitor) {
     if (!visitor->openAdditionalCase(this))
         return;
     enumCase->accept(visitor);
@@ -640,7 +640,7 @@ ClassBody::ClassBody(_Array<ClassMember>* members, Position* start, Position* en
     this->members = members;
 }
 
-void ClassBody::accept(SyntaxVisitor* visitor) {
+void ClassBody::accept(Visitor* visitor) {
     if (!visitor->openClassBody(this))
         return;
     if (members != nullptr) {
@@ -662,7 +662,7 @@ ClassMember::ClassMember(Declaration* declaration, Position* start, Position* en
     this->declaration = declaration;
 }
 
-void ClassMember::accept(SyntaxVisitor* visitor) {
+void ClassMember::accept(Visitor* visitor) {
     if (!visitor->openClassMember(this))
         return;
     declaration->accept(visitor);
@@ -678,7 +678,7 @@ PrefixExpression::PrefixExpression(string* prefixOperator, PostfixExpression* ex
     this->expression = expression;
 }
 
-void PrefixExpression::accept(SyntaxVisitor* visitor) {
+void PrefixExpression::accept(Visitor* visitor) {
     if (!visitor->openPrefixExpression(this))
         return;
     expression->accept(visitor);
@@ -694,7 +694,7 @@ PostfixExpression::PostfixExpression(PrimaryExpression* primaryExpression, _Arra
     this->postfixes = postfixes;
 }
 
-void PostfixExpression::accept(SyntaxVisitor* visitor) {
+void PostfixExpression::accept(Visitor* visitor) {
     if (!visitor->openPostfixExpression(this))
         return;
     primaryExpression->accept(visitor);
@@ -711,7 +711,7 @@ void PostfixExpression::accept(SyntaxVisitor* visitor) {
 
 bool PostfixExpression::_isPostfixExpression() { return (true); }
 
-void BinaryOp::accept(SyntaxVisitor* visitor) {
+void BinaryOp::accept(Visitor* visitor) {
 }
 
 bool BinaryOp::_isBinaryOp() { return (true); }
@@ -728,7 +728,7 @@ BinaryOperation::BinaryOperation(string* binaryOperator, PrefixExpression* expre
     this->expression = expression;
 }
 
-void BinaryOperation::accept(SyntaxVisitor* visitor) {
+void BinaryOperation::accept(Visitor* visitor) {
     if (!visitor->openBinaryOperation(this))
         return;
     expression->accept(visitor);
@@ -743,7 +743,7 @@ Assignment::Assignment(Expression* expression, Position* start, Position* end) {
     this->expression = expression;
 }
 
-void Assignment::accept(SyntaxVisitor* visitor) {
+void Assignment::accept(Visitor* visitor) {
     if (!visitor->openAssignment(this))
         return;
     expression->accept(visitor);
@@ -758,7 +758,7 @@ TypeQuery::TypeQuery(Type* objectType, Position* start, Position* end) {
     this->objectType = objectType;
 }
 
-void TypeQuery::accept(SyntaxVisitor* visitor) {
+void TypeQuery::accept(Visitor* visitor) {
     if (!visitor->openTypeQuery(this))
         return;
     objectType->accept(visitor);
@@ -773,7 +773,7 @@ TypeCast::TypeCast(Type* objectType, Position* start, Position* end) {
     this->objectType = objectType;
 }
 
-void TypeCast::accept(SyntaxVisitor* visitor) {
+void TypeCast::accept(Visitor* visitor) {
     if (!visitor->openTypeCast(this))
         return;
     objectType->accept(visitor);
@@ -790,7 +790,7 @@ CatchClause::CatchClause(CatchPattern* catchPattern, TuplePattern* bindingPatter
     this->expression = expression;
 }
 
-void CatchClause::accept(SyntaxVisitor* visitor) {
+void CatchClause::accept(Visitor* visitor) {
     if (!visitor->openCatchClause(this))
         return;
     catchPattern->accept(visitor);
@@ -802,7 +802,7 @@ void CatchClause::accept(SyntaxVisitor* visitor) {
 
 bool CatchClause::_isCatchClause() { return (true); }
 
-void CatchPattern::accept(SyntaxVisitor* visitor) {
+void CatchPattern::accept(Visitor* visitor) {
 }
 
 bool CatchPattern::_isCatchPattern() { return (true); }
@@ -816,7 +816,7 @@ WildCardCatchPattern::WildCardCatchPattern(WildcardPattern* pattern, Position* s
     this->pattern = pattern;
 }
 
-void WildCardCatchPattern::accept(SyntaxVisitor* visitor) {
+void WildCardCatchPattern::accept(Visitor* visitor) {
     if (!visitor->openWildCardCatchPattern(this))
         return;
     pattern->accept(visitor);
@@ -832,7 +832,7 @@ IdentifierCatchPattern::IdentifierCatchPattern(string* name, MemberExpression* m
     this->member = member;
 }
 
-void IdentifierCatchPattern::accept(SyntaxVisitor* visitor) {
+void IdentifierCatchPattern::accept(Visitor* visitor) {
     if (!visitor->openIdentifierCatchPattern(this))
         return;
     if (member != nullptr)
@@ -842,7 +842,7 @@ void IdentifierCatchPattern::accept(SyntaxVisitor* visitor) {
 
 bool IdentifierCatchPattern::_isIdentifierCatchPattern() { return (true); }
 
-void Postfix::accept(SyntaxVisitor* visitor) {
+void Postfix::accept(Visitor* visitor) {
 }
 
 bool Postfix::_isPostfix() { return (true); }
@@ -858,7 +858,7 @@ OperatorPostfix::OperatorPostfix(string* postfixOperator, Position* start, Posit
     this->postfixOperator = postfixOperator;
 }
 
-void OperatorPostfix::accept(SyntaxVisitor* visitor) {
+void OperatorPostfix::accept(Visitor* visitor) {
     visitor->visitOperatorPostfix(this);
 }
 
@@ -871,7 +871,7 @@ FunctionCall::FunctionCall(ParenthesizedExpression* arguments, _Array<CatchClaus
     this->catchClauses = catchClauses;
 }
 
-void FunctionCall::accept(SyntaxVisitor* visitor) {
+void FunctionCall::accept(Visitor* visitor) {
     if (!visitor->openFunctionCall(this))
         return;
     arguments->accept(visitor);
@@ -894,7 +894,7 @@ MemberExpression::MemberExpression(string* member, Position* start, Position* en
     this->member = member;
 }
 
-void MemberExpression::accept(SyntaxVisitor* visitor) {
+void MemberExpression::accept(Visitor* visitor) {
     visitor->visitMemberExpression(this);
 }
 
@@ -906,7 +906,7 @@ Subscript::Subscript(_Array<ExpressionElement>* expressions, Position* start, Po
     this->expressions = expressions;
 }
 
-void Subscript::accept(SyntaxVisitor* visitor) {
+void Subscript::accept(Visitor* visitor) {
     if (!visitor->openSubscript(this))
         return;
     if (expressions != nullptr) {
@@ -928,7 +928,7 @@ ExpressionElement::ExpressionElement(Expression* expression, Position* start, Po
     this->expression = expression;
 }
 
-void ExpressionElement::accept(SyntaxVisitor* visitor) {
+void ExpressionElement::accept(Visitor* visitor) {
     if (!visitor->openExpressionElement(this))
         return;
     expression->accept(visitor);
@@ -937,7 +937,7 @@ void ExpressionElement::accept(SyntaxVisitor* visitor) {
 
 bool ExpressionElement::_isExpressionElement() { return (true); }
 
-void PrimaryExpression::accept(SyntaxVisitor* visitor) {
+void PrimaryExpression::accept(Visitor* visitor) {
 }
 
 bool PrimaryExpression::_isPrimaryExpression() { return (true); }
@@ -963,7 +963,7 @@ IdentifierExpression::IdentifierExpression(string* name, Position* start, Positi
     this->name = name;
 }
 
-void IdentifierExpression::accept(SyntaxVisitor* visitor) {
+void IdentifierExpression::accept(Visitor* visitor) {
     visitor->visitIdentifierExpression(this);
 }
 
@@ -975,7 +975,7 @@ LiteralExpression::LiteralExpression(Literal* literal, Position* start, Position
     this->literal = literal;
 }
 
-void LiteralExpression::accept(SyntaxVisitor* visitor) {
+void LiteralExpression::accept(Visitor* visitor) {
     visitor->visitLiteralExpression(this);
 }
 
@@ -989,7 +989,7 @@ IfExpression::IfExpression(Expression* condition, Expression* consequent, ElseCl
     this->elseClause = elseClause;
 }
 
-void IfExpression::accept(SyntaxVisitor* visitor) {
+void IfExpression::accept(Visitor* visitor) {
     if (!visitor->openIfExpression(this))
         return;
     condition->accept(visitor);
@@ -1008,7 +1008,7 @@ SwitchExpression::SwitchExpression(Expression* expression, SwitchBody* body, Pos
     this->body = body;
 }
 
-void SwitchExpression::accept(SyntaxVisitor* visitor) {
+void SwitchExpression::accept(Visitor* visitor) {
     if (!visitor->openSwitchExpression(this))
         return;
     expression->accept(visitor);
@@ -1026,7 +1026,7 @@ ForExpression::ForExpression(Pattern* pattern, Expression* expression, Expressio
     this->code = code;
 }
 
-void ForExpression::accept(SyntaxVisitor* visitor) {
+void ForExpression::accept(Visitor* visitor) {
     if (!visitor->openForExpression(this))
         return;
     pattern->accept(visitor);
@@ -1044,7 +1044,7 @@ WhileExpression::WhileExpression(Expression* condition, Expression* code, Positi
     this->code = code;
 }
 
-void WhileExpression::accept(SyntaxVisitor* visitor) {
+void WhileExpression::accept(Visitor* visitor) {
     if (!visitor->openWhileExpression(this))
         return;
     condition->accept(visitor);
@@ -1061,7 +1061,7 @@ DoExpression::DoExpression(Expression* code, Expression* condition, Position* st
     this->condition = condition;
 }
 
-void DoExpression::accept(SyntaxVisitor* visitor) {
+void DoExpression::accept(Visitor* visitor) {
     if (!visitor->openDoExpression(this))
         return;
     code->accept(visitor);
@@ -1077,7 +1077,7 @@ ParenthesizedExpression::ParenthesizedExpression(_Array<ExpressionElement>* expr
     this->expressionElements = expressionElements;
 }
 
-void ParenthesizedExpression::accept(SyntaxVisitor* visitor) {
+void ParenthesizedExpression::accept(Visitor* visitor) {
     if (!visitor->openParenthesizedExpression(this))
         return;
     if (expressionElements != nullptr) {
@@ -1099,7 +1099,7 @@ ReturnExpression::ReturnExpression(ParenthesizedExpression* expression, Position
     this->expression = expression;
 }
 
-void ReturnExpression::accept(SyntaxVisitor* visitor) {
+void ReturnExpression::accept(Visitor* visitor) {
     if (!visitor->openReturnExpression(this))
         return;
     if (expression != nullptr)
@@ -1116,7 +1116,7 @@ ThrowExpression::ThrowExpression(IdentifierExpression* error, ParenthesizedExpre
     this->arguments = arguments;
 }
 
-void ThrowExpression::accept(SyntaxVisitor* visitor) {
+void ThrowExpression::accept(Visitor* visitor) {
     if (!visitor->openThrowExpression(this))
         return;
     error->accept(visitor);
@@ -1133,7 +1133,7 @@ BreakExpression::BreakExpression(ParenthesizedExpression* expression, Position* 
     this->expression = expression;
 }
 
-void BreakExpression::accept(SyntaxVisitor* visitor) {
+void BreakExpression::accept(Visitor* visitor) {
     if (!visitor->openBreakExpression(this))
         return;
     if (expression != nullptr)
@@ -1151,7 +1151,7 @@ ConstructorCall::ConstructorCall(Type* typeToInitialize, ParenthesizedExpression
     this->catchClauses = catchClauses;
 }
 
-void ConstructorCall::accept(SyntaxVisitor* visitor) {
+void ConstructorCall::accept(Visitor* visitor) {
     if (!visitor->openConstructorCall(this))
         return;
     typeToInitialize->accept(visitor);
@@ -1174,7 +1174,7 @@ ThisExpression::ThisExpression(Position* start, Position* end) {
     this->end = end;
 }
 
-void ThisExpression::accept(SyntaxVisitor* visitor) {
+void ThisExpression::accept(Visitor* visitor) {
     visitor->visitThisExpression(this);
 }
 
@@ -1185,7 +1185,7 @@ NullExpression::NullExpression(Position* start, Position* end) {
     this->end = end;
 }
 
-void NullExpression::accept(SyntaxVisitor* visitor) {
+void NullExpression::accept(Visitor* visitor) {
     visitor->visitNullExpression(this);
 }
 
@@ -1197,7 +1197,7 @@ ElseClause::ElseClause(Expression* alternative, Position* start, Position* end) 
     this->alternative = alternative;
 }
 
-void ElseClause::accept(SyntaxVisitor* visitor) {
+void ElseClause::accept(Visitor* visitor) {
     if (!visitor->openElseClause(this))
         return;
     alternative->accept(visitor);
@@ -1206,7 +1206,7 @@ void ElseClause::accept(SyntaxVisitor* visitor) {
 
 bool ElseClause::_isElseClause() { return (true); }
 
-void SwitchBody::accept(SyntaxVisitor* visitor) {
+void SwitchBody::accept(Visitor* visitor) {
 }
 
 bool SwitchBody::_isSwitchBody() { return (true); }
@@ -1220,7 +1220,7 @@ CurliedSwitchBody::CurliedSwitchBody(_Array<SwitchCase>* cases, Position* start,
     this->cases = cases;
 }
 
-void CurliedSwitchBody::accept(SyntaxVisitor* visitor) {
+void CurliedSwitchBody::accept(Visitor* visitor) {
     if (!visitor->openCurliedSwitchBody(this))
         return;
     if (cases != nullptr) {
@@ -1242,7 +1242,7 @@ NakedSwitchBody::NakedSwitchBody(_Array<SwitchCase>* cases, Position* start, Pos
     this->cases = cases;
 }
 
-void NakedSwitchBody::accept(SyntaxVisitor* visitor) {
+void NakedSwitchBody::accept(Visitor* visitor) {
     if (!visitor->openNakedSwitchBody(this))
         return;
     if (cases != nullptr) {
@@ -1265,7 +1265,7 @@ SwitchCase::SwitchCase(CaseLabel* label, CaseContent* content, Position* start, 
     this->content = content;
 }
 
-void SwitchCase::accept(SyntaxVisitor* visitor) {
+void SwitchCase::accept(Visitor* visitor) {
     if (!visitor->openSwitchCase(this))
         return;
     label->accept(visitor);
@@ -1275,7 +1275,7 @@ void SwitchCase::accept(SyntaxVisitor* visitor) {
 
 bool SwitchCase::_isSwitchCase() { return (true); }
 
-void CaseLabel::accept(SyntaxVisitor* visitor) {
+void CaseLabel::accept(Visitor* visitor) {
 }
 
 bool CaseLabel::_isCaseLabel() { return (true); }
@@ -1290,7 +1290,7 @@ ItemCaseLabel::ItemCaseLabel(Pattern* pattern, _Array<CaseItem>* additionalPatte
     this->additionalPatterns = additionalPatterns;
 }
 
-void ItemCaseLabel::accept(SyntaxVisitor* visitor) {
+void ItemCaseLabel::accept(Visitor* visitor) {
     if (!visitor->openItemCaseLabel(this))
         return;
     pattern->accept(visitor);
@@ -1312,7 +1312,7 @@ DefaultCaseLabel::DefaultCaseLabel(Position* start, Position* end) {
     this->end = end;
 }
 
-void DefaultCaseLabel::accept(SyntaxVisitor* visitor) {
+void DefaultCaseLabel::accept(Visitor* visitor) {
     visitor->visitDefaultCaseLabel(this);
 }
 
@@ -1324,7 +1324,7 @@ CaseItem::CaseItem(Pattern* pattern, Position* start, Position* end) {
     this->pattern = pattern;
 }
 
-void CaseItem::accept(SyntaxVisitor* visitor) {
+void CaseItem::accept(Visitor* visitor) {
     if (!visitor->openCaseItem(this))
         return;
     pattern->accept(visitor);
@@ -1333,7 +1333,7 @@ void CaseItem::accept(SyntaxVisitor* visitor) {
 
 bool CaseItem::_isCaseItem() { return (true); }
 
-void Pattern::accept(SyntaxVisitor* visitor) {
+void Pattern::accept(Visitor* visitor) {
 }
 
 bool Pattern::_isPattern() { return (true); }
@@ -1348,7 +1348,7 @@ WildcardPattern::WildcardPattern(Position* start, Position* end) {
     this->end = end;
 }
 
-void WildcardPattern::accept(SyntaxVisitor* visitor) {
+void WildcardPattern::accept(Visitor* visitor) {
     visitor->visitWildcardPattern(this);
 }
 
@@ -1361,7 +1361,7 @@ IdentifierPattern::IdentifierPattern(string* identifier, TypeAnnotation* annotat
     this->annotationForType = annotationForType;
 }
 
-void IdentifierPattern::accept(SyntaxVisitor* visitor) {
+void IdentifierPattern::accept(Visitor* visitor) {
     if (!visitor->openIdentifierPattern(this))
         return;
     if (annotationForType != nullptr)
@@ -1377,7 +1377,7 @@ TuplePattern::TuplePattern(_Array<TuplePatternElement>* elements, Position* star
     this->elements = elements;
 }
 
-void TuplePattern::accept(SyntaxVisitor* visitor) {
+void TuplePattern::accept(Visitor* visitor) {
     if (!visitor->openTuplePattern(this))
         return;
     if (elements != nullptr) {
@@ -1399,7 +1399,7 @@ ExpressionPattern::ExpressionPattern(Expression* expression, Position* start, Po
     this->expression = expression;
 }
 
-void ExpressionPattern::accept(SyntaxVisitor* visitor) {
+void ExpressionPattern::accept(Visitor* visitor) {
     if (!visitor->openExpressionPattern(this))
         return;
     expression->accept(visitor);
@@ -1414,7 +1414,7 @@ TuplePatternElement::TuplePatternElement(Pattern* pattern, Position* start, Posi
     this->pattern = pattern;
 }
 
-void TuplePatternElement::accept(SyntaxVisitor* visitor) {
+void TuplePatternElement::accept(Visitor* visitor) {
     if (!visitor->openTuplePatternElement(this))
         return;
     pattern->accept(visitor);
@@ -1429,7 +1429,7 @@ CaseContent::CaseContent(_Array<Statement>* statements, Position* start, Positio
     this->statements = statements;
 }
 
-void CaseContent::accept(SyntaxVisitor* visitor) {
+void CaseContent::accept(Visitor* visitor) {
     if (!visitor->openCaseContent(this))
         return;
     if (statements != nullptr) {
@@ -1454,7 +1454,7 @@ Type::Type(string* name, Subtype* subType, _Array<TypePostfix>* postfixes, LifeT
     this->lifeTime = lifeTime;
 }
 
-void Type::accept(SyntaxVisitor* visitor) {
+void Type::accept(Visitor* visitor) {
     if (!visitor->openType(this))
         return;
     if (subType != nullptr)
@@ -1480,7 +1480,7 @@ TypeAnnotation::TypeAnnotation(Type* annotationForType, Position* start, Positio
     this->annotationForType = annotationForType;
 }
 
-void TypeAnnotation::accept(SyntaxVisitor* visitor) {
+void TypeAnnotation::accept(Visitor* visitor) {
     if (!visitor->openTypeAnnotation(this))
         return;
     annotationForType->accept(visitor);
@@ -1495,7 +1495,7 @@ Subtype::Subtype(Type* type, Position* start, Position* end) {
     this->type = type;
 }
 
-void Subtype::accept(SyntaxVisitor* visitor) {
+void Subtype::accept(Visitor* visitor) {
     if (!visitor->openSubtype(this))
         return;
     type->accept(visitor);
@@ -1504,7 +1504,7 @@ void Subtype::accept(SyntaxVisitor* visitor) {
 
 bool Subtype::_isSubtype() { return (true); }
 
-void TypePostfix::accept(SyntaxVisitor* visitor) {
+void TypePostfix::accept(Visitor* visitor) {
 }
 
 bool TypePostfix::_isTypePostfix() { return (true); }
@@ -1518,7 +1518,7 @@ IndexedType::IndexedType(Type* key, Position* start, Position* end) {
     this->key = key;
 }
 
-void IndexedType::accept(SyntaxVisitor* visitor) {
+void IndexedType::accept(Visitor* visitor) {
     if (!visitor->openIndexedType(this))
         return;
     if (key != nullptr)
@@ -1533,13 +1533,13 @@ Pointer::Pointer(Position* start, Position* end) {
     this->end = end;
 }
 
-void Pointer::accept(SyntaxVisitor* visitor) {
+void Pointer::accept(Visitor* visitor) {
     visitor->visitPointer(this);
 }
 
 bool Pointer::_isPointer() { return (true); }
 
-void LifeTime::accept(SyntaxVisitor* visitor) {
+void LifeTime::accept(Visitor* visitor) {
 }
 
 bool LifeTime::_isLifeTime() { return (true); }
@@ -1554,7 +1554,7 @@ Root::Root(Position* start, Position* end) {
     this->end = end;
 }
 
-void Root::accept(SyntaxVisitor* visitor) {
+void Root::accept(Visitor* visitor) {
     visitor->visitRoot(this);
 }
 
@@ -1566,7 +1566,7 @@ Local::Local(string* location, Position* start, Position* end) {
     this->location = location;
 }
 
-void Local::accept(SyntaxVisitor* visitor) {
+void Local::accept(Visitor* visitor) {
     visitor->visitLocal(this);
 }
 
@@ -1578,7 +1578,7 @@ Reference::Reference(Literal* age, Position* start, Position* end) {
     this->age = age;
 }
 
-void Reference::accept(SyntaxVisitor* visitor) {
+void Reference::accept(Visitor* visitor) {
     visitor->visitReference(this);
 }
 
@@ -1589,7 +1589,7 @@ Thrown::Thrown(Position* start, Position* end) {
     this->end = end;
 }
 
-void Thrown::accept(SyntaxVisitor* visitor) {
+void Thrown::accept(Visitor* visitor) {
     visitor->visitThrown(this);
 }
 
@@ -1601,7 +1601,7 @@ TypeInheritanceClause::TypeInheritanceClause(_Array<Inheritance>* inheritances, 
     this->inheritances = inheritances;
 }
 
-void TypeInheritanceClause::accept(SyntaxVisitor* visitor) {
+void TypeInheritanceClause::accept(Visitor* visitor) {
     if (!visitor->openTypeInheritanceClause(this))
         return;
     if (inheritances != nullptr) {
@@ -1623,7 +1623,7 @@ Inheritance::Inheritance(Type* type, Position* start, Position* end) {
     this->type = type;
 }
 
-void Inheritance::accept(SyntaxVisitor* visitor) {
+void Inheritance::accept(Visitor* visitor) {
     if (!visitor->openInheritance(this))
         return;
     type->accept(visitor);

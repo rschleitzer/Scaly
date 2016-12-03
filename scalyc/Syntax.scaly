@@ -93,7 +93,7 @@ class Thrown
 class TypeInheritanceClause
 class Inheritance
 
-class SyntaxVisitor {
+class Visitor {
     function openProgram(program: Program): bool
     function closeProgram(program: Program)
     function openCompilationUnit(compilationUnit: CompilationUnit): bool
@@ -254,7 +254,7 @@ class Program extends SyntaxNode {
         this.parent = null
     }
 
-    function accept(mutable visitor: SyntaxVisitor) {
+    function accept(mutable visitor: Visitor) {
         if !visitor.openProgram(this)
             return
         if compilationUnits != null {
@@ -274,7 +274,7 @@ class CompilationUnit extends SyntaxNode {
         this.statements = statements
     }
 
-    function accept(mutable visitor: SyntaxVisitor) {
+    function accept(mutable visitor: Visitor) {
         if !visitor.openCompilationUnit(this)
             return
         if statements != null {
@@ -289,21 +289,21 @@ class CompilationUnit extends SyntaxNode {
 
 class Statement extends SyntaxNode {
 
-    function accept(mutable visitor: SyntaxVisitor) {
+    function accept(mutable visitor: Visitor) {
     }
 
 }
 
 class Declaration extends Statement {
 
-    override function accept(mutable visitor: SyntaxVisitor) {
+    override function accept(mutable visitor: Visitor) {
     }
 
 }
 
 class Expression extends Statement {
 
-    override function accept(mutable visitor: SyntaxVisitor) {
+    override function accept(mutable visitor: Visitor) {
     }
 
 }
@@ -316,7 +316,7 @@ class ConstantDeclaration extends Declaration {
         this.initializer = initializer
     }
 
-    override function accept(mutable visitor: SyntaxVisitor) {
+    override function accept(mutable visitor: Visitor) {
         if !visitor.openConstantDeclaration(this)
             return
         initializer.accept(visitor)
@@ -333,7 +333,7 @@ class VariableDeclaration extends Declaration {
         this.initializer = initializer
     }
 
-    override function accept(mutable visitor: SyntaxVisitor) {
+    override function accept(mutable visitor: Visitor) {
         if !visitor.openVariableDeclaration(this)
             return
         initializer.accept(visitor)
@@ -350,7 +350,7 @@ class MutableDeclaration extends Declaration {
         this.initializer = initializer
     }
 
-    override function accept(mutable visitor: SyntaxVisitor) {
+    override function accept(mutable visitor: Visitor) {
         if !visitor.openMutableDeclaration(this)
             return
         initializer.accept(visitor)
@@ -370,7 +370,7 @@ class FunctionDeclaration extends Declaration {
         this.body = body
     }
 
-    override function accept(mutable visitor: SyntaxVisitor) {
+    override function accept(mutable visitor: Visitor) {
         if !visitor.openFunctionDeclaration(this)
             return
         if modifiers != null {
@@ -394,7 +394,7 @@ class EnumDeclaration extends Declaration {
         this.members = members
     }
 
-    override function accept(mutable visitor: SyntaxVisitor) {
+    override function accept(mutable visitor: Visitor) {
         if !visitor.openEnumDeclaration(this)
             return
         if members != null {
@@ -416,7 +416,7 @@ class ClassDeclaration extends Declaration {
         this.body = body
     }
 
-    override function accept(mutable visitor: SyntaxVisitor) {
+    override function accept(mutable visitor: Visitor) {
         if !visitor.openClassDeclaration(this)
             return
         if typeInheritanceClause != null
@@ -437,7 +437,7 @@ class ConstructorDeclaration extends Declaration {
         this.body = body
     }
 
-    override function accept(mutable visitor: SyntaxVisitor) {
+    override function accept(mutable visitor: Visitor) {
         if !visitor.openConstructorDeclaration(this)
             return
         parameterClause.accept(visitor)
@@ -455,7 +455,7 @@ class CodeBlock extends Expression {
         this.statements = statements
     }
 
-    override function accept(mutable visitor: SyntaxVisitor) {
+    override function accept(mutable visitor: Visitor) {
         if !visitor.openCodeBlock(this)
             return
         if statements != null {
@@ -476,7 +476,7 @@ class SimpleExpression extends Expression {
         this.binaryOps = binaryOps
     }
 
-    override function accept(mutable visitor: SyntaxVisitor) {
+    override function accept(mutable visitor: Visitor) {
         if !visitor.openSimpleExpression(this)
             return
         prefixExpression.accept(visitor)
@@ -497,7 +497,7 @@ class Initializer extends SyntaxNode {
         this.expression = expression
     }
 
-    function accept(mutable visitor: SyntaxVisitor) {
+    function accept(mutable visitor: Visitor) {
         if !visitor.openInitializer(this)
             return
         expression.accept(visitor)
@@ -515,7 +515,7 @@ class BindingInitializer extends SyntaxNode {
         this.additionalInitializers = additionalInitializers
     }
 
-    function accept(mutable visitor: SyntaxVisitor) {
+    function accept(mutable visitor: Visitor) {
         if !visitor.openBindingInitializer(this)
             return
         initializer.accept(visitor)
@@ -537,7 +537,7 @@ class PatternInitializer extends SyntaxNode {
         this.initializer = initializer
     }
 
-    function accept(mutable visitor: SyntaxVisitor) {
+    function accept(mutable visitor: Visitor) {
         if !visitor.openPatternInitializer(this)
             return
         pattern.accept(visitor)
@@ -556,7 +556,7 @@ class AdditionalInitializer extends SyntaxNode {
         this.pattern = pattern
     }
 
-    function accept(mutable visitor: SyntaxVisitor) {
+    function accept(mutable visitor: Visitor) {
         if !visitor.openAdditionalInitializer(this)
             return
         pattern.accept(visitor)
@@ -567,7 +567,7 @@ class AdditionalInitializer extends SyntaxNode {
 
 class Modifier extends SyntaxNode {
 
-    function accept(mutable visitor: SyntaxVisitor) {
+    function accept(mutable visitor: Visitor) {
     }
 
 }
@@ -579,7 +579,7 @@ class OverrideWord extends Modifier {
         this.end = end
     }
 
-    override function accept(mutable visitor: SyntaxVisitor) {
+    override function accept(mutable visitor: Visitor) {
         visitor.visitOverrideWord(this)
     }
 
@@ -592,7 +592,7 @@ class StaticWord extends Modifier {
         this.end = end
     }
 
-    override function accept(mutable visitor: SyntaxVisitor) {
+    override function accept(mutable visitor: Visitor) {
         visitor.visitStaticWord(this)
     }
 
@@ -608,7 +608,7 @@ class FunctionSignature extends SyntaxNode {
         this.throwsClause = throwsClause
     }
 
-    function accept(mutable visitor: SyntaxVisitor) {
+    function accept(mutable visitor: Visitor) {
         if !visitor.openFunctionSignature(this)
             return
         parameterClause.accept(visitor)
@@ -629,7 +629,7 @@ class FunctionResult extends SyntaxNode {
         this.resultType = resultType
     }
 
-    function accept(mutable visitor: SyntaxVisitor) {
+    function accept(mutable visitor: Visitor) {
         if !visitor.openFunctionResult(this)
             return
         resultType.accept(visitor)
@@ -646,7 +646,7 @@ class ParameterClause extends SyntaxNode {
         this.parameters = parameters
     }
 
-    function accept(mutable visitor: SyntaxVisitor) {
+    function accept(mutable visitor: Visitor) {
         if !visitor.openParameterClause(this)
             return
         if parameters != null {
@@ -660,7 +660,7 @@ class ParameterClause extends SyntaxNode {
 
 class Parameter extends SyntaxNode {
 
-    function accept(mutable visitor: SyntaxVisitor) {
+    function accept(mutable visitor: Visitor) {
     }
 
 }
@@ -674,7 +674,7 @@ class ConstParameter extends Parameter {
         this.parameterType = parameterType
     }
 
-    override function accept(mutable visitor: SyntaxVisitor) {
+    override function accept(mutable visitor: Visitor) {
         if !visitor.openConstParameter(this)
             return
         parameterType.accept(visitor)
@@ -692,7 +692,7 @@ class VarParameter extends Parameter {
         this.parameterType = parameterType
     }
 
-    override function accept(mutable visitor: SyntaxVisitor) {
+    override function accept(mutable visitor: Visitor) {
         if !visitor.openVarParameter(this)
             return
         parameterType.accept(visitor)
@@ -709,7 +709,7 @@ class ThrowsClause extends SyntaxNode {
         this.throwsType = throwsType
     }
 
-    function accept(mutable visitor: SyntaxVisitor) {
+    function accept(mutable visitor: Visitor) {
         if !visitor.openThrowsClause(this)
             return
         throwsType.accept(visitor)
@@ -728,7 +728,7 @@ class EnumMember extends SyntaxNode {
         this.parameterClause = parameterClause
     }
 
-    function accept(mutable visitor: SyntaxVisitor) {
+    function accept(mutable visitor: Visitor) {
         if !visitor.openEnumMember(this)
             return
         enumCase.accept(visitor)
@@ -751,7 +751,7 @@ class EnumCase extends SyntaxNode {
         this.name = name
     }
 
-    function accept(mutable visitor: SyntaxVisitor) {
+    function accept(mutable visitor: Visitor) {
         visitor.visitEnumCase(this)
     }
 
@@ -765,7 +765,7 @@ class AdditionalCase extends SyntaxNode {
         this.enumCase = enumCase
     }
 
-    function accept(mutable visitor: SyntaxVisitor) {
+    function accept(mutable visitor: Visitor) {
         if !visitor.openAdditionalCase(this)
             return
         enumCase.accept(visitor)
@@ -782,7 +782,7 @@ class ClassBody extends SyntaxNode {
         this.members = members
     }
 
-    function accept(mutable visitor: SyntaxVisitor) {
+    function accept(mutable visitor: Visitor) {
         if !visitor.openClassBody(this)
             return
         if members != null {
@@ -802,7 +802,7 @@ class ClassMember extends SyntaxNode {
         this.declaration = declaration
     }
 
-    function accept(mutable visitor: SyntaxVisitor) {
+    function accept(mutable visitor: Visitor) {
         if !visitor.openClassMember(this)
             return
         declaration.accept(visitor)
@@ -820,7 +820,7 @@ class PrefixExpression extends SyntaxNode {
         this.expression = expression
     }
 
-    function accept(mutable visitor: SyntaxVisitor) {
+    function accept(mutable visitor: Visitor) {
         if !visitor.openPrefixExpression(this)
             return
         expression.accept(visitor)
@@ -838,7 +838,7 @@ class PostfixExpression extends SyntaxNode {
         this.postfixes = postfixes
     }
 
-    function accept(mutable visitor: SyntaxVisitor) {
+    function accept(mutable visitor: Visitor) {
         if !visitor.openPostfixExpression(this)
             return
         primaryExpression.accept(visitor)
@@ -853,7 +853,7 @@ class PostfixExpression extends SyntaxNode {
 
 class BinaryOp extends SyntaxNode {
 
-    function accept(mutable visitor: SyntaxVisitor) {
+    function accept(mutable visitor: Visitor) {
     }
 
 }
@@ -867,7 +867,7 @@ class BinaryOperation extends BinaryOp {
         this.expression = expression
     }
 
-    override function accept(mutable visitor: SyntaxVisitor) {
+    override function accept(mutable visitor: Visitor) {
         if !visitor.openBinaryOperation(this)
             return
         expression.accept(visitor)
@@ -884,7 +884,7 @@ class Assignment extends BinaryOp {
         this.expression = expression
     }
 
-    override function accept(mutable visitor: SyntaxVisitor) {
+    override function accept(mutable visitor: Visitor) {
         if !visitor.openAssignment(this)
             return
         expression.accept(visitor)
@@ -901,7 +901,7 @@ class TypeQuery extends BinaryOp {
         this.objectType = objectType
     }
 
-    override function accept(mutable visitor: SyntaxVisitor) {
+    override function accept(mutable visitor: Visitor) {
         if !visitor.openTypeQuery(this)
             return
         objectType.accept(visitor)
@@ -918,7 +918,7 @@ class TypeCast extends BinaryOp {
         this.objectType = objectType
     }
 
-    override function accept(mutable visitor: SyntaxVisitor) {
+    override function accept(mutable visitor: Visitor) {
         if !visitor.openTypeCast(this)
             return
         objectType.accept(visitor)
@@ -937,7 +937,7 @@ class CatchClause extends SyntaxNode {
         this.expression = expression
     }
 
-    function accept(mutable visitor: SyntaxVisitor) {
+    function accept(mutable visitor: Visitor) {
         if !visitor.openCatchClause(this)
             return
         catchPattern.accept(visitor)
@@ -951,7 +951,7 @@ class CatchClause extends SyntaxNode {
 
 class CatchPattern extends SyntaxNode {
 
-    function accept(mutable visitor: SyntaxVisitor) {
+    function accept(mutable visitor: Visitor) {
     }
 
 }
@@ -964,7 +964,7 @@ class WildCardCatchPattern extends CatchPattern {
         this.pattern = pattern
     }
 
-    override function accept(mutable visitor: SyntaxVisitor) {
+    override function accept(mutable visitor: Visitor) {
         if !visitor.openWildCardCatchPattern(this)
             return
         pattern.accept(visitor)
@@ -982,7 +982,7 @@ class IdentifierCatchPattern extends CatchPattern {
         this.member = member
     }
 
-    override function accept(mutable visitor: SyntaxVisitor) {
+    override function accept(mutable visitor: Visitor) {
         if !visitor.openIdentifierCatchPattern(this)
             return
         if member != null
@@ -994,7 +994,7 @@ class IdentifierCatchPattern extends CatchPattern {
 
 class Postfix extends SyntaxNode {
 
-    function accept(mutable visitor: SyntaxVisitor) {
+    function accept(mutable visitor: Visitor) {
     }
 
 }
@@ -1007,7 +1007,7 @@ class OperatorPostfix extends Postfix {
         this.postfixOperator = postfixOperator
     }
 
-    override function accept(mutable visitor: SyntaxVisitor) {
+    override function accept(mutable visitor: Visitor) {
         visitor.visitOperatorPostfix(this)
     }
 
@@ -1022,7 +1022,7 @@ class FunctionCall extends Postfix {
         this.catchClauses = catchClauses
     }
 
-    override function accept(mutable visitor: SyntaxVisitor) {
+    override function accept(mutable visitor: Visitor) {
         if !visitor.openFunctionCall(this)
             return
         arguments.accept(visitor)
@@ -1043,7 +1043,7 @@ class MemberExpression extends Postfix {
         this.member = member
     }
 
-    override function accept(mutable visitor: SyntaxVisitor) {
+    override function accept(mutable visitor: Visitor) {
         visitor.visitMemberExpression(this)
     }
 
@@ -1057,7 +1057,7 @@ class Subscript extends Postfix {
         this.expressions = expressions
     }
 
-    override function accept(mutable visitor: SyntaxVisitor) {
+    override function accept(mutable visitor: Visitor) {
         if !visitor.openSubscript(this)
             return
         if expressions != null {
@@ -1077,7 +1077,7 @@ class ExpressionElement extends SyntaxNode {
         this.expression = expression
     }
 
-    function accept(mutable visitor: SyntaxVisitor) {
+    function accept(mutable visitor: Visitor) {
         if !visitor.openExpressionElement(this)
             return
         expression.accept(visitor)
@@ -1088,7 +1088,7 @@ class ExpressionElement extends SyntaxNode {
 
 class PrimaryExpression extends SyntaxNode {
 
-    function accept(mutable visitor: SyntaxVisitor) {
+    function accept(mutable visitor: Visitor) {
     }
 
 }
@@ -1101,7 +1101,7 @@ class IdentifierExpression extends PrimaryExpression {
         this.name = name
     }
 
-    override function accept(mutable visitor: SyntaxVisitor) {
+    override function accept(mutable visitor: Visitor) {
         visitor.visitIdentifierExpression(this)
     }
 
@@ -1115,7 +1115,7 @@ class LiteralExpression extends PrimaryExpression {
         this.literal = literal
     }
 
-    override function accept(mutable visitor: SyntaxVisitor) {
+    override function accept(mutable visitor: Visitor) {
         visitor.visitLiteralExpression(this)
     }
 
@@ -1131,7 +1131,7 @@ class IfExpression extends PrimaryExpression {
         this.elseClause = elseClause
     }
 
-    override function accept(mutable visitor: SyntaxVisitor) {
+    override function accept(mutable visitor: Visitor) {
         if !visitor.openIfExpression(this)
             return
         condition.accept(visitor)
@@ -1152,7 +1152,7 @@ class SwitchExpression extends PrimaryExpression {
         this.body = body
     }
 
-    override function accept(mutable visitor: SyntaxVisitor) {
+    override function accept(mutable visitor: Visitor) {
         if !visitor.openSwitchExpression(this)
             return
         expression.accept(visitor)
@@ -1172,7 +1172,7 @@ class ForExpression extends PrimaryExpression {
         this.code = code
     }
 
-    override function accept(mutable visitor: SyntaxVisitor) {
+    override function accept(mutable visitor: Visitor) {
         if !visitor.openForExpression(this)
             return
         pattern.accept(visitor)
@@ -1192,7 +1192,7 @@ class WhileExpression extends PrimaryExpression {
         this.code = code
     }
 
-    override function accept(mutable visitor: SyntaxVisitor) {
+    override function accept(mutable visitor: Visitor) {
         if !visitor.openWhileExpression(this)
             return
         condition.accept(visitor)
@@ -1211,7 +1211,7 @@ class DoExpression extends PrimaryExpression {
         this.condition = condition
     }
 
-    override function accept(mutable visitor: SyntaxVisitor) {
+    override function accept(mutable visitor: Visitor) {
         if !visitor.openDoExpression(this)
             return
         code.accept(visitor)
@@ -1229,7 +1229,7 @@ class ParenthesizedExpression extends PrimaryExpression {
         this.expressionElements = expressionElements
     }
 
-    override function accept(mutable visitor: SyntaxVisitor) {
+    override function accept(mutable visitor: Visitor) {
         if !visitor.openParenthesizedExpression(this)
             return
         if expressionElements != null {
@@ -1249,7 +1249,7 @@ class ReturnExpression extends PrimaryExpression {
         this.expression = expression
     }
 
-    override function accept(mutable visitor: SyntaxVisitor) {
+    override function accept(mutable visitor: Visitor) {
         if !visitor.openReturnExpression(this)
             return
         if expression != null
@@ -1268,7 +1268,7 @@ class ThrowExpression extends PrimaryExpression {
         this.arguments = arguments
     }
 
-    override function accept(mutable visitor: SyntaxVisitor) {
+    override function accept(mutable visitor: Visitor) {
         if !visitor.openThrowExpression(this)
             return
         error.accept(visitor)
@@ -1287,7 +1287,7 @@ class BreakExpression extends PrimaryExpression {
         this.expression = expression
     }
 
-    override function accept(mutable visitor: SyntaxVisitor) {
+    override function accept(mutable visitor: Visitor) {
         if !visitor.openBreakExpression(this)
             return
         if expression != null
@@ -1307,7 +1307,7 @@ class ConstructorCall extends PrimaryExpression {
         this.catchClauses = catchClauses
     }
 
-    override function accept(mutable visitor: SyntaxVisitor) {
+    override function accept(mutable visitor: Visitor) {
         if !visitor.openConstructorCall(this)
             return
         typeToInitialize.accept(visitor)
@@ -1328,7 +1328,7 @@ class ThisExpression extends PrimaryExpression {
         this.end = end
     }
 
-    override function accept(mutable visitor: SyntaxVisitor) {
+    override function accept(mutable visitor: Visitor) {
         visitor.visitThisExpression(this)
     }
 
@@ -1341,7 +1341,7 @@ class NullExpression extends PrimaryExpression {
         this.end = end
     }
 
-    override function accept(mutable visitor: SyntaxVisitor) {
+    override function accept(mutable visitor: Visitor) {
         visitor.visitNullExpression(this)
     }
 
@@ -1355,7 +1355,7 @@ class ElseClause extends SyntaxNode {
         this.alternative = alternative
     }
 
-    function accept(mutable visitor: SyntaxVisitor) {
+    function accept(mutable visitor: Visitor) {
         if !visitor.openElseClause(this)
             return
         alternative.accept(visitor)
@@ -1366,7 +1366,7 @@ class ElseClause extends SyntaxNode {
 
 class SwitchBody extends SyntaxNode {
 
-    function accept(mutable visitor: SyntaxVisitor) {
+    function accept(mutable visitor: Visitor) {
     }
 
 }
@@ -1379,7 +1379,7 @@ class CurliedSwitchBody extends SwitchBody {
         this.cases = cases
     }
 
-    override function accept(mutable visitor: SyntaxVisitor) {
+    override function accept(mutable visitor: Visitor) {
         if !visitor.openCurliedSwitchBody(this)
             return
         if cases != null {
@@ -1399,7 +1399,7 @@ class NakedSwitchBody extends SwitchBody {
         this.cases = cases
     }
 
-    override function accept(mutable visitor: SyntaxVisitor) {
+    override function accept(mutable visitor: Visitor) {
         if !visitor.openNakedSwitchBody(this)
             return
         if cases != null {
@@ -1420,7 +1420,7 @@ class SwitchCase extends SyntaxNode {
         this.content = content
     }
 
-    function accept(mutable visitor: SyntaxVisitor) {
+    function accept(mutable visitor: Visitor) {
         if !visitor.openSwitchCase(this)
             return
         label.accept(visitor)
@@ -1432,7 +1432,7 @@ class SwitchCase extends SyntaxNode {
 
 class CaseLabel extends SyntaxNode {
 
-    function accept(mutable visitor: SyntaxVisitor) {
+    function accept(mutable visitor: Visitor) {
     }
 
 }
@@ -1446,7 +1446,7 @@ class ItemCaseLabel extends CaseLabel {
         this.additionalPatterns = additionalPatterns
     }
 
-    override function accept(mutable visitor: SyntaxVisitor) {
+    override function accept(mutable visitor: Visitor) {
         if !visitor.openItemCaseLabel(this)
             return
         pattern.accept(visitor)
@@ -1466,7 +1466,7 @@ class DefaultCaseLabel extends CaseLabel {
         this.end = end
     }
 
-    override function accept(mutable visitor: SyntaxVisitor) {
+    override function accept(mutable visitor: Visitor) {
         visitor.visitDefaultCaseLabel(this)
     }
 
@@ -1480,7 +1480,7 @@ class CaseItem extends SyntaxNode {
         this.pattern = pattern
     }
 
-    function accept(mutable visitor: SyntaxVisitor) {
+    function accept(mutable visitor: Visitor) {
         if !visitor.openCaseItem(this)
             return
         pattern.accept(visitor)
@@ -1491,7 +1491,7 @@ class CaseItem extends SyntaxNode {
 
 class Pattern extends SyntaxNode {
 
-    function accept(mutable visitor: SyntaxVisitor) {
+    function accept(mutable visitor: Visitor) {
     }
 
 }
@@ -1503,7 +1503,7 @@ class WildcardPattern extends Pattern {
         this.end = end
     }
 
-    override function accept(mutable visitor: SyntaxVisitor) {
+    override function accept(mutable visitor: Visitor) {
         visitor.visitWildcardPattern(this)
     }
 
@@ -1518,7 +1518,7 @@ class IdentifierPattern extends Pattern {
         this.annotationForType = annotationForType
     }
 
-    override function accept(mutable visitor: SyntaxVisitor) {
+    override function accept(mutable visitor: Visitor) {
         if !visitor.openIdentifierPattern(this)
             return
         if annotationForType != null
@@ -1536,7 +1536,7 @@ class TuplePattern extends Pattern {
         this.elements = elements
     }
 
-    override function accept(mutable visitor: SyntaxVisitor) {
+    override function accept(mutable visitor: Visitor) {
         if !visitor.openTuplePattern(this)
             return
         if elements != null {
@@ -1556,7 +1556,7 @@ class ExpressionPattern extends Pattern {
         this.expression = expression
     }
 
-    override function accept(mutable visitor: SyntaxVisitor) {
+    override function accept(mutable visitor: Visitor) {
         if !visitor.openExpressionPattern(this)
             return
         expression.accept(visitor)
@@ -1573,7 +1573,7 @@ class TuplePatternElement extends SyntaxNode {
         this.pattern = pattern
     }
 
-    function accept(mutable visitor: SyntaxVisitor) {
+    function accept(mutable visitor: Visitor) {
         if !visitor.openTuplePatternElement(this)
             return
         pattern.accept(visitor)
@@ -1590,7 +1590,7 @@ class CaseContent extends SyntaxNode {
         this.statements = statements
     }
 
-    function accept(mutable visitor: SyntaxVisitor) {
+    function accept(mutable visitor: Visitor) {
         if !visitor.openCaseContent(this)
             return
         if statements != null {
@@ -1613,7 +1613,7 @@ class Type extends SyntaxNode {
         this.lifeTime = lifeTime
     }
 
-    function accept(mutable visitor: SyntaxVisitor) {
+    function accept(mutable visitor: Visitor) {
         if !visitor.openType(this)
             return
         if subType != null
@@ -1637,7 +1637,7 @@ class TypeAnnotation extends SyntaxNode {
         this.annotationForType = annotationForType
     }
 
-    function accept(mutable visitor: SyntaxVisitor) {
+    function accept(mutable visitor: Visitor) {
         if !visitor.openTypeAnnotation(this)
             return
         annotationForType.accept(visitor)
@@ -1654,7 +1654,7 @@ class Subtype extends SyntaxNode {
         this.type = type
     }
 
-    function accept(mutable visitor: SyntaxVisitor) {
+    function accept(mutable visitor: Visitor) {
         if !visitor.openSubtype(this)
             return
         type.accept(visitor)
@@ -1665,7 +1665,7 @@ class Subtype extends SyntaxNode {
 
 class TypePostfix extends SyntaxNode {
 
-    function accept(mutable visitor: SyntaxVisitor) {
+    function accept(mutable visitor: Visitor) {
     }
 
 }
@@ -1678,7 +1678,7 @@ class IndexedType extends TypePostfix {
         this.key = key
     }
 
-    override function accept(mutable visitor: SyntaxVisitor) {
+    override function accept(mutable visitor: Visitor) {
         if !visitor.openIndexedType(this)
             return
         if key != null
@@ -1695,7 +1695,7 @@ class Pointer extends TypePostfix {
         this.end = end
     }
 
-    override function accept(mutable visitor: SyntaxVisitor) {
+    override function accept(mutable visitor: Visitor) {
         visitor.visitPointer(this)
     }
 
@@ -1703,7 +1703,7 @@ class Pointer extends TypePostfix {
 
 class LifeTime extends SyntaxNode {
 
-    function accept(mutable visitor: SyntaxVisitor) {
+    function accept(mutable visitor: Visitor) {
     }
 
 }
@@ -1715,7 +1715,7 @@ class Root extends LifeTime {
         this.end = end
     }
 
-    override function accept(mutable visitor: SyntaxVisitor) {
+    override function accept(mutable visitor: Visitor) {
         visitor.visitRoot(this)
     }
 
@@ -1729,7 +1729,7 @@ class Local extends LifeTime {
         this.location = location
     }
 
-    override function accept(mutable visitor: SyntaxVisitor) {
+    override function accept(mutable visitor: Visitor) {
         visitor.visitLocal(this)
     }
 
@@ -1743,7 +1743,7 @@ class Reference extends LifeTime {
         this.age = age
     }
 
-    override function accept(mutable visitor: SyntaxVisitor) {
+    override function accept(mutable visitor: Visitor) {
         visitor.visitReference(this)
     }
 
@@ -1756,7 +1756,7 @@ class Thrown extends LifeTime {
         this.end = end
     }
 
-    override function accept(mutable visitor: SyntaxVisitor) {
+    override function accept(mutable visitor: Visitor) {
         visitor.visitThrown(this)
     }
 
@@ -1770,7 +1770,7 @@ class TypeInheritanceClause extends SyntaxNode {
         this.inheritances = inheritances
     }
 
-    function accept(mutable visitor: SyntaxVisitor) {
+    function accept(mutable visitor: Visitor) {
         if !visitor.openTypeInheritanceClause(this)
             return
         if inheritances != null {
@@ -1790,7 +1790,7 @@ class Inheritance extends SyntaxNode {
         this.type = type
     }
 
-    function accept(mutable visitor: SyntaxVisitor) {
+    function accept(mutable visitor: Visitor) {
         if !visitor.openInheritance(this)
             return
         type.accept(visitor)

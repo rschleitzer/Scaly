@@ -12,7 +12,7 @@ public:
 
 };
 
-class CppVisitor : public SyntaxVisitor {
+class CppVisitor : public Visitor {
 public:
     string* moduleName;
     virtual void execute(Program* program);

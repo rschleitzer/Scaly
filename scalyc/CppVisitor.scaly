@@ -12,7 +12,7 @@ class Inherits {
     }
 }
 
-class CppVisitor extends SyntaxVisitor {
+class CppVisitor extends Visitor {
 
     // Needed during building one module
     mutable moduleName: string

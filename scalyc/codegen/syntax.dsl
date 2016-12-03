@@ -25,7 +25,7 @@ class "(id syntax-node)" extends "(if (base syntax-node) (base syntax-node) "Syn
 "    }
 "       ))
 "
-    "(if (base syntax-node) "override " "")"function accept(mutable visitor: SyntaxVisitor) {
+    "(if (base syntax-node) "override " "")"function accept(mutable visitor: Visitor) {
 "       (if (abstract? syntax-node) "" ($
             (if (has-syntax-children? syntax-node)
                 ($

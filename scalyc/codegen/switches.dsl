@@ -1,4 +1,0 @@
-(define generated-extension
-;	".generated"
-	""
-)
