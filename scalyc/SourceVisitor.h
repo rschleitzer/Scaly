@@ -44,7 +44,6 @@ public:
     virtual bool openConstParameter(ConstParameter* constParameter);
     virtual void writeParameter(string* name, Type* parameterType);
     virtual bool isClass(string* name);
-    virtual void closeConstParameter(ConstParameter* constParameter);
     virtual bool openVarParameter(VarParameter* varParameter);
     virtual bool openThrowsClause(ThrowsClause* throwsClause);
     virtual bool openEnumMember(EnumMember* enumMember);
@@ -54,7 +53,6 @@ public:
     virtual void appendDerivedClasses(_Array<string>* derivedClasses, _Array<string>* inheritors);
     virtual bool openPrefixExpression(PrefixExpression* prefixExpression);
     virtual bool openPostfixExpression(PostfixExpression* postfixExpression);
-    virtual void closePostfixExpression(PostfixExpression* postfixExpression);
     virtual bool openBinaryOperation(BinaryOperation* binaryOperation);
     virtual bool openAssignment(Assignment* assignment);
     virtual bool inConstructor(SyntaxNode* node);

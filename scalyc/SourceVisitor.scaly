@@ -691,9 +691,6 @@ class SourceVisitor extends CppVisitor {
         false
     }
 
-    function closeConstParameter(constParameter: ConstParameter) {
-    }
-
     function openVarParameter(varParameter: VarParameter): bool {
         writeParameter(varParameter.name, varParameter.parameterType)
         false
@@ -800,9 +797,6 @@ class SourceVisitor extends CppVisitor {
         }
 
         true
-    }
-
-    function closePostfixExpression(postfixExpression: PostfixExpression) {
     }
 
     function openBinaryOperation(binaryOperation: BinaryOperation): bool {

@@ -644,9 +644,6 @@ bool SourceVisitor::isClass(string* name) {
     return false;
 }
 
-void SourceVisitor::closeConstParameter(ConstParameter* constParameter) {
-}
-
 bool SourceVisitor::openVarParameter(VarParameter* varParameter) {
     writeParameter(varParameter->name, varParameter->parameterType);
     return false;
@@ -762,9 +759,6 @@ bool SourceVisitor::openPostfixExpression(PostfixExpression* postfixExpression) 
         }
     }
     return true;
-}
-
-void SourceVisitor::closePostfixExpression(PostfixExpression* postfixExpression) {
 }
 
 bool SourceVisitor::openBinaryOperation(BinaryOperation* binaryOperation) {
