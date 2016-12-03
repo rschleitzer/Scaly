@@ -166,7 +166,6 @@ void HeaderVisitor::closeFunctionDeclaration(FunctionDeclaration* functionDeclar
     staticFunction = false;
     if (functionDeclaration->body == nullptr)
         headerFile->append(" = 0");
-    suppressHeader = false;
 }
 
 bool HeaderVisitor::openEnumDeclaration(EnumDeclaration* enumDeclaration) {
@@ -859,11 +858,9 @@ void HeaderVisitor::visitWildcardPattern(WildcardPattern* wildcardPattern) {
 bool HeaderVisitor::openIdentifierPattern(IdentifierPattern* identifierPattern) {
     if (identifierPattern->annotationForType != nullptr) {
         identifierPattern->annotationForType->accept(this);
-        if (!suppressHeader)
-            headerFile->append(" ");
+        headerFile->append(" ");
     }
-    if (!suppressHeader)
-        headerFile->append(identifierPattern->identifier);
+    headerFile->append(identifierPattern->identifier);
     return false;
 }
 

@@ -14,7 +14,6 @@ class HeaderVisitor extends CppVisitor {
     mutable firstParameter: bool
     mutable firstBindingInitializer: bool
     mutable staticFunction: bool
-    mutable suppressHeader: bool
 
     constructor() {
 
@@ -181,8 +180,6 @@ class HeaderVisitor extends CppVisitor {
 
         if functionDeclaration.body == null
             headerFile.append(" = 0")
-
-        suppressHeader = false
     }
 
     function openEnumDeclaration(enumDeclaration: EnumDeclaration): bool {
@@ -879,13 +876,10 @@ class HeaderVisitor extends CppVisitor {
 
         if identifierPattern.annotationForType != null {
             identifierPattern.annotationForType.accept(this)
-
-            if !suppressHeader
-                headerFile.append(" ")
+            headerFile.append(" ")
         }
 
-        if !suppressHeader
-            headerFile.append(identifierPattern.identifier)
+        headerFile.append(identifierPattern.identifier)
 
         false
     }

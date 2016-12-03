@@ -14,7 +14,6 @@ public:
     bool firstParameter;
     bool firstBindingInitializer;
     bool staticFunction;
-    bool suppressHeader;
     HeaderVisitor();
     virtual bool openProgram(Program* program);
     virtual void closeProgram(Program* program);
