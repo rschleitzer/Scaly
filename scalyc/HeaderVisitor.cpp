@@ -398,11 +398,6 @@ bool HeaderVisitor::openFunctionSignature(FunctionSignature* functionSignature) 
     return true;
 }
 
-bool HeaderVisitor::openParameterClause(ParameterClause* parameterClause) {
-    firstParameter = true;
-    return true;
-}
-
 void HeaderVisitor::closeParameterClause(ParameterClause* parameterClause) {
     headerFile->append(")");
 }
@@ -414,12 +409,11 @@ bool HeaderVisitor::openConstParameter(ConstParameter* constParameter) {
 }
 
 void HeaderVisitor::writeParameter(string* name, Type* parameterType) {
-    if (!firstParameter) {
+    ParameterClause* parameterClause = (ParameterClause*)parameterType->parent->parent;
+    _Array<Parameter>* parameters = parameterClause->parameters;
+    Parameter* parameter = (Parameter*)parameterType->parent;
+    if (parameter != *(*parameters)[0])
         headerFile->append(", ");
-    }
-    else {
-        firstParameter = false;
-    }
     parameterType->accept(this);
     headerFile->append(" ");
     headerFile->append(name);

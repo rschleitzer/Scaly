@@ -11,7 +11,6 @@ public:
     _Array<Inherits>* inherits;
     _Array<string>* classes;
     size_t headerIndentLevel;
-    bool firstParameter;
     bool staticFunction;
     HeaderVisitor();
     virtual bool openProgram(Program* program);
@@ -30,7 +29,6 @@ public:
     virtual bool openCodeBlock(CodeBlock* codeBlock);
     virtual bool openPatternInitializer(PatternInitializer* patternInitializer);
     virtual bool openFunctionSignature(FunctionSignature* functionSignature);
-    virtual bool openParameterClause(ParameterClause* parameterClause);
     virtual void closeParameterClause(ParameterClause* parameterClause);
     virtual bool openConstParameter(ConstParameter* constParameter);
     virtual void writeParameter(string* name, Type* parameterType);
