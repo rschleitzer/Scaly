@@ -11,7 +11,6 @@ class SourceVisitor extends CppVisitor {
     mutable sourceIndentLevel: number
 
     // Some state during building some constructs
-    mutable firstParameter: bool
     mutable inParameterClause: bool
 
     constructor() {
@@ -633,7 +632,6 @@ class SourceVisitor extends CppVisitor {
     }
 
     function openParameterClause(parameterClause: ParameterClause): bool {
-        firstParameter = true
         inParameterClause = true
 
         true
@@ -654,13 +652,11 @@ class SourceVisitor extends CppVisitor {
     }
 
     function writeParameter(name: string, parameterType: Type) {
-        if !firstParameter {
+        let parameterClause: ParameterClause = parameterType.parent.parent as ParameterClause
+        let parameters: Parameter[] = parameterClause.parameters
+        let parameter: Parameter = parameterType.parent as Parameter
+        if parameter != parameters[0]
             sourceFile.append(", ")
-        }
-        else {
-            firstParameter = false
-        }
-
         parameterType.accept(this)
         sourceFile.append(" ")
         sourceFile.append(name)

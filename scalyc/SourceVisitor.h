@@ -11,7 +11,6 @@ public:
     _Array<Inherits>* inherits;
     _Array<string>* classes;
     size_t sourceIndentLevel;
-    bool firstParameter;
     bool inParameterClause;
     SourceVisitor();
     virtual bool openProgram(Program* program);

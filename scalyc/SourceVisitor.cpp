@@ -598,7 +598,6 @@ bool SourceVisitor::openFunctionResult(FunctionResult* functionResult) {
 }
 
 bool SourceVisitor::openParameterClause(ParameterClause* parameterClause) {
-    firstParameter = true;
     inParameterClause = true;
     return true;
 }
@@ -615,12 +614,11 @@ bool SourceVisitor::openConstParameter(ConstParameter* constParameter) {
 }
 
 void SourceVisitor::writeParameter(string* name, Type* parameterType) {
-    if (!firstParameter) {
+    ParameterClause* parameterClause = (ParameterClause*)parameterType->parent->parent;
+    _Array<Parameter>* parameters = parameterClause->parameters;
+    Parameter* parameter = (Parameter*)parameterType->parent;
+    if (parameter != *(*parameters)[0])
         sourceFile->append(", ");
-    }
-    else {
-        firstParameter = false;
-    }
     parameterType->accept(this);
     sourceFile->append(" ");
     sourceFile->append(name);
