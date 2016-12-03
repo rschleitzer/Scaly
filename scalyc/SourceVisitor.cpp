@@ -150,46 +150,26 @@ bool SourceVisitor::openConstantDeclaration(ConstantDeclaration* constantDeclara
     if (constantDeclaration->parent->parent->parent == nullptr)
         return true;
     if (constantDeclaration->parent->parent->parent->_isClassDeclaration())
-        suppressSource = true;
+        return false;
     return true;
-}
-
-void SourceVisitor::closeConstantDeclaration(ConstantDeclaration* constantDeclaration) {
-    suppressSource = false;
 }
 
 bool SourceVisitor::openVariableDeclaration(VariableDeclaration* variableDeclaration) {
     if (variableDeclaration->parent->parent->parent->_isClassDeclaration())
-        suppressSource = true;
+        return false;
     return true;
-}
-
-void SourceVisitor::closeVariableDeclaration(VariableDeclaration* variableDeclaration) {
-    suppressSource = false;
 }
 
 bool SourceVisitor::openMutableDeclaration(MutableDeclaration* mutableDeclaration) {
     if (mutableDeclaration->parent->parent->parent->_isClassDeclaration())
-        suppressSource = true;
+        return false;
     return true;
-}
-
-void SourceVisitor::closeMutableDeclaration(MutableDeclaration* mutableDeclaration) {
-    suppressSource = false;
 }
 
 bool SourceVisitor::openFunctionDeclaration(FunctionDeclaration* functionDeclaration) {
-    if (functionDeclaration->body == nullptr) {
-        suppressSource = true;
-    }
-    else {
-        suppressSource = false;
-    }
+    if (functionDeclaration->body == nullptr)
+        return false;
     return true;
-}
-
-void SourceVisitor::closeFunctionDeclaration(FunctionDeclaration* functionDeclaration) {
-    suppressSource = false;
 }
 
 bool SourceVisitor::openEnumDeclaration(EnumDeclaration* enumDeclaration) {
@@ -547,90 +527,68 @@ void SourceVisitor::closeBindingInitializer(BindingInitializer* bindingInitializ
 bool SourceVisitor::openFunctionSignature(FunctionSignature* functionSignature) {
     string* functionName = ((FunctionDeclaration*)functionSignature->parent)->name;
     if (functionSignature->result == nullptr) {
-        if (functionSignature->throwsClause == nullptr) {
-            if (!suppressSource)
-                sourceFile->append("void");
-        }
-        else {
-            if (!suppressSource)
-                appendCppType(sourceFile, functionSignature->throwsClause->throwsType);
-        }
+        if (functionSignature->throwsClause == nullptr)
+            sourceFile->append("void");
+        else
+            appendCppType(sourceFile, functionSignature->throwsClause->throwsType);
     }
     else {
         if (functionSignature->throwsClause != nullptr) {
-            if (!suppressSource)
-                sourceFile->append("_Result<");
+            sourceFile->append("_Result<");
             if (hasArrayPostfix(functionSignature->result->resultType)) {
                 Type* type = functionSignature->result->resultType;
-                if (!suppressSource) {
-                    sourceFile->append("_Array<");
-                    appendCppTypeName(sourceFile, type);
-                    sourceFile->append(">");
-                }
+                sourceFile->append("_Array<");
+                appendCppTypeName(sourceFile, type);
+                sourceFile->append(">");
             }
             else {
                 Type* type = (Type*)functionSignature->result->resultType;
-                if (!suppressSource)
-                    appendCppTypeName(sourceFile, type);
+                appendCppTypeName(sourceFile, type);
             }
-            if (!suppressSource) {
-                sourceFile->append(", ");
-                appendCppTypeName(sourceFile, (Type*)(functionSignature->throwsClause->throwsType));
-                sourceFile->append(">");
-            }
+            sourceFile->append(", ");
+            appendCppTypeName(sourceFile, (Type*)(functionSignature->throwsClause->throwsType));
+            sourceFile->append(">");
         }
         else {
             if (hasArrayPostfix(functionSignature->result->resultType)) {
                 Type* type = functionSignature->result->resultType;
-                if (!suppressSource) {
-                    sourceFile->append("_Array<");
-                    appendCppTypeName(sourceFile, type);
-                    sourceFile->append(">");
-                }
+                sourceFile->append("_Array<");
+                appendCppTypeName(sourceFile, type);
+                sourceFile->append(">");
             }
             else {
                 Type* type = (Type*)functionSignature->result->resultType;
-                if (!suppressSource)
-                    appendCppTypeName(sourceFile, type);
+                appendCppTypeName(sourceFile, type);
                 if (isClass(type->name)) {
-                    if (!suppressSource)
-                        sourceFile->append("*");
+                    sourceFile->append("*");
                 }
             }
         }
     }
-    if (!suppressSource) {
-        sourceFile->append(" ");
-        if (functionSignature->parent->parent->parent->parent->_isClassDeclaration()) {
-            ClassDeclaration* classDeclaration = (ClassDeclaration*)functionSignature->parent->parent->parent->parent;
-            sourceFile->append(classDeclaration->name);
-            sourceFile->append("::");
-        }
+    sourceFile->append(" ");
+    if (functionSignature->parent->parent->parent->parent->_isClassDeclaration()) {
+        ClassDeclaration* classDeclaration = (ClassDeclaration*)functionSignature->parent->parent->parent->parent;
+        sourceFile->append(classDeclaration->name);
+        sourceFile->append("::");
     }
-    if (!suppressSource) {
-        sourceFile->append(functionName);
-        sourceFile->append("(");
-    }
+    sourceFile->append(functionName);
+    sourceFile->append("(");
     if (functionSignature->result != nullptr) {
         Type* type = (Type*)functionSignature->result->resultType;
         if (isClass(type->name)) {
             LifeTime* lifeTime = type->lifeTime;
             if ((lifeTime == nullptr) || !(lifeTime->_isReference())) {
-                if (!suppressSource)
-                    sourceFile->append("_Page* _rp");
+                sourceFile->append("_Page* _rp");
                 if ((functionSignature->parameterClause->parameters) || (functionSignature->throwsClause)) {
-                    if (!suppressSource)
-                        sourceFile->append(", ");
+                    sourceFile->append(", ");
                 }
             }
         }
     }
     if (functionSignature->throwsClause != nullptr) {
-        if (!suppressSource)
-            sourceFile->append("_Page* _ep");
+        sourceFile->append("_Page* _ep");
         if (functionSignature->parameterClause->parameters) {
-            if (!suppressSource)
-                sourceFile->append(", ");
+            sourceFile->append(", ");
         }
     }
     return true;
@@ -647,8 +605,7 @@ bool SourceVisitor::openParameterClause(ParameterClause* parameterClause) {
 }
 
 void SourceVisitor::closeParameterClause(ParameterClause* parameterClause) {
-    if (!suppressSource)
-        sourceFile->append(") ");
+    sourceFile->append(") ");
     inParameterClause = false;
 }
 
@@ -660,17 +617,14 @@ bool SourceVisitor::openConstParameter(ConstParameter* constParameter) {
 
 void SourceVisitor::writeParameter(string* name, Type* parameterType) {
     if (!firstParameter) {
-        if (!suppressSource)
-            sourceFile->append(", ");
+        sourceFile->append(", ");
     }
     else {
         firstParameter = false;
     }
     parameterType->accept(this);
-    if (!suppressSource) {
-        sourceFile->append(" ");
-        sourceFile->append(name);
-    }
+    sourceFile->append(" ");
+    sourceFile->append(name);
 }
 
 bool SourceVisitor::isClass(string* name) {
@@ -2069,11 +2023,9 @@ bool SourceVisitor::openIdentifierPattern(IdentifierPattern* identifierPattern) 
     }
     if (identifierPattern->annotationForType != nullptr) {
         identifierPattern->annotationForType->accept(this);
-        if (!suppressSource)
-            sourceFile->append(" ");
+        sourceFile->append(" ");
     }
-    if (!suppressSource)
-        sourceFile->append(identifierPattern->identifier);
+    sourceFile->append(identifierPattern->identifier);
     return false;
 }
 
@@ -2142,22 +2094,18 @@ void SourceVisitor::closeCaseContent(CaseContent* caseContent) {
 
 bool SourceVisitor::openType(Type* type) {
     if (hasArrayPostfix(type)) {
-        if (!suppressSource)
-            sourceFile->append("_Array<");
+        sourceFile->append("_Array<");
     }
-    if ((!suppressSource))
-        appendCppTypeName(sourceFile, type);
+    appendCppTypeName(sourceFile, type);
     return true;
 }
 
 void SourceVisitor::closeType(Type* type) {
     if (hasArrayPostfix(type)) {
         if (!sourceIndentLevel) {
-            if (!suppressSource) {
-                sourceFile->append(">");
-                if (!type->parent->_isConstructorCall())
-                    sourceFile->append("*");
-            }
+            sourceFile->append(">");
+            if (!type->parent->_isConstructorCall())
+                sourceFile->append("*");
         }
         else {
             sourceFile->append(">");
@@ -2166,8 +2114,7 @@ void SourceVisitor::closeType(Type* type) {
         }
     }
     if (isClass(type->name) && !hasArrayPostfix(type) && !inTypeQuery(type) && !type->parent->_isConstructorCall()) {
-        if (!suppressSource)
-            sourceFile->append("*");
+        sourceFile->append("*");
     }
     if (inTypeQuery(type))
         sourceFile->append("()");

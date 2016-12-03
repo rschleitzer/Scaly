@@ -13,7 +13,6 @@ class SourceVisitor extends CppVisitor {
     // Some state during building some constructs
     mutable firstParameter: bool
     mutable inParameterClause: bool
-    mutable suppressSource: bool
 
     constructor() {
 
@@ -169,54 +168,33 @@ class SourceVisitor extends CppVisitor {
             return(true)
 
         if constantDeclaration.parent.parent.parent is ClassDeclaration
-            suppressSource = true
+            return(false)
             
         true
-    }
-
-    function closeConstantDeclaration(constantDeclaration: ConstantDeclaration) {
-        suppressSource = false
     }
 
     function openVariableDeclaration(variableDeclaration: VariableDeclaration): bool {
 
         if variableDeclaration.parent.parent.parent is ClassDeclaration
-            suppressSource = true
+            return(false)
 
         true
-    }
-
-    function closeVariableDeclaration(variableDeclaration: VariableDeclaration) {
-        suppressSource = false
     }
 
     function openMutableDeclaration(mutableDeclaration: MutableDeclaration): bool {
 
         if mutableDeclaration.parent.parent.parent is ClassDeclaration
-            suppressSource = true
+            return(false)
 
         true
-    }
-
-    function closeMutableDeclaration(mutableDeclaration: MutableDeclaration) {
-        suppressSource = false
     }
 
     function openFunctionDeclaration(functionDeclaration: FunctionDeclaration): bool {
 
-        if functionDeclaration.body == null {
-            suppressSource = true
-        }
-        else {
-            suppressSource = false
-        }
+        if functionDeclaration.body == null
+            return(false)
 
         true
-    }
-
-    function closeFunctionDeclaration(functionDeclaration: FunctionDeclaration) {
-
-        suppressSource = false
     }
 
     function openEnumDeclaration(enumDeclaration: EnumDeclaration): bool {
@@ -579,93 +557,71 @@ class SourceVisitor extends CppVisitor {
         let functionName: string = (functionSignature.parent as FunctionDeclaration).name
 
         if functionSignature.result == null {
-            if functionSignature.throwsClause == null {
-                if !suppressSource
-                    sourceFile.append("void")
-            }
-            else {
-                if !suppressSource
-                    appendCppType(sourceFile, functionSignature.throwsClause.throwsType)
-            }
+            if functionSignature.throwsClause == null
+                sourceFile.append("void")
+            else
+                appendCppType(sourceFile, functionSignature.throwsClause.throwsType)
         }
         else {
             if functionSignature.throwsClause != null {
 
-                if !suppressSource
-                    sourceFile.append("_Result<")
+                sourceFile.append("_Result<")
 
                 if hasArrayPostfix(functionSignature.result.resultType) {
                     let type: Type = functionSignature.result.resultType
-                    if !suppressSource {
-                        sourceFile.append("_Array<")
-                        appendCppTypeName(sourceFile, type)
-                        sourceFile.append(">")
-                    }
+                    sourceFile.append("_Array<")
+                    appendCppTypeName(sourceFile, type)
+                    sourceFile.append(">")
                 }
                 else {
                     let type: Type = functionSignature.result.resultType as Type
-                    if !suppressSource
-                        appendCppTypeName(sourceFile, type)
+                    appendCppTypeName(sourceFile, type)
                 }
-                if !suppressSource {
-                    sourceFile.append(", ")
-                    appendCppTypeName(sourceFile, (functionSignature.throwsClause.throwsType) as Type)
-                    sourceFile.append(">")
-                }
+                sourceFile.append(", ")
+                appendCppTypeName(sourceFile, (functionSignature.throwsClause.throwsType) as Type)
+                sourceFile.append(">")
             }
             else {
                 if hasArrayPostfix(functionSignature.result.resultType) {
                     let type: Type = functionSignature.result.resultType
-                    if !suppressSource {
-                        sourceFile.append("_Array<")
-                        appendCppTypeName(sourceFile, type)
-                        sourceFile.append(">")
-                    }
+                    sourceFile.append("_Array<")
+                    appendCppTypeName(sourceFile, type)
+                    sourceFile.append(">")
                 }
                 else {
                     let type: Type = functionSignature.result.resultType as Type
-                    if !suppressSource
-                        appendCppTypeName(sourceFile, type)
+                    appendCppTypeName(sourceFile, type)
                     if isClass(type.name) {
-                        if !suppressSource
-                            sourceFile.append("*")
+                        sourceFile.append("*")
                     }
                 }
             }
         }
 
-        if !suppressSource {
-            sourceFile.append(" ")    
-            if functionSignature.parent.parent.parent.parent is ClassDeclaration {
-                let classDeclaration: ClassDeclaration = functionSignature.parent.parent.parent.parent as ClassDeclaration
-                sourceFile.append(classDeclaration.name)
-                sourceFile.append("::")
-            }
+        sourceFile.append(" ")    
+        if functionSignature.parent.parent.parent.parent is ClassDeclaration {
+            let classDeclaration: ClassDeclaration = functionSignature.parent.parent.parent.parent as ClassDeclaration
+            sourceFile.append(classDeclaration.name)
+            sourceFile.append("::")
         }
-        if !suppressSource {
-            sourceFile.append(functionName)
-            sourceFile.append("(")
-        }
+        sourceFile.append(functionName)
+        sourceFile.append("(")
         if functionSignature.result != null {
             let type: Type = functionSignature.result.resultType as Type
             if isClass(type.name) {
                 let lifeTime: LifeTime = type.lifeTime
                 if (lifeTime == null) || !(lifeTime is Reference) {
-                    if !suppressSource
-                        sourceFile.append("_Page* _rp")
+                    sourceFile.append("_Page* _rp")
                     if (functionSignature.parameterClause.parameters) || (functionSignature.throwsClause) {
-                        if !suppressSource
-                            sourceFile.append(", ")
+                        sourceFile.append(", ")
                     }
                 }
             }
         }
         if functionSignature.throwsClause != null {
-            if !suppressSource
-                sourceFile.append("_Page* _ep")
+            sourceFile.append("_Page* _ep")
             if functionSignature.parameterClause.parameters {
-                if !suppressSource
-                    sourceFile.append(", ")
+                sourceFile.append(", ")
             }
         }
 
@@ -685,8 +641,7 @@ class SourceVisitor extends CppVisitor {
 
     function closeParameterClause(parameterClause: ParameterClause) {
 
-        if !suppressSource
-            sourceFile.append(") ")
+        sourceFile.append(") ")
 
         inParameterClause = false
     }
@@ -700,18 +655,15 @@ class SourceVisitor extends CppVisitor {
 
     function writeParameter(name: string, parameterType: Type) {
         if !firstParameter {
-            if !suppressSource
-                sourceFile.append(", ")
+            sourceFile.append(", ")
         }
         else {
             firstParameter = false
         }
 
         parameterType.accept(this)
-        if !suppressSource {
-            sourceFile.append(" ")
-            sourceFile.append(name)
-        }
+        sourceFile.append(" ")
+        sourceFile.append(name)
     }
 
     function isClass(name: string): bool {
@@ -2148,12 +2100,10 @@ class SourceVisitor extends CppVisitor {
         if identifierPattern.annotationForType != null {
             identifierPattern.annotationForType.accept(this)
 
-            if !suppressSource
-                sourceFile.append(" ")
+            sourceFile.append(" ")
         }
 
-        if !suppressSource
-            sourceFile.append(identifierPattern.identifier)
+        sourceFile.append(identifierPattern.identifier)
 
         false
     }
@@ -2225,11 +2175,9 @@ class SourceVisitor extends CppVisitor {
 
     function openType(type: Type): bool {
         if hasArrayPostfix(type) {
-            if !suppressSource
-                sourceFile.append("_Array<")
+            sourceFile.append("_Array<")
         }
-        if (!suppressSource)
-            appendCppTypeName(sourceFile, type)
+        appendCppTypeName(sourceFile, type)
  
        true
     }
@@ -2237,11 +2185,9 @@ class SourceVisitor extends CppVisitor {
     function closeType(type: Type) {
         if hasArrayPostfix(type) {
             if !sourceIndentLevel {
-                if !suppressSource {
-                    sourceFile.append(">")
-                    if !type.parent is ConstructorCall
-                        sourceFile.append("*")
-                }
+                sourceFile.append(">")
+                if !type.parent is ConstructorCall
+                    sourceFile.append("*")
             }
             else {
                 sourceFile.append(">")
@@ -2250,9 +2196,7 @@ class SourceVisitor extends CppVisitor {
             }
         }
         if isClass(type.name) && !hasArrayPostfix(type) && !inTypeQuery(type) && !type.parent is ConstructorCall {
-
-            if !suppressSource
-                sourceFile.append("*")
+            sourceFile.append("*")
         }
         if inTypeQuery(type)
             sourceFile.append("()")
