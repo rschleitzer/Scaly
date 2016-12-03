@@ -61,9 +61,6 @@ class HeaderVisitor extends CppVisitor {
         true
     }
 
-    function closeProgram(program: Program) {
-    }
-
     function openCompilationUnit(compilationUnit: CompilationUnit): bool {
 
         moduleName = compilationUnit.fileName
@@ -130,9 +127,6 @@ class HeaderVisitor extends CppVisitor {
         false
     }
 
-    function closeConstantDeclaration(constantDeclaration: ConstantDeclaration) {
-    }
-
     function openVariableDeclaration(variableDeclaration: VariableDeclaration): bool {
 
         if variableDeclaration.parent.parent.parent == null
@@ -144,9 +138,6 @@ class HeaderVisitor extends CppVisitor {
         false
     }
 
-    function closeVariableDeclaration(variableDeclaration: VariableDeclaration) {
-    }
-
     function openMutableDeclaration(mutableDeclaration: MutableDeclaration): bool {
 
         if mutableDeclaration.parent.parent.parent == null
@@ -156,9 +147,6 @@ class HeaderVisitor extends CppVisitor {
             return(true)
 
         false
-    }
-
-    function closeMutableDeclaration(mutableDeclaration: MutableDeclaration) {
     }
 
     function openFunctionDeclaration(functionDeclaration: FunctionDeclaration): bool {
@@ -338,37 +326,14 @@ class HeaderVisitor extends CppVisitor {
         true
     }
 
-    function closeConstructorDeclaration(constructorDeclaration: ConstructorDeclaration) {
-    }
-
     function openCodeBlock(codeBlock: CodeBlock): bool {
         false
-    }
-
-    function closeCodeBlock(codeBlock: CodeBlock) {
-    }
-
-    function openSimpleExpression(simpleExpression: SimpleExpression): bool {
-        true
-    }
-
-    function closeSimpleExpression(simpleExpression: SimpleExpression) {
-    }
-
-    function openInitializer(initializer: Initializer): bool {
-        true
-    }
-
-    function closeInitializer(initializer: Initializer) {
     }
 
     function openBindingInitializer(bindingInitializer: BindingInitializer): bool {
         firstBindingInitializer = true
 
         true
-    }
-
-    function closeBindingInitializer(bindingInitializer: BindingInitializer) {
     }
 
     function openPatternInitializer(patternInitializer: PatternInitializer): bool {
@@ -378,22 +343,6 @@ class HeaderVisitor extends CppVisitor {
             firstBindingInitializer = false
 
         true
-    }
-
-    function closePatternInitializer(patternInitializer: PatternInitializer) {
-    }
-
-    function openAdditionalInitializer(additionalInitializer: AdditionalInitializer): bool {
-        true
-    }
-
-    function closeAdditionalInitializer(additionalInitializer: AdditionalInitializer) {
-    }
-
-    function visitOverrideWord(overrideWord: OverrideWord) {
-    }
-
-    function visitStaticWord(staticWord: StaticWord) {
     }
 
     function openFunctionSignature(functionSignature: FunctionSignature): bool {
@@ -471,16 +420,6 @@ class HeaderVisitor extends CppVisitor {
         true
     }
 
-    function closeFunctionSignature(functionSignature: FunctionSignature) {
-    }
-
-    function openFunctionResult(functionResult: FunctionResult): bool {
-        true
-    }
-
-    function closeFunctionResult(functionResult: FunctionResult) {
-    }
-
     function openParameterClause(parameterClause: ParameterClause): bool {
 
         firstParameter = true
@@ -551,13 +490,6 @@ class HeaderVisitor extends CppVisitor {
         headerFile.append(varParameterName)
     }
 
-    function openThrowsClause(throwsClause: ThrowsClause): bool {
-        true
-    }
-
-    function closeThrowsClause(throwsClause: ThrowsClause) {
-    }
-
     function openEnumMember(enumMember: EnumMember): bool {
         if !enumMember.parent is EnumDeclaration
             return(false)
@@ -602,23 +534,6 @@ class HeaderVisitor extends CppVisitor {
         }
     }
 
-    function visitEnumCase(enumCase: EnumCase) {
-    }
-
-    function openAdditionalCase(additionalCase: AdditionalCase): bool {
-        true
-    }
-
-    function closeAdditionalCase(additionalCase: AdditionalCase) {
-    }
-
-    function openClassBody(classBody: ClassBody): bool {
-        true
-    }
-
-    function closeClassBody(classBody: ClassBody) {
-    }
-
     function indentHeader() {
         var i: number = 0
         while i < headerIndentLevel {
@@ -652,226 +567,6 @@ class HeaderVisitor extends CppVisitor {
         headerFile.append(";")
     }
 
-    function openPrefixExpression(prefixExpression: PrefixExpression): bool {
-        true
-    }
-
-    function closePrefixExpression(prefixExpression: PrefixExpression) {
-    }
-
-    function openPostfixExpression(postfixExpression: PostfixExpression): bool {
-        true
-    }
-
-    function closePostfixExpression(postfixExpression: PostfixExpression) {
-    }
-
-    function openBinaryOperation(binaryOperation: BinaryOperation): bool {
-        true
-    }
-
-    function closeBinaryOperation(binaryOperation: BinaryOperation) {
-    }
-
-    function openAssignment(assignment: Assignment): bool {
-        true
-    }
-
-    function closeAssignment(assignment: Assignment) {
-    }
-
-    function openTypeQuery(typeQuery: TypeQuery): bool {
-        true
-    }
-
-    function closeTypeQuery(typeQuery: TypeQuery) {
-    }
-
-    function openTypeCast(typeCast: TypeCast): bool {
-        true
-    }
-
-    function closeTypeCast(typeCast: TypeCast) {
-    }
-
-    function openCatchClause(catchClause: CatchClause): bool {
-        true
-    }
-
-    function closeCatchClause(catchClause: CatchClause) {
-    }
-
-    function openWildCardCatchPattern(wildCardCatchPattern: WildCardCatchPattern): bool {
-        true
-    }
-
-    function closeWildCardCatchPattern(wildCardCatchPattern: WildCardCatchPattern) {
-    }
-
-    function openIdentifierCatchPattern(identifierCatchPattern: IdentifierCatchPattern): bool {
-        true
-    }
-
-    function closeIdentifierCatchPattern(identifierCatchPattern: IdentifierCatchPattern) {
-    }
-
-    function visitOperatorPostfix(operatorPostfix: OperatorPostfix) {
-    }
-
-    function openFunctionCall(functionCall: FunctionCall): bool {
-        true
-    }
-
-    function closeFunctionCall(functionCall: FunctionCall) {
-    }
-
-    function visitMemberExpression(memberExpression: MemberExpression) {
-    }
-
-    function openSubscript(subscript: Subscript): bool {
-        true
-    }
-
-    function closeSubscript(subscript: Subscript) {
-    }
-
-    function openExpressionElement(expressionElement: ExpressionElement): bool {
-        true
-    }
-
-    function closeExpressionElement(expressionElement: ExpressionElement) {
-    }
-
-    function visitIdentifierExpression(identifierExpression: IdentifierExpression) {
-    }
-
-    function visitLiteralExpression(literalExpression: LiteralExpression) {
-    }
-
-    function openIfExpression(ifExpression: IfExpression): bool {
-        true
-    }
-
-    function closeIfExpression(ifExpression: IfExpression) {
-    }
-
-    function openSwitchExpression(switchExpression: SwitchExpression): bool {
-        true
-    }
-
-    function closeSwitchExpression(switchExpression: SwitchExpression) {
-    }
-
-    function openForExpression(forExpression: ForExpression): bool {
-        true
-    }
-
-    function closeForExpression(forExpression: ForExpression) {
-    }
-
-    function openWhileExpression(whileExpression: WhileExpression): bool {
-        true
-    }
-
-    function closeWhileExpression(whileExpression: WhileExpression) {
-    }
-
-    function openDoExpression(doExpression: DoExpression): bool {
-        true
-    }
-
-    function closeDoExpression(doExpression: DoExpression) {
-    }
-
-    function openParenthesizedExpression(parenthesizedExpression: ParenthesizedExpression): bool {
-        true
-    }
-
-    function closeParenthesizedExpression(parenthesizedExpression: ParenthesizedExpression) {
-    }
-
-    function openReturnExpression(returnExpression: ReturnExpression): bool {
-        true
-    }
-
-    function closeReturnExpression(returnExpression: ReturnExpression) {
-    }
-
-    function openThrowExpression(throwExpression: ThrowExpression): bool {
-        true
-    }
-
-    function closeThrowExpression(throwExpression: ThrowExpression) {
-    }
-
-    function openBreakExpression(breakExpression: BreakExpression): bool {
-        true
-    }
-
-    function closeBreakExpression(breakExpression: BreakExpression) {
-    }
-
-    function openConstructorCall(constructorCall: ConstructorCall): bool {
-        true
-    }
-
-    function closeConstructorCall(constructorCall: ConstructorCall) {
-    }
-
-    function visitThisExpression(thisExpression: ThisExpression) {
-    }
-
-    function visitNullExpression(nullExpression: NullExpression) {
-    }
-
-    function openElseClause(elseClause: ElseClause): bool {
-        true
-    }
-
-    function closeElseClause(elseClause: ElseClause) {
-    }
-
-    function openCurliedSwitchBody(curliedSwitchBody: CurliedSwitchBody): bool {
-        true
-    }
-
-    function closeCurliedSwitchBody(curliedSwitchBody: CurliedSwitchBody) {
-    }
-
-    function openNakedSwitchBody(nakedSwitchBody: NakedSwitchBody): bool {
-        true
-    }
-
-    function closeNakedSwitchBody(nakedSwitchBody: NakedSwitchBody) {
-    }
-
-    function openSwitchCase(switchCase: SwitchCase): bool {
-        true
-    }
-
-    function closeSwitchCase(switchCase: SwitchCase) {
-    }
-
-    function openItemCaseLabel(itemCaseLabel: ItemCaseLabel): bool {
-        true
-    }
-
-    function closeItemCaseLabel(itemCaseLabel: ItemCaseLabel) {
-    }
-
-    function visitDefaultCaseLabel(defaultCaseLabel: DefaultCaseLabel) {
-    }
-
-    function openCaseItem(caseItem: CaseItem): bool {
-        true
-    }
-
-    function closeCaseItem(caseItem: CaseItem) {
-    }
-
-    function visitWildcardPattern(wildcardPattern: WildcardPattern) {
-    }
-
     function openIdentifierPattern(identifierPattern: IdentifierPattern): bool {
 
         if identifierPattern.annotationForType != null {
@@ -882,37 +577,6 @@ class HeaderVisitor extends CppVisitor {
         headerFile.append(identifierPattern.identifier)
 
         false
-    }
-
-    function closeIdentifierPattern(identifierPattern: IdentifierPattern) {
-    }
-
-    function openTuplePattern(tuplePattern: TuplePattern): bool {
-        true
-    }
-
-    function closeTuplePattern(tuplePattern: TuplePattern) {
-    }
-
-    function openExpressionPattern(expressionPattern: ExpressionPattern): bool {
-        true
-    }
-
-    function closeExpressionPattern(expressionPattern: ExpressionPattern) {
-    }
-
-    function openTuplePatternElement(tuplePatternElement: TuplePatternElement): bool {
-        true
-    }
-
-    function closeTuplePatternElement(tuplePatternElement: TuplePatternElement) {
-    }
-
-    function openCaseContent(caseContent: CaseContent): bool {
-        true
-    }
-
-    function closeCaseContent(caseContent: CaseContent) {
     }
 
     function openType(type: Type): bool {
@@ -936,56 +600,6 @@ class HeaderVisitor extends CppVisitor {
         if isClass(type.name) && !hasArrayPostfix(type) && !type.parent is ConstructorCall {
                 headerFile.append("*")
         }
-    }
-
-    function openTypeAnnotation(typeAnnotation: TypeAnnotation): bool {
-        true
-    }
-
-    function closeTypeAnnotation(typeAnnotation: TypeAnnotation) {
-    }
-
-    function openSubtype(subtype: Subtype): bool {
-        true
-    }
-
-    function closeSubtype(subtype: Subtype) {
-    }
-
-    function openIndexedType(indexedType: IndexedType): bool {
-        true
-    }
-
-    function closeIndexedType(indexedType: IndexedType) {
-    }
-
-    function visitPointer(pointer: Pointer) {
-    }
-
-    function visitRoot(root: Root) {
-    }
-
-    function visitLocal(local: Local) {
-    }
-
-    function visitReference(reference: Reference) {
-    }
-
-    function visitThrown(thrown: Thrown) {
-    }
-
-    function openTypeInheritanceClause(typeInheritanceClause: TypeInheritanceClause): bool {
-        true
-    }
-
-    function closeTypeInheritanceClause(typeInheritanceClause: TypeInheritanceClause) {
-    }
-
-    function openInheritance(inheritance: Inheritance): bool {
-        true
-    }
-
-    function closeInheritance(inheritance: Inheritance) {
     }
 
     function buildMainHeaderFileString(program: Program) {
