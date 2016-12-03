@@ -483,12 +483,7 @@ void SourceVisitor::closeSimpleExpression(SimpleExpression* simpleExpression) {
                                 if (postfixExpression->primaryExpression->_isIdentifierExpression()) {
                                     IdentifierExpression* identifierExpression = (IdentifierExpression*)(postfixExpression->primaryExpression);
                                     if (identifierExpression->name->equals("print")) {
-                                        indentSource();
-                                        sourceFile->append("if (_File_error)\n");
-                                        indentSource();
-                                        sourceFile->append("    return _File_error;\n");
-                                        sourceIndentLevel--;
-                                        sourceFile->append("}\n");
+                                        sourceFile->append("    if (_File_error)\n        return _File_error;\n}\n");
                                     }
                                 }
                             }

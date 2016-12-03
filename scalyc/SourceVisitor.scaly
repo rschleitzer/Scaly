@@ -504,14 +504,10 @@ class SourceVisitor extends CppVisitor {
                                 let postfixExpression: PostfixExpression = (functionCall.parent) as PostfixExpression
                                 if postfixExpression.primaryExpression is IdentifierExpression {
                                     let identifierExpression: IdentifierExpression = (postfixExpression.primaryExpression) as IdentifierExpression
-                                    // Fix when print is recognized as external function
+
+                                    // Fix this when print is recognized as external function
                                     if identifierExpression.name.equals("print") {
-                                        indentSource()
-                                        sourceFile.append("if (_File_error)\n")
-                                        indentSource()
-                                        sourceFile.append("    return _File_error;\n")
-                                        sourceIndentLevel--
-                                        sourceFile.append("}\n")
+                                        sourceFile.append("    if (_File_error)\n        return _File_error;\n}\n")
                                     }
                                 }
                             }
