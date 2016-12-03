@@ -12,7 +12,6 @@ class HeaderVisitor extends CppVisitor {
 
     // Some state during building some constructs
     mutable firstParameter: bool
-    mutable firstBindingInitializer: bool
     mutable staticFunction: bool
 
     constructor() {
@@ -330,17 +329,9 @@ class HeaderVisitor extends CppVisitor {
         false
     }
 
-    function openBindingInitializer(bindingInitializer: BindingInitializer): bool {
-        firstBindingInitializer = true
-
-        true
-    }
-
     function openPatternInitializer(patternInitializer: PatternInitializer): bool {
-        if !firstBindingInitializer
+        if patternInitializer.parent is AdditionalInitializer
             headerFile.append(", ")
-        else
-            firstBindingInitializer = false
 
         true
     }

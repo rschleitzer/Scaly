@@ -12,7 +12,6 @@ public:
     _Array<string>* classes;
     size_t headerIndentLevel;
     bool firstParameter;
-    bool firstBindingInitializer;
     bool staticFunction;
     HeaderVisitor();
     virtual bool openProgram(Program* program);
@@ -29,7 +28,6 @@ public:
     virtual void closeClassDeclaration(ClassDeclaration* classDeclaration);
     virtual bool openConstructorDeclaration(ConstructorDeclaration* constructorDeclaration);
     virtual bool openCodeBlock(CodeBlock* codeBlock);
-    virtual bool openBindingInitializer(BindingInitializer* bindingInitializer);
     virtual bool openPatternInitializer(PatternInitializer* patternInitializer);
     virtual bool openFunctionSignature(FunctionSignature* functionSignature);
     virtual bool openParameterClause(ParameterClause* parameterClause);

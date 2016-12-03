@@ -321,16 +321,9 @@ bool HeaderVisitor::openCodeBlock(CodeBlock* codeBlock) {
     return false;
 }
 
-bool HeaderVisitor::openBindingInitializer(BindingInitializer* bindingInitializer) {
-    firstBindingInitializer = true;
-    return true;
-}
-
 bool HeaderVisitor::openPatternInitializer(PatternInitializer* patternInitializer) {
-    if (!firstBindingInitializer)
+    if (patternInitializer->parent->_isAdditionalInitializer())
         headerFile->append(", ");
-    else
-        firstBindingInitializer = false;
     return true;
 }
 
