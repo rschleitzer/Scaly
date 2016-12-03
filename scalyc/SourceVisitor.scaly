@@ -1337,12 +1337,10 @@ class SourceVisitor extends CppVisitor {
         ifExpression.condition.accept(this)
         sourceFile.append(")")
         if ifExpression.consequent is SimpleExpression {
-            sourceFile.append("\n")
-            sourceIndentLevel++
+            sourceFile.append("\n    ")
             indentSource()
             ifExpression.consequent.accept(this)
             sourceFile.append(";\n")
-            sourceIndentLevel--
         }
         else {
             sourceFile.append(" ")

@@ -1309,12 +1309,10 @@ bool SourceVisitor::openIfExpression(IfExpression* ifExpression) {
     ifExpression->condition->accept(this);
     sourceFile->append(")");
     if (ifExpression->consequent->_isSimpleExpression()) {
-        sourceFile->append("\n");
-        sourceIndentLevel++;
+        sourceFile->append("\n    ");
         indentSource();
         ifExpression->consequent->accept(this);
         sourceFile->append(";\n");
-        sourceIndentLevel--;
     }
     else {
         sourceFile->append(" ");
