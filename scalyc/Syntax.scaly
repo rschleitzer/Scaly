@@ -1,4 +1,243 @@
-class SyntaxNode {
+class Program
+class CompilationUnit
+class Statement
+class Declaration
+class Expression
+class ConstantDeclaration
+class VariableDeclaration
+class MutableDeclaration
+class FunctionDeclaration
+class EnumDeclaration
+class ClassDeclaration
+class ConstructorDeclaration
+class CodeBlock
+class SimpleExpression
+class Initializer
+class BindingInitializer
+class PatternInitializer
+class AdditionalInitializer
+class Modifier
+class OverrideWord
+class StaticWord
+class FunctionSignature
+class FunctionResult
+class ParameterClause
+class Parameter
+class ConstParameter
+class VarParameter
+class ThrowsClause
+class EnumMember
+class EnumCase
+class AdditionalCase
+class ClassBody
+class ClassMember
+class PrefixExpression
+class PostfixExpression
+class BinaryOp
+class BinaryOperation
+class Assignment
+class TypeQuery
+class TypeCast
+class CatchClause
+class CatchPattern
+class WildCardCatchPattern
+class IdentifierCatchPattern
+class Postfix
+class OperatorPostfix
+class FunctionCall
+class MemberExpression
+class Subscript
+class ExpressionElement
+class PrimaryExpression
+class IdentifierExpression
+class LiteralExpression
+class IfExpression
+class SwitchExpression
+class ForExpression
+class WhileExpression
+class DoExpression
+class ParenthesizedExpression
+class ReturnExpression
+class ThrowExpression
+class BreakExpression
+class ConstructorCall
+class ThisExpression
+class NullExpression
+class ElseClause
+class SwitchBody
+class CurliedSwitchBody
+class NakedSwitchBody
+class SwitchCase
+class CaseLabel
+class ItemCaseLabel
+class DefaultCaseLabel
+class CaseItem
+class Pattern
+class WildcardPattern
+class IdentifierPattern
+class TuplePattern
+class ExpressionPattern
+class TuplePatternElement
+class CaseContent
+class Type
+class TypeAnnotation
+class Subtype
+class TypePostfix
+class IndexedType
+class Pointer
+class LifeTime
+class Root
+class Local
+class Reference
+class Thrown
+class TypeInheritanceClause
+class Inheritance
+
+class SyntaxVisitor {
+    function openProgram(program: Program): bool
+    function closeProgram(program: Program)
+    function openCompilationUnit(compilationUnit: CompilationUnit): bool
+    function closeCompilationUnit(compilationUnit: CompilationUnit)
+    function openConstantDeclaration(constantDeclaration: ConstantDeclaration): bool
+    function closeConstantDeclaration(constantDeclaration: ConstantDeclaration)
+    function openVariableDeclaration(variableDeclaration: VariableDeclaration): bool
+    function closeVariableDeclaration(variableDeclaration: VariableDeclaration)
+    function openMutableDeclaration(mutableDeclaration: MutableDeclaration): bool
+    function closeMutableDeclaration(mutableDeclaration: MutableDeclaration)
+    function openFunctionDeclaration(functionDeclaration: FunctionDeclaration): bool
+    function closeFunctionDeclaration(functionDeclaration: FunctionDeclaration)
+    function openEnumDeclaration(enumDeclaration: EnumDeclaration): bool
+    function closeEnumDeclaration(enumDeclaration: EnumDeclaration)
+    function openClassDeclaration(classDeclaration: ClassDeclaration): bool
+    function closeClassDeclaration(classDeclaration: ClassDeclaration)
+    function openConstructorDeclaration(constructorDeclaration: ConstructorDeclaration): bool
+    function closeConstructorDeclaration(constructorDeclaration: ConstructorDeclaration)
+    function openCodeBlock(codeBlock: CodeBlock): bool
+    function closeCodeBlock(codeBlock: CodeBlock)
+    function openSimpleExpression(simpleExpression: SimpleExpression): bool
+    function closeSimpleExpression(simpleExpression: SimpleExpression)
+    function openInitializer(initializer: Initializer): bool
+    function closeInitializer(initializer: Initializer)
+    function openBindingInitializer(bindingInitializer: BindingInitializer): bool
+    function closeBindingInitializer(bindingInitializer: BindingInitializer)
+    function openPatternInitializer(patternInitializer: PatternInitializer): bool
+    function closePatternInitializer(patternInitializer: PatternInitializer)
+    function openAdditionalInitializer(additionalInitializer: AdditionalInitializer): bool
+    function closeAdditionalInitializer(additionalInitializer: AdditionalInitializer)
+    function visitOverrideWord(overrideWord: OverrideWord)
+    function visitStaticWord(staticWord: StaticWord)
+    function openFunctionSignature(functionSignature: FunctionSignature): bool
+    function closeFunctionSignature(functionSignature: FunctionSignature)
+    function openFunctionResult(functionResult: FunctionResult): bool
+    function closeFunctionResult(functionResult: FunctionResult)
+    function openParameterClause(parameterClause: ParameterClause): bool
+    function closeParameterClause(parameterClause: ParameterClause)
+    function openConstParameter(constParameter: ConstParameter): bool
+    function closeConstParameter(constParameter: ConstParameter)
+    function openVarParameter(varParameter: VarParameter): bool
+    function closeVarParameter(varParameter: VarParameter)
+    function openThrowsClause(throwsClause: ThrowsClause): bool
+    function closeThrowsClause(throwsClause: ThrowsClause)
+    function openEnumMember(enumMember: EnumMember): bool
+    function closeEnumMember(enumMember: EnumMember)
+    function visitEnumCase(enumCase: EnumCase)
+    function openAdditionalCase(additionalCase: AdditionalCase): bool
+    function closeAdditionalCase(additionalCase: AdditionalCase)
+    function openClassBody(classBody: ClassBody): bool
+    function closeClassBody(classBody: ClassBody)
+    function openClassMember(classMember: ClassMember): bool
+    function closeClassMember(classMember: ClassMember)
+    function openPrefixExpression(prefixExpression: PrefixExpression): bool
+    function closePrefixExpression(prefixExpression: PrefixExpression)
+    function openPostfixExpression(postfixExpression: PostfixExpression): bool
+    function closePostfixExpression(postfixExpression: PostfixExpression)
+    function openBinaryOperation(binaryOperation: BinaryOperation): bool
+    function closeBinaryOperation(binaryOperation: BinaryOperation)
+    function openAssignment(assignment: Assignment): bool
+    function closeAssignment(assignment: Assignment)
+    function openTypeQuery(typeQuery: TypeQuery): bool
+    function closeTypeQuery(typeQuery: TypeQuery)
+    function openTypeCast(typeCast: TypeCast): bool
+    function closeTypeCast(typeCast: TypeCast)
+    function openCatchClause(catchClause: CatchClause): bool
+    function closeCatchClause(catchClause: CatchClause)
+    function openWildCardCatchPattern(wildCardCatchPattern: WildCardCatchPattern): bool
+    function closeWildCardCatchPattern(wildCardCatchPattern: WildCardCatchPattern)
+    function openIdentifierCatchPattern(identifierCatchPattern: IdentifierCatchPattern): bool
+    function closeIdentifierCatchPattern(identifierCatchPattern: IdentifierCatchPattern)
+    function visitOperatorPostfix(operatorPostfix: OperatorPostfix)
+    function openFunctionCall(functionCall: FunctionCall): bool
+    function closeFunctionCall(functionCall: FunctionCall)
+    function visitMemberExpression(memberExpression: MemberExpression)
+    function openSubscript(subscript: Subscript): bool
+    function closeSubscript(subscript: Subscript)
+    function openExpressionElement(expressionElement: ExpressionElement): bool
+    function closeExpressionElement(expressionElement: ExpressionElement)
+    function visitIdentifierExpression(identifierExpression: IdentifierExpression)
+    function visitLiteralExpression(literalExpression: LiteralExpression)
+    function openIfExpression(ifExpression: IfExpression): bool
+    function closeIfExpression(ifExpression: IfExpression)
+    function openSwitchExpression(switchExpression: SwitchExpression): bool
+    function closeSwitchExpression(switchExpression: SwitchExpression)
+    function openForExpression(forExpression: ForExpression): bool
+    function closeForExpression(forExpression: ForExpression)
+    function openWhileExpression(whileExpression: WhileExpression): bool
+    function closeWhileExpression(whileExpression: WhileExpression)
+    function openDoExpression(doExpression: DoExpression): bool
+    function closeDoExpression(doExpression: DoExpression)
+    function openParenthesizedExpression(parenthesizedExpression: ParenthesizedExpression): bool
+    function closeParenthesizedExpression(parenthesizedExpression: ParenthesizedExpression)
+    function openReturnExpression(returnExpression: ReturnExpression): bool
+    function closeReturnExpression(returnExpression: ReturnExpression)
+    function openThrowExpression(throwExpression: ThrowExpression): bool
+    function closeThrowExpression(throwExpression: ThrowExpression)
+    function openBreakExpression(breakExpression: BreakExpression): bool
+    function closeBreakExpression(breakExpression: BreakExpression)
+    function openConstructorCall(constructorCall: ConstructorCall): bool
+    function closeConstructorCall(constructorCall: ConstructorCall)
+    function visitThisExpression(thisExpression: ThisExpression)
+    function visitNullExpression(nullExpression: NullExpression)
+    function openElseClause(elseClause: ElseClause): bool
+    function closeElseClause(elseClause: ElseClause)
+    function openCurliedSwitchBody(curliedSwitchBody: CurliedSwitchBody): bool
+    function closeCurliedSwitchBody(curliedSwitchBody: CurliedSwitchBody)
+    function openNakedSwitchBody(nakedSwitchBody: NakedSwitchBody): bool
+    function closeNakedSwitchBody(nakedSwitchBody: NakedSwitchBody)
+    function openSwitchCase(switchCase: SwitchCase): bool
+    function closeSwitchCase(switchCase: SwitchCase)
+    function openItemCaseLabel(itemCaseLabel: ItemCaseLabel): bool
+    function closeItemCaseLabel(itemCaseLabel: ItemCaseLabel)
+    function visitDefaultCaseLabel(defaultCaseLabel: DefaultCaseLabel)
+    function openCaseItem(caseItem: CaseItem): bool
+    function closeCaseItem(caseItem: CaseItem)
+    function visitWildcardPattern(wildcardPattern: WildcardPattern)
+    function openIdentifierPattern(identifierPattern: IdentifierPattern): bool
+    function closeIdentifierPattern(identifierPattern: IdentifierPattern)
+    function openTuplePattern(tuplePattern: TuplePattern): bool
+    function closeTuplePattern(tuplePattern: TuplePattern)
+    function openExpressionPattern(expressionPattern: ExpressionPattern): bool
+    function closeExpressionPattern(expressionPattern: ExpressionPattern)
+    function openTuplePatternElement(tuplePatternElement: TuplePatternElement): bool
+    function closeTuplePatternElement(tuplePatternElement: TuplePatternElement)
+    function openCaseContent(caseContent: CaseContent): bool
+    function closeCaseContent(caseContent: CaseContent)
+    function openType(type: Type): bool
+    function closeType(type: Type)
+    function openTypeAnnotation(typeAnnotation: TypeAnnotation): bool
+    function closeTypeAnnotation(typeAnnotation: TypeAnnotation)
+    function openSubtype(subtype: Subtype): bool
+    function closeSubtype(subtype: Subtype)
+    function openIndexedType(indexedType: IndexedType): bool
+    function closeIndexedType(indexedType: IndexedType)
+    function visitPointer(pointer: Pointer)
+    function visitRoot(root: Root)
+    function visitLocal(local: Local)
+    function visitReference(reference: Reference)
+    function visitThrown(thrown: Thrown)
+    function openTypeInheritanceClause(typeInheritanceClause: TypeInheritanceClause): bool
+    function closeTypeInheritanceClause(typeInheritanceClause: TypeInheritanceClause)
+    function openInheritance(inheritance: Inheritance): bool
+    function closeInheritance(inheritance: Inheritance)}class SyntaxNode {
     let start: Position
     let end: Position
     var parent: SyntaxNode

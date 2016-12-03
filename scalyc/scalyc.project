@@ -31,8 +31,6 @@
   <VirtualDirectory Name="src">
     <File Name="Lexer.cpp"/>
     <File Name="Lexer.scaly"/>
-    <File Name="Visitor.cpp"/>
-    <File Name="Visitor.scaly"/>
     <File Name="Syntax.cpp"/>
     <File Name="Syntax.scaly"/>
     <File Name="CppVisitor.cpp"/>
@@ -54,7 +52,6 @@
   </VirtualDirectory>
   <VirtualDirectory Name="include">
     <File Name="Lexer.h"/>
-    <File Name="Visitor.h"/>
     <File Name="Syntax.h"/>
     <File Name="CppVisitor.h"/>
     <File Name="HeaderVisitor.h"/>
@@ -87,7 +84,7 @@
         <Library Value="libscaly"/>
       </Linker>
       <ResourceCompiler Options="" Required="no"/>
-      <General OutputFile="$(IntermediateDirectory)/$(ProjectName)" IntermediateDirectory="../Debug" Command="./$(ProjectName)" CommandArguments="-o scalyc -d ../scalyc ../scalyc/Lexer.scaly ../scalyc/Visitor.scaly ../scalyc/Syntax.scaly ../scalyc/CppVisitor.scaly ../scalyc/HeaderVisitor.scaly ../scalyc/SourceVisitor.scaly ../scalyc/CompilerError.scaly ../scalyc/Parser.scaly ../scalyc/Options.scaly ../scalyc/Compiler.scaly ../scalyc/scalyc.scaly" UseSeparateDebugArgs="no" DebugArguments="" WorkingDirectory="$(IntermediateDirectory)" PauseExecWhenProcTerminates="yes" IsGUIProgram="no" IsEnabled="yes"/>
+      <General OutputFile="$(IntermediateDirectory)/$(ProjectName)" IntermediateDirectory="../Debug" Command="./$(ProjectName)" CommandArguments="-o scalyc -d ../scalyc ../scalyc/Lexer.scaly ../scalyc/Syntax.scaly ../scalyc/CppVisitor.scaly ../scalyc/HeaderVisitor.scaly ../scalyc/SourceVisitor.scaly ../scalyc/CompilerError.scaly ../scalyc/Parser.scaly ../scalyc/Options.scaly ../scalyc/Compiler.scaly ../scalyc/scalyc.scaly" UseSeparateDebugArgs="no" DebugArguments="" WorkingDirectory="$(IntermediateDirectory)" PauseExecWhenProcTerminates="yes" IsGUIProgram="no" IsEnabled="yes"/>
       <Environment EnvVarSetName="&lt;Use Defaults&gt;" DbgSetName="&lt;Use Defaults&gt;">
         <![CDATA[]]>
       </Environment>

@@ -2,10 +2,7 @@
     (make sequence
 
         (create-file ($ "Syntax.scaly" generated-extension)
-            (output (syntax)))
-
-        (create-file ($ "Visitor.scaly" generated-extension)
-            (output (visitor #f)))
+            (output ($ (visitor #f)(syntax))))
 
         (create-file ($ "MyVisitor.scaly" generated-extension)
             (output (visitor #t)))

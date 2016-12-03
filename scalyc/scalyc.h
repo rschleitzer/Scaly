@@ -3,7 +3,6 @@
 
 #include "Scaly.h"
 #include "Lexer.h"
-#include "Visitor.h"
 #include "Syntax.h"
 #include "CppVisitor.h"
 #include "HeaderVisitor.h"
