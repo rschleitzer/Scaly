@@ -11,6 +11,10 @@ public:
     _Array<Inherits>* inherits;
     _Array<string>* classes;
     size_t headerIndentLevel;
+    bool firstParameter;
+    bool firstBindingInitializer;
+    bool staticFunction;
+    bool suppressHeader;
     HeaderVisitor();
     virtual bool openProgram(Program* program);
     virtual void closeProgram(Program* program);
@@ -51,6 +55,8 @@ public:
     virtual bool openParameterClause(ParameterClause* parameterClause);
     virtual void closeParameterClause(ParameterClause* parameterClause);
     virtual bool openConstParameter(ConstParameter* constParameter);
+    virtual void writeParameter(string* name, Type* parameterType);
+    virtual bool isClass(string* name);
     virtual void closeConstParameter(ConstParameter* constParameter);
     virtual bool openVarParameter(VarParameter* varParameter);
     virtual void closeVarParameter(VarParameter* varParameter);
@@ -63,6 +69,9 @@ public:
     virtual void closeAdditionalCase(AdditionalCase* additionalCase);
     virtual bool openClassBody(ClassBody* classBody);
     virtual void closeClassBody(ClassBody* classBody);
+    virtual void indentHeader();
+    virtual void collectDerivedClasses(_Array<string>* derivedClasses, string* className);
+    virtual void appendDerivedClasses(_Array<string>* derivedClasses, _Array<string>* inheritors);
     virtual bool openClassMember(ClassMember* classMember);
     virtual void closeClassMember(ClassMember* classMember);
     virtual bool openPrefixExpression(PrefixExpression* prefixExpression);

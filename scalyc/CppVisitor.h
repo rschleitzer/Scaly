@@ -49,12 +49,14 @@ public:
     virtual void visitOverrideWord(OverrideWord* overrideWord);
     virtual void visitStaticWord(StaticWord* staticWord);
     virtual bool openFunctionSignature(FunctionSignature* functionSignature);
+    virtual bool hasArrayPostfix(Type* type);
     virtual void closeFunctionSignature(FunctionSignature* functionSignature);
     virtual bool openFunctionResult(FunctionResult* functionResult);
     virtual void closeFunctionResult(FunctionResult* functionResult);
     virtual bool openParameterClause(ParameterClause* parameterClause);
     virtual void closeParameterClause(ParameterClause* parameterClause);
     virtual bool openConstParameter(ConstParameter* constParameter);
+    virtual bool isClass(string* name) = 0;
     virtual void closeConstParameter(ConstParameter* constParameter);
     virtual bool openVarParameter(VarParameter* varParameter);
     virtual void closeVarParameter(VarParameter* varParameter);
@@ -62,6 +64,7 @@ public:
     virtual void closeThrowsClause(ThrowsClause* throwsClause);
     virtual bool openEnumMember(EnumMember* enumMember);
     virtual void closeEnumMember(EnumMember* enumMember);
+    virtual void appendCppType(VarString* s, Type* type);
     virtual void visitEnumCase(EnumCase* enumCase);
     virtual bool openAdditionalCase(AdditionalCase* additionalCase);
     virtual void closeAdditionalCase(AdditionalCase* additionalCase);
@@ -145,6 +148,7 @@ public:
     virtual void closeCaseContent(CaseContent* caseContent);
     virtual bool openType(Type* type);
     virtual void closeType(Type* type);
+    virtual void appendCppTypeName(VarString* s, Type* type);
     virtual bool openTypeAnnotation(TypeAnnotation* typeAnnotation);
     virtual void closeTypeAnnotation(TypeAnnotation* typeAnnotation);
     virtual bool openSubtype(Subtype* subtype);

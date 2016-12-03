@@ -5,8 +5,6 @@ namespace scalyc {
 SourceVisitor::SourceVisitor() {
     moduleName = new(getPage()) string();
     sourceFile = new(getPage()->allocateExclusivePage()) VarString();
-    headerFile = new(getPage()->allocateExclusivePage()) VarString();
-    mainHeaderFile = new(getPage()->allocateExclusivePage()) VarString();
     projectFile = new(getPage()->allocateExclusivePage()) VarString();
     inherits = new(getPage()->allocateExclusivePage()) _Array<Inherits>();
     classes = new(getPage()->allocateExclusivePage()) _Array<string>();
@@ -50,32 +48,11 @@ void SourceVisitor::closeProgram(Program* program) {
 
 bool SourceVisitor::openCompilationUnit(CompilationUnit* compilationUnit) {
     moduleName = compilationUnit->fileName;
-    headerIndentLevel = 0;
     sourceIndentLevel = 0;
-    declaringClassMember = false;
     inParameterClause = false;
     if (!(compilationUnit->parent->_isProgram()))
         return false;
     string* programName = ((Program*)(compilationUnit->parent))->name;
-    if (!moduleName->equals(programName)) {
-        if (headerFile != nullptr)
-            headerFile->getPage()->clear();
-        headerFile = new(headerFile->getPage()) VarString();
-        headerFile->append("#ifndef __");
-        headerFile->append(programName);
-        headerFile->append("__");
-        headerFile->append(moduleName);
-        headerFile->append("__\n");
-        headerFile->append("#define __");
-        headerFile->append(programName);
-        headerFile->append("__");
-        headerFile->append(moduleName);
-        headerFile->append("__\n#include \"");
-        headerFile->append(programName);
-        headerFile->append(".h\"\nusing namespace scaly;\nnamespace ");
-        headerFile->append(programName);
-        headerFile->append(" {");
-    }
     if (sourceFile != nullptr)
         sourceFile->getPage()->clear();
     sourceFile = new(sourceFile->getPage()) VarString(0, 4096);
@@ -126,28 +103,11 @@ void SourceVisitor::closeCompilationUnit(CompilationUnit* compilationUnit) {
     _Region _region; _Page* _p = _region.get();
     if (!(compilationUnit->parent)->_isProgram())
         return;
-    string* programName = ((Program*)(compilationUnit->parent))->name;
     string* programDirectory = ((Program*)(compilationUnit->parent))->directory;
     VarString* outputFilePath = new(_p) VarString(programDirectory);
     outputFilePath->append('/');
     string* fileNameWithoutExtension = Path::getFileNameWithoutExtension(_p, compilationUnit->fileName);
     outputFilePath->append(fileNameWithoutExtension);
-    if (!moduleName->equals(programName)) {
-        headerFile->append("\n\n}\n#endif // __scalyc__");
-        headerFile->append(moduleName);
-        headerFile->append("__\n");
-        VarString* headerFilePath = new(_p) VarString(outputFilePath);
-        headerFilePath->append(".h");
-        auto _File_error = File::writeFromString(_p, headerFilePath, headerFile);
-        if (_File_error) {
-            switch (_File_error->_getErrorCode()) {
-                default:
-                {
-                    return;
-                }
-            }
-        }
-    }
     if (isTopLevelFile(compilationUnit)) {
         _Array<Statement>* statements = compilationUnit->statements;
         if (statements->length() > 0) {
@@ -190,7 +150,6 @@ bool SourceVisitor::isTopLevelFile(CompilationUnit* compilationUnit) {
 }
 
 bool SourceVisitor::openConstantDeclaration(ConstantDeclaration* constantDeclaration) {
-    constDeclaration = true;
     if (constantDeclaration->parent->parent->parent == nullptr)
         return true;
     if (constantDeclaration->parent->parent->parent->_isClassDeclaration())
@@ -199,7 +158,6 @@ bool SourceVisitor::openConstantDeclaration(ConstantDeclaration* constantDeclara
 }
 
 void SourceVisitor::closeConstantDeclaration(ConstantDeclaration* constantDeclaration) {
-    constDeclaration = false;
     suppressSource = false;
 }
 
@@ -225,43 +183,20 @@ void SourceVisitor::closeMutableDeclaration(MutableDeclaration* mutableDeclarati
 
 bool SourceVisitor::openFunctionDeclaration(FunctionDeclaration* functionDeclaration) {
     if (functionDeclaration->body == nullptr) {
-        abstractFunction = true;
         suppressSource = true;
     }
     else {
-        abstractFunction = false;
         suppressSource = false;
-    }
-    if (functionDeclaration->modifiers != nullptr) {
-        _Array<Modifier>* modifiers = functionDeclaration->modifiers;
-        Modifier* modifier = nullptr;
-        size_t _modifiers_length = modifiers->length();
-        for (size_t _i = 0; _i < _modifiers_length; _i++) {
-            modifier = *(*modifiers)[_i];
-            {
-                if (modifier->_isStaticWord())
-                    staticFunction = true;
-            }
-        }
     }
     return true;
 }
 
 void SourceVisitor::closeFunctionDeclaration(FunctionDeclaration* functionDeclaration) {
-    if (abstractFunction) {
-        headerFile->append(" = 0");
-        abstractFunction = false;
-    }
-    staticFunction = false;
-    suppressHeader = false;
     suppressSource = false;
 }
 
 bool SourceVisitor::openEnumDeclaration(EnumDeclaration* enumDeclaration) {
     string* enumDeclarationName = enumDeclaration->name;
-    headerFile->append("\n\nclass ");
-    headerFile->append(enumDeclarationName);
-    headerFile->append(";\n");
     sourceFile->append("long ");
     sourceFile->append(enumDeclarationName);
     sourceFile->append("::_getErrorCode() {\n    return (long)errorCode;\n}\n\nvoid* ");
@@ -271,127 +206,16 @@ bool SourceVisitor::openEnumDeclaration(EnumDeclaration* enumDeclaration) {
 }
 
 void SourceVisitor::closeEnumDeclaration(EnumDeclaration* enumDeclaration) {
-    string* enumDeclarationName = enumDeclaration->name;
-    _Array<EnumMember>* members = enumDeclaration->members;
-    if (members != nullptr) {
-        headerFile->append("enum _");
-        headerFile->append(enumDeclarationName);
-        headerFile->append("Code {\n");
-        int i = 0;
-        EnumMember* member = nullptr;
-        size_t _members_length = members->length();
-        for (size_t _i = 0; _i < _members_length; _i++) {
-            member = *(*members)[_i];
-            {
-                headerFile->append("    _");
-                headerFile->append(enumDeclarationName);
-                headerFile->append("Code_");
-                headerFile->append(member->enumCase->name);
-                if (i == 0)
-                    headerFile->append(" = 1");
-                headerFile->append(",\n");
-                i++;
-            }
-        }
-        headerFile->append("};\n\n");
-    }
-    headerFile->append("class ");
-    headerFile->append(enumDeclarationName);
-    headerFile->append(" : public Object {\npublic:\n    ");
-    headerFile->append(enumDeclarationName);
-    headerFile->append("(_");
-    headerFile->append(enumDeclarationName);
-    headerFile->append("Code errorCode)\n    : errorCode(errorCode), errorInfo(0) {}\n\n");
-    if (members != nullptr) {
-        EnumMember* member = nullptr;
-        size_t _members_length = members->length();
-        for (size_t _i = 0; _i < _members_length; _i++) {
-            member = *(*members)[_i];
-            {
-                if (member->parameterClause) {
-                    headerFile->append("    ");
-                    headerFile->append(enumDeclarationName);
-                    headerFile->append("(_");
-                    headerFile->append(enumDeclarationName);
-                    headerFile->append("_");
-                    headerFile->append(member->enumCase->name);
-                    headerFile->append("* ");
-                    headerFile->append(member->enumCase->name);
-                    headerFile->append(")\n    : errorCode(_");
-                    headerFile->append(enumDeclarationName);
-                    headerFile->append("Code_");
-                    headerFile->append(member->enumCase->name);
-                    headerFile->append("), errorInfo(");
-                    headerFile->append(member->enumCase->name);
-                    headerFile->append(") {}\n\n");
-                }
-            }
-        }
-    }
-    headerFile->append("    long _getErrorCode();\n    void* _getErrorInfo();\n\n");
-    if (members != nullptr) {
-        EnumMember* member = nullptr;
-        size_t _members_length = members->length();
-        for (size_t _i = 0; _i < _members_length; _i++) {
-            member = *(*members)[_i];
-            {
-                if (member->parameterClause) {
-                    headerFile->append("    _");
-                    headerFile->append(enumDeclarationName);
-                    headerFile->append("_");
-                    headerFile->append(member->enumCase->name);
-                    headerFile->append("* get_");
-                    headerFile->append(member->enumCase->name);
-                    headerFile->append("();\n");
-                }
-            }
-        }
-    }
-    headerFile->append("\nprivate:\n    _");
-    headerFile->append(enumDeclarationName);
-    headerFile->append("Code errorCode;\n    void* errorInfo;\n};");
 }
 
 bool SourceVisitor::openClassDeclaration(ClassDeclaration* classDeclaration) {
-    headerFile->append("\n\nclass ");
-    headerFile->append(classDeclaration->name);
-    if (classDeclaration->body == nullptr) {
-        headerFile->append(";");
-        return false;
-    }
-    headerFile->append(" : public ");
-    if (classDeclaration->typeInheritanceClause != nullptr) {
-        _Array<Inheritance>* inheritances = classDeclaration->typeInheritanceClause->inheritances;
-        int i = 0;
-        Inheritance* inheritance = nullptr;
-        size_t _inheritances_length = inheritances->length();
-        for (size_t _i = 0; _i < _inheritances_length; _i++) {
-            inheritance = *(*inheritances)[_i];
-            {
-                if (i > 0)
-                    headerFile->append(", ");
-                headerFile->append(inheritance->type->name);
-                i++;
-            }
-        }
-    }
-    else {
-        headerFile->append("Object");
-    }
-    headerFile->append(" {\n");
-    headerFile->append("public:");
-    headerIndentLevel++;
     return true;
 }
 
 void SourceVisitor::closeClassDeclaration(ClassDeclaration* classDeclaration) {
-    headerFile->append("\n");
+    if (classDeclaration->body == nullptr)
+        return;
     if (classDeclaration->typeInheritanceClause != nullptr) {
-        headerFile->append("\n");
-        indentHeader();
-        headerFile->append("virtual bool _is");
-        headerFile->append(classDeclaration->name);
-        headerFile->append("();");
         sourceFile->append("bool ");
         sourceFile->append(classDeclaration->name);
         sourceFile->append("::_is");
@@ -407,11 +231,6 @@ void SourceVisitor::closeClassDeclaration(ClassDeclaration* classDeclaration) {
         for (size_t _i = 0; _i < _derivedClasses_length; _i++) {
             derivedClass = *(*derivedClasses)[_i];
             {
-                headerFile->append("\n");
-                indentHeader();
-                headerFile->append("virtual bool _is");
-                headerFile->append(derivedClass);
-                headerFile->append("();");
                 sourceFile->append("bool ");
                 sourceFile->append(classDeclaration->name);
                 sourceFile->append("::_is");
@@ -422,16 +241,12 @@ void SourceVisitor::closeClassDeclaration(ClassDeclaration* classDeclaration) {
         if (derivedClasses->length() > 0)
             sourceFile->append("\n");
     }
-    headerIndentLevel--;
-    headerFile->append("\n};");
 }
 
-bool SourceVisitor::openConstructorDeclaration(ConstructorDeclaration* initializerDeclaration) {
-    if (!initializerDeclaration->parent->parent->parent->_isClassDeclaration())
+bool SourceVisitor::openConstructorDeclaration(ConstructorDeclaration* constructorDeclaration) {
+    if (!constructorDeclaration->parent->parent->parent->_isClassDeclaration())
         return false;
-    string* classDeclarationName = ((Program*)(initializerDeclaration->parent->parent->parent))->name;
-    headerFile->append(classDeclarationName);
-    headerFile->append("(");
+    string* classDeclarationName = ((Program*)(constructorDeclaration->parent->parent->parent))->name;
     sourceFile->append(classDeclarationName);
     sourceFile->append("::");
     sourceFile->append(classDeclarationName);
@@ -441,7 +256,6 @@ bool SourceVisitor::openConstructorDeclaration(ConstructorDeclaration* initializ
 
 void SourceVisitor::closeConstructorDeclaration(ConstructorDeclaration* initializerDeclaration) {
     sourceFile->append("\n");
-    suppressHeader = false;
 }
 
 bool SourceVisitor::openCodeBlock(CodeBlock* codeBlock) {
@@ -453,7 +267,6 @@ bool SourceVisitor::openCodeBlock(CodeBlock* codeBlock) {
         indentSource();
         sourceFile->append("_Region _region; _Page* _p = _region.get();\n");
     }
-    suppressHeader = true;
     return true;
 }
 
@@ -734,7 +547,6 @@ void SourceVisitor::closeInitializer(Initializer* initializer) {
 bool SourceVisitor::openBindingInitializer(BindingInitializer* bindingInitializer) {
     if (bindingInitializer->parent->parent->_isCodeBlock() || bindingInitializer->parent->parent->_isCaseContent() || bindingInitializer->parent->parent->_isCompilationUnit())
         indentSource();
-    firstBindingInitializer = true;
     return true;
 }
 
@@ -746,10 +558,6 @@ void SourceVisitor::closeBindingInitializer(BindingInitializer* bindingInitializ
 }
 
 bool SourceVisitor::openPatternInitializer(PatternInitializer* patternInitializer) {
-    if (!firstBindingInitializer)
-        headerFile->append(", ");
-    else
-        firstBindingInitializer = false;
     return true;
 }
 
@@ -770,36 +578,23 @@ void SourceVisitor::visitStaticWord(StaticWord* staticWord) {
 }
 
 bool SourceVisitor::openFunctionSignature(FunctionSignature* functionSignature) {
-    if (!functionSignature->parent->_isFunctionDeclaration())
-        return false;
     string* functionName = ((FunctionDeclaration*)functionSignature->parent)->name;
-    if (staticFunction)
-        headerFile->append("static ");
-    else
-        headerFile->append("virtual ");
-    inFunctionReturn = true;
     if (functionSignature->result == nullptr) {
         if (functionSignature->throwsClause == nullptr) {
-            headerFile->append("void");
             if (!suppressSource)
                 sourceFile->append("void");
         }
         else {
-            appendCppType(headerFile, functionSignature->throwsClause->throwsType);
             if (!suppressSource)
                 appendCppType(sourceFile, functionSignature->throwsClause->throwsType);
         }
     }
     else {
         if (functionSignature->throwsClause != nullptr) {
-            headerFile->append("_Result<");
             if (!suppressSource)
                 sourceFile->append("_Result<");
             if (hasArrayPostfix(functionSignature->result->resultType)) {
-                headerFile->append("_Array<");
                 Type* type = functionSignature->result->resultType;
-                appendCppTypeName(headerFile, type);
-                headerFile->append(">");
                 if (!suppressSource) {
                     sourceFile->append("_Array<");
                     appendCppTypeName(sourceFile, type);
@@ -808,13 +603,9 @@ bool SourceVisitor::openFunctionSignature(FunctionSignature* functionSignature) 
             }
             else {
                 Type* type = (Type*)functionSignature->result->resultType;
-                appendCppTypeName(headerFile, type);
                 if (!suppressSource)
                     appendCppTypeName(sourceFile, type);
             }
-            headerFile->append(", ");
-            appendCppTypeName(headerFile, (Type*)(functionSignature->throwsClause->throwsType));
-            headerFile->append(">");
             if (!suppressSource) {
                 sourceFile->append(", ");
                 appendCppTypeName(sourceFile, (Type*)(functionSignature->throwsClause->throwsType));
@@ -823,10 +614,7 @@ bool SourceVisitor::openFunctionSignature(FunctionSignature* functionSignature) 
         }
         else {
             if (hasArrayPostfix(functionSignature->result->resultType)) {
-                headerFile->append("_Array<");
                 Type* type = functionSignature->result->resultType;
-                appendCppTypeName(headerFile, type);
-                headerFile->append(">");
                 if (!suppressSource) {
                     sourceFile->append("_Array<");
                     appendCppTypeName(sourceFile, type);
@@ -835,19 +623,15 @@ bool SourceVisitor::openFunctionSignature(FunctionSignature* functionSignature) 
             }
             else {
                 Type* type = (Type*)functionSignature->result->resultType;
-                appendCppTypeName(headerFile, type);
                 if (!suppressSource)
                     appendCppTypeName(sourceFile, type);
                 if (isClass(type->name)) {
-                    headerFile->append("*");
                     if (!suppressSource)
                         sourceFile->append("*");
                 }
             }
         }
     }
-    inFunctionReturn = false;
-    headerFile->append(" ");
     if (!suppressSource) {
         sourceFile->append(" ");
         if (functionSignature->parent->parent->parent->parent->_isClassDeclaration()) {
@@ -856,8 +640,6 @@ bool SourceVisitor::openFunctionSignature(FunctionSignature* functionSignature) 
             sourceFile->append("::");
         }
     }
-    headerFile->append(functionName);
-    headerFile->append("(");
     if (!suppressSource) {
         sourceFile->append(functionName);
         sourceFile->append("(");
@@ -867,11 +649,9 @@ bool SourceVisitor::openFunctionSignature(FunctionSignature* functionSignature) 
         if (isClass(type->name)) {
             LifeTime* lifeTime = type->lifeTime;
             if ((lifeTime == nullptr) || !(lifeTime->_isReference())) {
-                headerFile->append("_Page* _rp");
                 if (!suppressSource)
                     sourceFile->append("_Page* _rp");
                 if ((functionSignature->parameterClause->parameters) || (functionSignature->throwsClause)) {
-                    headerFile->append(", ");
                     if (!suppressSource)
                         sourceFile->append(", ");
                 }
@@ -879,11 +659,9 @@ bool SourceVisitor::openFunctionSignature(FunctionSignature* functionSignature) 
         }
     }
     if (functionSignature->throwsClause != nullptr) {
-        headerFile->append("_Page* _ep");
         if (!suppressSource)
             sourceFile->append("_Page* _ep");
         if (functionSignature->parameterClause->parameters) {
-            headerFile->append(", ");
             if (!suppressSource)
                 sourceFile->append(", ");
         }
@@ -891,18 +669,7 @@ bool SourceVisitor::openFunctionSignature(FunctionSignature* functionSignature) 
     return true;
 }
 
-bool SourceVisitor::hasArrayPostfix(Type* type) {
-    if (type->postfixes == nullptr)
-        return false;
-    _Array<TypePostfix>* postfixes = type->postfixes;
-    TypePostfix* typePostfix = *(*postfixes)[0];
-    if (typePostfix->_isIndexedType())
-        return true;
-    return false;
-}
-
 void SourceVisitor::closeFunctionSignature(FunctionSignature* functionSignature) {
-    suppressHeader = true;
 }
 
 bool SourceVisitor::openFunctionResult(FunctionResult* functionResult) {
@@ -919,7 +686,6 @@ bool SourceVisitor::openParameterClause(ParameterClause* parameterClause) {
 }
 
 void SourceVisitor::closeParameterClause(ParameterClause* parameterClause) {
-    headerFile->append(")");
     if (!suppressSource)
         sourceFile->append(") ");
     inParameterClause = false;
@@ -927,15 +693,12 @@ void SourceVisitor::closeParameterClause(ParameterClause* parameterClause) {
 
 bool SourceVisitor::openConstParameter(ConstParameter* constParameter) {
     string* constParameterName = constParameter->name;
-    constDeclaration = true;
     writeParameter(constParameterName, constParameter->parameterType);
-    constDeclaration = false;
     return false;
 }
 
 void SourceVisitor::writeParameter(string* name, Type* parameterType) {
     if (!firstParameter) {
-        headerFile->append(", ");
         if (!suppressSource)
             sourceFile->append(", ");
     }
@@ -943,8 +706,6 @@ void SourceVisitor::writeParameter(string* name, Type* parameterType) {
         firstParameter = false;
     }
     parameterType->accept(this);
-    headerFile->append(" ");
-    headerFile->append(name);
     if (!suppressSource) {
         sourceFile->append(" ");
         sourceFile->append(name);
@@ -969,7 +730,6 @@ bool SourceVisitor::isClass(string* name) {
 }
 
 void SourceVisitor::closeConstParameter(ConstParameter* constParameter) {
-    headerFile->append(constParameter->name);
 }
 
 bool SourceVisitor::openVarParameter(VarParameter* varParameter) {
@@ -978,8 +738,6 @@ bool SourceVisitor::openVarParameter(VarParameter* varParameter) {
 }
 
 void SourceVisitor::closeVarParameter(VarParameter* varParameter) {
-    string* varParameterName = varParameter->name;
-    headerFile->append(varParameterName);
 }
 
 bool SourceVisitor::openThrowsClause(ThrowsClause* throwsClause) {
@@ -994,15 +752,6 @@ bool SourceVisitor::openEnumMember(EnumMember* enumMember) {
         return false;
     string* enumDeclarationName = ((EnumDeclaration*)(enumMember->parent))->name;
     if (enumMember->parameterClause) {
-        headerFile->append("\nclass _");
-        headerFile->append(enumDeclarationName);
-        headerFile->append("_");
-        headerFile->append(enumMember->enumCase->name);
-        headerFile->append(" : public Object {\npublic:\n    _");
-        headerFile->append(enumDeclarationName);
-        headerFile->append("_");
-        headerFile->append(enumMember->enumCase->name);
-        headerFile->append("(");
         sourceFile->append("_");
         sourceFile->append(enumDeclarationName);
         sourceFile->append("_");
@@ -1013,14 +762,12 @@ bool SourceVisitor::openEnumMember(EnumMember* enumMember) {
         sourceFile->append(enumMember->enumCase->name);
         sourceFile->append("(");
     }
-    inEnumMember = true;
     return true;
 }
 
 void SourceVisitor::closeEnumMember(EnumMember* enumMember) {
     if (enumMember->parameterClause != nullptr) {
         sourceFile->append("\n");
-        headerFile->append(";\n\n");
         _Array<Parameter>* parameters = enumMember->parameterClause->parameters;
         if (parameters != nullptr) {
             sourceFile->append(": ");
@@ -1032,11 +779,6 @@ void SourceVisitor::closeEnumMember(EnumMember* enumMember) {
                 {
                     if (parameter->_isConstParameter()) {
                         ConstParameter* constParameter = (ConstParameter*)parameter;
-                        headerFile->append("    ");
-                        appendCppType(headerFile, constParameter->parameterType);
-                        headerFile->append(" ");
-                        headerFile->append(constParameter->name);
-                        headerFile->append(";\n");
                         if (pos != 0)
                             sourceFile->append(", ");
                         sourceFile->append(constParameter->name);
@@ -1048,7 +790,6 @@ void SourceVisitor::closeEnumMember(EnumMember* enumMember) {
                 }
             }
         }
-        headerFile->append("};\n");
         sourceFile->append(" { }\n\n_");
         string* enumDeclarationName = ((EnumDeclaration*)(enumMember->parent))->name;
         sourceFile->append(enumDeclarationName);
@@ -1063,21 +804,6 @@ void SourceVisitor::closeEnumMember(EnumMember* enumMember) {
         sourceFile->append("_");
         sourceFile->append(enumMember->enumCase->name);
         sourceFile->append("*)errorInfo;\n}\n\n");
-    }
-    inEnumMember = false;
-}
-
-void SourceVisitor::appendCppType(VarString* s, Type* type) {
-    if (hasArrayPostfix(type)) {
-        s->append("_Array<");
-        appendCppTypeName(s, type);
-        s->append(">*");
-    }
-    else {
-        appendCppTypeName(s, type);
-        if (isClass(type->name)) {
-            s->append("*");
-        }
     }
 }
 
@@ -1096,14 +822,6 @@ bool SourceVisitor::openClassBody(ClassBody* classBody) {
 }
 
 void SourceVisitor::closeClassBody(ClassBody* classBody) {
-}
-
-void SourceVisitor::indentHeader() {
-    size_t i = 0;
-    while (i < headerIndentLevel) {
-        headerFile->append("    ");
-        i++;
-    }
 }
 
 void SourceVisitor::indentSource() {
@@ -1139,15 +857,10 @@ void SourceVisitor::appendDerivedClasses(_Array<string>* derivedClasses, _Array<
 }
 
 bool SourceVisitor::openClassMember(ClassMember* classMember) {
-    headerFile->append("\n");
-    indentHeader();
-    declaringClassMember = true;
     return true;
 }
 
 void SourceVisitor::closeClassMember(ClassMember* classMember) {
-    headerFile->append(";");
-    declaringClassMember = false;
 }
 
 bool SourceVisitor::openPrefixExpression(PrefixExpression* prefixExpression) {
@@ -2512,13 +2225,9 @@ bool SourceVisitor::openIdentifierPattern(IdentifierPattern* identifierPattern) 
     }
     if (identifierPattern->annotationForType != nullptr) {
         identifierPattern->annotationForType->accept(this);
-        if (!suppressHeader)
-            headerFile->append(" ");
         if (!suppressSource)
             sourceFile->append(" ");
     }
-    if (!suppressHeader)
-        headerFile->append(identifierPattern->identifier);
     if (!suppressSource)
         sourceFile->append(identifierPattern->identifier);
     return false;
@@ -2612,12 +2321,7 @@ bool SourceVisitor::openType(Type* type) {
     if (hasArrayPostfix(type)) {
         if (!suppressSource)
             sourceFile->append("_Array<");
-        if (!sourceIndentLevel) {
-            headerFile->append("_Array<");
-        }
     }
-    if (!suppressHeader)
-        appendCppTypeName(headerFile, type);
     if ((!suppressSource))
         appendCppTypeName(sourceFile, type);
     return true;
@@ -2626,7 +2330,6 @@ bool SourceVisitor::openType(Type* type) {
 void SourceVisitor::closeType(Type* type) {
     if (hasArrayPostfix(type)) {
         if (!sourceIndentLevel) {
-            headerFile->append(">*");
             if (!suppressSource) {
                 sourceFile->append(">");
                 if (!type->parent->_isConstructorCall())
@@ -2640,8 +2343,6 @@ void SourceVisitor::closeType(Type* type) {
         }
     }
     if (isClass(type->name) && !hasArrayPostfix(type) && !inTypeQuery(type) && !type->parent->_isConstructorCall()) {
-        if (!suppressHeader)
-            headerFile->append("*");
         if (!suppressSource)
             sourceFile->append("*");
     }
@@ -2653,21 +2354,6 @@ bool SourceVisitor::inTypeQuery(Type* type) {
     if (type->parent->_isTypeQuery())
         return true;
     return false;
-}
-
-void SourceVisitor::appendCppTypeName(VarString* s, Type* type) {
-    string* typeName = type->name;
-    if (typeName->equals("number")) {
-        s->append("size_t");
-        return;
-    }
-    else {
-        if (typeName->equals("char")) {
-            s->append("char");
-            return;
-        }
-    }
-    s->append(typeName);
 }
 
 bool SourceVisitor::openTypeAnnotation(TypeAnnotation* typeAnnotation) {

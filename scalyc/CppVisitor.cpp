@@ -126,6 +126,16 @@ bool CppVisitor::openFunctionSignature(FunctionSignature* functionSignature) {
     return true;
 }
 
+bool CppVisitor::hasArrayPostfix(Type* type) {
+    if (type->postfixes == nullptr)
+        return false;
+    _Array<TypePostfix>* postfixes = type->postfixes;
+    TypePostfix* typePostfix = *(*postfixes)[0];
+    if (typePostfix->_isIndexedType())
+        return true;
+    return false;
+}
+
 void CppVisitor::closeFunctionSignature(FunctionSignature* functionSignature) {
 }
 
@@ -169,6 +179,20 @@ bool CppVisitor::openEnumMember(EnumMember* enumMember) {
 }
 
 void CppVisitor::closeEnumMember(EnumMember* enumMember) {
+}
+
+void CppVisitor::appendCppType(VarString* s, Type* type) {
+    if (hasArrayPostfix(type)) {
+        s->append("_Array<");
+        appendCppTypeName(s, type);
+        s->append(">*");
+    }
+    else {
+        appendCppTypeName(s, type);
+        if (isClass(type->name)) {
+            s->append("*");
+        }
+    }
 }
 
 void CppVisitor::visitEnumCase(EnumCase* enumCase) {
@@ -455,6 +479,21 @@ bool CppVisitor::openType(Type* type) {
 }
 
 void CppVisitor::closeType(Type* type) {
+}
+
+void CppVisitor::appendCppTypeName(VarString* s, Type* type) {
+    string* typeName = type->name;
+    if (typeName->equals("number")) {
+        s->append("size_t");
+        return;
+    }
+    else {
+        if (typeName->equals("char")) {
+            s->append("char");
+            return;
+        }
+    }
+    s->append(typeName);
 }
 
 bool CppVisitor::openTypeAnnotation(TypeAnnotation* typeAnnotation) {

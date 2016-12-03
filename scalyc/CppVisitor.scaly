@@ -136,6 +136,20 @@ class CppVisitor extends SyntaxVisitor {
         true
     }
 
+    function hasArrayPostfix(type: Type): bool {
+
+        if type.postfixes == null
+            return(false)
+
+        let postfixes: TypePostfix[] = type.postfixes
+        let typePostfix: TypePostfix = postfixes[0]
+
+        if typePostfix is IndexedType
+            return(true)
+
+        false
+    }
+
     function closeFunctionSignature(functionSignature: FunctionSignature) {
     }
 
@@ -156,6 +170,8 @@ class CppVisitor extends SyntaxVisitor {
     function openConstParameter(constParameter: ConstParameter): bool {
         true
     }
+
+    function isClass(name: string): bool
 
     function closeConstParameter(constParameter: ConstParameter) {
     }
@@ -179,6 +195,20 @@ class CppVisitor extends SyntaxVisitor {
     }
 
     function closeEnumMember(enumMember: EnumMember) {
+    }
+
+    function appendCppType(mutable s: VarString, type: Type) {
+        if hasArrayPostfix(type) {
+            s.append("_Array<")
+            appendCppTypeName(s, type)
+            s.append(">*")
+        }
+        else {
+            appendCppTypeName(s, type)
+            if isClass(type.name) {
+                s.append("*")
+            }
+        }
     }
 
     function visitEnumCase(enumCase: EnumCase) {
@@ -465,6 +495,22 @@ class CppVisitor extends SyntaxVisitor {
     }
 
     function closeType(type: Type) {
+    }
+
+    function appendCppTypeName(mutable s: VarString, type: Type) {
+        let typeName: string = type.name
+        if typeName.equals("number") {
+            s.append("size_t")
+            return
+        }
+        else {
+            if typeName.equals("char") {
+                s.append("char")
+                return
+            }
+        }
+
+        s.append(typeName)
     }
 
     function openTypeAnnotation(typeAnnotation: TypeAnnotation): bool {

@@ -1,8 +1,6 @@
 class SourceVisitor extends CppVisitor {
 
     mutable sourceFile: VarString
-    mutable headerFile: VarString
-    mutable mainHeaderFile: VarString
     mutable projectFile: VarString
 
     // Some rudimentary semantics cache
@@ -10,29 +8,18 @@ class SourceVisitor extends CppVisitor {
     mutable classes: string[]
 
     // indent level
-    mutable headerIndentLevel: number
     mutable sourceIndentLevel: number
 
     // Some state during building some constructs
     mutable firstParameter: bool
-    mutable firstBindingInitializer: bool
-    mutable declaringClassMember: bool
     mutable inParameterClause: bool
-    mutable abstractFunction: bool
-    mutable staticFunction: bool
-    mutable inEnumMember: bool
-    mutable inFunctionReturn: bool
-    mutable constDeclaration: bool
     mutable suppressSource: bool
-    mutable suppressHeader: bool
 
     constructor() {
 
         // null constructor of mutable members does not work yet
         moduleName = new string()
         sourceFile = new VarString()
-        headerFile = new VarString()
-        mainHeaderFile = new VarString()
         projectFile = new VarString()
         inherits = new Inherits[]()
         classes = new string[]()
@@ -73,34 +60,13 @@ class SourceVisitor extends CppVisitor {
 
     function openCompilationUnit(compilationUnit: CompilationUnit): bool {
         moduleName = compilationUnit.fileName
-        headerIndentLevel = 0
         sourceIndentLevel = 0
-        declaringClassMember = false
         inParameterClause = false
 
         if !(compilationUnit.parent is Program)
             return(false)
 
         let programName: string = ((compilationUnit.parent) as Program).name
-
-        // Build and write the header file
-        if !moduleName.equals(programName) {
-            headerFile = new VarString()
-            headerFile.append("#ifndef __")
-            headerFile.append(programName)
-            headerFile.append("__")
-            headerFile.append(moduleName)
-            headerFile.append("__\n")
-            headerFile.append("#define __")
-            headerFile.append(programName)
-            headerFile.append("__")
-            headerFile.append(moduleName)
-            headerFile.append("__\n#include \"")
-            headerFile.append(programName)
-            headerFile.append(".h\"\nusing namespace scaly;\nnamespace ")
-            headerFile.append(programName)
-            headerFile.append(" {")
-        }
 
         // Begin cpp file
         sourceFile = new VarString(0, 4096)
@@ -155,7 +121,6 @@ class SourceVisitor extends CppVisitor {
         if !(compilationUnit.parent) is Program
             return
 
-        let programName: string = ((compilationUnit.parent) as Program).name
         let programDirectory: string = ((compilationUnit.parent) as Program).directory
 
         // Close and write cpp file
@@ -164,17 +129,6 @@ class SourceVisitor extends CppVisitor {
         outputFilePath.append('/')
         let fileNameWithoutExtension: string$ = Path.getFileNameWithoutExtension(compilationUnit.fileName)
         outputFilePath.append(fileNameWithoutExtension)
-
-        if !moduleName.equals(programName) {
-            headerFile.append("\n\n}\n#endif // __scalyc__")
-            headerFile.append(moduleName)
-            headerFile.append("__\n")
-            let headerFilePath: VarString = new VarString(outputFilePath)
-            headerFilePath.append(".h")
-            File.writeFromString(headerFilePath, headerFile)
-                catch _ (error: fileError)
-                    return
-        }
 
         if isTopLevelFile(compilationUnit)
         {
@@ -213,7 +167,6 @@ class SourceVisitor extends CppVisitor {
     }
 
     function openConstantDeclaration(constantDeclaration: ConstantDeclaration): bool {
-        constDeclaration = true
 
         if constantDeclaration.parent.parent.parent == null
             return(true)
@@ -225,7 +178,6 @@ class SourceVisitor extends CppVisitor {
     }
 
     function closeConstantDeclaration(constantDeclaration: ConstantDeclaration) {
-        constDeclaration = false
         suppressSource = false
     }
 
@@ -256,20 +208,10 @@ class SourceVisitor extends CppVisitor {
     function openFunctionDeclaration(functionDeclaration: FunctionDeclaration): bool {
 
         if functionDeclaration.body == null {
-            abstractFunction = true
             suppressSource = true
         }
         else {
-            abstractFunction = false
             suppressSource = false
-        }
-
-        if functionDeclaration.modifiers != null {
-            let modifiers: Modifier[] = functionDeclaration.modifiers
-            for modifier: Modifier in modifiers {
-                if modifier is StaticWord
-                    staticFunction = true
-            }
         }
 
         true
@@ -277,22 +219,12 @@ class SourceVisitor extends CppVisitor {
 
     function closeFunctionDeclaration(functionDeclaration: FunctionDeclaration) {
 
-        if abstractFunction {
-            headerFile.append(" = 0")
-            abstractFunction = false
-        }
-
-        staticFunction = false
-        suppressHeader = false
         suppressSource = false
     }
 
     function openEnumDeclaration(enumDeclaration: EnumDeclaration): bool {
         let enumDeclarationName: string = enumDeclaration.name
 
-        headerFile.append("\n\nclass ")
-        headerFile.append(enumDeclarationName)
-        headerFile.append(";\n")
         sourceFile.append("long ")
         sourceFile.append(enumDeclarationName)
         sourceFile.append("::_getErrorCode() {\n    return (long)errorCode;\n}\n\nvoid* ")
@@ -303,117 +235,17 @@ class SourceVisitor extends CppVisitor {
     }
 
     function closeEnumDeclaration(enumDeclaration: EnumDeclaration) {
-        let enumDeclarationName: string = enumDeclaration.name
-        let members: EnumMember[] = enumDeclaration.members
-
-        if members != null {
-            headerFile.append("enum _")
-            headerFile.append(enumDeclarationName)
-            headerFile.append("Code {\n")
-            var i: int = 0
-            for member: EnumMember in members {
-                headerFile.append("    _")
-                headerFile.append(enumDeclarationName)
-                headerFile.append("Code_")
-                headerFile.append(member.enumCase.name)
-                if i == 0
-                    headerFile.append(" = 1")
-                headerFile.append(",\n")
-                i++
-            }
-            headerFile.append("};\n\n")
-        }
-
-        headerFile.append("class ")
-        headerFile.append(enumDeclarationName)
-        headerFile.append(" : public Object {\npublic:\n    ")
-        headerFile.append(enumDeclarationName)
-        headerFile.append("(_")
-        headerFile.append(enumDeclarationName)
-        headerFile.append("Code errorCode)\n    : errorCode(errorCode), errorInfo(0) {}\n\n")
-
-        if members != null {
-            for member: EnumMember in members {
-                if member.parameterClause {
-                    headerFile.append("    ")
-                    headerFile.append(enumDeclarationName)
-                    headerFile.append("(_")
-                    headerFile.append(enumDeclarationName)
-                    headerFile.append("_")
-                    headerFile.append(member.enumCase.name)
-                    headerFile.append("* ")
-                    headerFile.append(member.enumCase.name)
-                    headerFile.append(")\n    : errorCode(_")
-                    headerFile.append(enumDeclarationName)
-                    headerFile.append("Code_")
-                    headerFile.append(member.enumCase.name)
-                    headerFile.append("), errorInfo(")
-                    headerFile.append(member.enumCase.name)
-                    headerFile.append(") {}\n\n")
-                }
-            }
-        }
-
-        headerFile.append("    long _getErrorCode();\n    void* _getErrorInfo();\n\n")
-
-        if members != null {
-            for member: EnumMember in members {
-                if member.parameterClause {
-                    headerFile.append("    _")
-                    headerFile.append(enumDeclarationName)
-                    headerFile.append("_")
-                    headerFile.append(member.enumCase.name)
-                    headerFile.append("* get_")
-                    headerFile.append(member.enumCase.name)
-                    headerFile.append("();\n")
-                }
-            }
-        }
-        headerFile.append("\nprivate:\n    _")
-        headerFile.append(enumDeclarationName)
-        headerFile.append("Code errorCode;\n    void* errorInfo;\n};")
     }
 
     function openClassDeclaration(classDeclaration: ClassDeclaration): bool {
-        headerFile.append("\n\nclass ")
-        headerFile.append(classDeclaration.name)
-        if classDeclaration.body == null {
-            headerFile.append(";")
-            return(false)
-        }
-
-        headerFile.append(" : public ")
-        if classDeclaration.typeInheritanceClause != null {
-            let inheritances: Inheritance[] = classDeclaration.typeInheritanceClause.inheritances
-            var i: int = 0
-            for inheritance: Inheritance in inheritances {
-
-                if i > 0
-                    headerFile.append(", ")
-
-                headerFile.append(inheritance.type.name)
-
-                i++
-            }
-        }
-        else {
-            headerFile.append("Object")
-        }
-        headerFile.append(" {\n")
-        headerFile.append("public:")
-        headerIndentLevel++
-
         true
     }
 
     function closeClassDeclaration(classDeclaration: ClassDeclaration) {
-        headerFile.append("\n")
+        if classDeclaration.body == null
+            return
+        
         if classDeclaration.typeInheritanceClause != null {
-            headerFile.append("\n")
-            indentHeader()
-            headerFile.append("virtual bool _is")
-            headerFile.append(classDeclaration.name)
-            headerFile.append("();")
             sourceFile.append("bool ")
             sourceFile.append(classDeclaration.name)
             sourceFile.append("::_is")
@@ -424,13 +256,6 @@ class SourceVisitor extends CppVisitor {
             mutable derivedClasses: string[]$ = new string[]()
             collectDerivedClasses(derivedClasses, new string(classDeclaration.name))
             for derivedClass: string in derivedClasses {
-                headerFile.append("\n")
-
-                indentHeader()
-                headerFile.append("virtual bool _is")
-                headerFile.append(derivedClass)
-                headerFile.append("();")
-
                 sourceFile.append("bool ")
                 sourceFile.append(classDeclaration.name)
                 sourceFile.append("::_is")
@@ -440,19 +265,14 @@ class SourceVisitor extends CppVisitor {
             if derivedClasses.length() > 0
                 sourceFile.append("\n")
         }
-        headerIndentLevel--
-        headerFile.append("\n};")
     }
 
-    function openConstructorDeclaration(initializerDeclaration: ConstructorDeclaration): bool {
+    function openConstructorDeclaration(constructorDeclaration: ConstructorDeclaration): bool {
 
-        if !initializerDeclaration.parent.parent.parent is ClassDeclaration
+        if !constructorDeclaration.parent.parent.parent is ClassDeclaration
             return(false)
 
-        let classDeclarationName: string = ((initializerDeclaration.parent.parent.parent) as Program).name
-
-        headerFile.append(classDeclarationName)
-        headerFile.append("(")
+        let classDeclarationName: string = ((constructorDeclaration.parent.parent.parent) as Program).name
         
         sourceFile.append(classDeclarationName)
         sourceFile.append("::")
@@ -464,7 +284,6 @@ class SourceVisitor extends CppVisitor {
 
     function closeConstructorDeclaration(initializerDeclaration: ConstructorDeclaration) {
         sourceFile.append("\n")
-        suppressHeader = false
     }
 
     function openCodeBlock(codeBlock: CodeBlock): bool {
@@ -479,8 +298,6 @@ class SourceVisitor extends CppVisitor {
             indentSource()
             sourceFile.append("_Region _region; _Page* _p = _region.get();\n")
         }
-
-        suppressHeader = true
 
         true
     }
@@ -758,7 +575,6 @@ class SourceVisitor extends CppVisitor {
         if bindingInitializer.parent.parent is CodeBlock || bindingInitializer.parent.parent is CaseContent || bindingInitializer.parent.parent is CompilationUnit
             indentSource()
 
-        firstBindingInitializer = true
         true
     }
 
@@ -772,10 +588,6 @@ class SourceVisitor extends CppVisitor {
     }
 
     function openPatternInitializer(patternInitializer: PatternInitializer): bool {
-        if !firstBindingInitializer
-            headerFile.append(", ")
-        else
-            firstBindingInitializer = false
 
         true
     }
@@ -798,41 +610,26 @@ class SourceVisitor extends CppVisitor {
 
     function openFunctionSignature(functionSignature: FunctionSignature): bool {
 
-        if !functionSignature.parent is FunctionDeclaration
-            return(false)
-
         let functionName: string = (functionSignature.parent as FunctionDeclaration).name
-        if staticFunction
-            headerFile.append("static ")
-        else
-            headerFile.append("virtual ")
-
-        inFunctionReturn = true
 
         if functionSignature.result == null {
             if functionSignature.throwsClause == null {
-                headerFile.append("void")
                 if !suppressSource
                     sourceFile.append("void")
             }
             else {
-                appendCppType(headerFile, functionSignature.throwsClause.throwsType)
                 if !suppressSource
                     appendCppType(sourceFile, functionSignature.throwsClause.throwsType)
             }
         }
         else {
             if functionSignature.throwsClause != null {
-                headerFile.append("_Result<")
 
                 if !suppressSource
                     sourceFile.append("_Result<")
 
                 if hasArrayPostfix(functionSignature.result.resultType) {
-                    headerFile.append("_Array<")
                     let type: Type = functionSignature.result.resultType
-                    appendCppTypeName(headerFile, type)
-                    headerFile.append(">")
                     if !suppressSource {
                         sourceFile.append("_Array<")
                         appendCppTypeName(sourceFile, type)
@@ -841,13 +638,9 @@ class SourceVisitor extends CppVisitor {
                 }
                 else {
                     let type: Type = functionSignature.result.resultType as Type
-                    appendCppTypeName(headerFile, type)
                     if !suppressSource
                         appendCppTypeName(sourceFile, type)
                 }
-                headerFile.append(", ")
-                appendCppTypeName(headerFile, (functionSignature.throwsClause.throwsType) as Type)
-                headerFile.append(">")
                 if !suppressSource {
                     sourceFile.append(", ")
                     appendCppTypeName(sourceFile, (functionSignature.throwsClause.throwsType) as Type)
@@ -856,10 +649,7 @@ class SourceVisitor extends CppVisitor {
             }
             else {
                 if hasArrayPostfix(functionSignature.result.resultType) {
-                    headerFile.append("_Array<")
                     let type: Type = functionSignature.result.resultType
-                    appendCppTypeName(headerFile, type)
-                    headerFile.append(">")
                     if !suppressSource {
                         sourceFile.append("_Array<")
                         appendCppTypeName(sourceFile, type)
@@ -868,11 +658,9 @@ class SourceVisitor extends CppVisitor {
                 }
                 else {
                     let type: Type = functionSignature.result.resultType as Type
-                    appendCppTypeName(headerFile, type)
                     if !suppressSource
                         appendCppTypeName(sourceFile, type)
                     if isClass(type.name) {
-                        headerFile.append("*")
                         if !suppressSource
                             sourceFile.append("*")
                     }
@@ -880,8 +668,6 @@ class SourceVisitor extends CppVisitor {
             }
         }
 
-        inFunctionReturn = false
-        headerFile.append(" ")
         if !suppressSource {
             sourceFile.append(" ")    
             if functionSignature.parent.parent.parent.parent is ClassDeclaration {
@@ -890,8 +676,6 @@ class SourceVisitor extends CppVisitor {
                 sourceFile.append("::")
             }
         }
-        headerFile.append(functionName)
-        headerFile.append("(")
         if !suppressSource {
             sourceFile.append(functionName)
             sourceFile.append("(")
@@ -901,11 +685,9 @@ class SourceVisitor extends CppVisitor {
             if isClass(type.name) {
                 let lifeTime: LifeTime = type.lifeTime
                 if (lifeTime == null) || !(lifeTime is Reference) {
-                    headerFile.append("_Page* _rp")
                     if !suppressSource
                         sourceFile.append("_Page* _rp")
                     if (functionSignature.parameterClause.parameters) || (functionSignature.throwsClause) {
-                        headerFile.append(", ")
                         if !suppressSource
                             sourceFile.append(", ")
                     }
@@ -913,11 +695,9 @@ class SourceVisitor extends CppVisitor {
             }
         }
         if functionSignature.throwsClause != null {
-            headerFile.append("_Page* _ep")
             if !suppressSource
                 sourceFile.append("_Page* _ep")
             if functionSignature.parameterClause.parameters {
-                headerFile.append(", ")
                 if !suppressSource
                     sourceFile.append(", ")
             }
@@ -925,24 +705,8 @@ class SourceVisitor extends CppVisitor {
 
         true
     }
-    
-    function hasArrayPostfix(type: Type): bool {
-
-        if type.postfixes == null
-            return(false)
-
-        let postfixes: TypePostfix[] = type.postfixes
-        let typePostfix: TypePostfix = postfixes[0]
-
-        if typePostfix is IndexedType
-            return(true)
-
-        false
-    }
-
 
     function closeFunctionSignature(functionSignature: FunctionSignature) {
-        suppressHeader = true
     }
 
     function openFunctionResult(functionResult: FunctionResult): bool {
@@ -960,7 +724,6 @@ class SourceVisitor extends CppVisitor {
     }
 
     function closeParameterClause(parameterClause: ParameterClause) {
-        headerFile.append(")")
 
         if !suppressSource
             sourceFile.append(") ")
@@ -970,16 +733,13 @@ class SourceVisitor extends CppVisitor {
 
     function openConstParameter(constParameter: ConstParameter): bool {
         let constParameterName: string = constParameter.name
-        constDeclaration = true
         writeParameter(constParameterName, constParameter.parameterType)
-        constDeclaration = false
 
         false
     }
 
     function writeParameter(name: string, parameterType: Type) {
         if !firstParameter {
-            headerFile.append(", ")
             if !suppressSource
                 sourceFile.append(", ")
         }
@@ -988,8 +748,6 @@ class SourceVisitor extends CppVisitor {
         }
 
         parameterType.accept(this)
-        headerFile.append(" ")
-        headerFile.append(name)
         if !suppressSource {
             sourceFile.append(" ")
             sourceFile.append(name)
@@ -1022,7 +780,6 @@ class SourceVisitor extends CppVisitor {
     }
 
     function closeConstParameter(constParameter: ConstParameter) {
-        headerFile.append(constParameter.name)
     }
 
     function openVarParameter(varParameter: VarParameter): bool {
@@ -1031,8 +788,6 @@ class SourceVisitor extends CppVisitor {
     }
 
     function closeVarParameter(varParameter: VarParameter) {
-        let varParameterName: string = varParameter.name
-        headerFile.append(varParameterName)
     }
 
     function openThrowsClause(throwsClause: ThrowsClause): bool {
@@ -1048,15 +803,6 @@ class SourceVisitor extends CppVisitor {
 
         let enumDeclarationName: string = ((enumMember.parent) as EnumDeclaration).name
         if enumMember.parameterClause {
-            headerFile.append("\nclass _")
-            headerFile.append(enumDeclarationName)
-            headerFile.append("_")
-            headerFile.append(enumMember.enumCase.name)
-            headerFile.append(" : public Object {\npublic:\n    _")
-            headerFile.append(enumDeclarationName)
-            headerFile.append("_")
-            headerFile.append(enumMember.enumCase.name)
-            headerFile.append("(")
             sourceFile.append("_")
             sourceFile.append(enumDeclarationName)
             sourceFile.append("_")
@@ -1068,14 +814,12 @@ class SourceVisitor extends CppVisitor {
             sourceFile.append("(")
         }
 
-        inEnumMember = true
         true
     }
 
     function closeEnumMember(enumMember: EnumMember) {
         if enumMember.parameterClause != null {
             sourceFile.append("\n")
-            headerFile.append(";\n\n")
 
             let parameters: Parameter[] = enumMember.parameterClause.parameters
             if parameters != null {
@@ -1084,11 +828,6 @@ class SourceVisitor extends CppVisitor {
                 for parameter: Parameter in parameters {
                     if parameter is ConstParameter {
                         let constParameter: ConstParameter = parameter as ConstParameter
-                        headerFile.append("    ")
-                        appendCppType(headerFile, constParameter.parameterType)
-                        headerFile.append(" ")
-                        headerFile.append(constParameter.name)
-                        headerFile.append(";\n")
                         if pos != 0
                             sourceFile.append(", ")
                         sourceFile.append(constParameter.name)
@@ -1100,7 +839,6 @@ class SourceVisitor extends CppVisitor {
                 }
             }
 
-            headerFile.append("};\n")
             sourceFile.append(" { }\n\n_")
             let enumDeclarationName: string = ((enumMember.parent) as EnumDeclaration).name
             sourceFile.append(enumDeclarationName)
@@ -1115,22 +853,6 @@ class SourceVisitor extends CppVisitor {
             sourceFile.append("_")
             sourceFile.append(enumMember.enumCase.name)
             sourceFile.append("*)errorInfo;\n}\n\n")
-        }
-
-        inEnumMember = false
-    }
-
-    function appendCppType(mutable s: VarString, type: Type) {
-        if hasArrayPostfix(type) {
-            s.append("_Array<")
-            appendCppTypeName(s, type)
-            s.append(">*")
-        }
-        else {
-            appendCppTypeName(s, type)
-            if isClass(type.name) {
-                s.append("*")
-            }
         }
     }
 
@@ -1149,14 +871,6 @@ class SourceVisitor extends CppVisitor {
     }
 
     function closeClassBody(classBody: ClassBody) {
-    }
-
-    function indentHeader() {
-        var i: number = 0
-        while i < headerIndentLevel {
-            headerFile.append("    ")
-            i++
-        }
     }
 
     function indentSource() {
@@ -1182,16 +896,10 @@ class SourceVisitor extends CppVisitor {
     }
 
     function openClassMember(classMember: ClassMember): bool {
-        headerFile.append("\n")
-        indentHeader()
-        declaringClassMember = true
-
         true
     }
 
     function closeClassMember(classMember: ClassMember) {
-        headerFile.append(";")
-        declaringClassMember = false
     }
 
     function openPrefixExpression(prefixExpression: PrefixExpression): bool {
@@ -2597,15 +2305,9 @@ class SourceVisitor extends CppVisitor {
         if identifierPattern.annotationForType != null {
             identifierPattern.annotationForType.accept(this)
 
-            if !suppressHeader
-                headerFile.append(" ")
-
             if !suppressSource
                 sourceFile.append(" ")
         }
-
-        if !suppressHeader
-            headerFile.append(identifierPattern.identifier)
 
         if !suppressSource
             sourceFile.append(identifierPattern.identifier)
@@ -2703,12 +2405,7 @@ class SourceVisitor extends CppVisitor {
         if hasArrayPostfix(type) {
             if !suppressSource
                 sourceFile.append("_Array<")
-            if !sourceIndentLevel {
-                headerFile.append("_Array<")
-            }
         }
-        if !suppressHeader
-            appendCppTypeName(headerFile, type)
         if (!suppressSource)
             appendCppTypeName(sourceFile, type)
  
@@ -2718,7 +2415,6 @@ class SourceVisitor extends CppVisitor {
     function closeType(type: Type) {
         if hasArrayPostfix(type) {
             if !sourceIndentLevel {
-                headerFile.append(">*")
                 if !suppressSource {
                     sourceFile.append(">")
                     if !type.parent is ConstructorCall
@@ -2733,9 +2429,6 @@ class SourceVisitor extends CppVisitor {
         }
         if isClass(type.name) && !hasArrayPostfix(type) && !inTypeQuery(type) && !type.parent is ConstructorCall {
 
-            if !suppressHeader
-                headerFile.append("*")
-
             if !suppressSource
                 sourceFile.append("*")
         }
@@ -2748,22 +2441,6 @@ class SourceVisitor extends CppVisitor {
             return(true)
 
         false
-    }
-
-    function appendCppTypeName(mutable s: VarString, type: Type) {
-        let typeName: string = type.name
-        if typeName.equals("number") {
-            s.append("size_t")
-            return
-        }
-        else {
-            if typeName.equals("char") {
-                s.append("char")
-                return
-            }
-        }
-
-        s.append(typeName)
     }
 
     function openTypeAnnotation(typeAnnotation: TypeAnnotation): bool {

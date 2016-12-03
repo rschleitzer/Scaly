@@ -7,24 +7,13 @@ namespace scalyc {
 class SourceVisitor : public CppVisitor {
 public:
     VarString* sourceFile;
-    VarString* headerFile;
-    VarString* mainHeaderFile;
     VarString* projectFile;
     _Array<Inherits>* inherits;
     _Array<string>* classes;
-    size_t headerIndentLevel;
     size_t sourceIndentLevel;
     bool firstParameter;
-    bool firstBindingInitializer;
-    bool declaringClassMember;
     bool inParameterClause;
-    bool abstractFunction;
-    bool staticFunction;
-    bool inEnumMember;
-    bool inFunctionReturn;
-    bool constDeclaration;
     bool suppressSource;
-    bool suppressHeader;
     SourceVisitor();
     virtual bool openProgram(Program* program);
     virtual void closeProgram(Program* program);
@@ -43,7 +32,7 @@ public:
     virtual void closeEnumDeclaration(EnumDeclaration* enumDeclaration);
     virtual bool openClassDeclaration(ClassDeclaration* classDeclaration);
     virtual void closeClassDeclaration(ClassDeclaration* classDeclaration);
-    virtual bool openConstructorDeclaration(ConstructorDeclaration* initializerDeclaration);
+    virtual bool openConstructorDeclaration(ConstructorDeclaration* constructorDeclaration);
     virtual void closeConstructorDeclaration(ConstructorDeclaration* initializerDeclaration);
     virtual bool openCodeBlock(CodeBlock* codeBlock);
     virtual bool localAllocations(CodeBlock* codeBlock);
@@ -64,7 +53,6 @@ public:
     virtual void visitOverrideWord(OverrideWord* overrideWord);
     virtual void visitStaticWord(StaticWord* staticWord);
     virtual bool openFunctionSignature(FunctionSignature* functionSignature);
-    virtual bool hasArrayPostfix(Type* type);
     virtual void closeFunctionSignature(FunctionSignature* functionSignature);
     virtual bool openFunctionResult(FunctionResult* functionResult);
     virtual void closeFunctionResult(FunctionResult* functionResult);
@@ -80,13 +68,11 @@ public:
     virtual void closeThrowsClause(ThrowsClause* throwsClause);
     virtual bool openEnumMember(EnumMember* enumMember);
     virtual void closeEnumMember(EnumMember* enumMember);
-    virtual void appendCppType(VarString* s, Type* type);
     virtual void visitEnumCase(EnumCase* enumCase);
     virtual bool openAdditionalCase(AdditionalCase* additionalCase);
     virtual void closeAdditionalCase(AdditionalCase* additionalCase);
     virtual bool openClassBody(ClassBody* classBody);
     virtual void closeClassBody(ClassBody* classBody);
-    virtual void indentHeader();
     virtual void indentSource();
     virtual void collectDerivedClasses(_Array<string>* derivedClasses, string* className);
     virtual void appendDerivedClasses(_Array<string>* derivedClasses, _Array<string>* inheritors);
@@ -200,7 +186,6 @@ public:
     virtual bool openType(Type* type);
     virtual void closeType(Type* type);
     virtual bool inTypeQuery(Type* type);
-    virtual void appendCppTypeName(VarString* s, Type* type);
     virtual bool openTypeAnnotation(TypeAnnotation* typeAnnotation);
     virtual void closeTypeAnnotation(TypeAnnotation* typeAnnotation);
     virtual bool openSubtype(Subtype* subtype);
