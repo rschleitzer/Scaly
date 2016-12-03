@@ -11,7 +11,6 @@ public:
     _Array<Inherits>* inherits;
     _Array<string>* classes;
     size_t headerIndentLevel;
-    bool staticFunction;
     HeaderVisitor();
     virtual bool openProgram(Program* program);
     virtual bool openCompilationUnit(CompilationUnit* compilationUnit);
@@ -19,7 +18,6 @@ public:
     virtual bool openConstantDeclaration(ConstantDeclaration* constantDeclaration);
     virtual bool openVariableDeclaration(VariableDeclaration* variableDeclaration);
     virtual bool openMutableDeclaration(MutableDeclaration* mutableDeclaration);
-    virtual bool openFunctionDeclaration(FunctionDeclaration* functionDeclaration);
     virtual void closeFunctionDeclaration(FunctionDeclaration* functionDeclaration);
     virtual bool openEnumDeclaration(EnumDeclaration* enumDeclaration);
     virtual void closeEnumDeclaration(EnumDeclaration* enumDeclaration);

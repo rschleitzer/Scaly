@@ -134,24 +134,7 @@ bool HeaderVisitor::openMutableDeclaration(MutableDeclaration* mutableDeclaratio
     return false;
 }
 
-bool HeaderVisitor::openFunctionDeclaration(FunctionDeclaration* functionDeclaration) {
-    if (functionDeclaration->modifiers != nullptr) {
-        _Array<Modifier>* modifiers = functionDeclaration->modifiers;
-        Modifier* modifier = nullptr;
-        size_t _modifiers_length = modifiers->length();
-        for (size_t _i = 0; _i < _modifiers_length; _i++) {
-            modifier = *(*modifiers)[_i];
-            {
-                if (modifier->_isStaticWord())
-                    staticFunction = true;
-            }
-        }
-    }
-    return true;
-}
-
 void HeaderVisitor::closeFunctionDeclaration(FunctionDeclaration* functionDeclaration) {
-    staticFunction = false;
     if (functionDeclaration->body == nullptr)
         headerFile->append(" = 0");
 }
@@ -329,10 +312,24 @@ bool HeaderVisitor::openPatternInitializer(PatternInitializer* patternInitialize
 
 bool HeaderVisitor::openFunctionSignature(FunctionSignature* functionSignature) {
     string* functionName = ((FunctionDeclaration*)functionSignature->parent)->name;
-    if (staticFunction)
-        headerFile->append("static ");
-    else
+    FunctionDeclaration* functionDeclaration = (FunctionDeclaration*)functionSignature->parent;
+    if (functionDeclaration->modifiers != nullptr) {
+        _Array<Modifier>* modifiers = functionDeclaration->modifiers;
+        Modifier* modifier = nullptr;
+        size_t _modifiers_length = modifiers->length();
+        for (size_t _i = 0; _i < _modifiers_length; _i++) {
+            modifier = *(*modifiers)[_i];
+            {
+                if (modifier->_isStaticWord())
+                    headerFile->append("static ");
+                else
+                    headerFile->append("virtual ");
+            }
+        }
+    }
+    else {
         headerFile->append("virtual ");
+    }
     if (functionSignature->result == nullptr) {
         if (functionSignature->throwsClause == nullptr) {
             headerFile->append("void");

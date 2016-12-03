@@ -10,9 +10,6 @@ class HeaderVisitor extends CppVisitor {
     // indent level
     mutable headerIndentLevel: number
 
-    // Some state during building some constructs
-    mutable staticFunction: bool
-
     constructor() {
 
         // null constructor of mutable members does not work yet
@@ -147,22 +144,7 @@ class HeaderVisitor extends CppVisitor {
         false
     }
 
-    function openFunctionDeclaration(functionDeclaration: FunctionDeclaration): bool {
-
-        if functionDeclaration.modifiers != null {
-            let modifiers: Modifier[] = functionDeclaration.modifiers
-            for modifier: Modifier in modifiers {
-                if modifier is StaticWord
-                    staticFunction = true
-            }
-        }
-
-        true
-    }
-
     function closeFunctionDeclaration(functionDeclaration: FunctionDeclaration) {
-
-        staticFunction = false
 
         if functionDeclaration.body == null
             headerFile.append(" = 0")
@@ -337,10 +319,20 @@ class HeaderVisitor extends CppVisitor {
 
     function openFunctionSignature(functionSignature: FunctionSignature): bool {
         let functionName: string = (functionSignature.parent as FunctionDeclaration).name
-        if staticFunction
-            headerFile.append("static ")
-        else
+
+        let functionDeclaration: FunctionDeclaration = functionSignature.parent as FunctionDeclaration
+        if functionDeclaration.modifiers != null {
+            let modifiers: Modifier[] = functionDeclaration.modifiers
+            for modifier: Modifier in modifiers {
+                if modifier is StaticWord
+                    headerFile.append("static ")
+                else
+                    headerFile.append("virtual ")
+            }
+        }
+        else {
             headerFile.append("virtual ")
+        }
 
         if functionSignature.result == null {
             if functionSignature.throwsClause == null {
