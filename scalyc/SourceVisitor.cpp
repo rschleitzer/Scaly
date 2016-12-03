@@ -43,9 +43,6 @@ bool SourceVisitor::openProgram(Program* program) {
     return true;
 }
 
-void SourceVisitor::closeProgram(Program* program) {
-}
-
 bool SourceVisitor::openCompilationUnit(CompilationUnit* compilationUnit) {
     moduleName = compilationUnit->fileName;
     sourceIndentLevel = 0;
@@ -202,13 +199,6 @@ bool SourceVisitor::openEnumDeclaration(EnumDeclaration* enumDeclaration) {
     sourceFile->append("::_getErrorCode() {\n    return (long)errorCode;\n}\n\nvoid* ");
     sourceFile->append(enumDeclarationName);
     sourceFile->append("::_getErrorInfo() {\n    return errorInfo;\n}\n\n");
-    return true;
-}
-
-void SourceVisitor::closeEnumDeclaration(EnumDeclaration* enumDeclaration) {
-}
-
-bool SourceVisitor::openClassDeclaration(ClassDeclaration* classDeclaration) {
     return true;
 }
 
@@ -541,9 +531,6 @@ bool SourceVisitor::openInitializer(Initializer* initializer) {
     return true;
 }
 
-void SourceVisitor::closeInitializer(Initializer* initializer) {
-}
-
 bool SourceVisitor::openBindingInitializer(BindingInitializer* bindingInitializer) {
     if (bindingInitializer->parent->parent->_isCodeBlock() || bindingInitializer->parent->parent->_isCaseContent() || bindingInitializer->parent->parent->_isCompilationUnit())
         indentSource();
@@ -555,26 +542,6 @@ void SourceVisitor::closeBindingInitializer(BindingInitializer* bindingInitializ
         return;
     if (bindingInitializer->parent->parent->_isCodeBlock() || bindingInitializer->parent->parent->_isCaseContent() || bindingInitializer->parent->parent->_isCompilationUnit())
         sourceFile->append(";\n");
-}
-
-bool SourceVisitor::openPatternInitializer(PatternInitializer* patternInitializer) {
-    return true;
-}
-
-void SourceVisitor::closePatternInitializer(PatternInitializer* patternInitializer) {
-}
-
-bool SourceVisitor::openAdditionalInitializer(AdditionalInitializer* additionalInitializer) {
-    return true;
-}
-
-void SourceVisitor::closeAdditionalInitializer(AdditionalInitializer* additionalInitializer) {
-}
-
-void SourceVisitor::visitOverrideWord(OverrideWord* overrideWord) {
-}
-
-void SourceVisitor::visitStaticWord(StaticWord* staticWord) {
 }
 
 bool SourceVisitor::openFunctionSignature(FunctionSignature* functionSignature) {
@@ -669,14 +636,8 @@ bool SourceVisitor::openFunctionSignature(FunctionSignature* functionSignature) 
     return true;
 }
 
-void SourceVisitor::closeFunctionSignature(FunctionSignature* functionSignature) {
-}
-
 bool SourceVisitor::openFunctionResult(FunctionResult* functionResult) {
     return false;
-}
-
-void SourceVisitor::closeFunctionResult(FunctionResult* functionResult) {
 }
 
 bool SourceVisitor::openParameterClause(ParameterClause* parameterClause) {
@@ -737,14 +698,8 @@ bool SourceVisitor::openVarParameter(VarParameter* varParameter) {
     return false;
 }
 
-void SourceVisitor::closeVarParameter(VarParameter* varParameter) {
-}
-
 bool SourceVisitor::openThrowsClause(ThrowsClause* throwsClause) {
     return false;
-}
-
-void SourceVisitor::closeThrowsClause(ThrowsClause* throwsClause) {
 }
 
 bool SourceVisitor::openEnumMember(EnumMember* enumMember) {
@@ -807,23 +762,6 @@ void SourceVisitor::closeEnumMember(EnumMember* enumMember) {
     }
 }
 
-void SourceVisitor::visitEnumCase(EnumCase* enumCase) {
-}
-
-bool SourceVisitor::openAdditionalCase(AdditionalCase* additionalCase) {
-    return true;
-}
-
-void SourceVisitor::closeAdditionalCase(AdditionalCase* additionalCase) {
-}
-
-bool SourceVisitor::openClassBody(ClassBody* classBody) {
-    return true;
-}
-
-void SourceVisitor::closeClassBody(ClassBody* classBody) {
-}
-
 void SourceVisitor::indentSource() {
     size_t i = 0;
     while (i < sourceIndentLevel) {
@@ -856,20 +794,10 @@ void SourceVisitor::appendDerivedClasses(_Array<string>* derivedClasses, _Array<
     }
 }
 
-bool SourceVisitor::openClassMember(ClassMember* classMember) {
-    return true;
-}
-
-void SourceVisitor::closeClassMember(ClassMember* classMember) {
-}
-
 bool SourceVisitor::openPrefixExpression(PrefixExpression* prefixExpression) {
     if (prefixExpression->prefixOperator != nullptr)
         sourceFile->append(prefixExpression->prefixOperator);
     return true;
-}
-
-void SourceVisitor::closePrefixExpression(PrefixExpression* prefixExpression) {
 }
 
 bool SourceVisitor::openPostfixExpression(PostfixExpression* postfixExpression) {
@@ -890,9 +818,6 @@ bool SourceVisitor::openBinaryOperation(BinaryOperation* binaryOperation) {
     sourceFile->append(binaryOperation->binaryOperator);
     sourceFile->append(" ");
     return true;
-}
-
-void SourceVisitor::closeBinaryOperation(BinaryOperation* binaryOperation) {
 }
 
 bool SourceVisitor::openAssignment(Assignment* assignment) {
@@ -1033,22 +958,9 @@ bool SourceVisitor::isVariableMember(string* memberName, ClassDeclaration* class
     return false;
 }
 
-void SourceVisitor::closeAssignment(Assignment* assignment) {
-}
-
 bool SourceVisitor::openTypeQuery(TypeQuery* typeQuery) {
     sourceFile->append("->_is");
     return true;
-}
-
-void SourceVisitor::closeTypeQuery(TypeQuery* typeQuery) {
-}
-
-bool SourceVisitor::openTypeCast(TypeCast* typeCast) {
-    return true;
-}
-
-void SourceVisitor::closeTypeCast(TypeCast* typeCast) {
 }
 
 bool SourceVisitor::openCatchClause(CatchClause* catchClause) {
@@ -1268,32 +1180,8 @@ string* SourceVisitor::getErrorType(CatchClause* catchClause) {
     return nullptr;
 }
 
-void SourceVisitor::closeCatchClause(CatchClause* catchClause) {
-}
-
-bool SourceVisitor::openWildCardCatchPattern(WildCardCatchPattern* wildCardCatchPattern) {
-    return true;
-}
-
-void SourceVisitor::closeWildCardCatchPattern(WildCardCatchPattern* wildCardCatchPattern) {
-}
-
-bool SourceVisitor::openIdentifierCatchPattern(IdentifierCatchPattern* identifierCatchPattern) {
-    return true;
-}
-
-void SourceVisitor::closeIdentifierCatchPattern(IdentifierCatchPattern* identifierCatchPattern) {
-}
-
 void SourceVisitor::visitOperatorPostfix(OperatorPostfix* operatorPostfix) {
     sourceFile->append(operatorPostfix->postfixOperator);
-}
-
-bool SourceVisitor::openFunctionCall(FunctionCall* functionCall) {
-    return true;
-}
-
-void SourceVisitor::closeFunctionCall(FunctionCall* functionCall) {
 }
 
 void SourceVisitor::visitMemberExpression(MemberExpression* memberExpression) {
@@ -1324,10 +1212,6 @@ bool SourceVisitor::openSubscript(Subscript* subscript) {
 
 void SourceVisitor::closeSubscript(Subscript* subscript) {
     sourceFile->append("]");
-}
-
-bool SourceVisitor::openExpressionElement(ExpressionElement* expressionElement) {
-    return true;
 }
 
 void SourceVisitor::closeExpressionElement(ExpressionElement* expressionElement) {
@@ -1515,9 +1399,6 @@ bool SourceVisitor::openIfExpression(IfExpression* ifExpression) {
     return false;
 }
 
-void SourceVisitor::closeIfExpression(IfExpression* ifExpression) {
-}
-
 bool SourceVisitor::openSwitchExpression(SwitchExpression* switchExpression) {
     sourceFile->append("switch (");
     return true;
@@ -1569,9 +1450,6 @@ bool SourceVisitor::openForExpression(ForExpression* forExpression) {
     return false;
 }
 
-void SourceVisitor::closeForExpression(ForExpression* forExpression) {
-}
-
 bool SourceVisitor::openWhileExpression(WhileExpression* whileExpression) {
     sourceFile->append("while (");
     whileExpression->condition->accept(this);
@@ -1589,9 +1467,6 @@ bool SourceVisitor::openWhileExpression(WhileExpression* whileExpression) {
         whileExpression->code->accept(this);
     }
     return false;
-}
-
-void SourceVisitor::closeWhileExpression(WhileExpression* whileExpression) {
 }
 
 bool SourceVisitor::openDoExpression(DoExpression* doExpression) {
@@ -1613,9 +1488,6 @@ bool SourceVisitor::openDoExpression(DoExpression* doExpression) {
     doExpression->condition->accept(this);
     sourceFile->append(")");
     return false;
-}
-
-void SourceVisitor::closeDoExpression(DoExpression* doExpression) {
 }
 
 bool SourceVisitor::openParenthesizedExpression(ParenthesizedExpression* parenthesizedExpression) {
@@ -2007,15 +1879,9 @@ FunctionDeclaration* SourceVisitor::getFunctionDeclaration(SyntaxNode* syntaxNod
     return getFunctionDeclaration(syntaxNode->parent);
 }
 
-void SourceVisitor::closeThrowExpression(ThrowExpression* throwExpression) {
-}
-
 bool SourceVisitor::openBreakExpression(BreakExpression* breakExpression) {
     sourceFile->append("break");
     return true;
-}
-
-void SourceVisitor::closeBreakExpression(BreakExpression* breakExpression) {
 }
 
 bool SourceVisitor::openConstructorCall(ConstructorCall* constructorCall) {
@@ -2122,9 +1988,6 @@ bool SourceVisitor::openConstructorCall(ConstructorCall* constructorCall) {
     return true;
 }
 
-void SourceVisitor::closeConstructorCall(ConstructorCall* constructorCall) {
-}
-
 bool SourceVisitor::initializerIsBoundOrAssigned(ConstructorCall* initializerCall) {
     if (initializerCall->parent->_isPostfixExpression()) {
         PostfixExpression* postfixExpression = (PostfixExpression*)(initializerCall->parent);
@@ -2159,9 +2022,6 @@ bool SourceVisitor::openElseClause(ElseClause* elseClause) {
     return false;
 }
 
-void SourceVisitor::closeElseClause(ElseClause* elseClause) {
-}
-
 bool SourceVisitor::openCurliedSwitchBody(CurliedSwitchBody* curliedSwitchBody) {
     sourceFile->append(") {\n");
     sourceIndentLevel++;
@@ -2174,27 +2034,14 @@ void SourceVisitor::closeCurliedSwitchBody(CurliedSwitchBody* curliedSwitchBody)
     sourceFile->append("}\n");
 }
 
-bool SourceVisitor::openNakedSwitchBody(NakedSwitchBody* nakedSwitchBody) {
-    return true;
-}
-
-void SourceVisitor::closeNakedSwitchBody(NakedSwitchBody* nakedSwitchBody) {
-}
-
 bool SourceVisitor::openSwitchCase(SwitchCase* switchCase) {
     indentSource();
     return true;
 }
 
-void SourceVisitor::closeSwitchCase(SwitchCase* switchCase) {
-}
-
 bool SourceVisitor::openItemCaseLabel(ItemCaseLabel* itemCaseLabel) {
     sourceFile->append("case ");
     return true;
-}
-
-void SourceVisitor::closeItemCaseLabel(ItemCaseLabel* itemCaseLabel) {
 }
 
 void SourceVisitor::visitDefaultCaseLabel(DefaultCaseLabel* defaultCaseLabel) {
@@ -2208,9 +2055,6 @@ bool SourceVisitor::openCaseItem(CaseItem* caseItem) {
 
 void SourceVisitor::closeCaseItem(CaseItem* caseItem) {
     sourceFile->append(": ");
-}
-
-void SourceVisitor::visitWildcardPattern(WildcardPattern* wildcardPattern) {
 }
 
 bool SourceVisitor::openIdentifierPattern(IdentifierPattern* identifierPattern) {
@@ -2267,30 +2111,9 @@ bool SourceVisitor::isCatchingPatternInitializer(PatternInitializer* patternInit
     return false;
 }
 
-void SourceVisitor::closeIdentifierPattern(IdentifierPattern* identifierPattern) {
-}
-
-bool SourceVisitor::openTuplePattern(TuplePattern* tuplePattern) {
-    return true;
-}
-
-void SourceVisitor::closeTuplePattern(TuplePattern* tuplePattern) {
-}
-
-bool SourceVisitor::openExpressionPattern(ExpressionPattern* expressionPattern) {
-    return true;
-}
-
 void SourceVisitor::closeExpressionPattern(ExpressionPattern* expressionPattern) {
     if (expressionPattern->parent->_isItemCaseLabel())
         sourceFile->append(": ");
-}
-
-bool SourceVisitor::openTuplePatternElement(TuplePatternElement* tuplePatternElement) {
-    return true;
-}
-
-void SourceVisitor::closeTuplePatternElement(TuplePatternElement* tuplePatternElement) {
 }
 
 bool SourceVisitor::openCaseContent(CaseContent* caseContent) {
@@ -2356,55 +2179,12 @@ bool SourceVisitor::inTypeQuery(Type* type) {
     return false;
 }
 
-bool SourceVisitor::openTypeAnnotation(TypeAnnotation* typeAnnotation) {
-    return true;
-}
-
-void SourceVisitor::closeTypeAnnotation(TypeAnnotation* typeAnnotation) {
-}
-
-bool SourceVisitor::openSubtype(Subtype* subtype) {
-    return true;
-}
-
-void SourceVisitor::closeSubtype(Subtype* subtype) {
-}
-
-bool SourceVisitor::openIndexedType(IndexedType* indexedType) {
-    return true;
-}
-
-void SourceVisitor::closeIndexedType(IndexedType* indexedType) {
-}
-
 void SourceVisitor::visitPointer(Pointer* pointer) {
     sourceFile->append("*");
 }
 
-void SourceVisitor::visitRoot(Root* root) {
-}
-
-void SourceVisitor::visitLocal(Local* local) {
-}
-
-void SourceVisitor::visitReference(Reference* age) {
-}
-
-void SourceVisitor::visitThrown(Thrown* thrown) {
-}
-
-bool SourceVisitor::openTypeInheritanceClause(TypeInheritanceClause* typeInheritanceClause) {
-    return true;
-}
-
-void SourceVisitor::closeTypeInheritanceClause(TypeInheritanceClause* typeInheritanceClause) {
-}
-
 bool SourceVisitor::openInheritance(Inheritance* inheritance) {
     return false;
-}
-
-void SourceVisitor::closeInheritance(Inheritance* inheritance) {
 }
 
 void SourceVisitor::buildProjectFileString(Program* program) {
