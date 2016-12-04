@@ -136,12 +136,12 @@ class Lexer {
             case '\'':
                 token = scanCharacterLiteral()
 
-            case '_', '(', ')', '{', '}', '[', ']', ',', ':', ';', '@', '#', '^', '`', '$', '~': {
+            case '_', '(', ')', '{', '}', '[', ']', ',', ':', ';', '@', '#', '^', '`', '$': {
                 token = new Punctuation(new string(c))
                 position++ column++
             }
 
-            case '+', '*', '/', '%', '|':
+            case '+', '*', '/', '%', '|', '~':
                 token = scanOperator(false)
             
             case '<', '>': {
