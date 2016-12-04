@@ -45,7 +45,7 @@ public:
     virtual bool openThrowsClause(ThrowsClause* throwsClause);
     virtual bool openEnumMember(EnumMember* enumMember);
     virtual void closeEnumMember(EnumMember* enumMember);
-    virtual void indentSource();
+    virtual void indentSource(size_t level);
     virtual void collectDerivedClasses(_Array<string>* derivedClasses, string* className);
     virtual void appendDerivedClasses(_Array<string>* derivedClasses, _Array<string>* inheritors);
     virtual bool openPrefixExpression(PrefixExpression* prefixExpression);

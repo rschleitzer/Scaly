@@ -229,11 +229,11 @@ void SourceVisitor::closeConstructorDeclaration(ConstructorDeclaration* initiali
 
 bool SourceVisitor::openCodeBlock(CodeBlock* codeBlock) {
     if ((codeBlock->parent->_isCaseContent()) || (codeBlock->parent->_isCodeBlock()))
-        indentSource();
+        indentSource(sourceIndentLevel);
     sourceFile->append("{\n");
     sourceIndentLevel++;
     if (localAllocations(codeBlock)) {
-        indentSource();
+        indentSource(sourceIndentLevel);
         sourceFile->append("_Region _region; _Page* _p = _region.get();\n");
     }
     return true;
@@ -305,12 +305,12 @@ void SourceVisitor::closeCodeBlock(CodeBlock* codeBlock) {
     if (codeBlock->parent->_isFunctionDeclaration()) {
         FunctionDeclaration* functionDeclaration = (FunctionDeclaration*)codeBlock->parent;
         if ((functionDeclaration->signature->throwsClause != nullptr) && (functionDeclaration->signature->result == nullptr)) {
-            indentSource();
+            indentSource(sourceIndentLevel);
             sourceFile->append("return nullptr;\n");
         }
     }
     sourceIndentLevel--;
-    indentSource();
+    indentSource(sourceIndentLevel);
     sourceFile->append("}\n");
     if (codeBlock->parent->_isFunctionDeclaration())
         sourceFile->append("\n");
@@ -319,7 +319,7 @@ void SourceVisitor::closeCodeBlock(CodeBlock* codeBlock) {
 bool SourceVisitor::openSimpleExpression(SimpleExpression* simpleExpression) {
     Statement* statement = (Statement*)simpleExpression;
     if (statement->parent->_isCodeBlock() || statement->parent->_isCaseContent() || statement->parent->_isCompilationUnit())
-        indentSource();
+        indentSource(sourceIndentLevel);
     if (statement->parent->_isFunctionDeclaration()) {
         _Region _region; _Page* _p = _region.get();
         string* returnType = getReturnType(_p, statement);
@@ -371,11 +371,11 @@ bool SourceVisitor::openSimpleExpression(SimpleExpression* simpleExpression) {
                         sourceFile->append("if (");
                         sourceFile->append(memberName);
                         sourceFile->append(" != nullptr)\n");
-                        this->indentSource();
+                        this->indentSource(sourceIndentLevel);
                         sourceFile->append("    ");
                         sourceFile->append(memberName);
                         sourceFile->append("->getPage()->clear();\n");
-                        this->indentSource();
+                        this->indentSource(sourceIndentLevel);
                     }
                 }
             }
@@ -502,7 +502,7 @@ bool SourceVisitor::openInitializer(Initializer* initializer) {
 
 bool SourceVisitor::openBindingInitializer(BindingInitializer* bindingInitializer) {
     if (bindingInitializer->parent->parent->_isCodeBlock() || bindingInitializer->parent->parent->_isCaseContent() || bindingInitializer->parent->parent->_isCompilationUnit())
-        indentSource();
+        indentSource(sourceIndentLevel);
     return true;
 }
 
@@ -694,9 +694,9 @@ void SourceVisitor::closeEnumMember(EnumMember* enumMember) {
     }
 }
 
-void SourceVisitor::indentSource() {
+void SourceVisitor::indentSource(size_t level) {
     size_t i = 0;
-    while (i < sourceIndentLevel) {
+    while (i < level) {
         sourceFile->append("    ");
         i++;
     }
@@ -903,25 +903,25 @@ bool SourceVisitor::openCatchClause(CatchClause* catchClause) {
                     _Array<CatchClause>* catchClauses = functionCall->catchClauses;
                     if (*(*catchClauses)[0] == catchClause) {
                         sourceFile->append(";\n");
-                        indentSource();
+                        indentSource(sourceIndentLevel);
                         identifierPattern->annotationForType->accept(this);
                         sourceFile->append(" ");
                         sourceFile->append(identifierPattern->identifier);
                         sourceFile->append(" = nullptr;\n");
-                        indentSource();
+                        indentSource(sourceIndentLevel);
                         sourceFile->append("if (_");
                         sourceFile->append(identifierPattern->identifier);
                         sourceFile->append("_result.succeeded()) {\n");
-                        indentSource();
+                        indentSource(sourceIndentLevel);
                         sourceFile->append("    ");
                         sourceFile->append(identifierPattern->identifier);
                         sourceFile->append(" = _");
                         sourceFile->append(identifierPattern->identifier);
                         sourceFile->append("_result.getResult();\n");
-                        indentSource();
+                        indentSource(sourceIndentLevel);
                         sourceFile->append("}\n");
                     }
-                    indentSource();
+                    indentSource(sourceIndentLevel);
                     sourceFile->append("else");
                     if (catchClause->catchPattern->_isIdentifierCatchPattern()) {
                         IdentifierCatchPattern* identifierCatchPattern = (IdentifierCatchPattern*)(catchClause->catchPattern);
@@ -945,7 +945,7 @@ bool SourceVisitor::openCatchClause(CatchClause* catchClause) {
                                     TuplePatternElement* element = *(*elements)[0];
                                     if (element->pattern->_isIdentifierPattern()) {
                                         IdentifierPattern* pattern = (IdentifierPattern*)(element->pattern);
-                                        indentSource();
+                                        indentSource(sourceIndentLevel);
                                         sourceFile->append("    auto ");
                                         sourceFile->append(pattern->identifier);
                                         sourceFile->append(" = _");
@@ -957,7 +957,7 @@ bool SourceVisitor::openCatchClause(CatchClause* catchClause) {
                         }
                     }
                     sourceIndentLevel++;
-                    indentSource();
+                    indentSource(sourceIndentLevel);
                     if (catchClause->expression->_isSimpleExpression()) {
                         SimpleExpression* simpleExpression = (SimpleExpression*)(catchClause->expression);
                         PrimaryExpression* primaryExpression = simpleExpression->prefixExpression->expression->primaryExpression;
@@ -970,7 +970,7 @@ bool SourceVisitor::openCatchClause(CatchClause* catchClause) {
                     if (catchClause->expression->_isSimpleExpression())
                         sourceFile->append(";\n");
                     sourceIndentLevel--;
-                    indentSource();
+                    indentSource(sourceIndentLevel);
                     sourceFile->append("}\n");
                 }
             }
@@ -981,18 +981,18 @@ bool SourceVisitor::openCatchClause(CatchClause* catchClause) {
                 _Array<CatchClause>* catchClauses = functionCall->catchClauses;
                 if (*(*catchClauses)[0] == catchClause) {
                     sourceFile->append(";\n");
-                    indentSource();
+                    indentSource(sourceIndentLevel);
                     sourceFile->append("if (_");
                     sourceFile->append(identifierExpression->name);
                     sourceFile->append("_error) {\n");
                     sourceIndentLevel++;
-                    indentSource();
+                    indentSource(sourceIndentLevel);
                     sourceFile->append("switch (_");
                     sourceFile->append(identifierExpression->name);
                     sourceFile->append("_error->_getErrorCode()) {\n");
                     sourceIndentLevel++;
                 }
-                indentSource();
+                indentSource(sourceIndentLevel);
                 if (catchClause->catchPattern->_isIdentifierCatchPattern()) {
                     sourceFile->append("case _");
                     IdentifierCatchPattern* identifierCatchPattern = (IdentifierCatchPattern*)(catchClause->catchPattern);
@@ -1001,9 +1001,9 @@ bool SourceVisitor::openCatchClause(CatchClause* catchClause) {
                     if (identifierCatchPattern->member != nullptr) {
                         sourceFile->append(identifierCatchPattern->member->member);
                         sourceFile->append(":\n");
-                        indentSource();
+                        indentSource(sourceIndentLevel);
                         sourceFile->append("{\n");
-                        indentSource();
+                        indentSource(sourceIndentLevel);
                         sourceFile->append("    _");
                         sourceFile->append(identifierCatchPattern->name);
                         sourceFile->append("_");
@@ -1032,11 +1032,11 @@ bool SourceVisitor::openCatchClause(CatchClause* catchClause) {
                 }
                 if (catchClause->catchPattern->_isWildCardCatchPattern()) {
                     sourceFile->append("default:\n");
-                    indentSource();
+                    indentSource(sourceIndentLevel);
                     sourceFile->append("{\n");
                 }
                 sourceIndentLevel++;
-                indentSource();
+                indentSource(sourceIndentLevel);
                 catchClause->expression->accept(this);
                 {
                     bool insertBreak = true;
@@ -1048,20 +1048,20 @@ bool SourceVisitor::openCatchClause(CatchClause* catchClause) {
                         }
                     }
                     if (insertBreak) {
-                        indentSource();
+                        indentSource(sourceIndentLevel);
                         sourceFile->append("break;\n");
                     }
                 }
                 sourceIndentLevel--;
-                indentSource();
+                indentSource(sourceIndentLevel);
                 sourceFile->append("}\n");
                 _Array<CatchClause>* clauses = functionCall->catchClauses;
                 if (*(*clauses)[functionCall->catchClauses->length() - 1] == catchClause) {
                     sourceIndentLevel--;
-                    indentSource();
+                    indentSource(sourceIndentLevel);
                     sourceFile->append("}\n");
                     sourceIndentLevel--;
-                    indentSource();
+                    indentSource(sourceIndentLevel);
                     sourceFile->append("}\n");
                 }
             }
@@ -1300,7 +1300,7 @@ bool SourceVisitor::openIfExpression(IfExpression* ifExpression) {
     sourceFile->append(")");
     if (ifExpression->consequent->_isSimpleExpression()) {
         sourceFile->append("\n    ");
-        indentSource();
+        indentSource(sourceIndentLevel);
         ifExpression->consequent->accept(this);
         sourceFile->append(";\n");
     }
@@ -1333,7 +1333,7 @@ bool SourceVisitor::openForExpression(ForExpression* forExpression) {
     pattern->accept(this);
     if (pattern->_isIdentifierPattern()) {
         sourceFile->append(" = nullptr;\n");
-        indentSource();
+        indentSource(sourceIndentLevel);
         sourceFile->append("size_t _");
         Expression* expression = forExpression->expression;
         if (expression->_isSimpleExpression()) {
@@ -1345,24 +1345,24 @@ bool SourceVisitor::openForExpression(ForExpression* forExpression) {
                 sourceFile->append("_length = ");
                 sourceFile->append(collectionName);
                 sourceFile->append("->length();\n");
-                indentSource();
+                indentSource(sourceIndentLevel);
                 sourceFile->append("for (size_t _i = 0; _i < _");
                 sourceFile->append(collectionName);
                 sourceFile->append("_length; _i++) {\n");
                 sourceIndentLevel++;
-                indentSource();
+                indentSource(sourceIndentLevel);
                 if (forExpression->pattern->_isIdentifierPattern()) {
                     IdentifierPattern* identifierPattern = (IdentifierPattern*)(forExpression->pattern);
                     sourceFile->append(identifierPattern->identifier);
                     sourceFile->append(" = *(*");
                     sourceFile->append(collectionName);
                     sourceFile->append(")[_i];\n");
-                    indentSource();
+                    indentSource(sourceIndentLevel);
                     forExpression->code->accept(this);
                     if (forExpression->code->_isSimpleExpression())
                         sourceFile->append(";\n");
                     sourceIndentLevel--;
-                    indentSource();
+                    indentSource(sourceIndentLevel);
                     sourceFile->append("}\n");
                 }
             }
@@ -1377,7 +1377,7 @@ bool SourceVisitor::openWhileExpression(WhileExpression* whileExpression) {
     sourceFile->append(")");
     if (whileExpression->code->_isSimpleExpression()) {
         sourceFile->append("\n    ");
-        indentSource();
+        indentSource(sourceIndentLevel);
         whileExpression->code->accept(this);
         sourceFile->append(";\n");
     }
@@ -1392,7 +1392,7 @@ bool SourceVisitor::openDoExpression(DoExpression* doExpression) {
     sourceFile->append("do");
     if (doExpression->code->_isSimpleExpression()) {
         sourceFile->append("\n    ");
-        indentSource();
+        indentSource(sourceIndentLevel);
         doExpression->code->accept(this);
         sourceFile->append(";");
     }
@@ -1400,7 +1400,7 @@ bool SourceVisitor::openDoExpression(DoExpression* doExpression) {
         sourceFile->append(" ");
         doExpression->code->accept(this);
     }
-    indentSource();
+    indentSource(sourceIndentLevel);
     sourceFile->append("while (");
     doExpression->condition->accept(this);
     sourceFile->append(")");
@@ -1920,11 +1920,11 @@ void SourceVisitor::visitNullExpression(NullExpression* nullExpression) {
 }
 
 bool SourceVisitor::openElseClause(ElseClause* elseClause) {
-    indentSource();
+    indentSource(sourceIndentLevel);
     sourceFile->append("else");
     if (elseClause->alternative->_isSimpleExpression()) {
         sourceFile->append("\n    ");
-        indentSource();
+        indentSource(sourceIndentLevel);
         elseClause->alternative->accept(this);
     }
     else {
@@ -1942,12 +1942,12 @@ bool SourceVisitor::openCurliedSwitchBody(CurliedSwitchBody* curliedSwitchBody) 
 
 void SourceVisitor::closeCurliedSwitchBody(CurliedSwitchBody* curliedSwitchBody) {
     sourceIndentLevel--;
-    indentSource();
+    indentSource(sourceIndentLevel);
     sourceFile->append("}\n");
 }
 
 bool SourceVisitor::openSwitchCase(SwitchCase* switchCase) {
-    indentSource();
+    indentSource(sourceIndentLevel);
     return true;
 }
 
@@ -2037,14 +2037,14 @@ void SourceVisitor::closeCaseContent(CaseContent* caseContent) {
     if (caseContent->parent->_isSwitchCase()) {
         SwitchCase* switchCase = (SwitchCase*)caseContent->parent;
         if (!switchCase->label->_isDefaultCaseLabel()) {
-            indentSource();
+            indentSource(sourceIndentLevel);
             sourceFile->append("break;\n");
         }
         else
             additionalLineFeed = false;
     }
     sourceIndentLevel--;
-    indentSource();
+    indentSource(sourceIndentLevel);
     sourceFile->append("}\n");
     if (additionalLineFeed)
         sourceFile->append("\n");
