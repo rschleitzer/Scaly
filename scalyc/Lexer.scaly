@@ -137,11 +137,11 @@ class Lexer {
                 token = scanCharacterLiteral()
 
             case '_', '(', ')', '{', '}', '[', ']', ',', ':', ';', '@', '#', '^', '`', '$', '~': {
-                token = new Punctuation(new string(text.charAt(position)))
+                token = new Punctuation(new string(c))
                 position++ column++
             }
 
-            case '/', '+', '*', '%', '&', '|':
+            case '+', '*', '/', '%', '&', '|':
                 token = scanOperator(false)
             
             case '<', '>': {
@@ -151,7 +151,7 @@ class Lexer {
                 }
                 else {
                     switch text.charAt(position) {
-                        case '/', '=', '+', '!','*', '%', '&', '|', '^', '~', '.', ' ', '\t', '\r', '\n': {
+                        case '=', '+', '-', '*', '/', '%', '&', '|', '!', '^', '~', '.': {
                             position-- column--
                             token = scanOperator(true)
                         }
@@ -197,11 +197,11 @@ class Lexer {
             case '!': {
                 position++ column++
                 if position == end {
-                    token = new PostfixOperator(new string("!"))
+                    token = new PostfixOperator(new string(c))
                 }
                 else {
                     switch text.charAt(position) {
-                        case '/', '=', '+', '!', '*', '%', '&', '|', '^', '~' , '.', ' ', '\t', '\r', '\n': {
+                        case '=', '+', '-', '*', '/', '%', '&', '|', '!', '^', '~', '.': {
                             position-- column--
                             token = scanOperator(true)
                         }
@@ -212,7 +212,7 @@ class Lexer {
                                 token = scanOperator(true)
                             }
                             else {
-                                token = new Punctuation(new string("!"))
+                                token = new Punctuation(new string(c))
                             }
                         }
                     } 
@@ -222,7 +222,7 @@ class Lexer {
             case '?': {
                 position++ column++
                 if position == end {
-                    token = new PostfixOperator(new string("?"))
+                    token = new PostfixOperator(new string(c))
                 }
                 else {
                     switch text.charAt(position) {
@@ -236,7 +236,7 @@ class Lexer {
                                 token = scanOperator(true)
                             }
                             else {
-                                token = new Punctuation(new string("?"))
+                                token = new Punctuation(new string(c))
                             }
                         }
                     } 

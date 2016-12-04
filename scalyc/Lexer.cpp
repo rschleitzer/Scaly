@@ -144,14 +144,14 @@ void Lexer::advance() {
             {
                 if (token != nullptr)
                     token->getPage()->clear();
-                token = new(token->getPage()) Punctuation(new(token->getPage()) string(text->charAt(position)));
+                token = new(token->getPage()) Punctuation(new(token->getPage()) string(c));
                 position++;
                 column++;
             }
             break;
         }
 
-        case '/': case '+': case '*': case '%': case '&': case '|': {
+        case '+': case '*': case '/': case '%': case '&': case '|': {
             if (token != nullptr)
                 token->getPage()->clear();
             token = scanOperator(token->getPage(), false);
@@ -169,7 +169,7 @@ void Lexer::advance() {
                 }
                 else {
                     switch (text->charAt(position)) {
-                        case '/': case '=': case '+': case '!': case '*': case '%': case '&': case '|': case '^': case '~': case '.': case ' ': case '\t': case '\r': case '\n': {
+                        case '=': case '+': case '-': case '*': case '/': case '%': case '&': case '|': case '!': case '^': case '~': case '.': {
                             {
                                 position--;
                                 column--;
@@ -254,11 +254,11 @@ void Lexer::advance() {
                 if (position == end) {
                     if (token != nullptr)
                         token->getPage()->clear();
-                    token = new(token->getPage()) PostfixOperator(new(token->getPage()) string("!"));
+                    token = new(token->getPage()) PostfixOperator(new(token->getPage()) string(c));
                 }
                 else {
                     switch (text->charAt(position)) {
-                        case '/': case '=': case '+': case '!': case '*': case '%': case '&': case '|': case '^': case '~': case '.': case ' ': case '\t': case '\r': case '\n': {
+                        case '=': case '+': case '-': case '*': case '/': case '%': case '&': case '|': case '!': case '^': case '~': case '.': {
                             {
                                 position--;
                                 column--;
@@ -281,7 +281,7 @@ void Lexer::advance() {
                                 else {
                                     if (token != nullptr)
                                         token->getPage()->clear();
-                                    token = new(token->getPage()) Punctuation(new(token->getPage()) string("!"));
+                                    token = new(token->getPage()) Punctuation(new(token->getPage()) string(c));
                                 }
                             }
                         }
@@ -298,7 +298,7 @@ void Lexer::advance() {
                 if (position == end) {
                     if (token != nullptr)
                         token->getPage()->clear();
-                    token = new(token->getPage()) PostfixOperator(new(token->getPage()) string("?"));
+                    token = new(token->getPage()) PostfixOperator(new(token->getPage()) string(c));
                 }
                 else {
                     switch (text->charAt(position)) {
@@ -325,7 +325,7 @@ void Lexer::advance() {
                                 else {
                                     if (token != nullptr)
                                         token->getPage()->clear();
-                                    token = new(token->getPage()) Punctuation(new(token->getPage()) string("?"));
+                                    token = new(token->getPage()) Punctuation(new(token->getPage()) string(c));
                                 }
                             }
                         }
