@@ -518,6 +518,7 @@ class SourceVisitor extends CppVisitor {
 
     function openInitializer(initializer: Initializer): bool {
         sourceFile.append(" = ")
+
         true
     }
 
@@ -812,6 +813,7 @@ class SourceVisitor extends CppVisitor {
     }
 
     function inConstructor(node: SyntaxNode): bool {
+
         if node is ConstructorDeclaration
             return(true)
 
@@ -822,6 +824,7 @@ class SourceVisitor extends CppVisitor {
     }
 
     function inReturn(node: SyntaxNode): bool {
+
         if node is ReturnExpression
             return(true)
 
@@ -832,6 +835,7 @@ class SourceVisitor extends CppVisitor {
     }
 
     function inThrow(node: SyntaxNode): bool {
+
         if node is ThrowExpression
             return(true)
 
@@ -1410,6 +1414,7 @@ class SourceVisitor extends CppVisitor {
                 }
             }
         }
+
         false
     }
 
@@ -1529,6 +1534,7 @@ class SourceVisitor extends CppVisitor {
             if parameterInserted && (parenthesizedExpression.expressionElements != null)
                 sourceFile.append(", ")
         }
+
         true
     }
 
@@ -1611,6 +1617,7 @@ class SourceVisitor extends CppVisitor {
             if isClass(type.name) && (getFunctionCall(patternInitializer) != null)
                 return(true)
         }
+
         false
     }
 
@@ -1691,6 +1698,7 @@ class SourceVisitor extends CppVisitor {
             if inTopLevelCode(returnExpression)
                 sourceFile.append(" nullptr")
         }
+
         false
     }
     
@@ -1708,7 +1716,7 @@ class SourceVisitor extends CppVisitor {
         if syntaxNode.parent == null
             return(false)
 
-        return(inTopLevelCode(syntaxNode.parent))
+        inTopLevelCode(syntaxNode.parent)
     }
 
     function closeReturnExpression(returnExpression: ReturnExpression) {
@@ -1782,6 +1790,7 @@ class SourceVisitor extends CppVisitor {
         }
         if returnType != null
             sourceFile.append(")")
+
         false
     }
 
@@ -1800,7 +1809,7 @@ class SourceVisitor extends CppVisitor {
         if syntaxNode.parent == null
             return(null)
 
-        return(getCatchClause(syntaxNode.parent))
+        getCatchClause(syntaxNode.parent)
     }
 
     function getReturnType(syntaxNode: SyntaxNode): string {
@@ -1869,7 +1878,7 @@ class SourceVisitor extends CppVisitor {
         if syntaxNode.parent == null
             return(null)
 
-        return(getFunctionDeclaration(syntaxNode.parent))
+        getFunctionDeclaration(syntaxNode.parent)
     }
 
     function openBreakExpression(breakExpression: BreakExpression): bool {
@@ -2029,11 +2038,13 @@ class SourceVisitor extends CppVisitor {
 
     function openSwitchCase(switchCase: SwitchCase): bool {
         indent(level(switchCase))
+
         true
     }
 
     function openItemCaseLabel(itemCaseLabel: ItemCaseLabel): bool {
         sourceFile.append("case ")
+
         true
     }
 
