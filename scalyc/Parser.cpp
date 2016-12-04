@@ -2176,6 +2176,7 @@ Parser::Parser(string* theFileName, string* text) {
     at = new(getPage()) string("@");
     hash = new(getPage()) string("#");
     tilde = new(getPage()) string("~");
+    ampersand = new(getPage()) string("&");
 }
 
 _Result<CompilationUnit, ParserError> Parser::parseCompilationUnit(_Page* _rp, _Page* _ep) {

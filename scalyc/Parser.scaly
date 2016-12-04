@@ -2313,6 +2313,7 @@ class Parser {
         at = new string("@")
         hash = new string("#")
         tilde = new string("~")
+        ampersand = new string("&")
     }
 
     function parseCompilationUnit(): CompilationUnit throws ParserError {
@@ -4843,4 +4844,5 @@ class Parser {
     let at: string
     let hash: string
     let tilde: string
+    let ampersand: string
 }
