@@ -1816,41 +1816,36 @@ bool SourceVisitor::openConstructorCall(ConstructorCall* constructorCall) {
         sourceFile->append(page);
     }
     else {
-        if (initializerIsBoundOrAssigned(constructorCall)) {
-            Assignment* assignment = getAssignment(constructorCall);
-            if (assignment != nullptr) {
-                ClassDeclaration* classDeclaration = getClassDeclaration(assignment);
-                string* memberName = getMemberIfCreatingObject(assignment);
-                if (memberName != nullptr) {
-                    if (isVariableMember(memberName, classDeclaration)) {
-                        if (!inConstructor(assignment)) {
-                            sourceFile->append(memberName);
-                            sourceFile->append("->");
-                        }
-                        sourceFile->append("_getPage()");
-                        if (inConstructor(assignment)) {
-                            sourceFile->append("->allocateExclusivePage()");
-                        }
+        Assignment* assignment = getAssignment(constructorCall);
+        if (assignment != nullptr) {
+            ClassDeclaration* classDeclaration = getClassDeclaration(assignment);
+            string* memberName = getMemberIfCreatingObject(assignment);
+            if (memberName != nullptr) {
+                if (isVariableMember(memberName, classDeclaration)) {
+                    if (!inConstructor(assignment)) {
+                        sourceFile->append(memberName);
+                        sourceFile->append("->");
+                    }
+                    sourceFile->append("_getPage()");
+                    if (inConstructor(assignment)) {
+                        sourceFile->append("->allocateExclusivePage()");
                     }
                 }
-                else {
-                    SimpleExpression* simpleExpression = (SimpleExpression*)(assignment->parent);
-                    if (simpleExpression->prefixExpression->prefixOperator == nullptr) {
-                        PostfixExpression* leftSide = simpleExpression->prefixExpression->expression;
-                        if ((leftSide->postfixes == nullptr) && (leftSide->primaryExpression->_isIdentifierExpression())) {
-                            IdentifierExpression* memberExpression = (IdentifierExpression*)(leftSide->primaryExpression);
-                            string* memberName = memberExpression->name;
-                            ClassDeclaration* classDeclaration = getClassDeclaration(assignment);
-                            if ((classDeclaration != nullptr) && (memberName != nullptr) && !hasArrayPostfix(constructorCall->typeToConstruct)) {
-                                if (isVariableMember(memberName, classDeclaration)) {
-                                    sourceFile->append(memberName);
-                                    sourceFile->append("->");
-                                }
-                                sourceFile->append("_getPage()");
+            }
+            else {
+                SimpleExpression* simpleExpression = (SimpleExpression*)(assignment->parent);
+                if (simpleExpression->prefixExpression->prefixOperator == nullptr) {
+                    PostfixExpression* leftSide = simpleExpression->prefixExpression->expression;
+                    if ((leftSide->postfixes == nullptr) && (leftSide->primaryExpression->_isIdentifierExpression())) {
+                        IdentifierExpression* memberExpression = (IdentifierExpression*)(leftSide->primaryExpression);
+                        string* memberName = memberExpression->name;
+                        ClassDeclaration* classDeclaration = getClassDeclaration(assignment);
+                        if ((classDeclaration != nullptr) && (memberName != nullptr) && !hasArrayPostfix(constructorCall->typeToConstruct)) {
+                            if (isVariableMember(memberName, classDeclaration)) {
+                                sourceFile->append(memberName);
+                                sourceFile->append("->");
                             }
-                            else {
-                                sourceFile->append("_p");
-                            }
+                            sourceFile->append("_getPage()");
                         }
                         else {
                             sourceFile->append("_p");
@@ -1860,38 +1855,28 @@ bool SourceVisitor::openConstructorCall(ConstructorCall* constructorCall) {
                         sourceFile->append("_p");
                     }
                 }
-            }
-            else {
-                Initializer* initializer = getInitializer(constructorCall);
-                if (initializer != nullptr) {
-                    if (inRetDeclaration(constructorCall)) {
-                        sourceFile->append("_rp");
-                    }
-                    else {
-                        sourceFile->append("_p");
-                    }
+                else {
+                    sourceFile->append("_p");
                 }
             }
         }
         else {
-            sourceFile->append("_p");
+            Initializer* initializer = getInitializer(constructorCall);
+            if (initializer != nullptr) {
+                if (inRetDeclaration(constructorCall)) {
+                    sourceFile->append("_rp");
+                }
+                else {
+                    sourceFile->append("_p");
+                }
+            }
+            else {
+                sourceFile->append("_p");
+            }
         }
     }
     sourceFile->append(") ");
     return true;
-}
-
-bool SourceVisitor::initializerIsBoundOrAssigned(ConstructorCall* initializerCall) {
-    if (initializerCall->parent->_isPostfixExpression()) {
-        PostfixExpression* postfixExpression = (PostfixExpression*)(initializerCall->parent);
-        if ((postfixExpression->parent->parent->parent->_isAssignment()) || (postfixExpression->parent->parent->parent->_isInitializer()))
-            return true;
-        if (postfixExpression->parent->parent->parent->parent->parent->_isConstructorCall()) {
-            ConstructorCall* constructorCall = (ConstructorCall*)postfixExpression->parent->parent->parent->parent->parent;
-            return initializerIsBoundOrAssigned(constructorCall);
-        }
-    }
-    return false;
 }
 
 void SourceVisitor::visitThisExpression(ThisExpression* thisExpression) {

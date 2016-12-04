@@ -1921,41 +1921,36 @@ class SourceVisitor extends CppVisitor {
             sourceFile.append(page)
         }
         else {
-            if initializerIsBoundOrAssigned(constructorCall) {
-                let assignment: Assignment& = getAssignment(constructorCall)
-                if assignment != null {
-                    var classDeclaration: ClassDeclaration = getClassDeclaration(assignment)
-                    let memberName: string& = getMemberIfCreatingObject(assignment)
-                    if memberName != null {
-                        if isVariableMember(memberName, classDeclaration) {
-                            if !inConstructor(assignment) {
-                                sourceFile.append(memberName)
-                                sourceFile.append("->")
-                            }
-                            sourceFile.append("_getPage()")
-                            if inConstructor(assignment) {
-                                sourceFile.append("->allocateExclusivePage()")
-                            }
+            let assignment: Assignment& = getAssignment(constructorCall)
+            if assignment != null {
+                var classDeclaration: ClassDeclaration = getClassDeclaration(assignment)
+                let memberName: string& = getMemberIfCreatingObject(assignment)
+                if memberName != null {
+                    if isVariableMember(memberName, classDeclaration) {
+                        if !inConstructor(assignment) {
+                            sourceFile.append(memberName)
+                            sourceFile.append("->")
+                        }
+                        sourceFile.append("_getPage()")
+                        if inConstructor(assignment) {
+                            sourceFile.append("->allocateExclusivePage()")
                         }
                     }
-                    else {
-                        let simpleExpression: SimpleExpression = (assignment.parent) as SimpleExpression
-                        if simpleExpression.prefixExpression.prefixOperator == null {
-                            let leftSide: PostfixExpression = simpleExpression.prefixExpression.expression
-                            if (leftSide.postfixes == null) && (leftSide.primaryExpression is IdentifierExpression) {
-                                let memberExpression: IdentifierExpression = (leftSide.primaryExpression) as IdentifierExpression
-                                let memberName: string = memberExpression.name
-                                var classDeclaration: ClassDeclaration = getClassDeclaration(assignment)
-                                if (classDeclaration != null) && (memberName != null) && !hasArrayPostfix(constructorCall.typeToConstruct) {
-                                    if isVariableMember(memberName, classDeclaration) {
-                                        sourceFile.append(memberName)
-                                        sourceFile.append("->")
-                                    }
-                                    sourceFile.append("_getPage()")
+                }
+                else {
+                    let simpleExpression: SimpleExpression = (assignment.parent) as SimpleExpression
+                    if simpleExpression.prefixExpression.prefixOperator == null {
+                        let leftSide: PostfixExpression = simpleExpression.prefixExpression.expression
+                        if (leftSide.postfixes == null) && (leftSide.primaryExpression is IdentifierExpression) {
+                            let memberExpression: IdentifierExpression = (leftSide.primaryExpression) as IdentifierExpression
+                            let memberName: string = memberExpression.name
+                            var classDeclaration: ClassDeclaration = getClassDeclaration(assignment)
+                            if (classDeclaration != null) && (memberName != null) && !hasArrayPostfix(constructorCall.typeToConstruct) {
+                                if isVariableMember(memberName, classDeclaration) {
+                                    sourceFile.append(memberName)
+                                    sourceFile.append("->")
                                 }
-                                else {
-                                    sourceFile.append("_p")
-                                }
+                                sourceFile.append("_getPage()")
                             }
                             else {
                                 sourceFile.append("_p")
@@ -1965,41 +1960,30 @@ class SourceVisitor extends CppVisitor {
                             sourceFile.append("_p")
                         }
                     }
-                }
-                else {
-                    let initializer: Initializer& = getInitializer(constructorCall)
-                    if initializer != null {
-                        if inRetDeclaration(constructorCall) {
-                            sourceFile.append("_rp")
-                        }
-                        else {
-                            sourceFile.append("_p")
-                        }
+                    else {
+                        sourceFile.append("_p")
                     }
                 }
             }
             else {
-                sourceFile.append("_p")
+                let initializer: Initializer& = getInitializer(constructorCall)
+                if initializer != null {
+                    if inRetDeclaration(constructorCall) {
+                        sourceFile.append("_rp")
+                    }
+                    else {
+                        sourceFile.append("_p")
+                    }
+                }
+                else {
+                    sourceFile.append("_p")
+                }
             }
         }
 
         sourceFile.append(") ")
 
         true
-    }
-
-    function initializerIsBoundOrAssigned(initializerCall: ConstructorCall): bool {
-        if initializerCall.parent is PostfixExpression {
-            let postfixExpression: PostfixExpression = (initializerCall.parent) as PostfixExpression
-            if (postfixExpression.parent.parent.parent is Assignment) || (postfixExpression.parent.parent.parent is Initializer)
-                return(true)
-            if postfixExpression.parent.parent.parent.parent.parent is ConstructorCall {
-                let constructorCall: ConstructorCall = postfixExpression.parent.parent.parent.parent.parent as ConstructorCall
-                return(initializerIsBoundOrAssigned(constructorCall))
-            }
-        }
-
-        false
     }
 
     function visitThisExpression(thisExpression: ThisExpression) {

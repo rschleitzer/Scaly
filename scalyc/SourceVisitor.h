@@ -105,7 +105,6 @@ public:
     virtual bool openBreakExpression(BreakExpression* breakExpression);
     virtual string* getPage(_Page* _rp, SyntaxNode* node);
     virtual bool openConstructorCall(ConstructorCall* constructorCall);
-    virtual bool initializerIsBoundOrAssigned(ConstructorCall* initializerCall);
     virtual void visitThisExpression(ThisExpression* thisExpression);
     virtual void visitNullExpression(NullExpression* nullExpression);
     virtual bool openElseClause(ElseClause* elseClause);
