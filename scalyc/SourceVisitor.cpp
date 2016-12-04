@@ -1837,7 +1837,6 @@ bool SourceVisitor::openConstructorCall(ConstructorCall* constructorCall) {
                 PostfixExpression* leftSide = simpleExpression->prefixExpression->expression;
                 IdentifierExpression* memberExpression = (IdentifierExpression*)(leftSide->primaryExpression);
                 string* memberName = memberExpression->name;
-                ClassDeclaration* classDeclaration = getClassDeclaration(assignment);
                 if ((classDeclaration != nullptr) && (memberName != nullptr) && !hasArrayPostfix(constructorCall->typeToConstruct)) {
                     if (isVariableMember(memberName, classDeclaration)) {
                         sourceFile->append(memberName);

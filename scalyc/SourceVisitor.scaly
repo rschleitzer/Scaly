@@ -1942,7 +1942,6 @@ class SourceVisitor extends CppVisitor {
                     let leftSide: PostfixExpression = simpleExpression.prefixExpression.expression
                     let memberExpression: IdentifierExpression = (leftSide.primaryExpression) as IdentifierExpression
                     let memberName: string = memberExpression.name
-                    var classDeclaration: ClassDeclaration = getClassDeclaration(assignment)
                     if (classDeclaration != null) && (memberName != null) && !hasArrayPostfix(constructorCall.typeToConstruct) {
                         if isVariableMember(memberName, classDeclaration) {
                             sourceFile.append(memberName)
