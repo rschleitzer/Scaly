@@ -393,7 +393,7 @@ class SourceVisitor extends CppVisitor {
                             this.indent(level(simpleExpression))
                             sourceFile.append("    ")
                             sourceFile.append(memberName)
-                            sourceFile.append("->getPage()->clear();\n")
+                            sourceFile.append("->_getPage()->clear();\n")
                             this.indent(level(simpleExpression))
                         }
                     }
@@ -1473,7 +1473,7 @@ class SourceVisitor extends CppVisitor {
                                 var classDeclaration: ClassDeclaration = getClassDeclaration(assignment)
                                 if isVariableMember(member, classDeclaration) {
                                     sourceFile.append(member)
-                                    sourceFile.append("->getPage()")
+                                    sourceFile.append("->_getPage()")
                                     if functionCall.arguments != null && functionCall.arguments.expressionElements != null
                                         sourceFile.append(", ")
                                 }
@@ -1498,7 +1498,7 @@ class SourceVisitor extends CppVisitor {
                         let identifier: string& = getLocalPage(functionCall)
                         if identifier != null {
                             sourceFile.append(identifier)
-                            sourceFile.append("->getPage()")
+                            sourceFile.append("->_getPage()")
                             parameterInserted = true
                         }
                     }
@@ -1886,9 +1886,27 @@ class SourceVisitor extends CppVisitor {
 
         true
     }
+    
+    function getPage(node: SyntaxNode): string {
+
+        if node == null
+            return(null)
+        
+        if node is ReturnExpression
+            return(new string("_rp"))
+
+        return(getPage(node.parent))
+
+        null
+    }
 
     function openConstructorCall(constructorCall: ConstructorCall): bool {
         sourceFile.append("new(")
+        
+        let page: string$ = getPage(constructorCall.parent)
+        if page != null
+            return(page)
+        
         if !initializerIsBoundOrAssigned(constructorCall) {
             if (inReturn(constructorCall)) || (inRetDeclaration(constructorCall)) {
                 sourceFile.append("_rp")
@@ -1909,13 +1927,13 @@ class SourceVisitor extends CppVisitor {
                                         sourceFile.append(memberName)
                                         sourceFile.append("->")
                                     }
-                                    sourceFile.append("getPage()")
+                                    sourceFile.append("_getPage()")
                                     if inConstructor(assignment) {
                                         sourceFile.append("->allocateExclusivePage()")
                                     }
                                 }
                                 else {
-                                    sourceFile.append("getPage()")
+                                    sourceFile.append("_getPage()")
                                 }
                             }
                         }
@@ -1937,7 +1955,7 @@ class SourceVisitor extends CppVisitor {
                             sourceFile.append(memberName)
                             sourceFile.append("->")
                         }
-                        sourceFile.append("getPage()")
+                        sourceFile.append("_getPage()")
                         if inConstructor(assignment) {
                             sourceFile.append("->allocateExclusivePage()")
                         }
@@ -1956,7 +1974,7 @@ class SourceVisitor extends CppVisitor {
                                     sourceFile.append(memberName)
                                     sourceFile.append("->")
                                 }
-                                sourceFile.append("getPage()")
+                                sourceFile.append("_getPage()")
                             }
                             else {
                                 sourceFile.append("_p")

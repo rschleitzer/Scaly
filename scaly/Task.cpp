@@ -4,7 +4,7 @@ namespace scaly{
 __thread _Task* __CurrentTask = 0;
 
 _Task::_Task() {
-pool = new(getPage()) _Pool(); }
+pool = new(_getPage()) _Pool(); }
 
 _Page* _Task::getExtensionPage() {
     _Page* page = pool->allocatePage();

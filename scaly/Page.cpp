@@ -40,7 +40,7 @@ void* _Page::allocateObject(size_t size) {
         // We're already known to be full, so we delegate to the current page
         void* newObject = currentPage->allocateObject(size);
         // Possibly our current page was also full so we propagate back the new current page
-        _Page* allocatingPage = ((Object*)newObject)->getPage();
+        _Page* allocatingPage = ((Object*)newObject)->_getPage();
         if ((allocatingPage != currentPage) && (newObject != allocatingPage))
             currentPage = allocatingPage;
         return newObject; }

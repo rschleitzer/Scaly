@@ -8,35 +8,35 @@ VarString::VarString()
 VarString::VarString(const char* theString) {
     length = strlen(theString);
     capacity = length;
-    buffer = (char*)getPage()->allocateObject(length + 1);
+    buffer = (char*)_getPage()->allocateObject(length + 1);
     strcpy(buffer, theString);
 }
 
 VarString::VarString(VarString* theString)
 : length(theString->length), capacity(length) {
-    buffer = (char*)getPage()->allocateObject(length + 1);
+    buffer = (char*)_getPage()->allocateObject(length + 1);
     strcpy(buffer, theString->buffer);
 }
 
 VarString::VarString(string* theString)
 : length(theString->getLength()), capacity(length) {
-    buffer = (char*)getPage()->allocateObject(length + 1);
+    buffer = (char*)_getPage()->allocateObject(length + 1);
     strcpy(buffer, theString->getNativeString());
 }
 
 VarString::VarString(size_t theLength)
 : length(theLength), capacity(length) {
-    buffer = (char*)getPage()->allocateObject(length + 1);
+    buffer = (char*)_getPage()->allocateObject(length + 1);
 }
 
 VarString::VarString(size_t theLength, size_t theCapacity)
 : length(theLength), capacity(theCapacity) {
-    buffer = (char*)getPage()->allocateObject(capacity + 1);
+    buffer = (char*)_getPage()->allocateObject(capacity + 1);
 }
 
 VarString::VarString(char c)
 : length(1), capacity(length) {
-    buffer = (char*)getPage()->allocateObject(length + 1);
+    buffer = (char*)_getPage()->allocateObject(length + 1);
     buffer[0] = c;
     buffer[1] = 0;
 }
@@ -147,12 +147,12 @@ void VarString::reallocate(size_t newLength) {
     memcpy(buffer, oldString, oldLength + 1);
 
     // Reclaim the page if it was oversized, i.e., exclusively allocated
-    if (((Object*)oldString)->getPage() == ((_Page*)oldString))
-        getPage()->reclaimArray(oldString);
+    if (((Object*)oldString)->_getPage() == ((_Page*)oldString))
+        _getPage()->reclaimArray(oldString);
 }
 
 void VarString::allocate(size_t size) {
-    buffer = (char*) getPage()->allocateObject(size);
+    buffer = (char*) _getPage()->allocateObject(size);
 }
 
 _Array<VarString>& VarString::Split(_Page* _rp, char c) {

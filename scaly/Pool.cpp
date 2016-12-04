@@ -2,7 +2,7 @@
 namespace scaly{
 
 _Pool::_Pool() {
-    chunks = new(getPage()) _Array<_Chunk>(); }
+    chunks = new(_getPage()) _Array<_Chunk>(); }
 
 _Page* _Pool::allocatePage() {
     size_t chunksLength = chunks->length();
@@ -35,7 +35,7 @@ _Chunk* _Pool::getContainingChunk(_Page* page) {
     size_t chunksLength = chunks->length();
     for (int i = 0; i < chunksLength; i++) {
         _Chunk* chunk = *(*chunks)[i];
-        _Page* basePage = chunk->getPage();
+        _Page* basePage = chunk->_getPage();
         _Page* upperBound = (_Page*)((char*)basePage + _pageSize * _Chunk::numberOfPages);
         if ((page > basePage) && (page < upperBound))
             return chunk;

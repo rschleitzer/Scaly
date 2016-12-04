@@ -6,7 +6,7 @@ namespace scaly {
 class Object {
 public:
     void* operator new(size_t size, _Page* page);
-    _Page* getPage();
+    _Page* _getPage();
 };
 
 }

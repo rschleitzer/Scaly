@@ -10,7 +10,7 @@ void* Object::operator new(size_t size, _Page* page) {
     return object;
 }
 
-_Page* Object::getPage() {
+_Page* Object::_getPage() {
     return _Page::getPage(this);
 }
 

@@ -3,18 +3,18 @@ using namespace scaly;
 namespace scalyc {
 
 SourceVisitor::SourceVisitor() {
-    moduleName = new(getPage()) string();
-    sourceFile = new(getPage()->allocateExclusivePage()) VarString();
-    projectFile = new(getPage()->allocateExclusivePage()) VarString();
-    inherits = new(getPage()->allocateExclusivePage()) _Array<Inherits>();
-    classes = new(getPage()->allocateExclusivePage()) _Array<string>();
+    moduleName = new(_getPage()) string();
+    sourceFile = new(_getPage()->allocateExclusivePage()) VarString();
+    projectFile = new(_getPage()->allocateExclusivePage()) VarString();
+    inherits = new(_getPage()->allocateExclusivePage()) _Array<Inherits>();
+    classes = new(_getPage()->allocateExclusivePage()) _Array<string>();
 }
 
 bool SourceVisitor::openProgram(Program* program) {
     _Region _region; _Page* _p = _region.get();
     string* programDirectory = new(_p) string(program->directory);
     if (programDirectory == nullptr || programDirectory->equals("")) {
-        programDirectory = new(getPage()) string(".");
+        programDirectory = new(_getPage()) string(".");
     }
     {
         _Region _region; _Page* _p = _region.get();
@@ -46,8 +46,8 @@ bool SourceVisitor::openCompilationUnit(CompilationUnit* compilationUnit) {
         return false;
     string* programName = ((Program*)(compilationUnit->parent))->name;
     if (sourceFile != nullptr)
-        sourceFile->getPage()->clear();
-    sourceFile = new(sourceFile->getPage()) VarString(0, 4096);
+        sourceFile->_getPage()->clear();
+    sourceFile = new(sourceFile->_getPage()) VarString(0, 4096);
     sourceFile->append("#include \"");
     sourceFile->append(programName);
     sourceFile->append(".h\"\nusing namespace scaly;\n");
@@ -367,7 +367,7 @@ bool SourceVisitor::openSimpleExpression(SimpleExpression* simpleExpression) {
                         this->indent(level(simpleExpression));
                         sourceFile->append("    ");
                         sourceFile->append(memberName);
-                        sourceFile->append("->getPage()->clear();\n");
+                        sourceFile->append("->_getPage()->clear();\n");
                         this->indent(level(simpleExpression));
                     }
                 }
@@ -1412,7 +1412,7 @@ bool SourceVisitor::openParenthesizedExpression(ParenthesizedExpression* parenth
                             ClassDeclaration* classDeclaration = getClassDeclaration(assignment);
                             if (isVariableMember(member, classDeclaration)) {
                                 sourceFile->append(member);
-                                sourceFile->append("->getPage()");
+                                sourceFile->append("->_getPage()");
                                 if (functionCall->arguments != nullptr && functionCall->arguments->expressionElements != nullptr)
                                     sourceFile->append(", ");
                             }
@@ -1436,7 +1436,7 @@ bool SourceVisitor::openParenthesizedExpression(ParenthesizedExpression* parenth
                     string* identifier = getLocalPage(functionCall);
                     if (identifier != nullptr) {
                         sourceFile->append(identifier);
-                        sourceFile->append("->getPage()");
+                        sourceFile->append("->_getPage()");
                         parameterInserted = true;
                     }
                 }
@@ -1788,8 +1788,22 @@ bool SourceVisitor::openBreakExpression(BreakExpression* breakExpression) {
     return true;
 }
 
+string* SourceVisitor::getPage(_Page* _rp, SyntaxNode* node) {
+    if (node == nullptr)
+        return nullptr;
+    if (node->_isReturnExpression())
+        return
+    new(_rp) string("_rp");
+    return getPage(_rp, node->parent);
+    return nullptr;
+}
+
 bool SourceVisitor::openConstructorCall(ConstructorCall* constructorCall) {
+    _Region _region; _Page* _p = _region.get();
     sourceFile->append("new(");
+    string* page = getPage(_p, constructorCall->parent);
+    if (page != nullptr)
+        return page;
     if (!initializerIsBoundOrAssigned(constructorCall)) {
         if ((inReturn(constructorCall)) || (inRetDeclaration(constructorCall))) {
             sourceFile->append("_rp");
@@ -1810,13 +1824,13 @@ bool SourceVisitor::openConstructorCall(ConstructorCall* constructorCall) {
                                     sourceFile->append(memberName);
                                     sourceFile->append("->");
                                 }
-                                sourceFile->append("getPage()");
+                                sourceFile->append("_getPage()");
                                 if (inConstructor(assignment)) {
                                     sourceFile->append("->allocateExclusivePage()");
                                 }
                             }
                             else {
-                                sourceFile->append("getPage()");
+                                sourceFile->append("_getPage()");
                             }
                         }
                     }
@@ -1838,7 +1852,7 @@ bool SourceVisitor::openConstructorCall(ConstructorCall* constructorCall) {
                         sourceFile->append(memberName);
                         sourceFile->append("->");
                     }
-                    sourceFile->append("getPage()");
+                    sourceFile->append("_getPage()");
                     if (inConstructor(assignment)) {
                         sourceFile->append("->allocateExclusivePage()");
                     }
@@ -1857,7 +1871,7 @@ bool SourceVisitor::openConstructorCall(ConstructorCall* constructorCall) {
                                 sourceFile->append(memberName);
                                 sourceFile->append("->");
                             }
-                            sourceFile->append("getPage()");
+                            sourceFile->append("_getPage()");
                         }
                         else {
                             sourceFile->append("_p");
@@ -2252,7 +2266,7 @@ void SourceVisitor::registerInheritance(string* className, string* baseName) {
         }
     }
     if (inherit == nullptr) {
-        inherit = new(getPage()) Inherits(baseName);
+        inherit = new(_getPage()) Inherits(baseName);
         inherits->push(inherit);
     }
     inherit->inheritors->push(className);

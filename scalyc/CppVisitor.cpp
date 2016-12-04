@@ -3,8 +3,8 @@ using namespace scaly;
 namespace scalyc {
 
 Inherits::Inherits(string* className) {
-    name = new(getPage()) string(className);
-    inheritors = new(getPage()->allocateExclusivePage()) _Array<string>();
+    name = new(_getPage()) string(className);
+    inheritors = new(_getPage()->allocateExclusivePage()) _Array<string>();
 }
 
 void CppVisitor::execute(Program* program) {

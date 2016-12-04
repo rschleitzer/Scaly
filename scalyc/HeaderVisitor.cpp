@@ -3,18 +3,18 @@ using namespace scaly;
 namespace scalyc {
 
 HeaderVisitor::HeaderVisitor() {
-    moduleName = new(getPage()) string();
-    headerFile = new(getPage()->allocateExclusivePage()) VarString();
-    mainHeaderFile = new(getPage()->allocateExclusivePage()) VarString();
-    inherits = new(getPage()->allocateExclusivePage()) _Array<Inherits>();
-    classes = new(getPage()->allocateExclusivePage()) _Array<string>();
+    moduleName = new(_getPage()) string();
+    headerFile = new(_getPage()->allocateExclusivePage()) VarString();
+    mainHeaderFile = new(_getPage()->allocateExclusivePage()) VarString();
+    inherits = new(_getPage()->allocateExclusivePage()) _Array<Inherits>();
+    classes = new(_getPage()->allocateExclusivePage()) _Array<string>();
 }
 
 bool HeaderVisitor::openProgram(Program* program) {
     _Region _region; _Page* _p = _region.get();
     string* programDirectory = new(_p) string(program->directory);
     if (programDirectory == nullptr || programDirectory->equals("")) {
-        programDirectory = new(getPage()) string(".");
+        programDirectory = new(_getPage()) string(".");
     }
     if (!Directory::exists(programDirectory)) {
         auto _Directory_error = Directory::create(_p, programDirectory);
@@ -55,8 +55,8 @@ bool HeaderVisitor::openCompilationUnit(CompilationUnit* compilationUnit) {
     string* programName = ((Program*)(compilationUnit->parent))->name;
     if (!moduleName->equals(programName)) {
         if (headerFile != nullptr)
-            headerFile->getPage()->clear();
-        headerFile = new(headerFile->getPage()) VarString();
+            headerFile->_getPage()->clear();
+        headerFile = new(headerFile->_getPage()) VarString();
         headerFile->append("#ifndef __");
         headerFile->append(programName);
         headerFile->append("__");
@@ -613,7 +613,7 @@ void HeaderVisitor::registerInheritance(string* className, string* baseName) {
         }
     }
     if (inherit == nullptr) {
-        inherit = new(getPage()) Inherits(baseName);
+        inherit = new(_getPage()) Inherits(baseName);
         inherits->push(inherit);
     }
     inherit->inheritors->push(className);

@@ -18,7 +18,7 @@ _Chunk::_Chunk() {
 
     // Allocate and initialize the allocation map which contains 4096 bits (512 bytes)
     size_t numberOfBytesInMap = numberOfPagesInBucket * sizeof(size_t);
-    allocationMap = (size_t*)getPage()->allocateObject(numberOfBytesInMap);
+    allocationMap = (size_t*)_getPage()->allocateObject(numberOfBytesInMap);
     memset(allocationMap, 0, numberOfBytesInMap);
 
     // Since we are sitting on the first page of the chunk, we have to mark it as already allocated
@@ -66,7 +66,7 @@ _Page* _Chunk::allocatePage() {
 
     // Calculate the location of the page in memory
     size_t chunkBaseOffset = pageIndex * _pageSize;
-    char* page = (char*) getPage() + chunkBaseOffset;
+    char* page = (char*) _getPage() + chunkBaseOffset;
 
     // Return it as a pointer to our newly allocated page
     return (_Page*)page;
@@ -140,11 +140,11 @@ size_t _Chunk::findLowestZeroBit32(size_t map) {
 bool _Chunk::deallocatePage(_Page* page) {
 
     // Check whether this page is from our chunk area
-    if (((char*)page < (char*)getPage()) || (char*)page >= ((char*)getPage() + _pageSize * numberOfPages))
+    if (((char*)page < (char*)_getPage()) || (char*)page >= ((char*)_getPage() + _pageSize * numberOfPages))
         return false;
 
     // Position of the page in the chunk
-    size_t pageIndex = ((char*)page - (char*)getPage()) / _pageSize;
+    size_t pageIndex = ((char*)page - (char*)_getPage()) / _pageSize;
     
     // Position of the page in its bucket
     size_t pagePositionInBucket = (pageIndex & ~(numberOfPagesInBucket)) % numberOfPagesInBucket;
@@ -162,5 +162,5 @@ bool _Chunk::deallocatePage(_Page* page) {
 }
 
 void _Chunk::dispose() {
-    free(getPage()); }
+    free(_getPage()); }
 }

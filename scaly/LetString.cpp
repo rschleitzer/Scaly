@@ -7,32 +7,32 @@ string::string()
 
 string::string(const char c) {
     length = 1;
-    buffer = (char*)getPage()->allocateObject(length + 1);
+    buffer = (char*)_getPage()->allocateObject(length + 1);
     buffer[0] = c;
     buffer[1] = 0;
 }
 
 string::string(const char* theString) {
     length = strlen(theString);
-    buffer = (char*)getPage()->allocateObject(length + 1);
+    buffer = (char*)_getPage()->allocateObject(length + 1);
     copyNativeString(theString, length);
 }
 
 string::string(string* theString) {
     length = theString->getLength();
-    buffer = (char*)getPage()->allocateObject(length + 1);
+    buffer = (char*)_getPage()->allocateObject(length + 1);
     copyNativeString(theString->getNativeString(), length);
 }
 
 string::string(VarString* theString) {
     length = theString->getLength();
-    buffer = (char*)getPage()->allocateObject(length + 1);
+    buffer = (char*)_getPage()->allocateObject(length + 1);
     copyNativeString(theString->getNativeString(), length);
 }
 
 string::string(size_t theLength) {
     length = theLength;
-    buffer = (char*)getPage()->allocateObject(length + 1);
+    buffer = (char*)_getPage()->allocateObject(length + 1);
     buffer[length] = 0;
 }
 

@@ -598,8 +598,8 @@ bool SyntaxNode::_isTypeInheritanceClause() { return (false); }
 bool SyntaxNode::_isInheritance() { return (false); }
 
 Program::Program(string* name, string* directory, _Array<CompilationUnit>* compilationUnits) {
-    start = new(getPage()) Position(0, 0);
-    end = new(getPage()) Position(0, 0);
+    start = new(_getPage()) Position(0, 0);
+    end = new(_getPage()) Position(0, 0);
     this->name = name;
     this->directory = directory;
     this->compilationUnits = compilationUnits;
@@ -2129,53 +2129,53 @@ void Inheritance::accept(Visitor* visitor) {
 bool Inheritance::_isInheritance() { return (true); }
 
 Parser::Parser(string* theFileName, string* text) {
-    lexer = new(getPage()->allocateExclusivePage()) Lexer(text);
+    lexer = new(_getPage()->allocateExclusivePage()) Lexer(text);
     fileName = theFileName;
-    classKeyword = new(getPage()) string("class");
-    functionKeyword = new(getPage()) string("function");
-    ifKeyword = new(getPage()) string("if");
-    elseKeyword = new(getPage()) string("else");
-    switchKeyword = new(getPage()) string("switch");
-    caseKeyword = new(getPage()) string("case");
-    defaultKeyword = new(getPage()) string("default");
-    catchKeyword = new(getPage()) string("catch");
-    forKeyword = new(getPage()) string("for");
-    inKeyword = new(getPage()) string("in");
-    whileKeyword = new(getPage()) string("while");
-    doKeyword = new(getPage()) string("do");
-    returnKeyword = new(getPage()) string("return");
-    throwKeyword = new(getPage()) string("throw");
-    breakKeyword = new(getPage()) string("break");
-    throwsKeyword = new(getPage()) string("throws");
-    overrideKeyword = new(getPage()) string("override");
-    staticKeyword = new(getPage()) string("static");
-    letKeyword = new(getPage()) string("let");
-    varKeyword = new(getPage()) string("var");
-    mutableKeyword = new(getPage()) string("mutable");
-    isKeyword = new(getPage()) string("is");
-    asKeyword = new(getPage()) string("as");
-    constructorKeyword = new(getPage()) string("constructor");
-    enumKeyword = new(getPage()) string("enum");
-    thisKeyword = new(getPage()) string("this");
-    nullKeyword = new(getPage()) string("null");
-    newKeyword = new(getPage()) string("new");
-    extendsKeyword = new(getPage()) string("extends");
-    equal = new(getPage()) string("=");
-    comma = new(getPage()) string(",");
-    leftParen = new(getPage()) string("(");
-    rightParen = new(getPage()) string(")");
-    leftCurly = new(getPage()) string("{");
-    rightCurly = new(getPage()) string("}");
-    leftBracket = new(getPage()) string("[");
-    rightBracket = new(getPage()) string("]");
-    colon = new(getPage()) string(":");
-    dot = new(getPage()) string(".");
-    underscore = new(getPage()) string("_");
-    circumflex = new(getPage()) string("^");
-    dollar = new(getPage()) string("$");
-    at = new(getPage()) string("@");
-    hash = new(getPage()) string("#");
-    ampersand = new(getPage()) string("&");
+    classKeyword = new(_getPage()) string("class");
+    functionKeyword = new(_getPage()) string("function");
+    ifKeyword = new(_getPage()) string("if");
+    elseKeyword = new(_getPage()) string("else");
+    switchKeyword = new(_getPage()) string("switch");
+    caseKeyword = new(_getPage()) string("case");
+    defaultKeyword = new(_getPage()) string("default");
+    catchKeyword = new(_getPage()) string("catch");
+    forKeyword = new(_getPage()) string("for");
+    inKeyword = new(_getPage()) string("in");
+    whileKeyword = new(_getPage()) string("while");
+    doKeyword = new(_getPage()) string("do");
+    returnKeyword = new(_getPage()) string("return");
+    throwKeyword = new(_getPage()) string("throw");
+    breakKeyword = new(_getPage()) string("break");
+    throwsKeyword = new(_getPage()) string("throws");
+    overrideKeyword = new(_getPage()) string("override");
+    staticKeyword = new(_getPage()) string("static");
+    letKeyword = new(_getPage()) string("let");
+    varKeyword = new(_getPage()) string("var");
+    mutableKeyword = new(_getPage()) string("mutable");
+    isKeyword = new(_getPage()) string("is");
+    asKeyword = new(_getPage()) string("as");
+    constructorKeyword = new(_getPage()) string("constructor");
+    enumKeyword = new(_getPage()) string("enum");
+    thisKeyword = new(_getPage()) string("this");
+    nullKeyword = new(_getPage()) string("null");
+    newKeyword = new(_getPage()) string("new");
+    extendsKeyword = new(_getPage()) string("extends");
+    equal = new(_getPage()) string("=");
+    comma = new(_getPage()) string(",");
+    leftParen = new(_getPage()) string("(");
+    rightParen = new(_getPage()) string(")");
+    leftCurly = new(_getPage()) string("{");
+    rightCurly = new(_getPage()) string("}");
+    leftBracket = new(_getPage()) string("[");
+    rightBracket = new(_getPage()) string("]");
+    colon = new(_getPage()) string(":");
+    dot = new(_getPage()) string(".");
+    underscore = new(_getPage()) string("_");
+    circumflex = new(_getPage()) string("^");
+    dollar = new(_getPage()) string("$");
+    at = new(_getPage()) string("@");
+    hash = new(_getPage()) string("#");
+    ampersand = new(_getPage()) string("&");
 }
 
 _Result<CompilationUnit, ParserError> Parser::parseCompilationUnit(_Page* _rp, _Page* _ep) {
