@@ -1003,9 +1003,8 @@ bool SourceVisitor::openCatchClause(CatchClause* catchClause) {
                         sourceFile->append(":\n");
                         indentSource();
                         sourceFile->append("{\n");
-                        sourceIndentLevel++;
                         indentSource();
-                        sourceFile->append("_");
+                        sourceFile->append("    _");
                         sourceFile->append(identifierCatchPattern->name);
                         sourceFile->append("_");
                         sourceFile->append(identifierCatchPattern->member->member);
@@ -1029,7 +1028,6 @@ bool SourceVisitor::openCatchClause(CatchClause* catchClause) {
                             }
                         }
                         sourceFile->append("\n");
-                        sourceIndentLevel--;
                     }
                 }
                 if (catchClause->catchPattern->_isWildCardCatchPattern()) {

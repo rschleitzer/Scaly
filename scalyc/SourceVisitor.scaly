@@ -1048,9 +1048,8 @@ class SourceVisitor extends CppVisitor {
                             sourceFile.append(":\n")
                             indentSource()
                             sourceFile.append("{\n")
-                            sourceIndentLevel++
                             indentSource()
-                            sourceFile.append("_")
+                            sourceFile.append("    _")
                             sourceFile.append(identifierCatchPattern.name)
                             sourceFile.append("_")
                             sourceFile.append(identifierCatchPattern.member.member)                            
@@ -1074,7 +1073,6 @@ class SourceVisitor extends CppVisitor {
                                 }
                             }
                             sourceFile.append("\n")
-                            sourceIndentLevel--
                         }
                     }
                     if catchClause.catchPattern is WildCardCatchPattern {
