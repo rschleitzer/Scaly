@@ -1939,23 +1939,19 @@ class SourceVisitor extends CppVisitor {
                 }
                 else {
                     let simpleExpression: SimpleExpression = (assignment.parent) as SimpleExpression
-                    if simpleExpression.prefixExpression.prefixOperator == null {
-                        let leftSide: PostfixExpression = simpleExpression.prefixExpression.expression
-                        if (leftSide.postfixes == null) && (leftSide.primaryExpression is IdentifierExpression) {
-                            let memberExpression: IdentifierExpression = (leftSide.primaryExpression) as IdentifierExpression
-                            let memberName: string = memberExpression.name
-                            var classDeclaration: ClassDeclaration = getClassDeclaration(assignment)
-                            if (classDeclaration != null) && (memberName != null) && !hasArrayPostfix(constructorCall.typeToConstruct) {
-                                if isVariableMember(memberName, classDeclaration) {
-                                    sourceFile.append(memberName)
-                                    sourceFile.append("->")
-                                }
-                                sourceFile.append("_getPage()")
-                            }
-                            else {
-                                sourceFile.append("_p")
-                            }
+                    let leftSide: PostfixExpression = simpleExpression.prefixExpression.expression
+                    let memberExpression: IdentifierExpression = (leftSide.primaryExpression) as IdentifierExpression
+                    let memberName: string = memberExpression.name
+                    var classDeclaration: ClassDeclaration = getClassDeclaration(assignment)
+                    if (classDeclaration != null) && (memberName != null) && !hasArrayPostfix(constructorCall.typeToConstruct) {
+                        if isVariableMember(memberName, classDeclaration) {
+                            sourceFile.append(memberName)
+                            sourceFile.append("->")
                         }
+                        sourceFile.append("_getPage()")
+                    }
+                    else {
+                        sourceFile.append("_p")
                     }
                 }
             }

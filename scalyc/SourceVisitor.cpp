@@ -1834,23 +1834,19 @@ bool SourceVisitor::openConstructorCall(ConstructorCall* constructorCall) {
             }
             else {
                 SimpleExpression* simpleExpression = (SimpleExpression*)(assignment->parent);
-                if (simpleExpression->prefixExpression->prefixOperator == nullptr) {
-                    PostfixExpression* leftSide = simpleExpression->prefixExpression->expression;
-                    if ((leftSide->postfixes == nullptr) && (leftSide->primaryExpression->_isIdentifierExpression())) {
-                        IdentifierExpression* memberExpression = (IdentifierExpression*)(leftSide->primaryExpression);
-                        string* memberName = memberExpression->name;
-                        ClassDeclaration* classDeclaration = getClassDeclaration(assignment);
-                        if ((classDeclaration != nullptr) && (memberName != nullptr) && !hasArrayPostfix(constructorCall->typeToConstruct)) {
-                            if (isVariableMember(memberName, classDeclaration)) {
-                                sourceFile->append(memberName);
-                                sourceFile->append("->");
-                            }
-                            sourceFile->append("_getPage()");
-                        }
-                        else {
-                            sourceFile->append("_p");
-                        }
+                PostfixExpression* leftSide = simpleExpression->prefixExpression->expression;
+                IdentifierExpression* memberExpression = (IdentifierExpression*)(leftSide->primaryExpression);
+                string* memberName = memberExpression->name;
+                ClassDeclaration* classDeclaration = getClassDeclaration(assignment);
+                if ((classDeclaration != nullptr) && (memberName != nullptr) && !hasArrayPostfix(constructorCall->typeToConstruct)) {
+                    if (isVariableMember(memberName, classDeclaration)) {
+                        sourceFile->append(memberName);
+                        sourceFile->append("->");
                     }
+                    sourceFile->append("_getPage()");
+                }
+                else {
+                    sourceFile->append("_p");
                 }
             }
         }
