@@ -1855,9 +1855,6 @@ bool SourceVisitor::openConstructorCall(ConstructorCall* constructorCall) {
                         sourceFile->append("_p");
                     }
                 }
-                else {
-                    sourceFile->append("_p");
-                }
             }
         }
         else {
