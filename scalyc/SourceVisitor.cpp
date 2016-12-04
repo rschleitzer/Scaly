@@ -10,8 +10,6 @@ SourceVisitor::SourceVisitor() {
     classes = new(_getPage()->allocateExclusivePage()) _Array<string>();
 }
 
-string* SourceVisitor::getPage(_Page* _rp, SyntaxNode*) { return  0; }
-
 bool SourceVisitor::openProgram(Program* program) {
     _Region _region; _Page* _p = _region.get();
     string* programDirectory = new(_p) string(program->directory);

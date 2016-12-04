@@ -1886,26 +1886,9 @@ class SourceVisitor extends CppVisitor {
 
         true
     }
-    
-    function getPage(node: SyntaxNode): string {
-
-        if node == null
-            return(null)
-        
-        if node is ReturnExpression
-            return(new string("_rp"))
-
-        return(getPage(node.parent))
-
-        null
-    }
 
     function openConstructorCall(constructorCall: ConstructorCall): bool {
         sourceFile.append("new(")
-        
-      /*  let page: string$ = getPage(constructorCall.parent)
-        if page != null
-            return(page) */
         
         if !initializerIsBoundOrAssigned(constructorCall) {
             if (inReturn(constructorCall)) || (inRetDeclaration(constructorCall)) {
