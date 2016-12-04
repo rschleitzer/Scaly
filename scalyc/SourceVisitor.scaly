@@ -735,6 +735,24 @@ class SourceVisitor extends CppVisitor {
         }
     }
 
+    function getIndentSourceLevel(syntaxNode: SyntaxNode): number {
+        mutable level: number = 0
+        
+        while syntaxNode != null {
+
+            if syntaxNode is CodeBlock
+            || syntaxNode is CatchClause
+            || syntaxNode is ForExpression
+            || syntaxNode is CurliedSwitchBody
+            || syntaxNode is CaseContent
+                level++
+            
+            syntaxNode = syntaxNode.parent
+        }
+        
+        level
+    }
+
     function indentSource(level: number) {
         var i: number = 0
         while i < level {

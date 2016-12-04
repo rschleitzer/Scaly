@@ -694,6 +694,16 @@ void SourceVisitor::closeEnumMember(EnumMember* enumMember) {
     }
 }
 
+size_t SourceVisitor::getIndentSourceLevel(SyntaxNode* syntaxNode) {
+    size_t level = 0;
+    while (syntaxNode != nullptr) {
+        if (syntaxNode->_isCodeBlock() || syntaxNode->_isCatchClause() || syntaxNode->_isForExpression() || syntaxNode->_isCurliedSwitchBody() || syntaxNode->_isCaseContent())
+            level++;
+        syntaxNode = syntaxNode->parent;
+    }
+    return level;
+}
+
 void SourceVisitor::indentSource(size_t level) {
     size_t i = 0;
     while (i < level) {
