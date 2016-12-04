@@ -1816,34 +1816,7 @@ bool SourceVisitor::openConstructorCall(ConstructorCall* constructorCall) {
         sourceFile->append(page);
     }
     else {
-        if (!initializerIsBoundOrAssigned(constructorCall)) {
-            if (inAssignment(constructorCall)) {
-                Assignment* assignment = getAssignment(constructorCall);
-                if (assignment != nullptr) {
-                    ClassDeclaration* classDeclaration = getClassDeclaration(assignment);
-                    string* memberName = getMemberIfCreatingObject(assignment);
-                    if (memberName != nullptr) {
-                        if (isVariableMember(memberName, classDeclaration)) {
-                            if (!inConstructor(assignment)) {
-                                sourceFile->append(memberName);
-                                sourceFile->append("->");
-                            }
-                            sourceFile->append("_getPage()");
-                            if (inConstructor(assignment)) {
-                                sourceFile->append("->allocateExclusivePage()");
-                            }
-                        }
-                        else {
-                            sourceFile->append("_getPage()");
-                        }
-                    }
-                }
-            }
-            else {
-                sourceFile->append("_p");
-            }
-        }
-        else {
+        if (initializerIsBoundOrAssigned(constructorCall)) {
             Assignment* assignment = getAssignment(constructorCall);
             if (assignment != nullptr) {
                 ClassDeclaration* classDeclaration = getClassDeclaration(assignment);
@@ -1899,6 +1872,9 @@ bool SourceVisitor::openConstructorCall(ConstructorCall* constructorCall) {
                     }
                 }
             }
+        }
+        else {
+            sourceFile->append("_p");
         }
     }
     sourceFile->append(") ");

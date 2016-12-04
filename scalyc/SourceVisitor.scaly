@@ -1921,34 +1921,7 @@ class SourceVisitor extends CppVisitor {
             sourceFile.append(page)
         }
         else {
-            if !initializerIsBoundOrAssigned(constructorCall) {
-                if inAssignment(constructorCall) {
-                    var assignment: Assignment = getAssignment(constructorCall)
-                    if assignment != null {
-                        var classDeclaration: ClassDeclaration = getClassDeclaration(assignment)
-                        let memberName: string& = getMemberIfCreatingObject(assignment)
-                        if memberName != null {
-                            if isVariableMember(memberName, classDeclaration) {
-                                if !inConstructor(assignment) {
-                                    sourceFile.append(memberName)
-                                    sourceFile.append("->")
-                                }
-                                sourceFile.append("_getPage()")
-                                if inConstructor(assignment) {
-                                    sourceFile.append("->allocateExclusivePage()")
-                                }
-                            }
-                            else {
-                                sourceFile.append("_getPage()")
-                            }
-                        }
-                    }
-                }
-                else {
-                    sourceFile.append("_p")
-                }
-            }
-            else {
+            if initializerIsBoundOrAssigned(constructorCall) {
                 let assignment: Assignment& = getAssignment(constructorCall)
                 if assignment != null {
                     var classDeclaration: ClassDeclaration = getClassDeclaration(assignment)
@@ -2004,6 +1977,9 @@ class SourceVisitor extends CppVisitor {
                         }
                     }
                 }
+            }
+            else {
+                sourceFile.append("_p")
             }
         }
 
