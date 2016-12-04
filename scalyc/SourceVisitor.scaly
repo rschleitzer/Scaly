@@ -1903,9 +1903,9 @@ class SourceVisitor extends CppVisitor {
     function openConstructorCall(constructorCall: ConstructorCall): bool {
         sourceFile.append("new(")
         
-        let page: string$ = getPage(constructorCall.parent)
+      /*  let page: string$ = getPage(constructorCall.parent)
         if page != null
-            return(page)
+            return(page) */
         
         if !initializerIsBoundOrAssigned(constructorCall) {
             if (inReturn(constructorCall)) || (inRetDeclaration(constructorCall)) {

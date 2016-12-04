@@ -10,6 +10,8 @@ SourceVisitor::SourceVisitor() {
     classes = new(_getPage()->allocateExclusivePage()) _Array<string>();
 }
 
+string* SourceVisitor::getPage(_Page* _rp, SyntaxNode*) { return  0; }
+
 bool SourceVisitor::openProgram(Program* program) {
     _Region _region; _Page* _p = _region.get();
     string* programDirectory = new(_p) string(program->directory);
@@ -1788,22 +1790,8 @@ bool SourceVisitor::openBreakExpression(BreakExpression* breakExpression) {
     return true;
 }
 
-string* SourceVisitor::getPage(_Page* _rp, SyntaxNode* node) {
-    if (node == nullptr)
-        return nullptr;
-    if (node->_isReturnExpression())
-        return
-    new(_rp) string("_rp");
-    return getPage(_rp, node->parent);
-    return nullptr;
-}
-
 bool SourceVisitor::openConstructorCall(ConstructorCall* constructorCall) {
-    _Region _region; _Page* _p = _region.get();
     sourceFile->append("new(");
-    string* page = getPage(_p, constructorCall->parent);
-    if (page != nullptr)
-        return page;
     if (!initializerIsBoundOrAssigned(constructorCall)) {
         if ((inReturn(constructorCall)) || (inRetDeclaration(constructorCall))) {
             sourceFile->append("_rp");
