@@ -1902,74 +1902,83 @@ class SourceVisitor extends CppVisitor {
     function openConstructorCall(constructorCall: ConstructorCall): bool {
         sourceFile.append("new(")
         
-        if !initializerIsBoundOrAssigned(constructorCall) {
-            if (inReturn(constructorCall)) || (inRetDeclaration(constructorCall)) {
-                sourceFile.append("_rp")
-            }
-            else {
-                if inThrow(constructorCall) {
-                    sourceFile.append("_ep")
+        let page: string$ = getPage(constructorCall.parent)
+        if page != null {
+            sourceFile.append(page)
+        }
+        else {
+            if !initializerIsBoundOrAssigned(constructorCall) {
+                if (inReturn(constructorCall)) || (inRetDeclaration(constructorCall)) {
+                    sourceFile.append("_rp")
                 }
                 else {
-                    if inAssignment(constructorCall) {
-                        var assignment: Assignment = getAssignment(constructorCall)
-                        if assignment != null {
-                            var classDeclaration: ClassDeclaration = getClassDeclaration(assignment)
-                            let memberName: string& = getMemberIfCreatingObject(assignment)
-                            if memberName != null {
-                                if isVariableMember(memberName, classDeclaration) {
-                                    if !inConstructor(assignment) {
-                                        sourceFile.append(memberName)
-                                        sourceFile.append("->")
+                    if inThrow(constructorCall) {
+                        sourceFile.append("_ep")
+                    }
+                    else {
+                        if inAssignment(constructorCall) {
+                            var assignment: Assignment = getAssignment(constructorCall)
+                            if assignment != null {
+                                var classDeclaration: ClassDeclaration = getClassDeclaration(assignment)
+                                let memberName: string& = getMemberIfCreatingObject(assignment)
+                                if memberName != null {
+                                    if isVariableMember(memberName, classDeclaration) {
+                                        if !inConstructor(assignment) {
+                                            sourceFile.append(memberName)
+                                            sourceFile.append("->")
+                                        }
+                                        sourceFile.append("_getPage()")
+                                        if inConstructor(assignment) {
+                                            sourceFile.append("->allocateExclusivePage()")
+                                        }
                                     }
-                                    sourceFile.append("_getPage()")
-                                    if inConstructor(assignment) {
-                                        sourceFile.append("->allocateExclusivePage()")
+                                    else {
+                                        sourceFile.append("_getPage()")
                                     }
                                 }
-                                else {
-                                    sourceFile.append("_getPage()")
-                                }
+                            }
+                        }
+                        else {
+                            sourceFile.append("_p")
+                        }
+                    }
+                }
+            }
+            else {
+                if constructorCall.parent.parent.parent.parent is Assignment {
+                    let assignment: Assignment = (constructorCall.parent.parent.parent.parent) as Assignment
+                    var classDeclaration: ClassDeclaration = getClassDeclaration(assignment)
+                    let memberName: string& = getMemberIfCreatingObject(assignment)
+                    if memberName != null {
+                        if isVariableMember(memberName, classDeclaration) {
+                            if !inConstructor(assignment) {
+                                sourceFile.append(memberName)
+                                sourceFile.append("->")
+                            }
+                            sourceFile.append("_getPage()")
+                            if inConstructor(assignment) {
+                                sourceFile.append("->allocateExclusivePage()")
                             }
                         }
                     }
                     else {
-                        sourceFile.append("_p")
-                    }
-                }
-            }
-        }
-        else {
-            if constructorCall.parent.parent.parent.parent is Assignment {
-                let assignment: Assignment = (constructorCall.parent.parent.parent.parent) as Assignment
-                var classDeclaration: ClassDeclaration = getClassDeclaration(assignment)
-                let memberName: string& = getMemberIfCreatingObject(assignment)
-                if memberName != null {
-                    if isVariableMember(memberName, classDeclaration) {
-                        if !inConstructor(assignment) {
-                            sourceFile.append(memberName)
-                            sourceFile.append("->")
-                        }
-                        sourceFile.append("_getPage()")
-                        if inConstructor(assignment) {
-                            sourceFile.append("->allocateExclusivePage()")
-                        }
-                    }
-                }
-                else {
-                    let simpleExpression: SimpleExpression = (assignment.parent) as SimpleExpression
-                    if simpleExpression.prefixExpression.prefixOperator == null {
-                        let leftSide: PostfixExpression = simpleExpression.prefixExpression.expression
-                        if (leftSide.postfixes == null) && (leftSide.primaryExpression is IdentifierExpression) {
-                            let memberExpression: IdentifierExpression = (leftSide.primaryExpression) as IdentifierExpression
-                            let memberName: string = memberExpression.name
-                            var classDeclaration: ClassDeclaration = getClassDeclaration(assignment)
-                            if (classDeclaration != null) && (memberName != null) && !hasArrayPostfix(constructorCall.typeToConstruct) {
-                                if isVariableMember(memberName, classDeclaration) {
-                                    sourceFile.append(memberName)
-                                    sourceFile.append("->")
+                        let simpleExpression: SimpleExpression = (assignment.parent) as SimpleExpression
+                        if simpleExpression.prefixExpression.prefixOperator == null {
+                            let leftSide: PostfixExpression = simpleExpression.prefixExpression.expression
+                            if (leftSide.postfixes == null) && (leftSide.primaryExpression is IdentifierExpression) {
+                                let memberExpression: IdentifierExpression = (leftSide.primaryExpression) as IdentifierExpression
+                                let memberName: string = memberExpression.name
+                                var classDeclaration: ClassDeclaration = getClassDeclaration(assignment)
+                                if (classDeclaration != null) && (memberName != null) && !hasArrayPostfix(constructorCall.typeToConstruct) {
+                                    if isVariableMember(memberName, classDeclaration) {
+                                        sourceFile.append(memberName)
+                                        sourceFile.append("->")
+                                    }
+                                    sourceFile.append("_getPage()")
                                 }
-                                sourceFile.append("_getPage()")
+                                else {
+                                    sourceFile.append("_p")
+                                }
                             }
                             else {
                                 sourceFile.append("_p")
@@ -1979,21 +1988,18 @@ class SourceVisitor extends CppVisitor {
                             sourceFile.append("_p")
                         }
                     }
-                    else {
-                        sourceFile.append("_p")
-                    }
                 }
-            }
-            else {
-                if constructorCall.parent.parent.parent.parent is Initializer {
-                    if inReturn(constructorCall) || inRetDeclaration(constructorCall) {
-                        sourceFile.append("_rp")
-                    }
-                    else {
-                        if inThrow(constructorCall)
-                            sourceFile.append("_ep")
-                        else
-                            sourceFile.append("_p")
+                else {
+                    if constructorCall.parent.parent.parent.parent is Initializer {
+                        if inReturn(constructorCall) || inRetDeclaration(constructorCall) {
+                            sourceFile.append("_rp")
+                        }
+                        else {
+                            if inThrow(constructorCall)
+                                sourceFile.append("_ep")
+                            else
+                                sourceFile.append("_p")
+                        }
                     }
                 }
             }

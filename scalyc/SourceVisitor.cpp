@@ -1799,75 +1799,85 @@ string* SourceVisitor::getPage(_Page* _rp, SyntaxNode* syntaxNode) {
 }
 
 bool SourceVisitor::openConstructorCall(ConstructorCall* constructorCall) {
+    _Region _region; _Page* _p = _region.get();
     sourceFile->append("new(");
-    if (!initializerIsBoundOrAssigned(constructorCall)) {
-        if ((inReturn(constructorCall)) || (inRetDeclaration(constructorCall))) {
-            sourceFile->append("_rp");
-        }
-        else {
-            if (inThrow(constructorCall)) {
-                sourceFile->append("_ep");
+    string* page = getPage(_p, constructorCall->parent);
+    if (page != nullptr) {
+        sourceFile->append(page);
+    }
+    else {
+        if (!initializerIsBoundOrAssigned(constructorCall)) {
+            if ((inReturn(constructorCall)) || (inRetDeclaration(constructorCall))) {
+                sourceFile->append("_rp");
             }
             else {
-                if (inAssignment(constructorCall)) {
-                    Assignment* assignment = getAssignment(constructorCall);
-                    if (assignment != nullptr) {
-                        ClassDeclaration* classDeclaration = getClassDeclaration(assignment);
-                        string* memberName = getMemberIfCreatingObject(assignment);
-                        if (memberName != nullptr) {
-                            if (isVariableMember(memberName, classDeclaration)) {
-                                if (!inConstructor(assignment)) {
-                                    sourceFile->append(memberName);
-                                    sourceFile->append("->");
+                if (inThrow(constructorCall)) {
+                    sourceFile->append("_ep");
+                }
+                else {
+                    if (inAssignment(constructorCall)) {
+                        Assignment* assignment = getAssignment(constructorCall);
+                        if (assignment != nullptr) {
+                            ClassDeclaration* classDeclaration = getClassDeclaration(assignment);
+                            string* memberName = getMemberIfCreatingObject(assignment);
+                            if (memberName != nullptr) {
+                                if (isVariableMember(memberName, classDeclaration)) {
+                                    if (!inConstructor(assignment)) {
+                                        sourceFile->append(memberName);
+                                        sourceFile->append("->");
+                                    }
+                                    sourceFile->append("_getPage()");
+                                    if (inConstructor(assignment)) {
+                                        sourceFile->append("->allocateExclusivePage()");
+                                    }
                                 }
-                                sourceFile->append("_getPage()");
-                                if (inConstructor(assignment)) {
-                                    sourceFile->append("->allocateExclusivePage()");
+                                else {
+                                    sourceFile->append("_getPage()");
                                 }
                             }
-                            else {
-                                sourceFile->append("_getPage()");
-                            }
+                        }
+                    }
+                    else {
+                        sourceFile->append("_p");
+                    }
+                }
+            }
+        }
+        else {
+            if (constructorCall->parent->parent->parent->parent->_isAssignment()) {
+                Assignment* assignment = (Assignment*)(constructorCall->parent->parent->parent->parent);
+                ClassDeclaration* classDeclaration = getClassDeclaration(assignment);
+                string* memberName = getMemberIfCreatingObject(assignment);
+                if (memberName != nullptr) {
+                    if (isVariableMember(memberName, classDeclaration)) {
+                        if (!inConstructor(assignment)) {
+                            sourceFile->append(memberName);
+                            sourceFile->append("->");
+                        }
+                        sourceFile->append("_getPage()");
+                        if (inConstructor(assignment)) {
+                            sourceFile->append("->allocateExclusivePage()");
                         }
                     }
                 }
                 else {
-                    sourceFile->append("_p");
-                }
-            }
-        }
-    }
-    else {
-        if (constructorCall->parent->parent->parent->parent->_isAssignment()) {
-            Assignment* assignment = (Assignment*)(constructorCall->parent->parent->parent->parent);
-            ClassDeclaration* classDeclaration = getClassDeclaration(assignment);
-            string* memberName = getMemberIfCreatingObject(assignment);
-            if (memberName != nullptr) {
-                if (isVariableMember(memberName, classDeclaration)) {
-                    if (!inConstructor(assignment)) {
-                        sourceFile->append(memberName);
-                        sourceFile->append("->");
-                    }
-                    sourceFile->append("_getPage()");
-                    if (inConstructor(assignment)) {
-                        sourceFile->append("->allocateExclusivePage()");
-                    }
-                }
-            }
-            else {
-                SimpleExpression* simpleExpression = (SimpleExpression*)(assignment->parent);
-                if (simpleExpression->prefixExpression->prefixOperator == nullptr) {
-                    PostfixExpression* leftSide = simpleExpression->prefixExpression->expression;
-                    if ((leftSide->postfixes == nullptr) && (leftSide->primaryExpression->_isIdentifierExpression())) {
-                        IdentifierExpression* memberExpression = (IdentifierExpression*)(leftSide->primaryExpression);
-                        string* memberName = memberExpression->name;
-                        ClassDeclaration* classDeclaration = getClassDeclaration(assignment);
-                        if ((classDeclaration != nullptr) && (memberName != nullptr) && !hasArrayPostfix(constructorCall->typeToConstruct)) {
-                            if (isVariableMember(memberName, classDeclaration)) {
-                                sourceFile->append(memberName);
-                                sourceFile->append("->");
+                    SimpleExpression* simpleExpression = (SimpleExpression*)(assignment->parent);
+                    if (simpleExpression->prefixExpression->prefixOperator == nullptr) {
+                        PostfixExpression* leftSide = simpleExpression->prefixExpression->expression;
+                        if ((leftSide->postfixes == nullptr) && (leftSide->primaryExpression->_isIdentifierExpression())) {
+                            IdentifierExpression* memberExpression = (IdentifierExpression*)(leftSide->primaryExpression);
+                            string* memberName = memberExpression->name;
+                            ClassDeclaration* classDeclaration = getClassDeclaration(assignment);
+                            if ((classDeclaration != nullptr) && (memberName != nullptr) && !hasArrayPostfix(constructorCall->typeToConstruct)) {
+                                if (isVariableMember(memberName, classDeclaration)) {
+                                    sourceFile->append(memberName);
+                                    sourceFile->append("->");
+                                }
+                                sourceFile->append("_getPage()");
                             }
-                            sourceFile->append("_getPage()");
+                            else {
+                                sourceFile->append("_p");
+                            }
                         }
                         else {
                             sourceFile->append("_p");
@@ -1877,21 +1887,18 @@ bool SourceVisitor::openConstructorCall(ConstructorCall* constructorCall) {
                         sourceFile->append("_p");
                     }
                 }
-                else {
-                    sourceFile->append("_p");
-                }
             }
-        }
-        else {
-            if (constructorCall->parent->parent->parent->parent->_isInitializer()) {
-                if (inReturn(constructorCall) || inRetDeclaration(constructorCall)) {
-                    sourceFile->append("_rp");
-                }
-                else {
-                    if (inThrow(constructorCall))
-                        sourceFile->append("_ep");
-                    else
-                        sourceFile->append("_p");
+            else {
+                if (constructorCall->parent->parent->parent->parent->_isInitializer()) {
+                    if (inReturn(constructorCall) || inRetDeclaration(constructorCall)) {
+                        sourceFile->append("_rp");
+                    }
+                    else {
+                        if (inThrow(constructorCall))
+                            sourceFile->append("_ep");
+                        else
+                            sourceFile->append("_p");
+                    }
                 }
             }
         }
