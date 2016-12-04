@@ -789,21 +789,17 @@ string* SourceVisitor::getMemberIfCreatingObject(Assignment* assignment) {
     if (functionName == nullptr) {
         return nullptr;
     }
-    if (assignment->expression->_isSimpleExpression()) {
-        if (isClass(functionName) || isCreatingObject(functionName, assignment)) {
-            if (assignment->parent->_isSimpleExpression()) {
-                SimpleExpression* simpleExpression = (SimpleExpression*)(assignment->parent);
-                if (simpleExpression->prefixExpression->prefixOperator == 0) {
-                    PostfixExpression* leftSide = simpleExpression->prefixExpression->expression;
-                    if ((leftSide->postfixes == 0) && (leftSide->primaryExpression->_isIdentifierExpression())) {
-                        IdentifierExpression* memberExpression = (IdentifierExpression*)(leftSide->primaryExpression);
-                        string* memberName = memberExpression->name;
-                        ClassDeclaration* classDeclaration = getClassDeclaration(assignment);
-                        if (classDeclaration != nullptr) {
-                            if (isVariableMember(memberName, classDeclaration))
-                                return memberName;
-                        }
-                    }
+    if (isClass(functionName) || isCreatingObject(functionName, assignment)) {
+        SimpleExpression* simpleExpression = (SimpleExpression*)(assignment->parent);
+        if (simpleExpression->prefixExpression->prefixOperator == 0) {
+            PostfixExpression* leftSide = simpleExpression->prefixExpression->expression;
+            if ((leftSide->postfixes == 0) && (leftSide->primaryExpression->_isIdentifierExpression())) {
+                IdentifierExpression* memberExpression = (IdentifierExpression*)(leftSide->primaryExpression);
+                string* memberName = memberExpression->name;
+                ClassDeclaration* classDeclaration = getClassDeclaration(assignment);
+                if (classDeclaration != nullptr) {
+                    if (isVariableMember(memberName, classDeclaration))
+                        return memberName;
                 }
             }
         }
@@ -812,21 +808,19 @@ string* SourceVisitor::getMemberIfCreatingObject(Assignment* assignment) {
 }
 
 string* SourceVisitor::getFunctionName(Assignment* assignment) {
-    if (assignment->expression->_isSimpleExpression()) {
-        SimpleExpression* simpleExpression = (SimpleExpression*)(assignment->expression);
-        PrefixExpression* prefixExpression = simpleExpression->prefixExpression;
-        if (prefixExpression->prefixOperator == nullptr) {
-            PostfixExpression* rightSide = prefixExpression->expression;
-            if (rightSide->primaryExpression->_isIdentifierExpression()) {
-                IdentifierExpression* classExpression = (IdentifierExpression*)(rightSide->primaryExpression);
-                return classExpression->name;
-            }
-            else {
-                if (rightSide->primaryExpression->_isConstructorCall()) {
-                    ConstructorCall* constructorCall = (ConstructorCall*)(rightSide->primaryExpression);
-                    Type* type = constructorCall->typeToConstruct;
-                    return type->name;
-                }
+    SimpleExpression* simpleExpression = (SimpleExpression*)(assignment->expression);
+    PrefixExpression* prefixExpression = simpleExpression->prefixExpression;
+    if (prefixExpression->prefixOperator == nullptr) {
+        PostfixExpression* rightSide = prefixExpression->expression;
+        if (rightSide->primaryExpression->_isIdentifierExpression()) {
+            IdentifierExpression* classExpression = (IdentifierExpression*)(rightSide->primaryExpression);
+            return classExpression->name;
+        }
+        else {
+            if (rightSide->primaryExpression->_isConstructorCall()) {
+                ConstructorCall* constructorCall = (ConstructorCall*)(rightSide->primaryExpression);
+                Type* type = constructorCall->typeToConstruct;
+                return type->name;
             }
         }
     }

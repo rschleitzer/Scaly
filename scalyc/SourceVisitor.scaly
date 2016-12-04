@@ -851,21 +851,17 @@ class SourceVisitor extends CppVisitor {
             return(null)
         }
 
-        if assignment.expression is SimpleExpression {
-            if isClass(functionName) || isCreatingObject(functionName, assignment) {
-                if assignment.parent is SimpleExpression {
-                    let simpleExpression: SimpleExpression = (assignment.parent) as SimpleExpression
-                    if simpleExpression.prefixExpression.prefixOperator == 0 {
-                        let leftSide: PostfixExpression = simpleExpression.prefixExpression.expression
-                        if (leftSide.postfixes == 0) && (leftSide.primaryExpression is IdentifierExpression) {
-                            let memberExpression: IdentifierExpression = (leftSide.primaryExpression) as IdentifierExpression
-                            let memberName: string = memberExpression.name
-                            var classDeclaration: ClassDeclaration = getClassDeclaration(assignment)
-                            if classDeclaration != null {
-                                if isVariableMember(memberName, classDeclaration)
-                                    return(memberName)
-                            }
-                        }
+        if isClass(functionName) || isCreatingObject(functionName, assignment) {
+            let simpleExpression: SimpleExpression = (assignment.parent) as SimpleExpression
+            if simpleExpression.prefixExpression.prefixOperator == 0 {
+                let leftSide: PostfixExpression = simpleExpression.prefixExpression.expression
+                if (leftSide.postfixes == 0) && (leftSide.primaryExpression is IdentifierExpression) {
+                    let memberExpression: IdentifierExpression = (leftSide.primaryExpression) as IdentifierExpression
+                    let memberName: string = memberExpression.name
+                    var classDeclaration: ClassDeclaration = getClassDeclaration(assignment)
+                    if classDeclaration != null {
+                        if isVariableMember(memberName, classDeclaration)
+                            return(memberName)
                     }
                 }
             }
@@ -875,21 +871,19 @@ class SourceVisitor extends CppVisitor {
     }
 
     function getFunctionName(assignment: Assignment&): string& {
-        if assignment.expression is SimpleExpression {
-            let simpleExpression: SimpleExpression = (assignment.expression) as SimpleExpression
-            let prefixExpression: PrefixExpression = simpleExpression.prefixExpression
-            if prefixExpression.prefixOperator == null {
-                let rightSide: PostfixExpression = prefixExpression.expression
-                if rightSide.primaryExpression is IdentifierExpression {
-                    let classExpression: IdentifierExpression = (rightSide.primaryExpression) as IdentifierExpression
-                    return(classExpression.name)
-                }
-                else {
-                    if rightSide.primaryExpression is ConstructorCall {
-                        let constructorCall: ConstructorCall = (rightSide.primaryExpression) as ConstructorCall
-                        let type: Type = constructorCall.typeToConstruct
-                        return(type.name)
-                    }
+        let simpleExpression: SimpleExpression = (assignment.expression) as SimpleExpression
+        let prefixExpression: PrefixExpression = simpleExpression.prefixExpression
+        if prefixExpression.prefixOperator == null {
+            let rightSide: PostfixExpression = prefixExpression.expression
+            if rightSide.primaryExpression is IdentifierExpression {
+                let classExpression: IdentifierExpression = (rightSide.primaryExpression) as IdentifierExpression
+                return(classExpression.name)
+            }
+            else {
+                if rightSide.primaryExpression is ConstructorCall {
+                    let constructorCall: ConstructorCall = (rightSide.primaryExpression) as ConstructorCall
+                    let type: Type = constructorCall.typeToConstruct
+                    return(type.name)
                 }
             }
         }
