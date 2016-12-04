@@ -151,7 +151,7 @@ void Lexer::advance() {
             break;
         }
 
-        case '+': case '*': case '/': case '%': case '&': case '|': {
+        case '+': case '*': case '/': case '%': case '|': {
             if (token != nullptr)
                 token->getPage()->clear();
             token = scanOperator(token->getPage(), false);
@@ -247,7 +247,7 @@ void Lexer::advance() {
             break;
         }
 
-        case '!': {
+        case '!': case '?': case '&': {
             {
                 position++;
                 column++;
@@ -272,50 +272,6 @@ void Lexer::advance() {
                         default: {
                             {
                                 if (whitespaceSkipped || ((token != nullptr) && (token->_isPunctuation()))) {
-                                    position--;
-                                    column--;
-                                    if (token != nullptr)
-                                        token->getPage()->clear();
-                                    token = scanOperator(token->getPage(), true);
-                                }
-                                else {
-                                    if (token != nullptr)
-                                        token->getPage()->clear();
-                                    token = new(token->getPage()) Punctuation(new(token->getPage()) string(c));
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            break;
-        }
-
-        case '?': {
-            {
-                position++;
-                column++;
-                if (position == end) {
-                    if (token != nullptr)
-                        token->getPage()->clear();
-                    token = new(token->getPage()) PostfixOperator(new(token->getPage()) string(c));
-                }
-                else {
-                    switch (text->charAt(position)) {
-                        case '/': case '=': case '+': case '!': case '*': case '%': case '&': case '|': case '^': case '~': {
-                            {
-                                position--;
-                                column--;
-                                if (token != nullptr)
-                                    token->getPage()->clear();
-                                token = scanOperator(token->getPage(), true);
-                            }
-                            break;
-                        }
-
-                        default: {
-                            {
-                                if (whitespaceSkipped) {
                                     position--;
                                     column--;
                                     if (token != nullptr)

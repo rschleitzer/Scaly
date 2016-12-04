@@ -141,7 +141,7 @@ class Lexer {
                 position++ column++
             }
 
-            case '+', '*', '/', '%', '&', '|':
+            case '+', '*', '/', '%', '|':
                 token = scanOperator(false)
             
             case '<', '>': {
@@ -194,7 +194,7 @@ class Lexer {
                 }
             }
 
-            case '!': {
+            case '!', '?', '&': {
                 position++ column++
                 if position == end {
                     token = new PostfixOperator(new string(c))
@@ -208,30 +208,6 @@ class Lexer {
 
                         default: {
                             if whitespaceSkipped || ((token != null) && (token is Punctuation)) {
-                                position-- column--
-                                token = scanOperator(true)
-                            }
-                            else {
-                                token = new Punctuation(new string(c))
-                            }
-                        }
-                    } 
-                }
-            }
-
-            case '?': {
-                position++ column++
-                if position == end {
-                    token = new PostfixOperator(new string(c))
-                }
-                else {
-                    switch text.charAt(position) {
-                        case '/', '=', '+', '!', '*', '%', '&', '|', '^', '~': {
-                            position-- column--
-                            token = scanOperator(true)
-                        }
-                        default: {
-                            if whitespaceSkipped {
                                 position-- column--
                                 token = scanOperator(true)
                             }
