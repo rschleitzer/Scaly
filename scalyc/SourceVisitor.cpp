@@ -28,14 +28,11 @@ bool SourceVisitor::openProgram(Program* program) {
                 VarString* projectFilePath = new(_p) VarString(outputFilePath);
                 projectFilePath->append(".project");
                 auto _File_error = File::writeFromString(_p, projectFilePath, projectFile);
-                if (_File_error) {
-                    switch (_File_error->_getErrorCode()) {
-                        default:
-                        {
-                            return false;
-                        }
+                if (_File_error) { switch (_File_error->_getErrorCode()) {
+                    default: {
+                    return false;
                     }
-                }
+                } }
             }
         }
         collectInheritances(program);
@@ -120,14 +117,11 @@ void SourceVisitor::closeCompilationUnit(CompilationUnit* compilationUnit) {
     VarString* sourceFilePath = new(_p) VarString(outputFilePath);
     sourceFilePath->append(".cpp");
     auto _File_error = File::writeFromString(_p, sourceFilePath, sourceFile);
-    if (_File_error) {
-        switch (_File_error->_getErrorCode()) {
-            default:
-            {
-                return;
-            }
+    if (_File_error) { switch (_File_error->_getErrorCode()) {
+        default: {
+        return;
         }
-    }
+    } }
 }
 
 bool SourceVisitor::isTopLevelFile(CompilationUnit* compilationUnit) {
@@ -994,13 +988,11 @@ bool SourceVisitor::openCatchClause(CatchClause* catchClause) {
                     indent(level(catchClause) - 1);
                     sourceFile->append("if (_");
                     sourceFile->append(identifierExpression->name);
-                    sourceFile->append("_error) {\n");
-                    indent(level(catchClause));
-                    sourceFile->append("switch (_");
+                    sourceFile->append("_error) { switch (_");
                     sourceFile->append(identifierExpression->name);
                     sourceFile->append("_error->_getErrorCode()) {\n");
                 }
-                indent(level(catchClause) + 1);
+                indent(level(catchClause));
                 if (catchClause->catchPattern->_isIdentifierCatchPattern()) {
                     sourceFile->append("case _");
                     IdentifierCatchPattern* identifierCatchPattern = (IdentifierCatchPattern*)(catchClause->catchPattern);
@@ -1008,10 +1000,8 @@ bool SourceVisitor::openCatchClause(CatchClause* catchClause) {
                     sourceFile->append("Code_");
                     if (identifierCatchPattern->member != nullptr) {
                         sourceFile->append(identifierCatchPattern->member->member);
-                        sourceFile->append(":\n");
-                        indent(level(catchClause));
-                        sourceFile->append("{\n");
-                        indent(level(catchClause));
+                        sourceFile->append(": {\n");
+                        indent(level(catchClause) - 1);
                         sourceFile->append("    _");
                         sourceFile->append(identifierCatchPattern->name);
                         sourceFile->append("_");
@@ -1039,9 +1029,7 @@ bool SourceVisitor::openCatchClause(CatchClause* catchClause) {
                     }
                 }
                 if (catchClause->catchPattern->_isWildCardCatchPattern()) {
-                    sourceFile->append("default:\n");
-                    indent(level(catchClause) + 1);
-                    sourceFile->append("{\n        ");
+                    sourceFile->append("default: {\n");
                 }
                 indent(level(catchClause));
                 catchClause->expression->accept(this);
@@ -1059,14 +1047,12 @@ bool SourceVisitor::openCatchClause(CatchClause* catchClause) {
                         sourceFile->append("break;\n");
                     }
                 }
-                indent(level(catchClause) + 1);
+                indent(level(catchClause));
                 sourceFile->append("}\n");
                 _Array<CatchClause>* clauses = functionCall->catchClauses;
                 if (*(*clauses)[functionCall->catchClauses->length() - 1] == catchClause) {
-                    indent(level(catchClause));
-                    sourceFile->append("}\n");
                     indent(level(catchClause) - 1);
-                    sourceFile->append("}\n");
+                    sourceFile->append("} }\n");
                 }
             }
         }

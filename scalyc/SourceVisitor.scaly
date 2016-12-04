@@ -1049,13 +1049,11 @@ class SourceVisitor extends CppVisitor {
                         indent(level(catchClause) - 1)
                         sourceFile.append("if (_")
                         sourceFile.append(identifierExpression.name)
-                        sourceFile.append("_error) {\n")
-                        indent(level(catchClause))
-                        sourceFile.append("switch (_")
+                        sourceFile.append("_error) { switch (_")
                         sourceFile.append(identifierExpression.name)
                         sourceFile.append("_error->_getErrorCode()) {\n")
                     }
-                    indent(level(catchClause) + 1)
+                    indent(level(catchClause))
                     if catchClause.catchPattern is IdentifierCatchPattern {
                         sourceFile.append("case _")
                         let identifierCatchPattern: IdentifierCatchPattern = (catchClause.catchPattern) as IdentifierCatchPattern
@@ -1063,10 +1061,8 @@ class SourceVisitor extends CppVisitor {
                         sourceFile.append("Code_")
                         if identifierCatchPattern.member != null {
                             sourceFile.append(identifierCatchPattern.member.member)
-                            sourceFile.append(":\n")
-                            indent(level(catchClause))
-                            sourceFile.append("{\n")
-                            indent(level(catchClause))
+                            sourceFile.append(": {\n")
+                            indent(level(catchClause) - 1)
                             sourceFile.append("    _")
                             sourceFile.append(identifierCatchPattern.name)
                             sourceFile.append("_")
@@ -1094,9 +1090,7 @@ class SourceVisitor extends CppVisitor {
                         }
                     }
                     if catchClause.catchPattern is WildCardCatchPattern {
-                        sourceFile.append("default:\n")
-                        indent(level(catchClause) + 1)
-                        sourceFile.append("{\n        ")
+                        sourceFile.append("default: {\n")
                         //indent(level(catchClause))
                     }
                     
@@ -1117,15 +1111,13 @@ class SourceVisitor extends CppVisitor {
                         }
                     }
 
-                    indent(level(catchClause) + 1)
+                    indent(level(catchClause))
                     sourceFile.append("}\n")
                     
                     let clauses: CatchClause[] = functionCall.catchClauses
                     if clauses[functionCall.catchClauses.length() - 1] == catchClause {
-                        indent(level(catchClause))
-                        sourceFile.append("}\n")
                         indent(level(catchClause) - 1)
-                        sourceFile.append("}\n")
+                        sourceFile.append("} }\n")
                     }
                 }
             }

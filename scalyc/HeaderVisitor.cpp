@@ -18,14 +18,11 @@ bool HeaderVisitor::openProgram(Program* program) {
     }
     if (!Directory::exists(programDirectory)) {
         auto _Directory_error = Directory::create(_p, programDirectory);
-        if (_Directory_error) {
-            switch (_Directory_error->_getErrorCode()) {
-                default:
-                {
-                    return false;
-                }
+        if (_Directory_error) { switch (_Directory_error->_getErrorCode()) {
+            default: {
+            return false;
             }
-        }
+        } }
     }
     {
         _Region _region; _Page* _p = _region.get();
@@ -39,14 +36,11 @@ bool HeaderVisitor::openProgram(Program* program) {
                 VarString* headerFilePath = new(_p) VarString(outputFilePath);
                 headerFilePath->append(".h");
                 auto _File_error = File::writeFromString(_p, headerFilePath, mainHeaderFile);
-                if (_File_error) {
-                    switch (_File_error->_getErrorCode()) {
-                        default:
-                        {
-                            return false;
-                        }
+                if (_File_error) { switch (_File_error->_getErrorCode()) {
+                    default: {
+                    return false;
                     }
-                }
+                } }
             }
         }
         collectInheritances(program);
@@ -98,14 +92,11 @@ void HeaderVisitor::closeCompilationUnit(CompilationUnit* compilationUnit) {
         VarString* headerFilePath = new(_p) VarString(outputFilePath);
         headerFilePath->append(".h");
         auto _File_error = File::writeFromString(_p, headerFilePath, headerFile);
-        if (_File_error) {
-            switch (_File_error->_getErrorCode()) {
-                default:
-                {
-                    return;
-                }
+        if (_File_error) { switch (_File_error->_getErrorCode()) {
+            default: {
+            return;
             }
-        }
+        } }
     }
 }
 
