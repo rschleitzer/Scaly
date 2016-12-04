@@ -1808,35 +1808,30 @@ bool SourceVisitor::openConstructorCall(ConstructorCall* constructorCall) {
     }
     else {
         if (!initializerIsBoundOrAssigned(constructorCall)) {
-            if (inRetDeclaration(constructorCall)) {
-                sourceFile->append("_rp");
-            }
-            else {
-                if (inAssignment(constructorCall)) {
-                    Assignment* assignment = getAssignment(constructorCall);
-                    if (assignment != nullptr) {
-                        ClassDeclaration* classDeclaration = getClassDeclaration(assignment);
-                        string* memberName = getMemberIfCreatingObject(assignment);
-                        if (memberName != nullptr) {
-                            if (isVariableMember(memberName, classDeclaration)) {
-                                if (!inConstructor(assignment)) {
-                                    sourceFile->append(memberName);
-                                    sourceFile->append("->");
-                                }
-                                sourceFile->append("_getPage()");
-                                if (inConstructor(assignment)) {
-                                    sourceFile->append("->allocateExclusivePage()");
-                                }
+            if (inAssignment(constructorCall)) {
+                Assignment* assignment = getAssignment(constructorCall);
+                if (assignment != nullptr) {
+                    ClassDeclaration* classDeclaration = getClassDeclaration(assignment);
+                    string* memberName = getMemberIfCreatingObject(assignment);
+                    if (memberName != nullptr) {
+                        if (isVariableMember(memberName, classDeclaration)) {
+                            if (!inConstructor(assignment)) {
+                                sourceFile->append(memberName);
+                                sourceFile->append("->");
                             }
-                            else {
-                                sourceFile->append("_getPage()");
+                            sourceFile->append("_getPage()");
+                            if (inConstructor(assignment)) {
+                                sourceFile->append("->allocateExclusivePage()");
                             }
+                        }
+                        else {
+                            sourceFile->append("_getPage()");
                         }
                     }
                 }
-                else {
-                    sourceFile->append("_p");
-                }
+            }
+            else {
+                sourceFile->append("_p");
             }
         }
         else {
