@@ -1956,9 +1956,6 @@ class SourceVisitor extends CppVisitor {
                                 sourceFile.append("_p")
                             }
                         }
-                        else {
-                            sourceFile.append("_p")
-                        }
                     }
                 }
             }
