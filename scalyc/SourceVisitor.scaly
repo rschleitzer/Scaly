@@ -968,15 +968,18 @@ class SourceVisitor extends CppVisitor {
                         let catchClauses: CatchClause[] = functionCall.catchClauses
                         if catchClauses[0] == catchClause {
                             sourceFile.append(";\n")
+
                             indent(level(catchClause) - 1)
                             identifierPattern.annotationForType.accept(this)
                             sourceFile.append(" ")
                             sourceFile.append(identifierPattern.identifier)
                             sourceFile.append(" = nullptr;\n")
+
                             indent(level(catchClause) - 1)
                             sourceFile.append("if (_")
                             sourceFile.append(identifierPattern.identifier)
                             sourceFile.append("_result.succeeded()) {\n")
+
                             indent(level(catchClause) - 1)
                             sourceFile.append("    ")
                             sourceFile.append(identifierPattern.identifier)
@@ -986,6 +989,7 @@ class SourceVisitor extends CppVisitor {
                             indent(level(catchClause) - 1)
                             sourceFile.append("}\n")
                         }
+
                         indent(level(catchClause) - 1)
                         sourceFile.append("else")
                         if catchClause.catchPattern is IdentifierCatchPattern {
@@ -1011,8 +1015,9 @@ class SourceVisitor extends CppVisitor {
                                         let element: TuplePatternElement = elements[0]
                                         if element.pattern is IdentifierPattern {
                                             let pattern: IdentifierPattern = (element.pattern) as IdentifierPattern
-                                            indent(level(catchClause) - 1)
-                                            sourceFile.append("    auto ")
+
+                                            indent(level(catchClause))
+                                            sourceFile.append("auto ")
                                             sourceFile.append(pattern.identifier)                    
                                             sourceFile.append(" = _")
                                             sourceFile.append(identifierPattern.identifier)
@@ -1413,8 +1418,8 @@ class SourceVisitor extends CppVisitor {
         whileExpression.condition.accept(this)
         sourceFile.append(")")
         if whileExpression.code is SimpleExpression {
-            sourceFile.append("\n    ")
-            indent(level(whileExpression))
+            sourceFile.append("\n")
+            indent(level(whileExpression) + 1)
             whileExpression.code.accept(this)
             sourceFile.append(";\n")
         }
@@ -1429,8 +1434,8 @@ class SourceVisitor extends CppVisitor {
     function openDoExpression(doExpression: DoExpression): bool {
         sourceFile.append("do")
         if doExpression.code is SimpleExpression {
-            sourceFile.append("\n    ")
-            indent(level(doExpression))
+            sourceFile.append("\n")
+            indent(level(doExpression) + 1)
             doExpression.code.accept(this)
             sourceFile.append(";")
         }

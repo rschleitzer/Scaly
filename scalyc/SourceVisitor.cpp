@@ -951,8 +951,8 @@ bool SourceVisitor::openCatchClause(CatchClause* catchClause) {
                                     TuplePatternElement* element = *(*elements)[0];
                                     if (element->pattern->_isIdentifierPattern()) {
                                         IdentifierPattern* pattern = (IdentifierPattern*)(element->pattern);
-                                        indent(level(catchClause) - 1);
-                                        sourceFile->append("    auto ");
+                                        indent(level(catchClause));
+                                        sourceFile->append("auto ");
                                         sourceFile->append(pattern->identifier);
                                         sourceFile->append(" = _");
                                         sourceFile->append(identifierPattern->identifier);
@@ -1364,8 +1364,8 @@ bool SourceVisitor::openWhileExpression(WhileExpression* whileExpression) {
     whileExpression->condition->accept(this);
     sourceFile->append(")");
     if (whileExpression->code->_isSimpleExpression()) {
-        sourceFile->append("\n    ");
-        indent(level(whileExpression));
+        sourceFile->append("\n");
+        indent(level(whileExpression) + 1);
         whileExpression->code->accept(this);
         sourceFile->append(";\n");
     }
@@ -1379,8 +1379,8 @@ bool SourceVisitor::openWhileExpression(WhileExpression* whileExpression) {
 bool SourceVisitor::openDoExpression(DoExpression* doExpression) {
     sourceFile->append("do");
     if (doExpression->code->_isSimpleExpression()) {
-        sourceFile->append("\n    ");
-        indent(level(doExpression));
+        sourceFile->append("\n");
+        indent(level(doExpression) + 1);
         doExpression->code->accept(this);
         sourceFile->append(";");
     }
