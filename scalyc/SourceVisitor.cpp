@@ -1807,7 +1807,7 @@ bool SourceVisitor::openConstructorCall(ConstructorCall* constructorCall) {
     }
     else {
         if (!initializerIsBoundOrAssigned(constructorCall)) {
-            if ((inReturn(constructorCall)) || (inRetDeclaration(constructorCall))) {
+            if (inRetDeclaration(constructorCall)) {
                 sourceFile->append("_rp");
             }
             else {
