@@ -1407,12 +1407,10 @@ class SourceVisitor extends CppVisitor {
         whileExpression.condition.accept(this)
         sourceFile.append(")")
         if whileExpression.code is SimpleExpression {
-            sourceFile.append("\n")
-            sourceIndentLevel++
+            sourceFile.append("\n    ")
             indentSource()
             whileExpression.code.accept(this)
             sourceFile.append(";\n")
-            sourceIndentLevel--
         }
         else {
             sourceFile.append(" ")
@@ -1425,12 +1423,10 @@ class SourceVisitor extends CppVisitor {
     function openDoExpression(doExpression: DoExpression): bool {
         sourceFile.append("do")
         if doExpression.code is SimpleExpression {
-            sourceFile.append("\n")
-            sourceIndentLevel++
+            sourceFile.append("\n    ")
             indentSource()
             doExpression.code.accept(this)
             sourceFile.append(";")
-            sourceIndentLevel--
         }
         else {
             sourceFile.append(" ")
@@ -1997,11 +1993,9 @@ class SourceVisitor extends CppVisitor {
         indentSource()
         sourceFile.append("else")
         if elseClause.alternative is SimpleExpression {
-            sourceFile.append("\n")
-            sourceIndentLevel++
+            sourceFile.append("\n    ")
             indentSource()
             elseClause.alternative.accept(this)
-            sourceIndentLevel--
         }
         else {
             sourceFile.append(" ")
@@ -2147,16 +2141,9 @@ class SourceVisitor extends CppVisitor {
 
     function closeType(type: Type) {
         if hasArrayPostfix(type) {
-            if !sourceIndentLevel {
-                sourceFile.append(">")
-                if !type.parent is ConstructorCall
-                    sourceFile.append("*")
-            }
-            else {
-                sourceFile.append(">")
-                if !type.parent is ConstructorCall
-                    sourceFile.append("*")
-            }
+            sourceFile.append(">")
+            if !type.parent is ConstructorCall
+                sourceFile.append("*")
         }
         if isClass(type.name) && !hasArrayPostfix(type) && !inTypeQuery(type) && !type.parent is ConstructorCall {
             sourceFile.append("*")

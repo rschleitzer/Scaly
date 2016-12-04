@@ -1376,12 +1376,10 @@ bool SourceVisitor::openWhileExpression(WhileExpression* whileExpression) {
     whileExpression->condition->accept(this);
     sourceFile->append(")");
     if (whileExpression->code->_isSimpleExpression()) {
-        sourceFile->append("\n");
-        sourceIndentLevel++;
+        sourceFile->append("\n    ");
         indentSource();
         whileExpression->code->accept(this);
         sourceFile->append(";\n");
-        sourceIndentLevel--;
     }
     else {
         sourceFile->append(" ");
@@ -1393,12 +1391,10 @@ bool SourceVisitor::openWhileExpression(WhileExpression* whileExpression) {
 bool SourceVisitor::openDoExpression(DoExpression* doExpression) {
     sourceFile->append("do");
     if (doExpression->code->_isSimpleExpression()) {
-        sourceFile->append("\n");
-        sourceIndentLevel++;
+        sourceFile->append("\n    ");
         indentSource();
         doExpression->code->accept(this);
         sourceFile->append(";");
-        sourceIndentLevel--;
     }
     else {
         sourceFile->append(" ");
@@ -1927,11 +1923,9 @@ bool SourceVisitor::openElseClause(ElseClause* elseClause) {
     indentSource();
     sourceFile->append("else");
     if (elseClause->alternative->_isSimpleExpression()) {
-        sourceFile->append("\n");
-        sourceIndentLevel++;
+        sourceFile->append("\n    ");
         indentSource();
         elseClause->alternative->accept(this);
-        sourceIndentLevel--;
     }
     else {
         sourceFile->append(" ");
@@ -2066,16 +2060,9 @@ bool SourceVisitor::openType(Type* type) {
 
 void SourceVisitor::closeType(Type* type) {
     if (hasArrayPostfix(type)) {
-        if (!sourceIndentLevel) {
-            sourceFile->append(">");
-            if (!type->parent->_isConstructorCall())
-                sourceFile->append("*");
-        }
-        else {
-            sourceFile->append(">");
-            if (!type->parent->_isConstructorCall())
-                sourceFile->append("*");
-        }
+        sourceFile->append(">");
+        if (!type->parent->_isConstructorCall())
+            sourceFile->append("*");
     }
     if (isClass(type->name) && !hasArrayPostfix(type) && !inTypeQuery(type) && !type->parent->_isConstructorCall()) {
         sourceFile->append("*");
