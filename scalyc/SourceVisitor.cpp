@@ -1891,14 +1891,11 @@ bool SourceVisitor::openConstructorCall(ConstructorCall* constructorCall) {
             else {
                 Initializer* initializer = getInitializer(constructorCall);
                 if (initializer != nullptr) {
-                    if (inReturn(constructorCall) || inRetDeclaration(constructorCall)) {
+                    if (inRetDeclaration(constructorCall)) {
                         sourceFile->append("_rp");
                     }
                     else {
-                        if (inThrow(constructorCall))
-                            sourceFile->append("_ep");
-                        else
-                            sourceFile->append("_p");
+                        sourceFile->append("_p");
                     }
                 }
             }

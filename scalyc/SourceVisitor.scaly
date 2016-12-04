@@ -1996,14 +1996,11 @@ class SourceVisitor extends CppVisitor {
                 else {
                     let initializer: Initializer& = getInitializer(constructorCall)
                     if initializer != null {
-                        if inReturn(constructorCall) || inRetDeclaration(constructorCall) {
+                        if inRetDeclaration(constructorCall) {
                             sourceFile.append("_rp")
                         }
                         else {
-                            if inThrow(constructorCall)
-                                sourceFile.append("_ep")
-                            else
-                                sourceFile.append("_p")
+                            sourceFile.append("_p")
                         }
                     }
                 }
