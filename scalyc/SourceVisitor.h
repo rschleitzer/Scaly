@@ -10,7 +10,6 @@ public:
     VarString* projectFile;
     _Array<Inherits>* inherits;
     _Array<string>* classes;
-    size_t sourceIndentLevel;
     SourceVisitor();
     virtual bool openProgram(Program* program);
     virtual bool openCompilationUnit(CompilationUnit* compilationUnit);
@@ -23,7 +22,7 @@ public:
     virtual bool openEnumDeclaration(EnumDeclaration* enumDeclaration);
     virtual void closeClassDeclaration(ClassDeclaration* classDeclaration);
     virtual bool openConstructorDeclaration(ConstructorDeclaration* constructorDeclaration);
-    virtual void closeConstructorDeclaration(ConstructorDeclaration* initializerDeclaration);
+    virtual void closeConstructorDeclaration(ConstructorDeclaration* constructorDeclaration);
     virtual bool openCodeBlock(CodeBlock* codeBlock);
     virtual bool localAllocations(CodeBlock* codeBlock);
     virtual FunctionCall* getFunctionCall(PatternInitializer* patternInitializer);
@@ -45,8 +44,8 @@ public:
     virtual bool openThrowsClause(ThrowsClause* throwsClause);
     virtual bool openEnumMember(EnumMember* enumMember);
     virtual void closeEnumMember(EnumMember* enumMember);
-    virtual size_t getIndentSourceLevel(SyntaxNode* syntaxNode);
-    virtual void indentSource(size_t level);
+    virtual size_t level(SyntaxNode* syntaxNode);
+    virtual void indent(size_t level);
     virtual void collectDerivedClasses(_Array<string>* derivedClasses, string* className);
     virtual void appendDerivedClasses(_Array<string>* derivedClasses, _Array<string>* inheritors);
     virtual bool openPrefixExpression(PrefixExpression* prefixExpression);

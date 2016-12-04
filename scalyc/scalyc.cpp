@@ -50,57 +50,57 @@ int main(int argc, char** argv) {
 namespace scalyc {
 
 FileError* _main(_Page* _ep,  _Array<string>* arguments) {
-_Region _rp; _Page* _p = _rp.get();
+    _Region _rp; _Page* _p = _rp.get();
 
-auto _options_result = Options::parseArguments(_p, _p, arguments);
-Options* options = nullptr;
-if (_options_result.succeeded()) {
-    options = _options_result.getResult();
-}
-else if (_options_result._getErrorCode() == _OptionsErrorCode_invalidOption) {
-    {
-        print(_ep, "Invalid option.\n");
-        return nullptr;
+    auto _options_result = Options::parseArguments(_p, _p, arguments);
+    Options* options = nullptr;
+    if (_options_result.succeeded()) {
+        options = _options_result.getResult();
     }
-}
-else if (_options_result._getErrorCode() == _OptionsErrorCode_noOutputOption) {
-    {
-        print(_ep, "No output option.\n");
-        return nullptr;
+    else if (_options_result._getErrorCode() == _OptionsErrorCode_invalidOption) {
+        {
+            print(_ep, "Invalid option.\n");
+            return nullptr;
+        }
     }
-}
-else if (_options_result._getErrorCode() == _OptionsErrorCode_noFilesToCompile) {
-    {
-        print(_ep, "No files to compile.\n");
-        return nullptr;
+    else if (_options_result._getErrorCode() == _OptionsErrorCode_noOutputOption) {
+        {
+            print(_ep, "No output option.\n");
+            return nullptr;
+        }
     }
-}
-auto _Compiler_error = Compiler::compileFiles(_p, options);
-if (_Compiler_error) {
-    switch (_Compiler_error->_getErrorCode()) {
-        case _CompilerErrorCode_fileNotFound:
+    else if (_options_result._getErrorCode() == _OptionsErrorCode_noFilesToCompile) {
+        {
+            print(_ep, "No files to compile.\n");
+            return nullptr;
+        }
+    }
+    auto _Compiler_error = Compiler::compileFiles(_p, options);
+    if (_Compiler_error) {
+        switch (_Compiler_error->_getErrorCode()) {
+            case _CompilerErrorCode_fileNotFound:
         {
             _CompilerError_fileNotFound* file = _Compiler_error->get_fileNotFound();
-            {
-                print(_ep, "File ");
-                print(_ep, file->file);
-                print(_ep, " not found.\n");
-                return nullptr;
-            }
-            break;
-        }
-        default:
         {
-            {
-                print(_ep, "Compiler error.\n");
-                return nullptr;
+            print(_ep, "File ");
+            print(_ep, file->file);
+            print(_ep, " not found.\n");
+            return nullptr;
+        }
+        break;
             }
-            break;
+            default:
+            {
+                {
+            print(_ep, "Compiler error.\n");
+            return nullptr;
+        }
+        break;
+            }
         }
     }
-}
 
-return nullptr;
+    return nullptr;
 
 }
 

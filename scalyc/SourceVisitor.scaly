@@ -7,9 +7,6 @@ class SourceVisitor extends CppVisitor {
     mutable inherits: Inherits[]
     mutable classes: string[]
 
-    // indent level
-    mutable sourceIndentLevel: number
-
     constructor() {
 
         // null constructor of mutable members does not work yet
@@ -53,7 +50,6 @@ class SourceVisitor extends CppVisitor {
     function openCompilationUnit(compilationUnit: CompilationUnit): bool {
 
         moduleName = compilationUnit.fileName
-        sourceIndentLevel = 0
 
         if !(compilationUnit.parent is Program)
             return(false)
@@ -104,7 +100,7 @@ class SourceVisitor extends CppVisitor {
         sourceFile.append(" {\n\n")
         
         if isTopLevelFile(compilationUnit)
-            sourceFile.append("FileError* _main(_Page* _ep,  _Array<string>* arguments) {\n_Region _rp; _Page* _p = _rp.get();\n\n")
+            sourceFile.append("FileError* _main(_Page* _ep,  _Array<string>* arguments) {\n    _Region _rp; _Page* _p = _rp.get();\n\n")
 
         true
     }
@@ -132,7 +128,7 @@ class SourceVisitor extends CppVisitor {
                     let simpleExpression: SimpleExpression = statement as SimpleExpression
                     let primaryExpression: PrimaryExpression = simpleExpression.prefixExpression.expression.primaryExpression
                     if (!(primaryExpression is ReturnExpression)) && (!(primaryExpression is LiteralExpression))
-                        sourceFile.append("\nreturn nullptr;\n")
+                        sourceFile.append("\n    return nullptr;\n")
                 }
             }
 
@@ -246,20 +242,22 @@ class SourceVisitor extends CppVisitor {
         true
     }
 
-    function closeConstructorDeclaration(initializerDeclaration: ConstructorDeclaration) {
+    function closeConstructorDeclaration(constructorDeclaration: ConstructorDeclaration) {
         sourceFile.append("\n")
     }
 
     function openCodeBlock(codeBlock: CodeBlock): bool {
 
-        if (codeBlock.parent is CaseContent) || (codeBlock.parent is CodeBlock)
-            indentSource(sourceIndentLevel)
+        if codeBlock.parent is CodeBlock
+            indent(level(codeBlock) - 1)
 
+        if codeBlock.parent is CaseContent
+            indent(level(codeBlock) - 1)
+            
         sourceFile.append("{\n")
-        sourceIndentLevel++
 
         if localAllocations(codeBlock) {
-            indentSource(sourceIndentLevel)
+            indent(level(codeBlock))
             sourceFile.append("_Region _region; _Page* _p = _region.get();\n")
         }
 
@@ -323,13 +321,12 @@ class SourceVisitor extends CppVisitor {
         if codeBlock.parent is FunctionDeclaration {
             let functionDeclaration: FunctionDeclaration = codeBlock.parent as FunctionDeclaration
             if (functionDeclaration.signature.throwsClause != null) && (functionDeclaration.signature.result == null) {
-                indentSource(sourceIndentLevel)
+                indent(level(codeBlock))
                 sourceFile.append("return nullptr;\n")
             }
         }
  
-        sourceIndentLevel--
-        indentSource(sourceIndentLevel)
+        indent(level(codeBlock) - 1)
         sourceFile.append("}\n")
         if codeBlock.parent is FunctionDeclaration
             sourceFile.append("\n")
@@ -339,7 +336,7 @@ class SourceVisitor extends CppVisitor {
 
         let statement: Statement = simpleExpression as Statement
         if statement.parent is CodeBlock || statement.parent is CaseContent || statement.parent is CompilationUnit
-            indentSource(sourceIndentLevel)
+            indent(level(simpleExpression))
 
         // Prepend a return if this expression is the only one of a function
         if statement.parent is FunctionDeclaration {
@@ -393,11 +390,11 @@ class SourceVisitor extends CppVisitor {
                             sourceFile.append("if (")
                             sourceFile.append(memberName)
                             sourceFile.append(" != nullptr)\n")
-                            this.indentSource(sourceIndentLevel)
+                            this.indent(level(simpleExpression))
                             sourceFile.append("    ")
                             sourceFile.append(memberName)
                             sourceFile.append("->getPage()->clear();\n")
-                            this.indentSource(sourceIndentLevel)
+                            this.indent(level(simpleExpression))
                         }
                     }
                 }
@@ -435,6 +432,7 @@ class SourceVisitor extends CppVisitor {
                                 let postfixExpression: PostfixExpression = (functionCall.parent) as PostfixExpression
                                 if postfixExpression.primaryExpression is IdentifierExpression {
                                     let identifierExpression: IdentifierExpression = (postfixExpression.primaryExpression) as IdentifierExpression
+
                                     // Fix when print is recognized as external function
                                     if identifierExpression.name.equals("print") {
                                         sourceFile.append("{\n    auto _File_error = ")
@@ -526,7 +524,7 @@ class SourceVisitor extends CppVisitor {
     function openBindingInitializer(bindingInitializer: BindingInitializer): bool {
 
         if bindingInitializer.parent.parent is CodeBlock || bindingInitializer.parent.parent is CaseContent || bindingInitializer.parent.parent is CompilationUnit
-            indentSource(sourceIndentLevel)
+            indent(level(bindingInitializer))
 
         true
     }
@@ -735,25 +733,31 @@ class SourceVisitor extends CppVisitor {
         }
     }
 
-    function getIndentSourceLevel(syntaxNode: SyntaxNode): number {
-        mutable level: number = 0
-        
-        while syntaxNode != null {
+    function level(syntaxNode: SyntaxNode): number {
 
-            if syntaxNode is CodeBlock
-            || syntaxNode is CatchClause
-            || syntaxNode is ForExpression
-            || syntaxNode is CurliedSwitchBody
-            || syntaxNode is CaseContent
+        mutable level: number = 0
+        mutable node: SyntaxNode = syntaxNode
+        
+        while node != null {
+
+            if node is CodeBlock
+            || node is CompilationUnit
+            || node is ForExpression
+            || node is CatchClause
+            || node is CurliedSwitchBody
+            || node is CaseContent
                 level++
+
+            if node is ClassDeclaration
+                level--
             
-            syntaxNode = syntaxNode.parent
+            node = node.parent
         }
         
         level
     }
 
-    function indentSource(level: number) {
+    function indent(level: number) {
         var i: number = 0
         while i < level {
             sourceFile.append("    ")
@@ -964,25 +968,25 @@ class SourceVisitor extends CppVisitor {
                         let catchClauses: CatchClause[] = functionCall.catchClauses
                         if catchClauses[0] == catchClause {
                             sourceFile.append(";\n")
-                            indentSource(sourceIndentLevel)
+                            indent(level(catchClause) - 1)
                             identifierPattern.annotationForType.accept(this)
                             sourceFile.append(" ")
                             sourceFile.append(identifierPattern.identifier)
                             sourceFile.append(" = nullptr;\n")
-                            indentSource(sourceIndentLevel)
+                            indent(level(catchClause) - 1)
                             sourceFile.append("if (_")
                             sourceFile.append(identifierPattern.identifier)
                             sourceFile.append("_result.succeeded()) {\n")
-                            indentSource(sourceIndentLevel)
+                            indent(level(catchClause) - 1)
                             sourceFile.append("    ")
                             sourceFile.append(identifierPattern.identifier)
                             sourceFile.append(" = _")
                             sourceFile.append(identifierPattern.identifier)                    
                             sourceFile.append("_result.getResult();\n")
-                            indentSource(sourceIndentLevel)
+                            indent(level(catchClause) - 1)
                             sourceFile.append("}\n")
                         }
-                        indentSource(sourceIndentLevel)
+                        indent(level(catchClause) - 1)
                         sourceFile.append("else")
                         if catchClause.catchPattern is IdentifierCatchPattern {
                             let identifierCatchPattern: IdentifierCatchPattern = (catchClause.catchPattern) as IdentifierCatchPattern
@@ -1007,7 +1011,7 @@ class SourceVisitor extends CppVisitor {
                                         let element: TuplePatternElement = elements[0]
                                         if element.pattern is IdentifierPattern {
                                             let pattern: IdentifierPattern = (element.pattern) as IdentifierPattern
-                                            indentSource(sourceIndentLevel)
+                                            indent(level(catchClause) - 1)
                                             sourceFile.append("    auto ")
                                             sourceFile.append(pattern.identifier)                    
                                             sourceFile.append(" = _")
@@ -1019,8 +1023,7 @@ class SourceVisitor extends CppVisitor {
                             }
                         }
                         
-                        sourceIndentLevel++
-                        indentSource(sourceIndentLevel)
+                        indent(level(catchClause))
                         if catchClause.expression is SimpleExpression {
                             let simpleExpression: SimpleExpression = (catchClause.expression) as SimpleExpression
                             let primaryExpression: PrimaryExpression = simpleExpression.prefixExpression.expression.primaryExpression
@@ -1032,8 +1035,7 @@ class SourceVisitor extends CppVisitor {
                         catchClause.expression.accept(this)
                         if catchClause.expression is SimpleExpression
                             sourceFile.append(";\n")
-                        sourceIndentLevel--
-                        indentSource(sourceIndentLevel)
+                        indent(level(catchClause) - 1)
                         sourceFile.append("}\n")
                     }
                 }
@@ -1044,18 +1046,16 @@ class SourceVisitor extends CppVisitor {
                     let catchClauses: CatchClause[] = functionCall.catchClauses
                     if catchClauses[0] == catchClause {
                         sourceFile.append(";\n")
-                        indentSource(sourceIndentLevel)
+                        indent(level(catchClause) - 1)
                         sourceFile.append("if (_")
                         sourceFile.append(identifierExpression.name)
                         sourceFile.append("_error) {\n")
-                        sourceIndentLevel++
-                        indentSource(sourceIndentLevel)
+                        indent(level(catchClause))
                         sourceFile.append("switch (_")
                         sourceFile.append(identifierExpression.name)
                         sourceFile.append("_error->_getErrorCode()) {\n")
-                        sourceIndentLevel++
                     }
-                    indentSource(sourceIndentLevel)
+                    indent(level(catchClause) + 1)
                     if catchClause.catchPattern is IdentifierCatchPattern {
                         sourceFile.append("case _")
                         let identifierCatchPattern: IdentifierCatchPattern = (catchClause.catchPattern) as IdentifierCatchPattern
@@ -1064,9 +1064,9 @@ class SourceVisitor extends CppVisitor {
                         if identifierCatchPattern.member != null {
                             sourceFile.append(identifierCatchPattern.member.member)
                             sourceFile.append(":\n")
-                            indentSource(sourceIndentLevel)
+                            indent(level(catchClause))
                             sourceFile.append("{\n")
-                            indentSource(sourceIndentLevel)
+                            indent(level(catchClause))
                             sourceFile.append("    _")
                             sourceFile.append(identifierCatchPattern.name)
                             sourceFile.append("_")
@@ -1095,12 +1095,12 @@ class SourceVisitor extends CppVisitor {
                     }
                     if catchClause.catchPattern is WildCardCatchPattern {
                         sourceFile.append("default:\n")
-                        indentSource(sourceIndentLevel)
-                        sourceFile.append("{\n")
+                        indent(level(catchClause) + 1)
+                        sourceFile.append("{\n        ")
+                        //indent(level(catchClause))
                     }
                     
-                    sourceIndentLevel++
-                    indentSource(sourceIndentLevel)
+                    indent(level(catchClause))
                     catchClause.expression.accept(this)
                     {
                         var insertBreak: bool = true
@@ -1112,21 +1112,19 @@ class SourceVisitor extends CppVisitor {
                             }
                         }
                         if insertBreak {
-                            indentSource(sourceIndentLevel)
+                            indent(level(catchClause))
                             sourceFile.append("break;\n")
                         }
                     }
-                    sourceIndentLevel--
-                    indentSource(sourceIndentLevel)
+
+                    indent(level(catchClause) + 1)
                     sourceFile.append("}\n")
                     
                     let clauses: CatchClause[] = functionCall.catchClauses
                     if clauses[functionCall.catchClauses.length() - 1] == catchClause {
-                        sourceIndentLevel--
-                        indentSource(sourceIndentLevel)
+                        indent(level(catchClause))
                         sourceFile.append("}\n")
-                        sourceIndentLevel--
-                        indentSource(sourceIndentLevel)
+                        indent(level(catchClause) - 1)
                         sourceFile.append("}\n")
                     }
                 }
@@ -1347,7 +1345,7 @@ class SourceVisitor extends CppVisitor {
         sourceFile.append(")")
         if ifExpression.consequent is SimpleExpression {
             sourceFile.append("\n    ")
-            indentSource(sourceIndentLevel)
+            indent(level(ifExpression))
             ifExpression.consequent.accept(this)
             sourceFile.append(";\n")
         }
@@ -1382,7 +1380,7 @@ class SourceVisitor extends CppVisitor {
         pattern.accept(this)    
         if pattern is IdentifierPattern {
             sourceFile.append(" = nullptr;\n")
-            indentSource(sourceIndentLevel)
+            indent(level(forExpression) - 1)
             sourceFile.append("size_t _")
             let expression: Expression = forExpression.expression
             if expression is SimpleExpression {
@@ -1394,24 +1392,22 @@ class SourceVisitor extends CppVisitor {
                     sourceFile.append("_length = ")
                     sourceFile.append(collectionName)
                     sourceFile.append("->length();\n")
-                    indentSource(sourceIndentLevel)
+                    indent(level(forExpression) - 1)
                     sourceFile.append("for (size_t _i = 0; _i < _")
                     sourceFile.append(collectionName)
                     sourceFile.append("_length; _i++) {\n")
-                    sourceIndentLevel++
-                    indentSource(sourceIndentLevel)
+                    indent(level(forExpression))
                     if forExpression.pattern is IdentifierPattern {
                         let identifierPattern: IdentifierPattern = (forExpression.pattern) as IdentifierPattern
                         sourceFile.append(identifierPattern.identifier)
                         sourceFile.append(" = *(*")
                         sourceFile.append(collectionName)
                         sourceFile.append(")[_i];\n")
-                        indentSource(sourceIndentLevel)
+                        indent(level(forExpression))
                         forExpression.code.accept(this)
                         if forExpression.code is SimpleExpression
                             sourceFile.append(";\n")
-                        sourceIndentLevel--
-                        indentSource(sourceIndentLevel)
+                        indent(level(forExpression) - 1)
                         sourceFile.append("}\n")
                     }
                 }
@@ -1426,7 +1422,7 @@ class SourceVisitor extends CppVisitor {
         sourceFile.append(")")
         if whileExpression.code is SimpleExpression {
             sourceFile.append("\n    ")
-            indentSource(sourceIndentLevel)
+            indent(level(whileExpression))
             whileExpression.code.accept(this)
             sourceFile.append(";\n")
         }
@@ -1442,7 +1438,7 @@ class SourceVisitor extends CppVisitor {
         sourceFile.append("do")
         if doExpression.code is SimpleExpression {
             sourceFile.append("\n    ")
-            indentSource(sourceIndentLevel)
+            indent(level(doExpression))
             doExpression.code.accept(this)
             sourceFile.append(";")
         }
@@ -1450,7 +1446,7 @@ class SourceVisitor extends CppVisitor {
             sourceFile.append(" ")
             doExpression.code.accept(this)
         }
-        indentSource(sourceIndentLevel)
+        indent(level(doExpression))
         sourceFile.append("while (")
         doExpression.condition.accept(this)
         sourceFile.append(")")
@@ -2008,11 +2004,11 @@ class SourceVisitor extends CppVisitor {
     }
 
     function openElseClause(elseClause: ElseClause): bool {
-        indentSource(sourceIndentLevel)
+        indent(level(elseClause))
         sourceFile.append("else")
         if elseClause.alternative is SimpleExpression {
             sourceFile.append("\n    ")
-            indentSource(sourceIndentLevel)
+            indent(level(elseClause))
             elseClause.alternative.accept(this)
         }
         else {
@@ -2025,19 +2021,17 @@ class SourceVisitor extends CppVisitor {
 
     function openCurliedSwitchBody(curliedSwitchBody: CurliedSwitchBody): bool {
         sourceFile.append(") {\n")
-        sourceIndentLevel++
 
         true
     }
 
     function closeCurliedSwitchBody(curliedSwitchBody: CurliedSwitchBody) {
-        sourceIndentLevel--
-        indentSource(sourceIndentLevel)
+        indent(level(curliedSwitchBody) - 1)
         sourceFile.append("}\n")
     }
 
     function openSwitchCase(switchCase: SwitchCase): bool {
-        indentSource(sourceIndentLevel)
+        indent(level(switchCase))
         true
     }
 
@@ -2125,7 +2119,6 @@ class SourceVisitor extends CppVisitor {
 
     function openCaseContent(caseContent: CaseContent): bool {
         sourceFile.append("{\n")
-        sourceIndentLevel++
 
         true
     }
@@ -2135,14 +2128,14 @@ class SourceVisitor extends CppVisitor {
         if caseContent.parent is SwitchCase {
             let switchCase: SwitchCase = caseContent.parent as SwitchCase
             if !switchCase.label is DefaultCaseLabel {
-                indentSource(sourceIndentLevel)
+                indent(level(caseContent))
                 sourceFile.append("break;\n")
             }
             else
                 additionalLineFeed = false
         }
-        sourceIndentLevel--
-        indentSource(sourceIndentLevel)
+
+        indent(level(caseContent) - 1)
         sourceFile.append("}\n")
         if additionalLineFeed
             sourceFile.append("\n")
