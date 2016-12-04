@@ -1788,11 +1788,12 @@ bool SourceVisitor::openBreakExpression(BreakExpression* breakExpression) {
     return true;
 }
 
-string* SourceVisitor::getPage(_Page* _rp, SyntaxNode* syntaxNode) {
-    SyntaxNode* node = syntaxNode;
+string* SourceVisitor::getPage(_Page* _rp, SyntaxNode* node) {
     while (node != nullptr) {
         if (node->_isReturnExpression())
             return new(_rp) string("_rp");
+        if (node->_isThrowExpression())
+            return new(_rp) string("_ep");
         node = node->parent;
     }
     return nullptr;
@@ -1811,35 +1812,30 @@ bool SourceVisitor::openConstructorCall(ConstructorCall* constructorCall) {
                 sourceFile->append("_rp");
             }
             else {
-                if (inThrow(constructorCall)) {
-                    sourceFile->append("_ep");
-                }
-                else {
-                    if (inAssignment(constructorCall)) {
-                        Assignment* assignment = getAssignment(constructorCall);
-                        if (assignment != nullptr) {
-                            ClassDeclaration* classDeclaration = getClassDeclaration(assignment);
-                            string* memberName = getMemberIfCreatingObject(assignment);
-                            if (memberName != nullptr) {
-                                if (isVariableMember(memberName, classDeclaration)) {
-                                    if (!inConstructor(assignment)) {
-                                        sourceFile->append(memberName);
-                                        sourceFile->append("->");
-                                    }
-                                    sourceFile->append("_getPage()");
-                                    if (inConstructor(assignment)) {
-                                        sourceFile->append("->allocateExclusivePage()");
-                                    }
+                if (inAssignment(constructorCall)) {
+                    Assignment* assignment = getAssignment(constructorCall);
+                    if (assignment != nullptr) {
+                        ClassDeclaration* classDeclaration = getClassDeclaration(assignment);
+                        string* memberName = getMemberIfCreatingObject(assignment);
+                        if (memberName != nullptr) {
+                            if (isVariableMember(memberName, classDeclaration)) {
+                                if (!inConstructor(assignment)) {
+                                    sourceFile->append(memberName);
+                                    sourceFile->append("->");
                                 }
-                                else {
-                                    sourceFile->append("_getPage()");
+                                sourceFile->append("_getPage()");
+                                if (inConstructor(assignment)) {
+                                    sourceFile->append("->allocateExclusivePage()");
                                 }
+                            }
+                            else {
+                                sourceFile->append("_getPage()");
                             }
                         }
                     }
-                    else {
-                        sourceFile->append("_p");
-                    }
+                }
+                else {
+                    sourceFile->append("_p");
                 }
             }
         }
