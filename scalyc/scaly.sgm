@@ -411,7 +411,7 @@
         <content link = dollar
 
     <syntax id = Local                                          base = LifeTime
-        <content link = tilde
+        <content link = at
         <content identifier                                     property = location
 
     <syntax id = Reference                                      base = LifeTime

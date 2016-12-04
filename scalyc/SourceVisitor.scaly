@@ -2326,7 +2326,7 @@ class SourceVisitor extends CppVisitor {
     }
 
     function registerInheritance(className: string, baseName: string) {
-        var inherit: Inherits~inherits = null
+        var inherit: Inherits@inherits = null
         for inh: Inherits in inherits {
             if inh.name.equals(baseName)
              inherit = inh

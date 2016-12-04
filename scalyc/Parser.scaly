@@ -4601,12 +4601,12 @@ class Parser {
 
     function parseLocal(): Local throws ParserError {
         let start: Position$ = lexer.getPreviousPosition()
-        let startTilde1: Position$ = lexer.getPreviousPosition()
-        let successTilde1: bool = lexer.parsePunctuation(tilde)
-        if successTilde1
+        let startAt1: Position$ = lexer.getPreviousPosition()
+        let successAt1: bool = lexer.parsePunctuation(at)
+        if successAt1
             lexer.advance()
         else
-            throw punctuationExpected(new Position(startTilde1), new string(tilde))
+            throw punctuationExpected(new Position(startAt1), new string(at))
 
         let startLocation: Position$ = lexer.getPreviousPosition()
         let location: string = lexer.parseIdentifier()

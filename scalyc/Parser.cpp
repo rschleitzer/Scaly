@@ -5517,12 +5517,12 @@ _Result<Root, ParserError> Parser::parseRoot(_Page* _rp, _Page* _ep) {
 _Result<Local, ParserError> Parser::parseLocal(_Page* _rp, _Page* _ep) {
     _Region _region; _Page* _p = _region.get();
     Position* start = lexer->getPreviousPosition(_p);
-    Position* startTilde1 = lexer->getPreviousPosition(_p);
-    bool successTilde1 = lexer->parsePunctuation(tilde);
-    if (successTilde1)
+    Position* startAt1 = lexer->getPreviousPosition(_p);
+    bool successAt1 = lexer->parsePunctuation(at);
+    if (successAt1)
         lexer->advance();
     else
-        return _Result<Local, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_punctuationExpected(new(_ep) Position(startTilde1), new(_ep) string(tilde))));
+        return _Result<Local, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_punctuationExpected(new(_ep) Position(startAt1), new(_ep) string(at))));
     Position* startLocation = lexer->getPreviousPosition(_p);
     string* location = lexer->parseIdentifier(_rp);
     if ((location != nullptr) && isIdentifier(location))
