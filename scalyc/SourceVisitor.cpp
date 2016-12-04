@@ -1199,6 +1199,15 @@ Assignment* SourceVisitor::getAssignment(SyntaxNode* syntaxNode) {
     return getAssignment(parentNode);
 }
 
+Initializer* SourceVisitor::getInitializer(SyntaxNode* syntaxNode) {
+    if (syntaxNode->_isInitializer())
+        return (Initializer*)syntaxNode;
+    SyntaxNode* parentNode = syntaxNode->parent;
+    if (parentNode == nullptr)
+        return nullptr;
+    return getInitializer(parentNode);
+}
+
 bool SourceVisitor::inRetDeclaration(SyntaxNode* syntaxNode) {
     if (syntaxNode == nullptr)
         return false;
@@ -1835,8 +1844,8 @@ bool SourceVisitor::openConstructorCall(ConstructorCall* constructorCall) {
             }
         }
         else {
-            if (constructorCall->parent->parent->parent->parent->_isAssignment()) {
-                Assignment* assignment = (Assignment*)(constructorCall->parent->parent->parent->parent);
+            Assignment* assignment = getAssignment(constructorCall);
+            if (assignment != nullptr) {
                 ClassDeclaration* classDeclaration = getClassDeclaration(assignment);
                 string* memberName = getMemberIfCreatingObject(assignment);
                 if (memberName != nullptr) {
@@ -1880,7 +1889,8 @@ bool SourceVisitor::openConstructorCall(ConstructorCall* constructorCall) {
                 }
             }
             else {
-                if (constructorCall->parent->parent->parent->parent->_isInitializer()) {
+                Initializer* initializer = getInitializer(constructorCall);
+                if (initializer != nullptr) {
                     if (inReturn(constructorCall) || inRetDeclaration(constructorCall)) {
                         sourceFile->append("_rp");
                     }
@@ -1903,6 +1913,10 @@ bool SourceVisitor::initializerIsBoundOrAssigned(ConstructorCall* initializerCal
         PostfixExpression* postfixExpression = (PostfixExpression*)(initializerCall->parent);
         if ((postfixExpression->parent->parent->parent->_isAssignment()) || (postfixExpression->parent->parent->parent->_isInitializer()))
             return true;
+        if (postfixExpression->parent->parent->parent->parent->parent->_isConstructorCall()) {
+            ConstructorCall* constructorCall = (ConstructorCall*)postfixExpression->parent->parent->parent->parent->parent;
+            return initializerIsBoundOrAssigned(constructorCall);
+        }
     }
     return false;
 }

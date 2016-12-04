@@ -1272,6 +1272,17 @@ class SourceVisitor extends CppVisitor {
         getAssignment(parentNode)
     }
 
+    function getInitializer(syntaxNode: SyntaxNode&): Initializer& {
+        if syntaxNode is Initializer
+            return(syntaxNode as Initializer)
+
+        let parentNode: SyntaxNode = syntaxNode.parent
+        if parentNode == null
+            return(null)
+
+        getInitializer(parentNode)
+    }
+
     function inRetDeclaration(syntaxNode: SyntaxNode): bool {
         if syntaxNode == null
             return(false)
@@ -1938,8 +1949,8 @@ class SourceVisitor extends CppVisitor {
                 }
             }
             else {
-                if constructorCall.parent.parent.parent.parent is Assignment {
-                    let assignment: Assignment = (constructorCall.parent.parent.parent.parent) as Assignment
+                let assignment: Assignment& = getAssignment(constructorCall)
+                if assignment != null {
                     var classDeclaration: ClassDeclaration = getClassDeclaration(assignment)
                     let memberName: string& = getMemberIfCreatingObject(assignment)
                     if memberName != null {
@@ -1983,7 +1994,8 @@ class SourceVisitor extends CppVisitor {
                     }
                 }
                 else {
-                    if constructorCall.parent.parent.parent.parent is Initializer {
+                    let initializer: Initializer& = getInitializer(constructorCall)
+                    if initializer != null {
                         if inReturn(constructorCall) || inRetDeclaration(constructorCall) {
                             sourceFile.append("_rp")
                         }
@@ -2008,7 +2020,11 @@ class SourceVisitor extends CppVisitor {
             let postfixExpression: PostfixExpression = (initializerCall.parent) as PostfixExpression
             if (postfixExpression.parent.parent.parent is Assignment) || (postfixExpression.parent.parent.parent is Initializer)
                 return(true)
+            if postfixExpression.parent.parent.parent.parent.parent is ConstructorCall {
+                let constructorCall: ConstructorCall = postfixExpression.parent.parent.parent.parent.parent as ConstructorCall
+                return(initializerIsBoundOrAssigned(constructorCall))
             }
+        }
 
         false
     }
