@@ -1521,7 +1521,6 @@ public:
     string* dollar;
     string* at;
     string* hash;
-    string* tilde;
     string* ampersand;
 
 };

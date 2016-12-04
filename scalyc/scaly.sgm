@@ -474,7 +474,6 @@
     <punctuation id = dollar            value = "$"
     <punctuation id = at                value = "@"
     <punctuation id = hash              value = "#"
-    <punctuation id = tilde             value = "~"
     <punctuation id = ampersand         value = "&"
 
 </language>

@@ -2175,7 +2175,6 @@ Parser::Parser(string* theFileName, string* text) {
     dollar = new(getPage()) string("$");
     at = new(getPage()) string("@");
     hash = new(getPage()) string("#");
-    tilde = new(getPage()) string("~");
     ampersand = new(getPage()) string("&");
 }
 
