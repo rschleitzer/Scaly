@@ -4623,12 +4623,12 @@ class Parser {
 
     function parseReference(): Reference throws ParserError {
         let start: Position$ = lexer.getPreviousPosition()
-        let startAt1: Position$ = lexer.getPreviousPosition()
-        let successAt1: bool = lexer.parsePunctuation(at)
-        if successAt1
+        let startAmpersand1: Position$ = lexer.getPreviousPosition()
+        let successAmpersand1: bool = lexer.parsePunctuation(ampersand)
+        if successAmpersand1
             lexer.advance()
         else
-            throw punctuationExpected(new Position(startAt1), new string(at))
+            throw punctuationExpected(new Position(startAmpersand1), new string(ampersand))
 
         let age: Literal = lexer.parseLiteral()
         if age != null

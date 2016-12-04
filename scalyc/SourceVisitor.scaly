@@ -288,7 +288,7 @@ class SourceVisitor extends CppVisitor {
         false
     }
 
-    function getFunctionCall(patternInitializer: PatternInitializer@): FunctionCall@ {
+    function getFunctionCall(patternInitializer: PatternInitializer&): FunctionCall& {
         if patternInitializer.initializer != null {
             let expression: Expression = patternInitializer.initializer.expression
             if expression is SimpleExpression {
@@ -385,7 +385,7 @@ class SourceVisitor extends CppVisitor {
                     let binaryOp: BinaryOp = binaryOps[0]
                     if binaryOp is Assignment {
                         let assignment: Assignment = binaryOp as Assignment
-                        let memberName: string@ = getMemberIfCreatingObject(assignment)
+                        let memberName: string& = getMemberIfCreatingObject(assignment)
                         if (memberName != null) && (!inConstructor(assignment)) {
                             sourceFile.append("if (")
                             sourceFile.append(memberName)
@@ -845,8 +845,8 @@ class SourceVisitor extends CppVisitor {
         inThrow(node.parent)
     }
 
-    function getMemberIfCreatingObject(assignment: Assignment@): string@ {
-        let functionName: string@ = getFunctionName(assignment)
+    function getMemberIfCreatingObject(assignment: Assignment&): string& {
+        let functionName: string& = getFunctionName(assignment)
         if functionName == null {
             return(null)
         }
@@ -874,7 +874,7 @@ class SourceVisitor extends CppVisitor {
         null
     }
 
-    function getFunctionName(assignment: Assignment@): string@ {
+    function getFunctionName(assignment: Assignment&): string& {
         if assignment.expression is SimpleExpression {
             let simpleExpression: SimpleExpression = (assignment.expression) as SimpleExpression
             let prefixExpression: PrefixExpression = simpleExpression.prefixExpression
@@ -917,7 +917,7 @@ class SourceVisitor extends CppVisitor {
         false
     }
 
-    function getClassDeclaration(node: SyntaxNode@): ClassDeclaration@ {
+    function getClassDeclaration(node: SyntaxNode&): ClassDeclaration& {
         if node is ClassDeclaration
             return(node as ClassDeclaration)
 
@@ -1134,7 +1134,7 @@ class SourceVisitor extends CppVisitor {
         false
     }
 
-    function getIdentifierExpression(postfixExpression: PostfixExpression@): IdentifierExpression@ {
+    function getIdentifierExpression(postfixExpression: PostfixExpression&): IdentifierExpression& {
         if postfixExpression.parent.parent.parent is CodeBlock || postfixExpression.parent.parent.parent is CompilationUnit {
             if postfixExpression.parent is PrefixExpression {
                 let prefixExpression: PrefixExpression = (postfixExpression.parent) as PrefixExpression
@@ -1147,7 +1147,7 @@ class SourceVisitor extends CppVisitor {
         null
     }
 
-    function getErrorType(catchClause: CatchClause@): string@ {
+    function getErrorType(catchClause: CatchClause&): string& {
         if catchClause.bindingPattern != null {
             if catchClause.bindingPattern.elements != null {
                 if catchClause.bindingPattern.elements.length() == 1 {
@@ -1261,7 +1261,7 @@ class SourceVisitor extends CppVisitor {
         inAssignment(parentNode)
     }
 
-    function getAssignment(syntaxNode: SyntaxNode@): Assignment@ {
+    function getAssignment(syntaxNode: SyntaxNode&): Assignment& {
         if syntaxNode is Assignment
             return(syntaxNode as Assignment)
 
@@ -1468,7 +1468,7 @@ class SourceVisitor extends CppVisitor {
                     if !isClass(identifierExpression.name) {
                         if postfixExpression.parent.parent.parent is Assignment {
                             let assignment: Assignment = (postfixExpression.parent.parent.parent) as Assignment
-                            let member: string@ = getMemberIfCreatingObject(assignment)
+                            let member: string& = getMemberIfCreatingObject(assignment)
                             if member != null {
                                 var classDeclaration: ClassDeclaration = getClassDeclaration(assignment)
                                 if isVariableMember(member, classDeclaration) {
@@ -1495,7 +1495,7 @@ class SourceVisitor extends CppVisitor {
                         parameterInserted = true
                     }
                     else {
-                        let identifier: string@ = getLocalPage(functionCall)
+                        let identifier: string& = getLocalPage(functionCall)
                         if identifier != null {
                             sourceFile.append(identifier)
                             sourceFile.append("->getPage()")
@@ -1546,7 +1546,7 @@ class SourceVisitor extends CppVisitor {
         isRootBinding(bindingInitializer)
     }
     
-    function getLocalPage(functionCall: FunctionCall@): string@ {
+    function getLocalPage(functionCall: FunctionCall&): string& {
         var bindingInitializer: BindingInitializer = getBindingInitializer(functionCall) 
         if bindingInitializer == null
             return(null)
@@ -1621,7 +1621,7 @@ class SourceVisitor extends CppVisitor {
         false
     }
 
-    function getBindingInitializer(functionCall: FunctionCall@): BindingInitializer@ {
+    function getBindingInitializer(functionCall: FunctionCall&): BindingInitializer& {
         if functionCall.parent is PostfixExpression {
             let postfixExpression: PostfixExpression = (functionCall.parent) as PostfixExpression
             if postfixExpression.parent.parent.parent is Initializer {
@@ -1802,7 +1802,7 @@ class SourceVisitor extends CppVisitor {
         false
     }
 
-    function getCatchClause(syntaxNode: SyntaxNode@): CatchClause@ {
+    function getCatchClause(syntaxNode: SyntaxNode&): CatchClause& {
         if syntaxNode is CatchClause
             return(syntaxNode as CatchClause)
 
@@ -1871,7 +1871,7 @@ class SourceVisitor extends CppVisitor {
         false
     }
 
-    function getFunctionDeclaration(syntaxNode: SyntaxNode@): FunctionDeclaration@ {
+    function getFunctionDeclaration(syntaxNode: SyntaxNode&): FunctionDeclaration& {
         if syntaxNode is FunctionDeclaration
             return(syntaxNode as FunctionDeclaration)
 
@@ -1902,7 +1902,7 @@ class SourceVisitor extends CppVisitor {
                         var assignment: Assignment = getAssignment(constructorCall)
                         if assignment != null {
                             var classDeclaration: ClassDeclaration = getClassDeclaration(assignment)
-                            let memberName: string@ = getMemberIfCreatingObject(assignment)
+                            let memberName: string& = getMemberIfCreatingObject(assignment)
                             if memberName != null {
                                 if isVariableMember(memberName, classDeclaration) {
                                     if !inConstructor(assignment) {
@@ -1930,7 +1930,7 @@ class SourceVisitor extends CppVisitor {
             if constructorCall.parent.parent.parent.parent is Assignment {
                 let assignment: Assignment = (constructorCall.parent.parent.parent.parent) as Assignment
                 var classDeclaration: ClassDeclaration = getClassDeclaration(assignment)
-                let memberName: string@ = getMemberIfCreatingObject(assignment)
+                let memberName: string& = getMemberIfCreatingObject(assignment)
                 if memberName != null {
                     if isVariableMember(memberName, classDeclaration) {
                         if !inConstructor(assignment) {

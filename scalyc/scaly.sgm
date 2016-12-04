@@ -415,7 +415,7 @@
         <content identifier                                     property = location
 
     <syntax id = Reference                                      base = LifeTime
-        <content link = at
+        <content link = ampersand
         <content literal                               optional property = age
 
     <syntax id = Thrown                                         base = LifeTime

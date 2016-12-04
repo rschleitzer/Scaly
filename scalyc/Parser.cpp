@@ -5537,12 +5537,12 @@ _Result<Local, ParserError> Parser::parseLocal(_Page* _rp, _Page* _ep) {
 _Result<Reference, ParserError> Parser::parseReference(_Page* _rp, _Page* _ep) {
     _Region _region; _Page* _p = _region.get();
     Position* start = lexer->getPreviousPosition(_p);
-    Position* startAt1 = lexer->getPreviousPosition(_p);
-    bool successAt1 = lexer->parsePunctuation(at);
-    if (successAt1)
+    Position* startAmpersand1 = lexer->getPreviousPosition(_p);
+    bool successAmpersand1 = lexer->parsePunctuation(ampersand);
+    if (successAmpersand1)
         lexer->advance();
     else
-        return _Result<Reference, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_punctuationExpected(new(_ep) Position(startAt1), new(_ep) string(at))));
+        return _Result<Reference, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_punctuationExpected(new(_ep) Position(startAmpersand1), new(_ep) string(ampersand))));
     Literal* age = lexer->parseLiteral(_rp);
     if (age != nullptr)
         lexer->advance();
