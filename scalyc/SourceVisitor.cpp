@@ -1788,6 +1788,16 @@ bool SourceVisitor::openBreakExpression(BreakExpression* breakExpression) {
     return true;
 }
 
+string* SourceVisitor::getPage(_Page* _rp, SyntaxNode* syntaxNode) {
+    SyntaxNode* node = syntaxNode;
+    while (node != nullptr) {
+        if (node->_isReturnExpression())
+            return new(_rp) string("_rp");
+        node = node->parent;
+    }
+    return nullptr;
+}
+
 bool SourceVisitor::openConstructorCall(ConstructorCall* constructorCall) {
     sourceFile->append("new(");
     if (!initializerIsBoundOrAssigned(constructorCall)) {
