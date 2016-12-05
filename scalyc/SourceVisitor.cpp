@@ -3,8 +3,6 @@ using namespace scaly;
 namespace scalyc {
 
 SourceVisitor::SourceVisitor() {
-    sourceFile = new(_getPage()->allocateExclusivePage()) VarString();
-    projectFile = new(_getPage()->allocateExclusivePage()) VarString();
     inherits = new(_getPage()->allocateExclusivePage()) _Array<Inherits>();
     classes = new(_getPage()->allocateExclusivePage()) _Array<string>();
 }
@@ -45,7 +43,7 @@ bool SourceVisitor::openCompilationUnit(CompilationUnit* compilationUnit) {
     string* programName = ((Program*)(compilationUnit->parent))->name;
     if (sourceFile != nullptr)
         sourceFile->_getPage()->clear();
-    sourceFile = new(sourceFile == nullptr ? _getPage() : sourceFile->_getPage()) VarString(0, 4096);
+    sourceFile = new(sourceFile == nullptr ? _getPage() : sourceFile->_getPage()) VarString();
     sourceFile->append("#include \"");
     sourceFile->append(programName);
     sourceFile->append(".h\"\nusing namespace scaly;\n");
