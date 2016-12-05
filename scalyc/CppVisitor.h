@@ -14,12 +14,16 @@ public:
 
 class CppVisitor : public Visitor {
 public:
+    _Array<Inherits>* inherits;
+    _Array<string>* classes;
     string* moduleName;
     virtual void execute(Program* program);
     virtual bool hasArrayPostfix(Type* type);
     virtual bool isClass(string* name) = 0;
     virtual void appendCppType(VarString* s, Type* type);
     virtual void appendCppTypeName(VarString* s, Type* type);
+    virtual void collectDerivedClasses(_Array<string>* derivedClasses, string* className);
+    virtual void appendDerivedClasses(_Array<string>* derivedClasses, _Array<string>* inheritors);
 
     virtual bool _isCppVisitor();
     virtual bool _isHeaderVisitor();

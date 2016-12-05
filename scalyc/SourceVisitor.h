@@ -8,8 +8,6 @@ class SourceVisitor : public CppVisitor {
 public:
     VarString* sourceFile;
     VarString* projectFile;
-    _Array<Inherits>* inherits;
-    _Array<string>* classes;
     SourceVisitor();
     virtual bool openProgram(Program* program);
     virtual bool openCompilationUnit(CompilationUnit* compilationUnit);
@@ -46,8 +44,6 @@ public:
     virtual void closeEnumMember(EnumMember* enumMember);
     virtual size_t level(SyntaxNode* syntaxNode);
     virtual void indent(size_t level);
-    virtual void collectDerivedClasses(_Array<string>* derivedClasses, string* className);
-    virtual void appendDerivedClasses(_Array<string>* derivedClasses, _Array<string>* inheritors);
     virtual bool openPrefixExpression(PrefixExpression* prefixExpression);
     virtual bool openPostfixExpression(PostfixExpression* postfixExpression);
     virtual bool openBinaryOperation(BinaryOperation* binaryOperation);

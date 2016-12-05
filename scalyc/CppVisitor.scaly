@@ -14,6 +14,10 @@ class Inherits {
 
 class CppVisitor extends Visitor {
 
+    // Some rudimentary semantics cache
+    mutable inherits: Inherits[]
+    mutable classes: string[]
+
     // Needed during building one module
     mutable moduleName: string
 
@@ -65,5 +69,19 @@ class CppVisitor extends Visitor {
         }
 
         s.append(typeName)
+    }
+
+    function collectDerivedClasses(mutable derivedClasses: string[], className: string) {
+        for inherit: Inherits in inherits {
+            if inherit.name.equals(className)
+                appendDerivedClasses(derivedClasses, inherit.inheritors)
+        }
+    }
+
+    function appendDerivedClasses(mutable derivedClasses: string[], mutable inheritors: string[]) {
+        for inheritor: string in inheritors {
+            derivedClasses.push(inheritor)
+            collectDerivedClasses(derivedClasses, inheritor)
+        }
     }
 }

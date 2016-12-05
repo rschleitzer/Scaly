@@ -3,10 +3,6 @@ class HeaderVisitor extends CppVisitor {
     mutable headerFile: VarString
     mutable mainHeaderFile: VarString
 
-    // Some rudimentary semantics cache
-    mutable inherits: Inherits[]
-    mutable classes: string[]
-
     constructor() {
 
         // null constructor of mutable members does not work yet
@@ -493,20 +489,6 @@ class HeaderVisitor extends CppVisitor {
             }
 
             headerFile.append("};\n")
-        }
-    }
-
-    function collectDerivedClasses(mutable derivedClasses: string[], className: string) {
-        for inherit: Inherits in inherits {
-            if inherit.name.equals(className)
-                appendDerivedClasses(derivedClasses, inherit.inheritors)
-        }
-    }
-
-    function appendDerivedClasses(mutable derivedClasses: string[], mutable inheritors: string[]) {
-        for inheritor: string in inheritors {
-            derivedClasses.push(inheritor)
-            collectDerivedClasses(derivedClasses, inheritor)
         }
     }
 

@@ -3,10 +3,6 @@ class SourceVisitor extends CppVisitor {
     mutable sourceFile: VarString
     mutable projectFile: VarString
 
-    // Some rudimentary semantics cache
-    mutable inherits: Inherits[]
-    mutable classes: string[]
-
     constructor() {
 
         // null constructor of mutable members does not work yet
@@ -758,20 +754,6 @@ class SourceVisitor extends CppVisitor {
         while i < level {
             sourceFile.append("    ")
             i++
-        }
-    }
-
-    function collectDerivedClasses(mutable derivedClasses: string[], className: string) {
-        for inherit: Inherits in inherits {
-            if inherit.name.equals(className)
-                appendDerivedClasses(derivedClasses, inherit.inheritors)
-        }
-    }
-
-    function appendDerivedClasses(mutable derivedClasses: string[], mutable inheritors: string[]) {
-        for inheritor: string in inheritors {
-            derivedClasses.push(inheritor)
-            collectDerivedClasses(derivedClasses, inheritor)
         }
     }
 

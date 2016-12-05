@@ -50,6 +50,30 @@ void CppVisitor::appendCppTypeName(VarString* s, Type* type) {
     s->append(typeName);
 }
 
+void CppVisitor::collectDerivedClasses(_Array<string>* derivedClasses, string* className) {
+    Inherits* inherit = nullptr;
+    size_t _inherits_length = inherits->length();
+    for (size_t _i = 0; _i < _inherits_length; _i++) {
+        inherit = *(*inherits)[_i];
+        {
+            if (inherit->name->equals(className))
+                appendDerivedClasses(derivedClasses, inherit->inheritors);
+        }
+    }
+}
+
+void CppVisitor::appendDerivedClasses(_Array<string>* derivedClasses, _Array<string>* inheritors) {
+    string* inheritor = nullptr;
+    size_t _inheritors_length = inheritors->length();
+    for (size_t _i = 0; _i < _inheritors_length; _i++) {
+        inheritor = *(*inheritors)[_i];
+        {
+            derivedClasses->push(inheritor);
+            collectDerivedClasses(derivedClasses, inheritor);
+        }
+    }
+}
+
 bool CppVisitor::_isCppVisitor() { return (true); }
 
 bool CppVisitor::_isHeaderVisitor() { return (false); }

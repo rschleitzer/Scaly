@@ -8,8 +8,6 @@ class HeaderVisitor : public CppVisitor {
 public:
     VarString* headerFile;
     VarString* mainHeaderFile;
-    _Array<Inherits>* inherits;
-    _Array<string>* classes;
     HeaderVisitor();
     virtual bool openProgram(Program* program);
     virtual bool openCompilationUnit(CompilationUnit* compilationUnit);
@@ -35,8 +33,6 @@ public:
     virtual void closeVarParameter(VarParameter* varParameter);
     virtual bool openEnumMember(EnumMember* enumMember);
     virtual void closeEnumMember(EnumMember* enumMember);
-    virtual void collectDerivedClasses(_Array<string>* derivedClasses, string* className);
-    virtual void appendDerivedClasses(_Array<string>* derivedClasses, _Array<string>* inheritors);
     virtual bool openClassMember(ClassMember* classMember);
     virtual void closeClassMember(ClassMember* classMember);
     virtual bool openIdentifierPattern(IdentifierPattern* identifierPattern);

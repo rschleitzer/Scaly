@@ -477,30 +477,6 @@ void HeaderVisitor::closeEnumMember(EnumMember* enumMember) {
     }
 }
 
-void HeaderVisitor::collectDerivedClasses(_Array<string>* derivedClasses, string* className) {
-    Inherits* inherit = nullptr;
-    size_t _inherits_length = inherits->length();
-    for (size_t _i = 0; _i < _inherits_length; _i++) {
-        inherit = *(*inherits)[_i];
-        {
-            if (inherit->name->equals(className))
-                appendDerivedClasses(derivedClasses, inherit->inheritors);
-        }
-    }
-}
-
-void HeaderVisitor::appendDerivedClasses(_Array<string>* derivedClasses, _Array<string>* inheritors) {
-    string* inheritor = nullptr;
-    size_t _inheritors_length = inheritors->length();
-    for (size_t _i = 0; _i < _inheritors_length; _i++) {
-        inheritor = *(*inheritors)[_i];
-        {
-            derivedClasses->push(inheritor);
-            collectDerivedClasses(derivedClasses, inheritor);
-        }
-    }
-}
-
 bool HeaderVisitor::openClassMember(ClassMember* classMember) {
     headerFile->append("\n    ");
     return true;
