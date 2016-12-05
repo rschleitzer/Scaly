@@ -911,6 +911,7 @@ class SourceVisitor extends CppVisitor {
     function isVariableMember(memberName: string, classDeclaration: ClassDeclaration): bool {
         let classMembers: ClassMember[] = classDeclaration.body.members
         for member: ClassMember in classMembers {
+
             var bindingInitializer: BindingInitializer = null
             if member.declaration is MutableDeclaration {
                 let mutableDeclaration: MutableDeclaration = (member.declaration) as MutableDeclaration
@@ -920,10 +921,10 @@ class SourceVisitor extends CppVisitor {
                 let variableDeclaration: VariableDeclaration = (member.declaration) as VariableDeclaration
                 bindingInitializer = variableDeclaration.initializer
             }
-            
+
             if bindingInitializer == null
                 continue
-                
+
             let patternInitializer: PatternInitializer = bindingInitializer.initializer
             if patternInitializer.pattern is IdentifierPattern {
                 let identifierPattern: IdentifierPattern = (patternInitializer.pattern) as IdentifierPattern
