@@ -768,14 +768,6 @@ bool SourceVisitor::inConstructor(SyntaxNode* node) {
     return inConstructor(node->parent);
 }
 
-bool SourceVisitor::inReturn(SyntaxNode* node) {
-    if (node->_isReturnExpression())
-        return true;
-    if (node->parent == nullptr)
-        return false;
-    return inReturn(node->parent);
-}
-
 bool SourceVisitor::inThrow(SyntaxNode* node) {
     if (node->_isThrowExpression())
         return true;

@@ -53,7 +53,6 @@ public:
     virtual bool openBinaryOperation(BinaryOperation* binaryOperation);
     virtual bool openAssignment(Assignment* assignment);
     virtual bool inConstructor(SyntaxNode* node);
-    virtual bool inReturn(SyntaxNode* node);
     virtual bool inThrow(SyntaxNode* node);
     virtual string* getMemberIfCreatingObject(Assignment* assignment);
     virtual string* getFunctionName(Assignment* assignment);

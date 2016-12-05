@@ -823,17 +823,6 @@ class SourceVisitor extends CppVisitor {
         inConstructor(node.parent)
     }
 
-    function inReturn(node: SyntaxNode): bool {
-
-        if node is ReturnExpression
-            return(true)
-
-        if node.parent == null
-            return(false)
-
-        inReturn(node.parent)
-    }
-
     function inThrow(node: SyntaxNode): bool {
 
         if node is ThrowExpression
