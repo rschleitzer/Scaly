@@ -2350,7 +2350,6 @@ class SourceVisitor extends CppVisitor {
         for inh: Inherits in inherits {
             if inh.name.equals(baseName) {
                 inherit = inh
-                inherit.inheritors.push(className)
             }
         }
 
@@ -2359,5 +2358,7 @@ class SourceVisitor extends CppVisitor {
             inherit = newInherit
             inherits.push(inherit)
         }
+
+        inherit.inheritors.push(className)
     }
 }

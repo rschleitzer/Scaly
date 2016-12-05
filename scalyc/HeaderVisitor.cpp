@@ -611,7 +611,6 @@ void HeaderVisitor::registerInheritance(string* className, string* baseName) {
         {
             if (inh->name->equals(baseName)) {
                 inherit = inh;
-                inherit->inheritors->push(className);
             }
         }
     }
@@ -620,6 +619,7 @@ void HeaderVisitor::registerInheritance(string* className, string* baseName) {
         inherit = newInherit;
         inherits->push(inherit);
     }
+    inherit->inheritors->push(className);
 }
 
 bool HeaderVisitor::_isHeaderVisitor() { return (true); }

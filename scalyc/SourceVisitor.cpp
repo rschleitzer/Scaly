@@ -1880,7 +1880,7 @@ string* SourceVisitor::getPage(_Page* _rp, SyntaxNode* node) {
                         if (lifeTime->_isRoot())
                             return new(_rp) string("_p");
                         if (lifeTime->_isLocal())
-                            return new(_rp) string("getPage()");
+                            return new(_rp) string("_getPage()");
                     }
                 }
             }
@@ -2282,7 +2282,6 @@ void SourceVisitor::registerInheritance(string* className, string* baseName) {
         {
             if (inh->name->equals(baseName)) {
                 inherit = inh;
-                inherit->inheritors->push(className);
             }
         }
     }
@@ -2291,6 +2290,7 @@ void SourceVisitor::registerInheritance(string* className, string* baseName) {
         inherit = newInherit;
         inherits->push(inherit);
     }
+    inherit->inheritors->push(className);
 }
 
 bool SourceVisitor::_isSourceVisitor() { return (true); }
