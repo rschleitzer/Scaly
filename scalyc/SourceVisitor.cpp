@@ -784,7 +784,7 @@ string* SourceVisitor::getMemberIfCreatingObject(Assignment* assignment) {
     if (isClass(functionName) || isCreatingObject(functionName, assignment)) {
         SimpleExpression* simpleExpression = (SimpleExpression*)(assignment->parent);
         PostfixExpression* leftSide = simpleExpression->prefixExpression->expression;
-        if ((leftSide->postfixes == 0) && (leftSide->primaryExpression->_isIdentifierExpression())) {
+        if (leftSide->primaryExpression->_isIdentifierExpression()) {
             IdentifierExpression* memberExpression = (IdentifierExpression*)(leftSide->primaryExpression);
             string* memberName = memberExpression->name;
             ClassDeclaration* classDeclaration = getClassDeclaration(assignment);
