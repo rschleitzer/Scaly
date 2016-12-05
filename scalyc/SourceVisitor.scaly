@@ -937,6 +937,19 @@ class SourceVisitor extends CppVisitor {
             }
         }
 
+        if classDeclaration.typeInheritanceClause != null {
+            let inheritances: Inheritance[] = classDeclaration.typeInheritanceClause.inheritances
+            if inheritances != null {
+                for inheritance: Inheritance in inheritances {
+                    let baseClassDeclaration: ClassDeclaration& = findClassDeclaration(classDeclaration, inheritance.type.name)
+                    if baseClassDeclaration == null
+                        continue
+                    if isFieldMember(memberName, baseClassDeclaration)
+                        return(true)
+                }
+            }
+        }
+
         false
     }
 
@@ -965,7 +978,50 @@ class SourceVisitor extends CppVisitor {
             }
         }
 
+        if classDeclaration.typeInheritanceClause != null {
+            let inheritances: Inheritance[] = classDeclaration.typeInheritanceClause.inheritances
+            if inheritances != null {
+                for inheritance: Inheritance in inheritances {
+                    let baseClassDeclaration: ClassDeclaration& = findClassDeclaration(classDeclaration, inheritance.type.name)
+                    if baseClassDeclaration == null
+                        continue
+                    if isVariableMember(memberName, baseClassDeclaration)
+                        return(true)
+                }
+            }
+        }
+
         false
+    }
+    
+    function findClassDeclaration(node: SyntaxNode&, name: string&): ClassDeclaration& {
+        let program: Program = null
+
+        while node != null {
+            if node is Program {
+                program = node as Program
+                break
+            }
+            node = node.parent
+        }
+
+        let compilationUnits: CompilationUnit[] = program.compilationUnits
+        if compilationUnits != null {
+            for compilationUnit: CompilationUnit in compilationUnits {
+                let statements: Statement[] = compilationUnit.statements
+                if statements != null {
+                    for statement: Statement in statements {
+                        if statement is ClassDeclaration {
+                            let classDeclaration: ClassDeclaration = statement as ClassDeclaration
+                            if classDeclaration.name.equals(name)
+                                return(classDeclaration)
+                        }
+                    }
+                }
+            }
+        }
+        
+        null
     }
 
     function openTypeQuery(typeQuery: TypeQuery): bool {
@@ -1897,8 +1953,14 @@ class SourceVisitor extends CppVisitor {
                 if patternInitializer.pattern is IdentifierPattern {
                     let identifierPattern: IdentifierPattern = patternInitializer.pattern as IdentifierPattern
                     if identifierPattern.annotationForType != null {
-                        if identifierPattern.annotationForType.annotationForType.lifeTime == null
+                        if identifierPattern.annotationForType.annotationForType.lifeTime == null {
                             return(new string("_rp"))
+                        }
+                        else {
+                            let lifeTime: LifeTime = identifierPattern.annotationForType.annotationForType.lifeTime
+                            if lifeTime is Root
+                                return(new string("_p"))
+                        }
                     }
                 }
             }
@@ -1929,6 +1991,11 @@ class SourceVisitor extends CppVisitor {
                             }
                             return(new string(page))
                         }
+                        else {
+                            
+                            //FIXMEE!!!!
+                            return(new string("_p"))
+                        }
                     }
                 }
             }
@@ -1940,35 +2007,11 @@ class SourceVisitor extends CppVisitor {
     }
 
     function openConstructorCall(constructorCall: ConstructorCall): bool {
-        sourceFile.append("new(")
-        
+        sourceFile.append("new(")        
+
         let page: string$ = getPage(constructorCall.parent)
-        if page != null {
+        if page != null
             sourceFile.append(page)
-        }
-        else {
-            let assignment: Assignment& = getAssignment(constructorCall)
-            if assignment != null {
-                var classDeclaration: ClassDeclaration = getClassDeclaration(assignment)
-                let simpleExpression: SimpleExpression = (assignment.parent) as SimpleExpression
-                let leftSide: PostfixExpression = simpleExpression.prefixExpression.expression
-                let memberExpression: IdentifierExpression = (leftSide.primaryExpression) as IdentifierExpression
-                let memberName: string = memberExpression.name
-                if (classDeclaration != null) && (memberName != null) && !hasArrayPostfix(constructorCall.typeToConstruct) {
-                    if isVariableMember(memberName, classDeclaration) {
-                        sourceFile.append(memberName)
-                        sourceFile.append("->")
-                    }
-                    sourceFile.append("_getPage()")
-                }
-                else {
-                    sourceFile.append("_p")
-                }
-            }
-            else {
-                sourceFile.append("_p")
-            }
-        }
 
         sourceFile.append(") ")
 

@@ -3,7 +3,7 @@ using namespace scaly;
 namespace scalyc {
 
 HeaderVisitor::HeaderVisitor() {
-    moduleName = new(_getPage()) string();
+    moduleName = new(_getPage()->allocateExclusivePage()) string();
     headerFile = new(_getPage()->allocateExclusivePage()) VarString();
     mainHeaderFile = new(_getPage()->allocateExclusivePage()) VarString();
     inherits = new(_getPage()->allocateExclusivePage()) _Array<Inherits>();
@@ -14,7 +14,7 @@ bool HeaderVisitor::openProgram(Program* program) {
     _Region _region; _Page* _p = _region.get();
     string* programDirectory = new(_p) string(program->directory);
     if (programDirectory == nullptr || programDirectory->equals("")) {
-        programDirectory = new(_getPage()) string(".");
+        programDirectory = new(_p) string(".");
     }
     if (!Directory::exists(programDirectory)) {
         auto _Directory_error = Directory::create(_p, programDirectory);
@@ -261,7 +261,7 @@ void HeaderVisitor::closeClassDeclaration(ClassDeclaration* classDeclaration) {
     {
         _Region _region; _Page* _p = _region.get();
         _Array<string>* derivedClasses = new(_p) _Array<string>();
-        collectDerivedClasses(derivedClasses, new(_p) string(classDeclaration->name));
+        collectDerivedClasses(derivedClasses, classDeclaration->name);
         string* derivedClass = nullptr;
         size_t _derivedClasses_length = derivedClasses->length();
         for (size_t _i = 0; _i < _derivedClasses_length; _i++) {

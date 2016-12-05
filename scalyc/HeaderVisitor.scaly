@@ -271,7 +271,7 @@ class HeaderVisitor extends CppVisitor {
 
         {
             mutable derivedClasses: string[]$ = new string[]()
-            collectDerivedClasses(derivedClasses, new string(classDeclaration.name))
+            collectDerivedClasses(derivedClasses, classDeclaration.name)
             for derivedClass: string in derivedClasses {
                 headerFile.append("\n    virtual bool _is")
                 headerFile.append(derivedClass)

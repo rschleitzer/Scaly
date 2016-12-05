@@ -3,7 +3,7 @@ using namespace scaly;
 namespace scalyc {
 
 SourceVisitor::SourceVisitor() {
-    moduleName = new(_getPage()) string();
+    moduleName = new(_getPage()->allocateExclusivePage()) string();
     sourceFile = new(_getPage()->allocateExclusivePage()) VarString();
     projectFile = new(_getPage()->allocateExclusivePage()) VarString();
     inherits = new(_getPage()->allocateExclusivePage()) _Array<Inherits>();
@@ -14,7 +14,7 @@ bool SourceVisitor::openProgram(Program* program) {
     _Region _region; _Page* _p = _region.get();
     string* programDirectory = new(_p) string(program->directory);
     if (programDirectory == nullptr || programDirectory->equals("")) {
-        programDirectory = new(_getPage()) string(".");
+        programDirectory = new(_p) string(".");
     }
     {
         _Region _region; _Page* _p = _region.get();
@@ -877,6 +877,23 @@ bool SourceVisitor::isFieldMember(string* memberName, ClassDeclaration* classDec
             }
         }
     }
+    if (classDeclaration->typeInheritanceClause != nullptr) {
+        _Array<Inheritance>* inheritances = classDeclaration->typeInheritanceClause->inheritances;
+        if (inheritances != nullptr) {
+            Inheritance* inheritance = nullptr;
+            size_t _inheritances_length = inheritances->length();
+            for (size_t _i = 0; _i < _inheritances_length; _i++) {
+                inheritance = *(*inheritances)[_i];
+                {
+                    ClassDeclaration* baseClassDeclaration = findClassDeclaration(classDeclaration, inheritance->type->name);
+                    if (baseClassDeclaration == nullptr)
+                        continue;
+                    if (isFieldMember(memberName, baseClassDeclaration))
+                        return true;
+                }
+            }
+        }
+    }
     return false;
 }
 
@@ -906,7 +923,61 @@ bool SourceVisitor::isVariableMember(string* memberName, ClassDeclaration* class
             }
         }
     }
+    if (classDeclaration->typeInheritanceClause != nullptr) {
+        _Array<Inheritance>* inheritances = classDeclaration->typeInheritanceClause->inheritances;
+        if (inheritances != nullptr) {
+            Inheritance* inheritance = nullptr;
+            size_t _inheritances_length = inheritances->length();
+            for (size_t _i = 0; _i < _inheritances_length; _i++) {
+                inheritance = *(*inheritances)[_i];
+                {
+                    ClassDeclaration* baseClassDeclaration = findClassDeclaration(classDeclaration, inheritance->type->name);
+                    if (baseClassDeclaration == nullptr)
+                        continue;
+                    if (isVariableMember(memberName, baseClassDeclaration))
+                        return true;
+                }
+            }
+        }
+    }
     return false;
+}
+
+ClassDeclaration* SourceVisitor::findClassDeclaration(SyntaxNode* node, string* name) {
+    Program* program = nullptr;
+    while (node != nullptr) {
+        if (node->_isProgram()) {
+            program = (Program*)node;
+            break;
+        }
+        node = node->parent;
+    }
+    _Array<CompilationUnit>* compilationUnits = program->compilationUnits;
+    if (compilationUnits != nullptr) {
+        CompilationUnit* compilationUnit = nullptr;
+        size_t _compilationUnits_length = compilationUnits->length();
+        for (size_t _i = 0; _i < _compilationUnits_length; _i++) {
+            compilationUnit = *(*compilationUnits)[_i];
+            {
+                _Array<Statement>* statements = compilationUnit->statements;
+                if (statements != nullptr) {
+                    Statement* statement = nullptr;
+                    size_t _statements_length = statements->length();
+                    for (size_t _i = 0; _i < _statements_length; _i++) {
+                        statement = *(*statements)[_i];
+                        {
+                            if (statement->_isClassDeclaration()) {
+                                ClassDeclaration* classDeclaration = (ClassDeclaration*)statement;
+                                if (classDeclaration->name->equals(name))
+                                    return classDeclaration;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    return nullptr;
 }
 
 bool SourceVisitor::openTypeQuery(TypeQuery* typeQuery) {
@@ -1801,8 +1872,14 @@ string* SourceVisitor::getPage(_Page* _rp, SyntaxNode* node) {
             if (patternInitializer->pattern->_isIdentifierPattern()) {
                 IdentifierPattern* identifierPattern = (IdentifierPattern*)patternInitializer->pattern;
                 if (identifierPattern->annotationForType != nullptr) {
-                    if (identifierPattern->annotationForType->annotationForType->lifeTime == nullptr)
+                    if (identifierPattern->annotationForType->annotationForType->lifeTime == nullptr) {
                         return new(_rp) string("_rp");
+                    }
+                    else {
+                        LifeTime* lifeTime = identifierPattern->annotationForType->annotationForType->lifeTime;
+                        if (lifeTime->_isRoot())
+                            return new(_rp) string("_p");
+                    }
                 }
             }
         }
@@ -1832,6 +1909,9 @@ string* SourceVisitor::getPage(_Page* _rp, SyntaxNode* node) {
                         }
                         return new(_rp) string(page);
                     }
+                    else {
+                        return new(_rp) string("_p");
+                    }
                 }
             }
         }
@@ -1844,32 +1924,8 @@ bool SourceVisitor::openConstructorCall(ConstructorCall* constructorCall) {
     _Region _region; _Page* _p = _region.get();
     sourceFile->append("new(");
     string* page = getPage(_p, constructorCall->parent);
-    if (page != nullptr) {
+    if (page != nullptr)
         sourceFile->append(page);
-    }
-    else {
-        Assignment* assignment = getAssignment(constructorCall);
-        if (assignment != nullptr) {
-            ClassDeclaration* classDeclaration = getClassDeclaration(assignment);
-            SimpleExpression* simpleExpression = (SimpleExpression*)(assignment->parent);
-            PostfixExpression* leftSide = simpleExpression->prefixExpression->expression;
-            IdentifierExpression* memberExpression = (IdentifierExpression*)(leftSide->primaryExpression);
-            string* memberName = memberExpression->name;
-            if ((classDeclaration != nullptr) && (memberName != nullptr) && !hasArrayPostfix(constructorCall->typeToConstruct)) {
-                if (isVariableMember(memberName, classDeclaration)) {
-                    sourceFile->append(memberName);
-                    sourceFile->append("->");
-                }
-                sourceFile->append("_getPage()");
-            }
-            else {
-                sourceFile->append("_p");
-            }
-        }
-        else {
-            sourceFile->append("_p");
-        }
-    }
     sourceFile->append(") ");
     return true;
 }
