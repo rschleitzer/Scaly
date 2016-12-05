@@ -1888,6 +1888,18 @@ class SourceVisitor extends CppVisitor {
             if node is ThrowExpression
                 return(new string("_ep"))
 
+            if node is PatternInitializer {
+                let patternInitializer: PatternInitializer = node as PatternInitializer
+                if patternInitializer.pattern is IdentifierPattern {
+                    let identifierPattern: IdentifierPattern = patternInitializer.pattern as IdentifierPattern
+                    if identifierPattern.annotationForType != null {
+                        if identifierPattern.annotationForType.annotationForType.lifeTime == null
+                            return(new string("_rp"))
+                    }
+                }
+            }
+                
+
             node = node.parent
         }
 

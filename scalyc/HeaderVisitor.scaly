@@ -99,7 +99,7 @@ class HeaderVisitor extends CppVisitor {
             headerFile.append("\n\n}\n#endif // __scalyc__")
             headerFile.append(moduleName)
             headerFile.append("__\n")
-            let headerFilePath: VarString = new VarString(outputFilePath)
+            let headerFilePath: VarString$ = new VarString(outputFilePath)
             headerFilePath.append(".h")
             File.writeFromString(headerFilePath, headerFile)
                 catch _ (error: fileError)

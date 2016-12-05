@@ -86,6 +86,7 @@ void HeaderVisitor::closeCompilationUnit(CompilationUnit* compilationUnit) {
     string* fileNameWithoutExtension = Path::getFileNameWithoutExtension(_p, compilationUnit->fileName);
     outputFilePath->append(fileNameWithoutExtension);
     if (!moduleName->equals(programName)) {
+        _Region _region; _Page* _p = _region.get();
         headerFile->append("\n\n}\n#endif // __scalyc__");
         headerFile->append(moduleName);
         headerFile->append("__\n");

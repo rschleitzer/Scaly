@@ -1787,6 +1787,16 @@ string* SourceVisitor::getPage(_Page* _rp, SyntaxNode* node) {
             return new(_rp) string("_rp");
         if (node->_isThrowExpression())
             return new(_rp) string("_ep");
+        if (node->_isPatternInitializer()) {
+            PatternInitializer* patternInitializer = (PatternInitializer*)node;
+            if (patternInitializer->pattern->_isIdentifierPattern()) {
+                IdentifierPattern* identifierPattern = (IdentifierPattern*)patternInitializer->pattern;
+                if (identifierPattern->annotationForType != nullptr) {
+                    if (identifierPattern->annotationForType->annotationForType->lifeTime == nullptr)
+                        return new(_rp) string("_rp");
+                }
+            }
+        }
         node = node->parent;
     }
     return nullptr;

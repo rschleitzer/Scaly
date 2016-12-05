@@ -10,7 +10,7 @@ class Compiler {
             sources.push(source)
         }
 
-        mutable compilationUnits: CompilationUnit[] = new CompilationUnit[]()
+        mutable compilationUnits: CompilationUnit[]$ = new CompilationUnit[]()
         let index: number = 0
         for source: string in sources {
             let moduleName: string@compilationUnits = Path.getFileNameWithoutExtension(files[index])
@@ -25,10 +25,10 @@ class Compiler {
         for item: CompilationUnit in compilationUnits
             item.parent = program
 
-        mutable headerVisitor: HeaderVisitor = new HeaderVisitor()        
+        mutable headerVisitor: HeaderVisitor$ = new HeaderVisitor()        
         headerVisitor.execute(program)
 
-        mutable sourceVisitor: SourceVisitor = new SourceVisitor()        
+        mutable sourceVisitor: SourceVisitor$ = new SourceVisitor()        
         sourceVisitor.execute(program)
     }
 
