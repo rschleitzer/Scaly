@@ -73,7 +73,6 @@ public:
     virtual bool inAssignment(SyntaxNode* syntaxNode);
     virtual Assignment* getAssignment(SyntaxNode* syntaxNode);
     virtual Initializer* getInitializer(SyntaxNode* syntaxNode);
-    virtual bool inRetDeclaration(SyntaxNode* syntaxNode);
     virtual void visitLiteralExpression(LiteralExpression* literalExpression);
     virtual bool openIfExpression(IfExpression* ifExpression);
     virtual bool openSwitchExpression(SwitchExpression* switchExpression);

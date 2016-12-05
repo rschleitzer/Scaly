@@ -1192,30 +1192,6 @@ Initializer* SourceVisitor::getInitializer(SyntaxNode* syntaxNode) {
     return getInitializer(parentNode);
 }
 
-bool SourceVisitor::inRetDeclaration(SyntaxNode* syntaxNode) {
-    if (syntaxNode == nullptr)
-        return false;
-    BindingInitializer* bindingInitializer = nullptr;
-    do {
-        if (syntaxNode->_isBindingInitializer()) {
-            bindingInitializer = ((BindingInitializer*)syntaxNode);
-            break;
-        }
-        syntaxNode = syntaxNode->parent;
-    }
-    while (syntaxNode != nullptr);
-    if (bindingInitializer == nullptr)
-        return false;
-    if (bindingInitializer->initializer != nullptr) {
-        PatternInitializer* patternInitializer = bindingInitializer->initializer;
-        if (patternInitializer->pattern->_isIdentifierPattern()) {
-            IdentifierPattern* identifierPattern = (IdentifierPattern*)(patternInitializer->pattern);
-            return identifierPattern->identifier->equals("ret");
-        }
-    }
-    return false;
-}
-
 void SourceVisitor::visitLiteralExpression(LiteralExpression* literalExpression) {
     Literal* literal = literalExpression->literal;
     if (literal->_isNumericLiteral()) {
@@ -1844,18 +1820,7 @@ bool SourceVisitor::openConstructorCall(ConstructorCall* constructorCall) {
             }
         }
         else {
-            Initializer* initializer = getInitializer(constructorCall);
-            if (initializer != nullptr) {
-                if (inRetDeclaration(constructorCall)) {
-                    sourceFile->append("_rp");
-                }
-                else {
-                    sourceFile->append("_p");
-                }
-            }
-            else {
-                sourceFile->append("_p");
-            }
+            sourceFile->append("_p");
         }
     }
     sourceFile->append(") ");
