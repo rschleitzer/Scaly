@@ -2041,6 +2041,8 @@ class SourceVisitor extends CppVisitor {
                             if isVariableMember(name, classDeclaration) {
                                 if !inConstructor(assignment) {
                                     page.append(name)
+                                    page.append(" == nullptr ? _getPage() : ")
+                                    page.append(name)
                                     page.append("->")
                                 }
                                 page.append("_getPage()")
@@ -2260,6 +2262,7 @@ class SourceVisitor extends CppVisitor {
     }
     
     function buildProjectFileString(program: Program) {
+        projectFile = new VarString()
         projectFile.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n")
         projectFile.append("<CodeLite_Project Name=\"")
         projectFile.append(program.name)

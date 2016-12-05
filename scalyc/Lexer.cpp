@@ -109,7 +109,7 @@ void Lexer::advance() {
     if (position == end) {
         if (token != nullptr)
             token->_getPage()->clear();
-        token = new(token->_getPage()) EofToken();
+        token = new(token == nullptr ? _getPage() : token->_getPage()) EofToken();
         return;
     }
     char c = text->charAt(position);
@@ -144,7 +144,7 @@ void Lexer::advance() {
             {
                 if (token != nullptr)
                     token->_getPage()->clear();
-                token = new(token->_getPage()) Punctuation(new(token->_getPage()) string(c));
+                token = new(token == nullptr ? _getPage() : token->_getPage()) Punctuation(new(token == nullptr ? _getPage() : token->_getPage()) string(c));
                 position++;
                 column++;
             }
@@ -165,7 +165,7 @@ void Lexer::advance() {
                 if (position == end) {
                     if (token != nullptr)
                         token->_getPage()->clear();
-                    token = new(token->_getPage()) InvalidToken();
+                    token = new(token == nullptr ? _getPage() : token->_getPage()) InvalidToken();
                 }
                 else {
                     switch (text->charAt(position)) {
@@ -183,7 +183,7 @@ void Lexer::advance() {
                         default: {
                             if (token != nullptr)
                                 token->_getPage()->clear();
-                            token = new(token->_getPage()) Punctuation(new(token->_getPage()) string(c));
+                            token = new(token == nullptr ? _getPage() : token->_getPage()) Punctuation(new(token == nullptr ? _getPage() : token->_getPage()) string(c));
                         }
                     }
                 }
@@ -198,7 +198,7 @@ void Lexer::advance() {
                 if (position == end) {
                     if (token != nullptr)
                         token->_getPage()->clear();
-                    token = new(token->_getPage()) InvalidToken();
+                    token = new(token == nullptr ? _getPage() : token->_getPage()) InvalidToken();
                 }
                 else {
                     if (text->charAt(position) == '.') {
@@ -211,7 +211,7 @@ void Lexer::advance() {
                     else {
                         if (token != nullptr)
                             token->_getPage()->clear();
-                        token = new(token->_getPage()) Punctuation(new(token->_getPage()) string('.'));
+                        token = new(token == nullptr ? _getPage() : token->_getPage()) Punctuation(new(token == nullptr ? _getPage() : token->_getPage()) string('.'));
                     }
                 }
             }
@@ -225,7 +225,7 @@ void Lexer::advance() {
                 if (position == end) {
                     if (token != nullptr)
                         token->_getPage()->clear();
-                    token = new(token->_getPage()) InvalidToken();
+                    token = new(token == nullptr ? _getPage() : token->_getPage()) InvalidToken();
                 }
                 else {
                     if (text->charAt(position) != '>') {
@@ -238,7 +238,7 @@ void Lexer::advance() {
                     else {
                         if (token != nullptr)
                             token->_getPage()->clear();
-                        token = new(token->_getPage()) Punctuation(new(token->_getPage()) string("->"));
+                        token = new(token == nullptr ? _getPage() : token->_getPage()) Punctuation(new(token == nullptr ? _getPage() : token->_getPage()) string("->"));
                         position++;
                         column++;
                     }
@@ -254,7 +254,7 @@ void Lexer::advance() {
                 if (position == end) {
                     if (token != nullptr)
                         token->_getPage()->clear();
-                    token = new(token->_getPage()) PostfixOperator(new(token->_getPage()) string(c));
+                    token = new(token == nullptr ? _getPage() : token->_getPage()) PostfixOperator(new(token == nullptr ? _getPage() : token->_getPage()) string(c));
                 }
                 else {
                     switch (text->charAt(position)) {
@@ -281,7 +281,7 @@ void Lexer::advance() {
                                 else {
                                     if (token != nullptr)
                                         token->_getPage()->clear();
-                                    token = new(token->_getPage()) Punctuation(new(token->_getPage()) string(c));
+                                    token = new(token == nullptr ? _getPage() : token->_getPage()) Punctuation(new(token == nullptr ? _getPage() : token->_getPage()) string(c));
                                 }
                             }
                         }
@@ -298,7 +298,7 @@ void Lexer::advance() {
                 if (position == end) {
                     if (token != nullptr)
                         token->_getPage()->clear();
-                    token = new(token->_getPage()) InvalidToken();
+                    token = new(token == nullptr ? _getPage() : token->_getPage()) InvalidToken();
                 }
                 else {
                     switch (text->charAt(position)) {
@@ -316,7 +316,7 @@ void Lexer::advance() {
                         default: {
                             if (token != nullptr)
                                 token->_getPage()->clear();
-                            token = new(token->_getPage()) Punctuation(new(token->_getPage()) string("="));
+                            token = new(token == nullptr ? _getPage() : token->_getPage()) Punctuation(new(token == nullptr ? _getPage() : token->_getPage()) string("="));
                         }
                     }
                 }
@@ -327,7 +327,7 @@ void Lexer::advance() {
         default: {
             if (token != nullptr)
                 token->_getPage()->clear();
-            token = new(token->_getPage()) InvalidToken();
+            token = new(token == nullptr ? _getPage() : token->_getPage()) InvalidToken();
         }
     }
 }

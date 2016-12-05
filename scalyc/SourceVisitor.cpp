@@ -47,7 +47,7 @@ bool SourceVisitor::openCompilationUnit(CompilationUnit* compilationUnit) {
     string* programName = ((Program*)(compilationUnit->parent))->name;
     if (sourceFile != nullptr)
         sourceFile->_getPage()->clear();
-    sourceFile = new(sourceFile->_getPage()) VarString(0, 4096);
+    sourceFile = new(sourceFile == nullptr ? _getPage() : sourceFile->_getPage()) VarString(0, 4096);
     sourceFile->append("#include \"");
     sourceFile->append(programName);
     sourceFile->append(".h\"\nusing namespace scaly;\n");
@@ -1954,6 +1954,8 @@ string* SourceVisitor::getPage(_Page* _rp, SyntaxNode* node) {
                         if (isVariableMember(name, classDeclaration)) {
                             if (!inConstructor(assignment)) {
                                 page->append(name);
+                                page->append(" == nullptr ? _getPage() : ");
+                                page->append(name);
                                 page->append("->");
                             }
                             page->append("_getPage()");
@@ -2155,6 +2157,9 @@ bool SourceVisitor::openInheritance(Inheritance* inheritance) {
 }
 
 void SourceVisitor::buildProjectFileString(Program* program) {
+    if (projectFile != nullptr)
+        projectFile->_getPage()->clear();
+    projectFile = new(projectFile == nullptr ? _getPage() : projectFile->_getPage()) VarString();
     projectFile->append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
     projectFile->append("<CodeLite_Project Name=\"");
     projectFile->append(program->name);
