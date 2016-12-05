@@ -1861,6 +1861,51 @@ bool SourceVisitor::openBreakExpression(BreakExpression* breakExpression) {
     return true;
 }
 
+string* SourceVisitor::getPageOfVariable(_Page* _rp, string* name, CodeBlock* codeBlock) {
+    _Array<Statement>* statements = codeBlock->statements;
+    Statement* statement = nullptr;
+    size_t _statements_length = statements->length();
+    for (size_t _i = 0; _i < _statements_length; _i++) {
+        statement = *(*statements)[_i];
+        {
+            BindingInitializer* bindingInitializer = nullptr;
+            if (statement->_isConstantDeclaration()) {
+                ConstantDeclaration* constantDeclaration = (ConstantDeclaration*)statement;
+                bindingInitializer = constantDeclaration->initializer;
+            }
+            if (statement->_isMutableDeclaration()) {
+                MutableDeclaration* mutableDeclaration = (MutableDeclaration*)statement;
+                bindingInitializer = mutableDeclaration->initializer;
+            }
+            if (statement->_isVariableDeclaration()) {
+                VariableDeclaration* variableDeclaration = (VariableDeclaration*)statement;
+                bindingInitializer = variableDeclaration->initializer;
+            }
+            if (bindingInitializer == nullptr)
+                continue;
+            PatternInitializer* patternInitializer = bindingInitializer->initializer;
+            if (patternInitializer->pattern->_isIdentifierPattern()) {
+                IdentifierPattern* identifierPattern = (IdentifierPattern*)(patternInitializer->pattern);
+                if (identifierPattern->identifier->equals(name)) {
+                    if (identifierPattern->annotationForType != nullptr) {
+                        if (identifierPattern->annotationForType->annotationForType->lifeTime == nullptr) {
+                            return new(_rp) string("_rp");
+                        }
+                        else {
+                            LifeTime* lifeTime = identifierPattern->annotationForType->annotationForType->lifeTime;
+                            if (lifeTime->_isRoot())
+                                return new(_rp) string("_p");
+                            if (lifeTime->_isLocal())
+                                return new(_rp) string("_getPage()");
+                        }
+                    }
+                }
+            }
+        }
+    }
+    return nullptr;
+}
+
 string* SourceVisitor::getPage(_Page* _rp, SyntaxNode* node) {
     while (node != nullptr) {
         if (node->_isReturnExpression())
@@ -1892,6 +1937,16 @@ string* SourceVisitor::getPage(_Page* _rp, SyntaxNode* node) {
             if (leftSide->primaryExpression->_isIdentifierExpression()) {
                 IdentifierExpression* identifierExpression = (IdentifierExpression*)(leftSide->primaryExpression);
                 string* name = identifierExpression->name;
+                SyntaxNode* node = assignment;
+                while (node != nullptr) {
+                    if (node->_isCodeBlock()) {
+                        CodeBlock* codeBlock = (CodeBlock*)node;
+                        string* page = getPageOfVariable(_rp, name, codeBlock);
+                        if (page != nullptr)
+                            return page;
+                    }
+                    node = node->parent;
+                }
                 ClassDeclaration* classDeclaration = getClassDeclaration(assignment);
                 if (classDeclaration != nullptr) {
                     VarString* page = new(_rp) VarString("");
@@ -1910,9 +1965,6 @@ string* SourceVisitor::getPage(_Page* _rp, SyntaxNode* node) {
                             page->append("_getPage()");
                         }
                         return new(_rp) string(page);
-                    }
-                    else {
-                        return new(_rp) string("_p");
                     }
                 }
             }

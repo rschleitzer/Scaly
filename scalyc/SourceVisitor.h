@@ -103,6 +103,7 @@ public:
     virtual bool returnsArray(SyntaxNode* syntaxNode);
     virtual FunctionDeclaration* getFunctionDeclaration(SyntaxNode* syntaxNode);
     virtual bool openBreakExpression(BreakExpression* breakExpression);
+    virtual string* getPageOfVariable(_Page* _rp, string* name, CodeBlock* codeBlock);
     virtual string* getPage(_Page* _rp, SyntaxNode* node);
     virtual bool openConstructorCall(ConstructorCall* constructorCall);
     virtual void visitThisExpression(ThisExpression* thisExpression);
