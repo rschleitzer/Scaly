@@ -1773,6 +1773,18 @@ string* SourceVisitor::getPage(_Page* _rp, SyntaxNode* node) {
                 }
             }
         }
+        if (node->_isAssignment()) {
+            Assignment* assignment = (Assignment*)node;
+            SimpleExpression* simpleExpression = (SimpleExpression*)(assignment->parent);
+            PostfixExpression* leftSide = simpleExpression->prefixExpression->expression;
+            if (leftSide->primaryExpression->_isIdentifierExpression()) {
+                IdentifierExpression* identifierExpression = (IdentifierExpression*)(leftSide->primaryExpression);
+                string* name = identifierExpression->name;
+                ClassDeclaration* classDeclaration = getClassDeclaration(assignment);
+                if (classDeclaration != nullptr) {
+                }
+            }
+        }
         node = node->parent;
     }
     return nullptr;
