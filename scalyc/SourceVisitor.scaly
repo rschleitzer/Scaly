@@ -10,8 +10,6 @@ class SourceVisitor extends CppVisitor {
     constructor() {
 
         // null constructor of mutable members does not work yet
-        sourceFile = new VarString()
-        projectFile = new VarString()
         inherits = new Inherits[]()
         classes = new string[]()
     }

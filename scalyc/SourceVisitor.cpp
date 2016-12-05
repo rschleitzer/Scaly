@@ -3,8 +3,6 @@ using namespace scaly;
 namespace scalyc {
 
 SourceVisitor::SourceVisitor() {
-    sourceFile = new(_getPage()->allocateExclusivePage()) VarString();
-    projectFile = new(_getPage()->allocateExclusivePage()) VarString();
     inherits = new(_getPage()->allocateExclusivePage()) _Array<Inherits>();
     classes = new(_getPage()->allocateExclusivePage()) _Array<string>();
 }
