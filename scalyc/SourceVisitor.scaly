@@ -907,7 +907,39 @@ class SourceVisitor extends CppVisitor {
         
         null
     }
-    
+
+    function isFieldMember(memberName: string, classDeclaration: ClassDeclaration): bool {
+        let classMembers: ClassMember[] = classDeclaration.body.members
+        for member: ClassMember in classMembers {
+
+            var bindingInitializer: BindingInitializer = null
+            if member.declaration is ConstantDeclaration {
+                let constantDeclaration: ConstantDeclaration = (member.declaration) as ConstantDeclaration
+                bindingInitializer = constantDeclaration.initializer
+            }
+            if member.declaration is MutableDeclaration {
+                let mutableDeclaration: MutableDeclaration = (member.declaration) as MutableDeclaration
+                bindingInitializer = mutableDeclaration.initializer
+            }
+            if member.declaration is VariableDeclaration {
+                let variableDeclaration: VariableDeclaration = (member.declaration) as VariableDeclaration
+                bindingInitializer = variableDeclaration.initializer
+            }
+
+            if bindingInitializer == null
+                continue
+
+            let patternInitializer: PatternInitializer = bindingInitializer.initializer
+            if patternInitializer.pattern is IdentifierPattern {
+                let identifierPattern: IdentifierPattern = (patternInitializer.pattern) as IdentifierPattern
+                if identifierPattern.identifier.equals(memberName)
+                    return(true)
+            }
+        }
+
+        false
+    }
+
     function isVariableMember(memberName: string, classDeclaration: ClassDeclaration): bool {
         let classMembers: ClassMember[] = classDeclaration.body.members
         for member: ClassMember in classMembers {
@@ -1880,7 +1912,23 @@ class SourceVisitor extends CppVisitor {
                     let name: string = identifierExpression.name
                     var classDeclaration: ClassDeclaration = getClassDeclaration(assignment)
                     if classDeclaration != null {
-                        
+                        let page: VarString = new VarString("")
+                        if isFieldMember(name, classDeclaration) {
+                            if isVariableMember(name, classDeclaration) {
+                                if !inConstructor(assignment) {
+                                    page.append(name)
+                                    page.append("->")
+                                }
+                                page.append("_getPage()")
+                                if inConstructor(assignment) {
+                                    page.append("->allocateExclusivePage()")
+                                }
+                            }
+                            else {
+                                page.append("_getPage()")
+                            }
+                            return(new string(page))
+                        }
                     }
                 }
             }

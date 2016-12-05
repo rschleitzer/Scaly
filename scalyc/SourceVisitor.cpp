@@ -847,6 +847,39 @@ ClassDeclaration* SourceVisitor::getClassDeclaration(SyntaxNode* node) {
     return nullptr;
 }
 
+bool SourceVisitor::isFieldMember(string* memberName, ClassDeclaration* classDeclaration) {
+    _Array<ClassMember>* classMembers = classDeclaration->body->members;
+    ClassMember* member = nullptr;
+    size_t _classMembers_length = classMembers->length();
+    for (size_t _i = 0; _i < _classMembers_length; _i++) {
+        member = *(*classMembers)[_i];
+        {
+            BindingInitializer* bindingInitializer = nullptr;
+            if (member->declaration->_isConstantDeclaration()) {
+                ConstantDeclaration* constantDeclaration = (ConstantDeclaration*)(member->declaration);
+                bindingInitializer = constantDeclaration->initializer;
+            }
+            if (member->declaration->_isMutableDeclaration()) {
+                MutableDeclaration* mutableDeclaration = (MutableDeclaration*)(member->declaration);
+                bindingInitializer = mutableDeclaration->initializer;
+            }
+            if (member->declaration->_isVariableDeclaration()) {
+                VariableDeclaration* variableDeclaration = (VariableDeclaration*)(member->declaration);
+                bindingInitializer = variableDeclaration->initializer;
+            }
+            if (bindingInitializer == nullptr)
+                continue;
+            PatternInitializer* patternInitializer = bindingInitializer->initializer;
+            if (patternInitializer->pattern->_isIdentifierPattern()) {
+                IdentifierPattern* identifierPattern = (IdentifierPattern*)(patternInitializer->pattern);
+                if (identifierPattern->identifier->equals(memberName))
+                    return true;
+            }
+        }
+    }
+    return false;
+}
+
 bool SourceVisitor::isVariableMember(string* memberName, ClassDeclaration* classDeclaration) {
     _Array<ClassMember>* classMembers = classDeclaration->body->members;
     ClassMember* member = nullptr;
@@ -1782,6 +1815,23 @@ string* SourceVisitor::getPage(_Page* _rp, SyntaxNode* node) {
                 string* name = identifierExpression->name;
                 ClassDeclaration* classDeclaration = getClassDeclaration(assignment);
                 if (classDeclaration != nullptr) {
+                    VarString* page = new(_rp) VarString("");
+                    if (isFieldMember(name, classDeclaration)) {
+                        if (isVariableMember(name, classDeclaration)) {
+                            if (!inConstructor(assignment)) {
+                                page->append(name);
+                                page->append("->");
+                            }
+                            page->append("_getPage()");
+                            if (inConstructor(assignment)) {
+                                page->append("->allocateExclusivePage()");
+                            }
+                        }
+                        else {
+                            page->append("_getPage()");
+                        }
+                        return new(_rp) string(page);
+                    }
                 }
             }
         }

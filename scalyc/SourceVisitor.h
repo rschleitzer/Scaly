@@ -58,6 +58,7 @@ public:
     virtual string* getFunctionName(Assignment* assignment);
     virtual bool isCreatingObject(string* functionName, SyntaxNode* node);
     virtual ClassDeclaration* getClassDeclaration(SyntaxNode* node);
+    virtual bool isFieldMember(string* memberName, ClassDeclaration* classDeclaration);
     virtual bool isVariableMember(string* memberName, ClassDeclaration* classDeclaration);
     virtual bool openTypeQuery(TypeQuery* typeQuery);
     virtual bool openCatchClause(CatchClause* catchClause);
