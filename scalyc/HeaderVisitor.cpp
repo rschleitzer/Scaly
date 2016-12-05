@@ -56,7 +56,7 @@ bool HeaderVisitor::openCompilationUnit(CompilationUnit* compilationUnit) {
     if (!moduleName->equals(programName)) {
         if (headerFile != nullptr)
             headerFile->_getPage()->clear();
-        headerFile = new(headerFile == nullptr ? _getPage() : headerFile->_getPage()) VarString();
+        headerFile = new(headerFile == nullptr ? _getPage()->allocateExclusivePage() : headerFile->_getPage()) VarString();
         headerFile->append("#ifndef __");
         headerFile->append(programName);
         headerFile->append("__");

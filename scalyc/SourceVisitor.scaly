@@ -10,7 +10,8 @@ class SourceVisitor extends CppVisitor {
     constructor() {
 
         // null constructor of mutable members does not work yet
-        //sourceFile = new VarString()
+        sourceFile = new VarString()
+        projectFile = new VarString()
         inherits = new Inherits[]()
         classes = new string[]()
     }
@@ -53,7 +54,7 @@ class SourceVisitor extends CppVisitor {
         let programName: string = ((compilationUnit.parent) as Program).name
 
         // Begin cpp file
-        sourceFile = new VarString()
+        sourceFile = new VarString(0, 4096)
         sourceFile.append("#include \"")
         sourceFile.append(programName)
         sourceFile.append(".h\"\nusing namespace scaly;\n")
@@ -2037,7 +2038,7 @@ class SourceVisitor extends CppVisitor {
                             if isVariableMember(name, classDeclaration) {
                                 if !inConstructor(assignment) {
                                     page.append(name)
-                                    page.append(" == nullptr ? _getPage() : ")
+                                    page.append(" == nullptr ? _getPage()->allocateExclusivePage() : ")
                                     page.append(name)
                                     page.append("->")
                                 }
