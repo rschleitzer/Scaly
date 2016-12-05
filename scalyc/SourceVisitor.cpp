@@ -3,7 +3,6 @@ using namespace scaly;
 namespace scalyc {
 
 SourceVisitor::SourceVisitor() {
-    moduleName = new(_getPage()->allocateExclusivePage()) string();
     sourceFile = new(_getPage()->allocateExclusivePage()) VarString();
     projectFile = new(_getPage()->allocateExclusivePage()) VarString();
     inherits = new(_getPage()->allocateExclusivePage()) _Array<Inherits>();
@@ -41,7 +40,6 @@ bool SourceVisitor::openProgram(Program* program) {
 }
 
 bool SourceVisitor::openCompilationUnit(CompilationUnit* compilationUnit) {
-    moduleName = compilationUnit->fileName;
     if (!(compilationUnit->parent->_isProgram()))
         return false;
     string* programName = ((Program*)(compilationUnit->parent))->name;

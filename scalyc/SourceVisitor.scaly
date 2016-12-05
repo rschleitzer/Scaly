@@ -10,7 +10,6 @@ class SourceVisitor extends CppVisitor {
     constructor() {
 
         // null constructor of mutable members does not work yet
-        moduleName = new string()
         sourceFile = new VarString()
         projectFile = new VarString()
         inherits = new Inherits[]()
@@ -48,8 +47,6 @@ class SourceVisitor extends CppVisitor {
     }
 
     function openCompilationUnit(compilationUnit: CompilationUnit): bool {
-
-        moduleName = compilationUnit.fileName
 
         if !(compilationUnit.parent is Program)
             return(false)
