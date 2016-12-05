@@ -791,16 +791,14 @@ string* SourceVisitor::getMemberIfCreatingObject(Assignment* assignment) {
     }
     if (isClass(functionName) || isCreatingObject(functionName, assignment)) {
         SimpleExpression* simpleExpression = (SimpleExpression*)(assignment->parent);
-        if (simpleExpression->prefixExpression->prefixOperator == 0) {
-            PostfixExpression* leftSide = simpleExpression->prefixExpression->expression;
-            if ((leftSide->postfixes == 0) && (leftSide->primaryExpression->_isIdentifierExpression())) {
-                IdentifierExpression* memberExpression = (IdentifierExpression*)(leftSide->primaryExpression);
-                string* memberName = memberExpression->name;
-                ClassDeclaration* classDeclaration = getClassDeclaration(assignment);
-                if (classDeclaration != nullptr) {
-                    if (isVariableMember(memberName, classDeclaration))
-                        return memberName;
-                }
+        PostfixExpression* leftSide = simpleExpression->prefixExpression->expression;
+        if ((leftSide->postfixes == 0) && (leftSide->primaryExpression->_isIdentifierExpression())) {
+            IdentifierExpression* memberExpression = (IdentifierExpression*)(leftSide->primaryExpression);
+            string* memberName = memberExpression->name;
+            ClassDeclaration* classDeclaration = getClassDeclaration(assignment);
+            if (classDeclaration != nullptr) {
+                if (isVariableMember(memberName, classDeclaration))
+                    return memberName;
             }
         }
     }

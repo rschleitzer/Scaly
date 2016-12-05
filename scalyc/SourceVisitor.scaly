@@ -853,16 +853,14 @@ class SourceVisitor extends CppVisitor {
 
         if isClass(functionName) || isCreatingObject(functionName, assignment) {
             let simpleExpression: SimpleExpression = (assignment.parent) as SimpleExpression
-            if simpleExpression.prefixExpression.prefixOperator == 0 {
-                let leftSide: PostfixExpression = simpleExpression.prefixExpression.expression
-                if (leftSide.postfixes == 0) && (leftSide.primaryExpression is IdentifierExpression) {
-                    let memberExpression: IdentifierExpression = (leftSide.primaryExpression) as IdentifierExpression
-                    let memberName: string = memberExpression.name
-                    var classDeclaration: ClassDeclaration = getClassDeclaration(assignment)
-                    if classDeclaration != null {
-                        if isVariableMember(memberName, classDeclaration)
-                            return(memberName)
-                    }
+            let leftSide: PostfixExpression = simpleExpression.prefixExpression.expression
+            if (leftSide.postfixes == 0) && (leftSide.primaryExpression is IdentifierExpression) {
+                let memberExpression: IdentifierExpression = (leftSide.primaryExpression) as IdentifierExpression
+                let memberName: string = memberExpression.name
+                var classDeclaration: ClassDeclaration = getClassDeclaration(assignment)
+                if classDeclaration != null {
+                    if isVariableMember(memberName, classDeclaration)
+                        return(memberName)
                 }
             }
         }
