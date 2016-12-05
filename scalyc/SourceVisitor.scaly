@@ -52,7 +52,7 @@ class SourceVisitor extends CppVisitor {
         let programName: string = ((compilationUnit.parent) as Program).name
 
         // Begin cpp file
-        sourceFile = new VarString(0, 4096)
+        sourceFile = new VarString()
         sourceFile.append("#include \"")
         sourceFile.append(programName)
         sourceFile.append(".h\"\nusing namespace scaly;\n")
