@@ -1950,34 +1950,19 @@ class SourceVisitor extends CppVisitor {
             let assignment: Assignment& = getAssignment(constructorCall)
             if assignment != null {
                 var classDeclaration: ClassDeclaration = getClassDeclaration(assignment)
-                let memberName: string& = getMemberIfCreatingObject(assignment)
-                if memberName != null {
+                let simpleExpression: SimpleExpression = (assignment.parent) as SimpleExpression
+                let leftSide: PostfixExpression = simpleExpression.prefixExpression.expression
+                let memberExpression: IdentifierExpression = (leftSide.primaryExpression) as IdentifierExpression
+                let memberName: string = memberExpression.name
+                if (classDeclaration != null) && (memberName != null) && !hasArrayPostfix(constructorCall.typeToConstruct) {
                     if isVariableMember(memberName, classDeclaration) {
-                        if !inConstructor(assignment) {
-                            sourceFile.append(memberName)
-                            sourceFile.append("->")
-                        }
-                        sourceFile.append("_getPage()")
-                        if inConstructor(assignment) {
-                            sourceFile.append("->allocateExclusivePage()")
-                        }
+                        sourceFile.append(memberName)
+                        sourceFile.append("->")
                     }
+                    sourceFile.append("_getPage()")
                 }
                 else {
-                    let simpleExpression: SimpleExpression = (assignment.parent) as SimpleExpression
-                    let leftSide: PostfixExpression = simpleExpression.prefixExpression.expression
-                    let memberExpression: IdentifierExpression = (leftSide.primaryExpression) as IdentifierExpression
-                    let memberName: string = memberExpression.name
-                    if (classDeclaration != null) && (memberName != null) && !hasArrayPostfix(constructorCall.typeToConstruct) {
-                        if isVariableMember(memberName, classDeclaration) {
-                            sourceFile.append(memberName)
-                            sourceFile.append("->")
-                        }
-                        sourceFile.append("_getPage()")
-                    }
-                    else {
-                        sourceFile.append("_p")
-                    }
+                    sourceFile.append("_p")
                 }
             }
             else {

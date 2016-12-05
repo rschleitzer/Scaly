@@ -1851,34 +1851,19 @@ bool SourceVisitor::openConstructorCall(ConstructorCall* constructorCall) {
         Assignment* assignment = getAssignment(constructorCall);
         if (assignment != nullptr) {
             ClassDeclaration* classDeclaration = getClassDeclaration(assignment);
-            string* memberName = getMemberIfCreatingObject(assignment);
-            if (memberName != nullptr) {
+            SimpleExpression* simpleExpression = (SimpleExpression*)(assignment->parent);
+            PostfixExpression* leftSide = simpleExpression->prefixExpression->expression;
+            IdentifierExpression* memberExpression = (IdentifierExpression*)(leftSide->primaryExpression);
+            string* memberName = memberExpression->name;
+            if ((classDeclaration != nullptr) && (memberName != nullptr) && !hasArrayPostfix(constructorCall->typeToConstruct)) {
                 if (isVariableMember(memberName, classDeclaration)) {
-                    if (!inConstructor(assignment)) {
-                        sourceFile->append(memberName);
-                        sourceFile->append("->");
-                    }
-                    sourceFile->append("_getPage()");
-                    if (inConstructor(assignment)) {
-                        sourceFile->append("->allocateExclusivePage()");
-                    }
+                    sourceFile->append(memberName);
+                    sourceFile->append("->");
                 }
+                sourceFile->append("_getPage()");
             }
             else {
-                SimpleExpression* simpleExpression = (SimpleExpression*)(assignment->parent);
-                PostfixExpression* leftSide = simpleExpression->prefixExpression->expression;
-                IdentifierExpression* memberExpression = (IdentifierExpression*)(leftSide->primaryExpression);
-                string* memberName = memberExpression->name;
-                if ((classDeclaration != nullptr) && (memberName != nullptr) && !hasArrayPostfix(constructorCall->typeToConstruct)) {
-                    if (isVariableMember(memberName, classDeclaration)) {
-                        sourceFile->append(memberName);
-                        sourceFile->append("->");
-                    }
-                    sourceFile->append("_getPage()");
-                }
-                else {
-                    sourceFile->append("_p");
-                }
+                sourceFile->append("_p");
             }
         }
         else {
