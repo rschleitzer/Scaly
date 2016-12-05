@@ -609,15 +609,17 @@ void HeaderVisitor::registerInheritance(string* className, string* baseName) {
     for (size_t _i = 0; _i < _inherits_length; _i++) {
         inh = *(*inherits)[_i];
         {
-            if (inh->name->equals(baseName))
+            if (inh->name->equals(baseName)) {
                 inherit = inh;
+                inherit->inheritors->push(className);
+            }
         }
     }
     if (inherit == nullptr) {
-        inherit = new(_getPage()) Inherits(baseName);
+        Inherits* newInherit = new(_getPage()) Inherits(baseName);
+        inherit = newInherit;
         inherits->push(inherit);
     }
-    inherit->inheritors->push(className);
 }
 
 bool HeaderVisitor::_isHeaderVisitor() { return (true); }

@@ -603,14 +603,16 @@ class HeaderVisitor extends CppVisitor {
     function registerInheritance(className: string, baseName: string) {
         var inherit: Inherits@inherits = null
         for inh: Inherits in inherits {
-            if inh.name.equals(baseName)
-             inherit = inh
+            if inh.name.equals(baseName) {
+                inherit = inh
+                inherit.inheritors.push(className)
+            }
         }
 
         if inherit == null {
-            inherit = new Inherits(baseName)
+            let newInherit: Inherits@inherits = new Inherits(baseName)
+            inherit = newInherit
             inherits.push(inherit)
         }
-        inherit.inheritors.push(className)
     }
 }

@@ -187,7 +187,7 @@ void SourceVisitor::closeClassDeclaration(ClassDeclaration* classDeclaration) {
     {
         _Region _region; _Page* _p = _region.get();
         _Array<string>* derivedClasses = new(_p) _Array<string>();
-        collectDerivedClasses(derivedClasses, new(_p) string(classDeclaration->name));
+        collectDerivedClasses(derivedClasses, classDeclaration->name);
         string* derivedClass = nullptr;
         size_t _derivedClasses_length = derivedClasses->length();
         for (size_t _i = 0; _i < _derivedClasses_length; _i++) {
@@ -1879,6 +1879,8 @@ string* SourceVisitor::getPage(_Page* _rp, SyntaxNode* node) {
                         LifeTime* lifeTime = identifierPattern->annotationForType->annotationForType->lifeTime;
                         if (lifeTime->_isRoot())
                             return new(_rp) string("_p");
+                        if (lifeTime->_isLocal())
+                            return new(_rp) string("getPage()");
                     }
                 }
             }
@@ -2278,15 +2280,17 @@ void SourceVisitor::registerInheritance(string* className, string* baseName) {
     for (size_t _i = 0; _i < _inherits_length; _i++) {
         inh = *(*inherits)[_i];
         {
-            if (inh->name->equals(baseName))
+            if (inh->name->equals(baseName)) {
                 inherit = inh;
+                inherit->inheritors->push(className);
+            }
         }
     }
     if (inherit == nullptr) {
-        inherit = new(_getPage()) Inherits(baseName);
+        Inherits* newInherit = new(_getPage()) Inherits(baseName);
+        inherit = newInherit;
         inherits->push(inherit);
     }
-    inherit->inheritors->push(className);
 }
 
 bool SourceVisitor::_isSourceVisitor() { return (true); }
