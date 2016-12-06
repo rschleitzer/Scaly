@@ -1474,23 +1474,21 @@ bool SourceVisitor::openParenthesizedExpression(ParenthesizedExpression* parenth
                 }
             }
         }
-        if (!callsInitializer(functionCall)) {
-            if (assignedToRootObject(functionCall)) {
-                sourceFile->append("_p");
+        if (assignedToRootObject(functionCall)) {
+            sourceFile->append("_p");
+            parameterInserted = true;
+        }
+        else {
+            if (assignedToReturnedObject(functionCall)) {
+                sourceFile->append("_rp");
                 parameterInserted = true;
             }
             else {
-                if (assignedToReturnedObject(functionCall)) {
-                    sourceFile->append("_rp");
+                string* identifier = getLocalPage(functionCall);
+                if (identifier != nullptr) {
+                    sourceFile->append(identifier);
+                    sourceFile->append("->_getPage()");
                     parameterInserted = true;
-                }
-                else {
-                    string* identifier = getLocalPage(functionCall);
-                    if (identifier != nullptr) {
-                        sourceFile->append(identifier);
-                        sourceFile->append("->_getPage()");
-                        parameterInserted = true;
-                    }
                 }
             }
         }
@@ -1605,21 +1603,6 @@ BindingInitializer* SourceVisitor::getBindingInitializer(FunctionCall* functionC
         }
     }
     return nullptr;
-}
-
-bool SourceVisitor::callsInitializer(FunctionCall* functionCall) {
-    if (functionCall->parent->_isPostfixExpression()) {
-        PostfixExpression* postfixExpression = (PostfixExpression*)(functionCall->parent);
-        if (postfixExpression->postfixes->length() == 1) {
-            if (postfixExpression->primaryExpression->_isIdentifierExpression()) {
-                IdentifierExpression* identifierExpression = (IdentifierExpression*)(postfixExpression->primaryExpression);
-                if (isClass(identifierExpression->name)) {
-                    return true;
-                }
-            }
-        }
-    }
-    return false;
 }
 
 bool SourceVisitor::catchesError(FunctionCall* functionCall) {

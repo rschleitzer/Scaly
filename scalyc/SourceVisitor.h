@@ -85,7 +85,6 @@ public:
     virtual bool assignedToReturnedObject(FunctionCall* functionCall);
     virtual bool boundToObject(BindingInitializer* bindingInitializer);
     virtual BindingInitializer* getBindingInitializer(FunctionCall* functionCall);
-    virtual bool callsInitializer(FunctionCall* functionCall);
     virtual bool catchesError(FunctionCall* functionCall);
     virtual void closeParenthesizedExpression(ParenthesizedExpression* parenthesizedExpression);
     virtual bool openReturnExpression(ReturnExpression* returnExpression);
