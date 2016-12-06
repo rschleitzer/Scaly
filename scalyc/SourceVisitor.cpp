@@ -1460,18 +1460,16 @@ bool SourceVisitor::openParenthesizedExpression(ParenthesizedExpression* parenth
         bool parameterInserted = false;
         if (functionCall->parent->_isPostfixExpression()) {
             PostfixExpression* postfixExpression = (PostfixExpression*)(functionCall->parent);
-            if (postfixExpression->primaryExpression->_isIdentifierExpression()) {
-                if (postfixExpression->parent->parent->parent->_isAssignment()) {
-                    Assignment* assignment = (Assignment*)(postfixExpression->parent->parent->parent);
-                    string* member = getMemberIfCreatingObject(assignment);
-                    if (member != nullptr) {
-                        ClassDeclaration* classDeclaration = getClassDeclaration(assignment);
-                        if (isVariableObjectField(member, classDeclaration)) {
-                            sourceFile->append(member);
-                            sourceFile->append("->_getPage()");
-                            if (functionCall->arguments != nullptr && functionCall->arguments->expressionElements != nullptr)
-                                parameterInserted = true;
-                        }
+            if (postfixExpression->parent->parent->parent->_isAssignment()) {
+                Assignment* assignment = (Assignment*)(postfixExpression->parent->parent->parent);
+                string* member = getMemberIfCreatingObject(assignment);
+                if (member != nullptr) {
+                    ClassDeclaration* classDeclaration = getClassDeclaration(assignment);
+                    if (isVariableObjectField(member, classDeclaration)) {
+                        sourceFile->append(member);
+                        sourceFile->append("->_getPage()");
+                        if (functionCall->arguments != nullptr && functionCall->arguments->expressionElements != nullptr)
+                            parameterInserted = true;
                     }
                 }
             }
