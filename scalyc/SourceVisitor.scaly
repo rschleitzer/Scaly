@@ -1506,22 +1506,19 @@ class SourceVisitor extends CppVisitor {
             if functionCall.parent is PostfixExpression {
                 let postfixExpression: PostfixExpression = (functionCall.parent) as PostfixExpression
                 if postfixExpression.primaryExpression is IdentifierExpression {
-                    let identifierExpression: IdentifierExpression = (postfixExpression.primaryExpression) as IdentifierExpression
-                   // if !isClass(identifierExpression.name) {
-                        if postfixExpression.parent.parent.parent is Assignment {
-                            let assignment: Assignment = (postfixExpression.parent.parent.parent) as Assignment
-                            let member: string& = getMemberIfCreatingObject(assignment)
-                            if member != null {
-                                var classDeclaration: ClassDeclaration = getClassDeclaration(assignment)
-                                if isVariableObjectField(member, classDeclaration) {
-                                    sourceFile.append(member)
-                                    sourceFile.append("->_getPage()")
-                                    if functionCall.arguments != null && functionCall.arguments.expressionElements != null
-                                        parameterInserted = true
-                                }
+                    if postfixExpression.parent.parent.parent is Assignment {
+                        let assignment: Assignment = (postfixExpression.parent.parent.parent) as Assignment
+                        let member: string& = getMemberIfCreatingObject(assignment)
+                        if member != null {
+                            var classDeclaration: ClassDeclaration = getClassDeclaration(assignment)
+                            if isVariableObjectField(member, classDeclaration) {
+                                sourceFile.append(member)
+                                sourceFile.append("->_getPage()")
+                                if functionCall.arguments != null && functionCall.arguments.expressionElements != null
+                                    parameterInserted = true
                             }
                         }
-                    //}
+                    }
                 }
             }
 

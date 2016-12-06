@@ -1461,7 +1461,6 @@ bool SourceVisitor::openParenthesizedExpression(ParenthesizedExpression* parenth
         if (functionCall->parent->_isPostfixExpression()) {
             PostfixExpression* postfixExpression = (PostfixExpression*)(functionCall->parent);
             if (postfixExpression->primaryExpression->_isIdentifierExpression()) {
-                IdentifierExpression* identifierExpression = (IdentifierExpression*)(postfixExpression->primaryExpression);
                 if (postfixExpression->parent->parent->parent->_isAssignment()) {
                     Assignment* assignment = (Assignment*)(postfixExpression->parent->parent->parent);
                     string* member = getMemberIfCreatingObject(assignment);
