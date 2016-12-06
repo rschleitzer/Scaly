@@ -1445,6 +1445,7 @@ bool SourceVisitor::openParenthesizedExpression(ParenthesizedExpression* parenth
         sourceFile->append("(");
     if (parenthesizedExpression->parent->_isFunctionCall()) {
         FunctionCall* functionCall = (FunctionCall*)(parenthesizedExpression->parent);
+        bool parameterInserted = false;
         if (functionCall->parent->_isPostfixExpression()) {
             PostfixExpression* postfixExpression = (PostfixExpression*)(functionCall->parent);
             if (postfixExpression->primaryExpression->_isIdentifierExpression()) {
@@ -1459,14 +1460,13 @@ bool SourceVisitor::openParenthesizedExpression(ParenthesizedExpression* parenth
                                 sourceFile->append(member);
                                 sourceFile->append("->_getPage()");
                                 if (functionCall->arguments != nullptr && functionCall->arguments->expressionElements != nullptr)
-                                    sourceFile->append(", ");
+                                    parameterInserted = true;
                             }
                         }
                     }
                 }
             }
         }
-        bool parameterInserted = false;
         if (!callsInitializer(functionCall)) {
             if (assignedToRootObject(functionCall)) {
                 sourceFile->append("_p");

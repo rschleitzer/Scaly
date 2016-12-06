@@ -1490,6 +1490,7 @@ class SourceVisitor extends CppVisitor {
             sourceFile.append("(")
         if parenthesizedExpression.parent is FunctionCall {
             let functionCall: FunctionCall = (parenthesizedExpression.parent) as FunctionCall
+            let parameterInserted: bool = false
             if functionCall.parent is PostfixExpression {
                 let postfixExpression: PostfixExpression = (functionCall.parent) as PostfixExpression
                 if postfixExpression.primaryExpression is IdentifierExpression {
@@ -1504,7 +1505,7 @@ class SourceVisitor extends CppVisitor {
                                     sourceFile.append(member)
                                     sourceFile.append("->_getPage()")
                                     if functionCall.arguments != null && functionCall.arguments.expressionElements != null
-                                        sourceFile.append(", ")
+                                        parameterInserted = true
                                 }
                             }
                         }
@@ -1512,7 +1513,6 @@ class SourceVisitor extends CppVisitor {
                 }
             }
 
-            let parameterInserted: bool = false
             if !callsInitializer(functionCall) {
                 if assignedToRootObject(functionCall) {
                     sourceFile.append("_p")
