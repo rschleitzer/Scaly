@@ -837,18 +837,16 @@ class SourceVisitor extends CppVisitor {
     function getFunctionName(assignment: Assignment&): string& {
         let simpleExpression: SimpleExpression = (assignment.expression) as SimpleExpression
         let prefixExpression: PrefixExpression = simpleExpression.prefixExpression
-        if prefixExpression.prefixOperator == null {
-            let rightSide: PostfixExpression = prefixExpression.expression
-            if rightSide.primaryExpression is IdentifierExpression {
-                let classExpression: IdentifierExpression = (rightSide.primaryExpression) as IdentifierExpression
-                return(classExpression.name)
-            }
-            else {
-                if rightSide.primaryExpression is ConstructorCall {
-                    let constructorCall: ConstructorCall = (rightSide.primaryExpression) as ConstructorCall
-                    let type: Type = constructorCall.typeToConstruct
-                    return(type.name)
-                }
+        let rightSide: PostfixExpression = prefixExpression.expression
+        if rightSide.primaryExpression is IdentifierExpression {
+            let classExpression: IdentifierExpression = (rightSide.primaryExpression) as IdentifierExpression
+            return(classExpression.name)
+        }
+        else {
+            if rightSide.primaryExpression is ConstructorCall {
+                let constructorCall: ConstructorCall = (rightSide.primaryExpression) as ConstructorCall
+                let type: Type = constructorCall.typeToConstruct
+                return(type.name)
             }
         }
 

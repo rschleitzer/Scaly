@@ -772,18 +772,16 @@ string* SourceVisitor::getMemberIfCreatingObject(Assignment* assignment) {
 string* SourceVisitor::getFunctionName(Assignment* assignment) {
     SimpleExpression* simpleExpression = (SimpleExpression*)(assignment->expression);
     PrefixExpression* prefixExpression = simpleExpression->prefixExpression;
-    if (prefixExpression->prefixOperator == nullptr) {
-        PostfixExpression* rightSide = prefixExpression->expression;
-        if (rightSide->primaryExpression->_isIdentifierExpression()) {
-            IdentifierExpression* classExpression = (IdentifierExpression*)(rightSide->primaryExpression);
-            return classExpression->name;
-        }
-        else {
-            if (rightSide->primaryExpression->_isConstructorCall()) {
-                ConstructorCall* constructorCall = (ConstructorCall*)(rightSide->primaryExpression);
-                Type* type = constructorCall->typeToConstruct;
-                return type->name;
-            }
+    PostfixExpression* rightSide = prefixExpression->expression;
+    if (rightSide->primaryExpression->_isIdentifierExpression()) {
+        IdentifierExpression* classExpression = (IdentifierExpression*)(rightSide->primaryExpression);
+        return classExpression->name;
+    }
+    else {
+        if (rightSide->primaryExpression->_isConstructorCall()) {
+            ConstructorCall* constructorCall = (ConstructorCall*)(rightSide->primaryExpression);
+            Type* type = constructorCall->typeToConstruct;
+            return type->name;
         }
     }
     return nullptr;
