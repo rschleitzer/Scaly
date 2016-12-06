@@ -1505,7 +1505,7 @@ bool SourceVisitor::openParenthesizedExpression(ParenthesizedExpression* parenth
                 parameterInserted = true;
             }
         }
-        if (functionCall->catchClauses == nullptr) {
+        else {
             if (functionCall->parent->_isPostfixExpression()) {
                 PostfixExpression* postfixExpression = (PostfixExpression*)(functionCall->parent);
                 if (postfixExpression->primaryExpression->_isIdentifierExpression()) {

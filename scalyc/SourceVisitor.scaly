@@ -1550,9 +1550,8 @@ class SourceVisitor extends CppVisitor {
                         sourceFile.append("_ep")
                     parameterInserted = true
                 }
-            }
-            
-            if functionCall.catchClauses == null {
+            }            
+            else {
                 if functionCall.parent is PostfixExpression {
                     let postfixExpression: PostfixExpression = (functionCall.parent) as PostfixExpression
                     if postfixExpression.primaryExpression is IdentifierExpression {
