@@ -1462,18 +1462,16 @@ bool SourceVisitor::openParenthesizedExpression(ParenthesizedExpression* parenth
             PostfixExpression* postfixExpression = (PostfixExpression*)(functionCall->parent);
             if (postfixExpression->primaryExpression->_isIdentifierExpression()) {
                 IdentifierExpression* identifierExpression = (IdentifierExpression*)(postfixExpression->primaryExpression);
-                if (!isClass(identifierExpression->name)) {
-                    if (postfixExpression->parent->parent->parent->_isAssignment()) {
-                        Assignment* assignment = (Assignment*)(postfixExpression->parent->parent->parent);
-                        string* member = getMemberIfCreatingObject(assignment);
-                        if (member != nullptr) {
-                            ClassDeclaration* classDeclaration = getClassDeclaration(assignment);
-                            if (isVariableObjectField(member, classDeclaration)) {
-                                sourceFile->append(member);
-                                sourceFile->append("->_getPage()");
-                                if (functionCall->arguments != nullptr && functionCall->arguments->expressionElements != nullptr)
-                                    parameterInserted = true;
-                            }
+                if (postfixExpression->parent->parent->parent->_isAssignment()) {
+                    Assignment* assignment = (Assignment*)(postfixExpression->parent->parent->parent);
+                    string* member = getMemberIfCreatingObject(assignment);
+                    if (member != nullptr) {
+                        ClassDeclaration* classDeclaration = getClassDeclaration(assignment);
+                        if (isVariableObjectField(member, classDeclaration)) {
+                            sourceFile->append(member);
+                            sourceFile->append("->_getPage()");
+                            if (functionCall->arguments != nullptr && functionCall->arguments->expressionElements != nullptr)
+                                parameterInserted = true;
                         }
                     }
                 }
