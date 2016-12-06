@@ -50,9 +50,6 @@ public:
     virtual bool openAssignment(Assignment* assignment);
     virtual bool inConstructor(SyntaxNode* node);
     virtual bool inThrow(SyntaxNode* node);
-    virtual string* getMemberIfCreatingObject(Assignment* assignment);
-    virtual string* getFunctionName(Assignment* assignment);
-    virtual bool isCreatingObject(string* functionName, SyntaxNode* node);
     virtual ClassDeclaration* getClassDeclaration(SyntaxNode* node);
     virtual bool isObjectField(string* memberName, ClassDeclaration* classDeclaration);
     virtual bool isVariableObjectField(string* memberName, ClassDeclaration* classDeclaration);

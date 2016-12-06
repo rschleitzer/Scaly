@@ -3,7 +3,6 @@ using namespace scaly;
 namespace scalyc {
 
 HeaderVisitor::HeaderVisitor() {
-    moduleName = new(_getPage()->allocateExclusivePage()) string();
     headerFile = new(_getPage()->allocateExclusivePage()) VarString();
     mainHeaderFile = new(_getPage()->allocateExclusivePage()) VarString();
     inherits = new(_getPage()->allocateExclusivePage()) _Array<Inherits>();
@@ -49,23 +48,22 @@ bool HeaderVisitor::openProgram(Program* program) {
 }
 
 bool HeaderVisitor::openCompilationUnit(CompilationUnit* compilationUnit) {
-    moduleName = compilationUnit->fileName;
     if (!(compilationUnit->parent->_isProgram()))
         return false;
     string* programName = ((Program*)(compilationUnit->parent))->name;
-    if (!moduleName->equals(programName)) {
+    if (!compilationUnit->fileName->equals(programName)) {
         if (headerFile != nullptr)
             headerFile->_getPage()->clear();
         headerFile = new(headerFile == nullptr ? _getPage()->allocateExclusivePage() : headerFile->_getPage()) VarString();
         headerFile->append("#ifndef __");
         headerFile->append(programName);
         headerFile->append("__");
-        headerFile->append(moduleName);
+        headerFile->append(compilationUnit->fileName);
         headerFile->append("__\n");
         headerFile->append("#define __");
         headerFile->append(programName);
         headerFile->append("__");
-        headerFile->append(moduleName);
+        headerFile->append(compilationUnit->fileName);
         headerFile->append("__\n#include \"");
         headerFile->append(programName);
         headerFile->append(".h\"\nusing namespace scaly;\nnamespace ");
@@ -85,10 +83,10 @@ void HeaderVisitor::closeCompilationUnit(CompilationUnit* compilationUnit) {
     outputFilePath->append('/');
     string* fileNameWithoutExtension = Path::getFileNameWithoutExtension(_p, compilationUnit->fileName);
     outputFilePath->append(fileNameWithoutExtension);
-    if (!moduleName->equals(programName)) {
+    if (!compilationUnit->fileName->equals(programName)) {
         _Region _region; _Page* _p = _region.get();
         headerFile->append("\n\n}\n#endif // __scalyc__");
-        headerFile->append(moduleName);
+        headerFile->append(compilationUnit->fileName);
         headerFile->append("__\n");
         VarString* headerFilePath = new(_p) VarString(outputFilePath);
         headerFilePath->append(".h");

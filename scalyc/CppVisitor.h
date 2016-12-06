@@ -16,7 +16,6 @@ class CppVisitor : public Visitor {
 public:
     _Array<Inherits>* inherits;
     _Array<string>* classes;
-    string* moduleName;
     virtual void execute(Program* program);
     virtual bool hasArrayPostfix(Type* type);
     virtual bool isClass(string* name) = 0;

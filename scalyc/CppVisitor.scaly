@@ -18,9 +18,6 @@ class CppVisitor extends Visitor {
     mutable inherits: Inherits[]
     mutable classes: string[]
 
-    // Needed during building one module
-    mutable moduleName: string
-
     function execute(program: Program) {
         program.accept(this)
     }

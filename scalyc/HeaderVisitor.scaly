@@ -6,7 +6,6 @@ class HeaderVisitor extends CppVisitor {
     constructor() {
 
         // null constructor of mutable members does not work yet
-        moduleName = new string()
         headerFile = new VarString()
         mainHeaderFile = new VarString()
         inherits = new Inherits[]()
@@ -51,24 +50,22 @@ class HeaderVisitor extends CppVisitor {
 
     function openCompilationUnit(compilationUnit: CompilationUnit): bool {
 
-        moduleName = compilationUnit.fileName
-
         if !(compilationUnit.parent is Program)
             return(false)
 
         let programName: string = ((compilationUnit.parent) as Program).name
 
-        if !moduleName.equals(programName) {
+        if !compilationUnit.fileName.equals(programName) {
             headerFile = new VarString()
             headerFile.append("#ifndef __")
             headerFile.append(programName)
             headerFile.append("__")
-            headerFile.append(moduleName)
+            headerFile.append(compilationUnit.fileName)
             headerFile.append("__\n")
             headerFile.append("#define __")
             headerFile.append(programName)
             headerFile.append("__")
-            headerFile.append(moduleName)
+            headerFile.append(compilationUnit.fileName)
             headerFile.append("__\n#include \"")
             headerFile.append(programName)
             headerFile.append(".h\"\nusing namespace scaly;\nnamespace ")
@@ -91,9 +88,9 @@ class HeaderVisitor extends CppVisitor {
         let fileNameWithoutExtension: string$ = Path.getFileNameWithoutExtension(compilationUnit.fileName)
         outputFilePath.append(fileNameWithoutExtension)
 
-        if !moduleName.equals(programName) {
+        if !compilationUnit.fileName.equals(programName) {
             headerFile.append("\n\n}\n#endif // __scalyc__")
-            headerFile.append(moduleName)
+            headerFile.append(compilationUnit.fileName)
             headerFile.append("__\n")
             let headerFilePath: VarString$ = new VarString(outputFilePath)
             headerFilePath.append(".h")

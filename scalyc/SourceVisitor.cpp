@@ -355,16 +355,26 @@ bool SourceVisitor::openSimpleExpression(SimpleExpression* simpleExpression) {
                 BinaryOp* binaryOp = *(*binaryOps)[0];
                 if (binaryOp->_isAssignment()) {
                     Assignment* assignment = (Assignment*)binaryOp;
-                    string* memberName = getMemberIfCreatingObject(assignment);
-                    if ((memberName != nullptr) && (!inConstructor(assignment))) {
-                        sourceFile->append("if (");
-                        sourceFile->append(memberName);
-                        sourceFile->append(" != nullptr)\n");
-                        this->indent(level(simpleExpression));
-                        sourceFile->append("    ");
-                        sourceFile->append(memberName);
-                        sourceFile->append("->_getPage()->clear();\n");
-                        this->indent(level(simpleExpression));
+                    SimpleExpression* simpleExpression = (SimpleExpression*)(assignment->parent);
+                    PostfixExpression* leftSide = simpleExpression->prefixExpression->expression;
+                    if (leftSide->primaryExpression->_isIdentifierExpression()) {
+                        IdentifierExpression* memberExpression = (IdentifierExpression*)(leftSide->primaryExpression);
+                        string* memberName = memberExpression->name;
+                        ClassDeclaration* classDeclaration = getClassDeclaration(assignment);
+                        if (classDeclaration != nullptr) {
+                            if (isVariableObjectField(memberName, classDeclaration)) {
+                                if ((memberName != nullptr) && (!inConstructor(assignment))) {
+                                    sourceFile->append("if (");
+                                    sourceFile->append(memberName);
+                                    sourceFile->append(" != nullptr)\n");
+                                    this->indent(level(simpleExpression));
+                                    sourceFile->append("    ");
+                                    sourceFile->append(memberName);
+                                    sourceFile->append("->_getPage()->clear();\n");
+                                    this->indent(level(simpleExpression));
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -748,69 +758,6 @@ bool SourceVisitor::inThrow(SyntaxNode* node) {
     return inThrow(node->parent);
 }
 
-string* SourceVisitor::getMemberIfCreatingObject(Assignment* assignment) {
-    string* functionName = getFunctionName(assignment);
-    if (functionName == nullptr) {
-        return nullptr;
-    }
-    if (isClass(functionName) || isCreatingObject(functionName, assignment)) {
-        SimpleExpression* simpleExpression = (SimpleExpression*)(assignment->parent);
-        PostfixExpression* leftSide = simpleExpression->prefixExpression->expression;
-        if (leftSide->primaryExpression->_isIdentifierExpression()) {
-            IdentifierExpression* memberExpression = (IdentifierExpression*)(leftSide->primaryExpression);
-            string* memberName = memberExpression->name;
-            ClassDeclaration* classDeclaration = getClassDeclaration(assignment);
-            if (classDeclaration != nullptr) {
-                if (isVariableObjectField(memberName, classDeclaration))
-                    return memberName;
-            }
-        }
-    }
-    return nullptr;
-}
-
-string* SourceVisitor::getFunctionName(Assignment* assignment) {
-    if (assignment->expression->_isSimpleExpression()) {
-        SimpleExpression* simpleExpression = (SimpleExpression*)(assignment->expression);
-        PrefixExpression* prefixExpression = simpleExpression->prefixExpression;
-        PostfixExpression* rightSide = prefixExpression->expression;
-        if (rightSide->primaryExpression->_isIdentifierExpression()) {
-            IdentifierExpression* classExpression = (IdentifierExpression*)(rightSide->primaryExpression);
-            return classExpression->name;
-        }
-        else {
-            if (rightSide->primaryExpression->_isConstructorCall()) {
-                ConstructorCall* constructorCall = (ConstructorCall*)(rightSide->primaryExpression);
-                Type* type = constructorCall->typeToConstruct;
-                return type->name;
-            }
-        }
-    }
-    return nullptr;
-}
-
-bool SourceVisitor::isCreatingObject(string* functionName, SyntaxNode* node) {
-    ClassDeclaration* classDeclaration = getClassDeclaration(node);
-    if (classDeclaration == nullptr)
-        return false;
-    _Array<ClassMember>* members = classDeclaration->body->members;
-    if (members == nullptr)
-        return false;
-    ClassMember* member = nullptr;
-    size_t _members_length = members->length();
-    for (size_t _i = 0; _i < _members_length; _i++) {
-        member = *(*members)[_i];
-        {
-            if (member->declaration->_isFunctionDeclaration()) {
-                FunctionDeclaration* functionDeclaration = (FunctionDeclaration*)(member->declaration);
-                if (functionDeclaration->name->equals(functionName))
-                    return true;
-            }
-        }
-    }
-    return false;
-}
-
 ClassDeclaration* SourceVisitor::getClassDeclaration(SyntaxNode* node) {
     if (node->_isClassDeclaration())
         return (ClassDeclaration*)node;
@@ -820,6 +767,10 @@ ClassDeclaration* SourceVisitor::getClassDeclaration(SyntaxNode* node) {
 }
 
 bool SourceVisitor::isObjectField(string* memberName, ClassDeclaration* classDeclaration) {
+    if (classDeclaration->body == nullptr)
+        return false;
+    if (classDeclaration->body->members == nullptr)
+        return false;
     _Array<ClassMember>* classMembers = classDeclaration->body->members;
     ClassMember* member = nullptr;
     size_t _classMembers_length = classMembers->length();
@@ -876,6 +827,10 @@ bool SourceVisitor::isObjectField(string* memberName, ClassDeclaration* classDec
 }
 
 bool SourceVisitor::isVariableObjectField(string* memberName, ClassDeclaration* classDeclaration) {
+    if (classDeclaration->body == nullptr)
+        return false;
+    if (classDeclaration->body->members == nullptr)
+        return false;
     _Array<ClassMember>* classMembers = classDeclaration->body->members;
     ClassMember* member = nullptr;
     size_t _classMembers_length = classMembers->length();
@@ -1462,14 +1417,19 @@ bool SourceVisitor::openParenthesizedExpression(ParenthesizedExpression* parenth
             PostfixExpression* postfixExpression = (PostfixExpression*)(functionCall->parent);
             if (postfixExpression->parent->parent->parent->_isAssignment()) {
                 Assignment* assignment = (Assignment*)(postfixExpression->parent->parent->parent);
-                string* member = getMemberIfCreatingObject(assignment);
-                if (member != nullptr) {
+                SimpleExpression* simpleExpression = (SimpleExpression*)(assignment->parent);
+                PostfixExpression* leftSide = simpleExpression->prefixExpression->expression;
+                if (leftSide->primaryExpression->_isIdentifierExpression()) {
+                    IdentifierExpression* memberExpression = (IdentifierExpression*)(leftSide->primaryExpression);
+                    string* memberName = memberExpression->name;
                     ClassDeclaration* classDeclaration = getClassDeclaration(assignment);
-                    if (isVariableObjectField(member, classDeclaration)) {
-                        sourceFile->append(member);
-                        sourceFile->append("->_getPage()");
-                        if (functionCall->arguments != nullptr && functionCall->arguments->expressionElements != nullptr)
-                            parameterInserted = true;
+                    if (classDeclaration != nullptr) {
+                        if (isVariableObjectField(memberName, classDeclaration)) {
+                            sourceFile->append(memberName);
+                            sourceFile->append("->_getPage()");
+                            if (functionCall->arguments != nullptr && functionCall->arguments->expressionElements != nullptr)
+                                parameterInserted = true;
+                        }
                     }
                 }
             }

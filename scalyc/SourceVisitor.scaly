@@ -376,16 +376,26 @@ class SourceVisitor extends CppVisitor {
                     let binaryOp: BinaryOp = binaryOps[0]
                     if binaryOp is Assignment {
                         let assignment: Assignment = binaryOp as Assignment
-                        let memberName: string& = getMemberIfCreatingObject(assignment)
-                        if (memberName != null) && (!inConstructor(assignment)) {
-                            sourceFile.append("if (")
-                            sourceFile.append(memberName)
-                            sourceFile.append(" != nullptr)\n")
-                            this.indent(level(simpleExpression))
-                            sourceFile.append("    ")
-                            sourceFile.append(memberName)
-                            sourceFile.append("->_getPage()->clear();\n")
-                            this.indent(level(simpleExpression))
+                        let simpleExpression: SimpleExpression = (assignment.parent) as SimpleExpression
+                        let leftSide: PostfixExpression = simpleExpression.prefixExpression.expression
+                        if leftSide.primaryExpression is IdentifierExpression {
+                            let memberExpression: IdentifierExpression = (leftSide.primaryExpression) as IdentifierExpression
+                            let memberName: string = memberExpression.name
+                            var classDeclaration: ClassDeclaration = getClassDeclaration(assignment)
+                            if classDeclaration != null {
+                                if isVariableObjectField(memberName, classDeclaration) {
+                                    if (memberName != null) && (!inConstructor(assignment)) {
+                                        sourceFile.append("if (")
+                                        sourceFile.append(memberName)
+                                        sourceFile.append(" != nullptr)\n")
+                                        this.indent(level(simpleExpression))
+                                        sourceFile.append("    ")
+                                        sourceFile.append(memberName)
+                                        sourceFile.append("->_getPage()->clear();\n")
+                                        this.indent(level(simpleExpression))
+                                    }
+                                }
+                            }
                         }
                     }
                 }
@@ -811,70 +821,6 @@ class SourceVisitor extends CppVisitor {
         inThrow(node.parent)
     }
 
-    function getMemberIfCreatingObject(assignment: Assignment&): string& {
-        let functionName: string& = getFunctionName(assignment)
-        if functionName == null {
-            return(null)
-        }
-
-        if isClass(functionName) || isCreatingObject(functionName, assignment) {
-            let simpleExpression: SimpleExpression = (assignment.parent) as SimpleExpression
-            let leftSide: PostfixExpression = simpleExpression.prefixExpression.expression
-            if leftSide.primaryExpression is IdentifierExpression {
-                let memberExpression: IdentifierExpression = (leftSide.primaryExpression) as IdentifierExpression
-                let memberName: string = memberExpression.name
-                var classDeclaration: ClassDeclaration = getClassDeclaration(assignment)
-                if classDeclaration != null {
-                    if isVariableObjectField(memberName, classDeclaration)
-                        return(memberName)
-                }
-            }
-        }
-        
-        null
-    }
-
-    function getFunctionName(assignment: Assignment&): string& {
-        if assignment.expression is SimpleExpression {
-            let simpleExpression: SimpleExpression = (assignment.expression) as SimpleExpression
-            let prefixExpression: PrefixExpression = simpleExpression.prefixExpression
-            let rightSide: PostfixExpression = prefixExpression.expression
-            if rightSide.primaryExpression is IdentifierExpression {
-                let classExpression: IdentifierExpression = (rightSide.primaryExpression) as IdentifierExpression
-                return(classExpression.name)
-            }
-            else {
-                if rightSide.primaryExpression is ConstructorCall {
-                    let constructorCall: ConstructorCall = (rightSide.primaryExpression) as ConstructorCall
-                    let type: Type = constructorCall.typeToConstruct
-                    return(type.name)
-                }
-            }
-        }
-
-        null
-    }
-    
-    function isCreatingObject(functionName: string, node: SyntaxNode): bool {
-        var classDeclaration: ClassDeclaration = getClassDeclaration(node)
-        if classDeclaration == null
-            return(false)
-
-        let members: ClassMember[] = classDeclaration.body.members
-        if members == null
-            return(false)
-
-        for member: ClassMember in members {
-            if member.declaration is FunctionDeclaration {
-                let functionDeclaration: FunctionDeclaration = (member.declaration) as FunctionDeclaration
-                if functionDeclaration.name.equals(functionName)
-                    return(true)
-            } 
-        }
-
-        false
-    }
-
     function getClassDeclaration(node: SyntaxNode&): ClassDeclaration& {
         if node is ClassDeclaration
             return(node as ClassDeclaration)
@@ -886,6 +832,13 @@ class SourceVisitor extends CppVisitor {
     }
 
     function isObjectField(memberName: string, classDeclaration: ClassDeclaration): bool {
+
+        if classDeclaration.body == null
+            return(false)
+
+        if classDeclaration.body.members == null
+            return(false)
+
         let classMembers: ClassMember[] = classDeclaration.body.members
         for member: ClassMember in classMembers {
 
@@ -937,6 +890,13 @@ class SourceVisitor extends CppVisitor {
     }
 
     function isVariableObjectField(memberName: string, classDeclaration: ClassDeclaration): bool {
+
+        if classDeclaration.body == null
+            return(false)
+
+        if classDeclaration.body.members == null
+            return(false)
+            
         let classMembers: ClassMember[] = classDeclaration.body.members
         for member: ClassMember in classMembers {
 
@@ -1507,14 +1467,19 @@ class SourceVisitor extends CppVisitor {
                 let postfixExpression: PostfixExpression = (functionCall.parent) as PostfixExpression
                 if postfixExpression.parent.parent.parent is Assignment {
                     let assignment: Assignment = (postfixExpression.parent.parent.parent) as Assignment
-                    let member: string& = getMemberIfCreatingObject(assignment)
-                    if member != null {
+                    let simpleExpression: SimpleExpression = (assignment.parent) as SimpleExpression
+                    let leftSide: PostfixExpression = simpleExpression.prefixExpression.expression
+                    if leftSide.primaryExpression is IdentifierExpression {
+                        let memberExpression: IdentifierExpression = (leftSide.primaryExpression) as IdentifierExpression
+                        let memberName: string = memberExpression.name
                         var classDeclaration: ClassDeclaration = getClassDeclaration(assignment)
-                        if isVariableObjectField(member, classDeclaration) {
-                            sourceFile.append(member)
-                            sourceFile.append("->_getPage()")
-                            if functionCall.arguments != null && functionCall.arguments.expressionElements != null
-                                parameterInserted = true
+                        if classDeclaration != null {
+                            if isVariableObjectField(memberName, classDeclaration) {
+                                sourceFile.append(memberName)
+                                sourceFile.append("->_getPage()")
+                                if functionCall.arguments != null && functionCall.arguments.expressionElements != null
+                                    parameterInserted = true
+                            }
                         }
                     }
                 }
