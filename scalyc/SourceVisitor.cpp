@@ -761,7 +761,7 @@ string* SourceVisitor::getMemberIfCreatingObject(Assignment* assignment) {
             string* memberName = memberExpression->name;
             ClassDeclaration* classDeclaration = getClassDeclaration(assignment);
             if (classDeclaration != nullptr) {
-                if (isVariableMember(memberName, classDeclaration))
+                if (isVariableObjectField(memberName, classDeclaration))
                     return memberName;
             }
         }
@@ -819,7 +819,7 @@ ClassDeclaration* SourceVisitor::getClassDeclaration(SyntaxNode* node) {
     return nullptr;
 }
 
-bool SourceVisitor::isFieldMember(string* memberName, ClassDeclaration* classDeclaration) {
+bool SourceVisitor::isObjectField(string* memberName, ClassDeclaration* classDeclaration) {
     _Array<ClassMember>* classMembers = classDeclaration->body->members;
     ClassMember* member = nullptr;
     size_t _classMembers_length = classMembers->length();
@@ -844,8 +844,14 @@ bool SourceVisitor::isFieldMember(string* memberName, ClassDeclaration* classDec
             PatternInitializer* patternInitializer = bindingInitializer->initializer;
             if (patternInitializer->pattern->_isIdentifierPattern()) {
                 IdentifierPattern* identifierPattern = (IdentifierPattern*)(patternInitializer->pattern);
-                if (identifierPattern->identifier->equals(memberName))
-                    return true;
+                if (identifierPattern->identifier->equals(memberName)) {
+                    if (identifierPattern->annotationForType != nullptr) {
+                        if (isClass(identifierPattern->annotationForType->annotationForType->name))
+                            return true;
+                        else
+                            return false;
+                    }
+                }
             }
         }
     }
@@ -860,7 +866,7 @@ bool SourceVisitor::isFieldMember(string* memberName, ClassDeclaration* classDec
                     ClassDeclaration* baseClassDeclaration = findClassDeclaration(classDeclaration, inheritance->type->name);
                     if (baseClassDeclaration == nullptr)
                         continue;
-                    if (isFieldMember(memberName, baseClassDeclaration))
+                    if (isObjectField(memberName, baseClassDeclaration))
                         return true;
                 }
             }
@@ -869,7 +875,7 @@ bool SourceVisitor::isFieldMember(string* memberName, ClassDeclaration* classDec
     return false;
 }
 
-bool SourceVisitor::isVariableMember(string* memberName, ClassDeclaration* classDeclaration) {
+bool SourceVisitor::isVariableObjectField(string* memberName, ClassDeclaration* classDeclaration) {
     _Array<ClassMember>* classMembers = classDeclaration->body->members;
     ClassMember* member = nullptr;
     size_t _classMembers_length = classMembers->length();
@@ -890,8 +896,14 @@ bool SourceVisitor::isVariableMember(string* memberName, ClassDeclaration* class
             PatternInitializer* patternInitializer = bindingInitializer->initializer;
             if (patternInitializer->pattern->_isIdentifierPattern()) {
                 IdentifierPattern* identifierPattern = (IdentifierPattern*)(patternInitializer->pattern);
-                if (identifierPattern->identifier->equals(memberName))
-                    return true;
+                if (identifierPattern->identifier->equals(memberName)) {
+                    if (identifierPattern->annotationForType != nullptr) {
+                        if (isClass(identifierPattern->annotationForType->annotationForType->name))
+                            return true;
+                        else
+                            return false;
+                    }
+                }
             }
         }
     }
@@ -906,7 +918,7 @@ bool SourceVisitor::isVariableMember(string* memberName, ClassDeclaration* class
                     ClassDeclaration* baseClassDeclaration = findClassDeclaration(classDeclaration, inheritance->type->name);
                     if (baseClassDeclaration == nullptr)
                         continue;
-                    if (isVariableMember(memberName, baseClassDeclaration))
+                    if (isVariableObjectField(memberName, baseClassDeclaration))
                         return true;
                 }
             }
@@ -1456,7 +1468,7 @@ bool SourceVisitor::openParenthesizedExpression(ParenthesizedExpression* parenth
                         string* member = getMemberIfCreatingObject(assignment);
                         if (member != nullptr) {
                             ClassDeclaration* classDeclaration = getClassDeclaration(assignment);
-                            if (isVariableMember(member, classDeclaration)) {
+                            if (isVariableObjectField(member, classDeclaration)) {
                                 sourceFile->append(member);
                                 sourceFile->append("->_getPage()");
                                 if (functionCall->arguments != nullptr && functionCall->arguments->expressionElements != nullptr)
@@ -1889,6 +1901,8 @@ string* SourceVisitor::getPage(_Page* _rp, SyntaxNode* node) {
             if (patternInitializer->pattern->_isIdentifierPattern()) {
                 IdentifierPattern* identifierPattern = (IdentifierPattern*)patternInitializer->pattern;
                 if (identifierPattern->annotationForType != nullptr) {
+                    if (!isClass(identifierPattern->annotationForType->annotationForType->name))
+                        return nullptr;
                     if (identifierPattern->annotationForType->annotationForType->lifeTime == nullptr) {
                         return new(_rp) string("_rp");
                     }
@@ -1922,8 +1936,8 @@ string* SourceVisitor::getPage(_Page* _rp, SyntaxNode* node) {
                 ClassDeclaration* classDeclaration = getClassDeclaration(assignment);
                 if (classDeclaration != nullptr) {
                     VarString* page = new(_rp) VarString("");
-                    if (isFieldMember(name, classDeclaration)) {
-                        if (isVariableMember(name, classDeclaration)) {
+                    if (isObjectField(name, classDeclaration)) {
+                        if (isVariableObjectField(name, classDeclaration)) {
                             if (!inConstructor(assignment)) {
                                 page->append(name);
                                 page->append(" == nullptr ? _getPage()->allocateExclusivePage() : ");

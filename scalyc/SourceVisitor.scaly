@@ -825,7 +825,7 @@ class SourceVisitor extends CppVisitor {
                 let memberName: string = memberExpression.name
                 var classDeclaration: ClassDeclaration = getClassDeclaration(assignment)
                 if classDeclaration != null {
-                    if isVariableMember(memberName, classDeclaration)
+                    if isVariableObjectField(memberName, classDeclaration)
                         return(memberName)
                 }
             }
@@ -885,7 +885,7 @@ class SourceVisitor extends CppVisitor {
         null
     }
 
-    function isFieldMember(memberName: string, classDeclaration: ClassDeclaration): bool {
+    function isObjectField(memberName: string, classDeclaration: ClassDeclaration): bool {
         let classMembers: ClassMember[] = classDeclaration.body.members
         for member: ClassMember in classMembers {
 
@@ -909,8 +909,14 @@ class SourceVisitor extends CppVisitor {
             let patternInitializer: PatternInitializer = bindingInitializer.initializer
             if patternInitializer.pattern is IdentifierPattern {
                 let identifierPattern: IdentifierPattern = (patternInitializer.pattern) as IdentifierPattern
-                if identifierPattern.identifier.equals(memberName)
-                    return(true)
+                if identifierPattern.identifier.equals(memberName) {
+                    if identifierPattern.annotationForType != null {
+                        if isClass(identifierPattern.annotationForType.annotationForType.name)
+                            return(true)
+                        else
+                            return(false)
+                    }
+                }
             }
         }
 
@@ -921,7 +927,7 @@ class SourceVisitor extends CppVisitor {
                     let baseClassDeclaration: ClassDeclaration& = findClassDeclaration(classDeclaration, inheritance.type.name)
                     if baseClassDeclaration == null
                         continue
-                    if isFieldMember(memberName, baseClassDeclaration)
+                    if isObjectField(memberName, baseClassDeclaration)
                         return(true)
                 }
             }
@@ -930,7 +936,7 @@ class SourceVisitor extends CppVisitor {
         false
     }
 
-    function isVariableMember(memberName: string, classDeclaration: ClassDeclaration): bool {
+    function isVariableObjectField(memberName: string, classDeclaration: ClassDeclaration): bool {
         let classMembers: ClassMember[] = classDeclaration.body.members
         for member: ClassMember in classMembers {
 
@@ -950,8 +956,14 @@ class SourceVisitor extends CppVisitor {
             let patternInitializer: PatternInitializer = bindingInitializer.initializer
             if patternInitializer.pattern is IdentifierPattern {
                 let identifierPattern: IdentifierPattern = (patternInitializer.pattern) as IdentifierPattern
-                if identifierPattern.identifier.equals(memberName)
-                    return(true)
+                if identifierPattern.identifier.equals(memberName) {
+                    if identifierPattern.annotationForType != null {
+                        if isClass(identifierPattern.annotationForType.annotationForType.name)
+                            return(true)
+                        else
+                            return(false)
+                    }
+                }
             }
         }
 
@@ -962,7 +974,7 @@ class SourceVisitor extends CppVisitor {
                     let baseClassDeclaration: ClassDeclaration& = findClassDeclaration(classDeclaration, inheritance.type.name)
                     if baseClassDeclaration == null
                         continue
-                    if isVariableMember(memberName, baseClassDeclaration)
+                    if isVariableObjectField(memberName, baseClassDeclaration)
                         return(true)
                 }
             }
@@ -1501,7 +1513,7 @@ class SourceVisitor extends CppVisitor {
                             let member: string& = getMemberIfCreatingObject(assignment)
                             if member != null {
                                 var classDeclaration: ClassDeclaration = getClassDeclaration(assignment)
-                                if isVariableMember(member, classDeclaration) {
+                                if isVariableObjectField(member, classDeclaration) {
                                     sourceFile.append(member)
                                     sourceFile.append("->_getPage()")
                                     if functionCall.arguments != null && functionCall.arguments.expressionElements != null
@@ -1976,6 +1988,12 @@ class SourceVisitor extends CppVisitor {
                 if patternInitializer.pattern is IdentifierPattern {
                     let identifierPattern: IdentifierPattern = patternInitializer.pattern as IdentifierPattern
                     if identifierPattern.annotationForType != null {
+
+                        // simple type which needs no page for allocation
+                        if !isClass(identifierPattern.annotationForType.annotationForType.name)
+                            return(null)
+
+                        // null lifeTime means the object will be returned (default)
                         if identifierPattern.annotationForType.annotationForType.lifeTime == null {
                             return(new string("_rp"))
                         }
@@ -2014,8 +2032,8 @@ class SourceVisitor extends CppVisitor {
                     var classDeclaration: ClassDeclaration = getClassDeclaration(assignment)
                     if classDeclaration != null {
                         let page: VarString = new VarString("")
-                        if isFieldMember(name, classDeclaration) {
-                            if isVariableMember(name, classDeclaration) {
+                        if isObjectField(name, classDeclaration) {
+                            if isVariableObjectField(name, classDeclaration) {
                                 if !inConstructor(assignment) {
                                     page.append(name)
                                     page.append(" == nullptr ? _getPage()->allocateExclusivePage() : ")
