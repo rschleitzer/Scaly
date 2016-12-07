@@ -95,7 +95,7 @@ class Lexer {
     mutable column: number
     
     constructor(theText: string) {
-        token = new InvalidToken()
+        token = null
         whitespaceSkipped = true
         text = theText
         end = text.getLength()

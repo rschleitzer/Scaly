@@ -90,7 +90,7 @@ PostfixOperator::PostfixOperator(string* theOperation) {
 bool PostfixOperator::_isPostfixOperator() { return (true); }
 
 Lexer::Lexer(string* theText) {
-    token = new(_getPage()->allocateExclusivePage()) InvalidToken();
+    token = nullptr;
     whitespaceSkipped = true;
     text = theText;
     end = text->getLength();
