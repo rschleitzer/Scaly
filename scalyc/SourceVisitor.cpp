@@ -9,31 +9,20 @@ SourceVisitor::SourceVisitor() {
 
 bool SourceVisitor::openProgram(Program* program) {
     _Region _region; _Page* _p = _region.get();
-    string* programDirectory = new(_p) string(program->directory);
-    if (programDirectory == nullptr || programDirectory->equals("")) {
-        programDirectory = new(_p) string(".");
-    }
-    {
-        _Region _region; _Page* _p = _region.get();
-        VarString* outputFilePath = new(_p) VarString(programDirectory);
-        outputFilePath->append("/");
-        outputFilePath->append(program->name);
-        {
-            buildProjectFileString(program);
-            {
-                _Region _region; _Page* _p = _region.get();
-                VarString* projectFilePath = new(_p) VarString(outputFilePath);
-                projectFilePath->append(".project");
-                auto _File_error = File::writeFromString(_p, projectFilePath, projectFile);
-                if (_File_error) { switch (_File_error->_getErrorCode()) {
-                    default: {
-                    return false;
-                    }
-                } }
-            }
+    VarString* projectFilePath = new(_p) VarString(program->directory);
+    if (projectFilePath == nullptr || projectFilePath->equals(""))
+        projectFilePath = new(_p) VarString(".");
+    projectFilePath->append("/");
+    projectFilePath->append(program->name);
+    projectFilePath->append(".project");
+    VarString* projectFile = buildProjectFileString(_p, program);
+    auto _File_error = File::writeFromString(_p, projectFilePath, projectFile);
+    if (_File_error) { switch (_File_error->_getErrorCode()) {
+        default: {
+        return false;
         }
-        collectInheritances(program);
-    }
+    } }
+    collectInheritances(program);
     return true;
 }
 
@@ -2062,10 +2051,8 @@ bool SourceVisitor::openInheritance(Inheritance* inheritance) {
     return false;
 }
 
-void SourceVisitor::buildProjectFileString(Program* program) {
-    if (projectFile != nullptr)
-        projectFile->_getPage()->clear();
-    projectFile = new(projectFile == nullptr ? _getPage()->allocateExclusivePage() : projectFile->_getPage()) VarString();
+VarString* SourceVisitor::buildProjectFileString(_Page* _rp, Program* program) {
+    VarString* projectFile = new(_rp) VarString();
     projectFile->append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
     projectFile->append("<CodeLite_Project Name=\"");
     projectFile->append(program->name);
@@ -2195,6 +2182,7 @@ void SourceVisitor::buildProjectFileString(Program* program) {
     projectFile->append("        <ClangCmpFlagsC/>\n        <ClangCmpFlags/>\n        <ClangPP/>\n");
     projectFile->append("        <SearchPaths/>\n      </Completion>\n    </Configuration>\n  </Settings>\n");
     projectFile->append("  <Dependencies Name=\"Debug\"/>\n  <Dependencies Name=\"Release\"/>\n</CodeLite_Project>\n");
+    return projectFile;
 }
 
 void SourceVisitor::collectInheritances(Program* program) {

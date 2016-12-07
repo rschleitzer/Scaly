@@ -7,7 +7,6 @@ namespace scalyc {
 class SourceVisitor : public CppVisitor {
 public:
     VarString* sourceFile;
-    VarString* projectFile;
     SourceVisitor();
     virtual bool openProgram(Program* program);
     virtual bool openCompilationUnit(CompilationUnit* compilationUnit);
@@ -118,7 +117,7 @@ public:
     virtual bool inTypeQuery(Type* type);
     virtual void visitPointer(Pointer* pointer);
     virtual bool openInheritance(Inheritance* inheritance);
-    virtual void buildProjectFileString(Program* program);
+    virtual VarString* buildProjectFileString(_Page* _rp, Program* program);
     virtual void collectInheritances(Program* program);
 
     virtual bool _isSourceVisitor();

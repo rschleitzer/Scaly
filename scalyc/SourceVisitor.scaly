@@ -1,7 +1,6 @@
 class SourceVisitor extends CppVisitor {
 
     mutable sourceFile: VarString
-    mutable projectFile: VarString
 
     constructor() {
         inherits = new Inherits[]()
@@ -9,31 +8,20 @@ class SourceVisitor extends CppVisitor {
     }
 
     function openProgram(program: Program): bool {
-        mutable programDirectory: string$ = new string(program.directory)
+        mutable projectFilePath: VarString$ = new VarString(program.directory)
+        if projectFilePath == null || projectFilePath.equals("")
+            projectFilePath = new VarString$(".")
+        projectFilePath.append("/")
+        projectFilePath.append(program.name)
+        projectFilePath.append(".project")
 
-        if programDirectory == null || programDirectory.equals("") {
-            programDirectory = new string(".")
-        }
+        let projectFile: VarString$ = buildProjectFileString(program)
 
-        {
-            mutable outputFilePath: VarString$ = new VarString(programDirectory)
-            outputFilePath.append("/")
-            outputFilePath.append(program.name)
+        File.writeFromString(projectFilePath , projectFile)
+            catch _ (error: fileError)
+                return(false)
 
-            // Build and write the project file
-            {
-                buildProjectFileString(program)
-                {
-                    mutable projectFilePath: VarString$  = new VarString(outputFilePath)
-                    projectFilePath.append(".project")
-                    File.writeFromString(projectFilePath , projectFile)
-                        catch _ (error: fileError)
-                            return(false)
-                }
-            }
-
-            collectInheritances(program)
-        }
+        collectInheritances(program)
 
         true
     }
@@ -2179,8 +2167,8 @@ class SourceVisitor extends CppVisitor {
         false
     }
     
-    function buildProjectFileString(program: Program) {
-        projectFile = new VarString()
+    function buildProjectFileString(program: Program) : VarString {
+        mutable projectFile: VarString = new VarString()
         projectFile.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n")
         projectFile.append("<CodeLite_Project Name=\"")
         projectFile.append(program.name)
@@ -2292,6 +2280,8 @@ class SourceVisitor extends CppVisitor {
         projectFile.append("        <ClangCmpFlagsC/>\n        <ClangCmpFlags/>\n        <ClangPP/>\n")
         projectFile.append("        <SearchPaths/>\n      </Completion>\n    </Configuration>\n  </Settings>\n")
         projectFile.append("  <Dependencies Name=\"Debug\"/>\n  <Dependencies Name=\"Release\"/>\n</CodeLite_Project>\n")
+        
+        projectFile
     }
 
     function collectInheritances(program: Program) {
