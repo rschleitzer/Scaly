@@ -8,9 +8,12 @@ class SourceVisitor extends CppVisitor {
     }
 
     function openProgram(program: Program): bool {
+
         mutable projectFilePath: VarString$ = new VarString(program.directory)
+
         if projectFilePath == null || projectFilePath.equals("")
             projectFilePath = new VarString$(".")
+
         projectFilePath.append("/")
         projectFilePath.append(program.name)
         projectFilePath.append(".project")
@@ -34,7 +37,7 @@ class SourceVisitor extends CppVisitor {
         let programName: string = ((compilationUnit.parent) as Program).name
 
         // Begin cpp file
-        sourceFile = new VarString()
+        sourceFile = new VarString(0, 4096)
         sourceFile.append("#include \"")
         sourceFile.append(programName)
         sourceFile.append(".h\"\nusing namespace scaly;\n")

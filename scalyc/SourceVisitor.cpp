@@ -32,7 +32,7 @@ bool SourceVisitor::openCompilationUnit(CompilationUnit* compilationUnit) {
     string* programName = ((Program*)(compilationUnit->parent))->name;
     if (sourceFile != nullptr)
         sourceFile->_getPage()->clear();
-    sourceFile = new(sourceFile == nullptr ? _getPage()->allocateExclusivePage() : sourceFile->_getPage()) VarString();
+    sourceFile = new(sourceFile == nullptr ? _getPage()->allocateExclusivePage() : sourceFile->_getPage()) VarString(0, 4096);
     sourceFile->append("#include \"");
     sourceFile->append(programName);
     sourceFile->append(".h\"\nusing namespace scaly;\n");
