@@ -4,10 +4,8 @@ class HeaderVisitor extends CppVisitor {
     mutable mainHeaderFile: VarString
 
     constructor() {
-
-        // null constructor of mutable members does not work yet
-        headerFile = new VarString()
-        mainHeaderFile = new VarString()
+        headerFile = null
+        mainHeaderFile = null
         inherits = new Inherits[]()
         classes = new string[]()
     }
@@ -535,6 +533,7 @@ class HeaderVisitor extends CppVisitor {
     }
 
     function buildMainHeaderFileString(program: Program) {
+        mainHeaderFile = new VarString()
         mainHeaderFile.append("#ifndef __scaly__")
         mainHeaderFile.append(program.name)
         mainHeaderFile.append("__\n#define __scaly__")

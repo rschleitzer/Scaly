@@ -3,8 +3,8 @@ using namespace scaly;
 namespace scalyc {
 
 HeaderVisitor::HeaderVisitor() {
-    headerFile = new(_getPage()->allocateExclusivePage()) VarString();
-    mainHeaderFile = new(_getPage()->allocateExclusivePage()) VarString();
+    headerFile = nullptr;
+    mainHeaderFile = nullptr;
     inherits = new(_getPage()->allocateExclusivePage()) _Array<Inherits>();
     classes = new(_getPage()->allocateExclusivePage()) _Array<string>();
 }
@@ -512,6 +512,9 @@ void HeaderVisitor::closeType(Type* type) {
 }
 
 void HeaderVisitor::buildMainHeaderFileString(Program* program) {
+    if (mainHeaderFile != nullptr)
+        mainHeaderFile->_getPage()->clear();
+    mainHeaderFile = new(mainHeaderFile == nullptr ? _getPage()->allocateExclusivePage() : mainHeaderFile->_getPage()) VarString();
     mainHeaderFile->append("#ifndef __scaly__");
     mainHeaderFile->append(program->name);
     mainHeaderFile->append("__\n#define __scaly__");
