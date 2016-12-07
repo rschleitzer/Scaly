@@ -74,6 +74,55 @@ void CppVisitor::appendDerivedClasses(_Array<string>* derivedClasses, _Array<str
     }
 }
 
+void CppVisitor::collectInheritancesInCompilationUnit(CompilationUnit* compilationUnit) {
+    if (compilationUnit->statements != nullptr) {
+        _Array<Statement>* statements = compilationUnit->statements;
+        Statement* statement = nullptr;
+        size_t _statements_length = statements->length();
+        for (size_t _i = 0; _i < _statements_length; _i++) {
+            statement = *(*statements)[_i];
+            {
+                if (statement->_isClassDeclaration()) {
+                    ClassDeclaration* classDeclaration = (ClassDeclaration*)statement;
+                    classes->push(classDeclaration->name);
+                    if (classDeclaration->typeInheritanceClause != nullptr) {
+                        TypeInheritanceClause* inheritanceClause = classDeclaration->typeInheritanceClause;
+                        _Array<Inheritance>* inheritances = inheritanceClause->inheritances;
+                        Inheritance* inheritance = nullptr;
+                        size_t _inheritances_length = inheritances->length();
+                        for (size_t _i = 0; _i < _inheritances_length; _i++) {
+                            inheritance = *(*inheritances)[_i];
+                            {
+                                registerInheritance(classDeclaration->name, inheritance->type->name);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+void CppVisitor::registerInheritance(string* className, string* baseName) {
+    Inherits* inherit = nullptr;
+    Inherits* inh = nullptr;
+    size_t _inherits_length = inherits->length();
+    for (size_t _i = 0; _i < _inherits_length; _i++) {
+        inh = *(*inherits)[_i];
+        {
+            if (inh->name->equals(baseName)) {
+                inherit = inh;
+            }
+        }
+    }
+    if (inherit == nullptr) {
+        Inherits* newInherit = new(inherits->_getPage()) Inherits(baseName);
+        inherit = newInherit;
+        inherits->push(inherit);
+    }
+    inherit->inheritors->push(className);
+}
+
 bool CppVisitor::_isCppVisitor() { return (true); }
 
 bool CppVisitor::_isHeaderVisitor() { return (false); }

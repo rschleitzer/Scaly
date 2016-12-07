@@ -23,6 +23,8 @@ public:
     virtual void appendCppTypeName(VarString* s, Type* type);
     virtual void collectDerivedClasses(_Array<string>* derivedClasses, string* className);
     virtual void appendDerivedClasses(_Array<string>* derivedClasses, _Array<string>* inheritors);
+    virtual void collectInheritancesInCompilationUnit(CompilationUnit* compilationUnit);
+    virtual void registerInheritance(string* className, string* baseName);
 
     virtual bool _isCppVisitor();
     virtual bool _isHeaderVisitor();

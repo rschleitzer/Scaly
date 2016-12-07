@@ -558,40 +558,4 @@ class HeaderVisitor extends CppVisitor {
         for compilationUnit: CompilationUnit in compilationUnits
             collectInheritancesInCompilationUnit(compilationUnit)
     }
-
-    function collectInheritancesInCompilationUnit(compilationUnit: CompilationUnit) {
-        if compilationUnit.statements != null {
-            let statements: Statement[] = compilationUnit.statements
-            for statement: Statement in statements {
-                if statement is ClassDeclaration {
-                    let classDeclaration: ClassDeclaration = statement as ClassDeclaration
-                    classes.push(classDeclaration.name)
-                    if classDeclaration.typeInheritanceClause != null {
-                        let inheritanceClause: TypeInheritanceClause  = classDeclaration.typeInheritanceClause
-                        let inheritances: Inheritance[] = inheritanceClause.inheritances
-                        for inheritance: Inheritance in inheritances {
-                            registerInheritance(classDeclaration.name, inheritance.type.name)
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    function registerInheritance(className: string, baseName: string) {
-        var inherit: Inherits@inherits = null
-        for inh: Inherits in inherits {
-            if inh.name.equals(baseName) {
-                inherit = inh
-            }
-        }
-
-        if inherit == null {
-            let newInherit: Inherits@inherits = new Inherits(baseName)
-            inherit = newInherit
-            inherits.push(inherit)
-        }
-
-        inherit.inheritors.push(className)
-    }
 }

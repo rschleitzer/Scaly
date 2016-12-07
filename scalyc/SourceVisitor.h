@@ -120,8 +120,6 @@ public:
     virtual bool openInheritance(Inheritance* inheritance);
     virtual void buildProjectFileString(Program* program);
     virtual void collectInheritances(Program* program);
-    virtual void collectInheritancesInCompilationUnit(CompilationUnit* compilationUnit);
-    virtual void registerInheritance(string* className, string* baseName);
 
     virtual bool _isSourceVisitor();
 };
