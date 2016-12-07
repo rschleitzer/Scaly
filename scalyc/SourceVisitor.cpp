@@ -99,7 +99,8 @@ void SourceVisitor::closeCompilationUnit(CompilationUnit* compilationUnit) {
     if (isTopLevelFile(compilationUnit)) {
         _Array<Statement>* statements = compilationUnit->statements;
         if (statements->length() > 0) {
-            Statement* statement = *(*statements)[statements->length() - 1];
+            size_t length = statements->length();
+            Statement* statement = *(*statements)[length - 1];
             if (statement->_isSimpleExpression()) {
                 SimpleExpression* simpleExpression = (SimpleExpression*)statement;
                 PrimaryExpression* primaryExpression = simpleExpression->prefixExpression->expression->primaryExpression;
@@ -761,8 +762,10 @@ bool SourceVisitor::inThrow(SyntaxNode* node) {
 ClassDeclaration* SourceVisitor::getClassDeclaration(SyntaxNode* node) {
     if (node->_isClassDeclaration())
         return (ClassDeclaration*)node;
-    if (node->parent != nullptr)
-        return getClassDeclaration(node->parent);
+    if (node->parent != nullptr) {
+        ClassDeclaration* classDeclaration = getClassDeclaration(node->parent);
+        return classDeclaration;
+    }
     return nullptr;
 }
 
@@ -1411,46 +1414,13 @@ bool SourceVisitor::openParenthesizedExpression(ParenthesizedExpression* parenth
     if (!(parenthesizedExpression->parent)->_isReturnExpression())
         sourceFile->append("(");
     if (parenthesizedExpression->parent->_isFunctionCall()) {
+        _Region _region; _Page* _p = _region.get();
         FunctionCall* functionCall = (FunctionCall*)(parenthesizedExpression->parent);
         bool parameterInserted = false;
-        if (functionCall->parent->_isPostfixExpression()) {
-            PostfixExpression* postfixExpression = (PostfixExpression*)(functionCall->parent);
-            if (postfixExpression->parent->parent->parent->_isAssignment()) {
-                Assignment* assignment = (Assignment*)(postfixExpression->parent->parent->parent);
-                SimpleExpression* simpleExpression = (SimpleExpression*)(assignment->parent);
-                PostfixExpression* leftSide = simpleExpression->prefixExpression->expression;
-                if (leftSide->primaryExpression->_isIdentifierExpression()) {
-                    IdentifierExpression* memberExpression = (IdentifierExpression*)(leftSide->primaryExpression);
-                    string* memberName = memberExpression->name;
-                    ClassDeclaration* classDeclaration = getClassDeclaration(assignment);
-                    if (classDeclaration != nullptr) {
-                        if (isVariableObjectField(memberName, classDeclaration)) {
-                            sourceFile->append(memberName);
-                            sourceFile->append("->_getPage()");
-                            if (functionCall->arguments != nullptr && functionCall->arguments->expressionElements != nullptr)
-                                parameterInserted = true;
-                        }
-                    }
-                }
-            }
-        }
-        if (assignedToRootObject(functionCall)) {
-            sourceFile->append("_p");
+        string* pageName = getPage(_p, functionCall);
+        if (pageName != nullptr) {
+            sourceFile->append(pageName);
             parameterInserted = true;
-        }
-        else {
-            if (assignedToReturnedObject(functionCall)) {
-                sourceFile->append("_rp");
-                parameterInserted = true;
-            }
-            else {
-                string* identifier = getLocalPage(functionCall);
-                if (identifier != nullptr) {
-                    sourceFile->append(identifier);
-                    sourceFile->append("->_getPage()");
-                    parameterInserted = true;
-                }
-            }
         }
         if (catchesError(functionCall)) {
             if (!inThrow(functionCall)) {
@@ -1817,8 +1787,12 @@ string* SourceVisitor::getPageOfVariable(_Page* _rp, string* name, CodeBlock* co
                             LifeTime* lifeTime = identifierPattern->annotationForType->annotationForType->lifeTime;
                             if (lifeTime->_isRoot())
                                 return new(_rp) string("_p");
-                            if (lifeTime->_isLocal())
-                                return new(_rp) string("_getPage()");
+                            if (lifeTime->_isLocal()) {
+                                Local* local = (Local*)lifeTime;
+                                VarString* ret = new(_rp) VarString(local->location);
+                                ret->append("->_getPage()");
+                                return new(_rp) string(ret);
+                            }
                         }
                     }
                 }
@@ -1834,6 +1808,8 @@ string* SourceVisitor::getPage(_Page* _rp, SyntaxNode* node) {
             return new(_rp) string("_rp");
         if (node->_isThrowExpression())
             return new(_rp) string("_ep");
+        if (node->_isCatchClause())
+            return nullptr;
         if (node->_isPatternInitializer()) {
             PatternInitializer* patternInitializer = (PatternInitializer*)node;
             if (patternInitializer->pattern->_isIdentifierPattern()) {
@@ -1848,8 +1824,14 @@ string* SourceVisitor::getPage(_Page* _rp, SyntaxNode* node) {
                         LifeTime* lifeTime = identifierPattern->annotationForType->annotationForType->lifeTime;
                         if (lifeTime->_isRoot())
                             return new(_rp) string("_p");
-                        if (lifeTime->_isLocal())
-                            return new(_rp) string("_getPage()");
+                        if (lifeTime->_isLocal()) {
+                            Local* local = (Local*)lifeTime;
+                            VarString* ret = new(_rp) VarString(local->location);
+                            ret->append("->_getPage()");
+                            return new(_rp) string(ret);
+                        }
+                        if (lifeTime->_isReference())
+                            return nullptr;
                     }
                 }
             }
@@ -2267,7 +2249,7 @@ void SourceVisitor::registerInheritance(string* className, string* baseName) {
         }
     }
     if (inherit == nullptr) {
-        Inherits* newInherit = new(_getPage()) Inherits(baseName);
+        Inherits* newInherit = new(inherits->_getPage()) Inherits(baseName);
         inherit = newInherit;
         inherits->push(inherit);
     }

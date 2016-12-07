@@ -589,7 +589,7 @@ void HeaderVisitor::registerInheritance(string* className, string* baseName) {
         }
     }
     if (inherit == nullptr) {
-        Inherits* newInherit = new(_getPage()) Inherits(baseName);
+        Inherits* newInherit = new(inherits->_getPage()) Inherits(baseName);
         inherit = newInherit;
         inherits->push(inherit);
     }

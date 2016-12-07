@@ -130,7 +130,7 @@
 "   ))))
 "
     function isAtEnd(): bool {
-        return(lexer.isAtEnd())
+        lexer.isAtEnd()
     }
 
     function isIdentifier(id: string): bool {"

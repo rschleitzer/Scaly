@@ -116,27 +116,27 @@ void Lexer::advance() {
     if (((c >= 'a') && (c <= 'z')) || ((c >= 'A') && (c <= 'Z'))) {
         if (token != nullptr)
             token->_getPage()->clear();
-        token = scanIdentifier(token->_getPage());
+        token = scanIdentifier(token == nullptr ? _getPage()->allocateExclusivePage() : token->_getPage());
         return;
     }
     if ((c >= '0') && (c <= '9')) {
         if (token != nullptr)
             token->_getPage()->clear();
-        token = scanNumericLiteral(token->_getPage());
+        token = scanNumericLiteral(token == nullptr ? _getPage()->allocateExclusivePage() : token->_getPage());
         return;
     }
     switch (c) {
         case '\"': {
             if (token != nullptr)
                 token->_getPage()->clear();
-            token = scanStringLiteral(token->_getPage());
+            token = scanStringLiteral(token == nullptr ? _getPage()->allocateExclusivePage() : token->_getPage());
             break;
         }
 
         case '\'': {
             if (token != nullptr)
                 token->_getPage()->clear();
-            token = scanCharacterLiteral(token->_getPage());
+            token = scanCharacterLiteral(token == nullptr ? _getPage()->allocateExclusivePage() : token->_getPage());
             break;
         }
 
@@ -154,7 +154,7 @@ void Lexer::advance() {
         case '+': case '*': case '/': case '%': case '|': case '~': {
             if (token != nullptr)
                 token->_getPage()->clear();
-            token = scanOperator(token->_getPage(), false);
+            token = scanOperator(token == nullptr ? _getPage()->allocateExclusivePage() : token->_getPage(), false);
             break;
         }
 
@@ -175,7 +175,7 @@ void Lexer::advance() {
                                 column--;
                                 if (token != nullptr)
                                     token->_getPage()->clear();
-                                token = scanOperator(token->_getPage(), true);
+                                token = scanOperator(token == nullptr ? _getPage()->allocateExclusivePage() : token->_getPage(), true);
                             }
                             break;
                         }
@@ -206,7 +206,7 @@ void Lexer::advance() {
                         column--;
                         if (token != nullptr)
                             token->_getPage()->clear();
-                        token = scanOperator(token->_getPage(), true);
+                        token = scanOperator(token == nullptr ? _getPage()->allocateExclusivePage() : token->_getPage(), true);
                     }
                     else {
                         if (token != nullptr)
@@ -233,7 +233,7 @@ void Lexer::advance() {
                         column--;
                         if (token != nullptr)
                             token->_getPage()->clear();
-                        token = scanOperator(token->_getPage(), true);
+                        token = scanOperator(token == nullptr ? _getPage()->allocateExclusivePage() : token->_getPage(), true);
                     }
                     else {
                         if (token != nullptr)
@@ -264,7 +264,7 @@ void Lexer::advance() {
                                 column--;
                                 if (token != nullptr)
                                     token->_getPage()->clear();
-                                token = scanOperator(token->_getPage(), true);
+                                token = scanOperator(token == nullptr ? _getPage()->allocateExclusivePage() : token->_getPage(), true);
                             }
                             break;
                         }
@@ -276,7 +276,7 @@ void Lexer::advance() {
                                     column--;
                                     if (token != nullptr)
                                         token->_getPage()->clear();
-                                    token = scanOperator(token->_getPage(), true);
+                                    token = scanOperator(token == nullptr ? _getPage()->allocateExclusivePage() : token->_getPage(), true);
                                 }
                                 else {
                                     if (token != nullptr)
@@ -308,7 +308,7 @@ void Lexer::advance() {
                                 column--;
                                 if (token != nullptr)
                                     token->_getPage()->clear();
-                                token = scanOperator(token->_getPage(), true);
+                                token = scanOperator(token == nullptr ? _getPage()->allocateExclusivePage() : token->_getPage(), true);
                             }
                             break;
                         }
@@ -334,7 +334,8 @@ void Lexer::advance() {
 
 Identifier* Lexer::scanIdentifier(_Page* _rp) {
     _Region _region; _Page* _p = _region.get();
-    VarString* name = new(_p) VarString(text->charAt(position));
+    char firstChar = text->charAt(position);
+    VarString* name = new(_p) VarString(firstChar);
     do {
         position++;
         column++;
@@ -342,7 +343,7 @@ Identifier* Lexer::scanIdentifier(_Page* _rp) {
             return new(_rp) Identifier(new(_rp) string(name));
         char c = text->charAt(position);
         if (((c >= 'a') && (c <= 'z')) || ((c >= 'A') && (c <= 'Z')) || ((c >= '0') && (c <= '9')) || (c == '_'))
-            name->append(text->charAt(position));
+            name->append(c);
         else
             return new(_rp) Identifier(new(_rp) string(name));
     }
@@ -361,7 +362,8 @@ Operator* Lexer::scanOperator(_Page* _rp, bool includeDots) {
                 whitespaceSkippedBefore = false;
         }
     }
-    VarString* operation = new(_p) VarString(text->charAt(position));
+    char firstChar = text->charAt(position);
+    VarString* operation = new(_p) VarString(firstChar);
     do {
         position++;
         column++;
@@ -551,7 +553,8 @@ Token* Lexer::scanCharacterLiteral(_Page* _rp) {
 
 NumericLiteral* Lexer::scanNumericLiteral(_Page* _rp) {
     _Region _region; _Page* _p = _region.get();
-    VarString* value = new(_p) VarString(text->charAt(position));
+    char firstChar = text->charAt(position);
+    VarString* value = new(_p) VarString(firstChar);
     do {
         position++;
         column++;

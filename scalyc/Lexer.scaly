@@ -242,7 +242,8 @@ class Lexer {
     }
 
     function scanIdentifier(): Identifier {
-        mutable name: VarString$ = new VarString(text.charAt(position))
+        var firstChar: char = text.charAt(position)
+        mutable name: VarString$ = new VarString(firstChar)
 
         do {
             position++ column++
@@ -250,12 +251,12 @@ class Lexer {
             if position == end
                 return(new Identifier(new string(name)))
             
-            let c: char = text.charAt(position)
+            var c: char = text.charAt(position)
             if  ((c >= 'a') && (c <= 'z')) || 
                 ((c >= 'A') && (c <= 'Z')) || 
                 ((c >= '0') && (c <= '9')) || 
                  (c == '_')
-                name.append(text.charAt(position))
+                name.append(c)
             else
                 return(new Identifier(new string(name)))
         }            
@@ -275,7 +276,8 @@ class Lexer {
             }
         }
         
-        mutable operation: VarString$ = new VarString(text.charAt(position))
+        var firstChar: char = text.charAt(position)
+        mutable operation: VarString$ = new VarString(firstChar)
 
         do {
             position++ column++
@@ -392,8 +394,9 @@ class Lexer {
         while true
     }
 
-    function scanNumericLiteral(): NumericLiteral {    
-        mutable value: VarString$ = new VarString(text.charAt(position))
+    function scanNumericLiteral(): NumericLiteral {
+        var firstChar: char = text.charAt(position)
+        mutable value: VarString$ = new VarString(firstChar)
 
         do {
             position++ column++
@@ -550,7 +553,8 @@ class Lexer {
             return(false)
 
         let identifier: Identifier = token as Identifier
-        return(identifier.name.equals(fixedString))
+        
+        identifier.name.equals(fixedString)
     }
 
     function parseIdentifier(): string {
@@ -558,6 +562,7 @@ class Lexer {
             return(null)
 
         let identifier: Identifier = token as Identifier
+
         return(new string(identifier.name))
     }
 
@@ -566,7 +571,8 @@ class Lexer {
             return(false)
 
         let punctuation: Punctuation = token as Punctuation
-        return(punctuation.sign.equals(fixedString))
+
+        punctuation.sign.equals(fixedString)
     }
 
     function parseOperator(): string {
@@ -574,6 +580,7 @@ class Lexer {
             return(null)
 
         let op: Operator = token as Operator
+
         return(new string(op.operation))
     }
 
@@ -596,7 +603,7 @@ class Lexer {
             return(new NumericLiteral(new string(numericLiteral.value)))
         }
 
-        return(null)
+        null
     }
 
 
@@ -619,6 +626,7 @@ class Lexer {
         }
 
         let op: Operator = token as Operator
+
         return(new string(op.operation))
     }
 
@@ -628,11 +636,12 @@ class Lexer {
             return(null)
 
         let op: Operator = token as Operator
+
         return(new string(op.operation))
     }
 
     function isAtEnd(): bool {
-        return(position == end)
+        position == end
     }
 
     function getPosition(): Position {
