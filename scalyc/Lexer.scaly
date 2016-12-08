@@ -173,7 +173,7 @@ class Lexer {
     }
 
     function scanIdentifier(): Identifier {
-        var firstChar: char = text.charAt(position)
+        mutable firstChar: char = text.charAt(position)
         mutable name: VarString$ = new VarString(firstChar)
 
         do {
@@ -182,7 +182,7 @@ class Lexer {
             if position == end
                 return(new Identifier(new string(name)))
             
-            var c: char = text.charAt(position)
+            mutable c: char = text.charAt(position)
             if  ((c >= 'a') && (c <= 'z')) || 
                 ((c >= 'A') && (c <= 'Z')) || 
                 ((c >= '0') && (c <= '9')) || 
@@ -207,7 +207,7 @@ class Lexer {
             }
         }
         
-        var firstChar: char = text.charAt(position)
+        mutable firstChar: char = text.charAt(position)
         mutable operation: VarString$ = new VarString(firstChar)
 
         do {
@@ -236,7 +236,7 @@ class Lexer {
                     position = lastPosition
                     line = lastLine
                     column = lastColumn
-                    var whitespaceSkippedAfter: bool = whitespaceSkipped
+                    mutable whitespaceSkippedAfter: bool = whitespaceSkipped
 
                     if !whitespaceSkippedAfter {
                         switch text.charAt(position) {
@@ -326,7 +326,7 @@ class Lexer {
     }
 
     function scanNumericLiteral(): NumericLiteral {
-        var firstChar: char = text.charAt(position)
+        mutable firstChar: char = text.charAt(position)
         mutable value: VarString$ = new VarString(firstChar)
 
         do {

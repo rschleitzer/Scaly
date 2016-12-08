@@ -161,7 +161,7 @@ class HeaderVisitor extends CppVisitor {
             headerFile.append("enum _")
             headerFile.append(enumDeclarationName)
             headerFile.append("Code {\n")
-            var i: int = 0
+            mutable i: int = 0
             for member: EnumMember in members {
                 headerFile.append("    _")
                 headerFile.append(enumDeclarationName)
@@ -236,7 +236,7 @@ class HeaderVisitor extends CppVisitor {
         headerFile.append(" : public ")
         if classDeclaration.typeInheritanceClause != null {
             let inheritances: Inheritance[] = classDeclaration.typeInheritanceClause.inheritances
-            var i: int = 0
+            mutable i: int = 0
             for inheritance: Inheritance in inheritances {
 
                 if i > 0
@@ -475,7 +475,7 @@ class HeaderVisitor extends CppVisitor {
 
             let parameters: Parameter[] = enumMember.parameterClause.parameters
             if parameters != null {
-                var pos: number = 0
+                mutable pos: number = 0
                 for parameter: Parameter in parameters {
                     if parameter is ConstParameter {
                         let constParameter: ConstParameter = parameter as ConstParameter

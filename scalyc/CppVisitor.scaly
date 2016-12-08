@@ -90,7 +90,7 @@ class CppVisitor extends Visitor {
     }
 
     function registerInheritance(className: string, baseName: string) {
-        var inherit: Inherits@inherits = null
+        mutable inherit: Inherits@inherits = null
         for inh: Inherits in inherits {
             if inh.name.equals(baseName) {
                 inherit = inh

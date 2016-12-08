@@ -94,7 +94,7 @@ class Parser {
 "
         let end: Position$ = lexer.getPosition()
 
-        var ret: "(id syntax)" = new "(id syntax)"("
+        let ret: "(id syntax)" = new "(id syntax)"("
                 (apply-to-property-children-of syntax (lambda (content) ($
                     (property content)(if (properties-remaining? content syntax) ", " "")
                 )))

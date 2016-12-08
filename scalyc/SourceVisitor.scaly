@@ -250,7 +250,7 @@ class SourceVisitor extends CppVisitor {
         let statements: Statement[] = codeBlock.statements
         if statements != null {
             for statement: Statement in statements {
-                var bindingInitializer: BindingInitializer = null
+                mutable bindingInitializer: BindingInitializer = null
                 if statement is ConstantDeclaration {
                     let constantDeclaration: ConstantDeclaration = statement as ConstantDeclaration
                     bindingInitializer = constantDeclaration.initializer
@@ -372,7 +372,7 @@ class SourceVisitor extends CppVisitor {
                         if leftSide.primaryExpression is IdentifierExpression {
                             let memberExpression: IdentifierExpression = (leftSide.primaryExpression) as IdentifierExpression
                             let memberName: string = memberExpression.name
-                            var classDeclaration: ClassDeclaration& = getClassDeclaration(assignment)
+                            mutable classDeclaration: ClassDeclaration& = getClassDeclaration(assignment)
                             if classDeclaration != null {
                                 if isVariableObjectField(memberName, classDeclaration) {
                                     if (memberName != null) && (!inConstructor(assignment)) {
@@ -694,7 +694,7 @@ class SourceVisitor extends CppVisitor {
             let parameters: Parameter[] = enumMember.parameterClause.parameters
             if parameters != null {
                 sourceFile.append(": ")
-                var pos: number = 0
+                mutable pos: number = 0
                 for parameter: Parameter in parameters {
                     if parameter is ConstParameter {
                         let constParameter: ConstParameter = parameter as ConstParameter
@@ -751,7 +751,7 @@ class SourceVisitor extends CppVisitor {
     }
 
     function indent(level: number) {
-        var i: number = 0
+        mutable i: number = 0
         while i < level {
             sourceFile.append("    ")
             i++
@@ -835,7 +835,7 @@ class SourceVisitor extends CppVisitor {
         let classMembers: ClassMember[] = classDeclaration.body.members
         for member: ClassMember in classMembers {
 
-            var bindingInitializer: BindingInitializer = null
+            mutable bindingInitializer: BindingInitializer = null
             if member.declaration is ConstantDeclaration {
                 let constantDeclaration: ConstantDeclaration = (member.declaration) as ConstantDeclaration
                 bindingInitializer = constantDeclaration.initializer
@@ -893,7 +893,7 @@ class SourceVisitor extends CppVisitor {
         let classMembers: ClassMember[] = classDeclaration.body.members
         for member: ClassMember in classMembers {
 
-            var bindingInitializer: BindingInitializer = null
+            mutable bindingInitializer: BindingInitializer = null
             if member.declaration is MutableDeclaration {
                 let mutableDeclaration: MutableDeclaration = (member.declaration) as MutableDeclaration
                 bindingInitializer = mutableDeclaration.initializer
@@ -976,7 +976,7 @@ class SourceVisitor extends CppVisitor {
         if catchClause.parent is FunctionCall {
             let functionCall: FunctionCall = (catchClause.parent) as FunctionCall
             {
-                var bindingInitializer: BindingInitializer& = getBindingInitializer(functionCall)
+                mutable bindingInitializer: BindingInitializer& = getBindingInitializer(functionCall)
                 if bindingInitializer != null {
                     let patternInitializer: PatternInitializer = bindingInitializer.initializer
                     if patternInitializer.pattern is IdentifierPattern {
@@ -1015,7 +1015,7 @@ class SourceVisitor extends CppVisitor {
                             sourceFile.append("_result._getErrorCode() == _")
                             sourceFile.append(identifierCatchPattern.name)
                             sourceFile.append("Code_")
-                            var errorType: string& = getErrorType(catchClause)
+                            mutable errorType: string& = getErrorType(catchClause)
                             if errorType != null
                                 sourceFile.append(errorType)
                             sourceFile.append(")")
@@ -1062,7 +1062,7 @@ class SourceVisitor extends CppVisitor {
                 }
             }
             {
-                var identifierExpression: IdentifierExpression& = getIdentifierExpression((functionCall.parent) as PostfixExpression)
+                mutable identifierExpression: IdentifierExpression& = getIdentifierExpression((functionCall.parent) as PostfixExpression)
                 if identifierExpression != null {
                     let catchClauses: CatchClause[] = functionCall.catchClauses
                     if catchClauses[0] == catchClause {
@@ -1118,7 +1118,7 @@ class SourceVisitor extends CppVisitor {
                     indent(level(catchClause))
                     catchClause.expression.accept(this)
                     {
-                        var insertBreak: bool = true
+                        mutable insertBreak: bool = true
                         if catchClause.expression is SimpleExpression {
                             let simpleExpression: SimpleExpression = catchClause.expression as SimpleExpression
                             if simpleExpression.prefixExpression.expression.primaryExpression is ReturnExpression {
@@ -1497,7 +1497,7 @@ class SourceVisitor extends CppVisitor {
     }
 
     function assignedToRootObject(functionCall: FunctionCall): bool {
-        var bindingInitializer: BindingInitializer& = getBindingInitializer(functionCall)
+        mutable bindingInitializer: BindingInitializer& = getBindingInitializer(functionCall)
         if bindingInitializer == null
             return(false)
         
@@ -1505,7 +1505,7 @@ class SourceVisitor extends CppVisitor {
     }
     
     function getLocalPage(functionCall: FunctionCall&): string& {
-        var bindingInitializer: BindingInitializer& = getBindingInitializer(functionCall) 
+        mutable bindingInitializer: BindingInitializer& = getBindingInitializer(functionCall) 
         if bindingInitializer == null
             return(null)
             
@@ -1547,7 +1547,7 @@ class SourceVisitor extends CppVisitor {
     }
 
     function assignedToReturnedObject(functionCall: FunctionCall): bool {
-        var bindingInitializer: BindingInitializer& = getBindingInitializer(functionCall)
+        mutable bindingInitializer: BindingInitializer& = getBindingInitializer(functionCall)
         if bindingInitializer == null
             return(false)
 
@@ -1688,7 +1688,7 @@ class SourceVisitor extends CppVisitor {
                 if throwExpression.error is IdentifierExpression {
                     let errorExpression: IdentifierExpression = (throwExpression.error) as IdentifierExpression
                     let errorName: string = errorExpression.name
-                    var catchClause: CatchClause& = getCatchClause(throwExpression)
+                    mutable catchClause: CatchClause& = getCatchClause(throwExpression)
                     if catchClause != null {
                         if catchClause.catchPattern != null {
                             if catchClause.catchPattern is WildCardCatchPattern {
@@ -1737,7 +1737,7 @@ class SourceVisitor extends CppVisitor {
     }
 
     function inWildcardCatchClause(throwExpression: ThrowExpression): bool {
-        var catchClause: CatchClause& = getCatchClause(throwExpression)
+        mutable catchClause: CatchClause& = getCatchClause(throwExpression)
         if (catchClause != null) && (catchClause.catchPattern is WildCardCatchPattern)
             return(true)
 
@@ -1755,7 +1755,7 @@ class SourceVisitor extends CppVisitor {
     }
 
     function getReturnType(syntaxNode: SyntaxNode): string {
-        var functionDeclaration: FunctionDeclaration& = getFunctionDeclaration(syntaxNode)
+        mutable functionDeclaration: FunctionDeclaration& = getFunctionDeclaration(syntaxNode)
         if functionDeclaration != null {
             let functionResult: FunctionResult = functionDeclaration.signature.result
             if functionResult != null {
@@ -1778,7 +1778,7 @@ class SourceVisitor extends CppVisitor {
     }
     
     function getThrownType(syntaxNode: SyntaxNode): string {
-        var functionDeclaration: FunctionDeclaration& = getFunctionDeclaration(syntaxNode)
+        mutable functionDeclaration: FunctionDeclaration& = getFunctionDeclaration(syntaxNode)
         if functionDeclaration != null {
             let throwsClause: ThrowsClause = functionDeclaration.signature.throwsClause
             if throwsClause != null {
@@ -1801,7 +1801,7 @@ class SourceVisitor extends CppVisitor {
     }
 
     function returnsArray(syntaxNode: SyntaxNode): bool {
-        var functionDeclaration: FunctionDeclaration& = getFunctionDeclaration(syntaxNode)
+        mutable functionDeclaration: FunctionDeclaration& = getFunctionDeclaration(syntaxNode)
         if functionDeclaration != null {
             let functionResult: FunctionResult = functionDeclaration.signature.result
             if functionResult != null {
@@ -1833,7 +1833,7 @@ class SourceVisitor extends CppVisitor {
         let statements: Statement[] = codeBlock.statements
         for statement: Statement in statements {
 
-            var bindingInitializer: BindingInitializer = null
+            mutable bindingInitializer: BindingInitializer = null
             if statement is ConstantDeclaration {
                 let constantDeclaration: ConstantDeclaration = statement as ConstantDeclaration
                 bindingInitializer = constantDeclaration.initializer
@@ -1866,7 +1866,7 @@ class SourceVisitor extends CppVisitor {
 
                             if lifeTime is Local {
                                 let local: Local = lifeTime as Local
-                                var ret: VarString = new VarString(local.location)
+                                mutable ret: VarString = new VarString(local.location)
                                 ret.append("->_getPage()")
                                 return(new string(ret))
                             }
@@ -1913,7 +1913,7 @@ class SourceVisitor extends CppVisitor {
 
                             if lifeTime is Local {
                                 let local: Local = lifeTime as Local
-                                var ret: VarString = new VarString(local.location)
+                                mutable ret: VarString = new VarString(local.location)
                                 ret.append("->_getPage()")
                                 return(new string(ret))
                             }
@@ -1944,7 +1944,7 @@ class SourceVisitor extends CppVisitor {
                         node = node.parent
                     }
                     
-                    var classDeclaration: ClassDeclaration& = getClassDeclaration(assignment)
+                    mutable classDeclaration: ClassDeclaration& = getClassDeclaration(assignment)
                     if classDeclaration != null {
                         let page: VarString = new VarString("")
                         if isObjectField(name, classDeclaration) {
@@ -2117,7 +2117,7 @@ class SourceVisitor extends CppVisitor {
     }
 
     function closeCaseContent(caseContent: CaseContent) {
-        var additionalLineFeed: bool = true
+        mutable additionalLineFeed: bool = true
         if caseContent.parent is SwitchCase {
             let switchCase: SwitchCase = caseContent.parent as SwitchCase
             if !switchCase.label is DefaultCaseLabel {
