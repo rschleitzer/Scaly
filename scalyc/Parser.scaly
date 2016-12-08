@@ -2,84 +2,17 @@ class Program
 class CompilationUnit
 class Statement
 class Declaration
-class Expression
 class ConstantDeclaration
 class MutableDeclaration
-class FunctionDeclaration
-class EnumDeclaration
-class ClassDeclaration
-class ConstructorDeclaration
-class CodeBlock
-class SimpleExpression
-class Initializer
 class BindingInitializer
 class PatternInitializer
+class Initializer
 class AdditionalInitializer
-class Modifier
-class OverrideWord
-class StaticWord
-class FunctionSignature
-class FunctionResult
-class ParameterClause
-class Parameter
-class ConstParameter
-class VarParameter
-class ThrowsClause
-class EnumMember
-class EnumCase
-class AdditionalCase
-class ClassBody
-class ClassMember
-class PrefixExpression
-class PostfixExpression
-class BinaryOp
-class BinaryOperation
-class Assignment
-class TypeQuery
-class TypeCast
-class CatchClause
-class CatchPattern
-class WildCardCatchPattern
-class IdentifierCatchPattern
-class Postfix
-class OperatorPostfix
-class FunctionCall
-class MemberExpression
-class Subscript
-class ExpressionElement
-class PrimaryExpression
-class IdentifierExpression
-class LiteralExpression
-class IfExpression
-class SwitchExpression
-class ForExpression
-class WhileExpression
-class DoExpression
-class ParenthesizedExpression
-class ReturnExpression
-class ThrowExpression
-class BreakExpression
-class ConstructorCall
-class ThisExpression
-class NullExpression
-class ElseClause
-class SwitchBody
-class CurliedSwitchBody
-class NakedSwitchBody
-class SwitchCase
-class CaseLabel
-class ItemCaseLabel
-class DefaultCaseLabel
-class CaseItem
 class Pattern
 class WildcardPattern
 class IdentifierPattern
-class TuplePattern
-class ExpressionPattern
-class TuplePatternElement
-class CaseContent
-class Type
 class TypeAnnotation
+class Type
 class Subtype
 class TypePostfix
 class IndexedType
@@ -89,8 +22,75 @@ class Root
 class Local
 class Reference
 class Thrown
+class TuplePattern
+class TuplePatternElement
+class ExpressionPattern
+class FunctionDeclaration
+class Modifier
+class OverrideWord
+class StaticWord
+class FunctionSignature
+class ParameterClause
+class Parameter
+class ConstParameter
+class VarParameter
+class FunctionResult
+class ThrowsClause
+class EnumDeclaration
+class EnumMember
+class EnumCase
+class AdditionalCase
+class ClassDeclaration
 class TypeInheritanceClause
 class Inheritance
+class ClassBody
+class ClassMember
+class ConstructorDeclaration
+class Expression
+class CodeBlock
+class SimpleExpression
+class PrefixExpression
+class PostfixExpression
+class PrimaryExpression
+class IdentifierExpression
+class LiteralExpression
+class IfExpression
+class ElseClause
+class SwitchExpression
+class SwitchBody
+class CurliedSwitchBody
+class NakedSwitchBody
+class SwitchCase
+class CaseLabel
+class ItemCaseLabel
+class DefaultCaseLabel
+class CaseItem
+class CaseContent
+class ForExpression
+class WhileExpression
+class DoExpression
+class ParenthesizedExpression
+class ExpressionElement
+class ReturnExpression
+class ThrowExpression
+class BreakExpression
+class ConstructorCall
+class ThisExpression
+class NullExpression
+class Postfix
+class OperatorPostfix
+class FunctionCall
+class CatchClause
+class CatchPattern
+class WildCardCatchPattern
+class IdentifierCatchPattern
+class MemberExpression
+class Subscript
+class BinaryOp
+class BinaryOperation
+class Assignment
+class TypeQuery
+class TypeCast
 
 class Parser {
     constructor(theFileName: string, text: string) {
@@ -236,22 +236,6 @@ class Parser {
         null
     }
 
-    function parseExpression(): Expression {
-        {
-            let node: CodeBlock = parseCodeBlock()
-            if node != null
-                return(node)
-        }
-
-        {
-            let node: SimpleExpression = parseSimpleExpression()
-            if node != null
-                return(node)
-        }
-
-        null
-    }
-
     function parseConstantDeclaration(): ConstantDeclaration {
         let start: Position$ = lexer.getPreviousPosition()
 
@@ -290,209 +274,6 @@ class Parser {
 
         let ret: MutableDeclaration = new MutableDeclaration(initializer, new Position(start), new Position(end))
         initializer.parent = ret
-
-        ret
-    }
-
-    function parseFunctionDeclaration(): FunctionDeclaration {
-        let start: Position$ = lexer.getPreviousPosition()
-
-        let modifiers: Modifier[] = parseModifierList()
-
-        let successFunction2: bool = lexer.parseKeyword(functionKeyword)
-        if successFunction2
-            lexer.advance()
-        else
-            return(null)
-
-        let name: string = lexer.parseIdentifier()
-        if (name != null) && isIdentifier(name)
-            lexer.advance()
-        else
-            return(null)
-
-        let signature: FunctionSignature = parseFunctionSignature()
-        if signature == null
-            return(null)
-
-        let body: Expression = parseExpression()
-
-        let end: Position$ = lexer.getPosition()
-
-        let ret: FunctionDeclaration = new FunctionDeclaration(modifiers, name, signature, body, new Position(start), new Position(end))
-        if modifiers != null {
-            for item: Modifier in modifiers
-                item.parent = ret
-        }
-        signature.parent = ret
-        if body != null
-            body.parent = ret
-
-        ret
-    }
-
-    function parseEnumDeclaration(): EnumDeclaration {
-        let start: Position$ = lexer.getPreviousPosition()
-
-        let successEnum1: bool = lexer.parseKeyword(enumKeyword)
-        if successEnum1
-            lexer.advance()
-        else
-            return(null)
-
-        let name: string = lexer.parseIdentifier()
-        if (name != null) && isIdentifier(name)
-            lexer.advance()
-        else
-            return(null)
-
-        let successLeftCurly3: bool = lexer.parsePunctuation(leftCurly)
-        if successLeftCurly3
-            lexer.advance()
-        else
-            return(null)
-
-        let members: EnumMember[] = parseEnumMemberList()
-
-        let successRightCurly5: bool = lexer.parsePunctuation(rightCurly)
-        if successRightCurly5
-            lexer.advance()
-        else
-            return(null)
-
-        let end: Position$ = lexer.getPosition()
-
-        let ret: EnumDeclaration = new EnumDeclaration(name, members, new Position(start), new Position(end))
-        if members != null {
-            for item: EnumMember in members
-                item.parent = ret
-        }
-
-        ret
-    }
-
-    function parseClassDeclaration(): ClassDeclaration {
-        let start: Position$ = lexer.getPreviousPosition()
-
-        let successClass1: bool = lexer.parseKeyword(classKeyword)
-        if successClass1
-            lexer.advance()
-        else
-            return(null)
-
-        let name: string = lexer.parseIdentifier()
-        if (name != null) && isIdentifier(name)
-            lexer.advance()
-        else
-            return(null)
-
-        let typeInheritanceClause: TypeInheritanceClause = parseTypeInheritanceClause()
-
-        let body: ClassBody = parseClassBody()
-
-        let end: Position$ = lexer.getPosition()
-
-        let ret: ClassDeclaration = new ClassDeclaration(name, typeInheritanceClause, body, new Position(start), new Position(end))
-        if typeInheritanceClause != null
-            typeInheritanceClause.parent = ret
-        if body != null
-            body.parent = ret
-
-        ret
-    }
-
-    function parseConstructorDeclaration(): ConstructorDeclaration {
-        let start: Position$ = lexer.getPreviousPosition()
-
-        let successConstructor1: bool = lexer.parseKeyword(constructorKeyword)
-        if successConstructor1
-            lexer.advance()
-        else
-            return(null)
-
-        let parameterClause: ParameterClause = parseParameterClause()
-        if parameterClause == null
-            return(null)
-
-        let body: Expression = parseExpression()
-        if body == null
-            return(null)
-
-        let end: Position$ = lexer.getPosition()
-
-        let ret: ConstructorDeclaration = new ConstructorDeclaration(parameterClause, body, new Position(start), new Position(end))
-        parameterClause.parent = ret
-        body.parent = ret
-
-        ret
-    }
-
-    function parseCodeBlock(): CodeBlock {
-        let start: Position$ = lexer.getPreviousPosition()
-
-        let successLeftCurly1: bool = lexer.parsePunctuation(leftCurly)
-        if successLeftCurly1
-            lexer.advance()
-        else
-            return(null)
-
-        let statements: Statement[] = parseStatementList()
-
-        let successRightCurly3: bool = lexer.parsePunctuation(rightCurly)
-        if successRightCurly3
-            lexer.advance()
-        else
-            return(null)
-
-        let end: Position$ = lexer.getPosition()
-
-        let ret: CodeBlock = new CodeBlock(statements, new Position(start), new Position(end))
-        if statements != null {
-            for item: Statement in statements
-                item.parent = ret
-        }
-
-        ret
-    }
-
-    function parseSimpleExpression(): SimpleExpression {
-        let start: Position$ = lexer.getPreviousPosition()
-
-        let prefixExpression: PrefixExpression = parsePrefixExpression()
-        if prefixExpression == null
-            return(null)
-
-        let binaryOps: BinaryOp[] = parseBinaryOpList()
-
-        let end: Position$ = lexer.getPosition()
-
-        let ret: SimpleExpression = new SimpleExpression(prefixExpression, binaryOps, new Position(start), new Position(end))
-        prefixExpression.parent = ret
-        if binaryOps != null {
-            for item: BinaryOp in binaryOps
-                item.parent = ret
-        }
-
-        ret
-    }
-
-    function parseInitializer(): Initializer {
-        let start: Position$ = lexer.getPreviousPosition()
-
-        let successEqual1: bool = lexer.parsePunctuation(equal)
-        if successEqual1
-            lexer.advance()
-        else
-            return(null)
-
-        let expression: Expression = parseExpression()
-        if expression == null
-            return(null)
-
-        let end: Position$ = lexer.getPosition()
-
-        let ret: Initializer = new Initializer(expression, new Position(start), new Position(end))
-        expression.parent = ret
 
         ret
     }
@@ -554,6 +335,27 @@ class Parser {
         ret
     }
 
+    function parseInitializer(): Initializer {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let successEqual1: bool = lexer.parsePunctuation(equal)
+        if successEqual1
+            lexer.advance()
+        else
+            return(null)
+
+        let expression: Expression = parseExpression()
+        if expression == null
+            return(null)
+
+        let end: Position$ = lexer.getPosition()
+
+        let ret: Initializer = new Initializer(expression, new Position(start), new Position(end))
+        expression.parent = ret
+
+        ret
+    }
+
     function parseAdditionalInitializerList(): AdditionalInitializer[] {
         mutable ret: AdditionalInitializer[]$ = null
         while true {
@@ -588,6 +390,435 @@ class Parser {
 
         let ret: AdditionalInitializer = new AdditionalInitializer(pattern, new Position(start), new Position(end))
         pattern.parent = ret
+
+        ret
+    }
+
+    function parsePattern(): Pattern {
+        {
+            let node: WildcardPattern = parseWildcardPattern()
+            if node != null
+                return(node)
+        }
+
+        {
+            let node: IdentifierPattern = parseIdentifierPattern()
+            if node != null
+                return(node)
+        }
+
+        {
+            let node: TuplePattern = parseTuplePattern()
+            if node != null
+                return(node)
+        }
+
+        {
+            let node: ExpressionPattern = parseExpressionPattern()
+            if node != null
+                return(node)
+        }
+
+        null
+    }
+
+    function parseWildcardPattern(): WildcardPattern {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let successUnderscore1: bool = lexer.parsePunctuation(underscore)
+        if successUnderscore1
+            lexer.advance()
+        else
+            return(null)
+
+        let end: Position$ = lexer.getPosition()
+
+        let ret: WildcardPattern = new WildcardPattern(new Position(start), new Position(end))
+
+        ret
+    }
+
+    function parseIdentifierPattern(): IdentifierPattern {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let identifier: string = lexer.parseIdentifier()
+        if (identifier != null) && isIdentifier(identifier)
+            lexer.advance()
+        else
+            return(null)
+
+        let annotationForType: TypeAnnotation = parseTypeAnnotation()
+
+        let end: Position$ = lexer.getPosition()
+
+        let ret: IdentifierPattern = new IdentifierPattern(identifier, annotationForType, new Position(start), new Position(end))
+        if annotationForType != null
+            annotationForType.parent = ret
+
+        ret
+    }
+
+    function parseTypeAnnotation(): TypeAnnotation {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let successColon1: bool = lexer.parsePunctuation(colon)
+        if successColon1
+            lexer.advance()
+        else
+            return(null)
+
+        let annotationForType: Type = parseType()
+        if annotationForType == null
+            return(null)
+
+        let end: Position$ = lexer.getPosition()
+
+        let ret: TypeAnnotation = new TypeAnnotation(annotationForType, new Position(start), new Position(end))
+        annotationForType.parent = ret
+
+        ret
+    }
+
+    function parseType(): Type {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let name: string = lexer.parseIdentifier()
+        if (name != null) && isIdentifier(name)
+            lexer.advance()
+        else
+            return(null)
+
+        let subType: Subtype = parseSubtype()
+
+        let postfixes: TypePostfix[] = parseTypePostfixList()
+
+        let lifeTime: LifeTime = parseLifeTime()
+
+        let end: Position$ = lexer.getPosition()
+
+        let ret: Type = new Type(name, subType, postfixes, lifeTime, new Position(start), new Position(end))
+        if subType != null
+            subType.parent = ret
+        if postfixes != null {
+            for item: TypePostfix in postfixes
+                item.parent = ret
+        }
+        if lifeTime != null
+            lifeTime.parent = ret
+
+        ret
+    }
+
+    function parseSubtype(): Subtype {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let successDot1: bool = lexer.parsePunctuation(dot)
+        if successDot1
+            lexer.advance()
+        else
+            return(null)
+
+        let type: Type = parseType()
+        if type == null
+            return(null)
+
+        let end: Position$ = lexer.getPosition()
+
+        let ret: Subtype = new Subtype(type, new Position(start), new Position(end))
+        type.parent = ret
+
+        ret
+    }
+
+    function parseTypePostfixList(): TypePostfix[] {
+        mutable ret: TypePostfix[]$ = null
+        while true {
+
+            let node: TypePostfix = parseTypePostfix()
+            if node == null
+                break
+
+            if ret == null
+                ret = new TypePostfix[]()
+
+            ret.push(node)
+        }
+
+        return(ret)
+    }
+
+    function parseTypePostfix(): TypePostfix {
+        {
+            let node: IndexedType = parseIndexedType()
+            if node != null
+                return(node)
+        }
+
+        {
+            let node: Pointer = parsePointer()
+            if node != null
+                return(node)
+        }
+
+        null
+    }
+
+    function parseIndexedType(): IndexedType {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let successLeftBracket1: bool = lexer.parsePunctuation(leftBracket)
+        if successLeftBracket1
+            lexer.advance()
+        else
+            return(null)
+
+        let key: Type = parseType()
+
+        let successRightBracket3: bool = lexer.parsePunctuation(rightBracket)
+        if successRightBracket3
+            lexer.advance()
+        else
+            return(null)
+
+        let end: Position$ = lexer.getPosition()
+
+        let ret: IndexedType = new IndexedType(key, new Position(start), new Position(end))
+        if key != null
+            key.parent = ret
+
+        ret
+    }
+
+    function parsePointer(): Pointer {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let successCircumflex1: bool = lexer.parsePunctuation(circumflex)
+        if successCircumflex1
+            lexer.advance()
+        else
+            return(null)
+
+        let end: Position$ = lexer.getPosition()
+
+        let ret: Pointer = new Pointer(new Position(start), new Position(end))
+
+        ret
+    }
+
+    function parseLifeTime(): LifeTime {
+        {
+            let node: Root = parseRoot()
+            if node != null
+                return(node)
+        }
+
+        {
+            let node: Local = parseLocal()
+            if node != null
+                return(node)
+        }
+
+        {
+            let node: Reference = parseReference()
+            if node != null
+                return(node)
+        }
+
+        {
+            let node: Thrown = parseThrown()
+            if node != null
+                return(node)
+        }
+
+        null
+    }
+
+    function parseRoot(): Root {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let successDollar1: bool = lexer.parsePunctuation(dollar)
+        if successDollar1
+            lexer.advance()
+        else
+            return(null)
+
+        let end: Position$ = lexer.getPosition()
+
+        let ret: Root = new Root(new Position(start), new Position(end))
+
+        ret
+    }
+
+    function parseLocal(): Local {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let successAt1: bool = lexer.parsePunctuation(at)
+        if successAt1
+            lexer.advance()
+        else
+            return(null)
+
+        let location: string = lexer.parseIdentifier()
+        if (location != null) && isIdentifier(location)
+            lexer.advance()
+        else
+            return(null)
+
+        let end: Position$ = lexer.getPosition()
+
+        let ret: Local = new Local(location, new Position(start), new Position(end))
+
+        ret
+    }
+
+    function parseReference(): Reference {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let successAmpersand1: bool = lexer.parsePunctuation(ampersand)
+        if successAmpersand1
+            lexer.advance()
+        else
+            return(null)
+
+        let age: Literal = lexer.parseLiteral()
+        if age != null
+            lexer.advance()
+
+        let end: Position$ = lexer.getPosition()
+
+        let ret: Reference = new Reference(age, new Position(start), new Position(end))
+
+        ret
+    }
+
+    function parseThrown(): Thrown {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let successHash1: bool = lexer.parsePunctuation(hash)
+        if successHash1
+            lexer.advance()
+        else
+            return(null)
+
+        let end: Position$ = lexer.getPosition()
+
+        let ret: Thrown = new Thrown(new Position(start), new Position(end))
+
+        ret
+    }
+
+    function parseTuplePattern(): TuplePattern {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let successLeftParen1: bool = lexer.parsePunctuation(leftParen)
+        if successLeftParen1
+            lexer.advance()
+        else
+            return(null)
+
+        let elements: TuplePatternElement[] = parseTuplePatternElementList()
+
+        let successRightParen3: bool = lexer.parsePunctuation(rightParen)
+        if successRightParen3
+            lexer.advance()
+        else
+            return(null)
+
+        let end: Position$ = lexer.getPosition()
+
+        let ret: TuplePattern = new TuplePattern(elements, new Position(start), new Position(end))
+        if elements != null {
+            for item: TuplePatternElement in elements
+                item.parent = ret
+        }
+
+        ret
+    }
+
+    function parseTuplePatternElementList(): TuplePatternElement[] {
+        mutable ret: TuplePatternElement[]$ = null
+        while true {
+
+            let node: TuplePatternElement = parseTuplePatternElement()
+            if node == null
+                break
+
+            if ret == null
+                ret = new TuplePatternElement[]()
+
+            ret.push(node)
+        }
+
+        return(ret)
+    }
+
+    function parseTuplePatternElement(): TuplePatternElement {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let pattern: Pattern = parsePattern()
+        if pattern == null
+            return(null)
+
+        let successComma2: bool = lexer.parsePunctuation(comma)
+        if successComma2
+            lexer.advance()
+
+        let end: Position$ = lexer.getPosition()
+
+        let ret: TuplePatternElement = new TuplePatternElement(pattern, new Position(start), new Position(end))
+        pattern.parent = ret
+
+        ret
+    }
+
+    function parseExpressionPattern(): ExpressionPattern {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let expression: Expression = parseExpression()
+        if expression == null
+            return(null)
+
+        let end: Position$ = lexer.getPosition()
+
+        let ret: ExpressionPattern = new ExpressionPattern(expression, new Position(start), new Position(end))
+        expression.parent = ret
+
+        ret
+    }
+
+    function parseFunctionDeclaration(): FunctionDeclaration {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let modifiers: Modifier[] = parseModifierList()
+
+        let successFunction2: bool = lexer.parseKeyword(functionKeyword)
+        if successFunction2
+            lexer.advance()
+        else
+            return(null)
+
+        let name: string = lexer.parseIdentifier()
+        if (name != null) && isIdentifier(name)
+            lexer.advance()
+        else
+            return(null)
+
+        let signature: FunctionSignature = parseFunctionSignature()
+        if signature == null
+            return(null)
+
+        let body: Expression = parseExpression()
+
+        let end: Position$ = lexer.getPosition()
+
+        let ret: FunctionDeclaration = new FunctionDeclaration(modifiers, name, signature, body, new Position(start), new Position(end))
+        if modifiers != null {
+            for item: Modifier in modifiers
+                item.parent = ret
+        }
+        signature.parent = ret
+        if body != null
+            body.parent = ret
 
         ret
     }
@@ -676,27 +907,6 @@ class Parser {
             result.parent = ret
         if throwsClause != null
             throwsClause.parent = ret
-
-        ret
-    }
-
-    function parseFunctionResult(): FunctionResult {
-        let start: Position$ = lexer.getPreviousPosition()
-
-        let successColon1: bool = lexer.parsePunctuation(colon)
-        if successColon1
-            lexer.advance()
-        else
-            return(null)
-
-        let resultType: Type = parseType()
-        if resultType == null
-            return(null)
-
-        let end: Position$ = lexer.getPosition()
-
-        let ret: FunctionResult = new FunctionResult(resultType, new Position(start), new Position(end))
-        resultType.parent = ret
 
         ret
     }
@@ -851,6 +1061,27 @@ class Parser {
         ret
     }
 
+    function parseFunctionResult(): FunctionResult {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let successColon1: bool = lexer.parsePunctuation(colon)
+        if successColon1
+            lexer.advance()
+        else
+            return(null)
+
+        let resultType: Type = parseType()
+        if resultType == null
+            return(null)
+
+        let end: Position$ = lexer.getPosition()
+
+        let ret: FunctionResult = new FunctionResult(resultType, new Position(start), new Position(end))
+        resultType.parent = ret
+
+        ret
+    }
+
     function parseThrowsClause(): ThrowsClause {
         let start: Position$ = lexer.getPreviousPosition()
 
@@ -868,6 +1099,46 @@ class Parser {
 
         let ret: ThrowsClause = new ThrowsClause(throwsType, new Position(start), new Position(end))
         throwsType.parent = ret
+
+        ret
+    }
+
+    function parseEnumDeclaration(): EnumDeclaration {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let successEnum1: bool = lexer.parseKeyword(enumKeyword)
+        if successEnum1
+            lexer.advance()
+        else
+            return(null)
+
+        let name: string = lexer.parseIdentifier()
+        if (name != null) && isIdentifier(name)
+            lexer.advance()
+        else
+            return(null)
+
+        let successLeftCurly3: bool = lexer.parsePunctuation(leftCurly)
+        if successLeftCurly3
+            lexer.advance()
+        else
+            return(null)
+
+        let members: EnumMember[] = parseEnumMemberList()
+
+        let successRightCurly5: bool = lexer.parsePunctuation(rightCurly)
+        if successRightCurly5
+            lexer.advance()
+        else
+            return(null)
+
+        let end: Position$ = lexer.getPosition()
+
+        let ret: EnumDeclaration = new EnumDeclaration(name, members, new Position(start), new Position(end))
+        if members != null {
+            for item: EnumMember in members
+                item.parent = ret
+        }
 
         ret
     }
@@ -974,6 +1245,94 @@ class Parser {
         ret
     }
 
+    function parseClassDeclaration(): ClassDeclaration {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let successClass1: bool = lexer.parseKeyword(classKeyword)
+        if successClass1
+            lexer.advance()
+        else
+            return(null)
+
+        let name: string = lexer.parseIdentifier()
+        if (name != null) && isIdentifier(name)
+            lexer.advance()
+        else
+            return(null)
+
+        let typeInheritanceClause: TypeInheritanceClause = parseTypeInheritanceClause()
+
+        let body: ClassBody = parseClassBody()
+
+        let end: Position$ = lexer.getPosition()
+
+        let ret: ClassDeclaration = new ClassDeclaration(name, typeInheritanceClause, body, new Position(start), new Position(end))
+        if typeInheritanceClause != null
+            typeInheritanceClause.parent = ret
+        if body != null
+            body.parent = ret
+
+        ret
+    }
+
+    function parseTypeInheritanceClause(): TypeInheritanceClause {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let successExtends1: bool = lexer.parseKeyword(extendsKeyword)
+        if successExtends1
+            lexer.advance()
+        else
+            return(null)
+
+        let inheritances: Inheritance[] = parseInheritanceList()
+
+        let end: Position$ = lexer.getPosition()
+
+        let ret: TypeInheritanceClause = new TypeInheritanceClause(inheritances, new Position(start), new Position(end))
+        if inheritances != null {
+            for item: Inheritance in inheritances
+                item.parent = ret
+        }
+
+        ret
+    }
+
+    function parseInheritanceList(): Inheritance[] {
+        mutable ret: Inheritance[]$ = null
+        while true {
+
+            let node: Inheritance = parseInheritance()
+            if node == null
+                break
+
+            if ret == null
+                ret = new Inheritance[]()
+
+            ret.push(node)
+        }
+
+        return(ret)
+    }
+
+    function parseInheritance(): Inheritance {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let type: Type = parseType()
+        if type == null
+            return(null)
+
+        let successComma2: bool = lexer.parsePunctuation(comma)
+        if successComma2
+            lexer.advance()
+
+        let end: Position$ = lexer.getPosition()
+
+        let ret: Inheritance = new Inheritance(type, new Position(start), new Position(end))
+        type.parent = ret
+
+        ret
+    }
+
     function parseClassBody(): ClassBody {
         let start: Position$ = lexer.getPreviousPosition()
 
@@ -1034,6 +1393,97 @@ class Parser {
         ret
     }
 
+    function parseConstructorDeclaration(): ConstructorDeclaration {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let successConstructor1: bool = lexer.parseKeyword(constructorKeyword)
+        if successConstructor1
+            lexer.advance()
+        else
+            return(null)
+
+        let parameterClause: ParameterClause = parseParameterClause()
+        if parameterClause == null
+            return(null)
+
+        let body: Expression = parseExpression()
+        if body == null
+            return(null)
+
+        let end: Position$ = lexer.getPosition()
+
+        let ret: ConstructorDeclaration = new ConstructorDeclaration(parameterClause, body, new Position(start), new Position(end))
+        parameterClause.parent = ret
+        body.parent = ret
+
+        ret
+    }
+
+    function parseExpression(): Expression {
+        {
+            let node: CodeBlock = parseCodeBlock()
+            if node != null
+                return(node)
+        }
+
+        {
+            let node: SimpleExpression = parseSimpleExpression()
+            if node != null
+                return(node)
+        }
+
+        null
+    }
+
+    function parseCodeBlock(): CodeBlock {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let successLeftCurly1: bool = lexer.parsePunctuation(leftCurly)
+        if successLeftCurly1
+            lexer.advance()
+        else
+            return(null)
+
+        let statements: Statement[] = parseStatementList()
+
+        let successRightCurly3: bool = lexer.parsePunctuation(rightCurly)
+        if successRightCurly3
+            lexer.advance()
+        else
+            return(null)
+
+        let end: Position$ = lexer.getPosition()
+
+        let ret: CodeBlock = new CodeBlock(statements, new Position(start), new Position(end))
+        if statements != null {
+            for item: Statement in statements
+                item.parent = ret
+        }
+
+        ret
+    }
+
+    function parseSimpleExpression(): SimpleExpression {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let prefixExpression: PrefixExpression = parsePrefixExpression()
+        if prefixExpression == null
+            return(null)
+
+        let binaryOps: BinaryOp[] = parseBinaryOpList()
+
+        let end: Position$ = lexer.getPosition()
+
+        let ret: SimpleExpression = new SimpleExpression(prefixExpression, binaryOps, new Position(start), new Position(end))
+        prefixExpression.parent = ret
+        if binaryOps != null {
+            for item: BinaryOp in binaryOps
+                item.parent = ret
+        }
+
+        ret
+    }
+
     function parsePrefixExpression(): PrefixExpression {
         let start: Position$ = lexer.getPreviousPosition()
 
@@ -1070,401 +1520,6 @@ class Parser {
             for item: Postfix in postfixes
                 item.parent = ret
         }
-
-        ret
-    }
-
-    function parseBinaryOpList(): BinaryOp[] {
-        mutable ret: BinaryOp[]$ = null
-        while true {
-
-            let node: BinaryOp = parseBinaryOp()
-            if node == null
-                break
-
-            if ret == null
-                ret = new BinaryOp[]()
-
-            ret.push(node)
-        }
-
-        return(ret)
-    }
-
-    function parseBinaryOp(): BinaryOp {
-        {
-            let node: BinaryOperation = parseBinaryOperation()
-            if node != null
-                return(node)
-        }
-
-        {
-            let node: Assignment = parseAssignment()
-            if node != null
-                return(node)
-        }
-
-        {
-            let node: TypeQuery = parseTypeQuery()
-            if node != null
-                return(node)
-        }
-
-        {
-            let node: TypeCast = parseTypeCast()
-            if node != null
-                return(node)
-        }
-
-        null
-    }
-
-    function parseBinaryOperation(): BinaryOperation {
-        let start: Position$ = lexer.getPreviousPosition()
-
-        let binaryOperator: string = lexer.parseBinaryOperator()
-        if binaryOperator != null
-            lexer.advance()
-        else
-            return(null)
-
-        let expression: PrefixExpression = parsePrefixExpression()
-        if expression == null
-            return(null)
-
-        let end: Position$ = lexer.getPosition()
-
-        let ret: BinaryOperation = new BinaryOperation(binaryOperator, expression, new Position(start), new Position(end))
-        expression.parent = ret
-
-        ret
-    }
-
-    function parseAssignment(): Assignment {
-        let start: Position$ = lexer.getPreviousPosition()
-
-        let successEqual1: bool = lexer.parsePunctuation(equal)
-        if successEqual1
-            lexer.advance()
-        else
-            return(null)
-
-        let expression: Expression = parseExpression()
-        if expression == null
-            return(null)
-
-        let end: Position$ = lexer.getPosition()
-
-        let ret: Assignment = new Assignment(expression, new Position(start), new Position(end))
-        expression.parent = ret
-
-        ret
-    }
-
-    function parseTypeQuery(): TypeQuery {
-        let start: Position$ = lexer.getPreviousPosition()
-
-        let successIs1: bool = lexer.parseKeyword(isKeyword)
-        if successIs1
-            lexer.advance()
-        else
-            return(null)
-
-        let objectType: Type = parseType()
-        if objectType == null
-            return(null)
-
-        let end: Position$ = lexer.getPosition()
-
-        let ret: TypeQuery = new TypeQuery(objectType, new Position(start), new Position(end))
-        objectType.parent = ret
-
-        ret
-    }
-
-    function parseTypeCast(): TypeCast {
-        let start: Position$ = lexer.getPreviousPosition()
-
-        let successAs1: bool = lexer.parseKeyword(asKeyword)
-        if successAs1
-            lexer.advance()
-        else
-            return(null)
-
-        let objectType: Type = parseType()
-        if objectType == null
-            return(null)
-
-        let end: Position$ = lexer.getPosition()
-
-        let ret: TypeCast = new TypeCast(objectType, new Position(start), new Position(end))
-        objectType.parent = ret
-
-        ret
-    }
-
-    function parseCatchClauseList(): CatchClause[] {
-        mutable ret: CatchClause[]$ = null
-        while true {
-
-            let node: CatchClause = parseCatchClause()
-            if node == null
-                break
-
-            if ret == null
-                ret = new CatchClause[]()
-
-            ret.push(node)
-        }
-
-        return(ret)
-    }
-
-    function parseCatchClause(): CatchClause {
-        let start: Position$ = lexer.getPreviousPosition()
-
-        let successCatch1: bool = lexer.parseKeyword(catchKeyword)
-        if successCatch1
-            lexer.advance()
-        else
-            return(null)
-
-        let catchPattern: CatchPattern = parseCatchPattern()
-        if catchPattern == null
-            return(null)
-
-        let bindingPattern: TuplePattern = parseTuplePattern()
-
-        let expression: Expression = parseExpression()
-        if expression == null
-            return(null)
-
-        let end: Position$ = lexer.getPosition()
-
-        let ret: CatchClause = new CatchClause(catchPattern, bindingPattern, expression, new Position(start), new Position(end))
-        catchPattern.parent = ret
-        if bindingPattern != null
-            bindingPattern.parent = ret
-        expression.parent = ret
-
-        ret
-    }
-
-    function parseCatchPattern(): CatchPattern {
-        {
-            let node: WildCardCatchPattern = parseWildCardCatchPattern()
-            if node != null
-                return(node)
-        }
-
-        {
-            let node: IdentifierCatchPattern = parseIdentifierCatchPattern()
-            if node != null
-                return(node)
-        }
-
-        null
-    }
-
-    function parseWildCardCatchPattern(): WildCardCatchPattern {
-        let start: Position$ = lexer.getPreviousPosition()
-
-        let pattern: WildcardPattern = parseWildcardPattern()
-        if pattern == null
-            return(null)
-
-        let end: Position$ = lexer.getPosition()
-
-        let ret: WildCardCatchPattern = new WildCardCatchPattern(pattern, new Position(start), new Position(end))
-        pattern.parent = ret
-
-        ret
-    }
-
-    function parseIdentifierCatchPattern(): IdentifierCatchPattern {
-        let start: Position$ = lexer.getPreviousPosition()
-
-        let name: string = lexer.parseIdentifier()
-        if (name != null) && isIdentifier(name)
-            lexer.advance()
-        else
-            return(null)
-
-        let member: MemberExpression = parseMemberExpression()
-
-        let end: Position$ = lexer.getPosition()
-
-        let ret: IdentifierCatchPattern = new IdentifierCatchPattern(name, member, new Position(start), new Position(end))
-        if member != null
-            member.parent = ret
-
-        ret
-    }
-
-    function parsePostfixList(): Postfix[] {
-        mutable ret: Postfix[]$ = null
-        while true {
-
-            let node: Postfix = parsePostfix()
-            if node == null
-                break
-
-            if ret == null
-                ret = new Postfix[]()
-
-            ret.push(node)
-        }
-
-        return(ret)
-    }
-
-    function parsePostfix(): Postfix {
-        {
-            let node: OperatorPostfix = parseOperatorPostfix()
-            if node != null
-                return(node)
-        }
-
-        {
-            let node: FunctionCall = parseFunctionCall()
-            if node != null
-                return(node)
-        }
-
-        {
-            let node: MemberExpression = parseMemberExpression()
-            if node != null
-                return(node)
-        }
-
-        {
-            let node: Subscript = parseSubscript()
-            if node != null
-                return(node)
-        }
-
-        null
-    }
-
-    function parseOperatorPostfix(): OperatorPostfix {
-        let start: Position$ = lexer.getPreviousPosition()
-
-        let postfixOperator: string = lexer.parsePostfixOperator()
-        if postfixOperator != null
-            lexer.advance()
-        else
-            return(null)
-
-        let end: Position$ = lexer.getPosition()
-
-        let ret: OperatorPostfix = new OperatorPostfix(postfixOperator, new Position(start), new Position(end))
-
-        ret
-    }
-
-    function parseFunctionCall(): FunctionCall {
-        let start: Position$ = lexer.getPreviousPosition()
-
-        let arguments: ParenthesizedExpression = parseParenthesizedExpression()
-        if arguments == null
-            return(null)
-
-        let catchClauses: CatchClause[] = parseCatchClauseList()
-
-        let end: Position$ = lexer.getPosition()
-
-        let ret: FunctionCall = new FunctionCall(arguments, catchClauses, new Position(start), new Position(end))
-        arguments.parent = ret
-        if catchClauses != null {
-            for item: CatchClause in catchClauses
-                item.parent = ret
-        }
-
-        ret
-    }
-
-    function parseMemberExpression(): MemberExpression {
-        let start: Position$ = lexer.getPreviousPosition()
-
-        let successDot1: bool = lexer.parsePunctuation(dot)
-        if successDot1
-            lexer.advance()
-        else
-            return(null)
-
-        let member: string = lexer.parseIdentifier()
-        if (member != null) && isIdentifier(member)
-            lexer.advance()
-        else
-            return(null)
-
-        let end: Position$ = lexer.getPosition()
-
-        let ret: MemberExpression = new MemberExpression(member, new Position(start), new Position(end))
-
-        ret
-    }
-
-    function parseSubscript(): Subscript {
-        let start: Position$ = lexer.getPreviousPosition()
-
-        let successLeftBracket1: bool = lexer.parsePunctuation(leftBracket)
-        if successLeftBracket1
-            lexer.advance()
-        else
-            return(null)
-
-        let expressions: ExpressionElement[] = parseExpressionElementList()
-
-        let successRightBracket3: bool = lexer.parsePunctuation(rightBracket)
-        if successRightBracket3
-            lexer.advance()
-        else
-            return(null)
-
-        let end: Position$ = lexer.getPosition()
-
-        let ret: Subscript = new Subscript(expressions, new Position(start), new Position(end))
-        if expressions != null {
-            for item: ExpressionElement in expressions
-                item.parent = ret
-        }
-
-        ret
-    }
-
-    function parseExpressionElementList(): ExpressionElement[] {
-        mutable ret: ExpressionElement[]$ = null
-        while true {
-
-            let node: ExpressionElement = parseExpressionElement()
-            if node == null
-                break
-
-            if ret == null
-                ret = new ExpressionElement[]()
-
-            ret.push(node)
-        }
-
-        return(ret)
-    }
-
-    function parseExpressionElement(): ExpressionElement {
-        let start: Position$ = lexer.getPreviousPosition()
-
-        let expression: Expression = parseExpression()
-        if expression == null
-            return(null)
-
-        let successComma2: bool = lexer.parsePunctuation(comma)
-        if successComma2
-            lexer.advance()
-
-        let end: Position$ = lexer.getPosition()
-
-        let ret: ExpressionElement = new ExpressionElement(expression, new Position(start), new Position(end))
-        expression.parent = ret
 
         ret
     }
@@ -1619,6 +1674,27 @@ class Parser {
         ret
     }
 
+    function parseElseClause(): ElseClause {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let successElse1: bool = lexer.parseKeyword(elseKeyword)
+        if successElse1
+            lexer.advance()
+        else
+            return(null)
+
+        let alternative: Expression = parseExpression()
+        if alternative == null
+            return(null)
+
+        let end: Position$ = lexer.getPosition()
+
+        let ret: ElseClause = new ElseClause(alternative, new Position(start), new Position(end))
+        alternative.parent = ret
+
+        ret
+    }
+
     function parseSwitchExpression(): SwitchExpression {
         let start: Position$ = lexer.getPreviousPosition()
 
@@ -1641,279 +1717,6 @@ class Parser {
         let ret: SwitchExpression = new SwitchExpression(expression, body, new Position(start), new Position(end))
         expression.parent = ret
         body.parent = ret
-
-        ret
-    }
-
-    function parseForExpression(): ForExpression {
-        let start: Position$ = lexer.getPreviousPosition()
-
-        let successFor1: bool = lexer.parseKeyword(forKeyword)
-        if successFor1
-            lexer.advance()
-        else
-            return(null)
-
-        let pattern: Pattern = parsePattern()
-        if pattern == null
-            return(null)
-
-        let successIn3: bool = lexer.parseKeyword(inKeyword)
-        if successIn3
-            lexer.advance()
-        else
-            return(null)
-
-        let expression: Expression = parseExpression()
-        if expression == null
-            return(null)
-
-        let code: Expression = parseExpression()
-        if code == null
-            return(null)
-
-        let end: Position$ = lexer.getPosition()
-
-        let ret: ForExpression = new ForExpression(pattern, expression, code, new Position(start), new Position(end))
-        pattern.parent = ret
-        expression.parent = ret
-        code.parent = ret
-
-        ret
-    }
-
-    function parseWhileExpression(): WhileExpression {
-        let start: Position$ = lexer.getPreviousPosition()
-
-        let successWhile1: bool = lexer.parseKeyword(whileKeyword)
-        if successWhile1
-            lexer.advance()
-        else
-            return(null)
-
-        let condition: Expression = parseExpression()
-        if condition == null
-            return(null)
-
-        let code: Expression = parseExpression()
-        if code == null
-            return(null)
-
-        let end: Position$ = lexer.getPosition()
-
-        let ret: WhileExpression = new WhileExpression(condition, code, new Position(start), new Position(end))
-        condition.parent = ret
-        code.parent = ret
-
-        ret
-    }
-
-    function parseDoExpression(): DoExpression {
-        let start: Position$ = lexer.getPreviousPosition()
-
-        let successDo1: bool = lexer.parseKeyword(doKeyword)
-        if successDo1
-            lexer.advance()
-        else
-            return(null)
-
-        let code: Expression = parseExpression()
-        if code == null
-            return(null)
-
-        let successWhile3: bool = lexer.parseKeyword(whileKeyword)
-        if successWhile3
-            lexer.advance()
-        else
-            return(null)
-
-        let condition: Expression = parseExpression()
-        if condition == null
-            return(null)
-
-        let end: Position$ = lexer.getPosition()
-
-        let ret: DoExpression = new DoExpression(code, condition, new Position(start), new Position(end))
-        code.parent = ret
-        condition.parent = ret
-
-        ret
-    }
-
-    function parseParenthesizedExpression(): ParenthesizedExpression {
-        let start: Position$ = lexer.getPreviousPosition()
-
-        let successLeftParen1: bool = lexer.parsePunctuation(leftParen)
-        if successLeftParen1
-            lexer.advance()
-        else
-            return(null)
-
-        let expressionElements: ExpressionElement[] = parseExpressionElementList()
-
-        let successRightParen3: bool = lexer.parsePunctuation(rightParen)
-        if successRightParen3
-            lexer.advance()
-        else
-            return(null)
-
-        let end: Position$ = lexer.getPosition()
-
-        let ret: ParenthesizedExpression = new ParenthesizedExpression(expressionElements, new Position(start), new Position(end))
-        if expressionElements != null {
-            for item: ExpressionElement in expressionElements
-                item.parent = ret
-        }
-
-        ret
-    }
-
-    function parseReturnExpression(): ReturnExpression {
-        let start: Position$ = lexer.getPreviousPosition()
-
-        let successReturn1: bool = lexer.parseKeyword(returnKeyword)
-        if successReturn1
-            lexer.advance()
-        else
-            return(null)
-
-        let expression: ParenthesizedExpression = parseParenthesizedExpression()
-
-        let end: Position$ = lexer.getPosition()
-
-        let ret: ReturnExpression = new ReturnExpression(expression, new Position(start), new Position(end))
-        if expression != null
-            expression.parent = ret
-
-        ret
-    }
-
-    function parseThrowExpression(): ThrowExpression {
-        let start: Position$ = lexer.getPreviousPosition()
-
-        let successThrow1: bool = lexer.parseKeyword(throwKeyword)
-        if successThrow1
-            lexer.advance()
-        else
-            return(null)
-
-        let error: IdentifierExpression = parseIdentifierExpression()
-        if error == null
-            return(null)
-
-        let arguments: ParenthesizedExpression = parseParenthesizedExpression()
-
-        let end: Position$ = lexer.getPosition()
-
-        let ret: ThrowExpression = new ThrowExpression(error, arguments, new Position(start), new Position(end))
-        error.parent = ret
-        if arguments != null
-            arguments.parent = ret
-
-        ret
-    }
-
-    function parseBreakExpression(): BreakExpression {
-        let start: Position$ = lexer.getPreviousPosition()
-
-        let successBreak1: bool = lexer.parseKeyword(breakKeyword)
-        if successBreak1
-            lexer.advance()
-        else
-            return(null)
-
-        let expression: ParenthesizedExpression = parseParenthesizedExpression()
-
-        let end: Position$ = lexer.getPosition()
-
-        let ret: BreakExpression = new BreakExpression(expression, new Position(start), new Position(end))
-        if expression != null
-            expression.parent = ret
-
-        ret
-    }
-
-    function parseConstructorCall(): ConstructorCall {
-        let start: Position$ = lexer.getPreviousPosition()
-
-        let successNew1: bool = lexer.parseKeyword(newKeyword)
-        if successNew1
-            lexer.advance()
-        else
-            return(null)
-
-        let typeToConstruct: Type = parseType()
-        if typeToConstruct == null
-            return(null)
-
-        let arguments: ParenthesizedExpression = parseParenthesizedExpression()
-        if arguments == null
-            return(null)
-
-        let catchClauses: CatchClause[] = parseCatchClauseList()
-
-        let end: Position$ = lexer.getPosition()
-
-        let ret: ConstructorCall = new ConstructorCall(typeToConstruct, arguments, catchClauses, new Position(start), new Position(end))
-        typeToConstruct.parent = ret
-        arguments.parent = ret
-        if catchClauses != null {
-            for item: CatchClause in catchClauses
-                item.parent = ret
-        }
-
-        ret
-    }
-
-    function parseThisExpression(): ThisExpression {
-        let start: Position$ = lexer.getPreviousPosition()
-
-        let successThis1: bool = lexer.parseKeyword(thisKeyword)
-        if successThis1
-            lexer.advance()
-        else
-            return(null)
-
-        let end: Position$ = lexer.getPosition()
-
-        let ret: ThisExpression = new ThisExpression(new Position(start), new Position(end))
-
-        ret
-    }
-
-    function parseNullExpression(): NullExpression {
-        let start: Position$ = lexer.getPreviousPosition()
-
-        let successNull1: bool = lexer.parseKeyword(nullKeyword)
-        if successNull1
-            lexer.advance()
-        else
-            return(null)
-
-        let end: Position$ = lexer.getPosition()
-
-        let ret: NullExpression = new NullExpression(new Position(start), new Position(end))
-
-        ret
-    }
-
-    function parseElseClause(): ElseClause {
-        let start: Position$ = lexer.getPreviousPosition()
-
-        let successElse1: bool = lexer.parseKeyword(elseKeyword)
-        if successElse1
-            lexer.advance()
-        else
-            return(null)
-
-        let alternative: Expression = parseExpression()
-        if alternative == null
-            return(null)
-
-        let end: Position$ = lexer.getPosition()
-
-        let ret: ElseClause = new ElseClause(alternative, new Position(start), new Position(end))
-        alternative.parent = ret
 
         ret
     }
@@ -2124,149 +1927,6 @@ class Parser {
         ret
     }
 
-    function parsePattern(): Pattern {
-        {
-            let node: WildcardPattern = parseWildcardPattern()
-            if node != null
-                return(node)
-        }
-
-        {
-            let node: IdentifierPattern = parseIdentifierPattern()
-            if node != null
-                return(node)
-        }
-
-        {
-            let node: TuplePattern = parseTuplePattern()
-            if node != null
-                return(node)
-        }
-
-        {
-            let node: ExpressionPattern = parseExpressionPattern()
-            if node != null
-                return(node)
-        }
-
-        null
-    }
-
-    function parseWildcardPattern(): WildcardPattern {
-        let start: Position$ = lexer.getPreviousPosition()
-
-        let successUnderscore1: bool = lexer.parsePunctuation(underscore)
-        if successUnderscore1
-            lexer.advance()
-        else
-            return(null)
-
-        let end: Position$ = lexer.getPosition()
-
-        let ret: WildcardPattern = new WildcardPattern(new Position(start), new Position(end))
-
-        ret
-    }
-
-    function parseIdentifierPattern(): IdentifierPattern {
-        let start: Position$ = lexer.getPreviousPosition()
-
-        let identifier: string = lexer.parseIdentifier()
-        if (identifier != null) && isIdentifier(identifier)
-            lexer.advance()
-        else
-            return(null)
-
-        let annotationForType: TypeAnnotation = parseTypeAnnotation()
-
-        let end: Position$ = lexer.getPosition()
-
-        let ret: IdentifierPattern = new IdentifierPattern(identifier, annotationForType, new Position(start), new Position(end))
-        if annotationForType != null
-            annotationForType.parent = ret
-
-        ret
-    }
-
-    function parseTuplePattern(): TuplePattern {
-        let start: Position$ = lexer.getPreviousPosition()
-
-        let successLeftParen1: bool = lexer.parsePunctuation(leftParen)
-        if successLeftParen1
-            lexer.advance()
-        else
-            return(null)
-
-        let elements: TuplePatternElement[] = parseTuplePatternElementList()
-
-        let successRightParen3: bool = lexer.parsePunctuation(rightParen)
-        if successRightParen3
-            lexer.advance()
-        else
-            return(null)
-
-        let end: Position$ = lexer.getPosition()
-
-        let ret: TuplePattern = new TuplePattern(elements, new Position(start), new Position(end))
-        if elements != null {
-            for item: TuplePatternElement in elements
-                item.parent = ret
-        }
-
-        ret
-    }
-
-    function parseExpressionPattern(): ExpressionPattern {
-        let start: Position$ = lexer.getPreviousPosition()
-
-        let expression: Expression = parseExpression()
-        if expression == null
-            return(null)
-
-        let end: Position$ = lexer.getPosition()
-
-        let ret: ExpressionPattern = new ExpressionPattern(expression, new Position(start), new Position(end))
-        expression.parent = ret
-
-        ret
-    }
-
-    function parseTuplePatternElementList(): TuplePatternElement[] {
-        mutable ret: TuplePatternElement[]$ = null
-        while true {
-
-            let node: TuplePatternElement = parseTuplePatternElement()
-            if node == null
-                break
-
-            if ret == null
-                ret = new TuplePatternElement[]()
-
-            ret.push(node)
-        }
-
-        return(ret)
-    }
-
-    function parseTuplePatternElement(): TuplePatternElement {
-        let start: Position$ = lexer.getPreviousPosition()
-
-        let pattern: Pattern = parsePattern()
-        if pattern == null
-            return(null)
-
-        let successComma2: bool = lexer.parsePunctuation(comma)
-        if successComma2
-            lexer.advance()
-
-        let end: Position$ = lexer.getPosition()
-
-        let ret: TuplePatternElement = new TuplePatternElement(pattern, new Position(start), new Position(end))
-        pattern.parent = ret
-
-        ret
-    }
-
     function parseCaseContent(): CaseContent {
         let start: Position$ = lexer.getPreviousPosition()
 
@@ -2283,7 +1943,455 @@ class Parser {
         ret
     }
 
-    function parseType(): Type {
+    function parseForExpression(): ForExpression {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let successFor1: bool = lexer.parseKeyword(forKeyword)
+        if successFor1
+            lexer.advance()
+        else
+            return(null)
+
+        let pattern: Pattern = parsePattern()
+        if pattern == null
+            return(null)
+
+        let successIn3: bool = lexer.parseKeyword(inKeyword)
+        if successIn3
+            lexer.advance()
+        else
+            return(null)
+
+        let expression: Expression = parseExpression()
+        if expression == null
+            return(null)
+
+        let code: Expression = parseExpression()
+        if code == null
+            return(null)
+
+        let end: Position$ = lexer.getPosition()
+
+        let ret: ForExpression = new ForExpression(pattern, expression, code, new Position(start), new Position(end))
+        pattern.parent = ret
+        expression.parent = ret
+        code.parent = ret
+
+        ret
+    }
+
+    function parseWhileExpression(): WhileExpression {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let successWhile1: bool = lexer.parseKeyword(whileKeyword)
+        if successWhile1
+            lexer.advance()
+        else
+            return(null)
+
+        let condition: Expression = parseExpression()
+        if condition == null
+            return(null)
+
+        let code: Expression = parseExpression()
+        if code == null
+            return(null)
+
+        let end: Position$ = lexer.getPosition()
+
+        let ret: WhileExpression = new WhileExpression(condition, code, new Position(start), new Position(end))
+        condition.parent = ret
+        code.parent = ret
+
+        ret
+    }
+
+    function parseDoExpression(): DoExpression {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let successDo1: bool = lexer.parseKeyword(doKeyword)
+        if successDo1
+            lexer.advance()
+        else
+            return(null)
+
+        let code: Expression = parseExpression()
+        if code == null
+            return(null)
+
+        let successWhile3: bool = lexer.parseKeyword(whileKeyword)
+        if successWhile3
+            lexer.advance()
+        else
+            return(null)
+
+        let condition: Expression = parseExpression()
+        if condition == null
+            return(null)
+
+        let end: Position$ = lexer.getPosition()
+
+        let ret: DoExpression = new DoExpression(code, condition, new Position(start), new Position(end))
+        code.parent = ret
+        condition.parent = ret
+
+        ret
+    }
+
+    function parseParenthesizedExpression(): ParenthesizedExpression {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let successLeftParen1: bool = lexer.parsePunctuation(leftParen)
+        if successLeftParen1
+            lexer.advance()
+        else
+            return(null)
+
+        let expressionElements: ExpressionElement[] = parseExpressionElementList()
+
+        let successRightParen3: bool = lexer.parsePunctuation(rightParen)
+        if successRightParen3
+            lexer.advance()
+        else
+            return(null)
+
+        let end: Position$ = lexer.getPosition()
+
+        let ret: ParenthesizedExpression = new ParenthesizedExpression(expressionElements, new Position(start), new Position(end))
+        if expressionElements != null {
+            for item: ExpressionElement in expressionElements
+                item.parent = ret
+        }
+
+        ret
+    }
+
+    function parseExpressionElementList(): ExpressionElement[] {
+        mutable ret: ExpressionElement[]$ = null
+        while true {
+
+            let node: ExpressionElement = parseExpressionElement()
+            if node == null
+                break
+
+            if ret == null
+                ret = new ExpressionElement[]()
+
+            ret.push(node)
+        }
+
+        return(ret)
+    }
+
+    function parseExpressionElement(): ExpressionElement {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let expression: Expression = parseExpression()
+        if expression == null
+            return(null)
+
+        let successComma2: bool = lexer.parsePunctuation(comma)
+        if successComma2
+            lexer.advance()
+
+        let end: Position$ = lexer.getPosition()
+
+        let ret: ExpressionElement = new ExpressionElement(expression, new Position(start), new Position(end))
+        expression.parent = ret
+
+        ret
+    }
+
+    function parseReturnExpression(): ReturnExpression {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let successReturn1: bool = lexer.parseKeyword(returnKeyword)
+        if successReturn1
+            lexer.advance()
+        else
+            return(null)
+
+        let expression: ParenthesizedExpression = parseParenthesizedExpression()
+
+        let end: Position$ = lexer.getPosition()
+
+        let ret: ReturnExpression = new ReturnExpression(expression, new Position(start), new Position(end))
+        if expression != null
+            expression.parent = ret
+
+        ret
+    }
+
+    function parseThrowExpression(): ThrowExpression {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let successThrow1: bool = lexer.parseKeyword(throwKeyword)
+        if successThrow1
+            lexer.advance()
+        else
+            return(null)
+
+        let error: IdentifierExpression = parseIdentifierExpression()
+        if error == null
+            return(null)
+
+        let arguments: ParenthesizedExpression = parseParenthesizedExpression()
+
+        let end: Position$ = lexer.getPosition()
+
+        let ret: ThrowExpression = new ThrowExpression(error, arguments, new Position(start), new Position(end))
+        error.parent = ret
+        if arguments != null
+            arguments.parent = ret
+
+        ret
+    }
+
+    function parseBreakExpression(): BreakExpression {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let successBreak1: bool = lexer.parseKeyword(breakKeyword)
+        if successBreak1
+            lexer.advance()
+        else
+            return(null)
+
+        let expression: ParenthesizedExpression = parseParenthesizedExpression()
+
+        let end: Position$ = lexer.getPosition()
+
+        let ret: BreakExpression = new BreakExpression(expression, new Position(start), new Position(end))
+        if expression != null
+            expression.parent = ret
+
+        ret
+    }
+
+    function parseConstructorCall(): ConstructorCall {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let successNew1: bool = lexer.parseKeyword(newKeyword)
+        if successNew1
+            lexer.advance()
+        else
+            return(null)
+
+        let typeToConstruct: Type = parseType()
+        if typeToConstruct == null
+            return(null)
+
+        let arguments: ParenthesizedExpression = parseParenthesizedExpression()
+        if arguments == null
+            return(null)
+
+        let catchClauses: CatchClause[] = parseCatchClauseList()
+
+        let end: Position$ = lexer.getPosition()
+
+        let ret: ConstructorCall = new ConstructorCall(typeToConstruct, arguments, catchClauses, new Position(start), new Position(end))
+        typeToConstruct.parent = ret
+        arguments.parent = ret
+        if catchClauses != null {
+            for item: CatchClause in catchClauses
+                item.parent = ret
+        }
+
+        ret
+    }
+
+    function parseThisExpression(): ThisExpression {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let successThis1: bool = lexer.parseKeyword(thisKeyword)
+        if successThis1
+            lexer.advance()
+        else
+            return(null)
+
+        let end: Position$ = lexer.getPosition()
+
+        let ret: ThisExpression = new ThisExpression(new Position(start), new Position(end))
+
+        ret
+    }
+
+    function parseNullExpression(): NullExpression {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let successNull1: bool = lexer.parseKeyword(nullKeyword)
+        if successNull1
+            lexer.advance()
+        else
+            return(null)
+
+        let end: Position$ = lexer.getPosition()
+
+        let ret: NullExpression = new NullExpression(new Position(start), new Position(end))
+
+        ret
+    }
+
+    function parsePostfixList(): Postfix[] {
+        mutable ret: Postfix[]$ = null
+        while true {
+
+            let node: Postfix = parsePostfix()
+            if node == null
+                break
+
+            if ret == null
+                ret = new Postfix[]()
+
+            ret.push(node)
+        }
+
+        return(ret)
+    }
+
+    function parsePostfix(): Postfix {
+        {
+            let node: OperatorPostfix = parseOperatorPostfix()
+            if node != null
+                return(node)
+        }
+
+        {
+            let node: FunctionCall = parseFunctionCall()
+            if node != null
+                return(node)
+        }
+
+        {
+            let node: MemberExpression = parseMemberExpression()
+            if node != null
+                return(node)
+        }
+
+        {
+            let node: Subscript = parseSubscript()
+            if node != null
+                return(node)
+        }
+
+        null
+    }
+
+    function parseOperatorPostfix(): OperatorPostfix {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let postfixOperator: string = lexer.parsePostfixOperator()
+        if postfixOperator != null
+            lexer.advance()
+        else
+            return(null)
+
+        let end: Position$ = lexer.getPosition()
+
+        let ret: OperatorPostfix = new OperatorPostfix(postfixOperator, new Position(start), new Position(end))
+
+        ret
+    }
+
+    function parseFunctionCall(): FunctionCall {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let arguments: ParenthesizedExpression = parseParenthesizedExpression()
+        if arguments == null
+            return(null)
+
+        let catchClauses: CatchClause[] = parseCatchClauseList()
+
+        let end: Position$ = lexer.getPosition()
+
+        let ret: FunctionCall = new FunctionCall(arguments, catchClauses, new Position(start), new Position(end))
+        arguments.parent = ret
+        if catchClauses != null {
+            for item: CatchClause in catchClauses
+                item.parent = ret
+        }
+
+        ret
+    }
+
+    function parseCatchClauseList(): CatchClause[] {
+        mutable ret: CatchClause[]$ = null
+        while true {
+
+            let node: CatchClause = parseCatchClause()
+            if node == null
+                break
+
+            if ret == null
+                ret = new CatchClause[]()
+
+            ret.push(node)
+        }
+
+        return(ret)
+    }
+
+    function parseCatchClause(): CatchClause {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let successCatch1: bool = lexer.parseKeyword(catchKeyword)
+        if successCatch1
+            lexer.advance()
+        else
+            return(null)
+
+        let catchPattern: CatchPattern = parseCatchPattern()
+        if catchPattern == null
+            return(null)
+
+        let bindingPattern: TuplePattern = parseTuplePattern()
+
+        let expression: Expression = parseExpression()
+        if expression == null
+            return(null)
+
+        let end: Position$ = lexer.getPosition()
+
+        let ret: CatchClause = new CatchClause(catchPattern, bindingPattern, expression, new Position(start), new Position(end))
+        catchPattern.parent = ret
+        if bindingPattern != null
+            bindingPattern.parent = ret
+        expression.parent = ret
+
+        ret
+    }
+
+    function parseCatchPattern(): CatchPattern {
+        {
+            let node: WildCardCatchPattern = parseWildCardCatchPattern()
+            if node != null
+                return(node)
+        }
+
+        {
+            let node: IdentifierCatchPattern = parseIdentifierCatchPattern()
+            if node != null
+                return(node)
+        }
+
+        null
+    }
+
+    function parseWildCardCatchPattern(): WildCardCatchPattern {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let pattern: WildcardPattern = parseWildcardPattern()
+        if pattern == null
+            return(null)
+
+        let end: Position$ = lexer.getPosition()
+
+        let ret: WildCardCatchPattern = new WildCardCatchPattern(pattern, new Position(start), new Position(end))
+        pattern.parent = ret
+
+        ret
+    }
+
+    function parseIdentifierCatchPattern(): IdentifierCatchPattern {
         let start: Position$ = lexer.getPreviousPosition()
 
         let name: string = lexer.parseIdentifier()
@@ -2292,49 +2400,18 @@ class Parser {
         else
             return(null)
 
-        let subType: Subtype = parseSubtype()
-
-        let postfixes: TypePostfix[] = parseTypePostfixList()
-
-        let lifeTime: LifeTime = parseLifeTime()
+        let member: MemberExpression = parseMemberExpression()
 
         let end: Position$ = lexer.getPosition()
 
-        let ret: Type = new Type(name, subType, postfixes, lifeTime, new Position(start), new Position(end))
-        if subType != null
-            subType.parent = ret
-        if postfixes != null {
-            for item: TypePostfix in postfixes
-                item.parent = ret
-        }
-        if lifeTime != null
-            lifeTime.parent = ret
+        let ret: IdentifierCatchPattern = new IdentifierCatchPattern(name, member, new Position(start), new Position(end))
+        if member != null
+            member.parent = ret
 
         ret
     }
 
-    function parseTypeAnnotation(): TypeAnnotation {
-        let start: Position$ = lexer.getPreviousPosition()
-
-        let successColon1: bool = lexer.parsePunctuation(colon)
-        if successColon1
-            lexer.advance()
-        else
-            return(null)
-
-        let annotationForType: Type = parseType()
-        if annotationForType == null
-            return(null)
-
-        let end: Position$ = lexer.getPosition()
-
-        let ret: TypeAnnotation = new TypeAnnotation(annotationForType, new Position(start), new Position(end))
-        annotationForType.parent = ret
-
-        ret
-    }
-
-    function parseSubtype(): Subtype {
+    function parseMemberExpression(): MemberExpression {
         let start: Position$ = lexer.getPreviousPosition()
 
         let successDot1: bool = lexer.parsePunctuation(dot)
@@ -2343,52 +2420,20 @@ class Parser {
         else
             return(null)
 
-        let type: Type = parseType()
-        if type == null
+        let member: string = lexer.parseIdentifier()
+        if (member != null) && isIdentifier(member)
+            lexer.advance()
+        else
             return(null)
 
         let end: Position$ = lexer.getPosition()
 
-        let ret: Subtype = new Subtype(type, new Position(start), new Position(end))
-        type.parent = ret
+        let ret: MemberExpression = new MemberExpression(member, new Position(start), new Position(end))
 
         ret
     }
 
-    function parseTypePostfixList(): TypePostfix[] {
-        mutable ret: TypePostfix[]$ = null
-        while true {
-
-            let node: TypePostfix = parseTypePostfix()
-            if node == null
-                break
-
-            if ret == null
-                ret = new TypePostfix[]()
-
-            ret.push(node)
-        }
-
-        return(ret)
-    }
-
-    function parseTypePostfix(): TypePostfix {
-        {
-            let node: IndexedType = parseIndexedType()
-            if node != null
-                return(node)
-        }
-
-        {
-            let node: Pointer = parsePointer()
-            if node != null
-                return(node)
-        }
-
-        null
-    }
-
-    function parseIndexedType(): IndexedType {
+    function parseSubscript(): Subscript {
         let start: Position$ = lexer.getPreviousPosition()
 
         let successLeftBracket1: bool = lexer.parsePunctuation(leftBracket)
@@ -2397,7 +2442,7 @@ class Parser {
         else
             return(null)
 
-        let key: Type = parseType()
+        let expressions: ExpressionElement[] = parseExpressionElementList()
 
         let successRightBracket3: bool = lexer.parsePunctuation(rightBracket)
         if successRightBracket3
@@ -2407,163 +2452,25 @@ class Parser {
 
         let end: Position$ = lexer.getPosition()
 
-        let ret: IndexedType = new IndexedType(key, new Position(start), new Position(end))
-        if key != null
-            key.parent = ret
-
-        ret
-    }
-
-    function parsePointer(): Pointer {
-        let start: Position$ = lexer.getPreviousPosition()
-
-        let successCircumflex1: bool = lexer.parsePunctuation(circumflex)
-        if successCircumflex1
-            lexer.advance()
-        else
-            return(null)
-
-        let end: Position$ = lexer.getPosition()
-
-        let ret: Pointer = new Pointer(new Position(start), new Position(end))
-
-        ret
-    }
-
-    function parseLifeTime(): LifeTime {
-        {
-            let node: Root = parseRoot()
-            if node != null
-                return(node)
-        }
-
-        {
-            let node: Local = parseLocal()
-            if node != null
-                return(node)
-        }
-
-        {
-            let node: Reference = parseReference()
-            if node != null
-                return(node)
-        }
-
-        {
-            let node: Thrown = parseThrown()
-            if node != null
-                return(node)
-        }
-
-        null
-    }
-
-    function parseRoot(): Root {
-        let start: Position$ = lexer.getPreviousPosition()
-
-        let successDollar1: bool = lexer.parsePunctuation(dollar)
-        if successDollar1
-            lexer.advance()
-        else
-            return(null)
-
-        let end: Position$ = lexer.getPosition()
-
-        let ret: Root = new Root(new Position(start), new Position(end))
-
-        ret
-    }
-
-    function parseLocal(): Local {
-        let start: Position$ = lexer.getPreviousPosition()
-
-        let successAt1: bool = lexer.parsePunctuation(at)
-        if successAt1
-            lexer.advance()
-        else
-            return(null)
-
-        let location: string = lexer.parseIdentifier()
-        if (location != null) && isIdentifier(location)
-            lexer.advance()
-        else
-            return(null)
-
-        let end: Position$ = lexer.getPosition()
-
-        let ret: Local = new Local(location, new Position(start), new Position(end))
-
-        ret
-    }
-
-    function parseReference(): Reference {
-        let start: Position$ = lexer.getPreviousPosition()
-
-        let successAmpersand1: bool = lexer.parsePunctuation(ampersand)
-        if successAmpersand1
-            lexer.advance()
-        else
-            return(null)
-
-        let age: Literal = lexer.parseLiteral()
-        if age != null
-            lexer.advance()
-
-        let end: Position$ = lexer.getPosition()
-
-        let ret: Reference = new Reference(age, new Position(start), new Position(end))
-
-        ret
-    }
-
-    function parseThrown(): Thrown {
-        let start: Position$ = lexer.getPreviousPosition()
-
-        let successHash1: bool = lexer.parsePunctuation(hash)
-        if successHash1
-            lexer.advance()
-        else
-            return(null)
-
-        let end: Position$ = lexer.getPosition()
-
-        let ret: Thrown = new Thrown(new Position(start), new Position(end))
-
-        ret
-    }
-
-    function parseTypeInheritanceClause(): TypeInheritanceClause {
-        let start: Position$ = lexer.getPreviousPosition()
-
-        let successExtends1: bool = lexer.parseKeyword(extendsKeyword)
-        if successExtends1
-            lexer.advance()
-        else
-            return(null)
-
-        let inheritances: Inheritance[] = parseInheritanceList()
-
-        let end: Position$ = lexer.getPosition()
-
-        let ret: TypeInheritanceClause = new TypeInheritanceClause(inheritances, new Position(start), new Position(end))
-        if inheritances != null {
-            for item: Inheritance in inheritances
+        let ret: Subscript = new Subscript(expressions, new Position(start), new Position(end))
+        if expressions != null {
+            for item: ExpressionElement in expressions
                 item.parent = ret
         }
 
         ret
     }
 
-    function parseInheritanceList(): Inheritance[] {
-        mutable ret: Inheritance[]$ = null
+    function parseBinaryOpList(): BinaryOp[] {
+        mutable ret: BinaryOp[]$ = null
         while true {
 
-            let node: Inheritance = parseInheritance()
+            let node: BinaryOp = parseBinaryOp()
             if node == null
                 break
 
             if ret == null
-                ret = new Inheritance[]()
+                ret = new BinaryOp[]()
 
             ret.push(node)
         }
@@ -2571,21 +2478,114 @@ class Parser {
         return(ret)
     }
 
-    function parseInheritance(): Inheritance {
+    function parseBinaryOp(): BinaryOp {
+        {
+            let node: BinaryOperation = parseBinaryOperation()
+            if node != null
+                return(node)
+        }
+
+        {
+            let node: Assignment = parseAssignment()
+            if node != null
+                return(node)
+        }
+
+        {
+            let node: TypeQuery = parseTypeQuery()
+            if node != null
+                return(node)
+        }
+
+        {
+            let node: TypeCast = parseTypeCast()
+            if node != null
+                return(node)
+        }
+
+        null
+    }
+
+    function parseBinaryOperation(): BinaryOperation {
         let start: Position$ = lexer.getPreviousPosition()
 
-        let type: Type = parseType()
-        if type == null
+        let binaryOperator: string = lexer.parseBinaryOperator()
+        if binaryOperator != null
+            lexer.advance()
+        else
             return(null)
 
-        let successComma2: bool = lexer.parsePunctuation(comma)
-        if successComma2
-            lexer.advance()
+        let expression: PrefixExpression = parsePrefixExpression()
+        if expression == null
+            return(null)
 
         let end: Position$ = lexer.getPosition()
 
-        let ret: Inheritance = new Inheritance(type, new Position(start), new Position(end))
-        type.parent = ret
+        let ret: BinaryOperation = new BinaryOperation(binaryOperator, expression, new Position(start), new Position(end))
+        expression.parent = ret
+
+        ret
+    }
+
+    function parseAssignment(): Assignment {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let successEqual1: bool = lexer.parsePunctuation(equal)
+        if successEqual1
+            lexer.advance()
+        else
+            return(null)
+
+        let expression: Expression = parseExpression()
+        if expression == null
+            return(null)
+
+        let end: Position$ = lexer.getPosition()
+
+        let ret: Assignment = new Assignment(expression, new Position(start), new Position(end))
+        expression.parent = ret
+
+        ret
+    }
+
+    function parseTypeQuery(): TypeQuery {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let successIs1: bool = lexer.parseKeyword(isKeyword)
+        if successIs1
+            lexer.advance()
+        else
+            return(null)
+
+        let objectType: Type = parseType()
+        if objectType == null
+            return(null)
+
+        let end: Position$ = lexer.getPosition()
+
+        let ret: TypeQuery = new TypeQuery(objectType, new Position(start), new Position(end))
+        objectType.parent = ret
+
+        ret
+    }
+
+    function parseTypeCast(): TypeCast {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let successAs1: bool = lexer.parseKeyword(asKeyword)
+        if successAs1
+            lexer.advance()
+        else
+            return(null)
+
+        let objectType: Type = parseType()
+        if objectType == null
+            return(null)
+
+        let end: Position$ = lexer.getPosition()
+
+        let ret: TypeCast = new TypeCast(objectType, new Position(start), new Position(end))
+        objectType.parent = ret
 
         ret
     }
@@ -2760,55 +2760,6 @@ class Visitor {
     function closeMutableDeclaration(mutableDeclaration: MutableDeclaration) {
     }
 
-    function openFunctionDeclaration(functionDeclaration: FunctionDeclaration): bool {
-        true
-    }
-
-    function closeFunctionDeclaration(functionDeclaration: FunctionDeclaration) {
-    }
-
-    function openEnumDeclaration(enumDeclaration: EnumDeclaration): bool {
-        true
-    }
-
-    function closeEnumDeclaration(enumDeclaration: EnumDeclaration) {
-    }
-
-    function openClassDeclaration(classDeclaration: ClassDeclaration): bool {
-        true
-    }
-
-    function closeClassDeclaration(classDeclaration: ClassDeclaration) {
-    }
-
-    function openConstructorDeclaration(constructorDeclaration: ConstructorDeclaration): bool {
-        true
-    }
-
-    function closeConstructorDeclaration(constructorDeclaration: ConstructorDeclaration) {
-    }
-
-    function openCodeBlock(codeBlock: CodeBlock): bool {
-        true
-    }
-
-    function closeCodeBlock(codeBlock: CodeBlock) {
-    }
-
-    function openSimpleExpression(simpleExpression: SimpleExpression): bool {
-        true
-    }
-
-    function closeSimpleExpression(simpleExpression: SimpleExpression) {
-    }
-
-    function openInitializer(initializer: Initializer): bool {
-        true
-    }
-
-    function closeInitializer(initializer: Initializer) {
-    }
-
     function openBindingInitializer(bindingInitializer: BindingInitializer): bool {
         true
     }
@@ -2823,11 +2774,99 @@ class Visitor {
     function closePatternInitializer(patternInitializer: PatternInitializer) {
     }
 
+    function openInitializer(initializer: Initializer): bool {
+        true
+    }
+
+    function closeInitializer(initializer: Initializer) {
+    }
+
     function openAdditionalInitializer(additionalInitializer: AdditionalInitializer): bool {
         true
     }
 
     function closeAdditionalInitializer(additionalInitializer: AdditionalInitializer) {
+    }
+
+    function visitWildcardPattern(wildcardPattern: WildcardPattern) {
+    }
+
+    function openIdentifierPattern(identifierPattern: IdentifierPattern): bool {
+        true
+    }
+
+    function closeIdentifierPattern(identifierPattern: IdentifierPattern) {
+    }
+
+    function openTypeAnnotation(typeAnnotation: TypeAnnotation): bool {
+        true
+    }
+
+    function closeTypeAnnotation(typeAnnotation: TypeAnnotation) {
+    }
+
+    function openType(type: Type): bool {
+        true
+    }
+
+    function closeType(type: Type) {
+    }
+
+    function openSubtype(subtype: Subtype): bool {
+        true
+    }
+
+    function closeSubtype(subtype: Subtype) {
+    }
+
+    function openIndexedType(indexedType: IndexedType): bool {
+        true
+    }
+
+    function closeIndexedType(indexedType: IndexedType) {
+    }
+
+    function visitPointer(pointer: Pointer) {
+    }
+
+    function visitRoot(root: Root) {
+    }
+
+    function visitLocal(local: Local) {
+    }
+
+    function visitReference(reference: Reference) {
+    }
+
+    function visitThrown(thrown: Thrown) {
+    }
+
+    function openTuplePattern(tuplePattern: TuplePattern): bool {
+        true
+    }
+
+    function closeTuplePattern(tuplePattern: TuplePattern) {
+    }
+
+    function openTuplePatternElement(tuplePatternElement: TuplePatternElement): bool {
+        true
+    }
+
+    function closeTuplePatternElement(tuplePatternElement: TuplePatternElement) {
+    }
+
+    function openExpressionPattern(expressionPattern: ExpressionPattern): bool {
+        true
+    }
+
+    function closeExpressionPattern(expressionPattern: ExpressionPattern) {
+    }
+
+    function openFunctionDeclaration(functionDeclaration: FunctionDeclaration): bool {
+        true
+    }
+
+    function closeFunctionDeclaration(functionDeclaration: FunctionDeclaration) {
     }
 
     function visitOverrideWord(overrideWord: OverrideWord) {
@@ -2841,13 +2880,6 @@ class Visitor {
     }
 
     function closeFunctionSignature(functionSignature: FunctionSignature) {
-    }
-
-    function openFunctionResult(functionResult: FunctionResult): bool {
-        true
-    }
-
-    function closeFunctionResult(functionResult: FunctionResult) {
     }
 
     function openParameterClause(parameterClause: ParameterClause): bool {
@@ -2871,11 +2903,25 @@ class Visitor {
     function closeVarParameter(varParameter: VarParameter) {
     }
 
+    function openFunctionResult(functionResult: FunctionResult): bool {
+        true
+    }
+
+    function closeFunctionResult(functionResult: FunctionResult) {
+    }
+
     function openThrowsClause(throwsClause: ThrowsClause): bool {
         true
     }
 
     function closeThrowsClause(throwsClause: ThrowsClause) {
+    }
+
+    function openEnumDeclaration(enumDeclaration: EnumDeclaration): bool {
+        true
+    }
+
+    function closeEnumDeclaration(enumDeclaration: EnumDeclaration) {
     }
 
     function openEnumMember(enumMember: EnumMember): bool {
@@ -2895,6 +2941,27 @@ class Visitor {
     function closeAdditionalCase(additionalCase: AdditionalCase) {
     }
 
+    function openClassDeclaration(classDeclaration: ClassDeclaration): bool {
+        true
+    }
+
+    function closeClassDeclaration(classDeclaration: ClassDeclaration) {
+    }
+
+    function openTypeInheritanceClause(typeInheritanceClause: TypeInheritanceClause): bool {
+        true
+    }
+
+    function closeTypeInheritanceClause(typeInheritanceClause: TypeInheritanceClause) {
+    }
+
+    function openInheritance(inheritance: Inheritance): bool {
+        true
+    }
+
+    function closeInheritance(inheritance: Inheritance) {
+    }
+
     function openClassBody(classBody: ClassBody): bool {
         true
     }
@@ -2907,6 +2974,27 @@ class Visitor {
     }
 
     function closeClassMember(classMember: ClassMember) {
+    }
+
+    function openConstructorDeclaration(constructorDeclaration: ConstructorDeclaration): bool {
+        true
+    }
+
+    function closeConstructorDeclaration(constructorDeclaration: ConstructorDeclaration) {
+    }
+
+    function openCodeBlock(codeBlock: CodeBlock): bool {
+        true
+    }
+
+    function closeCodeBlock(codeBlock: CodeBlock) {
+    }
+
+    function openSimpleExpression(simpleExpression: SimpleExpression): bool {
+        true
+    }
+
+    function closeSimpleExpression(simpleExpression: SimpleExpression) {
     }
 
     function openPrefixExpression(prefixExpression: PrefixExpression): bool {
@@ -2923,82 +3011,6 @@ class Visitor {
     function closePostfixExpression(postfixExpression: PostfixExpression) {
     }
 
-    function openBinaryOperation(binaryOperation: BinaryOperation): bool {
-        true
-    }
-
-    function closeBinaryOperation(binaryOperation: BinaryOperation) {
-    }
-
-    function openAssignment(assignment: Assignment): bool {
-        true
-    }
-
-    function closeAssignment(assignment: Assignment) {
-    }
-
-    function openTypeQuery(typeQuery: TypeQuery): bool {
-        true
-    }
-
-    function closeTypeQuery(typeQuery: TypeQuery) {
-    }
-
-    function openTypeCast(typeCast: TypeCast): bool {
-        true
-    }
-
-    function closeTypeCast(typeCast: TypeCast) {
-    }
-
-    function openCatchClause(catchClause: CatchClause): bool {
-        true
-    }
-
-    function closeCatchClause(catchClause: CatchClause) {
-    }
-
-    function openWildCardCatchPattern(wildCardCatchPattern: WildCardCatchPattern): bool {
-        true
-    }
-
-    function closeWildCardCatchPattern(wildCardCatchPattern: WildCardCatchPattern) {
-    }
-
-    function openIdentifierCatchPattern(identifierCatchPattern: IdentifierCatchPattern): bool {
-        true
-    }
-
-    function closeIdentifierCatchPattern(identifierCatchPattern: IdentifierCatchPattern) {
-    }
-
-    function visitOperatorPostfix(operatorPostfix: OperatorPostfix) {
-    }
-
-    function openFunctionCall(functionCall: FunctionCall): bool {
-        true
-    }
-
-    function closeFunctionCall(functionCall: FunctionCall) {
-    }
-
-    function visitMemberExpression(memberExpression: MemberExpression) {
-    }
-
-    function openSubscript(subscript: Subscript): bool {
-        true
-    }
-
-    function closeSubscript(subscript: Subscript) {
-    }
-
-    function openExpressionElement(expressionElement: ExpressionElement): bool {
-        true
-    }
-
-    function closeExpressionElement(expressionElement: ExpressionElement) {
-    }
-
     function visitIdentifierExpression(identifierExpression: IdentifierExpression) {
     }
 
@@ -3012,80 +3024,18 @@ class Visitor {
     function closeIfExpression(ifExpression: IfExpression) {
     }
 
-    function openSwitchExpression(switchExpression: SwitchExpression): bool {
-        true
-    }
-
-    function closeSwitchExpression(switchExpression: SwitchExpression) {
-    }
-
-    function openForExpression(forExpression: ForExpression): bool {
-        true
-    }
-
-    function closeForExpression(forExpression: ForExpression) {
-    }
-
-    function openWhileExpression(whileExpression: WhileExpression): bool {
-        true
-    }
-
-    function closeWhileExpression(whileExpression: WhileExpression) {
-    }
-
-    function openDoExpression(doExpression: DoExpression): bool {
-        true
-    }
-
-    function closeDoExpression(doExpression: DoExpression) {
-    }
-
-    function openParenthesizedExpression(parenthesizedExpression: ParenthesizedExpression): bool {
-        true
-    }
-
-    function closeParenthesizedExpression(parenthesizedExpression: ParenthesizedExpression) {
-    }
-
-    function openReturnExpression(returnExpression: ReturnExpression): bool {
-        true
-    }
-
-    function closeReturnExpression(returnExpression: ReturnExpression) {
-    }
-
-    function openThrowExpression(throwExpression: ThrowExpression): bool {
-        true
-    }
-
-    function closeThrowExpression(throwExpression: ThrowExpression) {
-    }
-
-    function openBreakExpression(breakExpression: BreakExpression): bool {
-        true
-    }
-
-    function closeBreakExpression(breakExpression: BreakExpression) {
-    }
-
-    function openConstructorCall(constructorCall: ConstructorCall): bool {
-        true
-    }
-
-    function closeConstructorCall(constructorCall: ConstructorCall) {
-    }
-
-    function visitThisExpression(thisExpression: ThisExpression) {
-    }
-
-    function visitNullExpression(nullExpression: NullExpression) {
-    }
-
     function openElseClause(elseClause: ElseClause): bool {
         true
     }
 
     function closeElseClause(elseClause: ElseClause) {
+    }
+
+    function openSwitchExpression(switchExpression: SwitchExpression): bool {
+        true
+    }
+
+    function closeSwitchExpression(switchExpression: SwitchExpression) {
     }
 
     function openCurliedSwitchBody(curliedSwitchBody: CurliedSwitchBody): bool {
@@ -3126,37 +3076,6 @@ class Visitor {
     function closeCaseItem(caseItem: CaseItem) {
     }
 
-    function visitWildcardPattern(wildcardPattern: WildcardPattern) {
-    }
-
-    function openIdentifierPattern(identifierPattern: IdentifierPattern): bool {
-        true
-    }
-
-    function closeIdentifierPattern(identifierPattern: IdentifierPattern) {
-    }
-
-    function openTuplePattern(tuplePattern: TuplePattern): bool {
-        true
-    }
-
-    function closeTuplePattern(tuplePattern: TuplePattern) {
-    }
-
-    function openExpressionPattern(expressionPattern: ExpressionPattern): bool {
-        true
-    }
-
-    function closeExpressionPattern(expressionPattern: ExpressionPattern) {
-    }
-
-    function openTuplePatternElement(tuplePatternElement: TuplePatternElement): bool {
-        true
-    }
-
-    function closeTuplePatternElement(tuplePatternElement: TuplePatternElement) {
-    }
-
     function openCaseContent(caseContent: CaseContent): bool {
         true
     }
@@ -3164,61 +3083,142 @@ class Visitor {
     function closeCaseContent(caseContent: CaseContent) {
     }
 
-    function openType(type: Type): bool {
+    function openForExpression(forExpression: ForExpression): bool {
         true
     }
 
-    function closeType(type: Type) {
+    function closeForExpression(forExpression: ForExpression) {
     }
 
-    function openTypeAnnotation(typeAnnotation: TypeAnnotation): bool {
+    function openWhileExpression(whileExpression: WhileExpression): bool {
         true
     }
 
-    function closeTypeAnnotation(typeAnnotation: TypeAnnotation) {
+    function closeWhileExpression(whileExpression: WhileExpression) {
     }
 
-    function openSubtype(subtype: Subtype): bool {
+    function openDoExpression(doExpression: DoExpression): bool {
         true
     }
 
-    function closeSubtype(subtype: Subtype) {
+    function closeDoExpression(doExpression: DoExpression) {
     }
 
-    function openIndexedType(indexedType: IndexedType): bool {
+    function openParenthesizedExpression(parenthesizedExpression: ParenthesizedExpression): bool {
         true
     }
 
-    function closeIndexedType(indexedType: IndexedType) {
+    function closeParenthesizedExpression(parenthesizedExpression: ParenthesizedExpression) {
     }
 
-    function visitPointer(pointer: Pointer) {
-    }
-
-    function visitRoot(root: Root) {
-    }
-
-    function visitLocal(local: Local) {
-    }
-
-    function visitReference(reference: Reference) {
-    }
-
-    function visitThrown(thrown: Thrown) {
-    }
-
-    function openTypeInheritanceClause(typeInheritanceClause: TypeInheritanceClause): bool {
+    function openExpressionElement(expressionElement: ExpressionElement): bool {
         true
     }
 
-    function closeTypeInheritanceClause(typeInheritanceClause: TypeInheritanceClause) {
+    function closeExpressionElement(expressionElement: ExpressionElement) {
     }
 
-    function openInheritance(inheritance: Inheritance): bool {
+    function openReturnExpression(returnExpression: ReturnExpression): bool {
         true
     }
 
-    function closeInheritance(inheritance: Inheritance) {
+    function closeReturnExpression(returnExpression: ReturnExpression) {
+    }
+
+    function openThrowExpression(throwExpression: ThrowExpression): bool {
+        true
+    }
+
+    function closeThrowExpression(throwExpression: ThrowExpression) {
+    }
+
+    function openBreakExpression(breakExpression: BreakExpression): bool {
+        true
+    }
+
+    function closeBreakExpression(breakExpression: BreakExpression) {
+    }
+
+    function openConstructorCall(constructorCall: ConstructorCall): bool {
+        true
+    }
+
+    function closeConstructorCall(constructorCall: ConstructorCall) {
+    }
+
+    function visitThisExpression(thisExpression: ThisExpression) {
+    }
+
+    function visitNullExpression(nullExpression: NullExpression) {
+    }
+
+    function visitOperatorPostfix(operatorPostfix: OperatorPostfix) {
+    }
+
+    function openFunctionCall(functionCall: FunctionCall): bool {
+        true
+    }
+
+    function closeFunctionCall(functionCall: FunctionCall) {
+    }
+
+    function openCatchClause(catchClause: CatchClause): bool {
+        true
+    }
+
+    function closeCatchClause(catchClause: CatchClause) {
+    }
+
+    function openWildCardCatchPattern(wildCardCatchPattern: WildCardCatchPattern): bool {
+        true
+    }
+
+    function closeWildCardCatchPattern(wildCardCatchPattern: WildCardCatchPattern) {
+    }
+
+    function openIdentifierCatchPattern(identifierCatchPattern: IdentifierCatchPattern): bool {
+        true
+    }
+
+    function closeIdentifierCatchPattern(identifierCatchPattern: IdentifierCatchPattern) {
+    }
+
+    function visitMemberExpression(memberExpression: MemberExpression) {
+    }
+
+    function openSubscript(subscript: Subscript): bool {
+        true
+    }
+
+    function closeSubscript(subscript: Subscript) {
+    }
+
+    function openBinaryOperation(binaryOperation: BinaryOperation): bool {
+        true
+    }
+
+    function closeBinaryOperation(binaryOperation: BinaryOperation) {
+    }
+
+    function openAssignment(assignment: Assignment): bool {
+        true
+    }
+
+    function closeAssignment(assignment: Assignment) {
+    }
+
+    function openTypeQuery(typeQuery: TypeQuery): bool {
+        true
+    }
+
+    function closeTypeQuery(typeQuery: TypeQuery) {
+    }
+
+    function openTypeCast(typeCast: TypeCast): bool {
+        true
+    }
+
+    function closeTypeCast(typeCast: TypeCast) {
     }
 }
 
@@ -3287,13 +3287,6 @@ class Declaration extends Statement {
 
 }
 
-class Expression extends Statement {
-
-    override function accept(mutable visitor: Visitor) {
-    }
-
-}
-
 class ConstantDeclaration extends Declaration {
 
     constructor(initializer: BindingInitializer, start: Position, end: Position) {
@@ -3328,168 +3321,6 @@ class MutableDeclaration extends Declaration {
     }
 
     let initializer: BindingInitializer
-}
-
-class FunctionDeclaration extends Declaration {
-
-    constructor(modifiers: Modifier[], name: string, signature: FunctionSignature, body: Expression, start: Position, end: Position) {
-        this.start = start
-        this.end = end
-        this.modifiers = modifiers
-        this.name = name
-        this.signature = signature
-        this.body = body
-    }
-
-    override function accept(mutable visitor: Visitor) {
-        if !visitor.openFunctionDeclaration(this)
-            return
-        if modifiers != null {
-            for node: Modifier in modifiers
-                node.accept(visitor)
-        }
-        signature.accept(visitor)
-        if body != null
-            body.accept(visitor)
-        visitor.closeFunctionDeclaration(this)
-    }
-
-    let modifiers: Modifier[]
-    let name: string
-    let signature: FunctionSignature
-    let body: Expression
-}
-
-class EnumDeclaration extends Declaration {
-
-    constructor(name: string, members: EnumMember[], start: Position, end: Position) {
-        this.start = start
-        this.end = end
-        this.name = name
-        this.members = members
-    }
-
-    override function accept(mutable visitor: Visitor) {
-        if !visitor.openEnumDeclaration(this)
-            return
-        if members != null {
-            for node: EnumMember in members
-                node.accept(visitor)
-        }
-        visitor.closeEnumDeclaration(this)
-    }
-
-    let name: string
-    let members: EnumMember[]
-}
-
-class ClassDeclaration extends Declaration {
-
-    constructor(name: string, typeInheritanceClause: TypeInheritanceClause, body: ClassBody, start: Position, end: Position) {
-        this.start = start
-        this.end = end
-        this.name = name
-        this.typeInheritanceClause = typeInheritanceClause
-        this.body = body
-    }
-
-    override function accept(mutable visitor: Visitor) {
-        if !visitor.openClassDeclaration(this)
-            return
-        if typeInheritanceClause != null
-            typeInheritanceClause.accept(visitor)
-        if body != null
-            body.accept(visitor)
-        visitor.closeClassDeclaration(this)
-    }
-
-    let name: string
-    let typeInheritanceClause: TypeInheritanceClause
-    let body: ClassBody
-}
-
-class ConstructorDeclaration extends Declaration {
-
-    constructor(parameterClause: ParameterClause, body: Expression, start: Position, end: Position) {
-        this.start = start
-        this.end = end
-        this.parameterClause = parameterClause
-        this.body = body
-    }
-
-    override function accept(mutable visitor: Visitor) {
-        if !visitor.openConstructorDeclaration(this)
-            return
-        parameterClause.accept(visitor)
-        body.accept(visitor)
-        visitor.closeConstructorDeclaration(this)
-    }
-
-    let parameterClause: ParameterClause
-    let body: Expression
-}
-
-class CodeBlock extends Expression {
-
-    constructor(statements: Statement[], start: Position, end: Position) {
-        this.start = start
-        this.end = end
-        this.statements = statements
-    }
-
-    override function accept(mutable visitor: Visitor) {
-        if !visitor.openCodeBlock(this)
-            return
-        if statements != null {
-            for node: Statement in statements
-                node.accept(visitor)
-        }
-        visitor.closeCodeBlock(this)
-    }
-
-    let statements: Statement[]
-}
-
-class SimpleExpression extends Expression {
-
-    constructor(prefixExpression: PrefixExpression, binaryOps: BinaryOp[], start: Position, end: Position) {
-        this.start = start
-        this.end = end
-        this.prefixExpression = prefixExpression
-        this.binaryOps = binaryOps
-    }
-
-    override function accept(mutable visitor: Visitor) {
-        if !visitor.openSimpleExpression(this)
-            return
-        prefixExpression.accept(visitor)
-        if binaryOps != null {
-            for node: BinaryOp in binaryOps
-                node.accept(visitor)
-        }
-        visitor.closeSimpleExpression(this)
-    }
-
-    let prefixExpression: PrefixExpression
-    let binaryOps: BinaryOp[]
-}
-
-class Initializer extends SyntaxNode {
-
-    constructor(expression: Expression, start: Position, end: Position) {
-        this.start = start
-        this.end = end
-        this.expression = expression
-    }
-
-    function accept(mutable visitor: Visitor) {
-        if !visitor.openInitializer(this)
-            return
-        expression.accept(visitor)
-        visitor.closeInitializer(this)
-    }
-
-    let expression: Expression
 }
 
 class BindingInitializer extends SyntaxNode {
@@ -3538,6 +3369,24 @@ class PatternInitializer extends SyntaxNode {
     let initializer: Initializer
 }
 
+class Initializer extends SyntaxNode {
+
+    constructor(expression: Expression, start: Position, end: Position) {
+        this.start = start
+        this.end = end
+        this.expression = expression
+    }
+
+    function accept(mutable visitor: Visitor) {
+        if !visitor.openInitializer(this)
+            return
+        expression.accept(visitor)
+        visitor.closeInitializer(this)
+    }
+
+    let expression: Expression
+}
+
 class AdditionalInitializer extends SyntaxNode {
 
     constructor(pattern: PatternInitializer, start: Position, end: Position) {
@@ -3554,6 +3403,303 @@ class AdditionalInitializer extends SyntaxNode {
     }
 
     let pattern: PatternInitializer
+}
+
+class Pattern extends SyntaxNode {
+
+    function accept(mutable visitor: Visitor) {
+    }
+
+}
+
+class WildcardPattern extends Pattern {
+
+    constructor(start: Position, end: Position) {
+        this.start = start
+        this.end = end
+    }
+
+    override function accept(mutable visitor: Visitor) {
+        visitor.visitWildcardPattern(this)
+    }
+
+}
+
+class IdentifierPattern extends Pattern {
+
+    constructor(identifier: string, annotationForType: TypeAnnotation, start: Position, end: Position) {
+        this.start = start
+        this.end = end
+        this.identifier = identifier
+        this.annotationForType = annotationForType
+    }
+
+    override function accept(mutable visitor: Visitor) {
+        if !visitor.openIdentifierPattern(this)
+            return
+        if annotationForType != null
+            annotationForType.accept(visitor)
+        visitor.closeIdentifierPattern(this)
+    }
+
+    let identifier: string
+    let annotationForType: TypeAnnotation
+}
+
+class TypeAnnotation extends SyntaxNode {
+
+    constructor(annotationForType: Type, start: Position, end: Position) {
+        this.start = start
+        this.end = end
+        this.annotationForType = annotationForType
+    }
+
+    function accept(mutable visitor: Visitor) {
+        if !visitor.openTypeAnnotation(this)
+            return
+        annotationForType.accept(visitor)
+        visitor.closeTypeAnnotation(this)
+    }
+
+    let annotationForType: Type
+}
+
+class Type extends SyntaxNode {
+
+    constructor(name: string, subType: Subtype, postfixes: TypePostfix[], lifeTime: LifeTime, start: Position, end: Position) {
+        this.start = start
+        this.end = end
+        this.name = name
+        this.subType = subType
+        this.postfixes = postfixes
+        this.lifeTime = lifeTime
+    }
+
+    function accept(mutable visitor: Visitor) {
+        if !visitor.openType(this)
+            return
+        if subType != null
+            subType.accept(visitor)
+        if postfixes != null {
+            for node: TypePostfix in postfixes
+                node.accept(visitor)
+        }
+        if lifeTime != null
+            lifeTime.accept(visitor)
+        visitor.closeType(this)
+    }
+
+    let name: string
+    let subType: Subtype
+    let postfixes: TypePostfix[]
+    let lifeTime: LifeTime
+}
+
+class Subtype extends SyntaxNode {
+
+    constructor(type: Type, start: Position, end: Position) {
+        this.start = start
+        this.end = end
+        this.type = type
+    }
+
+    function accept(mutable visitor: Visitor) {
+        if !visitor.openSubtype(this)
+            return
+        type.accept(visitor)
+        visitor.closeSubtype(this)
+    }
+
+    let type: Type
+}
+
+class TypePostfix extends SyntaxNode {
+
+    function accept(mutable visitor: Visitor) {
+    }
+
+}
+
+class IndexedType extends TypePostfix {
+
+    constructor(key: Type, start: Position, end: Position) {
+        this.start = start
+        this.end = end
+        this.key = key
+    }
+
+    override function accept(mutable visitor: Visitor) {
+        if !visitor.openIndexedType(this)
+            return
+        if key != null
+            key.accept(visitor)
+        visitor.closeIndexedType(this)
+    }
+
+    let key: Type
+}
+
+class Pointer extends TypePostfix {
+
+    constructor(start: Position, end: Position) {
+        this.start = start
+        this.end = end
+    }
+
+    override function accept(mutable visitor: Visitor) {
+        visitor.visitPointer(this)
+    }
+
+}
+
+class LifeTime extends SyntaxNode {
+
+    function accept(mutable visitor: Visitor) {
+    }
+
+}
+
+class Root extends LifeTime {
+
+    constructor(start: Position, end: Position) {
+        this.start = start
+        this.end = end
+    }
+
+    override function accept(mutable visitor: Visitor) {
+        visitor.visitRoot(this)
+    }
+
+}
+
+class Local extends LifeTime {
+
+    constructor(location: string, start: Position, end: Position) {
+        this.start = start
+        this.end = end
+        this.location = location
+    }
+
+    override function accept(mutable visitor: Visitor) {
+        visitor.visitLocal(this)
+    }
+
+    let location: string
+}
+
+class Reference extends LifeTime {
+
+    constructor(age: Literal, start: Position, end: Position) {
+        this.start = start
+        this.end = end
+        this.age = age
+    }
+
+    override function accept(mutable visitor: Visitor) {
+        visitor.visitReference(this)
+    }
+
+    let age: Literal
+}
+
+class Thrown extends LifeTime {
+
+    constructor(start: Position, end: Position) {
+        this.start = start
+        this.end = end
+    }
+
+    override function accept(mutable visitor: Visitor) {
+        visitor.visitThrown(this)
+    }
+
+}
+
+class TuplePattern extends Pattern {
+
+    constructor(elements: TuplePatternElement[], start: Position, end: Position) {
+        this.start = start
+        this.end = end
+        this.elements = elements
+    }
+
+    override function accept(mutable visitor: Visitor) {
+        if !visitor.openTuplePattern(this)
+            return
+        if elements != null {
+            for node: TuplePatternElement in elements
+                node.accept(visitor)
+        }
+        visitor.closeTuplePattern(this)
+    }
+
+    let elements: TuplePatternElement[]
+}
+
+class TuplePatternElement extends SyntaxNode {
+
+    constructor(pattern: Pattern, start: Position, end: Position) {
+        this.start = start
+        this.end = end
+        this.pattern = pattern
+    }
+
+    function accept(mutable visitor: Visitor) {
+        if !visitor.openTuplePatternElement(this)
+            return
+        pattern.accept(visitor)
+        visitor.closeTuplePatternElement(this)
+    }
+
+    let pattern: Pattern
+}
+
+class ExpressionPattern extends Pattern {
+
+    constructor(expression: Expression, start: Position, end: Position) {
+        this.start = start
+        this.end = end
+        this.expression = expression
+    }
+
+    override function accept(mutable visitor: Visitor) {
+        if !visitor.openExpressionPattern(this)
+            return
+        expression.accept(visitor)
+        visitor.closeExpressionPattern(this)
+    }
+
+    let expression: Expression
+}
+
+class FunctionDeclaration extends Declaration {
+
+    constructor(modifiers: Modifier[], name: string, signature: FunctionSignature, body: Expression, start: Position, end: Position) {
+        this.start = start
+        this.end = end
+        this.modifiers = modifiers
+        this.name = name
+        this.signature = signature
+        this.body = body
+    }
+
+    override function accept(mutable visitor: Visitor) {
+        if !visitor.openFunctionDeclaration(this)
+            return
+        if modifiers != null {
+            for node: Modifier in modifiers
+                node.accept(visitor)
+        }
+        signature.accept(visitor)
+        if body != null
+            body.accept(visitor)
+        visitor.closeFunctionDeclaration(this)
+    }
+
+    let modifiers: Modifier[]
+    let name: string
+    let signature: FunctionSignature
+    let body: Expression
 }
 
 class Modifier extends SyntaxNode {
@@ -3613,24 +3759,6 @@ class FunctionSignature extends SyntaxNode {
     let parameterClause: ParameterClause
     let result: FunctionResult
     let throwsClause: ThrowsClause
-}
-
-class FunctionResult extends SyntaxNode {
-
-    constructor(resultType: Type, start: Position, end: Position) {
-        this.start = start
-        this.end = end
-        this.resultType = resultType
-    }
-
-    function accept(mutable visitor: Visitor) {
-        if !visitor.openFunctionResult(this)
-            return
-        resultType.accept(visitor)
-        visitor.closeFunctionResult(this)
-    }
-
-    let resultType: Type
 }
 
 class ParameterClause extends SyntaxNode {
@@ -3701,6 +3829,24 @@ class VarParameter extends Parameter {
     let parameterType: Type
 }
 
+class FunctionResult extends SyntaxNode {
+
+    constructor(resultType: Type, start: Position, end: Position) {
+        this.start = start
+        this.end = end
+        this.resultType = resultType
+    }
+
+    function accept(mutable visitor: Visitor) {
+        if !visitor.openFunctionResult(this)
+            return
+        resultType.accept(visitor)
+        visitor.closeFunctionResult(this)
+    }
+
+    let resultType: Type
+}
+
 class ThrowsClause extends SyntaxNode {
 
     constructor(throwsType: Type, start: Position, end: Position) {
@@ -3717,6 +3863,29 @@ class ThrowsClause extends SyntaxNode {
     }
 
     let throwsType: Type
+}
+
+class EnumDeclaration extends Declaration {
+
+    constructor(name: string, members: EnumMember[], start: Position, end: Position) {
+        this.start = start
+        this.end = end
+        this.name = name
+        this.members = members
+    }
+
+    override function accept(mutable visitor: Visitor) {
+        if !visitor.openEnumDeclaration(this)
+            return
+        if members != null {
+            for node: EnumMember in members
+                node.accept(visitor)
+        }
+        visitor.closeEnumDeclaration(this)
+    }
+
+    let name: string
+    let members: EnumMember[]
 }
 
 class EnumMember extends SyntaxNode {
@@ -3780,6 +3949,70 @@ class AdditionalCase extends SyntaxNode {
     let enumCase: EnumCase
 }
 
+class ClassDeclaration extends Declaration {
+
+    constructor(name: string, typeInheritanceClause: TypeInheritanceClause, body: ClassBody, start: Position, end: Position) {
+        this.start = start
+        this.end = end
+        this.name = name
+        this.typeInheritanceClause = typeInheritanceClause
+        this.body = body
+    }
+
+    override function accept(mutable visitor: Visitor) {
+        if !visitor.openClassDeclaration(this)
+            return
+        if typeInheritanceClause != null
+            typeInheritanceClause.accept(visitor)
+        if body != null
+            body.accept(visitor)
+        visitor.closeClassDeclaration(this)
+    }
+
+    let name: string
+    let typeInheritanceClause: TypeInheritanceClause
+    let body: ClassBody
+}
+
+class TypeInheritanceClause extends SyntaxNode {
+
+    constructor(inheritances: Inheritance[], start: Position, end: Position) {
+        this.start = start
+        this.end = end
+        this.inheritances = inheritances
+    }
+
+    function accept(mutable visitor: Visitor) {
+        if !visitor.openTypeInheritanceClause(this)
+            return
+        if inheritances != null {
+            for node: Inheritance in inheritances
+                node.accept(visitor)
+        }
+        visitor.closeTypeInheritanceClause(this)
+    }
+
+    let inheritances: Inheritance[]
+}
+
+class Inheritance extends SyntaxNode {
+
+    constructor(type: Type, start: Position, end: Position) {
+        this.start = start
+        this.end = end
+        this.type = type
+    }
+
+    function accept(mutable visitor: Visitor) {
+        if !visitor.openInheritance(this)
+            return
+        type.accept(visitor)
+        visitor.closeInheritance(this)
+    }
+
+    let type: Type
+}
+
 class ClassBody extends SyntaxNode {
 
     constructor(members: ClassMember[], start: Position, end: Position) {
@@ -3817,6 +4050,79 @@ class ClassMember extends SyntaxNode {
     }
 
     let declaration: Declaration
+}
+
+class ConstructorDeclaration extends Declaration {
+
+    constructor(parameterClause: ParameterClause, body: Expression, start: Position, end: Position) {
+        this.start = start
+        this.end = end
+        this.parameterClause = parameterClause
+        this.body = body
+    }
+
+    override function accept(mutable visitor: Visitor) {
+        if !visitor.openConstructorDeclaration(this)
+            return
+        parameterClause.accept(visitor)
+        body.accept(visitor)
+        visitor.closeConstructorDeclaration(this)
+    }
+
+    let parameterClause: ParameterClause
+    let body: Expression
+}
+
+class Expression extends Statement {
+
+    override function accept(mutable visitor: Visitor) {
+    }
+
+}
+
+class CodeBlock extends Expression {
+
+    constructor(statements: Statement[], start: Position, end: Position) {
+        this.start = start
+        this.end = end
+        this.statements = statements
+    }
+
+    override function accept(mutable visitor: Visitor) {
+        if !visitor.openCodeBlock(this)
+            return
+        if statements != null {
+            for node: Statement in statements
+                node.accept(visitor)
+        }
+        visitor.closeCodeBlock(this)
+    }
+
+    let statements: Statement[]
+}
+
+class SimpleExpression extends Expression {
+
+    constructor(prefixExpression: PrefixExpression, binaryOps: BinaryOp[], start: Position, end: Position) {
+        this.start = start
+        this.end = end
+        this.prefixExpression = prefixExpression
+        this.binaryOps = binaryOps
+    }
+
+    override function accept(mutable visitor: Visitor) {
+        if !visitor.openSimpleExpression(this)
+            return
+        prefixExpression.accept(visitor)
+        if binaryOps != null {
+            for node: BinaryOp in binaryOps
+                node.accept(visitor)
+        }
+        visitor.closeSimpleExpression(this)
+    }
+
+    let prefixExpression: PrefixExpression
+    let binaryOps: BinaryOp[]
 }
 
 class PrefixExpression extends SyntaxNode {
@@ -3861,258 +4167,6 @@ class PostfixExpression extends SyntaxNode {
 
     let primaryExpression: PrimaryExpression
     let postfixes: Postfix[]
-}
-
-class BinaryOp extends SyntaxNode {
-
-    function accept(mutable visitor: Visitor) {
-    }
-
-}
-
-class BinaryOperation extends BinaryOp {
-
-    constructor(binaryOperator: string, expression: PrefixExpression, start: Position, end: Position) {
-        this.start = start
-        this.end = end
-        this.binaryOperator = binaryOperator
-        this.expression = expression
-    }
-
-    override function accept(mutable visitor: Visitor) {
-        if !visitor.openBinaryOperation(this)
-            return
-        expression.accept(visitor)
-        visitor.closeBinaryOperation(this)
-    }
-
-    let binaryOperator: string
-    let expression: PrefixExpression
-}
-
-class Assignment extends BinaryOp {
-
-    constructor(expression: Expression, start: Position, end: Position) {
-        this.start = start
-        this.end = end
-        this.expression = expression
-    }
-
-    override function accept(mutable visitor: Visitor) {
-        if !visitor.openAssignment(this)
-            return
-        expression.accept(visitor)
-        visitor.closeAssignment(this)
-    }
-
-    let expression: Expression
-}
-
-class TypeQuery extends BinaryOp {
-
-    constructor(objectType: Type, start: Position, end: Position) {
-        this.start = start
-        this.end = end
-        this.objectType = objectType
-    }
-
-    override function accept(mutable visitor: Visitor) {
-        if !visitor.openTypeQuery(this)
-            return
-        objectType.accept(visitor)
-        visitor.closeTypeQuery(this)
-    }
-
-    let objectType: Type
-}
-
-class TypeCast extends BinaryOp {
-
-    constructor(objectType: Type, start: Position, end: Position) {
-        this.start = start
-        this.end = end
-        this.objectType = objectType
-    }
-
-    override function accept(mutable visitor: Visitor) {
-        if !visitor.openTypeCast(this)
-            return
-        objectType.accept(visitor)
-        visitor.closeTypeCast(this)
-    }
-
-    let objectType: Type
-}
-
-class CatchClause extends SyntaxNode {
-
-    constructor(catchPattern: CatchPattern, bindingPattern: TuplePattern, expression: Expression, start: Position, end: Position) {
-        this.start = start
-        this.end = end
-        this.catchPattern = catchPattern
-        this.bindingPattern = bindingPattern
-        this.expression = expression
-    }
-
-    function accept(mutable visitor: Visitor) {
-        if !visitor.openCatchClause(this)
-            return
-        catchPattern.accept(visitor)
-        if bindingPattern != null
-            bindingPattern.accept(visitor)
-        expression.accept(visitor)
-        visitor.closeCatchClause(this)
-    }
-
-    let catchPattern: CatchPattern
-    let bindingPattern: TuplePattern
-    let expression: Expression
-}
-
-class CatchPattern extends SyntaxNode {
-
-    function accept(mutable visitor: Visitor) {
-    }
-
-}
-
-class WildCardCatchPattern extends CatchPattern {
-
-    constructor(pattern: WildcardPattern, start: Position, end: Position) {
-        this.start = start
-        this.end = end
-        this.pattern = pattern
-    }
-
-    override function accept(mutable visitor: Visitor) {
-        if !visitor.openWildCardCatchPattern(this)
-            return
-        pattern.accept(visitor)
-        visitor.closeWildCardCatchPattern(this)
-    }
-
-    let pattern: WildcardPattern
-}
-
-class IdentifierCatchPattern extends CatchPattern {
-
-    constructor(name: string, member: MemberExpression, start: Position, end: Position) {
-        this.start = start
-        this.end = end
-        this.name = name
-        this.member = member
-    }
-
-    override function accept(mutable visitor: Visitor) {
-        if !visitor.openIdentifierCatchPattern(this)
-            return
-        if member != null
-            member.accept(visitor)
-        visitor.closeIdentifierCatchPattern(this)
-    }
-
-    let name: string
-    let member: MemberExpression
-}
-
-class Postfix extends SyntaxNode {
-
-    function accept(mutable visitor: Visitor) {
-    }
-
-}
-
-class OperatorPostfix extends Postfix {
-
-    constructor(postfixOperator: string, start: Position, end: Position) {
-        this.start = start
-        this.end = end
-        this.postfixOperator = postfixOperator
-    }
-
-    override function accept(mutable visitor: Visitor) {
-        visitor.visitOperatorPostfix(this)
-    }
-
-    let postfixOperator: string
-}
-
-class FunctionCall extends Postfix {
-
-    constructor(arguments: ParenthesizedExpression, catchClauses: CatchClause[], start: Position, end: Position) {
-        this.start = start
-        this.end = end
-        this.arguments = arguments
-        this.catchClauses = catchClauses
-    }
-
-    override function accept(mutable visitor: Visitor) {
-        if !visitor.openFunctionCall(this)
-            return
-        arguments.accept(visitor)
-        if catchClauses != null {
-            for node: CatchClause in catchClauses
-                node.accept(visitor)
-        }
-        visitor.closeFunctionCall(this)
-    }
-
-    let arguments: ParenthesizedExpression
-    let catchClauses: CatchClause[]
-}
-
-class MemberExpression extends Postfix {
-
-    constructor(member: string, start: Position, end: Position) {
-        this.start = start
-        this.end = end
-        this.member = member
-    }
-
-    override function accept(mutable visitor: Visitor) {
-        visitor.visitMemberExpression(this)
-    }
-
-    let member: string
-}
-
-class Subscript extends Postfix {
-
-    constructor(expressions: ExpressionElement[], start: Position, end: Position) {
-        this.start = start
-        this.end = end
-        this.expressions = expressions
-    }
-
-    override function accept(mutable visitor: Visitor) {
-        if !visitor.openSubscript(this)
-            return
-        if expressions != null {
-            for node: ExpressionElement in expressions
-                node.accept(visitor)
-        }
-        visitor.closeSubscript(this)
-    }
-
-    let expressions: ExpressionElement[]
-}
-
-class ExpressionElement extends SyntaxNode {
-
-    constructor(expression: Expression, start: Position, end: Position) {
-        this.start = start
-        this.end = end
-        this.expression = expression
-    }
-
-    function accept(mutable visitor: Visitor) {
-        if !visitor.openExpressionElement(this)
-            return
-        expression.accept(visitor)
-        visitor.closeExpressionElement(this)
-    }
-
-    let expression: Expression
 }
 
 class PrimaryExpression extends SyntaxNode {
@@ -4177,6 +4231,24 @@ class IfExpression extends PrimaryExpression {
     let elseClause: ElseClause
 }
 
+class ElseClause extends SyntaxNode {
+
+    constructor(alternative: Expression, start: Position, end: Position) {
+        this.start = start
+        this.end = end
+        this.alternative = alternative
+    }
+
+    function accept(mutable visitor: Visitor) {
+        if !visitor.openElseClause(this)
+            return
+        alternative.accept(visitor)
+        visitor.closeElseClause(this)
+    }
+
+    let alternative: Expression
+}
+
 class SwitchExpression extends PrimaryExpression {
 
     constructor(expression: Expression, body: SwitchBody, start: Position, end: Position) {
@@ -4196,224 +4268,6 @@ class SwitchExpression extends PrimaryExpression {
 
     let expression: Expression
     let body: SwitchBody
-}
-
-class ForExpression extends PrimaryExpression {
-
-    constructor(pattern: Pattern, expression: Expression, code: Expression, start: Position, end: Position) {
-        this.start = start
-        this.end = end
-        this.pattern = pattern
-        this.expression = expression
-        this.code = code
-    }
-
-    override function accept(mutable visitor: Visitor) {
-        if !visitor.openForExpression(this)
-            return
-        pattern.accept(visitor)
-        expression.accept(visitor)
-        code.accept(visitor)
-        visitor.closeForExpression(this)
-    }
-
-    let pattern: Pattern
-    let expression: Expression
-    let code: Expression
-}
-
-class WhileExpression extends PrimaryExpression {
-
-    constructor(condition: Expression, code: Expression, start: Position, end: Position) {
-        this.start = start
-        this.end = end
-        this.condition = condition
-        this.code = code
-    }
-
-    override function accept(mutable visitor: Visitor) {
-        if !visitor.openWhileExpression(this)
-            return
-        condition.accept(visitor)
-        code.accept(visitor)
-        visitor.closeWhileExpression(this)
-    }
-
-    let condition: Expression
-    let code: Expression
-}
-
-class DoExpression extends PrimaryExpression {
-
-    constructor(code: Expression, condition: Expression, start: Position, end: Position) {
-        this.start = start
-        this.end = end
-        this.code = code
-        this.condition = condition
-    }
-
-    override function accept(mutable visitor: Visitor) {
-        if !visitor.openDoExpression(this)
-            return
-        code.accept(visitor)
-        condition.accept(visitor)
-        visitor.closeDoExpression(this)
-    }
-
-    let code: Expression
-    let condition: Expression
-}
-
-class ParenthesizedExpression extends PrimaryExpression {
-
-    constructor(expressionElements: ExpressionElement[], start: Position, end: Position) {
-        this.start = start
-        this.end = end
-        this.expressionElements = expressionElements
-    }
-
-    override function accept(mutable visitor: Visitor) {
-        if !visitor.openParenthesizedExpression(this)
-            return
-        if expressionElements != null {
-            for node: ExpressionElement in expressionElements
-                node.accept(visitor)
-        }
-        visitor.closeParenthesizedExpression(this)
-    }
-
-    let expressionElements: ExpressionElement[]
-}
-
-class ReturnExpression extends PrimaryExpression {
-
-    constructor(expression: ParenthesizedExpression, start: Position, end: Position) {
-        this.start = start
-        this.end = end
-        this.expression = expression
-    }
-
-    override function accept(mutable visitor: Visitor) {
-        if !visitor.openReturnExpression(this)
-            return
-        if expression != null
-            expression.accept(visitor)
-        visitor.closeReturnExpression(this)
-    }
-
-    let expression: ParenthesizedExpression
-}
-
-class ThrowExpression extends PrimaryExpression {
-
-    constructor(error: IdentifierExpression, arguments: ParenthesizedExpression, start: Position, end: Position) {
-        this.start = start
-        this.end = end
-        this.error = error
-        this.arguments = arguments
-    }
-
-    override function accept(mutable visitor: Visitor) {
-        if !visitor.openThrowExpression(this)
-            return
-        error.accept(visitor)
-        if arguments != null
-            arguments.accept(visitor)
-        visitor.closeThrowExpression(this)
-    }
-
-    let error: IdentifierExpression
-    let arguments: ParenthesizedExpression
-}
-
-class BreakExpression extends PrimaryExpression {
-
-    constructor(expression: ParenthesizedExpression, start: Position, end: Position) {
-        this.start = start
-        this.end = end
-        this.expression = expression
-    }
-
-    override function accept(mutable visitor: Visitor) {
-        if !visitor.openBreakExpression(this)
-            return
-        if expression != null
-            expression.accept(visitor)
-        visitor.closeBreakExpression(this)
-    }
-
-    let expression: ParenthesizedExpression
-}
-
-class ConstructorCall extends PrimaryExpression {
-
-    constructor(typeToConstruct: Type, arguments: ParenthesizedExpression, catchClauses: CatchClause[], start: Position, end: Position) {
-        this.start = start
-        this.end = end
-        this.typeToConstruct = typeToConstruct
-        this.arguments = arguments
-        this.catchClauses = catchClauses
-    }
-
-    override function accept(mutable visitor: Visitor) {
-        if !visitor.openConstructorCall(this)
-            return
-        typeToConstruct.accept(visitor)
-        arguments.accept(visitor)
-        if catchClauses != null {
-            for node: CatchClause in catchClauses
-                node.accept(visitor)
-        }
-        visitor.closeConstructorCall(this)
-    }
-
-    let typeToConstruct: Type
-    let arguments: ParenthesizedExpression
-    let catchClauses: CatchClause[]
-}
-
-class ThisExpression extends PrimaryExpression {
-
-    constructor(start: Position, end: Position) {
-        this.start = start
-        this.end = end
-    }
-
-    override function accept(mutable visitor: Visitor) {
-        visitor.visitThisExpression(this)
-    }
-
-}
-
-class NullExpression extends PrimaryExpression {
-
-    constructor(start: Position, end: Position) {
-        this.start = start
-        this.end = end
-    }
-
-    override function accept(mutable visitor: Visitor) {
-        visitor.visitNullExpression(this)
-    }
-
-}
-
-class ElseClause extends SyntaxNode {
-
-    constructor(alternative: Expression, start: Position, end: Position) {
-        this.start = start
-        this.end = end
-        this.alternative = alternative
-    }
-
-    function accept(mutable visitor: Visitor) {
-        if !visitor.openElseClause(this)
-            return
-        alternative.accept(visitor)
-        visitor.closeElseClause(this)
-    }
-
-    let alternative: Expression
 }
 
 class SwitchBody extends SyntaxNode {
@@ -4548,104 +4402,6 @@ class CaseItem extends SyntaxNode {
     let pattern: Pattern
 }
 
-class Pattern extends SyntaxNode {
-
-    function accept(mutable visitor: Visitor) {
-    }
-
-}
-
-class WildcardPattern extends Pattern {
-
-    constructor(start: Position, end: Position) {
-        this.start = start
-        this.end = end
-    }
-
-    override function accept(mutable visitor: Visitor) {
-        visitor.visitWildcardPattern(this)
-    }
-
-}
-
-class IdentifierPattern extends Pattern {
-
-    constructor(identifier: string, annotationForType: TypeAnnotation, start: Position, end: Position) {
-        this.start = start
-        this.end = end
-        this.identifier = identifier
-        this.annotationForType = annotationForType
-    }
-
-    override function accept(mutable visitor: Visitor) {
-        if !visitor.openIdentifierPattern(this)
-            return
-        if annotationForType != null
-            annotationForType.accept(visitor)
-        visitor.closeIdentifierPattern(this)
-    }
-
-    let identifier: string
-    let annotationForType: TypeAnnotation
-}
-
-class TuplePattern extends Pattern {
-
-    constructor(elements: TuplePatternElement[], start: Position, end: Position) {
-        this.start = start
-        this.end = end
-        this.elements = elements
-    }
-
-    override function accept(mutable visitor: Visitor) {
-        if !visitor.openTuplePattern(this)
-            return
-        if elements != null {
-            for node: TuplePatternElement in elements
-                node.accept(visitor)
-        }
-        visitor.closeTuplePattern(this)
-    }
-
-    let elements: TuplePatternElement[]
-}
-
-class ExpressionPattern extends Pattern {
-
-    constructor(expression: Expression, start: Position, end: Position) {
-        this.start = start
-        this.end = end
-        this.expression = expression
-    }
-
-    override function accept(mutable visitor: Visitor) {
-        if !visitor.openExpressionPattern(this)
-            return
-        expression.accept(visitor)
-        visitor.closeExpressionPattern(this)
-    }
-
-    let expression: Expression
-}
-
-class TuplePatternElement extends SyntaxNode {
-
-    constructor(pattern: Pattern, start: Position, end: Position) {
-        this.start = start
-        this.end = end
-        this.pattern = pattern
-    }
-
-    function accept(mutable visitor: Visitor) {
-        if !visitor.openTuplePatternElement(this)
-            return
-        pattern.accept(visitor)
-        visitor.closeTuplePatternElement(this)
-    }
-
-    let pattern: Pattern
-}
-
 class CaseContent extends SyntaxNode {
 
     constructor(statements: Statement[], start: Position, end: Position) {
@@ -4667,210 +4423,454 @@ class CaseContent extends SyntaxNode {
     let statements: Statement[]
 }
 
-class Type extends SyntaxNode {
+class ForExpression extends PrimaryExpression {
 
-    constructor(name: string, subType: Subtype, postfixes: TypePostfix[], lifeTime: LifeTime, start: Position, end: Position) {
+    constructor(pattern: Pattern, expression: Expression, code: Expression, start: Position, end: Position) {
+        this.start = start
+        this.end = end
+        this.pattern = pattern
+        this.expression = expression
+        this.code = code
+    }
+
+    override function accept(mutable visitor: Visitor) {
+        if !visitor.openForExpression(this)
+            return
+        pattern.accept(visitor)
+        expression.accept(visitor)
+        code.accept(visitor)
+        visitor.closeForExpression(this)
+    }
+
+    let pattern: Pattern
+    let expression: Expression
+    let code: Expression
+}
+
+class WhileExpression extends PrimaryExpression {
+
+    constructor(condition: Expression, code: Expression, start: Position, end: Position) {
+        this.start = start
+        this.end = end
+        this.condition = condition
+        this.code = code
+    }
+
+    override function accept(mutable visitor: Visitor) {
+        if !visitor.openWhileExpression(this)
+            return
+        condition.accept(visitor)
+        code.accept(visitor)
+        visitor.closeWhileExpression(this)
+    }
+
+    let condition: Expression
+    let code: Expression
+}
+
+class DoExpression extends PrimaryExpression {
+
+    constructor(code: Expression, condition: Expression, start: Position, end: Position) {
+        this.start = start
+        this.end = end
+        this.code = code
+        this.condition = condition
+    }
+
+    override function accept(mutable visitor: Visitor) {
+        if !visitor.openDoExpression(this)
+            return
+        code.accept(visitor)
+        condition.accept(visitor)
+        visitor.closeDoExpression(this)
+    }
+
+    let code: Expression
+    let condition: Expression
+}
+
+class ParenthesizedExpression extends PrimaryExpression {
+
+    constructor(expressionElements: ExpressionElement[], start: Position, end: Position) {
+        this.start = start
+        this.end = end
+        this.expressionElements = expressionElements
+    }
+
+    override function accept(mutable visitor: Visitor) {
+        if !visitor.openParenthesizedExpression(this)
+            return
+        if expressionElements != null {
+            for node: ExpressionElement in expressionElements
+                node.accept(visitor)
+        }
+        visitor.closeParenthesizedExpression(this)
+    }
+
+    let expressionElements: ExpressionElement[]
+}
+
+class ExpressionElement extends SyntaxNode {
+
+    constructor(expression: Expression, start: Position, end: Position) {
+        this.start = start
+        this.end = end
+        this.expression = expression
+    }
+
+    function accept(mutable visitor: Visitor) {
+        if !visitor.openExpressionElement(this)
+            return
+        expression.accept(visitor)
+        visitor.closeExpressionElement(this)
+    }
+
+    let expression: Expression
+}
+
+class ReturnExpression extends PrimaryExpression {
+
+    constructor(expression: ParenthesizedExpression, start: Position, end: Position) {
+        this.start = start
+        this.end = end
+        this.expression = expression
+    }
+
+    override function accept(mutable visitor: Visitor) {
+        if !visitor.openReturnExpression(this)
+            return
+        if expression != null
+            expression.accept(visitor)
+        visitor.closeReturnExpression(this)
+    }
+
+    let expression: ParenthesizedExpression
+}
+
+class ThrowExpression extends PrimaryExpression {
+
+    constructor(error: IdentifierExpression, arguments: ParenthesizedExpression, start: Position, end: Position) {
+        this.start = start
+        this.end = end
+        this.error = error
+        this.arguments = arguments
+    }
+
+    override function accept(mutable visitor: Visitor) {
+        if !visitor.openThrowExpression(this)
+            return
+        error.accept(visitor)
+        if arguments != null
+            arguments.accept(visitor)
+        visitor.closeThrowExpression(this)
+    }
+
+    let error: IdentifierExpression
+    let arguments: ParenthesizedExpression
+}
+
+class BreakExpression extends PrimaryExpression {
+
+    constructor(expression: ParenthesizedExpression, start: Position, end: Position) {
+        this.start = start
+        this.end = end
+        this.expression = expression
+    }
+
+    override function accept(mutable visitor: Visitor) {
+        if !visitor.openBreakExpression(this)
+            return
+        if expression != null
+            expression.accept(visitor)
+        visitor.closeBreakExpression(this)
+    }
+
+    let expression: ParenthesizedExpression
+}
+
+class ConstructorCall extends PrimaryExpression {
+
+    constructor(typeToConstruct: Type, arguments: ParenthesizedExpression, catchClauses: CatchClause[], start: Position, end: Position) {
+        this.start = start
+        this.end = end
+        this.typeToConstruct = typeToConstruct
+        this.arguments = arguments
+        this.catchClauses = catchClauses
+    }
+
+    override function accept(mutable visitor: Visitor) {
+        if !visitor.openConstructorCall(this)
+            return
+        typeToConstruct.accept(visitor)
+        arguments.accept(visitor)
+        if catchClauses != null {
+            for node: CatchClause in catchClauses
+                node.accept(visitor)
+        }
+        visitor.closeConstructorCall(this)
+    }
+
+    let typeToConstruct: Type
+    let arguments: ParenthesizedExpression
+    let catchClauses: CatchClause[]
+}
+
+class ThisExpression extends PrimaryExpression {
+
+    constructor(start: Position, end: Position) {
+        this.start = start
+        this.end = end
+    }
+
+    override function accept(mutable visitor: Visitor) {
+        visitor.visitThisExpression(this)
+    }
+
+}
+
+class NullExpression extends PrimaryExpression {
+
+    constructor(start: Position, end: Position) {
+        this.start = start
+        this.end = end
+    }
+
+    override function accept(mutable visitor: Visitor) {
+        visitor.visitNullExpression(this)
+    }
+
+}
+
+class Postfix extends SyntaxNode {
+
+    function accept(mutable visitor: Visitor) {
+    }
+
+}
+
+class OperatorPostfix extends Postfix {
+
+    constructor(postfixOperator: string, start: Position, end: Position) {
+        this.start = start
+        this.end = end
+        this.postfixOperator = postfixOperator
+    }
+
+    override function accept(mutable visitor: Visitor) {
+        visitor.visitOperatorPostfix(this)
+    }
+
+    let postfixOperator: string
+}
+
+class FunctionCall extends Postfix {
+
+    constructor(arguments: ParenthesizedExpression, catchClauses: CatchClause[], start: Position, end: Position) {
+        this.start = start
+        this.end = end
+        this.arguments = arguments
+        this.catchClauses = catchClauses
+    }
+
+    override function accept(mutable visitor: Visitor) {
+        if !visitor.openFunctionCall(this)
+            return
+        arguments.accept(visitor)
+        if catchClauses != null {
+            for node: CatchClause in catchClauses
+                node.accept(visitor)
+        }
+        visitor.closeFunctionCall(this)
+    }
+
+    let arguments: ParenthesizedExpression
+    let catchClauses: CatchClause[]
+}
+
+class CatchClause extends SyntaxNode {
+
+    constructor(catchPattern: CatchPattern, bindingPattern: TuplePattern, expression: Expression, start: Position, end: Position) {
+        this.start = start
+        this.end = end
+        this.catchPattern = catchPattern
+        this.bindingPattern = bindingPattern
+        this.expression = expression
+    }
+
+    function accept(mutable visitor: Visitor) {
+        if !visitor.openCatchClause(this)
+            return
+        catchPattern.accept(visitor)
+        if bindingPattern != null
+            bindingPattern.accept(visitor)
+        expression.accept(visitor)
+        visitor.closeCatchClause(this)
+    }
+
+    let catchPattern: CatchPattern
+    let bindingPattern: TuplePattern
+    let expression: Expression
+}
+
+class CatchPattern extends SyntaxNode {
+
+    function accept(mutable visitor: Visitor) {
+    }
+
+}
+
+class WildCardCatchPattern extends CatchPattern {
+
+    constructor(pattern: WildcardPattern, start: Position, end: Position) {
+        this.start = start
+        this.end = end
+        this.pattern = pattern
+    }
+
+    override function accept(mutable visitor: Visitor) {
+        if !visitor.openWildCardCatchPattern(this)
+            return
+        pattern.accept(visitor)
+        visitor.closeWildCardCatchPattern(this)
+    }
+
+    let pattern: WildcardPattern
+}
+
+class IdentifierCatchPattern extends CatchPattern {
+
+    constructor(name: string, member: MemberExpression, start: Position, end: Position) {
         this.start = start
         this.end = end
         this.name = name
-        this.subType = subType
-        this.postfixes = postfixes
-        this.lifeTime = lifeTime
+        this.member = member
     }
 
-    function accept(mutable visitor: Visitor) {
-        if !visitor.openType(this)
+    override function accept(mutable visitor: Visitor) {
+        if !visitor.openIdentifierCatchPattern(this)
             return
-        if subType != null
-            subType.accept(visitor)
-        if postfixes != null {
-            for node: TypePostfix in postfixes
-                node.accept(visitor)
-        }
-        if lifeTime != null
-            lifeTime.accept(visitor)
-        visitor.closeType(this)
+        if member != null
+            member.accept(visitor)
+        visitor.closeIdentifierCatchPattern(this)
     }
 
     let name: string
-    let subType: Subtype
-    let postfixes: TypePostfix[]
-    let lifeTime: LifeTime
+    let member: MemberExpression
 }
 
-class TypeAnnotation extends SyntaxNode {
+class MemberExpression extends Postfix {
 
-    constructor(annotationForType: Type, start: Position, end: Position) {
+    constructor(member: string, start: Position, end: Position) {
         this.start = start
         this.end = end
-        this.annotationForType = annotationForType
+        this.member = member
     }
 
-    function accept(mutable visitor: Visitor) {
-        if !visitor.openTypeAnnotation(this)
+    override function accept(mutable visitor: Visitor) {
+        visitor.visitMemberExpression(this)
+    }
+
+    let member: string
+}
+
+class Subscript extends Postfix {
+
+    constructor(expressions: ExpressionElement[], start: Position, end: Position) {
+        this.start = start
+        this.end = end
+        this.expressions = expressions
+    }
+
+    override function accept(mutable visitor: Visitor) {
+        if !visitor.openSubscript(this)
             return
-        annotationForType.accept(visitor)
-        visitor.closeTypeAnnotation(this)
-    }
-
-    let annotationForType: Type
-}
-
-class Subtype extends SyntaxNode {
-
-    constructor(type: Type, start: Position, end: Position) {
-        this.start = start
-        this.end = end
-        this.type = type
-    }
-
-    function accept(mutable visitor: Visitor) {
-        if !visitor.openSubtype(this)
-            return
-        type.accept(visitor)
-        visitor.closeSubtype(this)
-    }
-
-    let type: Type
-}
-
-class TypePostfix extends SyntaxNode {
-
-    function accept(mutable visitor: Visitor) {
-    }
-
-}
-
-class IndexedType extends TypePostfix {
-
-    constructor(key: Type, start: Position, end: Position) {
-        this.start = start
-        this.end = end
-        this.key = key
-    }
-
-    override function accept(mutable visitor: Visitor) {
-        if !visitor.openIndexedType(this)
-            return
-        if key != null
-            key.accept(visitor)
-        visitor.closeIndexedType(this)
-    }
-
-    let key: Type
-}
-
-class Pointer extends TypePostfix {
-
-    constructor(start: Position, end: Position) {
-        this.start = start
-        this.end = end
-    }
-
-    override function accept(mutable visitor: Visitor) {
-        visitor.visitPointer(this)
-    }
-
-}
-
-class LifeTime extends SyntaxNode {
-
-    function accept(mutable visitor: Visitor) {
-    }
-
-}
-
-class Root extends LifeTime {
-
-    constructor(start: Position, end: Position) {
-        this.start = start
-        this.end = end
-    }
-
-    override function accept(mutable visitor: Visitor) {
-        visitor.visitRoot(this)
-    }
-
-}
-
-class Local extends LifeTime {
-
-    constructor(location: string, start: Position, end: Position) {
-        this.start = start
-        this.end = end
-        this.location = location
-    }
-
-    override function accept(mutable visitor: Visitor) {
-        visitor.visitLocal(this)
-    }
-
-    let location: string
-}
-
-class Reference extends LifeTime {
-
-    constructor(age: Literal, start: Position, end: Position) {
-        this.start = start
-        this.end = end
-        this.age = age
-    }
-
-    override function accept(mutable visitor: Visitor) {
-        visitor.visitReference(this)
-    }
-
-    let age: Literal
-}
-
-class Thrown extends LifeTime {
-
-    constructor(start: Position, end: Position) {
-        this.start = start
-        this.end = end
-    }
-
-    override function accept(mutable visitor: Visitor) {
-        visitor.visitThrown(this)
-    }
-
-}
-
-class TypeInheritanceClause extends SyntaxNode {
-
-    constructor(inheritances: Inheritance[], start: Position, end: Position) {
-        this.start = start
-        this.end = end
-        this.inheritances = inheritances
-    }
-
-    function accept(mutable visitor: Visitor) {
-        if !visitor.openTypeInheritanceClause(this)
-            return
-        if inheritances != null {
-            for node: Inheritance in inheritances
+        if expressions != null {
+            for node: ExpressionElement in expressions
                 node.accept(visitor)
         }
-        visitor.closeTypeInheritanceClause(this)
+        visitor.closeSubscript(this)
     }
 
-    let inheritances: Inheritance[]
+    let expressions: ExpressionElement[]
 }
 
-class Inheritance extends SyntaxNode {
-
-    constructor(type: Type, start: Position, end: Position) {
-        this.start = start
-        this.end = end
-        this.type = type
-    }
+class BinaryOp extends SyntaxNode {
 
     function accept(mutable visitor: Visitor) {
-        if !visitor.openInheritance(this)
-            return
-        type.accept(visitor)
-        visitor.closeInheritance(this)
     }
 
-    let type: Type
+}
+
+class BinaryOperation extends BinaryOp {
+
+    constructor(binaryOperator: string, expression: PrefixExpression, start: Position, end: Position) {
+        this.start = start
+        this.end = end
+        this.binaryOperator = binaryOperator
+        this.expression = expression
+    }
+
+    override function accept(mutable visitor: Visitor) {
+        if !visitor.openBinaryOperation(this)
+            return
+        expression.accept(visitor)
+        visitor.closeBinaryOperation(this)
+    }
+
+    let binaryOperator: string
+    let expression: PrefixExpression
+}
+
+class Assignment extends BinaryOp {
+
+    constructor(expression: Expression, start: Position, end: Position) {
+        this.start = start
+        this.end = end
+        this.expression = expression
+    }
+
+    override function accept(mutable visitor: Visitor) {
+        if !visitor.openAssignment(this)
+            return
+        expression.accept(visitor)
+        visitor.closeAssignment(this)
+    }
+
+    let expression: Expression
+}
+
+class TypeQuery extends BinaryOp {
+
+    constructor(objectType: Type, start: Position, end: Position) {
+        this.start = start
+        this.end = end
+        this.objectType = objectType
+    }
+
+    override function accept(mutable visitor: Visitor) {
+        if !visitor.openTypeQuery(this)
+            return
+        objectType.accept(visitor)
+        visitor.closeTypeQuery(this)
+    }
+
+    let objectType: Type
+}
+
+class TypeCast extends BinaryOp {
+
+    constructor(objectType: Type, start: Position, end: Position) {
+        this.start = start
+        this.end = end
+        this.objectType = objectType
+    }
+
+    override function accept(mutable visitor: Visitor) {
+        if !visitor.openTypeCast(this)
+            return
+        objectType.accept(visitor)
+        visitor.closeTypeCast(this)
+    }
+
+    let objectType: Type
 }
