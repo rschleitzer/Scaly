@@ -627,7 +627,6 @@ public:
     CompilationUnit(_Array<Statement>* statements, Position* start, Position* end);
     virtual void accept(Visitor* visitor);
     _Array<Statement>* statements;
-    string* fileName;
 
     virtual bool _isCompilationUnit();
 };

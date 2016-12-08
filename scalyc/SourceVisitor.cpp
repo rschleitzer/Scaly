@@ -83,7 +83,8 @@ void SourceVisitor::closeCompilationUnit(CompilationUnit* compilationUnit) {
         return;
     VarString* outputFilePath = new(_p) VarString(directory);
     outputFilePath->append('/');
-    string* fileNameWithoutExtension = Path::getFileNameWithoutExtension(_p, compilationUnit->fileName);
+    string* fileName = getFileName(_p, compilationUnit);
+    string* fileNameWithoutExtension = Path::getFileNameWithoutExtension(_p, fileName);
     outputFilePath->append(fileNameWithoutExtension);
     if (isTopLevelFile(compilationUnit)) {
         _Array<Statement>* statements = compilationUnit->statements;
@@ -2083,11 +2084,12 @@ VarString* SourceVisitor::buildProjectFileString(_Page* _rp, Program* program) {
             {
                 _Region _region; _Page* _p = _region.get();
                 projectFile->append("    <File Name=\"");
-                string* fileName = Path::getFileNameWithoutExtension(_p, compilationUnit->fileName);
-                projectFile->append(fileName);
+                string* fileName = getFileName(_p, compilationUnit);
+                string* fileNameWithoutExtension = Path::getFileNameWithoutExtension(_p, fileName);
+                projectFile->append(fileNameWithoutExtension);
                 projectFile->append(".cpp\"/>\n");
                 projectFile->append("    <File Name=\"");
-                projectFile->append(fileName);
+                projectFile->append(fileNameWithoutExtension);
                 projectFile->append(".scaly\"/>\n");
             }
         }
@@ -2102,8 +2104,9 @@ VarString* SourceVisitor::buildProjectFileString(_Page* _rp, Program* program) {
             {
                 _Region _region; _Page* _p = _region.get();
                 projectFile->append("    <File Name=\"");
-                string* fileName = Path::getFileNameWithoutExtension(_p, compilationUnit->fileName);
-                projectFile->append(fileName);
+                string* fileName = getFileName(_p, compilationUnit);
+                string* fileNameWithoutExtension = Path::getFileNameWithoutExtension(_p, fileName);
+                projectFile->append(fileNameWithoutExtension);
                 projectFile->append(".h\"/>\n");
             }
         }
@@ -2138,8 +2141,9 @@ VarString* SourceVisitor::buildProjectFileString(_Page* _rp, Program* program) {
                 projectFile->append(" ../");
                 projectFile->append(program->name);
                 projectFile->append("/");
-                string* fileName = Path::getFileNameWithoutExtension(_p, compilationUnit->fileName);
-                projectFile->append(fileName);
+                string* fileName = getFileName(_p, compilationUnit);
+                string* fileNameWithoutExtension = Path::getFileNameWithoutExtension(_p, fileName);
+                projectFile->append(fileNameWithoutExtension);
                 projectFile->append(".scaly");
             }
         }

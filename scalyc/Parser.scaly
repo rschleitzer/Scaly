@@ -157,7 +157,6 @@ class Parser {
         let end: Position$ = lexer.getPosition()
 
         var ret: CompilationUnit = new CompilationUnit(statements, new Position(start), new Position(end))
-        ret.fileName = fileName
         if statements != null {
             for item: Statement in statements
                 item.parent = ret
@@ -3312,7 +3311,6 @@ class CompilationUnit extends SyntaxNode {
     }
 
     let statements: Statement[]
-    let fileName: string
 }
 
 class Statement extends SyntaxNode {

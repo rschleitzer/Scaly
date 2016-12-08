@@ -49,22 +49,24 @@ bool HeaderVisitor::openProgram(Program* program) {
 }
 
 bool HeaderVisitor::openCompilationUnit(CompilationUnit* compilationUnit) {
+    _Region _region; _Page* _p = _region.get();
     if (!(compilationUnit->parent->_isProgram()))
         return false;
     string* programName = ((Program*)(compilationUnit->parent))->name;
-    if (!compilationUnit->fileName->equals(programName)) {
+    string* fileName = getFileName(_p, compilationUnit);
+    if (!fileName->equals(programName)) {
         if (headerFile != nullptr)
             headerFile->_getPage()->clear();
         headerFile = new(headerFile == nullptr ? _getPage()->allocateExclusivePage() : headerFile->_getPage()) VarString();
         headerFile->append("#ifndef __");
         headerFile->append(programName);
         headerFile->append("__");
-        headerFile->append(compilationUnit->fileName);
+        headerFile->append(fileName);
         headerFile->append("__\n");
         headerFile->append("#define __");
         headerFile->append(programName);
         headerFile->append("__");
-        headerFile->append(compilationUnit->fileName);
+        headerFile->append(fileName);
         headerFile->append("__\n#include \"");
         headerFile->append(programName);
         headerFile->append(".h\"\nusing namespace scaly;\nnamespace ");
@@ -81,12 +83,15 @@ void HeaderVisitor::closeCompilationUnit(CompilationUnit* compilationUnit) {
     string* programName = ((Program*)(compilationUnit->parent))->name;
     VarString* outputFilePath = new(_p) VarString(directory);
     outputFilePath->append('/');
-    string* fileNameWithoutExtension = Path::getFileNameWithoutExtension(_p, compilationUnit->fileName);
+    string* fileName = getFileName(_p, compilationUnit);
+    string* fileNameWithoutExtension = Path::getFileNameWithoutExtension(_p, fileName);
     outputFilePath->append(fileNameWithoutExtension);
-    if (!compilationUnit->fileName->equals(programName)) {
+    if (!fileName->equals(programName)) {
         _Region _region; _Page* _p = _region.get();
-        headerFile->append("\n\n}\n#endif // __scalyc__");
-        headerFile->append(compilationUnit->fileName);
+        headerFile->append("\n\n}\n#endif // __");
+        headerFile->append(programName);
+        headerFile->append("__");
+        headerFile->append(fileName);
         headerFile->append("__\n");
         VarString* headerFilePath = new(_p) VarString(outputFilePath);
         headerFilePath->append(".h");
@@ -528,8 +533,9 @@ void HeaderVisitor::buildMainHeaderFileString(Program* program) {
         {
             _Region _region; _Page* _p = _region.get();
             mainHeaderFile->append("#include \"");
-            string* fileName = Path::getFileNameWithoutExtension(_p, compilationUnit->fileName);
-            mainHeaderFile->append(fileName);
+            string* fileName = getFileName(_p, compilationUnit);
+            string* fileNameWithoutExtension = Path::getFileNameWithoutExtension(_p, fileName);
+            mainHeaderFile->append(fileNameWithoutExtension);
             mainHeaderFile->append(".h\"\n");
         }
     }

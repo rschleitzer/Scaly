@@ -118,6 +118,31 @@ void CppVisitor::registerInheritance(string* className, string* baseName) {
     inherit->inheritors->push(className);
 }
 
+string* CppVisitor::getFileName(_Page* _rp, CompilationUnit* compilationUnit) {
+    _Array<Statement>* statements = compilationUnit->statements;
+    Statement* statement = nullptr;
+    size_t _statements_length = statements->length();
+    for (size_t _i = 0; _i < _statements_length; _i++) {
+        statement = *(*statements)[_i];
+        {
+            if (statement->_isClassDeclaration()) {
+                ClassDeclaration* classDeclaration = (ClassDeclaration*)statement;
+                if (classDeclaration->body != nullptr)
+                    return new(_rp) string(classDeclaration->name);
+            }
+            if (statement->_isEnumDeclaration()) {
+                EnumDeclaration* enumDeclaration = (EnumDeclaration*)statement;
+                return new(_rp) string(enumDeclaration->name);
+            }
+        }
+    }
+    if (compilationUnit->parent->_isProgram()) {
+        Program* program = (Program*)compilationUnit->parent;
+        return new(_rp) string(program->name);
+    }
+    return nullptr;
+}
+
 bool CppVisitor::_isCppVisitor() { return (true); }
 
 bool CppVisitor::_isHeaderVisitor() { return (false); }

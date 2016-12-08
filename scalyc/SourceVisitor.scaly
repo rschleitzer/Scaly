@@ -95,7 +95,8 @@ class SourceVisitor extends CppVisitor {
 
         mutable outputFilePath: VarString$  = new VarString(directory)
         outputFilePath.append('/')
-        let fileNameWithoutExtension: string$ = Path.getFileNameWithoutExtension(compilationUnit.fileName)
+        let fileName: string$ = getFileName(compilationUnit)
+        let fileNameWithoutExtension: string$ = Path.getFileNameWithoutExtension(fileName)
         outputFilePath.append(fileNameWithoutExtension)
 
         if isTopLevelFile(compilationUnit)
@@ -2197,11 +2198,12 @@ class SourceVisitor extends CppVisitor {
             let compilationUnits: CompilationUnit[] = program.compilationUnits
             for compilationUnit: CompilationUnit in compilationUnits {
                 projectFile.append("    <File Name=\"")
-                let fileName: string$ = Path.getFileNameWithoutExtension(compilationUnit.fileName)
-                projectFile.append(fileName)
+                let fileName: string$ = getFileName(compilationUnit)
+                let fileNameWithoutExtension: string$ = Path.getFileNameWithoutExtension(fileName)
+                projectFile.append(fileNameWithoutExtension)
                 projectFile.append(".cpp\"/>\n")
                 projectFile.append("    <File Name=\"")
-                projectFile.append(fileName)
+                projectFile.append(fileNameWithoutExtension)
                 projectFile.append(".scaly\"/>\n")
             }
         }
@@ -2210,8 +2212,9 @@ class SourceVisitor extends CppVisitor {
             let compilationUnits: CompilationUnit[] = program.compilationUnits
             for compilationUnit: CompilationUnit in compilationUnits {
                 projectFile.append("    <File Name=\"")
-                let fileName: string$ = Path.getFileNameWithoutExtension(compilationUnit.fileName)
-                projectFile.append(fileName)
+                let fileName: string$ = getFileName(compilationUnit)
+                let fileNameWithoutExtension: string$ = Path.getFileNameWithoutExtension(fileName)
+                projectFile.append(fileNameWithoutExtension)
                 projectFile.append(".h\"/>\n")
             }
         }
@@ -2240,8 +2243,9 @@ class SourceVisitor extends CppVisitor {
                 projectFile.append(" ../")
                 projectFile.append(program.name)
                 projectFile.append("/")
-                let fileName: string$ = Path.getFileNameWithoutExtension(compilationUnit.fileName)
-                projectFile.append(fileName)
+                let fileName: string$ = getFileName(compilationUnit)
+                let fileNameWithoutExtension: string$ = Path.getFileNameWithoutExtension(fileName)
+                projectFile.append(fileNameWithoutExtension)
                 projectFile.append(".scaly")
             }
         }

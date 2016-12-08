@@ -54,18 +54,19 @@ class HeaderVisitor extends CppVisitor {
             return(false)
 
         let programName: string = ((compilationUnit.parent) as Program).name
+        let fileName: string$ = getFileName(compilationUnit)
 
-        if !compilationUnit.fileName.equals(programName) {
+        if !fileName.equals(programName) {
             headerFile = new VarString()
             headerFile.append("#ifndef __")
             headerFile.append(programName)
             headerFile.append("__")
-            headerFile.append(compilationUnit.fileName)
+            headerFile.append(fileName)
             headerFile.append("__\n")
             headerFile.append("#define __")
             headerFile.append(programName)
             headerFile.append("__")
-            headerFile.append(compilationUnit.fileName)
+            headerFile.append(fileName)
             headerFile.append("__\n#include \"")
             headerFile.append(programName)
             headerFile.append(".h\"\nusing namespace scaly;\nnamespace ")
@@ -84,12 +85,16 @@ class HeaderVisitor extends CppVisitor {
         let programName: string = ((compilationUnit.parent) as Program).name
         mutable outputFilePath: VarString$  = new VarString(directory)
         outputFilePath.append('/')
-        let fileNameWithoutExtension: string$ = Path.getFileNameWithoutExtension(compilationUnit.fileName)
+
+        let fileName: string$ = getFileName(compilationUnit)        
+        let fileNameWithoutExtension: string$ = Path.getFileNameWithoutExtension(fileName)
         outputFilePath.append(fileNameWithoutExtension)
 
-        if !compilationUnit.fileName.equals(programName) {
-            headerFile.append("\n\n}\n#endif // __scalyc__")
-            headerFile.append(compilationUnit.fileName)
+        if !fileName.equals(programName) {
+            headerFile.append("\n\n}\n#endif // __")
+            headerFile.append(programName)
+            headerFile.append("__")
+            headerFile.append(fileName)
             headerFile.append("__\n")
             let headerFilePath: VarString$ = new VarString(outputFilePath)
             headerFilePath.append(".h")
@@ -543,8 +548,9 @@ class HeaderVisitor extends CppVisitor {
         let compilationUnits: CompilationUnit[] = program.compilationUnits
         for compilationUnit: CompilationUnit in compilationUnits {
             mainHeaderFile.append("#include \"")
-            let fileName: string$ = Path.getFileNameWithoutExtension(compilationUnit.fileName)
-            mainHeaderFile.append(fileName)
+            let fileName: string$ = getFileName(compilationUnit)
+            let fileNameWithoutExtension: string$ = Path.getFileNameWithoutExtension(fileName)
+            mainHeaderFile.append(fileNameWithoutExtension)
             mainHeaderFile.append(".h\"\n")
         }
         mainHeaderFile.append("\nusing namespace scaly;\nnamespace ")

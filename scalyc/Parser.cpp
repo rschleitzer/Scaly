@@ -63,7 +63,6 @@ CompilationUnit* Parser::parseCompilationUnit(_Page* _rp) {
     }
     Position* end = lexer->getPosition(_p);
     CompilationUnit* ret = new(_rp) CompilationUnit(statements, new(_rp) Position(start), new(_rp) Position(end));
-    ret->fileName = fileName;
     if (statements != nullptr) {
         Statement* item = nullptr;
         size_t _statements_length = statements->length();

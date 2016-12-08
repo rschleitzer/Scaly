@@ -83,10 +83,6 @@ class "(id syntax-node)" extends "(if (base syntax-node) (base syntax-node) "Syn
 "
           )"")
         )))
-        (if (top? syntax-node)
-"    let fileName: string
-"
-        "")
 "}
 "   )))
 ))

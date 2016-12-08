@@ -100,10 +100,7 @@ class Parser {
                 )))
                 (if (node-list-empty? (properties syntax)) "" ", ")
                 "new Position(start), new Position(end))
-"                (if (top? syntax) ($
-"        ret.fileName = fileName
-"               )"")
-                (apply-to-property-children-of syntax (lambda (content)
+"                (apply-to-property-children-of syntax (lambda (content)
                     (if (multiple? content)
                         ($
 "        if "(property content)" != null {
