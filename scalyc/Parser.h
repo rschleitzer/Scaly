@@ -448,10 +448,9 @@ public:
 
 class Program : public SyntaxNode {
 public:
-    Program(string* name, string* directory, _Array<CompilationUnit>* compilationUnits);
+    Program(string* name, _Array<CompilationUnit>* compilationUnits);
     virtual void accept(Visitor* visitor);
     string* name;
-    string* directory;
     _Array<CompilationUnit>* compilationUnits;
 
     virtual bool _isProgram();

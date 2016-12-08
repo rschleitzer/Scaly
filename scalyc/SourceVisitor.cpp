@@ -81,8 +81,7 @@ void SourceVisitor::closeCompilationUnit(CompilationUnit* compilationUnit) {
     _Region _region; _Page* _p = _region.get();
     if (!(compilationUnit->parent)->_isProgram())
         return;
-    string* programDirectory = ((Program*)(compilationUnit->parent))->directory;
-    VarString* outputFilePath = new(_p) VarString(programDirectory);
+    VarString* outputFilePath = new(_p) VarString(directory);
     outputFilePath->append('/');
     string* fileNameWithoutExtension = Path::getFileNameWithoutExtension(_p, compilationUnit->fileName);
     outputFilePath->append(fileNameWithoutExtension);

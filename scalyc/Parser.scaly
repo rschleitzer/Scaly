@@ -599,11 +599,10 @@ class SyntaxNode {
 
 class Program extends SyntaxNode {
 
-    constructor(name: string, directory: string, compilationUnits: CompilationUnit[]) {
+    constructor(name: string, compilationUnits: CompilationUnit[]) {
         start = new Position(0, 0)
         end = new Position(0, 0)
         this.name = name
-        this.directory = directory
         this.compilationUnits = compilationUnits
         this.parent = null
     }
@@ -619,7 +618,6 @@ class Program extends SyntaxNode {
     }
 
     let name: string
-    let directory: string
     let compilationUnits: CompilationUnit[]
 }
 

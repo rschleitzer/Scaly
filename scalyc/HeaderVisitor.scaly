@@ -82,8 +82,7 @@ class HeaderVisitor extends CppVisitor {
             return
 
         let programName: string = ((compilationUnit.parent) as Program).name
-        let programDirectory: string = ((compilationUnit.parent) as Program).directory
-        mutable outputFilePath: VarString$  = new VarString(programDirectory)
+        mutable outputFilePath: VarString$  = new VarString(directory)
         outputFilePath.append('/')
         let fileNameWithoutExtension: string$ = Path.getFileNameWithoutExtension(compilationUnit.fileName)
         outputFilePath.append(fileNameWithoutExtension)

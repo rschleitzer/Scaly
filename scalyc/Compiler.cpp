@@ -37,7 +37,7 @@ void Compiler::compileFiles(Options* options) {
             index++;
         }
     }
-    Program* program = new(_p) Program(options->outputName, options->directory, new(_p) _Array<CompilationUnit>(compilationUnits));
+    Program* program = new(_p) Program(options->outputName, new(_p) _Array<CompilationUnit>(compilationUnits));
     CompilationUnit* item = nullptr;
     size_t _compilationUnits_length = compilationUnits->length();
     for (size_t _i = 0; _i < _compilationUnits_length; _i++) {

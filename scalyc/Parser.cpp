@@ -597,11 +597,10 @@ bool SyntaxNode::_isThrown() { return (false); }
 bool SyntaxNode::_isTypeInheritanceClause() { return (false); }
 bool SyntaxNode::_isInheritance() { return (false); }
 
-Program::Program(string* name, string* directory, _Array<CompilationUnit>* compilationUnits) {
+Program::Program(string* name, _Array<CompilationUnit>* compilationUnits) {
     start = new(_getPage()) Position(0, 0);
     end = new(_getPage()) Position(0, 0);
     this->name = name;
-    this->directory = directory;
     this->compilationUnits = compilationUnits;
     this->parent = nullptr;
 }

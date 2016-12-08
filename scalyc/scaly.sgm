@@ -3,7 +3,6 @@
 
     <syntax id = Program                                        program
         <content identifier                                     property = name
-        <content identifier                                     property = directory
         <content link = CompilationUnit       multiple          property = compilationUnits
 
     <syntax id = CompilationUnit                                top

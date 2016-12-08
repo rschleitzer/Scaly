@@ -79,8 +79,7 @@ void HeaderVisitor::closeCompilationUnit(CompilationUnit* compilationUnit) {
     if (!(compilationUnit->parent)->_isProgram())
         return;
     string* programName = ((Program*)(compilationUnit->parent))->name;
-    string* programDirectory = ((Program*)(compilationUnit->parent))->directory;
-    VarString* outputFilePath = new(_p) VarString(programDirectory);
+    VarString* outputFilePath = new(_p) VarString(directory);
     outputFilePath->append('/');
     string* fileNameWithoutExtension = Path::getFileNameWithoutExtension(_p, compilationUnit->fileName);
     outputFilePath->append(fileNameWithoutExtension);

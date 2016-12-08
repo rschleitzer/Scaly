@@ -91,11 +91,9 @@ class SourceVisitor extends CppVisitor {
         if !(compilationUnit.parent) is Program
             return
 
-        let programDirectory: string = ((compilationUnit.parent) as Program).directory
-
         // Close and write cpp file
 
-        mutable outputFilePath: VarString$  = new VarString(programDirectory)
+        mutable outputFilePath: VarString$  = new VarString(directory)
         outputFilePath.append('/')
         let fileNameWithoutExtension: string$ = Path.getFileNameWithoutExtension(compilationUnit.fileName)
         outputFilePath.append(fileNameWithoutExtension)
