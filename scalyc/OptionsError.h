@@ -1,5 +1,5 @@
-#ifndef __scalyc__CompilerError__
-#define __scalyc__CompilerError__
+#ifndef __scalyc__OptionsError__
+#define __scalyc__OptionsError__
 #include "scalyc.h"
 using namespace scaly;
 namespace scalyc {
@@ -49,4 +49,4 @@ private:
 };
 
 }
-#endif // __scalyc__CompilerError__
+#endif // __scalyc__OptionsError__

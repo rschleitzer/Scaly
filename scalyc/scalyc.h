@@ -3,7 +3,7 @@
 
 #include "Scaly.h"
 #include "Lexer.h"
-#include "CompilerError.h"
+#include "OptionsError.h"
 #include "Parser.h"
 #include "CppVisitor.h"
 #include "HeaderVisitor.h"
