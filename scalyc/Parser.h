@@ -16,8 +16,6 @@ class Expression;
 
 class ConstantDeclaration;
 
-class VariableDeclaration;
-
 class MutableDeclaration;
 
 class FunctionDeclaration;
@@ -201,7 +199,6 @@ public:
     virtual Declaration* parseDeclaration(_Page* _rp);
     virtual Expression* parseExpression(_Page* _rp);
     virtual ConstantDeclaration* parseConstantDeclaration(_Page* _rp);
-    virtual VariableDeclaration* parseVariableDeclaration(_Page* _rp);
     virtual MutableDeclaration* parseMutableDeclaration(_Page* _rp);
     virtual FunctionDeclaration* parseFunctionDeclaration(_Page* _rp);
     virtual EnumDeclaration* parseEnumDeclaration(_Page* _rp);
@@ -329,7 +326,6 @@ public:
     string* overrideKeyword;
     string* staticKeyword;
     string* letKeyword;
-    string* varKeyword;
     string* mutableKeyword;
     string* isKeyword;
     string* asKeyword;
@@ -366,8 +362,6 @@ public:
     virtual void closeCompilationUnit(CompilationUnit* compilationUnit);
     virtual bool openConstantDeclaration(ConstantDeclaration* constantDeclaration);
     virtual void closeConstantDeclaration(ConstantDeclaration* constantDeclaration);
-    virtual bool openVariableDeclaration(VariableDeclaration* variableDeclaration);
-    virtual void closeVariableDeclaration(VariableDeclaration* variableDeclaration);
     virtual bool openMutableDeclaration(MutableDeclaration* mutableDeclaration);
     virtual void closeMutableDeclaration(MutableDeclaration* mutableDeclaration);
     virtual bool openFunctionDeclaration(FunctionDeclaration* functionDeclaration);
@@ -521,7 +515,6 @@ public:
     virtual bool _isStatement();
     virtual bool _isDeclaration();
     virtual bool _isConstantDeclaration();
-    virtual bool _isVariableDeclaration();
     virtual bool _isMutableDeclaration();
     virtual bool _isFunctionDeclaration();
     virtual bool _isEnumDeclaration();
@@ -638,7 +631,6 @@ public:
     virtual bool _isStatement();
     virtual bool _isDeclaration();
     virtual bool _isConstantDeclaration();
-    virtual bool _isVariableDeclaration();
     virtual bool _isMutableDeclaration();
     virtual bool _isFunctionDeclaration();
     virtual bool _isEnumDeclaration();
@@ -655,7 +647,6 @@ public:
 
     virtual bool _isDeclaration();
     virtual bool _isConstantDeclaration();
-    virtual bool _isVariableDeclaration();
     virtual bool _isMutableDeclaration();
     virtual bool _isFunctionDeclaration();
     virtual bool _isEnumDeclaration();
@@ -679,15 +670,6 @@ public:
     BindingInitializer* initializer;
 
     virtual bool _isConstantDeclaration();
-};
-
-class VariableDeclaration : public Declaration {
-public:
-    VariableDeclaration(BindingInitializer* initializer, Position* start, Position* end);
-    virtual void accept(Visitor* visitor);
-    BindingInitializer* initializer;
-
-    virtual bool _isVariableDeclaration();
 };
 
 class MutableDeclaration : public Declaration {

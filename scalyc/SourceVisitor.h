@@ -14,7 +14,6 @@ public:
     virtual void closeCompilationUnit(CompilationUnit* compilationUnit);
     virtual bool isTopLevelFile(CompilationUnit* compilationUnit);
     virtual bool openConstantDeclaration(ConstantDeclaration* constantDeclaration);
-    virtual bool openVariableDeclaration(VariableDeclaration* variableDeclaration);
     virtual bool openMutableDeclaration(MutableDeclaration* mutableDeclaration);
     virtual bool openFunctionDeclaration(FunctionDeclaration* functionDeclaration);
     virtual bool openEnumDeclaration(EnumDeclaration* enumDeclaration);

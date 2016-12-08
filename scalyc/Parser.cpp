@@ -24,7 +24,6 @@ Parser::Parser(string* theFileName, string* text) {
     overrideKeyword = new(_getPage()) string("override");
     staticKeyword = new(_getPage()) string("static");
     letKeyword = new(_getPage()) string("let");
-    varKeyword = new(_getPage()) string("var");
     mutableKeyword = new(_getPage()) string("mutable");
     isKeyword = new(_getPage()) string("is");
     asKeyword = new(_getPage()) string("as");
@@ -109,11 +108,6 @@ Declaration* Parser::parseDeclaration(_Page* _rp) {
             return node;
     }
     {
-        VariableDeclaration* node = parseVariableDeclaration(_rp);
-        if (node != nullptr)
-            return node;
-    }
-    {
         MutableDeclaration* node = parseMutableDeclaration(_rp);
         if (node != nullptr)
             return node;
@@ -168,23 +162,6 @@ ConstantDeclaration* Parser::parseConstantDeclaration(_Page* _rp) {
         return nullptr;
     Position* end = lexer->getPosition(_p);
     ConstantDeclaration* ret = new(_rp) ConstantDeclaration(initializer, new(_rp) Position(start), new(_rp) Position(end));
-    initializer->parent = ret;
-    return ret;
-}
-
-VariableDeclaration* Parser::parseVariableDeclaration(_Page* _rp) {
-    _Region _region; _Page* _p = _region.get();
-    Position* start = lexer->getPreviousPosition(_p);
-    bool successVar1 = lexer->parseKeyword(varKeyword);
-    if (successVar1)
-        lexer->advance();
-    else
-        return nullptr;
-    BindingInitializer* initializer = parseBindingInitializer(_rp);
-    if (initializer == nullptr)
-        return nullptr;
-    Position* end = lexer->getPosition(_p);
-    VariableDeclaration* ret = new(_rp) VariableDeclaration(initializer, new(_rp) Position(start), new(_rp) Position(end));
     initializer->parent = ret;
     return ret;
 }
@@ -2205,8 +2182,6 @@ bool Parser::isIdentifier(string* id) {
         return false;
     if (id->equals(letKeyword))
         return false;
-    if (id->equals(varKeyword))
-        return false;
     if (id->equals(mutableKeyword))
         return false;
     if (id->equals(isKeyword))
@@ -2247,13 +2222,6 @@ bool Visitor::openConstantDeclaration(ConstantDeclaration* constantDeclaration) 
 }
 
 void Visitor::closeConstantDeclaration(ConstantDeclaration* constantDeclaration) {
-}
-
-bool Visitor::openVariableDeclaration(VariableDeclaration* variableDeclaration) {
-    return true;
-}
-
-void Visitor::closeVariableDeclaration(VariableDeclaration* variableDeclaration) {
 }
 
 bool Visitor::openMutableDeclaration(MutableDeclaration* mutableDeclaration) {
@@ -2733,7 +2701,6 @@ bool SyntaxNode::_isCompilationUnit() { return (false); }
 bool SyntaxNode::_isStatement() { return (false); }
 bool SyntaxNode::_isDeclaration() { return (false); }
 bool SyntaxNode::_isConstantDeclaration() { return (false); }
-bool SyntaxNode::_isVariableDeclaration() { return (false); }
 bool SyntaxNode::_isMutableDeclaration() { return (false); }
 bool SyntaxNode::_isFunctionDeclaration() { return (false); }
 bool SyntaxNode::_isEnumDeclaration() { return (false); }
@@ -2876,7 +2843,6 @@ bool Statement::_isStatement() { return (true); }
 
 bool Statement::_isDeclaration() { return (false); }
 bool Statement::_isConstantDeclaration() { return (false); }
-bool Statement::_isVariableDeclaration() { return (false); }
 bool Statement::_isMutableDeclaration() { return (false); }
 bool Statement::_isFunctionDeclaration() { return (false); }
 bool Statement::_isEnumDeclaration() { return (false); }
@@ -2892,7 +2858,6 @@ void Declaration::accept(Visitor* visitor) {
 bool Declaration::_isDeclaration() { return (true); }
 
 bool Declaration::_isConstantDeclaration() { return (false); }
-bool Declaration::_isVariableDeclaration() { return (false); }
 bool Declaration::_isMutableDeclaration() { return (false); }
 bool Declaration::_isFunctionDeclaration() { return (false); }
 bool Declaration::_isEnumDeclaration() { return (false); }
@@ -2921,21 +2886,6 @@ void ConstantDeclaration::accept(Visitor* visitor) {
 }
 
 bool ConstantDeclaration::_isConstantDeclaration() { return (true); }
-
-VariableDeclaration::VariableDeclaration(BindingInitializer* initializer, Position* start, Position* end) {
-    this->start = start;
-    this->end = end;
-    this->initializer = initializer;
-}
-
-void VariableDeclaration::accept(Visitor* visitor) {
-    if (!visitor->openVariableDeclaration(this))
-        return;
-    initializer->accept(visitor);
-    visitor->closeVariableDeclaration(this);
-}
-
-bool VariableDeclaration::_isVariableDeclaration() { return (true); }
 
 MutableDeclaration::MutableDeclaration(BindingInitializer* initializer, Position* start, Position* end) {
     this->start = start;

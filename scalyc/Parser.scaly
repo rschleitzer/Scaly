@@ -4,7 +4,6 @@ class Statement
 class Declaration
 class Expression
 class ConstantDeclaration
-class VariableDeclaration
 class MutableDeclaration
 class FunctionDeclaration
 class EnumDeclaration
@@ -116,7 +115,6 @@ class Parser {
         overrideKeyword = new string("override")
         staticKeyword = new string("static")
         letKeyword = new string("let")
-        varKeyword = new string("var")
         mutableKeyword = new string("mutable")
         isKeyword = new string("is")
         asKeyword = new string("as")
@@ -206,12 +204,6 @@ class Parser {
         }
 
         {
-            let node: VariableDeclaration = parseVariableDeclaration()
-            if node != null
-                return(node)
-        }
-
-        {
             let node: MutableDeclaration = parseMutableDeclaration()
             if node != null
                 return(node)
@@ -276,27 +268,6 @@ class Parser {
         let end: Position$ = lexer.getPosition()
 
         let ret: ConstantDeclaration = new ConstantDeclaration(initializer, new Position(start), new Position(end))
-        initializer.parent = ret
-
-        ret
-    }
-
-    function parseVariableDeclaration(): VariableDeclaration {
-        let start: Position$ = lexer.getPreviousPosition()
-
-        let successVar1: bool = lexer.parseKeyword(varKeyword)
-        if successVar1
-            lexer.advance()
-        else
-            return(null)
-
-        let initializer: BindingInitializer = parseBindingInitializer()
-        if initializer == null
-            return(null)
-
-        let end: Position$ = lexer.getPosition()
-
-        let ret: VariableDeclaration = new VariableDeclaration(initializer, new Position(start), new Position(end))
         initializer.parent = ret
 
         ret
@@ -2681,9 +2652,6 @@ class Parser {
         if id.equals(letKeyword)
             return(false)
 
-        if id.equals(varKeyword)
-            return(false)
-
         if id.equals(mutableKeyword)
             return(false)
 
@@ -2736,7 +2704,6 @@ class Parser {
     let overrideKeyword: string
     let staticKeyword: string
     let letKeyword: string
-    let varKeyword: string
     let mutableKeyword: string
     let isKeyword: string
     let asKeyword: string
@@ -2784,13 +2751,6 @@ class Visitor {
     }
 
     function closeConstantDeclaration(constantDeclaration: ConstantDeclaration) {
-    }
-
-    function openVariableDeclaration(variableDeclaration: VariableDeclaration): bool {
-        true
-    }
-
-    function closeVariableDeclaration(variableDeclaration: VariableDeclaration) {
     }
 
     function openMutableDeclaration(mutableDeclaration: MutableDeclaration): bool {
@@ -3347,24 +3307,6 @@ class ConstantDeclaration extends Declaration {
             return
         initializer.accept(visitor)
         visitor.closeConstantDeclaration(this)
-    }
-
-    let initializer: BindingInitializer
-}
-
-class VariableDeclaration extends Declaration {
-
-    constructor(initializer: BindingInitializer, start: Position, end: Position) {
-        this.start = start
-        this.end = end
-        this.initializer = initializer
-    }
-
-    override function accept(mutable visitor: Visitor) {
-        if !visitor.openVariableDeclaration(this)
-            return
-        initializer.accept(visitor)
-        visitor.closeVariableDeclaration(this)
     }
 
     let initializer: BindingInitializer

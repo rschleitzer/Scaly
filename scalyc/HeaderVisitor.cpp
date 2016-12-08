@@ -112,14 +112,6 @@ bool HeaderVisitor::openConstantDeclaration(ConstantDeclaration* constantDeclara
     return false;
 }
 
-bool HeaderVisitor::openVariableDeclaration(VariableDeclaration* variableDeclaration) {
-    if (variableDeclaration->parent->parent->parent == nullptr)
-        return false;
-    if (variableDeclaration->parent->parent->parent->_isClassDeclaration())
-        return true;
-    return false;
-}
-
 bool HeaderVisitor::openMutableDeclaration(MutableDeclaration* mutableDeclaration) {
     if (mutableDeclaration->parent->parent->parent == nullptr)
         return false;

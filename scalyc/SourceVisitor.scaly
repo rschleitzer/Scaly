@@ -147,14 +147,6 @@ class SourceVisitor extends CppVisitor {
         true
     }
 
-    function openVariableDeclaration(variableDeclaration: VariableDeclaration): bool {
-
-        if variableDeclaration.parent.parent.parent is ClassDeclaration
-            return(false)
-
-        true
-    }
-
     function openMutableDeclaration(mutableDeclaration: MutableDeclaration): bool {
 
         if mutableDeclaration.parent.parent.parent is ClassDeclaration
@@ -258,10 +250,6 @@ class SourceVisitor extends CppVisitor {
                 if statement is MutableDeclaration {
                     let mutableDeclaration: MutableDeclaration = statement as MutableDeclaration
                     bindingInitializer = mutableDeclaration.initializer
-                }
-                if statement is VariableDeclaration {
-                    let variableDeclaration: VariableDeclaration = statement as VariableDeclaration
-                    bindingInitializer = variableDeclaration.initializer
                 }
                 if isRootBinding(bindingInitializer)
                     return(true)
@@ -844,10 +832,6 @@ class SourceVisitor extends CppVisitor {
                 let mutableDeclaration: MutableDeclaration = (member.declaration) as MutableDeclaration
                 bindingInitializer = mutableDeclaration.initializer
             }
-            if member.declaration is VariableDeclaration {
-                let variableDeclaration: VariableDeclaration = (member.declaration) as VariableDeclaration
-                bindingInitializer = variableDeclaration.initializer
-            }
 
             if bindingInitializer == null
                 continue
@@ -897,10 +881,6 @@ class SourceVisitor extends CppVisitor {
             if member.declaration is MutableDeclaration {
                 let mutableDeclaration: MutableDeclaration = (member.declaration) as MutableDeclaration
                 bindingInitializer = mutableDeclaration.initializer
-            }
-            if member.declaration is VariableDeclaration {
-                let variableDeclaration: VariableDeclaration = (member.declaration) as VariableDeclaration
-                bindingInitializer = variableDeclaration.initializer
             }
 
             if bindingInitializer == null
@@ -1841,10 +1821,6 @@ class SourceVisitor extends CppVisitor {
             if statement is MutableDeclaration {
                 let mutableDeclaration: MutableDeclaration = statement as MutableDeclaration
                 bindingInitializer = mutableDeclaration.initializer
-            }
-            if statement is VariableDeclaration {
-                let variableDeclaration: VariableDeclaration = statement as VariableDeclaration
-                bindingInitializer = variableDeclaration.initializer
             }
 
             if bindingInitializer == null

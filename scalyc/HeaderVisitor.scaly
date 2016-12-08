@@ -115,17 +115,6 @@ class HeaderVisitor extends CppVisitor {
         false
     }
 
-    function openVariableDeclaration(variableDeclaration: VariableDeclaration): bool {
-
-        if variableDeclaration.parent.parent.parent == null
-            return(false)
-
-        if variableDeclaration.parent.parent.parent is ClassDeclaration
-            return(true)
-
-        false
-    }
-
     function openMutableDeclaration(mutableDeclaration: MutableDeclaration): bool {
 
         if mutableDeclaration.parent.parent.parent == null

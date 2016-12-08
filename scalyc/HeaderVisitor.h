@@ -14,7 +14,6 @@ public:
     virtual bool openCompilationUnit(CompilationUnit* compilationUnit);
     virtual void closeCompilationUnit(CompilationUnit* compilationUnit);
     virtual bool openConstantDeclaration(ConstantDeclaration* constantDeclaration);
-    virtual bool openVariableDeclaration(VariableDeclaration* variableDeclaration);
     virtual bool openMutableDeclaration(MutableDeclaration* mutableDeclaration);
     virtual void closeFunctionDeclaration(FunctionDeclaration* functionDeclaration);
     virtual bool openEnumDeclaration(EnumDeclaration* enumDeclaration);

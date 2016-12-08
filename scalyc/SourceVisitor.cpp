@@ -133,12 +133,6 @@ bool SourceVisitor::openConstantDeclaration(ConstantDeclaration* constantDeclara
     return true;
 }
 
-bool SourceVisitor::openVariableDeclaration(VariableDeclaration* variableDeclaration) {
-    if (variableDeclaration->parent->parent->parent->_isClassDeclaration())
-        return false;
-    return true;
-}
-
 bool SourceVisitor::openMutableDeclaration(MutableDeclaration* mutableDeclaration) {
     if (mutableDeclaration->parent->parent->parent->_isClassDeclaration())
         return false;
@@ -236,10 +230,6 @@ bool SourceVisitor::localAllocations(CodeBlock* codeBlock) {
                 if (statement->_isMutableDeclaration()) {
                     MutableDeclaration* mutableDeclaration = (MutableDeclaration*)statement;
                     bindingInitializer = mutableDeclaration->initializer;
-                }
-                if (statement->_isVariableDeclaration()) {
-                    VariableDeclaration* variableDeclaration = (VariableDeclaration*)statement;
-                    bindingInitializer = variableDeclaration->initializer;
                 }
                 if (isRootBinding(bindingInitializer))
                     return true;
@@ -779,10 +769,6 @@ bool SourceVisitor::isObjectField(string* memberName, ClassDeclaration* classDec
                 MutableDeclaration* mutableDeclaration = (MutableDeclaration*)(member->declaration);
                 bindingInitializer = mutableDeclaration->initializer;
             }
-            if (member->declaration->_isVariableDeclaration()) {
-                VariableDeclaration* variableDeclaration = (VariableDeclaration*)(member->declaration);
-                bindingInitializer = variableDeclaration->initializer;
-            }
             if (bindingInitializer == nullptr)
                 continue;
             PatternInitializer* patternInitializer = bindingInitializer->initializer;
@@ -834,10 +820,6 @@ bool SourceVisitor::isVariableObjectField(string* memberName, ClassDeclaration* 
             if (member->declaration->_isMutableDeclaration()) {
                 MutableDeclaration* mutableDeclaration = (MutableDeclaration*)(member->declaration);
                 bindingInitializer = mutableDeclaration->initializer;
-            }
-            if (member->declaration->_isVariableDeclaration()) {
-                VariableDeclaration* variableDeclaration = (VariableDeclaration*)(member->declaration);
-                bindingInitializer = variableDeclaration->initializer;
             }
             if (bindingInitializer == nullptr)
                 continue;
@@ -1758,10 +1740,6 @@ string* SourceVisitor::getPageOfVariable(_Page* _rp, string* name, CodeBlock* co
             if (statement->_isMutableDeclaration()) {
                 MutableDeclaration* mutableDeclaration = (MutableDeclaration*)statement;
                 bindingInitializer = mutableDeclaration->initializer;
-            }
-            if (statement->_isVariableDeclaration()) {
-                VariableDeclaration* variableDeclaration = (VariableDeclaration*)statement;
-                bindingInitializer = variableDeclaration->initializer;
             }
             if (bindingInitializer == nullptr)
                 continue;

@@ -14,7 +14,6 @@
 
     <syntax id = Declaration                           abstract base = Statement
         <content link = ConstantDeclaration
-        <content link = VariableDeclaration
         <content link = MutableDeclaration
         <content link = FunctionDeclaration
         <content link = EnumDeclaration
@@ -27,10 +26,6 @@
 
     <syntax id = ConstantDeclaration                            base = Declaration
         <content link = let
-        <content link = BindingInitializer                      property = initializer
-
-    <syntax id = VariableDeclaration                            base = Declaration
-        <content link = var
         <content link = BindingInitializer                      property = initializer
 
     <syntax id = MutableDeclaration                             base = Declaration
@@ -447,7 +442,6 @@
     <keyword id = override
     <keyword id = static
     <keyword id = let
-    <keyword id = var
     <keyword id = mutable
     <keyword id = is
     <keyword id = as
