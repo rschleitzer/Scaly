@@ -2,93 +2,6 @@
 using namespace scaly;
 namespace scalyc {
 
-Position::Position(size_t line, size_t column) {
-    this->line = line;
-    this->column = column;
-}
-
-Position::Position(Position* position) {
-    this->line = position->line;
-    this->column = position->column;
-}
-
-bool Token::_isEofToken() { return (false); }
-bool Token::_isInvalidToken() { return (false); }
-bool Token::_isIdentifier() { return (false); }
-bool Token::_isLiteral() { return (false); }
-bool Token::_isStringLiteral() { return (false); }
-bool Token::_isCharacterLiteral() { return (false); }
-bool Token::_isNumericLiteral() { return (false); }
-bool Token::_isPunctuation() { return (false); }
-bool Token::_isOperator() { return (false); }
-bool Token::_isPrefixOperator() { return (false); }
-bool Token::_isBinaryOperator() { return (false); }
-bool Token::_isPostfixOperator() { return (false); }
-
-bool EofToken::_isEofToken() { return (true); }
-
-bool InvalidToken::_isInvalidToken() { return (true); }
-
-Identifier::Identifier(string* name) {
-    this->name = name;
-}
-
-bool Identifier::_isIdentifier() { return (true); }
-
-bool Literal::_isLiteral() { return (true); }
-
-bool Literal::_isStringLiteral() { return (false); }
-bool Literal::_isCharacterLiteral() { return (false); }
-bool Literal::_isNumericLiteral() { return (false); }
-
-StringLiteral::StringLiteral(string* theString) {
-    value = theString;
-}
-
-bool StringLiteral::_isStringLiteral() { return (true); }
-
-CharacterLiteral::CharacterLiteral(string* theString) {
-    value = theString;
-}
-
-bool CharacterLiteral::_isCharacterLiteral() { return (true); }
-
-NumericLiteral::NumericLiteral(string* theValue) {
-    value = theValue;
-}
-
-bool NumericLiteral::_isNumericLiteral() { return (true); }
-
-Punctuation::Punctuation(string* theSign) {
-    sign = theSign;
-}
-
-bool Punctuation::_isPunctuation() { return (true); }
-
-bool Operator::_isOperator() { return (true); }
-
-bool Operator::_isPrefixOperator() { return (false); }
-bool Operator::_isBinaryOperator() { return (false); }
-bool Operator::_isPostfixOperator() { return (false); }
-
-PrefixOperator::PrefixOperator(string* theOperation) {
-    operation = theOperation;
-}
-
-bool PrefixOperator::_isPrefixOperator() { return (true); }
-
-BinaryOperator::BinaryOperator(string* theOperation) {
-    operation = theOperation;
-}
-
-bool BinaryOperator::_isBinaryOperator() { return (true); }
-
-PostfixOperator::PostfixOperator(string* theOperation) {
-    operation = theOperation;
-}
-
-bool PostfixOperator::_isPostfixOperator() { return (true); }
-
 Lexer::Lexer(string* theText) {
     token = nullptr;
     whitespaceSkipped = true;
@@ -855,6 +768,93 @@ Position* Lexer::getPosition(_Page* _rp) {
 Position* Lexer::getPreviousPosition(_Page* _rp) {
     return new(_rp) Position(previousLine, previousColumn);
 }
+
+Position::Position(size_t line, size_t column) {
+    this->line = line;
+    this->column = column;
+}
+
+Position::Position(Position* position) {
+    this->line = position->line;
+    this->column = position->column;
+}
+
+bool Token::_isEofToken() { return (false); }
+bool Token::_isInvalidToken() { return (false); }
+bool Token::_isIdentifier() { return (false); }
+bool Token::_isLiteral() { return (false); }
+bool Token::_isStringLiteral() { return (false); }
+bool Token::_isCharacterLiteral() { return (false); }
+bool Token::_isNumericLiteral() { return (false); }
+bool Token::_isPunctuation() { return (false); }
+bool Token::_isOperator() { return (false); }
+bool Token::_isPrefixOperator() { return (false); }
+bool Token::_isBinaryOperator() { return (false); }
+bool Token::_isPostfixOperator() { return (false); }
+
+bool EofToken::_isEofToken() { return (true); }
+
+bool InvalidToken::_isInvalidToken() { return (true); }
+
+Identifier::Identifier(string* name) {
+    this->name = name;
+}
+
+bool Identifier::_isIdentifier() { return (true); }
+
+bool Literal::_isLiteral() { return (true); }
+
+bool Literal::_isStringLiteral() { return (false); }
+bool Literal::_isCharacterLiteral() { return (false); }
+bool Literal::_isNumericLiteral() { return (false); }
+
+StringLiteral::StringLiteral(string* theString) {
+    value = theString;
+}
+
+bool StringLiteral::_isStringLiteral() { return (true); }
+
+CharacterLiteral::CharacterLiteral(string* theString) {
+    value = theString;
+}
+
+bool CharacterLiteral::_isCharacterLiteral() { return (true); }
+
+NumericLiteral::NumericLiteral(string* theValue) {
+    value = theValue;
+}
+
+bool NumericLiteral::_isNumericLiteral() { return (true); }
+
+Punctuation::Punctuation(string* theSign) {
+    sign = theSign;
+}
+
+bool Punctuation::_isPunctuation() { return (true); }
+
+bool Operator::_isOperator() { return (true); }
+
+bool Operator::_isPrefixOperator() { return (false); }
+bool Operator::_isBinaryOperator() { return (false); }
+bool Operator::_isPostfixOperator() { return (false); }
+
+PrefixOperator::PrefixOperator(string* theOperation) {
+    operation = theOperation;
+}
+
+bool PrefixOperator::_isPrefixOperator() { return (true); }
+
+BinaryOperator::BinaryOperator(string* theOperation) {
+    operation = theOperation;
+}
+
+bool BinaryOperator::_isBinaryOperator() { return (true); }
+
+PostfixOperator::PostfixOperator(string* theOperation) {
+    operation = theOperation;
+}
+
+bool PostfixOperator::_isPostfixOperator() { return (true); }
 
 
 }

@@ -1,86 +1,17 @@
-class Position {
-    constructor(line: number, column: number) {
-        this.line = line
-        this.column = column
-    }
-
-    constructor(position: Position) {
-        this.line = position.line
-        this.column = position.column
-    }
-
-    let line: number
-    let column: number
-}
-
-class Token {
-}
-
-class EofToken extends Token {
-}
-
-class InvalidToken extends Token {
-}
-
-class Identifier extends Token {
-    constructor(name: string) {
-        this.name = name
-    }
-    let name: string
-}
-
-class Literal extends Token {
-}
-
-class StringLiteral extends Literal {
-    constructor(theString: string) {
-        value = theString
-    }
-    let value: string
-}
-
-class CharacterLiteral extends Literal {
-    constructor(theString: string) {
-        value = theString
-    }
-    let value: string
-}
-
-class NumericLiteral extends Literal {
-    constructor(theValue: string) {
-        value = theValue
-    }
-    let value: string
-}
-
-class Punctuation extends Token {
-    constructor(theSign: string) {
-        sign = theSign
-    }
-    let sign: string
-}
-
-class Operator extends Token {
-    let operation: string
-}
-
-class PrefixOperator extends Operator {
-    constructor(theOperation: string) {
-        operation = theOperation
-    }
-}
-
-class BinaryOperator extends Operator {
-    constructor(theOperation: string) {
-        operation = theOperation
-    }
-}
-
-class PostfixOperator extends Operator {
-    constructor(theOperation: string) {
-        operation = theOperation
-    }
-}
+class Position
+class Token
+class EofToken
+class InvalidToken
+class Identifier
+class Literal
+class StringLiteral
+class CharacterLiteral
+class NumericLiteral
+class Punctuation
+class Operator
+class PrefixOperator
+class BinaryOperator
+class PostfixOperator
 
 class Lexer {
 
@@ -650,5 +581,89 @@ class Lexer {
 
     function getPreviousPosition(): Position {
         return(new Position(previousLine, previousColumn))
+    }
+}
+
+class Position {
+    constructor(line: number, column: number) {
+        this.line = line
+        this.column = column
+    }
+
+    constructor(position: Position) {
+        this.line = position.line
+        this.column = position.column
+    }
+
+    let line: number
+    let column: number
+}
+
+class Token {
+}
+
+class EofToken extends Token {
+}
+
+class InvalidToken extends Token {
+}
+
+class Identifier extends Token {
+    constructor(name: string) {
+        this.name = name
+    }
+    let name: string
+}
+
+class Literal extends Token {
+}
+
+class StringLiteral extends Literal {
+    constructor(theString: string) {
+        value = theString
+    }
+    let value: string
+}
+
+class CharacterLiteral extends Literal {
+    constructor(theString: string) {
+        value = theString
+    }
+    let value: string
+}
+
+class NumericLiteral extends Literal {
+    constructor(theValue: string) {
+        value = theValue
+    }
+    let value: string
+}
+
+class Punctuation extends Token {
+    constructor(theSign: string) {
+        sign = theSign
+    }
+    let sign: string
+}
+
+class Operator extends Token {
+    let operation: string
+}
+
+class PrefixOperator extends Operator {
+    constructor(theOperation: string) {
+        operation = theOperation
+    }
+}
+
+class BinaryOperator extends Operator {
+    constructor(theOperation: string) {
+        operation = theOperation
+    }
+}
+
+class PostfixOperator extends Operator {
+    constructor(theOperation: string) {
+        operation = theOperation
     }
 }

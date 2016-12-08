@@ -1,10 +1,4 @@
 (define (visitor) ($
-        (apply-to-selected-children "syntax" (lambda (syntax-node) ($
-"class "(id syntax-node)"
-"
-        )))
-"
-"
 "class Visitor {"
     (apply-to-selected-children "syntax" (lambda (syntax) (if (abstract? syntax) "" ($
         (if (has-syntax-children? syntax)

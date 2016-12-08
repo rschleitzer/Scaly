@@ -4,13 +4,7 @@
 using namespace scaly;
 namespace scalyc {
 
-class Inherits : public Object {
-public:
-    string* name;
-    _Array<string>* inheritors;
-    Inherits(string* className);
-
-};
+class Inherits;
 
 class CppVisitor : public Visitor {
 public:
@@ -29,6 +23,14 @@ public:
     virtual bool _isCppVisitor();
     virtual bool _isHeaderVisitor();
     virtual bool _isSourceVisitor();
+};
+
+class Inherits : public Object {
+public:
+    string* name;
+    _Array<string>* inheritors;
+    Inherits(string* className);
+
 };
 
 }

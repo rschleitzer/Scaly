@@ -1,16 +1,4 @@
-class Inherits {
-
-    // Class to inherit from
-    let name: string
-
-    // Classes which inherit from the class
-    mutable inheritors: string[]
-
-    constructor(className: string) {
-        name = new string(className)
-        inheritors = new string[]()
-    }
-}
+class Inherits
 
 class CppVisitor extends Visitor {
 
@@ -116,5 +104,19 @@ class CppVisitor extends Visitor {
         }
 
         inherit.inheritors.push(className)
+    }
+}
+
+class Inherits {
+
+    // Class to inherit from
+    let name: string
+
+    // Classes which inherit from the class
+    mutable inheritors: string[]
+
+    constructor(className: string) {
+        name = new string(className)
+        inheritors = new string[]()
     }
 }

@@ -2,11 +2,6 @@
 using namespace scaly;
 namespace scalyc {
 
-Inherits::Inherits(string* className) {
-    name = new(_getPage()) string(className);
-    inheritors = new(_getPage()->allocateExclusivePage()) _Array<string>();
-}
-
 void CppVisitor::execute(Program* program) {
     program->accept(this);
 }
@@ -127,6 +122,11 @@ bool CppVisitor::_isCppVisitor() { return (true); }
 
 bool CppVisitor::_isHeaderVisitor() { return (false); }
 bool CppVisitor::_isSourceVisitor() { return (false); }
+
+Inherits::Inherits(string* className) {
+    name = new(_getPage()) string(className);
+    inheritors = new(_getPage()->allocateExclusivePage()) _Array<string>();
+}
 
 
 }

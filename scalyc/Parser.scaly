@@ -93,2176 +93,6 @@ class Thrown
 class TypeInheritanceClause
 class Inheritance
 
-class Visitor {
-    function openProgram(program: Program): bool {
-        true
-    }
-
-    function closeProgram(program: Program) {
-    }
-
-    function openCompilationUnit(compilationUnit: CompilationUnit): bool {
-        true
-    }
-
-    function closeCompilationUnit(compilationUnit: CompilationUnit) {
-    }
-
-    function openConstantDeclaration(constantDeclaration: ConstantDeclaration): bool {
-        true
-    }
-
-    function closeConstantDeclaration(constantDeclaration: ConstantDeclaration) {
-    }
-
-    function openVariableDeclaration(variableDeclaration: VariableDeclaration): bool {
-        true
-    }
-
-    function closeVariableDeclaration(variableDeclaration: VariableDeclaration) {
-    }
-
-    function openMutableDeclaration(mutableDeclaration: MutableDeclaration): bool {
-        true
-    }
-
-    function closeMutableDeclaration(mutableDeclaration: MutableDeclaration) {
-    }
-
-    function openFunctionDeclaration(functionDeclaration: FunctionDeclaration): bool {
-        true
-    }
-
-    function closeFunctionDeclaration(functionDeclaration: FunctionDeclaration) {
-    }
-
-    function openEnumDeclaration(enumDeclaration: EnumDeclaration): bool {
-        true
-    }
-
-    function closeEnumDeclaration(enumDeclaration: EnumDeclaration) {
-    }
-
-    function openClassDeclaration(classDeclaration: ClassDeclaration): bool {
-        true
-    }
-
-    function closeClassDeclaration(classDeclaration: ClassDeclaration) {
-    }
-
-    function openConstructorDeclaration(constructorDeclaration: ConstructorDeclaration): bool {
-        true
-    }
-
-    function closeConstructorDeclaration(constructorDeclaration: ConstructorDeclaration) {
-    }
-
-    function openCodeBlock(codeBlock: CodeBlock): bool {
-        true
-    }
-
-    function closeCodeBlock(codeBlock: CodeBlock) {
-    }
-
-    function openSimpleExpression(simpleExpression: SimpleExpression): bool {
-        true
-    }
-
-    function closeSimpleExpression(simpleExpression: SimpleExpression) {
-    }
-
-    function openInitializer(initializer: Initializer): bool {
-        true
-    }
-
-    function closeInitializer(initializer: Initializer) {
-    }
-
-    function openBindingInitializer(bindingInitializer: BindingInitializer): bool {
-        true
-    }
-
-    function closeBindingInitializer(bindingInitializer: BindingInitializer) {
-    }
-
-    function openPatternInitializer(patternInitializer: PatternInitializer): bool {
-        true
-    }
-
-    function closePatternInitializer(patternInitializer: PatternInitializer) {
-    }
-
-    function openAdditionalInitializer(additionalInitializer: AdditionalInitializer): bool {
-        true
-    }
-
-    function closeAdditionalInitializer(additionalInitializer: AdditionalInitializer) {
-    }
-
-    function visitOverrideWord(overrideWord: OverrideWord) {
-    }
-
-    function visitStaticWord(staticWord: StaticWord) {
-    }
-
-    function openFunctionSignature(functionSignature: FunctionSignature): bool {
-        true
-    }
-
-    function closeFunctionSignature(functionSignature: FunctionSignature) {
-    }
-
-    function openFunctionResult(functionResult: FunctionResult): bool {
-        true
-    }
-
-    function closeFunctionResult(functionResult: FunctionResult) {
-    }
-
-    function openParameterClause(parameterClause: ParameterClause): bool {
-        true
-    }
-
-    function closeParameterClause(parameterClause: ParameterClause) {
-    }
-
-    function openConstParameter(constParameter: ConstParameter): bool {
-        true
-    }
-
-    function closeConstParameter(constParameter: ConstParameter) {
-    }
-
-    function openVarParameter(varParameter: VarParameter): bool {
-        true
-    }
-
-    function closeVarParameter(varParameter: VarParameter) {
-    }
-
-    function openThrowsClause(throwsClause: ThrowsClause): bool {
-        true
-    }
-
-    function closeThrowsClause(throwsClause: ThrowsClause) {
-    }
-
-    function openEnumMember(enumMember: EnumMember): bool {
-        true
-    }
-
-    function closeEnumMember(enumMember: EnumMember) {
-    }
-
-    function visitEnumCase(enumCase: EnumCase) {
-    }
-
-    function openAdditionalCase(additionalCase: AdditionalCase): bool {
-        true
-    }
-
-    function closeAdditionalCase(additionalCase: AdditionalCase) {
-    }
-
-    function openClassBody(classBody: ClassBody): bool {
-        true
-    }
-
-    function closeClassBody(classBody: ClassBody) {
-    }
-
-    function openClassMember(classMember: ClassMember): bool {
-        true
-    }
-
-    function closeClassMember(classMember: ClassMember) {
-    }
-
-    function openPrefixExpression(prefixExpression: PrefixExpression): bool {
-        true
-    }
-
-    function closePrefixExpression(prefixExpression: PrefixExpression) {
-    }
-
-    function openPostfixExpression(postfixExpression: PostfixExpression): bool {
-        true
-    }
-
-    function closePostfixExpression(postfixExpression: PostfixExpression) {
-    }
-
-    function openBinaryOperation(binaryOperation: BinaryOperation): bool {
-        true
-    }
-
-    function closeBinaryOperation(binaryOperation: BinaryOperation) {
-    }
-
-    function openAssignment(assignment: Assignment): bool {
-        true
-    }
-
-    function closeAssignment(assignment: Assignment) {
-    }
-
-    function openTypeQuery(typeQuery: TypeQuery): bool {
-        true
-    }
-
-    function closeTypeQuery(typeQuery: TypeQuery) {
-    }
-
-    function openTypeCast(typeCast: TypeCast): bool {
-        true
-    }
-
-    function closeTypeCast(typeCast: TypeCast) {
-    }
-
-    function openCatchClause(catchClause: CatchClause): bool {
-        true
-    }
-
-    function closeCatchClause(catchClause: CatchClause) {
-    }
-
-    function openWildCardCatchPattern(wildCardCatchPattern: WildCardCatchPattern): bool {
-        true
-    }
-
-    function closeWildCardCatchPattern(wildCardCatchPattern: WildCardCatchPattern) {
-    }
-
-    function openIdentifierCatchPattern(identifierCatchPattern: IdentifierCatchPattern): bool {
-        true
-    }
-
-    function closeIdentifierCatchPattern(identifierCatchPattern: IdentifierCatchPattern) {
-    }
-
-    function visitOperatorPostfix(operatorPostfix: OperatorPostfix) {
-    }
-
-    function openFunctionCall(functionCall: FunctionCall): bool {
-        true
-    }
-
-    function closeFunctionCall(functionCall: FunctionCall) {
-    }
-
-    function visitMemberExpression(memberExpression: MemberExpression) {
-    }
-
-    function openSubscript(subscript: Subscript): bool {
-        true
-    }
-
-    function closeSubscript(subscript: Subscript) {
-    }
-
-    function openExpressionElement(expressionElement: ExpressionElement): bool {
-        true
-    }
-
-    function closeExpressionElement(expressionElement: ExpressionElement) {
-    }
-
-    function visitIdentifierExpression(identifierExpression: IdentifierExpression) {
-    }
-
-    function visitLiteralExpression(literalExpression: LiteralExpression) {
-    }
-
-    function openIfExpression(ifExpression: IfExpression): bool {
-        true
-    }
-
-    function closeIfExpression(ifExpression: IfExpression) {
-    }
-
-    function openSwitchExpression(switchExpression: SwitchExpression): bool {
-        true
-    }
-
-    function closeSwitchExpression(switchExpression: SwitchExpression) {
-    }
-
-    function openForExpression(forExpression: ForExpression): bool {
-        true
-    }
-
-    function closeForExpression(forExpression: ForExpression) {
-    }
-
-    function openWhileExpression(whileExpression: WhileExpression): bool {
-        true
-    }
-
-    function closeWhileExpression(whileExpression: WhileExpression) {
-    }
-
-    function openDoExpression(doExpression: DoExpression): bool {
-        true
-    }
-
-    function closeDoExpression(doExpression: DoExpression) {
-    }
-
-    function openParenthesizedExpression(parenthesizedExpression: ParenthesizedExpression): bool {
-        true
-    }
-
-    function closeParenthesizedExpression(parenthesizedExpression: ParenthesizedExpression) {
-    }
-
-    function openReturnExpression(returnExpression: ReturnExpression): bool {
-        true
-    }
-
-    function closeReturnExpression(returnExpression: ReturnExpression) {
-    }
-
-    function openThrowExpression(throwExpression: ThrowExpression): bool {
-        true
-    }
-
-    function closeThrowExpression(throwExpression: ThrowExpression) {
-    }
-
-    function openBreakExpression(breakExpression: BreakExpression): bool {
-        true
-    }
-
-    function closeBreakExpression(breakExpression: BreakExpression) {
-    }
-
-    function openConstructorCall(constructorCall: ConstructorCall): bool {
-        true
-    }
-
-    function closeConstructorCall(constructorCall: ConstructorCall) {
-    }
-
-    function visitThisExpression(thisExpression: ThisExpression) {
-    }
-
-    function visitNullExpression(nullExpression: NullExpression) {
-    }
-
-    function openElseClause(elseClause: ElseClause): bool {
-        true
-    }
-
-    function closeElseClause(elseClause: ElseClause) {
-    }
-
-    function openCurliedSwitchBody(curliedSwitchBody: CurliedSwitchBody): bool {
-        true
-    }
-
-    function closeCurliedSwitchBody(curliedSwitchBody: CurliedSwitchBody) {
-    }
-
-    function openNakedSwitchBody(nakedSwitchBody: NakedSwitchBody): bool {
-        true
-    }
-
-    function closeNakedSwitchBody(nakedSwitchBody: NakedSwitchBody) {
-    }
-
-    function openSwitchCase(switchCase: SwitchCase): bool {
-        true
-    }
-
-    function closeSwitchCase(switchCase: SwitchCase) {
-    }
-
-    function openItemCaseLabel(itemCaseLabel: ItemCaseLabel): bool {
-        true
-    }
-
-    function closeItemCaseLabel(itemCaseLabel: ItemCaseLabel) {
-    }
-
-    function visitDefaultCaseLabel(defaultCaseLabel: DefaultCaseLabel) {
-    }
-
-    function openCaseItem(caseItem: CaseItem): bool {
-        true
-    }
-
-    function closeCaseItem(caseItem: CaseItem) {
-    }
-
-    function visitWildcardPattern(wildcardPattern: WildcardPattern) {
-    }
-
-    function openIdentifierPattern(identifierPattern: IdentifierPattern): bool {
-        true
-    }
-
-    function closeIdentifierPattern(identifierPattern: IdentifierPattern) {
-    }
-
-    function openTuplePattern(tuplePattern: TuplePattern): bool {
-        true
-    }
-
-    function closeTuplePattern(tuplePattern: TuplePattern) {
-    }
-
-    function openExpressionPattern(expressionPattern: ExpressionPattern): bool {
-        true
-    }
-
-    function closeExpressionPattern(expressionPattern: ExpressionPattern) {
-    }
-
-    function openTuplePatternElement(tuplePatternElement: TuplePatternElement): bool {
-        true
-    }
-
-    function closeTuplePatternElement(tuplePatternElement: TuplePatternElement) {
-    }
-
-    function openCaseContent(caseContent: CaseContent): bool {
-        true
-    }
-
-    function closeCaseContent(caseContent: CaseContent) {
-    }
-
-    function openType(type: Type): bool {
-        true
-    }
-
-    function closeType(type: Type) {
-    }
-
-    function openTypeAnnotation(typeAnnotation: TypeAnnotation): bool {
-        true
-    }
-
-    function closeTypeAnnotation(typeAnnotation: TypeAnnotation) {
-    }
-
-    function openSubtype(subtype: Subtype): bool {
-        true
-    }
-
-    function closeSubtype(subtype: Subtype) {
-    }
-
-    function openIndexedType(indexedType: IndexedType): bool {
-        true
-    }
-
-    function closeIndexedType(indexedType: IndexedType) {
-    }
-
-    function visitPointer(pointer: Pointer) {
-    }
-
-    function visitRoot(root: Root) {
-    }
-
-    function visitLocal(local: Local) {
-    }
-
-    function visitReference(reference: Reference) {
-    }
-
-    function visitThrown(thrown: Thrown) {
-    }
-
-    function openTypeInheritanceClause(typeInheritanceClause: TypeInheritanceClause): bool {
-        true
-    }
-
-    function closeTypeInheritanceClause(typeInheritanceClause: TypeInheritanceClause) {
-    }
-
-    function openInheritance(inheritance: Inheritance): bool {
-        true
-    }
-
-    function closeInheritance(inheritance: Inheritance) {
-    }
-}
-
-class SyntaxNode {
-    let start: Position
-    let end: Position
-    var parent: SyntaxNode
-}
-
-class Program extends SyntaxNode {
-
-    constructor(name: string, compilationUnits: CompilationUnit[]) {
-        start = new Position(0, 0)
-        end = new Position(0, 0)
-        this.name = name
-        this.compilationUnits = compilationUnits
-        this.parent = null
-    }
-
-    function accept(mutable visitor: Visitor) {
-        if !visitor.openProgram(this)
-            return
-        if compilationUnits != null {
-            for node: CompilationUnit in compilationUnits
-                node.accept(visitor)
-        }
-        visitor.closeProgram(this)
-    }
-
-    let name: string
-    let compilationUnits: CompilationUnit[]
-}
-
-class CompilationUnit extends SyntaxNode {
-
-    constructor(statements: Statement[], start: Position, end: Position) {
-        this.start = start
-        this.end = end
-        this.statements = statements
-    }
-
-    function accept(mutable visitor: Visitor) {
-        if !visitor.openCompilationUnit(this)
-            return
-        if statements != null {
-            for node: Statement in statements
-                node.accept(visitor)
-        }
-        visitor.closeCompilationUnit(this)
-    }
-
-    let statements: Statement[]
-    let fileName: string
-}
-
-class Statement extends SyntaxNode {
-
-    function accept(mutable visitor: Visitor) {
-    }
-
-}
-
-class Declaration extends Statement {
-
-    override function accept(mutable visitor: Visitor) {
-    }
-
-}
-
-class Expression extends Statement {
-
-    override function accept(mutable visitor: Visitor) {
-    }
-
-}
-
-class ConstantDeclaration extends Declaration {
-
-    constructor(initializer: BindingInitializer, start: Position, end: Position) {
-        this.start = start
-        this.end = end
-        this.initializer = initializer
-    }
-
-    override function accept(mutable visitor: Visitor) {
-        if !visitor.openConstantDeclaration(this)
-            return
-        initializer.accept(visitor)
-        visitor.closeConstantDeclaration(this)
-    }
-
-    let initializer: BindingInitializer
-}
-
-class VariableDeclaration extends Declaration {
-
-    constructor(initializer: BindingInitializer, start: Position, end: Position) {
-        this.start = start
-        this.end = end
-        this.initializer = initializer
-    }
-
-    override function accept(mutable visitor: Visitor) {
-        if !visitor.openVariableDeclaration(this)
-            return
-        initializer.accept(visitor)
-        visitor.closeVariableDeclaration(this)
-    }
-
-    let initializer: BindingInitializer
-}
-
-class MutableDeclaration extends Declaration {
-
-    constructor(initializer: BindingInitializer, start: Position, end: Position) {
-        this.start = start
-        this.end = end
-        this.initializer = initializer
-    }
-
-    override function accept(mutable visitor: Visitor) {
-        if !visitor.openMutableDeclaration(this)
-            return
-        initializer.accept(visitor)
-        visitor.closeMutableDeclaration(this)
-    }
-
-    let initializer: BindingInitializer
-}
-
-class FunctionDeclaration extends Declaration {
-
-    constructor(modifiers: Modifier[], name: string, signature: FunctionSignature, body: Expression, start: Position, end: Position) {
-        this.start = start
-        this.end = end
-        this.modifiers = modifiers
-        this.name = name
-        this.signature = signature
-        this.body = body
-    }
-
-    override function accept(mutable visitor: Visitor) {
-        if !visitor.openFunctionDeclaration(this)
-            return
-        if modifiers != null {
-            for node: Modifier in modifiers
-                node.accept(visitor)
-        }
-        signature.accept(visitor)
-        if body != null
-            body.accept(visitor)
-        visitor.closeFunctionDeclaration(this)
-    }
-
-    let modifiers: Modifier[]
-    let name: string
-    let signature: FunctionSignature
-    let body: Expression
-}
-
-class EnumDeclaration extends Declaration {
-
-    constructor(name: string, members: EnumMember[], start: Position, end: Position) {
-        this.start = start
-        this.end = end
-        this.name = name
-        this.members = members
-    }
-
-    override function accept(mutable visitor: Visitor) {
-        if !visitor.openEnumDeclaration(this)
-            return
-        if members != null {
-            for node: EnumMember in members
-                node.accept(visitor)
-        }
-        visitor.closeEnumDeclaration(this)
-    }
-
-    let name: string
-    let members: EnumMember[]
-}
-
-class ClassDeclaration extends Declaration {
-
-    constructor(name: string, typeInheritanceClause: TypeInheritanceClause, body: ClassBody, start: Position, end: Position) {
-        this.start = start
-        this.end = end
-        this.name = name
-        this.typeInheritanceClause = typeInheritanceClause
-        this.body = body
-    }
-
-    override function accept(mutable visitor: Visitor) {
-        if !visitor.openClassDeclaration(this)
-            return
-        if typeInheritanceClause != null
-            typeInheritanceClause.accept(visitor)
-        if body != null
-            body.accept(visitor)
-        visitor.closeClassDeclaration(this)
-    }
-
-    let name: string
-    let typeInheritanceClause: TypeInheritanceClause
-    let body: ClassBody
-}
-
-class ConstructorDeclaration extends Declaration {
-
-    constructor(parameterClause: ParameterClause, body: Expression, start: Position, end: Position) {
-        this.start = start
-        this.end = end
-        this.parameterClause = parameterClause
-        this.body = body
-    }
-
-    override function accept(mutable visitor: Visitor) {
-        if !visitor.openConstructorDeclaration(this)
-            return
-        parameterClause.accept(visitor)
-        body.accept(visitor)
-        visitor.closeConstructorDeclaration(this)
-    }
-
-    let parameterClause: ParameterClause
-    let body: Expression
-}
-
-class CodeBlock extends Expression {
-
-    constructor(statements: Statement[], start: Position, end: Position) {
-        this.start = start
-        this.end = end
-        this.statements = statements
-    }
-
-    override function accept(mutable visitor: Visitor) {
-        if !visitor.openCodeBlock(this)
-            return
-        if statements != null {
-            for node: Statement in statements
-                node.accept(visitor)
-        }
-        visitor.closeCodeBlock(this)
-    }
-
-    let statements: Statement[]
-}
-
-class SimpleExpression extends Expression {
-
-    constructor(prefixExpression: PrefixExpression, binaryOps: BinaryOp[], start: Position, end: Position) {
-        this.start = start
-        this.end = end
-        this.prefixExpression = prefixExpression
-        this.binaryOps = binaryOps
-    }
-
-    override function accept(mutable visitor: Visitor) {
-        if !visitor.openSimpleExpression(this)
-            return
-        prefixExpression.accept(visitor)
-        if binaryOps != null {
-            for node: BinaryOp in binaryOps
-                node.accept(visitor)
-        }
-        visitor.closeSimpleExpression(this)
-    }
-
-    let prefixExpression: PrefixExpression
-    let binaryOps: BinaryOp[]
-}
-
-class Initializer extends SyntaxNode {
-
-    constructor(expression: Expression, start: Position, end: Position) {
-        this.start = start
-        this.end = end
-        this.expression = expression
-    }
-
-    function accept(mutable visitor: Visitor) {
-        if !visitor.openInitializer(this)
-            return
-        expression.accept(visitor)
-        visitor.closeInitializer(this)
-    }
-
-    let expression: Expression
-}
-
-class BindingInitializer extends SyntaxNode {
-
-    constructor(initializer: PatternInitializer, additionalInitializers: AdditionalInitializer[], start: Position, end: Position) {
-        this.start = start
-        this.end = end
-        this.initializer = initializer
-        this.additionalInitializers = additionalInitializers
-    }
-
-    function accept(mutable visitor: Visitor) {
-        if !visitor.openBindingInitializer(this)
-            return
-        initializer.accept(visitor)
-        if additionalInitializers != null {
-            for node: AdditionalInitializer in additionalInitializers
-                node.accept(visitor)
-        }
-        visitor.closeBindingInitializer(this)
-    }
-
-    let initializer: PatternInitializer
-    let additionalInitializers: AdditionalInitializer[]
-}
-
-class PatternInitializer extends SyntaxNode {
-
-    constructor(pattern: Pattern, initializer: Initializer, start: Position, end: Position) {
-        this.start = start
-        this.end = end
-        this.pattern = pattern
-        this.initializer = initializer
-    }
-
-    function accept(mutable visitor: Visitor) {
-        if !visitor.openPatternInitializer(this)
-            return
-        pattern.accept(visitor)
-        if initializer != null
-            initializer.accept(visitor)
-        visitor.closePatternInitializer(this)
-    }
-
-    let pattern: Pattern
-    let initializer: Initializer
-}
-
-class AdditionalInitializer extends SyntaxNode {
-
-    constructor(pattern: PatternInitializer, start: Position, end: Position) {
-        this.start = start
-        this.end = end
-        this.pattern = pattern
-    }
-
-    function accept(mutable visitor: Visitor) {
-        if !visitor.openAdditionalInitializer(this)
-            return
-        pattern.accept(visitor)
-        visitor.closeAdditionalInitializer(this)
-    }
-
-    let pattern: PatternInitializer
-}
-
-class Modifier extends SyntaxNode {
-
-    function accept(mutable visitor: Visitor) {
-    }
-
-}
-
-class OverrideWord extends Modifier {
-
-    constructor(start: Position, end: Position) {
-        this.start = start
-        this.end = end
-    }
-
-    override function accept(mutable visitor: Visitor) {
-        visitor.visitOverrideWord(this)
-    }
-
-}
-
-class StaticWord extends Modifier {
-
-    constructor(start: Position, end: Position) {
-        this.start = start
-        this.end = end
-    }
-
-    override function accept(mutable visitor: Visitor) {
-        visitor.visitStaticWord(this)
-    }
-
-}
-
-class FunctionSignature extends SyntaxNode {
-
-    constructor(parameterClause: ParameterClause, result: FunctionResult, throwsClause: ThrowsClause, start: Position, end: Position) {
-        this.start = start
-        this.end = end
-        this.parameterClause = parameterClause
-        this.result = result
-        this.throwsClause = throwsClause
-    }
-
-    function accept(mutable visitor: Visitor) {
-        if !visitor.openFunctionSignature(this)
-            return
-        parameterClause.accept(visitor)
-        if result != null
-            result.accept(visitor)
-        if throwsClause != null
-            throwsClause.accept(visitor)
-        visitor.closeFunctionSignature(this)
-    }
-
-    let parameterClause: ParameterClause
-    let result: FunctionResult
-    let throwsClause: ThrowsClause
-}
-
-class FunctionResult extends SyntaxNode {
-
-    constructor(resultType: Type, start: Position, end: Position) {
-        this.start = start
-        this.end = end
-        this.resultType = resultType
-    }
-
-    function accept(mutable visitor: Visitor) {
-        if !visitor.openFunctionResult(this)
-            return
-        resultType.accept(visitor)
-        visitor.closeFunctionResult(this)
-    }
-
-    let resultType: Type
-}
-
-class ParameterClause extends SyntaxNode {
-
-    constructor(parameters: Parameter[], start: Position, end: Position) {
-        this.start = start
-        this.end = end
-        this.parameters = parameters
-    }
-
-    function accept(mutable visitor: Visitor) {
-        if !visitor.openParameterClause(this)
-            return
-        if parameters != null {
-            for node: Parameter in parameters
-                node.accept(visitor)
-        }
-        visitor.closeParameterClause(this)
-    }
-
-    let parameters: Parameter[]
-}
-
-class Parameter extends SyntaxNode {
-
-    function accept(mutable visitor: Visitor) {
-    }
-
-}
-
-class ConstParameter extends Parameter {
-
-    constructor(name: string, parameterType: Type, start: Position, end: Position) {
-        this.start = start
-        this.end = end
-        this.name = name
-        this.parameterType = parameterType
-    }
-
-    override function accept(mutable visitor: Visitor) {
-        if !visitor.openConstParameter(this)
-            return
-        parameterType.accept(visitor)
-        visitor.closeConstParameter(this)
-    }
-
-    let name: string
-    let parameterType: Type
-}
-
-class VarParameter extends Parameter {
-
-    constructor(name: string, parameterType: Type, start: Position, end: Position) {
-        this.start = start
-        this.end = end
-        this.name = name
-        this.parameterType = parameterType
-    }
-
-    override function accept(mutable visitor: Visitor) {
-        if !visitor.openVarParameter(this)
-            return
-        parameterType.accept(visitor)
-        visitor.closeVarParameter(this)
-    }
-
-    let name: string
-    let parameterType: Type
-}
-
-class ThrowsClause extends SyntaxNode {
-
-    constructor(throwsType: Type, start: Position, end: Position) {
-        this.start = start
-        this.end = end
-        this.throwsType = throwsType
-    }
-
-    function accept(mutable visitor: Visitor) {
-        if !visitor.openThrowsClause(this)
-            return
-        throwsType.accept(visitor)
-        visitor.closeThrowsClause(this)
-    }
-
-    let throwsType: Type
-}
-
-class EnumMember extends SyntaxNode {
-
-    constructor(enumCase: EnumCase, additionalCases: AdditionalCase[], parameterClause: ParameterClause, start: Position, end: Position) {
-        this.start = start
-        this.end = end
-        this.enumCase = enumCase
-        this.additionalCases = additionalCases
-        this.parameterClause = parameterClause
-    }
-
-    function accept(mutable visitor: Visitor) {
-        if !visitor.openEnumMember(this)
-            return
-        enumCase.accept(visitor)
-        if additionalCases != null {
-            for node: AdditionalCase in additionalCases
-                node.accept(visitor)
-        }
-        if parameterClause != null
-            parameterClause.accept(visitor)
-        visitor.closeEnumMember(this)
-    }
-
-    let enumCase: EnumCase
-    let additionalCases: AdditionalCase[]
-    let parameterClause: ParameterClause
-}
-
-class EnumCase extends SyntaxNode {
-
-    constructor(name: string, start: Position, end: Position) {
-        this.start = start
-        this.end = end
-        this.name = name
-    }
-
-    function accept(mutable visitor: Visitor) {
-        visitor.visitEnumCase(this)
-    }
-
-    let name: string
-}
-
-class AdditionalCase extends SyntaxNode {
-
-    constructor(enumCase: EnumCase, start: Position, end: Position) {
-        this.start = start
-        this.end = end
-        this.enumCase = enumCase
-    }
-
-    function accept(mutable visitor: Visitor) {
-        if !visitor.openAdditionalCase(this)
-            return
-        enumCase.accept(visitor)
-        visitor.closeAdditionalCase(this)
-    }
-
-    let enumCase: EnumCase
-}
-
-class ClassBody extends SyntaxNode {
-
-    constructor(members: ClassMember[], start: Position, end: Position) {
-        this.start = start
-        this.end = end
-        this.members = members
-    }
-
-    function accept(mutable visitor: Visitor) {
-        if !visitor.openClassBody(this)
-            return
-        if members != null {
-            for node: ClassMember in members
-                node.accept(visitor)
-        }
-        visitor.closeClassBody(this)
-    }
-
-    let members: ClassMember[]
-}
-
-class ClassMember extends SyntaxNode {
-
-    constructor(declaration: Declaration, start: Position, end: Position) {
-        this.start = start
-        this.end = end
-        this.declaration = declaration
-    }
-
-    function accept(mutable visitor: Visitor) {
-        if !visitor.openClassMember(this)
-            return
-        declaration.accept(visitor)
-        visitor.closeClassMember(this)
-    }
-
-    let declaration: Declaration
-}
-
-class PrefixExpression extends SyntaxNode {
-
-    constructor(prefixOperator: string, expression: PostfixExpression, start: Position, end: Position) {
-        this.start = start
-        this.end = end
-        this.prefixOperator = prefixOperator
-        this.expression = expression
-    }
-
-    function accept(mutable visitor: Visitor) {
-        if !visitor.openPrefixExpression(this)
-            return
-        expression.accept(visitor)
-        visitor.closePrefixExpression(this)
-    }
-
-    let prefixOperator: string
-    let expression: PostfixExpression
-}
-
-class PostfixExpression extends SyntaxNode {
-
-    constructor(primaryExpression: PrimaryExpression, postfixes: Postfix[], start: Position, end: Position) {
-        this.start = start
-        this.end = end
-        this.primaryExpression = primaryExpression
-        this.postfixes = postfixes
-    }
-
-    function accept(mutable visitor: Visitor) {
-        if !visitor.openPostfixExpression(this)
-            return
-        primaryExpression.accept(visitor)
-        if postfixes != null {
-            for node: Postfix in postfixes
-                node.accept(visitor)
-        }
-        visitor.closePostfixExpression(this)
-    }
-
-    let primaryExpression: PrimaryExpression
-    let postfixes: Postfix[]
-}
-
-class BinaryOp extends SyntaxNode {
-
-    function accept(mutable visitor: Visitor) {
-    }
-
-}
-
-class BinaryOperation extends BinaryOp {
-
-    constructor(binaryOperator: string, expression: PrefixExpression, start: Position, end: Position) {
-        this.start = start
-        this.end = end
-        this.binaryOperator = binaryOperator
-        this.expression = expression
-    }
-
-    override function accept(mutable visitor: Visitor) {
-        if !visitor.openBinaryOperation(this)
-            return
-        expression.accept(visitor)
-        visitor.closeBinaryOperation(this)
-    }
-
-    let binaryOperator: string
-    let expression: PrefixExpression
-}
-
-class Assignment extends BinaryOp {
-
-    constructor(expression: Expression, start: Position, end: Position) {
-        this.start = start
-        this.end = end
-        this.expression = expression
-    }
-
-    override function accept(mutable visitor: Visitor) {
-        if !visitor.openAssignment(this)
-            return
-        expression.accept(visitor)
-        visitor.closeAssignment(this)
-    }
-
-    let expression: Expression
-}
-
-class TypeQuery extends BinaryOp {
-
-    constructor(objectType: Type, start: Position, end: Position) {
-        this.start = start
-        this.end = end
-        this.objectType = objectType
-    }
-
-    override function accept(mutable visitor: Visitor) {
-        if !visitor.openTypeQuery(this)
-            return
-        objectType.accept(visitor)
-        visitor.closeTypeQuery(this)
-    }
-
-    let objectType: Type
-}
-
-class TypeCast extends BinaryOp {
-
-    constructor(objectType: Type, start: Position, end: Position) {
-        this.start = start
-        this.end = end
-        this.objectType = objectType
-    }
-
-    override function accept(mutable visitor: Visitor) {
-        if !visitor.openTypeCast(this)
-            return
-        objectType.accept(visitor)
-        visitor.closeTypeCast(this)
-    }
-
-    let objectType: Type
-}
-
-class CatchClause extends SyntaxNode {
-
-    constructor(catchPattern: CatchPattern, bindingPattern: TuplePattern, expression: Expression, start: Position, end: Position) {
-        this.start = start
-        this.end = end
-        this.catchPattern = catchPattern
-        this.bindingPattern = bindingPattern
-        this.expression = expression
-    }
-
-    function accept(mutable visitor: Visitor) {
-        if !visitor.openCatchClause(this)
-            return
-        catchPattern.accept(visitor)
-        if bindingPattern != null
-            bindingPattern.accept(visitor)
-        expression.accept(visitor)
-        visitor.closeCatchClause(this)
-    }
-
-    let catchPattern: CatchPattern
-    let bindingPattern: TuplePattern
-    let expression: Expression
-}
-
-class CatchPattern extends SyntaxNode {
-
-    function accept(mutable visitor: Visitor) {
-    }
-
-}
-
-class WildCardCatchPattern extends CatchPattern {
-
-    constructor(pattern: WildcardPattern, start: Position, end: Position) {
-        this.start = start
-        this.end = end
-        this.pattern = pattern
-    }
-
-    override function accept(mutable visitor: Visitor) {
-        if !visitor.openWildCardCatchPattern(this)
-            return
-        pattern.accept(visitor)
-        visitor.closeWildCardCatchPattern(this)
-    }
-
-    let pattern: WildcardPattern
-}
-
-class IdentifierCatchPattern extends CatchPattern {
-
-    constructor(name: string, member: MemberExpression, start: Position, end: Position) {
-        this.start = start
-        this.end = end
-        this.name = name
-        this.member = member
-    }
-
-    override function accept(mutable visitor: Visitor) {
-        if !visitor.openIdentifierCatchPattern(this)
-            return
-        if member != null
-            member.accept(visitor)
-        visitor.closeIdentifierCatchPattern(this)
-    }
-
-    let name: string
-    let member: MemberExpression
-}
-
-class Postfix extends SyntaxNode {
-
-    function accept(mutable visitor: Visitor) {
-    }
-
-}
-
-class OperatorPostfix extends Postfix {
-
-    constructor(postfixOperator: string, start: Position, end: Position) {
-        this.start = start
-        this.end = end
-        this.postfixOperator = postfixOperator
-    }
-
-    override function accept(mutable visitor: Visitor) {
-        visitor.visitOperatorPostfix(this)
-    }
-
-    let postfixOperator: string
-}
-
-class FunctionCall extends Postfix {
-
-    constructor(arguments: ParenthesizedExpression, catchClauses: CatchClause[], start: Position, end: Position) {
-        this.start = start
-        this.end = end
-        this.arguments = arguments
-        this.catchClauses = catchClauses
-    }
-
-    override function accept(mutable visitor: Visitor) {
-        if !visitor.openFunctionCall(this)
-            return
-        arguments.accept(visitor)
-        if catchClauses != null {
-            for node: CatchClause in catchClauses
-                node.accept(visitor)
-        }
-        visitor.closeFunctionCall(this)
-    }
-
-    let arguments: ParenthesizedExpression
-    let catchClauses: CatchClause[]
-}
-
-class MemberExpression extends Postfix {
-
-    constructor(member: string, start: Position, end: Position) {
-        this.start = start
-        this.end = end
-        this.member = member
-    }
-
-    override function accept(mutable visitor: Visitor) {
-        visitor.visitMemberExpression(this)
-    }
-
-    let member: string
-}
-
-class Subscript extends Postfix {
-
-    constructor(expressions: ExpressionElement[], start: Position, end: Position) {
-        this.start = start
-        this.end = end
-        this.expressions = expressions
-    }
-
-    override function accept(mutable visitor: Visitor) {
-        if !visitor.openSubscript(this)
-            return
-        if expressions != null {
-            for node: ExpressionElement in expressions
-                node.accept(visitor)
-        }
-        visitor.closeSubscript(this)
-    }
-
-    let expressions: ExpressionElement[]
-}
-
-class ExpressionElement extends SyntaxNode {
-
-    constructor(expression: Expression, start: Position, end: Position) {
-        this.start = start
-        this.end = end
-        this.expression = expression
-    }
-
-    function accept(mutable visitor: Visitor) {
-        if !visitor.openExpressionElement(this)
-            return
-        expression.accept(visitor)
-        visitor.closeExpressionElement(this)
-    }
-
-    let expression: Expression
-}
-
-class PrimaryExpression extends SyntaxNode {
-
-    function accept(mutable visitor: Visitor) {
-    }
-
-}
-
-class IdentifierExpression extends PrimaryExpression {
-
-    constructor(name: string, start: Position, end: Position) {
-        this.start = start
-        this.end = end
-        this.name = name
-    }
-
-    override function accept(mutable visitor: Visitor) {
-        visitor.visitIdentifierExpression(this)
-    }
-
-    let name: string
-}
-
-class LiteralExpression extends PrimaryExpression {
-
-    constructor(literal: Literal, start: Position, end: Position) {
-        this.start = start
-        this.end = end
-        this.literal = literal
-    }
-
-    override function accept(mutable visitor: Visitor) {
-        visitor.visitLiteralExpression(this)
-    }
-
-    let literal: Literal
-}
-
-class IfExpression extends PrimaryExpression {
-
-    constructor(condition: Expression, consequent: Expression, elseClause: ElseClause, start: Position, end: Position) {
-        this.start = start
-        this.end = end
-        this.condition = condition
-        this.consequent = consequent
-        this.elseClause = elseClause
-    }
-
-    override function accept(mutable visitor: Visitor) {
-        if !visitor.openIfExpression(this)
-            return
-        condition.accept(visitor)
-        consequent.accept(visitor)
-        if elseClause != null
-            elseClause.accept(visitor)
-        visitor.closeIfExpression(this)
-    }
-
-    let condition: Expression
-    let consequent: Expression
-    let elseClause: ElseClause
-}
-
-class SwitchExpression extends PrimaryExpression {
-
-    constructor(expression: Expression, body: SwitchBody, start: Position, end: Position) {
-        this.start = start
-        this.end = end
-        this.expression = expression
-        this.body = body
-    }
-
-    override function accept(mutable visitor: Visitor) {
-        if !visitor.openSwitchExpression(this)
-            return
-        expression.accept(visitor)
-        body.accept(visitor)
-        visitor.closeSwitchExpression(this)
-    }
-
-    let expression: Expression
-    let body: SwitchBody
-}
-
-class ForExpression extends PrimaryExpression {
-
-    constructor(pattern: Pattern, expression: Expression, code: Expression, start: Position, end: Position) {
-        this.start = start
-        this.end = end
-        this.pattern = pattern
-        this.expression = expression
-        this.code = code
-    }
-
-    override function accept(mutable visitor: Visitor) {
-        if !visitor.openForExpression(this)
-            return
-        pattern.accept(visitor)
-        expression.accept(visitor)
-        code.accept(visitor)
-        visitor.closeForExpression(this)
-    }
-
-    let pattern: Pattern
-    let expression: Expression
-    let code: Expression
-}
-
-class WhileExpression extends PrimaryExpression {
-
-    constructor(condition: Expression, code: Expression, start: Position, end: Position) {
-        this.start = start
-        this.end = end
-        this.condition = condition
-        this.code = code
-    }
-
-    override function accept(mutable visitor: Visitor) {
-        if !visitor.openWhileExpression(this)
-            return
-        condition.accept(visitor)
-        code.accept(visitor)
-        visitor.closeWhileExpression(this)
-    }
-
-    let condition: Expression
-    let code: Expression
-}
-
-class DoExpression extends PrimaryExpression {
-
-    constructor(code: Expression, condition: Expression, start: Position, end: Position) {
-        this.start = start
-        this.end = end
-        this.code = code
-        this.condition = condition
-    }
-
-    override function accept(mutable visitor: Visitor) {
-        if !visitor.openDoExpression(this)
-            return
-        code.accept(visitor)
-        condition.accept(visitor)
-        visitor.closeDoExpression(this)
-    }
-
-    let code: Expression
-    let condition: Expression
-}
-
-class ParenthesizedExpression extends PrimaryExpression {
-
-    constructor(expressionElements: ExpressionElement[], start: Position, end: Position) {
-        this.start = start
-        this.end = end
-        this.expressionElements = expressionElements
-    }
-
-    override function accept(mutable visitor: Visitor) {
-        if !visitor.openParenthesizedExpression(this)
-            return
-        if expressionElements != null {
-            for node: ExpressionElement in expressionElements
-                node.accept(visitor)
-        }
-        visitor.closeParenthesizedExpression(this)
-    }
-
-    let expressionElements: ExpressionElement[]
-}
-
-class ReturnExpression extends PrimaryExpression {
-
-    constructor(expression: ParenthesizedExpression, start: Position, end: Position) {
-        this.start = start
-        this.end = end
-        this.expression = expression
-    }
-
-    override function accept(mutable visitor: Visitor) {
-        if !visitor.openReturnExpression(this)
-            return
-        if expression != null
-            expression.accept(visitor)
-        visitor.closeReturnExpression(this)
-    }
-
-    let expression: ParenthesizedExpression
-}
-
-class ThrowExpression extends PrimaryExpression {
-
-    constructor(error: IdentifierExpression, arguments: ParenthesizedExpression, start: Position, end: Position) {
-        this.start = start
-        this.end = end
-        this.error = error
-        this.arguments = arguments
-    }
-
-    override function accept(mutable visitor: Visitor) {
-        if !visitor.openThrowExpression(this)
-            return
-        error.accept(visitor)
-        if arguments != null
-            arguments.accept(visitor)
-        visitor.closeThrowExpression(this)
-    }
-
-    let error: IdentifierExpression
-    let arguments: ParenthesizedExpression
-}
-
-class BreakExpression extends PrimaryExpression {
-
-    constructor(expression: ParenthesizedExpression, start: Position, end: Position) {
-        this.start = start
-        this.end = end
-        this.expression = expression
-    }
-
-    override function accept(mutable visitor: Visitor) {
-        if !visitor.openBreakExpression(this)
-            return
-        if expression != null
-            expression.accept(visitor)
-        visitor.closeBreakExpression(this)
-    }
-
-    let expression: ParenthesizedExpression
-}
-
-class ConstructorCall extends PrimaryExpression {
-
-    constructor(typeToConstruct: Type, arguments: ParenthesizedExpression, catchClauses: CatchClause[], start: Position, end: Position) {
-        this.start = start
-        this.end = end
-        this.typeToConstruct = typeToConstruct
-        this.arguments = arguments
-        this.catchClauses = catchClauses
-    }
-
-    override function accept(mutable visitor: Visitor) {
-        if !visitor.openConstructorCall(this)
-            return
-        typeToConstruct.accept(visitor)
-        arguments.accept(visitor)
-        if catchClauses != null {
-            for node: CatchClause in catchClauses
-                node.accept(visitor)
-        }
-        visitor.closeConstructorCall(this)
-    }
-
-    let typeToConstruct: Type
-    let arguments: ParenthesizedExpression
-    let catchClauses: CatchClause[]
-}
-
-class ThisExpression extends PrimaryExpression {
-
-    constructor(start: Position, end: Position) {
-        this.start = start
-        this.end = end
-    }
-
-    override function accept(mutable visitor: Visitor) {
-        visitor.visitThisExpression(this)
-    }
-
-}
-
-class NullExpression extends PrimaryExpression {
-
-    constructor(start: Position, end: Position) {
-        this.start = start
-        this.end = end
-    }
-
-    override function accept(mutable visitor: Visitor) {
-        visitor.visitNullExpression(this)
-    }
-
-}
-
-class ElseClause extends SyntaxNode {
-
-    constructor(alternative: Expression, start: Position, end: Position) {
-        this.start = start
-        this.end = end
-        this.alternative = alternative
-    }
-
-    function accept(mutable visitor: Visitor) {
-        if !visitor.openElseClause(this)
-            return
-        alternative.accept(visitor)
-        visitor.closeElseClause(this)
-    }
-
-    let alternative: Expression
-}
-
-class SwitchBody extends SyntaxNode {
-
-    function accept(mutable visitor: Visitor) {
-    }
-
-}
-
-class CurliedSwitchBody extends SwitchBody {
-
-    constructor(cases: SwitchCase[], start: Position, end: Position) {
-        this.start = start
-        this.end = end
-        this.cases = cases
-    }
-
-    override function accept(mutable visitor: Visitor) {
-        if !visitor.openCurliedSwitchBody(this)
-            return
-        if cases != null {
-            for node: SwitchCase in cases
-                node.accept(visitor)
-        }
-        visitor.closeCurliedSwitchBody(this)
-    }
-
-    let cases: SwitchCase[]
-}
-
-class NakedSwitchBody extends SwitchBody {
-
-    constructor(cases: SwitchCase[], start: Position, end: Position) {
-        this.start = start
-        this.end = end
-        this.cases = cases
-    }
-
-    override function accept(mutable visitor: Visitor) {
-        if !visitor.openNakedSwitchBody(this)
-            return
-        if cases != null {
-            for node: SwitchCase in cases
-                node.accept(visitor)
-        }
-        visitor.closeNakedSwitchBody(this)
-    }
-
-    let cases: SwitchCase[]
-}
-
-class SwitchCase extends SyntaxNode {
-
-    constructor(label: CaseLabel, content: CaseContent, start: Position, end: Position) {
-        this.start = start
-        this.end = end
-        this.label = label
-        this.content = content
-    }
-
-    function accept(mutable visitor: Visitor) {
-        if !visitor.openSwitchCase(this)
-            return
-        label.accept(visitor)
-        content.accept(visitor)
-        visitor.closeSwitchCase(this)
-    }
-
-    let label: CaseLabel
-    let content: CaseContent
-}
-
-class CaseLabel extends SyntaxNode {
-
-    function accept(mutable visitor: Visitor) {
-    }
-
-}
-
-class ItemCaseLabel extends CaseLabel {
-
-    constructor(pattern: Pattern, additionalPatterns: CaseItem[], start: Position, end: Position) {
-        this.start = start
-        this.end = end
-        this.pattern = pattern
-        this.additionalPatterns = additionalPatterns
-    }
-
-    override function accept(mutable visitor: Visitor) {
-        if !visitor.openItemCaseLabel(this)
-            return
-        pattern.accept(visitor)
-        if additionalPatterns != null {
-            for node: CaseItem in additionalPatterns
-                node.accept(visitor)
-        }
-        visitor.closeItemCaseLabel(this)
-    }
-
-    let pattern: Pattern
-    let additionalPatterns: CaseItem[]
-}
-
-class DefaultCaseLabel extends CaseLabel {
-
-    constructor(start: Position, end: Position) {
-        this.start = start
-        this.end = end
-    }
-
-    override function accept(mutable visitor: Visitor) {
-        visitor.visitDefaultCaseLabel(this)
-    }
-
-}
-
-class CaseItem extends SyntaxNode {
-
-    constructor(pattern: Pattern, start: Position, end: Position) {
-        this.start = start
-        this.end = end
-        this.pattern = pattern
-    }
-
-    function accept(mutable visitor: Visitor) {
-        if !visitor.openCaseItem(this)
-            return
-        pattern.accept(visitor)
-        visitor.closeCaseItem(this)
-    }
-
-    let pattern: Pattern
-}
-
-class Pattern extends SyntaxNode {
-
-    function accept(mutable visitor: Visitor) {
-    }
-
-}
-
-class WildcardPattern extends Pattern {
-
-    constructor(start: Position, end: Position) {
-        this.start = start
-        this.end = end
-    }
-
-    override function accept(mutable visitor: Visitor) {
-        visitor.visitWildcardPattern(this)
-    }
-
-}
-
-class IdentifierPattern extends Pattern {
-
-    constructor(identifier: string, annotationForType: TypeAnnotation, start: Position, end: Position) {
-        this.start = start
-        this.end = end
-        this.identifier = identifier
-        this.annotationForType = annotationForType
-    }
-
-    override function accept(mutable visitor: Visitor) {
-        if !visitor.openIdentifierPattern(this)
-            return
-        if annotationForType != null
-            annotationForType.accept(visitor)
-        visitor.closeIdentifierPattern(this)
-    }
-
-    let identifier: string
-    let annotationForType: TypeAnnotation
-}
-
-class TuplePattern extends Pattern {
-
-    constructor(elements: TuplePatternElement[], start: Position, end: Position) {
-        this.start = start
-        this.end = end
-        this.elements = elements
-    }
-
-    override function accept(mutable visitor: Visitor) {
-        if !visitor.openTuplePattern(this)
-            return
-        if elements != null {
-            for node: TuplePatternElement in elements
-                node.accept(visitor)
-        }
-        visitor.closeTuplePattern(this)
-    }
-
-    let elements: TuplePatternElement[]
-}
-
-class ExpressionPattern extends Pattern {
-
-    constructor(expression: Expression, start: Position, end: Position) {
-        this.start = start
-        this.end = end
-        this.expression = expression
-    }
-
-    override function accept(mutable visitor: Visitor) {
-        if !visitor.openExpressionPattern(this)
-            return
-        expression.accept(visitor)
-        visitor.closeExpressionPattern(this)
-    }
-
-    let expression: Expression
-}
-
-class TuplePatternElement extends SyntaxNode {
-
-    constructor(pattern: Pattern, start: Position, end: Position) {
-        this.start = start
-        this.end = end
-        this.pattern = pattern
-    }
-
-    function accept(mutable visitor: Visitor) {
-        if !visitor.openTuplePatternElement(this)
-            return
-        pattern.accept(visitor)
-        visitor.closeTuplePatternElement(this)
-    }
-
-    let pattern: Pattern
-}
-
-class CaseContent extends SyntaxNode {
-
-    constructor(statements: Statement[], start: Position, end: Position) {
-        this.start = start
-        this.end = end
-        this.statements = statements
-    }
-
-    function accept(mutable visitor: Visitor) {
-        if !visitor.openCaseContent(this)
-            return
-        if statements != null {
-            for node: Statement in statements
-                node.accept(visitor)
-        }
-        visitor.closeCaseContent(this)
-    }
-
-    let statements: Statement[]
-}
-
-class Type extends SyntaxNode {
-
-    constructor(name: string, subType: Subtype, postfixes: TypePostfix[], lifeTime: LifeTime, start: Position, end: Position) {
-        this.start = start
-        this.end = end
-        this.name = name
-        this.subType = subType
-        this.postfixes = postfixes
-        this.lifeTime = lifeTime
-    }
-
-    function accept(mutable visitor: Visitor) {
-        if !visitor.openType(this)
-            return
-        if subType != null
-            subType.accept(visitor)
-        if postfixes != null {
-            for node: TypePostfix in postfixes
-                node.accept(visitor)
-        }
-        if lifeTime != null
-            lifeTime.accept(visitor)
-        visitor.closeType(this)
-    }
-
-    let name: string
-    let subType: Subtype
-    let postfixes: TypePostfix[]
-    let lifeTime: LifeTime
-}
-
-class TypeAnnotation extends SyntaxNode {
-
-    constructor(annotationForType: Type, start: Position, end: Position) {
-        this.start = start
-        this.end = end
-        this.annotationForType = annotationForType
-    }
-
-    function accept(mutable visitor: Visitor) {
-        if !visitor.openTypeAnnotation(this)
-            return
-        annotationForType.accept(visitor)
-        visitor.closeTypeAnnotation(this)
-    }
-
-    let annotationForType: Type
-}
-
-class Subtype extends SyntaxNode {
-
-    constructor(type: Type, start: Position, end: Position) {
-        this.start = start
-        this.end = end
-        this.type = type
-    }
-
-    function accept(mutable visitor: Visitor) {
-        if !visitor.openSubtype(this)
-            return
-        type.accept(visitor)
-        visitor.closeSubtype(this)
-    }
-
-    let type: Type
-}
-
-class TypePostfix extends SyntaxNode {
-
-    function accept(mutable visitor: Visitor) {
-    }
-
-}
-
-class IndexedType extends TypePostfix {
-
-    constructor(key: Type, start: Position, end: Position) {
-        this.start = start
-        this.end = end
-        this.key = key
-    }
-
-    override function accept(mutable visitor: Visitor) {
-        if !visitor.openIndexedType(this)
-            return
-        if key != null
-            key.accept(visitor)
-        visitor.closeIndexedType(this)
-    }
-
-    let key: Type
-}
-
-class Pointer extends TypePostfix {
-
-    constructor(start: Position, end: Position) {
-        this.start = start
-        this.end = end
-    }
-
-    override function accept(mutable visitor: Visitor) {
-        visitor.visitPointer(this)
-    }
-
-}
-
-class LifeTime extends SyntaxNode {
-
-    function accept(mutable visitor: Visitor) {
-    }
-
-}
-
-class Root extends LifeTime {
-
-    constructor(start: Position, end: Position) {
-        this.start = start
-        this.end = end
-    }
-
-    override function accept(mutable visitor: Visitor) {
-        visitor.visitRoot(this)
-    }
-
-}
-
-class Local extends LifeTime {
-
-    constructor(location: string, start: Position, end: Position) {
-        this.start = start
-        this.end = end
-        this.location = location
-    }
-
-    override function accept(mutable visitor: Visitor) {
-        visitor.visitLocal(this)
-    }
-
-    let location: string
-}
-
-class Reference extends LifeTime {
-
-    constructor(age: Literal, start: Position, end: Position) {
-        this.start = start
-        this.end = end
-        this.age = age
-    }
-
-    override function accept(mutable visitor: Visitor) {
-        visitor.visitReference(this)
-    }
-
-    let age: Literal
-}
-
-class Thrown extends LifeTime {
-
-    constructor(start: Position, end: Position) {
-        this.start = start
-        this.end = end
-    }
-
-    override function accept(mutable visitor: Visitor) {
-        visitor.visitThrown(this)
-    }
-
-}
-
-class TypeInheritanceClause extends SyntaxNode {
-
-    constructor(inheritances: Inheritance[], start: Position, end: Position) {
-        this.start = start
-        this.end = end
-        this.inheritances = inheritances
-    }
-
-    function accept(mutable visitor: Visitor) {
-        if !visitor.openTypeInheritanceClause(this)
-            return
-        if inheritances != null {
-            for node: Inheritance in inheritances
-                node.accept(visitor)
-        }
-        visitor.closeTypeInheritanceClause(this)
-    }
-
-    let inheritances: Inheritance[]
-}
-
-class Inheritance extends SyntaxNode {
-
-    constructor(type: Type, start: Position, end: Position) {
-        this.start = start
-        this.end = end
-        this.type = type
-    }
-
-    function accept(mutable visitor: Visitor) {
-        if !visitor.openInheritance(this)
-            return
-        type.accept(visitor)
-        visitor.closeInheritance(this)
-    }
-
-    let type: Type
-}
-
 class Parser {
     constructor(theFileName: string, text: string) {
         lexer = new Lexer(text)
@@ -4933,4 +2763,2173 @@ class Parser {
     let at: string
     let hash: string
     let ampersand: string
+}
+class Visitor {
+    function openProgram(program: Program): bool {
+        true
+    }
+
+    function closeProgram(program: Program) {
+    }
+
+    function openCompilationUnit(compilationUnit: CompilationUnit): bool {
+        true
+    }
+
+    function closeCompilationUnit(compilationUnit: CompilationUnit) {
+    }
+
+    function openConstantDeclaration(constantDeclaration: ConstantDeclaration): bool {
+        true
+    }
+
+    function closeConstantDeclaration(constantDeclaration: ConstantDeclaration) {
+    }
+
+    function openVariableDeclaration(variableDeclaration: VariableDeclaration): bool {
+        true
+    }
+
+    function closeVariableDeclaration(variableDeclaration: VariableDeclaration) {
+    }
+
+    function openMutableDeclaration(mutableDeclaration: MutableDeclaration): bool {
+        true
+    }
+
+    function closeMutableDeclaration(mutableDeclaration: MutableDeclaration) {
+    }
+
+    function openFunctionDeclaration(functionDeclaration: FunctionDeclaration): bool {
+        true
+    }
+
+    function closeFunctionDeclaration(functionDeclaration: FunctionDeclaration) {
+    }
+
+    function openEnumDeclaration(enumDeclaration: EnumDeclaration): bool {
+        true
+    }
+
+    function closeEnumDeclaration(enumDeclaration: EnumDeclaration) {
+    }
+
+    function openClassDeclaration(classDeclaration: ClassDeclaration): bool {
+        true
+    }
+
+    function closeClassDeclaration(classDeclaration: ClassDeclaration) {
+    }
+
+    function openConstructorDeclaration(constructorDeclaration: ConstructorDeclaration): bool {
+        true
+    }
+
+    function closeConstructorDeclaration(constructorDeclaration: ConstructorDeclaration) {
+    }
+
+    function openCodeBlock(codeBlock: CodeBlock): bool {
+        true
+    }
+
+    function closeCodeBlock(codeBlock: CodeBlock) {
+    }
+
+    function openSimpleExpression(simpleExpression: SimpleExpression): bool {
+        true
+    }
+
+    function closeSimpleExpression(simpleExpression: SimpleExpression) {
+    }
+
+    function openInitializer(initializer: Initializer): bool {
+        true
+    }
+
+    function closeInitializer(initializer: Initializer) {
+    }
+
+    function openBindingInitializer(bindingInitializer: BindingInitializer): bool {
+        true
+    }
+
+    function closeBindingInitializer(bindingInitializer: BindingInitializer) {
+    }
+
+    function openPatternInitializer(patternInitializer: PatternInitializer): bool {
+        true
+    }
+
+    function closePatternInitializer(patternInitializer: PatternInitializer) {
+    }
+
+    function openAdditionalInitializer(additionalInitializer: AdditionalInitializer): bool {
+        true
+    }
+
+    function closeAdditionalInitializer(additionalInitializer: AdditionalInitializer) {
+    }
+
+    function visitOverrideWord(overrideWord: OverrideWord) {
+    }
+
+    function visitStaticWord(staticWord: StaticWord) {
+    }
+
+    function openFunctionSignature(functionSignature: FunctionSignature): bool {
+        true
+    }
+
+    function closeFunctionSignature(functionSignature: FunctionSignature) {
+    }
+
+    function openFunctionResult(functionResult: FunctionResult): bool {
+        true
+    }
+
+    function closeFunctionResult(functionResult: FunctionResult) {
+    }
+
+    function openParameterClause(parameterClause: ParameterClause): bool {
+        true
+    }
+
+    function closeParameterClause(parameterClause: ParameterClause) {
+    }
+
+    function openConstParameter(constParameter: ConstParameter): bool {
+        true
+    }
+
+    function closeConstParameter(constParameter: ConstParameter) {
+    }
+
+    function openVarParameter(varParameter: VarParameter): bool {
+        true
+    }
+
+    function closeVarParameter(varParameter: VarParameter) {
+    }
+
+    function openThrowsClause(throwsClause: ThrowsClause): bool {
+        true
+    }
+
+    function closeThrowsClause(throwsClause: ThrowsClause) {
+    }
+
+    function openEnumMember(enumMember: EnumMember): bool {
+        true
+    }
+
+    function closeEnumMember(enumMember: EnumMember) {
+    }
+
+    function visitEnumCase(enumCase: EnumCase) {
+    }
+
+    function openAdditionalCase(additionalCase: AdditionalCase): bool {
+        true
+    }
+
+    function closeAdditionalCase(additionalCase: AdditionalCase) {
+    }
+
+    function openClassBody(classBody: ClassBody): bool {
+        true
+    }
+
+    function closeClassBody(classBody: ClassBody) {
+    }
+
+    function openClassMember(classMember: ClassMember): bool {
+        true
+    }
+
+    function closeClassMember(classMember: ClassMember) {
+    }
+
+    function openPrefixExpression(prefixExpression: PrefixExpression): bool {
+        true
+    }
+
+    function closePrefixExpression(prefixExpression: PrefixExpression) {
+    }
+
+    function openPostfixExpression(postfixExpression: PostfixExpression): bool {
+        true
+    }
+
+    function closePostfixExpression(postfixExpression: PostfixExpression) {
+    }
+
+    function openBinaryOperation(binaryOperation: BinaryOperation): bool {
+        true
+    }
+
+    function closeBinaryOperation(binaryOperation: BinaryOperation) {
+    }
+
+    function openAssignment(assignment: Assignment): bool {
+        true
+    }
+
+    function closeAssignment(assignment: Assignment) {
+    }
+
+    function openTypeQuery(typeQuery: TypeQuery): bool {
+        true
+    }
+
+    function closeTypeQuery(typeQuery: TypeQuery) {
+    }
+
+    function openTypeCast(typeCast: TypeCast): bool {
+        true
+    }
+
+    function closeTypeCast(typeCast: TypeCast) {
+    }
+
+    function openCatchClause(catchClause: CatchClause): bool {
+        true
+    }
+
+    function closeCatchClause(catchClause: CatchClause) {
+    }
+
+    function openWildCardCatchPattern(wildCardCatchPattern: WildCardCatchPattern): bool {
+        true
+    }
+
+    function closeWildCardCatchPattern(wildCardCatchPattern: WildCardCatchPattern) {
+    }
+
+    function openIdentifierCatchPattern(identifierCatchPattern: IdentifierCatchPattern): bool {
+        true
+    }
+
+    function closeIdentifierCatchPattern(identifierCatchPattern: IdentifierCatchPattern) {
+    }
+
+    function visitOperatorPostfix(operatorPostfix: OperatorPostfix) {
+    }
+
+    function openFunctionCall(functionCall: FunctionCall): bool {
+        true
+    }
+
+    function closeFunctionCall(functionCall: FunctionCall) {
+    }
+
+    function visitMemberExpression(memberExpression: MemberExpression) {
+    }
+
+    function openSubscript(subscript: Subscript): bool {
+        true
+    }
+
+    function closeSubscript(subscript: Subscript) {
+    }
+
+    function openExpressionElement(expressionElement: ExpressionElement): bool {
+        true
+    }
+
+    function closeExpressionElement(expressionElement: ExpressionElement) {
+    }
+
+    function visitIdentifierExpression(identifierExpression: IdentifierExpression) {
+    }
+
+    function visitLiteralExpression(literalExpression: LiteralExpression) {
+    }
+
+    function openIfExpression(ifExpression: IfExpression): bool {
+        true
+    }
+
+    function closeIfExpression(ifExpression: IfExpression) {
+    }
+
+    function openSwitchExpression(switchExpression: SwitchExpression): bool {
+        true
+    }
+
+    function closeSwitchExpression(switchExpression: SwitchExpression) {
+    }
+
+    function openForExpression(forExpression: ForExpression): bool {
+        true
+    }
+
+    function closeForExpression(forExpression: ForExpression) {
+    }
+
+    function openWhileExpression(whileExpression: WhileExpression): bool {
+        true
+    }
+
+    function closeWhileExpression(whileExpression: WhileExpression) {
+    }
+
+    function openDoExpression(doExpression: DoExpression): bool {
+        true
+    }
+
+    function closeDoExpression(doExpression: DoExpression) {
+    }
+
+    function openParenthesizedExpression(parenthesizedExpression: ParenthesizedExpression): bool {
+        true
+    }
+
+    function closeParenthesizedExpression(parenthesizedExpression: ParenthesizedExpression) {
+    }
+
+    function openReturnExpression(returnExpression: ReturnExpression): bool {
+        true
+    }
+
+    function closeReturnExpression(returnExpression: ReturnExpression) {
+    }
+
+    function openThrowExpression(throwExpression: ThrowExpression): bool {
+        true
+    }
+
+    function closeThrowExpression(throwExpression: ThrowExpression) {
+    }
+
+    function openBreakExpression(breakExpression: BreakExpression): bool {
+        true
+    }
+
+    function closeBreakExpression(breakExpression: BreakExpression) {
+    }
+
+    function openConstructorCall(constructorCall: ConstructorCall): bool {
+        true
+    }
+
+    function closeConstructorCall(constructorCall: ConstructorCall) {
+    }
+
+    function visitThisExpression(thisExpression: ThisExpression) {
+    }
+
+    function visitNullExpression(nullExpression: NullExpression) {
+    }
+
+    function openElseClause(elseClause: ElseClause): bool {
+        true
+    }
+
+    function closeElseClause(elseClause: ElseClause) {
+    }
+
+    function openCurliedSwitchBody(curliedSwitchBody: CurliedSwitchBody): bool {
+        true
+    }
+
+    function closeCurliedSwitchBody(curliedSwitchBody: CurliedSwitchBody) {
+    }
+
+    function openNakedSwitchBody(nakedSwitchBody: NakedSwitchBody): bool {
+        true
+    }
+
+    function closeNakedSwitchBody(nakedSwitchBody: NakedSwitchBody) {
+    }
+
+    function openSwitchCase(switchCase: SwitchCase): bool {
+        true
+    }
+
+    function closeSwitchCase(switchCase: SwitchCase) {
+    }
+
+    function openItemCaseLabel(itemCaseLabel: ItemCaseLabel): bool {
+        true
+    }
+
+    function closeItemCaseLabel(itemCaseLabel: ItemCaseLabel) {
+    }
+
+    function visitDefaultCaseLabel(defaultCaseLabel: DefaultCaseLabel) {
+    }
+
+    function openCaseItem(caseItem: CaseItem): bool {
+        true
+    }
+
+    function closeCaseItem(caseItem: CaseItem) {
+    }
+
+    function visitWildcardPattern(wildcardPattern: WildcardPattern) {
+    }
+
+    function openIdentifierPattern(identifierPattern: IdentifierPattern): bool {
+        true
+    }
+
+    function closeIdentifierPattern(identifierPattern: IdentifierPattern) {
+    }
+
+    function openTuplePattern(tuplePattern: TuplePattern): bool {
+        true
+    }
+
+    function closeTuplePattern(tuplePattern: TuplePattern) {
+    }
+
+    function openExpressionPattern(expressionPattern: ExpressionPattern): bool {
+        true
+    }
+
+    function closeExpressionPattern(expressionPattern: ExpressionPattern) {
+    }
+
+    function openTuplePatternElement(tuplePatternElement: TuplePatternElement): bool {
+        true
+    }
+
+    function closeTuplePatternElement(tuplePatternElement: TuplePatternElement) {
+    }
+
+    function openCaseContent(caseContent: CaseContent): bool {
+        true
+    }
+
+    function closeCaseContent(caseContent: CaseContent) {
+    }
+
+    function openType(type: Type): bool {
+        true
+    }
+
+    function closeType(type: Type) {
+    }
+
+    function openTypeAnnotation(typeAnnotation: TypeAnnotation): bool {
+        true
+    }
+
+    function closeTypeAnnotation(typeAnnotation: TypeAnnotation) {
+    }
+
+    function openSubtype(subtype: Subtype): bool {
+        true
+    }
+
+    function closeSubtype(subtype: Subtype) {
+    }
+
+    function openIndexedType(indexedType: IndexedType): bool {
+        true
+    }
+
+    function closeIndexedType(indexedType: IndexedType) {
+    }
+
+    function visitPointer(pointer: Pointer) {
+    }
+
+    function visitRoot(root: Root) {
+    }
+
+    function visitLocal(local: Local) {
+    }
+
+    function visitReference(reference: Reference) {
+    }
+
+    function visitThrown(thrown: Thrown) {
+    }
+
+    function openTypeInheritanceClause(typeInheritanceClause: TypeInheritanceClause): bool {
+        true
+    }
+
+    function closeTypeInheritanceClause(typeInheritanceClause: TypeInheritanceClause) {
+    }
+
+    function openInheritance(inheritance: Inheritance): bool {
+        true
+    }
+
+    function closeInheritance(inheritance: Inheritance) {
+    }
+}
+
+class SyntaxNode {
+    let start: Position
+    let end: Position
+    var parent: SyntaxNode
+}
+
+class Program extends SyntaxNode {
+
+    constructor(name: string, compilationUnits: CompilationUnit[]) {
+        start = new Position(0, 0)
+        end = new Position(0, 0)
+        this.name = name
+        this.compilationUnits = compilationUnits
+        this.parent = null
+    }
+
+    function accept(mutable visitor: Visitor) {
+        if !visitor.openProgram(this)
+            return
+        if compilationUnits != null {
+            for node: CompilationUnit in compilationUnits
+                node.accept(visitor)
+        }
+        visitor.closeProgram(this)
+    }
+
+    let name: string
+    let compilationUnits: CompilationUnit[]
+}
+
+class CompilationUnit extends SyntaxNode {
+
+    constructor(statements: Statement[], start: Position, end: Position) {
+        this.start = start
+        this.end = end
+        this.statements = statements
+    }
+
+    function accept(mutable visitor: Visitor) {
+        if !visitor.openCompilationUnit(this)
+            return
+        if statements != null {
+            for node: Statement in statements
+                node.accept(visitor)
+        }
+        visitor.closeCompilationUnit(this)
+    }
+
+    let statements: Statement[]
+    let fileName: string
+}
+
+class Statement extends SyntaxNode {
+
+    function accept(mutable visitor: Visitor) {
+    }
+
+}
+
+class Declaration extends Statement {
+
+    override function accept(mutable visitor: Visitor) {
+    }
+
+}
+
+class Expression extends Statement {
+
+    override function accept(mutable visitor: Visitor) {
+    }
+
+}
+
+class ConstantDeclaration extends Declaration {
+
+    constructor(initializer: BindingInitializer, start: Position, end: Position) {
+        this.start = start
+        this.end = end
+        this.initializer = initializer
+    }
+
+    override function accept(mutable visitor: Visitor) {
+        if !visitor.openConstantDeclaration(this)
+            return
+        initializer.accept(visitor)
+        visitor.closeConstantDeclaration(this)
+    }
+
+    let initializer: BindingInitializer
+}
+
+class VariableDeclaration extends Declaration {
+
+    constructor(initializer: BindingInitializer, start: Position, end: Position) {
+        this.start = start
+        this.end = end
+        this.initializer = initializer
+    }
+
+    override function accept(mutable visitor: Visitor) {
+        if !visitor.openVariableDeclaration(this)
+            return
+        initializer.accept(visitor)
+        visitor.closeVariableDeclaration(this)
+    }
+
+    let initializer: BindingInitializer
+}
+
+class MutableDeclaration extends Declaration {
+
+    constructor(initializer: BindingInitializer, start: Position, end: Position) {
+        this.start = start
+        this.end = end
+        this.initializer = initializer
+    }
+
+    override function accept(mutable visitor: Visitor) {
+        if !visitor.openMutableDeclaration(this)
+            return
+        initializer.accept(visitor)
+        visitor.closeMutableDeclaration(this)
+    }
+
+    let initializer: BindingInitializer
+}
+
+class FunctionDeclaration extends Declaration {
+
+    constructor(modifiers: Modifier[], name: string, signature: FunctionSignature, body: Expression, start: Position, end: Position) {
+        this.start = start
+        this.end = end
+        this.modifiers = modifiers
+        this.name = name
+        this.signature = signature
+        this.body = body
+    }
+
+    override function accept(mutable visitor: Visitor) {
+        if !visitor.openFunctionDeclaration(this)
+            return
+        if modifiers != null {
+            for node: Modifier in modifiers
+                node.accept(visitor)
+        }
+        signature.accept(visitor)
+        if body != null
+            body.accept(visitor)
+        visitor.closeFunctionDeclaration(this)
+    }
+
+    let modifiers: Modifier[]
+    let name: string
+    let signature: FunctionSignature
+    let body: Expression
+}
+
+class EnumDeclaration extends Declaration {
+
+    constructor(name: string, members: EnumMember[], start: Position, end: Position) {
+        this.start = start
+        this.end = end
+        this.name = name
+        this.members = members
+    }
+
+    override function accept(mutable visitor: Visitor) {
+        if !visitor.openEnumDeclaration(this)
+            return
+        if members != null {
+            for node: EnumMember in members
+                node.accept(visitor)
+        }
+        visitor.closeEnumDeclaration(this)
+    }
+
+    let name: string
+    let members: EnumMember[]
+}
+
+class ClassDeclaration extends Declaration {
+
+    constructor(name: string, typeInheritanceClause: TypeInheritanceClause, body: ClassBody, start: Position, end: Position) {
+        this.start = start
+        this.end = end
+        this.name = name
+        this.typeInheritanceClause = typeInheritanceClause
+        this.body = body
+    }
+
+    override function accept(mutable visitor: Visitor) {
+        if !visitor.openClassDeclaration(this)
+            return
+        if typeInheritanceClause != null
+            typeInheritanceClause.accept(visitor)
+        if body != null
+            body.accept(visitor)
+        visitor.closeClassDeclaration(this)
+    }
+
+    let name: string
+    let typeInheritanceClause: TypeInheritanceClause
+    let body: ClassBody
+}
+
+class ConstructorDeclaration extends Declaration {
+
+    constructor(parameterClause: ParameterClause, body: Expression, start: Position, end: Position) {
+        this.start = start
+        this.end = end
+        this.parameterClause = parameterClause
+        this.body = body
+    }
+
+    override function accept(mutable visitor: Visitor) {
+        if !visitor.openConstructorDeclaration(this)
+            return
+        parameterClause.accept(visitor)
+        body.accept(visitor)
+        visitor.closeConstructorDeclaration(this)
+    }
+
+    let parameterClause: ParameterClause
+    let body: Expression
+}
+
+class CodeBlock extends Expression {
+
+    constructor(statements: Statement[], start: Position, end: Position) {
+        this.start = start
+        this.end = end
+        this.statements = statements
+    }
+
+    override function accept(mutable visitor: Visitor) {
+        if !visitor.openCodeBlock(this)
+            return
+        if statements != null {
+            for node: Statement in statements
+                node.accept(visitor)
+        }
+        visitor.closeCodeBlock(this)
+    }
+
+    let statements: Statement[]
+}
+
+class SimpleExpression extends Expression {
+
+    constructor(prefixExpression: PrefixExpression, binaryOps: BinaryOp[], start: Position, end: Position) {
+        this.start = start
+        this.end = end
+        this.prefixExpression = prefixExpression
+        this.binaryOps = binaryOps
+    }
+
+    override function accept(mutable visitor: Visitor) {
+        if !visitor.openSimpleExpression(this)
+            return
+        prefixExpression.accept(visitor)
+        if binaryOps != null {
+            for node: BinaryOp in binaryOps
+                node.accept(visitor)
+        }
+        visitor.closeSimpleExpression(this)
+    }
+
+    let prefixExpression: PrefixExpression
+    let binaryOps: BinaryOp[]
+}
+
+class Initializer extends SyntaxNode {
+
+    constructor(expression: Expression, start: Position, end: Position) {
+        this.start = start
+        this.end = end
+        this.expression = expression
+    }
+
+    function accept(mutable visitor: Visitor) {
+        if !visitor.openInitializer(this)
+            return
+        expression.accept(visitor)
+        visitor.closeInitializer(this)
+    }
+
+    let expression: Expression
+}
+
+class BindingInitializer extends SyntaxNode {
+
+    constructor(initializer: PatternInitializer, additionalInitializers: AdditionalInitializer[], start: Position, end: Position) {
+        this.start = start
+        this.end = end
+        this.initializer = initializer
+        this.additionalInitializers = additionalInitializers
+    }
+
+    function accept(mutable visitor: Visitor) {
+        if !visitor.openBindingInitializer(this)
+            return
+        initializer.accept(visitor)
+        if additionalInitializers != null {
+            for node: AdditionalInitializer in additionalInitializers
+                node.accept(visitor)
+        }
+        visitor.closeBindingInitializer(this)
+    }
+
+    let initializer: PatternInitializer
+    let additionalInitializers: AdditionalInitializer[]
+}
+
+class PatternInitializer extends SyntaxNode {
+
+    constructor(pattern: Pattern, initializer: Initializer, start: Position, end: Position) {
+        this.start = start
+        this.end = end
+        this.pattern = pattern
+        this.initializer = initializer
+    }
+
+    function accept(mutable visitor: Visitor) {
+        if !visitor.openPatternInitializer(this)
+            return
+        pattern.accept(visitor)
+        if initializer != null
+            initializer.accept(visitor)
+        visitor.closePatternInitializer(this)
+    }
+
+    let pattern: Pattern
+    let initializer: Initializer
+}
+
+class AdditionalInitializer extends SyntaxNode {
+
+    constructor(pattern: PatternInitializer, start: Position, end: Position) {
+        this.start = start
+        this.end = end
+        this.pattern = pattern
+    }
+
+    function accept(mutable visitor: Visitor) {
+        if !visitor.openAdditionalInitializer(this)
+            return
+        pattern.accept(visitor)
+        visitor.closeAdditionalInitializer(this)
+    }
+
+    let pattern: PatternInitializer
+}
+
+class Modifier extends SyntaxNode {
+
+    function accept(mutable visitor: Visitor) {
+    }
+
+}
+
+class OverrideWord extends Modifier {
+
+    constructor(start: Position, end: Position) {
+        this.start = start
+        this.end = end
+    }
+
+    override function accept(mutable visitor: Visitor) {
+        visitor.visitOverrideWord(this)
+    }
+
+}
+
+class StaticWord extends Modifier {
+
+    constructor(start: Position, end: Position) {
+        this.start = start
+        this.end = end
+    }
+
+    override function accept(mutable visitor: Visitor) {
+        visitor.visitStaticWord(this)
+    }
+
+}
+
+class FunctionSignature extends SyntaxNode {
+
+    constructor(parameterClause: ParameterClause, result: FunctionResult, throwsClause: ThrowsClause, start: Position, end: Position) {
+        this.start = start
+        this.end = end
+        this.parameterClause = parameterClause
+        this.result = result
+        this.throwsClause = throwsClause
+    }
+
+    function accept(mutable visitor: Visitor) {
+        if !visitor.openFunctionSignature(this)
+            return
+        parameterClause.accept(visitor)
+        if result != null
+            result.accept(visitor)
+        if throwsClause != null
+            throwsClause.accept(visitor)
+        visitor.closeFunctionSignature(this)
+    }
+
+    let parameterClause: ParameterClause
+    let result: FunctionResult
+    let throwsClause: ThrowsClause
+}
+
+class FunctionResult extends SyntaxNode {
+
+    constructor(resultType: Type, start: Position, end: Position) {
+        this.start = start
+        this.end = end
+        this.resultType = resultType
+    }
+
+    function accept(mutable visitor: Visitor) {
+        if !visitor.openFunctionResult(this)
+            return
+        resultType.accept(visitor)
+        visitor.closeFunctionResult(this)
+    }
+
+    let resultType: Type
+}
+
+class ParameterClause extends SyntaxNode {
+
+    constructor(parameters: Parameter[], start: Position, end: Position) {
+        this.start = start
+        this.end = end
+        this.parameters = parameters
+    }
+
+    function accept(mutable visitor: Visitor) {
+        if !visitor.openParameterClause(this)
+            return
+        if parameters != null {
+            for node: Parameter in parameters
+                node.accept(visitor)
+        }
+        visitor.closeParameterClause(this)
+    }
+
+    let parameters: Parameter[]
+}
+
+class Parameter extends SyntaxNode {
+
+    function accept(mutable visitor: Visitor) {
+    }
+
+}
+
+class ConstParameter extends Parameter {
+
+    constructor(name: string, parameterType: Type, start: Position, end: Position) {
+        this.start = start
+        this.end = end
+        this.name = name
+        this.parameterType = parameterType
+    }
+
+    override function accept(mutable visitor: Visitor) {
+        if !visitor.openConstParameter(this)
+            return
+        parameterType.accept(visitor)
+        visitor.closeConstParameter(this)
+    }
+
+    let name: string
+    let parameterType: Type
+}
+
+class VarParameter extends Parameter {
+
+    constructor(name: string, parameterType: Type, start: Position, end: Position) {
+        this.start = start
+        this.end = end
+        this.name = name
+        this.parameterType = parameterType
+    }
+
+    override function accept(mutable visitor: Visitor) {
+        if !visitor.openVarParameter(this)
+            return
+        parameterType.accept(visitor)
+        visitor.closeVarParameter(this)
+    }
+
+    let name: string
+    let parameterType: Type
+}
+
+class ThrowsClause extends SyntaxNode {
+
+    constructor(throwsType: Type, start: Position, end: Position) {
+        this.start = start
+        this.end = end
+        this.throwsType = throwsType
+    }
+
+    function accept(mutable visitor: Visitor) {
+        if !visitor.openThrowsClause(this)
+            return
+        throwsType.accept(visitor)
+        visitor.closeThrowsClause(this)
+    }
+
+    let throwsType: Type
+}
+
+class EnumMember extends SyntaxNode {
+
+    constructor(enumCase: EnumCase, additionalCases: AdditionalCase[], parameterClause: ParameterClause, start: Position, end: Position) {
+        this.start = start
+        this.end = end
+        this.enumCase = enumCase
+        this.additionalCases = additionalCases
+        this.parameterClause = parameterClause
+    }
+
+    function accept(mutable visitor: Visitor) {
+        if !visitor.openEnumMember(this)
+            return
+        enumCase.accept(visitor)
+        if additionalCases != null {
+            for node: AdditionalCase in additionalCases
+                node.accept(visitor)
+        }
+        if parameterClause != null
+            parameterClause.accept(visitor)
+        visitor.closeEnumMember(this)
+    }
+
+    let enumCase: EnumCase
+    let additionalCases: AdditionalCase[]
+    let parameterClause: ParameterClause
+}
+
+class EnumCase extends SyntaxNode {
+
+    constructor(name: string, start: Position, end: Position) {
+        this.start = start
+        this.end = end
+        this.name = name
+    }
+
+    function accept(mutable visitor: Visitor) {
+        visitor.visitEnumCase(this)
+    }
+
+    let name: string
+}
+
+class AdditionalCase extends SyntaxNode {
+
+    constructor(enumCase: EnumCase, start: Position, end: Position) {
+        this.start = start
+        this.end = end
+        this.enumCase = enumCase
+    }
+
+    function accept(mutable visitor: Visitor) {
+        if !visitor.openAdditionalCase(this)
+            return
+        enumCase.accept(visitor)
+        visitor.closeAdditionalCase(this)
+    }
+
+    let enumCase: EnumCase
+}
+
+class ClassBody extends SyntaxNode {
+
+    constructor(members: ClassMember[], start: Position, end: Position) {
+        this.start = start
+        this.end = end
+        this.members = members
+    }
+
+    function accept(mutable visitor: Visitor) {
+        if !visitor.openClassBody(this)
+            return
+        if members != null {
+            for node: ClassMember in members
+                node.accept(visitor)
+        }
+        visitor.closeClassBody(this)
+    }
+
+    let members: ClassMember[]
+}
+
+class ClassMember extends SyntaxNode {
+
+    constructor(declaration: Declaration, start: Position, end: Position) {
+        this.start = start
+        this.end = end
+        this.declaration = declaration
+    }
+
+    function accept(mutable visitor: Visitor) {
+        if !visitor.openClassMember(this)
+            return
+        declaration.accept(visitor)
+        visitor.closeClassMember(this)
+    }
+
+    let declaration: Declaration
+}
+
+class PrefixExpression extends SyntaxNode {
+
+    constructor(prefixOperator: string, expression: PostfixExpression, start: Position, end: Position) {
+        this.start = start
+        this.end = end
+        this.prefixOperator = prefixOperator
+        this.expression = expression
+    }
+
+    function accept(mutable visitor: Visitor) {
+        if !visitor.openPrefixExpression(this)
+            return
+        expression.accept(visitor)
+        visitor.closePrefixExpression(this)
+    }
+
+    let prefixOperator: string
+    let expression: PostfixExpression
+}
+
+class PostfixExpression extends SyntaxNode {
+
+    constructor(primaryExpression: PrimaryExpression, postfixes: Postfix[], start: Position, end: Position) {
+        this.start = start
+        this.end = end
+        this.primaryExpression = primaryExpression
+        this.postfixes = postfixes
+    }
+
+    function accept(mutable visitor: Visitor) {
+        if !visitor.openPostfixExpression(this)
+            return
+        primaryExpression.accept(visitor)
+        if postfixes != null {
+            for node: Postfix in postfixes
+                node.accept(visitor)
+        }
+        visitor.closePostfixExpression(this)
+    }
+
+    let primaryExpression: PrimaryExpression
+    let postfixes: Postfix[]
+}
+
+class BinaryOp extends SyntaxNode {
+
+    function accept(mutable visitor: Visitor) {
+    }
+
+}
+
+class BinaryOperation extends BinaryOp {
+
+    constructor(binaryOperator: string, expression: PrefixExpression, start: Position, end: Position) {
+        this.start = start
+        this.end = end
+        this.binaryOperator = binaryOperator
+        this.expression = expression
+    }
+
+    override function accept(mutable visitor: Visitor) {
+        if !visitor.openBinaryOperation(this)
+            return
+        expression.accept(visitor)
+        visitor.closeBinaryOperation(this)
+    }
+
+    let binaryOperator: string
+    let expression: PrefixExpression
+}
+
+class Assignment extends BinaryOp {
+
+    constructor(expression: Expression, start: Position, end: Position) {
+        this.start = start
+        this.end = end
+        this.expression = expression
+    }
+
+    override function accept(mutable visitor: Visitor) {
+        if !visitor.openAssignment(this)
+            return
+        expression.accept(visitor)
+        visitor.closeAssignment(this)
+    }
+
+    let expression: Expression
+}
+
+class TypeQuery extends BinaryOp {
+
+    constructor(objectType: Type, start: Position, end: Position) {
+        this.start = start
+        this.end = end
+        this.objectType = objectType
+    }
+
+    override function accept(mutable visitor: Visitor) {
+        if !visitor.openTypeQuery(this)
+            return
+        objectType.accept(visitor)
+        visitor.closeTypeQuery(this)
+    }
+
+    let objectType: Type
+}
+
+class TypeCast extends BinaryOp {
+
+    constructor(objectType: Type, start: Position, end: Position) {
+        this.start = start
+        this.end = end
+        this.objectType = objectType
+    }
+
+    override function accept(mutable visitor: Visitor) {
+        if !visitor.openTypeCast(this)
+            return
+        objectType.accept(visitor)
+        visitor.closeTypeCast(this)
+    }
+
+    let objectType: Type
+}
+
+class CatchClause extends SyntaxNode {
+
+    constructor(catchPattern: CatchPattern, bindingPattern: TuplePattern, expression: Expression, start: Position, end: Position) {
+        this.start = start
+        this.end = end
+        this.catchPattern = catchPattern
+        this.bindingPattern = bindingPattern
+        this.expression = expression
+    }
+
+    function accept(mutable visitor: Visitor) {
+        if !visitor.openCatchClause(this)
+            return
+        catchPattern.accept(visitor)
+        if bindingPattern != null
+            bindingPattern.accept(visitor)
+        expression.accept(visitor)
+        visitor.closeCatchClause(this)
+    }
+
+    let catchPattern: CatchPattern
+    let bindingPattern: TuplePattern
+    let expression: Expression
+}
+
+class CatchPattern extends SyntaxNode {
+
+    function accept(mutable visitor: Visitor) {
+    }
+
+}
+
+class WildCardCatchPattern extends CatchPattern {
+
+    constructor(pattern: WildcardPattern, start: Position, end: Position) {
+        this.start = start
+        this.end = end
+        this.pattern = pattern
+    }
+
+    override function accept(mutable visitor: Visitor) {
+        if !visitor.openWildCardCatchPattern(this)
+            return
+        pattern.accept(visitor)
+        visitor.closeWildCardCatchPattern(this)
+    }
+
+    let pattern: WildcardPattern
+}
+
+class IdentifierCatchPattern extends CatchPattern {
+
+    constructor(name: string, member: MemberExpression, start: Position, end: Position) {
+        this.start = start
+        this.end = end
+        this.name = name
+        this.member = member
+    }
+
+    override function accept(mutable visitor: Visitor) {
+        if !visitor.openIdentifierCatchPattern(this)
+            return
+        if member != null
+            member.accept(visitor)
+        visitor.closeIdentifierCatchPattern(this)
+    }
+
+    let name: string
+    let member: MemberExpression
+}
+
+class Postfix extends SyntaxNode {
+
+    function accept(mutable visitor: Visitor) {
+    }
+
+}
+
+class OperatorPostfix extends Postfix {
+
+    constructor(postfixOperator: string, start: Position, end: Position) {
+        this.start = start
+        this.end = end
+        this.postfixOperator = postfixOperator
+    }
+
+    override function accept(mutable visitor: Visitor) {
+        visitor.visitOperatorPostfix(this)
+    }
+
+    let postfixOperator: string
+}
+
+class FunctionCall extends Postfix {
+
+    constructor(arguments: ParenthesizedExpression, catchClauses: CatchClause[], start: Position, end: Position) {
+        this.start = start
+        this.end = end
+        this.arguments = arguments
+        this.catchClauses = catchClauses
+    }
+
+    override function accept(mutable visitor: Visitor) {
+        if !visitor.openFunctionCall(this)
+            return
+        arguments.accept(visitor)
+        if catchClauses != null {
+            for node: CatchClause in catchClauses
+                node.accept(visitor)
+        }
+        visitor.closeFunctionCall(this)
+    }
+
+    let arguments: ParenthesizedExpression
+    let catchClauses: CatchClause[]
+}
+
+class MemberExpression extends Postfix {
+
+    constructor(member: string, start: Position, end: Position) {
+        this.start = start
+        this.end = end
+        this.member = member
+    }
+
+    override function accept(mutable visitor: Visitor) {
+        visitor.visitMemberExpression(this)
+    }
+
+    let member: string
+}
+
+class Subscript extends Postfix {
+
+    constructor(expressions: ExpressionElement[], start: Position, end: Position) {
+        this.start = start
+        this.end = end
+        this.expressions = expressions
+    }
+
+    override function accept(mutable visitor: Visitor) {
+        if !visitor.openSubscript(this)
+            return
+        if expressions != null {
+            for node: ExpressionElement in expressions
+                node.accept(visitor)
+        }
+        visitor.closeSubscript(this)
+    }
+
+    let expressions: ExpressionElement[]
+}
+
+class ExpressionElement extends SyntaxNode {
+
+    constructor(expression: Expression, start: Position, end: Position) {
+        this.start = start
+        this.end = end
+        this.expression = expression
+    }
+
+    function accept(mutable visitor: Visitor) {
+        if !visitor.openExpressionElement(this)
+            return
+        expression.accept(visitor)
+        visitor.closeExpressionElement(this)
+    }
+
+    let expression: Expression
+}
+
+class PrimaryExpression extends SyntaxNode {
+
+    function accept(mutable visitor: Visitor) {
+    }
+
+}
+
+class IdentifierExpression extends PrimaryExpression {
+
+    constructor(name: string, start: Position, end: Position) {
+        this.start = start
+        this.end = end
+        this.name = name
+    }
+
+    override function accept(mutable visitor: Visitor) {
+        visitor.visitIdentifierExpression(this)
+    }
+
+    let name: string
+}
+
+class LiteralExpression extends PrimaryExpression {
+
+    constructor(literal: Literal, start: Position, end: Position) {
+        this.start = start
+        this.end = end
+        this.literal = literal
+    }
+
+    override function accept(mutable visitor: Visitor) {
+        visitor.visitLiteralExpression(this)
+    }
+
+    let literal: Literal
+}
+
+class IfExpression extends PrimaryExpression {
+
+    constructor(condition: Expression, consequent: Expression, elseClause: ElseClause, start: Position, end: Position) {
+        this.start = start
+        this.end = end
+        this.condition = condition
+        this.consequent = consequent
+        this.elseClause = elseClause
+    }
+
+    override function accept(mutable visitor: Visitor) {
+        if !visitor.openIfExpression(this)
+            return
+        condition.accept(visitor)
+        consequent.accept(visitor)
+        if elseClause != null
+            elseClause.accept(visitor)
+        visitor.closeIfExpression(this)
+    }
+
+    let condition: Expression
+    let consequent: Expression
+    let elseClause: ElseClause
+}
+
+class SwitchExpression extends PrimaryExpression {
+
+    constructor(expression: Expression, body: SwitchBody, start: Position, end: Position) {
+        this.start = start
+        this.end = end
+        this.expression = expression
+        this.body = body
+    }
+
+    override function accept(mutable visitor: Visitor) {
+        if !visitor.openSwitchExpression(this)
+            return
+        expression.accept(visitor)
+        body.accept(visitor)
+        visitor.closeSwitchExpression(this)
+    }
+
+    let expression: Expression
+    let body: SwitchBody
+}
+
+class ForExpression extends PrimaryExpression {
+
+    constructor(pattern: Pattern, expression: Expression, code: Expression, start: Position, end: Position) {
+        this.start = start
+        this.end = end
+        this.pattern = pattern
+        this.expression = expression
+        this.code = code
+    }
+
+    override function accept(mutable visitor: Visitor) {
+        if !visitor.openForExpression(this)
+            return
+        pattern.accept(visitor)
+        expression.accept(visitor)
+        code.accept(visitor)
+        visitor.closeForExpression(this)
+    }
+
+    let pattern: Pattern
+    let expression: Expression
+    let code: Expression
+}
+
+class WhileExpression extends PrimaryExpression {
+
+    constructor(condition: Expression, code: Expression, start: Position, end: Position) {
+        this.start = start
+        this.end = end
+        this.condition = condition
+        this.code = code
+    }
+
+    override function accept(mutable visitor: Visitor) {
+        if !visitor.openWhileExpression(this)
+            return
+        condition.accept(visitor)
+        code.accept(visitor)
+        visitor.closeWhileExpression(this)
+    }
+
+    let condition: Expression
+    let code: Expression
+}
+
+class DoExpression extends PrimaryExpression {
+
+    constructor(code: Expression, condition: Expression, start: Position, end: Position) {
+        this.start = start
+        this.end = end
+        this.code = code
+        this.condition = condition
+    }
+
+    override function accept(mutable visitor: Visitor) {
+        if !visitor.openDoExpression(this)
+            return
+        code.accept(visitor)
+        condition.accept(visitor)
+        visitor.closeDoExpression(this)
+    }
+
+    let code: Expression
+    let condition: Expression
+}
+
+class ParenthesizedExpression extends PrimaryExpression {
+
+    constructor(expressionElements: ExpressionElement[], start: Position, end: Position) {
+        this.start = start
+        this.end = end
+        this.expressionElements = expressionElements
+    }
+
+    override function accept(mutable visitor: Visitor) {
+        if !visitor.openParenthesizedExpression(this)
+            return
+        if expressionElements != null {
+            for node: ExpressionElement in expressionElements
+                node.accept(visitor)
+        }
+        visitor.closeParenthesizedExpression(this)
+    }
+
+    let expressionElements: ExpressionElement[]
+}
+
+class ReturnExpression extends PrimaryExpression {
+
+    constructor(expression: ParenthesizedExpression, start: Position, end: Position) {
+        this.start = start
+        this.end = end
+        this.expression = expression
+    }
+
+    override function accept(mutable visitor: Visitor) {
+        if !visitor.openReturnExpression(this)
+            return
+        if expression != null
+            expression.accept(visitor)
+        visitor.closeReturnExpression(this)
+    }
+
+    let expression: ParenthesizedExpression
+}
+
+class ThrowExpression extends PrimaryExpression {
+
+    constructor(error: IdentifierExpression, arguments: ParenthesizedExpression, start: Position, end: Position) {
+        this.start = start
+        this.end = end
+        this.error = error
+        this.arguments = arguments
+    }
+
+    override function accept(mutable visitor: Visitor) {
+        if !visitor.openThrowExpression(this)
+            return
+        error.accept(visitor)
+        if arguments != null
+            arguments.accept(visitor)
+        visitor.closeThrowExpression(this)
+    }
+
+    let error: IdentifierExpression
+    let arguments: ParenthesizedExpression
+}
+
+class BreakExpression extends PrimaryExpression {
+
+    constructor(expression: ParenthesizedExpression, start: Position, end: Position) {
+        this.start = start
+        this.end = end
+        this.expression = expression
+    }
+
+    override function accept(mutable visitor: Visitor) {
+        if !visitor.openBreakExpression(this)
+            return
+        if expression != null
+            expression.accept(visitor)
+        visitor.closeBreakExpression(this)
+    }
+
+    let expression: ParenthesizedExpression
+}
+
+class ConstructorCall extends PrimaryExpression {
+
+    constructor(typeToConstruct: Type, arguments: ParenthesizedExpression, catchClauses: CatchClause[], start: Position, end: Position) {
+        this.start = start
+        this.end = end
+        this.typeToConstruct = typeToConstruct
+        this.arguments = arguments
+        this.catchClauses = catchClauses
+    }
+
+    override function accept(mutable visitor: Visitor) {
+        if !visitor.openConstructorCall(this)
+            return
+        typeToConstruct.accept(visitor)
+        arguments.accept(visitor)
+        if catchClauses != null {
+            for node: CatchClause in catchClauses
+                node.accept(visitor)
+        }
+        visitor.closeConstructorCall(this)
+    }
+
+    let typeToConstruct: Type
+    let arguments: ParenthesizedExpression
+    let catchClauses: CatchClause[]
+}
+
+class ThisExpression extends PrimaryExpression {
+
+    constructor(start: Position, end: Position) {
+        this.start = start
+        this.end = end
+    }
+
+    override function accept(mutable visitor: Visitor) {
+        visitor.visitThisExpression(this)
+    }
+
+}
+
+class NullExpression extends PrimaryExpression {
+
+    constructor(start: Position, end: Position) {
+        this.start = start
+        this.end = end
+    }
+
+    override function accept(mutable visitor: Visitor) {
+        visitor.visitNullExpression(this)
+    }
+
+}
+
+class ElseClause extends SyntaxNode {
+
+    constructor(alternative: Expression, start: Position, end: Position) {
+        this.start = start
+        this.end = end
+        this.alternative = alternative
+    }
+
+    function accept(mutable visitor: Visitor) {
+        if !visitor.openElseClause(this)
+            return
+        alternative.accept(visitor)
+        visitor.closeElseClause(this)
+    }
+
+    let alternative: Expression
+}
+
+class SwitchBody extends SyntaxNode {
+
+    function accept(mutable visitor: Visitor) {
+    }
+
+}
+
+class CurliedSwitchBody extends SwitchBody {
+
+    constructor(cases: SwitchCase[], start: Position, end: Position) {
+        this.start = start
+        this.end = end
+        this.cases = cases
+    }
+
+    override function accept(mutable visitor: Visitor) {
+        if !visitor.openCurliedSwitchBody(this)
+            return
+        if cases != null {
+            for node: SwitchCase in cases
+                node.accept(visitor)
+        }
+        visitor.closeCurliedSwitchBody(this)
+    }
+
+    let cases: SwitchCase[]
+}
+
+class NakedSwitchBody extends SwitchBody {
+
+    constructor(cases: SwitchCase[], start: Position, end: Position) {
+        this.start = start
+        this.end = end
+        this.cases = cases
+    }
+
+    override function accept(mutable visitor: Visitor) {
+        if !visitor.openNakedSwitchBody(this)
+            return
+        if cases != null {
+            for node: SwitchCase in cases
+                node.accept(visitor)
+        }
+        visitor.closeNakedSwitchBody(this)
+    }
+
+    let cases: SwitchCase[]
+}
+
+class SwitchCase extends SyntaxNode {
+
+    constructor(label: CaseLabel, content: CaseContent, start: Position, end: Position) {
+        this.start = start
+        this.end = end
+        this.label = label
+        this.content = content
+    }
+
+    function accept(mutable visitor: Visitor) {
+        if !visitor.openSwitchCase(this)
+            return
+        label.accept(visitor)
+        content.accept(visitor)
+        visitor.closeSwitchCase(this)
+    }
+
+    let label: CaseLabel
+    let content: CaseContent
+}
+
+class CaseLabel extends SyntaxNode {
+
+    function accept(mutable visitor: Visitor) {
+    }
+
+}
+
+class ItemCaseLabel extends CaseLabel {
+
+    constructor(pattern: Pattern, additionalPatterns: CaseItem[], start: Position, end: Position) {
+        this.start = start
+        this.end = end
+        this.pattern = pattern
+        this.additionalPatterns = additionalPatterns
+    }
+
+    override function accept(mutable visitor: Visitor) {
+        if !visitor.openItemCaseLabel(this)
+            return
+        pattern.accept(visitor)
+        if additionalPatterns != null {
+            for node: CaseItem in additionalPatterns
+                node.accept(visitor)
+        }
+        visitor.closeItemCaseLabel(this)
+    }
+
+    let pattern: Pattern
+    let additionalPatterns: CaseItem[]
+}
+
+class DefaultCaseLabel extends CaseLabel {
+
+    constructor(start: Position, end: Position) {
+        this.start = start
+        this.end = end
+    }
+
+    override function accept(mutable visitor: Visitor) {
+        visitor.visitDefaultCaseLabel(this)
+    }
+
+}
+
+class CaseItem extends SyntaxNode {
+
+    constructor(pattern: Pattern, start: Position, end: Position) {
+        this.start = start
+        this.end = end
+        this.pattern = pattern
+    }
+
+    function accept(mutable visitor: Visitor) {
+        if !visitor.openCaseItem(this)
+            return
+        pattern.accept(visitor)
+        visitor.closeCaseItem(this)
+    }
+
+    let pattern: Pattern
+}
+
+class Pattern extends SyntaxNode {
+
+    function accept(mutable visitor: Visitor) {
+    }
+
+}
+
+class WildcardPattern extends Pattern {
+
+    constructor(start: Position, end: Position) {
+        this.start = start
+        this.end = end
+    }
+
+    override function accept(mutable visitor: Visitor) {
+        visitor.visitWildcardPattern(this)
+    }
+
+}
+
+class IdentifierPattern extends Pattern {
+
+    constructor(identifier: string, annotationForType: TypeAnnotation, start: Position, end: Position) {
+        this.start = start
+        this.end = end
+        this.identifier = identifier
+        this.annotationForType = annotationForType
+    }
+
+    override function accept(mutable visitor: Visitor) {
+        if !visitor.openIdentifierPattern(this)
+            return
+        if annotationForType != null
+            annotationForType.accept(visitor)
+        visitor.closeIdentifierPattern(this)
+    }
+
+    let identifier: string
+    let annotationForType: TypeAnnotation
+}
+
+class TuplePattern extends Pattern {
+
+    constructor(elements: TuplePatternElement[], start: Position, end: Position) {
+        this.start = start
+        this.end = end
+        this.elements = elements
+    }
+
+    override function accept(mutable visitor: Visitor) {
+        if !visitor.openTuplePattern(this)
+            return
+        if elements != null {
+            for node: TuplePatternElement in elements
+                node.accept(visitor)
+        }
+        visitor.closeTuplePattern(this)
+    }
+
+    let elements: TuplePatternElement[]
+}
+
+class ExpressionPattern extends Pattern {
+
+    constructor(expression: Expression, start: Position, end: Position) {
+        this.start = start
+        this.end = end
+        this.expression = expression
+    }
+
+    override function accept(mutable visitor: Visitor) {
+        if !visitor.openExpressionPattern(this)
+            return
+        expression.accept(visitor)
+        visitor.closeExpressionPattern(this)
+    }
+
+    let expression: Expression
+}
+
+class TuplePatternElement extends SyntaxNode {
+
+    constructor(pattern: Pattern, start: Position, end: Position) {
+        this.start = start
+        this.end = end
+        this.pattern = pattern
+    }
+
+    function accept(mutable visitor: Visitor) {
+        if !visitor.openTuplePatternElement(this)
+            return
+        pattern.accept(visitor)
+        visitor.closeTuplePatternElement(this)
+    }
+
+    let pattern: Pattern
+}
+
+class CaseContent extends SyntaxNode {
+
+    constructor(statements: Statement[], start: Position, end: Position) {
+        this.start = start
+        this.end = end
+        this.statements = statements
+    }
+
+    function accept(mutable visitor: Visitor) {
+        if !visitor.openCaseContent(this)
+            return
+        if statements != null {
+            for node: Statement in statements
+                node.accept(visitor)
+        }
+        visitor.closeCaseContent(this)
+    }
+
+    let statements: Statement[]
+}
+
+class Type extends SyntaxNode {
+
+    constructor(name: string, subType: Subtype, postfixes: TypePostfix[], lifeTime: LifeTime, start: Position, end: Position) {
+        this.start = start
+        this.end = end
+        this.name = name
+        this.subType = subType
+        this.postfixes = postfixes
+        this.lifeTime = lifeTime
+    }
+
+    function accept(mutable visitor: Visitor) {
+        if !visitor.openType(this)
+            return
+        if subType != null
+            subType.accept(visitor)
+        if postfixes != null {
+            for node: TypePostfix in postfixes
+                node.accept(visitor)
+        }
+        if lifeTime != null
+            lifeTime.accept(visitor)
+        visitor.closeType(this)
+    }
+
+    let name: string
+    let subType: Subtype
+    let postfixes: TypePostfix[]
+    let lifeTime: LifeTime
+}
+
+class TypeAnnotation extends SyntaxNode {
+
+    constructor(annotationForType: Type, start: Position, end: Position) {
+        this.start = start
+        this.end = end
+        this.annotationForType = annotationForType
+    }
+
+    function accept(mutable visitor: Visitor) {
+        if !visitor.openTypeAnnotation(this)
+            return
+        annotationForType.accept(visitor)
+        visitor.closeTypeAnnotation(this)
+    }
+
+    let annotationForType: Type
+}
+
+class Subtype extends SyntaxNode {
+
+    constructor(type: Type, start: Position, end: Position) {
+        this.start = start
+        this.end = end
+        this.type = type
+    }
+
+    function accept(mutable visitor: Visitor) {
+        if !visitor.openSubtype(this)
+            return
+        type.accept(visitor)
+        visitor.closeSubtype(this)
+    }
+
+    let type: Type
+}
+
+class TypePostfix extends SyntaxNode {
+
+    function accept(mutable visitor: Visitor) {
+    }
+
+}
+
+class IndexedType extends TypePostfix {
+
+    constructor(key: Type, start: Position, end: Position) {
+        this.start = start
+        this.end = end
+        this.key = key
+    }
+
+    override function accept(mutable visitor: Visitor) {
+        if !visitor.openIndexedType(this)
+            return
+        if key != null
+            key.accept(visitor)
+        visitor.closeIndexedType(this)
+    }
+
+    let key: Type
+}
+
+class Pointer extends TypePostfix {
+
+    constructor(start: Position, end: Position) {
+        this.start = start
+        this.end = end
+    }
+
+    override function accept(mutable visitor: Visitor) {
+        visitor.visitPointer(this)
+    }
+
+}
+
+class LifeTime extends SyntaxNode {
+
+    function accept(mutable visitor: Visitor) {
+    }
+
+}
+
+class Root extends LifeTime {
+
+    constructor(start: Position, end: Position) {
+        this.start = start
+        this.end = end
+    }
+
+    override function accept(mutable visitor: Visitor) {
+        visitor.visitRoot(this)
+    }
+
+}
+
+class Local extends LifeTime {
+
+    constructor(location: string, start: Position, end: Position) {
+        this.start = start
+        this.end = end
+        this.location = location
+    }
+
+    override function accept(mutable visitor: Visitor) {
+        visitor.visitLocal(this)
+    }
+
+    let location: string
+}
+
+class Reference extends LifeTime {
+
+    constructor(age: Literal, start: Position, end: Position) {
+        this.start = start
+        this.end = end
+        this.age = age
+    }
+
+    override function accept(mutable visitor: Visitor) {
+        visitor.visitReference(this)
+    }
+
+    let age: Literal
+}
+
+class Thrown extends LifeTime {
+
+    constructor(start: Position, end: Position) {
+        this.start = start
+        this.end = end
+    }
+
+    override function accept(mutable visitor: Visitor) {
+        visitor.visitThrown(this)
+    }
+
+}
+
+class TypeInheritanceClause extends SyntaxNode {
+
+    constructor(inheritances: Inheritance[], start: Position, end: Position) {
+        this.start = start
+        this.end = end
+        this.inheritances = inheritances
+    }
+
+    function accept(mutable visitor: Visitor) {
+        if !visitor.openTypeInheritanceClause(this)
+            return
+        if inheritances != null {
+            for node: Inheritance in inheritances
+                node.accept(visitor)
+        }
+        visitor.closeTypeInheritanceClause(this)
+    }
+
+    let inheritances: Inheritance[]
+}
+
+class Inheritance extends SyntaxNode {
+
+    constructor(type: Type, start: Position, end: Position) {
+        this.start = start
+        this.end = end
+        this.type = type
+    }
+
+    function accept(mutable visitor: Visitor) {
+        if !visitor.openInheritance(this)
+            return
+        type.accept(visitor)
+        visitor.closeInheritance(this)
+    }
+
+    let type: Type
 }

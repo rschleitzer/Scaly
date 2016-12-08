@@ -1,5 +1,8 @@
 (define (parser) ($
-
+        (apply-to-selected-children "syntax" (lambda (syntax-node) ($
+"class "(id syntax-node)"
+"
+        )))
 "
 class Parser {
     constructor(theFileName: string, text: string) {

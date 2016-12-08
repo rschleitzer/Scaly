@@ -4,6 +4,69 @@
 using namespace scaly;
 namespace scalyc {
 
+class Position;
+
+class Token;
+
+class EofToken;
+
+class InvalidToken;
+
+class Identifier;
+
+class Literal;
+
+class StringLiteral;
+
+class CharacterLiteral;
+
+class NumericLiteral;
+
+class Punctuation;
+
+class Operator;
+
+class PrefixOperator;
+
+class BinaryOperator;
+
+class PostfixOperator;
+
+class Lexer : public Object {
+public:
+    Token* token;
+    bool whitespaceSkipped;
+    string* text;
+    size_t position;
+    size_t end;
+    size_t previousLine;
+    size_t previousColumn;
+    size_t line;
+    size_t column;
+    Lexer(string* theText);
+    virtual void advance();
+    virtual Identifier* scanIdentifier(_Page* _rp);
+    virtual Operator* scanOperator(_Page* _rp, bool includeDots);
+    virtual Token* scanStringLiteral(_Page* _rp);
+    virtual Token* scanCharacterLiteral(_Page* _rp);
+    virtual NumericLiteral* scanNumericLiteral(_Page* _rp);
+    virtual bool skipWhitespace();
+    virtual void handleSingleLineComment();
+    virtual void handleMultiLineComment();
+    virtual bool parseKeyword(string* fixedString);
+    virtual string* parseIdentifier(_Page* _rp);
+    virtual bool parsePunctuation(string* fixedString);
+    virtual string* parseOperator(_Page* _rp);
+    virtual Literal* parseLiteral(_Page* _rp);
+    virtual string* parsePrefixOperator(_Page* _rp);
+    virtual string* parseBinaryOperator(_Page* _rp);
+    virtual string* parsePostfixOperator(_Page* _rp);
+    virtual bool isAtEnd();
+    virtual Position* getPosition(_Page* _rp);
+    virtual Position* getPreviousPosition(_Page* _rp);
+
+};
+
 class Position : public Object {
 public:
     Position(size_t line, size_t column);
@@ -120,41 +183,6 @@ public:
     PostfixOperator(string* theOperation);
 
     virtual bool _isPostfixOperator();
-};
-
-class Lexer : public Object {
-public:
-    Token* token;
-    bool whitespaceSkipped;
-    string* text;
-    size_t position;
-    size_t end;
-    size_t previousLine;
-    size_t previousColumn;
-    size_t line;
-    size_t column;
-    Lexer(string* theText);
-    virtual void advance();
-    virtual Identifier* scanIdentifier(_Page* _rp);
-    virtual Operator* scanOperator(_Page* _rp, bool includeDots);
-    virtual Token* scanStringLiteral(_Page* _rp);
-    virtual Token* scanCharacterLiteral(_Page* _rp);
-    virtual NumericLiteral* scanNumericLiteral(_Page* _rp);
-    virtual bool skipWhitespace();
-    virtual void handleSingleLineComment();
-    virtual void handleMultiLineComment();
-    virtual bool parseKeyword(string* fixedString);
-    virtual string* parseIdentifier(_Page* _rp);
-    virtual bool parsePunctuation(string* fixedString);
-    virtual string* parseOperator(_Page* _rp);
-    virtual Literal* parseLiteral(_Page* _rp);
-    virtual string* parsePrefixOperator(_Page* _rp);
-    virtual string* parseBinaryOperator(_Page* _rp);
-    virtual string* parsePostfixOperator(_Page* _rp);
-    virtual bool isAtEnd();
-    virtual Position* getPosition(_Page* _rp);
-    virtual Position* getPreviousPosition(_Page* _rp);
-
 };
 
 }

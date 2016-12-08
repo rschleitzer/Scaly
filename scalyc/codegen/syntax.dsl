@@ -16,7 +16,6 @@ class "(id syntax-node)" extends "(if (base syntax-node) (base syntax-node) "Syn
 "        start = new Position(0, 0)
         end = new Position(0, 0)
         this.name = name
-        this.directory = directory
         this.compilationUnits = compilationUnits
         this.parent = null
 "
