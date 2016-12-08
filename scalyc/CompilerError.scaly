@@ -5,24 +5,3 @@ enum OptionsError {
     case noFilesToCompile
 }
 
-enum ParserError {
-    case identifierExpected(position: Position)
-    case literalExpected(position: Position)
-    case keywordExpected(position: Position, keyword: string)
-    case punctuationExpected(position: Position, punctuation: string)
-    case operatorExpected(position: Position)
-    case unableToParse(position: Position, errors: ParserError[])
-    case notAtEnd(position: Position)
-}
-
-enum CompilerError {
-    case fileNotFound(file: string)
-    case unableToReadFile(file: string, error: FileError)
-    case syntaxError(error: ParserError)
-    case unableToCreateOutputDirectory(directory: string, error: DirectoryError)
-}
-
-enum CppError {
-    case unableToCreateOutputDirectory(directory: string, error: DirectoryError)
-}
-
