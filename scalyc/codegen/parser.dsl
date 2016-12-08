@@ -1,6 +1,7 @@
 (define (parser) ($
 
-"class Parser {
+"
+class Parser {
     constructor(theFileName: string, text: string) {
         lexer = new Lexer(text)
         fileName = theFileName
@@ -55,7 +56,8 @@
 "                (apply-to-children-of syntax (lambda (content) ($
                    (if (string=? "syntax" (type content))
                         ($ ; non-terminals
-"        let "(property content)": "(link content)(if (multiple? content) "[]" "")" = parse"(link content)(if (multiple? content) "List" "")"()
+"
+        let "(property content)": "(link content)(if (multiple? content) "[]" "")" = parse"(link content)(if (multiple? content) "List" "")"()
 "
                     (if (or (optional? content) (multiple? content)) "" ($
 "        if "(property content)" == null
@@ -71,7 +73,8 @@
 "                           )"")
                         )
                         ($ ; terminals
-"        let "(case (type content) (("keyword" "punctuation") ($ "success"(if (property content) (string-firstchar-upcase (property content)) ($ (string-firstchar-upcase (link content))(number->string (child-number content))))": bool"))(("literal") ($ (property content)": Literal"))(else ($ (property content)": string")))
+"
+        let "(case (type content) (("keyword" "punctuation") ($ "success"(if (property content) (string-firstchar-upcase (property content)) ($ (string-firstchar-upcase (link content))(number->string (child-number content))))": bool"))(("literal") ($ (property content)": Literal"))(else ($ (property content)": string")))
             " = lexer.parse"
             (case (type content)(("prefixoperator") "PrefixOperator")(("binaryoperator") "BinaryOperator")(("postfixoperator") "PostfixOperator")(("identifier") "Identifier")(("literal") "Literal")(("keyword") "Keyword")(("punctuation") "Punctuation"))
             "("(case (type content)(("keyword") (name-of-link content)) (("punctuation") (link content)) (else ""))")
@@ -85,7 +88,9 @@
                         )
                     ) ; syntax or terminal
                 ))) ; apply to children of syntax
-"        let end: Position$ = lexer.getPosition()
+"
+        let end: Position$ = lexer.getPosition()
+
         var ret: "(id syntax)" = new "(id syntax)"("
                 (apply-to-property-children-of syntax (lambda (content) ($
                     (property content)(if (properties-remaining? content syntax) ", " "")

@@ -2264,6 +2264,7 @@ class Inheritance extends SyntaxNode {
 
     let type: Type
 }
+
 class Parser {
     constructor(theFileName: string, text: string) {
         lexer = new Lexer(text)
@@ -2317,13 +2318,16 @@ class Parser {
 
     function parseCompilationUnit(): CompilationUnit {
         let start: Position$ = lexer.getPreviousPosition()
+
         let statements: Statement[] = parseStatementList()
         if statements != null {
             if !isAtEnd() {
                 return(null)
             }
         }
+
         let end: Position$ = lexer.getPosition()
+
         var ret: CompilationUnit = new CompilationUnit(statements, new Position(start), new Position(end))
         ret.fileName = fileName
         if statements != null {
@@ -2431,15 +2435,19 @@ class Parser {
 
     function parseConstantDeclaration(): ConstantDeclaration {
         let start: Position$ = lexer.getPreviousPosition()
+
         let successLet1: bool = lexer.parseKeyword(letKeyword)
         if successLet1
             lexer.advance()
         else
             return(null)
+
         let initializer: BindingInitializer = parseBindingInitializer()
         if initializer == null
             return(null)
+
         let end: Position$ = lexer.getPosition()
+
         var ret: ConstantDeclaration = new ConstantDeclaration(initializer, new Position(start), new Position(end))
         initializer.parent = ret
 
@@ -2448,15 +2456,19 @@ class Parser {
 
     function parseVariableDeclaration(): VariableDeclaration {
         let start: Position$ = lexer.getPreviousPosition()
+
         let successVar1: bool = lexer.parseKeyword(varKeyword)
         if successVar1
             lexer.advance()
         else
             return(null)
+
         let initializer: BindingInitializer = parseBindingInitializer()
         if initializer == null
             return(null)
+
         let end: Position$ = lexer.getPosition()
+
         var ret: VariableDeclaration = new VariableDeclaration(initializer, new Position(start), new Position(end))
         initializer.parent = ret
 
@@ -2465,15 +2477,19 @@ class Parser {
 
     function parseMutableDeclaration(): MutableDeclaration {
         let start: Position$ = lexer.getPreviousPosition()
+
         let successMutable1: bool = lexer.parseKeyword(mutableKeyword)
         if successMutable1
             lexer.advance()
         else
             return(null)
+
         let initializer: BindingInitializer = parseBindingInitializer()
         if initializer == null
             return(null)
+
         let end: Position$ = lexer.getPosition()
+
         var ret: MutableDeclaration = new MutableDeclaration(initializer, new Position(start), new Position(end))
         initializer.parent = ret
 
@@ -2482,22 +2498,29 @@ class Parser {
 
     function parseFunctionDeclaration(): FunctionDeclaration {
         let start: Position$ = lexer.getPreviousPosition()
+
         let modifiers: Modifier[] = parseModifierList()
+
         let successFunction2: bool = lexer.parseKeyword(functionKeyword)
         if successFunction2
             lexer.advance()
         else
             return(null)
+
         let name: string = lexer.parseIdentifier()
         if (name != null) && isIdentifier(name)
             lexer.advance()
         else
             return(null)
+
         let signature: FunctionSignature = parseFunctionSignature()
         if signature == null
             return(null)
+
         let body: Expression = parseExpression()
+
         let end: Position$ = lexer.getPosition()
+
         var ret: FunctionDeclaration = new FunctionDeclaration(modifiers, name, signature, body, new Position(start), new Position(end))
         if modifiers != null {
             for item: Modifier in modifiers
@@ -2512,28 +2535,35 @@ class Parser {
 
     function parseEnumDeclaration(): EnumDeclaration {
         let start: Position$ = lexer.getPreviousPosition()
+
         let successEnum1: bool = lexer.parseKeyword(enumKeyword)
         if successEnum1
             lexer.advance()
         else
             return(null)
+
         let name: string = lexer.parseIdentifier()
         if (name != null) && isIdentifier(name)
             lexer.advance()
         else
             return(null)
+
         let successLeftCurly3: bool = lexer.parsePunctuation(leftCurly)
         if successLeftCurly3
             lexer.advance()
         else
             return(null)
+
         let members: EnumMember[] = parseEnumMemberList()
+
         let successRightCurly5: bool = lexer.parsePunctuation(rightCurly)
         if successRightCurly5
             lexer.advance()
         else
             return(null)
+
         let end: Position$ = lexer.getPosition()
+
         var ret: EnumDeclaration = new EnumDeclaration(name, members, new Position(start), new Position(end))
         if members != null {
             for item: EnumMember in members
@@ -2545,19 +2575,25 @@ class Parser {
 
     function parseClassDeclaration(): ClassDeclaration {
         let start: Position$ = lexer.getPreviousPosition()
+
         let successClass1: bool = lexer.parseKeyword(classKeyword)
         if successClass1
             lexer.advance()
         else
             return(null)
+
         let name: string = lexer.parseIdentifier()
         if (name != null) && isIdentifier(name)
             lexer.advance()
         else
             return(null)
+
         let typeInheritanceClause: TypeInheritanceClause = parseTypeInheritanceClause()
+
         let body: ClassBody = parseClassBody()
+
         let end: Position$ = lexer.getPosition()
+
         var ret: ClassDeclaration = new ClassDeclaration(name, typeInheritanceClause, body, new Position(start), new Position(end))
         if typeInheritanceClause != null
             typeInheritanceClause.parent = ret
@@ -2569,18 +2605,23 @@ class Parser {
 
     function parseConstructorDeclaration(): ConstructorDeclaration {
         let start: Position$ = lexer.getPreviousPosition()
+
         let successConstructor1: bool = lexer.parseKeyword(constructorKeyword)
         if successConstructor1
             lexer.advance()
         else
             return(null)
+
         let parameterClause: ParameterClause = parseParameterClause()
         if parameterClause == null
             return(null)
+
         let body: Expression = parseExpression()
         if body == null
             return(null)
+
         let end: Position$ = lexer.getPosition()
+
         var ret: ConstructorDeclaration = new ConstructorDeclaration(parameterClause, body, new Position(start), new Position(end))
         parameterClause.parent = ret
         body.parent = ret
@@ -2590,18 +2631,23 @@ class Parser {
 
     function parseCodeBlock(): CodeBlock {
         let start: Position$ = lexer.getPreviousPosition()
+
         let successLeftCurly1: bool = lexer.parsePunctuation(leftCurly)
         if successLeftCurly1
             lexer.advance()
         else
             return(null)
+
         let statements: Statement[] = parseStatementList()
+
         let successRightCurly3: bool = lexer.parsePunctuation(rightCurly)
         if successRightCurly3
             lexer.advance()
         else
             return(null)
+
         let end: Position$ = lexer.getPosition()
+
         var ret: CodeBlock = new CodeBlock(statements, new Position(start), new Position(end))
         if statements != null {
             for item: Statement in statements
@@ -2613,11 +2659,15 @@ class Parser {
 
     function parseSimpleExpression(): SimpleExpression {
         let start: Position$ = lexer.getPreviousPosition()
+
         let prefixExpression: PrefixExpression = parsePrefixExpression()
         if prefixExpression == null
             return(null)
+
         let binaryOps: BinaryOp[] = parseBinaryOpList()
+
         let end: Position$ = lexer.getPosition()
+
         var ret: SimpleExpression = new SimpleExpression(prefixExpression, binaryOps, new Position(start), new Position(end))
         prefixExpression.parent = ret
         if binaryOps != null {
@@ -2630,15 +2680,19 @@ class Parser {
 
     function parseInitializer(): Initializer {
         let start: Position$ = lexer.getPreviousPosition()
+
         let successEqual1: bool = lexer.parsePunctuation(equal)
         if successEqual1
             lexer.advance()
         else
             return(null)
+
         let expression: Expression = parseExpression()
         if expression == null
             return(null)
+
         let end: Position$ = lexer.getPosition()
+
         var ret: Initializer = new Initializer(expression, new Position(start), new Position(end))
         expression.parent = ret
 
@@ -2647,11 +2701,15 @@ class Parser {
 
     function parseBindingInitializer(): BindingInitializer {
         let start: Position$ = lexer.getPreviousPosition()
+
         let initializer: PatternInitializer = parsePatternInitializer()
         if initializer == null
             return(null)
+
         let additionalInitializers: AdditionalInitializer[] = parseAdditionalInitializerList()
+
         let end: Position$ = lexer.getPosition()
+
         var ret: BindingInitializer = new BindingInitializer(initializer, additionalInitializers, new Position(start), new Position(end))
         initializer.parent = ret
         if additionalInitializers != null {
@@ -2681,11 +2739,15 @@ class Parser {
 
     function parsePatternInitializer(): PatternInitializer {
         let start: Position$ = lexer.getPreviousPosition()
+
         let pattern: Pattern = parsePattern()
         if pattern == null
             return(null)
+
         let initializer: Initializer = parseInitializer()
+
         let end: Position$ = lexer.getPosition()
+
         var ret: PatternInitializer = new PatternInitializer(pattern, initializer, new Position(start), new Position(end))
         pattern.parent = ret
         if initializer != null
@@ -2713,15 +2775,19 @@ class Parser {
 
     function parseAdditionalInitializer(): AdditionalInitializer {
         let start: Position$ = lexer.getPreviousPosition()
+
         let successComma1: bool = lexer.parsePunctuation(comma)
         if successComma1
             lexer.advance()
         else
             return(null)
+
         let pattern: PatternInitializer = parsePatternInitializer()
         if pattern == null
             return(null)
+
         let end: Position$ = lexer.getPosition()
+
         var ret: AdditionalInitializer = new AdditionalInitializer(pattern, new Position(start), new Position(end))
         pattern.parent = ret
 
@@ -2763,12 +2829,15 @@ class Parser {
 
     function parseOverrideWord(): OverrideWord {
         let start: Position$ = lexer.getPreviousPosition()
+
         let successOverride1: bool = lexer.parseKeyword(overrideKeyword)
         if successOverride1
             lexer.advance()
         else
             return(null)
+
         let end: Position$ = lexer.getPosition()
+
         var ret: OverrideWord = new OverrideWord(new Position(start), new Position(end))
 
         ret
@@ -2776,12 +2845,15 @@ class Parser {
 
     function parseStaticWord(): StaticWord {
         let start: Position$ = lexer.getPreviousPosition()
+
         let successStatic1: bool = lexer.parseKeyword(staticKeyword)
         if successStatic1
             lexer.advance()
         else
             return(null)
+
         let end: Position$ = lexer.getPosition()
+
         var ret: StaticWord = new StaticWord(new Position(start), new Position(end))
 
         ret
@@ -2789,12 +2861,17 @@ class Parser {
 
     function parseFunctionSignature(): FunctionSignature {
         let start: Position$ = lexer.getPreviousPosition()
+
         let parameterClause: ParameterClause = parseParameterClause()
         if parameterClause == null
             return(null)
+
         let result: FunctionResult = parseFunctionResult()
+
         let throwsClause: ThrowsClause = parseThrowsClause()
+
         let end: Position$ = lexer.getPosition()
+
         var ret: FunctionSignature = new FunctionSignature(parameterClause, result, throwsClause, new Position(start), new Position(end))
         parameterClause.parent = ret
         if result != null
@@ -2807,15 +2884,19 @@ class Parser {
 
     function parseFunctionResult(): FunctionResult {
         let start: Position$ = lexer.getPreviousPosition()
+
         let successColon1: bool = lexer.parsePunctuation(colon)
         if successColon1
             lexer.advance()
         else
             return(null)
+
         let resultType: Type = parseType()
         if resultType == null
             return(null)
+
         let end: Position$ = lexer.getPosition()
+
         var ret: FunctionResult = new FunctionResult(resultType, new Position(start), new Position(end))
         resultType.parent = ret
 
@@ -2841,18 +2922,23 @@ class Parser {
 
     function parseParameterClause(): ParameterClause {
         let start: Position$ = lexer.getPreviousPosition()
+
         let successLeftParen1: bool = lexer.parsePunctuation(leftParen)
         if successLeftParen1
             lexer.advance()
         else
             return(null)
+
         let parameters: Parameter[] = parseParameterList()
+
         let successRightParen3: bool = lexer.parsePunctuation(rightParen)
         if successRightParen3
             lexer.advance()
         else
             return(null)
+
         let end: Position$ = lexer.getPosition()
+
         var ret: ParameterClause = new ParameterClause(parameters, new Position(start), new Position(end))
         if parameters != null {
             for item: Parameter in parameters
@@ -2897,26 +2983,33 @@ class Parser {
 
     function parseConstParameter(): ConstParameter {
         let start: Position$ = lexer.getPreviousPosition()
+
         let successLet1: bool = lexer.parseKeyword(letKeyword)
         if successLet1
             lexer.advance()
+
         let name: string = lexer.parseIdentifier()
         if (name != null) && isIdentifier(name)
             lexer.advance()
         else
             return(null)
+
         let successColon3: bool = lexer.parsePunctuation(colon)
         if successColon3
             lexer.advance()
         else
             return(null)
+
         let parameterType: Type = parseType()
         if parameterType == null
             return(null)
+
         let successComma5: bool = lexer.parsePunctuation(comma)
         if successComma5
             lexer.advance()
+
         let end: Position$ = lexer.getPosition()
+
         var ret: ConstParameter = new ConstParameter(name, parameterType, new Position(start), new Position(end))
         parameterType.parent = ret
 
@@ -2925,28 +3018,35 @@ class Parser {
 
     function parseVarParameter(): VarParameter {
         let start: Position$ = lexer.getPreviousPosition()
+
         let successMutable1: bool = lexer.parseKeyword(mutableKeyword)
         if successMutable1
             lexer.advance()
         else
             return(null)
+
         let name: string = lexer.parseIdentifier()
         if (name != null) && isIdentifier(name)
             lexer.advance()
         else
             return(null)
+
         let successColon3: bool = lexer.parsePunctuation(colon)
         if successColon3
             lexer.advance()
         else
             return(null)
+
         let parameterType: Type = parseType()
         if parameterType == null
             return(null)
+
         let successComma5: bool = lexer.parsePunctuation(comma)
         if successComma5
             lexer.advance()
+
         let end: Position$ = lexer.getPosition()
+
         var ret: VarParameter = new VarParameter(name, parameterType, new Position(start), new Position(end))
         parameterType.parent = ret
 
@@ -2955,15 +3055,19 @@ class Parser {
 
     function parseThrowsClause(): ThrowsClause {
         let start: Position$ = lexer.getPreviousPosition()
+
         let successThrows1: bool = lexer.parseKeyword(throwsKeyword)
         if successThrows1
             lexer.advance()
         else
             return(null)
+
         let throwsType: Type = parseType()
         if throwsType == null
             return(null)
+
         let end: Position$ = lexer.getPosition()
+
         var ret: ThrowsClause = new ThrowsClause(throwsType, new Position(start), new Position(end))
         throwsType.parent = ret
 
@@ -2989,17 +3093,23 @@ class Parser {
 
     function parseEnumMember(): EnumMember {
         let start: Position$ = lexer.getPreviousPosition()
+
         let successCase1: bool = lexer.parseKeyword(caseKeyword)
         if successCase1
             lexer.advance()
         else
             return(null)
+
         let enumCase: EnumCase = parseEnumCase()
         if enumCase == null
             return(null)
+
         let additionalCases: AdditionalCase[] = parseAdditionalCaseList()
+
         let parameterClause: ParameterClause = parseParameterClause()
+
         let end: Position$ = lexer.getPosition()
+
         var ret: EnumMember = new EnumMember(enumCase, additionalCases, parameterClause, new Position(start), new Position(end))
         enumCase.parent = ret
         if additionalCases != null {
@@ -3014,12 +3124,15 @@ class Parser {
 
     function parseEnumCase(): EnumCase {
         let start: Position$ = lexer.getPreviousPosition()
+
         let name: string = lexer.parseIdentifier()
         if (name != null) && isIdentifier(name)
             lexer.advance()
         else
             return(null)
+
         let end: Position$ = lexer.getPosition()
+
         var ret: EnumCase = new EnumCase(name, new Position(start), new Position(end))
 
         ret
@@ -3044,15 +3157,19 @@ class Parser {
 
     function parseAdditionalCase(): AdditionalCase {
         let start: Position$ = lexer.getPreviousPosition()
+
         let successComma1: bool = lexer.parsePunctuation(comma)
         if successComma1
             lexer.advance()
         else
             return(null)
+
         let enumCase: EnumCase = parseEnumCase()
         if enumCase == null
             return(null)
+
         let end: Position$ = lexer.getPosition()
+
         var ret: AdditionalCase = new AdditionalCase(enumCase, new Position(start), new Position(end))
         enumCase.parent = ret
 
@@ -3061,18 +3178,23 @@ class Parser {
 
     function parseClassBody(): ClassBody {
         let start: Position$ = lexer.getPreviousPosition()
+
         let successLeftCurly1: bool = lexer.parsePunctuation(leftCurly)
         if successLeftCurly1
             lexer.advance()
         else
             return(null)
+
         let members: ClassMember[] = parseClassMemberList()
+
         let successRightCurly3: bool = lexer.parsePunctuation(rightCurly)
         if successRightCurly3
             lexer.advance()
         else
             return(null)
+
         let end: Position$ = lexer.getPosition()
+
         var ret: ClassBody = new ClassBody(members, new Position(start), new Position(end))
         if members != null {
             for item: ClassMember in members
@@ -3101,10 +3223,13 @@ class Parser {
 
     function parseClassMember(): ClassMember {
         let start: Position$ = lexer.getPreviousPosition()
+
         let declaration: Declaration = parseDeclaration()
         if declaration == null
             return(null)
+
         let end: Position$ = lexer.getPosition()
+
         var ret: ClassMember = new ClassMember(declaration, new Position(start), new Position(end))
         declaration.parent = ret
 
@@ -3113,13 +3238,17 @@ class Parser {
 
     function parsePrefixExpression(): PrefixExpression {
         let start: Position$ = lexer.getPreviousPosition()
+
         let prefixOperator: string = lexer.parsePrefixOperator()
         if prefixOperator != null
             lexer.advance()
+
         let expression: PostfixExpression = parsePostfixExpression()
         if expression == null
             return(null)
+
         let end: Position$ = lexer.getPosition()
+
         var ret: PrefixExpression = new PrefixExpression(prefixOperator, expression, new Position(start), new Position(end))
         expression.parent = ret
 
@@ -3128,11 +3257,15 @@ class Parser {
 
     function parsePostfixExpression(): PostfixExpression {
         let start: Position$ = lexer.getPreviousPosition()
+
         let primaryExpression: PrimaryExpression = parsePrimaryExpression()
         if primaryExpression == null
             return(null)
+
         let postfixes: Postfix[] = parsePostfixList()
+
         let end: Position$ = lexer.getPosition()
+
         var ret: PostfixExpression = new PostfixExpression(primaryExpression, postfixes, new Position(start), new Position(end))
         primaryExpression.parent = ret
         if postfixes != null {
@@ -3190,15 +3323,19 @@ class Parser {
 
     function parseBinaryOperation(): BinaryOperation {
         let start: Position$ = lexer.getPreviousPosition()
+
         let binaryOperator: string = lexer.parseBinaryOperator()
         if binaryOperator != null
             lexer.advance()
         else
             return(null)
+
         let expression: PrefixExpression = parsePrefixExpression()
         if expression == null
             return(null)
+
         let end: Position$ = lexer.getPosition()
+
         var ret: BinaryOperation = new BinaryOperation(binaryOperator, expression, new Position(start), new Position(end))
         expression.parent = ret
 
@@ -3207,15 +3344,19 @@ class Parser {
 
     function parseAssignment(): Assignment {
         let start: Position$ = lexer.getPreviousPosition()
+
         let successEqual1: bool = lexer.parsePunctuation(equal)
         if successEqual1
             lexer.advance()
         else
             return(null)
+
         let expression: Expression = parseExpression()
         if expression == null
             return(null)
+
         let end: Position$ = lexer.getPosition()
+
         var ret: Assignment = new Assignment(expression, new Position(start), new Position(end))
         expression.parent = ret
 
@@ -3224,15 +3365,19 @@ class Parser {
 
     function parseTypeQuery(): TypeQuery {
         let start: Position$ = lexer.getPreviousPosition()
+
         let successIs1: bool = lexer.parseKeyword(isKeyword)
         if successIs1
             lexer.advance()
         else
             return(null)
+
         let objectType: Type = parseType()
         if objectType == null
             return(null)
+
         let end: Position$ = lexer.getPosition()
+
         var ret: TypeQuery = new TypeQuery(objectType, new Position(start), new Position(end))
         objectType.parent = ret
 
@@ -3241,15 +3386,19 @@ class Parser {
 
     function parseTypeCast(): TypeCast {
         let start: Position$ = lexer.getPreviousPosition()
+
         let successAs1: bool = lexer.parseKeyword(asKeyword)
         if successAs1
             lexer.advance()
         else
             return(null)
+
         let objectType: Type = parseType()
         if objectType == null
             return(null)
+
         let end: Position$ = lexer.getPosition()
+
         var ret: TypeCast = new TypeCast(objectType, new Position(start), new Position(end))
         objectType.parent = ret
 
@@ -3275,19 +3424,25 @@ class Parser {
 
     function parseCatchClause(): CatchClause {
         let start: Position$ = lexer.getPreviousPosition()
+
         let successCatch1: bool = lexer.parseKeyword(catchKeyword)
         if successCatch1
             lexer.advance()
         else
             return(null)
+
         let catchPattern: CatchPattern = parseCatchPattern()
         if catchPattern == null
             return(null)
+
         let bindingPattern: TuplePattern = parseTuplePattern()
+
         let expression: Expression = parseExpression()
         if expression == null
             return(null)
+
         let end: Position$ = lexer.getPosition()
+
         var ret: CatchClause = new CatchClause(catchPattern, bindingPattern, expression, new Position(start), new Position(end))
         catchPattern.parent = ret
         if bindingPattern != null
@@ -3315,10 +3470,13 @@ class Parser {
 
     function parseWildCardCatchPattern(): WildCardCatchPattern {
         let start: Position$ = lexer.getPreviousPosition()
+
         let pattern: WildcardPattern = parseWildcardPattern()
         if pattern == null
             return(null)
+
         let end: Position$ = lexer.getPosition()
+
         var ret: WildCardCatchPattern = new WildCardCatchPattern(pattern, new Position(start), new Position(end))
         pattern.parent = ret
 
@@ -3327,13 +3485,17 @@ class Parser {
 
     function parseIdentifierCatchPattern(): IdentifierCatchPattern {
         let start: Position$ = lexer.getPreviousPosition()
+
         let name: string = lexer.parseIdentifier()
         if (name != null) && isIdentifier(name)
             lexer.advance()
         else
             return(null)
+
         let member: MemberExpression = parseMemberExpression()
+
         let end: Position$ = lexer.getPosition()
+
         var ret: IdentifierCatchPattern = new IdentifierCatchPattern(name, member, new Position(start), new Position(end))
         if member != null
             member.parent = ret
@@ -3388,12 +3550,15 @@ class Parser {
 
     function parseOperatorPostfix(): OperatorPostfix {
         let start: Position$ = lexer.getPreviousPosition()
+
         let postfixOperator: string = lexer.parsePostfixOperator()
         if postfixOperator != null
             lexer.advance()
         else
             return(null)
+
         let end: Position$ = lexer.getPosition()
+
         var ret: OperatorPostfix = new OperatorPostfix(postfixOperator, new Position(start), new Position(end))
 
         ret
@@ -3401,11 +3566,15 @@ class Parser {
 
     function parseFunctionCall(): FunctionCall {
         let start: Position$ = lexer.getPreviousPosition()
+
         let arguments: ParenthesizedExpression = parseParenthesizedExpression()
         if arguments == null
             return(null)
+
         let catchClauses: CatchClause[] = parseCatchClauseList()
+
         let end: Position$ = lexer.getPosition()
+
         var ret: FunctionCall = new FunctionCall(arguments, catchClauses, new Position(start), new Position(end))
         arguments.parent = ret
         if catchClauses != null {
@@ -3418,17 +3587,21 @@ class Parser {
 
     function parseMemberExpression(): MemberExpression {
         let start: Position$ = lexer.getPreviousPosition()
+
         let successDot1: bool = lexer.parsePunctuation(dot)
         if successDot1
             lexer.advance()
         else
             return(null)
+
         let member: string = lexer.parseIdentifier()
         if (member != null) && isIdentifier(member)
             lexer.advance()
         else
             return(null)
+
         let end: Position$ = lexer.getPosition()
+
         var ret: MemberExpression = new MemberExpression(member, new Position(start), new Position(end))
 
         ret
@@ -3436,18 +3609,23 @@ class Parser {
 
     function parseSubscript(): Subscript {
         let start: Position$ = lexer.getPreviousPosition()
+
         let successLeftBracket1: bool = lexer.parsePunctuation(leftBracket)
         if successLeftBracket1
             lexer.advance()
         else
             return(null)
+
         let expressions: ExpressionElement[] = parseExpressionElementList()
+
         let successRightBracket3: bool = lexer.parsePunctuation(rightBracket)
         if successRightBracket3
             lexer.advance()
         else
             return(null)
+
         let end: Position$ = lexer.getPosition()
+
         var ret: Subscript = new Subscript(expressions, new Position(start), new Position(end))
         if expressions != null {
             for item: ExpressionElement in expressions
@@ -3476,13 +3654,17 @@ class Parser {
 
     function parseExpressionElement(): ExpressionElement {
         let start: Position$ = lexer.getPreviousPosition()
+
         let expression: Expression = parseExpression()
         if expression == null
             return(null)
+
         let successComma2: bool = lexer.parsePunctuation(comma)
         if successComma2
             lexer.advance()
+
         let end: Position$ = lexer.getPosition()
+
         var ret: ExpressionElement = new ExpressionElement(expression, new Position(start), new Position(end))
         expression.parent = ret
 
@@ -3579,12 +3761,15 @@ class Parser {
 
     function parseIdentifierExpression(): IdentifierExpression {
         let start: Position$ = lexer.getPreviousPosition()
+
         let name: string = lexer.parseIdentifier()
         if (name != null) && isIdentifier(name)
             lexer.advance()
         else
             return(null)
+
         let end: Position$ = lexer.getPosition()
+
         var ret: IdentifierExpression = new IdentifierExpression(name, new Position(start), new Position(end))
 
         ret
@@ -3592,12 +3777,15 @@ class Parser {
 
     function parseLiteralExpression(): LiteralExpression {
         let start: Position$ = lexer.getPreviousPosition()
+
         let literal: Literal = lexer.parseLiteral()
         if literal != null
             lexer.advance()
         else
             return(null)
+
         let end: Position$ = lexer.getPosition()
+
         var ret: LiteralExpression = new LiteralExpression(literal, new Position(start), new Position(end))
 
         ret
@@ -3605,19 +3793,25 @@ class Parser {
 
     function parseIfExpression(): IfExpression {
         let start: Position$ = lexer.getPreviousPosition()
+
         let successIf1: bool = lexer.parseKeyword(ifKeyword)
         if successIf1
             lexer.advance()
         else
             return(null)
+
         let condition: Expression = parseExpression()
         if condition == null
             return(null)
+
         let consequent: Expression = parseExpression()
         if consequent == null
             return(null)
+
         let elseClause: ElseClause = parseElseClause()
+
         let end: Position$ = lexer.getPosition()
+
         var ret: IfExpression = new IfExpression(condition, consequent, elseClause, new Position(start), new Position(end))
         condition.parent = ret
         consequent.parent = ret
@@ -3629,18 +3823,23 @@ class Parser {
 
     function parseSwitchExpression(): SwitchExpression {
         let start: Position$ = lexer.getPreviousPosition()
+
         let successSwitch1: bool = lexer.parseKeyword(switchKeyword)
         if successSwitch1
             lexer.advance()
         else
             return(null)
+
         let expression: Expression = parseExpression()
         if expression == null
             return(null)
+
         let body: SwitchBody = parseSwitchBody()
         if body == null
             return(null)
+
         let end: Position$ = lexer.getPosition()
+
         var ret: SwitchExpression = new SwitchExpression(expression, body, new Position(start), new Position(end))
         expression.parent = ret
         body.parent = ret
@@ -3650,26 +3849,33 @@ class Parser {
 
     function parseForExpression(): ForExpression {
         let start: Position$ = lexer.getPreviousPosition()
+
         let successFor1: bool = lexer.parseKeyword(forKeyword)
         if successFor1
             lexer.advance()
         else
             return(null)
+
         let pattern: Pattern = parsePattern()
         if pattern == null
             return(null)
+
         let successIn3: bool = lexer.parseKeyword(inKeyword)
         if successIn3
             lexer.advance()
         else
             return(null)
+
         let expression: Expression = parseExpression()
         if expression == null
             return(null)
+
         let code: Expression = parseExpression()
         if code == null
             return(null)
+
         let end: Position$ = lexer.getPosition()
+
         var ret: ForExpression = new ForExpression(pattern, expression, code, new Position(start), new Position(end))
         pattern.parent = ret
         expression.parent = ret
@@ -3680,18 +3886,23 @@ class Parser {
 
     function parseWhileExpression(): WhileExpression {
         let start: Position$ = lexer.getPreviousPosition()
+
         let successWhile1: bool = lexer.parseKeyword(whileKeyword)
         if successWhile1
             lexer.advance()
         else
             return(null)
+
         let condition: Expression = parseExpression()
         if condition == null
             return(null)
+
         let code: Expression = parseExpression()
         if code == null
             return(null)
+
         let end: Position$ = lexer.getPosition()
+
         var ret: WhileExpression = new WhileExpression(condition, code, new Position(start), new Position(end))
         condition.parent = ret
         code.parent = ret
@@ -3701,23 +3912,29 @@ class Parser {
 
     function parseDoExpression(): DoExpression {
         let start: Position$ = lexer.getPreviousPosition()
+
         let successDo1: bool = lexer.parseKeyword(doKeyword)
         if successDo1
             lexer.advance()
         else
             return(null)
+
         let code: Expression = parseExpression()
         if code == null
             return(null)
+
         let successWhile3: bool = lexer.parseKeyword(whileKeyword)
         if successWhile3
             lexer.advance()
         else
             return(null)
+
         let condition: Expression = parseExpression()
         if condition == null
             return(null)
+
         let end: Position$ = lexer.getPosition()
+
         var ret: DoExpression = new DoExpression(code, condition, new Position(start), new Position(end))
         code.parent = ret
         condition.parent = ret
@@ -3727,18 +3944,23 @@ class Parser {
 
     function parseParenthesizedExpression(): ParenthesizedExpression {
         let start: Position$ = lexer.getPreviousPosition()
+
         let successLeftParen1: bool = lexer.parsePunctuation(leftParen)
         if successLeftParen1
             lexer.advance()
         else
             return(null)
+
         let expressionElements: ExpressionElement[] = parseExpressionElementList()
+
         let successRightParen3: bool = lexer.parsePunctuation(rightParen)
         if successRightParen3
             lexer.advance()
         else
             return(null)
+
         let end: Position$ = lexer.getPosition()
+
         var ret: ParenthesizedExpression = new ParenthesizedExpression(expressionElements, new Position(start), new Position(end))
         if expressionElements != null {
             for item: ExpressionElement in expressionElements
@@ -3750,13 +3972,17 @@ class Parser {
 
     function parseReturnExpression(): ReturnExpression {
         let start: Position$ = lexer.getPreviousPosition()
+
         let successReturn1: bool = lexer.parseKeyword(returnKeyword)
         if successReturn1
             lexer.advance()
         else
             return(null)
+
         let expression: ParenthesizedExpression = parseParenthesizedExpression()
+
         let end: Position$ = lexer.getPosition()
+
         var ret: ReturnExpression = new ReturnExpression(expression, new Position(start), new Position(end))
         if expression != null
             expression.parent = ret
@@ -3766,16 +3992,21 @@ class Parser {
 
     function parseThrowExpression(): ThrowExpression {
         let start: Position$ = lexer.getPreviousPosition()
+
         let successThrow1: bool = lexer.parseKeyword(throwKeyword)
         if successThrow1
             lexer.advance()
         else
             return(null)
+
         let error: IdentifierExpression = parseIdentifierExpression()
         if error == null
             return(null)
+
         let arguments: ParenthesizedExpression = parseParenthesizedExpression()
+
         let end: Position$ = lexer.getPosition()
+
         var ret: ThrowExpression = new ThrowExpression(error, arguments, new Position(start), new Position(end))
         error.parent = ret
         if arguments != null
@@ -3786,13 +4017,17 @@ class Parser {
 
     function parseBreakExpression(): BreakExpression {
         let start: Position$ = lexer.getPreviousPosition()
+
         let successBreak1: bool = lexer.parseKeyword(breakKeyword)
         if successBreak1
             lexer.advance()
         else
             return(null)
+
         let expression: ParenthesizedExpression = parseParenthesizedExpression()
+
         let end: Position$ = lexer.getPosition()
+
         var ret: BreakExpression = new BreakExpression(expression, new Position(start), new Position(end))
         if expression != null
             expression.parent = ret
@@ -3802,19 +4037,25 @@ class Parser {
 
     function parseConstructorCall(): ConstructorCall {
         let start: Position$ = lexer.getPreviousPosition()
+
         let successNew1: bool = lexer.parseKeyword(newKeyword)
         if successNew1
             lexer.advance()
         else
             return(null)
+
         let typeToConstruct: Type = parseType()
         if typeToConstruct == null
             return(null)
+
         let arguments: ParenthesizedExpression = parseParenthesizedExpression()
         if arguments == null
             return(null)
+
         let catchClauses: CatchClause[] = parseCatchClauseList()
+
         let end: Position$ = lexer.getPosition()
+
         var ret: ConstructorCall = new ConstructorCall(typeToConstruct, arguments, catchClauses, new Position(start), new Position(end))
         typeToConstruct.parent = ret
         arguments.parent = ret
@@ -3828,12 +4069,15 @@ class Parser {
 
     function parseThisExpression(): ThisExpression {
         let start: Position$ = lexer.getPreviousPosition()
+
         let successThis1: bool = lexer.parseKeyword(thisKeyword)
         if successThis1
             lexer.advance()
         else
             return(null)
+
         let end: Position$ = lexer.getPosition()
+
         var ret: ThisExpression = new ThisExpression(new Position(start), new Position(end))
 
         ret
@@ -3841,12 +4085,15 @@ class Parser {
 
     function parseNullExpression(): NullExpression {
         let start: Position$ = lexer.getPreviousPosition()
+
         let successNull1: bool = lexer.parseKeyword(nullKeyword)
         if successNull1
             lexer.advance()
         else
             return(null)
+
         let end: Position$ = lexer.getPosition()
+
         var ret: NullExpression = new NullExpression(new Position(start), new Position(end))
 
         ret
@@ -3854,15 +4101,19 @@ class Parser {
 
     function parseElseClause(): ElseClause {
         let start: Position$ = lexer.getPreviousPosition()
+
         let successElse1: bool = lexer.parseKeyword(elseKeyword)
         if successElse1
             lexer.advance()
         else
             return(null)
+
         let alternative: Expression = parseExpression()
         if alternative == null
             return(null)
+
         let end: Position$ = lexer.getPosition()
+
         var ret: ElseClause = new ElseClause(alternative, new Position(start), new Position(end))
         alternative.parent = ret
 
@@ -3887,18 +4138,23 @@ class Parser {
 
     function parseCurliedSwitchBody(): CurliedSwitchBody {
         let start: Position$ = lexer.getPreviousPosition()
+
         let successLeftCurly1: bool = lexer.parsePunctuation(leftCurly)
         if successLeftCurly1
             lexer.advance()
         else
             return(null)
+
         let cases: SwitchCase[] = parseSwitchCaseList()
+
         let successRightCurly3: bool = lexer.parsePunctuation(rightCurly)
         if successRightCurly3
             lexer.advance()
         else
             return(null)
+
         let end: Position$ = lexer.getPosition()
+
         var ret: CurliedSwitchBody = new CurliedSwitchBody(cases, new Position(start), new Position(end))
         if cases != null {
             for item: SwitchCase in cases
@@ -3910,8 +4166,11 @@ class Parser {
 
     function parseNakedSwitchBody(): NakedSwitchBody {
         let start: Position$ = lexer.getPreviousPosition()
+
         let cases: SwitchCase[] = parseSwitchCaseList()
+
         let end: Position$ = lexer.getPosition()
+
         var ret: NakedSwitchBody = new NakedSwitchBody(cases, new Position(start), new Position(end))
         if cases != null {
             for item: SwitchCase in cases
@@ -3940,13 +4199,17 @@ class Parser {
 
     function parseSwitchCase(): SwitchCase {
         let start: Position$ = lexer.getPreviousPosition()
+
         let label: CaseLabel = parseCaseLabel()
         if label == null
             return(null)
+
         let content: CaseContent = parseCaseContent()
         if content == null
             return(null)
+
         let end: Position$ = lexer.getPosition()
+
         var ret: SwitchCase = new SwitchCase(label, content, new Position(start), new Position(end))
         label.parent = ret
         content.parent = ret
@@ -3972,21 +4235,27 @@ class Parser {
 
     function parseItemCaseLabel(): ItemCaseLabel {
         let start: Position$ = lexer.getPreviousPosition()
+
         let successCase1: bool = lexer.parseKeyword(caseKeyword)
         if successCase1
             lexer.advance()
         else
             return(null)
+
         let pattern: Pattern = parsePattern()
         if pattern == null
             return(null)
+
         let additionalPatterns: CaseItem[] = parseCaseItemList()
+
         let successColon4: bool = lexer.parsePunctuation(colon)
         if successColon4
             lexer.advance()
         else
             return(null)
+
         let end: Position$ = lexer.getPosition()
+
         var ret: ItemCaseLabel = new ItemCaseLabel(pattern, additionalPatterns, new Position(start), new Position(end))
         pattern.parent = ret
         if additionalPatterns != null {
@@ -3999,17 +4268,21 @@ class Parser {
 
     function parseDefaultCaseLabel(): DefaultCaseLabel {
         let start: Position$ = lexer.getPreviousPosition()
+
         let successDefault1: bool = lexer.parseKeyword(defaultKeyword)
         if successDefault1
             lexer.advance()
         else
             return(null)
+
         let successColon2: bool = lexer.parsePunctuation(colon)
         if successColon2
             lexer.advance()
         else
             return(null)
+
         let end: Position$ = lexer.getPosition()
+
         var ret: DefaultCaseLabel = new DefaultCaseLabel(new Position(start), new Position(end))
 
         ret
@@ -4034,15 +4307,19 @@ class Parser {
 
     function parseCaseItem(): CaseItem {
         let start: Position$ = lexer.getPreviousPosition()
+
         let successComma1: bool = lexer.parsePunctuation(comma)
         if successComma1
             lexer.advance()
         else
             return(null)
+
         let pattern: Pattern = parsePattern()
         if pattern == null
             return(null)
+
         let end: Position$ = lexer.getPosition()
+
         var ret: CaseItem = new CaseItem(pattern, new Position(start), new Position(end))
         pattern.parent = ret
 
@@ -4079,12 +4356,15 @@ class Parser {
 
     function parseWildcardPattern(): WildcardPattern {
         let start: Position$ = lexer.getPreviousPosition()
+
         let successUnderscore1: bool = lexer.parsePunctuation(underscore)
         if successUnderscore1
             lexer.advance()
         else
             return(null)
+
         let end: Position$ = lexer.getPosition()
+
         var ret: WildcardPattern = new WildcardPattern(new Position(start), new Position(end))
 
         ret
@@ -4092,13 +4372,17 @@ class Parser {
 
     function parseIdentifierPattern(): IdentifierPattern {
         let start: Position$ = lexer.getPreviousPosition()
+
         let identifier: string = lexer.parseIdentifier()
         if (identifier != null) && isIdentifier(identifier)
             lexer.advance()
         else
             return(null)
+
         let annotationForType: TypeAnnotation = parseTypeAnnotation()
+
         let end: Position$ = lexer.getPosition()
+
         var ret: IdentifierPattern = new IdentifierPattern(identifier, annotationForType, new Position(start), new Position(end))
         if annotationForType != null
             annotationForType.parent = ret
@@ -4108,18 +4392,23 @@ class Parser {
 
     function parseTuplePattern(): TuplePattern {
         let start: Position$ = lexer.getPreviousPosition()
+
         let successLeftParen1: bool = lexer.parsePunctuation(leftParen)
         if successLeftParen1
             lexer.advance()
         else
             return(null)
+
         let elements: TuplePatternElement[] = parseTuplePatternElementList()
+
         let successRightParen3: bool = lexer.parsePunctuation(rightParen)
         if successRightParen3
             lexer.advance()
         else
             return(null)
+
         let end: Position$ = lexer.getPosition()
+
         var ret: TuplePattern = new TuplePattern(elements, new Position(start), new Position(end))
         if elements != null {
             for item: TuplePatternElement in elements
@@ -4131,10 +4420,13 @@ class Parser {
 
     function parseExpressionPattern(): ExpressionPattern {
         let start: Position$ = lexer.getPreviousPosition()
+
         let expression: Expression = parseExpression()
         if expression == null
             return(null)
+
         let end: Position$ = lexer.getPosition()
+
         var ret: ExpressionPattern = new ExpressionPattern(expression, new Position(start), new Position(end))
         expression.parent = ret
 
@@ -4160,13 +4452,17 @@ class Parser {
 
     function parseTuplePatternElement(): TuplePatternElement {
         let start: Position$ = lexer.getPreviousPosition()
+
         let pattern: Pattern = parsePattern()
         if pattern == null
             return(null)
+
         let successComma2: bool = lexer.parsePunctuation(comma)
         if successComma2
             lexer.advance()
+
         let end: Position$ = lexer.getPosition()
+
         var ret: TuplePatternElement = new TuplePatternElement(pattern, new Position(start), new Position(end))
         pattern.parent = ret
 
@@ -4175,8 +4471,11 @@ class Parser {
 
     function parseCaseContent(): CaseContent {
         let start: Position$ = lexer.getPreviousPosition()
+
         let statements: Statement[] = parseStatementList()
+
         let end: Position$ = lexer.getPosition()
+
         var ret: CaseContent = new CaseContent(statements, new Position(start), new Position(end))
         if statements != null {
             for item: Statement in statements
@@ -4188,15 +4487,21 @@ class Parser {
 
     function parseType(): Type {
         let start: Position$ = lexer.getPreviousPosition()
+
         let name: string = lexer.parseIdentifier()
         if (name != null) && isIdentifier(name)
             lexer.advance()
         else
             return(null)
+
         let subType: Subtype = parseSubtype()
+
         let postfixes: TypePostfix[] = parseTypePostfixList()
+
         let lifeTime: LifeTime = parseLifeTime()
+
         let end: Position$ = lexer.getPosition()
+
         var ret: Type = new Type(name, subType, postfixes, lifeTime, new Position(start), new Position(end))
         if subType != null
             subType.parent = ret
@@ -4212,15 +4517,19 @@ class Parser {
 
     function parseTypeAnnotation(): TypeAnnotation {
         let start: Position$ = lexer.getPreviousPosition()
+
         let successColon1: bool = lexer.parsePunctuation(colon)
         if successColon1
             lexer.advance()
         else
             return(null)
+
         let annotationForType: Type = parseType()
         if annotationForType == null
             return(null)
+
         let end: Position$ = lexer.getPosition()
+
         var ret: TypeAnnotation = new TypeAnnotation(annotationForType, new Position(start), new Position(end))
         annotationForType.parent = ret
 
@@ -4229,15 +4538,19 @@ class Parser {
 
     function parseSubtype(): Subtype {
         let start: Position$ = lexer.getPreviousPosition()
+
         let successDot1: bool = lexer.parsePunctuation(dot)
         if successDot1
             lexer.advance()
         else
             return(null)
+
         let type: Type = parseType()
         if type == null
             return(null)
+
         let end: Position$ = lexer.getPosition()
+
         var ret: Subtype = new Subtype(type, new Position(start), new Position(end))
         type.parent = ret
 
@@ -4279,18 +4592,23 @@ class Parser {
 
     function parseIndexedType(): IndexedType {
         let start: Position$ = lexer.getPreviousPosition()
+
         let successLeftBracket1: bool = lexer.parsePunctuation(leftBracket)
         if successLeftBracket1
             lexer.advance()
         else
             return(null)
+
         let key: Type = parseType()
+
         let successRightBracket3: bool = lexer.parsePunctuation(rightBracket)
         if successRightBracket3
             lexer.advance()
         else
             return(null)
+
         let end: Position$ = lexer.getPosition()
+
         var ret: IndexedType = new IndexedType(key, new Position(start), new Position(end))
         if key != null
             key.parent = ret
@@ -4300,12 +4618,15 @@ class Parser {
 
     function parsePointer(): Pointer {
         let start: Position$ = lexer.getPreviousPosition()
+
         let successCircumflex1: bool = lexer.parsePunctuation(circumflex)
         if successCircumflex1
             lexer.advance()
         else
             return(null)
+
         let end: Position$ = lexer.getPosition()
+
         var ret: Pointer = new Pointer(new Position(start), new Position(end))
 
         ret
@@ -4341,12 +4662,15 @@ class Parser {
 
     function parseRoot(): Root {
         let start: Position$ = lexer.getPreviousPosition()
+
         let successDollar1: bool = lexer.parsePunctuation(dollar)
         if successDollar1
             lexer.advance()
         else
             return(null)
+
         let end: Position$ = lexer.getPosition()
+
         var ret: Root = new Root(new Position(start), new Position(end))
 
         ret
@@ -4354,17 +4678,21 @@ class Parser {
 
     function parseLocal(): Local {
         let start: Position$ = lexer.getPreviousPosition()
+
         let successAt1: bool = lexer.parsePunctuation(at)
         if successAt1
             lexer.advance()
         else
             return(null)
+
         let location: string = lexer.parseIdentifier()
         if (location != null) && isIdentifier(location)
             lexer.advance()
         else
             return(null)
+
         let end: Position$ = lexer.getPosition()
+
         var ret: Local = new Local(location, new Position(start), new Position(end))
 
         ret
@@ -4372,15 +4700,19 @@ class Parser {
 
     function parseReference(): Reference {
         let start: Position$ = lexer.getPreviousPosition()
+
         let successAmpersand1: bool = lexer.parsePunctuation(ampersand)
         if successAmpersand1
             lexer.advance()
         else
             return(null)
+
         let age: Literal = lexer.parseLiteral()
         if age != null
             lexer.advance()
+
         let end: Position$ = lexer.getPosition()
+
         var ret: Reference = new Reference(age, new Position(start), new Position(end))
 
         ret
@@ -4388,12 +4720,15 @@ class Parser {
 
     function parseThrown(): Thrown {
         let start: Position$ = lexer.getPreviousPosition()
+
         let successHash1: bool = lexer.parsePunctuation(hash)
         if successHash1
             lexer.advance()
         else
             return(null)
+
         let end: Position$ = lexer.getPosition()
+
         var ret: Thrown = new Thrown(new Position(start), new Position(end))
 
         ret
@@ -4401,13 +4736,17 @@ class Parser {
 
     function parseTypeInheritanceClause(): TypeInheritanceClause {
         let start: Position$ = lexer.getPreviousPosition()
+
         let successExtends1: bool = lexer.parseKeyword(extendsKeyword)
         if successExtends1
             lexer.advance()
         else
             return(null)
+
         let inheritances: Inheritance[] = parseInheritanceList()
+
         let end: Position$ = lexer.getPosition()
+
         var ret: TypeInheritanceClause = new TypeInheritanceClause(inheritances, new Position(start), new Position(end))
         if inheritances != null {
             for item: Inheritance in inheritances
@@ -4436,13 +4775,17 @@ class Parser {
 
     function parseInheritance(): Inheritance {
         let start: Position$ = lexer.getPreviousPosition()
+
         let type: Type = parseType()
         if type == null
             return(null)
+
         let successComma2: bool = lexer.parsePunctuation(comma)
         if successComma2
             lexer.advance()
+
         let end: Position$ = lexer.getPosition()
+
         var ret: Inheritance = new Inheritance(type, new Position(start), new Position(end))
         type.parent = ret
 
