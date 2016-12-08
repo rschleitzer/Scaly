@@ -15,13 +15,17 @@
     (apply-to-selected-children "syntax" (lambda (syntax) (if (program? syntax) "" ($
         (if (multiple? syntax) ($
 "
-    function parse"(id syntax)"List(): "(id syntax)"[] throws ParserError {
+    function parse"(id syntax)"List(): "(id syntax)"[] {
         mutable ret: "(id syntax)"[]$ = null
         while true {
+
             let node: "(id syntax)" = parse"(id syntax)"()
-                catch _ break
+            if node == null
+                break
+
             if ret == null
                 ret = new "(id syntax)"[]()
+
             ret.push(node)
         }
 
@@ -29,26 +33,20 @@
     }
 "       )"")
 "
-    function parse"(id syntax)"(): "(id syntax)" throws ParserError {"
+    function parse"(id syntax)"(): "(id syntax)" {"
         (if (abstract? syntax)
             ($
-"
-        mutable errors: ParserError[]$ = new ParserError[]()
-        let start: Position$ = lexer.getPreviousPosition()
-"                (apply-to-children-of syntax (lambda (content) ($
+                (apply-to-children-of syntax (lambda (content) ($
 "
         {
-            let node: "(link content)" = parse"(link content)"() catch _ (error) {
-                errors.push(error)
-            }
-
+            let node: "(link content)" = parse"(link content)"()
             if node != null
                 return(node)
         }
 "
                 )))
 "
-        throw unableToParse(new Position(start), new ParserError[](errors))
+        null
 "
             )
             ($ ; non-abstract syntax
@@ -57,28 +55,22 @@
 "                (apply-to-children-of syntax (lambda (content) ($
                    (if (string=? "syntax" (type content))
                         ($ ; non-terminals
-"        let "(property content)": "(link content)(if (multiple? content) "[]" "")" = parse"(link content)(if (multiple? content) "List" "")"() catch _ "
-                    (if (optional? content)
-                        "null
-"                       ($ "(error)
-            throw "(if (string=? (type content) "syntax") "error" ($ "ParserError."
-                (case (type content) (("keyword") "Keyword") (("punctuation") "Punctuation")(("identifier") "Identifier")(("literal") "Literal")(("prefixoperator" "binaryoperator" "postfixoperator") "Operator"))
-                "Expected(start"(case (type content) (("keyword" "punctuation") ($ ", new string("((if (string=? (type content) "keyword") name-of-link link) content)")"))(else ""))"))"))"
-"                       )
-                    )
+"        let "(property content)": "(link content)(if (multiple? content) "[]" "")" = parse"(link content)(if (multiple? content) "List" "")"()
+"
+                    (if (or (optional? content) (multiple? content)) "" ($
+"        if "(property content)" == null
+            return(null)
+"
+                    ))
                            (if (top? syntax) ($
 "        if "(property content)" != null {
             if !isAtEnd() {
-                let current: Position$ = lexer.getPosition()
-                throw notAtEnd(new Position(current))
+                return(null)
             }
         }
 "                           )"")
                         )
                         ($ ; terminals
-                            (if (optional? content) "" ($
-"        let start"(if (property content) (string-firstchar-upcase (property content)) ($ (string-firstchar-upcase (link content))(number->string (child-number content))))": Position$ = lexer.getPreviousPosition()
-"                           ))
 "        let "(case (type content) (("keyword" "punctuation") ($ "success"(if (property content) (string-firstchar-upcase (property content)) ($ (string-firstchar-upcase (link content))(number->string (child-number content))))": bool"))(("literal") ($ (property content)": Literal"))(else ($ (property content)": string")))
             " = lexer.parse"
             (case (type content)(("prefixoperator") "PrefixOperator")(("binaryoperator") "BinaryOperator")(("postfixoperator") "PostfixOperator")(("identifier") "Identifier")(("literal") "Literal")(("keyword") "Keyword")(("punctuation") "Punctuation"))
@@ -87,11 +79,9 @@
             lexer.advance()
 "                           (if (optional? content) "" ($
 "        else
-            throw "
-        (case (type content) (("keyword") "keyword") (("punctuation") "punctuation")(("identifier") "identifier")(("literal") "literal")(("prefixoperator" "binaryoperator" "postfixoperator") "operator"))
-        "Expected(new Position(start"(if (property content) (string-firstchar-upcase (property content)) ($ (string-firstchar-upcase (link content))(number->string (child-number content))))(case (type content) (("keyword" "punctuation") ($ "), new string("((if (string=? (type content) "keyword") name-of-link link) content)")"))(else ")"))")
-
-"                           ))
+            return(null)
+"
+                           ))
                         )
                     ) ; syntax or terminal
                 ))) ; apply to children of syntax
@@ -122,7 +112,7 @@
                     )
                 ))
 "
-        return(ret)
+        ret
 "
             ) ; $
         ) ; abstract or not

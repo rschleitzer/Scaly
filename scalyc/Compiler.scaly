@@ -1,11 +1,10 @@
 class Compiler {
-    static function compileFiles(options: Options) throws CompilerError {
+    static function compileFiles(options: Options) {
         let files: string[] = options.files
         mutable sources: string[]$ = new string[]()
         for file: string in files {
             let source: string@sources = File.readToString(file)
-                catch FileError.noSuchFileOrDirectory(error: noSuchFileOrDirectory) throw fileNotFound(file)
-                catch _ (error: FileError) throw unableToReadFile(file, error)
+                catch FileError.noSuchFileOrDirectory(error: noSuchFileOrDirectory) return
                 
             sources.push(source)
         }
@@ -15,7 +14,8 @@ class Compiler {
         for source: string in sources {
             let moduleName: string@compilationUnits = Path.getFileNameWithoutExtension(files[index])
             let compilationUnit: CompilationUnit@compilationUnits = parseUnit(moduleName, source)
-                catch _ (error: CompilerError) throw syntaxError(error)
+            if compilationUnit == null
+                return
 
             compilationUnits.push(compilationUnit)
             index++
@@ -32,11 +32,9 @@ class Compiler {
         sourceVisitor.execute(program)
     }
 
-    static function parseUnit(moduleName: string, text: string): CompilationUnit throws ParserError {
+    static function parseUnit(moduleName: string, text: string): CompilationUnit {
         mutable parser: Parser$ = new Parser(moduleName, text)
         let compilationUnit: CompilationUnit = parser.parseCompilationUnit()
-            catch _ (error: ParserError)
-                throw error
         return(compilationUnit)
     }
 }

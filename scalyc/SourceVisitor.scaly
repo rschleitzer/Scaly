@@ -564,7 +564,7 @@ class SourceVisitor extends CppVisitor {
                     let type: Type = functionSignature.result.resultType
                     sourceFile.append("_Array<")
                     appendCppTypeName(sourceFile, type)
-                    sourceFile.append(">")
+                    sourceFile.append(">*")
                 }
                 else {
                     let type: Type = functionSignature.result.resultType as Type

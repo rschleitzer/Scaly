@@ -75,26 +75,7 @@ FileError* _main(_Page* _ep,  _Array<string>* arguments) {
             return nullptr;
         }
     }
-    auto _Compiler_error = Compiler::compileFiles(_p, options);
-    if (_Compiler_error) { switch (_Compiler_error->_getErrorCode()) {
-        case _CompilerErrorCode_fileNotFound: {
-        _CompilerError_fileNotFound* file = _Compiler_error->get_fileNotFound();
-        {
-            print(_ep, "File ");
-            print(_ep, file->file);
-            print(_ep, " not found.\n");
-            return nullptr;
-        }
-        break;
-        }
-        default: {
-        {
-            print(_ep, "Compiler error.\n");
-            return nullptr;
-        }
-        break;
-        }
-    } }
+    Compiler::compileFiles(options);
 
     return nullptr;
 

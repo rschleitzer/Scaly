@@ -13,15 +13,5 @@ let options: Options$ = Options.parseArguments(arguments)
     }
 
 Compiler.compileFiles(options)
-    catch CompilerError.fileNotFound(file) {
-        print("File ")
-        print(file.file)
-        print(" not found.\n")
-        return
-    }
-    catch _ (error: CompilerError) {
-        print("Compiler error.\n")
-        return
-    }
 
 

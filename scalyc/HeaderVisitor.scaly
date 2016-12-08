@@ -345,7 +345,7 @@ class HeaderVisitor extends CppVisitor {
                     headerFile.append("_Array<")
                     let type: Type = functionSignature.result.resultType
                     appendCppTypeName(headerFile, type)
-                    headerFile.append(">")
+                    headerFile.append(">*")
                 }
                 else {
                     let type: Type = functionSignature.result.resultType as Type

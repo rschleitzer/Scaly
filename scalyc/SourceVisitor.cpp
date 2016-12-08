@@ -532,7 +532,7 @@ bool SourceVisitor::openFunctionSignature(FunctionSignature* functionSignature) 
                 Type* type = functionSignature->result->resultType;
                 sourceFile->append("_Array<");
                 appendCppTypeName(sourceFile, type);
-                sourceFile->append(">");
+                sourceFile->append(">*");
             }
             else {
                 Type* type = (Type*)functionSignature->result->resultType;

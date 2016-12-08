@@ -343,7 +343,7 @@ bool HeaderVisitor::openFunctionSignature(FunctionSignature* functionSignature) 
                 headerFile->append("_Array<");
                 Type* type = functionSignature->result->resultType;
                 appendCppTypeName(headerFile, type);
-                headerFile->append(">");
+                headerFile->append(">*");
             }
             else {
                 Type* type = (Type*)functionSignature->result->resultType;
