@@ -44,9 +44,9 @@ void Compiler::compileFiles(Options* options) {
         item = *(*compilationUnits)[_i];
         item->parent = program;
     }
-    HeaderVisitor* headerVisitor = new(_p) HeaderVisitor();
+    HeaderVisitor* headerVisitor = new(_p) HeaderVisitor(options->directory);
     headerVisitor->execute(program);
-    SourceVisitor* sourceVisitor = new(_p) SourceVisitor();
+    SourceVisitor* sourceVisitor = new(_p) SourceVisitor(options->directory);
     sourceVisitor->execute(program);
 }
 

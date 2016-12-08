@@ -2,14 +2,15 @@
 using namespace scaly;
 namespace scalyc {
 
-SourceVisitor::SourceVisitor() {
+SourceVisitor::SourceVisitor(string* outputDirectory) {
+    directory = outputDirectory;
     inherits = new(_getPage()->allocateExclusivePage()) _Array<Inherits>();
     classes = new(_getPage()->allocateExclusivePage()) _Array<string>();
 }
 
 bool SourceVisitor::openProgram(Program* program) {
     _Region _region; _Page* _p = _region.get();
-    VarString* projectFilePath = new(_p) VarString(program->directory);
+    VarString* projectFilePath = new(_p) VarString(directory);
     if (projectFilePath == nullptr || projectFilePath->equals(""))
         projectFilePath = new(_p) VarString(".");
     projectFilePath->append("/");

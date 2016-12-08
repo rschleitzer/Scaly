@@ -25,10 +25,10 @@ class Compiler {
         for item: CompilationUnit in compilationUnits
             item.parent = program
 
-        mutable headerVisitor: HeaderVisitor$ = new HeaderVisitor()        
+        mutable headerVisitor: HeaderVisitor$ = new HeaderVisitor(options.directory)        
         headerVisitor.execute(program)
 
-        mutable sourceVisitor: SourceVisitor$ = new SourceVisitor()        
+        mutable sourceVisitor: SourceVisitor$ = new SourceVisitor(options.directory)        
         sourceVisitor.execute(program)
     }
 

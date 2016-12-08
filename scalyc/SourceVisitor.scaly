@@ -1,15 +1,17 @@
 class SourceVisitor extends CppVisitor {
 
+    let directory: string
     mutable sourceFile: VarString
 
-    constructor() {
+    constructor(outputDirectory: string) {
+        directory = outputDirectory
         inherits = new Inherits[]()
         classes = new string[]()
     }
 
     function openProgram(program: Program): bool {
 
-        mutable projectFilePath: VarString$ = new VarString(program.directory)
+        mutable projectFilePath: VarString$ = new VarString(directory)
 
         if projectFilePath == null || projectFilePath.equals("")
             projectFilePath = new VarString$(".")

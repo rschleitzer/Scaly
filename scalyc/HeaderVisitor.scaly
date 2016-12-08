@@ -1,9 +1,11 @@
 class HeaderVisitor extends CppVisitor {
     
+    let directory: string
     mutable headerFile: VarString
     mutable mainHeaderFile: VarString
 
-    constructor() {
+    constructor(outputDirectory: string) {
+        directory = outputDirectory
         headerFile = null
         mainHeaderFile = null
         inherits = new Inherits[]()
@@ -11,7 +13,7 @@ class HeaderVisitor extends CppVisitor {
     }
 
     function openProgram(program: Program): bool {
-        mutable programDirectory: string$ = new string(program.directory)
+        mutable programDirectory: string$ = new string(directory)
 
         if programDirectory == null || programDirectory.equals("") {
             programDirectory = new string(".")

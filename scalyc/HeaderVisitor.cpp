@@ -2,7 +2,8 @@
 using namespace scaly;
 namespace scalyc {
 
-HeaderVisitor::HeaderVisitor() {
+HeaderVisitor::HeaderVisitor(string* outputDirectory) {
+    directory = outputDirectory;
     headerFile = nullptr;
     mainHeaderFile = nullptr;
     inherits = new(_getPage()->allocateExclusivePage()) _Array<Inherits>();
@@ -11,7 +12,7 @@ HeaderVisitor::HeaderVisitor() {
 
 bool HeaderVisitor::openProgram(Program* program) {
     _Region _region; _Page* _p = _region.get();
-    string* programDirectory = new(_p) string(program->directory);
+    string* programDirectory = new(_p) string(directory);
     if (programDirectory == nullptr || programDirectory->equals("")) {
         programDirectory = new(_p) string(".");
     }
