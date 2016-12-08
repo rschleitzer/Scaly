@@ -1,5 +1,6 @@
 (define (visitor) ($
-"class Visitor {"
+"
+class Visitor {"
     (apply-to-selected-children "syntax" (lambda (syntax) (if (abstract? syntax) "" ($
         (if (has-syntax-children? syntax)
             ($ "
@@ -9,8 +10,7 @@
 
     function close"(id syntax)"("(string-firstchar-downcase (id syntax))": "(id syntax)") {
     }
-"
-            )
+"            )
             ($ "
     function visit"(id syntax)"("(string-firstchar-downcase (id syntax))": "(id syntax)") {
     }
@@ -18,6 +18,5 @@
         )
     ))))
 "}
-
 "
 ))

@@ -2764,6 +2764,7 @@ class Parser {
     let hash: string
     let ampersand: string
 }
+
 class Visitor {
     function openProgram(program: Program): bool {
         true

@@ -1,6 +1,7 @@
 (define (syntax) ($
 
-"class SyntaxNode {
+"
+class SyntaxNode {
     let start: Position
     let end: Position
     var parent: SyntaxNode
