@@ -552,14 +552,17 @@ bool SourceVisitor::openConstParameter(ConstParameter* constParameter) {
 }
 
 void SourceVisitor::writeParameter(string* name, Type* parameterType) {
-    ParameterClause* parameterClause = (ParameterClause*)parameterType->parent->parent;
-    _Array<Parameter>* parameters = parameterClause->parameters;
-    Parameter* parameter = (Parameter*)parameterType->parent;
-    if (parameter != *(*parameters)[0])
-        sourceFile->append(", ");
-    parameterType->accept(this);
-    sourceFile->append(" ");
-    sourceFile->append(name);
+    if (parameterType->parent->_isParameter()) {
+        Parameter* parameter = (Parameter*)parameterType->parent;
+        if (parameter->parent->_isParameterClause()) {
+            _Array<Parameter>* parameters = ((ParameterClause*)parameter->parent)->parameters;
+            if (parameter != *(*parameters)[0])
+                sourceFile->append(", ");
+            parameterType->accept(this);
+            sourceFile->append(" ");
+            sourceFile->append(name);
+        }
+    }
 }
 
 bool SourceVisitor::isClass(string* name) {

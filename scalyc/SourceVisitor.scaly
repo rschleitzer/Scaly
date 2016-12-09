@@ -595,14 +595,17 @@ class SourceVisitor extends CppVisitor {
     }
 
     function writeParameter(name: string, parameterType: Type) {
-        let parameterClause: ParameterClause = parameterType.parent.parent as ParameterClause
-        let parameters: Parameter[] = parameterClause.parameters
-        let parameter: Parameter = parameterType.parent as Parameter
-        if parameter != parameters[0]
-            sourceFile.append(", ")
-        parameterType.accept(this)
-        sourceFile.append(" ")
-        sourceFile.append(name)
+        if parameterType.parent is Parameter {
+            let parameter: Parameter = parameterType.parent as Parameter
+            if parameter.parent is ParameterClause {
+                let parameters: Parameter[] = (parameter.parent as ParameterClause).parameters
+                if parameter != parameters[0]
+                    sourceFile.append(", ")
+                parameterType.accept(this)
+                sourceFile.append(" ")
+                sourceFile.append(name)
+            }
+        }
     }
 
     function isClass(name: string): bool {
