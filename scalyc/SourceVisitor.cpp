@@ -308,15 +308,15 @@ bool SourceVisitor::openSimpleExpression(SimpleExpression* simpleExpression) {
             }
         }
     }
-    if (simpleExpression->links != nullptr) {
-        _Array<Link>* links = simpleExpression->links;
-        Link* link = nullptr;
-        size_t _links_length = links->length();
-        for (size_t _i = 0; _i < _links_length; _i++) {
-            link = *(*links)[_i];
+    if (simpleExpression->binaryExpressions != nullptr) {
+        _Array<BinaryExpression>* binaryExpressions = simpleExpression->binaryExpressions;
+        BinaryExpression* binaryExpression = nullptr;
+        size_t _binaryExpressions_length = binaryExpressions->length();
+        for (size_t _i = 0; _i < _binaryExpressions_length; _i++) {
+            binaryExpression = *(*binaryExpressions)[_i];
             {
-                if (link->_isTypeCast()) {
-                    TypeCast* typeCast = (TypeCast*)link;
+                if (binaryExpression->_isTypeCast()) {
+                    TypeCast* typeCast = (TypeCast*)binaryExpression;
                     if (typeCast->objectType->_isType()) {
                         Type* type = (Type*)typeCast->objectType;
                         sourceFile->append("(");
@@ -330,12 +330,12 @@ bool SourceVisitor::openSimpleExpression(SimpleExpression* simpleExpression) {
         }
     }
     if (simpleExpression->prefixExpression->expression->primaryExpression->_isIdentifierExpression()) {
-        _Array<Link>* links = simpleExpression->links;
-        if (links != nullptr) {
-            if (links->length() == 1) {
-                Link* link = *(*links)[0];
-                if (link->_isAssignment()) {
-                    Assignment* assignment = (Assignment*)link;
+        _Array<BinaryExpression>* binaryExpressions = simpleExpression->binaryExpressions;
+        if (binaryExpressions != nullptr) {
+            if (binaryExpressions->length() == 1) {
+                BinaryExpression* binaryExpression = *(*binaryExpressions)[0];
+                if (binaryExpression->_isAssignment()) {
+                    Assignment* assignment = (Assignment*)binaryExpression;
                     SimpleExpression* simpleExpression = (SimpleExpression*)(assignment->parent);
                     PostfixExpression* leftSide = simpleExpression->prefixExpression->expression;
                     if (leftSide->primaryExpression->_isIdentifierExpression()) {

@@ -226,7 +226,7 @@
 
     <syntax id = SimpleExpression                               base = Expression
         <content link = PrefixExpression                        property = prefixExpression
-        <content link = Link                  multiple optional property = links
+        <content link = BinaryExpression      multiple optional property = binaryExpressions
 
     <syntax id = PrefixExpression
         <content prefixoperator                        optional property = prefixOperator
@@ -401,25 +401,25 @@
         <content link = ExpressionElement     multiple          property = expressions
         <content link = rightBracket
 
-    <syntax id = Link                         multiple abstract
+    <syntax id = BinaryExpression             multiple abstract
         <content link = BinaryOperation
         <content link = Assignment
         <content link = TypeQuery
         <content link = TypeCast
 
-    <syntax id = BinaryOperation                                base = Link
+    <syntax id = BinaryOperation                                base = BinaryExpression
         <content binaryoperator                                 property = binaryOperator
         <content link = PrefixExpression                        property = expression
 
-    <syntax id = Assignment                                     base = Link
+    <syntax id = Assignment                                     base = BinaryExpression
         <content link = equal
         <content link = Expression                              property = expression
 
-    <syntax id = TypeQuery                                      base = Link
+    <syntax id = TypeQuery                                      base = BinaryExpression
         <content link = is
         <content link = Type                                    property = objectType
 
-    <syntax id = TypeCast                                       base = Link
+    <syntax id = TypeCast                                       base = BinaryExpression
         <content link = as
         <content link = Type                                    property = objectType
 

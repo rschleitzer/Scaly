@@ -329,11 +329,11 @@ class SourceVisitor extends CppVisitor {
         }
 
         // Prefix type cast if any
-        if simpleExpression.links != null {
-            let links: Link[] = simpleExpression.links
-            for link: Link in links {
-                if link is TypeCast {
-                    let typeCast: TypeCast = link as TypeCast
+        if simpleExpression.binaryExpressions != null {
+            let binaryExpressions: BinaryExpression[] = simpleExpression.binaryExpressions
+            for binaryExpression: BinaryExpression in binaryExpressions {
+                if binaryExpression is TypeCast {
+                    let typeCast: TypeCast = binaryExpression as TypeCast
                     if  typeCast.objectType is Type {
                         let type: Type = typeCast.objectType as Type
                         sourceFile.append("(")
@@ -347,14 +347,14 @@ class SourceVisitor extends CppVisitor {
         }
 
         if simpleExpression.prefixExpression.expression.primaryExpression is IdentifierExpression {
-            let links: Link[] = simpleExpression.links
+            let binaryExpressions: BinaryExpression[] = simpleExpression.binaryExpressions
 
             // If we assign to a member then clear the exclusive page of that member
-            if links != null {
-                if links.length() == 1 {
-                    let link: Link = links[0]
-                    if link is Assignment {
-                        let assignment: Assignment = link as Assignment
+            if binaryExpressions != null {
+                if binaryExpressions.length() == 1 {
+                    let binaryExpression: BinaryExpression = binaryExpressions[0]
+                    if binaryExpression is Assignment {
+                        let assignment: Assignment = binaryExpression as Assignment
                         let simpleExpression: SimpleExpression = (assignment.parent) as SimpleExpression
                         let leftSide: PostfixExpression = simpleExpression.prefixExpression.expression
                         if leftSide.primaryExpression is IdentifierExpression {

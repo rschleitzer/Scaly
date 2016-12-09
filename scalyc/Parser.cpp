@@ -1183,15 +1183,15 @@ SimpleExpression* Parser::parseSimpleExpression(_Page* _rp) {
     PrefixExpression* prefixExpression = parsePrefixExpression(_rp);
     if (prefixExpression == nullptr)
         return nullptr;
-    _Array<Link>* links = parseLinkList(_rp);
+    _Array<BinaryExpression>* binaryExpressions = parseBinaryExpressionList(_rp);
     Position* end = lexer->getPosition(_p);
-    SimpleExpression* ret = new(_rp) SimpleExpression(prefixExpression, links, new(_rp) Position(start), new(_rp) Position(end));
+    SimpleExpression* ret = new(_rp) SimpleExpression(prefixExpression, binaryExpressions, new(_rp) Position(start), new(_rp) Position(end));
     prefixExpression->parent = ret;
-    if (links != nullptr) {
-        Link* item = nullptr;
-        size_t _links_length = links->length();
-        for (size_t _i = 0; _i < _links_length; _i++) {
-            item = *(*links)[_i];
+    if (binaryExpressions != nullptr) {
+        BinaryExpression* item = nullptr;
+        size_t _binaryExpressions_length = binaryExpressions->length();
+        for (size_t _i = 0; _i < _binaryExpressions_length; _i++) {
+            item = *(*binaryExpressions)[_i];
             item->parent = ret;
         }
     }
@@ -2033,21 +2033,21 @@ Subscript* Parser::parseSubscript(_Page* _rp) {
     return ret;
 }
 
-_Array<Link>* Parser::parseLinkList(_Page* _rp) {
+_Array<BinaryExpression>* Parser::parseBinaryExpressionList(_Page* _rp) {
     _Region _region; _Page* _p = _region.get();
-    _Array<Link>* ret = nullptr;
+    _Array<BinaryExpression>* ret = nullptr;
     while (true) {
-        Link* node = parseLink(_rp);
+        BinaryExpression* node = parseBinaryExpression(_rp);
         if (node == nullptr)
             break;
         if (ret == nullptr)
-            ret = new(_p) _Array<Link>();
+            ret = new(_p) _Array<BinaryExpression>();
         ret->push(node);
     }
-    return ret ? new(_rp) _Array<Link>(ret) : nullptr;
+    return ret ? new(_rp) _Array<BinaryExpression>(ret) : nullptr;
 }
 
-Link* Parser::parseLink(_Page* _rp) {
+BinaryExpression* Parser::parseBinaryExpression(_Page* _rp) {
     {
         BinaryOperation* node = parseBinaryOperation(_rp);
         if (node != nullptr)
@@ -2784,7 +2784,7 @@ bool SyntaxNode::_isCatchClause() { return (false); }
 bool SyntaxNode::_isCatchPattern() { return (false); }
 bool SyntaxNode::_isWildCardCatchPattern() { return (false); }
 bool SyntaxNode::_isIdentifierCatchPattern() { return (false); }
-bool SyntaxNode::_isLink() { return (false); }
+bool SyntaxNode::_isBinaryExpression() { return (false); }
 bool SyntaxNode::_isBinaryOperation() { return (false); }
 bool SyntaxNode::_isAssignment() { return (false); }
 bool SyntaxNode::_isTypeQuery() { return (false); }
@@ -3595,22 +3595,22 @@ void CodeBlock::accept(Visitor* visitor) {
 
 bool CodeBlock::_isCodeBlock() { return (true); }
 
-SimpleExpression::SimpleExpression(PrefixExpression* prefixExpression, _Array<Link>* links, Position* start, Position* end) {
+SimpleExpression::SimpleExpression(PrefixExpression* prefixExpression, _Array<BinaryExpression>* binaryExpressions, Position* start, Position* end) {
     this->start = start;
     this->end = end;
     this->prefixExpression = prefixExpression;
-    this->links = links;
+    this->binaryExpressions = binaryExpressions;
 }
 
 void SimpleExpression::accept(Visitor* visitor) {
     if (!visitor->openSimpleExpression(this))
         return;
     prefixExpression->accept(visitor);
-    if (links != nullptr) {
-        Link* node = nullptr;
-        size_t _links_length = links->length();
-        for (size_t _i = 0; _i < _links_length; _i++) {
-            node = *(*links)[_i];
+    if (binaryExpressions != nullptr) {
+        BinaryExpression* node = nullptr;
+        size_t _binaryExpressions_length = binaryExpressions->length();
+        for (size_t _i = 0; _i < _binaryExpressions_length; _i++) {
+            node = *(*binaryExpressions)[_i];
             node->accept(visitor);
         }
     }
@@ -4232,15 +4232,15 @@ void Subscript::accept(Visitor* visitor) {
 
 bool Subscript::_isSubscript() { return (true); }
 
-void Link::accept(Visitor* visitor) {
+void BinaryExpression::accept(Visitor* visitor) {
 }
 
-bool Link::_isLink() { return (true); }
+bool BinaryExpression::_isBinaryExpression() { return (true); }
 
-bool Link::_isBinaryOperation() { return (false); }
-bool Link::_isAssignment() { return (false); }
-bool Link::_isTypeQuery() { return (false); }
-bool Link::_isTypeCast() { return (false); }
+bool BinaryExpression::_isBinaryOperation() { return (false); }
+bool BinaryExpression::_isAssignment() { return (false); }
+bool BinaryExpression::_isTypeQuery() { return (false); }
+bool BinaryExpression::_isTypeCast() { return (false); }
 
 BinaryOperation::BinaryOperation(string* binaryOperator, PrefixExpression* expression, Position* start, Position* end) {
     this->start = start;

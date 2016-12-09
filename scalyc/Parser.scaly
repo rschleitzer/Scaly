@@ -86,7 +86,7 @@ class WildCardCatchPattern
 class IdentifierCatchPattern
 class MemberExpression
 class Subscript
-class Link
+class BinaryExpression
 class BinaryOperation
 class Assignment
 class TypeQuery
@@ -1470,14 +1470,14 @@ class Parser {
         if prefixExpression == null
             return(null)
 
-        let links: Link[] = parseLinkList()
+        let binaryExpressions: BinaryExpression[] = parseBinaryExpressionList()
 
         let end: Position$ = lexer.getPosition()
 
-        let ret: SimpleExpression = new SimpleExpression(prefixExpression, links, new Position(start), new Position(end))
+        let ret: SimpleExpression = new SimpleExpression(prefixExpression, binaryExpressions, new Position(start), new Position(end))
         prefixExpression.parent = ret
-        if links != null {
-            for item: Link in links
+        if binaryExpressions != null {
+            for item: BinaryExpression in binaryExpressions
                 item.parent = ret
         }
 
@@ -2461,16 +2461,16 @@ class Parser {
         ret
     }
 
-    function parseLinkList(): Link[] {
-        mutable ret: Link[]$ = null
+    function parseBinaryExpressionList(): BinaryExpression[] {
+        mutable ret: BinaryExpression[]$ = null
         while true {
 
-            let node: Link = parseLink()
+            let node: BinaryExpression = parseBinaryExpression()
             if node == null
                 break
 
             if ret == null
-                ret = new Link[]()
+                ret = new BinaryExpression[]()
 
             ret.push(node)
         }
@@ -2478,7 +2478,7 @@ class Parser {
         return(ret)
     }
 
-    function parseLink(): Link {
+    function parseBinaryExpression(): BinaryExpression {
         {
             let node: BinaryOperation = parseBinaryOperation()
             if node != null
@@ -4103,26 +4103,26 @@ class CodeBlock extends Expression {
 
 class SimpleExpression extends Expression {
 
-    constructor(prefixExpression: PrefixExpression, links: Link[], start: Position, end: Position) {
+    constructor(prefixExpression: PrefixExpression, binaryExpressions: BinaryExpression[], start: Position, end: Position) {
         this.start = start
         this.end = end
         this.prefixExpression = prefixExpression
-        this.links = links
+        this.binaryExpressions = binaryExpressions
     }
 
     override function accept(mutable visitor: Visitor) {
         if !visitor.openSimpleExpression(this)
             return
         prefixExpression.accept(visitor)
-        if links != null {
-            for node: Link in links
+        if binaryExpressions != null {
+            for node: BinaryExpression in binaryExpressions
                 node.accept(visitor)
         }
         visitor.closeSimpleExpression(this)
     }
 
     let prefixExpression: PrefixExpression
-    let links: Link[]
+    let binaryExpressions: BinaryExpression[]
 }
 
 class PrefixExpression extends SyntaxNode {
@@ -4794,14 +4794,14 @@ class Subscript extends Postfix {
     let expressions: ExpressionElement[]
 }
 
-class Link extends SyntaxNode {
+class BinaryExpression extends SyntaxNode {
 
     function accept(mutable visitor: Visitor) {
     }
 
 }
 
-class BinaryOperation extends Link {
+class BinaryOperation extends BinaryExpression {
 
     constructor(binaryOperator: string, expression: PrefixExpression, start: Position, end: Position) {
         this.start = start
@@ -4821,7 +4821,7 @@ class BinaryOperation extends Link {
     let expression: PrefixExpression
 }
 
-class Assignment extends Link {
+class Assignment extends BinaryExpression {
 
     constructor(expression: Expression, start: Position, end: Position) {
         this.start = start
@@ -4839,7 +4839,7 @@ class Assignment extends Link {
     let expression: Expression
 }
 
-class TypeQuery extends Link {
+class TypeQuery extends BinaryExpression {
 
     constructor(objectType: Type, start: Position, end: Position) {
         this.start = start
@@ -4857,7 +4857,7 @@ class TypeQuery extends Link {
     let objectType: Type
 }
 
-class TypeCast extends Link {
+class TypeCast extends BinaryExpression {
 
     constructor(objectType: Type, start: Position, end: Position) {
         this.start = start
