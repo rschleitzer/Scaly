@@ -329,11 +329,11 @@ class SourceVisitor extends CppVisitor {
         }
 
         // Prefix type cast if any
-        if simpleExpression.binaryOps != null {
-            let binaryOps: BinaryOp[] = simpleExpression.binaryOps
-            for binaryOp: BinaryOp in binaryOps {
-                if binaryOp is TypeCast {
-                    let typeCast: TypeCast = binaryOp as TypeCast
+        if simpleExpression.links != null {
+            let links: Link[] = simpleExpression.links
+            for link: Link in links {
+                if link is TypeCast {
+                    let typeCast: TypeCast = link as TypeCast
                     if  typeCast.objectType is Type {
                         let type: Type = typeCast.objectType as Type
                         sourceFile.append("(")
@@ -347,14 +347,14 @@ class SourceVisitor extends CppVisitor {
         }
 
         if simpleExpression.prefixExpression.expression.primaryExpression is IdentifierExpression {
-            let binaryOps: BinaryOp[] = simpleExpression.binaryOps
+            let links: Link[] = simpleExpression.links
 
             // If we assign to a member then clear the exclusive page of that member
-            if binaryOps != null {
-                if binaryOps.length() == 1 {
-                    let binaryOp: BinaryOp = binaryOps[0]
-                    if binaryOp is Assignment {
-                        let assignment: Assignment = binaryOp as Assignment
+            if links != null {
+                if links.length() == 1 {
+                    let link: Link = links[0]
+                    if link is Assignment {
+                        let assignment: Assignment = link as Assignment
                         let simpleExpression: SimpleExpression = (assignment.parent) as SimpleExpression
                         let leftSide: PostfixExpression = simpleExpression.prefixExpression.expression
                         if leftSide.primaryExpression is IdentifierExpression {

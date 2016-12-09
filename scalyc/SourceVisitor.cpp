@@ -308,15 +308,15 @@ bool SourceVisitor::openSimpleExpression(SimpleExpression* simpleExpression) {
             }
         }
     }
-    if (simpleExpression->binaryOps != nullptr) {
-        _Array<BinaryOp>* binaryOps = simpleExpression->binaryOps;
-        BinaryOp* binaryOp = nullptr;
-        size_t _binaryOps_length = binaryOps->length();
-        for (size_t _i = 0; _i < _binaryOps_length; _i++) {
-            binaryOp = *(*binaryOps)[_i];
+    if (simpleExpression->links != nullptr) {
+        _Array<Link>* links = simpleExpression->links;
+        Link* link = nullptr;
+        size_t _links_length = links->length();
+        for (size_t _i = 0; _i < _links_length; _i++) {
+            link = *(*links)[_i];
             {
-                if (binaryOp->_isTypeCast()) {
-                    TypeCast* typeCast = (TypeCast*)binaryOp;
+                if (link->_isTypeCast()) {
+                    TypeCast* typeCast = (TypeCast*)link;
                     if (typeCast->objectType->_isType()) {
                         Type* type = (Type*)typeCast->objectType;
                         sourceFile->append("(");
@@ -330,12 +330,12 @@ bool SourceVisitor::openSimpleExpression(SimpleExpression* simpleExpression) {
         }
     }
     if (simpleExpression->prefixExpression->expression->primaryExpression->_isIdentifierExpression()) {
-        _Array<BinaryOp>* binaryOps = simpleExpression->binaryOps;
-        if (binaryOps != nullptr) {
-            if (binaryOps->length() == 1) {
-                BinaryOp* binaryOp = *(*binaryOps)[0];
-                if (binaryOp->_isAssignment()) {
-                    Assignment* assignment = (Assignment*)binaryOp;
+        _Array<Link>* links = simpleExpression->links;
+        if (links != nullptr) {
+            if (links->length() == 1) {
+                Link* link = *(*links)[0];
+                if (link->_isAssignment()) {
+                    Assignment* assignment = (Assignment*)link;
                     SimpleExpression* simpleExpression = (SimpleExpression*)(assignment->parent);
                     PostfixExpression* leftSide = simpleExpression->prefixExpression->expression;
                     if (leftSide->primaryExpression->_isIdentifierExpression()) {

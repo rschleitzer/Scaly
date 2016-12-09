@@ -226,7 +226,7 @@
 
     <syntax id = SimpleExpression                               base = Expression
         <content link = PrefixExpression                        property = prefixExpression
-        <content link = BinaryOp              multiple optional property = binaryOps
+        <content link = Link                  multiple optional property = links
 
     <syntax id = PrefixExpression
         <content prefixoperator                        optional property = prefixOperator
@@ -401,25 +401,25 @@
         <content link = ExpressionElement     multiple          property = expressions
         <content link = rightBracket
 
-    <syntax id = BinaryOp                     multiple abstract
+    <syntax id = Link                         multiple abstract
         <content link = BinaryOperation
         <content link = Assignment
         <content link = TypeQuery
         <content link = TypeCast
 
-    <syntax id = BinaryOperation                                base = BinaryOp
+    <syntax id = BinaryOperation                                base = Link
         <content binaryoperator                                 property = binaryOperator
         <content link = PrefixExpression                        property = expression
 
-    <syntax id = Assignment                                     base = BinaryOp
+    <syntax id = Assignment                                     base = Link
         <content link = equal
         <content link = Expression                              property = expression
 
-    <syntax id = TypeQuery                                      base = BinaryOp
+    <syntax id = TypeQuery                                      base = Link
         <content link = is
         <content link = Type                                    property = objectType
 
-    <syntax id = TypeCast                                       base = BinaryOp
+    <syntax id = TypeCast                                       base = Link
         <content link = as
         <content link = Type                                    property = objectType
 

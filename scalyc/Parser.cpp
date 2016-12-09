@@ -1183,15 +1183,15 @@ SimpleExpression* Parser::parseSimpleExpression(_Page* _rp) {
     PrefixExpression* prefixExpression = parsePrefixExpression(_rp);
     if (prefixExpression == nullptr)
         return nullptr;
-    _Array<BinaryOp>* binaryOps = parseBinaryOpList(_rp);
+    _Array<Link>* links = parseLinkList(_rp);
     Position* end = lexer->getPosition(_p);
-    SimpleExpression* ret = new(_rp) SimpleExpression(prefixExpression, binaryOps, new(_rp) Position(start), new(_rp) Position(end));
+    SimpleExpression* ret = new(_rp) SimpleExpression(prefixExpression, links, new(_rp) Position(start), new(_rp) Position(end));
     prefixExpression->parent = ret;
-    if (binaryOps != nullptr) {
-        BinaryOp* item = nullptr;
-        size_t _binaryOps_length = binaryOps->length();
-        for (size_t _i = 0; _i < _binaryOps_length; _i++) {
-            item = *(*binaryOps)[_i];
+    if (links != nullptr) {
+        Link* item = nullptr;
+        size_t _links_length = links->length();
+        for (size_t _i = 0; _i < _links_length; _i++) {
+            item = *(*links)[_i];
             item->parent = ret;
         }
     }
@@ -2033,21 +2033,21 @@ Subscript* Parser::parseSubscript(_Page* _rp) {
     return ret;
 }
 
-_Array<BinaryOp>* Parser::parseBinaryOpList(_Page* _rp) {
+_Array<Link>* Parser::parseLinkList(_Page* _rp) {
     _Region _region; _Page* _p = _region.get();
-    _Array<BinaryOp>* ret = nullptr;
+    _Array<Link>* ret = nullptr;
     while (true) {
-        BinaryOp* node = parseBinaryOp(_rp);
+        Link* node = parseLink(_rp);
         if (node == nullptr)
             break;
         if (ret == nullptr)
-            ret = new(_p) _Array<BinaryOp>();
+            ret = new(_p) _Array<Link>();
         ret->push(node);
     }
-    return ret ? new(_rp) _Array<BinaryOp>(ret) : nullptr;
+    return ret ? new(_rp) _Array<Link>(ret) : nullptr;
 }
 
-BinaryOp* Parser::parseBinaryOp(_Page* _rp) {
+Link* Parser::parseLink(_Page* _rp) {
     {
         BinaryOperation* node = parseBinaryOperation(_rp);
         if (node != nullptr)
@@ -2784,7 +2784,7 @@ bool SyntaxNode::_isCatchClause() { return (false); }
 bool SyntaxNode::_isCatchPattern() { return (false); }
 bool SyntaxNode::_isWildCardCatchPattern() { return (false); }
 bool SyntaxNode::_isIdentifierCatchPattern() { return (false); }
-bool SyntaxNode::_isBinaryOp() { return (false); }
+bool SyntaxNode::_isLink() { return (false); }
 bool SyntaxNode::_isBinaryOperation() { return (false); }
 bool SyntaxNode::_isAssignment() { return (false); }
 bool SyntaxNode::_isTypeQuery() { return (false); }
@@ -3595,22 +3595,22 @@ void CodeBlock::accept(Visitor* visitor) {
 
 bool CodeBlock::_isCodeBlock() { return (true); }
 
-SimpleExpression::SimpleExpression(PrefixExpression* prefixExpression, _Array<BinaryOp>* binaryOps, Position* start, Position* end) {
+SimpleExpression::SimpleExpression(PrefixExpression* prefixExpression, _Array<Link>* links, Position* start, Position* end) {
     this->start = start;
     this->end = end;
     this->prefixExpression = prefixExpression;
-    this->binaryOps = binaryOps;
+    this->links = links;
 }
 
 void SimpleExpression::accept(Visitor* visitor) {
     if (!visitor->openSimpleExpression(this))
         return;
     prefixExpression->accept(visitor);
-    if (binaryOps != nullptr) {
-        BinaryOp* node = nullptr;
-        size_t _binaryOps_length = binaryOps->length();
-        for (size_t _i = 0; _i < _binaryOps_length; _i++) {
-            node = *(*binaryOps)[_i];
+    if (links != nullptr) {
+        Link* node = nullptr;
+        size_t _links_length = links->length();
+        for (size_t _i = 0; _i < _links_length; _i++) {
+            node = *(*links)[_i];
             node->accept(visitor);
         }
     }
@@ -4232,15 +4232,15 @@ void Subscript::accept(Visitor* visitor) {
 
 bool Subscript::_isSubscript() { return (true); }
 
-void BinaryOp::accept(Visitor* visitor) {
+void Link::accept(Visitor* visitor) {
 }
 
-bool BinaryOp::_isBinaryOp() { return (true); }
+bool Link::_isLink() { return (true); }
 
-bool BinaryOp::_isBinaryOperation() { return (false); }
-bool BinaryOp::_isAssignment() { return (false); }
-bool BinaryOp::_isTypeQuery() { return (false); }
-bool BinaryOp::_isTypeCast() { return (false); }
+bool Link::_isBinaryOperation() { return (false); }
+bool Link::_isAssignment() { return (false); }
+bool Link::_isTypeQuery() { return (false); }
+bool Link::_isTypeCast() { return (false); }
 
 BinaryOperation::BinaryOperation(string* binaryOperator, PrefixExpression* expression, Position* start, Position* end) {
     this->start = start;

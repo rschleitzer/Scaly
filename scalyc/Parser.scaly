@@ -86,7 +86,7 @@ class WildCardCatchPattern
 class IdentifierCatchPattern
 class MemberExpression
 class Subscript
-class BinaryOp
+class Link
 class BinaryOperation
 class Assignment
 class TypeQuery
@@ -1470,14 +1470,14 @@ class Parser {
         if prefixExpression == null
             return(null)
 
-        let binaryOps: BinaryOp[] = parseBinaryOpList()
+        let links: Link[] = parseLinkList()
 
         let end: Position$ = lexer.getPosition()
 
-        let ret: SimpleExpression = new SimpleExpression(prefixExpression, binaryOps, new Position(start), new Position(end))
+        let ret: SimpleExpression = new SimpleExpression(prefixExpression, links, new Position(start), new Position(end))
         prefixExpression.parent = ret
-        if binaryOps != null {
-            for item: BinaryOp in binaryOps
+        if links != null {
+            for item: Link in links
                 item.parent = ret
         }
 
@@ -2461,16 +2461,16 @@ class Parser {
         ret
     }
 
-    function parseBinaryOpList(): BinaryOp[] {
-        mutable ret: BinaryOp[]$ = null
+    function parseLinkList(): Link[] {
+        mutable ret: Link[]$ = null
         while true {
 
-            let node: BinaryOp = parseBinaryOp()
+            let node: Link = parseLink()
             if node == null
                 break
 
             if ret == null
-                ret = new BinaryOp[]()
+                ret = new Link[]()
 
             ret.push(node)
         }
@@ -2478,7 +2478,7 @@ class Parser {
         return(ret)
     }
 
-    function parseBinaryOp(): BinaryOp {
+    function parseLink(): Link {
         {
             let node: BinaryOperation = parseBinaryOperation()
             if node != null
@@ -4103,26 +4103,26 @@ class CodeBlock extends Expression {
 
 class SimpleExpression extends Expression {
 
-    constructor(prefixExpression: PrefixExpression, binaryOps: BinaryOp[], start: Position, end: Position) {
+    constructor(prefixExpression: PrefixExpression, links: Link[], start: Position, end: Position) {
         this.start = start
         this.end = end
         this.prefixExpression = prefixExpression
-        this.binaryOps = binaryOps
+        this.links = links
     }
 
     override function accept(mutable visitor: Visitor) {
         if !visitor.openSimpleExpression(this)
             return
         prefixExpression.accept(visitor)
-        if binaryOps != null {
-            for node: BinaryOp in binaryOps
+        if links != null {
+            for node: Link in links
                 node.accept(visitor)
         }
         visitor.closeSimpleExpression(this)
     }
 
     let prefixExpression: PrefixExpression
-    let binaryOps: BinaryOp[]
+    let links: Link[]
 }
 
 class PrefixExpression extends SyntaxNode {
@@ -4794,14 +4794,14 @@ class Subscript extends Postfix {
     let expressions: ExpressionElement[]
 }
 
-class BinaryOp extends SyntaxNode {
+class Link extends SyntaxNode {
 
     function accept(mutable visitor: Visitor) {
     }
 
 }
 
-class BinaryOperation extends BinaryOp {
+class BinaryOperation extends Link {
 
     constructor(binaryOperator: string, expression: PrefixExpression, start: Position, end: Position) {
         this.start = start
@@ -4821,7 +4821,7 @@ class BinaryOperation extends BinaryOp {
     let expression: PrefixExpression
 }
 
-class Assignment extends BinaryOp {
+class Assignment extends Link {
 
     constructor(expression: Expression, start: Position, end: Position) {
         this.start = start
@@ -4839,7 +4839,7 @@ class Assignment extends BinaryOp {
     let expression: Expression
 }
 
-class TypeQuery extends BinaryOp {
+class TypeQuery extends Link {
 
     constructor(objectType: Type, start: Position, end: Position) {
         this.start = start
@@ -4857,7 +4857,7 @@ class TypeQuery extends BinaryOp {
     let objectType: Type
 }
 
-class TypeCast extends BinaryOp {
+class TypeCast extends Link {
 
     constructor(objectType: Type, start: Position, end: Position) {
         this.start = start

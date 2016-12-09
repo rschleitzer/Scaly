@@ -180,7 +180,7 @@ class MemberExpression;
 
 class Subscript;
 
-class BinaryOp;
+class Link;
 
 class BinaryOperation;
 
@@ -297,8 +297,8 @@ public:
     virtual IdentifierCatchPattern* parseIdentifierCatchPattern(_Page* _rp);
     virtual MemberExpression* parseMemberExpression(_Page* _rp);
     virtual Subscript* parseSubscript(_Page* _rp);
-    virtual _Array<BinaryOp>* parseBinaryOpList(_Page* _rp);
-    virtual BinaryOp* parseBinaryOp(_Page* _rp);
+    virtual _Array<Link>* parseLinkList(_Page* _rp);
+    virtual Link* parseLink(_Page* _rp);
     virtual BinaryOperation* parseBinaryOperation(_Page* _rp);
     virtual Assignment* parseAssignment(_Page* _rp);
     virtual TypeQuery* parseTypeQuery(_Page* _rp);
@@ -598,7 +598,7 @@ public:
     virtual bool _isCatchPattern();
     virtual bool _isWildCardCatchPattern();
     virtual bool _isIdentifierCatchPattern();
-    virtual bool _isBinaryOp();
+    virtual bool _isLink();
     virtual bool _isBinaryOperation();
     virtual bool _isAssignment();
     virtual bool _isTypeQuery();
@@ -1087,10 +1087,10 @@ public:
 
 class SimpleExpression : public Expression {
 public:
-    SimpleExpression(PrefixExpression* prefixExpression, _Array<BinaryOp>* binaryOps, Position* start, Position* end);
+    SimpleExpression(PrefixExpression* prefixExpression, _Array<Link>* links, Position* start, Position* end);
     virtual void accept(Visitor* visitor);
     PrefixExpression* prefixExpression;
-    _Array<BinaryOp>* binaryOps;
+    _Array<Link>* links;
 
     virtual bool _isSimpleExpression();
 };
@@ -1457,18 +1457,18 @@ public:
     virtual bool _isSubscript();
 };
 
-class BinaryOp : public SyntaxNode {
+class Link : public SyntaxNode {
 public:
     virtual void accept(Visitor* visitor);
 
-    virtual bool _isBinaryOp();
+    virtual bool _isLink();
     virtual bool _isBinaryOperation();
     virtual bool _isAssignment();
     virtual bool _isTypeQuery();
     virtual bool _isTypeCast();
 };
 
-class BinaryOperation : public BinaryOp {
+class BinaryOperation : public Link {
 public:
     BinaryOperation(string* binaryOperator, PrefixExpression* expression, Position* start, Position* end);
     virtual void accept(Visitor* visitor);
@@ -1478,7 +1478,7 @@ public:
     virtual bool _isBinaryOperation();
 };
 
-class Assignment : public BinaryOp {
+class Assignment : public Link {
 public:
     Assignment(Expression* expression, Position* start, Position* end);
     virtual void accept(Visitor* visitor);
@@ -1487,7 +1487,7 @@ public:
     virtual bool _isAssignment();
 };
 
-class TypeQuery : public BinaryOp {
+class TypeQuery : public Link {
 public:
     TypeQuery(Type* objectType, Position* start, Position* end);
     virtual void accept(Visitor* visitor);
@@ -1496,7 +1496,7 @@ public:
     virtual bool _isTypeQuery();
 };
 
-class TypeCast : public BinaryOp {
+class TypeCast : public Link {
 public:
     TypeCast(Type* objectType, Position* start, Position* end);
     virtual void accept(Visitor* visitor);
