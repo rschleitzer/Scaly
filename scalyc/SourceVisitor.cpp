@@ -1098,7 +1098,7 @@ void SourceVisitor::visitMemberExpression(MemberExpression* memberExpression) {
 }
 
 bool SourceVisitor::openSubscript(Subscript* subscript) {
-    sourceFile->append("[");
+    sourceFile->append(")[");
     return true;
 }
 
@@ -1149,20 +1149,6 @@ bool SourceVisitor::isLastExpressionElement(ExpressionElement* expressionElement
 
 void SourceVisitor::visitIdentifierExpression(IdentifierExpression* identifierExpression) {
     sourceFile->append(identifierExpression->name);
-    if (identifierExpression->parent->_isPostfixExpression()) {
-        PostfixExpression* postfixExpression = (PostfixExpression*)(identifierExpression->parent);
-        if (postfixExpression->postfixes != nullptr) {
-            Postfix* postfix = nullptr;
-            size_t _postfixExpression_length = postfixExpression->postfixes->length();
-            for (size_t _i = 0; _i < _postfixExpression_length; _i++) {
-                postfix = *(*postfixExpression->postfixes)[_i];
-                {
-                    if (postfix->_isSubscript())
-                        sourceFile->append(")");
-                }
-            }
-        }
-    }
 }
 
 bool SourceVisitor::inAssignment(SyntaxNode* syntaxNode) {
@@ -1584,8 +1570,7 @@ bool SourceVisitor::openThrowExpression(ThrowExpression* throwExpression) {
                                 bindingPattern = catchClause->bindingPattern;
                                 if (bindingPattern->elements != nullptr) {
                                     if (bindingPattern->elements->length() > 0) {
-                                        _Array<TuplePatternElement>* elements = bindingPattern->elements;
-                                        TuplePatternElement* element = *(*elements)[0];
+                                        TuplePatternElement* element = *(*bindingPattern->elements)[0];
                                         if (element->pattern->_isIdentifierPattern()) {
                                             IdentifierPattern* pattern = (IdentifierPattern*)(element->pattern);
                                             if (pattern->identifier->equals(errorName))

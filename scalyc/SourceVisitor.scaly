@@ -1168,7 +1168,7 @@ class SourceVisitor extends CppVisitor {
     }
 
     function openSubscript(subscript: Subscript): bool {
-        sourceFile.append("[")
+        sourceFile.append(")[")
 
         true
     }
@@ -1212,15 +1212,6 @@ class SourceVisitor extends CppVisitor {
 
     function visitIdentifierExpression(identifierExpression: IdentifierExpression) {
         sourceFile.append(identifierExpression.name)
-        if identifierExpression.parent is PostfixExpression {
-            let postfixExpression: PostfixExpression = (identifierExpression.parent) as PostfixExpression
-            if postfixExpression.postfixes != null {
-                for postfix: Postfix in postfixExpression.postfixes {
-                    if postfix is Subscript
-                        sourceFile.append(")")
-                }
-            }
-        }
     }
 
     function inAssignment(syntaxNode: SyntaxNode): bool {
@@ -1657,8 +1648,7 @@ class SourceVisitor extends CppVisitor {
                                     let bindingPattern: TuplePattern bindingPattern = catchClause.bindingPattern
                                     if bindingPattern.elements != null {
                                         if bindingPattern.elements.length() > 0 {
-                                            let elements: TuplePatternElement[] = bindingPattern.elements
-                                            let element: TuplePatternElement = elements[0]
+                                            let element: TuplePatternElement = bindingPattern.elements[0]
                                             if element.pattern is IdentifierPattern {
                                                 let pattern: IdentifierPattern = (element.pattern) as IdentifierPattern
                                                 if pattern.identifier.equals(errorName)
