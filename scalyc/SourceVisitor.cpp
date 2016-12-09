@@ -188,7 +188,7 @@ void SourceVisitor::closeClassDeclaration(ClassDeclaration* classDeclaration) {
 bool SourceVisitor::openConstructorDeclaration(ConstructorDeclaration* constructorDeclaration) {
     if (!constructorDeclaration->parent->parent->parent->_isClassDeclaration())
         return false;
-    string* classDeclarationName = ((Program*)(constructorDeclaration->parent->parent->parent))->name;
+    string* classDeclarationName = ((ClassDeclaration*)constructorDeclaration->parent->parent->parent)->name;
     sourceFile->append(classDeclarationName);
     sourceFile->append("::");
     sourceFile->append(classDeclarationName);

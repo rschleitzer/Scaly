@@ -205,7 +205,7 @@ class SourceVisitor extends CppVisitor {
         if !constructorDeclaration.parent.parent.parent is ClassDeclaration
             return(false)
 
-        let classDeclarationName: string = ((constructorDeclaration.parent.parent.parent) as Program).name
+        let classDeclarationName: string = (constructorDeclaration.parent.parent.parent as ClassDeclaration).name
         
         sourceFile.append(classDeclarationName)
         sourceFile.append("::")
