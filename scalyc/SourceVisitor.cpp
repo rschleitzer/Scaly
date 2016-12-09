@@ -1320,7 +1320,7 @@ bool SourceVisitor::openForExpression(ForExpression* forExpression) {
                 string* collectionName = identifierExpression->name;
                 sourceFile->append(collectionName);
                 sourceFile->append("_length = ");
-                sourceFile->append(collectionName);
+                forExpression->expression->accept(this);
                 sourceFile->append("->length();\n");
                 indent(level(forExpression) - 1);
                 sourceFile->append("for (size_t _i = 0; _i < _");
