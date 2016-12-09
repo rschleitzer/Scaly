@@ -350,9 +350,8 @@ bool HeaderVisitor::openFunctionSignature(FunctionSignature* functionSignature) 
     headerFile->append(functionName);
     headerFile->append("(");
     if (functionSignature->result != nullptr) {
-        Type* type = (Type*)functionSignature->result->resultType;
-        if (isClass(type->name)) {
-            LifeTime* lifeTime = type->lifeTime;
+        if (isClass(functionSignature->result->resultType->name)) {
+            LifeTime* lifeTime = functionSignature->result->resultType->lifeTime;
             if ((lifeTime == nullptr) || !(lifeTime->_isReference())) {
                 headerFile->append("_Page* _rp");
                 if ((functionSignature->parameterClause->parameters) || (functionSignature->throwsClause)) {
@@ -395,9 +394,8 @@ void HeaderVisitor::writeParameter(string* name, Type* parameterType) {
 }
 
 bool HeaderVisitor::isClass(string* name) {
-    if ((name->equals("string") || name->equals("VarString") || name->equals("File") || name->equals("Directory") || name->equals("Path") || name->equals("DirectoryError") || name->equals("FileError") || name->equals("ParserError") || name->equals("CppError") || name->equals("CompilerError"))) {
+    if (name->equals("string") || name->equals("VarString") || name->equals("File") || name->equals("Directory") || name->equals("Path") || name->equals("DirectoryError") || name->equals("FileError") || name->equals("ParserError") || name->equals("CppError") || name->equals("CompilerError"))
         return true;
-    }
     string* className = nullptr;
     size_t _classes_length = classes->length();
     for (size_t _i = 0; _i < _classes_length; _i++) {
@@ -421,8 +419,7 @@ bool HeaderVisitor::openVarParameter(VarParameter* varParameter) {
 }
 
 void HeaderVisitor::closeVarParameter(VarParameter* varParameter) {
-    string* varParameterName = varParameter->name;
-    headerFile->append(varParameterName);
+    headerFile->append(varParameter->name);
 }
 
 bool HeaderVisitor::openEnumMember(EnumMember* enumMember) {

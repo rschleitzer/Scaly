@@ -351,9 +351,8 @@ class HeaderVisitor extends CppVisitor {
         headerFile.append(functionName)
         headerFile.append("(")
         if functionSignature.result != null {
-            let type: Type = functionSignature.result.resultType as Type
-            if isClass(type.name) {
-                let lifeTime: LifeTime = type.lifeTime
+            if isClass(functionSignature.result.resultType.name) {
+                let lifeTime: LifeTime = functionSignature.result.resultType.lifeTime
                 if (lifeTime == null) || !(lifeTime is Reference) {
                     headerFile.append("_Page* _rp")
                     if (functionSignature.parameterClause.parameters) || (functionSignature.throwsClause) {
@@ -398,20 +397,17 @@ class HeaderVisitor extends CppVisitor {
     }
 
     function isClass(name: string): bool {
-        if (    name.equals("string")
-            ||  name.equals("VarString")
-            ||  name.equals("File")
-            ||  name.equals("Directory")
-            ||  name.equals("Path")
-            ||  name.equals("DirectoryError")
-            ||  name.equals("FileError")
-            ||  name.equals("ParserError")
-            ||  name.equals("CppError")
-            ||  name.equals("CompilerError")
-           )
-        {
+        if name.equals("string")
+        ||  name.equals("VarString")
+        ||  name.equals("File")
+        ||  name.equals("Directory")
+        ||  name.equals("Path")
+        ||  name.equals("DirectoryError")
+        ||  name.equals("FileError")
+        ||  name.equals("ParserError")
+        ||  name.equals("CppError")
+        ||  name.equals("CompilerError")
             return(true)
-        }
 
         for className: string in classes {
             if className.equals(name) {
@@ -432,8 +428,7 @@ class HeaderVisitor extends CppVisitor {
     }
 
     function closeVarParameter(varParameter: VarParameter) {
-        let varParameterName: string = varParameter.name
-        headerFile.append(varParameterName)
+        headerFile.append(varParameter.name)
     }
 
     function openEnumMember(enumMember: EnumMember): bool {
@@ -504,7 +499,9 @@ class HeaderVisitor extends CppVisitor {
 
     function openType(type: Type): bool {
 
-        if (type.parent is FunctionResult) || (type.parent is Inheritance) || (type.parent is ThrowsClause)
+        if (type.parent is FunctionResult)
+        || (type.parent is Inheritance)
+        || (type.parent is ThrowsClause)
             return(false)
             
         if hasArrayPostfix(type) {
