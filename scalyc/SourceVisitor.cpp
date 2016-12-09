@@ -286,8 +286,7 @@ bool SourceVisitor::openSimpleExpression(SimpleExpression* simpleExpression) {
     if (statement->parent->_isCodeBlock()) {
         CodeBlock* block = (CodeBlock*)statement->parent;
         if (block->parent->_isFunctionDeclaration()) {
-            _Array<Statement>* statements = block->statements;
-            if (*(*statements)[statements->length() - 1] == statement) {
+            if (*(*block->statements)[block->statements->length() - 1] == statement) {
                 _Region _region; _Page* _p = _region.get();
                 string* returnType = getReturnType(_p, statement);
                 if (returnType != nullptr)
@@ -481,30 +480,26 @@ bool SourceVisitor::openFunctionSignature(FunctionSignature* functionSignature) 
         if (functionSignature->throwsClause != nullptr) {
             sourceFile->append("_Result<");
             if (hasArrayPostfix(functionSignature->result->resultType)) {
-                Type* type = functionSignature->result->resultType;
                 sourceFile->append("_Array<");
-                appendCppTypeName(sourceFile, type);
+                appendCppTypeName(sourceFile, functionSignature->result->resultType);
                 sourceFile->append(">");
             }
             else {
-                Type* type = (Type*)functionSignature->result->resultType;
-                appendCppTypeName(sourceFile, type);
+                appendCppTypeName(sourceFile, functionSignature->result->resultType);
             }
             sourceFile->append(", ");
-            appendCppTypeName(sourceFile, (Type*)(functionSignature->throwsClause->throwsType));
+            appendCppTypeName(sourceFile, functionSignature->throwsClause->throwsType);
             sourceFile->append(">");
         }
         else {
             if (hasArrayPostfix(functionSignature->result->resultType)) {
-                Type* type = functionSignature->result->resultType;
                 sourceFile->append("_Array<");
-                appendCppTypeName(sourceFile, type);
+                appendCppTypeName(sourceFile, functionSignature->result->resultType);
                 sourceFile->append(">*");
             }
             else {
-                Type* type = (Type*)functionSignature->result->resultType;
-                appendCppTypeName(sourceFile, type);
-                if (isClass(type->name)) {
+                appendCppTypeName(sourceFile, functionSignature->result->resultType);
+                if (isClass(functionSignature->result->resultType->name)) {
                     sourceFile->append("*");
                 }
             }
@@ -1053,10 +1048,7 @@ string* SourceVisitor::getErrorType(CatchClause* catchClause) {
                 if (element->pattern->_isIdentifierPattern()) {
                     IdentifierPattern* pattern = (IdentifierPattern*)(element->pattern);
                     if (pattern->annotationForType != nullptr) {
-                        if (pattern->annotationForType->annotationForType->_isType()) {
-                            Type* type = (Type*)(pattern->annotationForType->annotationForType);
-                            return type->name;
-                        }
+                        return pattern->annotationForType->annotationForType->name;
                     }
                 }
             }

@@ -309,8 +309,7 @@ class SourceVisitor extends CppVisitor {
         if statement.parent is CodeBlock {
             let block: CodeBlock = statement.parent as CodeBlock
             if block.parent is FunctionDeclaration {
-                let statements: Statement[] = block.statements
-                if statements[statements.length() - 1] == statement {
+                if block.statements[block.statements.length() - 1] == statement {
                     let returnType: string$ = getReturnType(statement)
                     if returnType != null
                         prependReturn(simpleExpression)
@@ -521,30 +520,26 @@ class SourceVisitor extends CppVisitor {
                 sourceFile.append("_Result<")
 
                 if hasArrayPostfix(functionSignature.result.resultType) {
-                    let type: Type = functionSignature.result.resultType
                     sourceFile.append("_Array<")
-                    appendCppTypeName(sourceFile, type)
+                    appendCppTypeName(sourceFile, functionSignature.result.resultType)
                     sourceFile.append(">")
                 }
                 else {
-                    let type: Type = functionSignature.result.resultType as Type
-                    appendCppTypeName(sourceFile, type)
+                    appendCppTypeName(sourceFile, functionSignature.result.resultType)
                 }
                 sourceFile.append(", ")
-                appendCppTypeName(sourceFile, (functionSignature.throwsClause.throwsType) as Type)
+                appendCppTypeName(sourceFile, functionSignature.throwsClause.throwsType)
                 sourceFile.append(">")
             }
             else {
                 if hasArrayPostfix(functionSignature.result.resultType) {
-                    let type: Type = functionSignature.result.resultType
                     sourceFile.append("_Array<")
-                    appendCppTypeName(sourceFile, type)
+                    appendCppTypeName(sourceFile, functionSignature.result.resultType)
                     sourceFile.append(">*")
                 }
                 else {
-                    let type: Type = functionSignature.result.resultType as Type
-                    appendCppTypeName(sourceFile, type)
-                    if isClass(type.name) {
+                    appendCppTypeName(sourceFile, functionSignature.result.resultType)
+                    if isClass(functionSignature.result.resultType.name) {
                         sourceFile.append("*")
                     }
                 }
@@ -1122,10 +1117,7 @@ class SourceVisitor extends CppVisitor {
                     if element.pattern is IdentifierPattern {
                         let pattern: IdentifierPattern = (element.pattern) as IdentifierPattern
                         if pattern.annotationForType != null {
-                            if pattern.annotationForType.annotationForType is Type {
-                                let type: Type = (pattern.annotationForType.annotationForType) as Type
-                                return(type.name)
-                            }
+                            return(pattern.annotationForType.annotationForType.name)
                         }
                     }
                 }
