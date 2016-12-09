@@ -127,10 +127,9 @@ class SourceVisitor extends CppVisitor {
     }
     
     function isTopLevelFile(compilationUnit: CompilationUnit): bool {
-        for statement: Statement in compilationUnit.statements {
+        for statement: Statement in compilationUnit.statements
             if statement is Expression
                 return(true)
-        }
             
         false
     }
@@ -185,19 +184,18 @@ class SourceVisitor extends CppVisitor {
             sourceFile.append(classDeclaration.name)
             sourceFile.append("() { return (true); }\n\n")
         }
-        {
-            mutable derivedClasses: string[]$ = new string[]()
-            collectDerivedClasses(derivedClasses, classDeclaration.name)
-            for derivedClass: string in derivedClasses {
-                sourceFile.append("bool ")
-                sourceFile.append(classDeclaration.name)
-                sourceFile.append("::_is")
-                sourceFile.append(derivedClass)
-                sourceFile.append("() { return (false); }\n")
-            }
-            if derivedClasses.length() > 0
-                sourceFile.append("\n")
+
+        mutable derivedClasses: string[]$ = new string[]()
+        collectDerivedClasses(derivedClasses, classDeclaration.name)
+        for derivedClass: string in derivedClasses {
+            sourceFile.append("bool ")
+            sourceFile.append(classDeclaration.name)
+            sourceFile.append("::_is")
+            sourceFile.append(derivedClass)
+            sourceFile.append("() { return (false); }\n")
         }
+        if derivedClasses.length() > 0
+            sourceFile.append("\n")
     }
 
     function openConstructorDeclaration(constructorDeclaration: ConstructorDeclaration): bool {
@@ -205,8 +203,7 @@ class SourceVisitor extends CppVisitor {
         if !constructorDeclaration.parent.parent.parent is ClassDeclaration
             return(false)
 
-        let classDeclarationName: string = (constructorDeclaration.parent.parent.parent as ClassDeclaration).name
-        
+        let classDeclarationName: string = (constructorDeclaration.parent.parent.parent as ClassDeclaration).name        
         sourceFile.append(classDeclarationName)
         sourceFile.append("::")
         sourceFile.append(classDeclarationName)
@@ -327,14 +324,11 @@ class SourceVisitor extends CppVisitor {
             for binaryExpression: BinaryExpression in simpleExpression.binaryExpressions {
                 if binaryExpression is TypeCast {
                     let typeCast: TypeCast = binaryExpression as TypeCast
-                    if  typeCast.objectType is Type {
-                        let type: Type = typeCast.objectType as Type
-                        sourceFile.append("(")
-                        sourceFile.append(type.name)
-                        sourceFile.append("*)")
-                        simpleExpression.prefixExpression.accept(this)
-                        return(false)
-                    }
+                    sourceFile.append("(")
+                    sourceFile.append(typeCast.objectType.name)
+                    sourceFile.append("*)")
+                    simpleExpression.prefixExpression.accept(this)
+                    return(false)
                 }
             }
         }

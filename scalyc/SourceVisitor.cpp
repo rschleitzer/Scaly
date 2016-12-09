@@ -116,10 +116,9 @@ bool SourceVisitor::isTopLevelFile(CompilationUnit* compilationUnit) {
     size_t _compilationUnit_length = compilationUnit->statements->length();
     for (size_t _i = 0; _i < _compilationUnit_length; _i++) {
         statement = *(*compilationUnit->statements)[_i];
-        {
-            if (statement->_isExpression())
-                return true;
-        }
+        if (statement->_isExpression())
+            return true;
+;
     }
     return false;
 }
@@ -155,6 +154,7 @@ bool SourceVisitor::openEnumDeclaration(EnumDeclaration* enumDeclaration) {
 }
 
 void SourceVisitor::closeClassDeclaration(ClassDeclaration* classDeclaration) {
+    _Region _region; _Page* _p = _region.get();
     if (classDeclaration->body == nullptr)
         return;
     if (classDeclaration->typeInheritanceClause != nullptr) {
@@ -164,25 +164,22 @@ void SourceVisitor::closeClassDeclaration(ClassDeclaration* classDeclaration) {
         sourceFile->append(classDeclaration->name);
         sourceFile->append("() { return (true); }\n\n");
     }
-    {
-        _Region _region; _Page* _p = _region.get();
-        _Array<string>* derivedClasses = new(_p) _Array<string>();
-        collectDerivedClasses(derivedClasses, classDeclaration->name);
-        string* derivedClass = nullptr;
-        size_t _derivedClasses_length = derivedClasses->length();
-        for (size_t _i = 0; _i < _derivedClasses_length; _i++) {
-            derivedClass = *(*derivedClasses)[_i];
-            {
-                sourceFile->append("bool ");
-                sourceFile->append(classDeclaration->name);
-                sourceFile->append("::_is");
-                sourceFile->append(derivedClass);
-                sourceFile->append("() { return (false); }\n");
-            }
+    _Array<string>* derivedClasses = new(_p) _Array<string>();
+    collectDerivedClasses(derivedClasses, classDeclaration->name);
+    string* derivedClass = nullptr;
+    size_t _derivedClasses_length = derivedClasses->length();
+    for (size_t _i = 0; _i < _derivedClasses_length; _i++) {
+        derivedClass = *(*derivedClasses)[_i];
+        {
+            sourceFile->append("bool ");
+            sourceFile->append(classDeclaration->name);
+            sourceFile->append("::_is");
+            sourceFile->append(derivedClass);
+            sourceFile->append("() { return (false); }\n");
         }
-        if (derivedClasses->length() > 0)
-            sourceFile->append("\n");
     }
+    if (derivedClasses->length() > 0)
+        sourceFile->append("\n");
 }
 
 bool SourceVisitor::openConstructorDeclaration(ConstructorDeclaration* constructorDeclaration) {
@@ -307,14 +304,11 @@ bool SourceVisitor::openSimpleExpression(SimpleExpression* simpleExpression) {
             {
                 if (binaryExpression->_isTypeCast()) {
                     TypeCast* typeCast = (TypeCast*)binaryExpression;
-                    if (typeCast->objectType->_isType()) {
-                        Type* type = (Type*)typeCast->objectType;
-                        sourceFile->append("(");
-                        sourceFile->append(type->name);
-                        sourceFile->append("*)");
-                        simpleExpression->prefixExpression->accept(this);
-                        return false;
-                    }
+                    sourceFile->append("(");
+                    sourceFile->append(typeCast->objectType->name);
+                    sourceFile->append("*)");
+                    simpleExpression->prefixExpression->accept(this);
+                    return false;
                 }
             }
         }
