@@ -609,17 +609,16 @@ class SourceVisitor extends CppVisitor {
     }
 
     function isClass(name: string): bool {
-        if (    name.equals("string")
-            ||  name.equals("VarString")
-            ||  name.equals("File")
-            ||  name.equals("Directory")
-            ||  name.equals("Path")
-            ||  name.equals("DirectoryError")
-            ||  name.equals("FileError")
-            ||  name.equals("ParserError")
-            ||  name.equals("CppError")
-            ||  name.equals("CompilerError")
-           )
+        if name.equals("string")
+        ||  name.equals("VarString")
+        ||  name.equals("File")
+        ||  name.equals("Directory")
+        ||  name.equals("Path")
+        ||  name.equals("DirectoryError")
+        ||  name.equals("FileError")
+        ||  name.equals("ParserError")
+        ||  name.equals("CppError")
+        ||  name.equals("CompilerError")
         {
             return(true)
         }
@@ -646,7 +645,7 @@ class SourceVisitor extends CppVisitor {
         if !enumMember.parent is EnumDeclaration
             return(false)
 
-        let enumDeclarationName: string = ((enumMember.parent) as EnumDeclaration).name
+        let enumDeclarationName: string = (enumMember.parent as EnumDeclaration).name
         if enumMember.parameterClause {
             sourceFile.append("_")
             sourceFile.append(enumDeclarationName)
@@ -666,18 +665,16 @@ class SourceVisitor extends CppVisitor {
         if enumMember.parameterClause != null {
             sourceFile.append("\n")
 
-            let parameters: Parameter[] = enumMember.parameterClause.parameters
-            if parameters != null {
+            if enumMember.parameterClause.parameters != null {
                 sourceFile.append(": ")
                 mutable pos: number = 0
-                for parameter: Parameter in parameters {
+                for parameter: Parameter in enumMember.parameterClause.parameters {
                     if parameter is ConstParameter {
-                        let constParameter: ConstParameter = parameter as ConstParameter
                         if pos != 0
                             sourceFile.append(", ")
-                        sourceFile.append(constParameter.name)
+                        sourceFile.append((parameter as ConstParameter).name)
                         sourceFile.append("(")
-                        sourceFile.append(constParameter.name)
+                        sourceFile.append((parameter as ConstParameter).name)
                         sourceFile.append(")")
                     }
                     pos++

@@ -566,7 +566,7 @@ void SourceVisitor::writeParameter(string* name, Type* parameterType) {
 }
 
 bool SourceVisitor::isClass(string* name) {
-    if ((name->equals("string") || name->equals("VarString") || name->equals("File") || name->equals("Directory") || name->equals("Path") || name->equals("DirectoryError") || name->equals("FileError") || name->equals("ParserError") || name->equals("CppError") || name->equals("CompilerError"))) {
+    if (name->equals("string") || name->equals("VarString") || name->equals("File") || name->equals("Directory") || name->equals("Path") || name->equals("DirectoryError") || name->equals("FileError") || name->equals("ParserError") || name->equals("CppError") || name->equals("CompilerError")) {
         return true;
     }
     string* className = nullptr;
@@ -594,7 +594,7 @@ bool SourceVisitor::openThrowsClause(ThrowsClause* throwsClause) {
 bool SourceVisitor::openEnumMember(EnumMember* enumMember) {
     if (!enumMember->parent->_isEnumDeclaration())
         return false;
-    string* enumDeclarationName = ((EnumDeclaration*)(enumMember->parent))->name;
+    string* enumDeclarationName = ((EnumDeclaration*)enumMember->parent)->name;
     if (enumMember->parameterClause) {
         sourceFile->append("_");
         sourceFile->append(enumDeclarationName);
@@ -612,22 +612,20 @@ bool SourceVisitor::openEnumMember(EnumMember* enumMember) {
 void SourceVisitor::closeEnumMember(EnumMember* enumMember) {
     if (enumMember->parameterClause != nullptr) {
         sourceFile->append("\n");
-        _Array<Parameter>* parameters = enumMember->parameterClause->parameters;
-        if (parameters != nullptr) {
+        if (enumMember->parameterClause->parameters != nullptr) {
             sourceFile->append(": ");
             size_t pos = 0;
             Parameter* parameter = nullptr;
-            size_t _parameters_length = parameters->length();
-            for (size_t _i = 0; _i < _parameters_length; _i++) {
-                parameter = *(*parameters)[_i];
+            size_t _enumMember_length = enumMember->parameterClause->parameters->length();
+            for (size_t _i = 0; _i < _enumMember_length; _i++) {
+                parameter = *(*enumMember->parameterClause->parameters)[_i];
                 {
                     if (parameter->_isConstParameter()) {
-                        ConstParameter* constParameter = (ConstParameter*)parameter;
                         if (pos != 0)
                             sourceFile->append(", ");
-                        sourceFile->append(constParameter->name);
+                        sourceFile->append(((ConstParameter*)parameter)->name);
                         sourceFile->append("(");
-                        sourceFile->append(constParameter->name);
+                        sourceFile->append(((ConstParameter*)parameter)->name);
                         sourceFile->append(")");
                     }
                     pos++;
