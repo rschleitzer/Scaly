@@ -739,12 +739,11 @@ class SourceVisitor extends CppVisitor {
 
     function openPostfixExpression(postfixExpression: PostfixExpression): bool {
         if postfixExpression.postfixes != null {
-            let postfixes: Postfix[] = postfixExpression.postfixes
-            if (postfixes[0]) is Subscript {
-                sourceFile.append("*(*")
+            for postfix: Postfix in postfixExpression.postfixes {
+                if postfix is Subscript
+                    sourceFile.append("*(*")
             }
         }
-
         true
     }
 
@@ -1216,9 +1215,9 @@ class SourceVisitor extends CppVisitor {
         if identifierExpression.parent is PostfixExpression {
             let postfixExpression: PostfixExpression = (identifierExpression.parent) as PostfixExpression
             if postfixExpression.postfixes != null {
-                let postfixes: Postfix[] = postfixExpression.postfixes
-                if (postfixes[0]) is Subscript {
-                    sourceFile.append(")")
+                for postfix: Postfix in postfixExpression.postfixes {
+                    if postfix is Subscript
+                        sourceFile.append(")")
                 }
             }
         }

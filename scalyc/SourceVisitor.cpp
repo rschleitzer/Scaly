@@ -678,9 +678,14 @@ bool SourceVisitor::openPrefixExpression(PrefixExpression* prefixExpression) {
 
 bool SourceVisitor::openPostfixExpression(PostfixExpression* postfixExpression) {
     if (postfixExpression->postfixes != nullptr) {
-        _Array<Postfix>* postfixes = postfixExpression->postfixes;
-        if ((*(*postfixes)[0])->_isSubscript()) {
-            sourceFile->append("*(*");
+        Postfix* postfix = nullptr;
+        size_t _postfixExpression_length = postfixExpression->postfixes->length();
+        for (size_t _i = 0; _i < _postfixExpression_length; _i++) {
+            postfix = *(*postfixExpression->postfixes)[_i];
+            {
+                if (postfix->_isSubscript())
+                    sourceFile->append("*(*");
+            }
         }
     }
     return true;
@@ -1147,9 +1152,14 @@ void SourceVisitor::visitIdentifierExpression(IdentifierExpression* identifierEx
     if (identifierExpression->parent->_isPostfixExpression()) {
         PostfixExpression* postfixExpression = (PostfixExpression*)(identifierExpression->parent);
         if (postfixExpression->postfixes != nullptr) {
-            _Array<Postfix>* postfixes = postfixExpression->postfixes;
-            if ((*(*postfixes)[0])->_isSubscript()) {
-                sourceFile->append(")");
+            Postfix* postfix = nullptr;
+            size_t _postfixExpression_length = postfixExpression->postfixes->length();
+            for (size_t _i = 0; _i < _postfixExpression_length; _i++) {
+                postfix = *(*postfixExpression->postfixes)[_i];
+                {
+                    if (postfix->_isSubscript())
+                        sourceFile->append(")");
+                }
             }
         }
     }
