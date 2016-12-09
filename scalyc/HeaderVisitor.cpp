@@ -52,7 +52,7 @@ bool HeaderVisitor::openCompilationUnit(CompilationUnit* compilationUnit) {
     _Region _region; _Page* _p = _region.get();
     if (!(compilationUnit->parent->_isProgram()))
         return false;
-    string* programName = ((Program*)(compilationUnit->parent))->name;
+    string* programName = ((Program*)compilationUnit->parent)->name;
     string* fileName = getFileName(_p, compilationUnit);
     if (!fileName->equals(programName)) {
         if (headerFile != nullptr)
@@ -80,7 +80,7 @@ void HeaderVisitor::closeCompilationUnit(CompilationUnit* compilationUnit) {
     _Region _region; _Page* _p = _region.get();
     if (!(compilationUnit->parent)->_isProgram())
         return;
-    string* programName = ((Program*)(compilationUnit->parent))->name;
+    string* programName = ((Program*)compilationUnit->parent)->name;
     VarString* outputFilePath = new(_p) VarString(directory);
     outputFilePath->append('/');
     string* fileName = getFileName(_p, compilationUnit);
@@ -274,7 +274,7 @@ void HeaderVisitor::closeClassDeclaration(ClassDeclaration* classDeclaration) {
 bool HeaderVisitor::openConstructorDeclaration(ConstructorDeclaration* constructorDeclaration) {
     if (!constructorDeclaration->parent->parent->parent->_isClassDeclaration())
         return false;
-    string* classDeclarationName = ((Program*)(constructorDeclaration->parent->parent->parent))->name;
+    string* classDeclarationName = ((ClassDeclaration*)constructorDeclaration->parent->parent->parent)->name;
     headerFile->append(classDeclarationName);
     headerFile->append("(");
     return true;
@@ -322,16 +322,14 @@ bool HeaderVisitor::openFunctionSignature(FunctionSignature* functionSignature) 
             headerFile->append("_Result<");
             if (hasArrayPostfix(functionSignature->result->resultType)) {
                 headerFile->append("_Array<");
-                Type* type = functionSignature->result->resultType;
-                appendCppTypeName(headerFile, type);
+                appendCppTypeName(headerFile, functionSignature->result->resultType);
                 headerFile->append(">");
             }
             else {
-                Type* type = (Type*)functionSignature->result->resultType;
-                appendCppTypeName(headerFile, type);
+                appendCppTypeName(headerFile, functionSignature->result->resultType);
             }
             headerFile->append(", ");
-            appendCppTypeName(headerFile, (Type*)(functionSignature->throwsClause->throwsType));
+            appendCppTypeName(headerFile, functionSignature->throwsClause->throwsType);
             headerFile->append(">");
         }
         else {
@@ -342,9 +340,8 @@ bool HeaderVisitor::openFunctionSignature(FunctionSignature* functionSignature) 
                 headerFile->append(">*");
             }
             else {
-                Type* type = (Type*)functionSignature->result->resultType;
-                appendCppTypeName(headerFile, type);
-                if (isClass(type->name)) {
+                appendCppTypeName(headerFile, functionSignature->result->resultType);
+                if (isClass(functionSignature->result->resultType->name)) {
                     headerFile->append("*");
                 }
             }
@@ -429,7 +426,7 @@ void HeaderVisitor::closeVarParameter(VarParameter* varParameter) {
 bool HeaderVisitor::openEnumMember(EnumMember* enumMember) {
     if (!enumMember->parent->_isEnumDeclaration())
         return false;
-    string* enumDeclarationName = ((EnumDeclaration*)(enumMember->parent))->name;
+    string* enumDeclarationName = ((EnumDeclaration*)enumMember->parent)->name;
     if (enumMember->parameterClause) {
         headerFile->append("\nclass _");
         headerFile->append(enumDeclarationName);

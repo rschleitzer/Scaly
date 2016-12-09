@@ -53,7 +53,7 @@ class HeaderVisitor extends CppVisitor {
         if !(compilationUnit.parent is Program)
             return(false)
 
-        let programName: string = ((compilationUnit.parent) as Program).name
+        let programName: string = (compilationUnit.parent as Program).name
         let fileName: string$ = getFileName(compilationUnit)
 
         if !fileName.equals(programName) {
@@ -82,7 +82,7 @@ class HeaderVisitor extends CppVisitor {
         if !(compilationUnit.parent) is Program
             return
 
-        let programName: string = ((compilationUnit.parent) as Program).name
+        let programName: string = (compilationUnit.parent as Program).name
         mutable outputFilePath: VarString$  = new VarString(directory)
         outputFilePath.append('/')
 
@@ -273,7 +273,7 @@ class HeaderVisitor extends CppVisitor {
         if !constructorDeclaration.parent.parent.parent is ClassDeclaration
             return(false)
 
-        let classDeclarationName: string = ((constructorDeclaration.parent.parent.parent) as Program).name
+        let classDeclarationName: string = (constructorDeclaration.parent.parent.parent as ClassDeclaration).name
 
         headerFile.append(classDeclarationName)
         headerFile.append("(")
@@ -322,16 +322,14 @@ class HeaderVisitor extends CppVisitor {
 
                 if hasArrayPostfix(functionSignature.result.resultType) {
                     headerFile.append("_Array<")
-                    let type: Type = functionSignature.result.resultType
-                    appendCppTypeName(headerFile, type)
+                    appendCppTypeName(headerFile, functionSignature.result.resultType)
                     headerFile.append(">")
                 }
                 else {
-                    let type: Type = functionSignature.result.resultType as Type
-                    appendCppTypeName(headerFile, type)
+                    appendCppTypeName(headerFile, functionSignature.result.resultType)
                 }
                 headerFile.append(", ")
-                appendCppTypeName(headerFile, (functionSignature.throwsClause.throwsType) as Type)
+                appendCppTypeName(headerFile, functionSignature.throwsClause.throwsType)
                 headerFile.append(">")
             }
             else {
@@ -342,9 +340,8 @@ class HeaderVisitor extends CppVisitor {
                     headerFile.append(">*")
                 }
                 else {
-                    let type: Type = functionSignature.result.resultType as Type
-                    appendCppTypeName(headerFile, type)
-                    if isClass(type.name) {
+                    appendCppTypeName(headerFile, functionSignature.result.resultType)
+                    if isClass(functionSignature.result.resultType.name) {
                         headerFile.append("*")
                     }
                 }
@@ -441,7 +438,7 @@ class HeaderVisitor extends CppVisitor {
         if !enumMember.parent is EnumDeclaration
             return(false)
 
-        let enumDeclarationName: string = ((enumMember.parent) as EnumDeclaration).name
+        let enumDeclarationName: string = (enumMember.parent as EnumDeclaration).name
         if enumMember.parameterClause {
             headerFile.append("\nclass _")
             headerFile.append(enumDeclarationName)

@@ -237,9 +237,7 @@ FunctionCall* SourceVisitor::getFunctionCall(PatternInitializer* patternInitiali
     if (patternInitializer->initializer != nullptr) {
         Expression* expression = patternInitializer->initializer->expression;
         if (expression->_isSimpleExpression()) {
-            SimpleExpression* simpleExpression = (SimpleExpression*)expression;
-            PrefixExpression* prefixExpression = simpleExpression->prefixExpression;
-            PostfixExpression* postfixExpression = prefixExpression->expression;
+            PostfixExpression* postfixExpression = ((SimpleExpression*)expression)->prefixExpression->expression;
             if (postfixExpression->primaryExpression->_isIdentifierExpression()) {
                 if (postfixExpression->postfixes != nullptr) {
                     Postfix* postfix = nullptr;
@@ -328,23 +326,25 @@ bool SourceVisitor::openSimpleExpression(SimpleExpression* simpleExpression) {
                 BinaryExpression* binaryExpression = *(*binaryExpressions)[0];
                 if (binaryExpression->_isAssignment()) {
                     Assignment* assignment = (Assignment*)binaryExpression;
-                    SimpleExpression* simpleExpression = (SimpleExpression*)(assignment->parent);
-                    PostfixExpression* leftSide = simpleExpression->prefixExpression->expression;
-                    if (leftSide->primaryExpression->_isIdentifierExpression()) {
-                        IdentifierExpression* memberExpression = (IdentifierExpression*)(leftSide->primaryExpression);
-                        string* memberName = memberExpression->name;
-                        ClassDeclaration* classDeclaration = getClassDeclaration(assignment);
-                        if (classDeclaration != nullptr) {
-                            if (isVariableObjectField(memberName, classDeclaration)) {
-                                if ((memberName != nullptr) && (!inConstructor(assignment))) {
-                                    sourceFile->append("if (");
-                                    sourceFile->append(memberName);
-                                    sourceFile->append(" != nullptr)\n");
-                                    this->indent(level(simpleExpression));
-                                    sourceFile->append("    ");
-                                    sourceFile->append(memberName);
-                                    sourceFile->append("->_getPage()->clear();\n");
-                                    this->indent(level(simpleExpression));
+                    if (assignment->parent->_isSimpleExpression()) {
+                        SimpleExpression* simpleExpression = (SimpleExpression*)(assignment->parent);
+                        PostfixExpression* leftSide = simpleExpression->prefixExpression->expression;
+                        if (leftSide->primaryExpression->_isIdentifierExpression()) {
+                            IdentifierExpression* memberExpression = (IdentifierExpression*)(leftSide->primaryExpression);
+                            string* memberName = memberExpression->name;
+                            ClassDeclaration* classDeclaration = getClassDeclaration(assignment);
+                            if (classDeclaration != nullptr) {
+                                if (isVariableObjectField(memberName, classDeclaration)) {
+                                    if ((memberName != nullptr) && (!inConstructor(assignment))) {
+                                        sourceFile->append("if (");
+                                        sourceFile->append(memberName);
+                                        sourceFile->append(" != nullptr)\n");
+                                        this->indent(level(simpleExpression));
+                                        sourceFile->append("    ");
+                                        sourceFile->append(memberName);
+                                        sourceFile->append("->_getPage()->clear();\n");
+                                        this->indent(level(simpleExpression));
+                                    }
                                 }
                             }
                         }

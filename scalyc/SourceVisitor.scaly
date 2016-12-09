@@ -259,9 +259,7 @@ class SourceVisitor extends CppVisitor {
         if patternInitializer.initializer != null {
             let expression: Expression = patternInitializer.initializer.expression
             if expression is SimpleExpression {
-                let simpleExpression: SimpleExpression = expression as SimpleExpression
-                let prefixExpression: PrefixExpression = simpleExpression.prefixExpression
-                let postfixExpression: PostfixExpression = prefixExpression.expression
+                let postfixExpression: PostfixExpression = (expression as SimpleExpression).prefixExpression.expression
                 if postfixExpression.primaryExpression is IdentifierExpression {
                     if postfixExpression.postfixes != null {
                         for postfix: Postfix in postfixExpression.postfixes {
@@ -350,23 +348,25 @@ class SourceVisitor extends CppVisitor {
                     let binaryExpression: BinaryExpression = binaryExpressions[0]
                     if binaryExpression is Assignment {
                         let assignment: Assignment = binaryExpression as Assignment
-                        let simpleExpression: SimpleExpression = (assignment.parent) as SimpleExpression
-                        let leftSide: PostfixExpression = simpleExpression.prefixExpression.expression
-                        if leftSide.primaryExpression is IdentifierExpression {
-                            let memberExpression: IdentifierExpression = (leftSide.primaryExpression) as IdentifierExpression
-                            let memberName: string = memberExpression.name
-                            mutable classDeclaration: ClassDeclaration& = getClassDeclaration(assignment)
-                            if classDeclaration != null {
-                                if isVariableObjectField(memberName, classDeclaration) {
-                                    if (memberName != null) && (!inConstructor(assignment)) {
-                                        sourceFile.append("if (")
-                                        sourceFile.append(memberName)
-                                        sourceFile.append(" != nullptr)\n")
-                                        this.indent(level(simpleExpression))
-                                        sourceFile.append("    ")
-                                        sourceFile.append(memberName)
-                                        sourceFile.append("->_getPage()->clear();\n")
-                                        this.indent(level(simpleExpression))
+                        if assignment.parent is SimpleExpression {
+                            let simpleExpression: SimpleExpression = (assignment.parent) as SimpleExpression
+                            let leftSide: PostfixExpression = simpleExpression.prefixExpression.expression
+                            if leftSide.primaryExpression is IdentifierExpression {
+                                let memberExpression: IdentifierExpression = (leftSide.primaryExpression) as IdentifierExpression
+                                let memberName: string = memberExpression.name
+                                mutable classDeclaration: ClassDeclaration& = getClassDeclaration(assignment)
+                                if classDeclaration != null {
+                                    if isVariableObjectField(memberName, classDeclaration) {
+                                        if (memberName != null) && (!inConstructor(assignment)) {
+                                            sourceFile.append("if (")
+                                            sourceFile.append(memberName)
+                                            sourceFile.append(" != nullptr)\n")
+                                            this.indent(level(simpleExpression))
+                                            sourceFile.append("    ")
+                                            sourceFile.append(memberName)
+                                            sourceFile.append("->_getPage()->clear();\n")
+                                            this.indent(level(simpleExpression))
+                                        }
                                     }
                                 }
                             }
