@@ -221,14 +221,10 @@ bool SourceVisitor::localAllocations(CodeBlock* codeBlock) {
             statement = *(*codeBlock->statements)[_i];
             {
                 BindingInitializer* bindingInitializer = nullptr;
-                if (statement->_isConstantDeclaration()) {
-                    ConstantDeclaration* constantDeclaration = (ConstantDeclaration*)statement;
-                    bindingInitializer = constantDeclaration->initializer;
-                }
-                if (statement->_isMutableDeclaration()) {
-                    MutableDeclaration* mutableDeclaration = (MutableDeclaration*)statement;
-                    bindingInitializer = mutableDeclaration->initializer;
-                }
+                if (statement->_isConstantDeclaration())
+                    bindingInitializer = ((ConstantDeclaration*)statement)->initializer;
+                if (statement->_isMutableDeclaration())
+                    bindingInitializer = ((MutableDeclaration*)statement)->initializer;
                 if (isRootBinding(bindingInitializer))
                     return true;
             }
