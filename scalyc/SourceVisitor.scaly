@@ -375,8 +375,7 @@ class SourceVisitor extends CppVisitor {
                 if postfixes != null {
                     for postfix: Postfix in postfixes {
                         if postfix is FunctionCall {
-                            let functionCall: FunctionCall = postfix as FunctionCall
-                            if functionCall.catchClauses != null {
+                            if (postfix as FunctionCall).catchClauses != null {
                                 let identifierExpression: IdentifierExpression = simpleExpression.prefixExpression.expression.primaryExpression as IdentifierExpression
                                 sourceFile.append("auto _")
                                 sourceFile.append(identifierExpression.name)
@@ -391,9 +390,8 @@ class SourceVisitor extends CppVisitor {
         if simpleExpression.parent is CompilationUnit {
 
             // Prefix the error result for a global function call which throws FileError
-            let postfixes: Postfix[] = simpleExpression.prefixExpression.expression.postfixes
-            if postfixes != null {
-                for postfix: Postfix in postfixes {
+            if simpleExpression.prefixExpression.expression.postfixes != null {
+                for postfix: Postfix in simpleExpression.prefixExpression.expression.postfixes {
                     if postfix is FunctionCall {
                         let functionCall: FunctionCall = postfix as FunctionCall
                         if functionCall.catchClauses == null {
@@ -431,15 +429,9 @@ class SourceVisitor extends CppVisitor {
         let primaryExpression: PrimaryExpression = simpleExpression.prefixExpression.expression.primaryExpression
 
         if primaryExpression is IfExpression
-            return
-
-        if primaryExpression is SwitchExpression
-            return
-
-        if primaryExpression is ForExpression
-            return
-
-        if primaryExpression is WhileExpression
+        || primaryExpression is SwitchExpression
+        || primaryExpression is ForExpression
+        || primaryExpression is WhileExpression
             return
 
         if primaryExpression is IdentifierExpression {
@@ -454,7 +446,10 @@ class SourceVisitor extends CppVisitor {
                 }
             }
         }
-        if simpleExpression.parent is CodeBlock || simpleExpression.parent is CaseContent || simpleExpression.parent is CompilationUnit
+
+        if simpleExpression.parent is CodeBlock
+        || simpleExpression.parent is CaseContent
+        || simpleExpression.parent is CompilationUnit
             sourceFile.append(";\n")
             
         if simpleExpression.parent is CompilationUnit {
@@ -492,7 +487,9 @@ class SourceVisitor extends CppVisitor {
 
     function openBindingInitializer(bindingInitializer: BindingInitializer): bool {
 
-        if bindingInitializer.parent.parent is CodeBlock || bindingInitializer.parent.parent is CaseContent || bindingInitializer.parent.parent is CompilationUnit
+        if bindingInitializer.parent.parent is CodeBlock
+        || bindingInitializer.parent.parent is CaseContent
+        || bindingInitializer.parent.parent is CompilationUnit
             indent(level(bindingInitializer))
 
         true
@@ -503,7 +500,9 @@ class SourceVisitor extends CppVisitor {
         if isCatchingFunctionCall(bindingInitializer.initializer)
             return
 
-        if bindingInitializer.parent.parent is CodeBlock || bindingInitializer.parent.parent is CaseContent || bindingInitializer.parent.parent is CompilationUnit
+        if bindingInitializer.parent.parent is CodeBlock
+        || bindingInitializer.parent.parent is CaseContent
+        || bindingInitializer.parent.parent is CompilationUnit
             sourceFile.append(";\n")
     }
 
@@ -555,16 +554,14 @@ class SourceVisitor extends CppVisitor {
 
         sourceFile.append(" ")    
         if functionSignature.parent.parent.parent.parent is ClassDeclaration {
-            let classDeclaration: ClassDeclaration = functionSignature.parent.parent.parent.parent as ClassDeclaration
-            sourceFile.append(classDeclaration.name)
+            sourceFile.append((functionSignature.parent.parent.parent.parent as ClassDeclaration).name)
             sourceFile.append("::")
         }
         sourceFile.append(functionName)
         sourceFile.append("(")
         if functionSignature.result != null {
-            let type: Type = functionSignature.result.resultType as Type
-            if isClass(type.name) {
-                let lifeTime: LifeTime = type.lifeTime
+            if isClass(functionSignature.result.resultType.name) {
+                let lifeTime: LifeTime = functionSignature.result.resultType.lifeTime
                 if (lifeTime == null) || !(lifeTime is Reference) {
                     sourceFile.append("_Page* _rp")
                     if (functionSignature.parameterClause.parameters) || (functionSignature.throwsClause) {
@@ -592,8 +589,7 @@ class SourceVisitor extends CppVisitor {
     }
 
     function openConstParameter(constParameter: ConstParameter): bool {
-        let constParameterName: string = constParameter.name
-        writeParameter(constParameterName, constParameter.parameterType)
+        writeParameter(constParameter.name, constParameter.parameterType)
 
         false
     }

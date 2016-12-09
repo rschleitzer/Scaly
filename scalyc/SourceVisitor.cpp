@@ -355,8 +355,7 @@ bool SourceVisitor::openSimpleExpression(SimpleExpression* simpleExpression) {
                     postfix = *(*postfixes)[_i];
                     {
                         if (postfix->_isFunctionCall()) {
-                            FunctionCall* functionCall = (FunctionCall*)postfix;
-                            if (functionCall->catchClauses != nullptr) {
+                            if (((FunctionCall*)postfix)->catchClauses != nullptr) {
                                 IdentifierExpression* identifierExpression = (IdentifierExpression*)simpleExpression->prefixExpression->expression->primaryExpression;
                                 sourceFile->append("auto _");
                                 sourceFile->append(identifierExpression->name);
@@ -369,12 +368,11 @@ bool SourceVisitor::openSimpleExpression(SimpleExpression* simpleExpression) {
         }
     }
     if (simpleExpression->parent->_isCompilationUnit()) {
-        _Array<Postfix>* postfixes = simpleExpression->prefixExpression->expression->postfixes;
-        if (postfixes != nullptr) {
+        if (simpleExpression->prefixExpression->expression->postfixes != nullptr) {
             Postfix* postfix = nullptr;
-            size_t _postfixes_length = postfixes->length();
-            for (size_t _i = 0; _i < _postfixes_length; _i++) {
-                postfix = *(*postfixes)[_i];
+            size_t _simpleExpression_length = simpleExpression->prefixExpression->expression->postfixes->length();
+            for (size_t _i = 0; _i < _simpleExpression_length; _i++) {
+                postfix = *(*simpleExpression->prefixExpression->expression->postfixes)[_i];
                 {
                     if (postfix->_isFunctionCall()) {
                         FunctionCall* functionCall = (FunctionCall*)postfix;
@@ -405,13 +403,7 @@ void SourceVisitor::prependReturn(SimpleExpression* simpleExpression) {
 
 void SourceVisitor::closeSimpleExpression(SimpleExpression* simpleExpression) {
     PrimaryExpression* primaryExpression = simpleExpression->prefixExpression->expression->primaryExpression;
-    if (primaryExpression->_isIfExpression())
-        return;
-    if (primaryExpression->_isSwitchExpression())
-        return;
-    if (primaryExpression->_isForExpression())
-        return;
-    if (primaryExpression->_isWhileExpression())
+    if (primaryExpression->_isIfExpression() || primaryExpression->_isSwitchExpression() || primaryExpression->_isForExpression() || primaryExpression->_isWhileExpression())
         return;
     if (primaryExpression->_isIdentifierExpression()) {
         PostfixExpression* postfixExpression = simpleExpression->prefixExpression->expression;
@@ -521,16 +513,14 @@ bool SourceVisitor::openFunctionSignature(FunctionSignature* functionSignature) 
     }
     sourceFile->append(" ");
     if (functionSignature->parent->parent->parent->parent->_isClassDeclaration()) {
-        ClassDeclaration* classDeclaration = (ClassDeclaration*)functionSignature->parent->parent->parent->parent;
-        sourceFile->append(classDeclaration->name);
+        sourceFile->append(((ClassDeclaration*)functionSignature->parent->parent->parent->parent)->name);
         sourceFile->append("::");
     }
     sourceFile->append(functionName);
     sourceFile->append("(");
     if (functionSignature->result != nullptr) {
-        Type* type = (Type*)functionSignature->result->resultType;
-        if (isClass(type->name)) {
-            LifeTime* lifeTime = type->lifeTime;
+        if (isClass(functionSignature->result->resultType->name)) {
+            LifeTime* lifeTime = functionSignature->result->resultType->lifeTime;
             if ((lifeTime == nullptr) || !(lifeTime->_isReference())) {
                 sourceFile->append("_Page* _rp");
                 if ((functionSignature->parameterClause->parameters) || (functionSignature->throwsClause)) {
@@ -557,8 +547,7 @@ void SourceVisitor::closeParameterClause(ParameterClause* parameterClause) {
 }
 
 bool SourceVisitor::openConstParameter(ConstParameter* constParameter) {
-    string* constParameterName = constParameter->name;
-    writeParameter(constParameterName, constParameter->parameterType);
+    writeParameter(constParameter->name, constParameter->parameterType);
     return false;
 }
 
