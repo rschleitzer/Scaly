@@ -1331,7 +1331,7 @@ bool SourceVisitor::openForExpression(ForExpression* forExpression) {
                     IdentifierPattern* identifierPattern = (IdentifierPattern*)(forExpression->pattern);
                     sourceFile->append(identifierPattern->identifier);
                     sourceFile->append(" = *(*");
-                    sourceFile->append(collectionName);
+                    forExpression->expression->accept(this);
                     sourceFile->append(")[_i];\n");
                     indent(level(forExpression));
                     forExpression->code->accept(this);
