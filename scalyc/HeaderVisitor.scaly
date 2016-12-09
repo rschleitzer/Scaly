@@ -297,8 +297,7 @@ class HeaderVisitor extends CppVisitor {
 
         let functionDeclaration: FunctionDeclaration = functionSignature.parent as FunctionDeclaration
         if functionDeclaration.modifiers != null {
-            let modifiers: Modifier[] = functionDeclaration.modifiers
-            for modifier: Modifier in modifiers {
+            for modifier: Modifier in functionDeclaration.modifiers {
                 if modifier is StaticWord
                     headerFile.append("static ")
                 else
@@ -534,8 +533,7 @@ class HeaderVisitor extends CppVisitor {
         mainHeaderFile.append("__\n#define __scaly__")
         mainHeaderFile.append(program.name)
         mainHeaderFile.append("__\n\n#include \"Scaly.h\"\n")
-        let compilationUnits: CompilationUnit[] = program.compilationUnits
-        for compilationUnit: CompilationUnit in compilationUnits {
+        for compilationUnit: CompilationUnit in program.compilationUnits {
             mainHeaderFile.append("#include \"")
             let fileName: string$ = getFileName(compilationUnit)
             let fileNameWithoutExtension: string$ = Path.getFileNameWithoutExtension(fileName)
@@ -550,8 +548,7 @@ class HeaderVisitor extends CppVisitor {
     }
 
     function collectInheritances(program: Program) {
-        let compilationUnits: CompilationUnit[] = program.compilationUnits
-        for compilationUnit: CompilationUnit in compilationUnits
+        for compilationUnit: CompilationUnit in program.compilationUnits
             collectInheritancesInCompilationUnit(compilationUnit)
     }
 }

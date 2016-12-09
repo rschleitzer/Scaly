@@ -294,11 +294,10 @@ bool HeaderVisitor::openFunctionSignature(FunctionSignature* functionSignature) 
     string* functionName = ((FunctionDeclaration*)functionSignature->parent)->name;
     FunctionDeclaration* functionDeclaration = (FunctionDeclaration*)functionSignature->parent;
     if (functionDeclaration->modifiers != nullptr) {
-        _Array<Modifier>* modifiers = functionDeclaration->modifiers;
         Modifier* modifier = nullptr;
-        size_t _modifiers_length = modifiers->length();
-        for (size_t _i = 0; _i < _modifiers_length; _i++) {
-            modifier = *(*modifiers)[_i];
+        size_t _functionDeclaration_length = functionDeclaration->modifiers->length();
+        for (size_t _i = 0; _i < _functionDeclaration_length; _i++) {
+            modifier = *(*functionDeclaration->modifiers)[_i];
             {
                 if (modifier->_isStaticWord())
                     headerFile->append("static ");
@@ -517,11 +516,10 @@ void HeaderVisitor::buildMainHeaderFileString(Program* program) {
     mainHeaderFile->append("__\n#define __scaly__");
     mainHeaderFile->append(program->name);
     mainHeaderFile->append("__\n\n#include \"Scaly.h\"\n");
-    _Array<CompilationUnit>* compilationUnits = program->compilationUnits;
     CompilationUnit* compilationUnit = nullptr;
-    size_t _compilationUnits_length = compilationUnits->length();
-    for (size_t _i = 0; _i < _compilationUnits_length; _i++) {
-        compilationUnit = *(*compilationUnits)[_i];
+    size_t _program_length = program->compilationUnits->length();
+    for (size_t _i = 0; _i < _program_length; _i++) {
+        compilationUnit = *(*program->compilationUnits)[_i];
         {
             _Region _region; _Page* _p = _region.get();
             mainHeaderFile->append("#include \"");
@@ -539,11 +537,10 @@ void HeaderVisitor::buildMainHeaderFileString(Program* program) {
 }
 
 void HeaderVisitor::collectInheritances(Program* program) {
-    _Array<CompilationUnit>* compilationUnits = program->compilationUnits;
     CompilationUnit* compilationUnit = nullptr;
-    size_t _compilationUnits_length = compilationUnits->length();
-    for (size_t _i = 0; _i < _compilationUnits_length; _i++) {
-        compilationUnit = *(*compilationUnits)[_i];
+    size_t _program_length = program->compilationUnits->length();
+    for (size_t _i = 0; _i < _program_length; _i++) {
+        compilationUnit = *(*program->compilationUnits)[_i];
         collectInheritancesInCompilationUnit(compilationUnit);
     }
 }

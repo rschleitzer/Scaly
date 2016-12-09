@@ -71,22 +71,20 @@ void CppVisitor::appendDerivedClasses(_Array<string>* derivedClasses, _Array<str
 
 void CppVisitor::collectInheritancesInCompilationUnit(CompilationUnit* compilationUnit) {
     if (compilationUnit->statements != nullptr) {
-        _Array<Statement>* statements = compilationUnit->statements;
         Statement* statement = nullptr;
-        size_t _statements_length = statements->length();
-        for (size_t _i = 0; _i < _statements_length; _i++) {
-            statement = *(*statements)[_i];
+        size_t _compilationUnit_length = compilationUnit->statements->length();
+        for (size_t _i = 0; _i < _compilationUnit_length; _i++) {
+            statement = *(*compilationUnit->statements)[_i];
             {
                 if (statement->_isClassDeclaration()) {
                     ClassDeclaration* classDeclaration = (ClassDeclaration*)statement;
                     classes->push(classDeclaration->name);
                     if (classDeclaration->typeInheritanceClause != nullptr) {
                         TypeInheritanceClause* inheritanceClause = classDeclaration->typeInheritanceClause;
-                        _Array<Inheritance>* inheritances = inheritanceClause->inheritances;
                         Inheritance* inheritance = nullptr;
-                        size_t _inheritances_length = inheritances->length();
-                        for (size_t _i = 0; _i < _inheritances_length; _i++) {
-                            inheritance = *(*inheritances)[_i];
+                        size_t _inheritanceClause_length = inheritanceClause->inheritances->length();
+                        for (size_t _i = 0; _i < _inheritanceClause_length; _i++) {
+                            inheritance = *(*inheritanceClause->inheritances)[_i];
                             {
                                 registerInheritance(classDeclaration->name, inheritance->type->name);
                             }
@@ -119,11 +117,10 @@ void CppVisitor::registerInheritance(string* className, string* baseName) {
 }
 
 string* CppVisitor::getFileName(_Page* _rp, CompilationUnit* compilationUnit) {
-    _Array<Statement>* statements = compilationUnit->statements;
     Statement* statement = nullptr;
-    size_t _statements_length = statements->length();
-    for (size_t _i = 0; _i < _statements_length; _i++) {
-        statement = *(*statements)[_i];
+    size_t _compilationUnit_length = compilationUnit->statements->length();
+    for (size_t _i = 0; _i < _compilationUnit_length; _i++) {
+        statement = *(*compilationUnit->statements)[_i];
         {
             if (statement->_isClassDeclaration()) {
                 ClassDeclaration* classDeclaration = (ClassDeclaration*)statement;

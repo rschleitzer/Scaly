@@ -72,15 +72,13 @@ class CppVisitor extends Visitor {
 
     function collectInheritancesInCompilationUnit(compilationUnit: CompilationUnit) {
         if compilationUnit.statements != null {
-            let statements: Statement[] = compilationUnit.statements
-            for statement: Statement in statements {
+            for statement: Statement in compilationUnit.statements {
                 if statement is ClassDeclaration {
                     let classDeclaration: ClassDeclaration = statement as ClassDeclaration
                     classes.push(classDeclaration.name)
                     if classDeclaration.typeInheritanceClause != null {
                         let inheritanceClause: TypeInheritanceClause  = classDeclaration.typeInheritanceClause
-                        let inheritances: Inheritance[] = inheritanceClause.inheritances
-                        for inheritance: Inheritance in inheritances {
+                        for inheritance: Inheritance in inheritanceClause.inheritances {
                             registerInheritance(classDeclaration.name, inheritance.type.name)
                         }
                     }
@@ -107,8 +105,7 @@ class CppVisitor extends Visitor {
     }
 
     function getFileName(compilationUnit: CompilationUnit) : string {
-        let statements: Statement[] = compilationUnit.statements
-        for statement: Statement in statements {
+        for statement: Statement in compilationUnit.statements {
             if statement is ClassDeclaration {
                 let classDeclaration: ClassDeclaration = statement as ClassDeclaration
                 if classDeclaration.body != null
