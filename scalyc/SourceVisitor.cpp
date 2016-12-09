@@ -300,9 +300,8 @@ bool SourceVisitor::openSimpleExpression(SimpleExpression* simpleExpression) {
             binaryExpression = *(*simpleExpression->binaryExpressions)[_i];
             {
                 if (binaryExpression->_isTypeCast()) {
-                    TypeCast* typeCast = (TypeCast*)binaryExpression;
                     sourceFile->append("(");
-                    sourceFile->append(typeCast->objectType->name);
+                    sourceFile->append(((TypeCast*)binaryExpression)->objectType->name);
                     sourceFile->append("*)");
                     simpleExpression->prefixExpression->accept(this);
                     return false;
@@ -344,12 +343,11 @@ bool SourceVisitor::openSimpleExpression(SimpleExpression* simpleExpression) {
             }
         }
         if (simpleExpression->parent->_isCodeBlock() || simpleExpression->parent->_isCaseContent() || simpleExpression->parent->_isCompilationUnit()) {
-            _Array<Postfix>* postfixes = simpleExpression->prefixExpression->expression->postfixes;
-            if (postfixes != nullptr) {
+            if (simpleExpression->prefixExpression->expression->postfixes != nullptr) {
                 Postfix* postfix = nullptr;
-                size_t _postfixes_length = postfixes->length();
-                for (size_t _i = 0; _i < _postfixes_length; _i++) {
-                    postfix = *(*postfixes)[_i];
+                size_t _simpleExpression_length = simpleExpression->prefixExpression->expression->postfixes->length();
+                for (size_t _i = 0; _i < _simpleExpression_length; _i++) {
+                    postfix = *(*simpleExpression->prefixExpression->expression->postfixes)[_i];
                     {
                         if (postfix->_isFunctionCall()) {
                             if (((FunctionCall*)postfix)->catchClauses != nullptr) {
@@ -411,8 +409,7 @@ void SourceVisitor::closeSimpleExpression(SimpleExpression* simpleExpression) {
                 postfix = *(*postfixExpression->postfixes)[_i];
                 {
                     if (postfix->_isFunctionCall()) {
-                        FunctionCall* functionCall = (FunctionCall*)postfix;
-                        if (catchesError(functionCall))
+                        if (catchesError((FunctionCall*)postfix))
                             return;
                     }
                 }
@@ -733,19 +730,14 @@ bool SourceVisitor::isObjectField(string* memberName, ClassDeclaration* classDec
         member = *(*classDeclaration->body->members)[_i];
         {
             BindingInitializer* bindingInitializer = nullptr;
-            if (member->declaration->_isConstantDeclaration()) {
-                ConstantDeclaration* constantDeclaration = (ConstantDeclaration*)(member->declaration);
-                bindingInitializer = constantDeclaration->initializer;
-            }
-            if (member->declaration->_isMutableDeclaration()) {
-                MutableDeclaration* mutableDeclaration = (MutableDeclaration*)(member->declaration);
-                bindingInitializer = mutableDeclaration->initializer;
-            }
+            if (member->declaration->_isConstantDeclaration())
+                bindingInitializer = ((ConstantDeclaration*)member->declaration)->initializer;
+            if (member->declaration->_isMutableDeclaration())
+                bindingInitializer = ((MutableDeclaration*)member->declaration)->initializer;
             if (bindingInitializer == nullptr)
                 continue;
-            PatternInitializer* patternInitializer = bindingInitializer->initializer;
-            if (patternInitializer->pattern->_isIdentifierPattern()) {
-                IdentifierPattern* identifierPattern = (IdentifierPattern*)(patternInitializer->pattern);
+            if (bindingInitializer->initializer->pattern->_isIdentifierPattern()) {
+                IdentifierPattern* identifierPattern = (IdentifierPattern*)(bindingInitializer->initializer->pattern);
                 if (identifierPattern->identifier->equals(memberName)) {
                     if (identifierPattern->annotationForType != nullptr) {
                         if (isClass(identifierPattern->annotationForType->annotationForType->name))
@@ -782,22 +774,18 @@ bool SourceVisitor::isVariableObjectField(string* memberName, ClassDeclaration* 
         return false;
     if (classDeclaration->body->members == nullptr)
         return false;
-    _Array<ClassMember>* classMembers = classDeclaration->body->members;
     ClassMember* member = nullptr;
-    size_t _classMembers_length = classMembers->length();
-    for (size_t _i = 0; _i < _classMembers_length; _i++) {
-        member = *(*classMembers)[_i];
+    size_t _classDeclaration_length = classDeclaration->body->members->length();
+    for (size_t _i = 0; _i < _classDeclaration_length; _i++) {
+        member = *(*classDeclaration->body->members)[_i];
         {
             BindingInitializer* bindingInitializer = nullptr;
-            if (member->declaration->_isMutableDeclaration()) {
-                MutableDeclaration* mutableDeclaration = (MutableDeclaration*)(member->declaration);
-                bindingInitializer = mutableDeclaration->initializer;
-            }
+            if (member->declaration->_isMutableDeclaration())
+                bindingInitializer = ((MutableDeclaration*)member->declaration)->initializer;
             if (bindingInitializer == nullptr)
                 continue;
-            PatternInitializer* patternInitializer = bindingInitializer->initializer;
-            if (patternInitializer->pattern->_isIdentifierPattern()) {
-                IdentifierPattern* identifierPattern = (IdentifierPattern*)(patternInitializer->pattern);
+            if (bindingInitializer->initializer->pattern->_isIdentifierPattern()) {
+                IdentifierPattern* identifierPattern = (IdentifierPattern*)(bindingInitializer->initializer->pattern);
                 if (identifierPattern->identifier->equals(memberName)) {
                     if (identifierPattern->annotationForType != nullptr) {
                         if (isClass(identifierPattern->annotationForType->annotationForType->name))
