@@ -127,8 +127,7 @@ class SourceVisitor extends CppVisitor {
     }
     
     function isTopLevelFile(compilationUnit: CompilationUnit): bool {
-        let statements: Statement[] = compilationUnit.statements
-        for statement: Statement in statements {
+        for statement: Statement in compilationUnit.statements {
             if statement is Expression
                 return(true)
         }
@@ -239,9 +238,8 @@ class SourceVisitor extends CppVisitor {
     }
 
     function localAllocations(codeBlock: CodeBlock): bool {
-        let statements: Statement[] = codeBlock.statements
-        if statements != null {
-            for statement: Statement in statements {
+        if codeBlock.statements != null {
+            for statement: Statement in codeBlock.statements {
                 mutable bindingInitializer: BindingInitializer = null
                 if statement is ConstantDeclaration {
                     let constantDeclaration: ConstantDeclaration = statement as ConstantDeclaration
@@ -267,8 +265,7 @@ class SourceVisitor extends CppVisitor {
                 let postfixExpression: PostfixExpression = prefixExpression.expression
                 if postfixExpression.primaryExpression is IdentifierExpression {
                     if postfixExpression.postfixes != null {
-                        let postfixes: Postfix[] = postfixExpression.postfixes
-                        for postfix: Postfix in postfixes {
+                        for postfix: Postfix in postfixExpression.postfixes {
                             if postfix is FunctionCall {
                                 return(postfix as FunctionCall)
                             }
@@ -330,8 +327,7 @@ class SourceVisitor extends CppVisitor {
 
         // Prefix type cast if any
         if simpleExpression.binaryExpressions != null {
-            let binaryExpressions: BinaryExpression[] = simpleExpression.binaryExpressions
-            for binaryExpression: BinaryExpression in binaryExpressions {
+            for binaryExpression: BinaryExpression in simpleExpression.binaryExpressions {
                 if binaryExpression is TypeCast {
                     let typeCast: TypeCast = binaryExpression as TypeCast
                     if  typeCast.objectType is Type {
@@ -456,8 +452,7 @@ class SourceVisitor extends CppVisitor {
         if primaryExpression is IdentifierExpression {
             let postfixExpression: PostfixExpression = simpleExpression.prefixExpression.expression
             if postfixExpression.postfixes != null {
-                let postfixes: Postfix[] = postfixExpression.postfixes
-                for postfix: Postfix in postfixes {
+                for postfix: Postfix in postfixExpression.postfixes {
                     if postfix is FunctionCall {
                         let functionCall: FunctionCall = postfix as FunctionCall
                         if catchesError(functionCall)
@@ -820,14 +815,14 @@ class SourceVisitor extends CppVisitor {
         if classDeclaration.body.members == null
             return(false)
 
-        let classMembers: ClassMember[] = classDeclaration.body.members
-        for member: ClassMember in classMembers {
-
+        for member: ClassMember in classDeclaration.body.members {
             mutable bindingInitializer: BindingInitializer = null
+
             if member.declaration is ConstantDeclaration {
                 let constantDeclaration: ConstantDeclaration = (member.declaration) as ConstantDeclaration
                 bindingInitializer = constantDeclaration.initializer
             }
+
             if member.declaration is MutableDeclaration {
                 let mutableDeclaration: MutableDeclaration = (member.declaration) as MutableDeclaration
                 bindingInitializer = mutableDeclaration.initializer
@@ -927,12 +922,10 @@ class SourceVisitor extends CppVisitor {
             node = node.parent
         }
 
-        let compilationUnits: CompilationUnit[] = program.compilationUnits
-        if compilationUnits != null {
-            for compilationUnit: CompilationUnit in compilationUnits {
-                let statements: Statement[] = compilationUnit.statements
-                if statements != null {
-                    for statement: Statement in statements {
+        if program.compilationUnits != null {
+            for compilationUnit: CompilationUnit in program.compilationUnits {
+                if compilationUnit.statements != null {
+                    for statement: Statement in compilationUnit.statements {
                         if statement is ClassDeclaration {
                             let classDeclaration: ClassDeclaration = statement as ClassDeclaration
                             if classDeclaration.name.equals(name)
@@ -1810,8 +1803,7 @@ class SourceVisitor extends CppVisitor {
     }
     
     function getPageOfVariable(name: string, codeBlock: CodeBlock): string {
-        let statements: Statement[] = codeBlock.statements
-        for statement: Statement in statements {
+        for statement: Statement in codeBlock.statements {
 
             mutable bindingInitializer: BindingInitializer = null
             if statement is ConstantDeclaration {
@@ -2171,8 +2163,7 @@ class SourceVisitor extends CppVisitor {
         projectFile.append("  <Description/>\n  <Dependencies/>\n")
         projectFile.append("  <VirtualDirectory Name=\"src\">\n")
         {
-            let compilationUnits: CompilationUnit[] = program.compilationUnits
-            for compilationUnit: CompilationUnit in compilationUnits {
+            for compilationUnit: CompilationUnit in program.compilationUnits {
                 projectFile.append("    <File Name=\"")
                 let fileName: string$ = getFileName(compilationUnit)
                 let fileNameWithoutExtension: string$ = Path.getFileNameWithoutExtension(fileName)
@@ -2185,8 +2176,7 @@ class SourceVisitor extends CppVisitor {
         }
         projectFile.append("  </VirtualDirectory>\n  <VirtualDirectory Name=\"include\">\n")
         {
-            let compilationUnits: CompilationUnit[] = program.compilationUnits
-            for compilationUnit: CompilationUnit in compilationUnits {
+            for compilationUnit: CompilationUnit in program.compilationUnits {
                 projectFile.append("    <File Name=\"")
                 let fileName: string$ = getFileName(compilationUnit)
                 let fileNameWithoutExtension: string$ = Path.getFileNameWithoutExtension(fileName)
@@ -2214,8 +2204,7 @@ class SourceVisitor extends CppVisitor {
         projectFile.append(" -d ../")
         projectFile.append(program.name)
         {
-            let compilationUnits: CompilationUnit[] = program.compilationUnits
-            for compilationUnit: CompilationUnit in compilationUnits {
+            for compilationUnit: CompilationUnit in program.compilationUnits {
                 projectFile.append(" ../")
                 projectFile.append(program.name)
                 projectFile.append("/")
@@ -2268,8 +2257,7 @@ class SourceVisitor extends CppVisitor {
     }
 
     function collectInheritances(program: Program) {
-        let compilationUnits: CompilationUnit[] = program.compilationUnits
-        for compilationUnit: CompilationUnit in compilationUnits
+        for compilationUnit: CompilationUnit in program.compilationUnits
             collectInheritancesInCompilationUnit(compilationUnit)
     }
 }

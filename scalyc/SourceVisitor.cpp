@@ -112,11 +112,10 @@ void SourceVisitor::closeCompilationUnit(CompilationUnit* compilationUnit) {
 }
 
 bool SourceVisitor::isTopLevelFile(CompilationUnit* compilationUnit) {
-    _Array<Statement>* statements = compilationUnit->statements;
     Statement* statement = nullptr;
-    size_t _statements_length = statements->length();
-    for (size_t _i = 0; _i < _statements_length; _i++) {
-        statement = *(*statements)[_i];
+    size_t _compilationUnit_length = compilationUnit->statements->length();
+    for (size_t _i = 0; _i < _compilationUnit_length; _i++) {
+        statement = *(*compilationUnit->statements)[_i];
         {
             if (statement->_isExpression())
                 return true;
@@ -215,12 +214,11 @@ bool SourceVisitor::openCodeBlock(CodeBlock* codeBlock) {
 }
 
 bool SourceVisitor::localAllocations(CodeBlock* codeBlock) {
-    _Array<Statement>* statements = codeBlock->statements;
-    if (statements != nullptr) {
+    if (codeBlock->statements != nullptr) {
         Statement* statement = nullptr;
-        size_t _statements_length = statements->length();
-        for (size_t _i = 0; _i < _statements_length; _i++) {
-            statement = *(*statements)[_i];
+        size_t _codeBlock_length = codeBlock->statements->length();
+        for (size_t _i = 0; _i < _codeBlock_length; _i++) {
+            statement = *(*codeBlock->statements)[_i];
             {
                 BindingInitializer* bindingInitializer = nullptr;
                 if (statement->_isConstantDeclaration()) {
@@ -248,11 +246,10 @@ FunctionCall* SourceVisitor::getFunctionCall(PatternInitializer* patternInitiali
             PostfixExpression* postfixExpression = prefixExpression->expression;
             if (postfixExpression->primaryExpression->_isIdentifierExpression()) {
                 if (postfixExpression->postfixes != nullptr) {
-                    _Array<Postfix>* postfixes = postfixExpression->postfixes;
                     Postfix* postfix = nullptr;
-                    size_t _postfixes_length = postfixes->length();
-                    for (size_t _i = 0; _i < _postfixes_length; _i++) {
-                        postfix = *(*postfixes)[_i];
+                    size_t _postfixExpression_length = postfixExpression->postfixes->length();
+                    for (size_t _i = 0; _i < _postfixExpression_length; _i++) {
+                        postfix = *(*postfixExpression->postfixes)[_i];
                         {
                             if (postfix->_isFunctionCall()) {
                                 return (FunctionCall*)postfix;
@@ -309,11 +306,10 @@ bool SourceVisitor::openSimpleExpression(SimpleExpression* simpleExpression) {
         }
     }
     if (simpleExpression->binaryExpressions != nullptr) {
-        _Array<BinaryExpression>* binaryExpressions = simpleExpression->binaryExpressions;
         BinaryExpression* binaryExpression = nullptr;
-        size_t _binaryExpressions_length = binaryExpressions->length();
-        for (size_t _i = 0; _i < _binaryExpressions_length; _i++) {
-            binaryExpression = *(*binaryExpressions)[_i];
+        size_t _simpleExpression_length = simpleExpression->binaryExpressions->length();
+        for (size_t _i = 0; _i < _simpleExpression_length; _i++) {
+            binaryExpression = *(*simpleExpression->binaryExpressions)[_i];
             {
                 if (binaryExpression->_isTypeCast()) {
                     TypeCast* typeCast = (TypeCast*)binaryExpression;
@@ -430,11 +426,10 @@ void SourceVisitor::closeSimpleExpression(SimpleExpression* simpleExpression) {
     if (primaryExpression->_isIdentifierExpression()) {
         PostfixExpression* postfixExpression = simpleExpression->prefixExpression->expression;
         if (postfixExpression->postfixes != nullptr) {
-            _Array<Postfix>* postfixes = postfixExpression->postfixes;
             Postfix* postfix = nullptr;
-            size_t _postfixes_length = postfixes->length();
-            for (size_t _i = 0; _i < _postfixes_length; _i++) {
-                postfix = *(*postfixes)[_i];
+            size_t _postfixExpression_length = postfixExpression->postfixes->length();
+            for (size_t _i = 0; _i < _postfixExpression_length; _i++) {
+                postfix = *(*postfixExpression->postfixes)[_i];
                 {
                     if (postfix->_isFunctionCall()) {
                         FunctionCall* functionCall = (FunctionCall*)postfix;
@@ -754,11 +749,10 @@ bool SourceVisitor::isObjectField(string* memberName, ClassDeclaration* classDec
         return false;
     if (classDeclaration->body->members == nullptr)
         return false;
-    _Array<ClassMember>* classMembers = classDeclaration->body->members;
     ClassMember* member = nullptr;
-    size_t _classMembers_length = classMembers->length();
-    for (size_t _i = 0; _i < _classMembers_length; _i++) {
-        member = *(*classMembers)[_i];
+    size_t _classDeclaration_length = classDeclaration->body->members->length();
+    for (size_t _i = 0; _i < _classDeclaration_length; _i++) {
+        member = *(*classDeclaration->body->members)[_i];
         {
             BindingInitializer* bindingInitializer = nullptr;
             if (member->declaration->_isConstantDeclaration()) {
@@ -866,19 +860,17 @@ ClassDeclaration* SourceVisitor::findClassDeclaration(SyntaxNode* node, string* 
         }
         node = node->parent;
     }
-    _Array<CompilationUnit>* compilationUnits = program->compilationUnits;
-    if (compilationUnits != nullptr) {
+    if (program->compilationUnits != nullptr) {
         CompilationUnit* compilationUnit = nullptr;
-        size_t _compilationUnits_length = compilationUnits->length();
-        for (size_t _i = 0; _i < _compilationUnits_length; _i++) {
-            compilationUnit = *(*compilationUnits)[_i];
+        size_t _program_length = program->compilationUnits->length();
+        for (size_t _i = 0; _i < _program_length; _i++) {
+            compilationUnit = *(*program->compilationUnits)[_i];
             {
-                _Array<Statement>* statements = compilationUnit->statements;
-                if (statements != nullptr) {
+                if (compilationUnit->statements != nullptr) {
                     Statement* statement = nullptr;
-                    size_t _statements_length = statements->length();
-                    for (size_t _i = 0; _i < _statements_length; _i++) {
-                        statement = *(*statements)[_i];
+                    size_t _compilationUnit_length = compilationUnit->statements->length();
+                    for (size_t _i = 0; _i < _compilationUnit_length; _i++) {
+                        statement = *(*compilationUnit->statements)[_i];
                         {
                             if (statement->_isClassDeclaration()) {
                                 ClassDeclaration* classDeclaration = (ClassDeclaration*)statement;
@@ -1726,11 +1718,10 @@ bool SourceVisitor::openBreakExpression(BreakExpression* breakExpression) {
 }
 
 string* SourceVisitor::getPageOfVariable(_Page* _rp, string* name, CodeBlock* codeBlock) {
-    _Array<Statement>* statements = codeBlock->statements;
     Statement* statement = nullptr;
-    size_t _statements_length = statements->length();
-    for (size_t _i = 0; _i < _statements_length; _i++) {
-        statement = *(*statements)[_i];
+    size_t _codeBlock_length = codeBlock->statements->length();
+    for (size_t _i = 0; _i < _codeBlock_length; _i++) {
+        statement = *(*codeBlock->statements)[_i];
         {
             BindingInitializer* bindingInitializer = nullptr;
             if (statement->_isConstantDeclaration()) {
@@ -2054,11 +2045,10 @@ VarString* SourceVisitor::buildProjectFileString(_Page* _rp, Program* program) {
     projectFile->append("  <Description/>\n  <Dependencies/>\n");
     projectFile->append("  <VirtualDirectory Name=\"src\">\n");
     {
-        _Array<CompilationUnit>* compilationUnits = program->compilationUnits;
         CompilationUnit* compilationUnit = nullptr;
-        size_t _compilationUnits_length = compilationUnits->length();
-        for (size_t _i = 0; _i < _compilationUnits_length; _i++) {
-            compilationUnit = *(*compilationUnits)[_i];
+        size_t _program_length = program->compilationUnits->length();
+        for (size_t _i = 0; _i < _program_length; _i++) {
+            compilationUnit = *(*program->compilationUnits)[_i];
             {
                 _Region _region; _Page* _p = _region.get();
                 projectFile->append("    <File Name=\"");
@@ -2074,11 +2064,10 @@ VarString* SourceVisitor::buildProjectFileString(_Page* _rp, Program* program) {
     }
     projectFile->append("  </VirtualDirectory>\n  <VirtualDirectory Name=\"include\">\n");
     {
-        _Array<CompilationUnit>* compilationUnits = program->compilationUnits;
         CompilationUnit* compilationUnit = nullptr;
-        size_t _compilationUnits_length = compilationUnits->length();
-        for (size_t _i = 0; _i < _compilationUnits_length; _i++) {
-            compilationUnit = *(*compilationUnits)[_i];
+        size_t _program_length = program->compilationUnits->length();
+        for (size_t _i = 0; _i < _program_length; _i++) {
+            compilationUnit = *(*program->compilationUnits)[_i];
             {
                 _Region _region; _Page* _p = _region.get();
                 projectFile->append("    <File Name=\"");
@@ -2109,11 +2098,10 @@ VarString* SourceVisitor::buildProjectFileString(_Page* _rp, Program* program) {
     projectFile->append(" -d ../");
     projectFile->append(program->name);
     {
-        _Array<CompilationUnit>* compilationUnits = program->compilationUnits;
         CompilationUnit* compilationUnit = nullptr;
-        size_t _compilationUnits_length = compilationUnits->length();
-        for (size_t _i = 0; _i < _compilationUnits_length; _i++) {
-            compilationUnit = *(*compilationUnits)[_i];
+        size_t _program_length = program->compilationUnits->length();
+        for (size_t _i = 0; _i < _program_length; _i++) {
+            compilationUnit = *(*program->compilationUnits)[_i];
             {
                 _Region _region; _Page* _p = _region.get();
                 projectFile->append(" ../");
@@ -2168,11 +2156,10 @@ VarString* SourceVisitor::buildProjectFileString(_Page* _rp, Program* program) {
 }
 
 void SourceVisitor::collectInheritances(Program* program) {
-    _Array<CompilationUnit>* compilationUnits = program->compilationUnits;
     CompilationUnit* compilationUnit = nullptr;
-    size_t _compilationUnits_length = compilationUnits->length();
-    for (size_t _i = 0; _i < _compilationUnits_length; _i++) {
-        compilationUnit = *(*compilationUnits)[_i];
+    size_t _program_length = program->compilationUnits->length();
+    for (size_t _i = 0; _i < _program_length; _i++) {
+        compilationUnit = *(*program->compilationUnits)[_i];
         collectInheritancesInCompilationUnit(compilationUnit);
     }
 }
