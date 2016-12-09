@@ -1929,8 +1929,7 @@ bool SourceVisitor::openCaseContent(CaseContent* caseContent) {
 void SourceVisitor::closeCaseContent(CaseContent* caseContent) {
     bool additionalLineFeed = true;
     if (caseContent->parent->_isSwitchCase()) {
-        SwitchCase* switchCase = (SwitchCase*)caseContent->parent;
-        if (!switchCase->label->_isDefaultCaseLabel()) {
+        if (!((SwitchCase*)caseContent->parent)->label->_isDefaultCaseLabel()) {
             indent(level(caseContent));
             sourceFile->append("break;\n");
         }
@@ -1957,9 +1956,8 @@ void SourceVisitor::closeType(Type* type) {
         if (!type->parent->_isConstructorCall())
             sourceFile->append("*");
     }
-    if (isClass(type->name) && !hasArrayPostfix(type) && !inTypeQuery(type) && !type->parent->_isConstructorCall()) {
+    if (isClass(type->name) && !hasArrayPostfix(type) && !inTypeQuery(type) && !type->parent->_isConstructorCall())
         sourceFile->append("*");
-    }
     if (inTypeQuery(type))
         sourceFile->append("()");
 }
@@ -2009,12 +2007,11 @@ VarString* SourceVisitor::buildProjectFileString(_Page* _rp, Program* program) {
             {
                 _Region _region; _Page* _p = _region.get();
                 projectFile->append("    <File Name=\"");
-                string* fileName = getFileName(_p, compilationUnit);
-                string* fileNameWithoutExtension = Path::getFileNameWithoutExtension(_p, fileName);
-                projectFile->append(fileNameWithoutExtension);
+                string* fileName = Path::getFileNameWithoutExtension(_p, getFileName(_p, compilationUnit));
+                projectFile->append(fileName);
                 projectFile->append(".cpp\"/>\n");
                 projectFile->append("    <File Name=\"");
-                projectFile->append(fileNameWithoutExtension);
+                projectFile->append(fileName);
                 projectFile->append(".scaly\"/>\n");
             }
         }
@@ -2028,9 +2025,8 @@ VarString* SourceVisitor::buildProjectFileString(_Page* _rp, Program* program) {
             {
                 _Region _region; _Page* _p = _region.get();
                 projectFile->append("    <File Name=\"");
-                string* fileName = getFileName(_p, compilationUnit);
-                string* fileNameWithoutExtension = Path::getFileNameWithoutExtension(_p, fileName);
-                projectFile->append(fileNameWithoutExtension);
+                string* fileName = Path::getFileNameWithoutExtension(_p, getFileName(_p, compilationUnit));
+                projectFile->append(fileName);
                 projectFile->append(".h\"/>\n");
             }
         }
@@ -2064,9 +2060,8 @@ VarString* SourceVisitor::buildProjectFileString(_Page* _rp, Program* program) {
                 projectFile->append(" ../");
                 projectFile->append(program->name);
                 projectFile->append("/");
-                string* fileName = getFileName(_p, compilationUnit);
-                string* fileNameWithoutExtension = Path::getFileNameWithoutExtension(_p, fileName);
-                projectFile->append(fileNameWithoutExtension);
+                string* fileName = Path::getFileNameWithoutExtension(_p, getFileName(_p, compilationUnit));
+                projectFile->append(fileName);
                 projectFile->append(".scaly");
             }
         }

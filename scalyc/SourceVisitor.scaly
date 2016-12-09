@@ -1386,8 +1386,10 @@ class SourceVisitor extends CppVisitor {
     }
 
     function openParenthesizedExpression(parenthesizedExpression: ParenthesizedExpression): bool {
+
         if !(parenthesizedExpression.parent) is ReturnExpression
             sourceFile.append("(")
+
         if parenthesizedExpression.parent is FunctionCall {
             let functionCall: FunctionCall = (parenthesizedExpression.parent) as FunctionCall
             let parameterInserted: bool = false
@@ -2047,8 +2049,7 @@ class SourceVisitor extends CppVisitor {
     function closeCaseContent(caseContent: CaseContent) {
         mutable additionalLineFeed: bool = true
         if caseContent.parent is SwitchCase {
-            let switchCase: SwitchCase = caseContent.parent as SwitchCase
-            if !switchCase.label is DefaultCaseLabel {
+            if !(caseContent.parent as SwitchCase).label is DefaultCaseLabel {
                 indent(level(caseContent))
                 sourceFile.append("break;\n")
             }
@@ -2077,9 +2078,13 @@ class SourceVisitor extends CppVisitor {
             if !type.parent is ConstructorCall
                 sourceFile.append("*")
         }
-        if isClass(type.name) && !hasArrayPostfix(type) && !inTypeQuery(type) && !type.parent is ConstructorCall {
+
+        if isClass(type.name)
+        && !hasArrayPostfix(type)
+        && !inTypeQuery(type)
+        && !type.parent is ConstructorCall
             sourceFile.append("*")
-        }
+
         if inTypeQuery(type)
             sourceFile.append("()")
     }
@@ -2125,12 +2130,11 @@ class SourceVisitor extends CppVisitor {
         {
             for compilationUnit: CompilationUnit in program.compilationUnits {
                 projectFile.append("    <File Name=\"")
-                let fileName: string$ = getFileName(compilationUnit)
-                let fileNameWithoutExtension: string$ = Path.getFileNameWithoutExtension(fileName)
-                projectFile.append(fileNameWithoutExtension)
+                let fileName: string$ = Path.getFileNameWithoutExtension(getFileName(compilationUnit))
+                projectFile.append(fileName)
                 projectFile.append(".cpp\"/>\n")
                 projectFile.append("    <File Name=\"")
-                projectFile.append(fileNameWithoutExtension)
+                projectFile.append(fileName)
                 projectFile.append(".scaly\"/>\n")
             }
         }
@@ -2138,9 +2142,8 @@ class SourceVisitor extends CppVisitor {
         {
             for compilationUnit: CompilationUnit in program.compilationUnits {
                 projectFile.append("    <File Name=\"")
-                let fileName: string$ = getFileName(compilationUnit)
-                let fileNameWithoutExtension: string$ = Path.getFileNameWithoutExtension(fileName)
-                projectFile.append(fileNameWithoutExtension)
+                let fileName: string$ = Path.getFileNameWithoutExtension(getFileName(compilationUnit))
+                projectFile.append(fileName)
                 projectFile.append(".h\"/>\n")
             }
         }
@@ -2168,9 +2171,8 @@ class SourceVisitor extends CppVisitor {
                 projectFile.append(" ../")
                 projectFile.append(program.name)
                 projectFile.append("/")
-                let fileName: string$ = getFileName(compilationUnit)
-                let fileNameWithoutExtension: string$ = Path.getFileNameWithoutExtension(fileName)
-                projectFile.append(fileNameWithoutExtension)
+                let fileName: string$ = Path.getFileNameWithoutExtension(getFileName(compilationUnit))
+                projectFile.append(fileName)
                 projectFile.append(".scaly")
             }
         }
