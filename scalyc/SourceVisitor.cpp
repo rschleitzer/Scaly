@@ -87,10 +87,9 @@ void SourceVisitor::closeCompilationUnit(CompilationUnit* compilationUnit) {
     string* fileNameWithoutExtension = Path::getFileNameWithoutExtension(_p, fileName);
     outputFilePath->append(fileNameWithoutExtension);
     if (isTopLevelFile(compilationUnit)) {
-        _Array<Statement>* statements = compilationUnit->statements;
-        if (statements->length() > 0) {
-            size_t length = statements->length();
-            Statement* statement = *(*statements)[length - 1];
+        size_t length = compilationUnit->statements->length();
+        if (length > 0) {
+            Statement* statement = *(*compilationUnit->statements)[length - 1];
             if (statement->_isSimpleExpression()) {
                 SimpleExpression* simpleExpression = (SimpleExpression*)statement;
                 PrimaryExpression* primaryExpression = simpleExpression->prefixExpression->expression->primaryExpression;
@@ -885,8 +884,7 @@ bool SourceVisitor::openCatchClause(CatchClause* catchClause) {
                 PatternInitializer* patternInitializer = bindingInitializer->initializer;
                 if (patternInitializer->pattern->_isIdentifierPattern()) {
                     IdentifierPattern* identifierPattern = (IdentifierPattern*)(patternInitializer->pattern);
-                    _Array<CatchClause>* catchClauses = functionCall->catchClauses;
-                    if (*(*catchClauses)[0] == catchClause) {
+                    if (*(*functionCall->catchClauses)[0] == catchClause) {
                         sourceFile->append(";\n");
                         indent(level(catchClause) - 1);
                         identifierPattern->annotationForType->accept(this);
@@ -926,8 +924,7 @@ bool SourceVisitor::openCatchClause(CatchClause* catchClause) {
                             TuplePattern* bindingPattern = catchClause->bindingPattern;
                             if (bindingPattern->elements != nullptr) {
                                 if (bindingPattern->elements->length() > 0) {
-                                    _Array<TuplePatternElement>* elements = bindingPattern->elements;
-                                    TuplePatternElement* element = *(*elements)[0];
+                                    TuplePatternElement* element = *(*bindingPattern->elements)[0];
                                     if (element->pattern->_isIdentifierPattern()) {
                                         IdentifierPattern* pattern = (IdentifierPattern*)(element->pattern);
                                         indent(level(catchClause));
@@ -961,8 +958,7 @@ bool SourceVisitor::openCatchClause(CatchClause* catchClause) {
         {
             IdentifierExpression* identifierExpression = getIdentifierExpression((PostfixExpression*)(functionCall->parent));
             if (identifierExpression != nullptr) {
-                _Array<CatchClause>* catchClauses = functionCall->catchClauses;
-                if (*(*catchClauses)[0] == catchClause) {
+                if (*(*functionCall->catchClauses)[0] == catchClause) {
                     sourceFile->append(";\n");
                     indent(level(catchClause) - 1);
                     sourceFile->append("if (_");
@@ -990,8 +986,7 @@ bool SourceVisitor::openCatchClause(CatchClause* catchClause) {
                             TuplePattern* bindingPattern = catchClause->bindingPattern;
                             if (bindingPattern->elements != nullptr) {
                                 if (bindingPattern->elements->length() > 0) {
-                                    _Array<TuplePatternElement>* elements = bindingPattern->elements;
-                                    TuplePatternElement* element = *(*elements)[0];
+                                    TuplePatternElement* element = *(*bindingPattern->elements)[0];
                                     if (element->pattern->_isIdentifierPattern()) {
                                         IdentifierPattern* pattern = (IdentifierPattern*)(element->pattern);
                                         sourceFile->append(pattern->identifier);
@@ -1028,8 +1023,7 @@ bool SourceVisitor::openCatchClause(CatchClause* catchClause) {
                 }
                 indent(level(catchClause));
                 sourceFile->append("}\n");
-                _Array<CatchClause>* clauses = functionCall->catchClauses;
-                if (*(*clauses)[functionCall->catchClauses->length() - 1] == catchClause) {
+                if (*(*functionCall->catchClauses)[functionCall->catchClauses->length() - 1] == catchClause) {
                     indent(level(catchClause) - 1);
                     sourceFile->append("} }\n");
                 }
@@ -1055,8 +1049,7 @@ string* SourceVisitor::getErrorType(CatchClause* catchClause) {
     if (catchClause->bindingPattern != nullptr) {
         if (catchClause->bindingPattern->elements != nullptr) {
             if (catchClause->bindingPattern->elements->length() == 1) {
-                _Array<TuplePatternElement>* elements = catchClause->bindingPattern->elements;
-                TuplePatternElement* element = *(*elements)[0];
+                TuplePatternElement* element = *(*catchClause->bindingPattern->elements)[0];
                 if (element->pattern->_isIdentifierPattern()) {
                     IdentifierPattern* pattern = (IdentifierPattern*)(element->pattern);
                     if (pattern->annotationForType != nullptr) {
@@ -1082,8 +1075,7 @@ void SourceVisitor::visitMemberExpression(MemberExpression* memberExpression) {
         if (postfixExpression->primaryExpression->_isIdentifierExpression()) {
             IdentifierExpression* identifierExpression = (IdentifierExpression*)(postfixExpression->primaryExpression);
             if (postfixExpression->postfixes->length() > 1) {
-                _Array<Postfix>* postfixes = postfixExpression->postfixes;
-                if (((Postfix*)*(*postfixes)[0]) && ((*(*postfixes)[1])->_isFunctionCall())) {
+                if (((Postfix*)*(*postfixExpression->postfixes)[0]) && ((*(*postfixExpression->postfixes)[1])->_isFunctionCall())) {
                     if (isClass(identifierExpression->name)) {
                         sourceFile->append("::");
                         sourceFile->append(memberExpression->member);
@@ -1908,15 +1900,14 @@ bool SourceVisitor::isCatchingPatternInitializer(PatternInitializer* patternInit
             if (postfixExpression->postfixes != nullptr) {
                 FunctionCall* functionCall = nullptr;
                 if (postfixExpression->postfixes->length() > 0) {
-                    _Array<Postfix>* postfixes = postfixExpression->postfixes;
-                    Postfix* postfix = *(*postfixes)[0];
+                    Postfix* postfix = *(*postfixExpression->postfixes)[0];
                     if (postfix->_isFunctionCall()) {
                         functionCall = (FunctionCall*)postfix;
                     }
                     else {
                         if (postfix->_isMemberExpression()) {
                             if (postfixExpression->postfixes->length() > 1) {
-                                Postfix* postfix = *(*postfixes)[1];
+                                Postfix* postfix = *(*postfixExpression->postfixes)[1];
                                 if (postfix->_isFunctionCall()) {
                                     functionCall = (FunctionCall*)postfix;
                                 }
