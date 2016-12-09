@@ -86,9 +86,8 @@ class HeaderVisitor extends CppVisitor {
         mutable outputFilePath: VarString$  = new VarString(directory)
         outputFilePath.append('/')
 
-        let fileName: string$ = getFileName(compilationUnit)        
-        let fileNameWithoutExtension: string$ = Path.getFileNameWithoutExtension(fileName)
-        outputFilePath.append(fileNameWithoutExtension)
+        let fileName: string$ = Path.getFileNameWithoutExtension(getFileName(compilationUnit))
+        outputFilePath.append(fileName)
 
         if !fileName.equals(programName) {
             headerFile.append("\n\n}\n#endif // __")
@@ -385,14 +384,17 @@ class HeaderVisitor extends CppVisitor {
     }
 
     function writeParameter(name: string, parameterType: Type) {
-        let parameterClause: ParameterClause = parameterType.parent.parent as ParameterClause
-        let parameters: Parameter[] = parameterClause.parameters
-        let parameter: Parameter = parameterType.parent as Parameter
-        if parameter != parameters[0]
-            headerFile.append(", ")
-        parameterType.accept(this)
-        headerFile.append(" ")
-        headerFile.append(name)
+        if parameterType.parent is Parameter {
+            let parameter: Parameter = parameterType.parent as Parameter
+            if parameter.parent is ParameterClause {
+                let parameters: Parameter[] = (parameter.parent as ParameterClause).parameters
+                if parameter != parameters[0]
+                    headerFile.append(", ")
+                parameterType.accept(this)
+                headerFile.append(" ")
+                headerFile.append(name)
+            }
+        }
     }
 
     function isClass(name: string): bool {

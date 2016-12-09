@@ -30,7 +30,7 @@ bool SourceVisitor::openProgram(Program* program) {
 bool SourceVisitor::openCompilationUnit(CompilationUnit* compilationUnit) {
     if (!(compilationUnit->parent->_isProgram()))
         return false;
-    string* programName = ((Program*)(compilationUnit->parent))->name;
+    string* programName = ((Program*)compilationUnit->parent)->name;
     if (sourceFile != nullptr)
         sourceFile->_getPage()->clear();
     sourceFile = new(sourceFile == nullptr ? _getPage()->allocateExclusivePage() : sourceFile->_getPage()) VarString(0, 4096);
@@ -83,9 +83,8 @@ void SourceVisitor::closeCompilationUnit(CompilationUnit* compilationUnit) {
         return;
     VarString* outputFilePath = new(_p) VarString(directory);
     outputFilePath->append('/');
-    string* fileName = getFileName(_p, compilationUnit);
-    string* fileNameWithoutExtension = Path::getFileNameWithoutExtension(_p, fileName);
-    outputFilePath->append(fileNameWithoutExtension);
+    string* fileName = Path::getFileNameWithoutExtension(_p, getFileName(_p, compilationUnit));
+    outputFilePath->append(fileName);
     if (isTopLevelFile(compilationUnit)) {
         size_t length = compilationUnit->statements->length();
         if (length > 0) {

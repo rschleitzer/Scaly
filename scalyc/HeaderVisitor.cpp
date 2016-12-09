@@ -83,9 +83,8 @@ void HeaderVisitor::closeCompilationUnit(CompilationUnit* compilationUnit) {
     string* programName = ((Program*)compilationUnit->parent)->name;
     VarString* outputFilePath = new(_p) VarString(directory);
     outputFilePath->append('/');
-    string* fileName = getFileName(_p, compilationUnit);
-    string* fileNameWithoutExtension = Path::getFileNameWithoutExtension(_p, fileName);
-    outputFilePath->append(fileNameWithoutExtension);
+    string* fileName = Path::getFileNameWithoutExtension(_p, getFileName(_p, compilationUnit));
+    outputFilePath->append(fileName);
     if (!fileName->equals(programName)) {
         _Region _region; _Page* _p = _region.get();
         headerFile->append("\n\n}\n#endif // __");
@@ -382,14 +381,17 @@ bool HeaderVisitor::openConstParameter(ConstParameter* constParameter) {
 }
 
 void HeaderVisitor::writeParameter(string* name, Type* parameterType) {
-    ParameterClause* parameterClause = (ParameterClause*)parameterType->parent->parent;
-    _Array<Parameter>* parameters = parameterClause->parameters;
-    Parameter* parameter = (Parameter*)parameterType->parent;
-    if (parameter != *(*parameters)[0])
-        headerFile->append(", ");
-    parameterType->accept(this);
-    headerFile->append(" ");
-    headerFile->append(name);
+    if (parameterType->parent->_isParameter()) {
+        Parameter* parameter = (Parameter*)parameterType->parent;
+        if (parameter->parent->_isParameterClause()) {
+            _Array<Parameter>* parameters = ((ParameterClause*)parameter->parent)->parameters;
+            if (parameter != *(*parameters)[0])
+                headerFile->append(", ");
+            parameterType->accept(this);
+            headerFile->append(" ");
+            headerFile->append(name);
+        }
+    }
 }
 
 bool HeaderVisitor::isClass(string* name) {

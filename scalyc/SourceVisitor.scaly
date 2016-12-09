@@ -36,7 +36,7 @@ class SourceVisitor extends CppVisitor {
         if !(compilationUnit.parent is Program)
             return(false)
 
-        let programName: string = ((compilationUnit.parent) as Program).name
+        let programName: string = (compilationUnit.parent as Program).name
 
         // Begin cpp file
         sourceFile = new VarString(0, 4096)
@@ -95,9 +95,8 @@ class SourceVisitor extends CppVisitor {
 
         mutable outputFilePath: VarString$  = new VarString(directory)
         outputFilePath.append('/')
-        let fileName: string$ = getFileName(compilationUnit)
-        let fileNameWithoutExtension: string$ = Path.getFileNameWithoutExtension(fileName)
-        outputFilePath.append(fileNameWithoutExtension)
+        let fileName: string$ = Path.getFileNameWithoutExtension(getFileName(compilationUnit))
+        outputFilePath.append(fileName)
 
         if isTopLevelFile(compilationUnit)
         {
