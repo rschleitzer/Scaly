@@ -1021,18 +1021,27 @@ IdentifierExpression* SourceVisitor::getIdentifierExpression(PostfixExpression* 
 }
 
 string* SourceVisitor::getErrorType(CatchClause* catchClause) {
-    if (catchClause->bindingPattern != nullptr) {
-        if (catchClause->bindingPattern->elements != nullptr) {
-            if (catchClause->bindingPattern->elements->length() == 1) {
-                TuplePatternElement* element = *(*catchClause->bindingPattern->elements)[0];
-                if (element->pattern->_isIdentifierPattern()) {
-                    IdentifierPattern* pattern = (IdentifierPattern*)(element->pattern);
-                    if (pattern->annotationForType != nullptr) {
-                        return pattern->annotationForType->annotationForType->name;
+    if (catchClause->catchPattern->_isWildCardCatchPattern()) {
+        if (catchClause->bindingPattern != nullptr) {
+            if (catchClause->bindingPattern->elements != nullptr) {
+                if (catchClause->bindingPattern->elements->length() == 1) {
+                    TuplePatternElement* element = *(*catchClause->bindingPattern->elements)[0];
+                    if (element->pattern->_isIdentifierPattern()) {
+                        IdentifierPattern* pattern = (IdentifierPattern*)(element->pattern);
+                        if (pattern->annotationForType != nullptr) {
+                            return pattern->annotationForType->annotationForType->name;
+                        }
                     }
                 }
             }
         }
+    }
+    if (catchClause->catchPattern->_isIdentifierCatchPattern()) {
+        IdentifierCatchPattern* identifierCatchPattern = (IdentifierCatchPattern*)catchClause->catchPattern;
+        if (identifierCatchPattern->member == nullptr)
+            return identifierCatchPattern->name;
+        else
+            return identifierCatchPattern->member->member;
     }
     return nullptr;
 }

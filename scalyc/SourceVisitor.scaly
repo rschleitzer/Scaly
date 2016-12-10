@@ -1091,18 +1091,28 @@ class SourceVisitor extends CppVisitor {
     }
 
     function getErrorType(catchClause: CatchClause&): string& {
-        if catchClause.bindingPattern != null {
-            if catchClause.bindingPattern.elements != null {
-                if catchClause.bindingPattern.elements.length() == 1 {
-                    let element: TuplePatternElement = catchClause.bindingPattern.elements[0]
-                    if element.pattern is IdentifierPattern {
-                        let pattern: IdentifierPattern = (element.pattern) as IdentifierPattern
-                        if pattern.annotationForType != null {
-                            return(pattern.annotationForType.annotationForType.name)
+        if catchClause.catchPattern is WildCardCatchPattern {
+            if catchClause.bindingPattern != null {
+                if catchClause.bindingPattern.elements != null {
+                    if catchClause.bindingPattern.elements.length() == 1 {
+                        let element: TuplePatternElement = catchClause.bindingPattern.elements[0]
+                        if element.pattern is IdentifierPattern {
+                            let pattern: IdentifierPattern = (element.pattern) as IdentifierPattern
+                            if pattern.annotationForType != null {
+                                return(pattern.annotationForType.annotationForType.name)
+                            }
                         }
                     }
                 }
             }
+        }
+
+        if catchClause.catchPattern is IdentifierCatchPattern {
+            let identifierCatchPattern: IdentifierCatchPattern = catchClause.catchPattern as IdentifierCatchPattern
+            if identifierCatchPattern.member == null
+                return(identifierCatchPattern.name)
+            else
+                return(identifierCatchPattern.member.member)
         }
 
         null
