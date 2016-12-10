@@ -854,48 +854,132 @@ bool SourceVisitor::openTypeQuery(TypeQuery* typeQuery) {
 }
 
 bool SourceVisitor::openCatchClause(CatchClause* catchClause) {
-    if (catchClause->parent->_isFunctionCall()) {
-        FunctionCall* functionCall = (FunctionCall*)(catchClause->parent);
-        {
-            BindingInitializer* bindingInitializer = getBindingInitializer(functionCall);
-            if (bindingInitializer != nullptr) {
-                IdentifierPattern* identifierPattern = bindingInitializer->initializer->pattern;
-                if (*(*functionCall->catchClauses)[0] == catchClause) {
-                    sourceFile->append(";\n");
-                    indent(level(catchClause) - 1);
-                    identifierPattern->annotationForType->accept(this);
-                    sourceFile->append(" ");
-                    sourceFile->append(identifierPattern->identifier);
-                    sourceFile->append(" = nullptr;\n");
-                    indent(level(catchClause) - 1);
-                    sourceFile->append("if (_");
-                    sourceFile->append(identifierPattern->identifier);
-                    sourceFile->append("_result.succeeded()) {\n");
-                    indent(level(catchClause) - 1);
-                    sourceFile->append("    ");
-                    sourceFile->append(identifierPattern->identifier);
-                    sourceFile->append(" = _");
-                    sourceFile->append(identifierPattern->identifier);
-                    sourceFile->append("_result.getResult();\n");
-                    indent(level(catchClause) - 1);
-                    sourceFile->append("}\n");
-                }
+    if (!catchClause->parent->_isFunctionCall())
+        return false;
+    FunctionCall* functionCall = (FunctionCall*)(catchClause->parent);
+    {
+        BindingInitializer* bindingInitializer = getBindingInitializer(functionCall);
+        if (bindingInitializer != nullptr) {
+            IdentifierPattern* identifierPattern = bindingInitializer->initializer->pattern;
+            if (*(*functionCall->catchClauses)[0] == catchClause) {
+                sourceFile->append(";\n");
                 indent(level(catchClause) - 1);
-                sourceFile->append("else");
-                if (catchClause->catchPattern->_isIdentifierCatchPattern()) {
-                    IdentifierCatchPattern* identifierCatchPattern = (IdentifierCatchPattern*)(catchClause->catchPattern);
-                    sourceFile->append(" if (_");
-                    sourceFile->append(identifierPattern->identifier);
-                    sourceFile->append("_result._getErrorCode() == _");
-                    sourceFile->append(identifierCatchPattern->name);
-                    sourceFile->append("Code_");
-                    string* errorType = getErrorType(catchClause);
-                    if (errorType != nullptr)
-                        sourceFile->append(errorType);
-                    sourceFile->append(")");
+                identifierPattern->annotationForType->accept(this);
+                sourceFile->append(" ");
+                sourceFile->append(identifierPattern->identifier);
+                sourceFile->append(" = nullptr;\n");
+                indent(level(catchClause) - 1);
+                sourceFile->append("if (_");
+                sourceFile->append(identifierPattern->identifier);
+                sourceFile->append("_result.succeeded()) {\n");
+                indent(level(catchClause) - 1);
+                sourceFile->append("    ");
+                sourceFile->append(identifierPattern->identifier);
+                sourceFile->append(" = _");
+                sourceFile->append(identifierPattern->identifier);
+                sourceFile->append("_result.getResult();\n");
+                indent(level(catchClause) - 1);
+                sourceFile->append("}\n");
+            }
+            indent(level(catchClause) - 1);
+            sourceFile->append("else");
+            string* errorType = getErrorType(catchClause);
+            if (catchClause->catchPattern->_isIdentifierCatchPattern()) {
+                IdentifierCatchPattern* identifierCatchPattern = (IdentifierCatchPattern*)(catchClause->catchPattern);
+                sourceFile->append(" if (_");
+                sourceFile->append(identifierPattern->identifier);
+                sourceFile->append("_result._getErrorCode() == _");
+                sourceFile->append(identifierCatchPattern->name);
+                sourceFile->append("Code_");
+                if (errorType != nullptr)
+                    sourceFile->append(errorType);
+                sourceFile->append(")");
+            }
+            sourceFile->append(" {\n");
+            if (catchClause->bindingPattern != nullptr) {
+                TuplePattern* bindingPattern = catchClause->bindingPattern;
+                if (bindingPattern->elements != nullptr) {
+                    if (catchClause->catchPattern->_isWildCardCatchPattern()) {
+                        if (bindingPattern->elements->length() > 0) {
+                            TuplePatternElement* element = *(*bindingPattern->elements)[0];
+                            if (element->pattern->_isIdentifierPattern()) {
+                                IdentifierPattern* pattern = (IdentifierPattern*)(element->pattern);
+                                indent(level(catchClause));
+                                sourceFile->append("auto ");
+                                sourceFile->append(pattern->identifier);
+                                sourceFile->append(" = _");
+                                sourceFile->append(identifierPattern->identifier);
+                                sourceFile->append("_result.getError();\n");
+                            }
+                        }
+                    }
+                    if (catchClause->catchPattern->_isIdentifierCatchPattern()) {
+                        TuplePatternElement* element = nullptr;
+                        size_t _bindingPattern_length = bindingPattern->elements->length();
+                        for (size_t _i = 0; _i < _bindingPattern_length; _i++) {
+                            element = *(*bindingPattern->elements)[_i];
+                            {
+                                indent(level(catchClause));
+                                element->accept(this);
+                                sourceFile->append(" = _");
+                                sourceFile->append(identifierPattern->identifier);
+                                sourceFile->append("_result.getError()->get_");
+                                if (errorType != nullptr)
+                                    sourceFile->append(errorType);
+                                sourceFile->append("()->");
+                                if (element->pattern->_isIdentifierPattern()) {
+                                    sourceFile->append(((IdentifierPattern*)element->pattern)->identifier);
+                                }
+                                sourceFile->append(";");
+                                sourceFile->append("\n");
+                            }
+                        }
+                    }
                 }
-                sourceFile->append(" {\n");
-                if (catchClause->catchPattern->_isWildCardCatchPattern()) {
+            }
+            indent(level(catchClause));
+            if (catchClause->expression->_isSimpleExpression()) {
+                SimpleExpression* simpleExpression = (SimpleExpression*)(catchClause->expression);
+                PrimaryExpression* primaryExpression = simpleExpression->prefixExpression->expression->primaryExpression;
+                if ((!primaryExpression->_isReturnExpression()) && (!primaryExpression->_isBreakExpression()) && (!primaryExpression->_isThrowExpression())) {
+                    sourceFile->append(identifierPattern->identifier);
+                    sourceFile->append(" = ");
+                }
+            }
+            catchClause->expression->accept(this);
+            if (catchClause->expression->_isSimpleExpression())
+                sourceFile->append(";\n");
+            indent(level(catchClause) - 1);
+            sourceFile->append("}\n");
+        }
+    }
+    {
+        IdentifierExpression* identifierExpression = getIdentifierExpression((PostfixExpression*)(functionCall->parent));
+        if (identifierExpression != nullptr) {
+            if (*(*functionCall->catchClauses)[0] == catchClause) {
+                sourceFile->append(";\n");
+                indent(level(catchClause) - 1);
+                sourceFile->append("if (_");
+                sourceFile->append(identifierExpression->name);
+                sourceFile->append("_error) { switch (_");
+                sourceFile->append(identifierExpression->name);
+                sourceFile->append("_error->_getErrorCode()) {\n");
+            }
+            indent(level(catchClause));
+            if (catchClause->catchPattern->_isIdentifierCatchPattern()) {
+                sourceFile->append("case _");
+                IdentifierCatchPattern* identifierCatchPattern = (IdentifierCatchPattern*)(catchClause->catchPattern);
+                sourceFile->append(identifierCatchPattern->name);
+                sourceFile->append("Code_");
+                if (identifierCatchPattern->member != nullptr) {
+                    sourceFile->append(identifierCatchPattern->member->member);
+                    sourceFile->append(": {\n");
+                    indent(level(catchClause) - 1);
+                    sourceFile->append("    _");
+                    sourceFile->append(identifierCatchPattern->name);
+                    sourceFile->append("_");
+                    sourceFile->append(identifierCatchPattern->member->member);
+                    sourceFile->append("* ");
                     if (catchClause->bindingPattern != nullptr) {
                         TuplePattern* bindingPattern = catchClause->bindingPattern;
                         if (bindingPattern->elements != nullptr) {
@@ -903,105 +987,43 @@ bool SourceVisitor::openCatchClause(CatchClause* catchClause) {
                                 TuplePatternElement* element = *(*bindingPattern->elements)[0];
                                 if (element->pattern->_isIdentifierPattern()) {
                                     IdentifierPattern* pattern = (IdentifierPattern*)(element->pattern);
-                                    indent(level(catchClause));
-                                    sourceFile->append("auto ");
                                     sourceFile->append(pattern->identifier);
                                     sourceFile->append(" = _");
-                                    sourceFile->append(identifierPattern->identifier);
-                                    sourceFile->append("_result.getError();\n");
+                                    sourceFile->append(identifierExpression->name);
+                                    sourceFile->append("_error->get_");
+                                    sourceFile->append(identifierCatchPattern->member->member);
+                                    sourceFile->append("();");
                                 }
                             }
                         }
                     }
+                    sourceFile->append("\n");
                 }
-                indent(level(catchClause));
-                if (catchClause->expression->_isSimpleExpression()) {
-                    SimpleExpression* simpleExpression = (SimpleExpression*)(catchClause->expression);
-                    PrimaryExpression* primaryExpression = simpleExpression->prefixExpression->expression->primaryExpression;
-                    if ((!primaryExpression->_isReturnExpression()) && (!primaryExpression->_isBreakExpression()) && (!primaryExpression->_isThrowExpression())) {
-                        sourceFile->append(identifierPattern->identifier);
-                        sourceFile->append(" = ");
-                    }
-                }
-                catchClause->expression->accept(this);
-                if (catchClause->expression->_isSimpleExpression())
-                    sourceFile->append(";\n");
-                indent(level(catchClause) - 1);
-                sourceFile->append("}\n");
             }
-        }
-        {
-            IdentifierExpression* identifierExpression = getIdentifierExpression((PostfixExpression*)(functionCall->parent));
-            if (identifierExpression != nullptr) {
-                if (*(*functionCall->catchClauses)[0] == catchClause) {
-                    sourceFile->append(";\n");
-                    indent(level(catchClause) - 1);
-                    sourceFile->append("if (_");
-                    sourceFile->append(identifierExpression->name);
-                    sourceFile->append("_error) { switch (_");
-                    sourceFile->append(identifierExpression->name);
-                    sourceFile->append("_error->_getErrorCode()) {\n");
-                }
-                indent(level(catchClause));
-                if (catchClause->catchPattern->_isIdentifierCatchPattern()) {
-                    sourceFile->append("case _");
-                    IdentifierCatchPattern* identifierCatchPattern = (IdentifierCatchPattern*)(catchClause->catchPattern);
-                    sourceFile->append(identifierCatchPattern->name);
-                    sourceFile->append("Code_");
-                    if (identifierCatchPattern->member != nullptr) {
-                        sourceFile->append(identifierCatchPattern->member->member);
-                        sourceFile->append(": {\n");
-                        indent(level(catchClause) - 1);
-                        sourceFile->append("    _");
-                        sourceFile->append(identifierCatchPattern->name);
-                        sourceFile->append("_");
-                        sourceFile->append(identifierCatchPattern->member->member);
-                        sourceFile->append("* ");
-                        if (catchClause->bindingPattern != nullptr) {
-                            TuplePattern* bindingPattern = catchClause->bindingPattern;
-                            if (bindingPattern->elements != nullptr) {
-                                if (bindingPattern->elements->length() > 0) {
-                                    TuplePatternElement* element = *(*bindingPattern->elements)[0];
-                                    if (element->pattern->_isIdentifierPattern()) {
-                                        IdentifierPattern* pattern = (IdentifierPattern*)(element->pattern);
-                                        sourceFile->append(pattern->identifier);
-                                        sourceFile->append(" = _");
-                                        sourceFile->append(identifierExpression->name);
-                                        sourceFile->append("_error->get_");
-                                        sourceFile->append(identifierCatchPattern->member->member);
-                                        sourceFile->append("();");
-                                    }
-                                }
-                            }
-                        }
-                        sourceFile->append("\n");
+            if (catchClause->catchPattern->_isWildCardCatchPattern()) {
+                sourceFile->append("default: {\n");
+            }
+            indent(level(catchClause));
+            catchClause->expression->accept(this);
+            {
+                bool insertBreak = true;
+                if (catchClause->expression->_isSimpleExpression()) {
+                    SimpleExpression* simpleExpression = (SimpleExpression*)catchClause->expression;
+                    if (simpleExpression->prefixExpression->expression->primaryExpression->_isReturnExpression()) {
+                        sourceFile->append(";\n");
+                        insertBreak = false;
                     }
                 }
-                if (catchClause->catchPattern->_isWildCardCatchPattern()) {
-                    sourceFile->append("default: {\n");
+                if (insertBreak) {
+                    indent(level(catchClause));
+                    sourceFile->append("break;\n");
                 }
-                indent(level(catchClause));
-                catchClause->expression->accept(this);
-                {
-                    bool insertBreak = true;
-                    if (catchClause->expression->_isSimpleExpression()) {
-                        SimpleExpression* simpleExpression = (SimpleExpression*)catchClause->expression;
-                        if (simpleExpression->prefixExpression->expression->primaryExpression->_isReturnExpression()) {
-                            sourceFile->append(";\n");
-                            insertBreak = false;
-                        }
-                    }
-                    if (insertBreak) {
-                        indent(level(catchClause));
-                        sourceFile->append("break;\n");
-                    }
-                }
-                indent(level(catchClause));
-                sourceFile->append("}\n");
-                if (*(*functionCall->catchClauses)[functionCall->catchClauses->length() - 1] == catchClause) {
-                    indent(level(catchClause) - 1);
-                    sourceFile->append("} }\n");
-                }
+            }
+            indent(level(catchClause));
+            sourceFile->append("}\n");
+            if (*(*functionCall->catchClauses)[functionCall->catchClauses->length() - 1] == catchClause) {
+                indent(level(catchClause) - 1);
+                sourceFile->append("} }\n");
             }
         }
     }

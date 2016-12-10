@@ -58,8 +58,19 @@ FileError* _main(_Page* _ep,  _Array<string>* arguments) {
         options = _options_result.getResult();
     }
     else if (_options_result._getErrorCode() == _OptionsErrorCode_invalidOption) {
+        string* option = _options_result.getError()->get_invalidOption()->option;
         {
-            print(_ep, "Invalid option.\n");
+            _Region _region; _Page* _p = _region.get();
+            VarString* msg = new(_p) VarString("Invalid option ");
+            msg->append(option);
+            msg->append(" .\n");
+            string* message = new(_p) string(msg);
+            auto _print_error = print(_p, message);
+            if (_print_error) { switch (_print_error->_getErrorCode()) {
+                default: {
+                return nullptr;
+                }
+            } }
             return nullptr;
         }
     }

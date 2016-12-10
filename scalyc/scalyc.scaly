@@ -1,13 +1,17 @@
 let options: Options$ = Options.parseArguments(arguments)
-    catch OptionsError.invalidOption(error: invalidOption) {
-        print("Invalid option.\n")
+    catch OptionsError.invalidOption(option: string) {
+        mutable msg: VarString$ = new VarString("Invalid option ")
+        msg.append(option)
+        msg.append(" .\n")
+        let message: string$ = new string(msg)
+        print(message) catch _ return
         return
     }
-    catch OptionsError.noOutputOption(error: noOutputOption) {
+    catch OptionsError.noOutputOption() {
         print("No output option.\n")
         return
     }
-    catch OptionsError.noFilesToCompile(error: noFilesToCompile) {
+    catch OptionsError.noFilesToCompile() {
         print("No files to compile.\n")
         return
     }

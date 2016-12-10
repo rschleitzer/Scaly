@@ -4,7 +4,7 @@ class Compiler {
         mutable sources: string[]$ = new string[]()
         for file: string in files {
             let source: string@sources = File.readToString(file)
-                catch FileError.noSuchFileOrDirectory(error: noSuchFileOrDirectory) {
+                catch FileError.noSuchFileOrDirectory() {
                     mutable msg: VarString$ = new VarString("Can't read file: ")
                     msg.append(file)
                     msg.append("\n")

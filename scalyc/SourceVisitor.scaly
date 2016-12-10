@@ -912,53 +912,141 @@ class SourceVisitor extends CppVisitor {
     }
 
     function openCatchClause(catchClause: CatchClause): bool {
-        if catchClause.parent is FunctionCall {
-            let functionCall: FunctionCall = (catchClause.parent) as FunctionCall
-            {
-                mutable bindingInitializer: BindingInitializer& = getBindingInitializer(functionCall)
-                if bindingInitializer != null {
-                    let identifierPattern: IdentifierPattern = bindingInitializer.initializer.pattern
-                    if functionCall.catchClauses[0] == catchClause {
-                        sourceFile.append(";\n")
-
-                        indent(level(catchClause) - 1)
-                        identifierPattern.annotationForType.accept(this)
-                        sourceFile.append(" ")
-                        sourceFile.append(identifierPattern.identifier)
-                        sourceFile.append(" = nullptr;\n")
-
-                        indent(level(catchClause) - 1)
-                        sourceFile.append("if (_")
-                        sourceFile.append(identifierPattern.identifier)
-                        sourceFile.append("_result.succeeded()) {\n")
-
-                        indent(level(catchClause) - 1)
-                        sourceFile.append("    ")
-                        sourceFile.append(identifierPattern.identifier)
-                        sourceFile.append(" = _")
-                        sourceFile.append(identifierPattern.identifier)                    
-                        sourceFile.append("_result.getResult();\n")
-                        indent(level(catchClause) - 1)
-                        sourceFile.append("}\n")
-                    }
+        if !catchClause.parent is FunctionCall
+            return(false)
+ 
+        let functionCall: FunctionCall = (catchClause.parent) as FunctionCall
+        {
+            mutable bindingInitializer: BindingInitializer& = getBindingInitializer(functionCall)
+            if bindingInitializer != null {
+                let identifierPattern: IdentifierPattern = bindingInitializer.initializer.pattern
+                if functionCall.catchClauses[0] == catchClause {
+                    sourceFile.append(";\n")
 
                     indent(level(catchClause) - 1)
-                    sourceFile.append("else")
-                    if catchClause.catchPattern is IdentifierCatchPattern {
-                        let identifierCatchPattern: IdentifierCatchPattern = (catchClause.catchPattern) as IdentifierCatchPattern
-                        sourceFile.append(" if (_")
-                        sourceFile.append(identifierPattern.identifier)
-                        sourceFile.append("_result._getErrorCode() == _")
-                        sourceFile.append(identifierCatchPattern.name)
-                        sourceFile.append("Code_")
-                        mutable errorType: string& = getErrorType(catchClause)
-                        if errorType != null
-                            sourceFile.append(errorType)
-                        sourceFile.append(")")
-                    }
-                    sourceFile.append(" {\n")
+                    identifierPattern.annotationForType.accept(this)
+                    sourceFile.append(" ")
+                    sourceFile.append(identifierPattern.identifier)
+                    sourceFile.append(" = nullptr;\n")
 
-                    if catchClause.catchPattern is WildCardCatchPattern {
+                    indent(level(catchClause) - 1)
+                    sourceFile.append("if (_")
+                    sourceFile.append(identifierPattern.identifier)
+                    sourceFile.append("_result.succeeded()) {\n")
+
+                    indent(level(catchClause) - 1)
+                    sourceFile.append("    ")
+                    sourceFile.append(identifierPattern.identifier)
+                    sourceFile.append(" = _")
+                    sourceFile.append(identifierPattern.identifier)                    
+                    sourceFile.append("_result.getResult();\n")
+                    indent(level(catchClause) - 1)
+                    sourceFile.append("}\n")
+                }
+
+                indent(level(catchClause) - 1)
+                sourceFile.append("else")
+                mutable errorType: string& = getErrorType(catchClause)
+                if catchClause.catchPattern is IdentifierCatchPattern {
+                    let identifierCatchPattern: IdentifierCatchPattern = (catchClause.catchPattern) as IdentifierCatchPattern
+                    sourceFile.append(" if (_")
+                    sourceFile.append(identifierPattern.identifier)
+                    sourceFile.append("_result._getErrorCode() == _")
+                    sourceFile.append(identifierCatchPattern.name)
+                    sourceFile.append("Code_")
+                    if errorType != null
+                        sourceFile.append(errorType)
+                    sourceFile.append(")")
+                }
+
+                sourceFile.append(" {\n")
+
+                if catchClause.bindingPattern != null {
+                    let bindingPattern: TuplePattern = catchClause.bindingPattern
+                    if bindingPattern.elements != null {
+
+                        // bind the error variable if we have one if we catch wild
+                        if catchClause.catchPattern is WildCardCatchPattern {
+                            if bindingPattern.elements.length() > 0 {
+                                let element: TuplePatternElement = bindingPattern.elements[0]
+                                if element.pattern is IdentifierPattern {
+                                    let pattern: IdentifierPattern = (element.pattern) as IdentifierPattern
+
+                                    indent(level(catchClause))
+                                    sourceFile.append("auto ")
+                                    sourceFile.append(pattern.identifier)                    
+                                    sourceFile.append(" = _")
+                                    sourceFile.append(identifierPattern.identifier)
+                                    sourceFile.append("_result.getError();\n")
+                                }
+                            }
+                        }
+                        
+                        // establish the bindings if we catch an error code
+                        if catchClause.catchPattern is IdentifierCatchPattern {
+                            for element: TuplePatternElement in bindingPattern.elements {
+                                indent(level(catchClause))
+                                element.accept(this)
+                                sourceFile.append(" = _")
+                                sourceFile.append(identifierPattern.identifier)
+                                sourceFile.append("_result.getError()->get_")
+                                if errorType != null
+                                    sourceFile.append(errorType)
+                                sourceFile.append("()->")
+                                if element.pattern is IdentifierPattern {
+                                    sourceFile.append((element.pattern as IdentifierPattern).identifier)
+                                }
+                                sourceFile.append(";")
+                                sourceFile.append("\n")
+                            }
+
+                        }
+                    }
+                }
+                                
+                indent(level(catchClause))
+                if catchClause.expression is SimpleExpression {
+                    let simpleExpression: SimpleExpression = (catchClause.expression) as SimpleExpression
+                    let primaryExpression: PrimaryExpression = simpleExpression.prefixExpression.expression.primaryExpression
+                    if (!primaryExpression is ReturnExpression) && (!primaryExpression is BreakExpression) && (!primaryExpression is ThrowExpression) {
+                        sourceFile.append(identifierPattern.identifier)
+                        sourceFile.append(" = ")
+                    }
+                }
+                catchClause.expression.accept(this)
+                if catchClause.expression is SimpleExpression
+                    sourceFile.append(";\n")
+                indent(level(catchClause) - 1)
+                sourceFile.append("}\n")
+            }
+        }
+        {
+            mutable identifierExpression: IdentifierExpression& = getIdentifierExpression((functionCall.parent) as PostfixExpression)
+            if identifierExpression != null {
+                if functionCall.catchClauses[0] == catchClause {
+                    sourceFile.append(";\n")
+                    indent(level(catchClause) - 1)
+                    sourceFile.append("if (_")
+                    sourceFile.append(identifierExpression.name)
+                    sourceFile.append("_error) { switch (_")
+                    sourceFile.append(identifierExpression.name)
+                    sourceFile.append("_error->_getErrorCode()) {\n")
+                }
+                indent(level(catchClause))
+                if catchClause.catchPattern is IdentifierCatchPattern {
+                    sourceFile.append("case _")
+                    let identifierCatchPattern: IdentifierCatchPattern = (catchClause.catchPattern) as IdentifierCatchPattern
+                    sourceFile.append(identifierCatchPattern.name)
+                    sourceFile.append("Code_")
+                    if identifierCatchPattern.member != null {
+                        sourceFile.append(identifierCatchPattern.member.member)
+                        sourceFile.append(": {\n")
+                        indent(level(catchClause) - 1)
+                        sourceFile.append("    _")
+                        sourceFile.append(identifierCatchPattern.name)
+                        sourceFile.append("_")
+                        sourceFile.append(identifierCatchPattern.member.member)                            
+                        sourceFile.append("* ")
                         if catchClause.bindingPattern != null {
                             let bindingPattern: TuplePattern = catchClause.bindingPattern
                             if bindingPattern.elements != null {
@@ -966,114 +1054,51 @@ class SourceVisitor extends CppVisitor {
                                     let element: TuplePatternElement = bindingPattern.elements[0]
                                     if element.pattern is IdentifierPattern {
                                         let pattern: IdentifierPattern = (element.pattern) as IdentifierPattern
-
-                                        indent(level(catchClause))
-                                        sourceFile.append("auto ")
                                         sourceFile.append(pattern.identifier)                    
                                         sourceFile.append(" = _")
-                                        sourceFile.append(identifierPattern.identifier)
-                                        sourceFile.append("_result.getError();\n")
+                                        sourceFile.append(identifierExpression.name)
+                                        sourceFile.append("_error->get_")
+                                        sourceFile.append(identifierCatchPattern.member.member)                            
+                                        sourceFile.append("();")
                                     }
                                 }
                             }
                         }
+                        sourceFile.append("\n")
                     }
-                    
-                    indent(level(catchClause))
-                    if catchClause.expression is SimpleExpression {
-                        let simpleExpression: SimpleExpression = (catchClause.expression) as SimpleExpression
-                        let primaryExpression: PrimaryExpression = simpleExpression.prefixExpression.expression.primaryExpression
-                        if (!primaryExpression is ReturnExpression) && (!primaryExpression is BreakExpression) && (!primaryExpression is ThrowExpression) {
-                            sourceFile.append(identifierPattern.identifier)
-                            sourceFile.append(" = ")
-                        }
-                    }
-                    catchClause.expression.accept(this)
-                    if catchClause.expression is SimpleExpression
-                        sourceFile.append(";\n")
-                    indent(level(catchClause) - 1)
-                    sourceFile.append("}\n")
                 }
-            }
-            {
-                mutable identifierExpression: IdentifierExpression& = getIdentifierExpression((functionCall.parent) as PostfixExpression)
-                if identifierExpression != null {
-                    if functionCall.catchClauses[0] == catchClause {
-                        sourceFile.append(";\n")
-                        indent(level(catchClause) - 1)
-                        sourceFile.append("if (_")
-                        sourceFile.append(identifierExpression.name)
-                        sourceFile.append("_error) { switch (_")
-                        sourceFile.append(identifierExpression.name)
-                        sourceFile.append("_error->_getErrorCode()) {\n")
-                    }
-                    indent(level(catchClause))
-                    if catchClause.catchPattern is IdentifierCatchPattern {
-                        sourceFile.append("case _")
-                        let identifierCatchPattern: IdentifierCatchPattern = (catchClause.catchPattern) as IdentifierCatchPattern
-                        sourceFile.append(identifierCatchPattern.name)
-                        sourceFile.append("Code_")
-                        if identifierCatchPattern.member != null {
-                            sourceFile.append(identifierCatchPattern.member.member)
-                            sourceFile.append(": {\n")
-                            indent(level(catchClause) - 1)
-                            sourceFile.append("    _")
-                            sourceFile.append(identifierCatchPattern.name)
-                            sourceFile.append("_")
-                            sourceFile.append(identifierCatchPattern.member.member)                            
-                            sourceFile.append("* ")
-                            if catchClause.bindingPattern != null {
-                                let bindingPattern: TuplePattern = catchClause.bindingPattern
-                                if bindingPattern.elements != null {
-                                    if bindingPattern.elements.length() > 0 {
-                                        let element: TuplePatternElement = bindingPattern.elements[0]
-                                        if element.pattern is IdentifierPattern {
-                                            let pattern: IdentifierPattern = (element.pattern) as IdentifierPattern
-                                            sourceFile.append(pattern.identifier)                    
-                                            sourceFile.append(" = _")
-                                            sourceFile.append(identifierExpression.name)
-                                            sourceFile.append("_error->get_")
-                                            sourceFile.append(identifierCatchPattern.member.member)                            
-                                            sourceFile.append("();")
-                                        }
-                                    }
-                                }
-                            }
-                            sourceFile.append("\n")
+                if catchClause.catchPattern is WildCardCatchPattern {
+                    sourceFile.append("default: {\n")
+                    //indent(level(catchClause))
+                }
+                
+                indent(level(catchClause))
+                catchClause.expression.accept(this)
+                {
+                    mutable insertBreak: bool = true
+                    if catchClause.expression is SimpleExpression {
+                        let simpleExpression: SimpleExpression = catchClause.expression as SimpleExpression
+                        if simpleExpression.prefixExpression.expression.primaryExpression is ReturnExpression {
+                            sourceFile.append(";\n")
+                            insertBreak = false
                         }
                     }
-                    if catchClause.catchPattern is WildCardCatchPattern {
-                        sourceFile.append("default: {\n")
-                        //indent(level(catchClause))
+                    if insertBreak {
+                        indent(level(catchClause))
+                        sourceFile.append("break;\n")
                     }
-                    
-                    indent(level(catchClause))
-                    catchClause.expression.accept(this)
-                    {
-                        mutable insertBreak: bool = true
-                        if catchClause.expression is SimpleExpression {
-                            let simpleExpression: SimpleExpression = catchClause.expression as SimpleExpression
-                            if simpleExpression.prefixExpression.expression.primaryExpression is ReturnExpression {
-                                sourceFile.append(";\n")
-                                insertBreak = false
-                            }
-                        }
-                        if insertBreak {
-                            indent(level(catchClause))
-                            sourceFile.append("break;\n")
-                        }
-                    }
+                }
 
-                    indent(level(catchClause))
-                    sourceFile.append("}\n")
-                    
-                    if functionCall.catchClauses[functionCall.catchClauses.length() - 1] == catchClause {
-                        indent(level(catchClause) - 1)
-                        sourceFile.append("} }\n")
-                    }
+                indent(level(catchClause))
+                sourceFile.append("}\n")
+                
+                if functionCall.catchClauses[functionCall.catchClauses.length() - 1] == catchClause {
+                    indent(level(catchClause) - 1)
+                    sourceFile.append("} }\n")
                 }
             }
         }
+
         false
     }
 

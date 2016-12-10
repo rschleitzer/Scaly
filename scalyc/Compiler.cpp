@@ -84,6 +84,8 @@ CompilationUnit* Compiler::parseUnit(_Page* _rp, string* moduleName, string* tex
         compilationUnit = _compilationUnit_result.getResult();
     }
     else if (_compilationUnit_result._getErrorCode() == _ParserErrorCode_syntax) {
+        size_t line = _compilationUnit_result.getError()->get_syntax()->line;
+        size_t column = _compilationUnit_result.getError()->get_syntax()->column;
         {
             return nullptr;
         }
