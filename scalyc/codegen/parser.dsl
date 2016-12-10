@@ -37,7 +37,7 @@ class Parser {
     }
 "       )"")
 "
-    function parse"(id syntax)"(): "(id syntax)" {"
+    function parse"(id syntax)"(): "(id syntax)(if (top? syntax) " throws ParserError" "")" {"
         (if (abstract? syntax)
             ($
                 (apply-to-children-of syntax (lambda (content) ($
@@ -70,7 +70,8 @@ class Parser {
                            (if (top? syntax) ($
 "        if "(property content)" != null {
             if !isAtEnd() {
-                return(null)
+                let errorPos: Position$ = lexer.getPreviousPosition()
+                throw syntax(errorPos.line, errorPos.column)
             }
         }
 "                           )"")
