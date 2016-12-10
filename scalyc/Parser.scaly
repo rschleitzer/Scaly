@@ -147,7 +147,7 @@ class Parser {
         let statements: Statement[] = parseStatementList()
         if statements != null {
             if !isAtEnd() {
-                let errorPos: Position$ = lexer.getPosition()
+                let errorPos: Position$ = lexer.getPreviousPosition()
                 throw syntax(errorPos.line, errorPos.column)
             }
         }

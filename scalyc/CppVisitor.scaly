@@ -105,6 +105,10 @@ class CppVisitor extends Visitor {
     }
 
     function getFileName(compilationUnit: CompilationUnit) : string {
+
+        if compilationUnit.statements == null
+            return(null)
+
         for statement: Statement in compilationUnit.statements {
             if statement is ClassDeclaration {
                 let classDeclaration: ClassDeclaration = statement as ClassDeclaration

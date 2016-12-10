@@ -117,6 +117,8 @@ void CppVisitor::registerInheritance(string* className, string* baseName) {
 }
 
 string* CppVisitor::getFileName(_Page* _rp, CompilationUnit* compilationUnit) {
+    if (compilationUnit->statements == nullptr)
+        return nullptr;
     Statement* statement = nullptr;
     size_t _compilationUnit_length = compilationUnit->statements->length();
     for (size_t _i = 0; _i < _compilationUnit_length; _i++) {

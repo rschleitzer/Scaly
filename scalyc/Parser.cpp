@@ -58,7 +58,7 @@ _Result<CompilationUnit, ParserError> Parser::parseCompilationUnit(_Page* _rp, _
     if (statements != nullptr) {
         if (!isAtEnd()) {
             _Region _region; _Page* _p = _region.get();
-            Position* errorPos = lexer->getPosition(_p);
+            Position* errorPos = lexer->getPreviousPosition(_p);
             return _Result<CompilationUnit, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_syntax(errorPos->line, errorPos->column)));
         }
     }
