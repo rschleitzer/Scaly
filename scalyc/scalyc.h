@@ -6,6 +6,7 @@
 #include "OptionsError.h"
 #include "Parser.h"
 #include "CppVisitor.h"
+#include "Model.h"
 #include "Options.h"
 #include "Compiler.h"
 #include "scalyc.h"
