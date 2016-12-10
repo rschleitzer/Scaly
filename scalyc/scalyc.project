@@ -37,10 +37,6 @@
     <File Name="Parser.scaly"/>
     <File Name="CppVisitor.cpp"/>
     <File Name="CppVisitor.scaly"/>
-    <File Name="HeaderVisitor.cpp"/>
-    <File Name="HeaderVisitor.scaly"/>
-    <File Name="SourceVisitor.cpp"/>
-    <File Name="SourceVisitor.scaly"/>
     <File Name="Options.cpp"/>
     <File Name="Options.scaly"/>
     <File Name="Compiler.cpp"/>
@@ -53,8 +49,6 @@
     <File Name="OptionsError.h"/>
     <File Name="Parser.h"/>
     <File Name="CppVisitor.h"/>
-    <File Name="HeaderVisitor.h"/>
-    <File Name="SourceVisitor.h"/>
     <File Name="Options.h"/>
     <File Name="Compiler.h"/>
     <File Name="scalyc.h"/>
@@ -81,7 +75,7 @@
         <Library Value="libscaly"/>
       </Linker>
       <ResourceCompiler Options="" Required="no"/>
-      <General OutputFile="$(IntermediateDirectory)/$(ProjectName)" IntermediateDirectory="../Debug" Command="./$(ProjectName)" CommandArguments="-o scalyc -d ../scalyc ../scalyc/Lexer.scaly ../scalyc/OptionsError.scaly ../scalyc/Parser.scaly ../scalyc/CppVisitor.scaly ../scalyc/HeaderVisitor.scaly ../scalyc/SourceVisitor.scaly ../scalyc/Options.scaly ../scalyc/Compiler.scaly ../scalyc/scalyc.scaly" UseSeparateDebugArgs="no" DebugArguments="" WorkingDirectory="$(IntermediateDirectory)" PauseExecWhenProcTerminates="yes" IsGUIProgram="no" IsEnabled="yes"/>
+      <General OutputFile="$(IntermediateDirectory)/$(ProjectName)" IntermediateDirectory="../Debug" Command="./$(ProjectName)" CommandArguments="-o scalyc -d ../scalyc ../scalyc/Lexer.scaly ../scalyc/OptionsError.scaly ../scalyc/Parser.scaly ../scalyc/CppVisitor.scaly ../scalyc/Options.scaly ../scalyc/Compiler.scaly ../scalyc/scalyc.scaly" UseSeparateDebugArgs="no" DebugArguments="" WorkingDirectory="$(IntermediateDirectory)" PauseExecWhenProcTerminates="yes" IsGUIProgram="no" IsEnabled="yes"/>
       <Environment EnvVarSetName="&lt;Use Defaults&gt;" DbgSetName="&lt;Use Defaults&gt;">
         <![CDATA[]]>
       </Environment>
