@@ -33,7 +33,7 @@
         <content link = AdditionalInitializer multiple optional property = additionalInitializers
 
     <syntax id = PatternInitializer           multiple
-        <content link = Pattern                                 property = pattern
+        <content link = IdentifierPattern                       property = pattern
         <content link = Initializer                    optional property = initializer
 
     <syntax id = Initializer
@@ -312,7 +312,7 @@
 
     <syntax id = ForExpression                                  base = PrimaryExpression
         <content link = for
-        <content link = Pattern                                 property = pattern
+        <content link = IdentifierPattern                       property = pattern
         <content link = in
         <content link = Expression                              property = expression
         <content link = Expression                              property = code

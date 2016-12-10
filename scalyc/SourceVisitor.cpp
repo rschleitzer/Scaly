@@ -736,15 +736,13 @@ bool SourceVisitor::isObjectField(string* memberName, ClassDeclaration* classDec
                 bindingInitializer = ((MutableDeclaration*)member->declaration)->initializer;
             if (bindingInitializer == nullptr)
                 continue;
-            if (bindingInitializer->initializer->pattern->_isIdentifierPattern()) {
-                IdentifierPattern* identifierPattern = (IdentifierPattern*)(bindingInitializer->initializer->pattern);
-                if (identifierPattern->identifier->equals(memberName)) {
-                    if (identifierPattern->annotationForType != nullptr) {
-                        if (isClass(identifierPattern->annotationForType->annotationForType->name))
-                            return true;
-                        else
-                            return false;
-                    }
+            IdentifierPattern* identifierPattern = bindingInitializer->initializer->pattern;
+            if (identifierPattern->identifier->equals(memberName)) {
+                if (identifierPattern->annotationForType != nullptr) {
+                    if (isClass(identifierPattern->annotationForType->annotationForType->name))
+                        return true;
+                    else
+                        return false;
                 }
             }
         }
@@ -784,15 +782,13 @@ bool SourceVisitor::isVariableObjectField(string* memberName, ClassDeclaration* 
                 bindingInitializer = ((MutableDeclaration*)member->declaration)->initializer;
             if (bindingInitializer == nullptr)
                 continue;
-            if (bindingInitializer->initializer->pattern->_isIdentifierPattern()) {
-                IdentifierPattern* identifierPattern = (IdentifierPattern*)(bindingInitializer->initializer->pattern);
-                if (identifierPattern->identifier->equals(memberName)) {
-                    if (identifierPattern->annotationForType != nullptr) {
-                        if (isClass(identifierPattern->annotationForType->annotationForType->name))
-                            return true;
-                        else
-                            return false;
-                    }
+            IdentifierPattern* identifierPattern = bindingInitializer->initializer->pattern;
+            if (identifierPattern->identifier->equals(memberName)) {
+                if (identifierPattern->annotationForType != nullptr) {
+                    if (isClass(identifierPattern->annotationForType->annotationForType->name))
+                        return true;
+                    else
+                        return false;
                 }
             }
         }
@@ -863,78 +859,75 @@ bool SourceVisitor::openCatchClause(CatchClause* catchClause) {
         {
             BindingInitializer* bindingInitializer = getBindingInitializer(functionCall);
             if (bindingInitializer != nullptr) {
-                PatternInitializer* patternInitializer = bindingInitializer->initializer;
-                if (patternInitializer->pattern->_isIdentifierPattern()) {
-                    IdentifierPattern* identifierPattern = (IdentifierPattern*)(patternInitializer->pattern);
-                    if (*(*functionCall->catchClauses)[0] == catchClause) {
-                        sourceFile->append(";\n");
-                        indent(level(catchClause) - 1);
-                        identifierPattern->annotationForType->accept(this);
-                        sourceFile->append(" ");
-                        sourceFile->append(identifierPattern->identifier);
-                        sourceFile->append(" = nullptr;\n");
-                        indent(level(catchClause) - 1);
-                        sourceFile->append("if (_");
-                        sourceFile->append(identifierPattern->identifier);
-                        sourceFile->append("_result.succeeded()) {\n");
-                        indent(level(catchClause) - 1);
-                        sourceFile->append("    ");
-                        sourceFile->append(identifierPattern->identifier);
-                        sourceFile->append(" = _");
-                        sourceFile->append(identifierPattern->identifier);
-                        sourceFile->append("_result.getResult();\n");
-                        indent(level(catchClause) - 1);
-                        sourceFile->append("}\n");
-                    }
+                IdentifierPattern* identifierPattern = bindingInitializer->initializer->pattern;
+                if (*(*functionCall->catchClauses)[0] == catchClause) {
+                    sourceFile->append(";\n");
                     indent(level(catchClause) - 1);
-                    sourceFile->append("else");
-                    if (catchClause->catchPattern->_isIdentifierCatchPattern()) {
-                        IdentifierCatchPattern* identifierCatchPattern = (IdentifierCatchPattern*)(catchClause->catchPattern);
-                        sourceFile->append(" if (_");
-                        sourceFile->append(identifierPattern->identifier);
-                        sourceFile->append("_result._getErrorCode() == _");
-                        sourceFile->append(identifierCatchPattern->name);
-                        sourceFile->append("Code_");
-                        string* errorType = getErrorType(catchClause);
-                        if (errorType != nullptr)
-                            sourceFile->append(errorType);
-                        sourceFile->append(")");
-                    }
-                    sourceFile->append(" {\n");
-                    if (catchClause->catchPattern->_isWildCardCatchPattern()) {
-                        if (catchClause->bindingPattern != nullptr) {
-                            TuplePattern* bindingPattern = catchClause->bindingPattern;
-                            if (bindingPattern->elements != nullptr) {
-                                if (bindingPattern->elements->length() > 0) {
-                                    TuplePatternElement* element = *(*bindingPattern->elements)[0];
-                                    if (element->pattern->_isIdentifierPattern()) {
-                                        IdentifierPattern* pattern = (IdentifierPattern*)(element->pattern);
-                                        indent(level(catchClause));
-                                        sourceFile->append("auto ");
-                                        sourceFile->append(pattern->identifier);
-                                        sourceFile->append(" = _");
-                                        sourceFile->append(identifierPattern->identifier);
-                                        sourceFile->append("_result.getError();\n");
-                                    }
+                    identifierPattern->annotationForType->accept(this);
+                    sourceFile->append(" ");
+                    sourceFile->append(identifierPattern->identifier);
+                    sourceFile->append(" = nullptr;\n");
+                    indent(level(catchClause) - 1);
+                    sourceFile->append("if (_");
+                    sourceFile->append(identifierPattern->identifier);
+                    sourceFile->append("_result.succeeded()) {\n");
+                    indent(level(catchClause) - 1);
+                    sourceFile->append("    ");
+                    sourceFile->append(identifierPattern->identifier);
+                    sourceFile->append(" = _");
+                    sourceFile->append(identifierPattern->identifier);
+                    sourceFile->append("_result.getResult();\n");
+                    indent(level(catchClause) - 1);
+                    sourceFile->append("}\n");
+                }
+                indent(level(catchClause) - 1);
+                sourceFile->append("else");
+                if (catchClause->catchPattern->_isIdentifierCatchPattern()) {
+                    IdentifierCatchPattern* identifierCatchPattern = (IdentifierCatchPattern*)(catchClause->catchPattern);
+                    sourceFile->append(" if (_");
+                    sourceFile->append(identifierPattern->identifier);
+                    sourceFile->append("_result._getErrorCode() == _");
+                    sourceFile->append(identifierCatchPattern->name);
+                    sourceFile->append("Code_");
+                    string* errorType = getErrorType(catchClause);
+                    if (errorType != nullptr)
+                        sourceFile->append(errorType);
+                    sourceFile->append(")");
+                }
+                sourceFile->append(" {\n");
+                if (catchClause->catchPattern->_isWildCardCatchPattern()) {
+                    if (catchClause->bindingPattern != nullptr) {
+                        TuplePattern* bindingPattern = catchClause->bindingPattern;
+                        if (bindingPattern->elements != nullptr) {
+                            if (bindingPattern->elements->length() > 0) {
+                                TuplePatternElement* element = *(*bindingPattern->elements)[0];
+                                if (element->pattern->_isIdentifierPattern()) {
+                                    IdentifierPattern* pattern = (IdentifierPattern*)(element->pattern);
+                                    indent(level(catchClause));
+                                    sourceFile->append("auto ");
+                                    sourceFile->append(pattern->identifier);
+                                    sourceFile->append(" = _");
+                                    sourceFile->append(identifierPattern->identifier);
+                                    sourceFile->append("_result.getError();\n");
                                 }
                             }
                         }
                     }
-                    indent(level(catchClause));
-                    if (catchClause->expression->_isSimpleExpression()) {
-                        SimpleExpression* simpleExpression = (SimpleExpression*)(catchClause->expression);
-                        PrimaryExpression* primaryExpression = simpleExpression->prefixExpression->expression->primaryExpression;
-                        if ((!primaryExpression->_isReturnExpression()) && (!primaryExpression->_isBreakExpression()) && (!primaryExpression->_isThrowExpression())) {
-                            sourceFile->append(identifierPattern->identifier);
-                            sourceFile->append(" = ");
-                        }
-                    }
-                    catchClause->expression->accept(this);
-                    if (catchClause->expression->_isSimpleExpression())
-                        sourceFile->append(";\n");
-                    indent(level(catchClause) - 1);
-                    sourceFile->append("}\n");
                 }
+                indent(level(catchClause));
+                if (catchClause->expression->_isSimpleExpression()) {
+                    SimpleExpression* simpleExpression = (SimpleExpression*)(catchClause->expression);
+                    PrimaryExpression* primaryExpression = simpleExpression->prefixExpression->expression->primaryExpression;
+                    if ((!primaryExpression->_isReturnExpression()) && (!primaryExpression->_isBreakExpression()) && (!primaryExpression->_isThrowExpression())) {
+                        sourceFile->append(identifierPattern->identifier);
+                        sourceFile->append(" = ");
+                    }
+                }
+                catchClause->expression->accept(this);
+                if (catchClause->expression->_isSimpleExpression())
+                    sourceFile->append(";\n");
+                indent(level(catchClause) - 1);
+                sourceFile->append("}\n");
             }
         }
         {
@@ -1247,39 +1240,34 @@ void SourceVisitor::closeSwitchExpression(SwitchExpression* switchExpression) {
 bool SourceVisitor::openForExpression(ForExpression* forExpression) {
     Pattern* pattern = forExpression->pattern;
     pattern->accept(this);
-    if (pattern->_isIdentifierPattern()) {
-        sourceFile->append(" = nullptr;\n");
-        indent(level(forExpression) - 1);
-        sourceFile->append("size_t _");
-        Expression* expression = forExpression->expression;
-        if (expression->_isSimpleExpression()) {
-            SimpleExpression* simpleExpression = (SimpleExpression*)expression;
-            if (simpleExpression->prefixExpression->expression->primaryExpression->_isIdentifierExpression()) {
-                IdentifierExpression* identifierExpression = (IdentifierExpression*)(simpleExpression->prefixExpression->expression->primaryExpression);
-                string* collectionName = identifierExpression->name;
-                sourceFile->append(collectionName);
-                sourceFile->append("_length = ");
-                forExpression->expression->accept(this);
-                sourceFile->append("->length();\n");
-                indent(level(forExpression) - 1);
-                sourceFile->append("for (size_t _i = 0; _i < _");
-                sourceFile->append(collectionName);
-                sourceFile->append("_length; _i++) {\n");
-                indent(level(forExpression));
-                if (forExpression->pattern->_isIdentifierPattern()) {
-                    IdentifierPattern* identifierPattern = (IdentifierPattern*)(forExpression->pattern);
-                    sourceFile->append(identifierPattern->identifier);
-                    sourceFile->append(" = *(*");
-                    forExpression->expression->accept(this);
-                    sourceFile->append(")[_i];\n");
-                    indent(level(forExpression));
-                    forExpression->code->accept(this);
-                    if (forExpression->code->_isSimpleExpression())
-                        sourceFile->append(";\n");
-                    indent(level(forExpression) - 1);
-                    sourceFile->append("}\n");
-                }
-            }
+    sourceFile->append(" = nullptr;\n");
+    indent(level(forExpression) - 1);
+    sourceFile->append("size_t _");
+    Expression* expression = forExpression->expression;
+    if (expression->_isSimpleExpression()) {
+        SimpleExpression* simpleExpression = (SimpleExpression*)expression;
+        if (simpleExpression->prefixExpression->expression->primaryExpression->_isIdentifierExpression()) {
+            IdentifierExpression* identifierExpression = (IdentifierExpression*)(simpleExpression->prefixExpression->expression->primaryExpression);
+            string* collectionName = identifierExpression->name;
+            sourceFile->append(collectionName);
+            sourceFile->append("_length = ");
+            forExpression->expression->accept(this);
+            sourceFile->append("->length();\n");
+            indent(level(forExpression) - 1);
+            sourceFile->append("for (size_t _i = 0; _i < _");
+            sourceFile->append(collectionName);
+            sourceFile->append("_length; _i++) {\n");
+            indent(level(forExpression));
+            sourceFile->append(forExpression->pattern->identifier);
+            sourceFile->append(" = *(*");
+            forExpression->expression->accept(this);
+            sourceFile->append(")[_i];\n");
+            indent(level(forExpression));
+            forExpression->code->accept(this);
+            if (forExpression->code->_isSimpleExpression())
+                sourceFile->append(";\n");
+            indent(level(forExpression) - 1);
+            sourceFile->append("}\n");
         }
     }
     return false;
@@ -1375,16 +1363,12 @@ string* SourceVisitor::getLocalPage(FunctionCall* functionCall) {
     BindingInitializer* bindingInitializer = getBindingInitializer(functionCall);
     if (bindingInitializer == nullptr)
         return nullptr;
-    PatternInitializer* patternInitializer = bindingInitializer->initializer;
-    if (patternInitializer->pattern->_isIdentifierPattern()) {
-        IdentifierPattern* identifierPattern = (IdentifierPattern*)(patternInitializer->pattern);
-        Type* type = identifierPattern->annotationForType->annotationForType;
-        if (type->lifeTime == nullptr)
-            return nullptr;
-        if (type->lifeTime->_isLocal()) {
-            Local* local = (Local*)type->lifeTime;
-            return local->location;
-        }
+    Type* type = bindingInitializer->initializer->pattern->annotationForType->annotationForType;
+    if (type->lifeTime == nullptr)
+        return nullptr;
+    if (type->lifeTime->_isLocal()) {
+        Local* local = (Local*)type->lifeTime;
+        return local->location;
     }
     return nullptr;
 }
@@ -1392,15 +1376,11 @@ string* SourceVisitor::getLocalPage(FunctionCall* functionCall) {
 bool SourceVisitor::isRootBinding(BindingInitializer* bindingInitializer) {
     if (bindingInitializer == nullptr)
         return false;
-    PatternInitializer* patternInitializer = bindingInitializer->initializer;
-    if (patternInitializer->pattern->_isIdentifierPattern()) {
-        IdentifierPattern* identifierPattern = (IdentifierPattern*)(patternInitializer->pattern);
-        Type* type = identifierPattern->annotationForType->annotationForType;
-        if (type->lifeTime == nullptr)
-            return false;
-        if (type->lifeTime->_isRoot())
-            return true;
-    }
+    Type* type = bindingInitializer->initializer->pattern->annotationForType->annotationForType;
+    if (type->lifeTime == nullptr)
+        return false;
+    if (type->lifeTime->_isRoot())
+        return true;
     return false;
 }
 
@@ -1418,15 +1398,11 @@ bool SourceVisitor::assignedToReturnedObject(FunctionCall* functionCall) {
 bool SourceVisitor::boundToObject(BindingInitializer* bindingInitializer) {
     if (bindingInitializer == nullptr)
         return false;
-    PatternInitializer* patternInitializer = bindingInitializer->initializer;
-    if (patternInitializer->pattern->_isIdentifierPattern()) {
-        IdentifierPattern* identifierPattern = (IdentifierPattern*)(patternInitializer->pattern);
-        Type* type = identifierPattern->annotationForType->annotationForType;
-        if (type->lifeTime != nullptr)
-            return false;
-        if (isClass(type->name) && (getFunctionCall(patternInitializer) != nullptr))
-            return true;
-    }
+    Type* type = bindingInitializer->initializer->pattern->annotationForType->annotationForType;
+    if (type->lifeTime != nullptr)
+        return false;
+    if (isClass(type->name) && (getFunctionCall(bindingInitializer->initializer) != nullptr))
+        return true;
     return false;
 }
 
@@ -1680,24 +1656,21 @@ string* SourceVisitor::getPageOfVariable(_Page* _rp, string* name, CodeBlock* co
             }
             if (bindingInitializer == nullptr)
                 continue;
-            PatternInitializer* patternInitializer = bindingInitializer->initializer;
-            if (patternInitializer->pattern->_isIdentifierPattern()) {
-                IdentifierPattern* identifierPattern = (IdentifierPattern*)(patternInitializer->pattern);
-                if (identifierPattern->identifier->equals(name)) {
-                    if (identifierPattern->annotationForType != nullptr) {
-                        if (identifierPattern->annotationForType->annotationForType->lifeTime == nullptr) {
-                            return new(_rp) string("_rp");
-                        }
-                        else {
-                            LifeTime* lifeTime = identifierPattern->annotationForType->annotationForType->lifeTime;
-                            if (lifeTime->_isRoot())
-                                return new(_rp) string("_p");
-                            if (lifeTime->_isLocal()) {
-                                Local* local = (Local*)lifeTime;
-                                VarString* ret = new(_rp) VarString(local->location);
-                                ret->append("->_getPage()");
-                                return new(_rp) string(ret);
-                            }
+            IdentifierPattern* identifierPattern = bindingInitializer->initializer->pattern;
+            if (identifierPattern->identifier->equals(name)) {
+                if (identifierPattern->annotationForType != nullptr) {
+                    if (identifierPattern->annotationForType->annotationForType->lifeTime == nullptr) {
+                        return new(_rp) string("_rp");
+                    }
+                    else {
+                        LifeTime* lifeTime = identifierPattern->annotationForType->annotationForType->lifeTime;
+                        if (lifeTime->_isRoot())
+                            return new(_rp) string("_p");
+                        if (lifeTime->_isLocal()) {
+                            Local* local = (Local*)lifeTime;
+                            VarString* ret = new(_rp) VarString(local->location);
+                            ret->append("->_getPage()");
+                            return new(_rp) string(ret);
                         }
                     }
                 }
@@ -1717,27 +1690,25 @@ string* SourceVisitor::getPage(_Page* _rp, SyntaxNode* node) {
             return nullptr;
         if (node->_isPatternInitializer()) {
             PatternInitializer* patternInitializer = (PatternInitializer*)node;
-            if (patternInitializer->pattern->_isIdentifierPattern()) {
-                IdentifierPattern* identifierPattern = (IdentifierPattern*)patternInitializer->pattern;
-                if (identifierPattern->annotationForType != nullptr) {
-                    if (!isClass(identifierPattern->annotationForType->annotationForType->name))
+            IdentifierPattern* identifierPattern = patternInitializer->pattern;
+            if (identifierPattern->annotationForType != nullptr) {
+                if (!isClass(identifierPattern->annotationForType->annotationForType->name))
+                    return nullptr;
+                if (identifierPattern->annotationForType->annotationForType->lifeTime == nullptr) {
+                    return new(_rp) string("_rp");
+                }
+                else {
+                    LifeTime* lifeTime = identifierPattern->annotationForType->annotationForType->lifeTime;
+                    if (lifeTime->_isRoot())
+                        return new(_rp) string("_p");
+                    if (lifeTime->_isLocal()) {
+                        Local* local = (Local*)lifeTime;
+                        VarString* ret = new(_rp) VarString(local->location);
+                        ret->append("->_getPage()");
+                        return new(_rp) string(ret);
+                    }
+                    if (lifeTime->_isReference())
                         return nullptr;
-                    if (identifierPattern->annotationForType->annotationForType->lifeTime == nullptr) {
-                        return new(_rp) string("_rp");
-                    }
-                    else {
-                        LifeTime* lifeTime = identifierPattern->annotationForType->annotationForType->lifeTime;
-                        if (lifeTime->_isRoot())
-                            return new(_rp) string("_p");
-                        if (lifeTime->_isLocal()) {
-                            Local* local = (Local*)lifeTime;
-                            VarString* ret = new(_rp) VarString(local->location);
-                            ret->append("->_getPage()");
-                            return new(_rp) string(ret);
-                        }
-                        if (lifeTime->_isReference())
-                            return nullptr;
-                    }
                 }
             }
         }

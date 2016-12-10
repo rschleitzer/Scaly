@@ -684,9 +684,9 @@ public:
 
 class PatternInitializer : public SyntaxNode {
 public:
-    PatternInitializer(Pattern* pattern, Initializer* initializer, Position* start, Position* end);
+    PatternInitializer(IdentifierPattern* pattern, Initializer* initializer, Position* start, Position* end);
     virtual void accept(Visitor* visitor);
-    Pattern* pattern;
+    IdentifierPattern* pattern;
     Initializer* initializer;
 
     virtual bool _isPatternInitializer();
@@ -1268,9 +1268,9 @@ public:
 
 class ForExpression : public PrimaryExpression {
 public:
-    ForExpression(Pattern* pattern, Expression* expression, Expression* code, Position* start, Position* end);
+    ForExpression(IdentifierPattern* pattern, Expression* expression, Expression* code, Position* start, Position* end);
     virtual void accept(Visitor* visitor);
-    Pattern* pattern;
+    IdentifierPattern* pattern;
     Expression* expression;
     Expression* code;
 

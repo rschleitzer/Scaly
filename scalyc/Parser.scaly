@@ -319,7 +319,7 @@ class Parser {
     function parsePatternInitializer(): PatternInitializer {
         let start: Position$ = lexer.getPreviousPosition()
 
-        let pattern: Pattern = parsePattern()
+        let pattern: IdentifierPattern = parseIdentifierPattern()
         if pattern == null
             return(null)
 
@@ -1952,7 +1952,7 @@ class Parser {
         else
             return(null)
 
-        let pattern: Pattern = parsePattern()
+        let pattern: IdentifierPattern = parseIdentifierPattern()
         if pattern == null
             return(null)
 
@@ -3349,7 +3349,7 @@ class BindingInitializer extends SyntaxNode {
 
 class PatternInitializer extends SyntaxNode {
 
-    constructor(pattern: Pattern, initializer: Initializer, start: Position, end: Position) {
+    constructor(pattern: IdentifierPattern, initializer: Initializer, start: Position, end: Position) {
         this.start = start
         this.end = end
         this.pattern = pattern
@@ -3365,7 +3365,7 @@ class PatternInitializer extends SyntaxNode {
         visitor.closePatternInitializer(this)
     }
 
-    let pattern: Pattern
+    let pattern: IdentifierPattern
     let initializer: Initializer
 }
 
@@ -4425,7 +4425,7 @@ class CaseContent extends SyntaxNode {
 
 class ForExpression extends PrimaryExpression {
 
-    constructor(pattern: Pattern, expression: Expression, code: Expression, start: Position, end: Position) {
+    constructor(pattern: IdentifierPattern, expression: Expression, code: Expression, start: Position, end: Position) {
         this.start = start
         this.end = end
         this.pattern = pattern
@@ -4442,7 +4442,7 @@ class ForExpression extends PrimaryExpression {
         visitor.closeForExpression(this)
     }
 
-    let pattern: Pattern
+    let pattern: IdentifierPattern
     let expression: Expression
     let code: Expression
 }

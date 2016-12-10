@@ -805,15 +805,13 @@ class SourceVisitor extends CppVisitor {
             if bindingInitializer == null
                 continue
 
-            if bindingInitializer.initializer.pattern is IdentifierPattern {
-                let identifierPattern: IdentifierPattern = (bindingInitializer.initializer.pattern) as IdentifierPattern
-                if identifierPattern.identifier.equals(memberName) {
-                    if identifierPattern.annotationForType != null {
-                        if isClass(identifierPattern.annotationForType.annotationForType.name)
-                            return(true)
-                        else
-                            return(false)
-                    }
+            let identifierPattern: IdentifierPattern = bindingInitializer.initializer.pattern
+            if identifierPattern.identifier.equals(memberName) {
+                if identifierPattern.annotationForType != null {
+                    if isClass(identifierPattern.annotationForType.annotationForType.name)
+                        return(true)
+                    else
+                        return(false)
                 }
             }
         }
@@ -852,15 +850,13 @@ class SourceVisitor extends CppVisitor {
             if bindingInitializer == null
                 continue
 
-            if bindingInitializer.initializer.pattern is IdentifierPattern {
-                let identifierPattern: IdentifierPattern = (bindingInitializer.initializer.pattern) as IdentifierPattern
-                if identifierPattern.identifier.equals(memberName) {
-                    if identifierPattern.annotationForType != null {
-                        if isClass(identifierPattern.annotationForType.annotationForType.name)
-                            return(true)
-                        else
-                            return(false)
-                    }
+            let identifierPattern: IdentifierPattern = bindingInitializer.initializer.pattern
+            if identifierPattern.identifier.equals(memberName) {
+                if identifierPattern.annotationForType != null {
+                    if isClass(identifierPattern.annotationForType.annotationForType.name)
+                        return(true)
+                    else
+                        return(false)
                 }
             }
         }
@@ -921,85 +917,82 @@ class SourceVisitor extends CppVisitor {
             {
                 mutable bindingInitializer: BindingInitializer& = getBindingInitializer(functionCall)
                 if bindingInitializer != null {
-                    let patternInitializer: PatternInitializer = bindingInitializer.initializer
-                    if patternInitializer.pattern is IdentifierPattern {
-                        let identifierPattern: IdentifierPattern = (patternInitializer.pattern) as IdentifierPattern
-                        if functionCall.catchClauses[0] == catchClause {
-                            sourceFile.append(";\n")
-
-                            indent(level(catchClause) - 1)
-                            identifierPattern.annotationForType.accept(this)
-                            sourceFile.append(" ")
-                            sourceFile.append(identifierPattern.identifier)
-                            sourceFile.append(" = nullptr;\n")
-
-                            indent(level(catchClause) - 1)
-                            sourceFile.append("if (_")
-                            sourceFile.append(identifierPattern.identifier)
-                            sourceFile.append("_result.succeeded()) {\n")
-
-                            indent(level(catchClause) - 1)
-                            sourceFile.append("    ")
-                            sourceFile.append(identifierPattern.identifier)
-                            sourceFile.append(" = _")
-                            sourceFile.append(identifierPattern.identifier)                    
-                            sourceFile.append("_result.getResult();\n")
-                            indent(level(catchClause) - 1)
-                            sourceFile.append("}\n")
-                        }
+                    let identifierPattern: IdentifierPattern = bindingInitializer.initializer.pattern
+                    if functionCall.catchClauses[0] == catchClause {
+                        sourceFile.append(";\n")
 
                         indent(level(catchClause) - 1)
-                        sourceFile.append("else")
-                        if catchClause.catchPattern is IdentifierCatchPattern {
-                            let identifierCatchPattern: IdentifierCatchPattern = (catchClause.catchPattern) as IdentifierCatchPattern
-                            sourceFile.append(" if (_")
-                            sourceFile.append(identifierPattern.identifier)
-                            sourceFile.append("_result._getErrorCode() == _")
-                            sourceFile.append(identifierCatchPattern.name)
-                            sourceFile.append("Code_")
-                            mutable errorType: string& = getErrorType(catchClause)
-                            if errorType != null
-                                sourceFile.append(errorType)
-                            sourceFile.append(")")
-                        }
-                        sourceFile.append(" {\n")
+                        identifierPattern.annotationForType.accept(this)
+                        sourceFile.append(" ")
+                        sourceFile.append(identifierPattern.identifier)
+                        sourceFile.append(" = nullptr;\n")
 
-                        if catchClause.catchPattern is WildCardCatchPattern {
-                            if catchClause.bindingPattern != null {
-                                let bindingPattern: TuplePattern = catchClause.bindingPattern
-                                if bindingPattern.elements != null {
-                                    if bindingPattern.elements.length() > 0 {
-                                        let element: TuplePatternElement = bindingPattern.elements[0]
-                                        if element.pattern is IdentifierPattern {
-                                            let pattern: IdentifierPattern = (element.pattern) as IdentifierPattern
+                        indent(level(catchClause) - 1)
+                        sourceFile.append("if (_")
+                        sourceFile.append(identifierPattern.identifier)
+                        sourceFile.append("_result.succeeded()) {\n")
 
-                                            indent(level(catchClause))
-                                            sourceFile.append("auto ")
-                                            sourceFile.append(pattern.identifier)                    
-                                            sourceFile.append(" = _")
-                                            sourceFile.append(identifierPattern.identifier)
-                                            sourceFile.append("_result.getError();\n")
-                                        }
+                        indent(level(catchClause) - 1)
+                        sourceFile.append("    ")
+                        sourceFile.append(identifierPattern.identifier)
+                        sourceFile.append(" = _")
+                        sourceFile.append(identifierPattern.identifier)                    
+                        sourceFile.append("_result.getResult();\n")
+                        indent(level(catchClause) - 1)
+                        sourceFile.append("}\n")
+                    }
+
+                    indent(level(catchClause) - 1)
+                    sourceFile.append("else")
+                    if catchClause.catchPattern is IdentifierCatchPattern {
+                        let identifierCatchPattern: IdentifierCatchPattern = (catchClause.catchPattern) as IdentifierCatchPattern
+                        sourceFile.append(" if (_")
+                        sourceFile.append(identifierPattern.identifier)
+                        sourceFile.append("_result._getErrorCode() == _")
+                        sourceFile.append(identifierCatchPattern.name)
+                        sourceFile.append("Code_")
+                        mutable errorType: string& = getErrorType(catchClause)
+                        if errorType != null
+                            sourceFile.append(errorType)
+                        sourceFile.append(")")
+                    }
+                    sourceFile.append(" {\n")
+
+                    if catchClause.catchPattern is WildCardCatchPattern {
+                        if catchClause.bindingPattern != null {
+                            let bindingPattern: TuplePattern = catchClause.bindingPattern
+                            if bindingPattern.elements != null {
+                                if bindingPattern.elements.length() > 0 {
+                                    let element: TuplePatternElement = bindingPattern.elements[0]
+                                    if element.pattern is IdentifierPattern {
+                                        let pattern: IdentifierPattern = (element.pattern) as IdentifierPattern
+
+                                        indent(level(catchClause))
+                                        sourceFile.append("auto ")
+                                        sourceFile.append(pattern.identifier)                    
+                                        sourceFile.append(" = _")
+                                        sourceFile.append(identifierPattern.identifier)
+                                        sourceFile.append("_result.getError();\n")
                                     }
                                 }
                             }
                         }
-                        
-                        indent(level(catchClause))
-                        if catchClause.expression is SimpleExpression {
-                            let simpleExpression: SimpleExpression = (catchClause.expression) as SimpleExpression
-                            let primaryExpression: PrimaryExpression = simpleExpression.prefixExpression.expression.primaryExpression
-                            if (!primaryExpression is ReturnExpression) && (!primaryExpression is BreakExpression) && (!primaryExpression is ThrowExpression) {
-                                sourceFile.append(identifierPattern.identifier)
-                                sourceFile.append(" = ")
-                            }
-                        }
-                        catchClause.expression.accept(this)
-                        if catchClause.expression is SimpleExpression
-                            sourceFile.append(";\n")
-                        indent(level(catchClause) - 1)
-                        sourceFile.append("}\n")
                     }
+                    
+                    indent(level(catchClause))
+                    if catchClause.expression is SimpleExpression {
+                        let simpleExpression: SimpleExpression = (catchClause.expression) as SimpleExpression
+                        let primaryExpression: PrimaryExpression = simpleExpression.prefixExpression.expression.primaryExpression
+                        if (!primaryExpression is ReturnExpression) && (!primaryExpression is BreakExpression) && (!primaryExpression is ThrowExpression) {
+                            sourceFile.append(identifierPattern.identifier)
+                            sourceFile.append(" = ")
+                        }
+                    }
+                    catchClause.expression.accept(this)
+                    if catchClause.expression is SimpleExpression
+                        sourceFile.append(";\n")
+                    indent(level(catchClause) - 1)
+                    sourceFile.append("}\n")
                 }
             }
             {
@@ -1297,39 +1290,34 @@ class SourceVisitor extends CppVisitor {
     function openForExpression(forExpression: ForExpression): bool {
         let pattern: Pattern = forExpression.pattern
         pattern.accept(this)    
-        if pattern is IdentifierPattern {
-            sourceFile.append(" = nullptr;\n")
-            indent(level(forExpression) - 1)
-            sourceFile.append("size_t _")
-            let expression: Expression = forExpression.expression
-            if expression is SimpleExpression {
-                let simpleExpression: SimpleExpression = expression as SimpleExpression
-                if simpleExpression.prefixExpression.expression.primaryExpression is IdentifierExpression {
-                    let identifierExpression: IdentifierExpression = (simpleExpression.prefixExpression.expression.primaryExpression) as IdentifierExpression
-                    let collectionName: string = identifierExpression.name
-                    sourceFile.append(collectionName)
-                    sourceFile.append("_length = ")
-                    forExpression.expression.accept(this)
-                    sourceFile.append("->length();\n")
-                    indent(level(forExpression) - 1)
-                    sourceFile.append("for (size_t _i = 0; _i < _")
-                    sourceFile.append(collectionName)
-                    sourceFile.append("_length; _i++) {\n")
-                    indent(level(forExpression))
-                    if forExpression.pattern is IdentifierPattern {
-                        let identifierPattern: IdentifierPattern = (forExpression.pattern) as IdentifierPattern
-                        sourceFile.append(identifierPattern.identifier)
-                        sourceFile.append(" = *(*")
-                        forExpression.expression.accept(this)
-                        sourceFile.append(")[_i];\n")
-                        indent(level(forExpression))
-                        forExpression.code.accept(this)
-                        if forExpression.code is SimpleExpression
-                            sourceFile.append(";\n")
-                        indent(level(forExpression) - 1)
-                        sourceFile.append("}\n")
-                    }
-                }
+        sourceFile.append(" = nullptr;\n")
+        indent(level(forExpression) - 1)
+        sourceFile.append("size_t _")
+        let expression: Expression = forExpression.expression
+        if expression is SimpleExpression {
+            let simpleExpression: SimpleExpression = expression as SimpleExpression
+            if simpleExpression.prefixExpression.expression.primaryExpression is IdentifierExpression {
+                let identifierExpression: IdentifierExpression = (simpleExpression.prefixExpression.expression.primaryExpression) as IdentifierExpression
+                let collectionName: string = identifierExpression.name
+                sourceFile.append(collectionName)
+                sourceFile.append("_length = ")
+                forExpression.expression.accept(this)
+                sourceFile.append("->length();\n")
+                indent(level(forExpression) - 1)
+                sourceFile.append("for (size_t _i = 0; _i < _")
+                sourceFile.append(collectionName)
+                sourceFile.append("_length; _i++) {\n")
+                indent(level(forExpression))
+                sourceFile.append(forExpression.pattern.identifier)
+                sourceFile.append(" = *(*")
+                forExpression.expression.accept(this)
+                sourceFile.append(")[_i];\n")
+                indent(level(forExpression))
+                forExpression.code.accept(this)
+                if forExpression.code is SimpleExpression
+                    sourceFile.append(";\n")
+                indent(level(forExpression) - 1)
+                sourceFile.append("}\n")
             }
         }
 
@@ -1435,18 +1423,14 @@ class SourceVisitor extends CppVisitor {
         if bindingInitializer == null
             return(null)
             
-        let patternInitializer: PatternInitializer = bindingInitializer.initializer
-        if patternInitializer.pattern is IdentifierPattern {
-            let identifierPattern: IdentifierPattern = (patternInitializer.pattern) as IdentifierPattern
-            let type: Type = identifierPattern.annotationForType.annotationForType
+        let type: Type = bindingInitializer.initializer.pattern.annotationForType.annotationForType
 
-            if type.lifeTime == null
-                return(null)
+        if type.lifeTime == null
+            return(null)
 
-            if type.lifeTime is Local {
-                let local: Local = type.lifeTime as Local
-                return (local.location)
-            }
+        if type.lifeTime is Local {
+            let local: Local = type.lifeTime as Local
+            return (local.location)
         }
         
         null
@@ -1457,17 +1441,13 @@ class SourceVisitor extends CppVisitor {
        if bindingInitializer == null
             return(false)
             
-        let patternInitializer: PatternInitializer = bindingInitializer.initializer
-        if patternInitializer.pattern is IdentifierPattern {
-            let identifierPattern: IdentifierPattern = (patternInitializer.pattern) as IdentifierPattern
-            let type: Type = identifierPattern.annotationForType.annotationForType
+        let type: Type = bindingInitializer.initializer.pattern.annotationForType.annotationForType
 
-            if type.lifeTime == null
-                return(false)
+        if type.lifeTime == null
+            return(false)
 
-            if type.lifeTime is Root
-                return(true)
-        }
+        if type.lifeTime is Root
+            return(true)
         
         false
     }
@@ -1490,17 +1470,13 @@ class SourceVisitor extends CppVisitor {
         if bindingInitializer == null
             return(false)
 
-        let patternInitializer: PatternInitializer = bindingInitializer.initializer
-        if patternInitializer.pattern is IdentifierPattern {
-            let identifierPattern: IdentifierPattern = (patternInitializer.pattern) as IdentifierPattern
-            let type: Type = identifierPattern.annotationForType.annotationForType
-            
-            if type.lifeTime != null
-                return(false)
+        let type: Type = bindingInitializer.initializer.pattern.annotationForType.annotationForType
+        
+        if type.lifeTime != null
+            return(false)
 
-            if isClass(type.name) && (getFunctionCall(patternInitializer) != null)
-                return(true)
-        }
+        if isClass(type.name) && (getFunctionCall(bindingInitializer.initializer) != null)
+            return(true)
 
         false
     }
@@ -1770,26 +1746,23 @@ class SourceVisitor extends CppVisitor {
             if bindingInitializer == null
                 continue
 
-            let patternInitializer: PatternInitializer = bindingInitializer.initializer
-            if patternInitializer.pattern is IdentifierPattern {
-                let identifierPattern: IdentifierPattern = (patternInitializer.pattern) as IdentifierPattern
-                if identifierPattern.identifier.equals(name) {
-                    if identifierPattern.annotationForType != null {
-                        if identifierPattern.annotationForType.annotationForType.lifeTime == null {
-                            return(new string("_rp"))
-                        }
-                        else {
-                            let lifeTime: LifeTime = identifierPattern.annotationForType.annotationForType.lifeTime
+            let identifierPattern: IdentifierPattern = bindingInitializer.initializer.pattern
+            if identifierPattern.identifier.equals(name) {
+                if identifierPattern.annotationForType != null {
+                    if identifierPattern.annotationForType.annotationForType.lifeTime == null {
+                        return(new string("_rp"))
+                    }
+                    else {
+                        let lifeTime: LifeTime = identifierPattern.annotationForType.annotationForType.lifeTime
 
-                            if lifeTime is Root
-                                return(new string("_p"))
+                        if lifeTime is Root
+                            return(new string("_p"))
 
-                            if lifeTime is Local {
-                                let local: Local = lifeTime as Local
-                                mutable ret: VarString = new VarString(local.location)
-                                ret.append("->_getPage()")
-                                return(new string(ret))
-                            }
+                        if lifeTime is Local {
+                            let local: Local = lifeTime as Local
+                            mutable ret: VarString = new VarString(local.location)
+                            ret.append("->_getPage()")
+                            return(new string(ret))
                         }
                     }
                 }
@@ -1813,34 +1786,32 @@ class SourceVisitor extends CppVisitor {
 
             if node is PatternInitializer {
                 let patternInitializer: PatternInitializer = node as PatternInitializer
-                if patternInitializer.pattern is IdentifierPattern {
-                    let identifierPattern: IdentifierPattern = patternInitializer.pattern as IdentifierPattern
-                    if identifierPattern.annotationForType != null {
+                let identifierPattern: IdentifierPattern = patternInitializer.pattern
+                if identifierPattern.annotationForType != null {
 
-                        // simple type which needs no page for allocation
-                        if !isClass(identifierPattern.annotationForType.annotationForType.name)
+                    // simple type which needs no page for allocation
+                    if !isClass(identifierPattern.annotationForType.annotationForType.name)
+                        return(null)
+
+                    // null lifeTime means the object will be returned (default)
+                    if identifierPattern.annotationForType.annotationForType.lifeTime == null {
+                        return(new string("_rp"))
+                    }
+                    else {
+                        let lifeTime: LifeTime = identifierPattern.annotationForType.annotationForType.lifeTime
+
+                        if lifeTime is Root
+                            return(new string("_p"))
+
+                        if lifeTime is Local {
+                            let local: Local = lifeTime as Local
+                            mutable ret: VarString = new VarString(local.location)
+                            ret.append("->_getPage()")
+                            return(new string(ret))
+                        }
+                        
+                        if lifeTime is Reference
                             return(null)
-
-                        // null lifeTime means the object will be returned (default)
-                        if identifierPattern.annotationForType.annotationForType.lifeTime == null {
-                            return(new string("_rp"))
-                        }
-                        else {
-                            let lifeTime: LifeTime = identifierPattern.annotationForType.annotationForType.lifeTime
-
-                            if lifeTime is Root
-                                return(new string("_p"))
-
-                            if lifeTime is Local {
-                                let local: Local = lifeTime as Local
-                                mutable ret: VarString = new VarString(local.location)
-                                ret.append("->_getPage()")
-                                return(new string(ret))
-                            }
-                            
-                            if lifeTime is Reference
-                                return(null)
-                        }
                     }
                 }
             }

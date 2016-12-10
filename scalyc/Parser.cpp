@@ -207,7 +207,7 @@ _Array<PatternInitializer>* Parser::parsePatternInitializerList(_Page* _rp) {
 PatternInitializer* Parser::parsePatternInitializer(_Page* _rp) {
     _Region _region; _Page* _p = _region.get();
     Position* start = lexer->getPreviousPosition(_p);
-    Pattern* pattern = parsePattern(_rp);
+    IdentifierPattern* pattern = parseIdentifierPattern(_rp);
     if (pattern == nullptr)
         return nullptr;
     Initializer* initializer = parseInitializer(_rp);
@@ -1603,7 +1603,7 @@ ForExpression* Parser::parseForExpression(_Page* _rp) {
         lexer->advance();
     else
         return nullptr;
-    Pattern* pattern = parsePattern(_rp);
+    IdentifierPattern* pattern = parseIdentifierPattern(_rp);
     if (pattern == nullptr)
         return nullptr;
     bool successIn3 = lexer->parseKeyword(inKeyword);
@@ -2918,7 +2918,7 @@ void BindingInitializer::accept(Visitor* visitor) {
 
 bool BindingInitializer::_isBindingInitializer() { return (true); }
 
-PatternInitializer::PatternInitializer(Pattern* pattern, Initializer* initializer, Position* start, Position* end) {
+PatternInitializer::PatternInitializer(IdentifierPattern* pattern, Initializer* initializer, Position* start, Position* end) {
     this->start = start;
     this->end = end;
     this->pattern = pattern;
@@ -3904,7 +3904,7 @@ void CaseContent::accept(Visitor* visitor) {
 
 bool CaseContent::_isCaseContent() { return (true); }
 
-ForExpression::ForExpression(Pattern* pattern, Expression* expression, Expression* code, Position* start, Position* end) {
+ForExpression::ForExpression(IdentifierPattern* pattern, Expression* expression, Expression* code, Position* start, Position* end) {
     this->start = start;
     this->end = end;
     this->pattern = pattern;
