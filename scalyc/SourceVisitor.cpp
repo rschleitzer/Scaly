@@ -83,9 +83,13 @@ void SourceVisitor::closeCompilationUnit(CompilationUnit* compilationUnit) {
         return;
     VarString* outputFilePath = new(_p) VarString(directory);
     outputFilePath->append('/');
-    string* fileName = Path::getFileNameWithoutExtension(_p, getFileName(_p, compilationUnit));
-    outputFilePath->append(fileName);
-    if (isTopLevelFile(compilationUnit)) {
+    string* fileName = getFileName(_p, compilationUnit);
+    if (fileName != nullptr) {
+        _Region _region; _Page* _p = _region.get();
+        string* name = Path::getFileNameWithoutExtension(_p, fileName);
+        outputFilePath->append(name);
+    }
+    if (compilationUnit->statements != nullptr && isTopLevelFile(compilationUnit)) {
         size_t length = compilationUnit->statements->length();
         if (length > 0) {
             Statement* statement = *(*compilationUnit->statements)[length - 1];
@@ -1997,12 +2001,16 @@ VarString* SourceVisitor::buildProjectFileString(_Page* _rp, Program* program) {
             {
                 _Region _region; _Page* _p = _region.get();
                 projectFile->append("    <File Name=\"");
-                string* fileName = Path::getFileNameWithoutExtension(_p, getFileName(_p, compilationUnit));
-                projectFile->append(fileName);
-                projectFile->append(".cpp\"/>\n");
-                projectFile->append("    <File Name=\"");
-                projectFile->append(fileName);
-                projectFile->append(".scaly\"/>\n");
+                string* fileName = getFileName(_p, compilationUnit);
+                if (fileName != nullptr) {
+                    _Region _region; _Page* _p = _region.get();
+                    string* name = Path::getFileNameWithoutExtension(_p, fileName);
+                    projectFile->append(name);
+                    projectFile->append(".cpp\"/>\n");
+                    projectFile->append("    <File Name=\"");
+                    projectFile->append(name);
+                    projectFile->append(".scaly\"/>\n");
+                }
             }
         }
     }
@@ -2014,10 +2022,14 @@ VarString* SourceVisitor::buildProjectFileString(_Page* _rp, Program* program) {
             compilationUnit = *(*program->compilationUnits)[_i];
             {
                 _Region _region; _Page* _p = _region.get();
-                projectFile->append("    <File Name=\"");
-                string* fileName = Path::getFileNameWithoutExtension(_p, getFileName(_p, compilationUnit));
-                projectFile->append(fileName);
-                projectFile->append(".h\"/>\n");
+                string* fileName = getFileName(_p, compilationUnit);
+                if (fileName != nullptr) {
+                    _Region _region; _Page* _p = _region.get();
+                    string* name = Path::getFileNameWithoutExtension(_p, fileName);
+                    projectFile->append("    <File Name=\"");
+                    projectFile->append(name);
+                    projectFile->append(".h\"/>\n");
+                }
             }
         }
     }
@@ -2047,12 +2059,16 @@ VarString* SourceVisitor::buildProjectFileString(_Page* _rp, Program* program) {
             compilationUnit = *(*program->compilationUnits)[_i];
             {
                 _Region _region; _Page* _p = _region.get();
-                projectFile->append(" ../");
-                projectFile->append(program->name);
-                projectFile->append("/");
-                string* fileName = Path::getFileNameWithoutExtension(_p, getFileName(_p, compilationUnit));
-                projectFile->append(fileName);
-                projectFile->append(".scaly");
+                string* fileName = getFileName(_p, compilationUnit);
+                if (fileName != nullptr) {
+                    _Region _region; _Page* _p = _region.get();
+                    string* name = Path::getFileNameWithoutExtension(_p, fileName);
+                    projectFile->append(" ../");
+                    projectFile->append(program->name);
+                    projectFile->append("/");
+                    projectFile->append(name);
+                    projectFile->append(".scaly");
+                }
             }
         }
     }

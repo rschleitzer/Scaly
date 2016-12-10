@@ -95,10 +95,13 @@ class SourceVisitor extends CppVisitor {
 
         mutable outputFilePath: VarString$  = new VarString(directory)
         outputFilePath.append('/')
-        let fileName: string$ = Path.getFileNameWithoutExtension(getFileName(compilationUnit))
-        outputFilePath.append(fileName)
+        let fileName: string$ = getFileName(compilationUnit)
+        if fileName != null {
+            let name: string$ = Path.getFileNameWithoutExtension(fileName)
+            outputFilePath.append(name)
+        }
 
-        if isTopLevelFile(compilationUnit)
+        if compilationUnit.statements != null && isTopLevelFile(compilationUnit)
         {
             // Insert the return 0 if the last statement is not a return or a literal
             let length: number = compilationUnit.statements.length()
@@ -2126,21 +2129,27 @@ class SourceVisitor extends CppVisitor {
         {
             for compilationUnit: CompilationUnit in program.compilationUnits {
                 projectFile.append("    <File Name=\"")
-                let fileName: string$ = Path.getFileNameWithoutExtension(getFileName(compilationUnit))
-                projectFile.append(fileName)
-                projectFile.append(".cpp\"/>\n")
-                projectFile.append("    <File Name=\"")
-                projectFile.append(fileName)
-                projectFile.append(".scaly\"/>\n")
+                let fileName: string$ = getFileName(compilationUnit)
+                if fileName != null {
+                    let name: string$ = Path.getFileNameWithoutExtension(fileName)
+                    projectFile.append(name)
+                    projectFile.append(".cpp\"/>\n")
+                    projectFile.append("    <File Name=\"")
+                    projectFile.append(name)
+                    projectFile.append(".scaly\"/>\n")
+                }
             }
         }
         projectFile.append("  </VirtualDirectory>\n  <VirtualDirectory Name=\"include\">\n")
         {
             for compilationUnit: CompilationUnit in program.compilationUnits {
-                projectFile.append("    <File Name=\"")
-                let fileName: string$ = Path.getFileNameWithoutExtension(getFileName(compilationUnit))
-                projectFile.append(fileName)
-                projectFile.append(".h\"/>\n")
+                let fileName: string$ = getFileName(compilationUnit)
+                if fileName != null {
+                    let name: string$ = Path.getFileNameWithoutExtension(fileName)
+                    projectFile.append("    <File Name=\"")
+                    projectFile.append(name)
+                    projectFile.append(".h\"/>\n")
+                }
             }
         }
         projectFile.append("  </VirtualDirectory>\n  <Dependencies Name=\"Debug\"/>\n  <Dependencies Name=\"Release\"/>\n")
@@ -2164,12 +2173,15 @@ class SourceVisitor extends CppVisitor {
         projectFile.append(program.name)
         {
             for compilationUnit: CompilationUnit in program.compilationUnits {
-                projectFile.append(" ../")
-                projectFile.append(program.name)
-                projectFile.append("/")
-                let fileName: string$ = Path.getFileNameWithoutExtension(getFileName(compilationUnit))
-                projectFile.append(fileName)
-                projectFile.append(".scaly")
+                let fileName: string$ = getFileName(compilationUnit)
+                if fileName != null {
+                    let name: string$ = Path.getFileNameWithoutExtension(fileName)
+                    projectFile.append(" ../")
+                    projectFile.append(program.name)
+                    projectFile.append("/")
+                    projectFile.append(name)
+                    projectFile.append(".scaly")
+                }
             }
         }
         projectFile.append("\" UseSeparateDebugArgs=\"no\" DebugArguments=\"\" WorkingDirectory=\"$(IntermediateDirectory)\"")

@@ -55,23 +55,25 @@ class HeaderVisitor extends CppVisitor {
 
         let programName: string = (compilationUnit.parent as Program).name
         let fileName: string$ = getFileName(compilationUnit)
-
-        if !fileName.equals(programName) {
-            headerFile = new VarString()
-            headerFile.append("#ifndef __")
-            headerFile.append(programName)
-            headerFile.append("__")
-            headerFile.append(fileName)
-            headerFile.append("__\n")
-            headerFile.append("#define __")
-            headerFile.append(programName)
-            headerFile.append("__")
-            headerFile.append(fileName)
-            headerFile.append("__\n#include \"")
-            headerFile.append(programName)
-            headerFile.append(".h\"\nusing namespace scaly;\nnamespace ")
-            headerFile.append(programName)
-            headerFile.append(" {")
+        if fileName != null {
+            let name: string$ = Path.getFileNameWithoutExtension(fileName)
+            if !fileName.equals(programName) {
+                headerFile = new VarString()
+                headerFile.append("#ifndef __")
+                headerFile.append(programName)
+                headerFile.append("__")
+                headerFile.append(name)
+                headerFile.append("__\n")
+                headerFile.append("#define __")
+                headerFile.append(programName)
+                headerFile.append("__")
+                headerFile.append(name)
+                headerFile.append("__\n#include \"")
+                headerFile.append(programName)
+                headerFile.append(".h\"\nusing namespace scaly;\nnamespace ")
+                headerFile.append(programName)
+                headerFile.append(" {")
+            }
         }
 
         true
@@ -86,20 +88,23 @@ class HeaderVisitor extends CppVisitor {
         mutable outputFilePath: VarString$  = new VarString(directory)
         outputFilePath.append('/')
 
-        let fileName: string$ = Path.getFileNameWithoutExtension(getFileName(compilationUnit))
-        outputFilePath.append(fileName)
+        let fileName: string$ = getFileName(compilationUnit)
+        if fileName != null {
+            let name: string$ = Path.getFileNameWithoutExtension(fileName)
+            outputFilePath.append(name)
 
-        if !fileName.equals(programName) {
-            headerFile.append("\n\n}\n#endif // __")
-            headerFile.append(programName)
-            headerFile.append("__")
-            headerFile.append(fileName)
-            headerFile.append("__\n")
-            let headerFilePath: VarString$ = new VarString(outputFilePath)
-            headerFilePath.append(".h")
-            File.writeFromString(headerFilePath, headerFile)
-                catch _ (error: fileError)
-                    return
+            if !fileName.equals(programName) {
+                headerFile.append("\n\n}\n#endif // __")
+                headerFile.append(programName)
+                headerFile.append("__")
+                headerFile.append(name)
+                headerFile.append("__\n")
+                let headerFilePath: VarString$ = new VarString(outputFilePath)
+                headerFilePath.append(".h")
+                File.writeFromString(headerFilePath, headerFile)
+                    catch _ (error: fileError)
+                        return
+            }
         }
     }
 
@@ -522,10 +527,13 @@ class HeaderVisitor extends CppVisitor {
         mainHeaderFile.append("__\n\n#include \"Scaly.h\"\n")
         if program.compilationUnits != null {
             for compilationUnit: CompilationUnit in program.compilationUnits {
-                mainHeaderFile.append("#include \"")
-                let fileName: string$ = Path.getFileNameWithoutExtension(getFileName(compilationUnit))
-                mainHeaderFile.append(fileName)
-                mainHeaderFile.append(".h\"\n")
+                let fileName: string$ = getFileName(compilationUnit)
+                if fileName != null {
+                    let name: string$ = Path.getFileNameWithoutExtension(fileName)
+                    mainHeaderFile.append("#include \"")
+                    mainHeaderFile.append(name)
+                    mainHeaderFile.append(".h\"\n")
+                }
             }
         }
         mainHeaderFile.append("\nusing namespace scaly;\nnamespace ")

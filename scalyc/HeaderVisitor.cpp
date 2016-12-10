@@ -54,24 +54,28 @@ bool HeaderVisitor::openCompilationUnit(CompilationUnit* compilationUnit) {
         return false;
     string* programName = ((Program*)compilationUnit->parent)->name;
     string* fileName = getFileName(_p, compilationUnit);
-    if (!fileName->equals(programName)) {
-        if (headerFile != nullptr)
-            headerFile->_getPage()->clear();
-        headerFile = new(headerFile == nullptr ? _getPage()->allocateExclusivePage() : headerFile->_getPage()) VarString();
-        headerFile->append("#ifndef __");
-        headerFile->append(programName);
-        headerFile->append("__");
-        headerFile->append(fileName);
-        headerFile->append("__\n");
-        headerFile->append("#define __");
-        headerFile->append(programName);
-        headerFile->append("__");
-        headerFile->append(fileName);
-        headerFile->append("__\n#include \"");
-        headerFile->append(programName);
-        headerFile->append(".h\"\nusing namespace scaly;\nnamespace ");
-        headerFile->append(programName);
-        headerFile->append(" {");
+    if (fileName != nullptr) {
+        _Region _region; _Page* _p = _region.get();
+        string* name = Path::getFileNameWithoutExtension(_p, fileName);
+        if (!fileName->equals(programName)) {
+            if (headerFile != nullptr)
+                headerFile->_getPage()->clear();
+            headerFile = new(headerFile == nullptr ? _getPage()->allocateExclusivePage() : headerFile->_getPage()) VarString();
+            headerFile->append("#ifndef __");
+            headerFile->append(programName);
+            headerFile->append("__");
+            headerFile->append(name);
+            headerFile->append("__\n");
+            headerFile->append("#define __");
+            headerFile->append(programName);
+            headerFile->append("__");
+            headerFile->append(name);
+            headerFile->append("__\n#include \"");
+            headerFile->append(programName);
+            headerFile->append(".h\"\nusing namespace scaly;\nnamespace ");
+            headerFile->append(programName);
+            headerFile->append(" {");
+        }
     }
     return true;
 }
@@ -83,23 +87,27 @@ void HeaderVisitor::closeCompilationUnit(CompilationUnit* compilationUnit) {
     string* programName = ((Program*)compilationUnit->parent)->name;
     VarString* outputFilePath = new(_p) VarString(directory);
     outputFilePath->append('/');
-    string* fileName = Path::getFileNameWithoutExtension(_p, getFileName(_p, compilationUnit));
-    outputFilePath->append(fileName);
-    if (!fileName->equals(programName)) {
+    string* fileName = getFileName(_p, compilationUnit);
+    if (fileName != nullptr) {
         _Region _region; _Page* _p = _region.get();
-        headerFile->append("\n\n}\n#endif // __");
-        headerFile->append(programName);
-        headerFile->append("__");
-        headerFile->append(fileName);
-        headerFile->append("__\n");
-        VarString* headerFilePath = new(_p) VarString(outputFilePath);
-        headerFilePath->append(".h");
-        auto _File_error = File::writeFromString(_p, headerFilePath, headerFile);
-        if (_File_error) { switch (_File_error->_getErrorCode()) {
-            default: {
-            return;
-            }
-        } }
+        string* name = Path::getFileNameWithoutExtension(_p, fileName);
+        outputFilePath->append(name);
+        if (!fileName->equals(programName)) {
+            _Region _region; _Page* _p = _region.get();
+            headerFile->append("\n\n}\n#endif // __");
+            headerFile->append(programName);
+            headerFile->append("__");
+            headerFile->append(name);
+            headerFile->append("__\n");
+            VarString* headerFilePath = new(_p) VarString(outputFilePath);
+            headerFilePath->append(".h");
+            auto _File_error = File::writeFromString(_p, headerFilePath, headerFile);
+            if (_File_error) { switch (_File_error->_getErrorCode()) {
+                default: {
+                return;
+                }
+            } }
+        }
     }
 }
 
@@ -511,10 +519,14 @@ void HeaderVisitor::buildMainHeaderFileString(Program* program) {
             compilationUnit = *(*program->compilationUnits)[_i];
             {
                 _Region _region; _Page* _p = _region.get();
-                mainHeaderFile->append("#include \"");
-                string* fileName = Path::getFileNameWithoutExtension(_p, getFileName(_p, compilationUnit));
-                mainHeaderFile->append(fileName);
-                mainHeaderFile->append(".h\"\n");
+                string* fileName = getFileName(_p, compilationUnit);
+                if (fileName != nullptr) {
+                    _Region _region; _Page* _p = _region.get();
+                    string* name = Path::getFileNameWithoutExtension(_p, fileName);
+                    mainHeaderFile->append("#include \"");
+                    mainHeaderFile->append(name);
+                    mainHeaderFile->append(".h\"\n");
+                }
             }
         }
     }
