@@ -89,6 +89,16 @@ void Compiler::compileFiles(Options* options) {
     program->accept(sourceVisitor);
     ModelVisitor* modelVisitor = new(_p) ModelVisitor();
     program->accept(modelVisitor);
+    Model* model = modelVisitor->model;
+    VarString* msg = new(_p) VarString(model->name);
+    msg->append("\n");
+    string* message = new(_p) string(msg);
+    auto _print_error = print(_p, message);
+    if (_print_error) { switch (_print_error->_getErrorCode()) {
+        default: {
+        return;
+        }
+    } }
 }
 
 _Result<CompilationUnit, CompilerError> Compiler::parseUnit(_Page* _rp, _Page* _ep, string* moduleName, string* text) {

@@ -52,6 +52,12 @@ class Compiler {
 
         mutable modelVisitor: ModelVisitor$ = new ModelVisitor()
         program.accept(modelVisitor)
+        
+        let model: Model = modelVisitor.model
+        let msg: VarString$ = new VarString(model.name)
+        msg.append("\n")
+        let message: string$ = new string (msg)
+        print(message) catch _ return
     }
 
     static function parseUnit(moduleName: string, text: string): CompilationUnit throws CompilerError {

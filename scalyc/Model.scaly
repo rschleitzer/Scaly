@@ -1,5 +1,37 @@
+class Unit
+
 class Model {
+
+    let name: string
+    let units: Unit[]
+
+    constructor(name: string) {
+        this.name = name
+        units = new Unit[]()
+    }
+}
+
+class Unit {
 }
 
 class ModelVisitor extends Visitor {
+
+    mutable model: Model
+    mutable unit: Unit
+
+    function openProgram(program: Program) : bool {
+        model = new Model(program.name)
+        
+        true
+    }
+
+    function openCompilationUnit(compilationUnit: CompilationUnit) : bool {
+        unit = new Unit()
+
+        true
+    }
+
+    function closeCompilationUnit(compilationUnit: CompilationUnit) {
+        model.units.push(unit)
+    }
 }
