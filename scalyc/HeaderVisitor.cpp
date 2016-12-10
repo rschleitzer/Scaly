@@ -504,16 +504,18 @@ void HeaderVisitor::buildMainHeaderFileString(Program* program) {
     mainHeaderFile->append("__\n#define __scaly__");
     mainHeaderFile->append(program->name);
     mainHeaderFile->append("__\n\n#include \"Scaly.h\"\n");
-    CompilationUnit* compilationUnit = nullptr;
-    size_t _program_length = program->compilationUnits->length();
-    for (size_t _i = 0; _i < _program_length; _i++) {
-        compilationUnit = *(*program->compilationUnits)[_i];
-        {
-            _Region _region; _Page* _p = _region.get();
-            mainHeaderFile->append("#include \"");
-            string* fileName = Path::getFileNameWithoutExtension(_p, getFileName(_p, compilationUnit));
-            mainHeaderFile->append(fileName);
-            mainHeaderFile->append(".h\"\n");
+    if (program->compilationUnits != nullptr) {
+        CompilationUnit* compilationUnit = nullptr;
+        size_t _program_length = program->compilationUnits->length();
+        for (size_t _i = 0; _i < _program_length; _i++) {
+            compilationUnit = *(*program->compilationUnits)[_i];
+            {
+                _Region _region; _Page* _p = _region.get();
+                mainHeaderFile->append("#include \"");
+                string* fileName = Path::getFileNameWithoutExtension(_p, getFileName(_p, compilationUnit));
+                mainHeaderFile->append(fileName);
+                mainHeaderFile->append(".h\"\n");
+            }
         }
     }
     mainHeaderFile->append("\nusing namespace scaly;\nnamespace ");

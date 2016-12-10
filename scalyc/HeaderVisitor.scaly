@@ -520,11 +520,13 @@ class HeaderVisitor extends CppVisitor {
         mainHeaderFile.append("__\n#define __scaly__")
         mainHeaderFile.append(program.name)
         mainHeaderFile.append("__\n\n#include \"Scaly.h\"\n")
-        for compilationUnit: CompilationUnit in program.compilationUnits {
-            mainHeaderFile.append("#include \"")
-            let fileName: string$ = Path.getFileNameWithoutExtension(getFileName(compilationUnit))
-            mainHeaderFile.append(fileName)
-            mainHeaderFile.append(".h\"\n")
+        if program.compilationUnits != null {
+            for compilationUnit: CompilationUnit in program.compilationUnits {
+                mainHeaderFile.append("#include \"")
+                let fileName: string$ = Path.getFileNameWithoutExtension(getFileName(compilationUnit))
+                mainHeaderFile.append(fileName)
+                mainHeaderFile.append(".h\"\n")
+            }
         }
         mainHeaderFile.append("\nusing namespace scaly;\nnamespace ")
         mainHeaderFile.append(program.name)
