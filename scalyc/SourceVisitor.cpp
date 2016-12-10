@@ -72,7 +72,7 @@ bool SourceVisitor::openCompilationUnit(CompilationUnit* compilationUnit) {
     sourceFile->append("namespace ");
     sourceFile->append(programName);
     sourceFile->append(" {\n\n");
-    if (isTopLevelFile(compilationUnit))
+    if ((compilationUnit->statements != nullptr) && isTopLevelFile(compilationUnit))
         sourceFile->append("FileError* _main(_Page* _ep,  _Array<string>* arguments) {\n    _Region _rp; _Page* _p = _rp.get();\n\n");
     return true;
 }

@@ -81,7 +81,7 @@ class SourceVisitor extends CppVisitor {
         sourceFile.append(programName)
         sourceFile.append(" {\n\n")
         
-        if isTopLevelFile(compilationUnit)
+        if (compilationUnit.statements != null) && isTopLevelFile(compilationUnit)
             sourceFile.append("FileError* _main(_Page* _ep,  _Array<string>* arguments) {\n    _Region _rp; _Page* _p = _rp.get();\n\n")
 
         true
