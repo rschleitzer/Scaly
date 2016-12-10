@@ -345,13 +345,10 @@ Type* Parser::parseType(_Page* _rp) {
         lexer->advance();
     else
         return nullptr;
-    Subtype* subType = parseSubtype(_rp);
     _Array<TypePostfix>* postfixes = parseTypePostfixList(_rp);
     LifeTime* lifeTime = parseLifeTime(_rp);
     Position* end = lexer->getPosition(_p);
-    Type* ret = new(_rp) Type(name, subType, postfixes, lifeTime, new(_rp) Position(start), new(_rp) Position(end));
-    if (subType != nullptr)
-        subType->parent = ret;
+    Type* ret = new(_rp) Type(name, postfixes, lifeTime, new(_rp) Position(start), new(_rp) Position(end));
     if (postfixes != nullptr) {
         TypePostfix* item = nullptr;
         size_t _postfixes_length = postfixes->length();
@@ -362,23 +359,6 @@ Type* Parser::parseType(_Page* _rp) {
     }
     if (lifeTime != nullptr)
         lifeTime->parent = ret;
-    return ret;
-}
-
-Subtype* Parser::parseSubtype(_Page* _rp) {
-    _Region _region; _Page* _p = _region.get();
-    Position* start = lexer->getPreviousPosition(_p);
-    bool successDot1 = lexer->parsePunctuation(dot);
-    if (successDot1)
-        lexer->advance();
-    else
-        return nullptr;
-    Type* type = parseType(_rp);
-    if (type == nullptr)
-        return nullptr;
-    Position* end = lexer->getPosition(_p);
-    Subtype* ret = new(_rp) Subtype(type, new(_rp) Position(start), new(_rp) Position(end));
-    type->parent = ret;
     return ret;
 }
 
@@ -2283,13 +2263,6 @@ bool Visitor::openType(Type* type) {
 void Visitor::closeType(Type* type) {
 }
 
-bool Visitor::openSubtype(Subtype* subtype) {
-    return true;
-}
-
-void Visitor::closeSubtype(Subtype* subtype) {
-}
-
 bool Visitor::openIndexedType(IndexedType* indexedType) {
     return true;
 }
@@ -2720,7 +2693,6 @@ bool SyntaxNode::_isTuplePattern() { return (false); }
 bool SyntaxNode::_isExpressionPattern() { return (false); }
 bool SyntaxNode::_isTypeAnnotation() { return (false); }
 bool SyntaxNode::_isType() { return (false); }
-bool SyntaxNode::_isSubtype() { return (false); }
 bool SyntaxNode::_isTypePostfix() { return (false); }
 bool SyntaxNode::_isIndexedType() { return (false); }
 bool SyntaxNode::_isPointer() { return (false); }
@@ -3019,11 +2991,10 @@ void TypeAnnotation::accept(Visitor* visitor) {
 
 bool TypeAnnotation::_isTypeAnnotation() { return (true); }
 
-Type::Type(string* name, Subtype* subType, _Array<TypePostfix>* postfixes, LifeTime* lifeTime, Position* start, Position* end) {
+Type::Type(string* name, _Array<TypePostfix>* postfixes, LifeTime* lifeTime, Position* start, Position* end) {
     this->start = start;
     this->end = end;
     this->name = name;
-    this->subType = subType;
     this->postfixes = postfixes;
     this->lifeTime = lifeTime;
 }
@@ -3031,8 +3002,6 @@ Type::Type(string* name, Subtype* subType, _Array<TypePostfix>* postfixes, LifeT
 void Type::accept(Visitor* visitor) {
     if (!visitor->openType(this))
         return;
-    if (subType != nullptr)
-        subType->accept(visitor);
     if (postfixes != nullptr) {
         TypePostfix* node = nullptr;
         size_t _postfixes_length = postfixes->length();
@@ -3047,21 +3016,6 @@ void Type::accept(Visitor* visitor) {
 }
 
 bool Type::_isType() { return (true); }
-
-Subtype::Subtype(Type* type, Position* start, Position* end) {
-    this->start = start;
-    this->end = end;
-    this->type = type;
-}
-
-void Subtype::accept(Visitor* visitor) {
-    if (!visitor->openSubtype(this))
-        return;
-    type->accept(visitor);
-    visitor->closeSubtype(this);
-}
-
-bool Subtype::_isSubtype() { return (true); }
 
 void TypePostfix::accept(Visitor* visitor) {
 }

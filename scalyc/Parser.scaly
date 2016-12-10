@@ -13,7 +13,6 @@ class WildcardPattern
 class IdentifierPattern
 class TypeAnnotation
 class Type
-class Subtype
 class TypePostfix
 class IndexedType
 class Pointer
@@ -488,44 +487,19 @@ class Parser {
         else
             return(null)
 
-        let subType: Subtype = parseSubtype()
-
         let postfixes: TypePostfix[] = parseTypePostfixList()
 
         let lifeTime: LifeTime = parseLifeTime()
 
         let end: Position$ = lexer.getPosition()
 
-        let ret: Type = new Type(name, subType, postfixes, lifeTime, new Position(start), new Position(end))
-        if subType != null
-            subType.parent = ret
+        let ret: Type = new Type(name, postfixes, lifeTime, new Position(start), new Position(end))
         if postfixes != null {
             for item: TypePostfix in postfixes
                 item.parent = ret
         }
         if lifeTime != null
             lifeTime.parent = ret
-
-        ret
-    }
-
-    function parseSubtype(): Subtype {
-        let start: Position$ = lexer.getPreviousPosition()
-
-        let successDot1: bool = lexer.parsePunctuation(dot)
-        if successDot1
-            lexer.advance()
-        else
-            return(null)
-
-        let type: Type = parseType()
-        if type == null
-            return(null)
-
-        let end: Position$ = lexer.getPosition()
-
-        let ret: Subtype = new Subtype(type, new Position(start), new Position(end))
-        type.parent = ret
 
         ret
     }
@@ -2812,13 +2786,6 @@ class Visitor {
     function closeType(type: Type) {
     }
 
-    function openSubtype(subtype: Subtype): bool {
-        true
-    }
-
-    function closeSubtype(subtype: Subtype) {
-    }
-
     function openIndexedType(indexedType: IndexedType): bool {
         true
     }
@@ -3466,11 +3433,10 @@ class TypeAnnotation extends SyntaxNode {
 
 class Type extends SyntaxNode {
 
-    constructor(name: string, subType: Subtype, postfixes: TypePostfix[], lifeTime: LifeTime, start: Position, end: Position) {
+    constructor(name: string, postfixes: TypePostfix[], lifeTime: LifeTime, start: Position, end: Position) {
         this.start = start
         this.end = end
         this.name = name
-        this.subType = subType
         this.postfixes = postfixes
         this.lifeTime = lifeTime
     }
@@ -3478,8 +3444,6 @@ class Type extends SyntaxNode {
     function accept(mutable visitor: Visitor) {
         if !visitor.openType(this)
             return
-        if subType != null
-            subType.accept(visitor)
         if postfixes != null {
             for node: TypePostfix in postfixes
                 node.accept(visitor)
@@ -3490,27 +3454,8 @@ class Type extends SyntaxNode {
     }
 
     let name: string
-    let subType: Subtype
     let postfixes: TypePostfix[]
     let lifeTime: LifeTime
-}
-
-class Subtype extends SyntaxNode {
-
-    constructor(type: Type, start: Position, end: Position) {
-        this.start = start
-        this.end = end
-        this.type = type
-    }
-
-    function accept(mutable visitor: Visitor) {
-        if !visitor.openSubtype(this)
-            return
-        type.accept(visitor)
-        visitor.closeSubtype(this)
-    }
-
-    let type: Type
 }
 
 class TypePostfix extends SyntaxNode {

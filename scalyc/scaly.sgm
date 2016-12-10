@@ -63,13 +63,8 @@
 
     <syntax id = Type
         <content identifier                                     property = name
-        <content link = Subtype                        optional property = subType
         <content link = TypePostfix           multiple optional property = postfixes
         <content link = LifeTime                       optional property = lifeTime
-
-    <syntax id = Subtype
-        <content link = dot
-        <content link = Type                                    property = type
 
     <syntax id = TypePostfix                  multiple abstract
         <content link = IndexedType

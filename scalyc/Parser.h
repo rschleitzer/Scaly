@@ -34,8 +34,6 @@ class TypeAnnotation;
 
 class Type;
 
-class Subtype;
-
 class TypePostfix;
 
 class IndexedType;
@@ -210,7 +208,6 @@ public:
     virtual IdentifierPattern* parseIdentifierPattern(_Page* _rp);
     virtual TypeAnnotation* parseTypeAnnotation(_Page* _rp);
     virtual Type* parseType(_Page* _rp);
-    virtual Subtype* parseSubtype(_Page* _rp);
     virtual _Array<TypePostfix>* parseTypePostfixList(_Page* _rp);
     virtual TypePostfix* parseTypePostfix(_Page* _rp);
     virtual IndexedType* parseIndexedType(_Page* _rp);
@@ -379,8 +376,6 @@ public:
     virtual void closeTypeAnnotation(TypeAnnotation* typeAnnotation);
     virtual bool openType(Type* type);
     virtual void closeType(Type* type);
-    virtual bool openSubtype(Subtype* subtype);
-    virtual void closeSubtype(Subtype* subtype);
     virtual bool openIndexedType(IndexedType* indexedType);
     virtual void closeIndexedType(IndexedType* indexedType);
     virtual void visitPointer(Pointer* pointer);
@@ -534,7 +529,6 @@ public:
     virtual bool _isExpressionPattern();
     virtual bool _isTypeAnnotation();
     virtual bool _isType();
-    virtual bool _isSubtype();
     virtual bool _isTypePostfix();
     virtual bool _isIndexedType();
     virtual bool _isPointer();
@@ -750,23 +744,13 @@ public:
 
 class Type : public SyntaxNode {
 public:
-    Type(string* name, Subtype* subType, _Array<TypePostfix>* postfixes, LifeTime* lifeTime, Position* start, Position* end);
+    Type(string* name, _Array<TypePostfix>* postfixes, LifeTime* lifeTime, Position* start, Position* end);
     virtual void accept(Visitor* visitor);
     string* name;
-    Subtype* subType;
     _Array<TypePostfix>* postfixes;
     LifeTime* lifeTime;
 
     virtual bool _isType();
-};
-
-class Subtype : public SyntaxNode {
-public:
-    Subtype(Type* type, Position* start, Position* end);
-    virtual void accept(Visitor* visitor);
-    Type* type;
-
-    virtual bool _isSubtype();
 };
 
 class TypePostfix : public SyntaxNode {
