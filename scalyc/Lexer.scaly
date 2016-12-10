@@ -15,13 +15,11 @@ class PostfixOperator
 
 class Lexer {
 
-    mutable token: Token
-    mutable whitespaceSkipped: bool
+    mutable token: Token, whitespaceSkipped: bool
     let text: string
     mutable position: number
     let end: number
-    mutable previousLine: number
-    mutable previousColumn: number
+    mutable previousLine: number, previousColumn: number
     mutable line: number
     mutable column: number
     

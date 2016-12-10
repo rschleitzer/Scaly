@@ -34,13 +34,11 @@ class PostfixOperator;
 
 class Lexer : public Object {
 public:
-    Token* token;
-    bool whitespaceSkipped;
+    Token* token; bool whitespaceSkipped;
     string* text;
     size_t position;
     size_t end;
-    size_t previousLine;
-    size_t previousColumn;
+    size_t previousLine; size_t previousColumn;
     size_t line;
     size_t column;
     Lexer(string* theText);

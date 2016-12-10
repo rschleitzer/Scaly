@@ -283,7 +283,7 @@ bool HeaderVisitor::openCodeBlock(CodeBlock* codeBlock) {
 
 bool HeaderVisitor::openPatternInitializer(PatternInitializer* patternInitializer) {
     if (patternInitializer->parent->_isAdditionalInitializer())
-        headerFile->append(", ");
+        headerFile->append("; ");
     return true;
 }
 

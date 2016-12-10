@@ -284,7 +284,7 @@ class HeaderVisitor extends CppVisitor {
 
     function openPatternInitializer(patternInitializer: PatternInitializer): bool {
         if patternInitializer.parent is AdditionalInitializer
-            headerFile.append(", ")
+            headerFile.append("; ")
 
         true
     }
