@@ -2670,6 +2670,7 @@ void Visitor::closeTypeCast(TypeCast* typeCast) {
 bool Visitor::_isCppVisitor() { return (false); }
 bool Visitor::_isHeaderVisitor() { return (false); }
 bool Visitor::_isSourceVisitor() { return (false); }
+bool Visitor::_isModelVisitor() { return (false); }
 
 bool SyntaxNode::_isProgram() { return (false); }
 bool SyntaxNode::_isCompilationUnit() { return (false); }

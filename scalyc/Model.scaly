@@ -1,2 +1,5 @@
 class Model {
 }
+
+class ModelVisitor extends Visitor {
+}

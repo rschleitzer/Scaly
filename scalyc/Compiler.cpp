@@ -84,9 +84,11 @@ void Compiler::compileFiles(Options* options) {
         item->parent = program;
     }
     HeaderVisitor* headerVisitor = new(_p) HeaderVisitor(options->directory);
-    headerVisitor->execute(program);
+    program->accept(headerVisitor);
     SourceVisitor* sourceVisitor = new(_p) SourceVisitor(options->directory);
-    sourceVisitor->execute(program);
+    program->accept(sourceVisitor);
+    ModelVisitor* modelVisitor = new(_p) ModelVisitor();
+    program->accept(modelVisitor);
 }
 
 _Result<CompilationUnit, CompilerError> Compiler::parseUnit(_Page* _rp, _Page* _ep, string* moduleName, string* text) {

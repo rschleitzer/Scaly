@@ -6,10 +6,6 @@ class CppVisitor extends Visitor {
     mutable inherits: Inherits[]
     mutable classes: string[]
 
-    function execute(program: Program) {
-        program.accept(this)
-    }
-
     function hasArrayPostfix(type: Type): bool {
 
         if type.postfixes == null

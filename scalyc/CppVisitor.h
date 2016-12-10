@@ -10,7 +10,6 @@ class CppVisitor : public Visitor {
 public:
     _Array<Inherits>* inherits;
     _Array<string>* classes;
-    virtual void execute(Program* program);
     virtual bool hasArrayPostfix(Type* type);
     virtual bool isClass(string* name) = 0;
     virtual void appendCppType(VarString* s, Type* type);

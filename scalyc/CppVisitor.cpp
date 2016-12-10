@@ -2,10 +2,6 @@
 using namespace scaly;
 namespace scalyc {
 
-void CppVisitor::execute(Program* program) {
-    program->accept(this);
-}
-
 bool CppVisitor::hasArrayPostfix(Type* type) {
     if (type->postfixes == nullptr)
         return false;

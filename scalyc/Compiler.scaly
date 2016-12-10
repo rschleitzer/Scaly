@@ -45,10 +45,13 @@ class Compiler {
             item.parent = program
 
         mutable headerVisitor: HeaderVisitor$ = new HeaderVisitor(options.directory)        
-        headerVisitor.execute(program)
+        program.accept(headerVisitor)
 
         mutable sourceVisitor: SourceVisitor$ = new SourceVisitor(options.directory)        
-        sourceVisitor.execute(program)
+        program.accept(sourceVisitor)
+
+        mutable modelVisitor: ModelVisitor$ = new ModelVisitor()
+        program.accept(modelVisitor)
     }
 
     static function parseUnit(moduleName: string, text: string): CompilationUnit throws CompilerError {

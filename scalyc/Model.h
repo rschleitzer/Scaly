@@ -9,5 +9,11 @@ public:
 
 };
 
+class ModelVisitor : public Visitor {
+public:
+
+    virtual bool _isModelVisitor();
+};
+
 }
 #endif // __scalyc__Model__
