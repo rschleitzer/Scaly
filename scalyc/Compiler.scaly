@@ -4,7 +4,14 @@ class Compiler {
         mutable sources: string[]$ = new string[]()
         for file: string in files {
             let source: string@sources = File.readToString(file)
-                catch FileError.noSuchFileOrDirectory(error: noSuchFileOrDirectory) return
+                catch FileError.noSuchFileOrDirectory(error: noSuchFileOrDirectory) {
+                    mutable msg: VarString$ = new VarString("Can't read file: ")
+                    msg.append(file)
+                    msg.append("\n")
+                    let message: string$ = new string(msg)
+                    print(message) catch _ return
+                    return
+                }
                 
             sources.push(source)
         }
@@ -14,8 +21,14 @@ class Compiler {
         for source: string in sources {
             let moduleName: string@compilationUnits = Path.getFileNameWithoutExtension(files[index])
             let compilationUnit: CompilationUnit@compilationUnits = parseUnit(moduleName, source)
-            if compilationUnit == null
+            if compilationUnit == null {
+                mutable msg: VarString$ = new VarString("Syntax error in ")
+                msg.append(files[index])
+                msg.append("\n");
+                let message: string$ = new string(msg)
+                print(message) catch _ return
                 return
+            }
 
             compilationUnits.push(compilationUnit)
             index++

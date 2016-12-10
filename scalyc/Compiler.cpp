@@ -17,7 +17,20 @@ void Compiler::compileFiles(Options* options) {
                 source = _source_result.getResult();
             }
             else if (_source_result._getErrorCode() == _FileErrorCode_noSuchFileOrDirectory) {
-                return;
+                {
+                    _Region _region; _Page* _p = _region.get();
+                    VarString* msg = new(_p) VarString("Can't read file: ");
+                    msg->append(file);
+                    msg->append("\n");
+                    string* message = new(_p) string(msg);
+                    auto _print_error = print(_p, message);
+                    if (_print_error) { switch (_print_error->_getErrorCode()) {
+                        default: {
+                        return;
+                        }
+                    } }
+                    return;
+                }
             }
             sources->push(source);
         }
@@ -31,8 +44,20 @@ void Compiler::compileFiles(Options* options) {
         {
             string* moduleName = Path::getFileNameWithoutExtension(compilationUnits->_getPage(), *(*files)[index]);
             CompilationUnit* compilationUnit = parseUnit(compilationUnits->_getPage(), moduleName, source);
-            if (compilationUnit == nullptr)
+            if (compilationUnit == nullptr) {
+                _Region _region; _Page* _p = _region.get();
+                VarString* msg = new(_p) VarString("Syntax error in ");
+                msg->append(*(*files)[index]);
+                msg->append("\n");
+                string* message = new(_p) string(msg);
+                auto _print_error = print(_p, message);
+                if (_print_error) { switch (_print_error->_getErrorCode()) {
+                    default: {
+                    return;
+                    }
+                } }
                 return;
+            }
             compilationUnits->push(compilationUnit);
             index++;
         }
