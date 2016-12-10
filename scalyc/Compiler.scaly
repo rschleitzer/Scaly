@@ -24,7 +24,7 @@ class Compiler {
             if compilationUnit == null {
                 mutable msg: VarString$ = new VarString("Syntax error in ")
                 msg.append(files[index])
-                msg.append("\n");
+                msg.append("\n")
                 let message: string$ = new string(msg)
                 print(message) catch _ return
                 return

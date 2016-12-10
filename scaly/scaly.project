@@ -33,6 +33,7 @@
     <File Name="Chunk.cpp"/>
     <File Name="Pool.cpp"/>
     <File Name="Console.cpp"/>
+    <File Name="Number.cpp"/>
   </VirtualDirectory>
   <VirtualDirectory Name="include">
     <File Name="Scaly.h"/>
@@ -50,6 +51,7 @@
     <File Name="Chunk.h"/>
     <File Name="Pool.h"/>
     <File Name="Console.h"/>
+    <File Name="Number.h"/>
   </VirtualDirectory>
   <Settings Type="Static Library">
     <GlobalSettings>

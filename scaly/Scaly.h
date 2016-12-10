@@ -22,6 +22,7 @@ const size_t _maxStackPages = 0x100;
 #include "Result.h"
 #include "LetString.h"
 #include "VarString.h"
+#include "Number.h"
 #include "Path.h"
 #include "File.h"
 #include "Directory.h"
