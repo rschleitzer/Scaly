@@ -37,7 +37,7 @@ bool SourceVisitor::openCompilationUnit(CompilationUnit* compilationUnit) {
     sourceFile->append("#include \"");
     sourceFile->append(programName);
     sourceFile->append(".h\"\nusing namespace scaly;\n");
-    if (isTopLevelFile(compilationUnit)) {
+    if (compilationUnit->statements != nullptr && isTopLevelFile(compilationUnit)) {
         sourceFile->append("namespace scaly {\n\n");
         sourceFile->append("extern __thread _Page* __CurrentPage;\n");
         sourceFile->append("extern __thread _Task* __CurrentTask;\n\n");

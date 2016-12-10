@@ -44,7 +44,7 @@ class SourceVisitor extends CppVisitor {
         sourceFile.append(programName)
         sourceFile.append(".h\"\nusing namespace scaly;\n")
         
-        if isTopLevelFile(compilationUnit) {
+        if compilationUnit.statements != null && isTopLevelFile(compilationUnit) {
             sourceFile.append("namespace scaly {\n\n")
             sourceFile.append("extern __thread _Page* __CurrentPage;\n")
             sourceFile.append("extern __thread _Task* __CurrentTask;\n\n")
