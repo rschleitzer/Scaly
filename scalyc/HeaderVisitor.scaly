@@ -143,14 +143,13 @@ class HeaderVisitor extends CppVisitor {
 
     function closeEnumDeclaration(enumDeclaration: EnumDeclaration) {
         let enumDeclarationName: string = enumDeclaration.name
-        let members: EnumMember[] = enumDeclaration.members
 
-        if members != null {
+        if enumDeclaration.members != null {
             headerFile.append("enum _")
             headerFile.append(enumDeclarationName)
             headerFile.append("Code {\n")
             mutable i: int = 0
-            for member: EnumMember in members {
+            for member: EnumMember in enumDeclaration.members {
                 headerFile.append("    _")
                 headerFile.append(enumDeclarationName)
                 headerFile.append("Code_")
@@ -171,8 +170,8 @@ class HeaderVisitor extends CppVisitor {
         headerFile.append(enumDeclarationName)
         headerFile.append("Code errorCode)\n    : errorCode(errorCode), errorInfo(0) {}\n\n")
 
-        if members != null {
-            for member: EnumMember in members {
+        if enumDeclaration.members != null {
+            for member: EnumMember in enumDeclaration.members {
                 if member.parameterClause {
                     headerFile.append("    ")
                     headerFile.append(enumDeclarationName)
@@ -195,8 +194,8 @@ class HeaderVisitor extends CppVisitor {
 
         headerFile.append("    long _getErrorCode();\n    void* _getErrorInfo();\n\n")
 
-        if members != null {
-            for member: EnumMember in members {
+        if enumDeclaration.members != null {
+            for member: EnumMember in enumDeclaration.members {
                 if member.parameterClause {
                     headerFile.append("    _")
                     headerFile.append(enumDeclarationName)
@@ -223,9 +222,8 @@ class HeaderVisitor extends CppVisitor {
 
         headerFile.append(" : public ")
         if classDeclaration.typeInheritanceClause != null {
-            let inheritances: Inheritance[] = classDeclaration.typeInheritanceClause.inheritances
             mutable i: int = 0
-            for inheritance: Inheritance in inheritances {
+            for inheritance: Inheritance in classDeclaration.typeInheritanceClause.inheritances {
 
                 if i > 0
                     headerFile.append(", ")
@@ -292,8 +290,6 @@ class HeaderVisitor extends CppVisitor {
     }
 
     function openFunctionSignature(functionSignature: FunctionSignature): bool {
-        let functionName: string = (functionSignature.parent as FunctionDeclaration).name
-
         let functionDeclaration: FunctionDeclaration = functionSignature.parent as FunctionDeclaration
         if functionDeclaration.modifiers != null {
             for modifier: Modifier in functionDeclaration.modifiers {
@@ -334,8 +330,7 @@ class HeaderVisitor extends CppVisitor {
             else {
                 if hasArrayPostfix(functionSignature.result.resultType) {
                     headerFile.append("_Array<")
-                    let type: Type = functionSignature.result.resultType
-                    appendCppTypeName(headerFile, type)
+                    appendCppTypeName(headerFile, functionSignature.result.resultType)
                     headerFile.append(">*")
                 }
                 else {
@@ -348,7 +343,7 @@ class HeaderVisitor extends CppVisitor {
         }
 
         headerFile.append(" ")
-        headerFile.append(functionName)
+        headerFile.append((functionSignature.parent as FunctionDeclaration).name)
         headerFile.append("(")
         if functionSignature.result != null {
             if isClass(functionSignature.result.resultType.name) {
@@ -376,8 +371,7 @@ class HeaderVisitor extends CppVisitor {
     }
 
     function openConstParameter(constParameter: ConstParameter): bool {
-        let constParameterName: string = constParameter.name
-        writeParameter(constParameterName, constParameter.parameterType)
+        writeParameter(constParameter.name, constParameter.parameterType)
 
         false
     }
@@ -435,14 +429,13 @@ class HeaderVisitor extends CppVisitor {
         if !enumMember.parent is EnumDeclaration
             return(false)
 
-        let enumDeclarationName: string = (enumMember.parent as EnumDeclaration).name
         if enumMember.parameterClause {
             headerFile.append("\nclass _")
-            headerFile.append(enumDeclarationName)
+            headerFile.append((enumMember.parent as EnumDeclaration).name)
             headerFile.append("_")
             headerFile.append(enumMember.enumCase.name)
             headerFile.append(" : public Object {\npublic:\n    _")
-            headerFile.append(enumDeclarationName)
+            headerFile.append((enumMember.parent as EnumDeclaration).name)
             headerFile.append("_")
             headerFile.append(enumMember.enumCase.name)
             headerFile.append("(")
@@ -455,16 +448,14 @@ class HeaderVisitor extends CppVisitor {
         if enumMember.parameterClause != null {
             headerFile.append(";\n\n")
 
-            let parameters: Parameter[] = enumMember.parameterClause.parameters
-            if parameters != null {
+            if enumMember.parameterClause.parameters != null {
                 mutable pos: number = 0
-                for parameter: Parameter in parameters {
+                for parameter: Parameter in enumMember.parameterClause.parameters {
                     if parameter is ConstParameter {
-                        let constParameter: ConstParameter = parameter as ConstParameter
                         headerFile.append("    ")
-                        appendCppType(headerFile, constParameter.parameterType)
+                        appendCppType(headerFile, (parameter as ConstParameter).parameterType)
                         headerFile.append(" ")
-                        headerFile.append(constParameter.name)
+                        headerFile.append((parameter as ConstParameter).name)
                         headerFile.append(";\n")
                     }
                     pos++
@@ -531,9 +522,8 @@ class HeaderVisitor extends CppVisitor {
         mainHeaderFile.append("__\n\n#include \"Scaly.h\"\n")
         for compilationUnit: CompilationUnit in program.compilationUnits {
             mainHeaderFile.append("#include \"")
-            let fileName: string$ = getFileName(compilationUnit)
-            let fileNameWithoutExtension: string$ = Path.getFileNameWithoutExtension(fileName)
-            mainHeaderFile.append(fileNameWithoutExtension)
+            let fileName: string$ = Path.getFileNameWithoutExtension(getFileName(compilationUnit))
+            mainHeaderFile.append(fileName)
             mainHeaderFile.append(".h\"\n")
         }
         mainHeaderFile.append("\nusing namespace scaly;\nnamespace ")

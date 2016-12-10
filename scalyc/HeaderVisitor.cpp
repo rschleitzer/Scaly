@@ -134,16 +134,15 @@ bool HeaderVisitor::openEnumDeclaration(EnumDeclaration* enumDeclaration) {
 
 void HeaderVisitor::closeEnumDeclaration(EnumDeclaration* enumDeclaration) {
     string* enumDeclarationName = enumDeclaration->name;
-    _Array<EnumMember>* members = enumDeclaration->members;
-    if (members != nullptr) {
+    if (enumDeclaration->members != nullptr) {
         headerFile->append("enum _");
         headerFile->append(enumDeclarationName);
         headerFile->append("Code {\n");
         int i = 0;
         EnumMember* member = nullptr;
-        size_t _members_length = members->length();
-        for (size_t _i = 0; _i < _members_length; _i++) {
-            member = *(*members)[_i];
+        size_t _enumDeclaration_length = enumDeclaration->members->length();
+        for (size_t _i = 0; _i < _enumDeclaration_length; _i++) {
+            member = *(*enumDeclaration->members)[_i];
             {
                 headerFile->append("    _");
                 headerFile->append(enumDeclarationName);
@@ -164,11 +163,11 @@ void HeaderVisitor::closeEnumDeclaration(EnumDeclaration* enumDeclaration) {
     headerFile->append("(_");
     headerFile->append(enumDeclarationName);
     headerFile->append("Code errorCode)\n    : errorCode(errorCode), errorInfo(0) {}\n\n");
-    if (members != nullptr) {
+    if (enumDeclaration->members != nullptr) {
         EnumMember* member = nullptr;
-        size_t _members_length = members->length();
-        for (size_t _i = 0; _i < _members_length; _i++) {
-            member = *(*members)[_i];
+        size_t _enumDeclaration_length = enumDeclaration->members->length();
+        for (size_t _i = 0; _i < _enumDeclaration_length; _i++) {
+            member = *(*enumDeclaration->members)[_i];
             {
                 if (member->parameterClause) {
                     headerFile->append("    ");
@@ -191,11 +190,11 @@ void HeaderVisitor::closeEnumDeclaration(EnumDeclaration* enumDeclaration) {
         }
     }
     headerFile->append("    long _getErrorCode();\n    void* _getErrorInfo();\n\n");
-    if (members != nullptr) {
+    if (enumDeclaration->members != nullptr) {
         EnumMember* member = nullptr;
-        size_t _members_length = members->length();
-        for (size_t _i = 0; _i < _members_length; _i++) {
-            member = *(*members)[_i];
+        size_t _enumDeclaration_length = enumDeclaration->members->length();
+        for (size_t _i = 0; _i < _enumDeclaration_length; _i++) {
+            member = *(*enumDeclaration->members)[_i];
             {
                 if (member->parameterClause) {
                     headerFile->append("    _");
@@ -223,12 +222,11 @@ bool HeaderVisitor::openClassDeclaration(ClassDeclaration* classDeclaration) {
     }
     headerFile->append(" : public ");
     if (classDeclaration->typeInheritanceClause != nullptr) {
-        _Array<Inheritance>* inheritances = classDeclaration->typeInheritanceClause->inheritances;
         int i = 0;
         Inheritance* inheritance = nullptr;
-        size_t _inheritances_length = inheritances->length();
-        for (size_t _i = 0; _i < _inheritances_length; _i++) {
-            inheritance = *(*inheritances)[_i];
+        size_t _classDeclaration_length = classDeclaration->typeInheritanceClause->inheritances->length();
+        for (size_t _i = 0; _i < _classDeclaration_length; _i++) {
+            inheritance = *(*classDeclaration->typeInheritanceClause->inheritances)[_i];
             {
                 if (i > 0)
                     headerFile->append(", ");
@@ -290,7 +288,6 @@ bool HeaderVisitor::openPatternInitializer(PatternInitializer* patternInitialize
 }
 
 bool HeaderVisitor::openFunctionSignature(FunctionSignature* functionSignature) {
-    string* functionName = ((FunctionDeclaration*)functionSignature->parent)->name;
     FunctionDeclaration* functionDeclaration = (FunctionDeclaration*)functionSignature->parent;
     if (functionDeclaration->modifiers != nullptr) {
         Modifier* modifier = nullptr;
@@ -334,8 +331,7 @@ bool HeaderVisitor::openFunctionSignature(FunctionSignature* functionSignature) 
         else {
             if (hasArrayPostfix(functionSignature->result->resultType)) {
                 headerFile->append("_Array<");
-                Type* type = functionSignature->result->resultType;
-                appendCppTypeName(headerFile, type);
+                appendCppTypeName(headerFile, functionSignature->result->resultType);
                 headerFile->append(">*");
             }
             else {
@@ -347,7 +343,7 @@ bool HeaderVisitor::openFunctionSignature(FunctionSignature* functionSignature) 
         }
     }
     headerFile->append(" ");
-    headerFile->append(functionName);
+    headerFile->append(((FunctionDeclaration*)functionSignature->parent)->name);
     headerFile->append("(");
     if (functionSignature->result != nullptr) {
         if (isClass(functionSignature->result->resultType->name)) {
@@ -374,8 +370,7 @@ void HeaderVisitor::closeParameterClause(ParameterClause* parameterClause) {
 }
 
 bool HeaderVisitor::openConstParameter(ConstParameter* constParameter) {
-    string* constParameterName = constParameter->name;
-    writeParameter(constParameterName, constParameter->parameterType);
+    writeParameter(constParameter->name, constParameter->parameterType);
     return false;
 }
 
@@ -425,14 +420,13 @@ void HeaderVisitor::closeVarParameter(VarParameter* varParameter) {
 bool HeaderVisitor::openEnumMember(EnumMember* enumMember) {
     if (!enumMember->parent->_isEnumDeclaration())
         return false;
-    string* enumDeclarationName = ((EnumDeclaration*)enumMember->parent)->name;
     if (enumMember->parameterClause) {
         headerFile->append("\nclass _");
-        headerFile->append(enumDeclarationName);
+        headerFile->append(((EnumDeclaration*)enumMember->parent)->name);
         headerFile->append("_");
         headerFile->append(enumMember->enumCase->name);
         headerFile->append(" : public Object {\npublic:\n    _");
-        headerFile->append(enumDeclarationName);
+        headerFile->append(((EnumDeclaration*)enumMember->parent)->name);
         headerFile->append("_");
         headerFile->append(enumMember->enumCase->name);
         headerFile->append("(");
@@ -443,20 +437,18 @@ bool HeaderVisitor::openEnumMember(EnumMember* enumMember) {
 void HeaderVisitor::closeEnumMember(EnumMember* enumMember) {
     if (enumMember->parameterClause != nullptr) {
         headerFile->append(";\n\n");
-        _Array<Parameter>* parameters = enumMember->parameterClause->parameters;
-        if (parameters != nullptr) {
+        if (enumMember->parameterClause->parameters != nullptr) {
             size_t pos = 0;
             Parameter* parameter = nullptr;
-            size_t _parameters_length = parameters->length();
-            for (size_t _i = 0; _i < _parameters_length; _i++) {
-                parameter = *(*parameters)[_i];
+            size_t _enumMember_length = enumMember->parameterClause->parameters->length();
+            for (size_t _i = 0; _i < _enumMember_length; _i++) {
+                parameter = *(*enumMember->parameterClause->parameters)[_i];
                 {
                     if (parameter->_isConstParameter()) {
-                        ConstParameter* constParameter = (ConstParameter*)parameter;
                         headerFile->append("    ");
-                        appendCppType(headerFile, constParameter->parameterType);
+                        appendCppType(headerFile, ((ConstParameter*)parameter)->parameterType);
                         headerFile->append(" ");
-                        headerFile->append(constParameter->name);
+                        headerFile->append(((ConstParameter*)parameter)->name);
                         headerFile->append(";\n");
                     }
                     pos++;
@@ -519,9 +511,8 @@ void HeaderVisitor::buildMainHeaderFileString(Program* program) {
         {
             _Region _region; _Page* _p = _region.get();
             mainHeaderFile->append("#include \"");
-            string* fileName = getFileName(_p, compilationUnit);
-            string* fileNameWithoutExtension = Path::getFileNameWithoutExtension(_p, fileName);
-            mainHeaderFile->append(fileNameWithoutExtension);
+            string* fileName = Path::getFileNameWithoutExtension(_p, getFileName(_p, compilationUnit));
+            mainHeaderFile->append(fileName);
             mainHeaderFile->append(".h\"\n");
         }
     }
