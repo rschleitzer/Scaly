@@ -50,9 +50,6 @@
         <content link = TuplePattern
         <content link = ExpressionPattern
 
-    <syntax id = WildcardPattern                                base = Pattern
-        <content link = underscore
-
     <syntax id = IdentifierPattern                              base = Pattern
         <content identifier                                     property = identifier
         <content link = TypeAnnotation                 optional property = annotationForType
@@ -97,18 +94,6 @@
 
     <syntax id = Thrown                                         base = LifeTime
         <content link = hash
-
-    <syntax id = TuplePattern                                   base = Pattern
-        <content link = leftParen
-        <content link = TuplePatternElement   multiple          property = elements
-        <content link = rightParen
-
-    <syntax id = TuplePatternElement          multiple
-        <content link = Pattern                                 property = pattern
-        <content link = comma                          optional
-
-    <syntax id = ExpressionPattern                              base = Pattern
-        <content link = Expression                              property = expression
 
     <syntax id = FunctionDeclaration                            base = Declaration
         <content link = Modifier              multiple optional property = modifiers
@@ -386,6 +371,21 @@
     <syntax id = IdentifierCatchPattern                         base = CatchPattern
         <content identifier                                     property = name
         <content link = MemberExpression               optional property = member
+
+    <syntax id = WildcardPattern                                base = Pattern
+        <content link = underscore
+
+    <syntax id = TuplePattern                                   base = Pattern
+        <content link = leftParen
+        <content link = TuplePatternElement   multiple          property = elements
+        <content link = rightParen
+
+    <syntax id = TuplePatternElement          multiple
+        <content link = Pattern                                 property = pattern
+        <content link = comma                          optional
+
+    <syntax id = ExpressionPattern                              base = Pattern
+        <content link = Expression                              property = expression
 
     <syntax id = MemberExpression                               base = Postfix
         <content link = dot

@@ -9,7 +9,6 @@ class IdentifierInitializer
 class Initializer
 class AdditionalInitializer
 class Pattern
-class WildcardPattern
 class IdentifierPattern
 class TypeAnnotation
 class Type
@@ -21,9 +20,6 @@ class Root
 class Local
 class Reference
 class Thrown
-class TuplePattern
-class TuplePatternElement
-class ExpressionPattern
 class FunctionDeclaration
 class Modifier
 class OverrideWord
@@ -83,6 +79,10 @@ class CatchClause
 class CatchPattern
 class WildCardCatchPattern
 class IdentifierCatchPattern
+class WildcardPattern
+class TuplePattern
+class TuplePatternElement
+class ExpressionPattern
 class MemberExpression
 class Subscript
 class BinaryExpression
@@ -421,22 +421,6 @@ class Parser {
         null
     }
 
-    function parseWildcardPattern(): WildcardPattern {
-        let start: Position$ = lexer.getPreviousPosition()
-
-        let successUnderscore1: bool = lexer.parsePunctuation(underscore)
-        if successUnderscore1
-            lexer.advance()
-        else
-            return(null)
-
-        let end: Position$ = lexer.getPosition()
-
-        let ret: WildcardPattern = new WildcardPattern(new Position(start), new Position(end))
-
-        ret
-    }
-
     function parseIdentifierPattern(): IdentifierPattern {
         let start: Position$ = lexer.getPreviousPosition()
 
@@ -677,85 +661,6 @@ class Parser {
         let end: Position$ = lexer.getPosition()
 
         let ret: Thrown = new Thrown(new Position(start), new Position(end))
-
-        ret
-    }
-
-    function parseTuplePattern(): TuplePattern {
-        let start: Position$ = lexer.getPreviousPosition()
-
-        let successLeftParen1: bool = lexer.parsePunctuation(leftParen)
-        if successLeftParen1
-            lexer.advance()
-        else
-            return(null)
-
-        let elements: TuplePatternElement[] = parseTuplePatternElementList()
-
-        let successRightParen3: bool = lexer.parsePunctuation(rightParen)
-        if successRightParen3
-            lexer.advance()
-        else
-            return(null)
-
-        let end: Position$ = lexer.getPosition()
-
-        let ret: TuplePattern = new TuplePattern(elements, new Position(start), new Position(end))
-        if elements != null {
-            for item: TuplePatternElement in elements
-                item.parent = ret
-        }
-
-        ret
-    }
-
-    function parseTuplePatternElementList(): TuplePatternElement[] {
-        mutable ret: TuplePatternElement[]$ = null
-        while true {
-
-            let node: TuplePatternElement = parseTuplePatternElement()
-            if node == null
-                break
-
-            if ret == null
-                ret = new TuplePatternElement[]()
-
-            ret.push(node)
-        }
-
-        return(ret)
-    }
-
-    function parseTuplePatternElement(): TuplePatternElement {
-        let start: Position$ = lexer.getPreviousPosition()
-
-        let pattern: Pattern = parsePattern()
-        if pattern == null
-            return(null)
-
-        let successComma2: bool = lexer.parsePunctuation(comma)
-        if successComma2
-            lexer.advance()
-
-        let end: Position$ = lexer.getPosition()
-
-        let ret: TuplePatternElement = new TuplePatternElement(pattern, new Position(start), new Position(end))
-        pattern.parent = ret
-
-        ret
-    }
-
-    function parseExpressionPattern(): ExpressionPattern {
-        let start: Position$ = lexer.getPreviousPosition()
-
-        let expression: Expression = parseExpression()
-        if expression == null
-            return(null)
-
-        let end: Position$ = lexer.getPosition()
-
-        let ret: ExpressionPattern = new ExpressionPattern(expression, new Position(start), new Position(end))
-        expression.parent = ret
 
         ret
     }
@@ -2385,6 +2290,101 @@ class Parser {
         ret
     }
 
+    function parseWildcardPattern(): WildcardPattern {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let successUnderscore1: bool = lexer.parsePunctuation(underscore)
+        if successUnderscore1
+            lexer.advance()
+        else
+            return(null)
+
+        let end: Position$ = lexer.getPosition()
+
+        let ret: WildcardPattern = new WildcardPattern(new Position(start), new Position(end))
+
+        ret
+    }
+
+    function parseTuplePattern(): TuplePattern {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let successLeftParen1: bool = lexer.parsePunctuation(leftParen)
+        if successLeftParen1
+            lexer.advance()
+        else
+            return(null)
+
+        let elements: TuplePatternElement[] = parseTuplePatternElementList()
+
+        let successRightParen3: bool = lexer.parsePunctuation(rightParen)
+        if successRightParen3
+            lexer.advance()
+        else
+            return(null)
+
+        let end: Position$ = lexer.getPosition()
+
+        let ret: TuplePattern = new TuplePattern(elements, new Position(start), new Position(end))
+        if elements != null {
+            for item: TuplePatternElement in elements
+                item.parent = ret
+        }
+
+        ret
+    }
+
+    function parseTuplePatternElementList(): TuplePatternElement[] {
+        mutable ret: TuplePatternElement[]$ = null
+        while true {
+
+            let node: TuplePatternElement = parseTuplePatternElement()
+            if node == null
+                break
+
+            if ret == null
+                ret = new TuplePatternElement[]()
+
+            ret.push(node)
+        }
+
+        return(ret)
+    }
+
+    function parseTuplePatternElement(): TuplePatternElement {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let pattern: Pattern = parsePattern()
+        if pattern == null
+            return(null)
+
+        let successComma2: bool = lexer.parsePunctuation(comma)
+        if successComma2
+            lexer.advance()
+
+        let end: Position$ = lexer.getPosition()
+
+        let ret: TuplePatternElement = new TuplePatternElement(pattern, new Position(start), new Position(end))
+        pattern.parent = ret
+
+        ret
+    }
+
+    function parseExpressionPattern(): ExpressionPattern {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let expression: Expression = parseExpression()
+        if expression == null
+            return(null)
+
+        let end: Position$ = lexer.getPosition()
+
+        let ret: ExpressionPattern = new ExpressionPattern(expression, new Position(start), new Position(end))
+        expression.parent = ret
+
+        ret
+    }
+
     function parseMemberExpression(): MemberExpression {
         let start: Position$ = lexer.getPreviousPosition()
 
@@ -2762,9 +2762,6 @@ class Visitor {
     function closeAdditionalInitializer(additionalInitializer: AdditionalInitializer) {
     }
 
-    function visitWildcardPattern(wildcardPattern: WildcardPattern) {
-    }
-
     function openIdentifierPattern(identifierPattern: IdentifierPattern): bool {
         true
     }
@@ -2806,27 +2803,6 @@ class Visitor {
     }
 
     function visitThrown(thrown: Thrown) {
-    }
-
-    function openTuplePattern(tuplePattern: TuplePattern): bool {
-        true
-    }
-
-    function closeTuplePattern(tuplePattern: TuplePattern) {
-    }
-
-    function openTuplePatternElement(tuplePatternElement: TuplePatternElement): bool {
-        true
-    }
-
-    function closeTuplePatternElement(tuplePatternElement: TuplePatternElement) {
-    }
-
-    function openExpressionPattern(expressionPattern: ExpressionPattern): bool {
-        true
-    }
-
-    function closeExpressionPattern(expressionPattern: ExpressionPattern) {
     }
 
     function openFunctionDeclaration(functionDeclaration: FunctionDeclaration): bool {
@@ -3150,6 +3126,30 @@ class Visitor {
     function closeIdentifierCatchPattern(identifierCatchPattern: IdentifierCatchPattern) {
     }
 
+    function visitWildcardPattern(wildcardPattern: WildcardPattern) {
+    }
+
+    function openTuplePattern(tuplePattern: TuplePattern): bool {
+        true
+    }
+
+    function closeTuplePattern(tuplePattern: TuplePattern) {
+    }
+
+    function openTuplePatternElement(tuplePatternElement: TuplePatternElement): bool {
+        true
+    }
+
+    function closeTuplePatternElement(tuplePatternElement: TuplePatternElement) {
+    }
+
+    function openExpressionPattern(expressionPattern: ExpressionPattern): bool {
+        true
+    }
+
+    function closeExpressionPattern(expressionPattern: ExpressionPattern) {
+    }
+
     function visitMemberExpression(memberExpression: MemberExpression) {
     }
 
@@ -3379,19 +3379,6 @@ class Pattern extends SyntaxNode {
 
 }
 
-class WildcardPattern extends Pattern {
-
-    constructor(start: Position, end: Position) {
-        this.start = start
-        this.end = end
-    }
-
-    override function accept(mutable visitor: Visitor) {
-        visitor.visitWildcardPattern(this)
-    }
-
-}
-
 class IdentifierPattern extends Pattern {
 
     constructor(identifier: string, annotationForType: TypeAnnotation, start: Position, end: Position) {
@@ -3558,63 +3545,6 @@ class Thrown extends LifeTime {
         visitor.visitThrown(this)
     }
 
-}
-
-class TuplePattern extends Pattern {
-
-    constructor(elements: TuplePatternElement[], start: Position, end: Position) {
-        this.start = start
-        this.end = end
-        this.elements = elements
-    }
-
-    override function accept(mutable visitor: Visitor) {
-        if !visitor.openTuplePattern(this)
-            return
-        if elements != null {
-            for node: TuplePatternElement in elements
-                node.accept(visitor)
-        }
-        visitor.closeTuplePattern(this)
-    }
-
-    let elements: TuplePatternElement[]
-}
-
-class TuplePatternElement extends SyntaxNode {
-
-    constructor(pattern: Pattern, start: Position, end: Position) {
-        this.start = start
-        this.end = end
-        this.pattern = pattern
-    }
-
-    function accept(mutable visitor: Visitor) {
-        if !visitor.openTuplePatternElement(this)
-            return
-        pattern.accept(visitor)
-        visitor.closeTuplePatternElement(this)
-    }
-
-    let pattern: Pattern
-}
-
-class ExpressionPattern extends Pattern {
-
-    constructor(expression: Expression, start: Position, end: Position) {
-        this.start = start
-        this.end = end
-        this.expression = expression
-    }
-
-    override function accept(mutable visitor: Visitor) {
-        if !visitor.openExpressionPattern(this)
-            return
-        expression.accept(visitor)
-        visitor.closeExpressionPattern(this)
-    }
-
-    let expression: Expression
 }
 
 class FunctionDeclaration extends Declaration {
@@ -4701,6 +4631,76 @@ class IdentifierCatchPattern extends CatchPattern {
 
     let name: string
     let member: MemberExpression
+}
+
+class WildcardPattern extends Pattern {
+
+    constructor(start: Position, end: Position) {
+        this.start = start
+        this.end = end
+    }
+
+    override function accept(mutable visitor: Visitor) {
+        visitor.visitWildcardPattern(this)
+    }
+
+}
+
+class TuplePattern extends Pattern {
+
+    constructor(elements: TuplePatternElement[], start: Position, end: Position) {
+        this.start = start
+        this.end = end
+        this.elements = elements
+    }
+
+    override function accept(mutable visitor: Visitor) {
+        if !visitor.openTuplePattern(this)
+            return
+        if elements != null {
+            for node: TuplePatternElement in elements
+                node.accept(visitor)
+        }
+        visitor.closeTuplePattern(this)
+    }
+
+    let elements: TuplePatternElement[]
+}
+
+class TuplePatternElement extends SyntaxNode {
+
+    constructor(pattern: Pattern, start: Position, end: Position) {
+        this.start = start
+        this.end = end
+        this.pattern = pattern
+    }
+
+    function accept(mutable visitor: Visitor) {
+        if !visitor.openTuplePatternElement(this)
+            return
+        pattern.accept(visitor)
+        visitor.closeTuplePatternElement(this)
+    }
+
+    let pattern: Pattern
+}
+
+class ExpressionPattern extends Pattern {
+
+    constructor(expression: Expression, start: Position, end: Position) {
+        this.start = start
+        this.end = end
+        this.expression = expression
+    }
+
+    override function accept(mutable visitor: Visitor) {
+        if !visitor.openExpressionPattern(this)
+            return
+        expression.accept(visitor)
+        visitor.closeExpressionPattern(this)
+    }
+
+    let expression: Expression
 }
 
 class MemberExpression extends Postfix {

@@ -26,8 +26,6 @@ class AdditionalInitializer;
 
 class Pattern;
 
-class WildcardPattern;
-
 class IdentifierPattern;
 
 class TypeAnnotation;
@@ -49,12 +47,6 @@ class Local;
 class Reference;
 
 class Thrown;
-
-class TuplePattern;
-
-class TuplePatternElement;
-
-class ExpressionPattern;
 
 class FunctionDeclaration;
 
@@ -174,6 +166,14 @@ class WildCardCatchPattern;
 
 class IdentifierCatchPattern;
 
+class WildcardPattern;
+
+class TuplePattern;
+
+class TuplePatternElement;
+
+class ExpressionPattern;
+
 class MemberExpression;
 
 class Subscript;
@@ -204,7 +204,6 @@ public:
     virtual _Array<AdditionalInitializer>* parseAdditionalInitializerList(_Page* _rp);
     virtual AdditionalInitializer* parseAdditionalInitializer(_Page* _rp);
     virtual Pattern* parsePattern(_Page* _rp);
-    virtual WildcardPattern* parseWildcardPattern(_Page* _rp);
     virtual IdentifierPattern* parseIdentifierPattern(_Page* _rp);
     virtual TypeAnnotation* parseTypeAnnotation(_Page* _rp);
     virtual Type* parseType(_Page* _rp);
@@ -217,10 +216,6 @@ public:
     virtual Local* parseLocal(_Page* _rp);
     virtual Reference* parseReference(_Page* _rp);
     virtual Thrown* parseThrown(_Page* _rp);
-    virtual TuplePattern* parseTuplePattern(_Page* _rp);
-    virtual _Array<TuplePatternElement>* parseTuplePatternElementList(_Page* _rp);
-    virtual TuplePatternElement* parseTuplePatternElement(_Page* _rp);
-    virtual ExpressionPattern* parseExpressionPattern(_Page* _rp);
     virtual FunctionDeclaration* parseFunctionDeclaration(_Page* _rp);
     virtual _Array<Modifier>* parseModifierList(_Page* _rp);
     virtual Modifier* parseModifier(_Page* _rp);
@@ -292,6 +287,11 @@ public:
     virtual CatchPattern* parseCatchPattern(_Page* _rp);
     virtual WildCardCatchPattern* parseWildCardCatchPattern(_Page* _rp);
     virtual IdentifierCatchPattern* parseIdentifierCatchPattern(_Page* _rp);
+    virtual WildcardPattern* parseWildcardPattern(_Page* _rp);
+    virtual TuplePattern* parseTuplePattern(_Page* _rp);
+    virtual _Array<TuplePatternElement>* parseTuplePatternElementList(_Page* _rp);
+    virtual TuplePatternElement* parseTuplePatternElement(_Page* _rp);
+    virtual ExpressionPattern* parseExpressionPattern(_Page* _rp);
     virtual MemberExpression* parseMemberExpression(_Page* _rp);
     virtual Subscript* parseSubscript(_Page* _rp);
     virtual _Array<BinaryExpression>* parseBinaryExpressionList(_Page* _rp);
@@ -369,7 +369,6 @@ public:
     virtual void closeInitializer(Initializer* initializer);
     virtual bool openAdditionalInitializer(AdditionalInitializer* additionalInitializer);
     virtual void closeAdditionalInitializer(AdditionalInitializer* additionalInitializer);
-    virtual void visitWildcardPattern(WildcardPattern* wildcardPattern);
     virtual bool openIdentifierPattern(IdentifierPattern* identifierPattern);
     virtual void closeIdentifierPattern(IdentifierPattern* identifierPattern);
     virtual bool openTypeAnnotation(TypeAnnotation* typeAnnotation);
@@ -383,12 +382,6 @@ public:
     virtual void visitLocal(Local* local);
     virtual void visitReference(Reference* reference);
     virtual void visitThrown(Thrown* thrown);
-    virtual bool openTuplePattern(TuplePattern* tuplePattern);
-    virtual void closeTuplePattern(TuplePattern* tuplePattern);
-    virtual bool openTuplePatternElement(TuplePatternElement* tuplePatternElement);
-    virtual void closeTuplePatternElement(TuplePatternElement* tuplePatternElement);
-    virtual bool openExpressionPattern(ExpressionPattern* expressionPattern);
-    virtual void closeExpressionPattern(ExpressionPattern* expressionPattern);
     virtual bool openFunctionDeclaration(FunctionDeclaration* functionDeclaration);
     virtual void closeFunctionDeclaration(FunctionDeclaration* functionDeclaration);
     virtual void visitOverrideWord(OverrideWord* overrideWord);
@@ -482,6 +475,13 @@ public:
     virtual void closeWildCardCatchPattern(WildCardCatchPattern* wildCardCatchPattern);
     virtual bool openIdentifierCatchPattern(IdentifierCatchPattern* identifierCatchPattern);
     virtual void closeIdentifierCatchPattern(IdentifierCatchPattern* identifierCatchPattern);
+    virtual void visitWildcardPattern(WildcardPattern* wildcardPattern);
+    virtual bool openTuplePattern(TuplePattern* tuplePattern);
+    virtual void closeTuplePattern(TuplePattern* tuplePattern);
+    virtual bool openTuplePatternElement(TuplePatternElement* tuplePatternElement);
+    virtual void closeTuplePatternElement(TuplePatternElement* tuplePatternElement);
+    virtual bool openExpressionPattern(ExpressionPattern* expressionPattern);
+    virtual void closeExpressionPattern(ExpressionPattern* expressionPattern);
     virtual void visitMemberExpression(MemberExpression* memberExpression);
     virtual bool openSubscript(Subscript* subscript);
     virtual void closeSubscript(Subscript* subscript);
@@ -523,8 +523,8 @@ public:
     virtual bool _isInitializer();
     virtual bool _isAdditionalInitializer();
     virtual bool _isPattern();
-    virtual bool _isWildcardPattern();
     virtual bool _isIdentifierPattern();
+    virtual bool _isWildcardPattern();
     virtual bool _isTuplePattern();
     virtual bool _isExpressionPattern();
     virtual bool _isTypeAnnotation();
@@ -537,7 +537,6 @@ public:
     virtual bool _isLocal();
     virtual bool _isReference();
     virtual bool _isThrown();
-    virtual bool _isTuplePatternElement();
     virtual bool _isModifier();
     virtual bool _isOverrideWord();
     virtual bool _isStaticWord();
@@ -592,6 +591,7 @@ public:
     virtual bool _isCatchPattern();
     virtual bool _isWildCardCatchPattern();
     virtual bool _isIdentifierCatchPattern();
+    virtual bool _isTuplePatternElement();
     virtual bool _isBinaryExpression();
     virtual bool _isBinaryOperation();
     virtual bool _isAssignment();
@@ -709,18 +709,10 @@ public:
     virtual void accept(Visitor* visitor);
 
     virtual bool _isPattern();
-    virtual bool _isWildcardPattern();
     virtual bool _isIdentifierPattern();
+    virtual bool _isWildcardPattern();
     virtual bool _isTuplePattern();
     virtual bool _isExpressionPattern();
-};
-
-class WildcardPattern : public Pattern {
-public:
-    WildcardPattern(Position* start, Position* end);
-    virtual void accept(Visitor* visitor);
-
-    virtual bool _isWildcardPattern();
 };
 
 class IdentifierPattern : public Pattern {
@@ -822,33 +814,6 @@ public:
     virtual void accept(Visitor* visitor);
 
     virtual bool _isThrown();
-};
-
-class TuplePattern : public Pattern {
-public:
-    TuplePattern(_Array<TuplePatternElement>* elements, Position* start, Position* end);
-    virtual void accept(Visitor* visitor);
-    _Array<TuplePatternElement>* elements;
-
-    virtual bool _isTuplePattern();
-};
-
-class TuplePatternElement : public SyntaxNode {
-public:
-    TuplePatternElement(Pattern* pattern, Position* start, Position* end);
-    virtual void accept(Visitor* visitor);
-    Pattern* pattern;
-
-    virtual bool _isTuplePatternElement();
-};
-
-class ExpressionPattern : public Pattern {
-public:
-    ExpressionPattern(Expression* expression, Position* start, Position* end);
-    virtual void accept(Visitor* visitor);
-    Expression* expression;
-
-    virtual bool _isExpressionPattern();
 };
 
 class FunctionDeclaration : public Declaration {
@@ -1421,6 +1386,41 @@ public:
     MemberExpression* member;
 
     virtual bool _isIdentifierCatchPattern();
+};
+
+class WildcardPattern : public Pattern {
+public:
+    WildcardPattern(Position* start, Position* end);
+    virtual void accept(Visitor* visitor);
+
+    virtual bool _isWildcardPattern();
+};
+
+class TuplePattern : public Pattern {
+public:
+    TuplePattern(_Array<TuplePatternElement>* elements, Position* start, Position* end);
+    virtual void accept(Visitor* visitor);
+    _Array<TuplePatternElement>* elements;
+
+    virtual bool _isTuplePattern();
+};
+
+class TuplePatternElement : public SyntaxNode {
+public:
+    TuplePatternElement(Pattern* pattern, Position* start, Position* end);
+    virtual void accept(Visitor* visitor);
+    Pattern* pattern;
+
+    virtual bool _isTuplePatternElement();
+};
+
+class ExpressionPattern : public Pattern {
+public:
+    ExpressionPattern(Expression* expression, Position* start, Position* end);
+    virtual void accept(Visitor* visitor);
+    Expression* expression;
+
+    virtual bool _isExpressionPattern();
 };
 
 class MemberExpression : public Postfix {

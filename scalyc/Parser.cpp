@@ -291,19 +291,6 @@ Pattern* Parser::parsePattern(_Page* _rp) {
     return nullptr;
 }
 
-WildcardPattern* Parser::parseWildcardPattern(_Page* _rp) {
-    _Region _region; _Page* _p = _region.get();
-    Position* start = lexer->getPreviousPosition(_p);
-    bool successUnderscore1 = lexer->parsePunctuation(underscore);
-    if (successUnderscore1)
-        lexer->advance();
-    else
-        return nullptr;
-    Position* end = lexer->getPosition(_p);
-    WildcardPattern* ret = new(_rp) WildcardPattern(new(_rp) Position(start), new(_rp) Position(end));
-    return ret;
-}
-
 IdentifierPattern* Parser::parseIdentifierPattern(_Page* _rp) {
     _Region _region; _Page* _p = _region.get();
     Position* start = lexer->getPreviousPosition(_p);
@@ -505,74 +492,6 @@ Thrown* Parser::parseThrown(_Page* _rp) {
         return nullptr;
     Position* end = lexer->getPosition(_p);
     Thrown* ret = new(_rp) Thrown(new(_rp) Position(start), new(_rp) Position(end));
-    return ret;
-}
-
-TuplePattern* Parser::parseTuplePattern(_Page* _rp) {
-    _Region _region; _Page* _p = _region.get();
-    Position* start = lexer->getPreviousPosition(_p);
-    bool successLeftParen1 = lexer->parsePunctuation(leftParen);
-    if (successLeftParen1)
-        lexer->advance();
-    else
-        return nullptr;
-    _Array<TuplePatternElement>* elements = parseTuplePatternElementList(_rp);
-    bool successRightParen3 = lexer->parsePunctuation(rightParen);
-    if (successRightParen3)
-        lexer->advance();
-    else
-        return nullptr;
-    Position* end = lexer->getPosition(_p);
-    TuplePattern* ret = new(_rp) TuplePattern(elements, new(_rp) Position(start), new(_rp) Position(end));
-    if (elements != nullptr) {
-        TuplePatternElement* item = nullptr;
-        size_t _elements_length = elements->length();
-        for (size_t _i = 0; _i < _elements_length; _i++) {
-            item = *(*elements)[_i];
-            item->parent = ret;
-        }
-    }
-    return ret;
-}
-
-_Array<TuplePatternElement>* Parser::parseTuplePatternElementList(_Page* _rp) {
-    _Region _region; _Page* _p = _region.get();
-    _Array<TuplePatternElement>* ret = nullptr;
-    while (true) {
-        TuplePatternElement* node = parseTuplePatternElement(_rp);
-        if (node == nullptr)
-            break;
-        if (ret == nullptr)
-            ret = new(_p) _Array<TuplePatternElement>();
-        ret->push(node);
-    }
-    return ret ? new(_rp) _Array<TuplePatternElement>(ret) : nullptr;
-}
-
-TuplePatternElement* Parser::parseTuplePatternElement(_Page* _rp) {
-    _Region _region; _Page* _p = _region.get();
-    Position* start = lexer->getPreviousPosition(_p);
-    Pattern* pattern = parsePattern(_rp);
-    if (pattern == nullptr)
-        return nullptr;
-    bool successComma2 = lexer->parsePunctuation(comma);
-    if (successComma2)
-        lexer->advance();
-    Position* end = lexer->getPosition(_p);
-    TuplePatternElement* ret = new(_rp) TuplePatternElement(pattern, new(_rp) Position(start), new(_rp) Position(end));
-    pattern->parent = ret;
-    return ret;
-}
-
-ExpressionPattern* Parser::parseExpressionPattern(_Page* _rp) {
-    _Region _region; _Page* _p = _region.get();
-    Position* start = lexer->getPreviousPosition(_p);
-    Expression* expression = parseExpression(_rp);
-    if (expression == nullptr)
-        return nullptr;
-    Position* end = lexer->getPosition(_p);
-    ExpressionPattern* ret = new(_rp) ExpressionPattern(expression, new(_rp) Position(start), new(_rp) Position(end));
-    expression->parent = ret;
     return ret;
 }
 
@@ -1968,6 +1887,87 @@ IdentifierCatchPattern* Parser::parseIdentifierCatchPattern(_Page* _rp) {
     return ret;
 }
 
+WildcardPattern* Parser::parseWildcardPattern(_Page* _rp) {
+    _Region _region; _Page* _p = _region.get();
+    Position* start = lexer->getPreviousPosition(_p);
+    bool successUnderscore1 = lexer->parsePunctuation(underscore);
+    if (successUnderscore1)
+        lexer->advance();
+    else
+        return nullptr;
+    Position* end = lexer->getPosition(_p);
+    WildcardPattern* ret = new(_rp) WildcardPattern(new(_rp) Position(start), new(_rp) Position(end));
+    return ret;
+}
+
+TuplePattern* Parser::parseTuplePattern(_Page* _rp) {
+    _Region _region; _Page* _p = _region.get();
+    Position* start = lexer->getPreviousPosition(_p);
+    bool successLeftParen1 = lexer->parsePunctuation(leftParen);
+    if (successLeftParen1)
+        lexer->advance();
+    else
+        return nullptr;
+    _Array<TuplePatternElement>* elements = parseTuplePatternElementList(_rp);
+    bool successRightParen3 = lexer->parsePunctuation(rightParen);
+    if (successRightParen3)
+        lexer->advance();
+    else
+        return nullptr;
+    Position* end = lexer->getPosition(_p);
+    TuplePattern* ret = new(_rp) TuplePattern(elements, new(_rp) Position(start), new(_rp) Position(end));
+    if (elements != nullptr) {
+        TuplePatternElement* item = nullptr;
+        size_t _elements_length = elements->length();
+        for (size_t _i = 0; _i < _elements_length; _i++) {
+            item = *(*elements)[_i];
+            item->parent = ret;
+        }
+    }
+    return ret;
+}
+
+_Array<TuplePatternElement>* Parser::parseTuplePatternElementList(_Page* _rp) {
+    _Region _region; _Page* _p = _region.get();
+    _Array<TuplePatternElement>* ret = nullptr;
+    while (true) {
+        TuplePatternElement* node = parseTuplePatternElement(_rp);
+        if (node == nullptr)
+            break;
+        if (ret == nullptr)
+            ret = new(_p) _Array<TuplePatternElement>();
+        ret->push(node);
+    }
+    return ret ? new(_rp) _Array<TuplePatternElement>(ret) : nullptr;
+}
+
+TuplePatternElement* Parser::parseTuplePatternElement(_Page* _rp) {
+    _Region _region; _Page* _p = _region.get();
+    Position* start = lexer->getPreviousPosition(_p);
+    Pattern* pattern = parsePattern(_rp);
+    if (pattern == nullptr)
+        return nullptr;
+    bool successComma2 = lexer->parsePunctuation(comma);
+    if (successComma2)
+        lexer->advance();
+    Position* end = lexer->getPosition(_p);
+    TuplePatternElement* ret = new(_rp) TuplePatternElement(pattern, new(_rp) Position(start), new(_rp) Position(end));
+    pattern->parent = ret;
+    return ret;
+}
+
+ExpressionPattern* Parser::parseExpressionPattern(_Page* _rp) {
+    _Region _region; _Page* _p = _region.get();
+    Position* start = lexer->getPreviousPosition(_p);
+    Expression* expression = parseExpression(_rp);
+    if (expression == nullptr)
+        return nullptr;
+    Position* end = lexer->getPosition(_p);
+    ExpressionPattern* ret = new(_rp) ExpressionPattern(expression, new(_rp) Position(start), new(_rp) Position(end));
+    expression->parent = ret;
+    return ret;
+}
+
 MemberExpression* Parser::parseMemberExpression(_Page* _rp) {
     _Region _region; _Page* _p = _region.get();
     Position* start = lexer->getPreviousPosition(_p);
@@ -2239,9 +2239,6 @@ bool Visitor::openAdditionalInitializer(AdditionalInitializer* additionalInitial
 void Visitor::closeAdditionalInitializer(AdditionalInitializer* additionalInitializer) {
 }
 
-void Visitor::visitWildcardPattern(WildcardPattern* wildcardPattern) {
-}
-
 bool Visitor::openIdentifierPattern(IdentifierPattern* identifierPattern) {
     return true;
 }
@@ -2283,27 +2280,6 @@ void Visitor::visitReference(Reference* reference) {
 }
 
 void Visitor::visitThrown(Thrown* thrown) {
-}
-
-bool Visitor::openTuplePattern(TuplePattern* tuplePattern) {
-    return true;
-}
-
-void Visitor::closeTuplePattern(TuplePattern* tuplePattern) {
-}
-
-bool Visitor::openTuplePatternElement(TuplePatternElement* tuplePatternElement) {
-    return true;
-}
-
-void Visitor::closeTuplePatternElement(TuplePatternElement* tuplePatternElement) {
-}
-
-bool Visitor::openExpressionPattern(ExpressionPattern* expressionPattern) {
-    return true;
-}
-
-void Visitor::closeExpressionPattern(ExpressionPattern* expressionPattern) {
 }
 
 bool Visitor::openFunctionDeclaration(FunctionDeclaration* functionDeclaration) {
@@ -2627,6 +2603,30 @@ bool Visitor::openIdentifierCatchPattern(IdentifierCatchPattern* identifierCatch
 void Visitor::closeIdentifierCatchPattern(IdentifierCatchPattern* identifierCatchPattern) {
 }
 
+void Visitor::visitWildcardPattern(WildcardPattern* wildcardPattern) {
+}
+
+bool Visitor::openTuplePattern(TuplePattern* tuplePattern) {
+    return true;
+}
+
+void Visitor::closeTuplePattern(TuplePattern* tuplePattern) {
+}
+
+bool Visitor::openTuplePatternElement(TuplePatternElement* tuplePatternElement) {
+    return true;
+}
+
+void Visitor::closeTuplePatternElement(TuplePatternElement* tuplePatternElement) {
+}
+
+bool Visitor::openExpressionPattern(ExpressionPattern* expressionPattern) {
+    return true;
+}
+
+void Visitor::closeExpressionPattern(ExpressionPattern* expressionPattern) {
+}
+
 void Visitor::visitMemberExpression(MemberExpression* memberExpression) {
 }
 
@@ -2687,8 +2687,8 @@ bool SyntaxNode::_isIdentifierInitializer() { return (false); }
 bool SyntaxNode::_isInitializer() { return (false); }
 bool SyntaxNode::_isAdditionalInitializer() { return (false); }
 bool SyntaxNode::_isPattern() { return (false); }
-bool SyntaxNode::_isWildcardPattern() { return (false); }
 bool SyntaxNode::_isIdentifierPattern() { return (false); }
+bool SyntaxNode::_isWildcardPattern() { return (false); }
 bool SyntaxNode::_isTuplePattern() { return (false); }
 bool SyntaxNode::_isExpressionPattern() { return (false); }
 bool SyntaxNode::_isTypeAnnotation() { return (false); }
@@ -2701,7 +2701,6 @@ bool SyntaxNode::_isRoot() { return (false); }
 bool SyntaxNode::_isLocal() { return (false); }
 bool SyntaxNode::_isReference() { return (false); }
 bool SyntaxNode::_isThrown() { return (false); }
-bool SyntaxNode::_isTuplePatternElement() { return (false); }
 bool SyntaxNode::_isModifier() { return (false); }
 bool SyntaxNode::_isOverrideWord() { return (false); }
 bool SyntaxNode::_isStaticWord() { return (false); }
@@ -2756,6 +2755,7 @@ bool SyntaxNode::_isCatchClause() { return (false); }
 bool SyntaxNode::_isCatchPattern() { return (false); }
 bool SyntaxNode::_isWildCardCatchPattern() { return (false); }
 bool SyntaxNode::_isIdentifierCatchPattern() { return (false); }
+bool SyntaxNode::_isTuplePatternElement() { return (false); }
 bool SyntaxNode::_isBinaryExpression() { return (false); }
 bool SyntaxNode::_isBinaryOperation() { return (false); }
 bool SyntaxNode::_isAssignment() { return (false); }
@@ -2943,21 +2943,10 @@ void Pattern::accept(Visitor* visitor) {
 
 bool Pattern::_isPattern() { return (true); }
 
-bool Pattern::_isWildcardPattern() { return (false); }
 bool Pattern::_isIdentifierPattern() { return (false); }
+bool Pattern::_isWildcardPattern() { return (false); }
 bool Pattern::_isTuplePattern() { return (false); }
 bool Pattern::_isExpressionPattern() { return (false); }
-
-WildcardPattern::WildcardPattern(Position* start, Position* end) {
-    this->start = start;
-    this->end = end;
-}
-
-void WildcardPattern::accept(Visitor* visitor) {
-    visitor->visitWildcardPattern(this);
-}
-
-bool WildcardPattern::_isWildcardPattern() { return (true); }
 
 IdentifierPattern::IdentifierPattern(string* identifier, TypeAnnotation* annotationForType, Position* start, Position* end) {
     this->start = start;
@@ -3107,58 +3096,6 @@ void Thrown::accept(Visitor* visitor) {
 }
 
 bool Thrown::_isThrown() { return (true); }
-
-TuplePattern::TuplePattern(_Array<TuplePatternElement>* elements, Position* start, Position* end) {
-    this->start = start;
-    this->end = end;
-    this->elements = elements;
-}
-
-void TuplePattern::accept(Visitor* visitor) {
-    if (!visitor->openTuplePattern(this))
-        return;
-    if (elements != nullptr) {
-        TuplePatternElement* node = nullptr;
-        size_t _elements_length = elements->length();
-        for (size_t _i = 0; _i < _elements_length; _i++) {
-            node = *(*elements)[_i];
-            node->accept(visitor);
-        }
-    }
-    visitor->closeTuplePattern(this);
-}
-
-bool TuplePattern::_isTuplePattern() { return (true); }
-
-TuplePatternElement::TuplePatternElement(Pattern* pattern, Position* start, Position* end) {
-    this->start = start;
-    this->end = end;
-    this->pattern = pattern;
-}
-
-void TuplePatternElement::accept(Visitor* visitor) {
-    if (!visitor->openTuplePatternElement(this))
-        return;
-    pattern->accept(visitor);
-    visitor->closeTuplePatternElement(this);
-}
-
-bool TuplePatternElement::_isTuplePatternElement() { return (true); }
-
-ExpressionPattern::ExpressionPattern(Expression* expression, Position* start, Position* end) {
-    this->start = start;
-    this->end = end;
-    this->expression = expression;
-}
-
-void ExpressionPattern::accept(Visitor* visitor) {
-    if (!visitor->openExpressionPattern(this))
-        return;
-    expression->accept(visitor);
-    visitor->closeExpressionPattern(this);
-}
-
-bool ExpressionPattern::_isExpressionPattern() { return (true); }
 
 FunctionDeclaration::FunctionDeclaration(_Array<Modifier>* modifiers, string* name, FunctionSignature* signature, Expression* body, Position* start, Position* end) {
     this->start = start;
@@ -4151,6 +4088,69 @@ void IdentifierCatchPattern::accept(Visitor* visitor) {
 }
 
 bool IdentifierCatchPattern::_isIdentifierCatchPattern() { return (true); }
+
+WildcardPattern::WildcardPattern(Position* start, Position* end) {
+    this->start = start;
+    this->end = end;
+}
+
+void WildcardPattern::accept(Visitor* visitor) {
+    visitor->visitWildcardPattern(this);
+}
+
+bool WildcardPattern::_isWildcardPattern() { return (true); }
+
+TuplePattern::TuplePattern(_Array<TuplePatternElement>* elements, Position* start, Position* end) {
+    this->start = start;
+    this->end = end;
+    this->elements = elements;
+}
+
+void TuplePattern::accept(Visitor* visitor) {
+    if (!visitor->openTuplePattern(this))
+        return;
+    if (elements != nullptr) {
+        TuplePatternElement* node = nullptr;
+        size_t _elements_length = elements->length();
+        for (size_t _i = 0; _i < _elements_length; _i++) {
+            node = *(*elements)[_i];
+            node->accept(visitor);
+        }
+    }
+    visitor->closeTuplePattern(this);
+}
+
+bool TuplePattern::_isTuplePattern() { return (true); }
+
+TuplePatternElement::TuplePatternElement(Pattern* pattern, Position* start, Position* end) {
+    this->start = start;
+    this->end = end;
+    this->pattern = pattern;
+}
+
+void TuplePatternElement::accept(Visitor* visitor) {
+    if (!visitor->openTuplePatternElement(this))
+        return;
+    pattern->accept(visitor);
+    visitor->closeTuplePatternElement(this);
+}
+
+bool TuplePatternElement::_isTuplePatternElement() { return (true); }
+
+ExpressionPattern::ExpressionPattern(Expression* expression, Position* start, Position* end) {
+    this->start = start;
+    this->end = end;
+    this->expression = expression;
+}
+
+void ExpressionPattern::accept(Visitor* visitor) {
+    if (!visitor->openExpressionPattern(this))
+        return;
+    expression->accept(visitor);
+    visitor->closeExpressionPattern(this);
+}
+
+bool ExpressionPattern::_isExpressionPattern() { return (true); }
 
 MemberExpression::MemberExpression(string* member, Position* start, Position* end) {
     this->start = start;
