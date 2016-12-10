@@ -191,7 +191,7 @@ class TypeCast;
 class Parser : public Object {
 public:
     Parser(string* theFileName, string* text);
-    virtual CompilationUnit* parseCompilationUnit(_Page* _rp);
+    virtual _Result<CompilationUnit, ParserError> parseCompilationUnit(_Page* _rp, _Page* _ep);
     virtual _Array<Statement>* parseStatementList(_Page* _rp);
     virtual Statement* parseStatement(_Page* _rp);
     virtual Declaration* parseDeclaration(_Page* _rp);

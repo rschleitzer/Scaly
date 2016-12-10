@@ -5,3 +5,6 @@ enum OptionsError {
     case noFilesToCompile
 }
 
+enum ParserError {
+    case syntax(line: number, column: number)
+}

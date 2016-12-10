@@ -141,13 +141,14 @@ class Parser {
         ampersand = new string("&")
     }
 
-    function parseCompilationUnit(): CompilationUnit {
+    function parseCompilationUnit(): CompilationUnit throws ParserError {
         let start: Position$ = lexer.getPreviousPosition()
 
         let statements: Statement[] = parseStatementList()
         if statements != null {
             if !isAtEnd() {
-                return(null)
+                let errorPos: Position$ = lexer.getPosition()
+                throw syntax(errorPos.line, errorPos.column)
             }
         }
 

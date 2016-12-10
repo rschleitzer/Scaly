@@ -24,5 +24,20 @@ _OptionsError_unknownOption* OptionsError::get_unknownOption() {
     return (_OptionsError_unknownOption*)errorInfo;
 }
 
+long ParserError::_getErrorCode() {
+    return (long)errorCode;
+}
+
+void* ParserError::_getErrorInfo() {
+    return errorInfo;
+}
+
+_ParserError_syntax::_ParserError_syntax(size_t line, size_t column) 
+: line(line), column(column) { }
+
+_ParserError_syntax* ParserError::get_syntax() {
+    return (_ParserError_syntax*)errorInfo;
+}
+
 
 }

@@ -48,6 +48,9 @@ class Compiler {
     static function parseUnit(moduleName: string, text: string): CompilationUnit {
         mutable parser: Parser$ = new Parser(moduleName, text)
         let compilationUnit: CompilationUnit = parser.parseCompilationUnit()
+            catch ParserError.syntax(error: syntax) {
+                return(null)
+            }
         return(compilationUnit)
     }
 }

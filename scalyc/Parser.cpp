@@ -51,13 +51,15 @@ Parser::Parser(string* theFileName, string* text) {
     ampersand = new(_getPage()) string("&");
 }
 
-CompilationUnit* Parser::parseCompilationUnit(_Page* _rp) {
+_Result<CompilationUnit, ParserError> Parser::parseCompilationUnit(_Page* _rp, _Page* _ep) {
     _Region _region; _Page* _p = _region.get();
     Position* start = lexer->getPreviousPosition(_p);
     _Array<Statement>* statements = parseStatementList(_rp);
     if (statements != nullptr) {
         if (!isAtEnd()) {
-            return nullptr;
+            _Region _region; _Page* _p = _region.get();
+            Position* errorPos = lexer->getPosition(_p);
+            return _Result<CompilationUnit, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_syntax(errorPos->line, errorPos->column)));
         }
     }
     Position* end = lexer->getPosition(_p);

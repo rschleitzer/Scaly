@@ -48,5 +48,36 @@ private:
     void* errorInfo;
 };
 
+class ParserError;
+
+class _ParserError_syntax : public Object {
+public:
+    _ParserError_syntax(size_t line, size_t column);
+
+    size_t line;
+    size_t column;
+};
+enum _ParserErrorCode {
+    _ParserErrorCode_syntax = 1,
+};
+
+class ParserError : public Object {
+public:
+    ParserError(_ParserErrorCode errorCode)
+    : errorCode(errorCode), errorInfo(0) {}
+
+    ParserError(_ParserError_syntax* syntax)
+    : errorCode(_ParserErrorCode_syntax), errorInfo(syntax) {}
+
+    long _getErrorCode();
+    void* _getErrorInfo();
+
+    _ParserError_syntax* get_syntax();
+
+private:
+    _ParserErrorCode errorCode;
+    void* errorInfo;
+};
+
 }
 #endif // __scalyc__OptionsError__

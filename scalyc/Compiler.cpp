@@ -78,7 +78,16 @@ void Compiler::compileFiles(Options* options) {
 CompilationUnit* Compiler::parseUnit(_Page* _rp, string* moduleName, string* text) {
     _Region _region; _Page* _p = _region.get();
     Parser* parser = new(_p) Parser(moduleName, text);
-    CompilationUnit* compilationUnit = parser->parseCompilationUnit(_rp);
+    auto _compilationUnit_result = parser->parseCompilationUnit(_rp, _p);
+    CompilationUnit* compilationUnit = nullptr;
+    if (_compilationUnit_result.succeeded()) {
+        compilationUnit = _compilationUnit_result.getResult();
+    }
+    else if (_compilationUnit_result._getErrorCode() == _ParserErrorCode_syntax) {
+        {
+            return nullptr;
+        }
+    }
     return compilationUnit;
 }
 
