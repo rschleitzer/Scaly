@@ -5,7 +5,7 @@ class Declaration
 class ConstantDeclaration
 class MutableDeclaration
 class BindingInitializer
-class PatternInitializer
+class IdentifierInitializer
 class Initializer
 class AdditionalInitializer
 class Pattern
@@ -281,7 +281,7 @@ class Parser {
     function parseBindingInitializer(): BindingInitializer {
         let start: Position$ = lexer.getPreviousPosition()
 
-        let initializer: PatternInitializer = parsePatternInitializer()
+        let initializer: IdentifierInitializer = parseIdentifierInitializer()
         if initializer == null
             return(null)
 
@@ -299,16 +299,16 @@ class Parser {
         ret
     }
 
-    function parsePatternInitializerList(): PatternInitializer[] {
-        mutable ret: PatternInitializer[]$ = null
+    function parseIdentifierInitializerList(): IdentifierInitializer[] {
+        mutable ret: IdentifierInitializer[]$ = null
         while true {
 
-            let node: PatternInitializer = parsePatternInitializer()
+            let node: IdentifierInitializer = parseIdentifierInitializer()
             if node == null
                 break
 
             if ret == null
-                ret = new PatternInitializer[]()
+                ret = new IdentifierInitializer[]()
 
             ret.push(node)
         }
@@ -316,7 +316,7 @@ class Parser {
         return(ret)
     }
 
-    function parsePatternInitializer(): PatternInitializer {
+    function parseIdentifierInitializer(): IdentifierInitializer {
         let start: Position$ = lexer.getPreviousPosition()
 
         let pattern: IdentifierPattern = parseIdentifierPattern()
@@ -327,7 +327,7 @@ class Parser {
 
         let end: Position$ = lexer.getPosition()
 
-        let ret: PatternInitializer = new PatternInitializer(pattern, initializer, new Position(start), new Position(end))
+        let ret: IdentifierInitializer = new IdentifierInitializer(pattern, initializer, new Position(start), new Position(end))
         pattern.parent = ret
         if initializer != null
             initializer.parent = ret
@@ -382,7 +382,7 @@ class Parser {
         else
             return(null)
 
-        let pattern: PatternInitializer = parsePatternInitializer()
+        let pattern: IdentifierInitializer = parseIdentifierInitializer()
         if pattern == null
             return(null)
 
@@ -2767,11 +2767,11 @@ class Visitor {
     function closeBindingInitializer(bindingInitializer: BindingInitializer) {
     }
 
-    function openPatternInitializer(patternInitializer: PatternInitializer): bool {
+    function openIdentifierInitializer(identifierInitializer: IdentifierInitializer): bool {
         true
     }
 
-    function closePatternInitializer(patternInitializer: PatternInitializer) {
+    function closeIdentifierInitializer(identifierInitializer: IdentifierInitializer) {
     }
 
     function openInitializer(initializer: Initializer): bool {
@@ -3325,7 +3325,7 @@ class MutableDeclaration extends Declaration {
 
 class BindingInitializer extends SyntaxNode {
 
-    constructor(initializer: PatternInitializer, additionalInitializers: AdditionalInitializer[], start: Position, end: Position) {
+    constructor(initializer: IdentifierInitializer, additionalInitializers: AdditionalInitializer[], start: Position, end: Position) {
         this.start = start
         this.end = end
         this.initializer = initializer
@@ -3343,11 +3343,11 @@ class BindingInitializer extends SyntaxNode {
         visitor.closeBindingInitializer(this)
     }
 
-    let initializer: PatternInitializer
+    let initializer: IdentifierInitializer
     let additionalInitializers: AdditionalInitializer[]
 }
 
-class PatternInitializer extends SyntaxNode {
+class IdentifierInitializer extends SyntaxNode {
 
     constructor(pattern: IdentifierPattern, initializer: Initializer, start: Position, end: Position) {
         this.start = start
@@ -3357,12 +3357,12 @@ class PatternInitializer extends SyntaxNode {
     }
 
     function accept(mutable visitor: Visitor) {
-        if !visitor.openPatternInitializer(this)
+        if !visitor.openIdentifierInitializer(this)
             return
         pattern.accept(visitor)
         if initializer != null
             initializer.accept(visitor)
-        visitor.closePatternInitializer(this)
+        visitor.closeIdentifierInitializer(this)
     }
 
     let pattern: IdentifierPattern
@@ -3389,7 +3389,7 @@ class Initializer extends SyntaxNode {
 
 class AdditionalInitializer extends SyntaxNode {
 
-    constructor(pattern: PatternInitializer, start: Position, end: Position) {
+    constructor(pattern: IdentifierInitializer, start: Position, end: Position) {
         this.start = start
         this.end = end
         this.pattern = pattern
@@ -3402,7 +3402,7 @@ class AdditionalInitializer extends SyntaxNode {
         visitor.closeAdditionalInitializer(this)
     }
 
-    let pattern: PatternInitializer
+    let pattern: IdentifierInitializer
 }
 
 class Pattern extends SyntaxNode {

@@ -282,8 +282,8 @@ class HeaderVisitor extends CppVisitor {
         false
     }
 
-    function openPatternInitializer(patternInitializer: PatternInitializer): bool {
-        if patternInitializer.parent is AdditionalInitializer
+    function openIdentifierInitializer(identifierInitializer: IdentifierInitializer): bool {
+        if identifierInitializer.parent is AdditionalInitializer
             headerFile.append("; ")
 
         true

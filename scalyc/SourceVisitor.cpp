@@ -228,9 +228,9 @@ bool SourceVisitor::localAllocations(CodeBlock* codeBlock) {
     return false;
 }
 
-FunctionCall* SourceVisitor::getFunctionCall(PatternInitializer* patternInitializer) {
-    if (patternInitializer->initializer != nullptr) {
-        Expression* expression = patternInitializer->initializer->expression;
+FunctionCall* SourceVisitor::getFunctionCall(IdentifierInitializer* identifierInitializer) {
+    if (identifierInitializer->initializer != nullptr) {
+        Expression* expression = identifierInitializer->initializer->expression;
         if (expression->_isSimpleExpression()) {
             PostfixExpression* postfixExpression = ((SimpleExpression*)expression)->prefixExpression->expression;
             if (postfixExpression->primaryExpression->_isIdentifierExpression()) {
@@ -252,8 +252,8 @@ FunctionCall* SourceVisitor::getFunctionCall(PatternInitializer* patternInitiali
     return nullptr;
 }
 
-bool SourceVisitor::isCatchingFunctionCall(PatternInitializer* patternInitializer) {
-    if (catchesError(getFunctionCall(patternInitializer)))
+bool SourceVisitor::isCatchingFunctionCall(IdentifierInitializer* identifierInitializer) {
+    if (catchesError(getFunctionCall(identifierInitializer)))
         return true;
     return false;
 }
@@ -1411,10 +1411,10 @@ BindingInitializer* SourceVisitor::getBindingInitializer(FunctionCall* functionC
         PostfixExpression* postfixExpression = (PostfixExpression*)(functionCall->parent);
         if (postfixExpression->parent->parent->parent->_isInitializer()) {
             Initializer* initializer = (Initializer*)(postfixExpression->parent->parent->parent);
-            if (initializer->parent->_isPatternInitializer()) {
-                PatternInitializer* patternInitializer = (PatternInitializer*)(initializer->parent);
-                if (patternInitializer->parent->_isBindingInitializer()) {
-                    return (BindingInitializer*)(patternInitializer->parent);
+            if (initializer->parent->_isIdentifierInitializer()) {
+                IdentifierInitializer* identifierInitializer = (IdentifierInitializer*)(initializer->parent);
+                if (identifierInitializer->parent->_isBindingInitializer()) {
+                    return (BindingInitializer*)(identifierInitializer->parent);
                 }
             }
         }
@@ -1688,9 +1688,9 @@ string* SourceVisitor::getPage(_Page* _rp, SyntaxNode* node) {
             return new(_rp) string("_ep");
         if (node->_isCatchClause())
             return nullptr;
-        if (node->_isPatternInitializer()) {
-            PatternInitializer* patternInitializer = (PatternInitializer*)node;
-            IdentifierPattern* identifierPattern = patternInitializer->pattern;
+        if (node->_isIdentifierInitializer()) {
+            IdentifierInitializer* identifierInitializer = (IdentifierInitializer*)node;
+            IdentifierPattern* identifierPattern = identifierInitializer->pattern;
             if (identifierPattern->annotationForType != nullptr) {
                 if (!isClass(identifierPattern->annotationForType->annotationForType->name))
                     return nullptr;
@@ -1825,9 +1825,9 @@ void SourceVisitor::closeCaseItem(CaseItem* caseItem) {
 }
 
 bool SourceVisitor::openIdentifierPattern(IdentifierPattern* identifierPattern) {
-    if (identifierPattern->parent->_isPatternInitializer()) {
-        PatternInitializer* patternInitializer = (PatternInitializer*)(identifierPattern->parent);
-        if (isCatchingPatternInitializer(patternInitializer)) {
+    if (identifierPattern->parent->_isIdentifierInitializer()) {
+        IdentifierInitializer* identifierInitializer = (IdentifierInitializer*)(identifierPattern->parent);
+        if (isCatchingIdentifierInitializer(identifierInitializer)) {
             sourceFile->append("auto _");
             sourceFile->append(identifierPattern->identifier);
             sourceFile->append("_result");
@@ -1842,10 +1842,10 @@ bool SourceVisitor::openIdentifierPattern(IdentifierPattern* identifierPattern) 
     return false;
 }
 
-bool SourceVisitor::isCatchingPatternInitializer(PatternInitializer* patternInitializer) {
-    if (patternInitializer->initializer != nullptr) {
-        if (patternInitializer->initializer->expression->_isSimpleExpression()) {
-            SimpleExpression* simpleExpression = (SimpleExpression*)(patternInitializer->initializer->expression);
+bool SourceVisitor::isCatchingIdentifierInitializer(IdentifierInitializer* identifierInitializer) {
+    if (identifierInitializer->initializer != nullptr) {
+        if (identifierInitializer->initializer->expression->_isSimpleExpression()) {
+            SimpleExpression* simpleExpression = (SimpleExpression*)(identifierInitializer->initializer->expression);
             PostfixExpression* postfixExpression = simpleExpression->prefixExpression->expression;
             if (postfixExpression->postfixes != nullptr) {
                 FunctionCall* functionCall = nullptr;

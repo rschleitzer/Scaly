@@ -18,7 +18,7 @@ class MutableDeclaration;
 
 class BindingInitializer;
 
-class PatternInitializer;
+class IdentifierInitializer;
 
 class Initializer;
 
@@ -200,8 +200,8 @@ public:
     virtual ConstantDeclaration* parseConstantDeclaration(_Page* _rp);
     virtual MutableDeclaration* parseMutableDeclaration(_Page* _rp);
     virtual BindingInitializer* parseBindingInitializer(_Page* _rp);
-    virtual _Array<PatternInitializer>* parsePatternInitializerList(_Page* _rp);
-    virtual PatternInitializer* parsePatternInitializer(_Page* _rp);
+    virtual _Array<IdentifierInitializer>* parseIdentifierInitializerList(_Page* _rp);
+    virtual IdentifierInitializer* parseIdentifierInitializer(_Page* _rp);
     virtual Initializer* parseInitializer(_Page* _rp);
     virtual _Array<AdditionalInitializer>* parseAdditionalInitializerList(_Page* _rp);
     virtual AdditionalInitializer* parseAdditionalInitializer(_Page* _rp);
@@ -366,8 +366,8 @@ public:
     virtual void closeMutableDeclaration(MutableDeclaration* mutableDeclaration);
     virtual bool openBindingInitializer(BindingInitializer* bindingInitializer);
     virtual void closeBindingInitializer(BindingInitializer* bindingInitializer);
-    virtual bool openPatternInitializer(PatternInitializer* patternInitializer);
-    virtual void closePatternInitializer(PatternInitializer* patternInitializer);
+    virtual bool openIdentifierInitializer(IdentifierInitializer* identifierInitializer);
+    virtual void closeIdentifierInitializer(IdentifierInitializer* identifierInitializer);
     virtual bool openInitializer(Initializer* initializer);
     virtual void closeInitializer(Initializer* initializer);
     virtual bool openAdditionalInitializer(AdditionalInitializer* additionalInitializer);
@@ -524,7 +524,7 @@ public:
     virtual bool _isCodeBlock();
     virtual bool _isSimpleExpression();
     virtual bool _isBindingInitializer();
-    virtual bool _isPatternInitializer();
+    virtual bool _isIdentifierInitializer();
     virtual bool _isInitializer();
     virtual bool _isAdditionalInitializer();
     virtual bool _isPattern();
@@ -674,22 +674,22 @@ public:
 
 class BindingInitializer : public SyntaxNode {
 public:
-    BindingInitializer(PatternInitializer* initializer, _Array<AdditionalInitializer>* additionalInitializers, Position* start, Position* end);
+    BindingInitializer(IdentifierInitializer* initializer, _Array<AdditionalInitializer>* additionalInitializers, Position* start, Position* end);
     virtual void accept(Visitor* visitor);
-    PatternInitializer* initializer;
+    IdentifierInitializer* initializer;
     _Array<AdditionalInitializer>* additionalInitializers;
 
     virtual bool _isBindingInitializer();
 };
 
-class PatternInitializer : public SyntaxNode {
+class IdentifierInitializer : public SyntaxNode {
 public:
-    PatternInitializer(IdentifierPattern* pattern, Initializer* initializer, Position* start, Position* end);
+    IdentifierInitializer(IdentifierPattern* pattern, Initializer* initializer, Position* start, Position* end);
     virtual void accept(Visitor* visitor);
     IdentifierPattern* pattern;
     Initializer* initializer;
 
-    virtual bool _isPatternInitializer();
+    virtual bool _isIdentifierInitializer();
 };
 
 class Initializer : public SyntaxNode {
@@ -703,9 +703,9 @@ public:
 
 class AdditionalInitializer : public SyntaxNode {
 public:
-    AdditionalInitializer(PatternInitializer* pattern, Position* start, Position* end);
+    AdditionalInitializer(IdentifierInitializer* pattern, Position* start, Position* end);
     virtual void accept(Visitor* visitor);
-    PatternInitializer* pattern;
+    IdentifierInitializer* pattern;
 
     virtual bool _isAdditionalInitializer();
 };

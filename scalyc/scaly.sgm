@@ -29,10 +29,10 @@
         <content link = BindingInitializer                      property = initializer
 
     <syntax id = BindingInitializer
-        <content link = PatternInitializer                      property = initializer
+        <content link = IdentifierInitializer                   property = initializer
         <content link = AdditionalInitializer multiple optional property = additionalInitializers
 
-    <syntax id = PatternInitializer           multiple
+    <syntax id = IdentifierInitializer        multiple
         <content link = IdentifierPattern                       property = pattern
         <content link = Initializer                    optional property = initializer
 
@@ -42,7 +42,7 @@
 
     <syntax id = AdditionalInitializer        multiple
         <content link = comma
-        <content link = PatternInitializer                      property = pattern
+        <content link = IdentifierInitializer                   property = pattern
 
    <syntax id = Pattern                                abstract
         <content link = WildcardPattern

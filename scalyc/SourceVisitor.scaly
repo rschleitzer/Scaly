@@ -250,9 +250,9 @@ class SourceVisitor extends CppVisitor {
         false
     }
 
-    function getFunctionCall(patternInitializer: PatternInitializer&): FunctionCall& {
-        if patternInitializer.initializer != null {
-            let expression: Expression = patternInitializer.initializer.expression
+    function getFunctionCall(identifierInitializer: IdentifierInitializer&): FunctionCall& {
+        if identifierInitializer.initializer != null {
+            let expression: Expression = identifierInitializer.initializer.expression
             if expression is SimpleExpression {
                 let postfixExpression: PostfixExpression = (expression as SimpleExpression).prefixExpression.expression
                 if postfixExpression.primaryExpression is IdentifierExpression {
@@ -269,8 +269,8 @@ class SourceVisitor extends CppVisitor {
         null
     }
 
-    function isCatchingFunctionCall(patternInitializer: PatternInitializer): bool {
-        if catchesError(getFunctionCall(patternInitializer))
+    function isCatchingFunctionCall(identifierInitializer: IdentifierInitializer): bool {
+        if catchesError(getFunctionCall(identifierInitializer))
             return(true)
 
         false
@@ -1486,10 +1486,10 @@ class SourceVisitor extends CppVisitor {
             let postfixExpression: PostfixExpression = (functionCall.parent) as PostfixExpression
             if postfixExpression.parent.parent.parent is Initializer {
                 let initializer: Initializer = (postfixExpression.parent.parent.parent) as Initializer
-                if initializer.parent is PatternInitializer {
-                    let patternInitializer: PatternInitializer = (initializer.parent) as PatternInitializer
-                    if patternInitializer.parent is BindingInitializer {
-                        return((patternInitializer.parent) as BindingInitializer)
+                if initializer.parent is IdentifierInitializer {
+                    let identifierInitializer: IdentifierInitializer = (initializer.parent) as IdentifierInitializer
+                    if identifierInitializer.parent is BindingInitializer {
+                        return((identifierInitializer.parent) as BindingInitializer)
                     }
                 }
             }
@@ -1784,9 +1784,9 @@ class SourceVisitor extends CppVisitor {
             if node is CatchClause
                 return(null)
 
-            if node is PatternInitializer {
-                let patternInitializer: PatternInitializer = node as PatternInitializer
-                let identifierPattern: IdentifierPattern = patternInitializer.pattern
+            if node is IdentifierInitializer {
+                let identifierInitializer: IdentifierInitializer = node as IdentifierInitializer
+                let identifierPattern: IdentifierPattern = identifierInitializer.pattern
                 if identifierPattern.annotationForType != null {
 
                     // simple type which needs no page for allocation
@@ -1940,9 +1940,9 @@ class SourceVisitor extends CppVisitor {
     }
 
     function openIdentifierPattern(identifierPattern: IdentifierPattern): bool {
-        if identifierPattern.parent is PatternInitializer {
-            let patternInitializer: PatternInitializer = (identifierPattern.parent) as PatternInitializer
-            if isCatchingPatternInitializer(patternInitializer) {
+        if identifierPattern.parent is IdentifierInitializer {
+            let identifierInitializer: IdentifierInitializer = (identifierPattern.parent) as IdentifierInitializer
+            if isCatchingIdentifierInitializer(identifierInitializer) {
                 sourceFile.append("auto _")
                 sourceFile.append(identifierPattern.identifier)
                 sourceFile.append("_result")
@@ -1961,10 +1961,10 @@ class SourceVisitor extends CppVisitor {
         false
     }
 
-    function isCatchingPatternInitializer(patternInitializer: PatternInitializer): bool {
-        if patternInitializer.initializer != null {
-            if patternInitializer.initializer.expression is SimpleExpression {
-                let simpleExpression: SimpleExpression = (patternInitializer.initializer.expression) as SimpleExpression
+    function isCatchingIdentifierInitializer(identifierInitializer: IdentifierInitializer): bool {
+        if identifierInitializer.initializer != null {
+            if identifierInitializer.initializer.expression is SimpleExpression {
+                let simpleExpression: SimpleExpression = (identifierInitializer.initializer.expression) as SimpleExpression
                 let postfixExpression: PostfixExpression = simpleExpression.prefixExpression.expression
                 if postfixExpression.postfixes != null {
                     let functionCall: FunctionCall =  null

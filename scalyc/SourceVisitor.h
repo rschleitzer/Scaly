@@ -22,8 +22,8 @@ public:
     virtual void closeConstructorDeclaration(ConstructorDeclaration* constructorDeclaration);
     virtual bool openCodeBlock(CodeBlock* codeBlock);
     virtual bool localAllocations(CodeBlock* codeBlock);
-    virtual FunctionCall* getFunctionCall(PatternInitializer* patternInitializer);
-    virtual bool isCatchingFunctionCall(PatternInitializer* patternInitializer);
+    virtual FunctionCall* getFunctionCall(IdentifierInitializer* identifierInitializer);
+    virtual bool isCatchingFunctionCall(IdentifierInitializer* identifierInitializer);
     virtual void closeCodeBlock(CodeBlock* codeBlock);
     virtual bool openSimpleExpression(SimpleExpression* simpleExpression);
     virtual void prependReturn(SimpleExpression* simpleExpression);
@@ -108,7 +108,7 @@ public:
     virtual bool openCaseItem(CaseItem* caseItem);
     virtual void closeCaseItem(CaseItem* caseItem);
     virtual bool openIdentifierPattern(IdentifierPattern* identifierPattern);
-    virtual bool isCatchingPatternInitializer(PatternInitializer* patternInitializer);
+    virtual bool isCatchingIdentifierInitializer(IdentifierInitializer* identifierInitializer);
     virtual void closeExpressionPattern(ExpressionPattern* expressionPattern);
     virtual bool openCaseContent(CaseContent* caseContent);
     virtual void closeCaseContent(CaseContent* caseContent);

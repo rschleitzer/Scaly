@@ -172,7 +172,7 @@ MutableDeclaration* Parser::parseMutableDeclaration(_Page* _rp) {
 BindingInitializer* Parser::parseBindingInitializer(_Page* _rp) {
     _Region _region; _Page* _p = _region.get();
     Position* start = lexer->getPreviousPosition(_p);
-    PatternInitializer* initializer = parsePatternInitializer(_rp);
+    IdentifierInitializer* initializer = parseIdentifierInitializer(_rp);
     if (initializer == nullptr)
         return nullptr;
     _Array<AdditionalInitializer>* additionalInitializers = parseAdditionalInitializerList(_rp);
@@ -190,21 +190,21 @@ BindingInitializer* Parser::parseBindingInitializer(_Page* _rp) {
     return ret;
 }
 
-_Array<PatternInitializer>* Parser::parsePatternInitializerList(_Page* _rp) {
+_Array<IdentifierInitializer>* Parser::parseIdentifierInitializerList(_Page* _rp) {
     _Region _region; _Page* _p = _region.get();
-    _Array<PatternInitializer>* ret = nullptr;
+    _Array<IdentifierInitializer>* ret = nullptr;
     while (true) {
-        PatternInitializer* node = parsePatternInitializer(_rp);
+        IdentifierInitializer* node = parseIdentifierInitializer(_rp);
         if (node == nullptr)
             break;
         if (ret == nullptr)
-            ret = new(_p) _Array<PatternInitializer>();
+            ret = new(_p) _Array<IdentifierInitializer>();
         ret->push(node);
     }
-    return ret ? new(_rp) _Array<PatternInitializer>(ret) : nullptr;
+    return ret ? new(_rp) _Array<IdentifierInitializer>(ret) : nullptr;
 }
 
-PatternInitializer* Parser::parsePatternInitializer(_Page* _rp) {
+IdentifierInitializer* Parser::parseIdentifierInitializer(_Page* _rp) {
     _Region _region; _Page* _p = _region.get();
     Position* start = lexer->getPreviousPosition(_p);
     IdentifierPattern* pattern = parseIdentifierPattern(_rp);
@@ -212,7 +212,7 @@ PatternInitializer* Parser::parsePatternInitializer(_Page* _rp) {
         return nullptr;
     Initializer* initializer = parseInitializer(_rp);
     Position* end = lexer->getPosition(_p);
-    PatternInitializer* ret = new(_rp) PatternInitializer(pattern, initializer, new(_rp) Position(start), new(_rp) Position(end));
+    IdentifierInitializer* ret = new(_rp) IdentifierInitializer(pattern, initializer, new(_rp) Position(start), new(_rp) Position(end));
     pattern->parent = ret;
     if (initializer != nullptr)
         initializer->parent = ret;
@@ -258,7 +258,7 @@ AdditionalInitializer* Parser::parseAdditionalInitializer(_Page* _rp) {
         lexer->advance();
     else
         return nullptr;
-    PatternInitializer* pattern = parsePatternInitializer(_rp);
+    IdentifierInitializer* pattern = parseIdentifierInitializer(_rp);
     if (pattern == nullptr)
         return nullptr;
     Position* end = lexer->getPosition(_p);
@@ -2238,11 +2238,11 @@ bool Visitor::openBindingInitializer(BindingInitializer* bindingInitializer) {
 void Visitor::closeBindingInitializer(BindingInitializer* bindingInitializer) {
 }
 
-bool Visitor::openPatternInitializer(PatternInitializer* patternInitializer) {
+bool Visitor::openIdentifierInitializer(IdentifierInitializer* identifierInitializer) {
     return true;
 }
 
-void Visitor::closePatternInitializer(PatternInitializer* patternInitializer) {
+void Visitor::closeIdentifierInitializer(IdentifierInitializer* identifierInitializer) {
 }
 
 bool Visitor::openInitializer(Initializer* initializer) {
@@ -2710,7 +2710,7 @@ bool SyntaxNode::_isExpression() { return (false); }
 bool SyntaxNode::_isCodeBlock() { return (false); }
 bool SyntaxNode::_isSimpleExpression() { return (false); }
 bool SyntaxNode::_isBindingInitializer() { return (false); }
-bool SyntaxNode::_isPatternInitializer() { return (false); }
+bool SyntaxNode::_isIdentifierInitializer() { return (false); }
 bool SyntaxNode::_isInitializer() { return (false); }
 bool SyntaxNode::_isAdditionalInitializer() { return (false); }
 bool SyntaxNode::_isPattern() { return (false); }
@@ -2894,7 +2894,7 @@ void MutableDeclaration::accept(Visitor* visitor) {
 
 bool MutableDeclaration::_isMutableDeclaration() { return (true); }
 
-BindingInitializer::BindingInitializer(PatternInitializer* initializer, _Array<AdditionalInitializer>* additionalInitializers, Position* start, Position* end) {
+BindingInitializer::BindingInitializer(IdentifierInitializer* initializer, _Array<AdditionalInitializer>* additionalInitializers, Position* start, Position* end) {
     this->start = start;
     this->end = end;
     this->initializer = initializer;
@@ -2918,23 +2918,23 @@ void BindingInitializer::accept(Visitor* visitor) {
 
 bool BindingInitializer::_isBindingInitializer() { return (true); }
 
-PatternInitializer::PatternInitializer(IdentifierPattern* pattern, Initializer* initializer, Position* start, Position* end) {
+IdentifierInitializer::IdentifierInitializer(IdentifierPattern* pattern, Initializer* initializer, Position* start, Position* end) {
     this->start = start;
     this->end = end;
     this->pattern = pattern;
     this->initializer = initializer;
 }
 
-void PatternInitializer::accept(Visitor* visitor) {
-    if (!visitor->openPatternInitializer(this))
+void IdentifierInitializer::accept(Visitor* visitor) {
+    if (!visitor->openIdentifierInitializer(this))
         return;
     pattern->accept(visitor);
     if (initializer != nullptr)
         initializer->accept(visitor);
-    visitor->closePatternInitializer(this);
+    visitor->closeIdentifierInitializer(this);
 }
 
-bool PatternInitializer::_isPatternInitializer() { return (true); }
+bool IdentifierInitializer::_isIdentifierInitializer() { return (true); }
 
 Initializer::Initializer(Expression* expression, Position* start, Position* end) {
     this->start = start;
@@ -2951,7 +2951,7 @@ void Initializer::accept(Visitor* visitor) {
 
 bool Initializer::_isInitializer() { return (true); }
 
-AdditionalInitializer::AdditionalInitializer(PatternInitializer* pattern, Position* start, Position* end) {
+AdditionalInitializer::AdditionalInitializer(IdentifierInitializer* pattern, Position* start, Position* end) {
     this->start = start;
     this->end = end;
     this->pattern = pattern;

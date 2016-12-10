@@ -22,7 +22,7 @@ public:
     virtual void closeClassDeclaration(ClassDeclaration* classDeclaration);
     virtual bool openConstructorDeclaration(ConstructorDeclaration* constructorDeclaration);
     virtual bool openCodeBlock(CodeBlock* codeBlock);
-    virtual bool openPatternInitializer(PatternInitializer* patternInitializer);
+    virtual bool openIdentifierInitializer(IdentifierInitializer* identifierInitializer);
     virtual bool openFunctionSignature(FunctionSignature* functionSignature);
     virtual void closeParameterClause(ParameterClause* parameterClause);
     virtual bool openConstParameter(ConstParameter* constParameter);
