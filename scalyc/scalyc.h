@@ -5,6 +5,7 @@
 #include "Lexer.h"
 #include "OptionsError.h"
 #include "Parser.h"
+#include "CommonVisitor.h"
 #include "CppVisitor.h"
 #include "Model.h"
 #include "Options.h"

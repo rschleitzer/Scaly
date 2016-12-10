@@ -1,6 +1,6 @@
 class Inherits
 
-class CppVisitor extends Visitor {
+class CppVisitor extends CommonVisitor {
 
     // Some rudimentary semantics cache
     mutable inherits: Inherits[]
@@ -819,14 +819,6 @@ class SourceVisitor extends CppVisitor {
         File.writeFromString(sourceFilePath, sourceFile)
             catch _ (error: fileError)
                 return
-    }
-    
-    function isTopLevelFile(compilationUnit: CompilationUnit): bool {
-        for statement: Statement in compilationUnit.statements
-            if statement is Expression
-                return(true)
-            
-        false
     }
 
     function openConstantDeclaration(constantDeclaration: ConstantDeclaration): bool {

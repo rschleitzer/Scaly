@@ -7,6 +7,17 @@ Model::Model(string* name) {
     units = new(_getPage()) _Array<Unit>();
 }
 
+bool Unit::_isTopLevelCode() { return (false); }
+bool Unit::_isCode() { return (false); }
+
+bool Item::_isDefinition() { return (false); }
+
+bool Definition::_isDefinition() { return (true); }
+
+bool TopLevelCode::_isTopLevelCode() { return (true); }
+
+bool Code::_isCode() { return (true); }
+
 bool ModelVisitor::openProgram(Program* program) {
     if (model != nullptr)
         model->_getPage()->clear();

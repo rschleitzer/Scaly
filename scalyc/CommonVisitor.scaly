@@ -1,0 +1,10 @@
+class CommonVisitor extends Visitor {
+
+    function isTopLevelFile(compilationUnit: CompilationUnit): bool {
+        for statement: Statement in compilationUnit.statements
+            if statement is Expression
+                return(true)
+            
+        false
+    }
+}

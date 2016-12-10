@@ -494,6 +494,7 @@ public:
     virtual bool openTypeCast(TypeCast* typeCast);
     virtual void closeTypeCast(TypeCast* typeCast);
 
+    virtual bool _isCommonVisitor();
     virtual bool _isCppVisitor();
     virtual bool _isHeaderVisitor();
     virtual bool _isSourceVisitor();

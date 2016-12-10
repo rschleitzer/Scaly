@@ -6,7 +6,7 @@ namespace scalyc {
 
 class Inherits;
 
-class CppVisitor : public Visitor {
+class CppVisitor : public CommonVisitor {
 public:
     _Array<Inherits>* inherits;
     _Array<string>* classes;
@@ -81,7 +81,6 @@ public:
     virtual bool openProgram(Program* program);
     virtual bool openCompilationUnit(CompilationUnit* compilationUnit);
     virtual void closeCompilationUnit(CompilationUnit* compilationUnit);
-    virtual bool isTopLevelFile(CompilationUnit* compilationUnit);
     virtual bool openConstantDeclaration(ConstantDeclaration* constantDeclaration);
     virtual bool openMutableDeclaration(MutableDeclaration* mutableDeclaration);
     virtual bool openFunctionDeclaration(FunctionDeclaration* functionDeclaration);

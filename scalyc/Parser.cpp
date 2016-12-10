@@ -2667,6 +2667,7 @@ bool Visitor::openTypeCast(TypeCast* typeCast) {
 void Visitor::closeTypeCast(TypeCast* typeCast) {
 }
 
+bool Visitor::_isCommonVisitor() { return (false); }
 bool Visitor::_isCppVisitor() { return (false); }
 bool Visitor::_isHeaderVisitor() { return (false); }
 bool Visitor::_isSourceVisitor() { return (false); }

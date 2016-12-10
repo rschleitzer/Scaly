@@ -805,18 +805,6 @@ void SourceVisitor::closeCompilationUnit(CompilationUnit* compilationUnit) {
     } }
 }
 
-bool SourceVisitor::isTopLevelFile(CompilationUnit* compilationUnit) {
-    Statement* statement = nullptr;
-    size_t _compilationUnit_length = compilationUnit->statements->length();
-    for (size_t _i = 0; _i < _compilationUnit_length; _i++) {
-        statement = *(*compilationUnit->statements)[_i];
-        if (statement->_isExpression())
-            return true;
-;
-    }
-    return false;
-}
-
 bool SourceVisitor::openConstantDeclaration(ConstantDeclaration* constantDeclaration) {
     if (constantDeclaration->parent->parent->parent == nullptr)
         return true;

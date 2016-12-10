@@ -17,6 +17,34 @@ public:
 class Unit : public Object {
 public:
 
+    virtual bool _isTopLevelCode();
+    virtual bool _isCode();
+};
+
+class Item : public Object {
+public:
+
+    virtual bool _isDefinition();
+};
+
+class Definition : public Item {
+public:
+
+    virtual bool _isDefinition();
+};
+
+class TopLevelCode : public Unit {
+public:
+    _Array<Item>* items;
+
+    virtual bool _isTopLevelCode();
+};
+
+class Code : public Unit {
+public:
+    _Array<Definition>* definitions;
+
+    virtual bool _isCode();
 };
 
 class ModelVisitor : public Visitor {
