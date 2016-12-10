@@ -21,14 +21,20 @@ class Compiler {
         for source: string in sources {
             let moduleName: string@compilationUnits = Path.getFileNameWithoutExtension(files[index])
             let compilationUnit: CompilationUnit@compilationUnits = parseUnit(moduleName, source)
-            if compilationUnit == null {
-                mutable msg: VarString$ = new VarString("Syntax error in ")
-                msg.append(files[index])
-                msg.append("\n")
-                let message: string$ = new string(msg)
-                print(message) catch _ return
-                return
-            }
+                catch CompilerError.parser(line: number, column: number) {
+                    mutable msg: VarString$ = new VarString("Syntax error in ")
+                    msg.append(files[index])
+                    msg.append(" at ")
+                    let lineString: string$ = Number.toString(line)
+                    msg.append(lineString)
+                    msg.append(", ")
+                    let columnString: string$ = Number.toString(column)
+                    msg.append(columnString)
+                    msg.append("\n")
+                    let message: string$ = new string(msg)
+                    print(message) catch _ return
+                    return
+                }
 
             compilationUnits.push(compilationUnit)
             index++
@@ -45,12 +51,12 @@ class Compiler {
         sourceVisitor.execute(program)
     }
 
-    static function parseUnit(moduleName: string, text: string): CompilationUnit {
+    static function parseUnit(moduleName: string, text: string): CompilationUnit throws CompilerError {
         mutable parser: Parser$ = new Parser(moduleName, text)
 
         let compilationUnit: CompilationUnit = parser.parseCompilationUnit()
             catch ParserError.syntax(line: number, column: number) {
-                return(null)
+                throw parser(line, column)
             }
 
         compilationUnit

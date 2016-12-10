@@ -43,20 +43,34 @@ void Compiler::compileFiles(Options* options) {
         source = *(*sources)[_i];
         {
             string* moduleName = Path::getFileNameWithoutExtension(compilationUnits->_getPage(), *(*files)[index]);
-            CompilationUnit* compilationUnit = parseUnit(compilationUnits->_getPage(), moduleName, source);
-            if (compilationUnit == nullptr) {
-                _Region _region; _Page* _p = _region.get();
-                VarString* msg = new(_p) VarString("Syntax error in ");
-                msg->append(*(*files)[index]);
-                msg->append("\n");
-                string* message = new(_p) string(msg);
-                auto _print_error = print(_p, message);
-                if (_print_error) { switch (_print_error->_getErrorCode()) {
-                    default: {
+            auto _compilationUnit_result = parseUnit(compilationUnits->_getPage(), _p, moduleName, source);
+            CompilationUnit* compilationUnit = nullptr;
+            if (_compilationUnit_result.succeeded()) {
+                compilationUnit = _compilationUnit_result.getResult();
+            }
+            else if (_compilationUnit_result._getErrorCode() == _CompilerErrorCode_parser) {
+                size_t line = _compilationUnit_result.getError()->get_parser()->line;
+                size_t column = _compilationUnit_result.getError()->get_parser()->column;
+                {
+                    _Region _region; _Page* _p = _region.get();
+                    VarString* msg = new(_p) VarString("Syntax error in ");
+                    msg->append(*(*files)[index]);
+                    msg->append(" at ");
+                    string* lineString = Number::toString(_p, line);
+                    msg->append(lineString);
+                    msg->append(", ");
+                    string* columnString = Number::toString(_p, column);
+                    msg->append(columnString);
+                    msg->append("\n");
+                    string* message = new(_p) string(msg);
+                    auto _print_error = print(_p, message);
+                    if (_print_error) { switch (_print_error->_getErrorCode()) {
+                        default: {
+                        return;
+                        }
+                    } }
                     return;
-                    }
-                } }
-                return;
+                }
             }
             compilationUnits->push(compilationUnit);
             index++;
@@ -75,10 +89,10 @@ void Compiler::compileFiles(Options* options) {
     sourceVisitor->execute(program);
 }
 
-CompilationUnit* Compiler::parseUnit(_Page* _rp, string* moduleName, string* text) {
+_Result<CompilationUnit, CompilerError> Compiler::parseUnit(_Page* _rp, _Page* _ep, string* moduleName, string* text) {
     _Region _region; _Page* _p = _region.get();
     Parser* parser = new(_p) Parser(moduleName, text);
-    auto _compilationUnit_result = parser->parseCompilationUnit(_rp, _p);
+    auto _compilationUnit_result = parser->parseCompilationUnit(_rp, _ep);
     CompilationUnit* compilationUnit = nullptr;
     if (_compilationUnit_result.succeeded()) {
         compilationUnit = _compilationUnit_result.getResult();
@@ -87,7 +101,7 @@ CompilationUnit* Compiler::parseUnit(_Page* _rp, string* moduleName, string* tex
         size_t line = _compilationUnit_result.getError()->get_syntax()->line;
         size_t column = _compilationUnit_result.getError()->get_syntax()->column;
         {
-            return nullptr;
+            return _Result<CompilationUnit, CompilerError>(new(_ep) CompilerError(new(_ep) _CompilerError_parser(line, column)));
         }
     }
     return compilationUnit;

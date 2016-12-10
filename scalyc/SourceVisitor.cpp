@@ -556,7 +556,7 @@ void SourceVisitor::writeParameter(string* name, Type* parameterType) {
 }
 
 bool SourceVisitor::isClass(string* name) {
-    if (name->equals("string") || name->equals("VarString") || name->equals("File") || name->equals("Directory") || name->equals("Path") || name->equals("DirectoryError") || name->equals("FileError") || name->equals("ParserError") || name->equals("CppError") || name->equals("CompilerError")) {
+    if (name->equals("string") || name->equals("VarString") || name->equals("Number") || name->equals("File") || name->equals("Directory") || name->equals("Path") || name->equals("DirectoryError") || name->equals("FileError") || name->equals("ParserError") || name->equals("CppError") || name->equals("CompilerError")) {
         return true;
     }
     string* className = nullptr;

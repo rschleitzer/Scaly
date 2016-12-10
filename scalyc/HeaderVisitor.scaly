@@ -503,7 +503,7 @@ class HeaderVisitor extends CppVisitor {
         true
     }
 
-    function closeType(type: Type) {
+    function; closeType(type: Type) {
 
         if hasArrayPostfix(type)
             headerFile.append(">*")

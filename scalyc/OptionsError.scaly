@@ -8,3 +8,7 @@ enum OptionsError {
 enum ParserError {
     case syntax(line: number, column: number)
 }
+
+enum CompilerError {
+    case parser(line: number, column: number)
+}

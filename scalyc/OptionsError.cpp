@@ -39,5 +39,20 @@ _ParserError_syntax* ParserError::get_syntax() {
     return (_ParserError_syntax*)errorInfo;
 }
 
+long CompilerError::_getErrorCode() {
+    return (long)errorCode;
+}
+
+void* CompilerError::_getErrorInfo() {
+    return errorInfo;
+}
+
+_CompilerError_parser::_CompilerError_parser(size_t line, size_t column) 
+: line(line), column(column) { }
+
+_CompilerError_parser* CompilerError::get_parser() {
+    return (_CompilerError_parser*)errorInfo;
+}
+
 
 }

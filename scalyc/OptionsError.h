@@ -79,5 +79,36 @@ private:
     void* errorInfo;
 };
 
+class CompilerError;
+
+class _CompilerError_parser : public Object {
+public:
+    _CompilerError_parser(size_t line, size_t column);
+
+    size_t line;
+    size_t column;
+};
+enum _CompilerErrorCode {
+    _CompilerErrorCode_parser = 1,
+};
+
+class CompilerError : public Object {
+public:
+    CompilerError(_CompilerErrorCode errorCode)
+    : errorCode(errorCode), errorInfo(0) {}
+
+    CompilerError(_CompilerError_parser* parser)
+    : errorCode(_CompilerErrorCode_parser), errorInfo(parser) {}
+
+    long _getErrorCode();
+    void* _getErrorInfo();
+
+    _CompilerError_parser* get_parser();
+
+private:
+    _CompilerErrorCode errorCode;
+    void* errorInfo;
+};
+
 }
 #endif // __scalyc__OptionsError__
