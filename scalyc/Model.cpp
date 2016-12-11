@@ -7,17 +7,20 @@ Model::Model(string* name) {
     units = new(_getPage()) _Array<Unit>();
 }
 
+Unit::Unit() {
+}
+
 Unit::Unit(Model* model) {
     this->model = model;
-    definitions = new(_getPage()) _Array<Definition>();
+    definitions = new(_getPage()->allocateExclusivePage()) _Array<Definition>();
 }
 
 bool Unit::_isTopLevel() { return (false); }
 
 TopLevel::TopLevel(Model* model) {
     this->model = model;
-    definitions = new() _Array<Definition>();
-    actions = new() _Array<Action>();
+    definitions = new(_getPage()->allocateExclusivePage()) _Array<Definition>();
+    actions = new(_getPage()->allocateExclusivePage()) _Array<Action>();
 }
 
 bool TopLevel::_isTopLevel() { return (true); }
@@ -33,12 +36,12 @@ bool ModelVisitor::openCompilationUnit(CompilationUnit* compilationUnit) {
     if (isTopLevelFile(compilationUnit)) {
         if (unit != nullptr)
             unit->_getPage()->clear();
-        unit = new(unit == nullptr ? _getPage()->allocateExclusivePage() : unit->_getPage()) TopLevelCode(model);
+        unit = new(unit == nullptr ? _getPage()->allocateExclusivePage() : unit->_getPage()) TopLevel(model);
     }
     else {
         if (unit != nullptr)
             unit->_getPage()->clear();
-        unit = new(unit == nullptr ? _getPage()->allocateExclusivePage() : unit->_getPage()) Code(model);
+        unit = new(unit == nullptr ? _getPage()->allocateExclusivePage() : unit->_getPage()) Unit(model);
     }
     return true;
 }

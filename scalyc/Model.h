@@ -23,6 +23,7 @@ class Unit : public Object {
 public:
     Model* model;
     _Array<Definition>* definitions;
+    Unit();
     Unit(Model* model);
 
     virtual bool _isTopLevel();
@@ -35,7 +36,7 @@ public:
 
 class TopLevel : public Unit {
 public:
-    _Array<Action>* items;
+    _Array<Action>* actions;
     TopLevel(Model* model);
 
     virtual bool _isTopLevel();

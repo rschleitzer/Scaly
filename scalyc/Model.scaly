@@ -23,8 +23,12 @@ class Unit {
     let model: Model
     
     // The definitions of the unit.
-    let definitions: Definition[]
-    
+    mutable definitions: Definition[]
+
+    // Default constructor
+    constructor() {
+    }
+
     constructor(model: Model) {
         this.model = model
         definitions = new Definition[]()
@@ -38,8 +42,8 @@ class Action {
 // A top level program unit which in addition to definitions can contain top level actions.
 class TopLevel extends Unit {
 
-    let items: Action[]
-    
+    mutable actions: Action[]
+
     constructor(model: Model) {
         this.model = model
         definitions = new Definition[]()
@@ -61,10 +65,10 @@ class ModelVisitor extends CommonVisitor {
 
     function openCompilationUnit(compilationUnit: CompilationUnit) : bool {
         if isTopLevelFile(compilationUnit) {
-            unit = new TopLevelCode(model)
+            unit = new TopLevel(model)
         }
         else {
-            unit = new Code(model)
+            unit = new Unit(model)
         }
 
         true
