@@ -51,34 +51,14 @@ void ModelVisitor::closeCompilationUnit(CompilationUnit* compilationUnit) {
 }
 
 bool ModelVisitor::openConstantDeclaration(ConstantDeclaration* constantDeclaration) {
-    if (constantDeclaration->parent->_isCodeBlock()) {
+    if (constantDeclaration->parent->_isClassDeclaration()) {
     }
     else {
-        if (constantDeclaration->parent->_isClassDeclaration()) {
-        }
-        else {
-            if (constantDeclaration->parent->_isCompilationUnit()) {
-            }
-            else {
-            }
-        }
     }
     return true;
 }
 
 void ModelVisitor::closeConstantDeclaration(ConstantDeclaration* constantDeclaration) {
-    if (constantDeclaration->parent->_isCodeBlock()) {
-    }
-    else {
-        if (constantDeclaration->parent->_isClassDeclaration()) {
-        }
-        else {
-            if (constantDeclaration->parent->_isCompilationUnit()) {
-            }
-            else {
-            }
-        }
-    }
 }
 
 bool ModelVisitor::_isModelVisitor() { return (true); }

@@ -79,41 +79,16 @@ class ModelVisitor extends CommonVisitor {
     }
 
     function openConstantDeclaration(constantDeclaration: ConstantDeclaration): bool {
-        if constantDeclaration.parent is CodeBlock {
+        if constantDeclaration.parent is ClassDeclaration {
+            // Create a new const class member
         }
-        else {
-            if constantDeclaration.parent is ClassDeclaration {
-                // Create a new const class member
-            }
-            else { 
-                if constantDeclaration.parent is CompilationUnit {
-                    // Create a new binding member
-                }
-                else {
-                    // Should not happen
-                }
-            }
+        else { 
+            // Create a new binding member
+        }
             
-        }
         true
     }
 
     function closeConstantDeclaration(constantDeclaration: ConstantDeclaration) {
-        if constantDeclaration.parent is CodeBlock {
-        }
-        else {
-            if constantDeclaration.parent is ClassDeclaration {
-                // Extend the constant declarations of the current class by the current const class member
-            }
-            else { 
-                if constantDeclaration.parent is CompilationUnit {
-                    // Extend the current binding by the current binding member
-                }
-                else {
-                    // Should not happen
-                }
-            }
-            
-        }
     }
 }
