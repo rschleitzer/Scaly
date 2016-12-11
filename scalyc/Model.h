@@ -38,10 +38,16 @@ public:
     virtual bool _isScope();
 };
 
+class Binding : public Object {
+public:
+
+};
+
 class Scope : public Action {
 public:
     Scope* parent;
     _Array<Definition>* definitions;
+    _Array<Binding>* bindings;
     _Array<Action>* actions;
     Scope(Scope* parent);
 

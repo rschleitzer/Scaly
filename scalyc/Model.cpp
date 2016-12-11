@@ -22,6 +22,7 @@ bool Action::_isScope() { return (false); }
 
 Scope::Scope(Scope* parent) {
     this->parent = parent;
+    bindings = new(_getPage()->allocateExclusivePage()) _Array<Binding>();
     definitions = new(_getPage()->allocateExclusivePage()) _Array<Definition>();
     actions = new(_getPage()->allocateExclusivePage()) _Array<Action>();
 }

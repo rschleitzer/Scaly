@@ -1,11 +1,16 @@
 class Scope
 class Unit
 
-// The model of the complete program on which all back ends (apart from legacy Cpp Visitors) work.
+// The model of the complete program on which all back ends (apart from direct Cpp Visitors) work.
 class Model {
 
+    // The name of the program model
     let name: string
+
+    // The top level code if applicable
     mutable main: Scope
+
+    // The non top level compilation units
     mutable units: Unit[]
 
     constructor(name: string) {
@@ -47,15 +52,23 @@ class Unit {
 class Action {
 }
 
+// A name bound to some program object.
+class Binding {
+    let identifier: string
+    mutable scope: Scope
+}
+
 // A scope in which bindings are active.
 class Scope extends Action {
 
     mutable parent: Scope
     mutable definitions: Definition[]
+    mutable bindings: Binding[]
     mutable actions: Action[]
 
     constructor(parent: Scope) {
         this.parent = parent
+        bindings = new Binding[]()
         definitions = new Definition[]()
         actions = new Action[]()
     }
