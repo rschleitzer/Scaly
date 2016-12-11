@@ -46,8 +46,8 @@ class TopLevel extends Unit {
 
     constructor(model: Model) {
         this.model = model
-        definitions = new Definition[]()
         actions = new Action[]()
+        definitions = new Definition[]()
     }
 }
 

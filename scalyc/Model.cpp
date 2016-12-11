@@ -19,8 +19,8 @@ bool Unit::_isTopLevel() { return (false); }
 
 TopLevel::TopLevel(Model* model) {
     this->model = model;
-    definitions = new(_getPage()->allocateExclusivePage()) _Array<Definition>();
     actions = new(_getPage()->allocateExclusivePage()) _Array<Action>();
+    definitions = new(_getPage()->allocateExclusivePage()) _Array<Definition>();
 }
 
 bool TopLevel::_isTopLevel() { return (true); }
