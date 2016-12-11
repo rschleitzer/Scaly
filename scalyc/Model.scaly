@@ -12,6 +12,7 @@ class Model {
 }
 
 class Unit {
+    let model: Model
 }
 
 class Item {
@@ -21,14 +22,26 @@ class Definition extends Item {
 }
 
 class TopLevelCode extends Unit {
+
     let items: Item[]
+    
+    constructor(model: Model) {
+        this.model = model
+        items = new Item[]()
+    }
 }
 
 class Code extends Unit {
+    
     let definitions: Definition[]
+    
+    constructor(model: Model) {
+        this.model = model
+        definitions = new Definition[]()
+    }
 }
 
-class ModelVisitor extends Visitor {
+class ModelVisitor extends CommonVisitor {
 
     mutable model: Model
     mutable unit: Unit
@@ -40,12 +53,24 @@ class ModelVisitor extends Visitor {
     }
 
     function openCompilationUnit(compilationUnit: CompilationUnit) : bool {
-        unit = new Unit()
+        if isTopLevelFile(compilationUnit) {
+            unit = new TopLevelCode(model)
+        }
+        else {
+            unit = new Code(model)
+        }
 
         true
     }
 
     function closeCompilationUnit(compilationUnit: CompilationUnit) {
         model.units.push(unit)
+    }
+
+    function openConstantDeclaration(constantDeclaration: ConstantDeclaration): bool {
+        true
+    }
+
+    function closeConstantDeclaration(constantDeclaration: ConstantDeclaration) {
     }
 }

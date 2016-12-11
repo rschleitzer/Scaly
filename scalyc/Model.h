@@ -16,6 +16,7 @@ public:
 
 class Unit : public Object {
 public:
+    Model* model;
 
     virtual bool _isTopLevelCode();
     virtual bool _isCode();
@@ -36,6 +37,7 @@ public:
 class TopLevelCode : public Unit {
 public:
     _Array<Item>* items;
+    TopLevelCode(Model* model);
 
     virtual bool _isTopLevelCode();
 };
@@ -43,17 +45,20 @@ public:
 class Code : public Unit {
 public:
     _Array<Definition>* definitions;
+    Code(Model* model);
 
     virtual bool _isCode();
 };
 
-class ModelVisitor : public Visitor {
+class ModelVisitor : public CommonVisitor {
 public:
     Model* model;
     Unit* unit;
     virtual bool openProgram(Program* program);
     virtual bool openCompilationUnit(CompilationUnit* compilationUnit);
     virtual void closeCompilationUnit(CompilationUnit* compilationUnit);
+    virtual bool openConstantDeclaration(ConstantDeclaration* constantDeclaration);
+    virtual void closeConstantDeclaration(ConstantDeclaration* constantDeclaration);
 
     virtual bool _isModelVisitor();
 };

@@ -19,6 +19,7 @@ bool CommonVisitor::_isCommonVisitor() { return (true); }
 bool CommonVisitor::_isCppVisitor() { return (false); }
 bool CommonVisitor::_isHeaderVisitor() { return (false); }
 bool CommonVisitor::_isSourceVisitor() { return (false); }
+bool CommonVisitor::_isModelVisitor() { return (false); }
 
 
 }

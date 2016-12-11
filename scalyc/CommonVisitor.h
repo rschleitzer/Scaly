@@ -12,6 +12,7 @@ public:
     virtual bool _isCppVisitor();
     virtual bool _isHeaderVisitor();
     virtual bool _isSourceVisitor();
+    virtual bool _isModelVisitor();
 };
 
 }
