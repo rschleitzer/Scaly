@@ -7,26 +7,20 @@ Model::Model(string* name) {
     units = new(_getPage()) _Array<Unit>();
 }
 
-bool Unit::_isTopLevelCode() { return (false); }
-bool Unit::_isCode() { return (false); }
-
-bool Item::_isDefinition() { return (false); }
-
-bool Definition::_isDefinition() { return (true); }
-
-TopLevelCode::TopLevelCode(Model* model) {
-    this->model = model;
-    items = new(_getPage()) _Array<Item>();
-}
-
-bool TopLevelCode::_isTopLevelCode() { return (true); }
-
-Code::Code(Model* model) {
+Unit::Unit(Model* model) {
     this->model = model;
     definitions = new(_getPage()) _Array<Definition>();
 }
 
-bool Code::_isCode() { return (true); }
+bool Unit::_isTopLevel() { return (false); }
+
+TopLevel::TopLevel(Model* model) {
+    this->model = model;
+    definitions = new() _Array<Definition>();
+    actions = new() _Array<Action>();
+}
+
+bool TopLevel::_isTopLevel() { return (true); }
 
 bool ModelVisitor::openProgram(Program* program) {
     if (model != nullptr)
@@ -54,6 +48,8 @@ void ModelVisitor::closeCompilationUnit(CompilationUnit* compilationUnit) {
 }
 
 bool ModelVisitor::openConstantDeclaration(ConstantDeclaration* constantDeclaration) {
+    if (constantDeclaration->parent->_isClassDeclaration()) {
+    }
     return true;
 }
 

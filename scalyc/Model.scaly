@@ -1,5 +1,6 @@
 class Unit
 
+// The model of the complete program on which all back ends (apart from legacy Cpp Visitors) work.
 class Model {
 
     let name: string
@@ -11,28 +12,17 @@ class Model {
     }
 }
 
-class Unit {
+// Base class for functions, classes, enums and the like.
+class Definition {
+}
+
+// A part of the program which corresponds to a single compilation unit.
+class Unit {    
+
+    // The model which contains the unit
     let model: Model
-}
-
-class Item {
-}
-
-class Definition extends Item {
-}
-
-class TopLevelCode extends Unit {
-
-    let items: Item[]
     
-    constructor(model: Model) {
-        this.model = model
-        items = new Item[]()
-    }
-}
-
-class Code extends Unit {
-    
+    // The definitions of the unit.
     let definitions: Definition[]
     
     constructor(model: Model) {
@@ -40,6 +30,23 @@ class Code extends Unit {
         definitions = new Definition[]()
     }
 }
+
+// An action of working code.
+class Action {
+}
+
+// A top level program unit which in addition to definitions can contain top level actions.
+class TopLevel extends Unit {
+
+    let items: Action[]
+    
+    constructor(model: Model) {
+        this.model = model
+        definitions = new Definition[]()
+        actions = new Action[]()
+    }
+}
+
 
 class ModelVisitor extends CommonVisitor {
 
@@ -68,6 +75,8 @@ class ModelVisitor extends CommonVisitor {
     }
 
     function openConstantDeclaration(constantDeclaration: ConstantDeclaration): bool {
+        if constantDeclaration.parent is ClassDeclaration {
+        }
         true
     }
 

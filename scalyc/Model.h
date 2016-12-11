@@ -14,40 +14,31 @@ public:
 
 };
 
+class Definition : public Object {
+public:
+
+};
+
 class Unit : public Object {
 public:
     Model* model;
-
-    virtual bool _isTopLevelCode();
-    virtual bool _isCode();
-};
-
-class Item : public Object {
-public:
-
-    virtual bool _isDefinition();
-};
-
-class Definition : public Item {
-public:
-
-    virtual bool _isDefinition();
-};
-
-class TopLevelCode : public Unit {
-public:
-    _Array<Item>* items;
-    TopLevelCode(Model* model);
-
-    virtual bool _isTopLevelCode();
-};
-
-class Code : public Unit {
-public:
     _Array<Definition>* definitions;
-    Code(Model* model);
+    Unit(Model* model);
 
-    virtual bool _isCode();
+    virtual bool _isTopLevel();
+};
+
+class Action : public Object {
+public:
+
+};
+
+class TopLevel : public Unit {
+public:
+    _Array<Action>* items;
+    TopLevel(Model* model);
+
+    virtual bool _isTopLevel();
 };
 
 class ModelVisitor : public CommonVisitor {
