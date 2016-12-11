@@ -18,7 +18,6 @@ public:
     virtual void appendDerivedClasses(_Array<string>* derivedClasses, _Array<string>* inheritors);
     virtual void collectInheritancesInCompilationUnit(CompilationUnit* compilationUnit);
     virtual void registerInheritance(string* className, string* baseName);
-    virtual string* getFileName(_Page* _rp, CompilationUnit* compilationUnit);
 
     virtual bool _isCppVisitor();
     virtual bool _isHeaderVisitor();

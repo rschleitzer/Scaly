@@ -99,32 +99,6 @@ class CppVisitor extends CommonVisitor {
 
         inherit.inheritors.push(className)
     }
-
-    function getFileName(compilationUnit: CompilationUnit) : string {
-
-        if compilationUnit.statements == null
-            return(null)
-
-        for statement: Statement in compilationUnit.statements {
-            if statement is ClassDeclaration {
-                let classDeclaration: ClassDeclaration = statement as ClassDeclaration
-                if classDeclaration.body != null
-                    return(new string(classDeclaration.name))
-            }
-
-            if statement is EnumDeclaration {
-                let enumDeclaration: EnumDeclaration = statement as EnumDeclaration
-                return(new string(enumDeclaration.name))
-            }
-        }
-
-        if compilationUnit.parent is Program {
-            let program: Program = compilationUnit.parent as Program
-            return(new string(program.name))
-        }
-
-        null
-    }
 }
 
 class Inherits {

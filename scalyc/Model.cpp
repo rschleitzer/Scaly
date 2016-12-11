@@ -4,26 +4,29 @@ namespace scalyc {
 
 Model::Model(string* name) {
     this->name = name;
-    units = new(_getPage()) _Array<Unit>();
+    main = nullptr;
+    units = new(_getPage()->allocateExclusivePage()) _Array<Unit>();
 }
 
 Unit::Unit() {
     definitions = new(_getPage()->allocateExclusivePage()) _Array<Definition>();
 }
 
-Unit::Unit(Model* model) {
+Unit::Unit(Model* model, string* name) {
     this->model = model;
+    this->name = name;
     definitions = new(_getPage()->allocateExclusivePage()) _Array<Definition>();
 }
 
-bool Unit::_isTopLevel() { return (false); }
+bool Action::_isScope() { return (false); }
 
-TopLevel::TopLevel(Model* model) {
-    this->model = model;
+Scope::Scope(Scope* parent) {
+    this->parent = parent;
+    definitions = new(_getPage()->allocateExclusivePage()) _Array<Definition>();
     actions = new(_getPage()->allocateExclusivePage()) _Array<Action>();
 }
 
-bool TopLevel::_isTopLevel() { return (true); }
+bool Scope::_isScope() { return (true); }
 
 bool ModelVisitor::openProgram(Program* program) {
     if (model != nullptr)
@@ -34,20 +37,23 @@ bool ModelVisitor::openProgram(Program* program) {
 
 bool ModelVisitor::openCompilationUnit(CompilationUnit* compilationUnit) {
     if (isTopLevelFile(compilationUnit)) {
-        if (unit != nullptr)
-            unit->_getPage()->clear();
-        unit = new(unit == nullptr ? _getPage()->allocateExclusivePage() : unit->_getPage()) TopLevel(model);
+        if (model != nullptr)
+            model->_getPage()->clear();
+        model->main = new(model == nullptr ? _getPage()->allocateExclusivePage() : model->_getPage()) Scope(nullptr);
     }
     else {
+        _Region _region; _Page* _p = _region.get();
+        string* fileName = getFileName(_p, compilationUnit);
         if (unit != nullptr)
             unit->_getPage()->clear();
-        unit = new(unit == nullptr ? _getPage()->allocateExclusivePage() : unit->_getPage()) Unit(model);
+        unit = new(unit == nullptr ? _getPage()->allocateExclusivePage() : unit->_getPage()) Unit(model, fileName);
     }
     return true;
 }
 
 void ModelVisitor::closeCompilationUnit(CompilationUnit* compilationUnit) {
-    model->units->push(unit);
+    if (isTopLevelFile(compilationUnit))
+        model->units->push(unit);
 }
 
 bool ModelVisitor::openConstantDeclaration(ConstantDeclaration* constantDeclaration) {

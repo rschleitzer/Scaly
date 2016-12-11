@@ -4,11 +4,14 @@
 using namespace scaly;
 namespace scalyc {
 
+class Scope;
+
 class Unit;
 
 class Model : public Object {
 public:
     string* name;
+    Scope* main;
     _Array<Unit>* units;
     Model(string* name);
 
@@ -22,24 +25,27 @@ public:
 class Unit : public Object {
 public:
     Model* model;
+    string* name;
     _Array<Definition>* definitions;
     Unit();
-    Unit(Model* model);
+    Unit(Model* model, string* name);
 
-    virtual bool _isTopLevel();
 };
 
 class Action : public Object {
 public:
 
+    virtual bool _isScope();
 };
 
-class TopLevel : public Unit {
+class Scope : public Action {
 public:
+    Scope* parent;
+    _Array<Definition>* definitions;
     _Array<Action>* actions;
-    TopLevel(Model* model);
+    Scope(Scope* parent);
 
-    virtual bool _isTopLevel();
+    virtual bool _isScope();
 };
 
 class ModelVisitor : public CommonVisitor {
