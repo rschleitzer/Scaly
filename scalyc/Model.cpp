@@ -8,6 +8,7 @@ Model::Model(string* name) {
 }
 
 Unit::Unit() {
+    definitions = new(_getPage()->allocateExclusivePage()) _Array<Definition>();
 }
 
 Unit::Unit(Model* model) {
@@ -20,7 +21,6 @@ bool Unit::_isTopLevel() { return (false); }
 TopLevel::TopLevel(Model* model) {
     this->model = model;
     actions = new(_getPage()->allocateExclusivePage()) _Array<Action>();
-    definitions = new(_getPage()->allocateExclusivePage()) _Array<Definition>();
 }
 
 bool TopLevel::_isTopLevel() { return (true); }

@@ -27,6 +27,7 @@ class Unit {
 
     // Default constructor
     constructor() {
+        definitions = new Definition[]()
     }
 
     constructor(model: Model) {
@@ -47,7 +48,6 @@ class TopLevel extends Unit {
     constructor(model: Model) {
         this.model = model
         actions = new Action[]()
-        definitions = new Definition[]()
     }
 }
 
