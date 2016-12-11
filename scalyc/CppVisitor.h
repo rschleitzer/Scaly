@@ -120,7 +120,7 @@ public:
     virtual ClassDeclaration* getClassDeclaration(SyntaxNode* node);
     virtual bool isObjectField(string* memberName, ClassDeclaration* classDeclaration);
     virtual bool isVariableObjectField(string* memberName, ClassDeclaration* classDeclaration);
-    virtual ClassDeclaration* findClassDeclaration(SyntaxNode* node, string* name);
+    virtual _Array<ClassDeclaration>* findClassDeclarations(_Page* _rp, SyntaxNode* node, string* name);
     virtual bool openTypeQuery(TypeQuery* typeQuery);
     virtual bool openCatchClause(CatchClause* catchClause);
     virtual IdentifierExpression* getIdentifierExpression(PostfixExpression* postfixExpression);

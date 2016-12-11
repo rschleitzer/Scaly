@@ -1510,11 +1510,11 @@ class SourceVisitor extends CppVisitor {
             let inheritances: Inheritance[] = classDeclaration.typeInheritanceClause.inheritances
             if inheritances != null {
                 for inheritance: Inheritance in inheritances {
-                    let baseClassDeclaration: ClassDeclaration& = findClassDeclaration(classDeclaration, inheritance.type.name)
-                    if baseClassDeclaration == null
-                        continue
-                    if isObjectField(memberName, baseClassDeclaration)
-                        return(true)
+                    let baseClassDeclarations: ClassDeclaration[]$ = findClassDeclarations(classDeclaration, inheritance.type.name)
+                    for baseClassDeclaration: ClassDeclaration in baseClassDeclarations {
+                        if isObjectField(memberName, baseClassDeclaration)
+                            return(true)
+                    }
                 }
             }
         }
@@ -1555,11 +1555,11 @@ class SourceVisitor extends CppVisitor {
             let inheritances: Inheritance[] = classDeclaration.typeInheritanceClause.inheritances
             if inheritances != null {
                 for inheritance: Inheritance in inheritances {
-                    let baseClassDeclaration: ClassDeclaration& = findClassDeclaration(classDeclaration, inheritance.type.name)
-                    if baseClassDeclaration == null
-                        continue
-                    if isVariableObjectField(memberName, baseClassDeclaration)
-                        return(true)
+                    let baseClassDeclarations: ClassDeclaration[]$ = findClassDeclarations(classDeclaration, inheritance.type.name)
+                    for baseClassDeclaration: ClassDeclaration in baseClassDeclarations {
+                        if isVariableObjectField(memberName, baseClassDeclaration)
+                            return(true)
+                    }
                 }
             }
         }
@@ -1567,7 +1567,7 @@ class SourceVisitor extends CppVisitor {
         false
     }
     
-    function findClassDeclaration(node: SyntaxNode&, name: string&): ClassDeclaration& {
+    function findClassDeclarations(node: SyntaxNode, name: string): ClassDeclaration[] {
         let program: Program = null
 
         while node != null {
@@ -1578,6 +1578,7 @@ class SourceVisitor extends CppVisitor {
             node = node.parent
         }
 
+        mutable classDeclarations: ClassDeclaration[] = new ClassDeclaration[]()
         if program.compilationUnits != null {
             for compilationUnit: CompilationUnit in program.compilationUnits {
                 if compilationUnit.statements != null {
@@ -1585,14 +1586,14 @@ class SourceVisitor extends CppVisitor {
                         if statement is ClassDeclaration {
                             let classDeclaration: ClassDeclaration = statement as ClassDeclaration
                             if classDeclaration.name.equals(name)
-                                return(classDeclaration)
+                                classDeclarations.push(classDeclaration)
                         }
                     }
                 }
             }
         }
         
-        null
+        classDeclarations
     }
 
     function openTypeQuery(typeQuery: TypeQuery): bool {

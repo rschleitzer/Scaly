@@ -1439,11 +1439,17 @@ bool SourceVisitor::isObjectField(string* memberName, ClassDeclaration* classDec
             for (size_t _i = 0; _i < _inheritances_length; _i++) {
                 inheritance = *(*inheritances)[_i];
                 {
-                    ClassDeclaration* baseClassDeclaration = findClassDeclaration(classDeclaration, inheritance->type->name);
-                    if (baseClassDeclaration == nullptr)
-                        continue;
-                    if (isObjectField(memberName, baseClassDeclaration))
-                        return true;
+                    _Region _region; _Page* _p = _region.get();
+                    _Array<ClassDeclaration>* baseClassDeclarations = findClassDeclarations(_p, classDeclaration, inheritance->type->name);
+                    ClassDeclaration* baseClassDeclaration = nullptr;
+                    size_t _baseClassDeclarations_length = baseClassDeclarations->length();
+                    for (size_t _i = 0; _i < _baseClassDeclarations_length; _i++) {
+                        baseClassDeclaration = *(*baseClassDeclarations)[_i];
+                        {
+                            if (isObjectField(memberName, baseClassDeclaration))
+                                return true;
+                        }
+                    }
                 }
             }
         }
@@ -1485,11 +1491,17 @@ bool SourceVisitor::isVariableObjectField(string* memberName, ClassDeclaration* 
             for (size_t _i = 0; _i < _inheritances_length; _i++) {
                 inheritance = *(*inheritances)[_i];
                 {
-                    ClassDeclaration* baseClassDeclaration = findClassDeclaration(classDeclaration, inheritance->type->name);
-                    if (baseClassDeclaration == nullptr)
-                        continue;
-                    if (isVariableObjectField(memberName, baseClassDeclaration))
-                        return true;
+                    _Region _region; _Page* _p = _region.get();
+                    _Array<ClassDeclaration>* baseClassDeclarations = findClassDeclarations(_p, classDeclaration, inheritance->type->name);
+                    ClassDeclaration* baseClassDeclaration = nullptr;
+                    size_t _baseClassDeclarations_length = baseClassDeclarations->length();
+                    for (size_t _i = 0; _i < _baseClassDeclarations_length; _i++) {
+                        baseClassDeclaration = *(*baseClassDeclarations)[_i];
+                        {
+                            if (isVariableObjectField(memberName, baseClassDeclaration))
+                                return true;
+                        }
+                    }
                 }
             }
         }
@@ -1497,7 +1509,7 @@ bool SourceVisitor::isVariableObjectField(string* memberName, ClassDeclaration* 
     return false;
 }
 
-ClassDeclaration* SourceVisitor::findClassDeclaration(SyntaxNode* node, string* name) {
+_Array<ClassDeclaration>* SourceVisitor::findClassDeclarations(_Page* _rp, SyntaxNode* node, string* name) {
     Program* program = nullptr;
     while (node != nullptr) {
         if (node->_isProgram()) {
@@ -1506,6 +1518,7 @@ ClassDeclaration* SourceVisitor::findClassDeclaration(SyntaxNode* node, string* 
         }
         node = node->parent;
     }
+    _Array<ClassDeclaration>* classDeclarations = new(_rp) _Array<ClassDeclaration>();
     if (program->compilationUnits != nullptr) {
         CompilationUnit* compilationUnit = nullptr;
         size_t _program_length = program->compilationUnits->length();
@@ -1521,7 +1534,7 @@ ClassDeclaration* SourceVisitor::findClassDeclaration(SyntaxNode* node, string* 
                             if (statement->_isClassDeclaration()) {
                                 ClassDeclaration* classDeclaration = (ClassDeclaration*)statement;
                                 if (classDeclaration->name->equals(name))
-                                    return classDeclaration;
+                                    classDeclarations->push(classDeclaration);
                             }
                         }
                     }
@@ -1529,7 +1542,7 @@ ClassDeclaration* SourceVisitor::findClassDeclaration(SyntaxNode* node, string* 
             }
         }
     }
-    return nullptr;
+    return classDeclarations;
 }
 
 bool SourceVisitor::openTypeQuery(TypeQuery* typeQuery) {
