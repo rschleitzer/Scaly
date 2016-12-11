@@ -40,6 +40,10 @@ public:
 
 class Binding : public Object {
 public:
+    Scope* scope;
+    string* identifier;
+    bool isMutable;
+    Action* initializer;
 
 };
 

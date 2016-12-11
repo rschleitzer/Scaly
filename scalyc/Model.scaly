@@ -54,8 +54,18 @@ class Action {
 
 // A name bound to some program object.
 class Binding {
+
+    // The scope in which the binding is bound.
+    let scope: Scope
+
+    // The identifier of the binding.
     let identifier: string
-    mutable scope: Scope
+
+    // True if the binding can be mutated.
+    let isMutable: bool
+    
+    // The scope that defines the binding.
+    mutable initializer: Action
 }
 
 // A scope in which bindings are active.
