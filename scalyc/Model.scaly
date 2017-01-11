@@ -107,7 +107,7 @@ class ModelVisitor extends CommonVisitor {
         }
         else {
             let fileName: string$ = getFileName(compilationUnit)
-            unit = new Unit(model, fileName)
+            unit = new Unit(model, new string(fileName))
         }
 
         true

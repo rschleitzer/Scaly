@@ -52,7 +52,7 @@ bool ModelVisitor::openCompilationUnit(CompilationUnit* compilationUnit) {
         string* fileName = getFileName(_p, compilationUnit);
         if (unit != nullptr)
             unit->_getPage()->clear();
-        unit = new(unit == nullptr ? _getPage()->allocateExclusivePage() : unit->_getPage()) Unit(model, fileName);
+        unit = new(unit == nullptr ? _getPage()->allocateExclusivePage() : unit->_getPage()) Unit(model, new(unit == nullptr ? _getPage()->allocateExclusivePage() : unit->_getPage()) string(fileName));
     }
     return true;
 }
