@@ -48,11 +48,9 @@ bool ModelVisitor::openCompilationUnit(CompilationUnit* compilationUnit) {
         model->main = new(model == nullptr ? _getPage()->allocateExclusivePage() : model->_getPage()) Scope(nullptr);
     }
     else {
-        _Region _region; _Page* _p = _region.get();
-        string* fileName = getFileName(_p, compilationUnit);
         if (unit != nullptr)
             unit->_getPage()->clear();
-        unit = new(unit == nullptr ? _getPage()->allocateExclusivePage() : unit->_getPage()) Unit(model, new(unit == nullptr ? _getPage()->allocateExclusivePage() : unit->_getPage()) string(fileName));
+        unit = new(unit == nullptr ? _getPage()->allocateExclusivePage() : unit->_getPage()) Unit(model, getFileName(unit == nullptr ? _getPage()->allocateExclusivePage() : unit->_getPage(), compilationUnit));
     }
     return true;
 }
