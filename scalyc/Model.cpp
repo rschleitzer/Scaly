@@ -29,6 +29,11 @@ Scope::Scope(Scope* parent) {
 
 bool Scope::_isScope() { return (true); }
 
+ModelVisitor::ModelVisitor() {
+    model = nullptr;
+    unit = nullptr;
+}
+
 bool ModelVisitor::openProgram(Program* program) {
     if (model != nullptr)
         model->_getPage()->clear();

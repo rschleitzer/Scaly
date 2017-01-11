@@ -90,6 +90,11 @@ class ModelVisitor extends CommonVisitor {
     mutable model: Model
     mutable unit: Unit
 
+    constructor() {
+        model = null
+        unit = null
+    }
+
     function openProgram(program: Program) : bool {
         model = new Model(program.name)
         

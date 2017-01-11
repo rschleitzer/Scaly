@@ -62,6 +62,7 @@ class ModelVisitor : public CommonVisitor {
 public:
     Model* model;
     Unit* unit;
+    ModelVisitor();
     virtual bool openProgram(Program* program);
     virtual bool openCompilationUnit(CompilationUnit* compilationUnit);
     virtual void closeCompilationUnit(CompilationUnit* compilationUnit);
