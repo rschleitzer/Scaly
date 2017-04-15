@@ -7,7 +7,7 @@ namespace scalyc {
 class Compiler : public Object {
 public:
     static void compileFiles(Options* options);
-    static _Result<CompilationUnit, CompilerError> parseUnit(_Page* _rp, _Page* _ep, string* moduleName, string* text);
+    static _Result<Module, CompilerError> parseUnit(_Page* _rp, _Page* _ep, string* moduleName, string* text);
 
 };
 

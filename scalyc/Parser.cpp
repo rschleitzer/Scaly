@@ -51,7 +51,7 @@ Parser::Parser(string* theFileName, string* text) {
     ampersand = new(_getPage()) string("&");
 }
 
-_Result<CompilationUnit, ParserError> Parser::parseCompilationUnit(_Page* _rp, _Page* _ep) {
+_Result<Module, ParserError> Parser::parseModule(_Page* _rp, _Page* _ep) {
     _Region _region; _Page* _p = _region.get();
     Position* start = lexer->getPreviousPosition(_p);
     _Array<Statement>* statements = parseStatementList(_rp);
@@ -59,11 +59,11 @@ _Result<CompilationUnit, ParserError> Parser::parseCompilationUnit(_Page* _rp, _
         if (!isAtEnd()) {
             _Region _region; _Page* _p = _region.get();
             Position* errorPos = lexer->getPreviousPosition(_p);
-            return _Result<CompilationUnit, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_syntax(errorPos->line, errorPos->column)));
+            return _Result<Module, ParserError>(new(_ep) ParserError(new(_ep) _ParserError_syntax(errorPos->line, errorPos->column)));
         }
     }
     Position* end = lexer->getPosition(_p);
-    CompilationUnit* ret = new(_rp) CompilationUnit(statements, new(_rp) Position(start), new(_rp) Position(end));
+    Module* ret = new(_rp) Module(statements, new(_rp) Position(start), new(_rp) Position(end));
     if (statements != nullptr) {
         Statement* item = nullptr;
         size_t _statements_length = statements->length();
@@ -2192,11 +2192,11 @@ bool Visitor::openProgram(Program* program) {
 void Visitor::closeProgram(Program* program) {
 }
 
-bool Visitor::openCompilationUnit(CompilationUnit* compilationUnit) {
+bool Visitor::openModule(Module* module) {
     return true;
 }
 
-void Visitor::closeCompilationUnit(CompilationUnit* compilationUnit) {
+void Visitor::closeModule(Module* module) {
 }
 
 bool Visitor::openConstantDeclaration(ConstantDeclaration* constantDeclaration) {
@@ -2674,7 +2674,7 @@ bool Visitor::_isSourceVisitor() { return (false); }
 bool Visitor::_isModelVisitor() { return (false); }
 
 bool SyntaxNode::_isProgram() { return (false); }
-bool SyntaxNode::_isCompilationUnit() { return (false); }
+bool SyntaxNode::_isModule() { return (false); }
 bool SyntaxNode::_isStatement() { return (false); }
 bool SyntaxNode::_isDeclaration() { return (false); }
 bool SyntaxNode::_isConstantDeclaration() { return (false); }
@@ -2766,22 +2766,22 @@ bool SyntaxNode::_isAssignment() { return (false); }
 bool SyntaxNode::_isTypeQuery() { return (false); }
 bool SyntaxNode::_isTypeCast() { return (false); }
 
-Program::Program(string* name, _Array<CompilationUnit>* compilationUnits) {
+Program::Program(string* name, _Array<Module>* modules) {
     start = new(_getPage()) Position(0, 0);
     end = new(_getPage()) Position(0, 0);
     this->name = name;
-    this->compilationUnits = compilationUnits;
+    this->modules = modules;
     this->parent = nullptr;
 }
 
 void Program::accept(Visitor* visitor) {
     if (!visitor->openProgram(this))
         return;
-    if (compilationUnits != nullptr) {
-        CompilationUnit* node = nullptr;
-        size_t _compilationUnits_length = compilationUnits->length();
-        for (size_t _i = 0; _i < _compilationUnits_length; _i++) {
-            node = *(*compilationUnits)[_i];
+    if (modules != nullptr) {
+        Module* node = nullptr;
+        size_t _modules_length = modules->length();
+        for (size_t _i = 0; _i < _modules_length; _i++) {
+            node = *(*modules)[_i];
             node->accept(visitor);
         }
     }
@@ -2790,14 +2790,14 @@ void Program::accept(Visitor* visitor) {
 
 bool Program::_isProgram() { return (true); }
 
-CompilationUnit::CompilationUnit(_Array<Statement>* statements, Position* start, Position* end) {
+Module::Module(_Array<Statement>* statements, Position* start, Position* end) {
     this->start = start;
     this->end = end;
     this->statements = statements;
 }
 
-void CompilationUnit::accept(Visitor* visitor) {
-    if (!visitor->openCompilationUnit(this))
+void Module::accept(Visitor* visitor) {
+    if (!visitor->openModule(this))
         return;
     if (statements != nullptr) {
         Statement* node = nullptr;
@@ -2807,10 +2807,10 @@ void CompilationUnit::accept(Visitor* visitor) {
             node->accept(visitor);
         }
     }
-    visitor->closeCompilationUnit(this);
+    visitor->closeModule(this);
 }
 
-bool CompilationUnit::_isCompilationUnit() { return (true); }
+bool Module::_isModule() { return (true); }
 
 void Statement::accept(Visitor* visitor) {
 }

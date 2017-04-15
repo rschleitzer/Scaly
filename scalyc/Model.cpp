@@ -41,8 +41,8 @@ bool ModelVisitor::openProgram(Program* program) {
     return true;
 }
 
-bool ModelVisitor::openCompilationUnit(CompilationUnit* compilationUnit) {
-    if (isTopLevelFile(compilationUnit)) {
+bool ModelVisitor::openModule(Module* module) {
+    if (isTopLevelFile(module)) {
         if (model != nullptr)
             model->_getPage()->clear();
         model->main = new(model == nullptr ? _getPage()->allocateExclusivePage() : model->_getPage()) Scope(nullptr);
@@ -50,13 +50,13 @@ bool ModelVisitor::openCompilationUnit(CompilationUnit* compilationUnit) {
     else {
         if (unit != nullptr)
             unit->_getPage()->clear();
-        unit = new(unit == nullptr ? _getPage()->allocateExclusivePage() : unit->_getPage()) Unit(model, getFileName(unit == nullptr ? _getPage()->allocateExclusivePage() : unit->_getPage(), compilationUnit));
+        unit = new(unit == nullptr ? _getPage()->allocateExclusivePage() : unit->_getPage()) Unit(model, getFileName(unit == nullptr ? _getPage()->allocateExclusivePage() : unit->_getPage(), module));
     }
     return true;
 }
 
-void ModelVisitor::closeCompilationUnit(CompilationUnit* compilationUnit) {
-    if (isTopLevelFile(compilationUnit))
+void ModelVisitor::closeModule(Module* module) {
+    if (isTopLevelFile(module))
         model->units->push(unit);
 }
 

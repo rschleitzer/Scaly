@@ -16,7 +16,7 @@ public:
     virtual void appendCppTypeName(VarString* s, Type* type);
     virtual void collectDerivedClasses(_Array<string>* derivedClasses, string* className);
     virtual void appendDerivedClasses(_Array<string>* derivedClasses, _Array<string>* inheritors);
-    virtual void collectInheritancesInCompilationUnit(CompilationUnit* compilationUnit);
+    virtual void collectInheritancesInModule(Module* module);
     virtual void registerInheritance(string* className, string* baseName);
 
     virtual bool _isCppVisitor();
@@ -39,8 +39,8 @@ public:
     VarString* mainHeaderFile;
     HeaderVisitor(string* outputDirectory);
     virtual bool openProgram(Program* program);
-    virtual bool openCompilationUnit(CompilationUnit* compilationUnit);
-    virtual void closeCompilationUnit(CompilationUnit* compilationUnit);
+    virtual bool openModule(Module* module);
+    virtual void closeModule(Module* module);
     virtual bool openConstantDeclaration(ConstantDeclaration* constantDeclaration);
     virtual bool openMutableDeclaration(MutableDeclaration* mutableDeclaration);
     virtual void closeFunctionDeclaration(FunctionDeclaration* functionDeclaration);
@@ -78,8 +78,8 @@ public:
     VarString* sourceFile;
     SourceVisitor(string* outputDirectory);
     virtual bool openProgram(Program* program);
-    virtual bool openCompilationUnit(CompilationUnit* compilationUnit);
-    virtual void closeCompilationUnit(CompilationUnit* compilationUnit);
+    virtual bool openModule(Module* module);
+    virtual void closeModule(Module* module);
     virtual bool openConstantDeclaration(ConstantDeclaration* constantDeclaration);
     virtual bool openMutableDeclaration(MutableDeclaration* mutableDeclaration);
     virtual bool openFunctionDeclaration(FunctionDeclaration* functionDeclaration);

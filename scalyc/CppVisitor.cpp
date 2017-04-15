@@ -65,12 +65,12 @@ void CppVisitor::appendDerivedClasses(_Array<string>* derivedClasses, _Array<str
     }
 }
 
-void CppVisitor::collectInheritancesInCompilationUnit(CompilationUnit* compilationUnit) {
-    if (compilationUnit->statements != nullptr) {
+void CppVisitor::collectInheritancesInModule(Module* module) {
+    if (module->statements != nullptr) {
         Statement* statement = nullptr;
-        size_t _compilationUnit_length = compilationUnit->statements->length();
-        for (size_t _i = 0; _i < _compilationUnit_length; _i++) {
-            statement = *(*compilationUnit->statements)[_i];
+        size_t _module_length = module->statements->length();
+        for (size_t _i = 0; _i < _module_length; _i++) {
+            statement = *(*module->statements)[_i];
             {
                 if (statement->_isClassDeclaration()) {
                     ClassDeclaration* classDeclaration = (ClassDeclaration*)statement;
@@ -168,12 +168,12 @@ bool HeaderVisitor::openProgram(Program* program) {
     return true;
 }
 
-bool HeaderVisitor::openCompilationUnit(CompilationUnit* compilationUnit) {
+bool HeaderVisitor::openModule(Module* module) {
     _Region _region; _Page* _p = _region.get();
-    if (!(compilationUnit->parent->_isProgram()))
+    if (!(module->parent->_isProgram()))
         return false;
-    string* programName = ((Program*)compilationUnit->parent)->name;
-    string* fileName = getFileName(_p, compilationUnit);
+    string* programName = ((Program*)module->parent)->name;
+    string* fileName = getFileName(_p, module);
     if (fileName != nullptr) {
         _Region _region; _Page* _p = _region.get();
         string* name = Path::getFileNameWithoutExtension(_p, fileName);
@@ -200,14 +200,14 @@ bool HeaderVisitor::openCompilationUnit(CompilationUnit* compilationUnit) {
     return true;
 }
 
-void HeaderVisitor::closeCompilationUnit(CompilationUnit* compilationUnit) {
+void HeaderVisitor::closeModule(Module* module) {
     _Region _region; _Page* _p = _region.get();
-    if (!(compilationUnit->parent)->_isProgram())
+    if (!(module->parent)->_isProgram())
         return;
-    string* programName = ((Program*)compilationUnit->parent)->name;
+    string* programName = ((Program*)module->parent)->name;
     VarString* outputFilePath = new(_p) VarString(directory);
     outputFilePath->append('/');
-    string* fileName = getFileName(_p, compilationUnit);
+    string* fileName = getFileName(_p, module);
     if (fileName != nullptr) {
         _Region _region; _Page* _p = _region.get();
         string* name = Path::getFileNameWithoutExtension(_p, fileName);
@@ -632,14 +632,14 @@ void HeaderVisitor::buildMainHeaderFileString(Program* program) {
     mainHeaderFile->append("__\n#define __scaly__");
     mainHeaderFile->append(program->name);
     mainHeaderFile->append("__\n\n#include \"Scaly.h\"\n");
-    if (program->compilationUnits != nullptr) {
-        CompilationUnit* compilationUnit = nullptr;
-        size_t _program_length = program->compilationUnits->length();
+    if (program->modules != nullptr) {
+        Module* module = nullptr;
+        size_t _program_length = program->modules->length();
         for (size_t _i = 0; _i < _program_length; _i++) {
-            compilationUnit = *(*program->compilationUnits)[_i];
+            module = *(*program->modules)[_i];
             {
                 _Region _region; _Page* _p = _region.get();
-                string* fileName = getFileName(_p, compilationUnit);
+                string* fileName = getFileName(_p, module);
                 if (fileName != nullptr) {
                     _Region _region; _Page* _p = _region.get();
                     string* name = Path::getFileNameWithoutExtension(_p, fileName);
@@ -658,11 +658,11 @@ void HeaderVisitor::buildMainHeaderFileString(Program* program) {
 }
 
 void HeaderVisitor::collectInheritances(Program* program) {
-    CompilationUnit* compilationUnit = nullptr;
-    size_t _program_length = program->compilationUnits->length();
+    Module* module = nullptr;
+    size_t _program_length = program->modules->length();
     for (size_t _i = 0; _i < _program_length; _i++) {
-        compilationUnit = *(*program->compilationUnits)[_i];
-        collectInheritancesInCompilationUnit(compilationUnit);
+        module = *(*program->modules)[_i];
+        collectInheritancesInModule(module);
     }
 }
 
@@ -693,17 +693,17 @@ bool SourceVisitor::openProgram(Program* program) {
     return true;
 }
 
-bool SourceVisitor::openCompilationUnit(CompilationUnit* compilationUnit) {
-    if (!(compilationUnit->parent->_isProgram()))
+bool SourceVisitor::openModule(Module* module) {
+    if (!(module->parent->_isProgram()))
         return false;
-    string* programName = ((Program*)compilationUnit->parent)->name;
+    string* programName = ((Program*)module->parent)->name;
     if (sourceFile != nullptr)
         sourceFile->_getPage()->clear();
     sourceFile = new(sourceFile == nullptr ? _getPage()->allocateExclusivePage() : sourceFile->_getPage()) VarString(0, 4096);
     sourceFile->append("#include \"");
     sourceFile->append(programName);
     sourceFile->append(".h\"\nusing namespace scaly;\n");
-    if (compilationUnit->statements != nullptr && isTopLevelFile(compilationUnit)) {
+    if (module->statements != nullptr && isTopLevelFile(module)) {
         sourceFile->append("namespace scaly {\n\n");
         sourceFile->append("extern __thread _Page* __CurrentPage;\n");
         sourceFile->append("extern __thread _Task* __CurrentTask;\n\n");
@@ -738,27 +738,27 @@ bool SourceVisitor::openCompilationUnit(CompilationUnit* compilationUnit) {
     sourceFile->append("namespace ");
     sourceFile->append(programName);
     sourceFile->append(" {\n\n");
-    if ((compilationUnit->statements != nullptr) && isTopLevelFile(compilationUnit))
+    if ((module->statements != nullptr) && isTopLevelFile(module))
         sourceFile->append("FileError* _main(_Page* _ep,  _Array<string>* arguments) {\n    _Region _rp; _Page* _p = _rp.get();\n\n");
     return true;
 }
 
-void SourceVisitor::closeCompilationUnit(CompilationUnit* compilationUnit) {
+void SourceVisitor::closeModule(Module* module) {
     _Region _region; _Page* _p = _region.get();
-    if (!(compilationUnit->parent)->_isProgram())
+    if (!(module->parent)->_isProgram())
         return;
     VarString* outputFilePath = new(_p) VarString(directory);
     outputFilePath->append('/');
-    string* fileName = getFileName(_p, compilationUnit);
+    string* fileName = getFileName(_p, module);
     if (fileName != nullptr) {
         _Region _region; _Page* _p = _region.get();
         string* name = Path::getFileNameWithoutExtension(_p, fileName);
         outputFilePath->append(name);
     }
-    if (compilationUnit->statements != nullptr && isTopLevelFile(compilationUnit)) {
-        size_t length = compilationUnit->statements->length();
+    if (module->statements != nullptr && isTopLevelFile(module)) {
+        size_t length = module->statements->length();
         if (length > 0) {
-            Statement* statement = *(*compilationUnit->statements)[length - 1];
+            Statement* statement = *(*module->statements)[length - 1];
             if (statement->_isSimpleExpression()) {
                 SimpleExpression* simpleExpression = (SimpleExpression*)statement;
                 PrimaryExpression* primaryExpression = simpleExpression->prefixExpression->expression->primaryExpression;
@@ -932,7 +932,7 @@ void SourceVisitor::closeCodeBlock(CodeBlock* codeBlock) {
 
 bool SourceVisitor::openSimpleExpression(SimpleExpression* simpleExpression) {
     Statement* statement = (Statement*)simpleExpression;
-    if (statement->parent->_isCodeBlock() || statement->parent->_isCaseContent() || statement->parent->_isCompilationUnit())
+    if (statement->parent->_isCodeBlock() || statement->parent->_isCaseContent() || statement->parent->_isModule())
         indent(level(simpleExpression));
     if (statement->parent->_isFunctionDeclaration()) {
         _Region _region; _Page* _p = _region.get();
@@ -1000,7 +1000,7 @@ bool SourceVisitor::openSimpleExpression(SimpleExpression* simpleExpression) {
                 }
             }
         }
-        if (simpleExpression->parent->_isCodeBlock() || simpleExpression->parent->_isCaseContent() || simpleExpression->parent->_isCompilationUnit()) {
+        if (simpleExpression->parent->_isCodeBlock() || simpleExpression->parent->_isCaseContent() || simpleExpression->parent->_isModule()) {
             if (simpleExpression->prefixExpression->expression->postfixes != nullptr) {
                 Postfix* postfix = nullptr;
                 size_t _simpleExpression_length = simpleExpression->prefixExpression->expression->postfixes->length();
@@ -1020,7 +1020,7 @@ bool SourceVisitor::openSimpleExpression(SimpleExpression* simpleExpression) {
             }
         }
     }
-    if (simpleExpression->parent->_isCompilationUnit()) {
+    if (simpleExpression->parent->_isModule()) {
         if (simpleExpression->prefixExpression->expression->postfixes != nullptr) {
             Postfix* postfix = nullptr;
             size_t _simpleExpression_length = simpleExpression->prefixExpression->expression->postfixes->length();
@@ -1074,9 +1074,9 @@ void SourceVisitor::closeSimpleExpression(SimpleExpression* simpleExpression) {
             }
         }
     }
-    if (simpleExpression->parent->_isCodeBlock() || simpleExpression->parent->_isCaseContent() || simpleExpression->parent->_isCompilationUnit())
+    if (simpleExpression->parent->_isCodeBlock() || simpleExpression->parent->_isCaseContent() || simpleExpression->parent->_isModule())
         sourceFile->append(";\n");
-    if (simpleExpression->parent->_isCompilationUnit()) {
+    if (simpleExpression->parent->_isModule()) {
         _Array<Postfix>* postfixes = simpleExpression->prefixExpression->expression->postfixes;
         if (postfixes != nullptr) {
             Postfix* postfix = nullptr;
@@ -1110,7 +1110,7 @@ bool SourceVisitor::openInitializer(Initializer* initializer) {
 }
 
 bool SourceVisitor::openBindingInitializer(BindingInitializer* bindingInitializer) {
-    if (bindingInitializer->parent->parent->_isCodeBlock() || bindingInitializer->parent->parent->_isCaseContent() || bindingInitializer->parent->parent->_isCompilationUnit())
+    if (bindingInitializer->parent->parent->_isCodeBlock() || bindingInitializer->parent->parent->_isCaseContent() || bindingInitializer->parent->parent->_isModule())
         indent(level(bindingInitializer));
     return true;
 }
@@ -1118,7 +1118,7 @@ bool SourceVisitor::openBindingInitializer(BindingInitializer* bindingInitialize
 void SourceVisitor::closeBindingInitializer(BindingInitializer* bindingInitializer) {
     if (isCatchingFunctionCall(bindingInitializer->initializer))
         return;
-    if (bindingInitializer->parent->parent->_isCodeBlock() || bindingInitializer->parent->parent->_isCaseContent() || bindingInitializer->parent->parent->_isCompilationUnit())
+    if (bindingInitializer->parent->parent->_isCodeBlock() || bindingInitializer->parent->parent->_isCaseContent() || bindingInitializer->parent->parent->_isModule())
         sourceFile->append(";\n");
 }
 
@@ -1301,7 +1301,7 @@ size_t SourceVisitor::level(SyntaxNode* syntaxNode) {
     size_t level = 0;
     SyntaxNode* node = syntaxNode;
     while (node != nullptr) {
-        if (node->_isCodeBlock() || node->_isCompilationUnit() || node->_isForExpression() || node->_isCatchClause() || node->_isCurliedSwitchBody() || node->_isCaseContent())
+        if (node->_isCodeBlock() || node->_isModule() || node->_isForExpression() || node->_isCatchClause() || node->_isCurliedSwitchBody() || node->_isCaseContent())
             level++;
         if (node->_isClassDeclaration())
             level--;
@@ -1493,17 +1493,17 @@ _Array<ClassDeclaration>* SourceVisitor::findClassDeclarations(_Page* _rp, Synta
         node = node->parent;
     }
     _Array<ClassDeclaration>* classDeclarations = new(_rp) _Array<ClassDeclaration>();
-    if (program->compilationUnits != nullptr) {
-        CompilationUnit* compilationUnit = nullptr;
-        size_t _program_length = program->compilationUnits->length();
+    if (program->modules != nullptr) {
+        Module* module = nullptr;
+        size_t _program_length = program->modules->length();
         for (size_t _i = 0; _i < _program_length; _i++) {
-            compilationUnit = *(*program->compilationUnits)[_i];
+            module = *(*program->modules)[_i];
             {
-                if (compilationUnit->statements != nullptr) {
+                if (module->statements != nullptr) {
                     Statement* statement = nullptr;
-                    size_t _compilationUnit_length = compilationUnit->statements->length();
-                    for (size_t _i = 0; _i < _compilationUnit_length; _i++) {
-                        statement = *(*compilationUnit->statements)[_i];
+                    size_t _module_length = module->statements->length();
+                    for (size_t _i = 0; _i < _module_length; _i++) {
+                        statement = *(*module->statements)[_i];
                         {
                             if (statement->_isClassDeclaration()) {
                                 ClassDeclaration* classDeclaration = (ClassDeclaration*)statement;
@@ -1702,7 +1702,7 @@ bool SourceVisitor::openCatchClause(CatchClause* catchClause) {
 }
 
 IdentifierExpression* SourceVisitor::getIdentifierExpression(PostfixExpression* postfixExpression) {
-    if (postfixExpression->parent->parent->parent->_isCodeBlock() || postfixExpression->parent->parent->parent->_isCompilationUnit()) {
+    if (postfixExpression->parent->parent->parent->_isCodeBlock() || postfixExpression->parent->parent->parent->_isModule()) {
         if (postfixExpression->parent->_isPrefixExpression()) {
             PrefixExpression* prefixExpression = (PrefixExpression*)(postfixExpression->parent);
             if (prefixExpression->expression->primaryExpression->_isIdentifierExpression()) {
@@ -2175,7 +2175,7 @@ bool SourceVisitor::inTopLevelCode(SyntaxNode* syntaxNode) {
         return false;
     if (syntaxNode->_isFunctionDeclaration())
         return false;
-    if (syntaxNode->_isCompilationUnit())
+    if (syntaxNode->_isModule())
         return true;
     if (syntaxNode->parent == nullptr)
         return false;
@@ -2661,14 +2661,14 @@ VarString* SourceVisitor::buildProjectFileString(_Page* _rp, Program* program) {
     projectFile->append("  <Description/>\n  <Dependencies/>\n");
     projectFile->append("  <VirtualDirectory Name=\"src\">\n");
     {
-        CompilationUnit* compilationUnit = nullptr;
-        size_t _program_length = program->compilationUnits->length();
+        Module* module = nullptr;
+        size_t _program_length = program->modules->length();
         for (size_t _i = 0; _i < _program_length; _i++) {
-            compilationUnit = *(*program->compilationUnits)[_i];
+            module = *(*program->modules)[_i];
             {
                 _Region _region; _Page* _p = _region.get();
                 projectFile->append("    <File Name=\"");
-                string* fileName = getFileName(_p, compilationUnit);
+                string* fileName = getFileName(_p, module);
                 if (fileName != nullptr) {
                     _Region _region; _Page* _p = _region.get();
                     string* name = Path::getFileNameWithoutExtension(_p, fileName);
@@ -2683,13 +2683,13 @@ VarString* SourceVisitor::buildProjectFileString(_Page* _rp, Program* program) {
     }
     projectFile->append("  </VirtualDirectory>\n  <VirtualDirectory Name=\"include\">\n");
     {
-        CompilationUnit* compilationUnit = nullptr;
-        size_t _program_length = program->compilationUnits->length();
+        Module* module = nullptr;
+        size_t _program_length = program->modules->length();
         for (size_t _i = 0; _i < _program_length; _i++) {
-            compilationUnit = *(*program->compilationUnits)[_i];
+            module = *(*program->modules)[_i];
             {
                 _Region _region; _Page* _p = _region.get();
-                string* fileName = getFileName(_p, compilationUnit);
+                string* fileName = getFileName(_p, module);
                 if (fileName != nullptr) {
                     _Region _region; _Page* _p = _region.get();
                     string* name = Path::getFileNameWithoutExtension(_p, fileName);
@@ -2720,13 +2720,13 @@ VarString* SourceVisitor::buildProjectFileString(_Page* _rp, Program* program) {
     projectFile->append(" -d ../");
     projectFile->append(program->name);
     {
-        CompilationUnit* compilationUnit = nullptr;
-        size_t _program_length = program->compilationUnits->length();
+        Module* module = nullptr;
+        size_t _program_length = program->modules->length();
         for (size_t _i = 0; _i < _program_length; _i++) {
-            compilationUnit = *(*program->compilationUnits)[_i];
+            module = *(*program->modules)[_i];
             {
                 _Region _region; _Page* _p = _region.get();
-                string* fileName = getFileName(_p, compilationUnit);
+                string* fileName = getFileName(_p, module);
                 if (fileName != nullptr) {
                     _Region _region; _Page* _p = _region.get();
                     string* name = Path::getFileNameWithoutExtension(_p, fileName);
@@ -2781,11 +2781,11 @@ VarString* SourceVisitor::buildProjectFileString(_Page* _rp, Program* program) {
 }
 
 void SourceVisitor::collectInheritances(Program* program) {
-    CompilationUnit* compilationUnit = nullptr;
-    size_t _program_length = program->compilationUnits->length();
+    Module* module = nullptr;
+    size_t _program_length = program->modules->length();
     for (size_t _i = 0; _i < _program_length; _i++) {
-        compilationUnit = *(*program->compilationUnits)[_i];
-        collectInheritancesInCompilationUnit(compilationUnit);
+        module = *(*program->modules)[_i];
+        collectInheritancesInModule(module);
     }
 }
 

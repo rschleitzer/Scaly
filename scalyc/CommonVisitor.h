@@ -6,8 +6,8 @@ namespace scalyc {
 
 class CommonVisitor : public Visitor {
 public:
-    virtual bool isTopLevelFile(CompilationUnit* compilationUnit);
-    virtual string* getFileName(_Page* _rp, CompilationUnit* compilationUnit);
+    virtual bool isTopLevelFile(Module* module);
+    virtual string* getFileName(_Page* _rp, Module* module);
 
     virtual bool _isCommonVisitor();
     virtual bool _isCppVisitor();

@@ -101,19 +101,19 @@ class ModelVisitor extends CommonVisitor {
         true
     }
 
-    function openCompilationUnit(compilationUnit: CompilationUnit) : bool {
-        if isTopLevelFile(compilationUnit) {
+    function openModule(module: Module) : bool {
+        if isTopLevelFile(module) {
             model.main = new Scope(null)
         }
         else {
-            unit = new Unit(model, getFileName(compilationUnit))
+            unit = new Unit(model, getFileName(module))
         }
 
         true
     }
 
-    function closeCompilationUnit(compilationUnit: CompilationUnit) {
-        if isTopLevelFile(compilationUnit)
+    function closeModule(module: Module) {
+        if isTopLevelFile(module)
             model.units.push(unit)
     }
 

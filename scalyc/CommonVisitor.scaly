@@ -1,19 +1,19 @@
 class CommonVisitor extends Visitor {
 
-    function isTopLevelFile(compilationUnit: CompilationUnit): bool {
-        for statement: Statement in compilationUnit.statements
+    function isTopLevelFile(module: Module): bool {
+        for statement: Statement in module.statements
             if statement is Expression
                 return(true)
             
         false
     }
 
-    function getFileName(compilationUnit: CompilationUnit) : string {
+    function getFileName(module: Module) : string {
 
-        if compilationUnit.statements == null
+        if module.statements == null
             return(null)
 
-        for statement: Statement in compilationUnit.statements {
+        for statement: Statement in module.statements {
             if statement is ClassDeclaration {
                 let classDeclaration: ClassDeclaration = statement as ClassDeclaration
                 if classDeclaration.body != null
@@ -26,8 +26,8 @@ class CommonVisitor extends Visitor {
             }
         }
 
-        if compilationUnit.parent is Program {
-            let program: Program = compilationUnit.parent as Program
+        if module.parent is Program {
+            let program: Program = module.parent as Program
             return(new string(program.name))
         }
 

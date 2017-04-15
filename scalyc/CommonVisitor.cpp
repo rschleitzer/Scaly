@@ -2,11 +2,11 @@
 using namespace scaly;
 namespace scalyc {
 
-bool CommonVisitor::isTopLevelFile(CompilationUnit* compilationUnit) {
+bool CommonVisitor::isTopLevelFile(Module* module) {
     Statement* statement = nullptr;
-    size_t _compilationUnit_length = compilationUnit->statements->length();
-    for (size_t _i = 0; _i < _compilationUnit_length; _i++) {
-        statement = *(*compilationUnit->statements)[_i];
+    size_t _module_length = module->statements->length();
+    for (size_t _i = 0; _i < _module_length; _i++) {
+        statement = *(*module->statements)[_i];
         if (statement->_isExpression())
             return true;
 ;
@@ -14,13 +14,13 @@ bool CommonVisitor::isTopLevelFile(CompilationUnit* compilationUnit) {
     return false;
 }
 
-string* CommonVisitor::getFileName(_Page* _rp, CompilationUnit* compilationUnit) {
-    if (compilationUnit->statements == nullptr)
+string* CommonVisitor::getFileName(_Page* _rp, Module* module) {
+    if (module->statements == nullptr)
         return nullptr;
     Statement* statement = nullptr;
-    size_t _compilationUnit_length = compilationUnit->statements->length();
-    for (size_t _i = 0; _i < _compilationUnit_length; _i++) {
-        statement = *(*compilationUnit->statements)[_i];
+    size_t _module_length = module->statements->length();
+    for (size_t _i = 0; _i < _module_length; _i++) {
+        statement = *(*module->statements)[_i];
         {
             if (statement->_isClassDeclaration()) {
                 ClassDeclaration* classDeclaration = (ClassDeclaration*)statement;
@@ -33,8 +33,8 @@ string* CommonVisitor::getFileName(_Page* _rp, CompilationUnit* compilationUnit)
             }
         }
     }
-    if (compilationUnit->parent->_isProgram()) {
-        Program* program = (Program*)compilationUnit->parent;
+    if (module->parent->_isProgram()) {
+        Program* program = (Program*)module->parent;
         return new(_rp) string(program->name);
     }
     return nullptr;

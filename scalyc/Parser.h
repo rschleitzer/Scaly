@@ -6,7 +6,7 @@ namespace scalyc {
 
 class Program;
 
-class CompilationUnit;
+class Module;
 
 class Statement;
 
@@ -191,7 +191,7 @@ class TypeCast;
 class Parser : public Object {
 public:
     Parser(string* theFileName, string* text);
-    virtual _Result<CompilationUnit, ParserError> parseCompilationUnit(_Page* _rp, _Page* _ep);
+    virtual _Result<Module, ParserError> parseModule(_Page* _rp, _Page* _ep);
     virtual _Array<Statement>* parseStatementList(_Page* _rp);
     virtual Statement* parseStatement(_Page* _rp);
     virtual Declaration* parseDeclaration(_Page* _rp);
@@ -355,8 +355,8 @@ class Visitor : public Object {
 public:
     virtual bool openProgram(Program* program);
     virtual void closeProgram(Program* program);
-    virtual bool openCompilationUnit(CompilationUnit* compilationUnit);
-    virtual void closeCompilationUnit(CompilationUnit* compilationUnit);
+    virtual bool openModule(Module* module);
+    virtual void closeModule(Module* module);
     virtual bool openConstantDeclaration(ConstantDeclaration* constantDeclaration);
     virtual void closeConstantDeclaration(ConstantDeclaration* constantDeclaration);
     virtual bool openMutableDeclaration(MutableDeclaration* mutableDeclaration);
@@ -508,7 +508,7 @@ public:
     SyntaxNode* parent;
 
     virtual bool _isProgram();
-    virtual bool _isCompilationUnit();
+    virtual bool _isModule();
     virtual bool _isStatement();
     virtual bool _isDeclaration();
     virtual bool _isConstantDeclaration();
@@ -603,21 +603,21 @@ public:
 
 class Program : public SyntaxNode {
 public:
-    Program(string* name, _Array<CompilationUnit>* compilationUnits);
+    Program(string* name, _Array<Module>* modules);
     virtual void accept(Visitor* visitor);
     string* name;
-    _Array<CompilationUnit>* compilationUnits;
+    _Array<Module>* modules;
 
     virtual bool _isProgram();
 };
 
-class CompilationUnit : public SyntaxNode {
+class Module : public SyntaxNode {
 public:
-    CompilationUnit(_Array<Statement>* statements, Position* start, Position* end);
+    Module(_Array<Statement>* statements, Position* start, Position* end);
     virtual void accept(Visitor* visitor);
     _Array<Statement>* statements;
 
-    virtual bool _isCompilationUnit();
+    virtual bool _isModule();
 };
 
 class Statement : public SyntaxNode {

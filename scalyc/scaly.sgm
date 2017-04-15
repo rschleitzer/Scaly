@@ -3,9 +3,9 @@
 
     <syntax id = Program                                        program
         <content identifier                                     property = name
-        <content link = CompilationUnit       multiple          property = compilationUnits
+        <content link = Module                multiple          property = modules
 
-    <syntax id = CompilationUnit                                top
+    <syntax id = Module                                         top
         <content link = Statement             multiple optional property = statements
 
     <syntax id = Statement                    multiple abstract

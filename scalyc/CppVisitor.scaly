@@ -66,9 +66,9 @@ class CppVisitor extends CommonVisitor {
         }
     }
 
-    function collectInheritancesInCompilationUnit(compilationUnit: CompilationUnit) {
-        if compilationUnit.statements != null {
-            for statement: Statement in compilationUnit.statements {
+    function collectInheritancesInModule(module: Module) {
+        if module.statements != null {
+            for statement: Statement in module.statements {
                 if statement is ClassDeclaration {
                     let classDeclaration: ClassDeclaration = statement as ClassDeclaration
                     classes.push(classDeclaration.name)
@@ -165,13 +165,13 @@ class HeaderVisitor extends CppVisitor {
         true
     }
 
-    function openCompilationUnit(compilationUnit: CompilationUnit): bool {
+    function openModule(module: Module): bool {
 
-        if !(compilationUnit.parent is Program)
+        if !(module.parent is Program)
             return(false)
 
-        let programName: string = (compilationUnit.parent as Program).name
-        let fileName: string$ = getFileName(compilationUnit)
+        let programName: string = (module.parent as Program).name
+        let fileName: string$ = getFileName(module)
         if fileName != null {
             let name: string$ = Path.getFileNameWithoutExtension(fileName)
             if !fileName.equals(programName) {
@@ -196,16 +196,16 @@ class HeaderVisitor extends CppVisitor {
         true
     }
 
-    function closeCompilationUnit(compilationUnit: CompilationUnit) {
+    function closeModule(module: Module) {
 
-        if !(compilationUnit.parent) is Program
+        if !(module.parent) is Program
             return
 
-        let programName: string = (compilationUnit.parent as Program).name
+        let programName: string = (module.parent as Program).name
         mutable outputFilePath: VarString$  = new VarString(directory)
         outputFilePath.append('/')
 
-        let fileName: string$ = getFileName(compilationUnit)
+        let fileName: string$ = getFileName(module)
         if fileName != null {
             let name: string$ = Path.getFileNameWithoutExtension(fileName)
             outputFilePath.append(name)
@@ -642,9 +642,9 @@ class HeaderVisitor extends CppVisitor {
         mainHeaderFile.append("__\n#define __scaly__")
         mainHeaderFile.append(program.name)
         mainHeaderFile.append("__\n\n#include \"Scaly.h\"\n")
-        if program.compilationUnits != null {
-            for compilationUnit: CompilationUnit in program.compilationUnits {
-                let fileName: string$ = getFileName(compilationUnit)
+        if program.modules != null {
+            for module: Module in program.modules {
+                let fileName: string$ = getFileName(module)
                 if fileName != null {
                     let name: string$ = Path.getFileNameWithoutExtension(fileName)
                     mainHeaderFile.append("#include \"")
@@ -661,8 +661,8 @@ class HeaderVisitor extends CppVisitor {
     }
 
     function collectInheritances(program: Program) {
-        for compilationUnit: CompilationUnit in program.compilationUnits
-            collectInheritancesInCompilationUnit(compilationUnit)
+        for module: Module in program.modules
+            collectInheritancesInModule(module)
     }
 }
 
@@ -699,12 +699,12 @@ class SourceVisitor extends CppVisitor {
         true
     }
 
-    function openCompilationUnit(compilationUnit: CompilationUnit): bool {
+    function openModule(module: Module): bool {
 
-        if !(compilationUnit.parent is Program)
+        if !(module.parent is Program)
             return(false)
 
-        let programName: string = (compilationUnit.parent as Program).name
+        let programName: string = (module.parent as Program).name
 
         // Begin cpp file
         sourceFile = new VarString(0, 4096)
@@ -712,7 +712,7 @@ class SourceVisitor extends CppVisitor {
         sourceFile.append(programName)
         sourceFile.append(".h\"\nusing namespace scaly;\n")
         
-        if compilationUnit.statements != null && isTopLevelFile(compilationUnit) {
+        if module.statements != null && isTopLevelFile(module) {
             sourceFile.append("namespace scaly {\n\n")
             sourceFile.append("extern __thread _Page* __CurrentPage;\n")
             sourceFile.append("extern __thread _Task* __CurrentTask;\n\n")
@@ -749,32 +749,32 @@ class SourceVisitor extends CppVisitor {
         sourceFile.append(programName)
         sourceFile.append(" {\n\n")
         
-        if (compilationUnit.statements != null) && isTopLevelFile(compilationUnit)
+        if (module.statements != null) && isTopLevelFile(module)
             sourceFile.append("FileError* _main(_Page* _ep,  _Array<string>* arguments) {\n    _Region _rp; _Page* _p = _rp.get();\n\n")
 
         true
     }
 
-    function closeCompilationUnit(compilationUnit: CompilationUnit) {
-        if !(compilationUnit.parent) is Program
+    function closeModule(module: Module) {
+        if !(module.parent) is Program
             return
 
         // Close and write cpp file
 
         mutable outputFilePath: VarString$  = new VarString(directory)
         outputFilePath.append('/')
-        let fileName: string$ = getFileName(compilationUnit)
+        let fileName: string$ = getFileName(module)
         if fileName != null {
             let name: string$ = Path.getFileNameWithoutExtension(fileName)
             outputFilePath.append(name)
         }
 
-        if compilationUnit.statements != null && isTopLevelFile(compilationUnit)
+        if module.statements != null && isTopLevelFile(module)
         {
             // Insert the return 0 if the last statement is not a return or a literal
-            let length: number = compilationUnit.statements.length()
+            let length: number = module.statements.length()
             if length > 0 {
-                let statement: Statement = compilationUnit.statements[length - 1]
+                let statement: Statement = module.statements[length - 1]
                 if statement is SimpleExpression {
                     let simpleExpression: SimpleExpression = statement as SimpleExpression
                     let primaryExpression: PrimaryExpression = simpleExpression.prefixExpression.expression.primaryExpression
@@ -957,7 +957,7 @@ class SourceVisitor extends CppVisitor {
     function openSimpleExpression(simpleExpression: SimpleExpression): bool {
 
         let statement: Statement = simpleExpression as Statement
-        if statement.parent is CodeBlock || statement.parent is CaseContent || statement.parent is CompilationUnit
+        if statement.parent is CodeBlock || statement.parent is CaseContent || statement.parent is Module
             indent(level(simpleExpression))
 
         // Prepend a return if this expression is the only one of a function
@@ -1029,7 +1029,7 @@ class SourceVisitor extends CppVisitor {
             }
 
             // Prefix the error result for a catching function call
-            if simpleExpression.parent is CodeBlock || simpleExpression.parent is CaseContent || simpleExpression.parent is CompilationUnit {
+            if simpleExpression.parent is CodeBlock || simpleExpression.parent is CaseContent || simpleExpression.parent is Module {
                 if simpleExpression.prefixExpression.expression.postfixes != null {
                     for postfix: Postfix in simpleExpression.prefixExpression.expression.postfixes {
                         if postfix is FunctionCall {
@@ -1045,7 +1045,7 @@ class SourceVisitor extends CppVisitor {
             }
         }
 
-        if simpleExpression.parent is CompilationUnit {
+        if simpleExpression.parent is Module {
 
             // Prefix the error result for a global function call which throws FileError
             if simpleExpression.prefixExpression.expression.postfixes != null {
@@ -1106,10 +1106,10 @@ class SourceVisitor extends CppVisitor {
 
         if simpleExpression.parent is CodeBlock
         || simpleExpression.parent is CaseContent
-        || simpleExpression.parent is CompilationUnit
+        || simpleExpression.parent is Module
             sourceFile.append(";\n")
             
-        if simpleExpression.parent is CompilationUnit {
+        if simpleExpression.parent is Module {
 
             // Check and return the error result for a global function call which throws FileError
             let postfixes: Postfix[] = simpleExpression.prefixExpression.expression.postfixes
@@ -1146,7 +1146,7 @@ class SourceVisitor extends CppVisitor {
 
         if bindingInitializer.parent.parent is CodeBlock
         || bindingInitializer.parent.parent is CaseContent
-        || bindingInitializer.parent.parent is CompilationUnit
+        || bindingInitializer.parent.parent is Module
             indent(level(bindingInitializer))
 
         true
@@ -1159,7 +1159,7 @@ class SourceVisitor extends CppVisitor {
 
         if bindingInitializer.parent.parent is CodeBlock
         || bindingInitializer.parent.parent is CaseContent
-        || bindingInitializer.parent.parent is CompilationUnit
+        || bindingInitializer.parent.parent is Module
             sourceFile.append(";\n")
     }
 
@@ -1360,7 +1360,7 @@ class SourceVisitor extends CppVisitor {
         while node != null {
 
             if node is CodeBlock
-            || node is CompilationUnit
+            || node is Module
             || node is ForExpression
             || node is CatchClause
             || node is CurliedSwitchBody
@@ -1553,10 +1553,10 @@ class SourceVisitor extends CppVisitor {
         }
 
         mutable classDeclarations: ClassDeclaration[] = new ClassDeclaration[]()
-        if program.compilationUnits != null {
-            for compilationUnit: CompilationUnit in program.compilationUnits {
-                if compilationUnit.statements != null {
-                    for statement: Statement in compilationUnit.statements {
+        if program.modules != null {
+            for module: Module in program.modules {
+                if module.statements != null {
+                    for statement: Statement in module.statements {
                         if statement is ClassDeclaration {
                             let classDeclaration: ClassDeclaration = statement as ClassDeclaration
                             if classDeclaration.name.equals(name)
@@ -1768,7 +1768,7 @@ class SourceVisitor extends CppVisitor {
     }
 
     function getIdentifierExpression(postfixExpression: PostfixExpression&): IdentifierExpression& {
-        if postfixExpression.parent.parent.parent is CodeBlock || postfixExpression.parent.parent.parent is CompilationUnit {
+        if postfixExpression.parent.parent.parent is CodeBlock || postfixExpression.parent.parent.parent is Module {
             if postfixExpression.parent is PrefixExpression {
                 let prefixExpression: PrefixExpression = (postfixExpression.parent) as PrefixExpression
                 if prefixExpression.expression.primaryExpression is IdentifierExpression {
@@ -2254,7 +2254,7 @@ class SourceVisitor extends CppVisitor {
         if syntaxNode is FunctionDeclaration
             return(false)
 
-        if syntaxNode is CompilationUnit
+        if syntaxNode is Module
             return(true)
             
         if syntaxNode.parent == null
@@ -2788,9 +2788,9 @@ class SourceVisitor extends CppVisitor {
         projectFile.append("  <Description/>\n  <Dependencies/>\n")
         projectFile.append("  <VirtualDirectory Name=\"src\">\n")
         {
-            for compilationUnit: CompilationUnit in program.compilationUnits {
+            for module: Module in program.modules {
                 projectFile.append("    <File Name=\"")
-                let fileName: string$ = getFileName(compilationUnit)
+                let fileName: string$ = getFileName(module)
                 if fileName != null {
                     let name: string$ = Path.getFileNameWithoutExtension(fileName)
                     projectFile.append(name)
@@ -2803,8 +2803,8 @@ class SourceVisitor extends CppVisitor {
         }
         projectFile.append("  </VirtualDirectory>\n  <VirtualDirectory Name=\"include\">\n")
         {
-            for compilationUnit: CompilationUnit in program.compilationUnits {
-                let fileName: string$ = getFileName(compilationUnit)
+            for module: Module in program.modules {
+                let fileName: string$ = getFileName(module)
                 if fileName != null {
                     let name: string$ = Path.getFileNameWithoutExtension(fileName)
                     projectFile.append("    <File Name=\"")
@@ -2833,8 +2833,8 @@ class SourceVisitor extends CppVisitor {
         projectFile.append(" -d ../")
         projectFile.append(program.name)
         {
-            for compilationUnit: CompilationUnit in program.compilationUnits {
-                let fileName: string$ = getFileName(compilationUnit)
+            for module: Module in program.modules {
+                let fileName: string$ = getFileName(module)
                 if fileName != null {
                     let name: string$ = Path.getFileNameWithoutExtension(fileName)
                     projectFile.append(" ../")
@@ -2888,7 +2888,7 @@ class SourceVisitor extends CppVisitor {
     }
 
     function collectInheritances(program: Program) {
-        for compilationUnit: CompilationUnit in program.compilationUnits
-            collectInheritancesInCompilationUnit(compilationUnit)
+        for module: Module in program.modules
+            collectInheritancesInModule(module)
     }
 }

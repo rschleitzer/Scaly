@@ -1,5 +1,5 @@
 class Program
-class CompilationUnit
+class Module
 class Statement
 class Declaration
 class ConstantDeclaration
@@ -141,7 +141,7 @@ class Parser {
         ampersand = new string("&")
     }
 
-    function parseCompilationUnit(): CompilationUnit throws ParserError {
+    function parseModule(): Module throws ParserError {
         let start: Position$ = lexer.getPreviousPosition()
 
         let statements: Statement[] = parseStatementList()
@@ -154,7 +154,7 @@ class Parser {
 
         let end: Position$ = lexer.getPosition()
 
-        let ret: CompilationUnit = new CompilationUnit(statements, new Position(start), new Position(end))
+        let ret: Module = new Module(statements, new Position(start), new Position(end))
         if statements != null {
             for item: Statement in statements
                 item.parent = ret
@@ -2714,11 +2714,11 @@ class Visitor {
     function closeProgram(program: Program) {
     }
 
-    function openCompilationUnit(compilationUnit: CompilationUnit): bool {
+    function openModule(module: Module): bool {
         true
     }
 
-    function closeCompilationUnit(compilationUnit: CompilationUnit) {
+    function closeModule(module: Module) {
     }
 
     function openConstantDeclaration(constantDeclaration: ConstantDeclaration): bool {
@@ -3198,29 +3198,29 @@ class SyntaxNode {
 
 class Program extends SyntaxNode {
 
-    constructor(name: string, compilationUnits: CompilationUnit[]) {
+    constructor(name: string, modules: Module[]) {
         start = new Position(0, 0)
         end = new Position(0, 0)
         this.name = name
-        this.compilationUnits = compilationUnits
+        this.modules = modules
         this.parent = null
     }
 
     function accept(mutable visitor: Visitor) {
         if !visitor.openProgram(this)
             return
-        if compilationUnits != null {
-            for node: CompilationUnit in compilationUnits
+        if modules != null {
+            for node: Module in modules
                 node.accept(visitor)
         }
         visitor.closeProgram(this)
     }
 
     let name: string
-    let compilationUnits: CompilationUnit[]
+    let modules: Module[]
 }
 
-class CompilationUnit extends SyntaxNode {
+class Module extends SyntaxNode {
 
     constructor(statements: Statement[], start: Position, end: Position) {
         this.start = start
@@ -3229,13 +3229,13 @@ class CompilationUnit extends SyntaxNode {
     }
 
     function accept(mutable visitor: Visitor) {
-        if !visitor.openCompilationUnit(this)
+        if !visitor.openModule(this)
             return
         if statements != null {
             for node: Statement in statements
                 node.accept(visitor)
         }
-        visitor.closeCompilationUnit(this)
+        visitor.closeModule(this)
     }
 
     let statements: Statement[]

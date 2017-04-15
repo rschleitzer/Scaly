@@ -64,8 +64,8 @@ public:
     Unit* unit;
     ModelVisitor();
     virtual bool openProgram(Program* program);
-    virtual bool openCompilationUnit(CompilationUnit* compilationUnit);
-    virtual void closeCompilationUnit(CompilationUnit* compilationUnit);
+    virtual bool openModule(Module* module);
+    virtual void closeModule(Module* module);
     virtual bool openConstantDeclaration(ConstantDeclaration* constantDeclaration);
     virtual void closeConstantDeclaration(ConstantDeclaration* constantDeclaration);
 

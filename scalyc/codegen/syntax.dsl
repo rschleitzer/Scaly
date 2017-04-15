@@ -17,7 +17,7 @@ class "(id syntax-node)" extends "(if (base syntax-node) (base syntax-node) "Syn
 "        start = new Position(0, 0)
         end = new Position(0, 0)
         this.name = name
-        this.compilationUnits = compilationUnits
+        this.modules = modules
         this.parent = null
 "
             (constructor-initializers syntax-node)

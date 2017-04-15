@@ -16,11 +16,11 @@ class Compiler {
             sources.push(source)
         }
 
-        mutable compilationUnits: CompilationUnit[]$ = new CompilationUnit[]()
+        mutable modules: Module[]$ = new Module[]()
         let index: number = 0
         for source: string in sources {
-            let moduleName: string@compilationUnits = Path.getFileNameWithoutExtension(files[index])
-            let compilationUnit: CompilationUnit@compilationUnits = parseUnit(moduleName, source)
+            let moduleName: string@modules = Path.getFileNameWithoutExtension(files[index])
+            let module: Module@modules = parseUnit(moduleName, source)
                 catch CompilerError.parser(line: number, column: number) {
                     mutable msg: VarString$ = new VarString("Syntax error in ")
                     msg.append(files[index])
@@ -36,12 +36,12 @@ class Compiler {
                     return
                 }
 
-            compilationUnits.push(compilationUnit)
+            modules.push(module)
             index++
         }
 
-        let program: Program$ = new Program(options.outputName, new CompilationUnit[](compilationUnits))
-        for item: CompilationUnit in compilationUnits
+        let program: Program$ = new Program(options.outputName, new Module[](modules))
+        for item: Module in modules
             item.parent = program
 
         mutable headerVisitor: HeaderVisitor$ = new HeaderVisitor(options.directory)        
@@ -60,14 +60,14 @@ class Compiler {
         print(message) catch _ return
     }
 
-    static function parseUnit(moduleName: string, text: string): CompilationUnit throws CompilerError {
+    static function parseUnit(moduleName: string, text: string): Module throws CompilerError {
         mutable parser: Parser$ = new Parser(moduleName, text)
 
-        let compilationUnit: CompilationUnit = parser.parseCompilationUnit()
+        let module: Module = parser.parseModule()
             catch ParserError.syntax(line: number, column: number) {
                 throw parser(line, column)
             }
 
-        compilationUnit
+        module
     }
 }
