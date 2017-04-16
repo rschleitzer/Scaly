@@ -20,7 +20,7 @@ void _Page::clear() {
     reset(); }
 
 _Page** _Page::getLastExtensionPageLocation() {
-    // Frome where the ordinary extension page is pointed to
+    // From where the ordinary extension page is pointed to
     return ((_Page**) ((char*) this + _pageSize)) - 1; }
 
 void* _Page::operator new(size_t size, void* location) {
