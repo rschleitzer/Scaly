@@ -298,6 +298,150 @@ Memory Management
 
 Scaly uses 
 https://en.wikipedia.org/wiki/Region-based_memory_management[region-based memory management]
-where objects live on the stack. No heap is used, and therefore, neither garbage collection 
-nor reference counting is required. Objects are accessed via references 
+where objects conceptually live on the stack. No heap is used, and therefore, 
+neither garbage collection nor reference counting is required. Objects are accessed via references 
 within well-defined constraints which ensure safe parallel execution of the code.
+
+Regions
+~~~~~~~
+
+With Scaly's region-based memory management, objects are not allocated from a global heap, 
+but from a region. A region is formed each time program execution enters a block 
+in which at least one fresh object is assigned to a reference which is defined 
+in that block. An example:
+
+  function f() {
+      let a = new A()
+      let b = createB()
+      {
+          let c = new C()
+          {
+              c.d = new D()
+          }
+      }
+  }
+
+When a thread enters `f`, the outermost block of that function allocates a region in which
+two objects are created: one object of type `A` to which the reference `a` points is created with 
+`new`, and then one object of type `B` to which the reference `b` points, is created by a function 
+`createB()` (which might create the object by itself using `new` or call another function 
+which creates the object).
+
+Then, the next block is entered, and a new region is allocated in which an object of type `C` 
+is created and then assigned to the reference `c`. 
+
+The innermost block of the function, however, creates no region because no object is assigned to a 
+reference which is defined in that block. The new `D` object is created in `C`'s region instead 
+since it is assigned to `d` which is a member of `d`.
+
+When the block which contains `c` is left, its region is recycled, and both the object to which `c` 
+points and the object to which its member reference `d` points cease to exist.
+
+When the thread leaves `f`, the region which was created by its outermost block is recycled, too, 
+and the objects to which `a` and `b` pointed, vanish as well.
+
+References like `a`, `b`, and `c` which are defined in a block are called _root references_. 
+A root reference cannot be returned by a function because the region in which the object lives 
+to which that reference points is already recycled since its block is left 
+before the function returns. 
+
+References like `d` are called _local references_. A local reference 
+points to an object which lives in the region of a containing object as a member, array element, 
+or dictionary key or value. A local reference can only be returned from a function if it is 
+contained in an object which was created before the function was entered.
+
+The bootstrapping compiler which is currently the only (known) implementation of Scaly 
+is written in C\+\+. It uses a special form of the C++ `new` operator which is called _placement new_ 
+to create new objects in the appropriate region. The runtime library which comes with the compiler 
+provides the necessary mechanisms for managing the memory in regions.
+
+Pages
+~~~~~
+
+This compiler would compile the above function to a C++ function to something like the following:
+
+  void f() {
+      _Region _region; _Page* _p = _region.get();
+      A* a = new(_p) A();
+      B* b = createB(_p);
+      {
+          _Region _region; _Page* _p = _region.get();
+          C* c = new(_p) C();
+          {
+              c->d = new(c->getPage()) D();
+          }
+      }
+  }
+
+When the function is entered, a `_Region` object is created for its block to provide memory for 
+allocating objects which are rooted in this block. The memory of a region is divided in pages 
+of constant size (typically 4 or 8 kB). Therefore, a `_Page` object `_p` is obtained 
+from that region.  Then a new object of type `A` is created in `_p` using the placement 
+variant of `new`.
+
+All classes implement the _placement new_ operator by getting memory from the page in a way 
+similar to this code (some error handling removed for brevity):
+
+  void* Object::operator new(size_t size, _Page* page) {
+      return page->allocateObject(size); }
+
+Next, the `createB` function is used to create a new `B` object in our current page `_p`. 
+Since `createB` needs to know in which page the object is to be created, 
+it is passed to that function. The function `createB` can use _placement new_ to create the object 
+or use another function, passing the pointer to the page to it.
+
+Then, the next block is entered, and a new region is created and a page is obtained from that page 
+which is used to create a new `C` object.
+
+In the innermost block, a `D` object is created in the page of `c`. For that reason, `c` is asked 
+to provide its page for creating the object in. All classes implement a function `_getPage()` for 
+this purpose:
+
+  _Page* Object::_getPage() {
+      return _Page::getPage(this);
+  }
+
+Since pages are always aligned and have a size of a multiple of 2, the page of an address 
+can be calculated easily by setting the relevant lower bits of the address to zero:
+
+  _Page* _Page::getPage(void* address) {
+      return (_Page*) (((intptr_t)address) & ~(intptr_t)(_pageSize - 1));
+  }
+
+Root Page Allocation
+~~~~~~~~~~~~~~~~~~~~
+
+We have seen that each region provides a page upon block entry. The `_Region` class allocates its 
+page out of a large chunk of memory which is thread local:
+
+  __thread _Page* __CurrentPage = 0;
+
+At thread start, before regions kick in, this memory is allocated:
+
+  posix_memalign((void**)&__CurrentPage, _pageSize, _pageSize * _maxStackPages);
+
+The `_Region` class itself actually is only a very small helper. 
+At block entry, it shifts the `__CurrentPage` pointer up and initializes a `_Page` object 
+at this position with _placememt new_:
+
+  _Region::_Region(){
+      __CurrentPage = (_Page*)(((char*)__CurrentPage) + _pageSize);
+      new(__CurrentPage) _Page();
+  }
+ 
+At block exit, the extensions of the page (we will come to this later) are deallocated, 
+and the `__CurrentPage` pointer is shifted down:
+
+  _Region::~_Region() {
+      __CurrentPage->deallocateExtensions();
+      __CurrentPage = (_Page*)(((char*)__CurrentPage) - _pageSize);
+  }
+
+This way, the memory area accessed by the `__CurrentPage` pointer during thread execution 
+forms a logical stack, and the pages which live in this area are called _root pages_ 
+(as opposed to _extension pages_ which we will cover in a later section of this chapter).
+Allocating a fresh region is done by shifting a thread-local pointer.
+
+
+
+
