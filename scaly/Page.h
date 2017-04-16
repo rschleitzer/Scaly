@@ -9,7 +9,6 @@ public:
     void clear();
     void* operator new(size_t size, void* location);
     void* allocateObject(size_t size);
-    _Page* allocateExtensionPage();
     _Page* allocateExclusivePage();
     static void forget(_Page* page);
     void deallocateExtensions();
@@ -18,6 +17,7 @@ public:
     bool extend(void* address, size_t size);
 
 private:
+    _Page* allocateExtensionPage();
     _Page** getLastExtensionPageLocation();
     bool freeExtensionPage(_Page* page);
     void* getNextObject();

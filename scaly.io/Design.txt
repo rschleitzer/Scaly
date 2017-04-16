@@ -422,7 +422,7 @@ At thread start, before regions kick in, this memory is allocated:
 
 The `_Region` class itself actually is only a very small helper. 
 At block entry, it shifts the `__CurrentPage` pointer up and initializes a `_Page` object 
-at this position with _placememt new_:
+at this position with _placement new_:
 
   _Region::_Region(){
       __CurrentPage = (_Page*)(((char*)__CurrentPage) + _pageSize);
@@ -441,6 +441,109 @@ This way, the memory area accessed by the `__CurrentPage` pointer during thread 
 forms a logical stack, and the pages which live in this area are called _root pages_ 
 (as opposed to _extension pages_ which we will cover in a later section of this chapter).
 Allocating a fresh region is done by shifting a thread-local pointer.
+
+Object Allocation
+~~~~~~~~~~~~~~~~~
+
+As we have seen, the `_Region` class itself only shifts the current root page pointer up and 
+down the root page stack as thread execution enters and leaves blocks which declare root references. 
+
+Most of the memory management logic is performed by the `_Page` class. This class provides memory 
+for allocating objects and, if required, extends the available memory by allocating a new page 
+if its own memory is exhausted.
+
+A page is a memory area which is aligned to multiples of the page size which is usually 4 or 8 kB. 
+This memory area is controlled by a `_Page` object which lives at the start address of the page 
+and contains (among a few other things) an offset to the next object to be allocated, 
+counted from the page start address:
+
+    int nextObjectOffset;
+
+If the space fits for a particular object to allocate, allocation is done by adding to 
+`nextObjectOffset` and returning the current location. Here a code snippet of the 
+`allocateObject` method of `_Page` which is used by the placement new operator of `Object`:
+
+  void* location = getNextObject();
+  void* nextLocation = align((char*)location + size);
+  if (nextLocation <= (void*) getNextExtensionPageLocation()) {
+      setNextObject(nextLocation);
+      return location; }
+
+Here are two of the three helpers used (`getNextExtensionPageLocation()` will be explained later):
+
+  void* _Page::getNextObject() {
+      return (char*)this + nextObjectOffset; }
+
+  void _Page::setNextObject(void* object) {
+      nextObjectOffset = (char*)object - (char*)this; }
+
+With this code, allocating an object is done taking the following steps:
+
+. The `location` of the next object to be allocated is calculated by adding `nextObjectOffset` 
+  to the start of the page
+
+. The upper boundary of the object is calculated by adding the object size to `location`
+  and aligning the result
+
+. If the upper boundary is within limits, `nextObjectOffset` is calculated, and `location` 
+  is returned as the new object address.
+
+Thus, object allocation typically boils down to adding to an offset and checking it. 
+
+
+Extension pages
+~~~~~~~~~~~~~~~
+
+In the last section, we have seen a check of `nextLocation` against the result of 
+`getNextExtensionPageLocation()`. Here it is along with the helper `getLastExtensionPageLocation`:
+
+  _Page** _Page::getNextExtensionPageLocation() {
+      return getLastExtensionPageLocation() - extensions - 1; }
+
+  _Page** _Page::getLastExtensionPageLocation() {
+      return ((_Page**) ((char*) this + _pageSize)) - 1; }
+
+The `_Page` member `extensions` is used here:
+
+    int extensions;
+
+What does it all mean? It is all about so-called _extension pages_. An extension page is allocated 
+and used if the current page cannot provide enough memory to allocate an object of the desired 
+size. If the size required exceeds the maximum size which can be stored in a fresh page, 
+an oversized page is allocated directly from the operating system via `posix_memalign` and is 
+registered with the current page as an _exclusive page_. We will discuss exclusive pages in one 
+of the following sections. If the size required does fit in a fresh page, 
+an _extension page_ is allocated by the following method of the `_Page` class:
+
+  _Page* _Page::allocateExtensionPage() {
+      _Page* pageLocation = __CurrentTask->getExtensionPage();
+      if (!pageLocation)
+          return 0;
+      _Page* extensionPage = new (pageLocation) _Page();
+      *getLastExtensionPageLocation() = pageLocation;
+      currentPage = extensionPage;
+      return extensionPage; }
+
+The `getExtensionPage()` method of the `_Task` class which is called first, allocates a page out of 
+a thread-local page pool whose start-up size is 4096 pages (one chunk) and which can extend itself 
+by adding more chunks. The pages in a chunk are bit mapped in an allocation map of that chunk, and 
+allocating a page in a chunk is a quick constant-time action.
+
+Then, after the extension page is initialized with _placement new_, its address is stored 
+at a memory location at the very end of the page to be accessed at deallocation time:
+
+  _Page** _Page::getLastExtensionPageLocation() {
+      return ((_Page**) ((char*) this + _pageSize)) - 1; }
+
+Before `allocateExtensionPage()` returns, the extension page location is stored also in the 
+`currentPage` member as a shortcut to a page where allocation space should be available. 
+This member is updated also if a further allocation attempt results in an object which lives in 
+an even newer extension page.
+
+This way, allocation can start from a root page forming a chain of extension pages if many objects 
+are allocated in the region of that root page. When this region is left, 
+the `deallocateExtensions()` method deallocates all extension pages by freeing them in the thread 
+local page pool.
 
 
 

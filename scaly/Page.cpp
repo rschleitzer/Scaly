@@ -46,9 +46,9 @@ void* _Page::allocateObject(size_t size) {
         return newObject; }
 
     // Try to allocate from ourselves
-    void* nextLocation = align((char*)getNextObject() + size);
+    void* location = getNextObject();
+    void* nextLocation = align((char*)location + size);
     if (nextLocation <= (void*) getNextExtensionPageLocation()) {
-        void* location = getNextObject();
         setNextObject(nextLocation);
         return location; }
 
@@ -60,8 +60,6 @@ void* _Page::allocateObject(size_t size) {
         if ((_Page**)getNextObject() == getLastExtensionPageLocation()) {
             // Allocate an extension page with default size
             _Page* defaultExtensionPage = allocateExtensionPage();
-            // Make it our new current
-            currentPage = defaultExtensionPage;
             // Try again with the new extension page
             return defaultExtensionPage->allocateObject(size); }
 
@@ -73,7 +71,6 @@ void* _Page::allocateObject(size_t size) {
         return object; }
     // So we're not oversized. Allocate the standard extension page.
     _Page* extensionPage = allocateExtensionPage();
-    this->currentPage = extensionPage;
     // And allocate at last.
     return extensionPage->allocateObject(size); }
 
@@ -83,6 +80,7 @@ _Page* _Page::allocateExtensionPage() {
         return 0;
     _Page* extensionPage = new (pageLocation) _Page();
     *getLastExtensionPageLocation() = pageLocation;
+    currentPage = extensionPage;
     return extensionPage; }
 
 _Page* _Page::allocateExclusivePage() {
@@ -94,8 +92,6 @@ _Page* _Page::allocateExclusivePage() {
     if ((_Page**)getNextObject() == getNextExtensionPageLocation()) {
         // Allocate an extension page with default size
         _Page* defaultExtensionPage = allocateExtensionPage();
-        // Make it our new current
-        currentPage = defaultExtensionPage;
         // Try again with the new extension page
         return defaultExtensionPage->allocateExclusivePage(); }
 
