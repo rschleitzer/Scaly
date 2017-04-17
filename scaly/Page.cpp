@@ -65,10 +65,12 @@ void* _Page::allocateObject(size_t size) {
 
         // We allocate oversized objects directly.
         void* object;
-        posix_memalign(&object, _pageSize, size);
+        posix_memalign(&object, _pageSize, size + sizeof(_Page));
         *getNextExtensionPageLocation() = (_Page*)object;
         extensions++;
-        return object; }
+        _Page* page = new (object) _Page();
+        page->currentPage = nullptr;
+        return ((char*)object) + sizeof(_Page); }
     // So we're not oversized. Allocate the standard extension page.
     _Page* extensionPage = allocateExtensionPage();
     // And allocate at last.
@@ -127,6 +129,8 @@ void _Page::deallocateExtensions() {
         // Deallocate oversized or exclusive pages
         _Page** ppPage = page->getLastExtensionPageLocation() - 1;
         for (int i = 0; i < page->extensions; i++) {
+            if ((*ppPage)->currentPage != nullptr)
+                (*ppPage)->deallocateExtensions();
             forget(*ppPage);
             ppPage--; }
         if (page != this)
