@@ -673,6 +673,8 @@ class SourceVisitor extends CppVisitor {
 
     constructor(outputDirectory: string) {
         directory = outputDirectory
+        sourceFile = null
+
         inherits = new Inherits[]()
         classes = new string[]()
     }

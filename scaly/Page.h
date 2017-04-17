@@ -15,6 +15,7 @@ public:
     bool reclaimArray(void* address);
     static _Page* getPage(void* address);
     bool extend(void* address, size_t size);
+    bool isOversized();
 
 private:
     _Page* allocateExtensionPage();

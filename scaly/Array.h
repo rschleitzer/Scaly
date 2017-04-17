@@ -83,7 +83,7 @@ private:
         memcpy(_rawArray, oldArray, _size * sizeof(T*));
 
         // Reclaim the page if it was oversized, i.e., exclusively allocated
-        if (((Object*)oldArray)->_getPage() == ((_Page*)oldArray))
+        if (((Object*)oldArray)->_getPage()->isOversized())
             _getPage()->reclaimArray(oldArray);
     }
 

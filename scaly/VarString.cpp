@@ -147,7 +147,7 @@ void VarString::reallocate(size_t newLength) {
     memcpy(buffer, oldString, oldLength + 1);
 
     // Reclaim the page if it was oversized, i.e., exclusively allocated
-    if (((Object*)oldString)->_getPage() == ((_Page*)oldString))
+    if (((Object*)oldString)->_getPage()->isOversized())
         _getPage()->reclaimArray(oldString);
 }
 

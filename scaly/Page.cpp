@@ -41,7 +41,7 @@ void* _Page::allocateObject(size_t size) {
         void* newObject = currentPage->allocateObject(size);
         // Possibly our current page was also full so we propagate back the new current page
         _Page* allocatingPage = ((Object*)newObject)->_getPage();
-        if ((allocatingPage != currentPage) && (newObject != allocatingPage))
+        if ((allocatingPage != currentPage) && (!allocatingPage->isOversized()))
             currentPage = allocatingPage;
         return newObject; }
 
@@ -75,6 +75,10 @@ void* _Page::allocateObject(size_t size) {
     _Page* extensionPage = allocateExtensionPage();
     // And allocate at last.
     return extensionPage->allocateObject(size); }
+    
+bool _Page::isOversized() {
+    return currentPage == nullptr;
+}
 
 _Page* _Page::allocateExtensionPage() {
     _Page* pageLocation = __CurrentTask->getExtensionPage();

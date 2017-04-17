@@ -670,6 +670,7 @@ bool HeaderVisitor::_isHeaderVisitor() { return (true); }
 
 SourceVisitor::SourceVisitor(string* outputDirectory) {
     directory = outputDirectory;
+    sourceFile = nullptr;
     inherits = new(_getPage()->allocateExclusivePage()) _Array<Inherits>();
     classes = new(_getPage()->allocateExclusivePage()) _Array<string>();
 }
