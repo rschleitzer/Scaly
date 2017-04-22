@@ -4,7 +4,7 @@
 class SyntaxNode {
     let start: Position
     let end: Position
-    mutable parent: SyntaxNode
+    mutable parent: SyntaxNode&
 }
 "
     (apply-to-selected-children "syntax" (lambda (syntax-node) ($

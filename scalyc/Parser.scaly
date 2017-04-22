@@ -3193,7 +3193,7 @@ class Visitor {
 class SyntaxNode {
     let start: Position
     let end: Position
-    mutable parent: SyntaxNode
+    mutable parent: SyntaxNode&
 }
 
 class Program extends SyntaxNode {
