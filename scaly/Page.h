@@ -4,10 +4,8 @@ namespace scaly {
 
 class _Page {
 public:
-    _Page();
     void reset();
     void clear();
-    void* operator new(size_t size, void* location);
     void* allocateObject(size_t size);
     _Page* allocateExclusivePage();
     static void forget(_Page* page);
@@ -19,15 +17,15 @@ public:
 
 private:
     _Page* allocateExtensionPage();
-    _Page** getLastExtensionPageLocation();
-    bool freeExtensionPage(_Page* page);
+    _Page** getExtensionPageLocation();
+    bool deallocateExclusivePage(_Page* page);
     void* getNextObject();
     void setNextObject(void* object);
-    _Page** getNextExtensionPageLocation();
+    _Page** getNextExclusivePageLocation();
 
     _Page* currentPage;
     int nextObjectOffset;
-    int extensions;
+    int exclusivePages;
 };
 
 }

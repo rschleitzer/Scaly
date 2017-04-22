@@ -13,7 +13,7 @@ int main(int argc, char** argv) {
     posix_memalign((void**)&page, _pageSize, _pageSize * _maxStackPages);
     if (!page)
         return -1;
-    new (page) _Page();
+    page->reset();
     __CurrentPage = page;
 
     _Task* task = new(page) _Task();

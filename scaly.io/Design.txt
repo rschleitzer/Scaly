@@ -350,8 +350,8 @@ points to an object which lives in the region of a containing object as a member
 or dictionary key or value. A local reference can only be returned from a function if it is 
 contained in an object which was created before the function was entered.
 
-The bootstrapping compiler which is currently the only (known) implementation of Scaly 
-is written in C\+\+. It uses a special form of the C++ `new` operator which is called _placement new_ 
+The bootstrapping compiler which is currently the only (known) implementation of Scaly is written 
+in C\+\+. It uses a special form of the C++ `new` operator which is called _placement new_ 
 to create new objects in the appropriate region. The runtime library which comes with the compiler 
 provides the necessary mechanisms for managing the memory in regions.
 
@@ -422,15 +422,15 @@ At thread start, before regions kick in, this memory is allocated:
 
 The `_Region` class itself actually is only a very small helper. 
 At block entry, it shifts the `__CurrentPage` pointer up and initializes a `_Page` object 
-at this position with _placement new_:
+at this position:
 
   _Region::_Region(){
       __CurrentPage = (_Page*)(((char*)__CurrentPage) + _pageSize);
-      new(__CurrentPage) _Page();
+      __CurrentPage->reset();
   }
  
-At block exit, the extensions of the page (we will come to this later) are deallocated, 
-and the `__CurrentPage` pointer is shifted down:
+At block exit, the extension Pages and exclusive Pages of the page (we will come to this later) 
+are deallocated, and the `__CurrentPage` pointer is shifted down:
 
   _Region::~_Region() {
       __CurrentPage->deallocateExtensions();
@@ -465,11 +465,11 @@ If the space fits for a particular object to allocate, allocation is done by add
 
   void* location = getNextObject();
   void* nextLocation = align((char*)location + size);
-  if (nextLocation <= (void*) getNextExtensionPageLocation()) {
+  if (nextLocation <= (void*) getNextExclusivePageLocation()) {
       setNextObject(nextLocation);
       return location; }
 
-Here are two of the three helpers used (`getNextExtensionPageLocation()` will be explained later):
+Here are two of the three helpers used (`getNextExclusivePageLocation()` will be explained later):
 
   void* _Page::getNextObject() {
       return (char*)this + nextObjectOffset; }
@@ -494,35 +494,22 @@ Thus, object allocation typically boils down to adding to an offset and checking
 Extension pages
 ~~~~~~~~~~~~~~~
 
-In the last section, we have seen a check of `nextLocation` against the result of 
-`getNextExtensionPageLocation()`. Here it is along with the helper `getLastExtensionPageLocation`:
-
-  _Page** _Page::getNextExtensionPageLocation() {
-      return getLastExtensionPageLocation() - extensions - 1; }
-
-  _Page** _Page::getLastExtensionPageLocation() {
-      return ((_Page**) ((char*) this + _pageSize)) - 1; }
-
-The `_Page` member `extensions` is used here:
-
-    int extensions;
-
-What does it all mean? It is all about so-called _extension pages_. An extension page is allocated 
-and used if the current page cannot provide enough memory to allocate an object of the desired 
-size. If the size required exceeds the maximum size which can be stored in a fresh page, 
-an oversized page is allocated directly from the operating system via `posix_memalign` and is 
-registered with the current page as an _exclusive page_. We will discuss exclusive pages in one 
+An extension page is allocated and used if the current page cannot provide enough memory 
+to allocate an object of the desired size. If the size required exceeds the maximum size 
+which can be stored in a fresh page, an oversized page is allocated directly from the operating 
+system via `posix_memalign` and is registered with the current page as an _exclusive page_. We will discuss exclusive pages in one 
 of the following sections. If the size required does fit in a fresh page, 
 an _extension page_ is allocated by the following method of the `_Page` class:
 
   _Page* _Page::allocateExtensionPage() {
-      _Page* pageLocation = __CurrentTask->getExtensionPage();
-      if (!pageLocation)
+      _Page* extensionPage = __CurrentTask->getExtensionPage();
+      if (!extensionPage)
           return 0;
-      _Page* extensionPage = new (pageLocation) _Page();
-      *getLastExtensionPageLocation() = pageLocation;
+      extensionPage->reset();
+      *getExtensionPageLocation() = extensionPage;
       currentPage = extensionPage;
-      return extensionPage; }
+      return extensionPage;
+  }
 
 The `getExtensionPage()` method of the `_Task` class which is called first, allocates a page out of 
 a thread-local page pool whose start-up size is 4096 pages (one chunk) and which can extend itself 
@@ -532,7 +519,7 @@ allocating a page in a chunk is a quick constant-time action.
 Then, after the extension page is initialized with _placement new_, its address is stored 
 at a memory location at the very end of the page to be accessed at deallocation time:
 
-  _Page** _Page::getLastExtensionPageLocation() {
+  _Page** _Page::getExtensionPageLocation() {
       return ((_Page**) ((char*) this + _pageSize)) - 1; }
 
 Before `allocateExtensionPage()` returns, the extension page location is stored also in the 
@@ -542,9 +529,61 @@ an even newer extension page.
 
 This way, allocation can start from a root page forming a chain of extension pages if many objects 
 are allocated in the region of that root page. When this region is left, 
-the `deallocateExtensions()` method deallocates all extension pages by freeing them in the thread 
-local page pool.
+the `deallocateExtensions()` method deallocates all extension pages 
+by freeing them in the thread local page pool.
 
+Exclusive pages
+~~~~~~~~~~~~~~~
 
+We have seen that a region can grow by extending its root page with an extension page, which can 
+in turn be extended by another extension page, and so on. When thread execution leaves the region, 
+all extension pages are deallocated from the page pool. But while our region is alive, 
+we have seen no way for deleting objects from a region -- but that is what we need 
+for `mutable` object data, because otherwise we would leak memory by abandoning objects 
+pointed to by `mutable` references if we set those references to fresh objects.
+
+For this reason, fresh objects which are assigned to `mutable` references, get their own (root) 
+page, a so-called _exclusive page_. An exclusive page can be easily deallocated 
+if its leading object is deleted while its region remains active.
+
+Here are the relevant code lines which allocate and register an exclusive page:
+
+  _Page* exclusivePage = __CurrentTask->getExtensionPage();
+  exclusivePage->reset();
+  *getNextExclusivePageLocation() = exclusivePage;
+  exclusivePages++;
+
+The number of active exclusive pages is stored in the `int` member `exclusivePages` of the page, 
+and the pointer to the next exclusive page address is calculated by the following helper method:
+
+  _Page** _Page::getNextExclusivePageLocation() {
+      return getExtensionPageLocation() - exclusivePages - 1; }
+
+Exclusive pages are allocated and initialized in the same way as an extension page, but they are 
+registered not at the very end of the current page but in the next lower addresses. Several 
+exclusive pages can be allocated and registered with a page, while their locations are stored in 
+an area which grows downward from the end of that page (while the space allocated by objects 
+grows from the start of the page). 
+
+If an exclusive page is deallocated, it is unregistered with the page holding it 
+by shifting all lower exclusive page addresses up if applicable and decrementing `exclusivePages`.
+
+Oversized pages
+~~~~~~~~~~~~~~~
+
+String and array buffers can have sizes that exceed the net space of a freshly allocated page. 
+If we are to store such a thing, we allocate the necessary space directly from the operating system: 
+
+  _Page* page;
+  posix_memalign((void**)&page, _pageSize, size + sizeof(_Page));
+  page->reset();
+  page->currentPage = nullptr;
+  *getNextExclusivePageLocation() = page;
+  exclusivePages++;
+  return ((char*)page) + sizeof(_Page);
+
+Thus, we initialize the memory area as a page, mark it as oversized by setting `currentPage` 
+to `nullptr`, register the page as an exclusive page and return the memory address 
+directly after the page object data.
 
 

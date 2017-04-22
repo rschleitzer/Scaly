@@ -724,7 +724,7 @@ class SourceVisitor extends CppVisitor {
             sourceFile.append("    posix_memalign((void**)&__CurrentPage, _pageSize, _pageSize * _maxStackPages);\n")
             sourceFile.append("    if (!__CurrentPage)\n")
             sourceFile.append("        return -1;\n")
-            sourceFile.append("    new (__CurrentPage) _Page();\n")
+            sourceFile.append("    __CurrentPage->reset();\n")
             sourceFile.append("    _Task* task = new(__CurrentPage) _Task();\n")
             sourceFile.append("    __CurrentTask = task;\n\n")
             sourceFile.append("    // Collect the arguments into a string Vector\n")

@@ -5,7 +5,7 @@ __thread _Page* __CurrentPage = 0;
 
 _Region::_Region(){
     __CurrentPage = (_Page*)(((char*)__CurrentPage) + _pageSize);
-    new(__CurrentPage) _Page();
+    __CurrentPage->reset();
 }
 
 _Page* _Region::get() {
