@@ -1,8 +1,8 @@
-#ifndef __scalyc__OptionsError__
-#define __scalyc__OptionsError__
+#ifndef __scalycpp__OptionsError__
+#define __scalycpp__OptionsError__
 #include "scalycpp.h"
 using namespace scaly;
-namespace scalyc {
+namespace scalycpp {
 
 class OptionsError;
 
@@ -111,4 +111,4 @@ private:
 };
 
 }
-#endif // __scalyc__OptionsError__
+#endif // __scalycpp__OptionsError__

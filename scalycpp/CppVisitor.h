@@ -1,8 +1,8 @@
-#ifndef __scalyc__CppVisitor__
-#define __scalyc__CppVisitor__
+#ifndef __scalycpp__CppVisitor__
+#define __scalycpp__CppVisitor__
 #include "scalycpp.h"
 using namespace scaly;
-namespace scalyc {
+namespace scalycpp {
 
 class Inherits;
 
@@ -191,4 +191,4 @@ public:
 };
 
 }
-#endif // __scalyc__CppVisitor__
+#endif // __scalycpp__CppVisitor__

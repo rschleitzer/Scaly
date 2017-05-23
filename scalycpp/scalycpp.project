@@ -57,10 +57,8 @@
     <File Name="Model.h"/>
     <File Name="Options.h"/>
     <File Name="Compiler.h"/>
-    <File Name="scalyc.h"/>
+    <File Name="scalycpp.h"/>
   </VirtualDirectory>
-  <Dependencies Name="Debug"/>
-  <Dependencies Name="Release"/>
   <Dependencies Name="Debug"/>
   <Dependencies Name="Release"/>
   <Settings Type="Executable">
@@ -158,4 +156,6 @@
       </Completion>
     </Configuration>
   </Settings>
+  <Dependencies Name="Debug"/>
+  <Dependencies Name="Release"/>
 </CodeLite_Project>

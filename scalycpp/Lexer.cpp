@@ -1,6 +1,6 @@
 #include "scalycpp.h"
 using namespace scaly;
-namespace scalyc {
+namespace scalycpp {
 
 Lexer::Lexer(string* theText) {
     token = nullptr;

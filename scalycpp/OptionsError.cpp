@@ -1,6 +1,6 @@
 #include "scalycpp.h"
 using namespace scaly;
-namespace scalyc {
+namespace scalycpp {
 
 long OptionsError::_getErrorCode() {
     return (long)errorCode;

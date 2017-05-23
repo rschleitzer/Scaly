@@ -22,7 +22,7 @@ int main(int argc, char** argv) {
         arguments->push(new(__CurrentPage) string(argv[i]));
 
     // Call Scaly's top-level code
-    auto _File_error = scalyc::_main(__CurrentPage, arguments);
+    auto _File_error = scalycpp::_main(__CurrentPage, arguments);
     int ret = 0;
 
     // Convert Scaly's error enum back to OS errno values
@@ -44,7 +44,7 @@ int main(int argc, char** argv) {
     return ret;
 }
 
-namespace scalyc {
+namespace scalycpp {
 
 FileError* _main(_Page* _ep,  _Array<string>* arguments) {
     _Region _rp; _Page* _p = _rp.get();

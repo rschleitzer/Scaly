@@ -1,6 +1,6 @@
 #include "scalycpp.h"
 using namespace scaly;
-namespace scalyc {
+namespace scalycpp {
 
 bool CommonVisitor::isTopLevelFile(Module* module) {
     Statement* statement = nullptr;

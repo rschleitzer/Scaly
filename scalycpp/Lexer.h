@@ -1,8 +1,8 @@
-#ifndef __scalyc__Lexer__
-#define __scalyc__Lexer__
+#ifndef __scalycpp__Lexer__
+#define __scalycpp__Lexer__
 #include "scalycpp.h"
 using namespace scaly;
-namespace scalyc {
+namespace scalycpp {
 
 class Position;
 
@@ -184,4 +184,4 @@ public:
 };
 
 }
-#endif // __scalyc__Lexer__
+#endif // __scalycpp__Lexer__

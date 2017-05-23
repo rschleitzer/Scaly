@@ -1,8 +1,8 @@
-#ifndef __scalyc__CommonVisitor__
-#define __scalyc__CommonVisitor__
+#ifndef __scalycpp__CommonVisitor__
+#define __scalycpp__CommonVisitor__
 #include "scalycpp.h"
 using namespace scaly;
-namespace scalyc {
+namespace scalycpp {
 
 class CommonVisitor : public Visitor {
 public:
@@ -17,4 +17,4 @@ public:
 };
 
 }
-#endif // __scalyc__CommonVisitor__
+#endif // __scalycpp__CommonVisitor__

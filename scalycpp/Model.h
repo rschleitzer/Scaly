@@ -1,8 +1,8 @@
-#ifndef __scalyc__Model__
-#define __scalyc__Model__
+#ifndef __scalycpp__Model__
+#define __scalycpp__Model__
 #include "scalycpp.h"
 using namespace scaly;
-namespace scalyc {
+namespace scalycpp {
 
 class Scope;
 
@@ -73,4 +73,4 @@ public:
 };
 
 }
-#endif // __scalyc__Model__
+#endif // __scalycpp__Model__

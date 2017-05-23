@@ -1,6 +1,6 @@
 #include "scalycpp.h"
 using namespace scaly;
-namespace scalyc {
+namespace scalycpp {
 
 Options::Options(_Array<string>* input, string* output, string* dir) {
     files = input;

@@ -1,6 +1,6 @@
 #include "scalycpp.h"
 using namespace scaly;
-namespace scalyc {
+namespace scalycpp {
 
 bool CppVisitor::hasArrayPostfix(Type* type) {
     if (type->postfixes == nullptr)

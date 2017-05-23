@@ -1,8 +1,8 @@
-#ifndef __scalyc__Options__
-#define __scalyc__Options__
+#ifndef __scalycpp__Options__
+#define __scalycpp__Options__
 #include "scalycpp.h"
 using namespace scaly;
-namespace scalyc {
+namespace scalycpp {
 
 class Options : public Object {
 public:
@@ -15,4 +15,4 @@ public:
 };
 
 }
-#endif // __scalyc__Options__
+#endif // __scalycpp__Options__

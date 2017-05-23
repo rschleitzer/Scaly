@@ -1,6 +1,6 @@
 #include "scalycpp.h"
 using namespace scaly;
-namespace scalyc {
+namespace scalycpp {
 
 Parser::Parser(string* theFileName, string* text) {
     lexer = new(_getPage()->allocateExclusivePage()) Lexer(text);

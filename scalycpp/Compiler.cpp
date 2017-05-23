@@ -1,6 +1,6 @@
 #include "scalycpp.h"
 using namespace scaly;
-namespace scalyc {
+namespace scalycpp {
 
 void Compiler::compileFiles(Options* options) {
     _Region _region; _Page* _p = _region.get();

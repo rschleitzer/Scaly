@@ -1,8 +1,8 @@
-#ifndef __scalyc__Compiler__
-#define __scalyc__Compiler__
+#ifndef __scalycpp__Compiler__
+#define __scalycpp__Compiler__
 #include "scalycpp.h"
 using namespace scaly;
-namespace scalyc {
+namespace scalycpp {
 
 class Compiler : public Object {
 public:
@@ -12,4 +12,4 @@ public:
 };
 
 }
-#endif // __scalyc__Compiler__
+#endif // __scalycpp__Compiler__

@@ -1,8 +1,8 @@
-#ifndef __scalyc__Parser__
-#define __scalyc__Parser__
+#ifndef __scalycpp__Parser__
+#define __scalycpp__Parser__
 #include "scalycpp.h"
 using namespace scaly;
-namespace scalyc {
+namespace scalycpp {
 
 class Program;
 
@@ -1477,4 +1477,4 @@ public:
 };
 
 }
-#endif // __scalyc__Parser__
+#endif // __scalycpp__Parser__

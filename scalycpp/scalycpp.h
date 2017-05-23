@@ -1,5 +1,5 @@
-#ifndef __scaly__scalyc__
-#define __scaly__scalyc__
+#ifndef __scaly__scalycpp__
+#define __scaly__scalycpp__
 
 #include "Scaly.h"
 #include "Lexer.h"
@@ -13,8 +13,8 @@
 #include "scalycpp.h"
 
 using namespace scaly;
-namespace scalyc {
+namespace scalycpp {
 FileError* _main(_Page* page, _Array<string>* arguments);
 }
 
-#endif // __scaly__scalyc__
+#endif // __scaly__scalycpp__
