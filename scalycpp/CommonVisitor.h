@@ -1,6 +1,6 @@
 #ifndef __scalyc__CommonVisitor__
 #define __scalyc__CommonVisitor__
-#include "scalyc.h"
+#include "scalycpp.h"
 using namespace scaly;
 namespace scalyc {
 

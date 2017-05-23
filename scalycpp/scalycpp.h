@@ -10,7 +10,7 @@
 #include "Model.h"
 #include "Options.h"
 #include "Compiler.h"
-#include "scalyc.h"
+#include "scalycpp.h"
 
 using namespace scaly;
 namespace scalyc {

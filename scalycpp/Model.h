@@ -1,6 +1,6 @@
 #ifndef __scalyc__Model__
 #define __scalyc__Model__
-#include "scalyc.h"
+#include "scalycpp.h"
 using namespace scaly;
 namespace scalyc {
 

@@ -2,8 +2,8 @@ Debug
 Release
 scaly/scaly.mk
 scaly/scaly.txt
-scalyc/scalyc.mk
-scalyc/scalyc.txt
+scalycpp/scalycpp.mk
+scalycpp/scalycpp.txt
 shortest/shortest.mk
 shortest/shortest.txt
 hello/hello.mk

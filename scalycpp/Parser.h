@@ -1,6 +1,6 @@
 #ifndef __scalyc__Parser__
 #define __scalyc__Parser__
-#include "scalyc.h"
+#include "scalycpp.h"
 using namespace scaly;
 namespace scalyc {
 

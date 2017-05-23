@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<CodeLite_Project Name="scalyc" InternalType="Console">
+<CodeLite_Project Name="scalycpp" InternalType="Console">
   <Plugins>
     <Plugin Name="qmake">
       <![CDATA[00020001N0005Debug0000000000000001N0007Release000000000000]]>
@@ -45,8 +45,8 @@
     <File Name="Options.scaly"/>
     <File Name="Compiler.cpp"/>
     <File Name="Compiler.scaly"/>
-    <File Name="scalyc.cpp"/>
-    <File Name="scalyc.scaly"/>
+    <File Name="scalycpp.cpp"/>
+    <File Name="scalycpp.scaly"/>
   </VirtualDirectory>
   <VirtualDirectory Name="include">
     <File Name="Lexer.h"/>
@@ -59,6 +59,8 @@
     <File Name="Compiler.h"/>
     <File Name="scalyc.h"/>
   </VirtualDirectory>
+  <Dependencies Name="Debug"/>
+  <Dependencies Name="Release"/>
   <Dependencies Name="Debug"/>
   <Dependencies Name="Release"/>
   <Settings Type="Executable">
@@ -81,7 +83,7 @@
         <Library Value="libscaly"/>
       </Linker>
       <ResourceCompiler Options="" Required="no"/>
-      <General OutputFile="$(IntermediateDirectory)/$(ProjectName)" IntermediateDirectory="../Debug" Command="./$(ProjectName)" CommandArguments="-o scalyc -d ../scalyc ../scalyc/Lexer.scaly ../scalyc/OptionsError.scaly ../scalyc/Parser.scaly ../scalyc/CommonVisitor.scaly ../scalyc/CppVisitor.scaly ../scalyc/Model.scaly ../scalyc/Options.scaly ../scalyc/Compiler.scaly ../scalyc/scalyc.scaly" UseSeparateDebugArgs="no" DebugArguments="" WorkingDirectory="$(IntermediateDirectory)" PauseExecWhenProcTerminates="yes" IsGUIProgram="no" IsEnabled="yes"/>
+      <General OutputFile="$(IntermediateDirectory)/$(ProjectName)" IntermediateDirectory="../Debug" Command="./$(ProjectName)" CommandArguments="-o scalycpp -d ../scalycpp ../scalycpp/Lexer.scaly ../scalycpp/OptionsError.scaly ../scalycpp/Parser.scaly ../scalycpp/CommonVisitor.scaly ../scalycpp/CppVisitor.scaly ../scalycpp/Model.scaly ../scalycpp/Options.scaly ../scalycpp/Compiler.scaly ../scalycpp/scalycpp.scaly" UseSeparateDebugArgs="no" DebugArguments="" WorkingDirectory="$(IntermediateDirectory)" PauseExecWhenProcTerminates="yes" IsGUIProgram="no" IsEnabled="yes"/>
       <Environment EnvVarSetName="&lt;Use Defaults&gt;" DbgSetName="&lt;Use Defaults&gt;">
         <![CDATA[]]>
       </Environment>
@@ -156,6 +158,4 @@
       </Completion>
     </Configuration>
   </Settings>
-  <Dependencies Name="Debug"/>
-  <Dependencies Name="Release"/>
 </CodeLite_Project>

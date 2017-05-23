@@ -1,6 +1,6 @@
 #ifndef __scalyc__CppVisitor__
 #define __scalyc__CppVisitor__
-#include "scalyc.h"
+#include "scalycpp.h"
 using namespace scaly;
 namespace scalyc {
 
