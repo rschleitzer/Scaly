@@ -70,7 +70,7 @@ is a breeze - simply design a set of functions using classes for data transfer, 
 
 [[objects]]
 Objects
-----------------------
+-------
 
 An object is created by calling a constructor of its class. A constructor returns a new object. 
 This object can then be assigned to an item:
@@ -97,6 +97,7 @@ You can copy an immutable object by assigning it to another immutable object.
   let a: Foo = i
   let b: Foo = v
   v = i
+
 
 [[parents]]
 Parents
