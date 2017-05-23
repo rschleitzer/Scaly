@@ -31,20 +31,24 @@ that is written literally into a program.
 Classes
 -------
 
-Classes are a way of organizing data. Classes can have members - 
-either primitive ones like strings or numbers, or other classes, or arrays of them. 
-A class member (be it mutable or immutable) is semantically no reference - instead, 
-it denotes the object itself. The cosequence is that, if you assign an object 
-to another object variable, the object with all of its contained objects is copied. 
+Classes are a way of organizing data. Classes can have members -- either primitive ones 
+like strings or numbers, or other classes, or arrays of them. 
+
+Immutable object items -- either declared locally, object members or elements of an 
+array or dictionary -- can be assigned to either other immutable objects or fresh objects 
+created with `new`.
+
+Mutable object items (local, members or elements) cannot be assigned to other existing objects. 
+They can only be assigned to fresh objects created with `new`.
 
 In addition to the simple assignment operator `=`, there is also a movement operator `=!` 
-which moves the object from the right hand side expression (which must be mutable or variable, 
+which moves the object from the right hand side expression (which must be mutable, 
 and optional) to the left hand item which must be mutable or variable either. 
 
 There is also a swap operator `<=>` which swaps the left hand item with the right hand item. 
-For swapping, the items must be either both variable, or both mutable.
+For swapping, the items must both be mutable.
 
-Objects, however, have no value semantics when passed as arguments to a function. 
+Object arguments are passed by reference to a function. 
 If you pass a mutable object to a function, and the function alters that object, 
 the changes are visible to the caller after the function returned.
 
@@ -53,23 +57,19 @@ which means that members of an object cannot point to anything outside the
 object tree, and an object cannot be pointed to by anything else but the owner 
 (if it is a class member or an array element).
 
-Since classes organize their data in a in a strictly hierarchical way, 
-they can be easily serialized to JSON, XML, or any other text-based or binary 
-hierarchical representation of the data they contain. Since classes are serializable, 
-their data can be transmitted over the network to other nodes if your program 
-runs on a supercomputer, or sent to powerful GPU hardware on your local machine. Thus, programs 
-using classes for passing data scale well in a distributed or heterogeneous environment.
+Since mutable objects cannot be assigned to, classes organize their data 
+in a strictly hierarchical way. They can be easily serialized to JSON, XML, 
+or any other text-based or binary hierarchical representation of the data they contain. 
+Since classes are serializable, their data can be transmitted over the network to other nodes 
+if your program runs on a supercomputer, or sent to powerful GPU hardware on your local machine. 
+Thus, programs using classes for passing data scale well in a distributed or heterogeneous 
+environment.
 
 Because classes are so easily mapped to JSON or XML, building web services with Scaly 
 is a breeze - simply design a set of functions using classes for data transfer, and you are done.
 
-A class can define exactly one reference type as member - the so-called parent reference.
-If you assign an object with a parent reference to a member of a containing object, 
-this parent reference is automatically set to the containing object.
-This is useful if your algorithm walks a tree up and down, or to implement doubly-linked lists. 
-
-[[references]]
-Objects and References
+[[objects]]
+Objects
 ----------------------
 
 An object is created by calling a constructor of its class. A constructor returns a new object. 
@@ -77,7 +77,7 @@ This object can then be assigned to an item:
 
   mutable p: Foo = new Foo(42)
 
-A reference item can be declared _mutable_ or _immutable_. 
+An object can be declared _mutable_ or _immutable_. 
 An immutable item is declared with the `let` keyword. Neither the object it references 
 can be changed, nor the item itself:
 
@@ -85,7 +85,7 @@ can be changed, nor the item itself:
   // i.bar = 44 // The object cannot be changed
   // i = new Foo(44) // The item cannot be reassigned
 
-A mutable item is declared with the `mutable` keyword. A mutable item allows for 
+A mutable object is declared with the `mutable` keyword. A mutable item allows for 
 changing the object to which its reference points, and for reassigning another reference to it:
 
   mutable m: Foo = Foo(45)
@@ -98,13 +98,46 @@ You can copy an immutable object by assigning it to another immutable object.
   let b: Foo = v
   v = i
 
+[[parents]]
+Parents
+-------
+
+A class can define exactly one parent member. A parent member is recognized by an `@` at its 
+type declaration:
+
+  class Parent {
+      let children: Child[]
+  }
+
+  class Child {
+      let parent: Parent@
+  }
+
+
+If you assign an object with a parent member to a member of a object to contain it, 
+this parent member is automatically set to the containing object. If the child is added 
+to an array member, the parent member of the child points to the object which contains that 
+array member:
+
+  mutable p: Parent = new Parent()
+  p.Children.push(new Child()) // The parent property of the new Child points to p
+
+A parent member is useful if your algorithm walks a tree up and down, or to implement 
+doubly-linked lists.
+
+A parent members can only be accessed if the object holding it is immutable:
+
+  if p.length() > 0 {
+    let c: Child = p.children[0]
+    // let r = c.parent  // Error: Can't access a parent of a mutable object
+  }
 
 [[objectage]]
 Object Age
 ----------
 
-In Scaly, _objects live on the stack_, either referenced by local items, or by references 
-held by other objects, arrays, or dictionaries, which in turn live somewhere on the stack directly 
+In Scaly, _objects live on the stack_, either defined as local items, or owned by or referenced 
+by other objects, arrays, or dictionaries, which in turn live somewhere on the stack directly 
 or indirectly (held by other objects).
 
 If a block is left, the memory of all objects which were created in this block is recycled. 
