@@ -52,8 +52,6 @@ class FunctionDeclaration;
 
 class Modifier;
 
-class OverrideWord;
-
 class StaticWord;
 
 class FunctionSignature;
@@ -219,7 +217,6 @@ public:
     virtual FunctionDeclaration* parseFunctionDeclaration(_Page* _rp);
     virtual _Array<Modifier>* parseModifierList(_Page* _rp);
     virtual Modifier* parseModifier(_Page* _rp);
-    virtual OverrideWord* parseOverrideWord(_Page* _rp);
     virtual StaticWord* parseStaticWord(_Page* _rp);
     virtual FunctionSignature* parseFunctionSignature(_Page* _rp);
     virtual _Array<ParameterClause>* parseParameterClauseList(_Page* _rp);
@@ -320,7 +317,6 @@ public:
     string* throwKeyword;
     string* breakKeyword;
     string* throwsKeyword;
-    string* overrideKeyword;
     string* staticKeyword;
     string* letKeyword;
     string* mutableKeyword;
@@ -384,7 +380,6 @@ public:
     virtual void visitThrown(Thrown* thrown);
     virtual bool openFunctionDeclaration(FunctionDeclaration* functionDeclaration);
     virtual void closeFunctionDeclaration(FunctionDeclaration* functionDeclaration);
-    virtual void visitOverrideWord(OverrideWord* overrideWord);
     virtual void visitStaticWord(StaticWord* staticWord);
     virtual bool openFunctionSignature(FunctionSignature* functionSignature);
     virtual void closeFunctionSignature(FunctionSignature* functionSignature);
@@ -540,7 +535,6 @@ public:
     virtual bool _isReference();
     virtual bool _isThrown();
     virtual bool _isModifier();
-    virtual bool _isOverrideWord();
     virtual bool _isStaticWord();
     virtual bool _isFunctionSignature();
     virtual bool _isParameterClause();
@@ -835,16 +829,7 @@ public:
     virtual void accept(Visitor* visitor);
 
     virtual bool _isModifier();
-    virtual bool _isOverrideWord();
     virtual bool _isStaticWord();
-};
-
-class OverrideWord : public Modifier {
-public:
-    OverrideWord(Position* start, Position* end);
-    virtual void accept(Visitor* visitor);
-
-    virtual bool _isOverrideWord();
 };
 
 class StaticWord : public Modifier {

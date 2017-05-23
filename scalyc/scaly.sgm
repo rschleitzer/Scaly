@@ -103,11 +103,7 @@
         <content link = Expression                     optional property = body
 
     <syntax id = Modifier                     multiple abstract
-        <content link = OverrideWord
         <content link = StaticWord
-
-    <syntax id = OverrideWord                                   base = Modifier
-        <content link = override
 
     <syntax id = StaticWord                                     base = Modifier
         <content link = static
@@ -434,7 +430,6 @@
     <keyword id = throw
     <keyword id = break
     <keyword id = throws
-    <keyword id = override
     <keyword id = static
     <keyword id = let
     <keyword id = mutable

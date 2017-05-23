@@ -21,7 +21,6 @@ Parser::Parser(string* theFileName, string* text) {
     throwKeyword = new(_getPage()) string("throw");
     breakKeyword = new(_getPage()) string("break");
     throwsKeyword = new(_getPage()) string("throws");
-    overrideKeyword = new(_getPage()) string("override");
     staticKeyword = new(_getPage()) string("static");
     letKeyword = new(_getPage()) string("let");
     mutableKeyword = new(_getPage()) string("mutable");
@@ -547,29 +546,11 @@ _Array<Modifier>* Parser::parseModifierList(_Page* _rp) {
 
 Modifier* Parser::parseModifier(_Page* _rp) {
     {
-        OverrideWord* node = parseOverrideWord(_rp);
-        if (node != nullptr)
-            return node;
-    }
-    {
         StaticWord* node = parseStaticWord(_rp);
         if (node != nullptr)
             return node;
     }
     return nullptr;
-}
-
-OverrideWord* Parser::parseOverrideWord(_Page* _rp) {
-    _Region _region; _Page* _p = _region.get();
-    Position* start = lexer->getPreviousPosition(_p);
-    bool successOverride1 = lexer->parseKeyword(overrideKeyword);
-    if (successOverride1)
-        lexer->advance();
-    else
-        return nullptr;
-    Position* end = lexer->getPosition(_p);
-    OverrideWord* ret = new(_rp) OverrideWord(new(_rp) Position(start), new(_rp) Position(end));
-    return ret;
 }
 
 StaticWord* Parser::parseStaticWord(_Page* _rp) {
@@ -2158,8 +2139,6 @@ bool Parser::isIdentifier(string* id) {
         return false;
     if (id->equals(throwsKeyword))
         return false;
-    if (id->equals(overrideKeyword))
-        return false;
     if (id->equals(staticKeyword))
         return false;
     if (id->equals(letKeyword))
@@ -2289,9 +2268,6 @@ bool Visitor::openFunctionDeclaration(FunctionDeclaration* functionDeclaration) 
 }
 
 void Visitor::closeFunctionDeclaration(FunctionDeclaration* functionDeclaration) {
-}
-
-void Visitor::visitOverrideWord(OverrideWord* overrideWord) {
 }
 
 void Visitor::visitStaticWord(StaticWord* staticWord) {
@@ -2706,7 +2682,6 @@ bool SyntaxNode::_isLocal() { return (false); }
 bool SyntaxNode::_isReference() { return (false); }
 bool SyntaxNode::_isThrown() { return (false); }
 bool SyntaxNode::_isModifier() { return (false); }
-bool SyntaxNode::_isOverrideWord() { return (false); }
 bool SyntaxNode::_isStaticWord() { return (false); }
 bool SyntaxNode::_isFunctionSignature() { return (false); }
 bool SyntaxNode::_isParameterClause() { return (false); }
@@ -3134,19 +3109,7 @@ void Modifier::accept(Visitor* visitor) {
 
 bool Modifier::_isModifier() { return (true); }
 
-bool Modifier::_isOverrideWord() { return (false); }
 bool Modifier::_isStaticWord() { return (false); }
-
-OverrideWord::OverrideWord(Position* start, Position* end) {
-    this->start = start;
-    this->end = end;
-}
-
-void OverrideWord::accept(Visitor* visitor) {
-    visitor->visitOverrideWord(this);
-}
-
-bool OverrideWord::_isOverrideWord() { return (true); }
 
 StaticWord::StaticWord(Position* start, Position* end) {
     this->start = start;
