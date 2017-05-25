@@ -1,9 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <CodeLite_Workspace Name="scaly" Database="">
   <Project Name="scalypp" Path="scalypp/scalypp.project" Active="No"/>
-  <Project Name="scalycpp" Path="scalycpp/scalycpp.project" Active="Yes"/>
+  <Project Name="scalycpp" Path="scalycpp/scalycpp.project" Active="No"/>
   <Project Name="shortest" Path="shortest/shortest.project" Active="No"/>
   <Project Name="hello" Path="hello/hello.project" Active="No"/>
+  <Project Name="scalyc" Path="scalyc/scalyc.project" Active="Yes"/>
+  <Project Name="scaly" Path="scaly/scaly.project" Active="No"/>
   <BuildMatrix>
     <WorkspaceConfiguration Name="Debug" Selected="yes">
       <Environment/>
@@ -11,6 +13,8 @@
       <Project Name="scalycpp" ConfigName="Debug"/>
       <Project Name="shortest" ConfigName="Debug"/>
       <Project Name="hello" ConfigName="Debug"/>
+      <Project Name="scalyc" ConfigName="Debug"/>
+      <Project Name="scaly" ConfigName="Debug"/>
     </WorkspaceConfiguration>
     <WorkspaceConfiguration Name="Release" Selected="yes">
       <Environment/>
@@ -18,6 +22,8 @@
       <Project Name="scalycpp" ConfigName="Release"/>
       <Project Name="shortest" ConfigName="Release"/>
       <Project Name="hello" ConfigName="Release"/>
+      <Project Name="scalyc" ConfigName="Release"/>
+      <Project Name="scaly" ConfigName="Release"/>
     </WorkspaceConfiguration>
   </BuildMatrix>
 </CodeLite_Workspace>

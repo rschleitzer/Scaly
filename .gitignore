@@ -1,5 +1,9 @@
 Debug
 Release
+scaly/scaly.mk
+scaly/scaly.txt
+scalyc/scalyc.mk
+scalyc/scalyc.txt
 scalypp/scalypp.mk
 scalypp/scalypp.txt
 scalycpp/scalycpp.mk

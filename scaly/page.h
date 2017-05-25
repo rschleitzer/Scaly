@@ -1,30 +1,33 @@
-#ifndef __scaly_Page__
-#define __scaly_Page__
+#ifndef __scaly_page__
+#define __scaly_page__
 
-typedef struct scaly_Page scaly_Page;
-struct scaly_Page {
-    scaly_Page* currentPage;
+static const int scaly_alignment = 8;
+static const size_t scaly_pageSize = 0x1000;
+static const size_t scaly_maxStackPages = 0x100;
+
+typedef struct scaly_Page scaly_Page; struct scaly_Page {
+    struct scaly_Page* currentPage;
     int nextObjectOffset;
     int exclusivePages;
 };
 
-void scaly_Page_reset();
-void scaly_Page_clear();
-void* allocateObject(size_t size);
-scaly_Page* scaly_Page_allocateExclusivePage();
-void scaly_Page_forget(scaly_Page* page);
-void scaly_Page_deallocateExtensions();
-int scaly_Page_reclaimArray(void* address);
-scaly_Page* getPage(void* address);
-int scaly_Page_extend(void* address, size_t size);
-int scaly_Page_isOversized();
-scaly_Page* scaly_Page_allocateExtensionPage();
-scaly_Page** scaly_Page_getExtensionPageLocation();
-int scaly_Page_deallocateExclusivePage(scaly_Page* page);
-void* getNextObject();
-void setNextObject(void* object);
-scaly_Page** scaly_Page_getNextExclusivePageLocation();
+void scaly_Page_reset(scaly_Page* this);
+void scaly_Page_clear(scaly_Page* this);
+void* scaly_Page_allocateObject(scaly_Page* this, size_t size);
+scaly_Page* scaly_Page_allocateExclusivePage(scaly_Page* this);
+void scaly_Page_forget(scaly_Page* this);
+void scaly_Page_deallocateExtensions(scaly_Page* this);
+int scaly_Page_reclaimArray(scaly_Page* this, void* address);
+scaly_Page* scaly_Page_getPage(void* address);
+int scaly_Page_extend(scaly_Page* this, void* address, size_t size);
+int scaly_Page_isOversized(scaly_Page* this);
+scaly_Page* scaly_Page_allocateExtensionPage(scaly_Page* this);
+scaly_Page** scaly_Page_getExtensionPageLocation(scaly_Page* this);
+int scaly_Page_deallocateExclusivePage(scaly_Page* this, scaly_Page* page);
+void* scaly_Page_getNextObject(scaly_Page* this);
+void scaly_Page_setNextObject(scaly_Page* this, void* object);
+scaly_Page** scaly_Page_getNextExclusivePageLocation(scaly_Page* this);
 
-#endif // __scaly_Page__ 
+#endif // __scaly_page__ 
 
 
