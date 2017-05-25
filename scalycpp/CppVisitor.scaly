@@ -2826,7 +2826,7 @@ class SourceVisitor extends CppVisitor {
         projectFile.append(" Required=\"yes\" PreCompiledHeader=\"\" PCHInCommandLine=\"no\" PCHFlags=\"\" PCHFlagsPolicy=\"0\">\n")
         projectFile.append("        <IncludePath Value=\".\"/>\n        <IncludePath Value=\"../scaly\"/>\n      </Compiler>\n")
         projectFile.append("      <Linker Options=\"\" Required=\"yes\">\n        <LibraryPath Value=\"../Debug\"/>\n")
-        projectFile.append("        <Library Value=\"libscaly\"/>\n      </Linker>\n      <ResourceCompiler Options=\"\" Required=\"no\"/>\n")
+        projectFile.append("        <Library Value=\"libscalypp\"/>\n      </Linker>\n      <ResourceCompiler Options=\"\" Required=\"no\"/>\n")
         projectFile.append("      <General OutputFile=\"$(IntermediateDirectory)/$(ProjectName)\" IntermediateDirectory=\"../Debug\" ")
         projectFile.append("Command=\"./$(ProjectName)\" CommandArguments=\"-o ")
         projectFile.append(program.name)
