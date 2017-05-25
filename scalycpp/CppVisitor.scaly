@@ -2824,7 +2824,7 @@ class SourceVisitor extends CppVisitor {
         projectFile.append(" BuildResWithGlobalSettings=\"append\">\n")
         projectFile.append("      <Compiler Options=\"-g;-O0;-std=c++11;-Wall\" C_Options=\"-g;-O0;-Wall\" Assembler=\"\"")
         projectFile.append(" Required=\"yes\" PreCompiledHeader=\"\" PCHInCommandLine=\"no\" PCHFlags=\"\" PCHFlagsPolicy=\"0\">\n")
-        projectFile.append("        <IncludePath Value=\".\"/>\n        <IncludePath Value=\"../scaly\"/>\n      </Compiler>\n")
+        projectFile.append("        <IncludePath Value=\".\"/>\n        <IncludePath Value=\"../scalypp\"/>\n      </Compiler>\n")
         projectFile.append("      <Linker Options=\"\" Required=\"yes\">\n        <LibraryPath Value=\"../Debug\"/>\n")
         projectFile.append("        <Library Value=\"libscalypp\"/>\n      </Linker>\n      <ResourceCompiler Options=\"\" Required=\"no\"/>\n")
         projectFile.append("      <General OutputFile=\"$(IntermediateDirectory)/$(ProjectName)\" IntermediateDirectory=\"../Debug\" ")

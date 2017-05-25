@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <CodeLite_Workspace Name="scaly" Database="">
-  <Project Name="scalypp" Path="scaly/scaly.project" Active="No"/>
+  <Project Name="scalypp" Path="scalypp/scalypp.project" Active="No"/>
   <Project Name="scalycpp" Path="scalycpp/scalycpp.project" Active="Yes"/>
   <Project Name="shortest" Path="shortest/shortest.project" Active="No"/>
   <Project Name="hello" Path="hello/hello.project" Active="No"/>
