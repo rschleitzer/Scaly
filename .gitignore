@@ -1,7 +1,7 @@
 Debug
 Release
-scaly/scaly.mk
-scaly/scaly.txt
+scaly/scalypp.mk
+scaly/scalypp.txt
 scalycpp/scalycpp.mk
 scalycpp/scalycpp.txt
 shortest/shortest.mk
