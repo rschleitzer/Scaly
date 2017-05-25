@@ -39,8 +39,8 @@ LinkOptions            :=
 IncludePath            :=  $(IncludeSwitch). $(IncludeSwitch). $(IncludeSwitch)../scaly 
 IncludePCH             := 
 RcIncludePath          := 
-Libs                   := $(LibrarySwitch)scaly 
-ArLibs                 :=  "libscaly" 
+Libs                   := $(LibrarySwitch)scalypp 
+ArLibs                 :=  "libscalypp" 
 LibPath                := $(LibraryPathSwitch). $(LibraryPathSwitch)../Debug 
 
 ##
