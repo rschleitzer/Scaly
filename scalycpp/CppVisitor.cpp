@@ -2699,7 +2699,7 @@ VarString* SourceVisitor::buildProjectFileString(_Page* _rp, Program* program) {
             }
         }
     }
-    projectFile->append("  </VirtualDirectory>\n  <Dependencies Name=\"Debug\"/>\n  <Dependencies Name=\"Release\"/>\n");
+    projectFile->append("  </VirtualDirectory>\n  <Dependencies Name=\"Debug\"/>\n  <Dependencies Name=\"Release\"/>\n  <Dependencies Name=\"Debug\"/>\n  <Dependencies Name=\"Release\"/>\n");
     projectFile->append("  <Settings Type=\"Executable\">\n    <GlobalSettings>\n");
     projectFile->append("      <Compiler Options=\"\" C_Options=\"\" Assembler=\"\">\n");
     projectFile->append("        <IncludePath Value=\".\"/>\n      </Compiler>\n      <Linker Options=\"\">\n");
@@ -2775,7 +2775,7 @@ VarString* SourceVisitor::buildProjectFileString(_Page* _rp, Program* program) {
     projectFile->append("        <CustomPreBuild/>\n      </AdditionalRules>\n      <Completion EnableCpp11=\"no\" EnableCpp14=\"no\">\n");
     projectFile->append("        <ClangCmpFlagsC/>\n        <ClangCmpFlags/>\n        <ClangPP/>\n");
     projectFile->append("        <SearchPaths/>\n      </Completion>\n    </Configuration>\n  </Settings>\n");
-    projectFile->append("  <Dependencies Name=\"Debug\"/>\n  <Dependencies Name=\"Release\"/>\n</CodeLite_Project>\n");
+    projectFile->append("</CodeLite_Project>\n");
     return projectFile;
 }
 
