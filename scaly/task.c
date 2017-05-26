@@ -1,9 +1,9 @@
 #include "scaly.h"
 
-scaly_Task* new_scaly_Task(scaly_Page* _page) {
+scaly_Task* scaly_Task_new(scaly_Page* _page) {
     scaly_Task* this = (scaly_Task*) scaly_Page_allocateObject(_page, sizeof(scaly_Task));
 
-    this->pool = new_scaly_Pool(scaly_Page_getPage(this));
+    this->pool = scaly_Pool_new(scaly_Page_getPage(this));
 
     return this;
 }

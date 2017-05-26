@@ -1,9 +1,9 @@
 #include "scaly.h"
 
-scaly_Pool* new_scaly_Pool(scaly_Page* _page) {
+scaly_Pool* scaly_Pool_new(scaly_Page* _page) {
     scaly_Pool* this = (scaly_Pool*) scaly_Page_allocateObject(_page, sizeof(scaly_Pool));
 
-    this->chunks = new_scaly_Array(scaly_Page_getPage(this));
+    this->chunks = scaly_Array_new(scaly_Page_getPage(this));
 
     return this;
 }
