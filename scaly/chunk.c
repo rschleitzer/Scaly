@@ -74,7 +74,7 @@ scaly_Page* scaly_Chunk_allocatePage(scaly_Chunk* this) {
     return (scaly_Page*)page;
 }
 
-static size_t scaly_Chunk_findLowestZeroBit64(size_t map) {
+size_t scaly_Chunk_findLowestZeroBit64(size_t map) {
     size_t bucket = 0;
 
     size_t lowerHalf = map & 0xFFFFFFFF;
@@ -90,7 +90,7 @@ static size_t scaly_Chunk_findLowestZeroBit64(size_t map) {
     return bucket;
 }
 
-static size_t scaly_Chunk_findLowestZeroBit32(size_t map) {
+size_t scaly_Chunk_findLowestZeroBit32(size_t map) {
     if ((map & 0xFFFF) != 0xFFFF) {
         map &= 0xFFFF;
         if ((map & 0xFF) < 0xFF) {

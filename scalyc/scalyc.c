@@ -14,6 +14,11 @@ int main(int argc, char **argv) {
     scaly_Task* task = new_scaly_Task(__CurrentPage);
     __CurrentTask = task;
 
+    // Collect the arguments into a string Array
+    scaly_Array* arguments = new_scaly_Array(__CurrentPage, argc - 1);
+    for (int i = 1; i < argc; i++)
+        scaly_Array_push(arguments, scaly_string_fromRawString(__CurrentPage, argv[i]));
+
     int ret = 0;
 
 	return ret;

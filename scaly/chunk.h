@@ -23,7 +23,7 @@ scaly_Page* scaly_Chunk_allocatePage(scaly_Chunk* this);
 int scaly_Chunk_deallocatePage(scaly_Chunk* this, scaly_Page* page);
 int scaly_Chunk_isEmpty(scaly_Chunk* this);
 void scaly_Chunk_dispose(scaly_Chunk* this);
-static size_t scaly_Chunk_findLowestZeroBit64(size_t index);
-static size_t scaly_Chunk_findLowestZeroBit32(size_t index);
+size_t scaly_Chunk_findLowestZeroBit64(size_t index);
+size_t scaly_Chunk_findLowestZeroBit32(size_t index);
 
 #endif // __scaly_Chunk__

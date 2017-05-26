@@ -11,6 +11,7 @@
 #include "chunk.h"
 #include "pool.h"
 #include "task.h"
+#include "letstring.h"
 
 char* scaly_align(char*);
 
