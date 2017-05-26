@@ -21,5 +21,10 @@ int main(int argc, char **argv) {
 
     int ret = 0;
 
+
+    // Only for monitoring, debugging and stuff
+    scaly_Task_dispose(__CurrentTask);
+
+    // Give back the return code of the top-level code
 	return ret;
 }
