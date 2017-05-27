@@ -24,6 +24,7 @@
     <File Name="scaly.c"/>
     <File Name="chunk.c"/>
     <File Name="letstring.c"/>
+    <File Name="file.c"/>
   </VirtualDirectory>
   <VirtualDirectory Name="include">
     <File Name="scaly.h"/>
@@ -32,6 +33,7 @@
     <File Name="chunk.h"/>
     <File Name="array.h"/>
     <File Name="letstring.h"/>
+    <File Name="file.h"/>
   </VirtualDirectory>
   <Settings Type="Static Library">
     <GlobalSettings>
