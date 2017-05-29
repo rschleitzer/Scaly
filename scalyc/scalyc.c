@@ -44,6 +44,7 @@ int main(int argc, char **argv) {
 }
 
 _scaly_File_Result scalyc_main(scaly_Page* _ep,  scaly_Array* arguments) {
+    scaly_Page* _p = scaly_Page_alloc();
 
-    return (_scaly_File_Result) { 0, 0 };
+    scaly_Page_free(); return (_scaly_File_Result) { 0, 0 };
 }

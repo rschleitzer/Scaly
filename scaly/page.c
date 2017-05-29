@@ -1,8 +1,19 @@
 #include "scaly.h"
 
 extern scaly_Task* __CurrentTask;
+extern scaly_Page* __CurrentPage;
 
 extern size_t pagesAllocated;
+
+scaly_Page* scaly_Page_alloc() {
+    __CurrentPage = (scaly_Page*)(((char*)__CurrentPage) + scaly_pageSize);
+    return __CurrentPage;
+}
+
+void scaly_Page_free() {
+    scaly_Page_deallocateExtensions(__CurrentPage);
+    __CurrentPage = (scaly_Page*)(((char*)__CurrentPage) - scaly_pageSize);
+}
 
 void scaly_Page_reset(scaly_Page* this) {
     // Allocate default extension page pointer and initialize it to zero

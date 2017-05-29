@@ -11,6 +11,8 @@ typedef struct scaly_Page scaly_Page; struct scaly_Page {
     int exclusivePages;
 };
 
+scaly_Page* scaly_Page_alloc();
+void scaly_Page_free();
 void scaly_Page_reset(scaly_Page* this);
 void scaly_Page_clear(scaly_Page* this);
 void* scaly_Page_allocateObject(scaly_Page* this, size_t size);
