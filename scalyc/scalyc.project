@@ -18,9 +18,15 @@
   <Dependencies/>
   <VirtualDirectory Name="src">
     <File Name="scalyc.c"/>
+    <File Name="result.c"/>
+    <File Name="options.c"/>
+    <File Name="compiler.c"/>
   </VirtualDirectory>
   <VirtualDirectory Name="include">
     <File Name="scalyc.h"/>
+    <File Name="result.h"/>
+    <File Name="options.h"/>
+    <File Name="compiler.h"/>
   </VirtualDirectory>
   <Settings Type="Executable">
     <GlobalSettings>

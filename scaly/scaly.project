@@ -25,6 +25,9 @@
     <File Name="chunk.c"/>
     <File Name="letstring.c"/>
     <File Name="file.c"/>
+    <File Name="varstring.c"/>
+    <File Name="console.c"/>
+    <File Name="path.c"/>
   </VirtualDirectory>
   <VirtualDirectory Name="include">
     <File Name="scaly.h"/>
@@ -34,6 +37,9 @@
     <File Name="array.h"/>
     <File Name="letstring.h"/>
     <File Name="file.h"/>
+    <File Name="varstring.h"/>
+    <File Name="console.h"/>
+    <File Name="path.h"/>
   </VirtualDirectory>
   <Settings Type="Static Library">
     <GlobalSettings>

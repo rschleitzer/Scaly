@@ -1,6 +1,6 @@
 #ifndef __scaly__file__
 #define __scaly__file__
-    
+
 typedef enum _scaly_File_Result_ErrorCode _scaly_File_Result_ErrorCode; enum _scaly_File_Result_ErrorCode {
     _scaly_File_Result_ErrorCode_unknownError = 1,
     _scaly_File_Result_ErrorCode_noSuchFileOrDirectory,

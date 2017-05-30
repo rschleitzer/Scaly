@@ -12,7 +12,10 @@
 #include "pool.h"
 #include "task.h"
 #include "letstring.h"
+#include "varstring.h"
+#include "path.h"
 #include "file.h"
+#include "console.h"
 
 char* scaly_align(char*);
 

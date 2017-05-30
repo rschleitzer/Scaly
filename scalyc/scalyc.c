@@ -44,7 +44,61 @@ int main(int argc, char **argv) {
 }
 
 _scaly_File_Result scalyc_main(scaly_Page* _ep,  scaly_Array* arguments) {
-    scaly_Page* _p = scaly_Page_alloc();
+    scaly_Page* _p1 = scaly_Page_alloc();
+
+    _scalyc_Options_Result _options_result = scalyc_Options_parseArguments(_p1, _p1, arguments);
+    scalyc_Options* options = 0;
+    if (!_options_result.errorCode) {
+        options = _options_result.payload;
+    }
+    else if (_options_result.errorCode == _scalyc_Options_Result_ErrorCode_invalidOption) {
+        scaly_string* option = ((_scalyc_Options_Result_invalidOption*)_options_result.payload)->option;
+        {
+            scaly_Page* _p2 = scaly_Page_alloc();
+            scaly_VarString* msg = scaly_VarString_fromRawString(_p2, "Invalid option ");
+            scaly_VarString_appendString(msg, option);
+            scaly_VarString_appendRawString(msg, " .\n");
+            scaly_string* message = scaly_string_fromVarString(_p2, msg);
+            _scaly_File_Result _print_error = printString(_p2, message);
+            if (_print_error.errorCode) { switch (_print_error.errorCode) {
+                default: {
+                scaly_Page_free(); // _p2
+                scaly_Page_free(); // _p1
+                return (_scaly_File_Result) { _print_error.errorCode, 0 };
+                }
+            } }
+            scaly_Page_free(); // _p2
+            scaly_Page_free(); // _p1
+            return (_scaly_File_Result) { 0, 0 };
+        }
+    }
+    else if (_options_result.errorCode == _scalyc_Options_Result_ErrorCode_noOutputOption) {
+        {
+            _scaly_File_Result _print_error = printRawString(_ep, "No output option.\n");
+            if (_print_error.errorCode) { switch (_print_error.errorCode) {
+                default: {
+                scaly_Page_free(); // _p1
+                return (_scaly_File_Result) { _print_error.errorCode, 0 };
+                }
+            } }
+            scaly_Page_free(); // _p1
+            return (_scaly_File_Result) { 0, 0 };
+        }
+    }
+    else if (_options_result.errorCode == _scalyc_Options_Result_ErrorCode_noFilesToCompile) {
+        {
+            _scaly_File_Result _print_error = printRawString(_ep, "No files to compile.\n");
+            if (_print_error.errorCode) { switch (_print_error.errorCode) {
+                default: {
+                scaly_Page_free(); // _p1
+                return (_scaly_File_Result) { _print_error.errorCode, 0 };
+                }
+            } }
+            scaly_Page_free(); // _p1
+            return (_scaly_File_Result) { 0, 0 };
+        }
+    }
+    scaly_Compiler_compileFiles(options);
 
     scaly_Page_free(); return (_scaly_File_Result) { 0, 0 };
 }

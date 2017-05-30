@@ -23,7 +23,7 @@ int scaly_string_equals(scaly_string* this, scaly_string* theString);
 int scaly_string_notEquals(scaly_string* this, scaly_string* theString);
 int scaly_string_equalsVarString(scaly_string* this, scaly_VarString* theString);
 int scaly_string_notEqualsVarString(scaly_string* this, scaly_VarString* theString);
-scaly_Array* scaly_String_Split(scaly_Page* _rp, char c);
+scaly_Array* scaly_string_split(scaly_Page* _rp, scaly_string* this, char c);
 void scaly_string_copyNativeString(scaly_string* this, const char* theString, size_t length);
 
 #endif // __scaly__letstring__
