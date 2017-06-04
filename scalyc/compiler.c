@@ -7,7 +7,7 @@ void scaly_Compiler_compileFiles(scalyc_Options* options) {
     scaly_string* file = 0;
     size_t _files_length = files->_size;
     for (size_t _i = 0; _i < _files_length; _i++) {
-        file = (scaly_string*)scaly_Array_elementAt(files, _i);
+        file = (scaly_string*)*scaly_Array_elementAt(files, _i);
         {
             _scaly_File_Result _source_result = scaly_File_readToString(scaly_Page_getPage(sources), _p1, file);
             scaly_string* source = 0;
