@@ -19,7 +19,7 @@ scaly_Array* scaly_Array_newWithCapacity(scaly_Page* _page, size_t capacity) {
     return this;
 }
 
-scaly_Array* scaly_Array_fromArray(scaly_Page* _page, scaly_Array* array) {
+scaly_Array* scaly_Array_newFromArray(scaly_Page* _page, scaly_Array* array) {
     scaly_Array* this = (scaly_Array*) scaly_Page_allocateObject(_page, sizeof(scaly_Array));
     *this = (scaly_Array){ array->_size, array->_size, 0 };
 

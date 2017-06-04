@@ -1,5 +1,16 @@
 #include "scalyc.h"
 
+scalyc_Options* scalyc_Options_new(scaly_Page* _page, scaly_Array* files, scaly_string* outputName, scaly_string* directory) {
+    scalyc_Options* this = (scalyc_Options*) scaly_Page_allocateObject(_page, sizeof(scalyc_Options));
+
+    this->files = files;
+    this->outputName = outputName;
+    this->directory = directory;
+
+    return this;
+
+}
+
 _scalyc_Options_Result scalyc_Options_parseArguments(scaly_Page* _rp, scaly_Page* _ep, scaly_Array* args) {
     scaly_Page* _p = scaly_Page_alloc();
 
@@ -47,6 +58,6 @@ _scalyc_Options_Result scalyc_Options_parseArguments(scaly_Page* _rp, scaly_Page
         return (_scalyc_Options_Result){ _scalyc_Options_Result_ErrorCode_noOutputOption, 0 };
     if (input->_size == 0)
         return (_scalyc_Options_Result){ _scalyc_Options_Result_ErrorCode_noFilesToCompile, 0 };
-    return (_scalyc_Options_Result){ 0, scalyc_Options_new(_rp, (new_scaly_Array(_rp, input), output, dir)) };
+    return (_scalyc_Options_Result){ 0, scalyc_Options_new(_rp, scaly_Array_newFromArray(_rp, input), output, dir) };
 }
 

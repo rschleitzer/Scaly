@@ -28,5 +28,7 @@ int scaly_VarString_equalsVarString(scaly_VarString* this, scaly_VarString* theS
 int scaly_VarString_notEqualsVarString(scaly_VarString* this, scaly_VarString* theString);
 scaly_Array* scaly_VarString_Split(scaly_Page* _rp, char c);
 void scaly_VarString_copyNativeString(scaly_VarString* this, const char* theString, size_t length);
+void scaly_VarString_appendChar(scaly_VarString* this, char c);
+void scaly_VarString_allocateBuffer(scaly_VarString* this, size_t size);
 
 #endif // __scaly__letstring__

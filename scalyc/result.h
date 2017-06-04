@@ -12,13 +12,13 @@ typedef struct _scalyc_Options_Result_invalidOption _scalyc_Options_Result_inval
     scaly_string* option;
 };
 
-_scalyc_Options_Result_invalidOption* _new_scalyc_Options_Result_invalidOption(scaly_Page* _p, scaly_string* option);
+_scalyc_Options_Result_invalidOption* _new_scalyc_Options_Result_invalidOption(scaly_Page* _page, scaly_string* option);
 
 typedef struct _scalyc_Options_Result_unknownOption _scalyc_Options_Result_unknownOption; struct _scalyc_Options_Result_unknownOption {
     scaly_string* option;
 };
 
-_scalyc_Options_Result_unknownOption* _new_scalyc_Options_Result_unknownOption(scaly_Page* _p, scaly_string* option);
+_scalyc_Options_Result_unknownOption* _new_scalyc_Options_Result_unknownOption(scaly_Page* _page, scaly_string* option);
 
 typedef struct _scalyc_Options_Result _scalyc_Options_Result; struct _scalyc_Options_Result {
     enum _scalyc_Options_Result_ErrorCode errorCode;
@@ -34,7 +34,7 @@ typedef struct _scalyc_Parser_Result_syntax _scalyc_Parser_Result_syntax; struct
     size_t column;
 };
 
-_scalyc_Parser_Result_syntax* _new_scalyc_Parser_Result_syntax(scaly_Page* _p, size_t line, size_t column);
+_scalyc_Parser_Result_syntax* _new_scalyc_Parser_Result_syntax(scaly_Page* _pae, size_t line, size_t column);
 
 typedef struct _scalyc_Parser_Result _scalyc_Parser_Result; struct _scalyc_Parser_Result {
     enum _scalyc_Options_Result_ErrorCode errorCode;
@@ -50,7 +50,7 @@ typedef struct _scalyc_Compiler_Result_syntax _scalyc_Compiler_Result_syntax; st
     size_t column;
 };
 
-_scalyc_Compiler_Result_syntax* _new_scalyc_Compiler_Result_syntax(scaly_Page* _p, size_t line, size_t column);
+_scalyc_Compiler_Result_syntax* _new_scalyc_Compiler_Result_syntax(scaly_Page* _page, size_t line, size_t column);
 
 typedef struct _scalyc_Compiler_Result _scalyc_Compiler_Result; struct _scalyc_Compiler_Result {
     enum _scalyc_Compiler_Result_ErrorCode errorCode;

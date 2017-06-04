@@ -39,7 +39,7 @@ scaly_string* scaly_string_fromString(scaly_Page* _page, scaly_string* theString
 
     return this;
 }
-/*
+
 scaly_string* scaly_string_fromVarString(scaly_Page* _page, scaly_VarString* theString) {
     scaly_string* this = scaly_string_allocate(_page);
     *this = (scaly_string){ scaly_Page_allocateObject(_page, theString->length + 1), theString->length };
@@ -49,75 +49,77 @@ scaly_string* scaly_string_fromVarString(scaly_Page* _page, scaly_VarString* the
     return this;
 }
 
-string::string(size_t theLength) {
-    length = theLength;
-    buffer = (char*)_getPage()->allocateObject(length + 1);
-    buffer[length] = 0;
+scaly_string* scaly_string_newWithLength(scaly_Page* _page, size_t theLength) {
+    scaly_string* this = scaly_string_allocate(_page);
+    *this = (scaly_string){ scaly_Page_allocateObject(_page, theLength + 1), theLength };
+
+    this->buffer[0] = 0;
+    
+    return this;
 }
 
-char* string::getNativeString() const {
-    return buffer;
+char* scaly_string_getNativeString(scaly_string* this) {
+    return this->buffer;
 }
 
-size_t string::getLength() {
-    return length;
+size_t scaly_string_getLength(scaly_string* this) {
+    return this->length;
 }
 
-bool string::equals(const char* theString){
-    return strcmp(getNativeString(), theString) == 0;
+int scaly_string_equalsRawString(scaly_string* this, const char* theString) {
+    return strcmp(scaly_string_getNativeString(this), theString) == 0;
 }
 
-bool string::notEquals(const char* theString){
-    return strcmp(getNativeString(), theString) != 0;
+int scaly_string_notEqualsRawString(scaly_string* this, const char* theString) {
+    return strcmp(scaly_string_getNativeString(this), theString) != 0;
 }
 
-bool string::equals(string* theString){
-    return strcmp(getNativeString(), theString->getNativeString()) == 0;
+int scaly_string_equals(scaly_string* this, scaly_string* theString) {
+    return strcmp(scaly_string_getNativeString(this), scaly_string_getNativeString(theString)) == 0;
 }
 
-bool string::notEquals(string* theString){
-    return strcmp(getNativeString(), theString->getNativeString()) != 0;
+int scaly_string_notEquals(scaly_string* this, scaly_string* theString) {
+    return strcmp(scaly_string_getNativeString(this), scaly_string_getNativeString(theString)) != 0;
 }
 
-bool string::equals(VarString* theString){
-    return strcmp(getNativeString(), theString->getNativeString()) == 0;
+int scaly_string_equalsVarString(scaly_string* this, scaly_VarString* theString) {
+    return strcmp(scaly_string_getNativeString(this), scaly_VarString_getNativeString(theString)) == 0;
 }
 
-bool string::notEquals(VarString* theString){
-    return strcmp(getNativeString(), theString->getNativeString()) != 0;
+int scaly_string_notEqualsVarString(scaly_string* this, scaly_VarString* theString) {
+    return strcmp(scaly_string_getNativeString(this), scaly_VarString_getNativeString(theString)) != 0;
 }
 
-char string::charAt(size_t i) {
-    if (i < length)
-        return getNativeString()[i];
+char scaly_string_charAt(scaly_string* this, size_t i) {
+    if (i < this->length)
+        return scaly_string_getNativeString(this)[i];
 
     return -1;
 }
 
-_Array<string>& string::Split(_Page* _rp, char c) {
-    _Array<string>* ret = new(_rp) _Array<string>();
-    VarString* part = 0;
-    for (size_t _i = 0; _i < length; _i++) {
-        char currentChar = this->charAt(_i);
+scaly_Array* scaly_string_split(scaly_Page* _rp, scaly_string* this, char c) {
+    scaly_Array* ret = scaly_Array_new(_rp);
+    scaly_VarString* part = 0;
+    for (size_t _i = 0; _i < this->length; _i++) {
+        char currentChar = scaly_string_charAt(this, _i);
         if (currentChar == c) {
             if (part) {
-                ret->push(new(_rp) string(part));
+                scaly_Array_push(ret, scaly_string_fromVarString(_rp, part));
                 part = 0;
             }
         }
         else {
             if (!part)
-                part = new(_rp) VarString();
-            part->append(this->charAt(_i));
+                part = scaly_VarString_new(_rp);
+            scaly_VarString_appendChar(part, scaly_string_charAt(this, _i));
         }
     }
 
     if (part)
-        ret->push(new(_rp) string(part));
+        scaly_Array_push(ret, scaly_string_fromVarString(_rp, part));
 
-    return *ret;
+    return ret;
 }
-*/
 
 void scaly_string_copyNativeString(scaly_string* this, const char* theString, size_t length) {
     if (this->length == 0)

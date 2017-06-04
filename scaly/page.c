@@ -7,6 +7,7 @@ extern size_t pagesAllocated;
 
 scaly_Page* scaly_Page_alloc() {
     __CurrentPage = (scaly_Page*)(((char*)__CurrentPage) + scaly_pageSize);
+    scaly_Page_reset(__CurrentPage);
     return __CurrentPage;
 }
 
