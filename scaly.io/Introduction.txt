@@ -35,26 +35,26 @@ or a debug console, depending on the environment in which your program was start
 The function has the name `print` and accepts a string, returning nothing to the caller. 
 We use it to write up the inevitable _Hello World_ program in Scaly:
 
-  print("Hello World!")
+  print "Hello World!"
 
 When you run that program you will notice that no line break is printed. The reason is that we 
 did not include one in our string literal, and the print function does not print a line break 
 by itself. We correct that by inserting a line break literally:
 
-  print("Hello World!
-  ")
+  print "Hello World!
+  "
 
 Scaly can contain all kinds of whitespace literally. If you don't like to span string literals 
 more than one line for readability reasons or want more compact code, you can use 
 an escape sequence as well:
 
-  printf("Hello World!\n")
+  print "Hello World!\n"
 
 [[cmdlineargs]]
 Command line arguments
 ----------------------
 
-To return an integer value (even an implict `0`) is part of the calling convention 
+To return an `int` value (even an implict `0`) is part of the calling convention 
 for stand-alone programs: Zero or more string arguments are passed to the program, 
 and an integer value is returned which acts as an error code which might be useful 
 in extreme error situations if all other means of diagnosis like logging or tracing fail 
@@ -62,14 +62,13 @@ because they do not work for some pathologic reason which can be indicated by th
 
 The arguments passed to the program are bound to one parameter which is visible at the \
 top code level whose name is `arguments`. This parameter is an array of strings, 
-and we can call its `length()` function. So our next Scaly program (not much useful either) 
+and we can get its `length` field. So our next Scaly program (not much useful either) 
 returns the number of arguments passed at the command line:
 
-  arguments.length()
+  arguments.length
 
-This expression actually consists of three parts: an item identified by the `arguments` identifier, 
-the access of its `length` member via the dot, and calling that member 
-as a function without arguments (which it actually is), indicated by the two parentheses.
+This expression actually consists of two parts: an item identified by the `arguments` identifier
+and the access of its `length` field via the dot.
 
 [[codeblocks]]
 Code Blocks
@@ -80,8 +79,8 @@ Like in commonplace languages of C descent, a block starts with a left curly bra
 followed by zero or more statements, and ends with a right curly brace. An example:
 
   {
-      let a: number = 2
-      let b: number = 3
+      let a: int = 2
+      let b: int = 3
       a + b
   }
 
@@ -90,7 +89,7 @@ But there are important differences to C and friends:
 First, _code blocks are expressions_ - they may return a value. Because of this, 
 if the last statement of a code block is an expression, the value which is returned 
 by that statement is the value which the code block returns. Obviously, our example block 
-returns a number whose value is `5`.
+returns an `int` whose value is `5`, and therefore is a valid Scaly program.
 
 Second, the statements of a block can be _executed in any order_ as far as data dependencies 
 and the pureness of called functions allow. That is the main selling point of Scaly - 
