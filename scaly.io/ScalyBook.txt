@@ -1,6 +1,5 @@
 [[scalybook]]
-The Scaly Book
-==============
+= The Scaly Book
 :doctype: book
 
 include::Introduction.txt[tabsize=4]

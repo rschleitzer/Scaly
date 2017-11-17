@@ -1,35 +1,298 @@
 [[reference]]
-Reference
-=========
+== Reference
 
-[[statements]]
-Statements
-----------
+[[files]]
+=== Program files
 
-A Scaly program consists of _statements_. A statement is either an _expression_ which performs 
-computation work, or a _declaration_ which declares constructs like functions, classes, or enums 
-which can be used in expressions. The statements are written into one or more files each 
-containing a number of complete statements. A statement can be terminated by an optional semicolon.
+A Scaly _program_ consists of one or more files which contain the program code. 
+A file is an object from which a Scaly compiler can read a sequence of characters 
+and parse them into <<expressions,expressions>>. 
+A file must contain zero or more complete expressions.
 
-[[expressions]]
-Expressions
------------
+[[lexical]]
+=== Lexical structure
 
-_Expressions_ are the most fundamental building block of a Scaly program. 
-An expression performs actual computation work and usually returns a value 
-as a result of that work. There are numerous forms of expressions in Scaly like _literals_, 
-_function calls_, _operations_, and many more.
+On the lowest level, a Scaly program is made up of a sequence of _characters_ which are 
+read from one or more files. For the Scaly Programming Language, some characters 
+have a special meaning, which means that they control the forming of the conversion of 
+the character sequence into a sequence of _<<tokens,tokens>>_ and _<<whitespace,whitespaces>>_. 
+These tokens are then parsed into expressions which make up a Scaly program or library.
+
+[[whitespace]]
+==== Whitespaces
+
+Whitespaces are sequences of characters which have no meaning by themselves, 
+apart from being used for separating <<tokens,tokens>> 
+if no <<punctuation, punctuation>> can be used. 
+
+===== Whitespace character sequences
+
+Outside of comments or strings, the following characters form whitespace character sequences:
+
+* space, 
+
+* tab, 
+
+* line break, and 
+
+* line feed. 
+
+===== Single line comments
+
+Two forward slashes start a single line comment which spans all following characters 
+up to and including a line break.
+
+  // This is a single line comment.
+
+===== Multiple line comments
+
+A forward slash followed immediately by an asterisk starts a multiple line comment 
+which spans all following characters up to and including an asterisk 
+and a forward slash immediately following.
+
+  /* This is a multi-line comment.
+  Continued comment text
+  The comment ends now:*/
+
+Multiple line comments can be nested:
+
+  /* This comment is /*nested*/.*/
+
+[[tokens]]
+==== Tokens
+
+`Tokens` form the building blocks of expressions. The syntactic grammar of the 
+Scaly Programming Language is expressed in terms of tokens. Tokens can be
+
+* <<literals,literals>>,
+* <<punctuation,punctuation>>,
+* <<keywords,keywords>>, and
+* <<identifiers,identifiers>>.
 
 [[literals]]
-Literals
---------
+===== Literals
 
-The most basic expressions in Scaly are _literals_. A literal simply returns a value 
-that is written literally into a program.
+Literals are used to write constant values directly into the program. 
+
+A numeric literal starts with a digit, followed by zero or more digits,
+optionally one decimal point, optional fraction digits, an optional exponent 
+consisting of the exponent character (`E` or `e`) and exponent digits. 
+
+Some lexically valid numeric literals:
+
+  42
+  1.
+  0.22e4567
+  1E6
+
+(A minus sign is not part of a number literal. It can be implemented as a function.)
+
+String literals start with a double quote and end with a double quote: 
+
+  "This is a string"
+  
+All white space characters can be directly embedded in strings:
+
+  "A string with a 
+  line break"
+
+Tabs, carriage returns, line feeds, and NUL characters can be escaped by a back slash 
+and the characters `t`, `r`, `n`, `0` respectively. The back slash escapes 
+itself, and the double quote is escaped by a back slash as well.
+
+  "A line feed\n, an \"escaped\" string, an escaped \\ backslash, 
+  a \ttab, and a carriage \rreturn."
+
+Character literals start with a single quote, continue with the 
+character whose value is to be written, and end with a single quote:
+
+  'a'
+  '0' // The zero digit character
+
+The characters that can be escaped in string literals, and the single quote 
+must be escaped in a character literal.
+
+  '\"'
+  '\''
+  '\0' // The NUL character
+
+[[punctuation]]
+===== Punctuation
+
+Punctuation characters are used (alongside keywords) for building the structure 
+of expressions:
+
+* Equality sign (`=`)
+* Comma (`,`)
+* Left and right parentheses (`(`, `)`)
+* Left and right curly brackets (`{`, `}`)
+* Left and right brackets (`[`, `]`)
+* Colon (`:`)
+* Dot (`.`)
+* Underscore (`_`)
+* Circumflex (`^`)
+* Dollar (`$`)
+* At (`@`)
+* Hash (`#`)
+
+[[keywords]]
+===== Keywords
+
+Keywords are used (alongside punctuation characters) for building the structure 
+of expressions. The keywords are `namespace`, `using`, `class`, `extends`, 
+`function`, `if`, `else`, `switch`, `case`, `default`, `catch`, `for`,
+`in`, `while`, `do`, `return`, `throw`, `break`, `throws`, `static`,
+`let`, `mutable`, `is`, `as`, `enum`, `this`.
+
+[[identifiers]]
+===== Identifiers
+
+All character combinations which are not white space, literals, punctuation,
+or keywords, are identifiers. Some examples:
+
+  foo
+  +
+  **
+  <
+  >>?
+  -quack+
+  Roäc++
+
+Identifiers are used as names.
+
+[[expressions]]
+=== Expressions
+
+A Scaly program consists of _expressions_. Expressions are the most fundamental 
+building block of a Scaly program. An expression can perform
+computation work and either return the result of the computation to the 
+enclosing expression or bind it to an identifier which can be referred to 
+in the current scope.
+The expressions can be written into one or more files. A file can contain 
+zero or more complete expressions.
+
+An expression performs actual computation work and usually returns a value 
+as a result of that work. There are numerous forms of expressions in Scaly 
+like _literals_, _function calls_, _operations_, and many more.
+
+[[literalvalues]]
+==== Literal Values
+
+The most basic expressions in Scaly are _literal values_. A literal value 
+expression evaluates to the value that is written literally into a program.
+
+  1.602E-19
+  "baz"
+  'a'
+ 
+There is no such thing as a boolean literal as a part of the language. 
+Boolean constants can be defined by a runtime library. 
+
+[[objectsliterals]]
+==== Object literals
+
+An object literal is an expression which combines zero or more expressions, 
+the so-called components, to an object. An object is a data structure which 
+can be used as a
+
+  () // The empty object which contains no components.
+  (42,"The Answer") // Contains the number 42 and a string
+  (()) // A non-empty object which contains the empty object as its only component.
+
+The components of an object can be accessed by its index, 
+starting with 1 at its first component. The component index must be known 
+at compile time, it cannot be computed.
+
+  (7).1 // => 7
+  (1, (2, (3, (4)))).2.2.2 // => (4)
+
+The components of an object can be given a name which can be used to access them:
+
+  (brand = "IFA", model = "F9", year = 1952).year // => 1952
+
+[[arraysliterals]]
+==== Array literals
+
+An array literal combines zero or more expressions of the same type:
+
+  [2, 3, 5, 7] // An array with four components
+
+A component of an array can be accessed by appending brackets which contain the index.
+The index is zero-based.
+
+  [1, 2][1] // => 2
+
+[[declarations]]
+==== Declarations
+
+An declaration evaluates an expression and binds the value which was returned by 
+that expression to a constant or variable:
+
+  let a = 2
+  // b cannot be used here
+  let b = 3
+  a // 2
+  var c = b
+  b // 3
+
+The constant or variable can be used in every expression which follows its declaration 
+in the current scope. A scope is either the global scope or the scope of a <<block,block>>.
+
+[[blocks]]
+==== Blocks and scopes
+
+A block is an expression which combines zero or more expressions in a local scope. 
+The last expression of the block is returned.
+
+  { 99 } // => 99
+
+A scope gives a block a name:
+
+  scope A {
+    let b = 2 
+  }
+
+From a scope, a constant can be used after the scope declaration.
+
+  A.b // => 2
+
+[[functionliterals]]
+==== Function Literals
+
+A function literal evaluates to a function value. It consists of the `function` keyword,
+an object literal, and a block.
+
+  function (a) { a } // => function(a){a}
+
+[[functioncalls]]
+==== Function calls
+
+A function (an expression which evaluates to a function) can be called by combining it 
+with an object to be used as an input to the function:
+
+  function (a) { a } (2) // => 2
+
+[[operatorliterals]]
+==== Operator Literals
+
+For the Scaly programming language, an operator is a function which receives two objects 
+as input. An operator literal consists of the `operator` keyword, two object literals, 
+and a block.
+
+  operator (a) (b) { (a, b) } // => operator(a)(b){(a,b)}
+
+[[operatorcalls]]
+==== Operator Calls
+
+An operator can be called by combining an object expression with the operator and a 
+second object expression. The following example declares the `><` operator which combines 
+two expressions to an object:
+
+  let >< = operator (a) (b) { (a,b) }
+  2 >< 3 // => (2,3)
 
 [[classes]]
-Classes
--------
+=== Classes
 
 Classes are a way of organizing data. Classes can have members -- either primitive ones 
 like strings or numbers, or other classes, or arrays of them. 
@@ -68,9 +331,7 @@ environment.
 Because classes are so easily mapped to JSON or XML, building web services with Scaly 
 is a breeze - simply design a set of functions using classes for data transfer, and you are done.
 
-[[objects]]
-Objects
--------
+=== Objects
 
 An object is created by calling a constructor of its class. A constructor returns a new object. 
 This object can then be assigned to an item:
@@ -100,8 +361,7 @@ You can copy an immutable object by assigning it to another immutable object.
 
 
 [[parents]]
-Parents
--------
+=== Parents
 
 A class can define exactly one parent member. A parent member is recognized by an `@` at its 
 type declaration:
@@ -134,8 +394,7 @@ A parent members can only be accessed if the object holding it is immutable:
   }
 
 [[objectage]]
-Object Age
-----------
+=== Object Age
 
 In Scaly, _objects live on the stack_, either defined as local items, or owned by or referenced 
 by other objects, arrays, or dictionaries, which in turn live somewhere on the stack directly 
