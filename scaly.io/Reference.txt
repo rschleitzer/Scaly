@@ -161,7 +161,7 @@ or keywords, are identifiers. Some examples:
 Identifiers are used as names.
 
 [[expressions]]
-=== Expressions
+=== Basic Expressions
 
 A Scaly program consists of _expressions_. Expressions are the most fundamental 
 building block of a Scaly program. An expression can perform
@@ -174,6 +174,8 @@ zero or more complete expressions.
 An expression performs actual computation work and usually returns a value 
 as a result of that work. There are numerous forms of expressions in Scaly 
 like _literals_, _function calls_, _operations_, and many more.
+
+In this section, the basic expressions are described.
 
 [[literalvalues]]
 ==== Literal Values
@@ -188,12 +190,12 @@ expression evaluates to the value that is written literally into a program.
 There is no such thing as a boolean literal as a part of the language. 
 Boolean constants can be defined by a runtime library. 
 
-[[objectsliterals]]
-==== Object literals
+[[objectexpressions]]
+==== Object expressions
 
-An object literal is an expression which combines zero or more expressions, 
-the so-called components, to an object. An object is a data structure which 
-can be used as a
+An object expression is an expression which combines zero or more expressions, 
+the so-called components, to an object. An object is a combination of data 
+which are used together. 
 
   () // The empty object which contains no components.
   (42,"The Answer") // Contains the number 42 and a string
@@ -236,7 +238,7 @@ that expression to a constant or variable:
   b // 3
 
 The constant or variable can be used in every expression which follows its declaration 
-in the current scope. A scope is either the global scope or the scope of a <<block,block>>.
+in the current scope. A scope is either the global scope or the scope of a <<blocks,block>>.
 
 [[blocks]]
 ==== Blocks and scopes
@@ -256,10 +258,10 @@ From a scope, a constant can be used after the scope declaration.
 
   A.b // => 2
 
-[[functionliterals]]
-==== Function Literals
+[[functionexpressions]]
+==== Function Expressions
 
-A function literal evaluates to a function value. It consists of the `function` keyword,
+A function expression evaluates to a function value. It consists of the `function` keyword,
 an object literal, and a block.
 
   function (a) { a } // => function(a){a}
@@ -270,13 +272,14 @@ an object literal, and a block.
 A function (an expression which evaluates to a function) can be called by combining it 
 with an object to be used as an input to the function:
 
-  function (a) { a } (2) // => 2
+  let getItself = function (a) { a };
+  getItself(2) // => 2
 
 [[operatorliterals]]
-==== Operator Literals
+==== Operator Expressions
 
 For the Scaly programming language, an operator is a function which receives two objects 
-as input. An operator literal consists of the `operator` keyword, two object literals, 
+as input. An operator expression consists of the `operator` keyword, two object literals, 
 and a block.
 
   operator (a) (b) { (a, b) } // => operator(a)(b){(a,b)}
@@ -290,6 +293,104 @@ two expressions to an object:
 
   let >< = operator (a) (b) { (a,b) }
   2 >< 3 // => (2,3)
+
+[[arrayops]]
+==== Array operators
+
+A special variant of the operator expression is one that combines an array literal with a block. 
+It can combine multiple operads using one operation call.
+
+  let with = operator [a] { (a[0], a[1], a[2], a[3]) }
+  1 with 2 with 3 with 4 with 5 // => (1,2,3,4,5) 
+
+[[functiondeclarations]]
+==== Function and operator declarations
+
+Instead of declaring a function or using `let`, a shorter and more syntax can be used:
+
+  function getItself(a) { a }
+  operator >< (a)(b) { (a, b) }
+  operator with [a] { (a[0], a[1], a[2], a[3]) }
+
+[[externalfunctions]]
+==== External function declarations
+
+External functions are functions that are provided by the runtime environment. 
+If external functions are to be made accessible from a Scaly program, 
+they must be declared using the following syntax:
+
+  external _fopen(filename: pointer, mode: pointer): pointer
+  external _fclose(file: pointer)
+
+[[intrinsicfunctions]]
+==== Intrinsic function declarations
+
+Intrinsic functions are functions that are provided by the compiler infrastructure. 
+They must be declared using the following syntax:
+
+  intrinsic llvm.sin.f64(value: double): double
+
+[[types]]
+=== Types
+
+Types describe kinds of data which can be processed by a Scaly program. Most importantly, 
+a type determines which values a variable or constant can have, and the compiler 
+chooses a representation of the data on the hardware on which the code of a Scaly 
+program runs. There are primitive data types like boolean values, integral numbers, 
+floating point numbers, enumerations, bit masks, characters, pointers, functions, 
+and operators, and complex data types like objects, strings, arrays, and variants 
+which combine primitive data types. The names of built-in types are not keywords 
+in a strict sense, they are identifiers which are defined by default - either in the 
+compiler itself or in the runtime library.
+
+[[booleanvalues]]
+==== Boolean Values
+
+There is one boolean value type, `bool`. It can have two values, `false` and `true`. 
+
+[[integralnumbers]]
+==== Integral number types
+
+An integral number type is determined by the range of integral numbers which the 
+number can take on. Scaly defines a set of integral number types which are 
+characterized by their bit width, and whether they carry a sign or not:
+
+* `byte` and `sbyte` (8 bits unsigned and signed)
+* `short` and `ushort` (16 bits signed and unsigned)
+* `int` and `uint` (32 bits signed and unsigned)
+* `long` and `ulong` (64 bits signed and unsigned)
+
+[[characters]]
+==== Characters
+
+The `char` type represents exactly one character. A character is uniquely identified 
+by its code point which is a non-negative integral number. Which code points are valid 
+and the semantics of the individual characters are determined by the character set 
+used by the operating system and/or the runtime library. 
+
+[[pointers]]
+==== Pointers
+
+The `pointer` type represents an address in the address space of the machine. It can 
+point to any kind of data, and the type or semantics of the data are not defined. 
+A pointer can be converted to any data item without any runtime or compile time checks. 
+The author of the code is responsible to guarantee that any instance of a pointer 
+which is used carrys a valid address, and that the pointer is only converted to a constant or 
+variable of the type of data which lives at that address.
+
+Pointers should only be used when external functions are called by Scaly code or by Scaly 
+functions that are called from external code.
+
+[[functionsandoperators]]
+==== Functions and operators
+
+Functions and operators are primitive data insofar as they are a piece of code in the 
+address space of the process which cannot be used in another manner than calling it. 
+The type of a function or operator is determined by their input and the output, not by 
+their implementation. This means that two different functions or operators which have 
+the same input and output are of the same type.
+
+Functions and operators are uniquely identified by the address of their code.
 
 [[classes]]
 === Classes
