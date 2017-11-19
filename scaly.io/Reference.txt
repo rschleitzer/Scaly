@@ -1,10 +1,46 @@
 [[reference]]
 == Reference
 
+This chapter describes the Scaly Programming Language. 
+
+The Scaly Programming Language is defined by the structure and semantics of the 
+<<expressions,expressions>> which can be used to write a Scaly Program.
+
+On the lowest level, a Scaly program consists of a sequence of characters. 
+The <<lexical, lexical structure>> of the Scaly Programming Language 
+describes how the characters of the program code are combined to form a 
+sequence of <<tokens,tokens>> and <<whitespace,whitespaces>>.
+
+The structure of the <<expressions,expressions>> is defined by the 
+<<grammar,grammar>> of the Scaly Programming Language.
+
+The expressions
+its <<typesystem,type system>>, 
+its <<lexical,lexical structure>> and .
+
+The documentation you are reading sometimes refers to the reference 
+implementation of the Scaly Programming Language, but an alternative 
+implementation can choose to do things in another way, or to provide 
+additional functionality like a command line playground which the 
+reference implementation does not have.
+
+Particularly, the <<standardlibrary,standard library>> which comes with the 
+reference implementation is not part of the Scaly Programming Language 
+in a strict sense. Nevertheless, some elements like basic types of this 
+standard library like basic types are used in the code samples that are provided.
+
 [[files]]
 === Program files
 
+The reference implementation of the Scaly Programming Language, which the 
+documentation you are reading is part of, compiles a Scaly 
+program into an https://llvm.org/docs/LangRef.html[LLVM assembly language] module 
+which can be processed further using the 
+https://llvm.org/docs/CommandGuide/index.html[LLVM tools].
+
 A Scaly _program_ consists of one or more files which contain the program code. 
+The Scaly compiler compiles a Scaly program to a piece of executable code. 
+How this code can be executed depends of the implementation of the Scaly compiler. 
 A file is an object from which a Scaly compiler can read a sequence of characters 
 and parse them into <<expressions,expressions>>. 
 A file must contain zero or more complete expressions.
@@ -161,13 +197,12 @@ or keywords, are identifiers. Some examples:
 Identifiers are used as names.
 
 [[expressions]]
-=== Basic Expressions
+=== Expressions
 
-A Scaly program consists of _expressions_. Expressions are the most fundamental 
-building block of a Scaly program. An expression can perform
-computation work and either return the result of the computation to the 
-enclosing expression or bind it to an identifier which can be referred to 
-in the current scope.
+A Scaly program consists of _expressions_. Expressions are the building blocks 
+of a Scaly program. An expression can perform computation work and either 
+return the result of the computation to the enclosing expression or bind it 
+to an identifier which can be referred to in the current scope.
 The expressions can be written into one or more files. A file can contain 
 zero or more complete expressions.
 
@@ -328,45 +363,37 @@ they must be declared using the following syntax:
 Intrinsic functions are functions that are provided by the compiler infrastructure. 
 They must be declared using the following syntax:
 
-  intrinsic llvm.sin.f64(value: double): double
+  intrinsic function llvm.sin.f64(value: double): double
 
-[[types]]
-=== Types
+[[typesystem]]
+=== The Scaly Type System
 
-Types describe kinds of data which can be processed by a Scaly program. Most importantly, 
-a type determines which values a variable or constant can have, and the compiler 
-chooses a representation of the data on the hardware on which the code of a Scaly 
-program runs. There are primitive data types like boolean values, integral numbers, 
-floating point numbers, enumerations, bit masks, characters, pointers, functions, 
-and operators, and complex data types like objects, strings, arrays, and variants 
-which combine primitive data types. The names of built-in types are not keywords 
-in a strict sense, they are identifiers which are defined by default - either in the 
-compiler itself or in the runtime library.
+Types describe kinds of data which can be processed by a Scaly program. 
+Most importantly, a type determines which values a variable or constant can have, 
+and the compiler chooses a representation of the data on the hardware 
+on which the code of a Scaly program runs. There are primitive data types 
+like the void object, functions, and operators, integral and floating point numbers, 
+enumerations, bit masks, characters, pointers,and complex data types 
+like objects, arrays, and variants which combine primitive data types. 
 
-[[booleanvalues]]
-==== Boolean Values
+[[void]]
+==== The Void data type
 
-There is one boolean value type, `bool`. It can have two values, `false` and `true`. 
+The void data type has no value. It can be used as an object that has no data, 
+and it can be written as an empty <<objectexpressions,object expression>>:
 
-[[integralnumbers]]
-==== Integral number types
+  ()
 
-An integral number type is determined by the range of integral numbers which the 
-number can take on. Scaly defines a set of integral number types which are 
-characterized by their bit width, and whether they carry a sign or not:
+Typical uses would be <<functions,functions>> or <<operators,operators>> that return no value (and which are executed only 
+for their side effects), or to be part of variant data types.
 
-* `byte` and `sbyte` (8 bits unsigned and signed)
-* `short` and `ushort` (16 bits signed and unsigned)
-* `int` and `uint` (32 bits signed and unsigned)
-* `long` and `ulong` (64 bits signed and unsigned)
+[[functions]]
+==== Functions
 
-[[characters]]
-==== Characters
+[[operators]]
+==== Operators
 
-The `char` type represents exactly one character. A character is uniquely identified 
-by its code point which is a non-negative integral number. Which code points are valid 
-and the semantics of the individual characters are determined by the character set 
-used by the operating system and/or the runtime library. 
+A function is a part of a Scaly program that 
 
 [[pointers]]
 ==== Pointers
@@ -391,6 +418,56 @@ their implementation. This means that two different functions or operators which
 the same input and output are of the same type.
 
 Functions and operators are uniquely identified by the address of their code.
+
+[[standardlibrary]]
+=== The Scaly standard library
+
+This section describes the types of the standard library that comes with the reference 
+implementation of the Scaly Programming Language. You can use the Scaly Programming Language without the standard library, 
+and provide your own basic types.
+
+[[bool]]
+==== Boolean Values
+
+There is one boolean value type, `bool`. It can have two values, `false` and `true`. 
+
+[[ints]]
+==== Integral number types
+
+An integral number type is determined by the range of integral numbers which the 
+number can take on. Scaly defines a set of integral number types which are 
+characterized by their bit width, and whether they carry a sign or not:
+
+* `byte` and `sbyte` (8 bits unsigned and signed)
+* `short` and `ushort` (16 bits signed and unsigned)
+* `int` and `uint` (32 bits signed and unsigned)
+* `long` and `ulong` (64 bits signed and unsigned)
+
+[[char]]
+==== Characters
+
+The `char` type represents exactly one character. A character is uniquely identified 
+by its code point which is a non-negative integral number. Which code points are valid 
+and the semantics of the individual characters are determined by the character set 
+used by the operating system and/or the runtime library. 
+
+[[grammar]]
+=== Grammar
+
+The grammar of the expressions of the Scaly Programming Language is defined 
+as an https://en.wikipedia.org/wiki/Standard_Generalized_Markup_Language[SGML] document. 
+
+The reference implementation of the Scaly Programming Language actually generates 
+its parser directly out of the grammar description given below.
+
+Since SGML itself is a meta-language, the language in which the grammar is formulated 
+is expressed as an SGML DTD:
+
+include::../scalysh/grammar.dtd[tabsize=4]
+
+A language is formulated 
+
+include::../scalysh/scaly.sgm[tabsize=4]
 
 [[classes]]
 === Classes
