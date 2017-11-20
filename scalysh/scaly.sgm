@@ -1,4 +1,5 @@
   <!DOCTYPE grammar SYSTEM "grammar.dtd">
+  
   <grammar>
 
     <syntax id = Program                                        program
@@ -8,9 +9,9 @@
     <syntax id = Module                                         top
         <content link = Expression            multiple optional property = statements
 
-    <syntax id = Expression                            abstract base = Statement
+    <syntax id = Expression                            abstract
         <content link = SimpleExpression
-        <content link = CodeBlock
+        <content link = Block
         <content link = ConstantDeclaration
         <content link = MutableDeclaration
         <content link = FunctionDeclaration
@@ -189,7 +190,7 @@
         <content link = ParameterClause                         property = parameterClause
         <content link = Expression                              property = body
 
-    <syntax id = CodeBlock                                      base = Expression
+    <syntax id = Block                                          base = Expression
         <content link = leftCurly
         <content link = Statement   multiple                    property = statements
         <content link = rightCurly
