@@ -17,5 +17,5 @@ hell/hello.txt
 Makefile
 scaly.io/index.html
 scaly.io/book
-scalysh/.vscode
+.vscode
 scalysh/obj
