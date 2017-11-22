@@ -9,8 +9,8 @@ namespace scalysh
             Option = option;
         }
         public string Option;
-
     };
+
     public class UnknownOptionException : Exception
     {
         public UnknownOptionException(string option)
@@ -28,4 +28,26 @@ namespace scalysh
     public class NoFilesToCompileException : Exception
     {
     };
+
+    public class ParserException : Exception
+    {
+        public int line;
+        public int column;
+        public ParserException(int line, int column)
+        {
+            this.line = line;
+            this.column = column;
+        }
+    }
+
+    public class CompilerException : Exception
+    {
+        public int line;
+        public int column;
+        public CompilerException(int line, int column)
+        {
+            this.line = line;
+            this.column = column;
+        }
+    }
 }

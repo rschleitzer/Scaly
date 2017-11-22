@@ -8,7 +8,8 @@ namespace scalysh
         public string outputName;
         public string directory;
 
-        Options(string[] input, string output, string dir) {
+        Options(string[] input, string output, string dir)
+        {
             files = input;
             outputName = output;
             directory = dir;
