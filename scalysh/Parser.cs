@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -70,25 +70,25 @@ namespace scalysh
             {
                 Block node = parseBlock();
                 if (node != null)
-                    return (node);
+                    return node;
             }
 
             {
                 Assignment node = parseAssignment();
                 if (node != null)
-                    return (node);
+                    return node;
             }
 
             {
                 IdentifierExpression node = parseIdentifierExpression();
                 if (node != null)
-                    return (node);
+                    return node;
             }
 
             {
                 LiteralExpression node = parseLiteralExpression();
                 if (node != null)
-                    return (node);
+                    return node;
             }
 
             return null;
@@ -104,20 +104,21 @@ namespace scalysh
             else
                 return null;
 
-            Expression[] expressions = parseExpressionList();
+            Expression[] statements = parseExpressionList();
 
             bool successRightCurly3 = lexer.parsePunctuation(rightCurly);
             if (successRightCurly3)
                 lexer.advance();
             else
-                return (null);
+                return null;
 
             Position end = lexer.getPosition();
 
-            Block ret = new Block(new Position(start), new Position(end), expressions);
-            if (expressions != null)
+            Block ret = new Block(start, end, statements);
+
+            if (statements != null)
             {
-                foreach (Expression item in expressions)
+                foreach (Expression item in statements)
                     item.parent = ret;
             }
 
@@ -134,14 +135,15 @@ namespace scalysh
             else
                 return null;
 
-            Expression[] expressions = parseExpressionList();
+            Expression[] statements = parseExpressionList();
 
             Position end = lexer.getPosition();
 
-            Assignment ret = new Assignment(new Position(start), new Position(end), expressions);
-            if (expressions != null)
+            Assignment ret = new Assignment(start, end, statements);
+
+            if (statements != null)
             {
-                foreach (Expression item in expressions)
+                foreach (Expression item in statements)
                     item.parent = ret;
             }
 
@@ -160,7 +162,8 @@ namespace scalysh
 
             Position end = lexer.getPosition();
 
-            IdentifierExpression ret = new IdentifierExpression(new Position(start), new Position(end), name);
+            IdentifierExpression ret = new IdentifierExpression(start, end, name);
+
 
             return ret;
         }
@@ -177,7 +180,8 @@ namespace scalysh
 
             Position end = lexer.getPosition();
 
-            LiteralExpression ret = new LiteralExpression(new Position(start), new Position(end), literal);
+            LiteralExpression ret = new LiteralExpression(start, end, literal);
+
 
             return ret;
         }
@@ -241,7 +245,7 @@ namespace scalysh
         public virtual void visitLiteralExpression(LiteralExpression literalExpression)
         {
         }
-    }
+}
 
     public abstract class SyntaxNode
     {
@@ -273,9 +277,7 @@ namespace scalysh
             if (files != null)
             {
                 foreach (File node in files)
-                {
                     node.accept(visitor);
-                }
             }
             visitor.closeProgram(this);
         }
@@ -314,12 +316,12 @@ namespace scalysh
 
     public class Block : Expression
     {
-        public Expression[] expressions;
-        public Block(Position start, Position end, Expression[] expressions)
+        public Expression[] statements;
+        public Block(Position start, Position end, Expression[] statements)
         {
             this.start = start;
             this.end = end;
-            this.expressions = expressions;
+            this.statements = statements;
         }
 
         public override void accept(Visitor visitor)
@@ -327,9 +329,9 @@ namespace scalysh
             if (!visitor.openBlock(this))
                 return;
 
-            if (expressions != null)
+            if (statements != null)
             {
-                foreach (Expression node in expressions)
+                foreach (Expression node in statements)
                     node.accept(visitor);
             }
             visitor.closeBlock(this);
@@ -338,12 +340,12 @@ namespace scalysh
 
     public class Assignment : Expression
     {
-        public Expression[] expressions;
-        public Assignment(Position start, Position end, Expression[] expressions)
+        public Expression[] statements;
+        public Assignment(Position start, Position end, Expression[] statements)
         {
             this.start = start;
             this.end = end;
-            this.expressions = expressions;
+            this.statements = statements;
         }
 
         public override void accept(Visitor visitor)
@@ -351,9 +353,9 @@ namespace scalysh
             if (!visitor.openAssignment(this))
                 return;
 
-            if (expressions != null)
+            if (statements != null)
             {
-                foreach (Expression node in expressions)
+                foreach (Expression node in statements)
                     node.accept(visitor);
             }
             visitor.closeAssignment(this);

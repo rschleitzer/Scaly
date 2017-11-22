@@ -9,17 +9,11 @@
     <syntax id = File                                           top
         <content link = Expression            multiple optional property = expressions
 
-    <syntax id = Expression                            abstract
+    <syntax id = Expression                   multiple abstract
         <content link = Block
         <content link = Assignment
         <content link = IdentifierExpression
         <content link = LiteralExpression
-
-    <syntax id = IdentifierExpression                           base = Expression
-        <content identifier                                     property = name
-
-    <syntax id = LiteralExpression                              base = Expression
-        <content literal                                        property = literal
 
     <syntax id = Block                                          base = Expression
         <content link = leftCurly
@@ -29,6 +23,12 @@
     <syntax id = Assignment                                     base = Expression
         <content link = set
         <content link = Expression            multiple          property = statements
+
+    <syntax id = IdentifierExpression                           base = Expression
+        <content identifier                                     property = name
+
+    <syntax id = LiteralExpression                              base = Expression
+        <content literal                                        property = literal
 
     <keyword id = set
 
