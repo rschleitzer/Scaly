@@ -28,7 +28,6 @@
              55296     2048  UNUSED  -- surrogates --
              57344     8190   57344
              65534        2  UNUSED  -- FFFE and FFFF --
-             65536  1048576   65536
 
      CAPACITY NONE  -- Capacities are not restricted in XML --
 
