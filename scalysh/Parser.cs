@@ -62,7 +62,10 @@ namespace scalysh
                 ret.Add(node);
             }
 
-            return ret.ToArray();
+            if (ret != null)
+                return ret.ToArray();
+            else
+                return null;
         }
 
         public Expression parseExpression()

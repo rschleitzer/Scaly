@@ -7,7 +7,7 @@
             "type": "process",
             "args": [
                 "build",
-                "${workspaceFolder}/scalysh.csproj"
+                "${workspaceFolder}/scalysh/scalysh.csproj"
             ],
             "problemMatcher": "$msCompile",
             "group": {
