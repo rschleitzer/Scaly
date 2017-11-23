@@ -2,7 +2,7 @@
   "profiles": {
     "scalysh": {
       "commandName": "Project",
-      "commandLineArgs": "-o shortest ../scalycpp/Lexer.scaly"
+      "commandLineArgs": "../scaly/main.scaly -o scalyc"
     }
   }
 }
