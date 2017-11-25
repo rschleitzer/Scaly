@@ -59,7 +59,7 @@ These tokens are then parsed into expressions which make up a Scaly program or l
 
 Whitespaces are sequences of characters which have no meaning by themselves, 
 apart from being used for separating <<tokens,tokens>> 
-if no <<punctuation, punctuation>> can be used. 
+if no <<punctuationandkeywords, punctuation>> can be used. 
 
 ===== Whitespace character sequences
 
@@ -101,8 +101,8 @@ Multiple line comments can be nested:
 Scaly Programming Language is expressed in terms of tokens. Tokens can be
 
 * <<literals,literals>>,
-* <<punctuation,punctuation>>,
-* <<keywords,keywords>>, and
+* <<punctuationandkeywords,punctuation>>,
+* <<punctuationandkeywords,keywords>>, and
 * <<identifiers,identifiers>>.
 
 [[literals]]
@@ -152,30 +152,22 @@ must be escaped in a character literal.
   '\''
   '\0' // The NUL character
 
-[[punctuation]]
-===== Punctuation
+[[punctuationandkeywords]]
+===== Punctuation and
 
 Punctuation characters are used (alongside keywords) for building the structure 
-of expressions:
+of expressions.
 
-* Equality sign (`=`)
-* Comma (`,`)
-* Left and right parentheses (`(`, `)`)
-* Left and right curly brackets (`{`, `}`)
-* Left and right brackets (`[`, `]`)
-* Colon (`:`)
-* Dot (`.`)
-* Underscore (`_`)
-* Circumflex (`^`)
-* Dollar (`$`)
-* At (`@`)
-* Hash (`#`)
+Keywords are used (alongside punctuation characters) for building the structure 
+of expressions.
+
+The complete list of punctuation characters and keywords is contained in the 
+<<scalygrammar,Grammar Reference>>.
 
 [[keywords]]
 ===== Keywords
 
-Keywords are used (alongside punctuation characters) for building the structure 
-of expressions. The keywords are `namespace`, `using`, `class`, `extends`, 
+ The keywords are `namespace`, `using`, `class`, `extends`, 
 `function`, `if`, `else`, `switch`, `case`, `default`, `catch`, `for`,
 `in`, `while`, `do`, `return`, `throw`, `break`, `throws`, `static`,
 `let`, `mutable`, `is`, `as`, `enum`, `this`.
@@ -210,7 +202,8 @@ An expression performs actual computation work and usually returns a value
 as a result of that work. There are numerous forms of expressions in Scaly 
 like _literals_, _function calls_, _operations_, and many more.
 
-In this section, the basic expressions are described.
+Expressions can be optionally terminated by a semicolon. Line breaks are not 
+significant for expression termination.
 
 [[literalvalues]]
 ==== Literal Values
@@ -236,16 +229,22 @@ which are used together.
   (42,"The Answer") // Contains the number 42 and a string
   (()) // A non-empty object which contains the empty object as its only component.
 
+An object consisting of a single component is semantially equivalent to the 
+component contained by that object:
+
+  (5) // => 5
+
 The components of an object can be accessed by its index, 
 starting with 1 at its first component. The component index must be known 
 at compile time, it cannot be computed.
 
   (7).1 // => 7
-  (1, (2, (3, (4)))).2.2.2 // => (4)
+  (1, (2, (3, (4)))).2.2.2 // => 4
 
 The components of an object can be given a name which can be used to access them:
 
   (brand = "IFA", model = "F9", year = 1952).year // => 1952
+
 
 [[arraysliterals]]
 ==== Array literals
@@ -319,6 +318,16 @@ and a block.
 
   operator (a) (b) { (a, b) } // => operator(a)(b){(a,b)}
 
+Scaly knows no binary operator precedence, execution is left to right:
+
+  2 + 3 * 4 // => 20
+
+Operator precedence can be done by putting binary operation into parentheses (which are
+technically <<objectexpressions,object expressions>> with one component which simply 
+expose the containing operation after evaluation):
+
+  2 + (3 * 4) // => 14
+
 [[operatorcalls]]
 ==== Operator Calls
 
@@ -330,16 +339,47 @@ two expressions to an object:
   2 >< 3 // => (2,3)
 
 [[arrayops]]
-==== Array operators
+==== Array Operators
 
 A special variant of the operator expression is one that combines an array literal with a block. 
 It can combine multiple operads using one operation call.
 
   let with = operator [a] { (a[0], a[1], a[2], a[3]) }
-  1 with 2 with 3 with 4 with 5 // => (1,2,3,4,5) 
+  1 with 2 with 3 with 4 with 5 // => (1,2,3,4,5)
+
+The order of evaluation of the operator arguments is not specified.
+
+[[bindingexpressions]]
+==== Binding and Assignment Expressions
+
+Binding expressions bind an expression to a pattern. A pattern is commonly an 
+identifier expression which is a name of the object to which the expression is bound. 
+Binding expressions can be constant (using `let`), variable (using `mutable`), or 
+inferred (using `var`):
+
+  var a 2
+  var b 3
+  var c a + b
+  c // => 5
+
+Writing an equals sign after let, mutable, or var is not required by the language, 
+but since the standard library provides the unary = operator, the binding expressions 
+can use them. Together with optional semicolons, the code might be more readable:
+
+  var a = 2;
+  var b = 3;
+  var c = a + b;
+  c // => 5
+
+An object bound to a `mutable` name can be altered by setting it to a new value using 
+the assignment expression:
+
+  mutable d 6
+  set d d + 1
+  d // => 7
 
 [[functiondeclarations]]
-==== Function and operator declarations
+==== Function and Operator Declarations
 
 Instead of declaring a function or using `let`, a shorter and more syntax can be used:
 

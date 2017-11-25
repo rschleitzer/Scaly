@@ -1,5 +1,5 @@
 #!/bin/bash
 clang -S -emit-llvm main.cpp
 llc -filetype=obj main.ll
-clang main.o -o scalyc
+clang main.o -o scaly
 ./scalyc
