@@ -103,7 +103,7 @@ _Page* _Page::allocateExclusivePage() {
     // Check first whether we need an ordinary extension
     if ((_Page**)getNextObject() >= getNextExclusivePageLocation()) {
         // Allocate an extension page with default size
-        allocateExtensionPage()->allocateExclusivePage();
+        return allocateExtensionPage()->allocateExclusivePage();
     }
 
     _Page* exclusivePage = __CurrentTask->getExtensionPage();
@@ -155,7 +155,7 @@ void _Page::forget(_Page* page) {
 }
 
 bool _Page::reclaimArray(void* address) {
-    // Quick attempt to find it at tue current page
+    // Quick attempt to find it at the current page
     if (currentPage->deallocateExclusivePage((_Page*)address))
         return true;
     // Second attempt scanning the rest of the chain
