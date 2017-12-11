@@ -56,7 +56,7 @@ namespace scalysh
 
             switch (c)
             {
-                case '+': case '-': case '*': case '/': case '=': case '%': case '&': case '|': case '!': case '?': case '^': case '~': case '<': case '>':
+                case '+': case '-': case '*': case '/': case '=': case '%': case '&': case '|': case '^': case '~': case '<': case '>':
                     token = scanOperator();
                     break;
 
@@ -68,7 +68,7 @@ namespace scalysh
                     token = scanCharacterLiteral();
                     break;
 
-                case '_': case '(': case ')': case '{': case '}': case '[': case ']': case '.': case ',': case ':': case ';': case '@': case '#': case '`': case '$':
+                case '{': case '}': case '(': case ')': case '[': case ']': case '.': case ',': case ':': case ';': case '?': case '!': case '@': case '#': case '$': case '_': case '`':
                 {
                     token = new Punctuation(new string(c, 1));
                     position = position + 1;

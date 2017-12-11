@@ -76,7 +76,7 @@ namespace scalysh
             "(link content)(if (multiple? content) "[]" "")" "(property content)" = parse"(link content)(if (multiple? content) "List" "")"();
 "
                     (if (or (optional? content) (multiple? content)) "" ($
-"           if ("(property content)" == null)
+"            if ("(property content)" == null)
                 return null;
 "
                     ))
@@ -131,9 +131,9 @@ namespace scalysh
 "                       )
                         (if (string=? "syntax" (type content)) ($
                             (if (optional? content) ($
-"        if "(property content)" != null
+"            if ("(property content)" != null)
     "                       )"")
-"        "(property content)".parent = ret
+"            "(property content)".parent = ret;
 "                       )"")
                     )
                 ))

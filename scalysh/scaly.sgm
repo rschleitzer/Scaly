@@ -7,32 +7,212 @@
         <content link = File                  multiple          property = files
 
     <syntax id = File                                           top
-        <content link = Expression            multiple optional property = expressions
+        <content link = Statement             multiple optional property = statements
+    
+    <syntax id = Statement                    multiple abstract
+        <content link = Declaration
+        <content link = Expression
 
-    <syntax id = Expression                   multiple abstract
-        <content link = Block
+    <syntax id = Declaration                  multiple abstract base = Statement
+        <content link = ConstantDeclaration
+        <content link = VariableDeclaration
+        <content link = InferredDeclaration
         <content link = Assignment
-        <content link = IdentifierExpression
-        <content link = LiteralExpression
+        <content link = ClassDeclaration
+        <content link = MethodDeclaration
+        <content link = FunctionDeclaration
+
+    <syntax id = Expression                   multiple abstract base = Statement
+        <content link = Block
+        <content link = PostfixExpression
 
     <syntax id = Block                                          base = Expression
         <content link = leftCurly
-        <content link = Expression            multiple          property = statements
+        <content link = Statement            multiple          property = statements
         <content link = rightCurly
 
-    <syntax id = Assignment                                     base = Expression
-        <content link = set
-        <content link = Expression            multiple          property = statements
+    <syntax id = ConstantDeclaration                            base = Declaration
+        <content link = let
+        <content link = Binding                                 property = binding
 
-    <syntax id = IdentifierExpression                           base = Expression
+    <syntax id = VariableDeclaration                            base = Declaration
+        <content link = mutable
+        <content link = Binding                                 property = binding
+
+    <syntax id = InferredDeclaration                            base = Declaration
+        <content link = var
+        <content link = Binding                                 property = binding
+
+    <syntax id = Binding
+        <content identifier                                     property = name
+        <content link = TypeAnnotation                 optional property = typeAnnotation
+        <content link = Expression                              property = expression
+
+    <syntax id = Assignment                                     base = Declaration
+        <content link = set
+        <content link = Expression                              property = lvalue
+        <content link = colon
+        <content link = Expression                              property = rvalue
+
+    <syntax id = PostfixExpression                              base = Expression
+        <content link = PrimaryExpression                       property = primary
+        <content link = Postfix               multiple optional property = postfixes
+
+    <syntax id = PrimaryExpression            multiple abstract
+        <content link = IdentifierExpression
+        <content link = LiteralExpression
+        <content link = ThisExpression
+        <content link = ObjectExpression
+
+    <syntax id = IdentifierExpression                           base = PrimaryExpression
         <content identifier                                     property = name
 
-    <syntax id = LiteralExpression                              base = Expression
+    <syntax id = LiteralExpression                              base = PrimaryExpression
         <content literal                                        property = literal
 
+    <syntax id = ThisExpression                                 base = PrimaryExpression
+        <content link = this
+
+    <syntax id = Postfix                      multiple abstract
+        <content link = MemberAccess
+        <content link = Subscript
+        <content link = Operation
+
+    <syntax id = MemberAccess                                   base = Postfix
+        <content link = dot
+        <content identifier                                     property = member
+
+    <syntax id = Subscript                                      base = Postfix
+        <content link = leftBracket
+        <content link = ExpressionElement     multiple          property = expressions
+        <content link = rightBracket
+    
+    <syntax id = Operation                                      base = Postfix
+        <content link = Expression                              property = Expression
+
+    <syntax id = ExpressionElement            multiple
+        <content link = Expression                              property = expression
+        <content link = comma                          optional
+
+    <syntax id = ObjectExpression                               base = PrimaryExpression
+        <content link = leftParen
+        <content link = ObjectItem            multiple optional property = items
+        <content link = rightParen
+
+    <syntax id = ObjectItem                   multiple
+        <content link = Expression                              property = expression
+        <content link = comma                          optional
+
+    <syntax id = ClassDeclaration                               base = Declaration
+        <content link = class
+        <content link = Name                                    property = name
+        <content link = TypeInheritanceClause          optional property = typeInheritanceClause
+        <content link = ObjectDeclaration              optional property = contents
+        <content link = Expression                     optional property = body
+
+    <syntax id = Name
+        <content identifier                                     property = name
+        <content link = Extension             multiple optional property = extensions
+
+    <syntax id = Extension                    multiple
+        <content link = dot
+        <content identifier                                     property = name
+
+    <syntax id = TypeInheritanceClause
+        <content link = extends
+        <content link = Name                                    property = name
+
+    <syntax id = ObjectDeclaration
+        <content link = leftParen
+        <content link = Component             multiple optional property = components
+        <content link = rightParen
+
+    <syntax id = Component                    multiple
+        <content identifier                                     property = name
+        <content link = TypeAnnotation                 optional property = typeAnnotation
+        <content link = comma                          optional
+
+    <syntax id = FunctionDeclaration                            base = Declaration
+        <content link = function
+        <content link = Procedure                               property = procedure
+
+    <syntax id = MethodDeclaration                              base = Declaration
+        <content link = method
+        <content link = Procedure                               property = procedure
+
+    <syntax id = Procedure
+        <content identifier                                     property = name
+        <content link = ObjectDeclaration              optional property = input
+        <content link = TypeAnnotation                 optional property = output
+        <content link = Statement                               property = body
+
+    <syntax id = TypeAnnotation
+        <content link = colon
+        <content link = Type                                    property = name
+
+    <syntax id = Type
+        <content identifier                                     property = name
+        <content link = TypePostfix           multiple optional property = postfixes
+        <content link = LifeTime                       optional property = lifeTime
+
+    <syntax id = TypePostfix                  multiple abstract
+        <content link = Optional
+        <content link = IndexedType
+
+    <syntax id = Optional                                       base = TypePostfix
+        <content link = question
+
+    <syntax id = IndexedType                                    base = TypePostfix
+        <content link = leftBracket
+        <content link = Type                           optional property = key
+        <content link = rightBracket
+
+    <syntax id = LifeTime                              abstract
+        <content link = Root
+        <content link = Local
+        <content link = Reference
+        <content link = Thrown
+
+    <syntax id = Root                                           base = LifeTime
+        <content link = dollar
+
+    <syntax id = Local                                          base = LifeTime
+        <content link = at
+        <content identifier                                     property = location
+
+    <syntax id = Reference                                      base = LifeTime
+        <content link = backtick
+        <content literal                               optional property = age
+
+    <syntax id = Thrown                                         base = LifeTime
+        <content link = hash
+
+    <keyword id = let
+    <keyword id = mutable
+    <keyword id = var
     <keyword id = set
+    <keyword id = class
+    <keyword id = extends
+    <keyword id = function
+    <keyword id = method
+    <keyword id = this
 
     <punctuation id = leftCurly         value = "{"
     <punctuation id = rightCurly        value = "}"
+    <punctuation id = leftParen         value = "("
+    <punctuation id = rightParen        value = ")"
+    <punctuation id = leftBracket       value = "["
+    <punctuation id = rightBracket      value = "]"
+    <punctuation id = dot               value = "."
+    <punctuation id = comma             value = ","
+    <punctuation id = colon             value = ":"
+<!--<punctuation id = semicolon         value = ";"-->
+    <punctuation id = question          value = "?"
+<!--<punctuation id = exclamation       value = "!"-->
+    <punctuation id = at                value = "@"
+    <punctuation id = hash              value = "#"
+    <punctuation id = dollar            value = "$"
+<!--<punctuation id = underscore        value = "_"-->
+    <punctuation id = backtick          value = "`"
 
   </grammar>

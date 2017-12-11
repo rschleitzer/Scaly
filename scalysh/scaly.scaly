@@ -1,6 +1,6 @@
 function main(argc: int, argv: pointer): int {
 
     // Allocate the root page for the main thread
-    posix_memalign(pointer.addressOf(currentPage), _pageSize, _pageSize * _maxStackPages);
+    posix_memalign(pointer.addressOf(currentPage), pageSize, pageSize * maxStackPages)
 
 }

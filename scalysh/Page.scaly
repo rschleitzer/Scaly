@@ -1,19 +1,21 @@
 class Scaly.Page
 (
-    currentPage: Page? = ()
-    nextObjectOffset: int
-    exclusivePages: int
+    currentPage         : Page?
+    nextObjectOffset    : int
+    exclusivePages      : int
 )
 {
-    let alignment: int = 8
-    let pageSize: size = 0x1000
-    let maxStackPages: size = 0x1000
+    let alignment       : int   8
+    let pageSize        : size  0x1000
+    let maxStackPages   : size  0x1000
+
+    set currentPage: ()
 
     method reset {
-        pointer.set(getExtensionPageLocation(), 0)
-        set exclusivePages = 0
-        set nextObjectOffset = sizeof Page
-        set currentPage = this
+        pointer.write(getExtensionPageLocation(), 0)
+        set exclusivePages : 0
+        set nextObjectOffset : sizeof Page
+        set currentPage : this
     }
 
     method clear {
@@ -31,7 +33,7 @@ class Scaly.Page
         this as pointer + nextObjectOffset
 
     method setNextObject(object: pointer)
-        set nextObjectOffset = (object - this) as pointer
+        set nextObjectOffset : (object - this) as pointer
 
     method getNextExclusivePageLocation 
         getExtensionPageLocation() - ((exclusivePages + 1) * sizeof pointer)
@@ -58,7 +60,7 @@ class Scaly.Page
             if allocatingPage {
                 if (allocatingPage as pointer) <> (currentPage as pointer) and not (allocatingPage.isOversized()) {
                     // We can't assign mutable objects, so we work around this using pointers.
-                    pointer.set(currentPage as pointer, allocatingPage as pointer)
+                    pointer.write(currentPage as pointer, allocatingPage as pointer)
                 }
             }
 
@@ -81,7 +83,7 @@ class Scaly.Page
             if getNextObject() = getExtensionPageLocation() {
 
                 // Allocate an extension page with default size
-                var extensionPage = allocateExtensionPage();
+                var extensionPage = allocateExtensionPage()
 
                 // Try again with the new extension page
                 return extensionPage.allocateObject(objectSize)
@@ -97,10 +99,10 @@ class Scaly.Page
             page.reset()
             
             // This is a hint about the oversize of the page
-            set page.currentPage = ()
+            set page.currentPage : ()
 
-            pointer.set(getExtensionPageLocation(), page)
-            set exclusivePages = exclusivePages + 1
+            pointer.write(getExtensionPageLocation(), page)
+            set exclusivePages : exclusivePages + 1
             return page + sizeof Page
         }
 
@@ -122,8 +124,8 @@ class Scaly.Page
             return ()
 
         extensionPage.reset()
-        pointer.set(getExtensionPageLocation(), extensionPage)
-        set currentPage = extensionPage
+        pointer.write(getExtensionPageLocation(), extensionPage)
+        set currentPage : extensionPage
         return extensionPage
     }
 
@@ -147,15 +149,15 @@ class Scaly.Page
             return ()
 
         exclusivePage.reset()
-        pointer.set(getNextExclusivePageLocation(), exclusivePage)
-        set exclusivePages = exclusivePages + 1
+        pointer.write(getNextExclusivePageLocation(), exclusivePage)
+        set exclusivePages : exclusivePages + 1
         return exclusivePage
     }
 
     method extend(address: pointer, objectSize: size) {
 
         if objectSize = 0
-            set objectSize = 1
+            set objectSize : 1
 
         var nextLocation = align(address + objectSize)
 
@@ -176,7 +178,7 @@ class Scaly.Page
         return true
     }
 
-    method _Page::deallocateExtensions() {
+    method deallocateExtensions {
         mutable page: Page? = this
         do {
             if page = ()
@@ -185,21 +187,21 @@ class Scaly.Page
             let nextExtensionPage = page.getExtensionPageLocation as pointer
 
             // Deallocate oversized or exclusive pages
-            mutable pPage = page.getExtensionPageLocation() - sizeof pointer;
+            mutable pPage = page.getExtensionPageLocation() - sizeof pointer
 
             mutable i: int = 0
             do {
                 if not (pPage as Page).isOversized()
                     (pPage as Page).deallocateExtensions()
                 forget(pPage as Page)
-                set pPage = pPage - sizeof pointer
-                set i = i + 1
+                set pPage : pPage - sizeof pointer
+                set i : i + 1
             } while i < page.exclusivePages
 
-            if (page != this)
-                forget(page);
+            if (page <> this)
+                forget(page)
 
-            pointer.set(addressof page, nextExtensionPage)
+            pointer.write(addressof page, nextExtensionPage)
 
         } while true
     }
@@ -231,7 +233,7 @@ class Scaly.Page
     }
 
     function getPage(address: pointer): Page {
-        return address and not (_pageSize - 1) as Page
+        return address and not (pageSize - 1) as Page
     }
 
     method deallocateExclusivePage(page: Page): bool {
@@ -240,13 +242,13 @@ class Scaly.Page
         mutable pPage = getExtensionPageLocation() - sizeof pointer
 
         // Exclusive pages end pointer
-        let nextExtensionPageLocation = getNextExclusivePageLocation();
+        let nextExtensionPageLocation = getNextExclusivePageLocation()
 
         while pPage > nextExtensionPageLocation {
             if pPage as Page = page
                 break
 
-            set pPage = pPage - sizeof pointer
+            set pPage : pPage - sizeof pointer
         }
 
         // Report if we could not find it
@@ -255,13 +257,13 @@ class Scaly.Page
 
         // Shift the remaining array one position up
         do {
-            pointer.set(pPage, (pPage - sizeof pointer) as pointer)
+            pointer.write(pPage, (pPage - sizeof pointer) as pointer)
             set pPage = pPage - sizeof pointer
         } while pPage > nextExtensionPageLocation
         // Make room for one more extension
-        exclusivePages--;
-        forget(_page);
-        return true;
+        set exclusivePages : exclusivePages - 1
+        forget(page)
+        return true
     }
 
 }
