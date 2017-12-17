@@ -15,7 +15,7 @@ function main(argc: int, argv: pointer): int {
     set CurrentTask : task
 
     // Collect the arguments into a string Vector
-    mutable arguments = Array`string`@CurrentPage(argc - 1)
+    mutable arguments = Array[string]@CurrentPage(argc - 1)
 
     mutable i: int = 1
     while (i < argc) {

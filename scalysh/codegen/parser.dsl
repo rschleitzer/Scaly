@@ -77,8 +77,15 @@ namespace scalysh
 "
                     (if (or (optional? content) (multiple? content)) "" ($
 "            if ("(property content)" == null)
-                return null;
 "
+                        (if (equal? 1 (child-number content))
+                            ($
+"                return null;
+"                           )
+                            ($
+"                throw new ParserException(fileName, lexer.line, lexer.column);
+"                           )
+                        )
                     ))
                            (if (top? syntax) ($
 "            if ("(property content)" != null)
@@ -105,8 +112,14 @@ namespace scalysh
                 lexer.advance();
 "                           (if (optional? content) "" ($
 "            else
-                return null;
-"
+"                               (if (equal? 1 (child-number content))
+                                    ($
+"                return null;
+"                                   )
+                                    ($
+"                throw new ParserException(fileName, lexer.line, lexer.column);
+"                                    )
+                                )
                            ))
                         )
                     ) ; syntax or terminal

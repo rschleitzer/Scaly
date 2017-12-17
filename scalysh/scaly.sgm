@@ -133,7 +133,10 @@
     <syntax id = Catch                                          base = Postfix
         <content link = catch
         <content link = Type                                    property = typeSpec
-        <content link = ObjectExpression               optional property
+        <content link = leftParen
+        <content identifier                            optional property = errorName
+        <content link = rightParen
+        <content link = Expression                     optional property = handler
 
     <syntax id = MemberAccess                                   base = Postfix
         <content link = dot
@@ -198,10 +201,10 @@
         <content identifier                                     property = name
 
     <syntax id = GenericParameters
-        <content link = backtick
+        <content link = leftBracket
         <content identifier                                     property = name
         <content link = GenericParameter      multiple optional property = additionalGenerics
-        <content link = backtick
+        <content link = rightBracket
 
     <syntax id = GenericParameter             multiple
         <content link = comma
@@ -246,10 +249,10 @@
         <content link = LifeTime                       optional property = lifeTime
 
     <syntax id = GenericArguments
-        <content link = backtick
+        <content link = leftBracket
         <content link = Type                                    property = typeSpec
         <content link = GenericArgument       multiple optional property = additionalGenerics
-        <content link = backtick
+        <content link = rightBracket
 
     <syntax id = GenericArgument              multiple
         <content link = comma
@@ -281,7 +284,7 @@
         <content identifier                                     property = location
 
     <syntax id = Reference                                      base = LifeTime
-        <content link = hash
+        <content link = backtick
         <content literal                               optional property = age
 
     <syntax id = Thrown                                         base = LifeTime
@@ -323,7 +326,7 @@
     <punctuation id = question          value = "?"
     <punctuation id = exclamation       value = "!"
     <punctuation id = at                value = "@"
-    <punctuation id = hash              value = "#"
+<!--<punctuation id = hash              value = "#"-->
     <punctuation id = dollar            value = "$"
     <punctuation id = underscore        value = "_"
     <punctuation id = backtick          value = "`"

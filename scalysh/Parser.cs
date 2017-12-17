@@ -45,7 +45,6 @@ namespace scalysh
         string question = "?";
         string exclamation = "!";
         string at = "@";
-        string hash = "#";
         string dollar = "$";
         string underscore = "_";
         string backtick = "`";
@@ -99,7 +98,7 @@ namespace scalysh
             if (successRightCurly3)
                 lexer.advance();
             else
-                return null;
+                throw new ParserException(fileName, lexer.line, lexer.column);
 
             Position end = lexer.getPosition();
 
@@ -188,7 +187,7 @@ namespace scalysh
 
             Name name = parseName();
             if (name == null)
-                return null;
+                throw new ParserException(fileName, lexer.line, lexer.column);
 
             Position end = lexer.getPosition();
 
@@ -279,7 +278,7 @@ namespace scalysh
 
             Binding binding = parseBinding();
             if (binding == null)
-                return null;
+                throw new ParserException(fileName, lexer.line, lexer.column);
 
             Position end = lexer.getPosition();
 
@@ -302,7 +301,7 @@ namespace scalysh
 
             Binding binding = parseBinding();
             if (binding == null)
-                return null;
+                throw new ParserException(fileName, lexer.line, lexer.column);
 
             Position end = lexer.getPosition();
 
@@ -325,7 +324,7 @@ namespace scalysh
 
             Binding binding = parseBinding();
             if (binding == null)
-                return null;
+                throw new ParserException(fileName, lexer.line, lexer.column);
 
             Position end = lexer.getPosition();
 
@@ -348,7 +347,7 @@ namespace scalysh
 
             Binding binding = parseBinding();
             if (binding == null)
-                return null;
+                throw new ParserException(fileName, lexer.line, lexer.column);
 
             Position end = lexer.getPosition();
 
@@ -629,11 +628,11 @@ namespace scalysh
 
             Expression condition = parseExpression();
             if (condition == null)
-                return null;
+                throw new ParserException(fileName, lexer.line, lexer.column);
 
             Expression consequent = parseExpression();
             if (consequent == null)
-                return null;
+                throw new ParserException(fileName, lexer.line, lexer.column);
 
             Else elseClause = parseElse();
 
@@ -661,7 +660,7 @@ namespace scalysh
 
             Expression alternative = parseExpression();
             if (alternative == null)
-                return null;
+                throw new ParserException(fileName, lexer.line, lexer.column);
 
             Position end = lexer.getPosition();
 
@@ -686,7 +685,7 @@ namespace scalysh
             if ((index != null) && isIdentifier(index))
                 lexer.advance();
             else
-                return null;
+                throw new ParserException(fileName, lexer.line, lexer.column);
 
             TypeAnnotation typeAnnotation = parseTypeAnnotation();
 
@@ -694,15 +693,15 @@ namespace scalysh
             if (successIn4)
                 lexer.advance();
             else
-                return null;
+                throw new ParserException(fileName, lexer.line, lexer.column);
 
             Expression expression = parseExpression();
             if (expression == null)
-                return null;
+                throw new ParserException(fileName, lexer.line, lexer.column);
 
             Expression code = parseExpression();
             if (code == null)
-                return null;
+                throw new ParserException(fileName, lexer.line, lexer.column);
 
             Position end = lexer.getPosition();
 
@@ -728,11 +727,11 @@ namespace scalysh
 
             Expression condition = parseExpression();
             if (condition == null)
-                return null;
+                throw new ParserException(fileName, lexer.line, lexer.column);
 
             Expression code = parseExpression();
             if (code == null)
-                return null;
+                throw new ParserException(fileName, lexer.line, lexer.column);
 
             Position end = lexer.getPosition();
 
@@ -756,17 +755,17 @@ namespace scalysh
 
             Expression code = parseExpression();
             if (code == null)
-                return null;
+                throw new ParserException(fileName, lexer.line, lexer.column);
 
             bool successWhile3 = lexer.parseKeyword(whileKeyword);
             if (successWhile3)
                 lexer.advance();
             else
-                return null;
+                throw new ParserException(fileName, lexer.line, lexer.column);
 
             Expression condition = parseExpression();
             if (condition == null)
-                return null;
+                throw new ParserException(fileName, lexer.line, lexer.column);
 
             Position end = lexer.getPosition();
 
@@ -862,10 +861,35 @@ namespace scalysh
             else
                 return null;
 
+            Type typeSpec = parseType();
+            if (typeSpec == null)
+                throw new ParserException(fileName, lexer.line, lexer.column);
+
+            bool successLeftParen3 = lexer.parsePunctuation(leftParen);
+            if (successLeftParen3)
+                lexer.advance();
+            else
+                throw new ParserException(fileName, lexer.line, lexer.column);
+
+            string errorName = lexer.parseIdentifier();
+            if ((errorName != null) && isIdentifier(errorName))
+                lexer.advance();
+
+            bool successRightParen5 = lexer.parsePunctuation(rightParen);
+            if (successRightParen5)
+                lexer.advance();
+            else
+                throw new ParserException(fileName, lexer.line, lexer.column);
+
+            Expression handler = parseExpression();
+
             Position end = lexer.getPosition();
 
-            Catch ret = new Catch(start, end);
+            Catch ret = new Catch(start, end, typeSpec, errorName, handler);
 
+            typeSpec.parent = ret;
+            if (handler != null)
+                handler.parent = ret;
 
             return ret;
         }
@@ -884,7 +908,7 @@ namespace scalysh
             if ((member != null) && isIdentifier(member))
                 lexer.advance();
             else
-                return null;
+                throw new ParserException(fileName, lexer.line, lexer.column);
 
             Position end = lexer.getPosition();
 
@@ -912,7 +936,7 @@ namespace scalysh
             if (successRightBracket4)
                 lexer.advance();
             else
-                return null;
+                throw new ParserException(fileName, lexer.line, lexer.column);
 
             Position end = lexer.getPosition();
 
@@ -944,7 +968,7 @@ namespace scalysh
 
             Type typeSpec = parseType();
             if (typeSpec == null)
-                return null;
+                throw new ParserException(fileName, lexer.line, lexer.column);
 
             Position end = lexer.getPosition();
 
@@ -967,7 +991,7 @@ namespace scalysh
 
             Type typeSpec = parseType();
             if (typeSpec == null)
-                return null;
+                throw new ParserException(fileName, lexer.line, lexer.column);
 
             Position end = lexer.getPosition();
 
@@ -996,7 +1020,7 @@ namespace scalysh
             if (successRightParen4)
                 lexer.advance();
             else
-                return null;
+                throw new ParserException(fileName, lexer.line, lexer.column);
 
             Position end = lexer.getPosition();
 
@@ -1074,7 +1098,7 @@ namespace scalysh
 
             Type typeSpec = parseType();
             if (typeSpec == null)
-                return null;
+                throw new ParserException(fileName, lexer.line, lexer.column);
 
             Position end = lexer.getPosition();
 
@@ -1101,7 +1125,7 @@ namespace scalysh
             if (successColon3)
                 lexer.advance();
             else
-                return null;
+                throw new ParserException(fileName, lexer.line, lexer.column);
 
             Expression[] rValue = parseExpressionList();
 
@@ -1185,7 +1209,7 @@ namespace scalysh
 
             Name name = parseName();
             if (name == null)
-                return null;
+                throw new ParserException(fileName, lexer.line, lexer.column);
 
             GenericParameters generics = parseGenericParameters();
 
@@ -1272,7 +1296,7 @@ namespace scalysh
             if ((name != null) && isIdentifier(name))
                 lexer.advance();
             else
-                return null;
+                throw new ParserException(fileName, lexer.line, lexer.column);
 
             Position end = lexer.getPosition();
 
@@ -1286,8 +1310,8 @@ namespace scalysh
         {
             Position start = lexer.getPreviousPosition();
 
-            bool successBacktick1 = lexer.parsePunctuation(backtick);
-            if (successBacktick1)
+            bool successLeftBracket1 = lexer.parsePunctuation(leftBracket);
+            if (successLeftBracket1)
                 lexer.advance();
             else
                 return null;
@@ -1296,15 +1320,15 @@ namespace scalysh
             if ((name != null) && isIdentifier(name))
                 lexer.advance();
             else
-                return null;
+                throw new ParserException(fileName, lexer.line, lexer.column);
 
             GenericParameter[] additionalGenerics = parseGenericParameterList();
 
-            bool successBacktick4 = lexer.parsePunctuation(backtick);
-            if (successBacktick4)
+            bool successRightBracket4 = lexer.parsePunctuation(rightBracket);
+            if (successRightBracket4)
                 lexer.advance();
             else
-                return null;
+                throw new ParserException(fileName, lexer.line, lexer.column);
 
             Position end = lexer.getPosition();
 
@@ -1354,7 +1378,7 @@ namespace scalysh
             if ((name != null) && isIdentifier(name))
                 lexer.advance();
             else
-                return null;
+                throw new ParserException(fileName, lexer.line, lexer.column);
 
             Position end = lexer.getPosition();
 
@@ -1376,7 +1400,7 @@ namespace scalysh
 
             Name name = parseName();
             if (name == null)
-                return null;
+                throw new ParserException(fileName, lexer.line, lexer.column);
 
             Position end = lexer.getPosition();
 
@@ -1403,7 +1427,7 @@ namespace scalysh
             if (successRightParen3)
                 lexer.advance();
             else
-                return null;
+                throw new ParserException(fileName, lexer.line, lexer.column);
 
             Position end = lexer.getPosition();
 
@@ -1477,7 +1501,7 @@ namespace scalysh
 
             Procedure procedure = parseProcedure();
             if (procedure == null)
-                return null;
+                throw new ParserException(fileName, lexer.line, lexer.column);
 
             Position end = lexer.getPosition();
 
@@ -1500,7 +1524,7 @@ namespace scalysh
 
             Procedure procedure = parseProcedure();
             if (procedure == null)
-                return null;
+                throw new ParserException(fileName, lexer.line, lexer.column);
 
             Position end = lexer.getPosition();
 
@@ -1556,7 +1580,7 @@ namespace scalysh
 
             Type typeSpec = parseType();
             if (typeSpec == null)
-                return null;
+                throw new ParserException(fileName, lexer.line, lexer.column);
 
             Position end = lexer.getPosition();
 
@@ -1604,23 +1628,23 @@ namespace scalysh
         {
             Position start = lexer.getPreviousPosition();
 
-            bool successBacktick1 = lexer.parsePunctuation(backtick);
-            if (successBacktick1)
+            bool successLeftBracket1 = lexer.parsePunctuation(leftBracket);
+            if (successLeftBracket1)
                 lexer.advance();
             else
                 return null;
 
             Type typeSpec = parseType();
             if (typeSpec == null)
-                return null;
+                throw new ParserException(fileName, lexer.line, lexer.column);
 
             GenericArgument[] additionalGenerics = parseGenericArgumentList();
 
-            bool successBacktick4 = lexer.parsePunctuation(backtick);
-            if (successBacktick4)
+            bool successRightBracket4 = lexer.parsePunctuation(rightBracket);
+            if (successRightBracket4)
                 lexer.advance();
             else
-                return null;
+                throw new ParserException(fileName, lexer.line, lexer.column);
 
             Position end = lexer.getPosition();
 
@@ -1669,7 +1693,7 @@ namespace scalysh
 
             Type typeSpec = parseType();
             if (typeSpec == null)
-                return null;
+                throw new ParserException(fileName, lexer.line, lexer.column);
 
             Position end = lexer.getPosition();
 
@@ -1752,7 +1776,7 @@ namespace scalysh
             if (successRightBracket3)
                 lexer.advance();
             else
-                return null;
+                throw new ParserException(fileName, lexer.line, lexer.column);
 
             Position end = lexer.getPosition();
 
@@ -1825,7 +1849,7 @@ namespace scalysh
             if ((location != null) && isIdentifier(location))
                 lexer.advance();
             else
-                return null;
+                throw new ParserException(fileName, lexer.line, lexer.column);
 
             Position end = lexer.getPosition();
 
@@ -1839,8 +1863,8 @@ namespace scalysh
         {
             Position start = lexer.getPreviousPosition();
 
-            bool successHash1 = lexer.parsePunctuation(hash);
-            if (successHash1)
+            bool successBacktick1 = lexer.parsePunctuation(backtick);
+            if (successBacktick1)
                 lexer.advance();
             else
                 return null;
@@ -2122,7 +2146,12 @@ namespace scalysh
         {
         }
 
-        public virtual void visitCatch(Catch theCatch)
+        public virtual bool openCatch(Catch theCatch)
+        {
+            return true;
+        }
+
+        public virtual void closeCatch(Catch theCatch)
         {
         }
 
@@ -2863,15 +2892,27 @@ namespace scalysh
 
     public class Catch : Postfix
     {
-        public Catch(Position start, Position end)
+        public Type typeSpec;
+        public string errorName;
+        public Expression handler;
+        public Catch(Position start, Position end, Type typeSpec, string errorName, Expression handler)
         {
             this.start = start;
             this.end = end;
+            this.typeSpec = typeSpec;
+            this.errorName = errorName;
+            this.handler = handler;
         }
 
         public override void accept(Visitor visitor)
         {
-            visitor.visitCatch(this);
+            if (!visitor.openCatch(this))
+                return;
+
+        typeSpec.accept(visitor);
+        if (handler != null)
+            handler.accept(visitor);
+            visitor.closeCatch(this);
         }
     }
 

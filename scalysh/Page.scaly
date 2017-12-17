@@ -42,8 +42,9 @@ class Scaly.Page
 
     method allocateObject(objectSize: size): pointer {
 
-        if (currentPage = ())
+        if (currentPage = ()) {
             return 0
+        }
 
         if (this <> currentPage) {
 
@@ -51,8 +52,9 @@ class Scaly.Page
             var newObject = currentPage.allocateObject(objectSize)
 
             // It is always possible that we are out of memory
-            if (newObject = 0)
+            if (newObject = 0) {
                 return 0
+            }
 
             // Possibly our current page was also full so we propagate back the new current page
             let allocatingPage: Page? = getPage(newObject)
@@ -94,8 +96,9 @@ class Scaly.Page
             // We allocate oversized objects directly.
             mutable pagePointer: pointer 0
             posix_memalign(adressof pagePointer, pageSize, objectSize + sizeof Page)
-            if (pagePointer = 0)
+            if (pagePointer = 0) {
                 return 0
+            }
 
             mutable page pagePointer as Page
             page.reset()
@@ -120,7 +123,7 @@ class Scaly.Page
 
     method allocateExtensionPage(): Page? {
 
-        if Scaly.Task.currentTask is () {
+        if (Scaly.Task.currentTask = ()) {
             return ()
         }
 
@@ -147,12 +150,14 @@ class Scaly.Page
             return allocateExtensionPage().allocateExclusivePage()
         }
 
-        if Scaly.Task.currentTask is ()
+        if (Scaly.Task.currentTask = ()) {
             return ()
+        }
 
         var exclusivePage = Scaly.Task.currentTask.getExtensionPage()
-        if (exclusivePage = 0)
+        if (exclusivePage = 0) {
             return ()
+        }
 
         exclusivePage.reset()
         pointer.write(getNextExclusivePageLocation(), exclusivePage)
@@ -191,7 +196,7 @@ class Scaly.Page
     method deallocateExtensions {
         mutable page: Page? = this
         do {
-            if page is () {
+            if (page = ()) {
                 break
             }
 
@@ -225,7 +230,7 @@ class Scaly.Page
 
     method reclaimArray(address: pointer): bool {
 
-        if currentPage is () {
+        if (currentPage = ()) {
             return false
         }
 
@@ -276,7 +281,7 @@ class Scaly.Page
         // Shift the remaining array one position up
         do {
             pointer.write(pPage, (pPage - sizeof pointer) as pointer)
-            set pPage = pPage - sizeof pointer
+            set pPage : pPage - sizeof pointer
         } while (pPage > nextExtensionPageLocation)
 
         // Make room for one more extension
