@@ -120,7 +120,7 @@ namespace scalysh
 
                 switch (text[position])
                 {
-                    case '/': case '=': case '-': case '+': case '!': case '*': case '%': case '<': case '&': case '|': case '^': case '~':
+                    case '/': case '=': case '-': case '+': case '!': case '*': case '%': case '<': case '>': case '&': case '|': case '^': case '~':
                         operation = operation + text[position];
                         break;
 
@@ -507,22 +507,16 @@ namespace scalysh
                 return null;
 
             if (token is StringLiteral)
-            {
-                StringLiteral stringLiteral = token as StringLiteral;
-                return new StringLiteral(stringLiteral.value);
-            }
+                return new StringLiteral((token as StringLiteral).value);
 
             if (token is CharacterLiteral)
-            {
-                CharacterLiteral characterLiteral = token as CharacterLiteral;
-                return new CharacterLiteral(characterLiteral.value);
-            }
+                return new CharacterLiteral((token as CharacterLiteral).value);
+
+            if (token is HexLiteral)
+                return new HexLiteral((token as HexLiteral).value);
 
             if (token is NumericLiteral)
-            {
-                NumericLiteral numericLiteral = token as NumericLiteral;
-                return new NumericLiteral(numericLiteral.value);
-            }
+                return new NumericLiteral((token as NumericLiteral).value);
 
             return null;
         }

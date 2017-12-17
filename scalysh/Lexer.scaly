@@ -1,0 +1,498 @@
+class Scaly.Lexer(text: string)
+{
+    mutable token: Token? ()
+    mutable position: int 0
+    let end: int text.Length
+    mutable previousLine: int 1
+    mutable previousColumn: int 0
+    mutable line: int 1
+    mutable column: int 0
+
+    advance()
+
+    method advance {
+        skipWhitespace()
+        previousLine = line
+        previousColumn = column
+
+        if (position = end) {
+            token = new EofToken()
+            return
+        }
+
+        let c = text[position]
+
+        if (((c >= 'a') and (c <= 'z')) or ((c >= 'A') and (c <= 'Z'))) {
+            token = scanIdentifier()
+            return
+        }
+        
+        if ((c >= '0') and (c <= '9')) {
+            token = scanNumericLiteral()
+            return
+        }
+
+        switch (c) {
+
+            case '+', '-', '*', '/', '=', '%', '&', '|', '^', '~', '<', '>' {
+                token = scanOperator() }
+
+            case '\"' {
+                token = scanStringLiteral() }
+
+            case '\'' {
+                token = scanCharacterLiteral() }
+
+            case '{', '}', '(', ')', '[', ']', '.', ',', ':', ';', '?', '!', '@', '#', '$', '_', '`' {
+                token = Punctuation(c)
+                set position: position + 1
+                set column: column + 1
+            }
+ 
+            default {
+                token = InvalidToken()
+            }
+        }
+    }
+
+    method scanIdentifier: Identifier {
+
+        var name string(text[position])
+
+        do {
+            set position: position + 1
+            set column: column + 1
+
+            if (position = end) {
+                return (Identifier(name))
+            }
+
+            var c text[position]
+
+            if (((c >= 'a') and (c <= 'z')) or
+                ((c >= 'A') and (c <= 'Z')) or
+                ((c >= '0') and (c <= '9')) or
+                 (c  = '_')) {
+
+                set name : name + c
+            }
+            else {
+                return (Identifier(name))
+            }
+        }
+        while (true)
+    }
+
+    method scanOperator: Identifier {
+
+        var operation string(text[position])
+
+        do {
+            set position: position + 1
+            set column: column + 1
+
+            if (position = end) {
+                return (Identifier(operation)) }
+
+            switch (text[position]) {
+                case '/', '=', '-', '+', '!', '*', '%', '<', '>', '&', '|', '^', '~' {
+                    set operation : operation + text[position] }
+
+                default {
+                    return (new Identifier(operation))
+                }
+            }
+        }
+        while (true)
+    }
+
+    method scanStringLiteral: Token {
+
+        mutable value ""
+
+        do {
+            set position: position + 1
+            set column: column + 1
+
+            if (position = end) {
+                return (InvalidToken()) }
+
+            switch (text[position]) {
+                case '\"' {
+
+                    set position: position + 1
+                    set column: column + 1
+
+                    return (StringLiteral(value))
+                }
+
+                case '\\' {
+
+                    set position: position + 1
+                    set column: column + 1
+
+                    switch (text[position]) {
+                        case '\"', '\\', '\'' {
+                            set value: value + '\\' + text[position]
+                        }
+                        case 'n' { set value: value + "\\n" }
+                        case 'r' { set value: value + "\\r" }
+                        case 't' { set value: value + "\\t" }
+                        case '0' { set value: value + "\\0" }
+                        default  { return (InvalidToken()) }
+                    }
+                }
+                default {
+                    set value: value + text[position]
+                }
+            }
+        }
+        while (true)
+    }
+
+    method scanCharacterLiteral: Token {
+        mutable value ""
+
+        do {
+            set position: position + 1
+            set column: column + 1
+
+            if (position = end) {
+                return (InvalidToken()) }
+
+            switch (text[position]) {
+                case '\'' {
+                    set position: position + 1
+                    set column: column + 1
+                    return (CharacterLiteral(value))
+                }
+                case '\\' {
+                    set position: position + 1
+                    set column: column + 1
+                    switch (text[position]) {
+                        case '\"', '\\', '\'' {
+                            set value: value + '\\' + text[position]
+                        }
+                        case 'n' { set value: value + "\\n" }
+                        case 'r' { set value: value + "\\r" }
+                        case 't' { set value: value + "\\t" }
+                        case '0' { set value: value + "\\0" }
+                        default  { return (InvalidToken()) }
+                    }
+                }
+                default {
+                    set value: value + text[position]
+                }
+            }
+        }
+        while (true)
+    }
+
+    method scanNumericLiteral: NumericLiteral {
+
+        mutable value string(text[position])
+
+        set position: position + 1
+        set column: column + 1
+
+        if (position = end) {
+            return (NumericLiteral(value)) }
+
+        var x text[position]
+        if (x = 'x') {
+            return scanHexLiteral()
+        }
+        else {
+            set position: position - 1
+            set column: column - 1
+        }
+
+        do {
+
+            set position: position + 1
+            set column: column + 1
+
+            if (position = end) {
+                return (NumericLiteral(value)) }
+
+            var c text[position]
+            if ((c >= '0') and (c <= '9')) {
+                set value: value + text[position] }
+            else {
+                return (new NumericLiteral(value)) }
+        }
+        while (true)
+    }
+
+    method scanHexLiteral: HexLiteral {
+
+        mutable value string(text[position])
+
+        do {
+
+            set position: position + 1
+            set column: column + 1
+
+            if (position = end) {
+                return (new HexLiteral(value)) }
+
+            var c text[position]
+            if (((c >= '0') and (c <= '9')) or ((c >= 'a') and (c <= 'f')) or ((c >= 'A') and (c <= 'F'))) {
+                set value: value + text[position] }
+            else {
+                return (HexLiteral(value)) }
+        }
+        while (true)
+    }
+
+    method skipWhitespace {
+        do {
+            if (position = end) {
+                return }
+
+            switch (text[position]) {
+
+                case ' ' {
+                    set position: position + 1
+                    set column: column + 1
+                    continue
+                }
+
+                case '\t' {
+                    set position: position + 1
+                    set column: column + 4
+                    continue
+                }
+
+                case '\r' {
+                    set position: position + 1
+                    continue
+                }
+
+                case '\n' {
+                    set position: position + 1
+                    set column: 1
+                    set line: line + 1
+                    continue
+                }
+
+                case '/' {
+                    set position: position + 1
+                    set column: column + 1
+
+                    if (position = end) {
+                        return }
+
+                    if (text[position] = '/') {
+                        handleSingleLineComment()
+                    }
+                    else {
+                        if (text[position] = '*') {
+                            handleMultiLineComment() }
+                        else {
+                            return }
+                    }
+                }
+                default { return }
+            }
+        }
+        while (true)
+    }
+
+    method handleSingleLineComment {
+        do {
+            if (position = end) {
+                return }
+
+            switch (text[position]) {
+
+                case '\t' {
+                    set position: position + 1
+                    set column: column + 4
+                    continue
+                }
+
+                case '\r' {
+                    set position: position + 1
+                    continue
+                }
+
+                case '\n' {
+                    set position: position + 1
+                    set column: 1
+                    set line: line + 1
+                    return
+                }
+
+                default {
+                    set position: position + 1
+                    set column: column + 1
+                    continue
+                }
+            }
+        }
+        while (true)
+    }
+
+    method handleMultiLineComment {
+        do {
+            if (position = end) {
+                return }
+
+            switch (text[position]) {
+
+                case '/' {
+
+                    set position: position + 1
+                    set column: column + 1
+
+                    if (position = end) {
+                        return
+                    }
+                    else {
+                        if (text[position] = '*') {
+                            handleMultiLineComment() }
+                        else {
+                            return }
+                    }
+                }
+
+                case '*' {
+
+                    set position: position + 1
+                    set column: column + 1
+
+                    if (position = end) {
+                        return }
+                    else {
+                        if (text[position] = '/') {
+                            set position: position + 1
+                            set column: column + 1
+                            return
+                        }
+                    }
+                }
+
+                case '\t' {
+                    set position: position + 1
+                    set column: column + 4
+                    continue
+                }
+
+                case '\r' {
+                    set position: position + 1
+                    continue
+                }
+
+                case '\n' {
+                    set position: position + 1
+                    set column: 1
+                    set line: line + 1
+                    return
+                }
+
+                default {
+                    set position: position + 1
+                    set column: column + 1
+                    continue
+                }
+            }
+        }
+        while (true)
+    }
+
+    method parseKeyword(fixedString: string): bool {
+
+        if (not token is Identifier) {
+            return false }
+
+        return (token as Identifier!.name = fixedString)
+    }
+
+    method parseIdentifier: string? {
+
+        if (not token is Identifier) {
+            return () }
+
+        return token as Identifier!.name
+    }
+
+    method parsePunctuation(string fixedString): bool {
+
+        if (not token is Punctuation) {
+            return false }
+
+        return (token as Punctuation!.sign = fixedString)
+    }
+
+    method parseLiteral: Literal {
+
+        if (not token is Literal) {
+            return () }
+
+        if (token is StringLiteral) {
+            return StringLiteral(token as StringLiteral!.value)
+        }
+
+        if (token is CharacterLiteral) {
+            return CharacterLiteral(token as CharacterLiteral!.value)
+        }
+
+        if (token is HexLiteral) {
+            return HexLiteral(token as HexLiteral!.value)
+        }
+
+        if (token is NumericLiteral) {
+            return NumericLiteral(token as NumericLiteral!.value)
+        }
+
+        return null
+    }
+
+    method isAtEnd: bool {
+        return (position = end)
+    }
+
+    method getPosition: Position {
+        return (Position(line, column))
+    }
+
+    method getPreviousPosition: Position {
+        return (Position(previousLine, previousColumn))
+    }
+}
+
+class Position(line: number, column: number) {
+
+    constructor(position: Position) {
+        this.line = position.line
+        this.column = position.column
+    }
+}
+
+class Token {
+}
+
+class EofToken extends Token {
+}
+
+class InvalidToken extends Token {
+}
+
+class Identifier(name: string) extends Token {
+}
+
+class Literal extends Token {
+}
+
+class StringLiteral(value: string) extends Literal {
+}
+
+class CharacterLiteral(value: string) extends Literal {
+}
+
+class NumericLiteral(value: string) extends Literal {
+}
+
+class Punctuation(sign: string) extends Token {
+}

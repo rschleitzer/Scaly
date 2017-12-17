@@ -20,25 +20,30 @@ class Scaly.Page
         set currentPage : this
     }
 
-    method clear
+    method clear {
         deallocateExtensions()
         reset()
+    }
 
-    method isOversized
+    method isOversized {
         currentPage = ()
+    }
 
-    method getExtensionPageLocation
+    method getExtensionPageLocation {
         this as pointer + pageSize - sizeof pointer
+    }
 
-    method getNextObject
+    method getNextObject {
         this as pointer + nextObjectOffset
+    }
 
     method setNextObject(object: pointer) {
         set nextObjectOffset : (object - this) as pointer
     }
 
-    method getNextExclusivePageLocation
+    method getNextExclusivePageLocation {
         getExtensionPageLocation() - ((exclusivePages + 1) * sizeof pointer)
+    }
 
     method allocateObject(objectSize: size): pointer {
 
@@ -61,8 +66,8 @@ class Scaly.Page
 
             // This if is only to enable the member access in the next line. 
             // We know that if newObject <> 0, allocatingPage is never ()
-            if allocatingPage is Page {
-                if (allocatingPage as pointer) <> (currentPage as pointer) and not (allocatingPage.isOversized()) {
+            if (allocatingPage is Page) {
+                if ((allocatingPage as pointer) <> (currentPage as pointer) and not (allocatingPage.isOversized())) {
                     // We can't assign mutable objects, so we work around this using pointers.
                     pointer.write(currentPage as pointer, allocatingPage as pointer)
                 }
@@ -84,7 +89,7 @@ class Scaly.Page
         // Calculate gross size to decide whether we're oversized
         var grossSize = sizeof Page + objectSize + sizeof pointer + alignment
         if (grossSize > pageSize) {
-            if getNextObject() = getExtensionPageLocation() {
+            if (getNextObject() = getExtensionPageLocation()) {
 
                 // Allocate an extension page with default size
                 var extensionPage = allocateExtensionPage()
@@ -221,7 +226,7 @@ class Scaly.Page
 
             pointer.write(addressof page, nextExtensionPage)
 
-        } while true
+        } while (true)
     }
 
     function forget(Page page) {
@@ -235,14 +240,14 @@ class Scaly.Page
         }
 
         // Quick attempt to find it at the current page
-        if currentPage.deallocateExclusivePage(address as Page) {
+        if (currentPage.deallocateExclusivePage(address as Page)) {
             return true
         }
 
         // Second attempt scanning the rest of the chain
         mutable page: Page? = this
         do {
-            if page.deallocateExclusivePage(address as Page) {
+            if (page.deallocateExclusivePage(address as Page)) {
                 return true
             }
 
