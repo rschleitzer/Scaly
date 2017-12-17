@@ -67,6 +67,37 @@ namespace scalysh
             return ret;
         }
 
+        public Block parseBlock()
+        {
+            Position start = lexer.getPreviousPosition();
+
+            bool successLeftCurly1 = lexer.parsePunctuation(leftCurly);
+            if (successLeftCurly1)
+                lexer.advance();
+            else
+                return null;
+
+            Statement[] statements = parseStatementList();
+
+            bool successRightCurly3 = lexer.parsePunctuation(rightCurly);
+            if (successRightCurly3)
+                lexer.advance();
+            else
+                return null;
+
+            Position end = lexer.getPosition();
+
+            Block ret = new Block(start, end, statements);
+
+            if (statements != null)
+            {
+                foreach (Statement item in statements)
+                    item.parent = ret;
+            }
+
+            return ret;
+        }
+
         public Statement[] parseStatementList()
         {
             List<Statement> ret = null;
@@ -129,19 +160,19 @@ namespace scalysh
         public Declaration parseDeclaration()
         {
             {
-                ConstantDeclaration node = parseConstantDeclaration();
+                Let node = parseLet();
                 if (node != null)
                     return node;
             }
 
             {
-                VariableDeclaration node = parseVariableDeclaration();
+                Mutable node = parseMutable();
                 if (node != null)
                     return node;
             }
 
             {
-                InferredDeclaration node = parseInferredDeclaration();
+                Var node = parseVar();
                 if (node != null)
                     return node;
             }
@@ -153,24 +184,160 @@ namespace scalysh
             }
 
             {
-                ClassDeclaration node = parseClassDeclaration();
+                Class node = parseClass();
                 if (node != null)
                     return node;
             }
 
             {
-                MethodDeclaration node = parseMethodDeclaration();
+                Method node = parseMethod();
                 if (node != null)
                     return node;
             }
 
             {
-                FunctionDeclaration node = parseFunctionDeclaration();
+                Function node = parseFunction();
                 if (node != null)
                     return node;
             }
 
             return null;
+        }
+
+        public Let parseLet()
+        {
+            Position start = lexer.getPreviousPosition();
+
+            bool successLet1 = lexer.parseKeyword(letKeyword);
+            if (successLet1)
+                lexer.advance();
+            else
+                return null;
+
+            Binding binding = parseBinding();
+            if (binding == null)
+                return null;
+
+            Position end = lexer.getPosition();
+
+            Let ret = new Let(start, end, binding);
+
+            binding.parent = ret;
+
+            return ret;
+        }
+
+        public Mutable parseMutable()
+        {
+            Position start = lexer.getPreviousPosition();
+
+            bool successMutable1 = lexer.parseKeyword(mutableKeyword);
+            if (successMutable1)
+                lexer.advance();
+            else
+                return null;
+
+            Binding binding = parseBinding();
+            if (binding == null)
+                return null;
+
+            Position end = lexer.getPosition();
+
+            Mutable ret = new Mutable(start, end, binding);
+
+            binding.parent = ret;
+
+            return ret;
+        }
+
+        public Var parseVar()
+        {
+            Position start = lexer.getPreviousPosition();
+
+            bool successVar1 = lexer.parseKeyword(varKeyword);
+            if (successVar1)
+                lexer.advance();
+            else
+                return null;
+
+            Binding binding = parseBinding();
+            if (binding == null)
+                return null;
+
+            Position end = lexer.getPosition();
+
+            Var ret = new Var(start, end, binding);
+
+            binding.parent = ret;
+
+            return ret;
+        }
+
+        public Binding parseBinding()
+        {
+            Position start = lexer.getPreviousPosition();
+
+            string name = lexer.parseIdentifier();
+            if ((name != null) && isIdentifier(name))
+                lexer.advance();
+            else
+                return null;
+
+            TypeAnnotation typeAnnotation = parseTypeAnnotation();
+
+            Expression[] expressions = parseExpressionList();
+
+            Position end = lexer.getPosition();
+
+            Binding ret = new Binding(start, end, name, typeAnnotation, expressions);
+
+            if (typeAnnotation != null)
+                typeAnnotation.parent = ret;
+            if (expressions != null)
+            {
+                foreach (Expression item in expressions)
+                    item.parent = ret;
+            }
+
+            return ret;
+        }
+
+        public Assignment parseAssignment()
+        {
+            Position start = lexer.getPreviousPosition();
+
+            bool successSet1 = lexer.parseKeyword(setKeyword);
+            if (successSet1)
+                lexer.advance();
+            else
+                return null;
+
+            Expression[] lValue = parseExpressionList();
+
+            bool successColon3 = lexer.parsePunctuation(colon);
+            if (successColon3)
+                lexer.advance();
+            else
+                return null;
+
+            Expression[] rValue = parseExpressionList();
+
+            Position end = lexer.getPosition();
+
+            Assignment ret = new Assignment(start, end, lValue, rValue);
+
+            if (lValue != null)
+            {
+                foreach (Expression item in lValue)
+                    item.parent = ret;
+            }
+            if (rValue != null)
+            {
+                foreach (Expression item in rValue)
+                    item.parent = ret;
+            }
+
+            return ret;
         }
 
         public Expression[] parseExpressionList()
@@ -196,184 +363,6 @@ namespace scalysh
 
         public Expression parseExpression()
         {
-            {
-                Block node = parseBlock();
-                if (node != null)
-                    return node;
-            }
-
-            {
-                PostfixExpression node = parsePostfixExpression();
-                if (node != null)
-                    return node;
-            }
-
-            return null;
-        }
-
-        public Block parseBlock()
-        {
-            Position start = lexer.getPreviousPosition();
-
-            bool successLeftCurly1 = lexer.parsePunctuation(leftCurly);
-            if (successLeftCurly1)
-                lexer.advance();
-            else
-                return null;
-
-            Statement[] statements = parseStatementList();
-
-            bool successRightCurly3 = lexer.parsePunctuation(rightCurly);
-            if (successRightCurly3)
-                lexer.advance();
-            else
-                return null;
-
-            Position end = lexer.getPosition();
-
-            Block ret = new Block(start, end, statements);
-
-            if (statements != null)
-            {
-                foreach (Statement item in statements)
-                    item.parent = ret;
-            }
-
-            return ret;
-        }
-
-        public ConstantDeclaration parseConstantDeclaration()
-        {
-            Position start = lexer.getPreviousPosition();
-
-            bool successLet1 = lexer.parseKeyword(letKeyword);
-            if (successLet1)
-                lexer.advance();
-            else
-                return null;
-
-            Binding binding = parseBinding();
-            if (binding == null)
-                return null;
-
-            Position end = lexer.getPosition();
-
-            ConstantDeclaration ret = new ConstantDeclaration(start, end, binding);
-
-            binding.parent = ret;
-
-            return ret;
-        }
-
-        public VariableDeclaration parseVariableDeclaration()
-        {
-            Position start = lexer.getPreviousPosition();
-
-            bool successMutable1 = lexer.parseKeyword(mutableKeyword);
-            if (successMutable1)
-                lexer.advance();
-            else
-                return null;
-
-            Binding binding = parseBinding();
-            if (binding == null)
-                return null;
-
-            Position end = lexer.getPosition();
-
-            VariableDeclaration ret = new VariableDeclaration(start, end, binding);
-
-            binding.parent = ret;
-
-            return ret;
-        }
-
-        public InferredDeclaration parseInferredDeclaration()
-        {
-            Position start = lexer.getPreviousPosition();
-
-            bool successVar1 = lexer.parseKeyword(varKeyword);
-            if (successVar1)
-                lexer.advance();
-            else
-                return null;
-
-            Binding binding = parseBinding();
-            if (binding == null)
-                return null;
-
-            Position end = lexer.getPosition();
-
-            InferredDeclaration ret = new InferredDeclaration(start, end, binding);
-
-            binding.parent = ret;
-
-            return ret;
-        }
-
-        public Binding parseBinding()
-        {
-            Position start = lexer.getPreviousPosition();
-
-            string name = lexer.parseIdentifier();
-            if ((name != null) && isIdentifier(name))
-                lexer.advance();
-            else
-                return null;
-
-            TypeAnnotation typeAnnotation = parseTypeAnnotation();
-
-            Expression expression = parseExpression();
-            if (expression == null)
-                return null;
-
-            Position end = lexer.getPosition();
-
-            Binding ret = new Binding(start, end, name, typeAnnotation, expression);
-
-            if (typeAnnotation != null)
-                typeAnnotation.parent = ret;
-            expression.parent = ret;
-
-            return ret;
-        }
-
-        public Assignment parseAssignment()
-        {
-            Position start = lexer.getPreviousPosition();
-
-            bool successSet1 = lexer.parseKeyword(setKeyword);
-            if (successSet1)
-                lexer.advance();
-            else
-                return null;
-
-            Expression lvalue = parseExpression();
-            if (lvalue == null)
-                return null;
-
-            bool successColon3 = lexer.parsePunctuation(colon);
-            if (successColon3)
-                lexer.advance();
-            else
-                return null;
-
-            Expression rvalue = parseExpression();
-            if (rvalue == null)
-                return null;
-
-            Position end = lexer.getPosition();
-
-            Assignment ret = new Assignment(start, end, lvalue, rvalue);
-
-            lvalue.parent = ret;
-            rvalue.parent = ret;
-
-            return ret;
-        }
-
-        public PostfixExpression parsePostfixExpression()
-        {
             Position start = lexer.getPreviousPosition();
 
             PrimaryExpression primary = parsePrimaryExpression();
@@ -384,7 +373,7 @@ namespace scalysh
 
             Position end = lexer.getPosition();
 
-            PostfixExpression ret = new PostfixExpression(start, end, primary, postfixes);
+            Expression ret = new Expression(start, end, primary, postfixes);
 
             primary.parent = ret;
             if (postfixes != null)
@@ -439,6 +428,12 @@ namespace scalysh
 
             {
                 ObjectExpression node = parseObjectExpression();
+                if (node != null)
+                    return node;
+            }
+
+            {
+                Block node = parseBlock();
                 if (node != null)
                     return node;
             }
@@ -535,12 +530,6 @@ namespace scalysh
                     return node;
             }
 
-            {
-                Operation node = parseOperation();
-                if (node != null)
-                    return node;
-            }
-
             return null;
         }
 
@@ -595,23 +584,6 @@ namespace scalysh
                 foreach (ExpressionElement item in expressions)
                     item.parent = ret;
             }
-
-            return ret;
-        }
-
-        public Operation parseOperation()
-        {
-            Position start = lexer.getPreviousPosition();
-
-            Expression Expression = parseExpression();
-            if (Expression == null)
-                return null;
-
-            Position end = lexer.getPosition();
-
-            Operation ret = new Operation(start, end, Expression);
-
-            Expression.parent = ret;
 
             return ret;
         }
@@ -731,7 +703,7 @@ namespace scalysh
             return ret;
         }
 
-        public ClassDeclaration parseClassDeclaration()
+        public Class parseClass()
         {
             Position start = lexer.getPreviousPosition();
 
@@ -747,13 +719,13 @@ namespace scalysh
 
             TypeInheritanceClause typeInheritanceClause = parseTypeInheritanceClause();
 
-            ObjectDeclaration contents = parseObjectDeclaration();
+            Object contents = parseObject();
 
-            Expression body = parseExpression();
+            Block body = parseBlock();
 
             Position end = lexer.getPosition();
 
-            ClassDeclaration ret = new ClassDeclaration(start, end, name, typeInheritanceClause, contents, body);
+            Class ret = new Class(start, end, name, typeInheritanceClause, contents, body);
 
             name.parent = ret;
             if (typeInheritanceClause != null)
@@ -859,7 +831,7 @@ namespace scalysh
             return ret;
         }
 
-        public ObjectDeclaration parseObjectDeclaration()
+        public Object parseObject()
         {
             Position start = lexer.getPreviousPosition();
 
@@ -879,7 +851,7 @@ namespace scalysh
 
             Position end = lexer.getPosition();
 
-            ObjectDeclaration ret = new ObjectDeclaration(start, end, components);
+            Object ret = new Object(start, end, components);
 
             if (components != null)
             {
@@ -937,7 +909,7 @@ namespace scalysh
             return ret;
         }
 
-        public FunctionDeclaration parseFunctionDeclaration()
+        public Function parseFunction()
         {
             Position start = lexer.getPreviousPosition();
 
@@ -953,14 +925,14 @@ namespace scalysh
 
             Position end = lexer.getPosition();
 
-            FunctionDeclaration ret = new FunctionDeclaration(start, end, procedure);
+            Function ret = new Function(start, end, procedure);
 
             procedure.parent = ret;
 
             return ret;
         }
 
-        public MethodDeclaration parseMethodDeclaration()
+        public Method parseMethod()
         {
             Position start = lexer.getPreviousPosition();
 
@@ -976,7 +948,7 @@ namespace scalysh
 
             Position end = lexer.getPosition();
 
-            MethodDeclaration ret = new MethodDeclaration(start, end, procedure);
+            Method ret = new Method(start, end, procedure);
 
             procedure.parent = ret;
 
@@ -993,13 +965,11 @@ namespace scalysh
             else
                 return null;
 
-            ObjectDeclaration input = parseObjectDeclaration();
+            Object input = parseObject();
 
             TypeAnnotation output = parseTypeAnnotation();
 
-            Statement body = parseStatement();
-            if (body == null)
-                return null;
+            Block body = parseBlock();
 
             Position end = lexer.getPosition();
 
@@ -1009,7 +979,8 @@ namespace scalysh
                 input.parent = ret;
             if (output != null)
                 output.parent = ret;
-            body.parent = ret;
+            if (body != null)
+                body.parent = ret;
 
             return ret;
         }
@@ -1301,268 +1272,259 @@ namespace scalysh
 
     public class Visitor
     {
-        public virtual bool openProgram(Program program)
+        public virtual bool openProgram(Program theProgram)
         {
             return true;
         }
 
-        public virtual void closeProgram(Program program)
+        public virtual void closeProgram(Program theProgram)
         {
         }
 
-        public virtual bool openFile(File file)
-        {
-            return true;
-        }
-
-        public virtual void closeFile(File file)
-        {
-        }
-
-        public virtual bool openBlock(Block block)
+        public virtual bool openFile(File theFile)
         {
             return true;
         }
 
-        public virtual void closeBlock(Block block)
+        public virtual void closeFile(File theFile)
         {
         }
 
-        public virtual bool openConstantDeclaration(ConstantDeclaration constantDeclaration)
-        {
-            return true;
-        }
-
-        public virtual void closeConstantDeclaration(ConstantDeclaration constantDeclaration)
-        {
-        }
-
-        public virtual bool openVariableDeclaration(VariableDeclaration variableDeclaration)
+        public virtual bool openBlock(Block theBlock)
         {
             return true;
         }
 
-        public virtual void closeVariableDeclaration(VariableDeclaration variableDeclaration)
+        public virtual void closeBlock(Block theBlock)
         {
         }
 
-        public virtual bool openInferredDeclaration(InferredDeclaration inferredDeclaration)
-        {
-            return true;
-        }
-
-        public virtual void closeInferredDeclaration(InferredDeclaration inferredDeclaration)
-        {
-        }
-
-        public virtual bool openBinding(Binding binding)
+        public virtual bool openLet(Let theLet)
         {
             return true;
         }
 
-        public virtual void closeBinding(Binding binding)
+        public virtual void closeLet(Let theLet)
         {
         }
 
-        public virtual bool openAssignment(Assignment assignment)
-        {
-            return true;
-        }
-
-        public virtual void closeAssignment(Assignment assignment)
-        {
-        }
-
-        public virtual bool openPostfixExpression(PostfixExpression postfixExpression)
+        public virtual bool openMutable(Mutable theMutable)
         {
             return true;
         }
 
-        public virtual void closePostfixExpression(PostfixExpression postfixExpression)
+        public virtual void closeMutable(Mutable theMutable)
         {
         }
 
-        public virtual void visitIdentifierExpression(IdentifierExpression identifierExpression)
-        {
-        }
-
-        public virtual void visitLiteralExpression(LiteralExpression literalExpression)
-        {
-        }
-
-        public virtual void visitThisExpression(ThisExpression thisExpression)
-        {
-        }
-
-        public virtual void visitMemberAccess(MemberAccess memberAccess)
-        {
-        }
-
-        public virtual bool openSubscript(Subscript subscript)
+        public virtual bool openVar(Var theVar)
         {
             return true;
         }
 
-        public virtual void closeSubscript(Subscript subscript)
+        public virtual void closeVar(Var theVar)
         {
         }
 
-        public virtual bool openOperation(Operation operation)
-        {
-            return true;
-        }
-
-        public virtual void closeOperation(Operation operation)
-        {
-        }
-
-        public virtual bool openExpressionElement(ExpressionElement expressionElement)
+        public virtual bool openBinding(Binding theBinding)
         {
             return true;
         }
 
-        public virtual void closeExpressionElement(ExpressionElement expressionElement)
+        public virtual void closeBinding(Binding theBinding)
         {
         }
 
-        public virtual bool openObjectExpression(ObjectExpression objectExpression)
-        {
-            return true;
-        }
-
-        public virtual void closeObjectExpression(ObjectExpression objectExpression)
-        {
-        }
-
-        public virtual bool openObjectItem(ObjectItem objectItem)
+        public virtual bool openAssignment(Assignment theAssignment)
         {
             return true;
         }
 
-        public virtual void closeObjectItem(ObjectItem objectItem)
+        public virtual void closeAssignment(Assignment theAssignment)
         {
         }
 
-        public virtual bool openClassDeclaration(ClassDeclaration classDeclaration)
-        {
-            return true;
-        }
-
-        public virtual void closeClassDeclaration(ClassDeclaration classDeclaration)
-        {
-        }
-
-        public virtual bool openName(Name name)
+        public virtual bool openExpression(Expression theExpression)
         {
             return true;
         }
 
-        public virtual void closeName(Name name)
+        public virtual void closeExpression(Expression theExpression)
         {
         }
 
-        public virtual void visitExtension(Extension extension)
+        public virtual void visitIdentifierExpression(IdentifierExpression theIdentifierExpression)
         {
         }
 
-        public virtual bool openTypeInheritanceClause(TypeInheritanceClause typeInheritanceClause)
-        {
-            return true;
-        }
-
-        public virtual void closeTypeInheritanceClause(TypeInheritanceClause typeInheritanceClause)
+        public virtual void visitLiteralExpression(LiteralExpression theLiteralExpression)
         {
         }
 
-        public virtual bool openObjectDeclaration(ObjectDeclaration objectDeclaration)
-        {
-            return true;
-        }
-
-        public virtual void closeObjectDeclaration(ObjectDeclaration objectDeclaration)
+        public virtual void visitThisExpression(ThisExpression theThisExpression)
         {
         }
 
-        public virtual bool openComponent(Component component)
+        public virtual void visitMemberAccess(MemberAccess theMemberAccess)
+        {
+        }
+
+        public virtual bool openSubscript(Subscript theSubscript)
         {
             return true;
         }
 
-        public virtual void closeComponent(Component component)
+        public virtual void closeSubscript(Subscript theSubscript)
         {
         }
 
-        public virtual bool openFunctionDeclaration(FunctionDeclaration functionDeclaration)
-        {
-            return true;
-        }
-
-        public virtual void closeFunctionDeclaration(FunctionDeclaration functionDeclaration)
-        {
-        }
-
-        public virtual bool openMethodDeclaration(MethodDeclaration methodDeclaration)
+        public virtual bool openExpressionElement(ExpressionElement theExpressionElement)
         {
             return true;
         }
 
-        public virtual void closeMethodDeclaration(MethodDeclaration methodDeclaration)
+        public virtual void closeExpressionElement(ExpressionElement theExpressionElement)
         {
         }
 
-        public virtual bool openProcedure(Procedure procedure)
-        {
-            return true;
-        }
-
-        public virtual void closeProcedure(Procedure procedure)
-        {
-        }
-
-        public virtual bool openTypeAnnotation(TypeAnnotation typeAnnotation)
+        public virtual bool openObjectExpression(ObjectExpression theObjectExpression)
         {
             return true;
         }
 
-        public virtual void closeTypeAnnotation(TypeAnnotation typeAnnotation)
+        public virtual void closeObjectExpression(ObjectExpression theObjectExpression)
         {
         }
 
-        public virtual bool openType(Type type)
-        {
-            return true;
-        }
-
-        public virtual void closeType(Type type)
-        {
-        }
-
-        public virtual void visitOptional(Optional optional)
-        {
-        }
-
-        public virtual bool openIndexedType(IndexedType indexedType)
+        public virtual bool openObjectItem(ObjectItem theObjectItem)
         {
             return true;
         }
 
-        public virtual void closeIndexedType(IndexedType indexedType)
+        public virtual void closeObjectItem(ObjectItem theObjectItem)
         {
         }
 
-        public virtual void visitRoot(Root root)
+        public virtual bool openClass(Class theClass)
+        {
+            return true;
+        }
+
+        public virtual void closeClass(Class theClass)
         {
         }
 
-        public virtual void visitLocal(Local local)
+        public virtual bool openName(Name theName)
+        {
+            return true;
+        }
+
+        public virtual void closeName(Name theName)
         {
         }
 
-        public virtual void visitReference(Reference reference)
+        public virtual void visitExtension(Extension theExtension)
         {
         }
 
-        public virtual void visitThrown(Thrown thrown)
+        public virtual bool openTypeInheritanceClause(TypeInheritanceClause theTypeInheritanceClause)
+        {
+            return true;
+        }
+
+        public virtual void closeTypeInheritanceClause(TypeInheritanceClause theTypeInheritanceClause)
+        {
+        }
+
+        public virtual bool openObject(Object theObject)
+        {
+            return true;
+        }
+
+        public virtual void closeObject(Object theObject)
+        {
+        }
+
+        public virtual bool openComponent(Component theComponent)
+        {
+            return true;
+        }
+
+        public virtual void closeComponent(Component theComponent)
+        {
+        }
+
+        public virtual bool openFunction(Function theFunction)
+        {
+            return true;
+        }
+
+        public virtual void closeFunction(Function theFunction)
+        {
+        }
+
+        public virtual bool openMethod(Method theMethod)
+        {
+            return true;
+        }
+
+        public virtual void closeMethod(Method theMethod)
+        {
+        }
+
+        public virtual bool openProcedure(Procedure theProcedure)
+        {
+            return true;
+        }
+
+        public virtual void closeProcedure(Procedure theProcedure)
+        {
+        }
+
+        public virtual bool openTypeAnnotation(TypeAnnotation theTypeAnnotation)
+        {
+            return true;
+        }
+
+        public virtual void closeTypeAnnotation(TypeAnnotation theTypeAnnotation)
+        {
+        }
+
+        public virtual bool openType(Type theType)
+        {
+            return true;
+        }
+
+        public virtual void closeType(Type theType)
+        {
+        }
+
+        public virtual void visitOptional(Optional theOptional)
+        {
+        }
+
+        public virtual bool openIndexedType(IndexedType theIndexedType)
+        {
+            return true;
+        }
+
+        public virtual void closeIndexedType(IndexedType theIndexedType)
+        {
+        }
+
+        public virtual void visitRoot(Root theRoot)
+        {
+        }
+
+        public virtual void visitLocal(Local theLocal)
+        {
+        }
+
+        public virtual void visitReference(Reference theReference)
+        {
+        }
+
+        public virtual void visitThrown(Thrown theThrown)
         {
         }
 }
@@ -1627,28 +1589,7 @@ namespace scalysh
         }
     }
 
-    public class Statement : SyntaxNode
-    {
-        public override void accept(Visitor visitor)
-        {
-        }
-    }
-
-    public class Declaration : Statement
-    {
-        public override void accept(Visitor visitor)
-        {
-        }
-    }
-
-    public class Expression : Statement
-    {
-        public override void accept(Visitor visitor)
-        {
-        }
-    }
-
-    public class Block : Expression
+    public class Block : PrimaryExpression
     {
         public Statement[] statements;
         public Block(Position start, Position end, Statement[] statements)
@@ -1672,50 +1613,24 @@ namespace scalysh
         }
     }
 
-    public class ConstantDeclaration : Declaration
+    public class Statement : SyntaxNode
     {
-        public Binding binding;
-        public ConstantDeclaration(Position start, Position end, Binding binding)
-        {
-            this.start = start;
-            this.end = end;
-            this.binding = binding;
-        }
-
         public override void accept(Visitor visitor)
         {
-            if (!visitor.openConstantDeclaration(this))
-                return;
-
-        binding.accept(visitor);
-            visitor.closeConstantDeclaration(this);
         }
     }
 
-    public class VariableDeclaration : Declaration
+    public class Declaration : Statement
     {
-        public Binding binding;
-        public VariableDeclaration(Position start, Position end, Binding binding)
-        {
-            this.start = start;
-            this.end = end;
-            this.binding = binding;
-        }
-
         public override void accept(Visitor visitor)
         {
-            if (!visitor.openVariableDeclaration(this))
-                return;
-
-        binding.accept(visitor);
-            visitor.closeVariableDeclaration(this);
         }
     }
 
-    public class InferredDeclaration : Declaration
+    public class Let : Declaration
     {
         public Binding binding;
-        public InferredDeclaration(Position start, Position end, Binding binding)
+        public Let(Position start, Position end, Binding binding)
         {
             this.start = start;
             this.end = end;
@@ -1724,11 +1639,51 @@ namespace scalysh
 
         public override void accept(Visitor visitor)
         {
-            if (!visitor.openInferredDeclaration(this))
+            if (!visitor.openLet(this))
                 return;
 
         binding.accept(visitor);
-            visitor.closeInferredDeclaration(this);
+            visitor.closeLet(this);
+        }
+    }
+
+    public class Mutable : Declaration
+    {
+        public Binding binding;
+        public Mutable(Position start, Position end, Binding binding)
+        {
+            this.start = start;
+            this.end = end;
+            this.binding = binding;
+        }
+
+        public override void accept(Visitor visitor)
+        {
+            if (!visitor.openMutable(this))
+                return;
+
+        binding.accept(visitor);
+            visitor.closeMutable(this);
+        }
+    }
+
+    public class Var : Declaration
+    {
+        public Binding binding;
+        public Var(Position start, Position end, Binding binding)
+        {
+            this.start = start;
+            this.end = end;
+            this.binding = binding;
+        }
+
+        public override void accept(Visitor visitor)
+        {
+            if (!visitor.openVar(this))
+                return;
+
+        binding.accept(visitor);
+            visitor.closeVar(this);
         }
     }
 
@@ -1736,14 +1691,14 @@ namespace scalysh
     {
         public string name;
         public TypeAnnotation typeAnnotation;
-        public Expression expression;
-        public Binding(Position start, Position end, string name, TypeAnnotation typeAnnotation, Expression expression)
+        public Expression[] expressions;
+        public Binding(Position start, Position end, string name, TypeAnnotation typeAnnotation, Expression[] expressions)
         {
             this.start = start;
             this.end = end;
             this.name = name;
             this.typeAnnotation = typeAnnotation;
-            this.expression = expression;
+            this.expressions = expressions;
         }
 
         public override void accept(Visitor visitor)
@@ -1753,21 +1708,25 @@ namespace scalysh
 
         if (typeAnnotation != null)
             typeAnnotation.accept(visitor);
-        expression.accept(visitor);
+            if (expressions != null)
+            {
+                foreach (Expression node in expressions)
+                    node.accept(visitor);
+            }
             visitor.closeBinding(this);
         }
     }
 
     public class Assignment : Declaration
     {
-        public Expression lvalue;
-        public Expression rvalue;
-        public Assignment(Position start, Position end, Expression lvalue, Expression rvalue)
+        public Expression[] lValue;
+        public Expression[] rValue;
+        public Assignment(Position start, Position end, Expression[] lValue, Expression[] rValue)
         {
             this.start = start;
             this.end = end;
-            this.lvalue = lvalue;
-            this.rvalue = rvalue;
+            this.lValue = lValue;
+            this.rValue = rValue;
         }
 
         public override void accept(Visitor visitor)
@@ -1775,17 +1734,25 @@ namespace scalysh
             if (!visitor.openAssignment(this))
                 return;
 
-        lvalue.accept(visitor);
-        rvalue.accept(visitor);
+            if (lValue != null)
+            {
+                foreach (Expression node in lValue)
+                    node.accept(visitor);
+            }
+            if (rValue != null)
+            {
+                foreach (Expression node in rValue)
+                    node.accept(visitor);
+            }
             visitor.closeAssignment(this);
         }
     }
 
-    public class PostfixExpression : Expression
+    public class Expression : Statement
     {
         public PrimaryExpression primary;
         public Postfix[] postfixes;
-        public PostfixExpression(Position start, Position end, PrimaryExpression primary, Postfix[] postfixes)
+        public Expression(Position start, Position end, PrimaryExpression primary, Postfix[] postfixes)
         {
             this.start = start;
             this.end = end;
@@ -1795,7 +1762,7 @@ namespace scalysh
 
         public override void accept(Visitor visitor)
         {
-            if (!visitor.openPostfixExpression(this))
+            if (!visitor.openExpression(this))
                 return;
 
         primary.accept(visitor);
@@ -1804,7 +1771,7 @@ namespace scalysh
                 foreach (Postfix node in postfixes)
                     node.accept(visitor);
             }
-            visitor.closePostfixExpression(this);
+            visitor.closeExpression(this);
         }
     }
 
@@ -1908,26 +1875,6 @@ namespace scalysh
         }
     }
 
-    public class Operation : Postfix
-    {
-        public Expression Expression;
-        public Operation(Position start, Position end, Expression Expression)
-        {
-            this.start = start;
-            this.end = end;
-            this.Expression = Expression;
-        }
-
-        public override void accept(Visitor visitor)
-        {
-            if (!visitor.openOperation(this))
-                return;
-
-        Expression.accept(visitor);
-            visitor.closeOperation(this);
-        }
-    }
-
     public class ExpressionElement : SyntaxNode
     {
         public Expression expression;
@@ -1992,13 +1939,13 @@ namespace scalysh
         }
     }
 
-    public class ClassDeclaration : Declaration
+    public class Class : Declaration
     {
         public Name name;
         public TypeInheritanceClause typeInheritanceClause;
-        public ObjectDeclaration contents;
-        public Expression body;
-        public ClassDeclaration(Position start, Position end, Name name, TypeInheritanceClause typeInheritanceClause, ObjectDeclaration contents, Expression body)
+        public Object contents;
+        public Block body;
+        public Class(Position start, Position end, Name name, TypeInheritanceClause typeInheritanceClause, Object contents, Block body)
         {
             this.start = start;
             this.end = end;
@@ -2010,7 +1957,7 @@ namespace scalysh
 
         public override void accept(Visitor visitor)
         {
-            if (!visitor.openClassDeclaration(this))
+            if (!visitor.openClass(this))
                 return;
 
         name.accept(visitor);
@@ -2020,7 +1967,7 @@ namespace scalysh
             contents.accept(visitor);
         if (body != null)
             body.accept(visitor);
-            visitor.closeClassDeclaration(this);
+            visitor.closeClass(this);
         }
     }
 
@@ -2086,10 +2033,10 @@ namespace scalysh
         }
     }
 
-    public class ObjectDeclaration : SyntaxNode
+    public class Object : SyntaxNode
     {
         public Component[] components;
-        public ObjectDeclaration(Position start, Position end, Component[] components)
+        public Object(Position start, Position end, Component[] components)
         {
             this.start = start;
             this.end = end;
@@ -2098,7 +2045,7 @@ namespace scalysh
 
         public override void accept(Visitor visitor)
         {
-            if (!visitor.openObjectDeclaration(this))
+            if (!visitor.openObject(this))
                 return;
 
             if (components != null)
@@ -2106,7 +2053,7 @@ namespace scalysh
                 foreach (Component node in components)
                     node.accept(visitor);
             }
-            visitor.closeObjectDeclaration(this);
+            visitor.closeObject(this);
         }
     }
 
@@ -2133,10 +2080,10 @@ namespace scalysh
         }
     }
 
-    public class FunctionDeclaration : Declaration
+    public class Function : Declaration
     {
         public Procedure procedure;
-        public FunctionDeclaration(Position start, Position end, Procedure procedure)
+        public Function(Position start, Position end, Procedure procedure)
         {
             this.start = start;
             this.end = end;
@@ -2145,18 +2092,18 @@ namespace scalysh
 
         public override void accept(Visitor visitor)
         {
-            if (!visitor.openFunctionDeclaration(this))
+            if (!visitor.openFunction(this))
                 return;
 
         procedure.accept(visitor);
-            visitor.closeFunctionDeclaration(this);
+            visitor.closeFunction(this);
         }
     }
 
-    public class MethodDeclaration : Declaration
+    public class Method : Declaration
     {
         public Procedure procedure;
-        public MethodDeclaration(Position start, Position end, Procedure procedure)
+        public Method(Position start, Position end, Procedure procedure)
         {
             this.start = start;
             this.end = end;
@@ -2165,21 +2112,21 @@ namespace scalysh
 
         public override void accept(Visitor visitor)
         {
-            if (!visitor.openMethodDeclaration(this))
+            if (!visitor.openMethod(this))
                 return;
 
         procedure.accept(visitor);
-            visitor.closeMethodDeclaration(this);
+            visitor.closeMethod(this);
         }
     }
 
     public class Procedure : SyntaxNode
     {
         public string name;
-        public ObjectDeclaration input;
+        public Object input;
         public TypeAnnotation output;
-        public Statement body;
-        public Procedure(Position start, Position end, string name, ObjectDeclaration input, TypeAnnotation output, Statement body)
+        public Block body;
+        public Procedure(Position start, Position end, string name, Object input, TypeAnnotation output, Block body)
         {
             this.start = start;
             this.end = end;
@@ -2198,7 +2145,8 @@ namespace scalysh
             input.accept(visitor);
         if (output != null)
             output.accept(visitor);
-        body.accept(visitor);
+        if (body != null)
+            body.accept(visitor);
             visitor.closeProcedure(this);
         }
     }

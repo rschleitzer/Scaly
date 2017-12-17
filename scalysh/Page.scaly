@@ -23,20 +23,25 @@ class Scaly.Page
         reset()
     }
 
-    method isOversized
+    method isOversized {
         currentPage = ()
+    }
 
-    method getExtensionPageLocation
+    method getExtensionPageLocation {
         this as pointer + pageSize - sizeof pointer
+    }
 
-    method getNextObject
+    method getNextObject {
         this as pointer + nextObjectOffset
+    }
 
-    method setNextObject(object: pointer)
+    method setNextObject(object: pointer) {
         set nextObjectOffset : (object - this) as pointer
+    }
 
-    method getNextExclusivePageLocation 
+    method getNextExclusivePageLocation {
         getExtensionPageLocation() - ((exclusivePages + 1) * sizeof pointer)
+    }
 
     method allocateObject(objectSize: size): pointer {
 
@@ -265,5 +270,4 @@ class Scaly.Page
         forget(page)
         return true
     }
-
 }

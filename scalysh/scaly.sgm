@@ -8,53 +8,49 @@
 
     <syntax id = File                                           top
         <content link = Statement             multiple optional property = statements
-    
+
+    <syntax id = Block                                          base = PrimaryExpression
+        <content link = leftCurly
+        <content link = Statement             multiple          property = statements
+        <content link = rightCurly
+
     <syntax id = Statement                    multiple abstract
         <content link = Declaration
         <content link = Expression
 
     <syntax id = Declaration                  multiple abstract base = Statement
-        <content link = ConstantDeclaration
-        <content link = VariableDeclaration
-        <content link = InferredDeclaration
+        <content link = Let
+        <content link = Mutable
+        <content link = Var
         <content link = Assignment
-        <content link = ClassDeclaration
-        <content link = MethodDeclaration
-        <content link = FunctionDeclaration
+        <content link = Class
+        <content link = Method
+        <content link = Function
 
-    <syntax id = Expression                   multiple abstract base = Statement
-        <content link = Block
-        <content link = PostfixExpression
-
-    <syntax id = Block                                          base = Expression
-        <content link = leftCurly
-        <content link = Statement            multiple          property = statements
-        <content link = rightCurly
-
-    <syntax id = ConstantDeclaration                            base = Declaration
+    <syntax id = Let                                            base = Declaration
         <content link = let
         <content link = Binding                                 property = binding
 
-    <syntax id = VariableDeclaration                            base = Declaration
+    <syntax id = Mutable                                        base = Declaration
         <content link = mutable
         <content link = Binding                                 property = binding
 
-    <syntax id = InferredDeclaration                            base = Declaration
+    <syntax id = Var                                            base = Declaration
         <content link = var
         <content link = Binding                                 property = binding
 
     <syntax id = Binding
         <content identifier                                     property = name
         <content link = TypeAnnotation                 optional property = typeAnnotation
-        <content link = Expression                              property = expression
+        <content link = Expression            multiple          property = expressions
 
     <syntax id = Assignment                                     base = Declaration
         <content link = set
-        <content link = Expression                              property = lvalue
+        <content link = Expression            multiple          property = lValue
         <content link = colon
-        <content link = Expression                              property = rvalue
+        <content link = Expression            multiple          property = rValue
 
-    <syntax id = PostfixExpression                              base = Expression
+    <syntax id = Expression                   multiple          base = Statement
         <content link = PrimaryExpression                       property = primary
         <content link = Postfix               multiple optional property = postfixes
 
@@ -63,6 +59,7 @@
         <content link = LiteralExpression
         <content link = ThisExpression
         <content link = ObjectExpression
+        <content link = Block
 
     <syntax id = IdentifierExpression                           base = PrimaryExpression
         <content identifier                                     property = name
@@ -76,7 +73,6 @@
     <syntax id = Postfix                      multiple abstract
         <content link = MemberAccess
         <content link = Subscript
-        <content link = Operation
 
     <syntax id = MemberAccess                                   base = Postfix
         <content link = dot
@@ -86,9 +82,6 @@
         <content link = leftBracket
         <content link = ExpressionElement     multiple          property = expressions
         <content link = rightBracket
-    
-    <syntax id = Operation                                      base = Postfix
-        <content link = Expression                              property = Expression
 
     <syntax id = ExpressionElement            multiple
         <content link = Expression                              property = expression
@@ -103,12 +96,12 @@
         <content link = Expression                              property = expression
         <content link = comma                          optional
 
-    <syntax id = ClassDeclaration                               base = Declaration
+    <syntax id = Class                                          base = Declaration
         <content link = class
         <content link = Name                                    property = name
         <content link = TypeInheritanceClause          optional property = typeInheritanceClause
-        <content link = ObjectDeclaration              optional property = contents
-        <content link = Expression                     optional property = body
+        <content link = Object                         optional property = contents
+        <content link = Block                          optional property = body
 
     <syntax id = Name
         <content identifier                                     property = name
@@ -122,7 +115,7 @@
         <content link = extends
         <content link = Name                                    property = name
 
-    <syntax id = ObjectDeclaration
+    <syntax id = Object
         <content link = leftParen
         <content link = Component             multiple optional property = components
         <content link = rightParen
@@ -132,19 +125,19 @@
         <content link = TypeAnnotation                 optional property = typeAnnotation
         <content link = comma                          optional
 
-    <syntax id = FunctionDeclaration                            base = Declaration
+    <syntax id = Function                                       base = Declaration
         <content link = function
         <content link = Procedure                               property = procedure
 
-    <syntax id = MethodDeclaration                              base = Declaration
+    <syntax id = Method                                         base = Declaration
         <content link = method
         <content link = Procedure                               property = procedure
 
     <syntax id = Procedure
         <content identifier                                     property = name
-        <content link = ObjectDeclaration              optional property = input
+        <content link = Object                         optional property = input
         <content link = TypeAnnotation                 optional property = output
-        <content link = Statement                               property = body
+        <content link = Block                          optional property = body
 
     <syntax id = TypeAnnotation
         <content link = colon

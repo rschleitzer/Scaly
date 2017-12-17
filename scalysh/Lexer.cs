@@ -231,6 +231,23 @@ namespace scalysh
         {
             var value = new string(text[position], 1);
 
+            position = position + 1;
+            column = column + 1;
+
+            if (position == end)
+                return (new NumericLiteral(value));
+            
+            var x = text[position];
+            if (x == 'x')
+            {
+                return scanHexLiteral();
+            }
+            else
+            {
+                position = position - 1;
+                column = column - 1;
+            }
+
             do
             {
                 position = position + 1;
@@ -244,6 +261,27 @@ namespace scalysh
                     value = value + text[position];
                 else
                     return (new NumericLiteral(value));
+            }
+            while (true);
+        }
+
+        HexLiteral scanHexLiteral()
+        {
+            var value = new string(text[position], 1);
+
+            do
+            {
+                position = position + 1;
+                column = column + 1;
+
+                if (position == end)
+                    return (new HexLiteral(value));
+
+                var c = text[position];
+                if (((c >= '0') && (c <= '9')) || ((c >= 'a') && (c <= 'f')) || ((c >= 'A') && (c <= 'F')))
+                    value = value + text[position];
+                else
+                    return (new HexLiteral(value));
             }
             while (true);
         }
@@ -573,6 +611,12 @@ namespace scalysh
         {
             value = theValue;
         }
+    }
+
+    public class HexLiteral : NumericLiteral
+    {
+        public HexLiteral(string theValue)
+        : base(theValue) {}
     }
 
     public class Punctuation : Token
