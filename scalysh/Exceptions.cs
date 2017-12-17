@@ -31,10 +31,12 @@ namespace scalysh
 
     public class ParserException : Exception
     {
+        public string file;
         public int line;
         public int column;
-        public ParserException(int line, int column)
+        public ParserException(string file, int line, int column)
         {
+            this.file = file;
             this.line = line;
             this.column = column;
         }

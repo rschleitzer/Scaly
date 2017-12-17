@@ -1,3 +1,5 @@
+thread Scaly.CurrentPage : Page? ()
+
 class Scaly.Page
 (
     currentPage         : Page?
@@ -18,43 +20,38 @@ class Scaly.Page
         set currentPage : this
     }
 
-    method clear {
+    method clear
         deallocateExtensions()
         reset()
-    }
 
-    method isOversized {
+    method isOversized
         currentPage = ()
-    }
 
-    method getExtensionPageLocation {
+    method getExtensionPageLocation
         this as pointer + pageSize - sizeof pointer
-    }
 
-    method getNextObject {
+    method getNextObject
         this as pointer + nextObjectOffset
-    }
 
     method setNextObject(object: pointer) {
         set nextObjectOffset : (object - this) as pointer
     }
 
-    method getNextExclusivePageLocation {
+    method getNextExclusivePageLocation
         getExtensionPageLocation() - ((exclusivePages + 1) * sizeof pointer)
-    }
 
     method allocateObject(objectSize: size): pointer {
 
-        if currentPage = ()
+        if (currentPage = ())
             return 0
 
-        if this <> currentPage {
+        if (this <> currentPage) {
 
             // We're already known to be full, so we delegate to the current page
             var newObject = currentPage.allocateObject(objectSize)
 
             // It is always possible that we are out of memory
-            if newObject = 0
+            if (newObject = 0)
                 return 0
 
             // Possibly our current page was also full so we propagate back the new current page
@@ -62,7 +59,7 @@ class Scaly.Page
 
             // This if is only to enable the member access in the next line. 
             // We know that if newObject <> 0, allocatingPage is never ()
-            if allocatingPage {
+            if allocatingPage is Page {
                 if (allocatingPage as pointer) <> (currentPage as pointer) and not (allocatingPage.isOversized()) {
                     // We can't assign mutable objects, so we work around this using pointers.
                     pointer.write(currentPage as pointer, allocatingPage as pointer)
@@ -75,7 +72,7 @@ class Scaly.Page
         // Try to allocate from ourselves
         var location = getNextObject()
         var nextLocation = align(location + objectSize)
-        if nextLocation <= getNextExclusivePageLocation() {
+        if (nextLocation <= getNextExclusivePageLocation()) {
             setNextObject(nextLocation)
             return location
         }
@@ -84,7 +81,7 @@ class Scaly.Page
 
         // Calculate gross size to decide whether we're oversized
         var grossSize = sizeof Page + objectSize + sizeof pointer + alignment
-        if grossSize > pageSize {
+        if (grossSize > pageSize) {
             if getNextObject() = getExtensionPageLocation() {
 
                 // Allocate an extension page with default size
@@ -97,10 +94,10 @@ class Scaly.Page
             // We allocate oversized objects directly.
             mutable pagePointer: pointer 0
             posix_memalign(adressof pagePointer, pageSize, objectSize + sizeof Page)
-            if pagePointer = 0
+            if (pagePointer = 0)
                 return 0
 
-            mutable page: pointer as Page
+            mutable page pagePointer as Page
             page.reset()
             
             // This is a hint about the oversize of the page
@@ -113,20 +110,24 @@ class Scaly.Page
 
         // So we're not oversized. Create extension page and let it allocate.
         var allocatedExtensionPage = allocateExtensionPage()
-        if allocatedExtensionPage
+        if (allocatedExtensionPage <> 0) {
             return allocatedExtensionPage.allocateObject(objectSize)
-        else
+        }
+        else {
             return 0
+        }
     }
 
     method allocateExtensionPage(): Page? {
 
-        if not Scaly.Task.currentTask
+        if Scaly.Task.currentTask is () {
             return ()
+        }
 
         var extensionPage = Scaly.Task.currentTask.getExtensionPage()
-        if not extensionPage
+        if (extensionPage = 0) {
             return ()
+        }
 
         extensionPage.reset()
         pointer.write(getExtensionPageLocation(), extensionPage)
@@ -135,22 +136,22 @@ class Scaly.Page
     }
 
     method allocateExclusivePage(): Page? {
-        if this as pointer <> currentPage as pointer {
+        if (this as pointer <> currentPage as pointer) {
             // We're already known to be full, so we delegate to the current page
             return currentPage.allocateExclusivePage()
         }
 
         // Check first whether we need an ordinary extension
-        if getNextObject() >= getNextExclusivePageLocation() {
+        if (getNextObject() >= getNextExclusivePageLocation()) {
             // Allocate an extension page with default size
             return allocateExtensionPage().allocateExclusivePage()
         }
 
-        if not Scaly.Task.currentTask
+        if Scaly.Task.currentTask is ()
             return ()
 
         var exclusivePage = Scaly.Task.currentTask.getExtensionPage()
-        if not exclusivePage
+        if (exclusivePage = 0)
             return ()
 
         exclusivePage.reset()
@@ -161,22 +162,26 @@ class Scaly.Page
 
     method extend(address: pointer, objectSize: size) {
 
-        if objectSize = 0
+        if (objectSize = 0) {
             set objectSize : 1
+        }
 
         var nextLocation = align(address + objectSize)
 
         // If nextObject would not change because of the alignment, that's it
-        if nextLocation = getNextObject()
+        if (nextLocation = getNextObject()) {
             return true
+        }
 
         // If nextObject is already higher, other objects were allocated in the meantime
-        if nextLocation < getNextObject()
+        if (nextLocation < getNextObject()) {
             return false
+        }
 
         // Now we still have to check whether we still would have space left
-        if nextLocation >= getNextExclusivePageLocation()
+        if (nextLocation >= getNextExclusivePageLocation()) {
             return false
+        }
 
         // Allocate the extension
         setNextObject(nextLocation)
@@ -186,8 +191,9 @@ class Scaly.Page
     method deallocateExtensions {
         mutable page: Page? = this
         do {
-            if page = ()
+            if page is () {
                 break
+            }
 
             let nextExtensionPage = page.getExtensionPageLocation as pointer
 
@@ -196,15 +202,17 @@ class Scaly.Page
 
             mutable i: int = 0
             do {
-                if not (pPage as Page).isOversized()
+                if (not (pPage as Page).isOversized()) {
                     (pPage as Page).deallocateExtensions()
+                }
                 forget(pPage as Page)
                 set pPage : pPage - sizeof pointer
                 set i : i + 1
-            } while i < page.exclusivePages
+            } while (i < page.exclusivePages)
 
-            if (page <> this)
+            if (page <> this) {
                 forget(page)
+            }
 
             pointer.write(addressof page, nextExtensionPage)
 
@@ -217,28 +225,31 @@ class Scaly.Page
 
     method reclaimArray(address: pointer): bool {
 
-        if not currentPage
+        if currentPage is () {
             return false
+        }
 
         // Quick attempt to find it at the current page
-        if currentPage.deallocateExclusivePage(address as Page)
+        if currentPage.deallocateExclusivePage(address as Page) {
             return true
+        }
 
         // Second attempt scanning the rest of the chain
         mutable page: Page? = this
         do {
-            if page.deallocateExclusivePage(address as Page)
+            if page.deallocateExclusivePage(address as Page) {
                 return true
+            }
 
-            set page = page.getExtensionPageLocation() as Page
-        } while page <> currentPage
+            set page: page.getExtensionPageLocation() as Page
+        } while (page <> currentPage)
         
         // If we arrive here, we have a memory leak.
         return false
     }
 
     function getPage(address: pointer): Page {
-        return address and not (pageSize - 1) as Page
+        return (address and not (pageSize - 1)) as Page
     }
 
     method deallocateExclusivePage(page: Page): bool {
@@ -249,25 +260,28 @@ class Scaly.Page
         // Exclusive pages end pointer
         let nextExtensionPageLocation = getNextExclusivePageLocation()
 
-        while pPage > nextExtensionPageLocation {
-            if pPage as Page = page
+        while (pPage > nextExtensionPageLocation) {
+            if (pPage as Page = page) {
                 break
+            }
 
             set pPage : pPage - sizeof pointer
         }
 
         // Report if we could not find it
-        if pPage = nextExtensionPageLocation
+        if (pPage = nextExtensionPageLocation) {
             return false
+        }
 
         // Shift the remaining array one position up
         do {
             pointer.write(pPage, (pPage - sizeof pointer) as pointer)
             set pPage = pPage - sizeof pointer
-        } while pPage > nextExtensionPageLocation
+        } while (pPage > nextExtensionPageLocation)
+
         // Make room for one more extension
         set exclusivePages : exclusivePages - 1
-        forget(page)
+        forget page
         return true
     }
 }

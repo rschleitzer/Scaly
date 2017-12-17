@@ -86,7 +86,7 @@ namespace scalysh
                 if (!isAtEnd())
                 {
                     Position errorPos = lexer.getPreviousPosition();
-                    throw new ParserException(errorPos.line, errorPos.column);
+                    throw new ParserException(fileName, errorPos.line, errorPos.column);
                 }
             }
 "                           )"")

@@ -9,15 +9,29 @@ namespace scalysh
         Lexer lexer;
         string fileName;
 
+        string usingKeyword = "using";
         string letKeyword = "let";
         string mutableKeyword = "mutable";
         string varKeyword = "var";
+        string threadKeyword = "thread";
         string setKeyword = "set";
         string classKeyword = "class";
         string extendsKeyword = "extends";
         string functionKeyword = "function";
         string methodKeyword = "method";
         string thisKeyword = "this";
+        string sizeofKeyword = "sizeof";
+        string catchKeyword = "catch";
+        string asKeyword = "as";
+        string isKeyword = "is";
+        string ifKeyword = "if";
+        string elseKeyword = "else";
+        string forKeyword = "for";
+        string inKeyword = "in";
+        string whileKeyword = "while";
+        string doKeyword = "do";
+        string breakKeyword = "break";
+        string returnKeyword = "return";
 
         string leftCurly = "{";
         string rightCurly = "}";
@@ -29,9 +43,11 @@ namespace scalysh
         string comma = ",";
         string colon = ":";
         string question = "?";
+        string exclamation = "!";
         string at = "@";
         string hash = "#";
         string dollar = "$";
+        string underscore = "_";
         string backtick = "`";
 
         public Parser(string theFileName, string text)
@@ -50,7 +66,7 @@ namespace scalysh
                 if (!isAtEnd())
                 {
                     Position errorPos = lexer.getPreviousPosition();
-                    throw new ParserException(errorPos.line, errorPos.column);
+                    throw new ParserException(fileName, errorPos.line, errorPos.column);
                 }
             }
 
@@ -122,6 +138,12 @@ namespace scalysh
         public Statement parseStatement()
         {
             {
+                Using node = parseUsing();
+                if (node != null)
+                    return node;
+            }
+
+            {
                 Declaration node = parseDeclaration();
                 if (node != null)
                     return node;
@@ -133,7 +155,48 @@ namespace scalysh
                     return node;
             }
 
+            {
+                Set node = parseSet();
+                if (node != null)
+                    return node;
+            }
+
+            {
+                Break node = parseBreak();
+                if (node != null)
+                    return node;
+            }
+
+            {
+                Return node = parseReturn();
+                if (node != null)
+                    return node;
+            }
+
             return null;
+        }
+
+        public Using parseUsing()
+        {
+            Position start = lexer.getPreviousPosition();
+
+            bool successUsing1 = lexer.parseKeyword(usingKeyword);
+            if (successUsing1)
+                lexer.advance();
+            else
+                return null;
+
+            Name name = parseName();
+            if (name == null)
+                return null;
+
+            Position end = lexer.getPosition();
+
+            Using ret = new Using(start, end, name);
+
+            name.parent = ret;
+
+            return ret;
         }
 
         public Declaration[] parseDeclarationList()
@@ -178,7 +241,7 @@ namespace scalysh
             }
 
             {
-                Assignment node = parseAssignment();
+                Thread node = parseThread();
                 if (node != null)
                     return node;
             }
@@ -273,14 +336,35 @@ namespace scalysh
             return ret;
         }
 
+        public Thread parseThread()
+        {
+            Position start = lexer.getPreviousPosition();
+
+            bool successThread1 = lexer.parseKeyword(threadKeyword);
+            if (successThread1)
+                lexer.advance();
+            else
+                return null;
+
+            Binding binding = parseBinding();
+            if (binding == null)
+                return null;
+
+            Position end = lexer.getPosition();
+
+            Thread ret = new Thread(start, end, binding);
+
+            binding.parent = ret;
+
+            return ret;
+        }
+
         public Binding parseBinding()
         {
             Position start = lexer.getPreviousPosition();
 
-            string name = lexer.parseIdentifier();
-            if ((name != null) && isIdentifier(name))
-                lexer.advance();
-            else
+            Pattern pattern = parsePattern();
+            if (pattern == null)
                 return null;
 
             TypeAnnotation typeAnnotation = parseTypeAnnotation();
@@ -289,8 +373,9 @@ namespace scalysh
 
             Position end = lexer.getPosition();
 
-            Binding ret = new Binding(start, end, name, typeAnnotation, expressions);
+            Binding ret = new Binding(start, end, pattern, typeAnnotation, expressions);
 
+            pattern.parent = ret;
             if (typeAnnotation != null)
                 typeAnnotation.parent = ret;
             if (expressions != null)
@@ -302,40 +387,58 @@ namespace scalysh
             return ret;
         }
 
-        public Assignment parseAssignment()
+        public Pattern parsePattern()
+        {
+            {
+                WildcardPattern node = parseWildcardPattern();
+                if (node != null)
+                    return node;
+            }
+
+            {
+                IdentifierPattern node = parseIdentifierPattern();
+                if (node != null)
+                    return node;
+            }
+
+            return null;
+        }
+
+        public IdentifierPattern parseIdentifierPattern()
         {
             Position start = lexer.getPreviousPosition();
 
-            bool successSet1 = lexer.parseKeyword(setKeyword);
-            if (successSet1)
-                lexer.advance();
-            else
+            Name name = parseName();
+            if (name == null)
                 return null;
 
-            Expression[] lValue = parseExpressionList();
-
-            bool successColon3 = lexer.parsePunctuation(colon);
-            if (successColon3)
-                lexer.advance();
-            else
-                return null;
-
-            Expression[] rValue = parseExpressionList();
+            TypeAnnotation annotationForType = parseTypeAnnotation();
 
             Position end = lexer.getPosition();
 
-            Assignment ret = new Assignment(start, end, lValue, rValue);
+            IdentifierPattern ret = new IdentifierPattern(start, end, name, annotationForType);
 
-            if (lValue != null)
-            {
-                foreach (Expression item in lValue)
-                    item.parent = ret;
-            }
-            if (rValue != null)
-            {
-                foreach (Expression item in rValue)
-                    item.parent = ret;
-            }
+            name.parent = ret;
+            if (annotationForType != null)
+                annotationForType.parent = ret;
+
+            return ret;
+        }
+
+        public WildcardPattern parseWildcardPattern()
+        {
+            Position start = lexer.getPreviousPosition();
+
+            bool successUnderscore1 = lexer.parsePunctuation(underscore);
+            if (successUnderscore1)
+                lexer.advance();
+            else
+                return null;
+
+            Position end = lexer.getPosition();
+
+            WildcardPattern ret = new WildcardPattern(start, end);
+
 
             return ret;
         }
@@ -409,7 +512,7 @@ namespace scalysh
         public PrimaryExpression parsePrimaryExpression()
         {
             {
-                IdentifierExpression node = parseIdentifierExpression();
+                NameExpression node = parseNameExpression();
                 if (node != null)
                     return node;
             }
@@ -421,7 +524,31 @@ namespace scalysh
             }
 
             {
-                ThisExpression node = parseThisExpression();
+                If node = parseIf();
+                if (node != null)
+                    return node;
+            }
+
+            {
+                For node = parseFor();
+                if (node != null)
+                    return node;
+            }
+
+            {
+                While node = parseWhile();
+                if (node != null)
+                    return node;
+            }
+
+            {
+                Do node = parseDo();
+                if (node != null)
+                    return node;
+            }
+
+            {
+                This node = parseThis();
                 if (node != null)
                     return node;
             }
@@ -438,23 +565,36 @@ namespace scalysh
                     return node;
             }
 
+            {
+                SizeOf node = parseSizeOf();
+                if (node != null)
+                    return node;
+            }
+
             return null;
         }
 
-        public IdentifierExpression parseIdentifierExpression()
+        public NameExpression parseNameExpression()
         {
             Position start = lexer.getPreviousPosition();
 
-            string name = lexer.parseIdentifier();
-            if ((name != null) && isIdentifier(name))
-                lexer.advance();
-            else
+            Name name = parseName();
+            if (name == null)
                 return null;
+
+            GenericArguments generics = parseGenericArguments();
+
+            LifeTime lifeTime = parseLifeTime();
 
             Position end = lexer.getPosition();
 
-            IdentifierExpression ret = new IdentifierExpression(start, end, name);
+            NameExpression ret = new NameExpression(start, end, name, generics, lifeTime);
 
+            name.parent = ret;
+            if (generics != null)
+                generics.parent = ret;
+            if (lifeTime != null)
+                lifeTime.parent = ret;
 
             return ret;
         }
@@ -477,7 +617,168 @@ namespace scalysh
             return ret;
         }
 
-        public ThisExpression parseThisExpression()
+        public If parseIf()
+        {
+            Position start = lexer.getPreviousPosition();
+
+            bool successIf1 = lexer.parseKeyword(ifKeyword);
+            if (successIf1)
+                lexer.advance();
+            else
+                return null;
+
+            Expression condition = parseExpression();
+            if (condition == null)
+                return null;
+
+            Expression consequent = parseExpression();
+            if (consequent == null)
+                return null;
+
+            Else elseClause = parseElse();
+
+            Position end = lexer.getPosition();
+
+            If ret = new If(start, end, condition, consequent, elseClause);
+
+            condition.parent = ret;
+            consequent.parent = ret;
+            if (elseClause != null)
+                elseClause.parent = ret;
+
+            return ret;
+        }
+
+        public Else parseElse()
+        {
+            Position start = lexer.getPreviousPosition();
+
+            bool successElse1 = lexer.parseKeyword(elseKeyword);
+            if (successElse1)
+                lexer.advance();
+            else
+                return null;
+
+            Expression alternative = parseExpression();
+            if (alternative == null)
+                return null;
+
+            Position end = lexer.getPosition();
+
+            Else ret = new Else(start, end, alternative);
+
+            alternative.parent = ret;
+
+            return ret;
+        }
+
+        public For parseFor()
+        {
+            Position start = lexer.getPreviousPosition();
+
+            bool successFor1 = lexer.parseKeyword(forKeyword);
+            if (successFor1)
+                lexer.advance();
+            else
+                return null;
+
+            string index = lexer.parseIdentifier();
+            if ((index != null) && isIdentifier(index))
+                lexer.advance();
+            else
+                return null;
+
+            TypeAnnotation typeAnnotation = parseTypeAnnotation();
+
+            bool successIn4 = lexer.parseKeyword(inKeyword);
+            if (successIn4)
+                lexer.advance();
+            else
+                return null;
+
+            Expression expression = parseExpression();
+            if (expression == null)
+                return null;
+
+            Expression code = parseExpression();
+            if (code == null)
+                return null;
+
+            Position end = lexer.getPosition();
+
+            For ret = new For(start, end, index, typeAnnotation, expression, code);
+
+            if (typeAnnotation != null)
+                typeAnnotation.parent = ret;
+            expression.parent = ret;
+            code.parent = ret;
+
+            return ret;
+        }
+
+        public While parseWhile()
+        {
+            Position start = lexer.getPreviousPosition();
+
+            bool successWhile1 = lexer.parseKeyword(whileKeyword);
+            if (successWhile1)
+                lexer.advance();
+            else
+                return null;
+
+            Expression condition = parseExpression();
+            if (condition == null)
+                return null;
+
+            Expression code = parseExpression();
+            if (code == null)
+                return null;
+
+            Position end = lexer.getPosition();
+
+            While ret = new While(start, end, condition, code);
+
+            condition.parent = ret;
+            code.parent = ret;
+
+            return ret;
+        }
+
+        public Do parseDo()
+        {
+            Position start = lexer.getPreviousPosition();
+
+            bool successDo1 = lexer.parseKeyword(doKeyword);
+            if (successDo1)
+                lexer.advance();
+            else
+                return null;
+
+            Expression code = parseExpression();
+            if (code == null)
+                return null;
+
+            bool successWhile3 = lexer.parseKeyword(whileKeyword);
+            if (successWhile3)
+                lexer.advance();
+            else
+                return null;
+
+            Expression condition = parseExpression();
+            if (condition == null)
+                return null;
+
+            Position end = lexer.getPosition();
+
+            Do ret = new Do(start, end, code, condition);
+
+            code.parent = ret;
+            condition.parent = ret;
+
+            return ret;
+        }
+
+        public This parseThis()
         {
             Position start = lexer.getPreviousPosition();
 
@@ -489,7 +790,7 @@ namespace scalysh
 
             Position end = lexer.getPosition();
 
-            ThisExpression ret = new ThisExpression(start, end);
+            This ret = new This(start, end);
 
 
             return ret;
@@ -519,6 +820,12 @@ namespace scalysh
         public Postfix parsePostfix()
         {
             {
+                Catch node = parseCatch();
+                if (node != null)
+                    return node;
+            }
+
+            {
                 MemberAccess node = parseMemberAccess();
                 if (node != null)
                     return node;
@@ -530,7 +837,37 @@ namespace scalysh
                     return node;
             }
 
+            {
+                As node = parseAs();
+                if (node != null)
+                    return node;
+            }
+
+            {
+                Is node = parseIs();
+                if (node != null)
+                    return node;
+            }
+
             return null;
+        }
+
+        public Catch parseCatch()
+        {
+            Position start = lexer.getPreviousPosition();
+
+            bool successCatch1 = lexer.parseKeyword(catchKeyword);
+            if (successCatch1)
+                lexer.advance();
+            else
+                return null;
+
+            Position end = lexer.getPosition();
+
+            Catch ret = new Catch(start, end);
+
+
+            return ret;
         }
 
         public MemberAccess parseMemberAccess()
@@ -567,65 +904,76 @@ namespace scalysh
             else
                 return null;
 
-            ExpressionElement[] expressions = parseExpressionElementList();
+            Expression[] firstItems = parseExpressionList();
 
-            bool successRightBracket3 = lexer.parsePunctuation(rightBracket);
-            if (successRightBracket3)
+            ObjectItem[] additionalItemses = parseObjectItemList();
+
+            bool successRightBracket4 = lexer.parsePunctuation(rightBracket);
+            if (successRightBracket4)
                 lexer.advance();
             else
                 return null;
 
             Position end = lexer.getPosition();
 
-            Subscript ret = new Subscript(start, end, expressions);
+            Subscript ret = new Subscript(start, end, firstItems, additionalItemses);
 
-            if (expressions != null)
+            if (firstItems != null)
             {
-                foreach (ExpressionElement item in expressions)
+                foreach (Expression item in firstItems)
+                    item.parent = ret;
+            }
+            if (additionalItemses != null)
+            {
+                foreach (ObjectItem item in additionalItemses)
                     item.parent = ret;
             }
 
             return ret;
         }
 
-        public ExpressionElement[] parseExpressionElementList()
-        {
-            List<ExpressionElement> ret = null;
-            while (true)
-            {
-                ExpressionElement node = parseExpressionElement();
-                if (node == null)
-                    break;
-
-                if (ret == null)
-                    ret = new List<ExpressionElement>();
-
-                ret.Add(node);
-            }
-
-            if (ret != null)
-                return ret.ToArray();
-            else
-                return null;
-        }
-
-        public ExpressionElement parseExpressionElement()
+        public As parseAs()
         {
             Position start = lexer.getPreviousPosition();
 
-            Expression expression = parseExpression();
-            if (expression == null)
+            bool successAs1 = lexer.parseKeyword(asKeyword);
+            if (successAs1)
+                lexer.advance();
+            else
                 return null;
 
-            bool successComma2 = lexer.parsePunctuation(comma);
-            if (successComma2)
-                lexer.advance();
+            Type typeSpec = parseType();
+            if (typeSpec == null)
+                return null;
 
             Position end = lexer.getPosition();
 
-            ExpressionElement ret = new ExpressionElement(start, end, expression);
+            As ret = new As(start, end, typeSpec);
 
-            expression.parent = ret;
+            typeSpec.parent = ret;
+
+            return ret;
+        }
+
+        public Is parseIs()
+        {
+            Position start = lexer.getPreviousPosition();
+
+            bool successIs1 = lexer.parseKeyword(isKeyword);
+            if (successIs1)
+                lexer.advance();
+            else
+                return null;
+
+            Type typeSpec = parseType();
+            if (typeSpec == null)
+                return null;
+
+            Position end = lexer.getPosition();
+
+            Is ret = new Is(start, end, typeSpec);
+
+            typeSpec.parent = ret;
 
             return ret;
         }
@@ -640,21 +988,28 @@ namespace scalysh
             else
                 return null;
 
-            ObjectItem[] items = parseObjectItemList();
+            Expression[] firstItems = parseExpressionList();
 
-            bool successRightParen3 = lexer.parsePunctuation(rightParen);
-            if (successRightParen3)
+            ObjectItem[] additionalItemses = parseObjectItemList();
+
+            bool successRightParen4 = lexer.parsePunctuation(rightParen);
+            if (successRightParen4)
                 lexer.advance();
             else
                 return null;
 
             Position end = lexer.getPosition();
 
-            ObjectExpression ret = new ObjectExpression(start, end, items);
+            ObjectExpression ret = new ObjectExpression(start, end, firstItems, additionalItemses);
 
-            if (items != null)
+            if (firstItems != null)
             {
-                foreach (ObjectItem item in items)
+                foreach (Expression item in firstItems)
+                    item.parent = ret;
+            }
+            if (additionalItemses != null)
+            {
+                foreach (ObjectItem item in additionalItemses)
                     item.parent = ret;
             }
 
@@ -686,19 +1041,134 @@ namespace scalysh
         {
             Position start = lexer.getPreviousPosition();
 
-            Expression expression = parseExpression();
-            if (expression == null)
+            bool successComma1 = lexer.parsePunctuation(comma);
+            if (successComma1)
+                lexer.advance();
+            else
                 return null;
 
-            bool successComma2 = lexer.parsePunctuation(comma);
-            if (successComma2)
-                lexer.advance();
+            Expression[] expression = parseExpressionList();
 
             Position end = lexer.getPosition();
 
             ObjectItem ret = new ObjectItem(start, end, expression);
 
-            expression.parent = ret;
+            if (expression != null)
+            {
+                foreach (Expression item in expression)
+                    item.parent = ret;
+            }
+
+            return ret;
+        }
+
+        public SizeOf parseSizeOf()
+        {
+            Position start = lexer.getPreviousPosition();
+
+            bool successSizeof1 = lexer.parseKeyword(sizeofKeyword);
+            if (successSizeof1)
+                lexer.advance();
+            else
+                return null;
+
+            Type typeSpec = parseType();
+            if (typeSpec == null)
+                return null;
+
+            Position end = lexer.getPosition();
+
+            SizeOf ret = new SizeOf(start, end, typeSpec);
+
+            typeSpec.parent = ret;
+
+            return ret;
+        }
+
+        public Set parseSet()
+        {
+            Position start = lexer.getPreviousPosition();
+
+            bool successSet1 = lexer.parseKeyword(setKeyword);
+            if (successSet1)
+                lexer.advance();
+            else
+                return null;
+
+            Expression[] lValue = parseExpressionList();
+
+            bool successColon3 = lexer.parsePunctuation(colon);
+            if (successColon3)
+                lexer.advance();
+            else
+                return null;
+
+            Expression[] rValue = parseExpressionList();
+
+            Position end = lexer.getPosition();
+
+            Set ret = new Set(start, end, lValue, rValue);
+
+            if (lValue != null)
+            {
+                foreach (Expression item in lValue)
+                    item.parent = ret;
+            }
+            if (rValue != null)
+            {
+                foreach (Expression item in rValue)
+                    item.parent = ret;
+            }
+
+            return ret;
+        }
+
+        public Break parseBreak()
+        {
+            Position start = lexer.getPreviousPosition();
+
+            bool successBreak1 = lexer.parseKeyword(breakKeyword);
+            if (successBreak1)
+                lexer.advance();
+            else
+                return null;
+
+            Expression[] lValue = parseExpressionList();
+
+            Position end = lexer.getPosition();
+
+            Break ret = new Break(start, end, lValue);
+
+            if (lValue != null)
+            {
+                foreach (Expression item in lValue)
+                    item.parent = ret;
+            }
+
+            return ret;
+        }
+
+        public Return parseReturn()
+        {
+            Position start = lexer.getPreviousPosition();
+
+            bool successReturn1 = lexer.parseKeyword(returnKeyword);
+            if (successReturn1)
+                lexer.advance();
+            else
+                return null;
+
+            Expression[] lValue = parseExpressionList();
+
+            Position end = lexer.getPosition();
+
+            Return ret = new Return(start, end, lValue);
+
+            if (lValue != null)
+            {
+                foreach (Expression item in lValue)
+                    item.parent = ret;
+            }
 
             return ret;
         }
@@ -717,19 +1187,23 @@ namespace scalysh
             if (name == null)
                 return null;
 
-            TypeInheritanceClause typeInheritanceClause = parseTypeInheritanceClause();
+            GenericParameters generics = parseGenericParameters();
+
+            Extends baseClass = parseExtends();
 
             Object contents = parseObject();
 
-            Block body = parseBlock();
+            Expression body = parseExpression();
 
             Position end = lexer.getPosition();
 
-            Class ret = new Class(start, end, name, typeInheritanceClause, contents, body);
+            Class ret = new Class(start, end, name, generics, baseClass, contents, body);
 
             name.parent = ret;
-            if (typeInheritanceClause != null)
-                typeInheritanceClause.parent = ret;
+            if (generics != null)
+                generics.parent = ret;
+            if (baseClass != null)
+                baseClass.parent = ret;
             if (contents != null)
                 contents.parent = ret;
             if (body != null)
@@ -808,7 +1282,89 @@ namespace scalysh
             return ret;
         }
 
-        public TypeInheritanceClause parseTypeInheritanceClause()
+        public GenericParameters parseGenericParameters()
+        {
+            Position start = lexer.getPreviousPosition();
+
+            bool successBacktick1 = lexer.parsePunctuation(backtick);
+            if (successBacktick1)
+                lexer.advance();
+            else
+                return null;
+
+            string name = lexer.parseIdentifier();
+            if ((name != null) && isIdentifier(name))
+                lexer.advance();
+            else
+                return null;
+
+            GenericParameter[] additionalGenerics = parseGenericParameterList();
+
+            bool successBacktick4 = lexer.parsePunctuation(backtick);
+            if (successBacktick4)
+                lexer.advance();
+            else
+                return null;
+
+            Position end = lexer.getPosition();
+
+            GenericParameters ret = new GenericParameters(start, end, name, additionalGenerics);
+
+            if (additionalGenerics != null)
+            {
+                foreach (GenericParameter item in additionalGenerics)
+                    item.parent = ret;
+            }
+
+            return ret;
+        }
+
+        public GenericParameter[] parseGenericParameterList()
+        {
+            List<GenericParameter> ret = null;
+            while (true)
+            {
+                GenericParameter node = parseGenericParameter();
+                if (node == null)
+                    break;
+
+                if (ret == null)
+                    ret = new List<GenericParameter>();
+
+                ret.Add(node);
+            }
+
+            if (ret != null)
+                return ret.ToArray();
+            else
+                return null;
+        }
+
+        public GenericParameter parseGenericParameter()
+        {
+            Position start = lexer.getPreviousPosition();
+
+            bool successComma1 = lexer.parsePunctuation(comma);
+            if (successComma1)
+                lexer.advance();
+            else
+                return null;
+
+            string name = lexer.parseIdentifier();
+            if ((name != null) && isIdentifier(name))
+                lexer.advance();
+            else
+                return null;
+
+            Position end = lexer.getPosition();
+
+            GenericParameter ret = new GenericParameter(start, end, name);
+
+
+            return ret;
+        }
+
+        public Extends parseExtends()
         {
             Position start = lexer.getPreviousPosition();
 
@@ -824,7 +1380,7 @@ namespace scalysh
 
             Position end = lexer.getPosition();
 
-            TypeInheritanceClause ret = new TypeInheritanceClause(start, end, name);
+            Extends ret = new Extends(start, end, name);
 
             name.parent = ret;
 
@@ -969,7 +1525,7 @@ namespace scalysh
 
             TypeAnnotation output = parseTypeAnnotation();
 
-            Block body = parseBlock();
+            Expression[] body = parseExpressionList();
 
             Position end = lexer.getPosition();
 
@@ -980,7 +1536,10 @@ namespace scalysh
             if (output != null)
                 output.parent = ret;
             if (body != null)
-                body.parent = ret;
+            {
+                foreach (Expression item in body)
+                    item.parent = ret;
+            }
 
             return ret;
         }
@@ -995,15 +1554,15 @@ namespace scalysh
             else
                 return null;
 
-            Type name = parseType();
-            if (name == null)
+            Type typeSpec = parseType();
+            if (typeSpec == null)
                 return null;
 
             Position end = lexer.getPosition();
 
-            TypeAnnotation ret = new TypeAnnotation(start, end, name);
+            TypeAnnotation ret = new TypeAnnotation(start, end, typeSpec);
 
-            name.parent = ret;
+            typeSpec.parent = ret;
 
             return ret;
         }
@@ -1018,14 +1577,18 @@ namespace scalysh
             else
                 return null;
 
+            GenericArguments generics = parseGenericArguments();
+
             TypePostfix[] postfixes = parseTypePostfixList();
 
             LifeTime lifeTime = parseLifeTime();
 
             Position end = lexer.getPosition();
 
-            Type ret = new Type(start, end, name, postfixes, lifeTime);
+            Type ret = new Type(start, end, name, generics, postfixes, lifeTime);
 
+            if (generics != null)
+                generics.parent = ret;
             if (postfixes != null)
             {
                 foreach (TypePostfix item in postfixes)
@@ -1033,6 +1596,86 @@ namespace scalysh
             }
             if (lifeTime != null)
                 lifeTime.parent = ret;
+
+            return ret;
+        }
+
+        public GenericArguments parseGenericArguments()
+        {
+            Position start = lexer.getPreviousPosition();
+
+            bool successBacktick1 = lexer.parsePunctuation(backtick);
+            if (successBacktick1)
+                lexer.advance();
+            else
+                return null;
+
+            Type typeSpec = parseType();
+            if (typeSpec == null)
+                return null;
+
+            GenericArgument[] additionalGenerics = parseGenericArgumentList();
+
+            bool successBacktick4 = lexer.parsePunctuation(backtick);
+            if (successBacktick4)
+                lexer.advance();
+            else
+                return null;
+
+            Position end = lexer.getPosition();
+
+            GenericArguments ret = new GenericArguments(start, end, typeSpec, additionalGenerics);
+
+            typeSpec.parent = ret;
+            if (additionalGenerics != null)
+            {
+                foreach (GenericArgument item in additionalGenerics)
+                    item.parent = ret;
+            }
+
+            return ret;
+        }
+
+        public GenericArgument[] parseGenericArgumentList()
+        {
+            List<GenericArgument> ret = null;
+            while (true)
+            {
+                GenericArgument node = parseGenericArgument();
+                if (node == null)
+                    break;
+
+                if (ret == null)
+                    ret = new List<GenericArgument>();
+
+                ret.Add(node);
+            }
+
+            if (ret != null)
+                return ret.ToArray();
+            else
+                return null;
+        }
+
+        public GenericArgument parseGenericArgument()
+        {
+            Position start = lexer.getPreviousPosition();
+
+            bool successComma1 = lexer.parsePunctuation(comma);
+            if (successComma1)
+                lexer.advance();
+            else
+                return null;
+
+            Type typeSpec = parseType();
+            if (typeSpec == null)
+                return null;
+
+            Position end = lexer.getPosition();
+
+            GenericArgument ret = new GenericArgument(start, end, typeSpec);
+
+            typeSpec.parent = ret;
 
             return ret;
         }
@@ -1103,7 +1746,7 @@ namespace scalysh
             else
                 return null;
 
-            Type key = parseType();
+            Type typeSpec = parseType();
 
             bool successRightBracket3 = lexer.parsePunctuation(rightBracket);
             if (successRightBracket3)
@@ -1113,10 +1756,10 @@ namespace scalysh
 
             Position end = lexer.getPosition();
 
-            IndexedType ret = new IndexedType(start, end, key);
+            IndexedType ret = new IndexedType(start, end, typeSpec);
 
-            if (key != null)
-                key.parent = ret;
+            if (typeSpec != null)
+                typeSpec.parent = ret;
 
             return ret;
         }
@@ -1196,8 +1839,8 @@ namespace scalysh
         {
             Position start = lexer.getPreviousPosition();
 
-            bool successBacktick1 = lexer.parsePunctuation(backtick);
-            if (successBacktick1)
+            bool successHash1 = lexer.parsePunctuation(hash);
+            if (successHash1)
                 lexer.advance();
             else
                 return null;
@@ -1218,8 +1861,8 @@ namespace scalysh
         {
             Position start = lexer.getPreviousPosition();
 
-            bool successHash1 = lexer.parsePunctuation(hash);
-            if (successHash1)
+            bool successExclamation1 = lexer.parsePunctuation(exclamation);
+            if (successExclamation1)
                 lexer.advance();
             else
                 return null;
@@ -1239,6 +1882,9 @@ namespace scalysh
 
         bool isIdentifier(string id)
         {
+            if (id == usingKeyword)
+                return false;
+
             if (id == letKeyword)
                 return false;
 
@@ -1246,6 +1892,9 @@ namespace scalysh
                 return false;
 
             if (id == varKeyword)
+                return false;
+
+            if (id == threadKeyword)
                 return false;
 
             if (id == setKeyword)
@@ -1264,6 +1913,42 @@ namespace scalysh
                 return false;
 
             if (id == thisKeyword)
+                return false;
+
+            if (id == sizeofKeyword)
+                return false;
+
+            if (id == catchKeyword)
+                return false;
+
+            if (id == asKeyword)
+                return false;
+
+            if (id == isKeyword)
+                return false;
+
+            if (id == ifKeyword)
+                return false;
+
+            if (id == elseKeyword)
+                return false;
+
+            if (id == forKeyword)
+                return false;
+
+            if (id == inKeyword)
+                return false;
+
+            if (id == whileKeyword)
+                return false;
+
+            if (id == doKeyword)
+                return false;
+
+            if (id == breakKeyword)
+                return false;
+
+            if (id == returnKeyword)
                 return false;
 
             return true;
@@ -1299,6 +1984,15 @@ namespace scalysh
         {
         }
 
+        public virtual bool openUsing(Using theUsing)
+        {
+            return true;
+        }
+
+        public virtual void closeUsing(Using theUsing)
+        {
+        }
+
         public virtual bool openLet(Let theLet)
         {
             return true;
@@ -1326,6 +2020,15 @@ namespace scalysh
         {
         }
 
+        public virtual bool openThread(Thread theThread)
+        {
+            return true;
+        }
+
+        public virtual void closeThread(Thread theThread)
+        {
+        }
+
         public virtual bool openBinding(Binding theBinding)
         {
             return true;
@@ -1335,12 +2038,16 @@ namespace scalysh
         {
         }
 
-        public virtual bool openAssignment(Assignment theAssignment)
+        public virtual bool openIdentifierPattern(IdentifierPattern theIdentifierPattern)
         {
             return true;
         }
 
-        public virtual void closeAssignment(Assignment theAssignment)
+        public virtual void closeIdentifierPattern(IdentifierPattern theIdentifierPattern)
+        {
+        }
+
+        public virtual void visitWildcardPattern(WildcardPattern theWildcardPattern)
         {
         }
 
@@ -1353,7 +2060,12 @@ namespace scalysh
         {
         }
 
-        public virtual void visitIdentifierExpression(IdentifierExpression theIdentifierExpression)
+        public virtual bool openNameExpression(NameExpression theNameExpression)
+        {
+            return true;
+        }
+
+        public virtual void closeNameExpression(NameExpression theNameExpression)
         {
         }
 
@@ -1361,7 +2073,56 @@ namespace scalysh
         {
         }
 
-        public virtual void visitThisExpression(ThisExpression theThisExpression)
+        public virtual bool openIf(If theIf)
+        {
+            return true;
+        }
+
+        public virtual void closeIf(If theIf)
+        {
+        }
+
+        public virtual bool openElse(Else theElse)
+        {
+            return true;
+        }
+
+        public virtual void closeElse(Else theElse)
+        {
+        }
+
+        public virtual bool openFor(For theFor)
+        {
+            return true;
+        }
+
+        public virtual void closeFor(For theFor)
+        {
+        }
+
+        public virtual bool openWhile(While theWhile)
+        {
+            return true;
+        }
+
+        public virtual void closeWhile(While theWhile)
+        {
+        }
+
+        public virtual bool openDo(Do theDo)
+        {
+            return true;
+        }
+
+        public virtual void closeDo(Do theDo)
+        {
+        }
+
+        public virtual void visitThis(This theThis)
+        {
+        }
+
+        public virtual void visitCatch(Catch theCatch)
         {
         }
 
@@ -1378,12 +2139,21 @@ namespace scalysh
         {
         }
 
-        public virtual bool openExpressionElement(ExpressionElement theExpressionElement)
+        public virtual bool openAs(As theAs)
         {
             return true;
         }
 
-        public virtual void closeExpressionElement(ExpressionElement theExpressionElement)
+        public virtual void closeAs(As theAs)
+        {
+        }
+
+        public virtual bool openIs(Is theIs)
+        {
+            return true;
+        }
+
+        public virtual void closeIs(Is theIs)
         {
         }
 
@@ -1402,6 +2172,42 @@ namespace scalysh
         }
 
         public virtual void closeObjectItem(ObjectItem theObjectItem)
+        {
+        }
+
+        public virtual bool openSizeOf(SizeOf theSizeOf)
+        {
+            return true;
+        }
+
+        public virtual void closeSizeOf(SizeOf theSizeOf)
+        {
+        }
+
+        public virtual bool openSet(Set theSet)
+        {
+            return true;
+        }
+
+        public virtual void closeSet(Set theSet)
+        {
+        }
+
+        public virtual bool openBreak(Break theBreak)
+        {
+            return true;
+        }
+
+        public virtual void closeBreak(Break theBreak)
+        {
+        }
+
+        public virtual bool openReturn(Return theReturn)
+        {
+            return true;
+        }
+
+        public virtual void closeReturn(Return theReturn)
         {
         }
 
@@ -1427,12 +2233,25 @@ namespace scalysh
         {
         }
 
-        public virtual bool openTypeInheritanceClause(TypeInheritanceClause theTypeInheritanceClause)
+        public virtual bool openGenericParameters(GenericParameters theGenericParameters)
         {
             return true;
         }
 
-        public virtual void closeTypeInheritanceClause(TypeInheritanceClause theTypeInheritanceClause)
+        public virtual void closeGenericParameters(GenericParameters theGenericParameters)
+        {
+        }
+
+        public virtual void visitGenericParameter(GenericParameter theGenericParameter)
+        {
+        }
+
+        public virtual bool openExtends(Extends theExtends)
+        {
+            return true;
+        }
+
+        public virtual void closeExtends(Extends theExtends)
         {
         }
 
@@ -1496,6 +2315,24 @@ namespace scalysh
         }
 
         public virtual void closeType(Type theType)
+        {
+        }
+
+        public virtual bool openGenericArguments(GenericArguments theGenericArguments)
+        {
+            return true;
+        }
+
+        public virtual void closeGenericArguments(GenericArguments theGenericArguments)
+        {
+        }
+
+        public virtual bool openGenericArgument(GenericArgument theGenericArgument)
+        {
+            return true;
+        }
+
+        public virtual void closeGenericArgument(GenericArgument theGenericArgument)
         {
         }
 
@@ -1620,6 +2457,26 @@ namespace scalysh
         }
     }
 
+    public class Using : Statement
+    {
+        public Name name;
+        public Using(Position start, Position end, Name name)
+        {
+            this.start = start;
+            this.end = end;
+            this.name = name;
+        }
+
+        public override void accept(Visitor visitor)
+        {
+            if (!visitor.openUsing(this))
+                return;
+
+        name.accept(visitor);
+            visitor.closeUsing(this);
+        }
+    }
+
     public class Declaration : Statement
     {
         public override void accept(Visitor visitor)
@@ -1687,16 +2544,36 @@ namespace scalysh
         }
     }
 
-    public class Binding : SyntaxNode
+    public class Thread : Declaration
     {
-        public string name;
-        public TypeAnnotation typeAnnotation;
-        public Expression[] expressions;
-        public Binding(Position start, Position end, string name, TypeAnnotation typeAnnotation, Expression[] expressions)
+        public Binding binding;
+        public Thread(Position start, Position end, Binding binding)
         {
             this.start = start;
             this.end = end;
-            this.name = name;
+            this.binding = binding;
+        }
+
+        public override void accept(Visitor visitor)
+        {
+            if (!visitor.openThread(this))
+                return;
+
+        binding.accept(visitor);
+            visitor.closeThread(this);
+        }
+    }
+
+    public class Binding : SyntaxNode
+    {
+        public Pattern pattern;
+        public TypeAnnotation typeAnnotation;
+        public Expression[] expressions;
+        public Binding(Position start, Position end, Pattern pattern, TypeAnnotation typeAnnotation, Expression[] expressions)
+        {
+            this.start = start;
+            this.end = end;
+            this.pattern = pattern;
             this.typeAnnotation = typeAnnotation;
             this.expressions = expressions;
         }
@@ -1706,6 +2583,7 @@ namespace scalysh
             if (!visitor.openBinding(this))
                 return;
 
+        pattern.accept(visitor);
         if (typeAnnotation != null)
             typeAnnotation.accept(visitor);
             if (expressions != null)
@@ -1717,34 +2595,48 @@ namespace scalysh
         }
     }
 
-    public class Assignment : Declaration
+    public class Pattern : SyntaxNode
     {
-        public Expression[] lValue;
-        public Expression[] rValue;
-        public Assignment(Position start, Position end, Expression[] lValue, Expression[] rValue)
+        public override void accept(Visitor visitor)
+        {
+        }
+    }
+
+    public class IdentifierPattern : Pattern
+    {
+        public Name name;
+        public TypeAnnotation annotationForType;
+        public IdentifierPattern(Position start, Position end, Name name, TypeAnnotation annotationForType)
         {
             this.start = start;
             this.end = end;
-            this.lValue = lValue;
-            this.rValue = rValue;
+            this.name = name;
+            this.annotationForType = annotationForType;
         }
 
         public override void accept(Visitor visitor)
         {
-            if (!visitor.openAssignment(this))
+            if (!visitor.openIdentifierPattern(this))
                 return;
 
-            if (lValue != null)
-            {
-                foreach (Expression node in lValue)
-                    node.accept(visitor);
-            }
-            if (rValue != null)
-            {
-                foreach (Expression node in rValue)
-                    node.accept(visitor);
-            }
-            visitor.closeAssignment(this);
+        name.accept(visitor);
+        if (annotationForType != null)
+            annotationForType.accept(visitor);
+            visitor.closeIdentifierPattern(this);
+        }
+    }
+
+    public class WildcardPattern : Pattern
+    {
+        public WildcardPattern(Position start, Position end)
+        {
+            this.start = start;
+            this.end = end;
+        }
+
+        public override void accept(Visitor visitor)
+        {
+            visitor.visitWildcardPattern(this);
         }
     }
 
@@ -1782,19 +2674,31 @@ namespace scalysh
         }
     }
 
-    public class IdentifierExpression : PrimaryExpression
+    public class NameExpression : PrimaryExpression
     {
-        public string name;
-        public IdentifierExpression(Position start, Position end, string name)
+        public Name name;
+        public GenericArguments generics;
+        public LifeTime lifeTime;
+        public NameExpression(Position start, Position end, Name name, GenericArguments generics, LifeTime lifeTime)
         {
             this.start = start;
             this.end = end;
             this.name = name;
+            this.generics = generics;
+            this.lifeTime = lifeTime;
         }
 
         public override void accept(Visitor visitor)
         {
-            visitor.visitIdentifierExpression(this);
+            if (!visitor.openNameExpression(this))
+                return;
+
+        name.accept(visitor);
+        if (generics != null)
+            generics.accept(visitor);
+        if (lifeTime != null)
+            lifeTime.accept(visitor);
+            visitor.closeNameExpression(this);
         }
     }
 
@@ -1814,9 +2718,131 @@ namespace scalysh
         }
     }
 
-    public class ThisExpression : PrimaryExpression
+    public class If : PrimaryExpression
     {
-        public ThisExpression(Position start, Position end)
+        public Expression condition;
+        public Expression consequent;
+        public Else elseClause;
+        public If(Position start, Position end, Expression condition, Expression consequent, Else elseClause)
+        {
+            this.start = start;
+            this.end = end;
+            this.condition = condition;
+            this.consequent = consequent;
+            this.elseClause = elseClause;
+        }
+
+        public override void accept(Visitor visitor)
+        {
+            if (!visitor.openIf(this))
+                return;
+
+        condition.accept(visitor);
+        consequent.accept(visitor);
+        if (elseClause != null)
+            elseClause.accept(visitor);
+            visitor.closeIf(this);
+        }
+    }
+
+    public class Else : SyntaxNode
+    {
+        public Expression alternative;
+        public Else(Position start, Position end, Expression alternative)
+        {
+            this.start = start;
+            this.end = end;
+            this.alternative = alternative;
+        }
+
+        public override void accept(Visitor visitor)
+        {
+            if (!visitor.openElse(this))
+                return;
+
+        alternative.accept(visitor);
+            visitor.closeElse(this);
+        }
+    }
+
+    public class For : PrimaryExpression
+    {
+        public string index;
+        public TypeAnnotation typeAnnotation;
+        public Expression expression;
+        public Expression code;
+        public For(Position start, Position end, string index, TypeAnnotation typeAnnotation, Expression expression, Expression code)
+        {
+            this.start = start;
+            this.end = end;
+            this.index = index;
+            this.typeAnnotation = typeAnnotation;
+            this.expression = expression;
+            this.code = code;
+        }
+
+        public override void accept(Visitor visitor)
+        {
+            if (!visitor.openFor(this))
+                return;
+
+        if (typeAnnotation != null)
+            typeAnnotation.accept(visitor);
+        expression.accept(visitor);
+        code.accept(visitor);
+            visitor.closeFor(this);
+        }
+    }
+
+    public class While : PrimaryExpression
+    {
+        public Expression condition;
+        public Expression code;
+        public While(Position start, Position end, Expression condition, Expression code)
+        {
+            this.start = start;
+            this.end = end;
+            this.condition = condition;
+            this.code = code;
+        }
+
+        public override void accept(Visitor visitor)
+        {
+            if (!visitor.openWhile(this))
+                return;
+
+        condition.accept(visitor);
+        code.accept(visitor);
+            visitor.closeWhile(this);
+        }
+    }
+
+    public class Do : PrimaryExpression
+    {
+        public Expression code;
+        public Expression condition;
+        public Do(Position start, Position end, Expression code, Expression condition)
+        {
+            this.start = start;
+            this.end = end;
+            this.code = code;
+            this.condition = condition;
+        }
+
+        public override void accept(Visitor visitor)
+        {
+            if (!visitor.openDo(this))
+                return;
+
+        code.accept(visitor);
+        condition.accept(visitor);
+            visitor.closeDo(this);
+        }
+    }
+
+    public class This : PrimaryExpression
+    {
+        public This(Position start, Position end)
         {
             this.start = start;
             this.end = end;
@@ -1824,7 +2850,7 @@ namespace scalysh
 
         public override void accept(Visitor visitor)
         {
-            visitor.visitThisExpression(this);
+            visitor.visitThis(this);
         }
     }
 
@@ -1832,6 +2858,20 @@ namespace scalysh
     {
         public override void accept(Visitor visitor)
         {
+        }
+    }
+
+    public class Catch : Postfix
+    {
+        public Catch(Position start, Position end)
+        {
+            this.start = start;
+            this.end = end;
+        }
+
+        public override void accept(Visitor visitor)
+        {
+            visitor.visitCatch(this);
         }
     }
 
@@ -1853,12 +2893,14 @@ namespace scalysh
 
     public class Subscript : Postfix
     {
-        public ExpressionElement[] expressions;
-        public Subscript(Position start, Position end, ExpressionElement[] expressions)
+        public Expression[] firstItems;
+        public ObjectItem[] additionalItemses;
+        public Subscript(Position start, Position end, Expression[] firstItems, ObjectItem[] additionalItemses)
         {
             this.start = start;
             this.end = end;
-            this.expressions = expressions;
+            this.firstItems = firstItems;
+            this.additionalItemses = additionalItemses;
         }
 
         public override void accept(Visitor visitor)
@@ -1866,43 +2908,70 @@ namespace scalysh
             if (!visitor.openSubscript(this))
                 return;
 
-            if (expressions != null)
+            if (firstItems != null)
             {
-                foreach (ExpressionElement node in expressions)
+                foreach (Expression node in firstItems)
+                    node.accept(visitor);
+            }
+            if (additionalItemses != null)
+            {
+                foreach (ObjectItem node in additionalItemses)
                     node.accept(visitor);
             }
             visitor.closeSubscript(this);
         }
     }
 
-    public class ExpressionElement : SyntaxNode
+    public class As : Postfix
     {
-        public Expression expression;
-        public ExpressionElement(Position start, Position end, Expression expression)
+        public Type typeSpec;
+        public As(Position start, Position end, Type typeSpec)
         {
             this.start = start;
             this.end = end;
-            this.expression = expression;
+            this.typeSpec = typeSpec;
         }
 
         public override void accept(Visitor visitor)
         {
-            if (!visitor.openExpressionElement(this))
+            if (!visitor.openAs(this))
                 return;
 
-        expression.accept(visitor);
-            visitor.closeExpressionElement(this);
+        typeSpec.accept(visitor);
+            visitor.closeAs(this);
+        }
+    }
+
+    public class Is : Postfix
+    {
+        public Type typeSpec;
+        public Is(Position start, Position end, Type typeSpec)
+        {
+            this.start = start;
+            this.end = end;
+            this.typeSpec = typeSpec;
+        }
+
+        public override void accept(Visitor visitor)
+        {
+            if (!visitor.openIs(this))
+                return;
+
+        typeSpec.accept(visitor);
+            visitor.closeIs(this);
         }
     }
 
     public class ObjectExpression : PrimaryExpression
     {
-        public ObjectItem[] items;
-        public ObjectExpression(Position start, Position end, ObjectItem[] items)
+        public Expression[] firstItems;
+        public ObjectItem[] additionalItemses;
+        public ObjectExpression(Position start, Position end, Expression[] firstItems, ObjectItem[] additionalItemses)
         {
             this.start = start;
             this.end = end;
-            this.items = items;
+            this.firstItems = firstItems;
+            this.additionalItemses = additionalItemses;
         }
 
         public override void accept(Visitor visitor)
@@ -1910,9 +2979,14 @@ namespace scalysh
             if (!visitor.openObjectExpression(this))
                 return;
 
-            if (items != null)
+            if (firstItems != null)
             {
-                foreach (ObjectItem node in items)
+                foreach (Expression node in firstItems)
+                    node.accept(visitor);
+            }
+            if (additionalItemses != null)
+            {
+                foreach (ObjectItem node in additionalItemses)
                     node.accept(visitor);
             }
             visitor.closeObjectExpression(this);
@@ -1921,8 +2995,8 @@ namespace scalysh
 
     public class ObjectItem : SyntaxNode
     {
-        public Expression expression;
-        public ObjectItem(Position start, Position end, Expression expression)
+        public Expression[] expression;
+        public ObjectItem(Position start, Position end, Expression[] expression)
         {
             this.start = start;
             this.end = end;
@@ -1934,23 +3008,128 @@ namespace scalysh
             if (!visitor.openObjectItem(this))
                 return;
 
-        expression.accept(visitor);
+            if (expression != null)
+            {
+                foreach (Expression node in expression)
+                    node.accept(visitor);
+            }
             visitor.closeObjectItem(this);
+        }
+    }
+
+    public class SizeOf : PrimaryExpression
+    {
+        public Type typeSpec;
+        public SizeOf(Position start, Position end, Type typeSpec)
+        {
+            this.start = start;
+            this.end = end;
+            this.typeSpec = typeSpec;
+        }
+
+        public override void accept(Visitor visitor)
+        {
+            if (!visitor.openSizeOf(this))
+                return;
+
+        typeSpec.accept(visitor);
+            visitor.closeSizeOf(this);
+        }
+    }
+
+    public class Set : Statement
+    {
+        public Expression[] lValue;
+        public Expression[] rValue;
+        public Set(Position start, Position end, Expression[] lValue, Expression[] rValue)
+        {
+            this.start = start;
+            this.end = end;
+            this.lValue = lValue;
+            this.rValue = rValue;
+        }
+
+        public override void accept(Visitor visitor)
+        {
+            if (!visitor.openSet(this))
+                return;
+
+            if (lValue != null)
+            {
+                foreach (Expression node in lValue)
+                    node.accept(visitor);
+            }
+            if (rValue != null)
+            {
+                foreach (Expression node in rValue)
+                    node.accept(visitor);
+            }
+            visitor.closeSet(this);
+        }
+    }
+
+    public class Break : Statement
+    {
+        public Expression[] lValue;
+        public Break(Position start, Position end, Expression[] lValue)
+        {
+            this.start = start;
+            this.end = end;
+            this.lValue = lValue;
+        }
+
+        public override void accept(Visitor visitor)
+        {
+            if (!visitor.openBreak(this))
+                return;
+
+            if (lValue != null)
+            {
+                foreach (Expression node in lValue)
+                    node.accept(visitor);
+            }
+            visitor.closeBreak(this);
+        }
+    }
+
+    public class Return : Statement
+    {
+        public Expression[] lValue;
+        public Return(Position start, Position end, Expression[] lValue)
+        {
+            this.start = start;
+            this.end = end;
+            this.lValue = lValue;
+        }
+
+        public override void accept(Visitor visitor)
+        {
+            if (!visitor.openReturn(this))
+                return;
+
+            if (lValue != null)
+            {
+                foreach (Expression node in lValue)
+                    node.accept(visitor);
+            }
+            visitor.closeReturn(this);
         }
     }
 
     public class Class : Declaration
     {
         public Name name;
-        public TypeInheritanceClause typeInheritanceClause;
+        public GenericParameters generics;
+        public Extends baseClass;
         public Object contents;
-        public Block body;
-        public Class(Position start, Position end, Name name, TypeInheritanceClause typeInheritanceClause, Object contents, Block body)
+        public Expression body;
+        public Class(Position start, Position end, Name name, GenericParameters generics, Extends baseClass, Object contents, Expression body)
         {
             this.start = start;
             this.end = end;
             this.name = name;
-            this.typeInheritanceClause = typeInheritanceClause;
+            this.generics = generics;
+            this.baseClass = baseClass;
             this.contents = contents;
             this.body = body;
         }
@@ -1961,8 +3140,10 @@ namespace scalysh
                 return;
 
         name.accept(visitor);
-        if (typeInheritanceClause != null)
-            typeInheritanceClause.accept(visitor);
+        if (generics != null)
+            generics.accept(visitor);
+        if (baseClass != null)
+            baseClass.accept(visitor);
         if (contents != null)
             contents.accept(visitor);
         if (body != null)
@@ -2013,10 +3194,36 @@ namespace scalysh
         }
     }
 
-    public class TypeInheritanceClause : SyntaxNode
+    public class GenericParameters : SyntaxNode
     {
-        public Name name;
-        public TypeInheritanceClause(Position start, Position end, Name name)
+        public string name;
+        public GenericParameter[] additionalGenerics;
+        public GenericParameters(Position start, Position end, string name, GenericParameter[] additionalGenerics)
+        {
+            this.start = start;
+            this.end = end;
+            this.name = name;
+            this.additionalGenerics = additionalGenerics;
+        }
+
+        public override void accept(Visitor visitor)
+        {
+            if (!visitor.openGenericParameters(this))
+                return;
+
+            if (additionalGenerics != null)
+            {
+                foreach (GenericParameter node in additionalGenerics)
+                    node.accept(visitor);
+            }
+            visitor.closeGenericParameters(this);
+        }
+    }
+
+    public class GenericParameter : SyntaxNode
+    {
+        public string name;
+        public GenericParameter(Position start, Position end, string name)
         {
             this.start = start;
             this.end = end;
@@ -2025,11 +3232,27 @@ namespace scalysh
 
         public override void accept(Visitor visitor)
         {
-            if (!visitor.openTypeInheritanceClause(this))
+            visitor.visitGenericParameter(this);
+        }
+    }
+
+    public class Extends : SyntaxNode
+    {
+        public Name name;
+        public Extends(Position start, Position end, Name name)
+        {
+            this.start = start;
+            this.end = end;
+            this.name = name;
+        }
+
+        public override void accept(Visitor visitor)
+        {
+            if (!visitor.openExtends(this))
                 return;
 
         name.accept(visitor);
-            visitor.closeTypeInheritanceClause(this);
+            visitor.closeExtends(this);
         }
     }
 
@@ -2125,8 +3348,8 @@ namespace scalysh
         public string name;
         public Object input;
         public TypeAnnotation output;
-        public Block body;
-        public Procedure(Position start, Position end, string name, Object input, TypeAnnotation output, Block body)
+        public Expression[] body;
+        public Procedure(Position start, Position end, string name, Object input, TypeAnnotation output, Expression[] body)
         {
             this.start = start;
             this.end = end;
@@ -2145,20 +3368,23 @@ namespace scalysh
             input.accept(visitor);
         if (output != null)
             output.accept(visitor);
-        if (body != null)
-            body.accept(visitor);
+            if (body != null)
+            {
+                foreach (Expression node in body)
+                    node.accept(visitor);
+            }
             visitor.closeProcedure(this);
         }
     }
 
     public class TypeAnnotation : SyntaxNode
     {
-        public Type name;
-        public TypeAnnotation(Position start, Position end, Type name)
+        public Type typeSpec;
+        public TypeAnnotation(Position start, Position end, Type typeSpec)
         {
             this.start = start;
             this.end = end;
-            this.name = name;
+            this.typeSpec = typeSpec;
         }
 
         public override void accept(Visitor visitor)
@@ -2166,7 +3392,7 @@ namespace scalysh
             if (!visitor.openTypeAnnotation(this))
                 return;
 
-        name.accept(visitor);
+        typeSpec.accept(visitor);
             visitor.closeTypeAnnotation(this);
         }
     }
@@ -2174,13 +3400,15 @@ namespace scalysh
     public class Type : SyntaxNode
     {
         public string name;
+        public GenericArguments generics;
         public TypePostfix[] postfixes;
         public LifeTime lifeTime;
-        public Type(Position start, Position end, string name, TypePostfix[] postfixes, LifeTime lifeTime)
+        public Type(Position start, Position end, string name, GenericArguments generics, TypePostfix[] postfixes, LifeTime lifeTime)
         {
             this.start = start;
             this.end = end;
             this.name = name;
+            this.generics = generics;
             this.postfixes = postfixes;
             this.lifeTime = lifeTime;
         }
@@ -2190,6 +3418,8 @@ namespace scalysh
             if (!visitor.openType(this))
                 return;
 
+        if (generics != null)
+            generics.accept(visitor);
             if (postfixes != null)
             {
                 foreach (TypePostfix node in postfixes)
@@ -2198,6 +3428,53 @@ namespace scalysh
         if (lifeTime != null)
             lifeTime.accept(visitor);
             visitor.closeType(this);
+        }
+    }
+
+    public class GenericArguments : SyntaxNode
+    {
+        public Type typeSpec;
+        public GenericArgument[] additionalGenerics;
+        public GenericArguments(Position start, Position end, Type typeSpec, GenericArgument[] additionalGenerics)
+        {
+            this.start = start;
+            this.end = end;
+            this.typeSpec = typeSpec;
+            this.additionalGenerics = additionalGenerics;
+        }
+
+        public override void accept(Visitor visitor)
+        {
+            if (!visitor.openGenericArguments(this))
+                return;
+
+        typeSpec.accept(visitor);
+            if (additionalGenerics != null)
+            {
+                foreach (GenericArgument node in additionalGenerics)
+                    node.accept(visitor);
+            }
+            visitor.closeGenericArguments(this);
+        }
+    }
+
+    public class GenericArgument : SyntaxNode
+    {
+        public Type typeSpec;
+        public GenericArgument(Position start, Position end, Type typeSpec)
+        {
+            this.start = start;
+            this.end = end;
+            this.typeSpec = typeSpec;
+        }
+
+        public override void accept(Visitor visitor)
+        {
+            if (!visitor.openGenericArgument(this))
+                return;
+
+        typeSpec.accept(visitor);
+            visitor.closeGenericArgument(this);
         }
     }
 
@@ -2224,12 +3501,12 @@ namespace scalysh
 
     public class IndexedType : TypePostfix
     {
-        public Type key;
-        public IndexedType(Position start, Position end, Type key)
+        public Type typeSpec;
+        public IndexedType(Position start, Position end, Type typeSpec)
         {
             this.start = start;
             this.end = end;
-            this.key = key;
+            this.typeSpec = typeSpec;
         }
 
         public override void accept(Visitor visitor)
@@ -2237,8 +3514,8 @@ namespace scalysh
             if (!visitor.openIndexedType(this))
                 return;
 
-        if (key != null)
-            key.accept(visitor);
+        if (typeSpec != null)
+            typeSpec.accept(visitor);
             visitor.closeIndexedType(this);
         }
     }
