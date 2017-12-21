@@ -1,0 +1,51 @@
+class Compiler {
+    function compileFiles(options: Options) {
+        let files options.files
+        mutable sources ""
+        for (file in files) {
+            let source: string@sources = File.readToString(file)
+                catch FileNotFoundError() {
+                    print("Can't read file: "file"\n") catch _ {}
+                    return
+                }
+                
+            sources.push(source)
+        }
+
+        mutable program Program(options.outputName)
+        let index: number 0
+        for (source in sources) {
+            let module: Module?@program = parseUnit(Path.getFileNameWithoutExtension(files[index]), source)
+                catch ParserCompilerError(e) {
+                    print ("Syntax error in "files[index]" at "e.line", "e.column"\n") catch _ {}
+                    return
+                }
+
+            program.modules.Add(module)
+            set index: index + 1
+        }
+
+        for (item in modules) {
+            set item.parent: program }
+
+        mutable modelVisitor: ModelVisitor$ = new ModelVisitor()
+        program.accept(modelVisitor)
+        
+        let model: Model = modelVisitor.model
+        let msg: VarString$ = new VarString(model.name)
+        msg.append("\n")
+        let message: string$ = new string (msg)
+        print(message) catch _ return
+    }
+
+    function parseUnit(moduleName: string, text: string): Module throws CompilerError {
+        mutable parser Parser(moduleName, text)
+
+        let module: Module = parser.parseModule()
+            catch ParserError(e) {
+                throw parser(e.line, e.column)
+            }
+
+        module
+    }
+}

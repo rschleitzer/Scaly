@@ -35,7 +35,7 @@ namespace scalysh
                         index++;
                     }
                     catch (ParserException e) {
-                        System.Console.WriteLine($"Syntax error in {files[index]} at {e.line}, {e.column}");
+                        System.Console.WriteLine($"Syntax error in {fileName} at {e.line}, {e.column}");
                         return;
                     }
                 }
@@ -60,7 +60,7 @@ namespace scalysh
             }
             catch (ParserException e)
             {
-                throw new CompilerException(e.line, e.column);
+                throw new CompilerException(fileName, e.line, e.column);
             }
         }
     }

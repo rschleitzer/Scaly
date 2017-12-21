@@ -42,14 +42,11 @@ namespace scalysh
         }
     }
 
-    public class CompilerException : Exception
+    public class CompilerException : ParserException
     {
-        public int line;
-        public int column;
-        public CompilerException(int line, int column)
+        public CompilerException(string file, int line, int column)
+            :base(file, line, column)
         {
-            this.line = line;
-            this.column = column;
         }
     }
 }

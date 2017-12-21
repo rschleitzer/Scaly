@@ -23,6 +23,7 @@ namespace scalysh
         string thisKeyword = "this";
         string sizeofKeyword = "sizeof";
         string catchKeyword = "catch";
+        string throwsKeyword = "throws";
         string asKeyword = "as";
         string isKeyword = "is";
         string ifKeyword = "if";
@@ -37,6 +38,7 @@ namespace scalysh
         string breakKeyword = "break";
         string continueKeyword = "continue";
         string returnKeyword = "return";
+        string throwKeyword = "throw";
 
         string leftCurly = "{";
         string rightCurly = "}";
@@ -180,6 +182,12 @@ namespace scalysh
 
             {
                 Return node = parseReturn();
+                if (node != null)
+                    return node;
+            }
+
+            {
+                Throw node = parseThrow();
                 if (node != null)
                     return node;
             }
@@ -950,6 +958,12 @@ namespace scalysh
             else
                 return null;
 
+            bool successLeftParen2 = lexer.parsePunctuation(leftParen);
+            if (successLeftParen2)
+                lexer.advance();
+            else
+                throw new ParserException(fileName, lexer.line, lexer.column);
+
             string index = lexer.parseIdentifier();
             if ((index != null) && isIdentifier(index))
                 lexer.advance();
@@ -958,17 +972,21 @@ namespace scalysh
 
             TypeAnnotation typeAnnotation = parseTypeAnnotation();
 
-            bool successIn4 = lexer.parseKeyword(inKeyword);
-            if (successIn4)
+            bool successIn5 = lexer.parseKeyword(inKeyword);
+            if (successIn5)
                 lexer.advance();
             else
                 throw new ParserException(fileName, lexer.line, lexer.column);
 
-            Expression expression = parseExpression();
-            if (expression == null)
+            Expression[] expression = parseExpressionList();
+
+            bool successRightParen7 = lexer.parsePunctuation(rightParen);
+            if (successRightParen7)
+                lexer.advance();
+            else
                 throw new ParserException(fileName, lexer.line, lexer.column);
 
-            Expression code = parseExpression();
+            Block code = parseBlock();
             if (code == null)
                 throw new ParserException(fileName, lexer.line, lexer.column);
 
@@ -978,7 +996,11 @@ namespace scalysh
 
             if (typeAnnotation != null)
                 typeAnnotation.parent = ret;
-            expression.parent = ret;
+            if (expression != null)
+            {
+                foreach (Expression item in expression)
+                    item.parent = ret;
+            }
             code.parent = ret;
 
             return ret;
@@ -1164,12 +1186,65 @@ namespace scalysh
             else
                 return null;
 
-            Type typeSpec = parseType();
+            CatchPattern typeSpec = parseCatchPattern();
             if (typeSpec == null)
                 throw new ParserException(fileName, lexer.line, lexer.column);
 
-            bool successLeftParen3 = lexer.parsePunctuation(leftParen);
-            if (successLeftParen3)
+            Expression handler = parseExpression();
+
+            Position end = lexer.getPosition();
+
+            Catch ret = new Catch(start, end, typeSpec, handler);
+
+            typeSpec.parent = ret;
+            if (handler != null)
+                handler.parent = ret;
+
+            return ret;
+        }
+
+        public CatchPattern parseCatchPattern()
+        {
+            {
+                WildCardCatchPattern node = parseWildCardCatchPattern();
+                if (node != null)
+                    return node;
+            }
+
+            {
+                NameCatchPattern node = parseNameCatchPattern();
+                if (node != null)
+                    return node;
+            }
+
+            return null;
+        }
+
+        public WildCardCatchPattern parseWildCardCatchPattern()
+        {
+            Position start = lexer.getPreviousPosition();
+
+            WildcardPattern pattern = parseWildcardPattern();
+            if (pattern == null)
+                return null;
+
+            Position end = lexer.getPosition();
+
+            WildCardCatchPattern ret = new WildCardCatchPattern(start, end, pattern);
+
+            pattern.parent = ret;
+
+            return ret;
+        }
+
+        public NameCatchPattern parseNameCatchPattern()
+        {
+            Position start = lexer.getPreviousPosition();
+
+            Name member = parseName();
+
+            bool successLeftParen2 = lexer.parsePunctuation(leftParen);
+            if (successLeftParen2)
                 lexer.advance();
             else
                 throw new ParserException(fileName, lexer.line, lexer.column);
@@ -1178,21 +1253,18 @@ namespace scalysh
             if ((errorName != null) && isIdentifier(errorName))
                 lexer.advance();
 
-            bool successRightParen5 = lexer.parsePunctuation(rightParen);
-            if (successRightParen5)
+            bool successRightParen4 = lexer.parsePunctuation(rightParen);
+            if (successRightParen4)
                 lexer.advance();
             else
                 throw new ParserException(fileName, lexer.line, lexer.column);
 
-            Expression handler = parseExpression();
-
             Position end = lexer.getPosition();
 
-            Catch ret = new Catch(start, end, typeSpec, errorName, handler);
+            NameCatchPattern ret = new NameCatchPattern(start, end, member, errorName);
 
-            typeSpec.parent = ret;
-            if (handler != null)
-                handler.parent = ret;
+            if (member != null)
+                member.parent = ret;
 
             return ret;
         }
@@ -1521,15 +1593,40 @@ namespace scalysh
             else
                 return null;
 
-            Expression[] lValue = parseExpressionList();
+            Expression[] expression = parseExpressionList();
 
             Position end = lexer.getPosition();
 
-            Return ret = new Return(start, end, lValue);
+            Return ret = new Return(start, end, expression);
 
-            if (lValue != null)
+            if (expression != null)
             {
-                foreach (Expression item in lValue)
+                foreach (Expression item in expression)
+                    item.parent = ret;
+            }
+
+            return ret;
+        }
+
+        public Throw parseThrow()
+        {
+            Position start = lexer.getPreviousPosition();
+
+            bool successThrow1 = lexer.parseKeyword(throwKeyword);
+            if (successThrow1)
+                lexer.advance();
+            else
+                return null;
+
+            Expression[] expression = parseExpressionList();
+
+            Position end = lexer.getPosition();
+
+            Throw ret = new Throw(start, end, expression);
+
+            if (expression != null)
+            {
+                foreach (Expression item in expression)
                     item.parent = ret;
             }
 
@@ -1915,18 +2012,22 @@ namespace scalysh
 
             TypeAnnotation output = parseTypeAnnotation();
 
+            Throws throwsClause = parseThrows();
+
             Block body = parseBlock();
             if (body == null)
                 throw new ParserException(fileName, lexer.line, lexer.column);
 
             Position end = lexer.getPosition();
 
-            Procedure ret = new Procedure(start, end, name, input, output, body);
+            Procedure ret = new Procedure(start, end, name, input, output, throwsClause, body);
 
             if (input != null)
                 input.parent = ret;
             if (output != null)
                 output.parent = ret;
+            if (throwsClause != null)
+                throwsClause.parent = ret;
             body.parent = ret;
 
             return ret;
@@ -1984,6 +2085,29 @@ namespace scalysh
             }
             if (lifeTime != null)
                 lifeTime.parent = ret;
+
+            return ret;
+        }
+
+        public Throws parseThrows()
+        {
+            Position start = lexer.getPreviousPosition();
+
+            bool successThrows1 = lexer.parseKeyword(throwsKeyword);
+            if (successThrows1)
+                lexer.advance();
+            else
+                return null;
+
+            Type throwsType = parseType();
+            if (throwsType == null)
+                throw new ParserException(fileName, lexer.line, lexer.column);
+
+            Position end = lexer.getPosition();
+
+            Throws ret = new Throws(start, end, throwsType);
+
+            throwsType.parent = ret;
 
             return ret;
         }
@@ -2312,6 +2436,9 @@ namespace scalysh
             if (id == catchKeyword)
                 return false;
 
+            if (id == throwsKeyword)
+                return false;
+
             if (id == asKeyword)
                 return false;
 
@@ -2352,6 +2479,9 @@ namespace scalysh
                 return false;
 
             if (id == returnKeyword)
+                return false;
+
+            if (id == throwKeyword)
                 return false;
 
             return true;
@@ -2583,6 +2713,24 @@ namespace scalysh
         {
         }
 
+        public virtual bool openWildCardCatchPattern(WildCardCatchPattern theWildCardCatchPattern)
+        {
+            return true;
+        }
+
+        public virtual void closeWildCardCatchPattern(WildCardCatchPattern theWildCardCatchPattern)
+        {
+        }
+
+        public virtual bool openNameCatchPattern(NameCatchPattern theNameCatchPattern)
+        {
+            return true;
+        }
+
+        public virtual void closeNameCatchPattern(NameCatchPattern theNameCatchPattern)
+        {
+        }
+
         public virtual void visitMemberAccess(MemberAccess theMemberAccess)
         {
         }
@@ -2673,6 +2821,15 @@ namespace scalysh
         }
 
         public virtual void closeReturn(Return theReturn)
+        {
+        }
+
+        public virtual bool openThrow(Throw theThrow)
+        {
+            return true;
+        }
+
+        public virtual void closeThrow(Throw theThrow)
         {
         }
 
@@ -2789,6 +2946,15 @@ namespace scalysh
         }
 
         public virtual void closeType(Type theType)
+        {
+        }
+
+        public virtual bool openThrows(Throws theThrows)
+        {
+            return true;
+        }
+
+        public virtual void closeThrows(Throws theThrows)
         {
         }
 
@@ -3389,9 +3555,9 @@ namespace scalysh
     {
         public string index;
         public TypeAnnotation typeAnnotation;
-        public Expression expression;
-        public Expression code;
-        public For(Position start, Position end, string index, TypeAnnotation typeAnnotation, Expression expression, Expression code)
+        public Expression[] expression;
+        public Block code;
+        public For(Position start, Position end, string index, TypeAnnotation typeAnnotation, Expression[] expression, Block code)
         {
             this.start = start;
             this.end = end;
@@ -3408,7 +3574,11 @@ namespace scalysh
 
         if (typeAnnotation != null)
             typeAnnotation.accept(visitor);
-        expression.accept(visitor);
+            if (expression != null)
+            {
+                foreach (Expression node in expression)
+                    node.accept(visitor);
+            }
         code.accept(visitor);
             visitor.closeFor(this);
         }
@@ -3491,15 +3661,13 @@ namespace scalysh
 
     public class Catch : Postfix
     {
-        public Type typeSpec;
-        public string errorName;
+        public CatchPattern typeSpec;
         public Expression handler;
-        public Catch(Position start, Position end, Type typeSpec, string errorName, Expression handler)
+        public Catch(Position start, Position end, CatchPattern typeSpec, Expression handler)
         {
             this.start = start;
             this.end = end;
             this.typeSpec = typeSpec;
-            this.errorName = errorName;
             this.handler = handler;
         }
 
@@ -3512,6 +3680,56 @@ namespace scalysh
         if (handler != null)
             handler.accept(visitor);
             visitor.closeCatch(this);
+        }
+    }
+
+    public class CatchPattern : SyntaxNode
+    {
+        public override void accept(Visitor visitor)
+        {
+        }
+    }
+
+    public class WildCardCatchPattern : CatchPattern
+    {
+        public WildcardPattern pattern;
+        public WildCardCatchPattern(Position start, Position end, WildcardPattern pattern)
+        {
+            this.start = start;
+            this.end = end;
+            this.pattern = pattern;
+        }
+
+        public override void accept(Visitor visitor)
+        {
+            if (!visitor.openWildCardCatchPattern(this))
+                return;
+
+        pattern.accept(visitor);
+            visitor.closeWildCardCatchPattern(this);
+        }
+    }
+
+    public class NameCatchPattern : CatchPattern
+    {
+        public Name member;
+        public string errorName;
+        public NameCatchPattern(Position start, Position end, Name member, string errorName)
+        {
+            this.start = start;
+            this.end = end;
+            this.member = member;
+            this.errorName = errorName;
+        }
+
+        public override void accept(Visitor visitor)
+        {
+            if (!visitor.openNameCatchPattern(this))
+                return;
+
+        if (member != null)
+            member.accept(visitor);
+            visitor.closeNameCatchPattern(this);
         }
     }
 
@@ -3762,12 +3980,12 @@ namespace scalysh
 
     public class Return : Statement
     {
-        public Expression[] lValue;
-        public Return(Position start, Position end, Expression[] lValue)
+        public Expression[] expression;
+        public Return(Position start, Position end, Expression[] expression)
         {
             this.start = start;
             this.end = end;
-            this.lValue = lValue;
+            this.expression = expression;
         }
 
         public override void accept(Visitor visitor)
@@ -3775,12 +3993,36 @@ namespace scalysh
             if (!visitor.openReturn(this))
                 return;
 
-            if (lValue != null)
+            if (expression != null)
             {
-                foreach (Expression node in lValue)
+                foreach (Expression node in expression)
                     node.accept(visitor);
             }
             visitor.closeReturn(this);
+        }
+    }
+
+    public class Throw : Statement
+    {
+        public Expression[] expression;
+        public Throw(Position start, Position end, Expression[] expression)
+        {
+            this.start = start;
+            this.end = end;
+            this.expression = expression;
+        }
+
+        public override void accept(Visitor visitor)
+        {
+            if (!visitor.openThrow(this))
+                return;
+
+            if (expression != null)
+            {
+                foreach (Expression node in expression)
+                    node.accept(visitor);
+            }
+            visitor.closeThrow(this);
         }
     }
 
@@ -4040,14 +4282,16 @@ namespace scalysh
         public string name;
         public Object input;
         public TypeAnnotation output;
+        public Throws throwsClause;
         public Block body;
-        public Procedure(Position start, Position end, string name, Object input, TypeAnnotation output, Block body)
+        public Procedure(Position start, Position end, string name, Object input, TypeAnnotation output, Throws throwsClause, Block body)
         {
             this.start = start;
             this.end = end;
             this.name = name;
             this.input = input;
             this.output = output;
+            this.throwsClause = throwsClause;
             this.body = body;
         }
 
@@ -4060,6 +4304,8 @@ namespace scalysh
             input.accept(visitor);
         if (output != null)
             output.accept(visitor);
+        if (throwsClause != null)
+            throwsClause.accept(visitor);
         body.accept(visitor);
             visitor.closeProcedure(this);
         }
@@ -4116,6 +4362,26 @@ namespace scalysh
         if (lifeTime != null)
             lifeTime.accept(visitor);
             visitor.closeType(this);
+        }
+    }
+
+    public class Throws : SyntaxNode
+    {
+        public Type throwsType;
+        public Throws(Position start, Position end, Type throwsType)
+        {
+            this.start = start;
+            this.end = end;
+            this.throwsType = throwsType;
+        }
+
+        public override void accept(Visitor visitor)
+        {
+            if (!visitor.openThrows(this))
+                return;
+
+        throwsType.accept(visitor);
+            visitor.closeThrows(this);
         }
     }
 

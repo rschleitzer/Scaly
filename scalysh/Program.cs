@@ -4,11 +4,10 @@
     {
         static int Main(string[] arguments)
         {
+            Options options = null;
             try
             {
-                Options options = Options.ParseArguments(arguments);
-                Compiler.compileFiles(options);
-                return 0;
+                options = Options.ParseArguments(arguments);
             }
             catch (InvalidOptionException e)
             {
@@ -26,6 +25,17 @@
                 try { System.Console.WriteLine("No files to compile."); } catch { return -4; }
                 return -5;
             }
+
+            try
+            {
+                Compiler.compileFiles(options);
+            }
+            catch (CompilerException e)
+            {
+                var message = $"Compiler error at line {e.line}, column {e.column}.";
+                try { System.Console.WriteLine("No files to compile."); } catch { return -4; }
+            }
+            return 0;
         }
     }
 }

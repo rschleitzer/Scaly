@@ -22,6 +22,7 @@
         <content link = Break
         <content link = Continue
         <content link = Return
+        <content link = Throw
 
     <syntax id = Using                                          base = Statement
         <content link = using
@@ -141,11 +142,13 @@
 
     <syntax id = For                                            base = PrimaryExpression
         <content link = for
+        <content link = leftParen
         <content identifier                                     property = index
         <content link = TypeAnnotation                 optional property = typeAnnotation
         <content link = in
-        <content link = Expression                              property = expression
-        <content link = Expression                              property = code
+        <content link = Expression            multiple          property = expression
+        <content link = rightParen
+        <content link = Block                                   property = code
 
     <syntax id = While                                          base = PrimaryExpression
         <content link = while
@@ -175,11 +178,21 @@
 
     <syntax id = Catch                                          base = Postfix
         <content link = catch
-        <content link = Type                                    property = typeSpec
+        <content link = CatchPattern                            property = typeSpec
+        <content link = Expression                     optional property = handler
+
+    <syntax id = CatchPattern                          abstract
+        <content link = WildCardCatchPattern
+        <content link = NameCatchPattern
+
+    <syntax id = WildCardCatchPattern                           base = CatchPattern
+        <content link = WildcardPattern                         property = pattern
+
+    <syntax id = NameCatchPattern                               base = CatchPattern
+        <content link = Name                           optional property = member
         <content link = leftParen
         <content identifier                            optional property = errorName
         <content link = rightParen
-        <content link = Expression                     optional property = handler
 
     <syntax id = MemberAccess                                   base = Postfix
         <content link = dot
@@ -231,7 +244,11 @@
 
     <syntax id = Return                                         base = Statement
         <content link = return
-        <content link = Expression            multiple          property = lValue
+        <content link = Expression            multiple          property = expression
+
+    <syntax id = Throw                                          base = Statement
+        <content link = throw
+        <content link = Expression            multiple          property = expression
 
     <syntax id = Class                                          base = Declaration
         <content link = class
@@ -290,6 +307,7 @@
         <content identifier                                     property = name
         <content link = Object                         optional property = input
         <content link = TypeAnnotation                 optional property = output
+        <content link = Throws                         optional property = throwsClause
         <content link = Block                                   property = body
 
     <syntax id = TypeAnnotation
@@ -301,6 +319,10 @@
         <content link = GenericArguments               optional property = generics
         <content link = TypePostfix           multiple optional property = postfixes
         <content link = LifeTime                       optional property = lifeTime
+
+    <syntax id = Throws
+        <content link = throws
+        <content link = Type                                    property = throwsType
 
     <syntax id = GenericArguments
         <content link = leftBracket
@@ -358,6 +380,7 @@
     <keyword id = this
     <keyword id = sizeof
     <keyword id = catch
+    <keyword id = throws
     <keyword id = as
     <keyword id = is
     <keyword id = if
@@ -372,6 +395,7 @@
     <keyword id = break
     <keyword id = continue
     <keyword id = return
+    <keyword id = throw
 
     <punctuation id = leftCurly         value = "{"
     <punctuation id = rightCurly        value = "}"
