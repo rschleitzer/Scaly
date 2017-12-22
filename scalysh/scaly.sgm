@@ -7,7 +7,11 @@
         <content link = File                  multiple          property = files
 
     <syntax id = File                                           top
-        <content link = Statement             multiple optional property = statements
+        <content link = Segment               multiple optional property = statements
+
+    <syntax id = Segment                      multiple
+        <content link = Statement                               property = Step
+        <content link = semicolon                      optional
 
     <syntax id = Block                                          base = PrimaryExpression
         <content link = leftCurly
@@ -397,6 +401,7 @@
     <keyword id = return
     <keyword id = throw
 
+    <punctuation id = semicolon         value = ";"
     <punctuation id = leftCurly         value = "{"
     <punctuation id = rightCurly        value = "}"
     <punctuation id = leftParen         value = "("

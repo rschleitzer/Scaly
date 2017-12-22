@@ -40,6 +40,7 @@ namespace scalysh
         string returnKeyword = "return";
         string throwKeyword = "throw";
 
+        string semicolon = ";";
         string leftCurly = "{";
         string rightCurly = "}";
         string leftParen = "(";
@@ -67,7 +68,7 @@ namespace scalysh
         {
             Position start = lexer.getPreviousPosition();
 
-            Statement[] statements = parseStatementList();
+            Segment[] statements = parseSegmentList();
             if (statements != null)
             {
                 if (!isAtEnd())
@@ -83,9 +84,51 @@ namespace scalysh
 
             if (statements != null)
             {
-                foreach (Statement item in statements)
+                foreach (Segment item in statements)
                     item.parent = ret;
             }
+
+            return ret;
+        }
+
+        public Segment[] parseSegmentList()
+        {
+            List<Segment> ret = null;
+            while (true)
+            {
+                Segment node = parseSegment();
+                if (node == null)
+                    break;
+
+                if (ret == null)
+                    ret = new List<Segment>();
+
+                ret.Add(node);
+            }
+
+            if (ret != null)
+                return ret.ToArray();
+            else
+                return null;
+        }
+
+        public Segment parseSegment()
+        {
+            Position start = lexer.getPreviousPosition();
+
+            Statement Step = parseStatement();
+            if (Step == null)
+                return null;
+
+            bool successSemicolon2 = lexer.parsePunctuation(semicolon);
+            if (successSemicolon2)
+                lexer.advance();
+
+            Position end = lexer.getPosition();
+
+            Segment ret = new Segment(start, end, Step);
+
+            Step.parent = ret;
 
             return ret;
         }
@@ -2508,6 +2551,15 @@ namespace scalysh
         {
         }
 
+        public virtual bool openSegment(Segment theSegment)
+        {
+            return true;
+        }
+
+        public virtual void closeSegment(Segment theSegment)
+        {
+        }
+
         public virtual bool openBlock(Block theBlock)
         {
             return true;
@@ -3044,8 +3096,8 @@ namespace scalysh
 
     public class File : SyntaxNode
     {
-        public Statement[] statements;
-        public File(Position start, Position end, Statement[] statements)
+        public Segment[] statements;
+        public File(Position start, Position end, Segment[] statements)
         {
             this.start = start;
             this.end = end;
@@ -3059,10 +3111,30 @@ namespace scalysh
 
             if (statements != null)
             {
-                foreach (Statement node in statements)
+                foreach (Segment node in statements)
                     node.accept(visitor);
             }
             visitor.closeFile(this);
+        }
+    }
+
+    public class Segment : SyntaxNode
+    {
+        public Statement Step;
+        public Segment(Position start, Position end, Statement Step)
+        {
+            this.start = start;
+            this.end = end;
+            this.Step = Step;
+        }
+
+        public override void accept(Visitor visitor)
+        {
+            if (!visitor.openSegment(this))
+                return;
+
+        Step.accept(visitor);
+            visitor.closeSegment(this);
         }
     }
 
