@@ -4,19 +4,15 @@
 This chapter describes the Scaly Programming Language. 
 
 The Scaly Programming Language is defined by the structure and semantics of the 
-<<expressions,expressions>> which can be used to write a Scaly Program.
+<<statements,statements>> which can be used to write a Scaly Program.
 
 On the lowest level, a Scaly program consists of a sequence of characters. 
 The <<lexical, lexical structure>> of the Scaly Programming Language 
 describes how the characters of the program code are combined to form a 
 sequence of <<tokens,tokens>> and <<whitespace,whitespaces>>.
 
-The structure of the <<expressions,expressions>> is defined by the 
+The structure of the <<statements,statements>> is defined by the 
 <<grammar,grammar>> of the Scaly Programming Language.
-
-The expressions
-its <<typesystem,type system>>, 
-its <<lexical,lexical structure>> and .
 
 The documentation you are reading sometimes refers to the reference 
 implementation of the Scaly Programming Language, but an alternative 
@@ -26,8 +22,9 @@ reference implementation does not have.
 
 Particularly, the <<standardlibrary,standard library>> which comes with the 
 reference implementation is not part of the Scaly Programming Language 
-in a strict sense. Nevertheless, some elements like basic types of this 
-standard library like basic types are used in the code samples that are provided.
+in a strict sense. Nevertheless, some elements like basic types, operators, 
+and functions of this standard library like basic types are used 
+in the code samples that are provided.
 
 [[files]]
 === Program files
@@ -38,12 +35,13 @@ program into an https://llvm.org/docs/LangRef.html[LLVM assembly language] modul
 which can be processed further using the 
 https://llvm.org/docs/CommandGuide/index.html[LLVM tools].
 
-A Scaly _program_ consists of one or more files which contain the program code. 
-The Scaly compiler compiles a Scaly program to a piece of executable code. 
-How this code can be executed depends of the implementation of the Scaly compiler. 
-A file is an object from which a Scaly compiler can read a sequence of characters 
-and parse them into <<expressions,expressions>>. 
-A file must contain zero or more complete expressions.
+A Scaly <<program, program>> consists of one or more <<files, files>> 
+which contain the program code. The Scaly compiler compiles a Scaly program 
+to a piece of executable code. How this code can be executed depends 
+on the implementation of the Scaly compiler. A file is an object from which a 
+Scaly compiler can read a sequence of characters 
+and parse them into <<statements,statements>>. 
+A file must contain zero or more complete statements.
 
 [[lexical]]
 === Lexical structure
@@ -106,7 +104,7 @@ Scaly Programming Language is expressed in terms of tokens. Tokens can be
 * <<identifiers,identifiers>>.
 
 [[literals]]
-===== Literals
+==== Literals
 
 Literals are used to write constant values directly into the program. 
 
@@ -114,14 +112,22 @@ A numeric literal starts with a digit, followed by zero or more digits,
 optionally one decimal point, optional fraction digits, an optional exponent 
 consisting of the exponent character (`E` or `e`) and exponent digits. 
 
+If the first two characters are `0x`, the literal is a hexadecimal literal.
+The digits that may follow may include the characters `a`, `b`, `c`, `d`, `e`, `f`,
+ `A`, `B`, `C`, `D`, `E`, and `F`. No decimal point or exponent is allowed for 
+ hexadecimal literals.
+
 Some lexically valid numeric literals:
 
   42
   1.
   0.22e4567
   1E6
+  0xFB04
+  0x123abc
 
-(A minus sign is not part of a number literal. It can be implemented as a function.)
+(A minus sign is not part of a number literal. It is typically implemented as 
+a unary operator.)
 
 String literals start with a double quote and end with a double quote: 
 
@@ -153,7 +159,7 @@ must be escaped in a character literal.
   '\0' // The NUL character
 
 [[punctuationandkeywords]]
-===== Punctuation and
+==== Punctuation and Keywords
 
 Punctuation characters are used (alongside keywords) for building the structure 
 of expressions.
@@ -164,39 +170,55 @@ of expressions.
 The complete list of punctuation characters and keywords is contained in the 
 <<scalygrammar,Grammar Reference>>.
 
-[[keywords]]
-===== Keywords
-
- The keywords are `namespace`, `using`, `class`, `extends`, 
-`function`, `if`, `else`, `switch`, `case`, `default`, `catch`, `for`,
-`in`, `while`, `do`, `return`, `throw`, `break`, `throws`, `static`,
-`let`, `mutable`, `is`, `as`, `enum`, `this`.
-
 [[identifiers]]
-===== Identifiers
+==== Identifiers
 
 All character combinations which are not white space, literals, punctuation,
 or keywords, are identifiers. Some examples:
 
-  foo
-  +
-  **
-  <
-  >>?
-  -quack+
-  Roäc++
+  WindyShore
+  foo_bar
+  baz
 
 Identifiers are used as names.
 
-[[expressions]]
-=== Expressions
+[[operatortokens]]
+==== Operator
 
-A Scaly program consists of _expressions_. Expressions are the building blocks 
-of a Scaly program. An expression can perform computation work and either 
+All combinations of operator characters are operators. The operator characters are 
+`+`, `-`, `*`, `/`, `=`, `%`, `&`, `|`, `^`, `~`, `<`, and `>`. Some examples:
+
+  +
+  **
+  <
+  >>
+
+Operators are used as names like <<identifiers, identifiers>>.
+
+[[program]]
+=== The Program
+
+The Scaly compiler processes a _program_ which contains all code which is to be 
+compiled in a single compiler run to an executable program, a library, or code 
+which is compiled just-in-time (JITted). A program consists of zero or more 
+<<files, files>>.
+
+[[Files]]
+=== Files
+
+A _file_ is a single sequence of characters which contains zero or more characters 
+which make up zero or more complete <<statements, statements>>.
+
+[[statements]]
+=== Statements
+
+A Scaly program consists of _statements_. Statements are the building blocks 
+of a Scaly program. A statement can perform computation work and either 
 return the result of the computation to the enclosing expression or bind it 
 to an identifier which can be referred to in the current scope.
-The expressions can be written into one or more files. A file can contain 
-zero or more complete expressions.
+
+[[expressions]]
+=== Expressions
 
 An expression performs actual computation work and usually returns a value 
 as a result of that work. There are numerous forms of expressions in Scaly 
@@ -619,7 +641,7 @@ meta grammar given in the <<metagrammar,previous section>>. Please note that
 a character sequence complying to the grammar is not necessarily a valid 
 Scaly program. All valid Scaly programs, howver, comply with this grammar. 
 The semantic requirements for the expressions to form a valid Scaly program 
-are described in the <<expressions,Expressions>> section.
+are described in the <<program,Program>> section and the sections that follow.
 
 include::../scalysh/scaly.sgm[tabsize=4]
 

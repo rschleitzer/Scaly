@@ -95,7 +95,7 @@ class Scaly.Lexer(text: string)
                 return (Identifier(operation)) }
 
             switch (text[position]) {
-                case '/', '=', '-', '+', '!', '*', '%', '<', '>', '&', '|', '^', '~' {
+                case '+', '-', '*', '/', '=', '%', '&', '|', '^', '~', '<', '>' {
                     set operation : operation + text[position] }
 
                 default {

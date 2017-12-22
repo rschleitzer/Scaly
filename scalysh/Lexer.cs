@@ -120,7 +120,7 @@ namespace scalysh
 
                 switch (text[position])
                 {
-                    case '/': case '=': case '-': case '+': case '!': case '*': case '%': case '<': case '>': case '&': case '|': case '^': case '~':
+                    case '+': case '-': case '*': case '/': case '=': case '%': case '&': case '|': case '^': case '~': case '<': case '>':
                         operation = operation + text[position];
                         break;
 
