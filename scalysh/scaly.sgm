@@ -9,7 +9,7 @@
     <syntax id = File                                           top
         <content link = Statement             multiple optional property = statements
 
-    <syntax id = Block                                          base = PrimaryExpression
+    <syntax id = Block                                          base = Expression
         <content link = leftCurly
         <content link = Statement             multiple          property = statements
         <content link = rightCurly
@@ -24,17 +24,16 @@
         <content link = Constructor
         <content link = Method
         <content link = Function
-        <content link = Expression
         <content link = Set
         <content link = Break
         <content link = Continue
         <content link = Return
         <content link = Throw
+        <content link = Calculation
 
     <syntax id = Using                                          base = Statement
         <content link = using
         <content link = Path                                    property = path
-        <content link = semicolon                      optional
 
     <syntax id = Let                                            base = Statement
         <content link = let
@@ -55,8 +54,7 @@
     <syntax id = Binding
         <content link = Pattern                                 property = pattern
         <content link = TypeAnnotation                 optional property = typeAnnotation
-        <content link = Expression            multiple          property = expressions
-        <content link = semicolon                      optional
+        <content link = Calculation                             property = calculation
 
    <syntax id = Pattern                                abstract
         <content link = WildcardPattern
@@ -73,11 +71,18 @@
     <syntax id = ExpressionPattern                              base = Pattern
         <content link = Expression                              property = expression
 
-    <syntax id = Expression                   multiple          base = Statement
-        <content link = PrimaryExpression                       property = primary
+    <syntax id = Calculation                                    base = Statement
+        <content link = Operation                               property = operation
+        <content link = semicolon                      optional
+    
+    <syntax id = Operation
+        <content link = Operator              multiple          property = op
+
+    <syntax id = Operator                     multiple          base = Statement
+        <content link = Expression                              property = primary
         <content link = Postfix               multiple optional property = postfixes
 
-    <syntax id = PrimaryExpression            multiple abstract
+    <syntax id = Expression                   multiple abstract
         <content link = Name
         <content link = Constant
         <content link = If
@@ -90,18 +95,18 @@
         <content link = Block
         <content link = SizeOf
 
-    <syntax id = Name                                    base = PrimaryExpression
+    <syntax id = Name                                           base = Expression
         <content link = Path                                    property = path
         <content link = GenericArguments               optional property = generics
         <content link = LifeTime                       optional property = lifeTime
 
-    <syntax id = Constant                                base = PrimaryExpression
+    <syntax id = Constant                                base = Expression
         <content literal                                        property = literal
 
-    <syntax id = If                                             base = PrimaryExpression
+    <syntax id = If                                             base = Expression
         <content link = if
         <content link = leftParen
-        <content link = Expression            multiple          property = condition
+        <content link = Operation                               property = condition
         <content link = rightParen
         <content link = Block                                   property = consequent
         <content link = Else                           optional property = elseClause
@@ -110,10 +115,10 @@
         <content link = else
         <content link = Block                                   property = alternative
 
-    <syntax id = Switch                                         base = PrimaryExpression
+    <syntax id = Switch                                         base = Expression
         <content link = switch
         <content link = leftParen
-        <content link = Expression            multiple          property = condition
+        <content link = Operation                               property = condition
         <content link = rightParen
         <content link = leftCurly
         <content link = SwitchCase            multiple          property = cases
@@ -139,32 +144,32 @@
         <content link = comma
         <content link = Pattern                                 property = pattern
 
-    <syntax id = For                                            base = PrimaryExpression
+    <syntax id = For                                            base = Expression
         <content link = for
         <content link = leftParen
         <content identifier                                     property = index
         <content link = TypeAnnotation                 optional property = typeAnnotation
         <content link = in
-        <content link = Expression            multiple          property = expression
+        <content link = Operation                               property = operation
         <content link = rightParen
         <content link = Block                                   property = code
 
-    <syntax id = While                                          base = PrimaryExpression
+    <syntax id = While                                          base = Expression
         <content link = while
         <content link = leftParen
-        <content link = Expression            multiple          property = condition
+        <content link = Operation                               property = condition
         <content link = rightParen
         <content link = Block                                   property = code
 
-    <syntax id = Do                                             base = PrimaryExpression
+    <syntax id = Do                                             base = Expression
         <content link = do
         <content link = Block                                   property = code
         <content link = while
         <content link = leftParen
-        <content link = Expression            multiple          property = condition
+        <content link = Operation                               property = condition
         <content link = rightParen
 
-    <syntax id = This                                           base = PrimaryExpression
+    <syntax id = This                                           base = Expression
         <content link = this
 
     <syntax id = Postfix                      multiple abstract
@@ -178,7 +183,7 @@
     <syntax id = Catch                                          base = Postfix
         <content link = catch
         <content link = CatchPattern                            property = typeSpec
-        <content link = Expression                     optional property = handler
+        <content link = Block                                   property = handler
 
     <syntax id = CatchPattern                          abstract
         <content link = WildCardCatchPattern
@@ -199,7 +204,7 @@
 
     <syntax id = Subscript                                      base = Postfix
         <content link = leftBracket
-        <content link = Expression            multiple optional property = firstItems
+        <content link = Operation                               property = firstItems
         <content link = ObjectItem            multiple optional property = additionalItemses
         <content link = rightBracket
 
@@ -214,44 +219,40 @@
     <syntax id = Unwrap                                         base = Postfix
         <content link = exclamation
 
-    <syntax id = ObjectExpression                               base = PrimaryExpression
+    <syntax id = ObjectExpression                               base = Expression
         <content link = leftParen
-        <content link = Expression            multiple optional property = firstItems
-        <content link = ObjectItem            multiple optional property = additionalItemses
+        <content link = Operation                      optional property = firstOp
+        <content link = ObjectItem            multiple optional property = additionalOps
         <content link = rightParen
 
     <syntax id = ObjectItem                   multiple
         <content link = comma
-        <content link = Expression            multiple optional property = expression
+        <content link = Operation                               property = operation
 
-    <syntax id = SizeOf                                         base = PrimaryExpression
+    <syntax id = SizeOf                                         base = Expression
         <content link = sizeof
         <content link = Type                                    property = typeSpec
 
     <syntax id = Set                                            base = Statement
         <content link = set
-        <content link = Expression            multiple          property = lValue
+        <content link = Operation                               property = lValue
         <content link = colon
-        <content link = Expression            multiple          property = rValue
-        <content link = semicolon                      optional
+        <content link = Calculation                             property = rValue
 
     <syntax id = Break                                          base = Statement
         <content link = break
-        <content link = Expression            multiple          property = lValue
-        <content link = semicolon                      optional
+        <content link = Calculation                    optional property = result
 
     <syntax id = Continue                                       base = Statement
         <content link = continue
 
     <syntax id = Return                                         base = Statement
         <content link = return
-        <content link = Expression            multiple          property = expression
-        <content link = semicolon                      optional
+        <content link = Calculation                    optional property = result
 
     <syntax id = Throw                                          base = Statement
         <content link = throw
-        <content link = Expression            multiple          property = expression
-        <content link = semicolon                      optional
+        <content link = Calculation                             property = exception
 
     <syntax id = Class                                          base = Statement
         <content link = class

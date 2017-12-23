@@ -1,7 +1,7 @@
 class Compiler {
     function compileFiles(options: Options) {
-        let files options.files
-        mutable sources ""
+        let files options.files;
+        mutable sources "";
         for (file in files) {
             let source: string@sources = File.readToString(file)
                 catch FileNotFoundError() {
@@ -35,7 +35,7 @@ class Compiler {
         let msg: VarString$ = new VarString(model.name)
         msg.append("\n")
         let message: string$ = new string (msg)
-        print(message) catch _ return
+        print(message) catch _ { return }
     }
 
     function parseUnit(moduleName: string, text: string): Module throws CompilerError {
