@@ -9,27 +9,22 @@
     <syntax id = File                                           top
         <content link = Statement             multiple optional property = statements
 
-    <syntax id = Block                                          base = Expression
-        <content link = leftCurly
-        <content link = Statement             multiple optional property = statements
-        <content link = rightCurly
-
     <syntax id = Statement                    multiple abstract
         <content link = Using
         <content link = Let
-        <content link = Mutable
         <content link = Var
+        <content link = Mutable
         <content link = Thread
+        <content link = Set
+        <content link = Calculation
+        <content link = Function
         <content link = Class
         <content link = Constructor
         <content link = Method
-        <content link = Function
-        <content link = Set
         <content link = Break
         <content link = Continue
         <content link = Return
         <content link = Throw
-        <content link = Calculation
 
     <syntax id = Using                                          base = Statement
         <content link = using
@@ -39,12 +34,12 @@
         <content link = let
         <content link = Binding                                 property = binding
 
-    <syntax id = Mutable                                        base = Statement
-        <content link = mutable
-        <content link = Binding                                 property = binding
-
     <syntax id = Var                                            base = Statement
         <content link = var
+        <content link = Binding                                 property = binding
+
+    <syntax id = Mutable                                        base = Statement
+        <content link = mutable
         <content link = Binding                                 property = binding
 
     <syntax id = Thread                                         base = Statement
@@ -52,24 +47,15 @@
         <content link = Binding                                 property = binding
 
     <syntax id = Binding
-        <content link = Pattern                                 property = pattern
+        <content link = Path                                    property = path
         <content link = TypeAnnotation                 optional property = typeAnnotation
         <content link = Calculation                             property = calculation
 
-   <syntax id = Pattern                                abstract
-        <content link = WildcardPattern
-        <content link = IdentifierPattern
-        <content link = ExpressionPattern
-
-    <syntax id = IdentifierPattern                              base = Pattern
-        <content link = Path                                    property = path
-        <content link = TypeAnnotation                 optional property = annotationForType
-
-    <syntax id = WildcardPattern                                base = Pattern
-        <content link = underscore
-
-    <syntax id = ExpressionPattern                              base = Pattern
-        <content link = Expression                              property = expression
+    <syntax id = Set                                            base = Statement
+        <content link = set
+        <content link = Operation                               property = lValue
+        <content link = colon
+        <content link = Calculation                             property = rValue
 
     <syntax id = Calculation                                    base = Statement
         <content link = Operation                               property = operation
@@ -83,6 +69,7 @@
         <content link = Postfix               multiple optional property = postfixes
 
     <syntax id = Expression                   multiple abstract
+        <content link = Block
         <content link = Name
         <content link = Constant
         <content link = If
@@ -92,15 +79,19 @@
         <content link = Do
         <content link = This
         <content link = ObjectExpression
-        <content link = Block
         <content link = SizeOf
+
+    <syntax id = Block                                          base = Expression
+        <content link = leftCurly
+        <content link = Statement             multiple optional property = statements
+        <content link = rightCurly
 
     <syntax id = Name                                           base = Expression
         <content link = Path                                    property = path
         <content link = GenericArguments               optional property = generics
         <content link = LifeTime                       optional property = lifeTime
 
-    <syntax id = Constant                                base = Expression
+    <syntax id = Constant                                       base = Expression
         <content literal                                        property = literal
 
     <syntax id = If                                             base = Expression
@@ -134,15 +125,29 @@
 
     <syntax id = ItemCaseLabel                                  base = CaseLabel
         <content link = case
-        <content link = Pattern                                 property = pattern
+        <content link = CasePattern                             property = pattern
         <content link = CaseItem              multiple optional property = additionalPatterns
+
+    <syntax id = CasePattern                            abstract
+        <content link = WildcardPattern
+        <content link = IdentifierPattern
+        <content link = ConstantPattern
+
+    <syntax id = IdentifierPattern                              base = CasePattern
+        <content link = Path                                    property = path
+
+    <syntax id = ConstantPattern                                base = CasePattern
+        <content link = Constant                                property = constant
+
+    <syntax id = WildcardPattern                                base = CasePattern
+        <content link = underscore
 
     <syntax id = DefaultCaseLabel                               base = CaseLabel
         <content link = default
 
     <syntax id = CaseItem                     multiple
         <content link = comma
-        <content link = Pattern                                 property = pattern
+        <content link = CasePattern                             property = pattern
 
     <syntax id = For                                            base = Expression
         <content link = for
@@ -232,12 +237,6 @@
     <syntax id = SizeOf                                         base = Expression
         <content link = sizeof
         <content link = Type                                    property = typeSpec
-
-    <syntax id = Set                                            base = Statement
-        <content link = set
-        <content link = Operation                               property = lValue
-        <content link = colon
-        <content link = Calculation                             property = rValue
 
     <syntax id = Break                                          base = Statement
         <content link = break

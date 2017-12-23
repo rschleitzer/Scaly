@@ -91,37 +91,6 @@ namespace scalysh
             return ret;
         }
 
-        public Block parseBlock()
-        {
-            Position start = lexer.getPreviousPosition();
-
-            bool successLeftCurly1 = lexer.parsePunctuation(leftCurly);
-            if (successLeftCurly1)
-                lexer.advance();
-            else
-                return null;
-
-            Statement[] statements = parseStatementList();
-
-            bool successRightCurly3 = lexer.parsePunctuation(rightCurly);
-            if (successRightCurly3)
-                lexer.advance();
-            else
-                throw new ParserException(fileName, lexer.line, lexer.column);
-
-            Position end = lexer.getPosition();
-
-            Block ret = new Block(start, end, statements);
-
-            if (statements != null)
-            {
-                foreach (Statement item in statements)
-                    item.parent = ret;
-            }
-
-            return ret;
-        }
-
         public Statement[] parseStatementList()
         {
             List<Statement> ret = null;
@@ -158,19 +127,37 @@ namespace scalysh
             }
 
             {
-                Mutable node = parseMutable();
-                if (node != null)
-                    return node;
-            }
-
-            {
                 Var node = parseVar();
                 if (node != null)
                     return node;
             }
 
             {
+                Mutable node = parseMutable();
+                if (node != null)
+                    return node;
+            }
+
+            {
                 Thread node = parseThread();
+                if (node != null)
+                    return node;
+            }
+
+            {
+                Set node = parseSet();
+                if (node != null)
+                    return node;
+            }
+
+            {
+                Calculation node = parseCalculation();
+                if (node != null)
+                    return node;
+            }
+
+            {
+                Function node = parseFunction();
                 if (node != null)
                     return node;
             }
@@ -189,18 +176,6 @@ namespace scalysh
 
             {
                 Method node = parseMethod();
-                if (node != null)
-                    return node;
-            }
-
-            {
-                Function node = parseFunction();
-                if (node != null)
-                    return node;
-            }
-
-            {
-                Set node = parseSet();
                 if (node != null)
                     return node;
             }
@@ -225,12 +200,6 @@ namespace scalysh
 
             {
                 Throw node = parseThrow();
-                if (node != null)
-                    return node;
-            }
-
-            {
-                Calculation node = parseCalculation();
                 if (node != null)
                     return node;
             }
@@ -284,29 +253,6 @@ namespace scalysh
             return ret;
         }
 
-        public Mutable parseMutable()
-        {
-            Position start = lexer.getPreviousPosition();
-
-            bool successMutable1 = lexer.parseKeyword(mutableKeyword);
-            if (successMutable1)
-                lexer.advance();
-            else
-                return null;
-
-            Binding binding = parseBinding();
-            if (binding == null)
-                throw new ParserException(fileName, lexer.line, lexer.column);
-
-            Position end = lexer.getPosition();
-
-            Mutable ret = new Mutable(start, end, binding);
-
-            binding.parent = ret;
-
-            return ret;
-        }
-
         public Var parseVar()
         {
             Position start = lexer.getPreviousPosition();
@@ -324,6 +270,29 @@ namespace scalysh
             Position end = lexer.getPosition();
 
             Var ret = new Var(start, end, binding);
+
+            binding.parent = ret;
+
+            return ret;
+        }
+
+        public Mutable parseMutable()
+        {
+            Position start = lexer.getPreviousPosition();
+
+            bool successMutable1 = lexer.parseKeyword(mutableKeyword);
+            if (successMutable1)
+                lexer.advance();
+            else
+                return null;
+
+            Binding binding = parseBinding();
+            if (binding == null)
+                throw new ParserException(fileName, lexer.line, lexer.column);
+
+            Position end = lexer.getPosition();
+
+            Mutable ret = new Mutable(start, end, binding);
 
             binding.parent = ret;
 
@@ -357,8 +326,8 @@ namespace scalysh
         {
             Position start = lexer.getPreviousPosition();
 
-            Pattern pattern = parsePattern();
-            if (pattern == null)
+            Path path = parsePath();
+            if (path == null)
                 return null;
 
             TypeAnnotation typeAnnotation = parseTypeAnnotation();
@@ -369,9 +338,9 @@ namespace scalysh
 
             Position end = lexer.getPosition();
 
-            Binding ret = new Binding(start, end, pattern, typeAnnotation, calculation);
+            Binding ret = new Binding(start, end, path, typeAnnotation, calculation);
 
-            pattern.parent = ret;
+            path.parent = ret;
             if (typeAnnotation != null)
                 typeAnnotation.parent = ret;
             calculation.parent = ret;
@@ -379,81 +348,36 @@ namespace scalysh
             return ret;
         }
 
-        public Pattern parsePattern()
-        {
-            {
-                WildcardPattern node = parseWildcardPattern();
-                if (node != null)
-                    return node;
-            }
-
-            {
-                IdentifierPattern node = parseIdentifierPattern();
-                if (node != null)
-                    return node;
-            }
-
-            {
-                ExpressionPattern node = parseExpressionPattern();
-                if (node != null)
-                    return node;
-            }
-
-            return null;
-        }
-
-        public IdentifierPattern parseIdentifierPattern()
+        public Set parseSet()
         {
             Position start = lexer.getPreviousPosition();
 
-            Path path = parsePath();
-            if (path == null)
-                return null;
-
-            TypeAnnotation annotationForType = parseTypeAnnotation();
-
-            Position end = lexer.getPosition();
-
-            IdentifierPattern ret = new IdentifierPattern(start, end, path, annotationForType);
-
-            path.parent = ret;
-            if (annotationForType != null)
-                annotationForType.parent = ret;
-
-            return ret;
-        }
-
-        public WildcardPattern parseWildcardPattern()
-        {
-            Position start = lexer.getPreviousPosition();
-
-            bool successUnderscore1 = lexer.parsePunctuation(underscore);
-            if (successUnderscore1)
+            bool successSet1 = lexer.parseKeyword(setKeyword);
+            if (successSet1)
                 lexer.advance();
             else
                 return null;
 
-            Position end = lexer.getPosition();
+            Operation lValue = parseOperation();
+            if (lValue == null)
+                throw new ParserException(fileName, lexer.line, lexer.column);
 
-            WildcardPattern ret = new WildcardPattern(start, end);
+            bool successColon3 = lexer.parsePunctuation(colon);
+            if (successColon3)
+                lexer.advance();
+            else
+                throw new ParserException(fileName, lexer.line, lexer.column);
 
-
-            return ret;
-        }
-
-        public ExpressionPattern parseExpressionPattern()
-        {
-            Position start = lexer.getPreviousPosition();
-
-            Expression expression = parseExpression();
-            if (expression == null)
-                return null;
+            Calculation rValue = parseCalculation();
+            if (rValue == null)
+                throw new ParserException(fileName, lexer.line, lexer.column);
 
             Position end = lexer.getPosition();
 
-            ExpressionPattern ret = new ExpressionPattern(start, end, expression);
+            Set ret = new Set(start, end, lValue, rValue);
 
-            expression.parent = ret;
+            lValue.parent = ret;
+            rValue.parent = ret;
 
             return ret;
         }
@@ -569,6 +493,12 @@ namespace scalysh
         public Expression parseExpression()
         {
             {
+                Block node = parseBlock();
+                if (node != null)
+                    return node;
+            }
+
+            {
                 Name node = parseName();
                 if (node != null)
                     return node;
@@ -623,18 +553,43 @@ namespace scalysh
             }
 
             {
-                Block node = parseBlock();
-                if (node != null)
-                    return node;
-            }
-
-            {
                 SizeOf node = parseSizeOf();
                 if (node != null)
                     return node;
             }
 
             return null;
+        }
+
+        public Block parseBlock()
+        {
+            Position start = lexer.getPreviousPosition();
+
+            bool successLeftCurly1 = lexer.parsePunctuation(leftCurly);
+            if (successLeftCurly1)
+                lexer.advance();
+            else
+                return null;
+
+            Statement[] statements = parseStatementList();
+
+            bool successRightCurly3 = lexer.parsePunctuation(rightCurly);
+            if (successRightCurly3)
+                lexer.advance();
+            else
+                throw new ParserException(fileName, lexer.line, lexer.column);
+
+            Position end = lexer.getPosition();
+
+            Block ret = new Block(start, end, statements);
+
+            if (statements != null)
+            {
+                foreach (Statement item in statements)
+                    item.parent = ret;
+            }
+
+            return ret;
         }
 
         public Name parseName()
@@ -873,7 +828,7 @@ namespace scalysh
             else
                 return null;
 
-            Pattern pattern = parsePattern();
+            CasePattern pattern = parseCasePattern();
             if (pattern == null)
                 throw new ParserException(fileName, lexer.line, lexer.column);
 
@@ -889,6 +844,81 @@ namespace scalysh
                 foreach (CaseItem item in additionalPatterns)
                     item.parent = ret;
             }
+
+            return ret;
+        }
+
+        public CasePattern parseCasePattern()
+        {
+            {
+                WildcardPattern node = parseWildcardPattern();
+                if (node != null)
+                    return node;
+            }
+
+            {
+                IdentifierPattern node = parseIdentifierPattern();
+                if (node != null)
+                    return node;
+            }
+
+            {
+                ConstantPattern node = parseConstantPattern();
+                if (node != null)
+                    return node;
+            }
+
+            return null;
+        }
+
+        public IdentifierPattern parseIdentifierPattern()
+        {
+            Position start = lexer.getPreviousPosition();
+
+            Path path = parsePath();
+            if (path == null)
+                return null;
+
+            Position end = lexer.getPosition();
+
+            IdentifierPattern ret = new IdentifierPattern(start, end, path);
+
+            path.parent = ret;
+
+            return ret;
+        }
+
+        public ConstantPattern parseConstantPattern()
+        {
+            Position start = lexer.getPreviousPosition();
+
+            Constant constant = parseConstant();
+            if (constant == null)
+                return null;
+
+            Position end = lexer.getPosition();
+
+            ConstantPattern ret = new ConstantPattern(start, end, constant);
+
+            constant.parent = ret;
+
+            return ret;
+        }
+
+        public WildcardPattern parseWildcardPattern()
+        {
+            Position start = lexer.getPreviousPosition();
+
+            bool successUnderscore1 = lexer.parsePunctuation(underscore);
+            if (successUnderscore1)
+                lexer.advance();
+            else
+                return null;
+
+            Position end = lexer.getPosition();
+
+            WildcardPattern ret = new WildcardPattern(start, end);
+
 
             return ret;
         }
@@ -942,7 +972,7 @@ namespace scalysh
             else
                 return null;
 
-            Pattern pattern = parsePattern();
+            CasePattern pattern = parseCasePattern();
             if (pattern == null)
                 throw new ParserException(fileName, lexer.line, lexer.column);
 
@@ -1493,40 +1523,6 @@ namespace scalysh
             SizeOf ret = new SizeOf(start, end, typeSpec);
 
             typeSpec.parent = ret;
-
-            return ret;
-        }
-
-        public Set parseSet()
-        {
-            Position start = lexer.getPreviousPosition();
-
-            bool successSet1 = lexer.parseKeyword(setKeyword);
-            if (successSet1)
-                lexer.advance();
-            else
-                return null;
-
-            Operation lValue = parseOperation();
-            if (lValue == null)
-                throw new ParserException(fileName, lexer.line, lexer.column);
-
-            bool successColon3 = lexer.parsePunctuation(colon);
-            if (successColon3)
-                lexer.advance();
-            else
-                throw new ParserException(fileName, lexer.line, lexer.column);
-
-            Calculation rValue = parseCalculation();
-            if (rValue == null)
-                throw new ParserException(fileName, lexer.line, lexer.column);
-
-            Position end = lexer.getPosition();
-
-            Set ret = new Set(start, end, lValue, rValue);
-
-            lValue.parent = ret;
-            rValue.parent = ret;
 
             return ret;
         }
@@ -2491,15 +2487,6 @@ namespace scalysh
         {
         }
 
-        public virtual bool openBlock(Block theBlock)
-        {
-            return true;
-        }
-
-        public virtual void closeBlock(Block theBlock)
-        {
-        }
-
         public virtual bool openUsing(Using theUsing)
         {
             return true;
@@ -2518,21 +2505,21 @@ namespace scalysh
         {
         }
 
-        public virtual bool openMutable(Mutable theMutable)
-        {
-            return true;
-        }
-
-        public virtual void closeMutable(Mutable theMutable)
-        {
-        }
-
         public virtual bool openVar(Var theVar)
         {
             return true;
         }
 
         public virtual void closeVar(Var theVar)
+        {
+        }
+
+        public virtual bool openMutable(Mutable theMutable)
+        {
+            return true;
+        }
+
+        public virtual void closeMutable(Mutable theMutable)
         {
         }
 
@@ -2554,25 +2541,12 @@ namespace scalysh
         {
         }
 
-        public virtual bool openIdentifierPattern(IdentifierPattern theIdentifierPattern)
+        public virtual bool openSet(Set theSet)
         {
             return true;
         }
 
-        public virtual void closeIdentifierPattern(IdentifierPattern theIdentifierPattern)
-        {
-        }
-
-        public virtual void visitWildcardPattern(WildcardPattern theWildcardPattern)
-        {
-        }
-
-        public virtual bool openExpressionPattern(ExpressionPattern theExpressionPattern)
-        {
-            return true;
-        }
-
-        public virtual void closeExpressionPattern(ExpressionPattern theExpressionPattern)
+        public virtual void closeSet(Set theSet)
         {
         }
 
@@ -2600,6 +2574,15 @@ namespace scalysh
         }
 
         public virtual void closeOperator(Operator theOperator)
+        {
+        }
+
+        public virtual bool openBlock(Block theBlock)
+        {
+            return true;
+        }
+
+        public virtual void closeBlock(Block theBlock)
         {
         }
 
@@ -2658,6 +2641,28 @@ namespace scalysh
         }
 
         public virtual void closeItemCaseLabel(ItemCaseLabel theItemCaseLabel)
+        {
+        }
+
+        public virtual bool openIdentifierPattern(IdentifierPattern theIdentifierPattern)
+        {
+            return true;
+        }
+
+        public virtual void closeIdentifierPattern(IdentifierPattern theIdentifierPattern)
+        {
+        }
+
+        public virtual bool openConstantPattern(ConstantPattern theConstantPattern)
+        {
+            return true;
+        }
+
+        public virtual void closeConstantPattern(ConstantPattern theConstantPattern)
+        {
+        }
+
+        public virtual void visitWildcardPattern(WildcardPattern theWildcardPattern)
         {
         }
 
@@ -2791,15 +2796,6 @@ namespace scalysh
         }
 
         public virtual void closeSizeOf(SizeOf theSizeOf)
-        {
-        }
-
-        public virtual bool openSet(Set theSet)
-        {
-            return true;
-        }
-
-        public virtual void closeSet(Set theSet)
         {
         }
 
@@ -3067,30 +3063,6 @@ namespace scalysh
         }
     }
 
-    public class Block : Expression
-    {
-        public Statement[] statements;
-        public Block(Position start, Position end, Statement[] statements)
-        {
-            this.start = start;
-            this.end = end;
-            this.statements = statements;
-        }
-
-        public override void accept(Visitor visitor)
-        {
-            if (!visitor.openBlock(this))
-                return;
-
-            if (statements != null)
-            {
-                foreach (Statement node in statements)
-                    node.accept(visitor);
-            }
-            visitor.closeBlock(this);
-        }
-    }
-
     public class Statement : SyntaxNode
     {
         public override void accept(Visitor visitor)
@@ -3138,26 +3110,6 @@ namespace scalysh
         }
     }
 
-    public class Mutable : Statement
-    {
-        public Binding binding;
-        public Mutable(Position start, Position end, Binding binding)
-        {
-            this.start = start;
-            this.end = end;
-            this.binding = binding;
-        }
-
-        public override void accept(Visitor visitor)
-        {
-            if (!visitor.openMutable(this))
-                return;
-
-        binding.accept(visitor);
-            visitor.closeMutable(this);
-        }
-    }
-
     public class Var : Statement
     {
         public Binding binding;
@@ -3175,6 +3127,26 @@ namespace scalysh
 
         binding.accept(visitor);
             visitor.closeVar(this);
+        }
+    }
+
+    public class Mutable : Statement
+    {
+        public Binding binding;
+        public Mutable(Position start, Position end, Binding binding)
+        {
+            this.start = start;
+            this.end = end;
+            this.binding = binding;
+        }
+
+        public override void accept(Visitor visitor)
+        {
+            if (!visitor.openMutable(this))
+                return;
+
+        binding.accept(visitor);
+            visitor.closeMutable(this);
         }
     }
 
@@ -3200,14 +3172,14 @@ namespace scalysh
 
     public class Binding : SyntaxNode
     {
-        public Pattern pattern;
+        public Path path;
         public TypeAnnotation typeAnnotation;
         public Calculation calculation;
-        public Binding(Position start, Position end, Pattern pattern, TypeAnnotation typeAnnotation, Calculation calculation)
+        public Binding(Position start, Position end, Path path, TypeAnnotation typeAnnotation, Calculation calculation)
         {
             this.start = start;
             this.end = end;
-            this.pattern = pattern;
+            this.path = path;
             this.typeAnnotation = typeAnnotation;
             this.calculation = calculation;
         }
@@ -3217,7 +3189,7 @@ namespace scalysh
             if (!visitor.openBinding(this))
                 return;
 
-        pattern.accept(visitor);
+        path.accept(visitor);
         if (typeAnnotation != null)
             typeAnnotation.accept(visitor);
         calculation.accept(visitor);
@@ -3225,68 +3197,26 @@ namespace scalysh
         }
     }
 
-    public class Pattern : SyntaxNode
+    public class Set : Statement
     {
-        public override void accept(Visitor visitor)
-        {
-        }
-    }
-
-    public class IdentifierPattern : Pattern
-    {
-        public Path path;
-        public TypeAnnotation annotationForType;
-        public IdentifierPattern(Position start, Position end, Path path, TypeAnnotation annotationForType)
+        public Operation lValue;
+        public Calculation rValue;
+        public Set(Position start, Position end, Operation lValue, Calculation rValue)
         {
             this.start = start;
             this.end = end;
-            this.path = path;
-            this.annotationForType = annotationForType;
+            this.lValue = lValue;
+            this.rValue = rValue;
         }
 
         public override void accept(Visitor visitor)
         {
-            if (!visitor.openIdentifierPattern(this))
+            if (!visitor.openSet(this))
                 return;
 
-        path.accept(visitor);
-        if (annotationForType != null)
-            annotationForType.accept(visitor);
-            visitor.closeIdentifierPattern(this);
-        }
-    }
-
-    public class WildcardPattern : Pattern
-    {
-        public WildcardPattern(Position start, Position end)
-        {
-            this.start = start;
-            this.end = end;
-        }
-
-        public override void accept(Visitor visitor)
-        {
-            visitor.visitWildcardPattern(this);
-        }
-    }
-
-    public class ExpressionPattern : Pattern
-    {
-        public Expression expression;
-        public ExpressionPattern(Position start, Position end, Expression expression)
-        {
-            this.start = start;
-            this.end = end;
-            this.expression = expression;
-        }
-
-        public override void accept(Visitor visitor)
-        {
-            if (!visitor.openExpressionPattern(this))
-                return;
-
-        expression.accept(visitor);
-            visitor.closeExpressionPattern(this);
+        lValue.accept(visitor);
+        rValue.accept(visitor);
+            visitor.closeSet(this);
         }
     }
 
@@ -3365,6 +3295,30 @@ namespace scalysh
     {
         public override void accept(Visitor visitor)
         {
+        }
+    }
+
+    public class Block : Expression
+    {
+        public Statement[] statements;
+        public Block(Position start, Position end, Statement[] statements)
+        {
+            this.start = start;
+            this.end = end;
+            this.statements = statements;
+        }
+
+        public override void accept(Visitor visitor)
+        {
+            if (!visitor.openBlock(this))
+                return;
+
+            if (statements != null)
+            {
+                foreach (Statement node in statements)
+                    node.accept(visitor);
+            }
+            visitor.closeBlock(this);
         }
     }
 
@@ -3518,9 +3472,9 @@ namespace scalysh
 
     public class ItemCaseLabel : CaseLabel
     {
-        public Pattern pattern;
+        public CasePattern pattern;
         public CaseItem[] additionalPatterns;
-        public ItemCaseLabel(Position start, Position end, Pattern pattern, CaseItem[] additionalPatterns)
+        public ItemCaseLabel(Position start, Position end, CasePattern pattern, CaseItem[] additionalPatterns)
         {
             this.start = start;
             this.end = end;
@@ -3543,6 +3497,67 @@ namespace scalysh
         }
     }
 
+    public class CasePattern : SyntaxNode
+    {
+        public override void accept(Visitor visitor)
+        {
+        }
+    }
+
+    public class IdentifierPattern : CasePattern
+    {
+        public Path path;
+        public IdentifierPattern(Position start, Position end, Path path)
+        {
+            this.start = start;
+            this.end = end;
+            this.path = path;
+        }
+
+        public override void accept(Visitor visitor)
+        {
+            if (!visitor.openIdentifierPattern(this))
+                return;
+
+        path.accept(visitor);
+            visitor.closeIdentifierPattern(this);
+        }
+    }
+
+    public class ConstantPattern : CasePattern
+    {
+        public Constant constant;
+        public ConstantPattern(Position start, Position end, Constant constant)
+        {
+            this.start = start;
+            this.end = end;
+            this.constant = constant;
+        }
+
+        public override void accept(Visitor visitor)
+        {
+            if (!visitor.openConstantPattern(this))
+                return;
+
+        constant.accept(visitor);
+            visitor.closeConstantPattern(this);
+        }
+    }
+
+    public class WildcardPattern : CasePattern
+    {
+        public WildcardPattern(Position start, Position end)
+        {
+            this.start = start;
+            this.end = end;
+        }
+
+        public override void accept(Visitor visitor)
+        {
+            visitor.visitWildcardPattern(this);
+        }
+    }
+
     public class DefaultCaseLabel : CaseLabel
     {
         public DefaultCaseLabel(Position start, Position end)
@@ -3559,8 +3574,8 @@ namespace scalysh
 
     public class CaseItem : SyntaxNode
     {
-        public Pattern pattern;
-        public CaseItem(Position start, Position end, Pattern pattern)
+        public CasePattern pattern;
+        public CaseItem(Position start, Position end, CasePattern pattern)
         {
             this.start = start;
             this.end = end;
@@ -3908,29 +3923,6 @@ namespace scalysh
 
         typeSpec.accept(visitor);
             visitor.closeSizeOf(this);
-        }
-    }
-
-    public class Set : Statement
-    {
-        public Operation lValue;
-        public Calculation rValue;
-        public Set(Position start, Position end, Operation lValue, Calculation rValue)
-        {
-            this.start = start;
-            this.end = end;
-            this.lValue = lValue;
-            this.rValue = rValue;
-        }
-
-        public override void accept(Visitor visitor)
-        {
-            if (!visitor.openSet(this))
-                return;
-
-        lValue.accept(visitor);
-        rValue.accept(visitor);
-            visitor.closeSet(this);
         }
     }
 
