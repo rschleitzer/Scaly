@@ -68,7 +68,7 @@ namespace scalysh
         {
             Position start = lexer.getPreviousPosition();
 
-            Segment[] statements = parseSegmentList();
+            Statement[] statements = parseStatementList();
             if (statements != null)
             {
                 if (!isAtEnd())
@@ -84,51 +84,9 @@ namespace scalysh
 
             if (statements != null)
             {
-                foreach (Segment item in statements)
+                foreach (Statement item in statements)
                     item.parent = ret;
             }
-
-            return ret;
-        }
-
-        public Segment[] parseSegmentList()
-        {
-            List<Segment> ret = null;
-            while (true)
-            {
-                Segment node = parseSegment();
-                if (node == null)
-                    break;
-
-                if (ret == null)
-                    ret = new List<Segment>();
-
-                ret.Add(node);
-            }
-
-            if (ret != null)
-                return ret.ToArray();
-            else
-                return null;
-        }
-
-        public Segment parseSegment()
-        {
-            Position start = lexer.getPreviousPosition();
-
-            Statement Step = parseStatement();
-            if (Step == null)
-                return null;
-
-            bool successSemicolon2 = lexer.parsePunctuation(semicolon);
-            if (successSemicolon2)
-                lexer.advance();
-
-            Position end = lexer.getPosition();
-
-            Segment ret = new Segment(start, end, Step);
-
-            Step.parent = ret;
 
             return ret;
         }
@@ -194,7 +152,49 @@ namespace scalysh
             }
 
             {
-                Declaration node = parseDeclaration();
+                Let node = parseLet();
+                if (node != null)
+                    return node;
+            }
+
+            {
+                Mutable node = parseMutable();
+                if (node != null)
+                    return node;
+            }
+
+            {
+                Var node = parseVar();
+                if (node != null)
+                    return node;
+            }
+
+            {
+                Thread node = parseThread();
+                if (node != null)
+                    return node;
+            }
+
+            {
+                Class node = parseClass();
+                if (node != null)
+                    return node;
+            }
+
+            {
+                Constructor node = parseConstructor();
+                if (node != null)
+                    return node;
+            }
+
+            {
+                Method node = parseMethod();
+                if (node != null)
+                    return node;
+            }
+
+            {
+                Function node = parseFunction();
                 if (node != null)
                     return node;
             }
@@ -252,6 +252,10 @@ namespace scalysh
             if (path == null)
                 throw new ParserException(fileName, lexer.line, lexer.column);
 
+            bool successSemicolon3 = lexer.parsePunctuation(semicolon);
+            if (successSemicolon3)
+                lexer.advance();
+
             Position end = lexer.getPosition();
 
             Using ret = new Using(start, end, path);
@@ -259,80 +263,6 @@ namespace scalysh
             path.parent = ret;
 
             return ret;
-        }
-
-        public Declaration[] parseDeclarationList()
-        {
-            List<Declaration> ret = null;
-            while (true)
-            {
-                Declaration node = parseDeclaration();
-                if (node == null)
-                    break;
-
-                if (ret == null)
-                    ret = new List<Declaration>();
-
-                ret.Add(node);
-            }
-
-            if (ret != null)
-                return ret.ToArray();
-            else
-                return null;
-        }
-
-        public Declaration parseDeclaration()
-        {
-            {
-                Let node = parseLet();
-                if (node != null)
-                    return node;
-            }
-
-            {
-                Mutable node = parseMutable();
-                if (node != null)
-                    return node;
-            }
-
-            {
-                Var node = parseVar();
-                if (node != null)
-                    return node;
-            }
-
-            {
-                Thread node = parseThread();
-                if (node != null)
-                    return node;
-            }
-
-            {
-                Class node = parseClass();
-                if (node != null)
-                    return node;
-            }
-
-            {
-                Constructor node = parseConstructor();
-                if (node != null)
-                    return node;
-            }
-
-            {
-                Method node = parseMethod();
-                if (node != null)
-                    return node;
-            }
-
-            {
-                Function node = parseFunction();
-                if (node != null)
-                    return node;
-            }
-
-            return null;
         }
 
         public Let parseLet()
@@ -438,6 +368,10 @@ namespace scalysh
             TypeAnnotation typeAnnotation = parseTypeAnnotation();
 
             Expression[] expressions = parseExpressionList();
+
+            bool successSemicolon4 = lexer.parsePunctuation(semicolon);
+            if (successSemicolon4)
+                lexer.advance();
 
             Position end = lexer.getPosition();
 
@@ -1565,6 +1499,10 @@ namespace scalysh
 
             Expression[] rValue = parseExpressionList();
 
+            bool successSemicolon5 = lexer.parsePunctuation(semicolon);
+            if (successSemicolon5)
+                lexer.advance();
+
             Position end = lexer.getPosition();
 
             Set ret = new Set(start, end, lValue, rValue);
@@ -1594,6 +1532,10 @@ namespace scalysh
                 return null;
 
             Expression[] lValue = parseExpressionList();
+
+            bool successSemicolon3 = lexer.parsePunctuation(semicolon);
+            if (successSemicolon3)
+                lexer.advance();
 
             Position end = lexer.getPosition();
 
@@ -1638,6 +1580,10 @@ namespace scalysh
 
             Expression[] expression = parseExpressionList();
 
+            bool successSemicolon3 = lexer.parsePunctuation(semicolon);
+            if (successSemicolon3)
+                lexer.advance();
+
             Position end = lexer.getPosition();
 
             Return ret = new Return(start, end, expression);
@@ -1662,6 +1608,10 @@ namespace scalysh
                 return null;
 
             Expression[] expression = parseExpressionList();
+
+            bool successSemicolon3 = lexer.parsePunctuation(semicolon);
+            if (successSemicolon3)
+                lexer.advance();
 
             Position end = lexer.getPosition();
 
@@ -2551,15 +2501,6 @@ namespace scalysh
         {
         }
 
-        public virtual bool openSegment(Segment theSegment)
-        {
-            return true;
-        }
-
-        public virtual void closeSegment(Segment theSegment)
-        {
-        }
-
         public virtual bool openBlock(Block theBlock)
         {
             return true;
@@ -3096,8 +3037,8 @@ namespace scalysh
 
     public class File : SyntaxNode
     {
-        public Segment[] statements;
-        public File(Position start, Position end, Segment[] statements)
+        public Statement[] statements;
+        public File(Position start, Position end, Statement[] statements)
         {
             this.start = start;
             this.end = end;
@@ -3111,30 +3052,10 @@ namespace scalysh
 
             if (statements != null)
             {
-                foreach (Segment node in statements)
+                foreach (Statement node in statements)
                     node.accept(visitor);
             }
             visitor.closeFile(this);
-        }
-    }
-
-    public class Segment : SyntaxNode
-    {
-        public Statement Step;
-        public Segment(Position start, Position end, Statement Step)
-        {
-            this.start = start;
-            this.end = end;
-            this.Step = Step;
-        }
-
-        public override void accept(Visitor visitor)
-        {
-            if (!visitor.openSegment(this))
-                return;
-
-        Step.accept(visitor);
-            visitor.closeSegment(this);
         }
     }
 
@@ -3189,14 +3110,7 @@ namespace scalysh
         }
     }
 
-    public class Declaration : Statement
-    {
-        public override void accept(Visitor visitor)
-        {
-        }
-    }
-
-    public class Let : Declaration
+    public class Let : Statement
     {
         public Binding binding;
         public Let(Position start, Position end, Binding binding)
@@ -3216,7 +3130,7 @@ namespace scalysh
         }
     }
 
-    public class Mutable : Declaration
+    public class Mutable : Statement
     {
         public Binding binding;
         public Mutable(Position start, Position end, Binding binding)
@@ -3236,7 +3150,7 @@ namespace scalysh
         }
     }
 
-    public class Var : Declaration
+    public class Var : Statement
     {
         public Binding binding;
         public Var(Position start, Position end, Binding binding)
@@ -3256,7 +3170,7 @@ namespace scalysh
         }
     }
 
-    public class Thread : Declaration
+    public class Thread : Statement
     {
         public Binding binding;
         public Thread(Position start, Position end, Binding binding)
@@ -4098,7 +4012,7 @@ namespace scalysh
         }
     }
 
-    public class Class : Declaration
+    public class Class : Statement
     {
         public Path path;
         public GenericParameters generics;
@@ -4285,7 +4199,7 @@ namespace scalysh
         }
     }
 
-    public class Constructor : Declaration
+    public class Constructor : Statement
     {
         public Object input;
         public Block body;
@@ -4309,7 +4223,7 @@ namespace scalysh
         }
     }
 
-    public class Method : Declaration
+    public class Method : Statement
     {
         public Procedure procedure;
         public Method(Position start, Position end, Procedure procedure)
@@ -4329,7 +4243,7 @@ namespace scalysh
         }
     }
 
-    public class Function : Declaration
+    public class Function : Statement
     {
         public Procedure procedure;
         public Function(Position start, Position end, Procedure procedure)

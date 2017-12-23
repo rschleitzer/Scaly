@@ -7,11 +7,7 @@
         <content link = File                  multiple          property = files
 
     <syntax id = File                                           top
-        <content link = Segment               multiple optional property = statements
-
-    <syntax id = Segment                      multiple
-        <content link = Statement                               property = Step
-        <content link = semicolon                      optional
+        <content link = Statement             multiple optional property = statements
 
     <syntax id = Block                                          base = PrimaryExpression
         <content link = leftCurly
@@ -20,7 +16,14 @@
 
     <syntax id = Statement                    multiple abstract
         <content link = Using
-        <content link = Declaration
+        <content link = Let
+        <content link = Mutable
+        <content link = Var
+        <content link = Thread
+        <content link = Class
+        <content link = Constructor
+        <content link = Method
+        <content link = Function
         <content link = Expression
         <content link = Set
         <content link = Break
@@ -31,30 +34,21 @@
     <syntax id = Using                                          base = Statement
         <content link = using
         <content link = Path                                    property = path
+        <content link = semicolon                      optional
 
-    <syntax id = Declaration                  multiple abstract base = Statement
-        <content link = Let
-        <content link = Mutable
-        <content link = Var
-        <content link = Thread
-        <content link = Class
-        <content link = Constructor
-        <content link = Method
-        <content link = Function
-
-    <syntax id = Let                                            base = Declaration
+    <syntax id = Let                                            base = Statement
         <content link = let
         <content link = Binding                                 property = binding
 
-    <syntax id = Mutable                                        base = Declaration
+    <syntax id = Mutable                                        base = Statement
         <content link = mutable
         <content link = Binding                                 property = binding
 
-    <syntax id = Var                                            base = Declaration
+    <syntax id = Var                                            base = Statement
         <content link = var
         <content link = Binding                                 property = binding
 
-    <syntax id = Thread                                         base = Declaration
+    <syntax id = Thread                                         base = Statement
         <content link = thread
         <content link = Binding                                 property = binding
 
@@ -62,6 +56,7 @@
         <content link = Pattern                                 property = pattern
         <content link = TypeAnnotation                 optional property = typeAnnotation
         <content link = Expression            multiple          property = expressions
+        <content link = semicolon                      optional
 
    <syntax id = Pattern                                abstract
         <content link = WildcardPattern
@@ -238,10 +233,12 @@
         <content link = Expression            multiple          property = lValue
         <content link = colon
         <content link = Expression            multiple          property = rValue
+        <content link = semicolon                      optional
 
     <syntax id = Break                                          base = Statement
         <content link = break
         <content link = Expression            multiple          property = lValue
+        <content link = semicolon                      optional
 
     <syntax id = Continue                                       base = Statement
         <content link = continue
@@ -249,12 +246,14 @@
     <syntax id = Return                                         base = Statement
         <content link = return
         <content link = Expression            multiple          property = expression
+        <content link = semicolon                      optional
 
     <syntax id = Throw                                          base = Statement
         <content link = throw
         <content link = Expression            multiple          property = expression
+        <content link = semicolon                      optional
 
-    <syntax id = Class                                          base = Declaration
+    <syntax id = Class                                          base = Statement
         <content link = class
         <content link = Path                                    property = path
         <content link = GenericParameters              optional property = generics
@@ -294,16 +293,16 @@
         <content link = TypeAnnotation                 optional property = typeAnnotation
         <content link = comma                          optional
 
-    <syntax id = Constructor                                    base = Declaration
+    <syntax id = Constructor                                    base = Statement
         <content link = constructor
         <content link = Object                         optional property = input
         <content link = Block                                   property = body
 
-    <syntax id = Method                                         base = Declaration
+    <syntax id = Method                                         base = Statement
         <content link = method
         <content link = Procedure                               property = procedure
 
-    <syntax id = Function                                       base = Declaration
+    <syntax id = Function                                       base = Statement
         <content link = function
         <content link = Procedure                               property = procedure
 
