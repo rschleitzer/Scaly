@@ -1,6 +1,6 @@
 class Compiler {
     static function compileFiles(options: Options) {
-        let files: string[] = options.files;
+        let files: string[] = options.files
         mutable sources: string[]$ = new string[]()
         for file: string in files {
             let source: string@sources = File.readToString(file)
