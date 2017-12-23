@@ -3,9 +3,7 @@
   <Project Name="scalypp" Path="scalypp/scalypp.project" Active="No"/>
   <Project Name="scalycpp" Path="scalycpp/scalycpp.project" Active="No"/>
   <Project Name="shortest" Path="shortest/shortest.project" Active="No"/>
-  <Project Name="hello" Path="hello/hello.project" Active="No"/>
-  <Project Name="scalyc" Path="scalyc/scalyc.project" Active="Yes"/>
-  <Project Name="scaly" Path="scaly/scaly.project" Active="No"/>
+  <Project Name="hello" Path="hello/hello.project" Active="Yes"/>
   <BuildMatrix>
     <WorkspaceConfiguration Name="Debug" Selected="yes">
       <Environment/>

@@ -2,6 +2,8 @@ Debug
 Release
 scaly/main.o
 scaly/scalyc
+scaly/scaly.mk
+scaly/scaly.txt
 scalypp/scalypp.mk
 scalypp/scalypp.txt
 scalycpp/scalycpp.mk
