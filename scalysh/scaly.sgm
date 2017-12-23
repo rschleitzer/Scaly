@@ -11,7 +11,7 @@
 
     <syntax id = Block                                          base = Expression
         <content link = leftCurly
-        <content link = Statement             multiple          property = statements
+        <content link = Statement             multiple optional property = statements
         <content link = rightCurly
 
     <syntax id = Statement                    multiple abstract

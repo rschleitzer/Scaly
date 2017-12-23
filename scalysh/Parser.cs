@@ -780,6 +780,8 @@ namespace scalysh
                 throw new ParserException(fileName, lexer.line, lexer.column);
 
             SwitchCase[] cases = parseSwitchCaseList();
+            if (cases == null)
+                throw new ParserException(fileName, lexer.line, lexer.column);
 
             bool successRightCurly7 = lexer.parsePunctuation(rightCurly);
             if (successRightCurly7)
