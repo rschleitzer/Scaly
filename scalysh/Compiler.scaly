@@ -2,7 +2,7 @@ class Compiler {
     function compileFiles(options: Options) {
         let files options.files;
         mutable sources "";
-        for (file in files) {
+        for (file in files) loop test {
             let source: string@sources = File.readToString(file)
                 catch FileNotFoundError() {
                     print("Can't read file: "file"\n") catch _ {}

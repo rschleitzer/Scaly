@@ -11,15 +11,14 @@ function main(argc: int, argv: pointer): int {
 
     CurrentPage.reset()
 
-    mutable task: Task@CurrentPage = Task()
-    set CurrentTask : task
+    set CurrentTask : new Task@CurrentPage()
 
     // Collect the arguments into a string Vector
-    mutable arguments Array[string]@CurrentPage(argc - 1)
+    mutable arguments new Array[string]@CurrentPage(argc - 1)
 
     mutable i: int 1
     while (i < argc) {
-        arguments.Add(string@CurrentPage(argv[i]))
+        arguments.Add(new string@CurrentPage(argv[i]))
         set i: i + 1
     }
 

@@ -11,6 +11,7 @@
 
     <syntax id = Statement                    multiple abstract
         <content link = Using
+        <content link = Namespace
         <content link = Let
         <content link = Var
         <content link = Mutable
@@ -29,6 +30,11 @@
     <syntax id = Using                                          base = Statement
         <content link = using
         <content link = Path                                    property = path
+
+    <syntax id = Namespace                                      base = Statement
+        <content link = namespace
+        <content link = Path                                    property = path
+        <content link = Block                                   property = scope
 
     <syntax id = Let                                            base = Statement
         <content link = let
@@ -70,7 +76,7 @@
 
     <syntax id = Expression                   multiple abstract
         <content link = Block
-        <content link = Name
+        <content link = Path
         <content link = Constant
         <content link = If
         <content link = Switch
@@ -78,6 +84,7 @@
         <content link = While
         <content link = Do
         <content link = This
+        <content link = New
         <content link = ObjectExpression
         <content link = SizeOf
 
@@ -85,11 +92,6 @@
         <content link = leftCurly
         <content link = Statement             multiple optional property = statements
         <content link = rightCurly
-
-    <syntax id = Name                                           base = Expression
-        <content link = Path                                    property = path
-        <content link = GenericArguments               optional property = generics
-        <content link = LifeTime                       optional property = lifeTime
 
     <syntax id = Constant                                       base = Expression
         <content literal                                        property = literal
@@ -157,25 +159,44 @@
         <content link = in
         <content link = Operation                               property = operation
         <content link = rightParen
-        <content link = Block                                   property = code
+        <content link = Loop                                    property = iteration
 
     <syntax id = While                                          base = Expression
         <content link = while
         <content link = leftParen
         <content link = Operation                               property = condition
         <content link = rightParen
-        <content link = Block                                   property = code
+        <content link = Loop                                    property = iteration
 
     <syntax id = Do                                             base = Expression
         <content link = do
-        <content link = Block                                   property = code
+        <content link = Loop                                    property = iteration
         <content link = while
         <content link = leftParen
         <content link = Operation                               property = condition
         <content link = rightParen
 
+    <syntax id = Loop                                  abstract
+        <content link = SimpleLoop
+        <content link = NamedLoop
+
+    <syntax id = SimpleLoop                                     base = Loop
+        <content link = Block                                   property = code
+
+    <syntax id = NamedLoop                                      base = Loop
+        <content link = loop
+        <content identifier                                     property = name
+        <content link = Block                                   property = code
+
     <syntax id = This                                           base = Expression
         <content link = this
+
+    <syntax id = New                                            base = Expression
+        <content link = new
+        <content link = Path                                    property = path
+        <content link = GenericArguments               optional property = generics
+        <content link = LifeTime                       optional property = lifeTime
+
 
     <syntax id = Postfix                      multiple abstract
         <content link = Catch
@@ -198,7 +219,7 @@
         <content link = WildcardPattern                         property = pattern
 
     <syntax id = NameCatchPattern                               base = CatchPattern
-        <content link = Name                           optional property = member
+        <content link = Path                           optional property = member
         <content link = leftParen
         <content identifier                            optional property = errorName
         <content link = rightParen
@@ -240,10 +261,13 @@
 
     <syntax id = Break                                          base = Statement
         <content link = break
-        <content link = Calculation                    optional property = result
+        <content identifier                            optional property = iteration
+        <content link = semicolon                      optional
 
     <syntax id = Continue                                       base = Statement
         <content link = continue
+        <content identifier                            optional property = iteration
+        <content link = semicolon                      optional
 
     <syntax id = Return                                         base = Statement
         <content link = return
@@ -259,9 +283,9 @@
         <content link = GenericParameters              optional property = generics
         <content link = Object                         optional property = contents
         <content link = Extends                        optional property = baseClass
-        <content link = Expression                     optional property = body
+        <content link = Block                          optional property = body
 
-    <syntax id = Path
+    <syntax id = Path                                           base = Expression
         <content identifier                                     property = name
         <content link = Extension             multiple optional property = extensions
 
@@ -370,6 +394,7 @@
         <content link = hash
 
     <keyword id = using
+    <keyword id = namespace
     <keyword id = let
     <keyword id = mutable
     <keyword id = var
@@ -381,6 +406,7 @@
     <keyword id = method
     <keyword id = function
     <keyword id = this
+    <keyword id = new
     <keyword id = sizeof
     <keyword id = catch
     <keyword id = throws
@@ -395,6 +421,7 @@
     <keyword id = in
     <keyword id = while
     <keyword id = do
+    <keyword id = loop
     <keyword id = break
     <keyword id = continue
     <keyword id = return

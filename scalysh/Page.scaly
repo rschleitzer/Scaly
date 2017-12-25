@@ -200,9 +200,9 @@ class Scaly.Page
 
     method deallocateExtensions {
         mutable page: Page? = this
-        do {
+        do loop pageLoop {
             if (page = ()) {
-                break
+                break pageLoop
             }
 
             let nextExtensionPage = page.getExtensionPageLocation as pointer
