@@ -431,35 +431,28 @@ class Scaly.Lexer(text: string)
             return () }
 
         if (token is StringLiteral) {
-            return StringLiteral(token as StringLiteral!.value)
-        }
+            return StringLiteral(token as StringLiteral!.value) }
 
         if (token is CharacterLiteral) {
-            return CharacterLiteral(token as CharacterLiteral!.value)
-        }
+            return CharacterLiteral(token as CharacterLiteral!.value) }
 
         if (token is HexLiteral) {
-            return HexLiteral(token as HexLiteral!.value)
-        }
+            return HexLiteral(token as HexLiteral!.value) }
 
         if (token is NumericLiteral) {
-            return NumericLiteral(token as NumericLiteral!.value)
-        }
+            return NumericLiteral(token as NumericLiteral!.value) }
 
-        return null
+        return ()
     }
 
     method isAtEnd: bool {
-        return (position = end)
-    }
+        return (position = end) }
 
     method getPosition: Position {
-        return (Position(line, column))
-    }
+        return (Position(line, column)) }
 
     method getPreviousPosition: Position {
-        return (Position(previousLine, previousColumn))
-    }
+        return (Position(previousLine, previousColumn)) }
 }
 
 class Position(line: number, column: number) {
@@ -470,29 +463,12 @@ class Position(line: number, column: number) {
     }
 }
 
-class Token {
-}
-
-class EofToken extends Token {
-}
-
-class InvalidToken extends Token {
-}
-
-class Identifier(name: string) extends Token {
-}
-
-class Literal extends Token {
-}
-
-class StringLiteral(value: string) extends Literal {
-}
-
-class CharacterLiteral(value: string) extends Literal {
-}
-
-class NumericLiteral(value: string) extends Literal {
-}
-
-class Punctuation(sign: string) extends Token {
-}
+class Token
+class EofToken extends Token
+class InvalidToken extends Token
+class Identifier(name: string) extends Token
+class Literal extends Token
+class StringLiteral(value: string) extends Literal
+class CharacterLiteral(value: string) extends Literal
+class NumericLiteral(value: string) extends Literal
+class Punctuation(sign: string) extends Token

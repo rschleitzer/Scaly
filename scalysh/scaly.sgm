@@ -197,7 +197,6 @@
         <content link = GenericArguments               optional property = generics
         <content link = LifeTime                       optional property = lifeTime
 
-
     <syntax id = Postfix                      multiple abstract
         <content link = Catch
         <content link = MemberAccess
@@ -240,7 +239,7 @@
 
     <syntax id = Is                                             base = Postfix
         <content link = is
-        <content link = Type                                    property = typeSpec
+        <content link = TypeSpec                                property = typeSpec
 
     <syntax id = Unwrap                                         base = Postfix
         <content link = exclamation
@@ -339,17 +338,26 @@
 
     <syntax id = TypeAnnotation
         <content link = colon
-        <content link = Type                                    property = typeSpec
+        <content link = TypeSpec                                property = typeSpec
 
-    <syntax id = Type
+    <syntax id = TypeSpec                     multiple abstract
+        <content link = Type
+        <content link = Variant
+
+    <syntax id = Type                         multiple          base = TypeSpec
         <content identifier                                     property = name
         <content link = GenericArguments               optional property = generics
-        <content link = TypePostfix           multiple optional property = postfixes
+        <content link = Optional                       optional property = optional
         <content link = LifeTime                       optional property = lifeTime
+
+    <syntax id = Variant                                        base = TypeSpec
+        <content link = leftParen
+        <content link = TypeSpec              multiple optional property = types
+        <content link = rightParen
 
     <syntax id = Throws
         <content link = throws
-        <content link = Type                                    property = throwsType
+        <content link = TypeSpec                                property = throwsType
 
     <syntax id = GenericArguments
         <content link = leftBracket
@@ -361,17 +369,8 @@
         <content link = comma
         <content link = Type                                    property = typeSpec
 
-    <syntax id = TypePostfix                  multiple abstract
-        <content link = Optional
-        <content link = IndexedType
-
-    <syntax id = Optional                                       base = TypePostfix
+    <syntax id = Optional
         <content link = question
-
-    <syntax id = IndexedType                                    base = TypePostfix
-        <content link = leftBracket
-        <content link = Type                           optional property = typeSpec
-        <content link = rightBracket
 
     <syntax id = LifeTime                              abstract
         <content link = Root

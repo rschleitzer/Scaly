@@ -1,15 +1,14 @@
 [[reference]]
 == Reference
 
-This chapter describes the Scaly Programming Language. 
+This chapter describes the Scaly Programming Language. The Scaly Programming Language 
+is defined by the structure and semantics of the 
+<<statements,statements>> which can be used to write a Scaly <<program,program>>.
 
-The Scaly Programming Language is defined by the structure and semantics of the 
-<<statements,statements>> which can be used to write a Scaly Program.
-
-On the lowest level, a Scaly program consists of a sequence of characters. 
-The <<lexical, lexical structure>> of the Scaly Programming Language 
-describes how the characters of the program code are combined to form a 
-sequence of <<tokens,tokens>> and <<whitespace,whitespaces>>.
+On the lowest level, a Scaly program consists of a sequence of characters which 
+are read from <<files,files>>. The <<lexical, lexical structure>> 
+of the Scaly Programming Language describes how the characters of the program code 
+are combined to form a sequence of <<tokens,tokens>> and <<whitespace,whitespaces>>.
 
 The structure of the <<statements,statements>> is defined by the 
 <<grammar,grammar>> of the Scaly Programming Language.
@@ -25,23 +24,6 @@ reference implementation is not part of the Scaly Programming Language
 in a strict sense. Nevertheless, some elements like basic types, operators, 
 and functions of this standard library like basic types are used 
 in the code samples that are provided.
-
-[[files]]
-=== Program files
-
-The reference implementation of the Scaly Programming Language, which the 
-documentation you are reading is part of, compiles a Scaly 
-program into an https://llvm.org/docs/LangRef.html[LLVM assembly language] module 
-which can be processed further using the 
-https://llvm.org/docs/CommandGuide/index.html[LLVM tools].
-
-A Scaly <<program, program>> consists of one or more <<files, files>> 
-which contain the program code. The Scaly compiler compiles a Scaly program 
-to a piece of executable code. How this code can be executed depends 
-on the implementation of the Scaly compiler. A file is an object from which a 
-Scaly compiler can read a sequence of characters 
-and parse them into <<statements,statements>>. 
-A file must contain zero or more complete statements.
 
 [[lexical]]
 === Lexical structure
@@ -203,11 +185,25 @@ compiled in a single compiler run to an executable program, a library, or code
 which is compiled just-in-time (JITted). A program consists of zero or more 
 <<files, files>>.
 
-[[Files]]
+
+[[files]]
 === Files
 
-A _file_ is a single sequence of characters which contains zero or more characters 
-which make up zero or more complete <<statements, statements>>.
+A Scaly <<program, program>> consists of one or more <<files, files>> 
+which contain the program code. The Scaly compiler compiles a Scaly program 
+to a piece of executable code. How this code can be executed depends 
+on the implementation of the Scaly compiler.
+
+The reference implementation of the Scaly Programming Language, which the 
+documentation you are reading is part of, compiles a Scaly 
+program into an https://llvm.org/docs/LangRef.html[LLVM assembly language] module 
+which can be processed further using the 
+https://llvm.org/docs/CommandGuide/index.html[LLVM tools].
+
+A file is an object from which a 
+Scaly compiler can read a sequence of characters 
+and parse them into <<statements,statements>>. 
+A file must contain zero or more complete statements.
 
 [[statements]]
 === Statements

@@ -1506,7 +1506,7 @@ namespace scalysh
             else
                 return null;
 
-            Type typeSpec = parseType();
+            TypeSpec typeSpec = parseTypeSpec();
             if (typeSpec == null)
                 throw new ParserException(fileName, lexer.line, lexer.column);
 
@@ -2146,7 +2146,7 @@ namespace scalysh
             else
                 return null;
 
-            Type typeSpec = parseType();
+            TypeSpec typeSpec = parseTypeSpec();
             if (typeSpec == null)
                 throw new ParserException(fileName, lexer.line, lexer.column);
 
@@ -2157,6 +2157,65 @@ namespace scalysh
             typeSpec.parent = ret;
 
             return ret;
+        }
+
+        public TypeSpec[] parseTypeSpecList()
+        {
+            List<TypeSpec> ret = null;
+            while (true)
+            {
+                TypeSpec node = parseTypeSpec();
+                if (node == null)
+                    break;
+
+                if (ret == null)
+                    ret = new List<TypeSpec>();
+
+                ret.Add(node);
+            }
+
+            if (ret != null)
+                return ret.ToArray();
+            else
+                return null;
+        }
+
+        public TypeSpec parseTypeSpec()
+        {
+            {
+                Type node = parseType();
+                if (node != null)
+                    return node;
+            }
+
+            {
+                Variant node = parseVariant();
+                if (node != null)
+                    return node;
+            }
+
+            return null;
+        }
+
+        public Type[] parseTypeList()
+        {
+            List<Type> ret = null;
+            while (true)
+            {
+                Type node = parseType();
+                if (node == null)
+                    break;
+
+                if (ret == null)
+                    ret = new List<Type>();
+
+                ret.Add(node);
+            }
+
+            if (ret != null)
+                return ret.ToArray();
+            else
+                return null;
         }
 
         public Type parseType()
@@ -2171,23 +2230,51 @@ namespace scalysh
 
             GenericArguments generics = parseGenericArguments();
 
-            TypePostfix[] postfixes = parseTypePostfixList();
+            Optional optional = parseOptional();
 
             LifeTime lifeTime = parseLifeTime();
 
             Position end = lexer.getPosition();
 
-            Type ret = new Type(start, end, name, generics, postfixes, lifeTime);
+            Type ret = new Type(start, end, name, generics, optional, lifeTime);
 
             if (generics != null)
                 generics.parent = ret;
-            if (postfixes != null)
-            {
-                foreach (TypePostfix item in postfixes)
-                    item.parent = ret;
-            }
+            if (optional != null)
+                optional.parent = ret;
             if (lifeTime != null)
                 lifeTime.parent = ret;
+
+            return ret;
+        }
+
+        public Variant parseVariant()
+        {
+            Position start = lexer.getPreviousPosition();
+
+            bool successLeftParen1 = lexer.parsePunctuation(leftParen);
+            if (successLeftParen1)
+                lexer.advance();
+            else
+                return null;
+
+            TypeSpec[] types = parseTypeSpecList();
+
+            bool successRightParen3 = lexer.parsePunctuation(rightParen);
+            if (successRightParen3)
+                lexer.advance();
+            else
+                throw new ParserException(fileName, lexer.line, lexer.column);
+
+            Position end = lexer.getPosition();
+
+            Variant ret = new Variant(start, end, types);
+
+            if (types != null)
+            {
+                foreach (TypeSpec item in types)
+                    item.parent = ret;
+            }
 
             return ret;
         }
@@ -2202,7 +2289,7 @@ namespace scalysh
             else
                 return null;
 
-            Type throwsType = parseType();
+            TypeSpec throwsType = parseTypeSpec();
             if (throwsType == null)
                 throw new ParserException(fileName, lexer.line, lexer.column);
 
@@ -2295,44 +2382,6 @@ namespace scalysh
             return ret;
         }
 
-        public TypePostfix[] parseTypePostfixList()
-        {
-            List<TypePostfix> ret = null;
-            while (true)
-            {
-                TypePostfix node = parseTypePostfix();
-                if (node == null)
-                    break;
-
-                if (ret == null)
-                    ret = new List<TypePostfix>();
-
-                ret.Add(node);
-            }
-
-            if (ret != null)
-                return ret.ToArray();
-            else
-                return null;
-        }
-
-        public TypePostfix parseTypePostfix()
-        {
-            {
-                Optional node = parseOptional();
-                if (node != null)
-                    return node;
-            }
-
-            {
-                IndexedType node = parseIndexedType();
-                if (node != null)
-                    return node;
-            }
-
-            return null;
-        }
-
         public Optional parseOptional()
         {
             Position start = lexer.getPreviousPosition();
@@ -2347,34 +2396,6 @@ namespace scalysh
 
             Optional ret = new Optional(start, end);
 
-
-            return ret;
-        }
-
-        public IndexedType parseIndexedType()
-        {
-            Position start = lexer.getPreviousPosition();
-
-            bool successLeftBracket1 = lexer.parsePunctuation(leftBracket);
-            if (successLeftBracket1)
-                lexer.advance();
-            else
-                return null;
-
-            Type typeSpec = parseType();
-
-            bool successRightBracket3 = lexer.parsePunctuation(rightBracket);
-            if (successRightBracket3)
-                lexer.advance();
-            else
-                throw new ParserException(fileName, lexer.line, lexer.column);
-
-            Position end = lexer.getPosition();
-
-            IndexedType ret = new IndexedType(start, end, typeSpec);
-
-            if (typeSpec != null)
-                typeSpec.parent = ret;
 
             return ret;
         }
@@ -3101,6 +3122,15 @@ namespace scalysh
         {
         }
 
+        public virtual bool openVariant(Variant theVariant)
+        {
+            return true;
+        }
+
+        public virtual void closeVariant(Variant theVariant)
+        {
+        }
+
         public virtual bool openThrows(Throws theThrows)
         {
             return true;
@@ -3129,15 +3159,6 @@ namespace scalysh
         }
 
         public virtual void visitOptional(Optional theOptional)
-        {
-        }
-
-        public virtual bool openIndexedType(IndexedType theIndexedType)
-        {
-            return true;
-        }
-
-        public virtual void closeIndexedType(IndexedType theIndexedType)
         {
         }
 
@@ -4053,8 +4074,8 @@ namespace scalysh
 
     public class Is : Postfix
     {
-        public Type typeSpec;
-        public Is(Position start, Position end, Type typeSpec)
+        public TypeSpec typeSpec;
+        public Is(Position start, Position end, TypeSpec typeSpec)
         {
             this.start = start;
             this.end = end;
@@ -4513,8 +4534,8 @@ namespace scalysh
 
     public class TypeAnnotation : SyntaxNode
     {
-        public Type typeSpec;
-        public TypeAnnotation(Position start, Position end, Type typeSpec)
+        public TypeSpec typeSpec;
+        public TypeAnnotation(Position start, Position end, TypeSpec typeSpec)
         {
             this.start = start;
             this.end = end;
@@ -4531,19 +4552,26 @@ namespace scalysh
         }
     }
 
-    public class Type : SyntaxNode
+    public class TypeSpec : SyntaxNode
+    {
+        public override void accept(Visitor visitor)
+        {
+        }
+    }
+
+    public class Type : TypeSpec
     {
         public string name;
         public GenericArguments generics;
-        public TypePostfix[] postfixes;
+        public Optional optional;
         public LifeTime lifeTime;
-        public Type(Position start, Position end, string name, GenericArguments generics, TypePostfix[] postfixes, LifeTime lifeTime)
+        public Type(Position start, Position end, string name, GenericArguments generics, Optional optional, LifeTime lifeTime)
         {
             this.start = start;
             this.end = end;
             this.name = name;
             this.generics = generics;
-            this.postfixes = postfixes;
+            this.optional = optional;
             this.lifeTime = lifeTime;
         }
 
@@ -4554,21 +4582,42 @@ namespace scalysh
 
         if (generics != null)
             generics.accept(visitor);
-            if (postfixes != null)
-            {
-                foreach (TypePostfix node in postfixes)
-                    node.accept(visitor);
-            }
+        if (optional != null)
+            optional.accept(visitor);
         if (lifeTime != null)
             lifeTime.accept(visitor);
             visitor.closeType(this);
         }
     }
 
+    public class Variant : TypeSpec
+    {
+        public TypeSpec[] types;
+        public Variant(Position start, Position end, TypeSpec[] types)
+        {
+            this.start = start;
+            this.end = end;
+            this.types = types;
+        }
+
+        public override void accept(Visitor visitor)
+        {
+            if (!visitor.openVariant(this))
+                return;
+
+            if (types != null)
+            {
+                foreach (TypeSpec node in types)
+                    node.accept(visitor);
+            }
+            visitor.closeVariant(this);
+        }
+    }
+
     public class Throws : SyntaxNode
     {
-        public Type throwsType;
-        public Throws(Position start, Position end, Type throwsType)
+        public TypeSpec throwsType;
+        public Throws(Position start, Position end, TypeSpec throwsType)
         {
             this.start = start;
             this.end = end;
@@ -4632,14 +4681,7 @@ namespace scalysh
         }
     }
 
-    public class TypePostfix : SyntaxNode
-    {
-        public override void accept(Visitor visitor)
-        {
-        }
-    }
-
-    public class Optional : TypePostfix
+    public class Optional : SyntaxNode
     {
         public Optional(Position start, Position end)
         {
@@ -4650,27 +4692,6 @@ namespace scalysh
         public override void accept(Visitor visitor)
         {
             visitor.visitOptional(this);
-        }
-    }
-
-    public class IndexedType : TypePostfix
-    {
-        public Type typeSpec;
-        public IndexedType(Position start, Position end, Type typeSpec)
-        {
-            this.start = start;
-            this.end = end;
-            this.typeSpec = typeSpec;
-        }
-
-        public override void accept(Visitor visitor)
-        {
-            if (!visitor.openIndexedType(this))
-                return;
-
-        if (typeSpec != null)
-            typeSpec.accept(visitor);
-            visitor.closeIndexedType(this);
         }
     }
 
