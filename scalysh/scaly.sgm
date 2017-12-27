@@ -29,11 +29,19 @@
 
     <syntax id = Using                                          base = Statement
         <content link = using
-        <content link = Path                                    property = path
+        <content link = Name                                    property = name
+
+    <syntax id = Name                                           base = Expression
+        <content identifier                                     property = name
+        <content link = Extension             multiple optional property = extensions
+
+    <syntax id = Extension                    multiple
+        <content link = dot
+        <content identifier                                     property = name
 
     <syntax id = Namespace                                      base = Statement
         <content link = namespace
-        <content link = Path                                    property = path
+        <content link = Name                                    property = name
         <content link = Block                                   property = scope
 
     <syntax id = Let                                            base = Statement
@@ -53,7 +61,7 @@
         <content link = Binding                                 property = binding
 
     <syntax id = Binding
-        <content link = Path                                    property = path
+        <content link = Name                                    property = name
         <content link = TypeAnnotation                 optional property = typeAnnotation
         <content link = Calculation                             property = calculation
 
@@ -74,9 +82,55 @@
         <content link = Expression                              property = primary
         <content link = Postfix               multiple optional property = postfixes
 
+    <syntax id = Postfix                      multiple abstract
+        <content link = MemberAccess
+        <content link = Subscript
+        <content link = As
+        <content link = Is
+        <content link = Unwrap
+        <content link = Catch
+
+    <syntax id = MemberAccess                                   base = Postfix
+        <content link = dot
+        <content identifier                                     property = member
+
+    <syntax id = Subscript                                      base = Postfix
+        <content link = leftBracket
+        <content link = Operation                               property = operation
+        <content link = rightBracket
+
+    <syntax id = As                                             base = Postfix
+        <content link = as
+        <content link = Type                                    property = typeSpec
+
+    <syntax id = Is                                             base = Postfix
+        <content link = is
+        <content link = TypeSpec                                property = typeSpec
+
+    <syntax id = Unwrap                                         base = Postfix
+        <content link = exclamation
+
+    <syntax id = Catch                                          base = Postfix
+        <content link = catch
+        <content link = CatchPattern                            property = typeSpec
+        <content link = Block                                   property = handler
+
+    <syntax id = CatchPattern                          abstract
+        <content link = WildCardCatchPattern
+        <content link = NameCatchPattern
+
+    <syntax id = WildCardCatchPattern                           base = CatchPattern
+        <content link = WildcardPattern                         property = pattern
+
+    <syntax id = NameCatchPattern                               base = CatchPattern
+        <content link = Name                           optional property = name
+        <content link = leftParen
+        <content identifier                            optional property = errorName
+        <content link = rightParen
+
     <syntax id = Expression                   multiple abstract
         <content link = Block
-        <content link = Path
+        <content link = Name
         <content link = Constant
         <content link = If
         <content link = Switch
@@ -85,7 +139,7 @@
         <content link = Do
         <content link = This
         <content link = New
-        <content link = ObjectExpression
+        <content link = Object
         <content link = SizeOf
 
     <syntax id = Block                                          base = Expression
@@ -127,16 +181,16 @@
 
     <syntax id = ItemCaseLabel                                  base = CaseLabel
         <content link = case
+        <content link = CaseItem              multiple          property = items
+
+    <syntax id = CaseItem                     multiple
         <content link = CasePattern                             property = pattern
-        <content link = CaseItem              multiple optional property = additionalPatterns
+        <content link = comma                          optional
 
-    <syntax id = CasePattern                            abstract
-        <content link = WildcardPattern
-        <content link = IdentifierPattern
+    <syntax id = CasePattern                  multiple abstract
         <content link = ConstantPattern
-
-    <syntax id = IdentifierPattern                              base = CasePattern
-        <content link = Path                                    property = path
+        <content link = WildcardPattern
+        <content link = NamePattern
 
     <syntax id = ConstantPattern                                base = CasePattern
         <content link = Constant                                property = constant
@@ -144,12 +198,11 @@
     <syntax id = WildcardPattern                                base = CasePattern
         <content link = underscore
 
+    <syntax id = NamePattern                                    base = CasePattern
+        <content link = Name                                    property = name
+
     <syntax id = DefaultCaseLabel                               base = CaseLabel
         <content link = default
-
-    <syntax id = CaseItem                     multiple
-        <content link = comma
-        <content link = CasePattern                             property = pattern
 
     <syntax id = For                                            base = Expression
         <content link = for
@@ -193,64 +246,17 @@
 
     <syntax id = New                                            base = Expression
         <content link = new
-        <content link = Path                                    property = path
+        <content link = Name                                    property = name
         <content link = GenericArguments               optional property = generics
         <content link = LifeTime                       optional property = lifeTime
 
-    <syntax id = Postfix                      multiple abstract
-        <content link = Catch
-        <content link = MemberAccess
-        <content link = Subscript
-        <content link = As
-        <content link = Is
-        <content link = Unwrap
-
-    <syntax id = Catch                                          base = Postfix
-        <content link = catch
-        <content link = CatchPattern                            property = typeSpec
-        <content link = Block                                   property = handler
-
-    <syntax id = CatchPattern                          abstract
-        <content link = WildCardCatchPattern
-        <content link = NameCatchPattern
-
-    <syntax id = WildCardCatchPattern                           base = CatchPattern
-        <content link = WildcardPattern                         property = pattern
-
-    <syntax id = NameCatchPattern                               base = CatchPattern
-        <content link = Path                           optional property = member
-        <content link = leftParen
-        <content identifier                            optional property = errorName
-        <content link = rightParen
-
-    <syntax id = MemberAccess                                   base = Postfix
-        <content link = dot
-        <content identifier                                     property = member
-
-    <syntax id = Subscript                                      base = Postfix
-        <content link = leftBracket
-        <content link = Operation                               property = firstItems
-        <content link = ObjectItem            multiple optional property = additionalItemses
-        <content link = rightBracket
-
-    <syntax id = As                                             base = Postfix
-        <content link = as
-        <content link = Type                                    property = typeSpec
-
-    <syntax id = Is                                             base = Postfix
-        <content link = is
-        <content link = TypeSpec                                property = typeSpec
-
-    <syntax id = Unwrap                                         base = Postfix
-        <content link = exclamation
-
-    <syntax id = ObjectExpression                               base = Expression
+    <syntax id = Object                                         base = Expression
         <content link = leftParen
         <content link = Operation                      optional property = firstOp
-        <content link = ObjectItem            multiple optional property = additionalOps
+        <content link = Item                  multiple optional property = additionalOps
         <content link = rightParen
 
-    <syntax id = ObjectItem                   multiple
+    <syntax id = Item                         multiple
         <content link = comma
         <content link = Operation                               property = operation
 
@@ -278,19 +284,11 @@
 
     <syntax id = Class                                          base = Statement
         <content link = class
-        <content link = Path                                    property = path
+        <content link = Name                                    property = name
         <content link = GenericParameters              optional property = generics
-        <content link = Object                         optional property = contents
+        <content link = Structure                         optional property = contents
         <content link = Extends                        optional property = baseClass
         <content link = Block                          optional property = body
-
-    <syntax id = Path                                           base = Expression
-        <content identifier                                     property = name
-        <content link = Extension             multiple optional property = extensions
-
-    <syntax id = Extension                    multiple
-        <content link = dot
-        <content identifier                                     property = name
 
     <syntax id = GenericParameters
         <content link = leftBracket
@@ -304,9 +302,9 @@
 
     <syntax id = Extends
         <content link = extends
-        <content link = Path                                    property = path
+        <content link = Name                                    property = name
 
-    <syntax id = Object
+    <syntax id = Structure
         <content link = leftParen
         <content link = Component             multiple optional property = components
         <content link = rightParen
@@ -318,7 +316,7 @@
 
     <syntax id = Constructor                                    base = Statement
         <content link = constructor
-        <content link = Object                         optional property = input
+        <content link = Structure                      optional property = input
         <content link = Block                                   property = body
 
     <syntax id = Method                                         base = Statement
@@ -331,7 +329,7 @@
 
     <syntax id = Procedure
         <content identifier                                     property = name
-        <content link = Object                         optional property = input
+        <content link = Structure                      optional property = input
         <content link = TypeAnnotation                 optional property = output
         <content link = Throws                         optional property = throwsClause
         <content link = Block                                   property = body
@@ -361,7 +359,7 @@
 
     <syntax id = GenericArguments
         <content link = leftBracket
-        <content link = Type                                    property = typeSpec
+        <content link = Type                                    property = generic
         <content link = GenericArgument       multiple optional property = additionalGenerics
         <content link = rightBracket
 
