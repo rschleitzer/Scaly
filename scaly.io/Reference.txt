@@ -1,8 +1,8 @@
 [[reference]]
 == Reference
 
-This chapter describes the Scaly Programming Language. The Scaly Programming Language 
-is defined by the structure and semantics of the 
+This chapter describes the Scaly Programming Language. 
+The Scaly Programming Language is defined by the structure and semantics of the 
 <<statements,statements>> which can be used to write a Scaly <<program,program>>.
 
 On the lowest level, a Scaly program consists of a sequence of characters which 
@@ -31,8 +31,9 @@ in the code samples that are provided.
 On the lowest level, a Scaly program is made up of a sequence of _characters_ which are 
 read from one or more files. For the Scaly Programming Language, some characters 
 have a special meaning, which means that they control the forming of the conversion of 
-the character sequence into a sequence of _<<tokens,tokens>>_ and _<<whitespace,whitespaces>>_. 
-These tokens are then parsed into expressions which make up a Scaly program or library.
+the character sequence into a sequence of _<<tokens,tokens>>_ and 
+_<<whitespace,whitespaces>>_. These tokens are then parsed into expressions 
+which make up a Scaly program or library.
 
 [[whitespace]]
 ==== Whitespaces
@@ -43,7 +44,8 @@ if no <<punctuationandkeywords, punctuation>> can be used.
 
 ===== Whitespace character sequences
 
-Outside of comments or strings, the following characters form whitespace character sequences:
+Outside of comments or strings, the following characters form 
+whitespace character sequences:
 
 * space, 
 
@@ -313,8 +315,8 @@ From a scope, a constant can be used after the scope declaration.
 [[functionexpressions]]
 ==== Function Expressions
 
-A function expression evaluates to a function value. It consists of the `function` keyword,
-an object literal, and a block.
+A function expression evaluates to a function value. 
+It consists of the `function` keyword, an object literal, and a block.
 
   function (a) { a } // => function(a){a}
 
