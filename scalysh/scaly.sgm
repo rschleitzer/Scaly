@@ -1,5 +1,5 @@
   <!DOCTYPE grammar SYSTEM "grammar.dtd">
-  
+
   <grammar>
 
     <syntax id = Program                                        program
@@ -12,10 +12,10 @@
     <syntax id = Statement                    multiple abstract
         <content link = Using
         <content link = Namespace
+        <content link = TypeDefinition
         <content link = Let
         <content link = Var
         <content link = Mutable
-        <content link = Thread
         <content link = Set
         <content link = Calculation
         <content link = Function
@@ -44,6 +44,11 @@
         <content link = Name                                    property = name
         <content link = Block                                   property = scope
 
+    <syntax id = TypeDefinition                                 base = Statement
+        <content link = typedef
+        <content identifier                                     property = typeName
+        <content link = TypeSpec                                property = typeSpec
+
     <syntax id = Let                                            base = Statement
         <content link = let
         <content link = Binding                                 property = binding
@@ -54,10 +59,6 @@
 
     <syntax id = Mutable                                        base = Statement
         <content link = mutable
-        <content link = Binding                                 property = binding
-
-    <syntax id = Thread                                         base = Statement
-        <content link = thread
         <content link = Binding                                 property = binding
 
     <syntax id = Binding
@@ -84,7 +85,6 @@
 
     <syntax id = Postfix                      multiple abstract
         <content link = MemberAccess
-        <content link = Subscript
         <content link = As
         <content link = Is
         <content link = Unwrap
@@ -94,14 +94,9 @@
         <content link = dot
         <content identifier                                     property = member
 
-    <syntax id = Subscript                                      base = Postfix
-        <content link = leftBracket
-        <content link = Operation                               property = operation
-        <content link = rightBracket
-
     <syntax id = As                                             base = Postfix
         <content link = as
-        <content link = Type                                    property = typeSpec
+        <content link = TypeSpec                                property = typeSpec
 
     <syntax id = Is                                             base = Postfix
         <content link = is
@@ -140,6 +135,7 @@
         <content link = This
         <content link = New
         <content link = Object
+        <content link = Array
         <content link = SizeOf
 
     <syntax id = Block                                          base = Expression
@@ -256,6 +252,12 @@
         <content link = Item                  multiple optional property = additionalOps
         <content link = rightParen
 
+    <syntax id = Array                                          base = Expression
+        <content link = leftBracket
+        <content link = Operation                      optional property = firstOp
+        <content link = Item                  multiple optional property = additionalOps
+        <content link = rightBracket
+
     <syntax id = Item                         multiple
         <content link = comma
         <content link = Operation                               property = operation
@@ -286,7 +288,7 @@
         <content link = class
         <content link = Name                                    property = name
         <content link = GenericParameters              optional property = generics
-        <content link = Structure                         optional property = contents
+        <content link = Structure                      optional property = contents
         <content link = Extends                        optional property = baseClass
         <content link = Block                          optional property = body
 
@@ -343,7 +345,7 @@
         <content link = Variant
 
     <syntax id = Type                         multiple          base = TypeSpec
-        <content identifier                                     property = name
+        <content link = Name                                    property = name
         <content link = GenericArguments               optional property = generics
         <content link = Optional                       optional property = optional
         <content link = LifeTime                       optional property = lifeTime
@@ -392,10 +394,10 @@
 
     <keyword id = using
     <keyword id = namespace
+    <keyword id = typedef
     <keyword id = let
     <keyword id = mutable
     <keyword id = var
-    <keyword id = thread
     <keyword id = set
     <keyword id = class
     <keyword id = extends

@@ -9,57 +9,57 @@ namespace scalysh
         Lexer lexer;
         string fileName;
 
-        string usingKeyword = "using";
-        string namespaceKeyword = "namespace";
-        string letKeyword = "let";
-        string mutableKeyword = "mutable";
-        string varKeyword = "var";
-        string threadKeyword = "thread";
-        string setKeyword = "set";
-        string classKeyword = "class";
-        string extendsKeyword = "extends";
-        string constructorKeyword = "constructor";
-        string methodKeyword = "method";
-        string functionKeyword = "function";
-        string thisKeyword = "this";
-        string newKeyword = "new";
-        string sizeofKeyword = "sizeof";
-        string catchKeyword = "catch";
-        string throwsKeyword = "throws";
-        string asKeyword = "as";
-        string isKeyword = "is";
-        string ifKeyword = "if";
-        string elseKeyword = "else";
-        string switchKeyword = "switch";
-        string caseKeyword = "case";
-        string defaultKeyword = "default";
-        string forKeyword = "for";
-        string inKeyword = "in";
-        string whileKeyword = "while";
-        string doKeyword = "do";
-        string loopKeyword = "loop";
-        string breakKeyword = "break";
-        string continueKeyword = "continue";
-        string returnKeyword = "return";
-        string throwKeyword = "throw";
+        readonly string usingKeyword = "using";
+        readonly string namespaceKeyword = "namespace";
+        readonly string typedefKeyword = "typedef";
+        readonly string letKeyword = "let";
+        readonly string mutableKeyword = "mutable";
+        readonly string varKeyword = "var";
+        readonly string setKeyword = "set";
+        readonly string classKeyword = "class";
+        readonly string extendsKeyword = "extends";
+        readonly string constructorKeyword = "constructor";
+        readonly string methodKeyword = "method";
+        readonly string functionKeyword = "function";
+        readonly string thisKeyword = "this";
+        readonly string newKeyword = "new";
+        readonly string sizeofKeyword = "sizeof";
+        readonly string catchKeyword = "catch";
+        readonly string throwsKeyword = "throws";
+        readonly string asKeyword = "as";
+        readonly string isKeyword = "is";
+        readonly string ifKeyword = "if";
+        readonly string elseKeyword = "else";
+        readonly string switchKeyword = "switch";
+        readonly string caseKeyword = "case";
+        readonly string defaultKeyword = "default";
+        readonly string forKeyword = "for";
+        readonly string inKeyword = "in";
+        readonly string whileKeyword = "while";
+        readonly string doKeyword = "do";
+        readonly string loopKeyword = "loop";
+        readonly string breakKeyword = "break";
+        readonly string continueKeyword = "continue";
+        readonly string returnKeyword = "return";
+        readonly string throwKeyword = "throw";
 
-        string semicolon = ";";
-        string leftCurly = "{";
-        string rightCurly = "}";
-        string leftParen = "(";
-        string rightParen = ")";
-        string leftBracket = "[";
-        string rightBracket = "]";
-        string dot = ".";
-        string comma = ",";
-        string colon = ":";
-        string question = "?";
-        string exclamation = "!";
-        string at = "@";
-        string hash = "#";
-        string dollar = "$";
-        string underscore = "_";
-        string backtick = "`";
+        readonly string semicolon = ";";
+        readonly string leftCurly = "{";
+        readonly string rightCurly = "}";
+        readonly string leftParen = "(";
+        readonly string rightParen = ")";
+        readonly string leftBracket = "[";
+        readonly string rightBracket = "]";
+        readonly string dot = ".";
+        readonly string comma = ",";
+        readonly string colon = ":";
+        readonly string question = "?";
+        readonly string exclamation = "!";
+        readonly string at = "@";
+        readonly string hash = "#";
+        readonly string dollar = "$";
+        readonly string underscore = "_";
+        readonly string backtick = "`";
 
         public Parser(string theFileName, string text)
         {
@@ -130,6 +130,12 @@ namespace scalysh
             }
 
             {
+                TypeDefinition node = parseTypeDefinition();
+                if (node != null)
+                    return node;
+            }
+
+            {
                 Let node = parseLet();
                 if (node != null)
                     return node;
@@ -143,12 +149,6 @@ namespace scalysh
 
             {
                 Mutable node = parseMutable();
-                if (node != null)
-                    return node;
-            }
-
-            {
-                Thread node = parseThread();
                 if (node != null)
                     return node;
             }
@@ -337,6 +337,35 @@ namespace scalysh
             return ret;
         }
 
+        public TypeDefinition parseTypeDefinition()
+        {
+            Position start = lexer.getPreviousPosition();
+
+            bool successTypedef1 = lexer.parseKeyword(typedefKeyword);
+            if (successTypedef1)
+                lexer.advance();
+            else
+                return null;
+
+            string typeName = lexer.parseIdentifier();
+            if ((typeName != null) && isIdentifier(typeName))
+                lexer.advance();
+            else
+                throw new ParserException(fileName, lexer.line, lexer.column);
+
+            TypeSpec typeSpec = parseTypeSpec();
+            if (typeSpec == null)
+                throw new ParserException(fileName, lexer.line, lexer.column);
+
+            Position end = lexer.getPosition();
+
+            TypeDefinition ret = new TypeDefinition(start, end, typeName, typeSpec);
+
+            typeSpec.parent = ret;
+
+            return ret;
+        }
+
         public Let parseLet()
         {
             Position start = lexer.getPreviousPosition();
@@ -400,29 +429,6 @@ namespace scalysh
             Position end = lexer.getPosition();
 
             Mutable ret = new Mutable(start, end, binding);
-
-            binding.parent = ret;
-
-            return ret;
-        }
-
-        public Thread parseThread()
-        {
-            Position start = lexer.getPreviousPosition();
-
-            bool successThread1 = lexer.parseKeyword(threadKeyword);
-            if (successThread1)
-                lexer.advance();
-            else
-                return null;
-
-            Binding binding = parseBinding();
-            if (binding == null)
-                throw new ParserException(fileName, lexer.line, lexer.column);
-
-            Position end = lexer.getPosition();
-
-            Thread ret = new Thread(start, end, binding);
 
             binding.parent = ret;
 
@@ -606,12 +612,6 @@ namespace scalysh
             }
 
             {
-                Subscript node = parseSubscript();
-                if (node != null)
-                    return node;
-            }
-
-            {
                 As node = parseAs();
                 if (node != null)
                     return node;
@@ -662,35 +662,6 @@ namespace scalysh
             return ret;
         }
 
-        public Subscript parseSubscript()
-        {
-            Position start = lexer.getPreviousPosition();
-
-            bool successLeftBracket1 = lexer.parsePunctuation(leftBracket);
-            if (successLeftBracket1)
-                lexer.advance();
-            else
-                return null;
-
-            Operation operation = parseOperation();
-            if (operation == null)
-                throw new ParserException(fileName, lexer.line, lexer.column);
-
-            bool successRightBracket3 = lexer.parsePunctuation(rightBracket);
-            if (successRightBracket3)
-                lexer.advance();
-            else
-                throw new ParserException(fileName, lexer.line, lexer.column);
-
-            Position end = lexer.getPosition();
-
-            Subscript ret = new Subscript(start, end, operation);
-
-            operation.parent = ret;
-
-            return ret;
-        }
-
         public As parseAs()
         {
             Position start = lexer.getPreviousPosition();
@@ -701,7 +672,7 @@ namespace scalysh
             else
                 return null;
 
-            Type typeSpec = parseType();
+            TypeSpec typeSpec = parseTypeSpec();
             if (typeSpec == null)
                 throw new ParserException(fileName, lexer.line, lexer.column);
 
@@ -934,6 +905,12 @@ namespace scalysh
 
             {
                 Object node = parseObject();
+                if (node != null)
+                    return node;
+            }
+
+            {
+                Array node = parseArray();
                 if (node != null)
                     return node;
             }
@@ -1651,6 +1628,41 @@ namespace scalysh
             return ret;
         }
 
+        public Array parseArray()
+        {
+            Position start = lexer.getPreviousPosition();
+
+            bool successLeftBracket1 = lexer.parsePunctuation(leftBracket);
+            if (successLeftBracket1)
+                lexer.advance();
+            else
+                return null;
+
+            Operation firstOp = parseOperation();
+
+            Item[] additionalOps = parseItemList();
+
+            bool successRightBracket4 = lexer.parsePunctuation(rightBracket);
+            if (successRightBracket4)
+                lexer.advance();
+            else
+                throw new ParserException(fileName, lexer.line, lexer.column);
+
+            Position end = lexer.getPosition();
+
+            Array ret = new Array(start, end, firstOp, additionalOps);
+
+            if (firstOp != null)
+                firstOp.parent = ret;
+            if (additionalOps != null)
+            {
+                foreach (Item item in additionalOps)
+                    item.parent = ret;
+            }
+
+            return ret;
+        }
+
         public Item[] parseItemList()
         {
             List<Item> ret = null;
@@ -2231,10 +2243,8 @@ namespace scalysh
         {
             Position start = lexer.getPreviousPosition();
 
-            string name = lexer.parseIdentifier();
-            if ((name != null) && isIdentifier(name))
-                lexer.advance();
-            else
+            Name name = parseName();
+            if (name == null)
                 return null;
 
             GenericArguments generics = parseGenericArguments();
@@ -2247,6 +2257,7 @@ namespace scalysh
 
             Type ret = new Type(start, end, name, generics, optional, lifeTime);
 
+            name.parent = ret;
             if (generics != null)
                 generics.parent = ret;
             if (optional != null)
@@ -2533,6 +2544,9 @@ namespace scalysh
             if (id == namespaceKeyword)
                 return false;
 
+            if (id == typedefKeyword)
+                return false;
+
             if (id == letKeyword)
                 return false;
 
@@ -2540,9 +2554,6 @@ namespace scalysh
                 return false;
 
             if (id == varKeyword)
-                return false;
-
-            if (id == threadKeyword)
                 return false;
 
             if (id == setKeyword)
@@ -2681,6 +2692,15 @@ namespace scalysh
         {
         }
 
+        public virtual bool openTypeDefinition(TypeDefinition theTypeDefinition)
+        {
+            return true;
+        }
+
+        public virtual void closeTypeDefinition(TypeDefinition theTypeDefinition)
+        {
+        }
+
         public virtual bool openLet(Let theLet)
         {
             return true;
@@ -2705,15 +2725,6 @@ namespace scalysh
         }
 
         public virtual void closeMutable(Mutable theMutable)
-        {
-        }
-
-        public virtual bool openThread(Thread theThread)
-        {
-            return true;
-        }
-
-        public virtual void closeThread(Thread theThread)
         {
         }
 
@@ -2763,15 +2774,6 @@ namespace scalysh
         }
 
         public virtual void visitMemberAccess(MemberAccess theMemberAccess)
-        {
-        }
-
-        public virtual bool openSubscript(Subscript theSubscript)
-        {
-            return true;
-        }
-
-        public virtual void closeSubscript(Subscript theSubscript)
         {
         }
 
@@ -2981,6 +2983,15 @@ namespace scalysh
         }
 
         public virtual void closeObject(Object theObject)
+        {
+        }
+
+        public virtual bool openArray(Array theArray)
+        {
+            return true;
+        }
+
+        public virtual void closeArray(Array theArray)
         {
         }
 
@@ -3340,6 +3351,28 @@ namespace scalysh
         }
     }
 
+    public class TypeDefinition : Statement
+    {
+        public string typeName;
+        public TypeSpec typeSpec;
+        public TypeDefinition(Position start, Position end, string typeName, TypeSpec typeSpec)
+        {
+            this.start = start;
+            this.end = end;
+            this.typeName = typeName;
+            this.typeSpec = typeSpec;
+        }
+
+        public override void accept(Visitor visitor)
+        {
+            if (!visitor.openTypeDefinition(this))
+                return;
+
+        typeSpec.accept(visitor);
+            visitor.closeTypeDefinition(this);
+        }
+    }
+
     public class Let : Statement
     {
         public Binding binding;
@@ -3397,26 +3430,6 @@ namespace scalysh
 
         binding.accept(visitor);
             visitor.closeMutable(this);
-        }
-    }
-
-    public class Thread : Statement
-    {
-        public Binding binding;
-        public Thread(Position start, Position end, Binding binding)
-        {
-            this.start = start;
-            this.end = end;
-            this.binding = binding;
-        }
-
-        public override void accept(Visitor visitor)
-        {
-            if (!visitor.openThread(this))
-                return;
-
-        binding.accept(visitor);
-            visitor.closeThread(this);
         }
     }
 
@@ -3564,30 +3577,10 @@ namespace scalysh
         }
     }
 
-    public class Subscript : Postfix
-    {
-        public Operation operation;
-        public Subscript(Position start, Position end, Operation operation)
-        {
-            this.start = start;
-            this.end = end;
-            this.operation = operation;
-        }
-
-        public override void accept(Visitor visitor)
-        {
-            if (!visitor.openSubscript(this))
-                return;
-
-        operation.accept(visitor);
-            visitor.closeSubscript(this);
-        }
-    }
-
     public class As : Postfix
     {
-        public Type typeSpec;
-        public As(Position start, Position end, Type typeSpec)
+        public TypeSpec typeSpec;
+        public As(Position start, Position end, TypeSpec typeSpec)
         {
             this.start = start;
             this.end = end;
@@ -4175,6 +4168,34 @@ namespace scalysh
         }
     }
 
+    public class Array : Expression
+    {
+        public Operation firstOp;
+        public Item[] additionalOps;
+        public Array(Position start, Position end, Operation firstOp, Item[] additionalOps)
+        {
+            this.start = start;
+            this.end = end;
+            this.firstOp = firstOp;
+            this.additionalOps = additionalOps;
+        }
+
+        public override void accept(Visitor visitor)
+        {
+            if (!visitor.openArray(this))
+                return;
+
+        if (firstOp != null)
+            firstOp.accept(visitor);
+            if (additionalOps != null)
+            {
+                foreach (Item node in additionalOps)
+                    node.accept(visitor);
+            }
+            visitor.closeArray(this);
+        }
+    }
+
     public class Item : SyntaxNode
     {
         public Operation operation;
@@ -4560,11 +4581,11 @@ namespace scalysh
 
     public class Type : TypeSpec
     {
-        public string name;
+        public Name name;
         public GenericArguments generics;
         public Optional optional;
         public LifeTime lifeTime;
-        public Type(Position start, Position end, string name, GenericArguments generics, Optional optional, LifeTime lifeTime)
+        public Type(Position start, Position end, Name name, GenericArguments generics, Optional optional, LifeTime lifeTime)
         {
             this.start = start;
             this.end = end;
@@ -4579,6 +4600,7 @@ namespace scalysh
             if (!visitor.openType(this))
                 return;
 
+        name.accept(visitor);
         if (generics != null)
             generics.accept(visitor);
         if (optional != null)

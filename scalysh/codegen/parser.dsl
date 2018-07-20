@@ -11,11 +11,11 @@ namespace scalysh
         string fileName;
 
 "   (apply-to-selected-children "keyword" (lambda (keyword) ($
-"        string "(name keyword)" = \""(id keyword)"\";
+"        readonly string "(name keyword)" = \""(id keyword)"\";
 "   )))
 "
 "   (apply-to-selected-children "punctuation" (lambda (punctuation) ($
-"        string "(id punctuation)" = \""(value punctuation)"\";
+"        readonly string "(id punctuation)" = \""(value punctuation)"\";
 "   )))
 "
         public Parser(string theFileName, string text)

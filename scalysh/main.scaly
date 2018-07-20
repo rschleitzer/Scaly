@@ -1,29 +1,21 @@
 using Scaly
 
+typedef array std.pmr.vector
+typedef string std.pmr.string
+
 function main(argc: int, argv: pointer): int {
 
-    // Allocate the root page for the main thread
-    posix_memalign(CurrentPage as pointer, pageSize, pageSize * maxStackPages)
-
-    if (CurrentPage = ()) {
-        return (-1)
-    }
-
-    CurrentPage.reset()
-
-    set CurrentTask : new Task@CurrentPage()
-
     // Collect the arguments into a string Vector
-    mutable arguments new Array[string]@CurrentPage(argc - 1)
+    mutable arguments new array[string?](argc - 1)
 
     mutable i: int 1
     while (i < argc) {
-        arguments.Add(new string@CurrentPage(argv[i]))
+        arguments.Add(new string(argv[i]))
         set i: i + 1
     }
 
     // Call Scaly's top-level code
-    var ret Scaly.main(CurrentPage, arguments)
+    var ret Scaly.main(arguments)
 
     // Only for monitoring, debugging and stuff
     CurrentTask.dispose()
