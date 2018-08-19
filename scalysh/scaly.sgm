@@ -22,6 +22,7 @@
         <content link = Class
         <content link = Constructor
         <content link = Method
+        <content link = Operator
         <content link = Break
         <content link = Continue
         <content link = Return
@@ -77,9 +78,9 @@
         <content link = semicolon                      optional
     
     <syntax id = Operation
-        <content link = Operator              multiple          property = op
+        <content link = Operand               multiple          property = op
 
-    <syntax id = Operator                     multiple          base = Statement
+    <syntax id = Operand                      multiple          base = Statement
         <content link = Expression                              property = primary
         <content link = Postfix               multiple optional property = postfixes
 
@@ -329,8 +330,15 @@
         <content link = function
         <content link = Procedure                               property = procedure
 
+    <syntax id = Operator                                       base = Statement
+        <content link = operator
+        <content link = Routine                                 property = routine
+
     <syntax id = Procedure
         <content identifier                                     property = name
+        <content link = Routine                                 property = routine
+
+    <syntax id = Routine
         <content link = Structure                      optional property = input
         <content link = TypeAnnotation                 optional property = output
         <content link = Throws                         optional property = throwsClause
@@ -404,6 +412,7 @@
     <keyword id = constructor
     <keyword id = method
     <keyword id = function
+    <keyword id = operator
     <keyword id = this
     <keyword id = new
     <keyword id = sizeof

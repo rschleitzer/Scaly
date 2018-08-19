@@ -1,12 +1,9 @@
 using Scaly
 
-typedef array std.pmr.vector
-typedef string std.pmr.string
-
 function main(argc: int, argv: pointer): int {
 
-    // Collect the arguments into a string Vector
-    mutable arguments new array[string?](argc - 1)
+    // Collect the arguments into a string Array
+    mutable arguments new Array[string?](argc - 1)
 
     mutable i: int 1
     while (i < argc) {

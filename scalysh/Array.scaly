@@ -1,0 +1,103 @@
+namespace scaly {
+
+class Array[T] {
+
+    constructor() {
+        set size: 0
+        set capacity: 0
+        set rawArray: 0
+    }
+
+    constructor(capacity: int) {
+        set size: 0
+        set this.capacity: capacity
+        set rawArray: 0
+    }
+
+    constructor(array: Array[T]) {
+        set size: array.length()
+        set capacity: array.length()
+        allocate()
+        memcpy(rawArray, array.getRawArray(), size * sizeof T)
+    }
+
+    operator (sizet i): T throws ArrayOutOfBoundsError {
+        if (i >= size) {
+            throw ArrayOutOfBoundsError() }
+
+        return rawArray + (i * sizeof T) as T
+    }
+
+    function length(): int {
+        return size
+    }
+
+    function getRawArray(): pointer {
+        return rawArray;
+    }
+
+    // Append a value to the array
+    function push(item: T) {
+        if (rawArray = ()) {
+            set capacity: 1
+            set size: 0
+            allocate()
+        }
+        else {
+            if (size = capacity) {
+                reAllocate(capacity * 2) }
+        }
+
+        set rawArray[size]: item
+        set size: size + 1
+    }
+
+    // Take away a value from the array's end
+    function pop(): T? {
+        if (size = 0) {
+            return ()
+        }
+        else {
+            T item = this[size - 1]
+            set size: size - 1
+            return item
+        }
+    }
+
+    // Remove a value from the array
+    function remove(t: T) {
+        mutable i: int 0
+        do {
+            if (this[i] = t) {
+                mutable j: int i + 1
+                do {
+                    set this[j - 1]: this[j]
+                } while (j < size)
+                set size: size - 1
+                return
+            }
+            set i: i + 1
+        } while (i < size)
+    }
+
+    function reAllocate(newCapacity: int) {
+        let oldArray: pointer[T] rawArray
+        set capacity: newCapacity
+        allocate()
+        memcpy(rawArray, oldArray, size * sizeof T);
+
+        // Reclaim the page if it was oversized, i.e., exclusively allocated
+        if (((Object*)oldArray).getPage().isOversized()) {
+            getPage().reclaimArray(oldArray) }
+    }
+
+    void allocate() {
+        set rawArray: getPage().allocateObject(capacity * sizeof pointer[T])
+    }
+
+    sizet size;
+    sizet capacity;
+    T** rawArray;
+}
+
+}

@@ -21,6 +21,7 @@ namespace scalysh
         readonly string constructorKeyword = "constructor";
         readonly string methodKeyword = "method";
         readonly string functionKeyword = "function";
+        readonly string operatorKeyword = "operator";
         readonly string thisKeyword = "this";
         readonly string newKeyword = "new";
         readonly string sizeofKeyword = "sizeof";
@@ -185,6 +186,12 @@ namespace scalysh
 
             {
                 Method node = parseMethod();
+                if (node != null)
+                    return node;
+            }
+
+            {
+                Operator node = parseOperator();
                 if (node != null)
                     return node;
             }
@@ -520,7 +527,7 @@ namespace scalysh
         {
             Position start = lexer.getPreviousPosition();
 
-            Operator[] op = parseOperatorList();
+            Operand[] op = parseOperandList();
             if (op == null)
                 return null;
 
@@ -530,24 +537,24 @@ namespace scalysh
 
             if (op != null)
             {
-                foreach (Operator item in op)
+                foreach (Operand item in op)
                     item.parent = ret;
             }
 
             return ret;
         }
 
-        public Operator[] parseOperatorList()
+        public Operand[] parseOperandList()
         {
-            List<Operator> ret = null;
+            List<Operand> ret = null;
             while (true)
             {
-                Operator node = parseOperator();
+                Operand node = parseOperand();
                 if (node == null)
                     break;
 
                 if (ret == null)
-                    ret = new List<Operator>();
+                    ret = new List<Operand>();
 
                 ret.Add(node);
             }
@@ -558,7 +565,7 @@ namespace scalysh
                 return null;
         }
 
-        public Operator parseOperator()
+        public Operand parseOperand()
         {
             Position start = lexer.getPreviousPosition();
 
@@ -570,7 +577,7 @@ namespace scalysh
 
             Position end = lexer.getPosition();
 
-            Operator ret = new Operator(start, end, primary, postfixes);
+            Operand ret = new Operand(start, end, primary, postfixes);
 
             primary.parent = ret;
             if (postfixes != null)
@@ -2122,6 +2129,29 @@ namespace scalysh
             return ret;
         }
 
+        public Operator parseOperator()
+        {
+            Position start = lexer.getPreviousPosition();
+
+            bool successOperator1 = lexer.parseKeyword(operatorKeyword);
+            if (successOperator1)
+                lexer.advance();
+            else
+                return null;
+
+            Routine routine = parseRoutine();
+            if (routine == null)
+                throw new ParserException(fileName, lexer.line, lexer.column);
+
+            Position end = lexer.getPosition();
+
+            Operator ret = new Operator(start, end, routine);
+
+            routine.parent = ret;
+
+            return ret;
+        }
+
         public Procedure parseProcedure()
         {
             Position start = lexer.getPreviousPosition();
@@ -2131,6 +2161,23 @@ namespace scalysh
                 lexer.advance();
             else
                 return null;
+
+            Routine routine = parseRoutine();
+            if (routine == null)
+                throw new ParserException(fileName, lexer.line, lexer.column);
+
+            Position end = lexer.getPosition();
+
+            Procedure ret = new Procedure(start, end, name, routine);
+
+            routine.parent = ret;
+
+            return ret;
+        }
+
+        public Routine parseRoutine()
+        {
+            Position start = lexer.getPreviousPosition();
 
             Structure input = parseStructure();
 
@@ -2144,7 +2191,7 @@ namespace scalysh
 
             Position end = lexer.getPosition();
 
-            Procedure ret = new Procedure(start, end, name, input, output, throwsClause, body);
+            Routine ret = new Routine(start, end, input, output, throwsClause, body);
 
             if (input != null)
                 input.parent = ret;
@@ -2574,6 +2621,9 @@ namespace scalysh
             if (id == functionKeyword)
                 return false;
 
+            if (id == operatorKeyword)
+                return false;
+
             if (id == thisKeyword)
                 return false;
 
@@ -2764,12 +2814,12 @@ namespace scalysh
         {
         }
 
-        public virtual bool openOperator(Operator theOperator)
+        public virtual bool openOperand(Operand theOperand)
         {
             return true;
         }
 
-        public virtual void closeOperator(Operator theOperator)
+        public virtual void closeOperand(Operand theOperand)
         {
         }
 
@@ -3115,12 +3165,30 @@ namespace scalysh
         {
         }
 
+        public virtual bool openOperator(Operator theOperator)
+        {
+            return true;
+        }
+
+        public virtual void closeOperator(Operator theOperator)
+        {
+        }
+
         public virtual bool openProcedure(Procedure theProcedure)
         {
             return true;
         }
 
         public virtual void closeProcedure(Procedure theProcedure)
+        {
+        }
+
+        public virtual bool openRoutine(Routine theRoutine)
+        {
+            return true;
+        }
+
+        public virtual void closeRoutine(Routine theRoutine)
         {
         }
 
@@ -3505,8 +3573,8 @@ namespace scalysh
 
     public class Operation : SyntaxNode
     {
-        public Operator[] op;
-        public Operation(Position start, Position end, Operator[] op)
+        public Operand[] op;
+        public Operation(Position start, Position end, Operand[] op)
         {
             this.start = start;
             this.end = end;
@@ -3520,18 +3588,18 @@ namespace scalysh
 
             if (op != null)
             {
-                foreach (Operator node in op)
+                foreach (Operand node in op)
                     node.accept(visitor);
             }
             visitor.closeOperation(this);
         }
     }
 
-    public class Operator : Statement
+    public class Operand : Statement
     {
         public Expression primary;
         public Postfix[] postfixes;
-        public Operator(Position start, Position end, Expression primary, Postfix[] postfixes)
+        public Operand(Position start, Position end, Expression primary, Postfix[] postfixes)
         {
             this.start = start;
             this.end = end;
@@ -3541,7 +3609,7 @@ namespace scalysh
 
         public override void accept(Visitor visitor)
         {
-            if (!visitor.openOperator(this))
+            if (!visitor.openOperand(this))
                 return;
 
         primary.accept(visitor);
@@ -3550,7 +3618,7 @@ namespace scalysh
                 foreach (Postfix node in postfixes)
                     node.accept(visitor);
             }
-            visitor.closeOperator(this);
+            visitor.closeOperand(this);
         }
     }
 
@@ -4518,18 +4586,58 @@ namespace scalysh
         }
     }
 
+    public class Operator : Statement
+    {
+        public Routine routine;
+        public Operator(Position start, Position end, Routine routine)
+        {
+            this.start = start;
+            this.end = end;
+            this.routine = routine;
+        }
+
+        public override void accept(Visitor visitor)
+        {
+            if (!visitor.openOperator(this))
+                return;
+
+        routine.accept(visitor);
+            visitor.closeOperator(this);
+        }
+    }
+
     public class Procedure : SyntaxNode
     {
         public string name;
-        public Structure input;
-        public TypeAnnotation output;
-        public Throws throwsClause;
-        public Block body;
-        public Procedure(Position start, Position end, string name, Structure input, TypeAnnotation output, Throws throwsClause, Block body)
+        public Routine routine;
+        public Procedure(Position start, Position end, string name, Routine routine)
         {
             this.start = start;
             this.end = end;
             this.name = name;
+            this.routine = routine;
+        }
+
+        public override void accept(Visitor visitor)
+        {
+            if (!visitor.openProcedure(this))
+                return;
+
+        routine.accept(visitor);
+            visitor.closeProcedure(this);
+        }
+    }
+
+    public class Routine : SyntaxNode
+    {
+        public Structure input;
+        public TypeAnnotation output;
+        public Throws throwsClause;
+        public Block body;
+        public Routine(Position start, Position end, Structure input, TypeAnnotation output, Throws throwsClause, Block body)
+        {
+            this.start = start;
+            this.end = end;
             this.input = input;
             this.output = output;
             this.throwsClause = throwsClause;
@@ -4538,7 +4646,7 @@ namespace scalysh
 
         public override void accept(Visitor visitor)
         {
-            if (!visitor.openProcedure(this))
+            if (!visitor.openRoutine(this))
                 return;
 
         if (input != null)
@@ -4548,7 +4656,7 @@ namespace scalysh
         if (throwsClause != null)
             throwsClause.accept(visitor);
         body.accept(visitor);
-            visitor.closeProcedure(this);
+            visitor.closeRoutine(this);
         }
     }
 
