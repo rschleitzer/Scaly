@@ -1,6 +1,6 @@
-thread Scaly.CurrentPage : Page? ()
+threadlocal scaly.currentPage : Page? ()
 
-class Scaly.Page
+class scaly.Page
 (
     currentPage         : Page?
     nextObjectOffset    : int
@@ -246,7 +246,7 @@ class Scaly.Page
 
         // Second attempt scanning the rest of the chain
         mutable page: Page? = this
-        do {
+        do {getPage
             if (page.deallocateExclusivePage(address as Page)) {
                 return true
             }

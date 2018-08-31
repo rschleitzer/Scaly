@@ -16,6 +16,7 @@
         <content link = Let
         <content link = Var
         <content link = Mutable
+        <content link = ThreadLocal
         <content link = Set
         <content link = Calculation
         <content link = Function
@@ -60,6 +61,10 @@
 
     <syntax id = Mutable                                        base = Statement
         <content link = mutable
+        <content link = Binding                                 property = binding
+
+    <syntax id = ThreadLocal                                    base = Statement
+        <content link = threadlocal
         <content link = Binding                                 property = binding
 
     <syntax id = Binding
@@ -405,6 +410,7 @@
     <keyword id = typedef
     <keyword id = let
     <keyword id = mutable
+    <keyword id = threadlocal
     <keyword id = var
     <keyword id = set
     <keyword id = class

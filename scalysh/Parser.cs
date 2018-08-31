@@ -14,6 +14,7 @@ namespace scalysh
         readonly string typedefKeyword = "typedef";
         readonly string letKeyword = "let";
         readonly string mutableKeyword = "mutable";
+        readonly string threadlocalKeyword = "threadlocal";
         readonly string varKeyword = "var";
         readonly string setKeyword = "set";
         readonly string classKeyword = "class";
@@ -150,6 +151,12 @@ namespace scalysh
 
             {
                 Mutable node = parseMutable();
+                if (node != null)
+                    return node;
+            }
+
+            {
+                ThreadLocal node = parseThreadLocal();
                 if (node != null)
                     return node;
             }
@@ -436,6 +443,29 @@ namespace scalysh
             Position end = lexer.getPosition();
 
             Mutable ret = new Mutable(start, end, binding);
+
+            binding.parent = ret;
+
+            return ret;
+        }
+
+        public ThreadLocal parseThreadLocal()
+        {
+            Position start = lexer.getPreviousPosition();
+
+            bool successThreadlocal1 = lexer.parseKeyword(threadlocalKeyword);
+            if (successThreadlocal1)
+                lexer.advance();
+            else
+                return null;
+
+            Binding binding = parseBinding();
+            if (binding == null)
+                throw new ParserException(fileName, lexer.line, lexer.column);
+
+            Position end = lexer.getPosition();
+
+            ThreadLocal ret = new ThreadLocal(start, end, binding);
 
             binding.parent = ret;
 
@@ -2600,6 +2630,9 @@ namespace scalysh
             if (id == mutableKeyword)
                 return false;
 
+            if (id == threadlocalKeyword)
+                return false;
+
             if (id == varKeyword)
                 return false;
 
@@ -2775,6 +2808,15 @@ namespace scalysh
         }
 
         public virtual void closeMutable(Mutable theMutable)
+        {
+        }
+
+        public virtual bool openThreadLocal(ThreadLocal theThreadLocal)
+        {
+            return true;
+        }
+
+        public virtual void closeThreadLocal(ThreadLocal theThreadLocal)
         {
         }
 
@@ -3498,6 +3540,26 @@ namespace scalysh
 
         binding.accept(visitor);
             visitor.closeMutable(this);
+        }
+    }
+
+    public class ThreadLocal : Statement
+    {
+        public Binding binding;
+        public ThreadLocal(Position start, Position end, Binding binding)
+        {
+            this.start = start;
+            this.end = end;
+            this.binding = binding;
+        }
+
+        public override void accept(Visitor visitor)
+        {
+            if (!visitor.openThreadLocal(this))
+                return;
+
+        binding.accept(visitor);
+            visitor.closeThreadLocal(this);
         }
     }
 

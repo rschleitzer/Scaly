@@ -1,0 +1,12 @@
+namespace scaly {
+    class string {
+        function string(page: Page, cstring: pointer[char]): pointer[string] {
+            let length strlen cstring
+            let packedLength getPackedLength(length)
+            let buffer: pointer[string] page.allocateObject (packedLength + length)
+            writePackedLength(buffer, length)
+            copyNativeString(cstring, buffer + packedLength, length)
+            return buffer
+        }
+    }
+}
