@@ -56,7 +56,8 @@ namespace scalysh
                 (apply-to-children-of syntax (lambda (content) ($
 "
             {
-                "(link content)"Syntax node = parse"(link content)"();
+                "(link content)"Syntax
+                 node = parse"(link content)"();
                 if (node != null)
                     return node;
             }

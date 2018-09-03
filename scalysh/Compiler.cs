@@ -45,7 +45,7 @@ namespace scalysh
             foreach (var item in files)
                 item.parent = program;
 
-            var modelVisitor = new CVisitor();
+            var modelVisitor = new ModelVisitor();
             program.accept(modelVisitor);
         }
 

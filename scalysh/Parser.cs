@@ -2726,585 +2726,585 @@ namespace scalysh
 
     public class SyntaxVisitor
     {
-        public virtual bool openProgram(ProgramSyntax theProgram)
+        public virtual bool openProgram(ProgramSyntax programSyntax)
         {
             return true;
         }
 
-        public virtual void closeProgram(ProgramSyntax theProgram)
+        public virtual void closeProgram(ProgramSyntax programSyntax)
         {
         }
 
-        public virtual bool openFile(FileSyntax theFile)
-        {
-            return true;
-        }
-
-        public virtual void closeFile(FileSyntax theFile)
-        {
-        }
-
-        public virtual bool openUsing(UsingSyntax theUsing)
+        public virtual bool openFile(FileSyntax fileSyntax)
         {
             return true;
         }
 
-        public virtual void closeUsing(UsingSyntax theUsing)
+        public virtual void closeFile(FileSyntax fileSyntax)
         {
         }
 
-        public virtual bool openName(NameSyntax theName)
-        {
-            return true;
-        }
-
-        public virtual void closeName(NameSyntax theName)
-        {
-        }
-
-        public virtual void visitExtension(ExtensionSyntax theExtension)
-        {
-        }
-
-        public virtual bool openNamespace(NamespaceSyntax theNamespace)
+        public virtual bool openUsing(UsingSyntax usingSyntax)
         {
             return true;
         }
 
-        public virtual void closeNamespace(NamespaceSyntax theNamespace)
+        public virtual void closeUsing(UsingSyntax usingSyntax)
         {
         }
 
-        public virtual bool openTypeDefinition(TypeDefinitionSyntax theTypeDefinition)
-        {
-            return true;
-        }
-
-        public virtual void closeTypeDefinition(TypeDefinitionSyntax theTypeDefinition)
-        {
-        }
-
-        public virtual bool openLet(LetSyntax theLet)
+        public virtual bool openName(NameSyntax nameSyntax)
         {
             return true;
         }
 
-        public virtual void closeLet(LetSyntax theLet)
+        public virtual void closeName(NameSyntax nameSyntax)
         {
         }
 
-        public virtual bool openVar(VarSyntax theVar)
-        {
-            return true;
-        }
-
-        public virtual void closeVar(VarSyntax theVar)
+        public virtual void visitExtension(ExtensionSyntax extensionSyntax)
         {
         }
 
-        public virtual bool openMutable(MutableSyntax theMutable)
+        public virtual bool openNamespace(NamespaceSyntax namespaceSyntax)
         {
             return true;
         }
 
-        public virtual void closeMutable(MutableSyntax theMutable)
+        public virtual void closeNamespace(NamespaceSyntax namespaceSyntax)
         {
         }
 
-        public virtual bool openThreadLocal(ThreadLocalSyntax theThreadLocal)
-        {
-            return true;
-        }
-
-        public virtual void closeThreadLocal(ThreadLocalSyntax theThreadLocal)
-        {
-        }
-
-        public virtual bool openBinding(BindingSyntax theBinding)
+        public virtual bool openTypeDefinition(TypeDefinitionSyntax typeDefinitionSyntax)
         {
             return true;
         }
 
-        public virtual void closeBinding(BindingSyntax theBinding)
+        public virtual void closeTypeDefinition(TypeDefinitionSyntax typeDefinitionSyntax)
         {
         }
 
-        public virtual bool openSet(SetSyntax theSet)
-        {
-            return true;
-        }
-
-        public virtual void closeSet(SetSyntax theSet)
-        {
-        }
-
-        public virtual bool openCalculation(CalculationSyntax theCalculation)
+        public virtual bool openLet(LetSyntax letSyntax)
         {
             return true;
         }
 
-        public virtual void closeCalculation(CalculationSyntax theCalculation)
+        public virtual void closeLet(LetSyntax letSyntax)
         {
         }
 
-        public virtual bool openOperation(OperationSyntax theOperation)
-        {
-            return true;
-        }
-
-        public virtual void closeOperation(OperationSyntax theOperation)
-        {
-        }
-
-        public virtual bool openOperand(OperandSyntax theOperand)
+        public virtual bool openVar(VarSyntax varSyntax)
         {
             return true;
         }
 
-        public virtual void closeOperand(OperandSyntax theOperand)
+        public virtual void closeVar(VarSyntax varSyntax)
         {
         }
 
-        public virtual void visitMemberAccess(MemberAccessSyntax theMemberAccess)
-        {
-        }
-
-        public virtual bool openAs(AsSyntax theAs)
+        public virtual bool openMutable(MutableSyntax mutableSyntax)
         {
             return true;
         }
 
-        public virtual void closeAs(AsSyntax theAs)
+        public virtual void closeMutable(MutableSyntax mutableSyntax)
         {
         }
 
-        public virtual bool openIs(IsSyntax theIs)
-        {
-            return true;
-        }
-
-        public virtual void closeIs(IsSyntax theIs)
-        {
-        }
-
-        public virtual void visitUnwrap(UnwrapSyntax theUnwrap)
-        {
-        }
-
-        public virtual bool openCatch(CatchSyntax theCatch)
+        public virtual bool openThreadLocal(ThreadLocalSyntax threadLocalSyntax)
         {
             return true;
         }
 
-        public virtual void closeCatch(CatchSyntax theCatch)
+        public virtual void closeThreadLocal(ThreadLocalSyntax threadLocalSyntax)
         {
         }
 
-        public virtual bool openWildCardCatchPattern(WildCardCatchPatternSyntax theWildCardCatchPattern)
-        {
-            return true;
-        }
-
-        public virtual void closeWildCardCatchPattern(WildCardCatchPatternSyntax theWildCardCatchPattern)
-        {
-        }
-
-        public virtual bool openNameCatchPattern(NameCatchPatternSyntax theNameCatchPattern)
+        public virtual bool openBinding(BindingSyntax bindingSyntax)
         {
             return true;
         }
 
-        public virtual void closeNameCatchPattern(NameCatchPatternSyntax theNameCatchPattern)
+        public virtual void closeBinding(BindingSyntax bindingSyntax)
         {
         }
 
-        public virtual bool openBlock(BlockSyntax theBlock)
-        {
-            return true;
-        }
-
-        public virtual void closeBlock(BlockSyntax theBlock)
-        {
-        }
-
-        public virtual void visitConstant(ConstantSyntax theConstant)
-        {
-        }
-
-        public virtual bool openIf(IfSyntax theIf)
+        public virtual bool openSet(SetSyntax setSyntax)
         {
             return true;
         }
 
-        public virtual void closeIf(IfSyntax theIf)
+        public virtual void closeSet(SetSyntax setSyntax)
         {
         }
 
-        public virtual bool openElse(ElseSyntax theElse)
-        {
-            return true;
-        }
-
-        public virtual void closeElse(ElseSyntax theElse)
-        {
-        }
-
-        public virtual bool openSwitch(SwitchSyntax theSwitch)
+        public virtual bool openCalculation(CalculationSyntax calculationSyntax)
         {
             return true;
         }
 
-        public virtual void closeSwitch(SwitchSyntax theSwitch)
+        public virtual void closeCalculation(CalculationSyntax calculationSyntax)
         {
         }
 
-        public virtual bool openSwitchCase(SwitchCaseSyntax theSwitchCase)
-        {
-            return true;
-        }
-
-        public virtual void closeSwitchCase(SwitchCaseSyntax theSwitchCase)
-        {
-        }
-
-        public virtual bool openItemCaseLabel(ItemCaseLabelSyntax theItemCaseLabel)
+        public virtual bool openOperation(OperationSyntax operationSyntax)
         {
             return true;
         }
 
-        public virtual void closeItemCaseLabel(ItemCaseLabelSyntax theItemCaseLabel)
+        public virtual void closeOperation(OperationSyntax operationSyntax)
         {
         }
 
-        public virtual bool openCaseItem(CaseItemSyntax theCaseItem)
-        {
-            return true;
-        }
-
-        public virtual void closeCaseItem(CaseItemSyntax theCaseItem)
-        {
-        }
-
-        public virtual bool openConstantPattern(ConstantPatternSyntax theConstantPattern)
+        public virtual bool openOperand(OperandSyntax operandSyntax)
         {
             return true;
         }
 
-        public virtual void closeConstantPattern(ConstantPatternSyntax theConstantPattern)
+        public virtual void closeOperand(OperandSyntax operandSyntax)
         {
         }
 
-        public virtual void visitWildcardPattern(WildcardPatternSyntax theWildcardPattern)
+        public virtual void visitMemberAccess(MemberAccessSyntax memberAccessSyntax)
         {
         }
 
-        public virtual bool openNamePattern(NamePatternSyntax theNamePattern)
-        {
-            return true;
-        }
-
-        public virtual void closeNamePattern(NamePatternSyntax theNamePattern)
-        {
-        }
-
-        public virtual void visitDefaultCaseLabel(DefaultCaseLabelSyntax theDefaultCaseLabel)
-        {
-        }
-
-        public virtual bool openFor(ForSyntax theFor)
+        public virtual bool openAs(AsSyntax asSyntax)
         {
             return true;
         }
 
-        public virtual void closeFor(ForSyntax theFor)
+        public virtual void closeAs(AsSyntax asSyntax)
         {
         }
 
-        public virtual bool openWhile(WhileSyntax theWhile)
-        {
-            return true;
-        }
-
-        public virtual void closeWhile(WhileSyntax theWhile)
-        {
-        }
-
-        public virtual bool openDo(DoSyntax theDo)
+        public virtual bool openIs(IsSyntax isSyntax)
         {
             return true;
         }
 
-        public virtual void closeDo(DoSyntax theDo)
+        public virtual void closeIs(IsSyntax isSyntax)
         {
         }
 
-        public virtual bool openSimpleLoop(SimpleLoopSyntax theSimpleLoop)
-        {
-            return true;
-        }
-
-        public virtual void closeSimpleLoop(SimpleLoopSyntax theSimpleLoop)
+        public virtual void visitUnwrap(UnwrapSyntax unwrapSyntax)
         {
         }
 
-        public virtual bool openNamedLoop(NamedLoopSyntax theNamedLoop)
+        public virtual bool openCatch(CatchSyntax catchSyntax)
         {
             return true;
         }
 
-        public virtual void closeNamedLoop(NamedLoopSyntax theNamedLoop)
+        public virtual void closeCatch(CatchSyntax catchSyntax)
         {
         }
 
-        public virtual void visitThis(ThisSyntax theThis)
-        {
-        }
-
-        public virtual bool openNew(NewSyntax theNew)
+        public virtual bool openWildCardCatchPattern(WildCardCatchPatternSyntax wildCardCatchPatternSyntax)
         {
             return true;
         }
 
-        public virtual void closeNew(NewSyntax theNew)
+        public virtual void closeWildCardCatchPattern(WildCardCatchPatternSyntax wildCardCatchPatternSyntax)
         {
         }
 
-        public virtual bool openObject(ObjectSyntax theObject)
-        {
-            return true;
-        }
-
-        public virtual void closeObject(ObjectSyntax theObject)
-        {
-        }
-
-        public virtual bool openArray(ArraySyntax theArray)
+        public virtual bool openNameCatchPattern(NameCatchPatternSyntax nameCatchPatternSyntax)
         {
             return true;
         }
 
-        public virtual void closeArray(ArraySyntax theArray)
+        public virtual void closeNameCatchPattern(NameCatchPatternSyntax nameCatchPatternSyntax)
         {
         }
 
-        public virtual bool openItem(ItemSyntax theItem)
-        {
-            return true;
-        }
-
-        public virtual void closeItem(ItemSyntax theItem)
-        {
-        }
-
-        public virtual bool openSizeOf(SizeOfSyntax theSizeOf)
+        public virtual bool openBlock(BlockSyntax blockSyntax)
         {
             return true;
         }
 
-        public virtual void closeSizeOf(SizeOfSyntax theSizeOf)
+        public virtual void closeBlock(BlockSyntax blockSyntax)
         {
         }
 
-        public virtual void visitBreak(BreakSyntax theBreak)
+        public virtual void visitConstant(ConstantSyntax constantSyntax)
         {
         }
 
-        public virtual void visitContinue(ContinueSyntax theContinue)
-        {
-        }
-
-        public virtual bool openReturn(ReturnSyntax theReturn)
+        public virtual bool openIf(IfSyntax ifSyntax)
         {
             return true;
         }
 
-        public virtual void closeReturn(ReturnSyntax theReturn)
+        public virtual void closeIf(IfSyntax ifSyntax)
         {
         }
 
-        public virtual bool openThrow(ThrowSyntax theThrow)
-        {
-            return true;
-        }
-
-        public virtual void closeThrow(ThrowSyntax theThrow)
-        {
-        }
-
-        public virtual bool openClass(ClassSyntax theClass)
+        public virtual bool openElse(ElseSyntax elseSyntax)
         {
             return true;
         }
 
-        public virtual void closeClass(ClassSyntax theClass)
+        public virtual void closeElse(ElseSyntax elseSyntax)
         {
         }
 
-        public virtual bool openGenericParameters(GenericParametersSyntax theGenericParameters)
-        {
-            return true;
-        }
-
-        public virtual void closeGenericParameters(GenericParametersSyntax theGenericParameters)
-        {
-        }
-
-        public virtual void visitGenericParameter(GenericParameterSyntax theGenericParameter)
-        {
-        }
-
-        public virtual bool openExtends(ExtendsSyntax theExtends)
+        public virtual bool openSwitch(SwitchSyntax switchSyntax)
         {
             return true;
         }
 
-        public virtual void closeExtends(ExtendsSyntax theExtends)
+        public virtual void closeSwitch(SwitchSyntax switchSyntax)
         {
         }
 
-        public virtual bool openStructure(StructureSyntax theStructure)
-        {
-            return true;
-        }
-
-        public virtual void closeStructure(StructureSyntax theStructure)
-        {
-        }
-
-        public virtual bool openComponent(ComponentSyntax theComponent)
+        public virtual bool openSwitchCase(SwitchCaseSyntax switchCaseSyntax)
         {
             return true;
         }
 
-        public virtual void closeComponent(ComponentSyntax theComponent)
+        public virtual void closeSwitchCase(SwitchCaseSyntax switchCaseSyntax)
         {
         }
 
-        public virtual bool openConstructor(ConstructorSyntax theConstructor)
-        {
-            return true;
-        }
-
-        public virtual void closeConstructor(ConstructorSyntax theConstructor)
-        {
-        }
-
-        public virtual bool openMethod(MethodSyntax theMethod)
+        public virtual bool openItemCaseLabel(ItemCaseLabelSyntax itemCaseLabelSyntax)
         {
             return true;
         }
 
-        public virtual void closeMethod(MethodSyntax theMethod)
+        public virtual void closeItemCaseLabel(ItemCaseLabelSyntax itemCaseLabelSyntax)
         {
         }
 
-        public virtual bool openFunction(FunctionSyntax theFunction)
-        {
-            return true;
-        }
-
-        public virtual void closeFunction(FunctionSyntax theFunction)
-        {
-        }
-
-        public virtual bool openOperator(OperatorSyntax theOperator)
+        public virtual bool openCaseItem(CaseItemSyntax caseItemSyntax)
         {
             return true;
         }
 
-        public virtual void closeOperator(OperatorSyntax theOperator)
+        public virtual void closeCaseItem(CaseItemSyntax caseItemSyntax)
         {
         }
 
-        public virtual bool openProcedure(ProcedureSyntax theProcedure)
-        {
-            return true;
-        }
-
-        public virtual void closeProcedure(ProcedureSyntax theProcedure)
-        {
-        }
-
-        public virtual bool openRoutine(RoutineSyntax theRoutine)
+        public virtual bool openConstantPattern(ConstantPatternSyntax constantPatternSyntax)
         {
             return true;
         }
 
-        public virtual void closeRoutine(RoutineSyntax theRoutine)
+        public virtual void closeConstantPattern(ConstantPatternSyntax constantPatternSyntax)
         {
         }
 
-        public virtual bool openTypeAnnotation(TypeAnnotationSyntax theTypeAnnotation)
-        {
-            return true;
-        }
-
-        public virtual void closeTypeAnnotation(TypeAnnotationSyntax theTypeAnnotation)
+        public virtual void visitWildcardPattern(WildcardPatternSyntax wildcardPatternSyntax)
         {
         }
 
-        public virtual bool openType(TypeSyntax theType)
+        public virtual bool openNamePattern(NamePatternSyntax namePatternSyntax)
         {
             return true;
         }
 
-        public virtual void closeType(TypeSyntax theType)
+        public virtual void closeNamePattern(NamePatternSyntax namePatternSyntax)
         {
         }
 
-        public virtual bool openVariant(VariantSyntax theVariant)
-        {
-            return true;
-        }
-
-        public virtual void closeVariant(VariantSyntax theVariant)
+        public virtual void visitDefaultCaseLabel(DefaultCaseLabelSyntax defaultCaseLabelSyntax)
         {
         }
 
-        public virtual bool openThrows(ThrowsSyntax theThrows)
+        public virtual bool openFor(ForSyntax forSyntax)
         {
             return true;
         }
 
-        public virtual void closeThrows(ThrowsSyntax theThrows)
+        public virtual void closeFor(ForSyntax forSyntax)
         {
         }
 
-        public virtual bool openGenericArguments(GenericArgumentsSyntax theGenericArguments)
-        {
-            return true;
-        }
-
-        public virtual void closeGenericArguments(GenericArgumentsSyntax theGenericArguments)
-        {
-        }
-
-        public virtual bool openGenericArgument(GenericArgumentSyntax theGenericArgument)
+        public virtual bool openWhile(WhileSyntax whileSyntax)
         {
             return true;
         }
 
-        public virtual void closeGenericArgument(GenericArgumentSyntax theGenericArgument)
+        public virtual void closeWhile(WhileSyntax whileSyntax)
         {
         }
 
-        public virtual void visitOptional(OptionalSyntax theOptional)
+        public virtual bool openDo(DoSyntax doSyntax)
+        {
+            return true;
+        }
+
+        public virtual void closeDo(DoSyntax doSyntax)
         {
         }
 
-        public virtual void visitRoot(RootSyntax theRoot)
+        public virtual bool openSimpleLoop(SimpleLoopSyntax simpleLoopSyntax)
+        {
+            return true;
+        }
+
+        public virtual void closeSimpleLoop(SimpleLoopSyntax simpleLoopSyntax)
         {
         }
 
-        public virtual void visitLocal(LocalSyntax theLocal)
+        public virtual bool openNamedLoop(NamedLoopSyntax namedLoopSyntax)
+        {
+            return true;
+        }
+
+        public virtual void closeNamedLoop(NamedLoopSyntax namedLoopSyntax)
         {
         }
 
-        public virtual void visitReference(ReferenceSyntax theReference)
+        public virtual void visitThis(ThisSyntax thisSyntax)
         {
         }
 
-        public virtual void visitThrown(ThrownSyntax theThrown)
+        public virtual bool openNew(NewSyntax newSyntax)
+        {
+            return true;
+        }
+
+        public virtual void closeNew(NewSyntax newSyntax)
+        {
+        }
+
+        public virtual bool openObject(ObjectSyntax objectSyntax)
+        {
+            return true;
+        }
+
+        public virtual void closeObject(ObjectSyntax objectSyntax)
+        {
+        }
+
+        public virtual bool openArray(ArraySyntax arraySyntax)
+        {
+            return true;
+        }
+
+        public virtual void closeArray(ArraySyntax arraySyntax)
+        {
+        }
+
+        public virtual bool openItem(ItemSyntax itemSyntax)
+        {
+            return true;
+        }
+
+        public virtual void closeItem(ItemSyntax itemSyntax)
+        {
+        }
+
+        public virtual bool openSizeOf(SizeOfSyntax sizeOfSyntax)
+        {
+            return true;
+        }
+
+        public virtual void closeSizeOf(SizeOfSyntax sizeOfSyntax)
+        {
+        }
+
+        public virtual void visitBreak(BreakSyntax breakSyntax)
+        {
+        }
+
+        public virtual void visitContinue(ContinueSyntax continueSyntax)
+        {
+        }
+
+        public virtual bool openReturn(ReturnSyntax returnSyntax)
+        {
+            return true;
+        }
+
+        public virtual void closeReturn(ReturnSyntax returnSyntax)
+        {
+        }
+
+        public virtual bool openThrow(ThrowSyntax throwSyntax)
+        {
+            return true;
+        }
+
+        public virtual void closeThrow(ThrowSyntax throwSyntax)
+        {
+        }
+
+        public virtual bool openClass(ClassSyntax classSyntax)
+        {
+            return true;
+        }
+
+        public virtual void closeClass(ClassSyntax classSyntax)
+        {
+        }
+
+        public virtual bool openGenericParameters(GenericParametersSyntax genericParametersSyntax)
+        {
+            return true;
+        }
+
+        public virtual void closeGenericParameters(GenericParametersSyntax genericParametersSyntax)
+        {
+        }
+
+        public virtual void visitGenericParameter(GenericParameterSyntax genericParameterSyntax)
+        {
+        }
+
+        public virtual bool openExtends(ExtendsSyntax extendsSyntax)
+        {
+            return true;
+        }
+
+        public virtual void closeExtends(ExtendsSyntax extendsSyntax)
+        {
+        }
+
+        public virtual bool openStructure(StructureSyntax structureSyntax)
+        {
+            return true;
+        }
+
+        public virtual void closeStructure(StructureSyntax structureSyntax)
+        {
+        }
+
+        public virtual bool openComponent(ComponentSyntax componentSyntax)
+        {
+            return true;
+        }
+
+        public virtual void closeComponent(ComponentSyntax componentSyntax)
+        {
+        }
+
+        public virtual bool openConstructor(ConstructorSyntax constructorSyntax)
+        {
+            return true;
+        }
+
+        public virtual void closeConstructor(ConstructorSyntax constructorSyntax)
+        {
+        }
+
+        public virtual bool openMethod(MethodSyntax methodSyntax)
+        {
+            return true;
+        }
+
+        public virtual void closeMethod(MethodSyntax methodSyntax)
+        {
+        }
+
+        public virtual bool openFunction(FunctionSyntax functionSyntax)
+        {
+            return true;
+        }
+
+        public virtual void closeFunction(FunctionSyntax functionSyntax)
+        {
+        }
+
+        public virtual bool openOperator(OperatorSyntax operatorSyntax)
+        {
+            return true;
+        }
+
+        public virtual void closeOperator(OperatorSyntax operatorSyntax)
+        {
+        }
+
+        public virtual bool openProcedure(ProcedureSyntax procedureSyntax)
+        {
+            return true;
+        }
+
+        public virtual void closeProcedure(ProcedureSyntax procedureSyntax)
+        {
+        }
+
+        public virtual bool openRoutine(RoutineSyntax routineSyntax)
+        {
+            return true;
+        }
+
+        public virtual void closeRoutine(RoutineSyntax routineSyntax)
+        {
+        }
+
+        public virtual bool openTypeAnnotation(TypeAnnotationSyntax typeAnnotationSyntax)
+        {
+            return true;
+        }
+
+        public virtual void closeTypeAnnotation(TypeAnnotationSyntax typeAnnotationSyntax)
+        {
+        }
+
+        public virtual bool openType(TypeSyntax typeSyntax)
+        {
+            return true;
+        }
+
+        public virtual void closeType(TypeSyntax typeSyntax)
+        {
+        }
+
+        public virtual bool openVariant(VariantSyntax variantSyntax)
+        {
+            return true;
+        }
+
+        public virtual void closeVariant(VariantSyntax variantSyntax)
+        {
+        }
+
+        public virtual bool openThrows(ThrowsSyntax throwsSyntax)
+        {
+            return true;
+        }
+
+        public virtual void closeThrows(ThrowsSyntax throwsSyntax)
+        {
+        }
+
+        public virtual bool openGenericArguments(GenericArgumentsSyntax genericArgumentsSyntax)
+        {
+            return true;
+        }
+
+        public virtual void closeGenericArguments(GenericArgumentsSyntax genericArgumentsSyntax)
+        {
+        }
+
+        public virtual bool openGenericArgument(GenericArgumentSyntax genericArgumentSyntax)
+        {
+            return true;
+        }
+
+        public virtual void closeGenericArgument(GenericArgumentSyntax genericArgumentSyntax)
+        {
+        }
+
+        public virtual void visitOptional(OptionalSyntax optionalSyntax)
+        {
+        }
+
+        public virtual void visitRoot(RootSyntax rootSyntax)
+        {
+        }
+
+        public virtual void visitLocal(LocalSyntax localSyntax)
+        {
+        }
+
+        public virtual void visitReference(ReferenceSyntax referenceSyntax)
+        {
+        }
+
+        public virtual void visitThrown(ThrownSyntax thrownSyntax)
         {
         }
 }
