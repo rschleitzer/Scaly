@@ -7,18 +7,18 @@
         public Position end;
         public SyntaxNode parent;
 
-        public abstract void accept(Visitor visitor);
+        public abstract void accept(SyntaxVisitor visitor);
     }
 "
     (apply-to-selected-children "syntax" (lambda (syntax-node) ($
 "
-    public class "(id syntax-node)" : "(if (base syntax-node) (base syntax-node) "SyntaxNode")"
+    public class "(id syntax-node)"Syntax : "(if (base syntax-node) ($ (base syntax-node)"Syntax") "SyntaxNode")"
     {"        (apply-to-children-of syntax-node (lambda (content) ($
             (if (property content) ($
 "
         public "
                 (case (type content)
-                    (("syntax") ($ (link content)(if (multiple? content)"[]" "")))
+                    (("syntax") ($ (link content)"Syntax"(if (multiple? content)"[]" "")))
                     (("identifier") "string")
                     (("literal") "Literal")
                     (("keyword" "punctuation") "bool")
@@ -32,10 +32,10 @@
         )"")
         (if (abstract? syntax-node) "" ($
 "
-        public "(id syntax-node)"("(if (program? syntax-node) "" ($ "Position start, Position end"(if (node-list-empty? (properties syntax-node)) "" ", ")))
+        public "(id syntax-node)"Syntax("(if (program? syntax-node) "" ($ "Position start, Position end"(if (node-list-empty? (properties syntax-node)) "" ", ")))
             (apply-to-property-children-of syntax-node (lambda (content) ($
                 (case (type content)
-                    (("syntax") ($ (link content)(if (multiple? content)"[]" "")" "(property content)))
+                    (("syntax") ($ (link content)"Syntax"(if (multiple? content)"[]" "")" "(property content)))
                     (("identifier") ($ "string "(property content)))
                     (("literal") ($ "Literal "(property content)))
                     (("keyword" "punctuation") ($ "bool "(property content)))
@@ -63,7 +63,7 @@
 "        }
 "       ))
 "
-        public override void accept(Visitor visitor)
+        public override void accept(SyntaxVisitor visitor)
         {
 "       (if (abstract? syntax-node) "" ($
             (if (has-syntax-children? syntax-node)
@@ -84,7 +84,7 @@
                                         ($
 "            if ("(property content)" != null)
             {
-                foreach ("(link content)" node in "(property content)")
+                foreach ("(link content)"Syntax node in "(property content)")
                     node.accept(visitor);
             }
 "

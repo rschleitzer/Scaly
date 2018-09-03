@@ -27,17 +27,17 @@ namespace scalysh
     (apply-to-selected-children "syntax" (lambda (syntax) (if (program? syntax) "" ($
         (if (multiple? syntax) ($
 "
-        public "(id syntax)"[] parse"(id syntax)"List()
+        public "(id syntax)"Syntax[] parse"(id syntax)"List()
         {
-            List<"(id syntax)"> ret = null;
+            List<"(id syntax)"Syntax> ret = null;
             while (true)
             {
-                "(id syntax)" node = parse"(id syntax)"();
+                "(id syntax)"Syntax node = parse"(id syntax)"();
                 if (node == null)
                     break;
 
                 if (ret == null)
-                    ret = new List<"(id syntax)">();
+                    ret = new List<"(id syntax)"Syntax>();
 
                 ret.Add(node);
             }
@@ -49,14 +49,14 @@ namespace scalysh
         }
 "       )"")
 "
-        public "(id syntax)" parse"(id syntax)"()
+        public "(id syntax)"Syntax parse"(id syntax)"()
         {"
         (if (abstract? syntax)
             ($
                 (apply-to-children-of syntax (lambda (content) ($
 "
             {
-                "(link content)" node = parse"(link content)"();
+                "(link content)"Syntax node = parse"(link content)"();
                 if (node != null)
                     return node;
             }
@@ -73,7 +73,7 @@ namespace scalysh
                    (if (string=? "syntax" (type content))
                         ($ ; non-terminals
 "
-            "(link content)(if (multiple? content) "[]" "")" "(property content)" = parse"(link content)(if (multiple? content) "List" "")"();
+            "(link content)"Syntax"(if (multiple? content) "[]" "")" "(property content)" = parse"(link content)(if (multiple? content) "List" "")"();
 "
                     (if (optional? content) "" ($
 "            if ("(property content)" == null)
@@ -127,7 +127,7 @@ namespace scalysh
 "
             Position end = lexer.getPosition();
 
-            "(id syntax)" ret = new "(id syntax)"(start, end"
+            "(id syntax)"Syntax ret = new "(id syntax)"Syntax(start, end"
                 (apply-to-property-children-of syntax (lambda (content) ($
                     ", "(property content)
                 )))
@@ -138,7 +138,7 @@ namespace scalysh
                         ($
 "            if ("(property content)" != null)
             {
-                foreach ("(link content)" item in "(property content)")
+                foreach ("(link content)"Syntax item in "(property content)")
                     item.parent = ret;
             }
 "                       )

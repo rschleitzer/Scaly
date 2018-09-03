@@ -22,7 +22,7 @@ namespace scalysh
                 }
             }
 
-            var files = new List<File>();
+            var files = new List<FileSyntax>();
             {
                 var index = 0;
                 foreach (string source in sources)
@@ -41,7 +41,7 @@ namespace scalysh
                 }
             }
 
-            var program = new Program(options.outputName, files.ToArray());
+            var program = new ProgramSyntax(options.outputName, files.ToArray());
             foreach (var item in files)
                 item.parent = program;
 
@@ -49,7 +49,7 @@ namespace scalysh
             program.accept(modelVisitor);
         }
 
-        static File parseFile(string fileName, string text)
+        static FileSyntax parseFile(string fileName, string text)
         {
             var parser = new Parser(fileName, text);
 
