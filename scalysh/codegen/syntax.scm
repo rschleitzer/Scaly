@@ -26,6 +26,10 @@
                 " "(property content)";"
           )"")
         )))
+        (if (top? syntax-node) ($
+"
+        public string fileName;"
+        )"")
         (if (abstract? syntax-node) "" ($
 "
         public "(id syntax-node)"("(if (program? syntax-node) "" ($ "Position start, Position end"(if (node-list-empty? (properties syntax-node)) "" ", ")))

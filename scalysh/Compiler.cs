@@ -27,7 +27,7 @@ namespace scalysh
                 var index = 0;
                 foreach (string source in sources)
                 {
-                    var fileName = System.IO.Path.GetFileNameWithoutExtension(options.files[index]);
+                    var fileName = System.IO.Path.GetFileName(options.files[index]);
                     try
                     {
                         var file = parseFile(fileName, source);
@@ -45,7 +45,7 @@ namespace scalysh
             foreach (var item in files)
                 item.parent = program;
 
-            var modelVisitor = new ModelVisitor();
+            var modelVisitor = new CVisitor();
             program.accept(modelVisitor);
         }
 
@@ -56,6 +56,7 @@ namespace scalysh
             try
             {
                 var file = parser.parseFile();
+                file.fileName = fileName;
                 return file;
             }
             catch (ParserException e)

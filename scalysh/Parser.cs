@@ -3348,6 +3348,7 @@ namespace scalysh
     public class File : SyntaxNode
     {
         public Statement[] statements;
+        public string fileName;
         public File(Position start, Position end, Statement[] statements)
         {
             this.start = start;
