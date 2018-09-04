@@ -292,7 +292,7 @@
 
     <syntax id = Class                                          base = Statement
         <content link = class
-        <content link = Name                                    property = name
+        <content identifier                                     property = name
         <content link = GenericParameters              optional property = generics
         <content link = Structure                      optional property = contents
         <content link = Extends                        optional property = baseClass

@@ -1874,8 +1874,10 @@ namespace scalysh
             else
                 return null;
 
-            NameSyntax name = parseName();
-            if (name == null)
+            string name = lexer.parseIdentifier();
+            if ((name != null) && isIdentifier(name))
+                lexer.advance();
+            else
                 throw new ParserException(fileName, lexer.line, lexer.column);
 
             GenericParametersSyntax generics = parseGenericParameters();
@@ -1890,7 +1892,6 @@ namespace scalysh
 
             ClassSyntax ret = new ClassSyntax(start, end, name, generics, contents, baseClass, body);
 
-            name.parent = ret;
             if (generics != null)
                 generics.parent = ret;
             if (contents != null)
@@ -3307,7 +3308,7 @@ namespace scalysh
         public virtual void visitThrown(ThrownSyntax thrownSyntax)
         {
         }
-}
+    }
 
     public abstract class SyntaxNode
     {
@@ -4442,12 +4443,12 @@ namespace scalysh
 
     public class ClassSyntax : StatementSyntax
     {
-        public NameSyntax name;
+        public string name;
         public GenericParametersSyntax generics;
         public StructureSyntax contents;
         public ExtendsSyntax baseClass;
         public BlockSyntax body;
-        public ClassSyntax(Position start, Position end, NameSyntax name, GenericParametersSyntax generics, StructureSyntax contents, ExtendsSyntax baseClass, BlockSyntax body)
+        public ClassSyntax(Position start, Position end, string name, GenericParametersSyntax generics, StructureSyntax contents, ExtendsSyntax baseClass, BlockSyntax body)
         {
             this.start = start;
             this.end = end;
@@ -4463,7 +4464,6 @@ namespace scalysh
             if (!visitor.openClass(this))
                 return;
 
-        name.accept(visitor);
         if (generics != null)
             generics.accept(visitor);
         if (contents != null)

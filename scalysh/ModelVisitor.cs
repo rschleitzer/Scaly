@@ -7,12 +7,12 @@ namespace scalysh
         public string name;
     }
 
-    class NamespaceModel
+    class ClassModel
     {
         public string name;
     }
 
-    class ClassModel
+    class FunctionModel
     {
         public string name;
     }
@@ -22,10 +22,11 @@ namespace scalysh
         public ProgramModel Model;
 
         string currentFile;
-        Stack<string> currentNamespace = new Stack<string>();
-        Stack<ClassModel> currentClass = new Stack<ClassModel>();
+        Stack<string> namespaceStack = new Stack<string>();
+        Stack<ClassModel> classStack = new Stack<ClassModel>();
 
-        Dictionary<string, ClassModel> dictClasses = new Dictionary<string, ClassModel>();
+        Dictionary<string, ClassModel> classDictionary = new Dictionary<string, ClassModel>();
+        Dictionary<string, FunctionModel> functionDictionary = new Dictionary<string, FunctionModel>();
 
         public override bool openProgram(ProgramSyntax programSyntax)
         {
@@ -41,10 +42,10 @@ namespace scalysh
 
         public override bool openNamespace(NamespaceSyntax namespaceSyntax)
         {
-            currentNamespace.Push(namespaceSyntax.name.name);
+            namespaceStack.Push(namespaceSyntax.name.name);
             if (namespaceSyntax.name.extensions != null)
                 foreach (var extension in namespaceSyntax.name.extensions)
-                    currentNamespace.Push(extension.name);
+                    namespaceStack.Push(extension.name);
 
             namespaceSyntax.scope.accept(this);
             return false;
@@ -52,35 +53,32 @@ namespace scalysh
 
         public override void closeNamespace(NamespaceSyntax namespaceSyntax)
         {
-            currentNamespace.Pop();
+            namespaceStack.Pop();
             if (namespaceSyntax.name.extensions != null)
                 foreach (var extension in namespaceSyntax.name.extensions)
-                    currentNamespace.Pop();
+                    namespaceStack.Pop();
         }
 
         public override bool openClass(ClassSyntax classSyntax)
         {
             var className = "";
-            foreach (var name in currentNamespace)
+            foreach (var name in namespaceStack)
                 className += name + ".";
 
-            className += classSyntax.name.name;
-            if (classSyntax.name.extensions != null)
-                foreach (var extension in classSyntax.name.extensions)
-                    className += "." + extension;
+            className += classSyntax.name;
 
             ClassModel theClass = null;
-            if (!dictClasses.ContainsKey(className))
+            if (!classDictionary.ContainsKey(className))
             {
                 theClass = new ClassModel() { name = className };
-                dictClasses.Add(className, theClass);
+                classDictionary.Add(className, theClass);
             }
             else
             {
-                theClass = dictClasses[className];
+                theClass = classDictionary[className];
             }
 
-            currentClass.Push(theClass);
+            classStack.Push(theClass);
 
             if (classSyntax.contents != null)
                 classSyntax.contents.accept(this);
@@ -91,9 +89,31 @@ namespace scalysh
             return true;
         }
 
-        public override void closeClass(ClassSyntax classSyntax)
+        public override void closeClass(ClassSyntax classSyntax) => classStack.Pop();
+
+        public override bool openFunction(FunctionSyntax functionSyntax)
         {
-            currentClass.Pop();
+            string functionName = null;
+            var currentClass = classStack.Peek();
+            if (currentClass != null)
+            {
+                functionName = currentClass.name + ".";
+            }
+            else
+            {
+                functionName = "";
+            }
+
+            functionName += functionSyntax.procedure.name;
+            if (functionDictionary.ContainsKey(functionName))
+                throw new ModelException($"Function {functionSyntax.procedure.name} already defined.", currentFile, functionSyntax.start.line, functionSyntax.start.column);
+            var function = new FunctionModel() { name = functionName };
+            functionDictionary.Add(functionName, function);
+            return true;
+        }
+
+        public override void closeFunction(FunctionSyntax functionSyntax)
+        {
         }
     }
 }
