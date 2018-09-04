@@ -47,6 +47,7 @@ namespace scalysh
 
             var modelVisitor = new ModelVisitor();
             program.accept(modelVisitor);
+            var model = modelVisitor.programModel;
         }
 
         static FileSyntax parseFile(string fileName, string text)

@@ -1,6 +1,6 @@
 namespace scaly {
     class string {
-        function string(page: Page, cstring: pointer[char]): pointer[string] {
+        allocator(page: Page, cstring: pointer[char]) {
             let length strlen cstring
             let packedLength getPackedLength(length)
             let buffer: pointer[string] page.allocateObject (packedLength + length)

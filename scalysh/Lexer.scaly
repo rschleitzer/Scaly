@@ -457,7 +457,7 @@ class Scaly.Lexer(text: string)
 
 class Position(line: number, column: number) {
 
-    constructor(position: Position) {
+    initializer(position: Position) {
         this.line = position.line
         this.column = position.column
     }

@@ -19,7 +19,8 @@ namespace scalysh
         readonly string setKeyword = "set";
         readonly string classKeyword = "class";
         readonly string extendsKeyword = "extends";
-        readonly string constructorKeyword = "constructor";
+        readonly string initializerKeyword = "initializer";
+        readonly string allocatorKeyword = "allocator";
         readonly string methodKeyword = "method";
         readonly string functionKeyword = "function";
         readonly string operatorKeyword = "operator";
@@ -186,7 +187,13 @@ namespace scalysh
             }
 
             {
-                ConstructorSyntax node = parseConstructor();
+                InitializerSyntax node = parseInitializer();
+                if (node != null)
+                    return node;
+            }
+
+            {
+                AllocatorSyntax node = parseAllocator();
                 if (node != null)
                     return node;
             }
@@ -2087,12 +2094,12 @@ namespace scalysh
             return ret;
         }
 
-        public ConstructorSyntax parseConstructor()
+        public InitializerSyntax parseInitializer()
         {
             Position start = lexer.getPreviousPosition();
 
-            bool successConstructor1 = lexer.parseKeyword(constructorKeyword);
-            if (successConstructor1)
+            bool successInitializer1 = lexer.parseKeyword(initializerKeyword);
+            if (successInitializer1)
                 lexer.advance();
             else
                 return null;
@@ -2105,7 +2112,34 @@ namespace scalysh
 
             Position end = lexer.getPosition();
 
-            ConstructorSyntax ret = new ConstructorSyntax(start, end, input, body);
+            InitializerSyntax ret = new InitializerSyntax(start, end, input, body);
+
+            if (input != null)
+                input.parent = ret;
+            body.parent = ret;
+
+            return ret;
+        }
+
+        public AllocatorSyntax parseAllocator()
+        {
+            Position start = lexer.getPreviousPosition();
+
+            bool successAllocator1 = lexer.parseKeyword(allocatorKeyword);
+            if (successAllocator1)
+                lexer.advance();
+            else
+                return null;
+
+            StructureSyntax input = parseStructure();
+
+            BlockSyntax body = parseBlock();
+            if (body == null)
+                throw new ParserException(fileName, lexer.line, lexer.column);
+
+            Position end = lexer.getPosition();
+
+            AllocatorSyntax ret = new AllocatorSyntax(start, end, input, body);
 
             if (input != null)
                 input.parent = ret;
@@ -2646,7 +2680,10 @@ namespace scalysh
             if (id == extendsKeyword)
                 return false;
 
-            if (id == constructorKeyword)
+            if (id == initializerKeyword)
+                return false;
+
+            if (id == allocatorKeyword)
                 return false;
 
             if (id == methodKeyword)
@@ -3181,12 +3218,21 @@ namespace scalysh
         {
         }
 
-        public virtual bool openConstructor(ConstructorSyntax constructorSyntax)
+        public virtual bool openInitializer(InitializerSyntax initializerSyntax)
         {
             return true;
         }
 
-        public virtual void closeConstructor(ConstructorSyntax constructorSyntax)
+        public virtual void closeInitializer(InitializerSyntax initializerSyntax)
+        {
+        }
+
+        public virtual bool openAllocator(AllocatorSyntax allocatorSyntax)
+        {
+            return true;
+        }
+
+        public virtual void closeAllocator(AllocatorSyntax allocatorSyntax)
         {
         }
 
@@ -4585,11 +4631,11 @@ namespace scalysh
         }
     }
 
-    public class ConstructorSyntax : StatementSyntax
+    public class InitializerSyntax : StatementSyntax
     {
         public StructureSyntax input;
         public BlockSyntax body;
-        public ConstructorSyntax(Position start, Position end, StructureSyntax input, BlockSyntax body)
+        public InitializerSyntax(Position start, Position end, StructureSyntax input, BlockSyntax body)
         {
             this.start = start;
             this.end = end;
@@ -4599,13 +4645,37 @@ namespace scalysh
 
         public override void accept(SyntaxVisitor visitor)
         {
-            if (!visitor.openConstructor(this))
+            if (!visitor.openInitializer(this))
                 return;
 
         if (input != null)
             input.accept(visitor);
         body.accept(visitor);
-            visitor.closeConstructor(this);
+            visitor.closeInitializer(this);
+        }
+    }
+
+    public class AllocatorSyntax : StatementSyntax
+    {
+        public StructureSyntax input;
+        public BlockSyntax body;
+        public AllocatorSyntax(Position start, Position end, StructureSyntax input, BlockSyntax body)
+        {
+            this.start = start;
+            this.end = end;
+            this.input = input;
+            this.body = body;
+        }
+
+        public override void accept(SyntaxVisitor visitor)
+        {
+            if (!visitor.openAllocator(this))
+                return;
+
+        if (input != null)
+            input.accept(visitor);
+        body.accept(visitor);
+            visitor.closeAllocator(this);
         }
     }
 

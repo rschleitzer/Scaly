@@ -2,26 +2,30 @@ namespace scaly {
 
 class Array[T] {
 
-    constructor() {
+    mutable size: int
+    mutable capacity: int
+    mutable rawArray: pointer[T]
+
+    initializer() {
         set size: 0
         set capacity: 0
         set rawArray: 0
     }
 
-    constructor(capacity: int) {
+    initializer(capacity: int) {
         set size: 0
         set this.capacity: capacity
         set rawArray: 0
     }
 
-    constructor(array: Array[T]) {
+    initializer(array: Array[T]) {
         set size: array.length()
         set capacity: array.length()
         allocate()
         memcpy(rawArray, array.getRawArray(), size * sizeof T)
     }
 
-    operator (sizet i): T throws ArrayOutOfBoundsError {
+    operator (i: int): T throws ArrayOutOfBoundsError {
         if (i >= size) {
             throw ArrayOutOfBoundsError() }
 
@@ -94,10 +98,6 @@ class Array[T] {
     void allocate() {
         set rawArray: getPage().allocateObject(capacity * sizeof pointer[T])
     }
-
-    sizet size;
-    sizet capacity;
-    T** rawArray;
 }
 
 }

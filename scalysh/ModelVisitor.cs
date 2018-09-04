@@ -5,32 +5,47 @@ namespace scalysh
     class ProgramModel
     {
         public string name;
+        public Dictionary<string, NamespaceModel> namespaces = new Dictionary<string, NamespaceModel>();
+        public Dictionary<string, ClassModel> classes = new Dictionary<string, ClassModel>();
+        public Dictionary<string, FunctionModel> functions = new Dictionary<string, FunctionModel>();
     }
+
+    class NamespaceModel
+    {
+        public string name;
+        public NamespaceModel parentNamespace;
+        public Dictionary<string, NamespaceModel> subNamespaces = new Dictionary<string, NamespaceModel>();
+        public Dictionary<string, ClassModel> classes = new Dictionary<string, ClassModel>();
+    }    
 
     class ClassModel
     {
         public string name;
+        public NamespaceModel parentNamespace;
+        public ClassModel parentClass;
+        public Dictionary<string, ClassModel> subClasses = new Dictionary<string, ClassModel>();
+        public Dictionary<string, FunctionModel> functions = new Dictionary<string, FunctionModel>();
     }
 
     class FunctionModel
     {
         public string name;
+        public NamespaceModel parentNamespace;
+        public ClassModel parentClass;
     }
 
     class ModelVisitor : SyntaxVisitor
     {
-        public ProgramModel Model;
+        public ProgramModel programModel;
 
         string currentFile;
-        Stack<string> namespaceStack = new Stack<string>();
+        Stack<NamespaceModel> namespaceStack = new Stack<NamespaceModel>();
         Stack<ClassModel> classStack = new Stack<ClassModel>();
 
-        Dictionary<string, ClassModel> classDictionary = new Dictionary<string, ClassModel>();
-        Dictionary<string, FunctionModel> functionDictionary = new Dictionary<string, FunctionModel>();
 
         public override bool openProgram(ProgramSyntax programSyntax)
         {
-            Model = new ProgramModel { name = programSyntax.name };
+            programModel = new ProgramModel { name = programSyntax.name };
             return true;
         }
 
@@ -42,40 +57,117 @@ namespace scalysh
 
         public override bool openNamespace(NamespaceSyntax namespaceSyntax)
         {
-            namespaceStack.Push(namespaceSyntax.name.name);
+            var name = namespaceSyntax.name.name;
+            NamespaceModel theNamespace = null;
+            NamespaceModel currentNamespace = null;
+
+            if (namespaceStack.Count > 0)
+            {
+                currentNamespace = namespaceStack.Peek();
+                if (currentNamespace.subNamespaces.ContainsKey(name))
+                {
+                    theNamespace = currentNamespace.subNamespaces[name];
+                }
+                else
+                {
+                    theNamespace = new NamespaceModel() { name = name, parentNamespace = currentNamespace };
+                    currentNamespace.subNamespaces.Add(name, theNamespace);
+                }
+            }
+            else
+            {
+                if (programModel.namespaces.ContainsKey(name))
+                {
+                    theNamespace = programModel.namespaces[name];
+                }
+                else
+                {
+                    theNamespace = new NamespaceModel() { name = name };
+                    programModel.namespaces.Add(name, theNamespace);
+                }
+                
+            }
+
+            namespaceStack.Push(theNamespace);
+            currentNamespace = theNamespace;
+
             if (namespaceSyntax.name.extensions != null)
+            {
                 foreach (var extension in namespaceSyntax.name.extensions)
-                    namespaceStack.Push(extension.name);
+                {
+
+                    NamespaceModel subNamespaceModel = null;
+                    if (currentNamespace.subNamespaces.ContainsKey(extension.name))
+                    {
+                        subNamespaceModel = currentNamespace.subNamespaces[extension.name];
+                    }
+                    else 
+                    {
+                        subNamespaceModel = new NamespaceModel() { name = extension.name, parentNamespace = currentNamespace  };
+                        currentNamespace.subNamespaces.Add(extension.name, subNamespaceModel);
+                    }
+
+                    namespaceStack.Push(subNamespaceModel);
+                    currentNamespace = subNamespaceModel;
+                    name = extension.name;
+                }
+            }
 
             namespaceSyntax.scope.accept(this);
-            return false;
-        }
 
-        public override void closeNamespace(NamespaceSyntax namespaceSyntax)
-        {
             namespaceStack.Pop();
             if (namespaceSyntax.name.extensions != null)
                 foreach (var extension in namespaceSyntax.name.extensions)
                     namespaceStack.Pop();
+            return false;
         }
 
         public override bool openClass(ClassSyntax classSyntax)
         {
-            var className = "";
-            foreach (var name in namespaceStack)
-                className += name + ".";
-
-            className += classSyntax.name;
-
             ClassModel theClass = null;
-            if (!classDictionary.ContainsKey(className))
+
+            var name = classSyntax.name;
+            if (classStack.Count > 0)
             {
-                theClass = new ClassModel() { name = className };
-                classDictionary.Add(className, theClass);
+                ClassModel currentClass = classStack.Peek();
+                if (currentClass.subClasses.ContainsKey(name))
+                {
+                    theClass = currentClass.subClasses[name];
+                }
+                else
+                {
+                    theClass = new ClassModel() { name = name, parentClass = currentClass };
+                    currentClass.subClasses.Add(name, theClass);
+                }
             }
             else
             {
-                theClass = classDictionary[className];
+                if (namespaceStack.Count > 0)
+                {
+                    NamespaceModel currentNamespace = namespaceStack.Peek();
+                    if (currentNamespace.classes.ContainsKey(name))
+                    {
+                        theClass = currentNamespace.classes[name];
+                    }
+                    else
+                    {
+                        theClass = new ClassModel() { name = name, parentNamespace = currentNamespace };
+                        currentNamespace.classes.Add(name, theClass);
+                    }
+                }
+                else
+                {
+                    if (programModel.classes.ContainsKey(name))
+                    {
+                        theClass = programModel.classes[name];
+                    }
+                    else
+                    {
+                        theClass = new ClassModel() { name = name};
+                        programModel.classes.Add(name, theClass);
+                    }
+                   
+                }
             }
 
             classStack.Push(theClass);
@@ -86,29 +178,31 @@ namespace scalysh
             if (classSyntax.body != null)
                 classSyntax.body.accept(this);
 
-            return true;
+            classStack.Pop();
+            return false;
         }
-
-        public override void closeClass(ClassSyntax classSyntax) => classStack.Pop();
 
         public override bool openFunction(FunctionSyntax functionSyntax)
         {
-            string functionName = null;
-            var currentClass = classStack.Peek();
-            if (currentClass != null)
-            {
-                functionName = currentClass.name + ".";
-            }
-            else
-            {
-                functionName = "";
-            }
+            var functionName = functionSyntax.procedure.name;
 
-            functionName += functionSyntax.procedure.name;
-            if (functionDictionary.ContainsKey(functionName))
-                throw new ModelException($"Function {functionSyntax.procedure.name} already defined.", currentFile, functionSyntax.start.line, functionSyntax.start.column);
-            var function = new FunctionModel() { name = functionName };
-            functionDictionary.Add(functionName, function);
+            if ((classStack.Count > 0) && (classStack.Peek().functions.ContainsKey(functionName))) 
+                throw new ModelException($"Function {functionName} already defined in {classStack.Peek().name}.", currentFile, functionSyntax.start.line, functionSyntax.start.column);
+
+            if (programModel.functions.ContainsKey(functionName))
+                throw new ModelException($"Function {functionName} already defined.", currentFile, functionSyntax.start.line, functionSyntax.start.column);
+
+            var function = new FunctionModel() {
+                name = functionName,
+                parentClass = classStack.Count > 0 ? classStack.Peek(): null,
+                parentNamespace = namespaceStack.Count > 0 && classStack.Count == 0 ? namespaceStack.Peek() : null
+            };
+
+            if (classStack.Count > 0)
+                classStack.Peek().functions.Add(functionName, function);
+            else
+                programModel.functions.Add(functionName, function);
+
             return true;
         }
 

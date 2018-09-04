@@ -21,7 +21,8 @@
         <content link = Calculation
         <content link = Function
         <content link = Class
-        <content link = Constructor
+        <content link = Initializer
+        <content link = Allocator
         <content link = Method
         <content link = Operator
         <content link = Break
@@ -322,8 +323,13 @@
         <content link = TypeAnnotation                 optional property = typeAnnotation
         <content link = comma                          optional
 
-    <syntax id = Constructor                                    base = Statement
-        <content link = constructor
+    <syntax id = Initializer                                    base = Statement
+        <content link = initializer
+        <content link = Structure                      optional property = input
+        <content link = Block                                   property = body
+
+    <syntax id = Allocator                                      base = Statement
+        <content link = allocator
         <content link = Structure                      optional property = input
         <content link = Block                                   property = body
 
@@ -415,7 +421,8 @@
     <keyword id = set
     <keyword id = class
     <keyword id = extends
-    <keyword id = constructor
+    <keyword id = initializer
+    <keyword id = allocator
     <keyword id = method
     <keyword id = function
     <keyword id = operator
