@@ -5,6 +5,8 @@ class scalyc.Parser(
 
     ) {
 
+    mutable lexer: Lexer new Lexer(text)
+
     let usingKeyword: string = new string("using")
     let namespaceKeyword: string = new string("namespace")
     let typedefKeyword: string = new string("typedef")
@@ -62,32 +64,32 @@ class scalyc.Parser(
     function parseFile(): File throws ParserError {
         let start: Position$ = lexer.getPreviousPosition()
 
-        let usings: Using[] = parseUsingList()
-        if usings != null {
-            if !isAtEnd() {
+        let usings: Array[Using] = parseUsingList()
+        if (usings <> null) {
+            if (isAtEnd() = false) {
                 let errorPos: Position$ = lexer.getPreviousPosition()
                 throw syntax(errorPos.line, errorPos.column)
             }
         }
 
-        let statements: Statement[] = parseStatementList()
-        if statements != null {
-            if !isAtEnd() {
+        let statements: Array[Statement] = parseStatementList()
+        if (statements <> null) {
+            if (isAtEnd() = false) {
                 let errorPos: Position$ = lexer.getPreviousPosition()
                 throw syntax(errorPos.line, errorPos.column)
             }
         }
 
-        let end: Position$ = lexer.getPosition()
+        let end: Position$ lexer.getPosition()
 
-        let ret: File = new File(usings, statements, new Position(start), new Position(end))
-        if usings != null {
-            for item: Using in usings
-                item.parent = ret
+        let ret: File new File(usings, statements, new Position(start), new Position(end))
+        if (usings <> ()) {
+            for (item: Using in usings) {
+                item.parent = ret }
         }
-        if statements != null {
-            for item: Statement in statements
-                item.parent = ret
+        if (statements <> ()) {
+            for (item: Statement in statements) {
+                item.parent = ret }
         }
 
         ret
@@ -95,14 +97,14 @@ class scalyc.Parser(
 
     method parseStatementList(): Array[Statement] {
         mutable ret: Array[Statement]$ = null
-        while true {
+        while (true) {
 
-            let node: Statement = parseStatement()
-            if node == null
-                break
+            let node: Statement parseStatement()
+            if (node = ()) {
+                break }
 
-            if ret == null
-                ret = new Statement[]()
+            if (ret = ()) {
+                ret = new Array[Statement]() }
 
             ret.add(node)
         }
@@ -113,86 +115,86 @@ class scalyc.Parser(
     function parseStatement(): Statement {
         {
             let node: Namespace = parseNamespace()
-            if node != null
-                return(node)
+            if (node <> ()) {
+                return node }
         }
 
         {
             let node: TypeDefinition = parseTypeDefinition()
-            if node != null
-                return(node)
+            if (node <> ()) {
+                return node }
         }
 
         {
             let node: Let = parseLet()
-            if node != null
-                return(node)
+            if (node <> ()) {
+                return node }
         }
 
         {
             let node: Var = parseVar()
-            if node != null
-                return(node)
+            if (node <> ()) {
+                return node }
         }
 
         {
             let node: Mutable = parseMutable()
-            if node != null
-                return(node)
+            if (node <> ()) {
+                return node }
         }
 
         {
             let node: ThreadLocal = parseThreadLocal()
-            if node != null
-                return(node)
+            if (node <> ()) {
+                return node }
         }
 
         {
             let node: Set = parseSet()
-            if node != null
-                return(node)
+            if (node <> ()) {
+                return node }
         }
 
         {
             let node: Calculation = parseCalculation()
-            if node != null
-                return(node)
+            if (node <> ()) {
+                return node }
         }
 
         {
             let node: Function = parseFunction()
-            if node != null
-                return(node)
+            if (node <> ()) {
+                return node }
         }
 
         {
             let node: Class = parseClass()
-            if node != null
-                return(node)
+            if (node <> ()) {
+                return node }
         }
 
         {
             let node: Break = parseBreak()
-            if node != null
-                return(node)
+            if (node <> ()) {
+                return node }
         }
 
         {
             let node: Continue = parseContinue()
-            if node != null
-                return(node)
+            if (node <> ()) {
+                return node }
         }
 
         {
             let node: Return = parseReturn()
-            if node != null
-                return(node)
+            if (node <> ()) {
+                return node }
         }
 
         {
             let node: Throw = parseThrow()
-            if node != null
-                return(node)
+            if (node <> ()) {
+                return node }
         }
 
         null
@@ -200,14 +202,14 @@ class scalyc.Parser(
 
     method parseUsingList(): Array[Using] {
         mutable ret: Array[Using]$ = null
-        while true {
+        while (true) {
 
-            let node: Using = parseUsing()
-            if node == null
-                break
+            let node: Using parseUsing()
+            if (node = ()) {
+                break }
 
-            if ret == null
-                ret = new Using[]()
+            if (ret = ()) {
+                ret = new Array[Using]() }
 
             ret.add(node)
         }
@@ -219,18 +221,18 @@ class scalyc.Parser(
         let start: Position$ = lexer.getPreviousPosition()
 
         let successUsing1: bool = lexer.parseKeyword(usingKeyword)
-        if successUsing1
-            lexer.advance()
-        else
-            return(null)
+        if (successUsing1) {
+            lexer.advance() }
+        else {
+            return () }
 
         let name: Name = parseName()
-        if name == null
-            return(null)
+        if (name = ()) {
+            return () }
 
-        let end: Position$ = lexer.getPosition()
+        let end: Position$ lexer.getPosition()
 
-        let ret: Using = new Using(name, new Position(start), new Position(end))
+        let ret: Using new Using(name, new Position(start), new Position(end))
         name.parent = ret
 
         ret
@@ -240,19 +242,19 @@ class scalyc.Parser(
         let start: Position$ = lexer.getPreviousPosition()
 
         let name: string = lexer.parseIdentifier()
-        if (name != null) && isIdentifier(name)
-            lexer.advance()
-        else
-            return(null)
+        if ((name <> ()) && isIdentifier(name)) {
+            lexer.advance() }
+        else {
+            return () }
 
-        let extensions: Extension[] = parseExtensionList()
+        let extensions: Array[Extension] = parseExtensionList()
 
-        let end: Position$ = lexer.getPosition()
+        let end: Position$ lexer.getPosition()
 
-        let ret: Name = new Name(name, extensions, new Position(start), new Position(end))
-        if extensions != null {
-            for item: Extension in extensions
-                item.parent = ret
+        let ret: Name new Name(name, extensions, new Position(start), new Position(end))
+        if (extensions <> ()) {
+            for (item: Extension in extensions) {
+                item.parent = ret }
         }
 
         ret
@@ -260,14 +262,14 @@ class scalyc.Parser(
 
     method parseExtensionList(): Array[Extension] {
         mutable ret: Array[Extension]$ = null
-        while true {
+        while (true) {
 
-            let node: Extension = parseExtension()
-            if node == null
-                break
+            let node: Extension parseExtension()
+            if (node = ()) {
+                break }
 
-            if ret == null
-                ret = new Extension[]()
+            if (ret = ()) {
+                ret = new Array[Extension]() }
 
             ret.add(node)
         }
@@ -279,20 +281,20 @@ class scalyc.Parser(
         let start: Position$ = lexer.getPreviousPosition()
 
         let successDot1: bool = lexer.parsePunctuation(dot)
-        if successDot1
-            lexer.advance()
-        else
-            return(null)
+        if (successDot1) {
+            lexer.advance() }
+        else {
+            return () }
 
         let name: string = lexer.parseIdentifier()
-        if (name != null) && isIdentifier(name)
-            lexer.advance()
-        else
-            return(null)
+        if ((name <> ()) && isIdentifier(name)) {
+            lexer.advance() }
+        else {
+            return () }
 
-        let end: Position$ = lexer.getPosition()
+        let end: Position$ lexer.getPosition()
 
-        let ret: Extension = new Extension(name, new Position(start), new Position(end))
+        let ret: Extension new Extension(name, new Position(start), new Position(end))
 
         ret
     }
@@ -301,42 +303,42 @@ class scalyc.Parser(
         let start: Position$ = lexer.getPreviousPosition()
 
         let successNamespace1: bool = lexer.parseKeyword(namespaceKeyword)
-        if successNamespace1
-            lexer.advance()
-        else
-            return(null)
+        if (successNamespace1) {
+            lexer.advance() }
+        else {
+            return () }
 
         let name: Name = parseName()
-        if name == null
-            return(null)
+        if (name = ()) {
+            return () }
 
         let successLeftCurly3: bool = lexer.parsePunctuation(leftCurly)
-        if successLeftCurly3
-            lexer.advance()
-        else
-            return(null)
+        if (successLeftCurly3) {
+            lexer.advance() }
+        else {
+            return () }
 
-        let usings: Using[] = parseUsingList()
+        let usings: Array[Using] = parseUsingList()
 
-        let statements: Statement[] = parseStatementList()
+        let statements: Array[Statement] = parseStatementList()
 
         let successRightCurly6: bool = lexer.parsePunctuation(rightCurly)
-        if successRightCurly6
-            lexer.advance()
-        else
-            return(null)
+        if (successRightCurly6) {
+            lexer.advance() }
+        else {
+            return () }
 
-        let end: Position$ = lexer.getPosition()
+        let end: Position$ lexer.getPosition()
 
-        let ret: Namespace = new Namespace(name, usings, statements, new Position(start), new Position(end))
+        let ret: Namespace new Namespace(name, usings, statements, new Position(start), new Position(end))
         name.parent = ret
-        if usings != null {
-            for item: Using in usings
-                item.parent = ret
+        if (usings <> ()) {
+            for (item: Using in usings) {
+                item.parent = ret }
         }
-        if statements != null {
-            for item: Statement in statements
-                item.parent = ret
+        if (statements <> ()) {
+            for (item: Statement in statements) {
+                item.parent = ret }
         }
 
         ret
@@ -346,24 +348,24 @@ class scalyc.Parser(
         let start: Position$ = lexer.getPreviousPosition()
 
         let successTypedef1: bool = lexer.parseKeyword(typedefKeyword)
-        if successTypedef1
-            lexer.advance()
-        else
-            return(null)
+        if (successTypedef1) {
+            lexer.advance() }
+        else {
+            return () }
 
         let typeName: string = lexer.parseIdentifier()
-        if (typeName != null) && isIdentifier(typeName)
-            lexer.advance()
-        else
-            return(null)
+        if ((typeName <> ()) && isIdentifier(typeName)) {
+            lexer.advance() }
+        else {
+            return () }
 
         let typeSpec: TypeSpec = parseTypeSpec()
-        if typeSpec == null
-            return(null)
+        if (typeSpec = ()) {
+            return () }
 
-        let end: Position$ = lexer.getPosition()
+        let end: Position$ lexer.getPosition()
 
-        let ret: TypeDefinition = new TypeDefinition(typeName, typeSpec, new Position(start), new Position(end))
+        let ret: TypeDefinition new TypeDefinition(typeName, typeSpec, new Position(start), new Position(end))
         typeSpec.parent = ret
 
         ret
@@ -373,18 +375,18 @@ class scalyc.Parser(
         let start: Position$ = lexer.getPreviousPosition()
 
         let successLet1: bool = lexer.parseKeyword(letKeyword)
-        if successLet1
-            lexer.advance()
-        else
-            return(null)
+        if (successLet1) {
+            lexer.advance() }
+        else {
+            return () }
 
         let binding: Binding = parseBinding()
-        if binding == null
-            return(null)
+        if (binding = ()) {
+            return () }
 
-        let end: Position$ = lexer.getPosition()
+        let end: Position$ lexer.getPosition()
 
-        let ret: Let = new Let(binding, new Position(start), new Position(end))
+        let ret: Let new Let(binding, new Position(start), new Position(end))
         binding.parent = ret
 
         ret
@@ -394,18 +396,18 @@ class scalyc.Parser(
         let start: Position$ = lexer.getPreviousPosition()
 
         let successVar1: bool = lexer.parseKeyword(varKeyword)
-        if successVar1
-            lexer.advance()
-        else
-            return(null)
+        if (successVar1) {
+            lexer.advance() }
+        else {
+            return () }
 
         let binding: Binding = parseBinding()
-        if binding == null
-            return(null)
+        if (binding = ()) {
+            return () }
 
-        let end: Position$ = lexer.getPosition()
+        let end: Position$ lexer.getPosition()
 
-        let ret: Var = new Var(binding, new Position(start), new Position(end))
+        let ret: Var new Var(binding, new Position(start), new Position(end))
         binding.parent = ret
 
         ret
@@ -415,18 +417,18 @@ class scalyc.Parser(
         let start: Position$ = lexer.getPreviousPosition()
 
         let successMutable1: bool = lexer.parseKeyword(mutableKeyword)
-        if successMutable1
-            lexer.advance()
-        else
-            return(null)
+        if (successMutable1) {
+            lexer.advance() }
+        else {
+            return () }
 
         let binding: Binding = parseBinding()
-        if binding == null
-            return(null)
+        if (binding = ()) {
+            return () }
 
-        let end: Position$ = lexer.getPosition()
+        let end: Position$ lexer.getPosition()
 
-        let ret: Mutable = new Mutable(binding, new Position(start), new Position(end))
+        let ret: Mutable new Mutable(binding, new Position(start), new Position(end))
         binding.parent = ret
 
         ret
@@ -436,18 +438,18 @@ class scalyc.Parser(
         let start: Position$ = lexer.getPreviousPosition()
 
         let successThreadlocal1: bool = lexer.parseKeyword(threadlocalKeyword)
-        if successThreadlocal1
-            lexer.advance()
-        else
-            return(null)
+        if (successThreadlocal1) {
+            lexer.advance() }
+        else {
+            return () }
 
         let binding: Binding = parseBinding()
-        if binding == null
-            return(null)
+        if (binding = ()) {
+            return () }
 
-        let end: Position$ = lexer.getPosition()
+        let end: Position$ lexer.getPosition()
 
-        let ret: ThreadLocal = new ThreadLocal(binding, new Position(start), new Position(end))
+        let ret: ThreadLocal new ThreadLocal(binding, new Position(start), new Position(end))
         binding.parent = ret
 
         ret
@@ -457,21 +459,21 @@ class scalyc.Parser(
         let start: Position$ = lexer.getPreviousPosition()
 
         let name: Name = parseName()
-        if name == null
-            return(null)
+        if (name = ()) {
+            return () }
 
         let typeAnnotation: TypeAnnotation = parseTypeAnnotation()
 
         let calculation: Calculation = parseCalculation()
-        if calculation == null
-            return(null)
+        if (calculation = ()) {
+            return () }
 
-        let end: Position$ = lexer.getPosition()
+        let end: Position$ lexer.getPosition()
 
-        let ret: Binding = new Binding(name, typeAnnotation, calculation, new Position(start), new Position(end))
+        let ret: Binding new Binding(name, typeAnnotation, calculation, new Position(start), new Position(end))
         name.parent = ret
-        if typeAnnotation != null
-            typeAnnotation.parent = ret
+        if (typeAnnotation <> ()) {
+            typeAnnotation.parent = ret }
         calculation.parent = ret
 
         ret
@@ -481,28 +483,28 @@ class scalyc.Parser(
         let start: Position$ = lexer.getPreviousPosition()
 
         let successSet1: bool = lexer.parseKeyword(setKeyword)
-        if successSet1
-            lexer.advance()
-        else
-            return(null)
+        if (successSet1) {
+            lexer.advance() }
+        else {
+            return () }
 
         let lValue: Operation = parseOperation()
-        if lValue == null
-            return(null)
+        if (lValue = ()) {
+            return () }
 
         let successColon3: bool = lexer.parsePunctuation(colon)
-        if successColon3
-            lexer.advance()
-        else
-            return(null)
+        if (successColon3) {
+            lexer.advance() }
+        else {
+            return () }
 
         let rValue: Calculation = parseCalculation()
-        if rValue == null
-            return(null)
+        if (rValue = ()) {
+            return () }
 
-        let end: Position$ = lexer.getPosition()
+        let end: Position$ lexer.getPosition()
 
-        let ret: Set = new Set(lValue, rValue, new Position(start), new Position(end))
+        let ret: Set new Set(lValue, rValue, new Position(start), new Position(end))
         lValue.parent = ret
         rValue.parent = ret
 
@@ -513,16 +515,16 @@ class scalyc.Parser(
         let start: Position$ = lexer.getPreviousPosition()
 
         let operation: Operation = parseOperation()
-        if operation == null
-            return(null)
+        if (operation = ()) {
+            return () }
 
         let successSemicolon2: bool = lexer.parsePunctuation(semicolon)
-        if successSemicolon2
-            lexer.advance()
+        if (successSemicolon2) {
+            lexer.advance() }
 
-        let end: Position$ = lexer.getPosition()
+        let end: Position$ lexer.getPosition()
 
-        let ret: Calculation = new Calculation(operation, new Position(start), new Position(end))
+        let ret: Calculation new Calculation(operation, new Position(start), new Position(end))
         operation.parent = ret
 
         ret
@@ -531,14 +533,14 @@ class scalyc.Parser(
     function parseOperation(): Operation {
         let start: Position$ = lexer.getPreviousPosition()
 
-        let op: Operand[] = parseOperandList()
+        let op: Array[Operand] = parseOperandList()
 
-        let end: Position$ = lexer.getPosition()
+        let end: Position$ lexer.getPosition()
 
-        let ret: Operation = new Operation(op, new Position(start), new Position(end))
-        if op != null {
-            for item: Operand in op
-                item.parent = ret
+        let ret: Operation new Operation(op, new Position(start), new Position(end))
+        if (op <> ()) {
+            for (item: Operand in op) {
+                item.parent = ret }
         }
 
         ret
@@ -546,14 +548,14 @@ class scalyc.Parser(
 
     method parseOperandList(): Array[Operand] {
         mutable ret: Array[Operand]$ = null
-        while true {
+        while (true) {
 
-            let node: Operand = parseOperand()
-            if node == null
-                break
+            let node: Operand parseOperand()
+            if (node = ()) {
+                break }
 
-            if ret == null
-                ret = new Operand[]()
+            if (ret = ()) {
+                ret = new Array[Operand]() }
 
             ret.add(node)
         }
@@ -565,18 +567,18 @@ class scalyc.Parser(
         let start: Position$ = lexer.getPreviousPosition()
 
         let primary: Expression = parseExpression()
-        if primary == null
-            return(null)
+        if (primary = ()) {
+            return () }
 
-        let postfixes: Postfix[] = parsePostfixList()
+        let postfixes: Array[Postfix] = parsePostfixList()
 
-        let end: Position$ = lexer.getPosition()
+        let end: Position$ lexer.getPosition()
 
-        let ret: Operand = new Operand(primary, postfixes, new Position(start), new Position(end))
+        let ret: Operand new Operand(primary, postfixes, new Position(start), new Position(end))
         primary.parent = ret
-        if postfixes != null {
-            for item: Postfix in postfixes
-                item.parent = ret
+        if (postfixes <> ()) {
+            for (item: Postfix in postfixes) {
+                item.parent = ret }
         }
 
         ret
@@ -584,14 +586,14 @@ class scalyc.Parser(
 
     method parsePostfixList(): Array[Postfix] {
         mutable ret: Array[Postfix]$ = null
-        while true {
+        while (true) {
 
-            let node: Postfix = parsePostfix()
-            if node == null
-                break
+            let node: Postfix parsePostfix()
+            if (node = ()) {
+                break }
 
-            if ret == null
-                ret = new Postfix[]()
+            if (ret = ()) {
+                ret = new Array[Postfix]() }
 
             ret.add(node)
         }
@@ -602,32 +604,32 @@ class scalyc.Parser(
     function parsePostfix(): Postfix {
         {
             let node: MemberAccess = parseMemberAccess()
-            if node != null
-                return(node)
+            if (node <> ()) {
+                return node }
         }
 
         {
             let node: As = parseAs()
-            if node != null
-                return(node)
+            if (node <> ()) {
+                return node }
         }
 
         {
             let node: Is = parseIs()
-            if node != null
-                return(node)
+            if (node <> ()) {
+                return node }
         }
 
         {
             let node: Unwrap = parseUnwrap()
-            if node != null
-                return(node)
+            if (node <> ()) {
+                return node }
         }
 
         {
             let node: Catch = parseCatch()
-            if node != null
-                return(node)
+            if (node <> ()) {
+                return node }
         }
 
         null
@@ -637,20 +639,20 @@ class scalyc.Parser(
         let start: Position$ = lexer.getPreviousPosition()
 
         let successDot1: bool = lexer.parsePunctuation(dot)
-        if successDot1
-            lexer.advance()
-        else
-            return(null)
+        if (successDot1) {
+            lexer.advance() }
+        else {
+            return () }
 
         let member: string = lexer.parseIdentifier()
-        if (member != null) && isIdentifier(member)
-            lexer.advance()
-        else
-            return(null)
+        if ((member <> ()) && isIdentifier(member)) {
+            lexer.advance() }
+        else {
+            return () }
 
-        let end: Position$ = lexer.getPosition()
+        let end: Position$ lexer.getPosition()
 
-        let ret: MemberAccess = new MemberAccess(member, new Position(start), new Position(end))
+        let ret: MemberAccess new MemberAccess(member, new Position(start), new Position(end))
 
         ret
     }
@@ -659,18 +661,18 @@ class scalyc.Parser(
         let start: Position$ = lexer.getPreviousPosition()
 
         let successAs1: bool = lexer.parseKeyword(asKeyword)
-        if successAs1
-            lexer.advance()
-        else
-            return(null)
+        if (successAs1) {
+            lexer.advance() }
+        else {
+            return () }
 
         let typeSpec: TypeSpec = parseTypeSpec()
-        if typeSpec == null
-            return(null)
+        if (typeSpec = ()) {
+            return () }
 
-        let end: Position$ = lexer.getPosition()
+        let end: Position$ lexer.getPosition()
 
-        let ret: As = new As(typeSpec, new Position(start), new Position(end))
+        let ret: As new As(typeSpec, new Position(start), new Position(end))
         typeSpec.parent = ret
 
         ret
@@ -680,18 +682,18 @@ class scalyc.Parser(
         let start: Position$ = lexer.getPreviousPosition()
 
         let successIs1: bool = lexer.parseKeyword(isKeyword)
-        if successIs1
-            lexer.advance()
-        else
-            return(null)
+        if (successIs1) {
+            lexer.advance() }
+        else {
+            return () }
 
         let typeSpec: TypeSpec = parseTypeSpec()
-        if typeSpec == null
-            return(null)
+        if (typeSpec = ()) {
+            return () }
 
-        let end: Position$ = lexer.getPosition()
+        let end: Position$ lexer.getPosition()
 
-        let ret: Is = new Is(typeSpec, new Position(start), new Position(end))
+        let ret: Is new Is(typeSpec, new Position(start), new Position(end))
         typeSpec.parent = ret
 
         ret
@@ -701,14 +703,14 @@ class scalyc.Parser(
         let start: Position$ = lexer.getPreviousPosition()
 
         let successExclamation1: bool = lexer.parsePunctuation(exclamation)
-        if successExclamation1
-            lexer.advance()
-        else
-            return(null)
+        if (successExclamation1) {
+            lexer.advance() }
+        else {
+            return () }
 
-        let end: Position$ = lexer.getPosition()
+        let end: Position$ lexer.getPosition()
 
-        let ret: Unwrap = new Unwrap(new Position(start), new Position(end))
+        let ret: Unwrap new Unwrap(new Position(start), new Position(end))
 
         ret
     }
@@ -717,22 +719,22 @@ class scalyc.Parser(
         let start: Position$ = lexer.getPreviousPosition()
 
         let successCatch1: bool = lexer.parseKeyword(catchKeyword)
-        if successCatch1
-            lexer.advance()
-        else
-            return(null)
+        if (successCatch1) {
+            lexer.advance() }
+        else {
+            return () }
 
         let typeSpec: CatchPattern = parseCatchPattern()
-        if typeSpec == null
-            return(null)
+        if (typeSpec = ()) {
+            return () }
 
         let handler: Block = parseBlock()
-        if handler == null
-            return(null)
+        if (handler = ()) {
+            return () }
 
-        let end: Position$ = lexer.getPosition()
+        let end: Position$ lexer.getPosition()
 
-        let ret: Catch = new Catch(typeSpec, handler, new Position(start), new Position(end))
+        let ret: Catch new Catch(typeSpec, handler, new Position(start), new Position(end))
         typeSpec.parent = ret
         handler.parent = ret
 
@@ -742,14 +744,14 @@ class scalyc.Parser(
     function parseCatchPattern(): CatchPattern {
         {
             let node: WildCardCatchPattern = parseWildCardCatchPattern()
-            if node != null
-                return(node)
+            if (node <> ()) {
+                return node }
         }
 
         {
             let node: NameCatchPattern = parseNameCatchPattern()
-            if node != null
-                return(node)
+            if (node <> ()) {
+                return node }
         }
 
         null
@@ -759,12 +761,12 @@ class scalyc.Parser(
         let start: Position$ = lexer.getPreviousPosition()
 
         let pattern: WildcardPattern = parseWildcardPattern()
-        if pattern == null
-            return(null)
+        if (pattern = ()) {
+            return () }
 
-        let end: Position$ = lexer.getPosition()
+        let end: Position$ lexer.getPosition()
 
-        let ret: WildCardCatchPattern = new WildCardCatchPattern(pattern, new Position(start), new Position(end))
+        let ret: WildCardCatchPattern new WildCardCatchPattern(pattern, new Position(start), new Position(end))
         pattern.parent = ret
 
         ret
@@ -776,40 +778,40 @@ class scalyc.Parser(
         let name: Name = parseName()
 
         let successLeftParen2: bool = lexer.parsePunctuation(leftParen)
-        if successLeftParen2
-            lexer.advance()
-        else
-            return(null)
+        if (successLeftParen2) {
+            lexer.advance() }
+        else {
+            return () }
 
         let errorName: string = lexer.parseIdentifier()
-        if (errorName != null) && isIdentifier(errorName)
-            lexer.advance()
+        if ((errorName <> ()) && isIdentifier(errorName)) {
+            lexer.advance() }
 
         let successRightParen4: bool = lexer.parsePunctuation(rightParen)
-        if successRightParen4
-            lexer.advance()
-        else
-            return(null)
+        if (successRightParen4) {
+            lexer.advance() }
+        else {
+            return () }
 
-        let end: Position$ = lexer.getPosition()
+        let end: Position$ lexer.getPosition()
 
-        let ret: NameCatchPattern = new NameCatchPattern(name, errorName, new Position(start), new Position(end))
-        if name != null
-            name.parent = ret
+        let ret: NameCatchPattern new NameCatchPattern(name, errorName, new Position(start), new Position(end))
+        if (name <> ()) {
+            name.parent = ret }
 
         ret
     }
 
     method parseExpressionList(): Array[Expression] {
         mutable ret: Array[Expression]$ = null
-        while true {
+        while (true) {
 
-            let node: Expression = parseExpression()
-            if node == null
-                break
+            let node: Expression parseExpression()
+            if (node = ()) {
+                break }
 
-            if ret == null
-                ret = new Expression[]()
+            if (ret = ()) {
+                ret = new Array[Expression]() }
 
             ret.add(node)
         }
@@ -820,80 +822,80 @@ class scalyc.Parser(
     function parseExpression(): Expression {
         {
             let node: Block = parseBlock()
-            if node != null
-                return(node)
+            if (node <> ()) {
+                return node }
         }
 
         {
             let node: Name = parseName()
-            if node != null
-                return(node)
+            if (node <> ()) {
+                return node }
         }
 
         {
             let node: Constant = parseConstant()
-            if node != null
-                return(node)
+            if (node <> ()) {
+                return node }
         }
 
         {
             let node: If = parseIf()
-            if node != null
-                return(node)
+            if (node <> ()) {
+                return node }
         }
 
         {
             let node: Switch = parseSwitch()
-            if node != null
-                return(node)
+            if (node <> ()) {
+                return node }
         }
 
         {
             let node: For = parseFor()
-            if node != null
-                return(node)
+            if (node <> ()) {
+                return node }
         }
 
         {
             let node: While = parseWhile()
-            if node != null
-                return(node)
+            if (node <> ()) {
+                return node }
         }
 
         {
             let node: Do = parseDo()
-            if node != null
-                return(node)
+            if (node <> ()) {
+                return node }
         }
 
         {
             let node: This = parseThis()
-            if node != null
-                return(node)
+            if (node <> ()) {
+                return node }
         }
 
         {
             let node: New = parseNew()
-            if node != null
-                return(node)
+            if (node <> ()) {
+                return node }
         }
 
         {
             let node: Object = parseObject()
-            if node != null
-                return(node)
+            if (node <> ()) {
+                return node }
         }
 
         {
             let node: Array = parseArray()
-            if node != null
-                return(node)
+            if (node <> ()) {
+                return node }
         }
 
         {
             let node: SizeOf = parseSizeOf()
-            if node != null
-                return(node)
+            if (node <> ()) {
+                return node }
         }
 
         null
@@ -903,25 +905,25 @@ class scalyc.Parser(
         let start: Position$ = lexer.getPreviousPosition()
 
         let successLeftCurly1: bool = lexer.parsePunctuation(leftCurly)
-        if successLeftCurly1
-            lexer.advance()
-        else
-            return(null)
+        if (successLeftCurly1) {
+            lexer.advance() }
+        else {
+            return () }
 
-        let statements: Statement[] = parseStatementList()
+        let statements: Array[Statement] = parseStatementList()
 
         let successRightCurly3: bool = lexer.parsePunctuation(rightCurly)
-        if successRightCurly3
-            lexer.advance()
-        else
-            return(null)
+        if (successRightCurly3) {
+            lexer.advance() }
+        else {
+            return () }
 
-        let end: Position$ = lexer.getPosition()
+        let end: Position$ lexer.getPosition()
 
-        let ret: Block = new Block(statements, new Position(start), new Position(end))
-        if statements != null {
-            for item: Statement in statements
-                item.parent = ret
+        let ret: Block new Block(statements, new Position(start), new Position(end))
+        if (statements <> ()) {
+            for (item: Statement in statements) {
+                item.parent = ret }
         }
 
         ret
@@ -931,14 +933,14 @@ class scalyc.Parser(
         let start: Position$ = lexer.getPreviousPosition()
 
         let literal: Literal = lexer.parseLiteral()
-        if literal != null
-            lexer.advance()
-        else
-            return(null)
+        if (literal <> ()) {
+            lexer.advance() }
+        else {
+            return () }
 
-        let end: Position$ = lexer.getPosition()
+        let end: Position$ lexer.getPosition()
 
-        let ret: Constant = new Constant(literal, new Position(start), new Position(end))
+        let ret: Constant new Constant(literal, new Position(start), new Position(end))
 
         ret
     }
@@ -947,40 +949,40 @@ class scalyc.Parser(
         let start: Position$ = lexer.getPreviousPosition()
 
         let successIf1: bool = lexer.parseKeyword(ifKeyword)
-        if successIf1
-            lexer.advance()
-        else
-            return(null)
+        if (successIf1) {
+            lexer.advance() }
+        else {
+            return () }
 
         let successLeftParen2: bool = lexer.parsePunctuation(leftParen)
-        if successLeftParen2
-            lexer.advance()
-        else
-            return(null)
+        if (successLeftParen2) {
+            lexer.advance() }
+        else {
+            return () }
 
         let condition: Operation = parseOperation()
-        if condition == null
-            return(null)
+        if (condition = ()) {
+            return () }
 
         let successRightParen4: bool = lexer.parsePunctuation(rightParen)
-        if successRightParen4
-            lexer.advance()
-        else
-            return(null)
+        if (successRightParen4) {
+            lexer.advance() }
+        else {
+            return () }
 
         let consequent: Block = parseBlock()
-        if consequent == null
-            return(null)
+        if (consequent = ()) {
+            return () }
 
         let elseClause: Else = parseElse()
 
-        let end: Position$ = lexer.getPosition()
+        let end: Position$ lexer.getPosition()
 
-        let ret: If = new If(condition, consequent, elseClause, new Position(start), new Position(end))
+        let ret: If new If(condition, consequent, elseClause, new Position(start), new Position(end))
         condition.parent = ret
         consequent.parent = ret
-        if elseClause != null
-            elseClause.parent = ret
+        if (elseClause <> ()) {
+            elseClause.parent = ret }
 
         ret
     }
@@ -989,18 +991,18 @@ class scalyc.Parser(
         let start: Position$ = lexer.getPreviousPosition()
 
         let successElse1: bool = lexer.parseKeyword(elseKeyword)
-        if successElse1
-            lexer.advance()
-        else
-            return(null)
+        if (successElse1) {
+            lexer.advance() }
+        else {
+            return () }
 
         let alternative: Block = parseBlock()
-        if alternative == null
-            return(null)
+        if (alternative = ()) {
+            return () }
 
-        let end: Position$ = lexer.getPosition()
+        let end: Position$ lexer.getPosition()
 
-        let ret: Else = new Else(alternative, new Position(start), new Position(end))
+        let ret: Else new Else(alternative, new Position(start), new Position(end))
         alternative.parent = ret
 
         ret
@@ -1010,48 +1012,48 @@ class scalyc.Parser(
         let start: Position$ = lexer.getPreviousPosition()
 
         let successSwitch1: bool = lexer.parseKeyword(switchKeyword)
-        if successSwitch1
-            lexer.advance()
-        else
-            return(null)
+        if (successSwitch1) {
+            lexer.advance() }
+        else {
+            return () }
 
         let successLeftParen2: bool = lexer.parsePunctuation(leftParen)
-        if successLeftParen2
-            lexer.advance()
-        else
-            return(null)
+        if (successLeftParen2) {
+            lexer.advance() }
+        else {
+            return () }
 
         let condition: Operation = parseOperation()
-        if condition == null
-            return(null)
+        if (condition = ()) {
+            return () }
 
         let successRightParen4: bool = lexer.parsePunctuation(rightParen)
-        if successRightParen4
-            lexer.advance()
-        else
-            return(null)
+        if (successRightParen4) {
+            lexer.advance() }
+        else {
+            return () }
 
         let successLeftCurly5: bool = lexer.parsePunctuation(leftCurly)
-        if successLeftCurly5
-            lexer.advance()
-        else
-            return(null)
+        if (successLeftCurly5) {
+            lexer.advance() }
+        else {
+            return () }
 
-        let cases: SwitchCase[] = parseSwitchCaseList()
+        let cases: Array[SwitchCase] = parseSwitchCaseList()
 
         let successRightCurly7: bool = lexer.parsePunctuation(rightCurly)
-        if successRightCurly7
-            lexer.advance()
-        else
-            return(null)
+        if (successRightCurly7) {
+            lexer.advance() }
+        else {
+            return () }
 
-        let end: Position$ = lexer.getPosition()
+        let end: Position$ lexer.getPosition()
 
-        let ret: Switch = new Switch(condition, cases, new Position(start), new Position(end))
+        let ret: Switch new Switch(condition, cases, new Position(start), new Position(end))
         condition.parent = ret
-        if cases != null {
-            for item: SwitchCase in cases
-                item.parent = ret
+        if (cases <> ()) {
+            for (item: SwitchCase in cases) {
+                item.parent = ret }
         }
 
         ret
@@ -1059,14 +1061,14 @@ class scalyc.Parser(
 
     method parseSwitchCaseList(): Array[SwitchCase] {
         mutable ret: Array[SwitchCase]$ = null
-        while true {
+        while (true) {
 
-            let node: SwitchCase = parseSwitchCase()
-            if node == null
-                break
+            let node: SwitchCase parseSwitchCase()
+            if (node = ()) {
+                break }
 
-            if ret == null
-                ret = new SwitchCase[]()
+            if (ret = ()) {
+                ret = new Array[SwitchCase]() }
 
             ret.add(node)
         }
@@ -1078,16 +1080,16 @@ class scalyc.Parser(
         let start: Position$ = lexer.getPreviousPosition()
 
         let label: CaseLabel = parseCaseLabel()
-        if label == null
-            return(null)
+        if (label = ()) {
+            return () }
 
         let content: Block = parseBlock()
-        if content == null
-            return(null)
+        if (content = ()) {
+            return () }
 
-        let end: Position$ = lexer.getPosition()
+        let end: Position$ lexer.getPosition()
 
-        let ret: SwitchCase = new SwitchCase(label, content, new Position(start), new Position(end))
+        let ret: SwitchCase new SwitchCase(label, content, new Position(start), new Position(end))
         label.parent = ret
         content.parent = ret
 
@@ -1097,14 +1099,14 @@ class scalyc.Parser(
     function parseCaseLabel(): CaseLabel {
         {
             let node: ItemCaseLabel = parseItemCaseLabel()
-            if node != null
-                return(node)
+            if (node <> ()) {
+                return node }
         }
 
         {
             let node: DefaultCaseLabel = parseDefaultCaseLabel()
-            if node != null
-                return(node)
+            if (node <> ()) {
+                return node }
         }
 
         null
@@ -1114,19 +1116,19 @@ class scalyc.Parser(
         let start: Position$ = lexer.getPreviousPosition()
 
         let successCase1: bool = lexer.parseKeyword(caseKeyword)
-        if successCase1
-            lexer.advance()
-        else
-            return(null)
+        if (successCase1) {
+            lexer.advance() }
+        else {
+            return () }
 
-        let items: CaseItem[] = parseCaseItemList()
+        let items: Array[CaseItem] = parseCaseItemList()
 
-        let end: Position$ = lexer.getPosition()
+        let end: Position$ lexer.getPosition()
 
-        let ret: ItemCaseLabel = new ItemCaseLabel(items, new Position(start), new Position(end))
-        if items != null {
-            for item: CaseItem in items
-                item.parent = ret
+        let ret: ItemCaseLabel new ItemCaseLabel(items, new Position(start), new Position(end))
+        if (items <> ()) {
+            for (item: CaseItem in items) {
+                item.parent = ret }
         }
 
         ret
@@ -1134,14 +1136,14 @@ class scalyc.Parser(
 
     method parseCaseItemList(): Array[CaseItem] {
         mutable ret: Array[CaseItem]$ = null
-        while true {
+        while (true) {
 
-            let node: CaseItem = parseCaseItem()
-            if node == null
-                break
+            let node: CaseItem parseCaseItem()
+            if (node = ()) {
+                break }
 
-            if ret == null
-                ret = new CaseItem[]()
+            if (ret = ()) {
+                ret = new Array[CaseItem]() }
 
             ret.add(node)
         }
@@ -1153,16 +1155,16 @@ class scalyc.Parser(
         let start: Position$ = lexer.getPreviousPosition()
 
         let pattern: CasePattern = parseCasePattern()
-        if pattern == null
-            return(null)
+        if (pattern = ()) {
+            return () }
 
         let successComma2: bool = lexer.parsePunctuation(comma)
-        if successComma2
-            lexer.advance()
+        if (successComma2) {
+            lexer.advance() }
 
-        let end: Position$ = lexer.getPosition()
+        let end: Position$ lexer.getPosition()
 
-        let ret: CaseItem = new CaseItem(pattern, new Position(start), new Position(end))
+        let ret: CaseItem new CaseItem(pattern, new Position(start), new Position(end))
         pattern.parent = ret
 
         ret
@@ -1170,14 +1172,14 @@ class scalyc.Parser(
 
     method parseCasePatternList(): Array[CasePattern] {
         mutable ret: Array[CasePattern]$ = null
-        while true {
+        while (true) {
 
-            let node: CasePattern = parseCasePattern()
-            if node == null
-                break
+            let node: CasePattern parseCasePattern()
+            if (node = ()) {
+                break }
 
-            if ret == null
-                ret = new CasePattern[]()
+            if (ret = ()) {
+                ret = new Array[CasePattern]() }
 
             ret.add(node)
         }
@@ -1188,20 +1190,20 @@ class scalyc.Parser(
     function parseCasePattern(): CasePattern {
         {
             let node: ConstantPattern = parseConstantPattern()
-            if node != null
-                return(node)
+            if (node <> ()) {
+                return node }
         }
 
         {
             let node: WildcardPattern = parseWildcardPattern()
-            if node != null
-                return(node)
+            if (node <> ()) {
+                return node }
         }
 
         {
             let node: NamePattern = parseNamePattern()
-            if node != null
-                return(node)
+            if (node <> ()) {
+                return node }
         }
 
         null
@@ -1211,12 +1213,12 @@ class scalyc.Parser(
         let start: Position$ = lexer.getPreviousPosition()
 
         let constant: Constant = parseConstant()
-        if constant == null
-            return(null)
+        if (constant = ()) {
+            return () }
 
-        let end: Position$ = lexer.getPosition()
+        let end: Position$ lexer.getPosition()
 
-        let ret: ConstantPattern = new ConstantPattern(constant, new Position(start), new Position(end))
+        let ret: ConstantPattern new ConstantPattern(constant, new Position(start), new Position(end))
         constant.parent = ret
 
         ret
@@ -1226,14 +1228,14 @@ class scalyc.Parser(
         let start: Position$ = lexer.getPreviousPosition()
 
         let successUnderscore1: bool = lexer.parsePunctuation(underscore)
-        if successUnderscore1
-            lexer.advance()
-        else
-            return(null)
+        if (successUnderscore1) {
+            lexer.advance() }
+        else {
+            return () }
 
-        let end: Position$ = lexer.getPosition()
+        let end: Position$ lexer.getPosition()
 
-        let ret: WildcardPattern = new WildcardPattern(new Position(start), new Position(end))
+        let ret: WildcardPattern new WildcardPattern(new Position(start), new Position(end))
 
         ret
     }
@@ -1242,12 +1244,12 @@ class scalyc.Parser(
         let start: Position$ = lexer.getPreviousPosition()
 
         let name: Name = parseName()
-        if name == null
-            return(null)
+        if (name = ()) {
+            return () }
 
-        let end: Position$ = lexer.getPosition()
+        let end: Position$ lexer.getPosition()
 
-        let ret: NamePattern = new NamePattern(name, new Position(start), new Position(end))
+        let ret: NamePattern new NamePattern(name, new Position(start), new Position(end))
         name.parent = ret
 
         ret
@@ -1257,14 +1259,14 @@ class scalyc.Parser(
         let start: Position$ = lexer.getPreviousPosition()
 
         let successDefault1: bool = lexer.parseKeyword(defaultKeyword)
-        if successDefault1
-            lexer.advance()
-        else
-            return(null)
+        if (successDefault1) {
+            lexer.advance() }
+        else {
+            return () }
 
-        let end: Position$ = lexer.getPosition()
+        let end: Position$ lexer.getPosition()
 
-        let ret: DefaultCaseLabel = new DefaultCaseLabel(new Position(start), new Position(end))
+        let ret: DefaultCaseLabel new DefaultCaseLabel(new Position(start), new Position(end))
 
         ret
     }
@@ -1273,50 +1275,50 @@ class scalyc.Parser(
         let start: Position$ = lexer.getPreviousPosition()
 
         let successFor1: bool = lexer.parseKeyword(forKeyword)
-        if successFor1
-            lexer.advance()
-        else
-            return(null)
+        if (successFor1) {
+            lexer.advance() }
+        else {
+            return () }
 
         let successLeftParen2: bool = lexer.parsePunctuation(leftParen)
-        if successLeftParen2
-            lexer.advance()
-        else
-            return(null)
+        if (successLeftParen2) {
+            lexer.advance() }
+        else {
+            return () }
 
         let index: string = lexer.parseIdentifier()
-        if (index != null) && isIdentifier(index)
-            lexer.advance()
-        else
-            return(null)
+        if ((index <> ()) && isIdentifier(index)) {
+            lexer.advance() }
+        else {
+            return () }
 
         let typeAnnotation: TypeAnnotation = parseTypeAnnotation()
 
         let successIn5: bool = lexer.parseKeyword(inKeyword)
-        if successIn5
-            lexer.advance()
-        else
-            return(null)
+        if (successIn5) {
+            lexer.advance() }
+        else {
+            return () }
 
         let operation: Operation = parseOperation()
-        if operation == null
-            return(null)
+        if (operation = ()) {
+            return () }
 
         let successRightParen7: bool = lexer.parsePunctuation(rightParen)
-        if successRightParen7
-            lexer.advance()
-        else
-            return(null)
+        if (successRightParen7) {
+            lexer.advance() }
+        else {
+            return () }
 
         let iteration: Loop = parseLoop()
-        if iteration == null
-            return(null)
+        if (iteration = ()) {
+            return () }
 
-        let end: Position$ = lexer.getPosition()
+        let end: Position$ lexer.getPosition()
 
-        let ret: For = new For(index, typeAnnotation, operation, iteration, new Position(start), new Position(end))
-        if typeAnnotation != null
-            typeAnnotation.parent = ret
+        let ret: For new For(index, typeAnnotation, operation, iteration, new Position(start), new Position(end))
+        if (typeAnnotation <> ()) {
+            typeAnnotation.parent = ret }
         operation.parent = ret
         iteration.parent = ret
 
@@ -1327,34 +1329,34 @@ class scalyc.Parser(
         let start: Position$ = lexer.getPreviousPosition()
 
         let successWhile1: bool = lexer.parseKeyword(whileKeyword)
-        if successWhile1
-            lexer.advance()
-        else
-            return(null)
+        if (successWhile1) {
+            lexer.advance() }
+        else {
+            return () }
 
         let successLeftParen2: bool = lexer.parsePunctuation(leftParen)
-        if successLeftParen2
-            lexer.advance()
-        else
-            return(null)
+        if (successLeftParen2) {
+            lexer.advance() }
+        else {
+            return () }
 
         let condition: Operation = parseOperation()
-        if condition == null
-            return(null)
+        if (condition = ()) {
+            return () }
 
         let successRightParen4: bool = lexer.parsePunctuation(rightParen)
-        if successRightParen4
-            lexer.advance()
-        else
-            return(null)
+        if (successRightParen4) {
+            lexer.advance() }
+        else {
+            return () }
 
         let iteration: Loop = parseLoop()
-        if iteration == null
-            return(null)
+        if (iteration = ()) {
+            return () }
 
-        let end: Position$ = lexer.getPosition()
+        let end: Position$ lexer.getPosition()
 
-        let ret: While = new While(condition, iteration, new Position(start), new Position(end))
+        let ret: While new While(condition, iteration, new Position(start), new Position(end))
         condition.parent = ret
         iteration.parent = ret
 
@@ -1365,40 +1367,40 @@ class scalyc.Parser(
         let start: Position$ = lexer.getPreviousPosition()
 
         let successDo1: bool = lexer.parseKeyword(doKeyword)
-        if successDo1
-            lexer.advance()
-        else
-            return(null)
+        if (successDo1) {
+            lexer.advance() }
+        else {
+            return () }
 
         let iteration: Loop = parseLoop()
-        if iteration == null
-            return(null)
+        if (iteration = ()) {
+            return () }
 
         let successWhile3: bool = lexer.parseKeyword(whileKeyword)
-        if successWhile3
-            lexer.advance()
-        else
-            return(null)
+        if (successWhile3) {
+            lexer.advance() }
+        else {
+            return () }
 
         let successLeftParen4: bool = lexer.parsePunctuation(leftParen)
-        if successLeftParen4
-            lexer.advance()
-        else
-            return(null)
+        if (successLeftParen4) {
+            lexer.advance() }
+        else {
+            return () }
 
         let condition: Operation = parseOperation()
-        if condition == null
-            return(null)
+        if (condition = ()) {
+            return () }
 
         let successRightParen6: bool = lexer.parsePunctuation(rightParen)
-        if successRightParen6
-            lexer.advance()
-        else
-            return(null)
+        if (successRightParen6) {
+            lexer.advance() }
+        else {
+            return () }
 
-        let end: Position$ = lexer.getPosition()
+        let end: Position$ lexer.getPosition()
 
-        let ret: Do = new Do(iteration, condition, new Position(start), new Position(end))
+        let ret: Do new Do(iteration, condition, new Position(start), new Position(end))
         iteration.parent = ret
         condition.parent = ret
 
@@ -1408,14 +1410,14 @@ class scalyc.Parser(
     function parseLoop(): Loop {
         {
             let node: SimpleLoop = parseSimpleLoop()
-            if node != null
-                return(node)
+            if (node <> ()) {
+                return node }
         }
 
         {
             let node: NamedLoop = parseNamedLoop()
-            if node != null
-                return(node)
+            if (node <> ()) {
+                return node }
         }
 
         null
@@ -1425,12 +1427,12 @@ class scalyc.Parser(
         let start: Position$ = lexer.getPreviousPosition()
 
         let code: Block = parseBlock()
-        if code == null
-            return(null)
+        if (code = ()) {
+            return () }
 
-        let end: Position$ = lexer.getPosition()
+        let end: Position$ lexer.getPosition()
 
-        let ret: SimpleLoop = new SimpleLoop(code, new Position(start), new Position(end))
+        let ret: SimpleLoop new SimpleLoop(code, new Position(start), new Position(end))
         code.parent = ret
 
         ret
@@ -1440,24 +1442,24 @@ class scalyc.Parser(
         let start: Position$ = lexer.getPreviousPosition()
 
         let successLoop1: bool = lexer.parseKeyword(loopKeyword)
-        if successLoop1
-            lexer.advance()
-        else
-            return(null)
+        if (successLoop1) {
+            lexer.advance() }
+        else {
+            return () }
 
         let name: string = lexer.parseIdentifier()
-        if (name != null) && isIdentifier(name)
-            lexer.advance()
-        else
-            return(null)
+        if ((name <> ()) && isIdentifier(name)) {
+            lexer.advance() }
+        else {
+            return () }
 
         let code: Block = parseBlock()
-        if code == null
-            return(null)
+        if (code = ()) {
+            return () }
 
-        let end: Position$ = lexer.getPosition()
+        let end: Position$ lexer.getPosition()
 
-        let ret: NamedLoop = new NamedLoop(name, code, new Position(start), new Position(end))
+        let ret: NamedLoop new NamedLoop(name, code, new Position(start), new Position(end))
         code.parent = ret
 
         ret
@@ -1467,14 +1469,14 @@ class scalyc.Parser(
         let start: Position$ = lexer.getPreviousPosition()
 
         let successThis1: bool = lexer.parseKeyword(thisKeyword)
-        if successThis1
-            lexer.advance()
-        else
-            return(null)
+        if (successThis1) {
+            lexer.advance() }
+        else {
+            return () }
 
-        let end: Position$ = lexer.getPosition()
+        let end: Position$ lexer.getPosition()
 
-        let ret: This = new This(new Position(start), new Position(end))
+        let ret: This new This(new Position(start), new Position(end))
 
         ret
     }
@@ -1483,18 +1485,18 @@ class scalyc.Parser(
         let start: Position$ = lexer.getPreviousPosition()
 
         let successNew1: bool = lexer.parseKeyword(newKeyword)
-        if successNew1
-            lexer.advance()
-        else
-            return(null)
+        if (successNew1) {
+            lexer.advance() }
+        else {
+            return () }
 
         let typeSpec: Type = parseType()
-        if typeSpec == null
-            return(null)
+        if (typeSpec = ()) {
+            return () }
 
-        let end: Position$ = lexer.getPosition()
+        let end: Position$ lexer.getPosition()
 
-        let ret: New = new New(typeSpec, new Position(start), new Position(end))
+        let ret: New new New(typeSpec, new Position(start), new Position(end))
         typeSpec.parent = ret
 
         ret
@@ -1504,29 +1506,29 @@ class scalyc.Parser(
         let start: Position$ = lexer.getPreviousPosition()
 
         let successLeftParen1: bool = lexer.parsePunctuation(leftParen)
-        if successLeftParen1
-            lexer.advance()
-        else
-            return(null)
+        if (successLeftParen1) {
+            lexer.advance() }
+        else {
+            return () }
 
         let firstOp: Operation = parseOperation()
 
-        let additionalOps: Item[] = parseItemList()
+        let additionalOps: Array[Item] = parseItemList()
 
         let successRightParen4: bool = lexer.parsePunctuation(rightParen)
-        if successRightParen4
-            lexer.advance()
-        else
-            return(null)
+        if (successRightParen4) {
+            lexer.advance() }
+        else {
+            return () }
 
-        let end: Position$ = lexer.getPosition()
+        let end: Position$ lexer.getPosition()
 
-        let ret: Object = new Object(firstOp, additionalOps, new Position(start), new Position(end))
-        if firstOp != null
-            firstOp.parent = ret
-        if additionalOps != null {
-            for item: Item in additionalOps
-                item.parent = ret
+        let ret: Object new Object(firstOp, additionalOps, new Position(start), new Position(end))
+        if (firstOp <> ()) {
+            firstOp.parent = ret }
+        if (additionalOps <> ()) {
+            for (item: Item in additionalOps) {
+                item.parent = ret }
         }
 
         ret
@@ -1536,29 +1538,29 @@ class scalyc.Parser(
         let start: Position$ = lexer.getPreviousPosition()
 
         let successLeftBracket1: bool = lexer.parsePunctuation(leftBracket)
-        if successLeftBracket1
-            lexer.advance()
-        else
-            return(null)
+        if (successLeftBracket1) {
+            lexer.advance() }
+        else {
+            return () }
 
         let firstOp: Operation = parseOperation()
 
-        let additionalOps: Item[] = parseItemList()
+        let additionalOps: Array[Item] = parseItemList()
 
         let successRightBracket4: bool = lexer.parsePunctuation(rightBracket)
-        if successRightBracket4
-            lexer.advance()
-        else
-            return(null)
+        if (successRightBracket4) {
+            lexer.advance() }
+        else {
+            return () }
 
-        let end: Position$ = lexer.getPosition()
+        let end: Position$ lexer.getPosition()
 
-        let ret: Array = new Array(firstOp, additionalOps, new Position(start), new Position(end))
-        if firstOp != null
-            firstOp.parent = ret
-        if additionalOps != null {
-            for item: Item in additionalOps
-                item.parent = ret
+        let ret: Array new Array(firstOp, additionalOps, new Position(start), new Position(end))
+        if (firstOp <> ()) {
+            firstOp.parent = ret }
+        if (additionalOps <> ()) {
+            for (item: Item in additionalOps) {
+                item.parent = ret }
         }
 
         ret
@@ -1566,14 +1568,14 @@ class scalyc.Parser(
 
     method parseItemList(): Array[Item] {
         mutable ret: Array[Item]$ = null
-        while true {
+        while (true) {
 
-            let node: Item = parseItem()
-            if node == null
-                break
+            let node: Item parseItem()
+            if (node = ()) {
+                break }
 
-            if ret == null
-                ret = new Item[]()
+            if (ret = ()) {
+                ret = new Array[Item]() }
 
             ret.add(node)
         }
@@ -1585,18 +1587,18 @@ class scalyc.Parser(
         let start: Position$ = lexer.getPreviousPosition()
 
         let successComma1: bool = lexer.parsePunctuation(comma)
-        if successComma1
-            lexer.advance()
-        else
-            return(null)
+        if (successComma1) {
+            lexer.advance() }
+        else {
+            return () }
 
         let operation: Operation = parseOperation()
-        if operation == null
-            return(null)
+        if (operation = ()) {
+            return () }
 
-        let end: Position$ = lexer.getPosition()
+        let end: Position$ lexer.getPosition()
 
-        let ret: Item = new Item(operation, new Position(start), new Position(end))
+        let ret: Item new Item(operation, new Position(start), new Position(end))
         operation.parent = ret
 
         ret
@@ -1606,18 +1608,18 @@ class scalyc.Parser(
         let start: Position$ = lexer.getPreviousPosition()
 
         let successSizeof1: bool = lexer.parseKeyword(sizeofKeyword)
-        if successSizeof1
-            lexer.advance()
-        else
-            return(null)
+        if (successSizeof1) {
+            lexer.advance() }
+        else {
+            return () }
 
         let typeSpec: Type = parseType()
-        if typeSpec == null
-            return(null)
+        if (typeSpec = ()) {
+            return () }
 
-        let end: Position$ = lexer.getPosition()
+        let end: Position$ lexer.getPosition()
 
-        let ret: SizeOf = new SizeOf(typeSpec, new Position(start), new Position(end))
+        let ret: SizeOf new SizeOf(typeSpec, new Position(start), new Position(end))
         typeSpec.parent = ret
 
         ret
@@ -1627,22 +1629,22 @@ class scalyc.Parser(
         let start: Position$ = lexer.getPreviousPosition()
 
         let successBreak1: bool = lexer.parseKeyword(breakKeyword)
-        if successBreak1
-            lexer.advance()
-        else
-            return(null)
+        if (successBreak1) {
+            lexer.advance() }
+        else {
+            return () }
 
         let iteration: string = lexer.parseIdentifier()
-        if (iteration != null) && isIdentifier(iteration)
-            lexer.advance()
+        if ((iteration <> ()) && isIdentifier(iteration)) {
+            lexer.advance() }
 
         let successSemicolon3: bool = lexer.parsePunctuation(semicolon)
-        if successSemicolon3
-            lexer.advance()
+        if (successSemicolon3) {
+            lexer.advance() }
 
-        let end: Position$ = lexer.getPosition()
+        let end: Position$ lexer.getPosition()
 
-        let ret: Break = new Break(iteration, new Position(start), new Position(end))
+        let ret: Break new Break(iteration, new Position(start), new Position(end))
 
         ret
     }
@@ -1651,22 +1653,22 @@ class scalyc.Parser(
         let start: Position$ = lexer.getPreviousPosition()
 
         let successContinue1: bool = lexer.parseKeyword(continueKeyword)
-        if successContinue1
-            lexer.advance()
-        else
-            return(null)
+        if (successContinue1) {
+            lexer.advance() }
+        else {
+            return () }
 
         let iteration: string = lexer.parseIdentifier()
-        if (iteration != null) && isIdentifier(iteration)
-            lexer.advance()
+        if ((iteration <> ()) && isIdentifier(iteration)) {
+            lexer.advance() }
 
         let successSemicolon3: bool = lexer.parsePunctuation(semicolon)
-        if successSemicolon3
-            lexer.advance()
+        if (successSemicolon3) {
+            lexer.advance() }
 
-        let end: Position$ = lexer.getPosition()
+        let end: Position$ lexer.getPosition()
 
-        let ret: Continue = new Continue(iteration, new Position(start), new Position(end))
+        let ret: Continue new Continue(iteration, new Position(start), new Position(end))
 
         ret
     }
@@ -1675,18 +1677,18 @@ class scalyc.Parser(
         let start: Position$ = lexer.getPreviousPosition()
 
         let successReturn1: bool = lexer.parseKeyword(returnKeyword)
-        if successReturn1
-            lexer.advance()
-        else
-            return(null)
+        if (successReturn1) {
+            lexer.advance() }
+        else {
+            return () }
 
         let result: Calculation = parseCalculation()
 
-        let end: Position$ = lexer.getPosition()
+        let end: Position$ lexer.getPosition()
 
-        let ret: Return = new Return(result, new Position(start), new Position(end))
-        if result != null
-            result.parent = ret
+        let ret: Return new Return(result, new Position(start), new Position(end))
+        if (result <> ()) {
+            result.parent = ret }
 
         ret
     }
@@ -1695,18 +1697,18 @@ class scalyc.Parser(
         let start: Position$ = lexer.getPreviousPosition()
 
         let successThrow1: bool = lexer.parseKeyword(throwKeyword)
-        if successThrow1
-            lexer.advance()
-        else
-            return(null)
+        if (successThrow1) {
+            lexer.advance() }
+        else {
+            return () }
 
         let exception: Calculation = parseCalculation()
-        if exception == null
-            return(null)
+        if (exception = ()) {
+            return () }
 
-        let end: Position$ = lexer.getPosition()
+        let end: Position$ lexer.getPosition()
 
-        let ret: Throw = new Throw(exception, new Position(start), new Position(end))
+        let ret: Throw new Throw(exception, new Position(start), new Position(end))
         exception.parent = ret
 
         ret
@@ -1716,14 +1718,14 @@ class scalyc.Parser(
         let start: Position$ = lexer.getPreviousPosition()
 
         let successClass1: bool = lexer.parseKeyword(classKeyword)
-        if successClass1
-            lexer.advance()
-        else
-            return(null)
+        if (successClass1) {
+            lexer.advance() }
+        else {
+            return () }
 
         let name: Name = parseName()
-        if name == null
-            return(null)
+        if (name = ()) {
+            return () }
 
         let generics: GenericParameters = parseGenericParameters()
 
@@ -1733,18 +1735,18 @@ class scalyc.Parser(
 
         let body: ClassBody = parseClassBody()
 
-        let end: Position$ = lexer.getPosition()
+        let end: Position$ lexer.getPosition()
 
-        let ret: Class = new Class(name, generics, contents, baseClass, body, new Position(start), new Position(end))
+        let ret: Class new Class(name, generics, contents, baseClass, body, new Position(start), new Position(end))
         name.parent = ret
-        if generics != null
-            generics.parent = ret
-        if contents != null
-            contents.parent = ret
-        if baseClass != null
-            baseClass.parent = ret
-        if body != null
-            body.parent = ret
+        if (generics <> ()) {
+            generics.parent = ret }
+        if (contents <> ()) {
+            contents.parent = ret }
+        if (baseClass <> ()) {
+            baseClass.parent = ret }
+        if (body <> ()) {
+            body.parent = ret }
 
         ret
     }
@@ -1753,31 +1755,31 @@ class scalyc.Parser(
         let start: Position$ = lexer.getPreviousPosition()
 
         let successLeftBracket1: bool = lexer.parsePunctuation(leftBracket)
-        if successLeftBracket1
-            lexer.advance()
-        else
-            return(null)
+        if (successLeftBracket1) {
+            lexer.advance() }
+        else {
+            return () }
 
         let name: string = lexer.parseIdentifier()
-        if (name != null) && isIdentifier(name)
-            lexer.advance()
-        else
-            return(null)
+        if ((name <> ()) && isIdentifier(name)) {
+            lexer.advance() }
+        else {
+            return () }
 
-        let additionalGenerics: GenericParameter[] = parseGenericParameterList()
+        let additionalGenerics: Array[GenericParameter] = parseGenericParameterList()
 
         let successRightBracket4: bool = lexer.parsePunctuation(rightBracket)
-        if successRightBracket4
-            lexer.advance()
-        else
-            return(null)
+        if (successRightBracket4) {
+            lexer.advance() }
+        else {
+            return () }
 
-        let end: Position$ = lexer.getPosition()
+        let end: Position$ lexer.getPosition()
 
-        let ret: GenericParameters = new GenericParameters(name, additionalGenerics, new Position(start), new Position(end))
-        if additionalGenerics != null {
-            for item: GenericParameter in additionalGenerics
-                item.parent = ret
+        let ret: GenericParameters new GenericParameters(name, additionalGenerics, new Position(start), new Position(end))
+        if (additionalGenerics <> ()) {
+            for (item: GenericParameter in additionalGenerics) {
+                item.parent = ret }
         }
 
         ret
@@ -1785,14 +1787,14 @@ class scalyc.Parser(
 
     method parseGenericParameterList(): Array[GenericParameter] {
         mutable ret: Array[GenericParameter]$ = null
-        while true {
+        while (true) {
 
-            let node: GenericParameter = parseGenericParameter()
-            if node == null
-                break
+            let node: GenericParameter parseGenericParameter()
+            if (node = ()) {
+                break }
 
-            if ret == null
-                ret = new GenericParameter[]()
+            if (ret = ()) {
+                ret = new Array[GenericParameter]() }
 
             ret.add(node)
         }
@@ -1804,20 +1806,20 @@ class scalyc.Parser(
         let start: Position$ = lexer.getPreviousPosition()
 
         let successComma1: bool = lexer.parsePunctuation(comma)
-        if successComma1
-            lexer.advance()
-        else
-            return(null)
+        if (successComma1) {
+            lexer.advance() }
+        else {
+            return () }
 
         let name: string = lexer.parseIdentifier()
-        if (name != null) && isIdentifier(name)
-            lexer.advance()
-        else
-            return(null)
+        if ((name <> ()) && isIdentifier(name)) {
+            lexer.advance() }
+        else {
+            return () }
 
-        let end: Position$ = lexer.getPosition()
+        let end: Position$ lexer.getPosition()
 
-        let ret: GenericParameter = new GenericParameter(name, new Position(start), new Position(end))
+        let ret: GenericParameter new GenericParameter(name, new Position(start), new Position(end))
 
         ret
     }
@@ -1826,18 +1828,18 @@ class scalyc.Parser(
         let start: Position$ = lexer.getPreviousPosition()
 
         let successExtends1: bool = lexer.parseKeyword(extendsKeyword)
-        if successExtends1
-            lexer.advance()
-        else
-            return(null)
+        if (successExtends1) {
+            lexer.advance() }
+        else {
+            return () }
 
         let name: Name = parseName()
-        if name == null
-            return(null)
+        if (name = ()) {
+            return () }
 
-        let end: Position$ = lexer.getPosition()
+        let end: Position$ lexer.getPosition()
 
-        let ret: Extends = new Extends(name, new Position(start), new Position(end))
+        let ret: Extends new Extends(name, new Position(start), new Position(end))
         name.parent = ret
 
         ret
@@ -1847,25 +1849,25 @@ class scalyc.Parser(
         let start: Position$ = lexer.getPreviousPosition()
 
         let successLeftParen1: bool = lexer.parsePunctuation(leftParen)
-        if successLeftParen1
-            lexer.advance()
-        else
-            return(null)
+        if (successLeftParen1) {
+            lexer.advance() }
+        else {
+            return () }
 
-        let components: Component[] = parseComponentList()
+        let components: Array[Component] = parseComponentList()
 
         let successRightParen3: bool = lexer.parsePunctuation(rightParen)
-        if successRightParen3
-            lexer.advance()
-        else
-            return(null)
+        if (successRightParen3) {
+            lexer.advance() }
+        else {
+            return () }
 
-        let end: Position$ = lexer.getPosition()
+        let end: Position$ lexer.getPosition()
 
-        let ret: Structure = new Structure(components, new Position(start), new Position(end))
-        if components != null {
-            for item: Component in components
-                item.parent = ret
+        let ret: Structure new Structure(components, new Position(start), new Position(end))
+        if (components <> ()) {
+            for (item: Component in components) {
+                item.parent = ret }
         }
 
         ret
@@ -1873,14 +1875,14 @@ class scalyc.Parser(
 
     method parseComponentList(): Array[Component] {
         mutable ret: Array[Component]$ = null
-        while true {
+        while (true) {
 
-            let node: Component = parseComponent()
-            if node == null
-                break
+            let node: Component parseComponent()
+            if (node = ()) {
+                break }
 
-            if ret == null
-                ret = new Component[]()
+            if (ret = ()) {
+                ret = new Array[Component]() }
 
             ret.add(node)
         }
@@ -1892,22 +1894,22 @@ class scalyc.Parser(
         let start: Position$ = lexer.getPreviousPosition()
 
         let name: string = lexer.parseIdentifier()
-        if (name != null) && isIdentifier(name)
-            lexer.advance()
-        else
-            return(null)
+        if ((name <> ()) && isIdentifier(name)) {
+            lexer.advance() }
+        else {
+            return () }
 
         let typeAnnotation: TypeAnnotation = parseTypeAnnotation()
 
         let successComma3: bool = lexer.parsePunctuation(comma)
-        if successComma3
-            lexer.advance()
+        if (successComma3) {
+            lexer.advance() }
 
-        let end: Position$ = lexer.getPosition()
+        let end: Position$ lexer.getPosition()
 
-        let ret: Component = new Component(name, typeAnnotation, new Position(start), new Position(end))
-        if typeAnnotation != null
-            typeAnnotation.parent = ret
+        let ret: Component new Component(name, typeAnnotation, new Position(start), new Position(end))
+        if (typeAnnotation <> ()) {
+            typeAnnotation.parent = ret }
 
         ret
     }
@@ -1916,25 +1918,25 @@ class scalyc.Parser(
         let start: Position$ = lexer.getPreviousPosition()
 
         let successLeftCurly1: bool = lexer.parsePunctuation(leftCurly)
-        if successLeftCurly1
-            lexer.advance()
-        else
-            return(null)
+        if (successLeftCurly1) {
+            lexer.advance() }
+        else {
+            return () }
 
-        let members: Member[] = parseMemberList()
+        let members: Array[Member] = parseMemberList()
 
         let successRightCurly3: bool = lexer.parsePunctuation(rightCurly)
-        if successRightCurly3
-            lexer.advance()
-        else
-            return(null)
+        if (successRightCurly3) {
+            lexer.advance() }
+        else {
+            return () }
 
-        let end: Position$ = lexer.getPosition()
+        let end: Position$ lexer.getPosition()
 
-        let ret: ClassBody = new ClassBody(members, new Position(start), new Position(end))
-        if members != null {
-            for item: Member in members
-                item.parent = ret
+        let ret: ClassBody new ClassBody(members, new Position(start), new Position(end))
+        if (members <> ()) {
+            for (item: Member in members) {
+                item.parent = ret }
         }
 
         ret
@@ -1942,14 +1944,14 @@ class scalyc.Parser(
 
     method parseMemberList(): Array[Member] {
         mutable ret: Array[Member]$ = null
-        while true {
+        while (true) {
 
-            let node: Member = parseMember()
-            if node == null
-                break
+            let node: Member parseMember()
+            if (node = ()) {
+                break }
 
-            if ret == null
-                ret = new Member[]()
+            if (ret = ()) {
+                ret = new Array[Member]() }
 
             ret.add(node)
         }
@@ -1960,50 +1962,50 @@ class scalyc.Parser(
     function parseMember(): Member {
         {
             let node: LetMember = parseLetMember()
-            if node != null
-                return(node)
+            if (node <> ()) {
+                return node }
         }
 
         {
             let node: MutableMember = parseMutableMember()
-            if node != null
-                return(node)
+            if (node <> ()) {
+                return node }
         }
 
         {
             let node: SetInitialization = parseSetInitialization()
-            if node != null
-                return(node)
+            if (node <> ()) {
+                return node }
         }
 
         {
             let node: Method = parseMethod()
-            if node != null
-                return(node)
+            if (node <> ()) {
+                return node }
         }
 
         {
             let node: StaticFunction = parseStaticFunction()
-            if node != null
-                return(node)
+            if (node <> ()) {
+                return node }
         }
 
         {
             let node: Operator = parseOperator()
-            if node != null
-                return(node)
+            if (node <> ()) {
+                return node }
         }
 
         {
             let node: Initializer = parseInitializer()
-            if node != null
-                return(node)
+            if (node <> ()) {
+                return node }
         }
 
         {
             let node: Allocator = parseAllocator()
-            if node != null
-                return(node)
+            if (node <> ()) {
+                return node }
         }
 
         null
@@ -2013,12 +2015,12 @@ class scalyc.Parser(
         let start: Position$ = lexer.getPreviousPosition()
 
         let definition: Let = parseLet()
-        if definition == null
-            return(null)
+        if (definition = ()) {
+            return () }
 
-        let end: Position$ = lexer.getPosition()
+        let end: Position$ lexer.getPosition()
 
-        let ret: LetMember = new LetMember(definition, new Position(start), new Position(end))
+        let ret: LetMember new LetMember(definition, new Position(start), new Position(end))
         definition.parent = ret
 
         ret
@@ -2028,12 +2030,12 @@ class scalyc.Parser(
         let start: Position$ = lexer.getPreviousPosition()
 
         let definition: Mutable = parseMutable()
-        if definition == null
-            return(null)
+        if (definition = ()) {
+            return () }
 
-        let end: Position$ = lexer.getPosition()
+        let end: Position$ lexer.getPosition()
 
-        let ret: MutableMember = new MutableMember(definition, new Position(start), new Position(end))
+        let ret: MutableMember new MutableMember(definition, new Position(start), new Position(end))
         definition.parent = ret
 
         ret
@@ -2043,12 +2045,12 @@ class scalyc.Parser(
         let start: Position$ = lexer.getPreviousPosition()
 
         let definition: Set = parseSet()
-        if definition == null
-            return(null)
+        if (definition = ()) {
+            return () }
 
-        let end: Position$ = lexer.getPosition()
+        let end: Position$ lexer.getPosition()
 
-        let ret: SetInitialization = new SetInitialization(definition, new Position(start), new Position(end))
+        let ret: SetInitialization new SetInitialization(definition, new Position(start), new Position(end))
         definition.parent = ret
 
         ret
@@ -2058,18 +2060,18 @@ class scalyc.Parser(
         let start: Position$ = lexer.getPreviousPosition()
 
         let successMethod1: bool = lexer.parseKeyword(methodKeyword)
-        if successMethod1
-            lexer.advance()
-        else
-            return(null)
+        if (successMethod1) {
+            lexer.advance() }
+        else {
+            return () }
 
         let procedure: Procedure = parseProcedure()
-        if procedure == null
-            return(null)
+        if (procedure = ()) {
+            return () }
 
-        let end: Position$ = lexer.getPosition()
+        let end: Position$ lexer.getPosition()
 
-        let ret: Method = new Method(procedure, new Position(start), new Position(end))
+        let ret: Method new Method(procedure, new Position(start), new Position(end))
         procedure.parent = ret
 
         ret
@@ -2079,12 +2081,12 @@ class scalyc.Parser(
         let start: Position$ = lexer.getPreviousPosition()
 
         let procedure: Function = parseFunction()
-        if procedure == null
-            return(null)
+        if (procedure = ()) {
+            return () }
 
-        let end: Position$ = lexer.getPosition()
+        let end: Position$ lexer.getPosition()
 
-        let ret: StaticFunction = new StaticFunction(procedure, new Position(start), new Position(end))
+        let ret: StaticFunction new StaticFunction(procedure, new Position(start), new Position(end))
         procedure.parent = ret
 
         ret
@@ -2094,18 +2096,18 @@ class scalyc.Parser(
         let start: Position$ = lexer.getPreviousPosition()
 
         let successOperator1: bool = lexer.parseKeyword(operatorKeyword)
-        if successOperator1
-            lexer.advance()
-        else
-            return(null)
+        if (successOperator1) {
+            lexer.advance() }
+        else {
+            return () }
 
         let routine: Routine = parseRoutine()
-        if routine == null
-            return(null)
+        if (routine = ()) {
+            return () }
 
-        let end: Position$ = lexer.getPosition()
+        let end: Position$ lexer.getPosition()
 
-        let ret: Operator = new Operator(routine, new Position(start), new Position(end))
+        let ret: Operator new Operator(routine, new Position(start), new Position(end))
         routine.parent = ret
 
         ret
@@ -2115,22 +2117,22 @@ class scalyc.Parser(
         let start: Position$ = lexer.getPreviousPosition()
 
         let successInitializer1: bool = lexer.parseKeyword(initializerKeyword)
-        if successInitializer1
-            lexer.advance()
-        else
-            return(null)
+        if (successInitializer1) {
+            lexer.advance() }
+        else {
+            return () }
 
         let input: Structure = parseStructure()
 
         let body: Block = parseBlock()
-        if body == null
-            return(null)
+        if (body = ()) {
+            return () }
 
-        let end: Position$ = lexer.getPosition()
+        let end: Position$ lexer.getPosition()
 
-        let ret: Initializer = new Initializer(input, body, new Position(start), new Position(end))
-        if input != null
-            input.parent = ret
+        let ret: Initializer new Initializer(input, body, new Position(start), new Position(end))
+        if (input <> ()) {
+            input.parent = ret }
         body.parent = ret
 
         ret
@@ -2140,22 +2142,22 @@ class scalyc.Parser(
         let start: Position$ = lexer.getPreviousPosition()
 
         let successAllocator1: bool = lexer.parseKeyword(allocatorKeyword)
-        if successAllocator1
-            lexer.advance()
-        else
-            return(null)
+        if (successAllocator1) {
+            lexer.advance() }
+        else {
+            return () }
 
         let input: Structure = parseStructure()
 
         let body: Block = parseBlock()
-        if body == null
-            return(null)
+        if (body = ()) {
+            return () }
 
-        let end: Position$ = lexer.getPosition()
+        let end: Position$ lexer.getPosition()
 
-        let ret: Allocator = new Allocator(input, body, new Position(start), new Position(end))
-        if input != null
-            input.parent = ret
+        let ret: Allocator new Allocator(input, body, new Position(start), new Position(end))
+        if (input <> ()) {
+            input.parent = ret }
         body.parent = ret
 
         ret
@@ -2165,18 +2167,18 @@ class scalyc.Parser(
         let start: Position$ = lexer.getPreviousPosition()
 
         let successFunction1: bool = lexer.parseKeyword(functionKeyword)
-        if successFunction1
-            lexer.advance()
-        else
-            return(null)
+        if (successFunction1) {
+            lexer.advance() }
+        else {
+            return () }
 
         let procedure: Procedure = parseProcedure()
-        if procedure == null
-            return(null)
+        if (procedure = ()) {
+            return () }
 
-        let end: Position$ = lexer.getPosition()
+        let end: Position$ lexer.getPosition()
 
-        let ret: Function = new Function(procedure, new Position(start), new Position(end))
+        let ret: Function new Function(procedure, new Position(start), new Position(end))
         procedure.parent = ret
 
         ret
@@ -2186,18 +2188,18 @@ class scalyc.Parser(
         let start: Position$ = lexer.getPreviousPosition()
 
         let name: string = lexer.parseIdentifier()
-        if (name != null) && isIdentifier(name)
-            lexer.advance()
-        else
-            return(null)
+        if ((name <> ()) && isIdentifier(name)) {
+            lexer.advance() }
+        else {
+            return () }
 
         let routine: Routine = parseRoutine()
-        if routine == null
-            return(null)
+        if (routine = ()) {
+            return () }
 
-        let end: Position$ = lexer.getPosition()
+        let end: Position$ lexer.getPosition()
 
-        let ret: Procedure = new Procedure(name, routine, new Position(start), new Position(end))
+        let ret: Procedure new Procedure(name, routine, new Position(start), new Position(end))
         routine.parent = ret
 
         ret
@@ -2213,18 +2215,18 @@ class scalyc.Parser(
         let throwsClause: Throws = parseThrows()
 
         let body: Block = parseBlock()
-        if body == null
-            return(null)
+        if (body = ()) {
+            return () }
 
-        let end: Position$ = lexer.getPosition()
+        let end: Position$ lexer.getPosition()
 
-        let ret: Routine = new Routine(input, output, throwsClause, body, new Position(start), new Position(end))
-        if input != null
-            input.parent = ret
-        if output != null
-            output.parent = ret
-        if throwsClause != null
-            throwsClause.parent = ret
+        let ret: Routine new Routine(input, output, throwsClause, body, new Position(start), new Position(end))
+        if (input <> ()) {
+            input.parent = ret }
+        if (output <> ()) {
+            output.parent = ret }
+        if (throwsClause <> ()) {
+            throwsClause.parent = ret }
         body.parent = ret
 
         ret
@@ -2234,18 +2236,18 @@ class scalyc.Parser(
         let start: Position$ = lexer.getPreviousPosition()
 
         let successColon1: bool = lexer.parsePunctuation(colon)
-        if successColon1
-            lexer.advance()
-        else
-            return(null)
+        if (successColon1) {
+            lexer.advance() }
+        else {
+            return () }
 
         let typeSpec: TypeSpec = parseTypeSpec()
-        if typeSpec == null
-            return(null)
+        if (typeSpec = ()) {
+            return () }
 
-        let end: Position$ = lexer.getPosition()
+        let end: Position$ lexer.getPosition()
 
-        let ret: TypeAnnotation = new TypeAnnotation(typeSpec, new Position(start), new Position(end))
+        let ret: TypeAnnotation new TypeAnnotation(typeSpec, new Position(start), new Position(end))
         typeSpec.parent = ret
 
         ret
@@ -2253,14 +2255,14 @@ class scalyc.Parser(
 
     method parseTypeSpecList(): Array[TypeSpec] {
         mutable ret: Array[TypeSpec]$ = null
-        while true {
+        while (true) {
 
-            let node: TypeSpec = parseTypeSpec()
-            if node == null
-                break
+            let node: TypeSpec parseTypeSpec()
+            if (node = ()) {
+                break }
 
-            if ret == null
-                ret = new TypeSpec[]()
+            if (ret = ()) {
+                ret = new Array[TypeSpec]() }
 
             ret.add(node)
         }
@@ -2271,14 +2273,14 @@ class scalyc.Parser(
     function parseTypeSpec(): TypeSpec {
         {
             let node: Type = parseType()
-            if node != null
-                return(node)
+            if (node <> ()) {
+                return node }
         }
 
         {
             let node: Variant = parseVariant()
-            if node != null
-                return(node)
+            if (node <> ()) {
+                return node }
         }
 
         null
@@ -2286,14 +2288,14 @@ class scalyc.Parser(
 
     method parseTypeList(): Array[Type] {
         mutable ret: Array[Type]$ = null
-        while true {
+        while (true) {
 
-            let node: Type = parseType()
-            if node == null
-                break
+            let node: Type parseType()
+            if (node = ()) {
+                break }
 
-            if ret == null
-                ret = new Type[]()
+            if (ret = ()) {
+                ret = new Array[Type]() }
 
             ret.add(node)
         }
@@ -2305,8 +2307,8 @@ class scalyc.Parser(
         let start: Position$ = lexer.getPreviousPosition()
 
         let name: Name = parseName()
-        if name == null
-            return(null)
+        if (name = ()) {
+            return () }
 
         let generics: GenericArguments = parseGenericArguments()
 
@@ -2314,16 +2316,16 @@ class scalyc.Parser(
 
         let lifeTime: LifeTime = parseLifeTime()
 
-        let end: Position$ = lexer.getPosition()
+        let end: Position$ lexer.getPosition()
 
-        let ret: Type = new Type(name, generics, optional, lifeTime, new Position(start), new Position(end))
+        let ret: Type new Type(name, generics, optional, lifeTime, new Position(start), new Position(end))
         name.parent = ret
-        if generics != null
-            generics.parent = ret
-        if optional != null
-            optional.parent = ret
-        if lifeTime != null
-            lifeTime.parent = ret
+        if (generics <> ()) {
+            generics.parent = ret }
+        if (optional <> ()) {
+            optional.parent = ret }
+        if (lifeTime <> ()) {
+            lifeTime.parent = ret }
 
         ret
     }
@@ -2332,25 +2334,25 @@ class scalyc.Parser(
         let start: Position$ = lexer.getPreviousPosition()
 
         let successLeftParen1: bool = lexer.parsePunctuation(leftParen)
-        if successLeftParen1
-            lexer.advance()
-        else
-            return(null)
+        if (successLeftParen1) {
+            lexer.advance() }
+        else {
+            return () }
 
-        let types: Type[] = parseTypeList()
+        let types: Array[Type] = parseTypeList()
 
         let successRightParen3: bool = lexer.parsePunctuation(rightParen)
-        if successRightParen3
-            lexer.advance()
-        else
-            return(null)
+        if (successRightParen3) {
+            lexer.advance() }
+        else {
+            return () }
 
-        let end: Position$ = lexer.getPosition()
+        let end: Position$ lexer.getPosition()
 
-        let ret: Variant = new Variant(types, new Position(start), new Position(end))
-        if types != null {
-            for item: Type in types
-                item.parent = ret
+        let ret: Variant new Variant(types, new Position(start), new Position(end))
+        if (types <> ()) {
+            for (item: Type in types) {
+                item.parent = ret }
         }
 
         ret
@@ -2360,18 +2362,18 @@ class scalyc.Parser(
         let start: Position$ = lexer.getPreviousPosition()
 
         let successThrows1: bool = lexer.parseKeyword(throwsKeyword)
-        if successThrows1
-            lexer.advance()
-        else
-            return(null)
+        if (successThrows1) {
+            lexer.advance() }
+        else {
+            return () }
 
         let throwsType: TypeSpec = parseTypeSpec()
-        if throwsType == null
-            return(null)
+        if (throwsType = ()) {
+            return () }
 
-        let end: Position$ = lexer.getPosition()
+        let end: Position$ lexer.getPosition()
 
-        let ret: Throws = new Throws(throwsType, new Position(start), new Position(end))
+        let ret: Throws new Throws(throwsType, new Position(start), new Position(end))
         throwsType.parent = ret
 
         ret
@@ -2381,30 +2383,30 @@ class scalyc.Parser(
         let start: Position$ = lexer.getPreviousPosition()
 
         let successLeftBracket1: bool = lexer.parsePunctuation(leftBracket)
-        if successLeftBracket1
-            lexer.advance()
-        else
-            return(null)
+        if (successLeftBracket1) {
+            lexer.advance() }
+        else {
+            return () }
 
         let generic: Type = parseType()
-        if generic == null
-            return(null)
+        if (generic = ()) {
+            return () }
 
-        let additionalGenerics: GenericArgument[] = parseGenericArgumentList()
+        let additionalGenerics: Array[GenericArgument] = parseGenericArgumentList()
 
         let successRightBracket4: bool = lexer.parsePunctuation(rightBracket)
-        if successRightBracket4
-            lexer.advance()
-        else
-            return(null)
+        if (successRightBracket4) {
+            lexer.advance() }
+        else {
+            return () }
 
-        let end: Position$ = lexer.getPosition()
+        let end: Position$ lexer.getPosition()
 
-        let ret: GenericArguments = new GenericArguments(generic, additionalGenerics, new Position(start), new Position(end))
+        let ret: GenericArguments new GenericArguments(generic, additionalGenerics, new Position(start), new Position(end))
         generic.parent = ret
-        if additionalGenerics != null {
-            for item: GenericArgument in additionalGenerics
-                item.parent = ret
+        if (additionalGenerics <> ()) {
+            for (item: GenericArgument in additionalGenerics) {
+                item.parent = ret }
         }
 
         ret
@@ -2412,14 +2414,14 @@ class scalyc.Parser(
 
     method parseGenericArgumentList(): Array[GenericArgument] {
         mutable ret: Array[GenericArgument]$ = null
-        while true {
+        while (true) {
 
-            let node: GenericArgument = parseGenericArgument()
-            if node == null
-                break
+            let node: GenericArgument parseGenericArgument()
+            if (node = ()) {
+                break }
 
-            if ret == null
-                ret = new GenericArgument[]()
+            if (ret = ()) {
+                ret = new Array[GenericArgument]() }
 
             ret.add(node)
         }
@@ -2431,18 +2433,18 @@ class scalyc.Parser(
         let start: Position$ = lexer.getPreviousPosition()
 
         let successComma1: bool = lexer.parsePunctuation(comma)
-        if successComma1
-            lexer.advance()
-        else
-            return(null)
+        if (successComma1) {
+            lexer.advance() }
+        else {
+            return () }
 
         let typeSpec: Type = parseType()
-        if typeSpec == null
-            return(null)
+        if (typeSpec = ()) {
+            return () }
 
-        let end: Position$ = lexer.getPosition()
+        let end: Position$ lexer.getPosition()
 
-        let ret: GenericArgument = new GenericArgument(typeSpec, new Position(start), new Position(end))
+        let ret: GenericArgument new GenericArgument(typeSpec, new Position(start), new Position(end))
         typeSpec.parent = ret
 
         ret
@@ -2452,14 +2454,14 @@ class scalyc.Parser(
         let start: Position$ = lexer.getPreviousPosition()
 
         let successQuestion1: bool = lexer.parsePunctuation(question)
-        if successQuestion1
-            lexer.advance()
-        else
-            return(null)
+        if (successQuestion1) {
+            lexer.advance() }
+        else {
+            return () }
 
-        let end: Position$ = lexer.getPosition()
+        let end: Position$ lexer.getPosition()
 
-        let ret: Optional = new Optional(new Position(start), new Position(end))
+        let ret: Optional new Optional(new Position(start), new Position(end))
 
         ret
     }
@@ -2467,26 +2469,26 @@ class scalyc.Parser(
     function parseLifeTime(): LifeTime {
         {
             let node: Root = parseRoot()
-            if node != null
-                return(node)
+            if (node <> ()) {
+                return node }
         }
 
         {
             let node: Local = parseLocal()
-            if node != null
-                return(node)
+            if (node <> ()) {
+                return node }
         }
 
         {
             let node: Reference = parseReference()
-            if node != null
-                return(node)
+            if (node <> ()) {
+                return node }
         }
 
         {
             let node: Thrown = parseThrown()
-            if node != null
-                return(node)
+            if (node <> ()) {
+                return node }
         }
 
         null
@@ -2496,14 +2498,14 @@ class scalyc.Parser(
         let start: Position$ = lexer.getPreviousPosition()
 
         let successDollar1: bool = lexer.parsePunctuation(dollar)
-        if successDollar1
-            lexer.advance()
-        else
-            return(null)
+        if (successDollar1) {
+            lexer.advance() }
+        else {
+            return () }
 
-        let end: Position$ = lexer.getPosition()
+        let end: Position$ lexer.getPosition()
 
-        let ret: Root = new Root(new Position(start), new Position(end))
+        let ret: Root new Root(new Position(start), new Position(end))
 
         ret
     }
@@ -2512,20 +2514,20 @@ class scalyc.Parser(
         let start: Position$ = lexer.getPreviousPosition()
 
         let successAt1: bool = lexer.parsePunctuation(at)
-        if successAt1
-            lexer.advance()
-        else
-            return(null)
+        if (successAt1) {
+            lexer.advance() }
+        else {
+            return () }
 
         let location: string = lexer.parseIdentifier()
-        if (location != null) && isIdentifier(location)
-            lexer.advance()
-        else
-            return(null)
+        if ((location <> ()) && isIdentifier(location)) {
+            lexer.advance() }
+        else {
+            return () }
 
-        let end: Position$ = lexer.getPosition()
+        let end: Position$ lexer.getPosition()
 
-        let ret: Local = new Local(location, new Position(start), new Position(end))
+        let ret: Local new Local(location, new Position(start), new Position(end))
 
         ret
     }
@@ -2534,18 +2536,18 @@ class scalyc.Parser(
         let start: Position$ = lexer.getPreviousPosition()
 
         let successBacktick1: bool = lexer.parsePunctuation(backtick)
-        if successBacktick1
-            lexer.advance()
-        else
-            return(null)
+        if (successBacktick1) {
+            lexer.advance() }
+        else {
+            return () }
 
         let age: Literal = lexer.parseLiteral()
-        if age != null
-            lexer.advance()
+        if (age <> ()) {
+            lexer.advance() }
 
-        let end: Position$ = lexer.getPosition()
+        let end: Position$ lexer.getPosition()
 
-        let ret: Reference = new Reference(age, new Position(start), new Position(end))
+        let ret: Reference new Reference(age, new Position(start), new Position(end))
 
         ret
     }
@@ -2554,14 +2556,14 @@ class scalyc.Parser(
         let start: Position$ = lexer.getPreviousPosition()
 
         let successHash1: bool = lexer.parsePunctuation(hash)
-        if successHash1
-            lexer.advance()
-        else
-            return(null)
+        if (successHash1) {
+            lexer.advance() }
+        else {
+            return () }
 
-        let end: Position$ = lexer.getPosition()
+        let end: Position$ lexer.getPosition()
 
-        let ret: Thrown = new Thrown(new Position(start), new Position(end))
+        let ret: Thrown new Thrown(new Position(start), new Position(end))
 
         ret
     }
@@ -2571,667 +2573,610 @@ class scalyc.Parser(
     }
 
     function isIdentifier(id: string): bool {
-        if id.equals(usingKeyword)
-            return(false)
+        if (id.equals(usingKeyword)) {
+            return false }
 
-        if id.equals(namespaceKeyword)
-            return(false)
+        if (id.equals(namespaceKeyword)) {
+            return false }
 
-        if id.equals(typedefKeyword)
-            return(false)
+        if (id.equals(typedefKeyword)) {
+            return false }
 
-        if id.equals(letKeyword)
-            return(false)
+        if (id.equals(letKeyword)) {
+            return false }
 
-        if id.equals(mutableKeyword)
-            return(false)
+        if (id.equals(mutableKeyword)) {
+            return false }
 
-        if id.equals(threadlocalKeyword)
-            return(false)
+        if (id.equals(threadlocalKeyword)) {
+            return false }
 
-        if id.equals(varKeyword)
-            return(false)
+        if (id.equals(varKeyword)) {
+            return false }
 
-        if id.equals(setKeyword)
-            return(false)
+        if (id.equals(setKeyword)) {
+            return false }
 
-        if id.equals(classKeyword)
-            return(false)
+        if (id.equals(classKeyword)) {
+            return false }
 
-        if id.equals(extendsKeyword)
-            return(false)
+        if (id.equals(extendsKeyword)) {
+            return false }
 
-        if id.equals(initializerKeyword)
-            return(false)
+        if (id.equals(initializerKeyword)) {
+            return false }
 
-        if id.equals(allocatorKeyword)
-            return(false)
+        if (id.equals(allocatorKeyword)) {
+            return false }
 
-        if id.equals(methodKeyword)
-            return(false)
+        if (id.equals(methodKeyword)) {
+            return false }
 
-        if id.equals(functionKeyword)
-            return(false)
+        if (id.equals(functionKeyword)) {
+            return false }
 
-        if id.equals(operatorKeyword)
-            return(false)
+        if (id.equals(operatorKeyword)) {
+            return false }
 
-        if id.equals(thisKeyword)
-            return(false)
+        if (id.equals(thisKeyword)) {
+            return false }
 
-        if id.equals(newKeyword)
-            return(false)
+        if (id.equals(newKeyword)) {
+            return false }
 
-        if id.equals(sizeofKeyword)
-            return(false)
+        if (id.equals(sizeofKeyword)) {
+            return false }
 
-        if id.equals(catchKeyword)
-            return(false)
+        if (id.equals(catchKeyword)) {
+            return false }
 
-        if id.equals(throwsKeyword)
-            return(false)
+        if (id.equals(throwsKeyword)) {
+            return false }
 
-        if id.equals(asKeyword)
-            return(false)
+        if (id.equals(asKeyword)) {
+            return false }
 
-        if id.equals(isKeyword)
-            return(false)
+        if (id.equals(isKeyword)) {
+            return false }
 
-        if id.equals(ifKeyword)
-            return(false)
+        if (id.equals(ifKeyword)) {
+            return false }
 
-        if id.equals(elseKeyword)
-            return(false)
+        if (id.equals(elseKeyword)) {
+            return false }
 
-        if id.equals(switchKeyword)
-            return(false)
+        if (id.equals(switchKeyword)) {
+            return false }
 
-        if id.equals(caseKeyword)
-            return(false)
+        if (id.equals(caseKeyword)) {
+            return false }
 
-        if id.equals(defaultKeyword)
-            return(false)
+        if (id.equals(defaultKeyword)) {
+            return false }
 
-        if id.equals(forKeyword)
-            return(false)
+        if (id.equals(forKeyword)) {
+            return false }
 
-        if id.equals(inKeyword)
-            return(false)
+        if (id.equals(inKeyword)) {
+            return false }
 
-        if id.equals(whileKeyword)
-            return(false)
+        if (id.equals(whileKeyword)) {
+            return false }
 
-        if id.equals(doKeyword)
-            return(false)
+        if (id.equals(doKeyword)) {
+            return false }
 
-        if id.equals(loopKeyword)
-            return(false)
+        if (id.equals(loopKeyword)) {
+            return false }
 
-        if id.equals(breakKeyword)
-            return(false)
+        if (id.equals(breakKeyword)) {
+            return false }
 
-        if id.equals(continueKeyword)
-            return(false)
+        if (id.equals(continueKeyword)) {
+            return false }
 
-        if id.equals(returnKeyword)
-            return(false)
+        if (id.equals(returnKeyword)) {
+            return false }
 
-        if id.equals(throwKeyword)
-            return(false)
+        if (id.equals(throwKeyword)) {
+            return false }
 
-        return(true)
+        true
     }
-
-    mutable lexer: Lexer
-    let fileName: string
-
-    let usingKeyword: string
-    let namespaceKeyword: string
-    let typedefKeyword: string
-    let letKeyword: string
-    let mutableKeyword: string
-    let threadlocalKeyword: string
-    let varKeyword: string
-    let setKeyword: string
-    let classKeyword: string
-    let extendsKeyword: string
-    let initializerKeyword: string
-    let allocatorKeyword: string
-    let methodKeyword: string
-    let functionKeyword: string
-    let operatorKeyword: string
-    let thisKeyword: string
-    let newKeyword: string
-    let sizeofKeyword: string
-    let catchKeyword: string
-    let throwsKeyword: string
-    let asKeyword: string
-    let isKeyword: string
-    let ifKeyword: string
-    let elseKeyword: string
-    let switchKeyword: string
-    let caseKeyword: string
-    let defaultKeyword: string
-    let forKeyword: string
-    let inKeyword: string
-    let whileKeyword: string
-    let doKeyword: string
-    let loopKeyword: string
-    let breakKeyword: string
-    let continueKeyword: string
-    let returnKeyword: string
-    let throwKeyword: string
-    let semicolon: string
-    let leftCurly: string
-    let rightCurly: string
-    let leftParen: string
-    let rightParen: string
-    let leftBracket: string
-    let rightBracket: string
-    let dot: string
-    let comma: string
-    let colon: string
-    let question: string
-    let exclamation: string
-    let at: string
-    let hash: string
-    let dollar: string
-    let underscore: string
-    let backtick: string
 }
 
 class Visitor {
-    function openProgram(program: Program): bool {
+    function openProgram(programSyntax: ProgramSyntax): bool {
         true
     }
 
-    function closeProgram(program: Program) {
+    function closeProgram(programSyntax: ProgramSyntax) {
     }
 
-    function openFile(file: File): bool {
+    function openFile(fileSyntax: FileSyntax): bool {
         true
     }
 
-    function closeFile(file: File) {
+    function closeFile(fileSyntax: FileSyntax) {
     }
 
-    function openUsing(using: Using): bool {
+    function openUsing(usingSyntax: UsingSyntax): bool {
         true
     }
 
-    function closeUsing(using: Using) {
+    function closeUsing(usingSyntax: UsingSyntax) {
     }
 
-    function openName(name: Name): bool {
+    function openName(nameSyntax: NameSyntax): bool {
         true
     }
 
-    function closeName(name: Name) {
+    function closeName(nameSyntax: NameSyntax) {
     }
 
-    function visitExtension(extension: Extension) {
+    function visitExtension(extensionSyntax: ExtensionSyntax) {
     }
 
-    function openNamespace(namespace: Namespace): bool {
+    function openNamespace(namespaceSyntax: NamespaceSyntax): bool {
         true
     }
 
-    function closeNamespace(namespace: Namespace) {
+    function closeNamespace(namespaceSyntax: NamespaceSyntax) {
     }
 
-    function openTypeDefinition(typeDefinition: TypeDefinition): bool {
+    function openTypeDefinition(typeDefinitionSyntax: TypeDefinitionSyntax): bool {
         true
     }
 
-    function closeTypeDefinition(typeDefinition: TypeDefinition) {
+    function closeTypeDefinition(typeDefinitionSyntax: TypeDefinitionSyntax) {
     }
 
-    function openLet(let: Let): bool {
+    function openLet(letSyntax: LetSyntax): bool {
         true
     }
 
-    function closeLet(let: Let) {
+    function closeLet(letSyntax: LetSyntax) {
     }
 
-    function openVar(var: Var): bool {
+    function openVar(varSyntax: VarSyntax): bool {
         true
     }
 
-    function closeVar(var: Var) {
+    function closeVar(varSyntax: VarSyntax) {
     }
 
-    function openMutable(mutable: Mutable): bool {
+    function openMutable(mutableSyntax: MutableSyntax): bool {
         true
     }
 
-    function closeMutable(mutable: Mutable) {
+    function closeMutable(mutableSyntax: MutableSyntax) {
     }
 
-    function openThreadLocal(threadLocal: ThreadLocal): bool {
+    function openThreadLocal(threadLocalSyntax: ThreadLocalSyntax): bool {
         true
     }
 
-    function closeThreadLocal(threadLocal: ThreadLocal) {
+    function closeThreadLocal(threadLocalSyntax: ThreadLocalSyntax) {
     }
 
-    function openBinding(binding: Binding): bool {
+    function openBinding(bindingSyntax: BindingSyntax): bool {
         true
     }
 
-    function closeBinding(binding: Binding) {
+    function closeBinding(bindingSyntax: BindingSyntax) {
     }
 
-    function openSet(set: Set): bool {
+    function openSet(setSyntax: SetSyntax): bool {
         true
     }
 
-    function closeSet(set: Set) {
+    function closeSet(setSyntax: SetSyntax) {
     }
 
-    function openCalculation(calculation: Calculation): bool {
+    function openCalculation(calculationSyntax: CalculationSyntax): bool {
         true
     }
 
-    function closeCalculation(calculation: Calculation) {
+    function closeCalculation(calculationSyntax: CalculationSyntax) {
     }
 
-    function openOperation(operation: Operation): bool {
+    function openOperation(operationSyntax: OperationSyntax): bool {
         true
     }
 
-    function closeOperation(operation: Operation) {
+    function closeOperation(operationSyntax: OperationSyntax) {
     }
 
-    function openOperand(operand: Operand): bool {
+    function openOperand(operandSyntax: OperandSyntax): bool {
         true
     }
 
-    function closeOperand(operand: Operand) {
+    function closeOperand(operandSyntax: OperandSyntax) {
     }
 
-    function visitMemberAccess(memberAccess: MemberAccess) {
+    function visitMemberAccess(memberAccessSyntax: MemberAccessSyntax) {
     }
 
-    function openAs(as: As): bool {
+    function openAs(asSyntax: AsSyntax): bool {
         true
     }
 
-    function closeAs(as: As) {
+    function closeAs(asSyntax: AsSyntax) {
     }
 
-    function openIs(is: Is): bool {
+    function openIs(isSyntax: IsSyntax): bool {
         true
     }
 
-    function closeIs(is: Is) {
+    function closeIs(isSyntax: IsSyntax) {
     }
 
-    function visitUnwrap(unwrap: Unwrap) {
+    function visitUnwrap(unwrapSyntax: UnwrapSyntax) {
     }
 
-    function openCatch(catch: Catch): bool {
+    function openCatch(catchSyntax: CatchSyntax): bool {
         true
     }
 
-    function closeCatch(catch: Catch) {
+    function closeCatch(catchSyntax: CatchSyntax) {
     }
 
-    function openWildCardCatchPattern(wildCardCatchPattern: WildCardCatchPattern): bool {
+    function openWildCardCatchPattern(wildCardCatchPatternSyntax: WildCardCatchPatternSyntax): bool {
         true
     }
 
-    function closeWildCardCatchPattern(wildCardCatchPattern: WildCardCatchPattern) {
+    function closeWildCardCatchPattern(wildCardCatchPatternSyntax: WildCardCatchPatternSyntax) {
     }
 
-    function openNameCatchPattern(nameCatchPattern: NameCatchPattern): bool {
+    function openNameCatchPattern(nameCatchPatternSyntax: NameCatchPatternSyntax): bool {
         true
     }
 
-    function closeNameCatchPattern(nameCatchPattern: NameCatchPattern) {
+    function closeNameCatchPattern(nameCatchPatternSyntax: NameCatchPatternSyntax) {
     }
 
-    function openBlock(block: Block): bool {
+    function openBlock(blockSyntax: BlockSyntax): bool {
         true
     }
 
-    function closeBlock(block: Block) {
+    function closeBlock(blockSyntax: BlockSyntax) {
     }
 
-    function visitConstant(constant: Constant) {
+    function visitConstant(constantSyntax: ConstantSyntax) {
     }
 
-    function openIf(if: If): bool {
+    function openIf(ifSyntax: IfSyntax): bool {
         true
     }
 
-    function closeIf(if: If) {
+    function closeIf(ifSyntax: IfSyntax) {
     }
 
-    function openElse(else: Else): bool {
+    function openElse(elseSyntax: ElseSyntax): bool {
         true
     }
 
-    function closeElse(else: Else) {
+    function closeElse(elseSyntax: ElseSyntax) {
     }
 
-    function openSwitch(switch: Switch): bool {
+    function openSwitch(switchSyntax: SwitchSyntax): bool {
         true
     }
 
-    function closeSwitch(switch: Switch) {
+    function closeSwitch(switchSyntax: SwitchSyntax) {
     }
 
-    function openSwitchCase(switchCase: SwitchCase): bool {
+    function openSwitchCase(switchCaseSyntax: SwitchCaseSyntax): bool {
         true
     }
 
-    function closeSwitchCase(switchCase: SwitchCase) {
+    function closeSwitchCase(switchCaseSyntax: SwitchCaseSyntax) {
     }
 
-    function openItemCaseLabel(itemCaseLabel: ItemCaseLabel): bool {
+    function openItemCaseLabel(itemCaseLabelSyntax: ItemCaseLabelSyntax): bool {
         true
     }
 
-    function closeItemCaseLabel(itemCaseLabel: ItemCaseLabel) {
+    function closeItemCaseLabel(itemCaseLabelSyntax: ItemCaseLabelSyntax) {
     }
 
-    function openCaseItem(caseItem: CaseItem): bool {
+    function openCaseItem(caseItemSyntax: CaseItemSyntax): bool {
         true
     }
 
-    function closeCaseItem(caseItem: CaseItem) {
+    function closeCaseItem(caseItemSyntax: CaseItemSyntax) {
     }
 
-    function openConstantPattern(constantPattern: ConstantPattern): bool {
+    function openConstantPattern(constantPatternSyntax: ConstantPatternSyntax): bool {
         true
     }
 
-    function closeConstantPattern(constantPattern: ConstantPattern) {
+    function closeConstantPattern(constantPatternSyntax: ConstantPatternSyntax) {
     }
 
-    function visitWildcardPattern(wildcardPattern: WildcardPattern) {
+    function visitWildcardPattern(wildcardPatternSyntax: WildcardPatternSyntax) {
     }
 
-    function openNamePattern(namePattern: NamePattern): bool {
+    function openNamePattern(namePatternSyntax: NamePatternSyntax): bool {
         true
     }
 
-    function closeNamePattern(namePattern: NamePattern) {
+    function closeNamePattern(namePatternSyntax: NamePatternSyntax) {
     }
 
-    function visitDefaultCaseLabel(defaultCaseLabel: DefaultCaseLabel) {
+    function visitDefaultCaseLabel(defaultCaseLabelSyntax: DefaultCaseLabelSyntax) {
     }
 
-    function openFor(for: For): bool {
+    function openFor(forSyntax: ForSyntax): bool {
         true
     }
 
-    function closeFor(for: For) {
+    function closeFor(forSyntax: ForSyntax) {
     }
 
-    function openWhile(while: While): bool {
+    function openWhile(whileSyntax: WhileSyntax): bool {
         true
     }
 
-    function closeWhile(while: While) {
+    function closeWhile(whileSyntax: WhileSyntax) {
     }
 
-    function openDo(do: Do): bool {
+    function openDo(doSyntax: DoSyntax): bool {
         true
     }
 
-    function closeDo(do: Do) {
+    function closeDo(doSyntax: DoSyntax) {
     }
 
-    function openSimpleLoop(simpleLoop: SimpleLoop): bool {
+    function openSimpleLoop(simpleLoopSyntax: SimpleLoopSyntax): bool {
         true
     }
 
-    function closeSimpleLoop(simpleLoop: SimpleLoop) {
+    function closeSimpleLoop(simpleLoopSyntax: SimpleLoopSyntax) {
     }
 
-    function openNamedLoop(namedLoop: NamedLoop): bool {
+    function openNamedLoop(namedLoopSyntax: NamedLoopSyntax): bool {
         true
     }
 
-    function closeNamedLoop(namedLoop: NamedLoop) {
+    function closeNamedLoop(namedLoopSyntax: NamedLoopSyntax) {
     }
 
-    function visitThis(this: This) {
+    function visitThis(thisSyntax: ThisSyntax) {
     }
 
-    function openNew(new: New): bool {
+    function openNew(newSyntax: NewSyntax): bool {
         true
     }
 
-    function closeNew(new: New) {
+    function closeNew(newSyntax: NewSyntax) {
     }
 
-    function openObject(object: Object): bool {
+    function openObject(objectSyntax: ObjectSyntax): bool {
         true
     }
 
-    function closeObject(object: Object) {
+    function closeObject(objectSyntax: ObjectSyntax) {
     }
 
-    function openArray(array: Array): bool {
+    function openArray(arraySyntax: ArraySyntax): bool {
         true
     }
 
-    function closeArray(array: Array) {
+    function closeArray(arraySyntax: ArraySyntax) {
     }
 
-    function openItem(item: Item): bool {
+    function openItem(itemSyntax: ItemSyntax): bool {
         true
     }
 
-    function closeItem(item: Item) {
+    function closeItem(itemSyntax: ItemSyntax) {
     }
 
-    function openSizeOf(sizeOf: SizeOf): bool {
+    function openSizeOf(sizeOfSyntax: SizeOfSyntax): bool {
         true
     }
 
-    function closeSizeOf(sizeOf: SizeOf) {
+    function closeSizeOf(sizeOfSyntax: SizeOfSyntax) {
     }
 
-    function visitBreak(break: Break) {
+    function visitBreak(breakSyntax: BreakSyntax) {
     }
 
-    function visitContinue(continue: Continue) {
+    function visitContinue(continueSyntax: ContinueSyntax) {
     }
 
-    function openReturn(return: Return): bool {
+    function openReturn(returnSyntax: ReturnSyntax): bool {
         true
     }
 
-    function closeReturn(return: Return) {
+    function closeReturn(returnSyntax: ReturnSyntax) {
     }
 
-    function openThrow(throw: Throw): bool {
+    function openThrow(throwSyntax: ThrowSyntax): bool {
         true
     }
 
-    function closeThrow(throw: Throw) {
+    function closeThrow(throwSyntax: ThrowSyntax) {
     }
 
-    function openClass(class: Class): bool {
+    function openClass(classSyntax: ClassSyntax): bool {
         true
     }
 
-    function closeClass(class: Class) {
+    function closeClass(classSyntax: ClassSyntax) {
     }
 
-    function openGenericParameters(genericParameters: GenericParameters): bool {
+    function openGenericParameters(genericParametersSyntax: GenericParametersSyntax): bool {
         true
     }
 
-    function closeGenericParameters(genericParameters: GenericParameters) {
+    function closeGenericParameters(genericParametersSyntax: GenericParametersSyntax) {
     }
 
-    function visitGenericParameter(genericParameter: GenericParameter) {
+    function visitGenericParameter(genericParameterSyntax: GenericParameterSyntax) {
     }
 
-    function openExtends(extends: Extends): bool {
+    function openExtends(extendsSyntax: ExtendsSyntax): bool {
         true
     }
 
-    function closeExtends(extends: Extends) {
+    function closeExtends(extendsSyntax: ExtendsSyntax) {
     }
 
-    function openStructure(structure: Structure): bool {
+    function openStructure(structureSyntax: StructureSyntax): bool {
         true
     }
 
-    function closeStructure(structure: Structure) {
+    function closeStructure(structureSyntax: StructureSyntax) {
     }
 
-    function openComponent(component: Component): bool {
+    function openComponent(componentSyntax: ComponentSyntax): bool {
         true
     }
 
-    function closeComponent(component: Component) {
+    function closeComponent(componentSyntax: ComponentSyntax) {
     }
 
-    function openClassBody(classBody: ClassBody): bool {
+    function openClassBody(classBodySyntax: ClassBodySyntax): bool {
         true
     }
 
-    function closeClassBody(classBody: ClassBody) {
+    function closeClassBody(classBodySyntax: ClassBodySyntax) {
     }
 
-    function openLetMember(letMember: LetMember): bool {
+    function openLetMember(letMemberSyntax: LetMemberSyntax): bool {
         true
     }
 
-    function closeLetMember(letMember: LetMember) {
+    function closeLetMember(letMemberSyntax: LetMemberSyntax) {
     }
 
-    function openMutableMember(mutableMember: MutableMember): bool {
+    function openMutableMember(mutableMemberSyntax: MutableMemberSyntax): bool {
         true
     }
 
-    function closeMutableMember(mutableMember: MutableMember) {
+    function closeMutableMember(mutableMemberSyntax: MutableMemberSyntax) {
     }
 
-    function openSetInitialization(setInitialization: SetInitialization): bool {
+    function openSetInitialization(setInitializationSyntax: SetInitializationSyntax): bool {
         true
     }
 
-    function closeSetInitialization(setInitialization: SetInitialization) {
+    function closeSetInitialization(setInitializationSyntax: SetInitializationSyntax) {
     }
 
-    function openMethod(method: Method): bool {
+    function openMethod(methodSyntax: MethodSyntax): bool {
         true
     }
 
-    function closeMethod(method: Method) {
+    function closeMethod(methodSyntax: MethodSyntax) {
     }
 
-    function openStaticFunction(staticFunction: StaticFunction): bool {
+    function openStaticFunction(staticFunctionSyntax: StaticFunctionSyntax): bool {
         true
     }
 
-    function closeStaticFunction(staticFunction: StaticFunction) {
+    function closeStaticFunction(staticFunctionSyntax: StaticFunctionSyntax) {
     }
 
-    function openOperator(operator: Operator): bool {
+    function openOperator(operatorSyntax: OperatorSyntax): bool {
         true
     }
 
-    function closeOperator(operator: Operator) {
+    function closeOperator(operatorSyntax: OperatorSyntax) {
     }
 
-    function openInitializer(initializer: Initializer): bool {
+    function openInitializer(initializerSyntax: InitializerSyntax): bool {
         true
     }
 
-    function closeInitializer(initializer: Initializer) {
+    function closeInitializer(initializerSyntax: InitializerSyntax) {
     }
 
-    function openAllocator(allocator: Allocator): bool {
+    function openAllocator(allocatorSyntax: AllocatorSyntax): bool {
         true
     }
 
-    function closeAllocator(allocator: Allocator) {
+    function closeAllocator(allocatorSyntax: AllocatorSyntax) {
     }
 
-    function openFunction(function: Function): bool {
+    function openFunction(functionSyntax: FunctionSyntax): bool {
         true
     }
 
-    function closeFunction(function: Function) {
+    function closeFunction(functionSyntax: FunctionSyntax) {
     }
 
-    function openProcedure(procedure: Procedure): bool {
+    function openProcedure(procedureSyntax: ProcedureSyntax): bool {
         true
     }
 
-    function closeProcedure(procedure: Procedure) {
+    function closeProcedure(procedureSyntax: ProcedureSyntax) {
     }
 
-    function openRoutine(routine: Routine): bool {
+    function openRoutine(routineSyntax: RoutineSyntax): bool {
         true
     }
 
-    function closeRoutine(routine: Routine) {
+    function closeRoutine(routineSyntax: RoutineSyntax) {
     }
 
-    function openTypeAnnotation(typeAnnotation: TypeAnnotation): bool {
+    function openTypeAnnotation(typeAnnotationSyntax: TypeAnnotationSyntax): bool {
         true
     }
 
-    function closeTypeAnnotation(typeAnnotation: TypeAnnotation) {
+    function closeTypeAnnotation(typeAnnotationSyntax: TypeAnnotationSyntax) {
     }
 
-    function openType(type: Type): bool {
+    function openType(typeSyntax: TypeSyntax): bool {
         true
     }
 
-    function closeType(type: Type) {
+    function closeType(typeSyntax: TypeSyntax) {
     }
 
-    function openVariant(variant: Variant): bool {
+    function openVariant(variantSyntax: VariantSyntax): bool {
         true
     }
 
-    function closeVariant(variant: Variant) {
+    function closeVariant(variantSyntax: VariantSyntax) {
     }
 
-    function openThrows(throws: Throws): bool {
+    function openThrows(throwsSyntax: ThrowsSyntax): bool {
         true
     }
 
-    function closeThrows(throws: Throws) {
+    function closeThrows(throwsSyntax: ThrowsSyntax) {
     }
 
-    function openGenericArguments(genericArguments: GenericArguments): bool {
+    function openGenericArguments(genericArgumentsSyntax: GenericArgumentsSyntax): bool {
         true
     }
 
-    function closeGenericArguments(genericArguments: GenericArguments) {
+    function closeGenericArguments(genericArgumentsSyntax: GenericArgumentsSyntax) {
     }
 
-    function openGenericArgument(genericArgument: GenericArgument): bool {
+    function openGenericArgument(genericArgumentSyntax: GenericArgumentSyntax): bool {
         true
     }
 
-    function closeGenericArgument(genericArgument: GenericArgument) {
+    function closeGenericArgument(genericArgumentSyntax: GenericArgumentSyntax) {
     }
 
-    function visitOptional(optional: Optional) {
+    function visitOptional(optionalSyntax: OptionalSyntax) {
     }
 
-    function visitRoot(root: Root) {
+    function visitRoot(rootSyntax: RootSyntax) {
     }
 
-    function visitLocal(local: Local) {
+    function visitLocal(localSyntax: LocalSyntax) {
     }
 
-    function visitReference(reference: Reference) {
+    function visitReference(referenceSyntax: ReferenceSyntax) {
     }
 
-    function visitThrown(thrown: Thrown) {
+    function visitThrown(thrownSyntax: ThrownSyntax) {
     }
 }
 

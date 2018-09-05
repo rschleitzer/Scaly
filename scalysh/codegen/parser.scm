@@ -186,6 +186,8 @@ namespace scalyc
 
     ) {
 
+    mutable lexer: Lexer new Lexer(text)
+
 "   (apply-to-selected-children "keyword" (lambda (keyword) ($
 "    let "(name keyword)": string = new string(\""(id keyword)"\")
 "   )))
@@ -198,14 +200,14 @@ namespace scalyc
 "
     method parse"(id syntax)"List(): Array["(id syntax)"] {
         mutable ret: Array["(id syntax)"]$ = null
-        while true {
+        while (true) {
 
-            let node: "(id syntax)" = parse"(id syntax)"()
-            if node == null
-                break
+            let node: "(id syntax)" parse"(id syntax)"()
+            if (node = ()) {
+                break }
 
-            if ret == null
-                ret = new "(id syntax)"[]()
+            if (ret = ()) {
+                ret = new Array["(id syntax)"]() }
 
             ret.add(node)
         }
@@ -221,8 +223,8 @@ namespace scalyc
 "
         {
             let node: "(link content)" = parse"(link content)"()
-            if node != null
-                return(node)
+            if (node <""> ()) {
+                return node }
         }
 "
                 )))
@@ -237,16 +239,16 @@ namespace scalyc
                    (if (string=? "syntax" (type content))
                         ($ ; non-terminals
 "
-        let "(property content)": "(link content)(if (multiple? content) "[]" "")" = parse"(link content)(if (multiple? content) "List" "")"()
+        let "(property content)": "(if (multiple? content) "Array[" "")(link content)(if (multiple? content) "]" "")" = parse"(link content)(if (multiple? content) "List" "")"()
 "
                     (if (or (optional? content) (multiple? content)) "" ($
-"        if "(property content)" == null
-            return(null)
+"        if ("(property content)" = ()) {
+            return () }
 "
                     ))
                            (if (top? syntax) ($
-"        if "(property content)" != null {
-            if !isAtEnd() {
+"        if ("(property content)" <""> null) {
+            if (isAtEnd() = false) {
                 let errorPos: Position$ = lexer.getPreviousPosition()
                 throw syntax(errorPos.line, errorPos.column)
             }
@@ -259,20 +261,20 @@ namespace scalyc
             " = lexer.parse"
             (case (type content)(("prefixoperator") "PrefixOperator")(("binaryoperator") "BinaryOperator")(("postfixoperator") "PostfixOperator")(("identifier") "Identifier")(("literal") "Literal")(("keyword") "Keyword")(("punctuation") "Punctuation"))
             "("(case (type content)(("keyword") (name-of-link content)) (("punctuation") (link content)) (else ""))")
-        if "(case (type content) (("keyword" "punctuation") ($ "success"(if (property content) (string-firstchar-upcase (property content)) ($ (string-firstchar-upcase (link content))(number->string (child-number content))))))(("identifier") ($ "("(property content)" != null) && isIdentifier("(property content)")")) (else ($ (property content)" != null")))"
-            lexer.advance()
+        if ("(case (type content) (("keyword" "punctuation") ($ "success"(if (property content) (string-firstchar-upcase (property content)) ($ (string-firstchar-upcase (link content))(number->string (child-number content))))))(("identifier") ($ "("(property content)" <""> ()) && isIdentifier("(property content)")")) (else ($ (property content)" <""> ()")))") {
+            lexer.advance() }
 "                           (if (optional? content) "" ($
-"        else
-            return(null)
+"        else {
+            return () }
 "
                            ))
                         )
                     ) ; syntax or terminal
                 ))) ; apply to children of syntax
 "
-        let end: Position$ = lexer.getPosition()
+        let end: Position$ lexer.getPosition()
 
-        let ret: "(id syntax)" = new "(id syntax)"("
+        let ret: "(id syntax)" new "(id syntax)"("
                 (apply-to-property-children-of syntax (lambda (content) ($
                     (property content)(if (properties-remaining? content syntax) ", " "")
                 )))
@@ -281,16 +283,16 @@ namespace scalyc
 "                (apply-to-property-children-of syntax (lambda (content)
                     (if (multiple? content)
                         ($
-"        if "(property content)" != null {
-            for item: "(link content)" in "(property content)"
-                item.parent = ret
+"        if ("(property content)" <""> ()) {
+            for (item: "(link content)" in "(property content)") {
+                item.parent = ret }
         }
 "                       )
                         (if (string=? "syntax" (type content)) ($
                             (if (optional? content) ($
-"        if "(property content)" != null
+"        if ("(property content)" <""> ()) {
     "                       )"")
-"        "(property content)".parent = ret
+"        "(property content)".parent = ret"(if (optional? content) " }" "")"
 "                       )"")
                     )
                 ))
@@ -309,23 +311,13 @@ namespace scalyc
     function isIdentifier(id: string): bool {"
    (apply-to-selected-children "keyword" (lambda (keyword) ($
 "
-        if id.equals("(name keyword)")
-            return(false)
+        if (id.equals("(name keyword)")) {
+            return false }
 "   )))
 "
-        return(true)
+        true
     }
-
-    mutable lexer: Lexer
-    let fileName: string
-
-"   (apply-to-selected-children "keyword" (lambda (keyword) ($
-"    let "(name keyword)": string
-"   )))
-    (apply-to-selected-children "punctuation" (lambda (punctuation) ($
-"    let "(id punctuation)": string
-"   )))
-"}
+}
 "
 
 ))
