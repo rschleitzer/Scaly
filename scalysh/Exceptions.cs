@@ -1,6 +1,6 @@
 using System;
 
-namespace scalysh
+namespace scalyc
 {
     public class InvalidOptionException : Exception
     {

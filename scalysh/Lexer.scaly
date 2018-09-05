@@ -1,5 +1,11 @@
-class Scaly.Lexer(text: string)
-{
+namespace scalyc {
+
+class Lexer(
+
+    text: string
+
+    ) {
+
     mutable token: Token? ()
     mutable position: int 0
     let end: int text.Length
@@ -472,3 +478,5 @@ class StringLiteral(value: string) extends Literal
 class CharacterLiteral(value: string) extends Literal
 class NumericLiteral(value: string) extends Literal
 class Punctuation(sign: string) extends Token
+
+}

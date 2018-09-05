@@ -229,7 +229,7 @@ class scaly.Page
         } while (true)
     }
 
-    function forget(Page page) {
+    method forget(page: Page) {
         Scaly.Task.currentTask.releaseExtensionPage(page)
     }
 
@@ -258,7 +258,7 @@ class scaly.Page
         return false
     }
 
-    function getPage(address: pointer): Page {
+    method getPage(address: pointer): Page {
         return (address and not (pageSize - 1)) as Page
     }
 

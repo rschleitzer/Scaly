@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace scalysh
+namespace scalyc
 {
     class Parser
     {
@@ -74,6 +74,8 @@ namespace scalysh
         {
             Position start = lexer.getPreviousPosition();
 
+            UsingSyntax[] usings = parseUsingList();
+
             StatementSyntax[] statements = parseStatementList();
             if (statements != null)
             {
@@ -86,8 +88,13 @@ namespace scalysh
 
             Position end = lexer.getPosition();
 
-            FileSyntax ret = new FileSyntax(start, end, statements);
+            FileSyntax ret = new FileSyntax(start, end, usings, statements);
 
+            if (usings != null)
+            {
+                foreach (UsingSyntax item in usings)
+                    item.parent = ret;
+            }
             if (statements != null)
             {
                 foreach (StatementSyntax item in statements)
@@ -120,12 +127,6 @@ namespace scalysh
 
         public StatementSyntax parseStatement()
         {
-            {
-                UsingSyntax node = parseUsing();
-                if (node != null)
-                    return node;
-            }
-
             {
                 NamespaceSyntax node = parseNamespace();
                 if (node != null)
@@ -187,30 +188,6 @@ namespace scalysh
             }
 
             {
-                InitializerSyntax node = parseInitializer();
-                if (node != null)
-                    return node;
-            }
-
-            {
-                AllocatorSyntax node = parseAllocator();
-                if (node != null)
-                    return node;
-            }
-
-            {
-                MethodSyntax node = parseMethod();
-                if (node != null)
-                    return node;
-            }
-
-            {
-                OperatorSyntax node = parseOperator();
-                if (node != null)
-                    return node;
-            }
-
-            {
                 BreakSyntax node = parseBreak();
                 if (node != null)
                     return node;
@@ -235,6 +212,27 @@ namespace scalysh
             }
 
             return null;
+        }
+
+        public UsingSyntax[] parseUsingList()
+        {
+            List<UsingSyntax> ret = null;
+            while (true)
+            {
+                UsingSyntax node = parseUsing();
+                if (node == null)
+                    break;
+
+                if (ret == null)
+                    ret = new List<UsingSyntax>();
+
+                ret.Add(node);
+            }
+
+            if (ret != null)
+                return ret.ToArray();
+            else
+                return null;
         }
 
         public UsingSyntax parseUsing()
@@ -344,16 +342,37 @@ namespace scalysh
             if (name == null)
                 throw new ParserException(fileName, lexer.line, lexer.column);
 
-            BlockSyntax scope = parseBlock();
-            if (scope == null)
+            bool successLeftCurly3 = lexer.parsePunctuation(leftCurly);
+            if (successLeftCurly3)
+                lexer.advance();
+            else
+                throw new ParserException(fileName, lexer.line, lexer.column);
+
+            UsingSyntax[] usings = parseUsingList();
+
+            StatementSyntax[] statements = parseStatementList();
+
+            bool successRightCurly6 = lexer.parsePunctuation(rightCurly);
+            if (successRightCurly6)
+                lexer.advance();
+            else
                 throw new ParserException(fileName, lexer.line, lexer.column);
 
             Position end = lexer.getPosition();
 
-            NamespaceSyntax ret = new NamespaceSyntax(start, end, name, scope);
+            NamespaceSyntax ret = new NamespaceSyntax(start, end, name, usings, statements);
 
             name.parent = ret;
-            scope.parent = ret;
+            if (usings != null)
+            {
+                foreach (UsingSyntax item in usings)
+                    item.parent = ret;
+            }
+            if (statements != null)
+            {
+                foreach (StatementSyntax item in statements)
+                    item.parent = ret;
+            }
 
             return ret;
         }
@@ -1616,23 +1635,15 @@ namespace scalysh
             else
                 return null;
 
-            NameSyntax name = parseName();
-            if (name == null)
+            TypeSyntax typeSpec = parseType();
+            if (typeSpec == null)
                 throw new ParserException(fileName, lexer.line, lexer.column);
-
-            GenericArgumentsSyntax generics = parseGenericArguments();
-
-            LifeTimeSyntax lifeTime = parseLifeTime();
 
             Position end = lexer.getPosition();
 
-            NewSyntax ret = new NewSyntax(start, end, name, generics, lifeTime);
+            NewSyntax ret = new NewSyntax(start, end, typeSpec);
 
-            name.parent = ret;
-            if (generics != null)
-                generics.parent = ret;
-            if (lifeTime != null)
-                lifeTime.parent = ret;
+            typeSpec.parent = ret;
 
             return ret;
         }
@@ -1881,10 +1892,8 @@ namespace scalysh
             else
                 return null;
 
-            string name = lexer.parseIdentifier();
-            if ((name != null) && isIdentifier(name))
-                lexer.advance();
-            else
+            NameSyntax name = parseName();
+            if (name == null)
                 throw new ParserException(fileName, lexer.line, lexer.column);
 
             GenericParametersSyntax generics = parseGenericParameters();
@@ -1893,12 +1902,13 @@ namespace scalysh
 
             ExtendsSyntax baseClass = parseExtends();
 
-            BlockSyntax body = parseBlock();
+            ClassBodySyntax body = parseClassBody();
 
             Position end = lexer.getPosition();
 
             ClassSyntax ret = new ClassSyntax(start, end, name, generics, contents, baseClass, body);
 
+            name.parent = ret;
             if (generics != null)
                 generics.parent = ret;
             if (contents != null)
@@ -2094,6 +2104,225 @@ namespace scalysh
             return ret;
         }
 
+        public ClassBodySyntax parseClassBody()
+        {
+            Position start = lexer.getPreviousPosition();
+
+            bool successLeftCurly1 = lexer.parsePunctuation(leftCurly);
+            if (successLeftCurly1)
+                lexer.advance();
+            else
+                return null;
+
+            MemberSyntax[] members = parseMemberList();
+
+            bool successRightCurly3 = lexer.parsePunctuation(rightCurly);
+            if (successRightCurly3)
+                lexer.advance();
+            else
+                throw new ParserException(fileName, lexer.line, lexer.column);
+
+            Position end = lexer.getPosition();
+
+            ClassBodySyntax ret = new ClassBodySyntax(start, end, members);
+
+            if (members != null)
+            {
+                foreach (MemberSyntax item in members)
+                    item.parent = ret;
+            }
+
+            return ret;
+        }
+
+        public MemberSyntax[] parseMemberList()
+        {
+            List<MemberSyntax> ret = null;
+            while (true)
+            {
+                MemberSyntax node = parseMember();
+                if (node == null)
+                    break;
+
+                if (ret == null)
+                    ret = new List<MemberSyntax>();
+
+                ret.Add(node);
+            }
+
+            if (ret != null)
+                return ret.ToArray();
+            else
+                return null;
+        }
+
+        public MemberSyntax parseMember()
+        {
+            {
+                LetMemberSyntax node = parseLetMember();
+                if (node != null)
+                    return node;
+            }
+
+            {
+                MutableMemberSyntax node = parseMutableMember();
+                if (node != null)
+                    return node;
+            }
+
+            {
+                SetInitializationSyntax node = parseSetInitialization();
+                if (node != null)
+                    return node;
+            }
+
+            {
+                MethodSyntax node = parseMethod();
+                if (node != null)
+                    return node;
+            }
+
+            {
+                StaticFunctionSyntax node = parseStaticFunction();
+                if (node != null)
+                    return node;
+            }
+
+            {
+                OperatorSyntax node = parseOperator();
+                if (node != null)
+                    return node;
+            }
+
+            {
+                InitializerSyntax node = parseInitializer();
+                if (node != null)
+                    return node;
+            }
+
+            {
+                AllocatorSyntax node = parseAllocator();
+                if (node != null)
+                    return node;
+            }
+
+            return null;
+        }
+
+        public LetMemberSyntax parseLetMember()
+        {
+            Position start = lexer.getPreviousPosition();
+
+            LetSyntax definition = parseLet();
+            if (definition == null)
+                return null;
+
+            Position end = lexer.getPosition();
+
+            LetMemberSyntax ret = new LetMemberSyntax(start, end, definition);
+
+            definition.parent = ret;
+
+            return ret;
+        }
+
+        public MutableMemberSyntax parseMutableMember()
+        {
+            Position start = lexer.getPreviousPosition();
+
+            MutableSyntax definition = parseMutable();
+            if (definition == null)
+                return null;
+
+            Position end = lexer.getPosition();
+
+            MutableMemberSyntax ret = new MutableMemberSyntax(start, end, definition);
+
+            definition.parent = ret;
+
+            return ret;
+        }
+
+        public SetInitializationSyntax parseSetInitialization()
+        {
+            Position start = lexer.getPreviousPosition();
+
+            SetSyntax definition = parseSet();
+            if (definition == null)
+                return null;
+
+            Position end = lexer.getPosition();
+
+            SetInitializationSyntax ret = new SetInitializationSyntax(start, end, definition);
+
+            definition.parent = ret;
+
+            return ret;
+        }
+
+        public MethodSyntax parseMethod()
+        {
+            Position start = lexer.getPreviousPosition();
+
+            bool successMethod1 = lexer.parseKeyword(methodKeyword);
+            if (successMethod1)
+                lexer.advance();
+            else
+                return null;
+
+            ProcedureSyntax procedure = parseProcedure();
+            if (procedure == null)
+                throw new ParserException(fileName, lexer.line, lexer.column);
+
+            Position end = lexer.getPosition();
+
+            MethodSyntax ret = new MethodSyntax(start, end, procedure);
+
+            procedure.parent = ret;
+
+            return ret;
+        }
+
+        public StaticFunctionSyntax parseStaticFunction()
+        {
+            Position start = lexer.getPreviousPosition();
+
+            FunctionSyntax procedure = parseFunction();
+            if (procedure == null)
+                return null;
+
+            Position end = lexer.getPosition();
+
+            StaticFunctionSyntax ret = new StaticFunctionSyntax(start, end, procedure);
+
+            procedure.parent = ret;
+
+            return ret;
+        }
+
+        public OperatorSyntax parseOperator()
+        {
+            Position start = lexer.getPreviousPosition();
+
+            bool successOperator1 = lexer.parseKeyword(operatorKeyword);
+            if (successOperator1)
+                lexer.advance();
+            else
+                return null;
+
+            RoutineSyntax routine = parseRoutine();
+            if (routine == null)
+                throw new ParserException(fileName, lexer.line, lexer.column);
+
+            Position end = lexer.getPosition();
+
+            OperatorSyntax ret = new OperatorSyntax(start, end, routine);
+
+            routine.parent = ret;
+
+            return ret;
+        }
+
         public InitializerSyntax parseInitializer()
         {
             Position start = lexer.getPreviousPosition();
@@ -2148,29 +2377,6 @@ namespace scalysh
             return ret;
         }
 
-        public MethodSyntax parseMethod()
-        {
-            Position start = lexer.getPreviousPosition();
-
-            bool successMethod1 = lexer.parseKeyword(methodKeyword);
-            if (successMethod1)
-                lexer.advance();
-            else
-                return null;
-
-            ProcedureSyntax procedure = parseProcedure();
-            if (procedure == null)
-                throw new ParserException(fileName, lexer.line, lexer.column);
-
-            Position end = lexer.getPosition();
-
-            MethodSyntax ret = new MethodSyntax(start, end, procedure);
-
-            procedure.parent = ret;
-
-            return ret;
-        }
-
         public FunctionSyntax parseFunction()
         {
             Position start = lexer.getPreviousPosition();
@@ -2190,29 +2396,6 @@ namespace scalysh
             FunctionSyntax ret = new FunctionSyntax(start, end, procedure);
 
             procedure.parent = ret;
-
-            return ret;
-        }
-
-        public OperatorSyntax parseOperator()
-        {
-            Position start = lexer.getPreviousPosition();
-
-            bool successOperator1 = lexer.parseKeyword(operatorKeyword);
-            if (successOperator1)
-                lexer.advance();
-            else
-                return null;
-
-            RoutineSyntax routine = parseRoutine();
-            if (routine == null)
-                throw new ParserException(fileName, lexer.line, lexer.column);
-
-            Position end = lexer.getPosition();
-
-            OperatorSyntax ret = new OperatorSyntax(start, end, routine);
-
-            routine.parent = ret;
 
             return ret;
         }
@@ -2390,7 +2573,7 @@ namespace scalysh
             else
                 return null;
 
-            TypeSpecSyntax[] types = parseTypeSpecList();
+            TypeSyntax[] types = parseTypeList();
 
             bool successRightParen3 = lexer.parsePunctuation(rightParen);
             if (successRightParen3)
@@ -2404,7 +2587,7 @@ namespace scalysh
 
             if (types != null)
             {
-                foreach (TypeSpecSyntax item in types)
+                foreach (TypeSyntax item in types)
                     item.parent = ret;
             }
 
@@ -3218,6 +3401,69 @@ namespace scalysh
         {
         }
 
+        public virtual bool openClassBody(ClassBodySyntax classBodySyntax)
+        {
+            return true;
+        }
+
+        public virtual void closeClassBody(ClassBodySyntax classBodySyntax)
+        {
+        }
+
+        public virtual bool openLetMember(LetMemberSyntax letMemberSyntax)
+        {
+            return true;
+        }
+
+        public virtual void closeLetMember(LetMemberSyntax letMemberSyntax)
+        {
+        }
+
+        public virtual bool openMutableMember(MutableMemberSyntax mutableMemberSyntax)
+        {
+            return true;
+        }
+
+        public virtual void closeMutableMember(MutableMemberSyntax mutableMemberSyntax)
+        {
+        }
+
+        public virtual bool openSetInitialization(SetInitializationSyntax setInitializationSyntax)
+        {
+            return true;
+        }
+
+        public virtual void closeSetInitialization(SetInitializationSyntax setInitializationSyntax)
+        {
+        }
+
+        public virtual bool openMethod(MethodSyntax methodSyntax)
+        {
+            return true;
+        }
+
+        public virtual void closeMethod(MethodSyntax methodSyntax)
+        {
+        }
+
+        public virtual bool openStaticFunction(StaticFunctionSyntax staticFunctionSyntax)
+        {
+            return true;
+        }
+
+        public virtual void closeStaticFunction(StaticFunctionSyntax staticFunctionSyntax)
+        {
+        }
+
+        public virtual bool openOperator(OperatorSyntax operatorSyntax)
+        {
+            return true;
+        }
+
+        public virtual void closeOperator(OperatorSyntax operatorSyntax)
+        {
+        }
+
         public virtual bool openInitializer(InitializerSyntax initializerSyntax)
         {
             return true;
@@ -3236,30 +3482,12 @@ namespace scalysh
         {
         }
 
-        public virtual bool openMethod(MethodSyntax methodSyntax)
-        {
-            return true;
-        }
-
-        public virtual void closeMethod(MethodSyntax methodSyntax)
-        {
-        }
-
         public virtual bool openFunction(FunctionSyntax functionSyntax)
         {
             return true;
         }
 
         public virtual void closeFunction(FunctionSyntax functionSyntax)
-        {
-        }
-
-        public virtual bool openOperator(OperatorSyntax operatorSyntax)
-        {
-            return true;
-        }
-
-        public virtual void closeOperator(OperatorSyntax operatorSyntax)
         {
         }
 
@@ -3388,18 +3616,21 @@ namespace scalysh
                 foreach (FileSyntax node in files)
                     node.accept(visitor);
             }
+
             visitor.closeProgram(this);
         }
     }
 
     public class FileSyntax : SyntaxNode
     {
+        public UsingSyntax[] usings;
         public StatementSyntax[] statements;
         public string fileName;
-        public FileSyntax(Position start, Position end, StatementSyntax[] statements)
+        public FileSyntax(Position start, Position end, UsingSyntax[] usings, StatementSyntax[] statements)
         {
             this.start = start;
             this.end = end;
+            this.usings = usings;
             this.statements = statements;
         }
 
@@ -3408,11 +3639,18 @@ namespace scalysh
             if (!visitor.openFile(this))
                 return;
 
+            if (usings != null)
+            {
+                foreach (UsingSyntax node in usings)
+                    node.accept(visitor);
+            }
+
             if (statements != null)
             {
                 foreach (StatementSyntax node in statements)
                     node.accept(visitor);
             }
+
             visitor.closeFile(this);
         }
     }
@@ -3424,7 +3662,7 @@ namespace scalysh
         }
     }
 
-    public class UsingSyntax : StatementSyntax
+    public class UsingSyntax : SyntaxNode
     {
         public NameSyntax name;
         public UsingSyntax(Position start, Position end, NameSyntax name)
@@ -3439,7 +3677,8 @@ namespace scalysh
             if (!visitor.openUsing(this))
                 return;
 
-        name.accept(visitor);
+            name.accept(visitor);
+
             visitor.closeUsing(this);
         }
     }
@@ -3466,6 +3705,7 @@ namespace scalysh
                 foreach (ExtensionSyntax node in extensions)
                     node.accept(visitor);
             }
+
             visitor.closeName(this);
         }
     }
@@ -3489,13 +3729,15 @@ namespace scalysh
     public class NamespaceSyntax : StatementSyntax
     {
         public NameSyntax name;
-        public BlockSyntax scope;
-        public NamespaceSyntax(Position start, Position end, NameSyntax name, BlockSyntax scope)
+        public UsingSyntax[] usings;
+        public StatementSyntax[] statements;
+        public NamespaceSyntax(Position start, Position end, NameSyntax name, UsingSyntax[] usings, StatementSyntax[] statements)
         {
             this.start = start;
             this.end = end;
             this.name = name;
-            this.scope = scope;
+            this.usings = usings;
+            this.statements = statements;
         }
 
         public override void accept(SyntaxVisitor visitor)
@@ -3503,8 +3745,20 @@ namespace scalysh
             if (!visitor.openNamespace(this))
                 return;
 
-        name.accept(visitor);
-        scope.accept(visitor);
+            name.accept(visitor);
+
+            if (usings != null)
+            {
+                foreach (UsingSyntax node in usings)
+                    node.accept(visitor);
+            }
+
+            if (statements != null)
+            {
+                foreach (StatementSyntax node in statements)
+                    node.accept(visitor);
+            }
+
             visitor.closeNamespace(this);
         }
     }
@@ -3526,7 +3780,8 @@ namespace scalysh
             if (!visitor.openTypeDefinition(this))
                 return;
 
-        typeSpec.accept(visitor);
+            typeSpec.accept(visitor);
+
             visitor.closeTypeDefinition(this);
         }
     }
@@ -3546,7 +3801,8 @@ namespace scalysh
             if (!visitor.openLet(this))
                 return;
 
-        binding.accept(visitor);
+            binding.accept(visitor);
+
             visitor.closeLet(this);
         }
     }
@@ -3566,7 +3822,8 @@ namespace scalysh
             if (!visitor.openVar(this))
                 return;
 
-        binding.accept(visitor);
+            binding.accept(visitor);
+
             visitor.closeVar(this);
         }
     }
@@ -3586,7 +3843,8 @@ namespace scalysh
             if (!visitor.openMutable(this))
                 return;
 
-        binding.accept(visitor);
+            binding.accept(visitor);
+
             visitor.closeMutable(this);
         }
     }
@@ -3606,7 +3864,8 @@ namespace scalysh
             if (!visitor.openThreadLocal(this))
                 return;
 
-        binding.accept(visitor);
+            binding.accept(visitor);
+
             visitor.closeThreadLocal(this);
         }
     }
@@ -3630,10 +3889,13 @@ namespace scalysh
             if (!visitor.openBinding(this))
                 return;
 
-        name.accept(visitor);
-        if (typeAnnotation != null)
-            typeAnnotation.accept(visitor);
-        calculation.accept(visitor);
+            name.accept(visitor);
+
+            if (typeAnnotation != null)
+                typeAnnotation.accept(visitor);
+
+            calculation.accept(visitor);
+
             visitor.closeBinding(this);
         }
     }
@@ -3655,8 +3917,10 @@ namespace scalysh
             if (!visitor.openSet(this))
                 return;
 
-        lValue.accept(visitor);
-        rValue.accept(visitor);
+            lValue.accept(visitor);
+
+            rValue.accept(visitor);
+
             visitor.closeSet(this);
         }
     }
@@ -3676,7 +3940,8 @@ namespace scalysh
             if (!visitor.openCalculation(this))
                 return;
 
-        operation.accept(visitor);
+            operation.accept(visitor);
+
             visitor.closeCalculation(this);
         }
     }
@@ -3701,6 +3966,7 @@ namespace scalysh
                 foreach (OperandSyntax node in op)
                     node.accept(visitor);
             }
+
             visitor.closeOperation(this);
         }
     }
@@ -3722,12 +3988,14 @@ namespace scalysh
             if (!visitor.openOperand(this))
                 return;
 
-        primary.accept(visitor);
+            primary.accept(visitor);
+
             if (postfixes != null)
             {
                 foreach (PostfixSyntax node in postfixes)
                     node.accept(visitor);
             }
+
             visitor.closeOperand(this);
         }
     }
@@ -3770,7 +4038,8 @@ namespace scalysh
             if (!visitor.openAs(this))
                 return;
 
-        typeSpec.accept(visitor);
+            typeSpec.accept(visitor);
+
             visitor.closeAs(this);
         }
     }
@@ -3790,7 +4059,8 @@ namespace scalysh
             if (!visitor.openIs(this))
                 return;
 
-        typeSpec.accept(visitor);
+            typeSpec.accept(visitor);
+
             visitor.closeIs(this);
         }
     }
@@ -3826,8 +4096,10 @@ namespace scalysh
             if (!visitor.openCatch(this))
                 return;
 
-        typeSpec.accept(visitor);
-        handler.accept(visitor);
+            typeSpec.accept(visitor);
+
+            handler.accept(visitor);
+
             visitor.closeCatch(this);
         }
     }
@@ -3854,7 +4126,8 @@ namespace scalysh
             if (!visitor.openWildCardCatchPattern(this))
                 return;
 
-        pattern.accept(visitor);
+            pattern.accept(visitor);
+
             visitor.closeWildCardCatchPattern(this);
         }
     }
@@ -3876,8 +4149,9 @@ namespace scalysh
             if (!visitor.openNameCatchPattern(this))
                 return;
 
-        if (name != null)
-            name.accept(visitor);
+            if (name != null)
+                name.accept(visitor);
+
             visitor.closeNameCatchPattern(this);
         }
     }
@@ -3909,6 +4183,7 @@ namespace scalysh
                 foreach (StatementSyntax node in statements)
                     node.accept(visitor);
             }
+
             visitor.closeBlock(this);
         }
     }
@@ -3948,10 +4223,13 @@ namespace scalysh
             if (!visitor.openIf(this))
                 return;
 
-        condition.accept(visitor);
-        consequent.accept(visitor);
-        if (elseClause != null)
-            elseClause.accept(visitor);
+            condition.accept(visitor);
+
+            consequent.accept(visitor);
+
+            if (elseClause != null)
+                elseClause.accept(visitor);
+
             visitor.closeIf(this);
         }
     }
@@ -3971,7 +4249,8 @@ namespace scalysh
             if (!visitor.openElse(this))
                 return;
 
-        alternative.accept(visitor);
+            alternative.accept(visitor);
+
             visitor.closeElse(this);
         }
     }
@@ -3993,12 +4272,14 @@ namespace scalysh
             if (!visitor.openSwitch(this))
                 return;
 
-        condition.accept(visitor);
+            condition.accept(visitor);
+
             if (cases != null)
             {
                 foreach (SwitchCaseSyntax node in cases)
                     node.accept(visitor);
             }
+
             visitor.closeSwitch(this);
         }
     }
@@ -4020,8 +4301,10 @@ namespace scalysh
             if (!visitor.openSwitchCase(this))
                 return;
 
-        label.accept(visitor);
-        content.accept(visitor);
+            label.accept(visitor);
+
+            content.accept(visitor);
+
             visitor.closeSwitchCase(this);
         }
     }
@@ -4053,6 +4336,7 @@ namespace scalysh
                 foreach (CaseItemSyntax node in items)
                     node.accept(visitor);
             }
+
             visitor.closeItemCaseLabel(this);
         }
     }
@@ -4072,7 +4356,8 @@ namespace scalysh
             if (!visitor.openCaseItem(this))
                 return;
 
-        pattern.accept(visitor);
+            pattern.accept(visitor);
+
             visitor.closeCaseItem(this);
         }
     }
@@ -4099,7 +4384,8 @@ namespace scalysh
             if (!visitor.openConstantPattern(this))
                 return;
 
-        constant.accept(visitor);
+            constant.accept(visitor);
+
             visitor.closeConstantPattern(this);
         }
     }
@@ -4133,7 +4419,8 @@ namespace scalysh
             if (!visitor.openNamePattern(this))
                 return;
 
-        name.accept(visitor);
+            name.accept(visitor);
+
             visitor.closeNamePattern(this);
         }
     }
@@ -4173,10 +4460,13 @@ namespace scalysh
             if (!visitor.openFor(this))
                 return;
 
-        if (typeAnnotation != null)
-            typeAnnotation.accept(visitor);
-        operation.accept(visitor);
-        iteration.accept(visitor);
+            if (typeAnnotation != null)
+                typeAnnotation.accept(visitor);
+
+            operation.accept(visitor);
+
+            iteration.accept(visitor);
+
             visitor.closeFor(this);
         }
     }
@@ -4198,8 +4488,10 @@ namespace scalysh
             if (!visitor.openWhile(this))
                 return;
 
-        condition.accept(visitor);
-        iteration.accept(visitor);
+            condition.accept(visitor);
+
+            iteration.accept(visitor);
+
             visitor.closeWhile(this);
         }
     }
@@ -4221,8 +4513,10 @@ namespace scalysh
             if (!visitor.openDo(this))
                 return;
 
-        iteration.accept(visitor);
-        condition.accept(visitor);
+            iteration.accept(visitor);
+
+            condition.accept(visitor);
+
             visitor.closeDo(this);
         }
     }
@@ -4249,7 +4543,8 @@ namespace scalysh
             if (!visitor.openSimpleLoop(this))
                 return;
 
-        code.accept(visitor);
+            code.accept(visitor);
+
             visitor.closeSimpleLoop(this);
         }
     }
@@ -4271,7 +4566,8 @@ namespace scalysh
             if (!visitor.openNamedLoop(this))
                 return;
 
-        code.accept(visitor);
+            code.accept(visitor);
+
             visitor.closeNamedLoop(this);
         }
     }
@@ -4292,16 +4588,12 @@ namespace scalysh
 
     public class NewSyntax : ExpressionSyntax
     {
-        public NameSyntax name;
-        public GenericArgumentsSyntax generics;
-        public LifeTimeSyntax lifeTime;
-        public NewSyntax(Position start, Position end, NameSyntax name, GenericArgumentsSyntax generics, LifeTimeSyntax lifeTime)
+        public TypeSyntax typeSpec;
+        public NewSyntax(Position start, Position end, TypeSyntax typeSpec)
         {
             this.start = start;
             this.end = end;
-            this.name = name;
-            this.generics = generics;
-            this.lifeTime = lifeTime;
+            this.typeSpec = typeSpec;
         }
 
         public override void accept(SyntaxVisitor visitor)
@@ -4309,11 +4601,8 @@ namespace scalysh
             if (!visitor.openNew(this))
                 return;
 
-        name.accept(visitor);
-        if (generics != null)
-            generics.accept(visitor);
-        if (lifeTime != null)
-            lifeTime.accept(visitor);
+            typeSpec.accept(visitor);
+
             visitor.closeNew(this);
         }
     }
@@ -4335,13 +4624,15 @@ namespace scalysh
             if (!visitor.openObject(this))
                 return;
 
-        if (firstOp != null)
-            firstOp.accept(visitor);
+            if (firstOp != null)
+                firstOp.accept(visitor);
+
             if (additionalOps != null)
             {
                 foreach (ItemSyntax node in additionalOps)
                     node.accept(visitor);
             }
+
             visitor.closeObject(this);
         }
     }
@@ -4363,13 +4654,15 @@ namespace scalysh
             if (!visitor.openArray(this))
                 return;
 
-        if (firstOp != null)
-            firstOp.accept(visitor);
+            if (firstOp != null)
+                firstOp.accept(visitor);
+
             if (additionalOps != null)
             {
                 foreach (ItemSyntax node in additionalOps)
                     node.accept(visitor);
             }
+
             visitor.closeArray(this);
         }
     }
@@ -4389,7 +4682,8 @@ namespace scalysh
             if (!visitor.openItem(this))
                 return;
 
-        operation.accept(visitor);
+            operation.accept(visitor);
+
             visitor.closeItem(this);
         }
     }
@@ -4409,7 +4703,8 @@ namespace scalysh
             if (!visitor.openSizeOf(this))
                 return;
 
-        typeSpec.accept(visitor);
+            typeSpec.accept(visitor);
+
             visitor.closeSizeOf(this);
         }
     }
@@ -4461,8 +4756,9 @@ namespace scalysh
             if (!visitor.openReturn(this))
                 return;
 
-        if (result != null)
-            result.accept(visitor);
+            if (result != null)
+                result.accept(visitor);
+
             visitor.closeReturn(this);
         }
     }
@@ -4482,19 +4778,20 @@ namespace scalysh
             if (!visitor.openThrow(this))
                 return;
 
-        exception.accept(visitor);
+            exception.accept(visitor);
+
             visitor.closeThrow(this);
         }
     }
 
     public class ClassSyntax : StatementSyntax
     {
-        public string name;
+        public NameSyntax name;
         public GenericParametersSyntax generics;
         public StructureSyntax contents;
         public ExtendsSyntax baseClass;
-        public BlockSyntax body;
-        public ClassSyntax(Position start, Position end, string name, GenericParametersSyntax generics, StructureSyntax contents, ExtendsSyntax baseClass, BlockSyntax body)
+        public ClassBodySyntax body;
+        public ClassSyntax(Position start, Position end, NameSyntax name, GenericParametersSyntax generics, StructureSyntax contents, ExtendsSyntax baseClass, ClassBodySyntax body)
         {
             this.start = start;
             this.end = end;
@@ -4510,14 +4807,20 @@ namespace scalysh
             if (!visitor.openClass(this))
                 return;
 
-        if (generics != null)
-            generics.accept(visitor);
-        if (contents != null)
-            contents.accept(visitor);
-        if (baseClass != null)
-            baseClass.accept(visitor);
-        if (body != null)
-            body.accept(visitor);
+            name.accept(visitor);
+
+            if (generics != null)
+                generics.accept(visitor);
+
+            if (contents != null)
+                contents.accept(visitor);
+
+            if (baseClass != null)
+                baseClass.accept(visitor);
+
+            if (body != null)
+                body.accept(visitor);
+
             visitor.closeClass(this);
         }
     }
@@ -4544,6 +4847,7 @@ namespace scalysh
                 foreach (GenericParameterSyntax node in additionalGenerics)
                     node.accept(visitor);
             }
+
             visitor.closeGenericParameters(this);
         }
     }
@@ -4579,7 +4883,8 @@ namespace scalysh
             if (!visitor.openExtends(this))
                 return;
 
-        name.accept(visitor);
+            name.accept(visitor);
+
             visitor.closeExtends(this);
         }
     }
@@ -4604,6 +4909,7 @@ namespace scalysh
                 foreach (ComponentSyntax node in components)
                     node.accept(visitor);
             }
+
             visitor.closeStructure(this);
         }
     }
@@ -4625,13 +4931,172 @@ namespace scalysh
             if (!visitor.openComponent(this))
                 return;
 
-        if (typeAnnotation != null)
-            typeAnnotation.accept(visitor);
+            if (typeAnnotation != null)
+                typeAnnotation.accept(visitor);
+
             visitor.closeComponent(this);
         }
     }
 
-    public class InitializerSyntax : StatementSyntax
+    public class ClassBodySyntax : SyntaxNode
+    {
+        public MemberSyntax[] members;
+        public ClassBodySyntax(Position start, Position end, MemberSyntax[] members)
+        {
+            this.start = start;
+            this.end = end;
+            this.members = members;
+        }
+
+        public override void accept(SyntaxVisitor visitor)
+        {
+            if (!visitor.openClassBody(this))
+                return;
+
+            if (members != null)
+            {
+                foreach (MemberSyntax node in members)
+                    node.accept(visitor);
+            }
+
+            visitor.closeClassBody(this);
+        }
+    }
+
+    public class MemberSyntax : SyntaxNode
+    {
+        public override void accept(SyntaxVisitor visitor)
+        {
+        }
+    }
+
+    public class LetMemberSyntax : MemberSyntax
+    {
+        public LetSyntax definition;
+        public LetMemberSyntax(Position start, Position end, LetSyntax definition)
+        {
+            this.start = start;
+            this.end = end;
+            this.definition = definition;
+        }
+
+        public override void accept(SyntaxVisitor visitor)
+        {
+            if (!visitor.openLetMember(this))
+                return;
+
+            definition.accept(visitor);
+
+            visitor.closeLetMember(this);
+        }
+    }
+
+    public class MutableMemberSyntax : MemberSyntax
+    {
+        public MutableSyntax definition;
+        public MutableMemberSyntax(Position start, Position end, MutableSyntax definition)
+        {
+            this.start = start;
+            this.end = end;
+            this.definition = definition;
+        }
+
+        public override void accept(SyntaxVisitor visitor)
+        {
+            if (!visitor.openMutableMember(this))
+                return;
+
+            definition.accept(visitor);
+
+            visitor.closeMutableMember(this);
+        }
+    }
+
+    public class SetInitializationSyntax : MemberSyntax
+    {
+        public SetSyntax definition;
+        public SetInitializationSyntax(Position start, Position end, SetSyntax definition)
+        {
+            this.start = start;
+            this.end = end;
+            this.definition = definition;
+        }
+
+        public override void accept(SyntaxVisitor visitor)
+        {
+            if (!visitor.openSetInitialization(this))
+                return;
+
+            definition.accept(visitor);
+
+            visitor.closeSetInitialization(this);
+        }
+    }
+
+    public class MethodSyntax : MemberSyntax
+    {
+        public ProcedureSyntax procedure;
+        public MethodSyntax(Position start, Position end, ProcedureSyntax procedure)
+        {
+            this.start = start;
+            this.end = end;
+            this.procedure = procedure;
+        }
+
+        public override void accept(SyntaxVisitor visitor)
+        {
+            if (!visitor.openMethod(this))
+                return;
+
+            procedure.accept(visitor);
+
+            visitor.closeMethod(this);
+        }
+    }
+
+    public class StaticFunctionSyntax : MemberSyntax
+    {
+        public FunctionSyntax procedure;
+        public StaticFunctionSyntax(Position start, Position end, FunctionSyntax procedure)
+        {
+            this.start = start;
+            this.end = end;
+            this.procedure = procedure;
+        }
+
+        public override void accept(SyntaxVisitor visitor)
+        {
+            if (!visitor.openStaticFunction(this))
+                return;
+
+            procedure.accept(visitor);
+
+            visitor.closeStaticFunction(this);
+        }
+    }
+
+    public class OperatorSyntax : MemberSyntax
+    {
+        public RoutineSyntax routine;
+        public OperatorSyntax(Position start, Position end, RoutineSyntax routine)
+        {
+            this.start = start;
+            this.end = end;
+            this.routine = routine;
+        }
+
+        public override void accept(SyntaxVisitor visitor)
+        {
+            if (!visitor.openOperator(this))
+                return;
+
+            routine.accept(visitor);
+
+            visitor.closeOperator(this);
+        }
+    }
+
+    public class InitializerSyntax : MemberSyntax
     {
         public StructureSyntax input;
         public BlockSyntax body;
@@ -4648,14 +5113,16 @@ namespace scalysh
             if (!visitor.openInitializer(this))
                 return;
 
-        if (input != null)
-            input.accept(visitor);
-        body.accept(visitor);
+            if (input != null)
+                input.accept(visitor);
+
+            body.accept(visitor);
+
             visitor.closeInitializer(this);
         }
     }
 
-    public class AllocatorSyntax : StatementSyntax
+    public class AllocatorSyntax : MemberSyntax
     {
         public StructureSyntax input;
         public BlockSyntax body;
@@ -4672,30 +5139,12 @@ namespace scalysh
             if (!visitor.openAllocator(this))
                 return;
 
-        if (input != null)
-            input.accept(visitor);
-        body.accept(visitor);
+            if (input != null)
+                input.accept(visitor);
+
+            body.accept(visitor);
+
             visitor.closeAllocator(this);
-        }
-    }
-
-    public class MethodSyntax : StatementSyntax
-    {
-        public ProcedureSyntax procedure;
-        public MethodSyntax(Position start, Position end, ProcedureSyntax procedure)
-        {
-            this.start = start;
-            this.end = end;
-            this.procedure = procedure;
-        }
-
-        public override void accept(SyntaxVisitor visitor)
-        {
-            if (!visitor.openMethod(this))
-                return;
-
-        procedure.accept(visitor);
-            visitor.closeMethod(this);
         }
     }
 
@@ -4714,28 +5163,9 @@ namespace scalysh
             if (!visitor.openFunction(this))
                 return;
 
-        procedure.accept(visitor);
+            procedure.accept(visitor);
+
             visitor.closeFunction(this);
-        }
-    }
-
-    public class OperatorSyntax : StatementSyntax
-    {
-        public RoutineSyntax routine;
-        public OperatorSyntax(Position start, Position end, RoutineSyntax routine)
-        {
-            this.start = start;
-            this.end = end;
-            this.routine = routine;
-        }
-
-        public override void accept(SyntaxVisitor visitor)
-        {
-            if (!visitor.openOperator(this))
-                return;
-
-        routine.accept(visitor);
-            visitor.closeOperator(this);
         }
     }
 
@@ -4756,7 +5186,8 @@ namespace scalysh
             if (!visitor.openProcedure(this))
                 return;
 
-        routine.accept(visitor);
+            routine.accept(visitor);
+
             visitor.closeProcedure(this);
         }
     }
@@ -4782,13 +5213,17 @@ namespace scalysh
             if (!visitor.openRoutine(this))
                 return;
 
-        if (input != null)
-            input.accept(visitor);
-        if (output != null)
-            output.accept(visitor);
-        if (throwsClause != null)
-            throwsClause.accept(visitor);
-        body.accept(visitor);
+            if (input != null)
+                input.accept(visitor);
+
+            if (output != null)
+                output.accept(visitor);
+
+            if (throwsClause != null)
+                throwsClause.accept(visitor);
+
+            body.accept(visitor);
+
             visitor.closeRoutine(this);
         }
     }
@@ -4808,7 +5243,8 @@ namespace scalysh
             if (!visitor.openTypeAnnotation(this))
                 return;
 
-        typeSpec.accept(visitor);
+            typeSpec.accept(visitor);
+
             visitor.closeTypeAnnotation(this);
         }
     }
@@ -4841,21 +5277,25 @@ namespace scalysh
             if (!visitor.openType(this))
                 return;
 
-        name.accept(visitor);
-        if (generics != null)
-            generics.accept(visitor);
-        if (optional != null)
-            optional.accept(visitor);
-        if (lifeTime != null)
-            lifeTime.accept(visitor);
+            name.accept(visitor);
+
+            if (generics != null)
+                generics.accept(visitor);
+
+            if (optional != null)
+                optional.accept(visitor);
+
+            if (lifeTime != null)
+                lifeTime.accept(visitor);
+
             visitor.closeType(this);
         }
     }
 
     public class VariantSyntax : TypeSpecSyntax
     {
-        public TypeSpecSyntax[] types;
-        public VariantSyntax(Position start, Position end, TypeSpecSyntax[] types)
+        public TypeSyntax[] types;
+        public VariantSyntax(Position start, Position end, TypeSyntax[] types)
         {
             this.start = start;
             this.end = end;
@@ -4869,9 +5309,10 @@ namespace scalysh
 
             if (types != null)
             {
-                foreach (TypeSpecSyntax node in types)
+                foreach (TypeSyntax node in types)
                     node.accept(visitor);
             }
+
             visitor.closeVariant(this);
         }
     }
@@ -4891,7 +5332,8 @@ namespace scalysh
             if (!visitor.openThrows(this))
                 return;
 
-        throwsType.accept(visitor);
+            throwsType.accept(visitor);
+
             visitor.closeThrows(this);
         }
     }
@@ -4913,12 +5355,14 @@ namespace scalysh
             if (!visitor.openGenericArguments(this))
                 return;
 
-        generic.accept(visitor);
+            generic.accept(visitor);
+
             if (additionalGenerics != null)
             {
                 foreach (GenericArgumentSyntax node in additionalGenerics)
                     node.accept(visitor);
             }
+
             visitor.closeGenericArguments(this);
         }
     }
@@ -4938,7 +5382,8 @@ namespace scalysh
             if (!visitor.openGenericArgument(this))
                 return;
 
-        typeSpec.accept(visitor);
+            typeSpec.accept(visitor);
+
             visitor.closeGenericArgument(this);
         }
     }

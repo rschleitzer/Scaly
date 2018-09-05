@@ -1,0 +1,4707 @@
+class scalyc.Parser(
+
+    fileName: string,
+    text: string
+
+    ) {
+
+    let usingKeyword: string = new string("using")
+    let namespaceKeyword: string = new string("namespace")
+    let typedefKeyword: string = new string("typedef")
+    let letKeyword: string = new string("let")
+    let mutableKeyword: string = new string("mutable")
+    let threadlocalKeyword: string = new string("threadlocal")
+    let varKeyword: string = new string("var")
+    let setKeyword: string = new string("set")
+    let classKeyword: string = new string("class")
+    let extendsKeyword: string = new string("extends")
+    let initializerKeyword: string = new string("initializer")
+    let allocatorKeyword: string = new string("allocator")
+    let methodKeyword: string = new string("method")
+    let functionKeyword: string = new string("function")
+    let operatorKeyword: string = new string("operator")
+    let thisKeyword: string = new string("this")
+    let newKeyword: string = new string("new")
+    let sizeofKeyword: string = new string("sizeof")
+    let catchKeyword: string = new string("catch")
+    let throwsKeyword: string = new string("throws")
+    let asKeyword: string = new string("as")
+    let isKeyword: string = new string("is")
+    let ifKeyword: string = new string("if")
+    let elseKeyword: string = new string("else")
+    let switchKeyword: string = new string("switch")
+    let caseKeyword: string = new string("case")
+    let defaultKeyword: string = new string("default")
+    let forKeyword: string = new string("for")
+    let inKeyword: string = new string("in")
+    let whileKeyword: string = new string("while")
+    let doKeyword: string = new string("do")
+    let loopKeyword: string = new string("loop")
+    let breakKeyword: string = new string("break")
+    let continueKeyword: string = new string("continue")
+    let returnKeyword: string = new string("return")
+    let throwKeyword: string = new string("throw")
+    let semicolon: string = new string(";")
+    let leftCurly: string = new string("{")
+    let rightCurly: string = new string("}")
+    let leftParen: string = new string("(")
+    let rightParen: string = new string(")")
+    let leftBracket: string = new string("[")
+    let rightBracket: string = new string("]")
+    let dot: string = new string(".")
+    let comma: string = new string(",")
+    let colon: string = new string(":")
+    let question: string = new string("?")
+    let exclamation: string = new string("!")
+    let at: string = new string("@")
+    let hash: string = new string("#")
+    let dollar: string = new string("$")
+    let underscore: string = new string("_")
+    let backtick: string = new string("`")
+
+    function parseFile(): File throws ParserError {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let usings: Using[] = parseUsingList()
+        if usings != null {
+            if !isAtEnd() {
+                let errorPos: Position$ = lexer.getPreviousPosition()
+                throw syntax(errorPos.line, errorPos.column)
+            }
+        }
+
+        let statements: Statement[] = parseStatementList()
+        if statements != null {
+            if !isAtEnd() {
+                let errorPos: Position$ = lexer.getPreviousPosition()
+                throw syntax(errorPos.line, errorPos.column)
+            }
+        }
+
+        let end: Position$ = lexer.getPosition()
+
+        let ret: File = new File(usings, statements, new Position(start), new Position(end))
+        if usings != null {
+            for item: Using in usings
+                item.parent = ret
+        }
+        if statements != null {
+            for item: Statement in statements
+                item.parent = ret
+        }
+
+        ret
+    }
+
+    method parseStatementList(): Array[Statement] {
+        mutable ret: Array[Statement]$ = null
+        while true {
+
+            let node: Statement = parseStatement()
+            if node == null
+                break
+
+            if ret == null
+                ret = new Statement[]()
+
+            ret.add(node)
+        }
+
+        ret
+    }
+
+    function parseStatement(): Statement {
+        {
+            let node: Namespace = parseNamespace()
+            if node != null
+                return(node)
+        }
+
+        {
+            let node: TypeDefinition = parseTypeDefinition()
+            if node != null
+                return(node)
+        }
+
+        {
+            let node: Let = parseLet()
+            if node != null
+                return(node)
+        }
+
+        {
+            let node: Var = parseVar()
+            if node != null
+                return(node)
+        }
+
+        {
+            let node: Mutable = parseMutable()
+            if node != null
+                return(node)
+        }
+
+        {
+            let node: ThreadLocal = parseThreadLocal()
+            if node != null
+                return(node)
+        }
+
+        {
+            let node: Set = parseSet()
+            if node != null
+                return(node)
+        }
+
+        {
+            let node: Calculation = parseCalculation()
+            if node != null
+                return(node)
+        }
+
+        {
+            let node: Function = parseFunction()
+            if node != null
+                return(node)
+        }
+
+        {
+            let node: Class = parseClass()
+            if node != null
+                return(node)
+        }
+
+        {
+            let node: Break = parseBreak()
+            if node != null
+                return(node)
+        }
+
+        {
+            let node: Continue = parseContinue()
+            if node != null
+                return(node)
+        }
+
+        {
+            let node: Return = parseReturn()
+            if node != null
+                return(node)
+        }
+
+        {
+            let node: Throw = parseThrow()
+            if node != null
+                return(node)
+        }
+
+        null
+    }
+
+    method parseUsingList(): Array[Using] {
+        mutable ret: Array[Using]$ = null
+        while true {
+
+            let node: Using = parseUsing()
+            if node == null
+                break
+
+            if ret == null
+                ret = new Using[]()
+
+            ret.add(node)
+        }
+
+        ret
+    }
+
+    function parseUsing(): Using {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let successUsing1: bool = lexer.parseKeyword(usingKeyword)
+        if successUsing1
+            lexer.advance()
+        else
+            return(null)
+
+        let name: Name = parseName()
+        if name == null
+            return(null)
+
+        let end: Position$ = lexer.getPosition()
+
+        let ret: Using = new Using(name, new Position(start), new Position(end))
+        name.parent = ret
+
+        ret
+    }
+
+    function parseName(): Name {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let name: string = lexer.parseIdentifier()
+        if (name != null) && isIdentifier(name)
+            lexer.advance()
+        else
+            return(null)
+
+        let extensions: Extension[] = parseExtensionList()
+
+        let end: Position$ = lexer.getPosition()
+
+        let ret: Name = new Name(name, extensions, new Position(start), new Position(end))
+        if extensions != null {
+            for item: Extension in extensions
+                item.parent = ret
+        }
+
+        ret
+    }
+
+    method parseExtensionList(): Array[Extension] {
+        mutable ret: Array[Extension]$ = null
+        while true {
+
+            let node: Extension = parseExtension()
+            if node == null
+                break
+
+            if ret == null
+                ret = new Extension[]()
+
+            ret.add(node)
+        }
+
+        ret
+    }
+
+    function parseExtension(): Extension {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let successDot1: bool = lexer.parsePunctuation(dot)
+        if successDot1
+            lexer.advance()
+        else
+            return(null)
+
+        let name: string = lexer.parseIdentifier()
+        if (name != null) && isIdentifier(name)
+            lexer.advance()
+        else
+            return(null)
+
+        let end: Position$ = lexer.getPosition()
+
+        let ret: Extension = new Extension(name, new Position(start), new Position(end))
+
+        ret
+    }
+
+    function parseNamespace(): Namespace {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let successNamespace1: bool = lexer.parseKeyword(namespaceKeyword)
+        if successNamespace1
+            lexer.advance()
+        else
+            return(null)
+
+        let name: Name = parseName()
+        if name == null
+            return(null)
+
+        let successLeftCurly3: bool = lexer.parsePunctuation(leftCurly)
+        if successLeftCurly3
+            lexer.advance()
+        else
+            return(null)
+
+        let usings: Using[] = parseUsingList()
+
+        let statements: Statement[] = parseStatementList()
+
+        let successRightCurly6: bool = lexer.parsePunctuation(rightCurly)
+        if successRightCurly6
+            lexer.advance()
+        else
+            return(null)
+
+        let end: Position$ = lexer.getPosition()
+
+        let ret: Namespace = new Namespace(name, usings, statements, new Position(start), new Position(end))
+        name.parent = ret
+        if usings != null {
+            for item: Using in usings
+                item.parent = ret
+        }
+        if statements != null {
+            for item: Statement in statements
+                item.parent = ret
+        }
+
+        ret
+    }
+
+    function parseTypeDefinition(): TypeDefinition {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let successTypedef1: bool = lexer.parseKeyword(typedefKeyword)
+        if successTypedef1
+            lexer.advance()
+        else
+            return(null)
+
+        let typeName: string = lexer.parseIdentifier()
+        if (typeName != null) && isIdentifier(typeName)
+            lexer.advance()
+        else
+            return(null)
+
+        let typeSpec: TypeSpec = parseTypeSpec()
+        if typeSpec == null
+            return(null)
+
+        let end: Position$ = lexer.getPosition()
+
+        let ret: TypeDefinition = new TypeDefinition(typeName, typeSpec, new Position(start), new Position(end))
+        typeSpec.parent = ret
+
+        ret
+    }
+
+    function parseLet(): Let {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let successLet1: bool = lexer.parseKeyword(letKeyword)
+        if successLet1
+            lexer.advance()
+        else
+            return(null)
+
+        let binding: Binding = parseBinding()
+        if binding == null
+            return(null)
+
+        let end: Position$ = lexer.getPosition()
+
+        let ret: Let = new Let(binding, new Position(start), new Position(end))
+        binding.parent = ret
+
+        ret
+    }
+
+    function parseVar(): Var {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let successVar1: bool = lexer.parseKeyword(varKeyword)
+        if successVar1
+            lexer.advance()
+        else
+            return(null)
+
+        let binding: Binding = parseBinding()
+        if binding == null
+            return(null)
+
+        let end: Position$ = lexer.getPosition()
+
+        let ret: Var = new Var(binding, new Position(start), new Position(end))
+        binding.parent = ret
+
+        ret
+    }
+
+    function parseMutable(): Mutable {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let successMutable1: bool = lexer.parseKeyword(mutableKeyword)
+        if successMutable1
+            lexer.advance()
+        else
+            return(null)
+
+        let binding: Binding = parseBinding()
+        if binding == null
+            return(null)
+
+        let end: Position$ = lexer.getPosition()
+
+        let ret: Mutable = new Mutable(binding, new Position(start), new Position(end))
+        binding.parent = ret
+
+        ret
+    }
+
+    function parseThreadLocal(): ThreadLocal {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let successThreadlocal1: bool = lexer.parseKeyword(threadlocalKeyword)
+        if successThreadlocal1
+            lexer.advance()
+        else
+            return(null)
+
+        let binding: Binding = parseBinding()
+        if binding == null
+            return(null)
+
+        let end: Position$ = lexer.getPosition()
+
+        let ret: ThreadLocal = new ThreadLocal(binding, new Position(start), new Position(end))
+        binding.parent = ret
+
+        ret
+    }
+
+    function parseBinding(): Binding {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let name: Name = parseName()
+        if name == null
+            return(null)
+
+        let typeAnnotation: TypeAnnotation = parseTypeAnnotation()
+
+        let calculation: Calculation = parseCalculation()
+        if calculation == null
+            return(null)
+
+        let end: Position$ = lexer.getPosition()
+
+        let ret: Binding = new Binding(name, typeAnnotation, calculation, new Position(start), new Position(end))
+        name.parent = ret
+        if typeAnnotation != null
+            typeAnnotation.parent = ret
+        calculation.parent = ret
+
+        ret
+    }
+
+    function parseSet(): Set {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let successSet1: bool = lexer.parseKeyword(setKeyword)
+        if successSet1
+            lexer.advance()
+        else
+            return(null)
+
+        let lValue: Operation = parseOperation()
+        if lValue == null
+            return(null)
+
+        let successColon3: bool = lexer.parsePunctuation(colon)
+        if successColon3
+            lexer.advance()
+        else
+            return(null)
+
+        let rValue: Calculation = parseCalculation()
+        if rValue == null
+            return(null)
+
+        let end: Position$ = lexer.getPosition()
+
+        let ret: Set = new Set(lValue, rValue, new Position(start), new Position(end))
+        lValue.parent = ret
+        rValue.parent = ret
+
+        ret
+    }
+
+    function parseCalculation(): Calculation {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let operation: Operation = parseOperation()
+        if operation == null
+            return(null)
+
+        let successSemicolon2: bool = lexer.parsePunctuation(semicolon)
+        if successSemicolon2
+            lexer.advance()
+
+        let end: Position$ = lexer.getPosition()
+
+        let ret: Calculation = new Calculation(operation, new Position(start), new Position(end))
+        operation.parent = ret
+
+        ret
+    }
+
+    function parseOperation(): Operation {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let op: Operand[] = parseOperandList()
+
+        let end: Position$ = lexer.getPosition()
+
+        let ret: Operation = new Operation(op, new Position(start), new Position(end))
+        if op != null {
+            for item: Operand in op
+                item.parent = ret
+        }
+
+        ret
+    }
+
+    method parseOperandList(): Array[Operand] {
+        mutable ret: Array[Operand]$ = null
+        while true {
+
+            let node: Operand = parseOperand()
+            if node == null
+                break
+
+            if ret == null
+                ret = new Operand[]()
+
+            ret.add(node)
+        }
+
+        ret
+    }
+
+    function parseOperand(): Operand {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let primary: Expression = parseExpression()
+        if primary == null
+            return(null)
+
+        let postfixes: Postfix[] = parsePostfixList()
+
+        let end: Position$ = lexer.getPosition()
+
+        let ret: Operand = new Operand(primary, postfixes, new Position(start), new Position(end))
+        primary.parent = ret
+        if postfixes != null {
+            for item: Postfix in postfixes
+                item.parent = ret
+        }
+
+        ret
+    }
+
+    method parsePostfixList(): Array[Postfix] {
+        mutable ret: Array[Postfix]$ = null
+        while true {
+
+            let node: Postfix = parsePostfix()
+            if node == null
+                break
+
+            if ret == null
+                ret = new Postfix[]()
+
+            ret.add(node)
+        }
+
+        ret
+    }
+
+    function parsePostfix(): Postfix {
+        {
+            let node: MemberAccess = parseMemberAccess()
+            if node != null
+                return(node)
+        }
+
+        {
+            let node: As = parseAs()
+            if node != null
+                return(node)
+        }
+
+        {
+            let node: Is = parseIs()
+            if node != null
+                return(node)
+        }
+
+        {
+            let node: Unwrap = parseUnwrap()
+            if node != null
+                return(node)
+        }
+
+        {
+            let node: Catch = parseCatch()
+            if node != null
+                return(node)
+        }
+
+        null
+    }
+
+    function parseMemberAccess(): MemberAccess {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let successDot1: bool = lexer.parsePunctuation(dot)
+        if successDot1
+            lexer.advance()
+        else
+            return(null)
+
+        let member: string = lexer.parseIdentifier()
+        if (member != null) && isIdentifier(member)
+            lexer.advance()
+        else
+            return(null)
+
+        let end: Position$ = lexer.getPosition()
+
+        let ret: MemberAccess = new MemberAccess(member, new Position(start), new Position(end))
+
+        ret
+    }
+
+    function parseAs(): As {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let successAs1: bool = lexer.parseKeyword(asKeyword)
+        if successAs1
+            lexer.advance()
+        else
+            return(null)
+
+        let typeSpec: TypeSpec = parseTypeSpec()
+        if typeSpec == null
+            return(null)
+
+        let end: Position$ = lexer.getPosition()
+
+        let ret: As = new As(typeSpec, new Position(start), new Position(end))
+        typeSpec.parent = ret
+
+        ret
+    }
+
+    function parseIs(): Is {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let successIs1: bool = lexer.parseKeyword(isKeyword)
+        if successIs1
+            lexer.advance()
+        else
+            return(null)
+
+        let typeSpec: TypeSpec = parseTypeSpec()
+        if typeSpec == null
+            return(null)
+
+        let end: Position$ = lexer.getPosition()
+
+        let ret: Is = new Is(typeSpec, new Position(start), new Position(end))
+        typeSpec.parent = ret
+
+        ret
+    }
+
+    function parseUnwrap(): Unwrap {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let successExclamation1: bool = lexer.parsePunctuation(exclamation)
+        if successExclamation1
+            lexer.advance()
+        else
+            return(null)
+
+        let end: Position$ = lexer.getPosition()
+
+        let ret: Unwrap = new Unwrap(new Position(start), new Position(end))
+
+        ret
+    }
+
+    function parseCatch(): Catch {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let successCatch1: bool = lexer.parseKeyword(catchKeyword)
+        if successCatch1
+            lexer.advance()
+        else
+            return(null)
+
+        let typeSpec: CatchPattern = parseCatchPattern()
+        if typeSpec == null
+            return(null)
+
+        let handler: Block = parseBlock()
+        if handler == null
+            return(null)
+
+        let end: Position$ = lexer.getPosition()
+
+        let ret: Catch = new Catch(typeSpec, handler, new Position(start), new Position(end))
+        typeSpec.parent = ret
+        handler.parent = ret
+
+        ret
+    }
+
+    function parseCatchPattern(): CatchPattern {
+        {
+            let node: WildCardCatchPattern = parseWildCardCatchPattern()
+            if node != null
+                return(node)
+        }
+
+        {
+            let node: NameCatchPattern = parseNameCatchPattern()
+            if node != null
+                return(node)
+        }
+
+        null
+    }
+
+    function parseWildCardCatchPattern(): WildCardCatchPattern {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let pattern: WildcardPattern = parseWildcardPattern()
+        if pattern == null
+            return(null)
+
+        let end: Position$ = lexer.getPosition()
+
+        let ret: WildCardCatchPattern = new WildCardCatchPattern(pattern, new Position(start), new Position(end))
+        pattern.parent = ret
+
+        ret
+    }
+
+    function parseNameCatchPattern(): NameCatchPattern {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let name: Name = parseName()
+
+        let successLeftParen2: bool = lexer.parsePunctuation(leftParen)
+        if successLeftParen2
+            lexer.advance()
+        else
+            return(null)
+
+        let errorName: string = lexer.parseIdentifier()
+        if (errorName != null) && isIdentifier(errorName)
+            lexer.advance()
+
+        let successRightParen4: bool = lexer.parsePunctuation(rightParen)
+        if successRightParen4
+            lexer.advance()
+        else
+            return(null)
+
+        let end: Position$ = lexer.getPosition()
+
+        let ret: NameCatchPattern = new NameCatchPattern(name, errorName, new Position(start), new Position(end))
+        if name != null
+            name.parent = ret
+
+        ret
+    }
+
+    method parseExpressionList(): Array[Expression] {
+        mutable ret: Array[Expression]$ = null
+        while true {
+
+            let node: Expression = parseExpression()
+            if node == null
+                break
+
+            if ret == null
+                ret = new Expression[]()
+
+            ret.add(node)
+        }
+
+        ret
+    }
+
+    function parseExpression(): Expression {
+        {
+            let node: Block = parseBlock()
+            if node != null
+                return(node)
+        }
+
+        {
+            let node: Name = parseName()
+            if node != null
+                return(node)
+        }
+
+        {
+            let node: Constant = parseConstant()
+            if node != null
+                return(node)
+        }
+
+        {
+            let node: If = parseIf()
+            if node != null
+                return(node)
+        }
+
+        {
+            let node: Switch = parseSwitch()
+            if node != null
+                return(node)
+        }
+
+        {
+            let node: For = parseFor()
+            if node != null
+                return(node)
+        }
+
+        {
+            let node: While = parseWhile()
+            if node != null
+                return(node)
+        }
+
+        {
+            let node: Do = parseDo()
+            if node != null
+                return(node)
+        }
+
+        {
+            let node: This = parseThis()
+            if node != null
+                return(node)
+        }
+
+        {
+            let node: New = parseNew()
+            if node != null
+                return(node)
+        }
+
+        {
+            let node: Object = parseObject()
+            if node != null
+                return(node)
+        }
+
+        {
+            let node: Array = parseArray()
+            if node != null
+                return(node)
+        }
+
+        {
+            let node: SizeOf = parseSizeOf()
+            if node != null
+                return(node)
+        }
+
+        null
+    }
+
+    function parseBlock(): Block {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let successLeftCurly1: bool = lexer.parsePunctuation(leftCurly)
+        if successLeftCurly1
+            lexer.advance()
+        else
+            return(null)
+
+        let statements: Statement[] = parseStatementList()
+
+        let successRightCurly3: bool = lexer.parsePunctuation(rightCurly)
+        if successRightCurly3
+            lexer.advance()
+        else
+            return(null)
+
+        let end: Position$ = lexer.getPosition()
+
+        let ret: Block = new Block(statements, new Position(start), new Position(end))
+        if statements != null {
+            for item: Statement in statements
+                item.parent = ret
+        }
+
+        ret
+    }
+
+    function parseConstant(): Constant {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let literal: Literal = lexer.parseLiteral()
+        if literal != null
+            lexer.advance()
+        else
+            return(null)
+
+        let end: Position$ = lexer.getPosition()
+
+        let ret: Constant = new Constant(literal, new Position(start), new Position(end))
+
+        ret
+    }
+
+    function parseIf(): If {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let successIf1: bool = lexer.parseKeyword(ifKeyword)
+        if successIf1
+            lexer.advance()
+        else
+            return(null)
+
+        let successLeftParen2: bool = lexer.parsePunctuation(leftParen)
+        if successLeftParen2
+            lexer.advance()
+        else
+            return(null)
+
+        let condition: Operation = parseOperation()
+        if condition == null
+            return(null)
+
+        let successRightParen4: bool = lexer.parsePunctuation(rightParen)
+        if successRightParen4
+            lexer.advance()
+        else
+            return(null)
+
+        let consequent: Block = parseBlock()
+        if consequent == null
+            return(null)
+
+        let elseClause: Else = parseElse()
+
+        let end: Position$ = lexer.getPosition()
+
+        let ret: If = new If(condition, consequent, elseClause, new Position(start), new Position(end))
+        condition.parent = ret
+        consequent.parent = ret
+        if elseClause != null
+            elseClause.parent = ret
+
+        ret
+    }
+
+    function parseElse(): Else {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let successElse1: bool = lexer.parseKeyword(elseKeyword)
+        if successElse1
+            lexer.advance()
+        else
+            return(null)
+
+        let alternative: Block = parseBlock()
+        if alternative == null
+            return(null)
+
+        let end: Position$ = lexer.getPosition()
+
+        let ret: Else = new Else(alternative, new Position(start), new Position(end))
+        alternative.parent = ret
+
+        ret
+    }
+
+    function parseSwitch(): Switch {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let successSwitch1: bool = lexer.parseKeyword(switchKeyword)
+        if successSwitch1
+            lexer.advance()
+        else
+            return(null)
+
+        let successLeftParen2: bool = lexer.parsePunctuation(leftParen)
+        if successLeftParen2
+            lexer.advance()
+        else
+            return(null)
+
+        let condition: Operation = parseOperation()
+        if condition == null
+            return(null)
+
+        let successRightParen4: bool = lexer.parsePunctuation(rightParen)
+        if successRightParen4
+            lexer.advance()
+        else
+            return(null)
+
+        let successLeftCurly5: bool = lexer.parsePunctuation(leftCurly)
+        if successLeftCurly5
+            lexer.advance()
+        else
+            return(null)
+
+        let cases: SwitchCase[] = parseSwitchCaseList()
+
+        let successRightCurly7: bool = lexer.parsePunctuation(rightCurly)
+        if successRightCurly7
+            lexer.advance()
+        else
+            return(null)
+
+        let end: Position$ = lexer.getPosition()
+
+        let ret: Switch = new Switch(condition, cases, new Position(start), new Position(end))
+        condition.parent = ret
+        if cases != null {
+            for item: SwitchCase in cases
+                item.parent = ret
+        }
+
+        ret
+    }
+
+    method parseSwitchCaseList(): Array[SwitchCase] {
+        mutable ret: Array[SwitchCase]$ = null
+        while true {
+
+            let node: SwitchCase = parseSwitchCase()
+            if node == null
+                break
+
+            if ret == null
+                ret = new SwitchCase[]()
+
+            ret.add(node)
+        }
+
+        ret
+    }
+
+    function parseSwitchCase(): SwitchCase {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let label: CaseLabel = parseCaseLabel()
+        if label == null
+            return(null)
+
+        let content: Block = parseBlock()
+        if content == null
+            return(null)
+
+        let end: Position$ = lexer.getPosition()
+
+        let ret: SwitchCase = new SwitchCase(label, content, new Position(start), new Position(end))
+        label.parent = ret
+        content.parent = ret
+
+        ret
+    }
+
+    function parseCaseLabel(): CaseLabel {
+        {
+            let node: ItemCaseLabel = parseItemCaseLabel()
+            if node != null
+                return(node)
+        }
+
+        {
+            let node: DefaultCaseLabel = parseDefaultCaseLabel()
+            if node != null
+                return(node)
+        }
+
+        null
+    }
+
+    function parseItemCaseLabel(): ItemCaseLabel {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let successCase1: bool = lexer.parseKeyword(caseKeyword)
+        if successCase1
+            lexer.advance()
+        else
+            return(null)
+
+        let items: CaseItem[] = parseCaseItemList()
+
+        let end: Position$ = lexer.getPosition()
+
+        let ret: ItemCaseLabel = new ItemCaseLabel(items, new Position(start), new Position(end))
+        if items != null {
+            for item: CaseItem in items
+                item.parent = ret
+        }
+
+        ret
+    }
+
+    method parseCaseItemList(): Array[CaseItem] {
+        mutable ret: Array[CaseItem]$ = null
+        while true {
+
+            let node: CaseItem = parseCaseItem()
+            if node == null
+                break
+
+            if ret == null
+                ret = new CaseItem[]()
+
+            ret.add(node)
+        }
+
+        ret
+    }
+
+    function parseCaseItem(): CaseItem {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let pattern: CasePattern = parseCasePattern()
+        if pattern == null
+            return(null)
+
+        let successComma2: bool = lexer.parsePunctuation(comma)
+        if successComma2
+            lexer.advance()
+
+        let end: Position$ = lexer.getPosition()
+
+        let ret: CaseItem = new CaseItem(pattern, new Position(start), new Position(end))
+        pattern.parent = ret
+
+        ret
+    }
+
+    method parseCasePatternList(): Array[CasePattern] {
+        mutable ret: Array[CasePattern]$ = null
+        while true {
+
+            let node: CasePattern = parseCasePattern()
+            if node == null
+                break
+
+            if ret == null
+                ret = new CasePattern[]()
+
+            ret.add(node)
+        }
+
+        ret
+    }
+
+    function parseCasePattern(): CasePattern {
+        {
+            let node: ConstantPattern = parseConstantPattern()
+            if node != null
+                return(node)
+        }
+
+        {
+            let node: WildcardPattern = parseWildcardPattern()
+            if node != null
+                return(node)
+        }
+
+        {
+            let node: NamePattern = parseNamePattern()
+            if node != null
+                return(node)
+        }
+
+        null
+    }
+
+    function parseConstantPattern(): ConstantPattern {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let constant: Constant = parseConstant()
+        if constant == null
+            return(null)
+
+        let end: Position$ = lexer.getPosition()
+
+        let ret: ConstantPattern = new ConstantPattern(constant, new Position(start), new Position(end))
+        constant.parent = ret
+
+        ret
+    }
+
+    function parseWildcardPattern(): WildcardPattern {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let successUnderscore1: bool = lexer.parsePunctuation(underscore)
+        if successUnderscore1
+            lexer.advance()
+        else
+            return(null)
+
+        let end: Position$ = lexer.getPosition()
+
+        let ret: WildcardPattern = new WildcardPattern(new Position(start), new Position(end))
+
+        ret
+    }
+
+    function parseNamePattern(): NamePattern {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let name: Name = parseName()
+        if name == null
+            return(null)
+
+        let end: Position$ = lexer.getPosition()
+
+        let ret: NamePattern = new NamePattern(name, new Position(start), new Position(end))
+        name.parent = ret
+
+        ret
+    }
+
+    function parseDefaultCaseLabel(): DefaultCaseLabel {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let successDefault1: bool = lexer.parseKeyword(defaultKeyword)
+        if successDefault1
+            lexer.advance()
+        else
+            return(null)
+
+        let end: Position$ = lexer.getPosition()
+
+        let ret: DefaultCaseLabel = new DefaultCaseLabel(new Position(start), new Position(end))
+
+        ret
+    }
+
+    function parseFor(): For {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let successFor1: bool = lexer.parseKeyword(forKeyword)
+        if successFor1
+            lexer.advance()
+        else
+            return(null)
+
+        let successLeftParen2: bool = lexer.parsePunctuation(leftParen)
+        if successLeftParen2
+            lexer.advance()
+        else
+            return(null)
+
+        let index: string = lexer.parseIdentifier()
+        if (index != null) && isIdentifier(index)
+            lexer.advance()
+        else
+            return(null)
+
+        let typeAnnotation: TypeAnnotation = parseTypeAnnotation()
+
+        let successIn5: bool = lexer.parseKeyword(inKeyword)
+        if successIn5
+            lexer.advance()
+        else
+            return(null)
+
+        let operation: Operation = parseOperation()
+        if operation == null
+            return(null)
+
+        let successRightParen7: bool = lexer.parsePunctuation(rightParen)
+        if successRightParen7
+            lexer.advance()
+        else
+            return(null)
+
+        let iteration: Loop = parseLoop()
+        if iteration == null
+            return(null)
+
+        let end: Position$ = lexer.getPosition()
+
+        let ret: For = new For(index, typeAnnotation, operation, iteration, new Position(start), new Position(end))
+        if typeAnnotation != null
+            typeAnnotation.parent = ret
+        operation.parent = ret
+        iteration.parent = ret
+
+        ret
+    }
+
+    function parseWhile(): While {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let successWhile1: bool = lexer.parseKeyword(whileKeyword)
+        if successWhile1
+            lexer.advance()
+        else
+            return(null)
+
+        let successLeftParen2: bool = lexer.parsePunctuation(leftParen)
+        if successLeftParen2
+            lexer.advance()
+        else
+            return(null)
+
+        let condition: Operation = parseOperation()
+        if condition == null
+            return(null)
+
+        let successRightParen4: bool = lexer.parsePunctuation(rightParen)
+        if successRightParen4
+            lexer.advance()
+        else
+            return(null)
+
+        let iteration: Loop = parseLoop()
+        if iteration == null
+            return(null)
+
+        let end: Position$ = lexer.getPosition()
+
+        let ret: While = new While(condition, iteration, new Position(start), new Position(end))
+        condition.parent = ret
+        iteration.parent = ret
+
+        ret
+    }
+
+    function parseDo(): Do {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let successDo1: bool = lexer.parseKeyword(doKeyword)
+        if successDo1
+            lexer.advance()
+        else
+            return(null)
+
+        let iteration: Loop = parseLoop()
+        if iteration == null
+            return(null)
+
+        let successWhile3: bool = lexer.parseKeyword(whileKeyword)
+        if successWhile3
+            lexer.advance()
+        else
+            return(null)
+
+        let successLeftParen4: bool = lexer.parsePunctuation(leftParen)
+        if successLeftParen4
+            lexer.advance()
+        else
+            return(null)
+
+        let condition: Operation = parseOperation()
+        if condition == null
+            return(null)
+
+        let successRightParen6: bool = lexer.parsePunctuation(rightParen)
+        if successRightParen6
+            lexer.advance()
+        else
+            return(null)
+
+        let end: Position$ = lexer.getPosition()
+
+        let ret: Do = new Do(iteration, condition, new Position(start), new Position(end))
+        iteration.parent = ret
+        condition.parent = ret
+
+        ret
+    }
+
+    function parseLoop(): Loop {
+        {
+            let node: SimpleLoop = parseSimpleLoop()
+            if node != null
+                return(node)
+        }
+
+        {
+            let node: NamedLoop = parseNamedLoop()
+            if node != null
+                return(node)
+        }
+
+        null
+    }
+
+    function parseSimpleLoop(): SimpleLoop {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let code: Block = parseBlock()
+        if code == null
+            return(null)
+
+        let end: Position$ = lexer.getPosition()
+
+        let ret: SimpleLoop = new SimpleLoop(code, new Position(start), new Position(end))
+        code.parent = ret
+
+        ret
+    }
+
+    function parseNamedLoop(): NamedLoop {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let successLoop1: bool = lexer.parseKeyword(loopKeyword)
+        if successLoop1
+            lexer.advance()
+        else
+            return(null)
+
+        let name: string = lexer.parseIdentifier()
+        if (name != null) && isIdentifier(name)
+            lexer.advance()
+        else
+            return(null)
+
+        let code: Block = parseBlock()
+        if code == null
+            return(null)
+
+        let end: Position$ = lexer.getPosition()
+
+        let ret: NamedLoop = new NamedLoop(name, code, new Position(start), new Position(end))
+        code.parent = ret
+
+        ret
+    }
+
+    function parseThis(): This {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let successThis1: bool = lexer.parseKeyword(thisKeyword)
+        if successThis1
+            lexer.advance()
+        else
+            return(null)
+
+        let end: Position$ = lexer.getPosition()
+
+        let ret: This = new This(new Position(start), new Position(end))
+
+        ret
+    }
+
+    function parseNew(): New {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let successNew1: bool = lexer.parseKeyword(newKeyword)
+        if successNew1
+            lexer.advance()
+        else
+            return(null)
+
+        let typeSpec: Type = parseType()
+        if typeSpec == null
+            return(null)
+
+        let end: Position$ = lexer.getPosition()
+
+        let ret: New = new New(typeSpec, new Position(start), new Position(end))
+        typeSpec.parent = ret
+
+        ret
+    }
+
+    function parseObject(): Object {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let successLeftParen1: bool = lexer.parsePunctuation(leftParen)
+        if successLeftParen1
+            lexer.advance()
+        else
+            return(null)
+
+        let firstOp: Operation = parseOperation()
+
+        let additionalOps: Item[] = parseItemList()
+
+        let successRightParen4: bool = lexer.parsePunctuation(rightParen)
+        if successRightParen4
+            lexer.advance()
+        else
+            return(null)
+
+        let end: Position$ = lexer.getPosition()
+
+        let ret: Object = new Object(firstOp, additionalOps, new Position(start), new Position(end))
+        if firstOp != null
+            firstOp.parent = ret
+        if additionalOps != null {
+            for item: Item in additionalOps
+                item.parent = ret
+        }
+
+        ret
+    }
+
+    function parseArray(): Array {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let successLeftBracket1: bool = lexer.parsePunctuation(leftBracket)
+        if successLeftBracket1
+            lexer.advance()
+        else
+            return(null)
+
+        let firstOp: Operation = parseOperation()
+
+        let additionalOps: Item[] = parseItemList()
+
+        let successRightBracket4: bool = lexer.parsePunctuation(rightBracket)
+        if successRightBracket4
+            lexer.advance()
+        else
+            return(null)
+
+        let end: Position$ = lexer.getPosition()
+
+        let ret: Array = new Array(firstOp, additionalOps, new Position(start), new Position(end))
+        if firstOp != null
+            firstOp.parent = ret
+        if additionalOps != null {
+            for item: Item in additionalOps
+                item.parent = ret
+        }
+
+        ret
+    }
+
+    method parseItemList(): Array[Item] {
+        mutable ret: Array[Item]$ = null
+        while true {
+
+            let node: Item = parseItem()
+            if node == null
+                break
+
+            if ret == null
+                ret = new Item[]()
+
+            ret.add(node)
+        }
+
+        ret
+    }
+
+    function parseItem(): Item {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let successComma1: bool = lexer.parsePunctuation(comma)
+        if successComma1
+            lexer.advance()
+        else
+            return(null)
+
+        let operation: Operation = parseOperation()
+        if operation == null
+            return(null)
+
+        let end: Position$ = lexer.getPosition()
+
+        let ret: Item = new Item(operation, new Position(start), new Position(end))
+        operation.parent = ret
+
+        ret
+    }
+
+    function parseSizeOf(): SizeOf {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let successSizeof1: bool = lexer.parseKeyword(sizeofKeyword)
+        if successSizeof1
+            lexer.advance()
+        else
+            return(null)
+
+        let typeSpec: Type = parseType()
+        if typeSpec == null
+            return(null)
+
+        let end: Position$ = lexer.getPosition()
+
+        let ret: SizeOf = new SizeOf(typeSpec, new Position(start), new Position(end))
+        typeSpec.parent = ret
+
+        ret
+    }
+
+    function parseBreak(): Break {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let successBreak1: bool = lexer.parseKeyword(breakKeyword)
+        if successBreak1
+            lexer.advance()
+        else
+            return(null)
+
+        let iteration: string = lexer.parseIdentifier()
+        if (iteration != null) && isIdentifier(iteration)
+            lexer.advance()
+
+        let successSemicolon3: bool = lexer.parsePunctuation(semicolon)
+        if successSemicolon3
+            lexer.advance()
+
+        let end: Position$ = lexer.getPosition()
+
+        let ret: Break = new Break(iteration, new Position(start), new Position(end))
+
+        ret
+    }
+
+    function parseContinue(): Continue {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let successContinue1: bool = lexer.parseKeyword(continueKeyword)
+        if successContinue1
+            lexer.advance()
+        else
+            return(null)
+
+        let iteration: string = lexer.parseIdentifier()
+        if (iteration != null) && isIdentifier(iteration)
+            lexer.advance()
+
+        let successSemicolon3: bool = lexer.parsePunctuation(semicolon)
+        if successSemicolon3
+            lexer.advance()
+
+        let end: Position$ = lexer.getPosition()
+
+        let ret: Continue = new Continue(iteration, new Position(start), new Position(end))
+
+        ret
+    }
+
+    function parseReturn(): Return {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let successReturn1: bool = lexer.parseKeyword(returnKeyword)
+        if successReturn1
+            lexer.advance()
+        else
+            return(null)
+
+        let result: Calculation = parseCalculation()
+
+        let end: Position$ = lexer.getPosition()
+
+        let ret: Return = new Return(result, new Position(start), new Position(end))
+        if result != null
+            result.parent = ret
+
+        ret
+    }
+
+    function parseThrow(): Throw {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let successThrow1: bool = lexer.parseKeyword(throwKeyword)
+        if successThrow1
+            lexer.advance()
+        else
+            return(null)
+
+        let exception: Calculation = parseCalculation()
+        if exception == null
+            return(null)
+
+        let end: Position$ = lexer.getPosition()
+
+        let ret: Throw = new Throw(exception, new Position(start), new Position(end))
+        exception.parent = ret
+
+        ret
+    }
+
+    function parseClass(): Class {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let successClass1: bool = lexer.parseKeyword(classKeyword)
+        if successClass1
+            lexer.advance()
+        else
+            return(null)
+
+        let name: Name = parseName()
+        if name == null
+            return(null)
+
+        let generics: GenericParameters = parseGenericParameters()
+
+        let contents: Structure = parseStructure()
+
+        let baseClass: Extends = parseExtends()
+
+        let body: ClassBody = parseClassBody()
+
+        let end: Position$ = lexer.getPosition()
+
+        let ret: Class = new Class(name, generics, contents, baseClass, body, new Position(start), new Position(end))
+        name.parent = ret
+        if generics != null
+            generics.parent = ret
+        if contents != null
+            contents.parent = ret
+        if baseClass != null
+            baseClass.parent = ret
+        if body != null
+            body.parent = ret
+
+        ret
+    }
+
+    function parseGenericParameters(): GenericParameters {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let successLeftBracket1: bool = lexer.parsePunctuation(leftBracket)
+        if successLeftBracket1
+            lexer.advance()
+        else
+            return(null)
+
+        let name: string = lexer.parseIdentifier()
+        if (name != null) && isIdentifier(name)
+            lexer.advance()
+        else
+            return(null)
+
+        let additionalGenerics: GenericParameter[] = parseGenericParameterList()
+
+        let successRightBracket4: bool = lexer.parsePunctuation(rightBracket)
+        if successRightBracket4
+            lexer.advance()
+        else
+            return(null)
+
+        let end: Position$ = lexer.getPosition()
+
+        let ret: GenericParameters = new GenericParameters(name, additionalGenerics, new Position(start), new Position(end))
+        if additionalGenerics != null {
+            for item: GenericParameter in additionalGenerics
+                item.parent = ret
+        }
+
+        ret
+    }
+
+    method parseGenericParameterList(): Array[GenericParameter] {
+        mutable ret: Array[GenericParameter]$ = null
+        while true {
+
+            let node: GenericParameter = parseGenericParameter()
+            if node == null
+                break
+
+            if ret == null
+                ret = new GenericParameter[]()
+
+            ret.add(node)
+        }
+
+        ret
+    }
+
+    function parseGenericParameter(): GenericParameter {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let successComma1: bool = lexer.parsePunctuation(comma)
+        if successComma1
+            lexer.advance()
+        else
+            return(null)
+
+        let name: string = lexer.parseIdentifier()
+        if (name != null) && isIdentifier(name)
+            lexer.advance()
+        else
+            return(null)
+
+        let end: Position$ = lexer.getPosition()
+
+        let ret: GenericParameter = new GenericParameter(name, new Position(start), new Position(end))
+
+        ret
+    }
+
+    function parseExtends(): Extends {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let successExtends1: bool = lexer.parseKeyword(extendsKeyword)
+        if successExtends1
+            lexer.advance()
+        else
+            return(null)
+
+        let name: Name = parseName()
+        if name == null
+            return(null)
+
+        let end: Position$ = lexer.getPosition()
+
+        let ret: Extends = new Extends(name, new Position(start), new Position(end))
+        name.parent = ret
+
+        ret
+    }
+
+    function parseStructure(): Structure {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let successLeftParen1: bool = lexer.parsePunctuation(leftParen)
+        if successLeftParen1
+            lexer.advance()
+        else
+            return(null)
+
+        let components: Component[] = parseComponentList()
+
+        let successRightParen3: bool = lexer.parsePunctuation(rightParen)
+        if successRightParen3
+            lexer.advance()
+        else
+            return(null)
+
+        let end: Position$ = lexer.getPosition()
+
+        let ret: Structure = new Structure(components, new Position(start), new Position(end))
+        if components != null {
+            for item: Component in components
+                item.parent = ret
+        }
+
+        ret
+    }
+
+    method parseComponentList(): Array[Component] {
+        mutable ret: Array[Component]$ = null
+        while true {
+
+            let node: Component = parseComponent()
+            if node == null
+                break
+
+            if ret == null
+                ret = new Component[]()
+
+            ret.add(node)
+        }
+
+        ret
+    }
+
+    function parseComponent(): Component {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let name: string = lexer.parseIdentifier()
+        if (name != null) && isIdentifier(name)
+            lexer.advance()
+        else
+            return(null)
+
+        let typeAnnotation: TypeAnnotation = parseTypeAnnotation()
+
+        let successComma3: bool = lexer.parsePunctuation(comma)
+        if successComma3
+            lexer.advance()
+
+        let end: Position$ = lexer.getPosition()
+
+        let ret: Component = new Component(name, typeAnnotation, new Position(start), new Position(end))
+        if typeAnnotation != null
+            typeAnnotation.parent = ret
+
+        ret
+    }
+
+    function parseClassBody(): ClassBody {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let successLeftCurly1: bool = lexer.parsePunctuation(leftCurly)
+        if successLeftCurly1
+            lexer.advance()
+        else
+            return(null)
+
+        let members: Member[] = parseMemberList()
+
+        let successRightCurly3: bool = lexer.parsePunctuation(rightCurly)
+        if successRightCurly3
+            lexer.advance()
+        else
+            return(null)
+
+        let end: Position$ = lexer.getPosition()
+
+        let ret: ClassBody = new ClassBody(members, new Position(start), new Position(end))
+        if members != null {
+            for item: Member in members
+                item.parent = ret
+        }
+
+        ret
+    }
+
+    method parseMemberList(): Array[Member] {
+        mutable ret: Array[Member]$ = null
+        while true {
+
+            let node: Member = parseMember()
+            if node == null
+                break
+
+            if ret == null
+                ret = new Member[]()
+
+            ret.add(node)
+        }
+
+        ret
+    }
+
+    function parseMember(): Member {
+        {
+            let node: LetMember = parseLetMember()
+            if node != null
+                return(node)
+        }
+
+        {
+            let node: MutableMember = parseMutableMember()
+            if node != null
+                return(node)
+        }
+
+        {
+            let node: SetInitialization = parseSetInitialization()
+            if node != null
+                return(node)
+        }
+
+        {
+            let node: Method = parseMethod()
+            if node != null
+                return(node)
+        }
+
+        {
+            let node: StaticFunction = parseStaticFunction()
+            if node != null
+                return(node)
+        }
+
+        {
+            let node: Operator = parseOperator()
+            if node != null
+                return(node)
+        }
+
+        {
+            let node: Initializer = parseInitializer()
+            if node != null
+                return(node)
+        }
+
+        {
+            let node: Allocator = parseAllocator()
+            if node != null
+                return(node)
+        }
+
+        null
+    }
+
+    function parseLetMember(): LetMember {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let definition: Let = parseLet()
+        if definition == null
+            return(null)
+
+        let end: Position$ = lexer.getPosition()
+
+        let ret: LetMember = new LetMember(definition, new Position(start), new Position(end))
+        definition.parent = ret
+
+        ret
+    }
+
+    function parseMutableMember(): MutableMember {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let definition: Mutable = parseMutable()
+        if definition == null
+            return(null)
+
+        let end: Position$ = lexer.getPosition()
+
+        let ret: MutableMember = new MutableMember(definition, new Position(start), new Position(end))
+        definition.parent = ret
+
+        ret
+    }
+
+    function parseSetInitialization(): SetInitialization {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let definition: Set = parseSet()
+        if definition == null
+            return(null)
+
+        let end: Position$ = lexer.getPosition()
+
+        let ret: SetInitialization = new SetInitialization(definition, new Position(start), new Position(end))
+        definition.parent = ret
+
+        ret
+    }
+
+    function parseMethod(): Method {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let successMethod1: bool = lexer.parseKeyword(methodKeyword)
+        if successMethod1
+            lexer.advance()
+        else
+            return(null)
+
+        let procedure: Procedure = parseProcedure()
+        if procedure == null
+            return(null)
+
+        let end: Position$ = lexer.getPosition()
+
+        let ret: Method = new Method(procedure, new Position(start), new Position(end))
+        procedure.parent = ret
+
+        ret
+    }
+
+    function parseStaticFunction(): StaticFunction {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let procedure: Function = parseFunction()
+        if procedure == null
+            return(null)
+
+        let end: Position$ = lexer.getPosition()
+
+        let ret: StaticFunction = new StaticFunction(procedure, new Position(start), new Position(end))
+        procedure.parent = ret
+
+        ret
+    }
+
+    function parseOperator(): Operator {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let successOperator1: bool = lexer.parseKeyword(operatorKeyword)
+        if successOperator1
+            lexer.advance()
+        else
+            return(null)
+
+        let routine: Routine = parseRoutine()
+        if routine == null
+            return(null)
+
+        let end: Position$ = lexer.getPosition()
+
+        let ret: Operator = new Operator(routine, new Position(start), new Position(end))
+        routine.parent = ret
+
+        ret
+    }
+
+    function parseInitializer(): Initializer {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let successInitializer1: bool = lexer.parseKeyword(initializerKeyword)
+        if successInitializer1
+            lexer.advance()
+        else
+            return(null)
+
+        let input: Structure = parseStructure()
+
+        let body: Block = parseBlock()
+        if body == null
+            return(null)
+
+        let end: Position$ = lexer.getPosition()
+
+        let ret: Initializer = new Initializer(input, body, new Position(start), new Position(end))
+        if input != null
+            input.parent = ret
+        body.parent = ret
+
+        ret
+    }
+
+    function parseAllocator(): Allocator {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let successAllocator1: bool = lexer.parseKeyword(allocatorKeyword)
+        if successAllocator1
+            lexer.advance()
+        else
+            return(null)
+
+        let input: Structure = parseStructure()
+
+        let body: Block = parseBlock()
+        if body == null
+            return(null)
+
+        let end: Position$ = lexer.getPosition()
+
+        let ret: Allocator = new Allocator(input, body, new Position(start), new Position(end))
+        if input != null
+            input.parent = ret
+        body.parent = ret
+
+        ret
+    }
+
+    function parseFunction(): Function {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let successFunction1: bool = lexer.parseKeyword(functionKeyword)
+        if successFunction1
+            lexer.advance()
+        else
+            return(null)
+
+        let procedure: Procedure = parseProcedure()
+        if procedure == null
+            return(null)
+
+        let end: Position$ = lexer.getPosition()
+
+        let ret: Function = new Function(procedure, new Position(start), new Position(end))
+        procedure.parent = ret
+
+        ret
+    }
+
+    function parseProcedure(): Procedure {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let name: string = lexer.parseIdentifier()
+        if (name != null) && isIdentifier(name)
+            lexer.advance()
+        else
+            return(null)
+
+        let routine: Routine = parseRoutine()
+        if routine == null
+            return(null)
+
+        let end: Position$ = lexer.getPosition()
+
+        let ret: Procedure = new Procedure(name, routine, new Position(start), new Position(end))
+        routine.parent = ret
+
+        ret
+    }
+
+    function parseRoutine(): Routine {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let input: Structure = parseStructure()
+
+        let output: TypeAnnotation = parseTypeAnnotation()
+
+        let throwsClause: Throws = parseThrows()
+
+        let body: Block = parseBlock()
+        if body == null
+            return(null)
+
+        let end: Position$ = lexer.getPosition()
+
+        let ret: Routine = new Routine(input, output, throwsClause, body, new Position(start), new Position(end))
+        if input != null
+            input.parent = ret
+        if output != null
+            output.parent = ret
+        if throwsClause != null
+            throwsClause.parent = ret
+        body.parent = ret
+
+        ret
+    }
+
+    function parseTypeAnnotation(): TypeAnnotation {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let successColon1: bool = lexer.parsePunctuation(colon)
+        if successColon1
+            lexer.advance()
+        else
+            return(null)
+
+        let typeSpec: TypeSpec = parseTypeSpec()
+        if typeSpec == null
+            return(null)
+
+        let end: Position$ = lexer.getPosition()
+
+        let ret: TypeAnnotation = new TypeAnnotation(typeSpec, new Position(start), new Position(end))
+        typeSpec.parent = ret
+
+        ret
+    }
+
+    method parseTypeSpecList(): Array[TypeSpec] {
+        mutable ret: Array[TypeSpec]$ = null
+        while true {
+
+            let node: TypeSpec = parseTypeSpec()
+            if node == null
+                break
+
+            if ret == null
+                ret = new TypeSpec[]()
+
+            ret.add(node)
+        }
+
+        ret
+    }
+
+    function parseTypeSpec(): TypeSpec {
+        {
+            let node: Type = parseType()
+            if node != null
+                return(node)
+        }
+
+        {
+            let node: Variant = parseVariant()
+            if node != null
+                return(node)
+        }
+
+        null
+    }
+
+    method parseTypeList(): Array[Type] {
+        mutable ret: Array[Type]$ = null
+        while true {
+
+            let node: Type = parseType()
+            if node == null
+                break
+
+            if ret == null
+                ret = new Type[]()
+
+            ret.add(node)
+        }
+
+        ret
+    }
+
+    function parseType(): Type {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let name: Name = parseName()
+        if name == null
+            return(null)
+
+        let generics: GenericArguments = parseGenericArguments()
+
+        let optional: Optional = parseOptional()
+
+        let lifeTime: LifeTime = parseLifeTime()
+
+        let end: Position$ = lexer.getPosition()
+
+        let ret: Type = new Type(name, generics, optional, lifeTime, new Position(start), new Position(end))
+        name.parent = ret
+        if generics != null
+            generics.parent = ret
+        if optional != null
+            optional.parent = ret
+        if lifeTime != null
+            lifeTime.parent = ret
+
+        ret
+    }
+
+    function parseVariant(): Variant {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let successLeftParen1: bool = lexer.parsePunctuation(leftParen)
+        if successLeftParen1
+            lexer.advance()
+        else
+            return(null)
+
+        let types: Type[] = parseTypeList()
+
+        let successRightParen3: bool = lexer.parsePunctuation(rightParen)
+        if successRightParen3
+            lexer.advance()
+        else
+            return(null)
+
+        let end: Position$ = lexer.getPosition()
+
+        let ret: Variant = new Variant(types, new Position(start), new Position(end))
+        if types != null {
+            for item: Type in types
+                item.parent = ret
+        }
+
+        ret
+    }
+
+    function parseThrows(): Throws {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let successThrows1: bool = lexer.parseKeyword(throwsKeyword)
+        if successThrows1
+            lexer.advance()
+        else
+            return(null)
+
+        let throwsType: TypeSpec = parseTypeSpec()
+        if throwsType == null
+            return(null)
+
+        let end: Position$ = lexer.getPosition()
+
+        let ret: Throws = new Throws(throwsType, new Position(start), new Position(end))
+        throwsType.parent = ret
+
+        ret
+    }
+
+    function parseGenericArguments(): GenericArguments {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let successLeftBracket1: bool = lexer.parsePunctuation(leftBracket)
+        if successLeftBracket1
+            lexer.advance()
+        else
+            return(null)
+
+        let generic: Type = parseType()
+        if generic == null
+            return(null)
+
+        let additionalGenerics: GenericArgument[] = parseGenericArgumentList()
+
+        let successRightBracket4: bool = lexer.parsePunctuation(rightBracket)
+        if successRightBracket4
+            lexer.advance()
+        else
+            return(null)
+
+        let end: Position$ = lexer.getPosition()
+
+        let ret: GenericArguments = new GenericArguments(generic, additionalGenerics, new Position(start), new Position(end))
+        generic.parent = ret
+        if additionalGenerics != null {
+            for item: GenericArgument in additionalGenerics
+                item.parent = ret
+        }
+
+        ret
+    }
+
+    method parseGenericArgumentList(): Array[GenericArgument] {
+        mutable ret: Array[GenericArgument]$ = null
+        while true {
+
+            let node: GenericArgument = parseGenericArgument()
+            if node == null
+                break
+
+            if ret == null
+                ret = new GenericArgument[]()
+
+            ret.add(node)
+        }
+
+        ret
+    }
+
+    function parseGenericArgument(): GenericArgument {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let successComma1: bool = lexer.parsePunctuation(comma)
+        if successComma1
+            lexer.advance()
+        else
+            return(null)
+
+        let typeSpec: Type = parseType()
+        if typeSpec == null
+            return(null)
+
+        let end: Position$ = lexer.getPosition()
+
+        let ret: GenericArgument = new GenericArgument(typeSpec, new Position(start), new Position(end))
+        typeSpec.parent = ret
+
+        ret
+    }
+
+    function parseOptional(): Optional {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let successQuestion1: bool = lexer.parsePunctuation(question)
+        if successQuestion1
+            lexer.advance()
+        else
+            return(null)
+
+        let end: Position$ = lexer.getPosition()
+
+        let ret: Optional = new Optional(new Position(start), new Position(end))
+
+        ret
+    }
+
+    function parseLifeTime(): LifeTime {
+        {
+            let node: Root = parseRoot()
+            if node != null
+                return(node)
+        }
+
+        {
+            let node: Local = parseLocal()
+            if node != null
+                return(node)
+        }
+
+        {
+            let node: Reference = parseReference()
+            if node != null
+                return(node)
+        }
+
+        {
+            let node: Thrown = parseThrown()
+            if node != null
+                return(node)
+        }
+
+        null
+    }
+
+    function parseRoot(): Root {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let successDollar1: bool = lexer.parsePunctuation(dollar)
+        if successDollar1
+            lexer.advance()
+        else
+            return(null)
+
+        let end: Position$ = lexer.getPosition()
+
+        let ret: Root = new Root(new Position(start), new Position(end))
+
+        ret
+    }
+
+    function parseLocal(): Local {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let successAt1: bool = lexer.parsePunctuation(at)
+        if successAt1
+            lexer.advance()
+        else
+            return(null)
+
+        let location: string = lexer.parseIdentifier()
+        if (location != null) && isIdentifier(location)
+            lexer.advance()
+        else
+            return(null)
+
+        let end: Position$ = lexer.getPosition()
+
+        let ret: Local = new Local(location, new Position(start), new Position(end))
+
+        ret
+    }
+
+    function parseReference(): Reference {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let successBacktick1: bool = lexer.parsePunctuation(backtick)
+        if successBacktick1
+            lexer.advance()
+        else
+            return(null)
+
+        let age: Literal = lexer.parseLiteral()
+        if age != null
+            lexer.advance()
+
+        let end: Position$ = lexer.getPosition()
+
+        let ret: Reference = new Reference(age, new Position(start), new Position(end))
+
+        ret
+    }
+
+    function parseThrown(): Thrown {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let successHash1: bool = lexer.parsePunctuation(hash)
+        if successHash1
+            lexer.advance()
+        else
+            return(null)
+
+        let end: Position$ = lexer.getPosition()
+
+        let ret: Thrown = new Thrown(new Position(start), new Position(end))
+
+        ret
+    }
+
+    function isAtEnd(): bool {
+        lexer.isAtEnd()
+    }
+
+    function isIdentifier(id: string): bool {
+        if id.equals(usingKeyword)
+            return(false)
+
+        if id.equals(namespaceKeyword)
+            return(false)
+
+        if id.equals(typedefKeyword)
+            return(false)
+
+        if id.equals(letKeyword)
+            return(false)
+
+        if id.equals(mutableKeyword)
+            return(false)
+
+        if id.equals(threadlocalKeyword)
+            return(false)
+
+        if id.equals(varKeyword)
+            return(false)
+
+        if id.equals(setKeyword)
+            return(false)
+
+        if id.equals(classKeyword)
+            return(false)
+
+        if id.equals(extendsKeyword)
+            return(false)
+
+        if id.equals(initializerKeyword)
+            return(false)
+
+        if id.equals(allocatorKeyword)
+            return(false)
+
+        if id.equals(methodKeyword)
+            return(false)
+
+        if id.equals(functionKeyword)
+            return(false)
+
+        if id.equals(operatorKeyword)
+            return(false)
+
+        if id.equals(thisKeyword)
+            return(false)
+
+        if id.equals(newKeyword)
+            return(false)
+
+        if id.equals(sizeofKeyword)
+            return(false)
+
+        if id.equals(catchKeyword)
+            return(false)
+
+        if id.equals(throwsKeyword)
+            return(false)
+
+        if id.equals(asKeyword)
+            return(false)
+
+        if id.equals(isKeyword)
+            return(false)
+
+        if id.equals(ifKeyword)
+            return(false)
+
+        if id.equals(elseKeyword)
+            return(false)
+
+        if id.equals(switchKeyword)
+            return(false)
+
+        if id.equals(caseKeyword)
+            return(false)
+
+        if id.equals(defaultKeyword)
+            return(false)
+
+        if id.equals(forKeyword)
+            return(false)
+
+        if id.equals(inKeyword)
+            return(false)
+
+        if id.equals(whileKeyword)
+            return(false)
+
+        if id.equals(doKeyword)
+            return(false)
+
+        if id.equals(loopKeyword)
+            return(false)
+
+        if id.equals(breakKeyword)
+            return(false)
+
+        if id.equals(continueKeyword)
+            return(false)
+
+        if id.equals(returnKeyword)
+            return(false)
+
+        if id.equals(throwKeyword)
+            return(false)
+
+        return(true)
+    }
+
+    mutable lexer: Lexer
+    let fileName: string
+
+    let usingKeyword: string
+    let namespaceKeyword: string
+    let typedefKeyword: string
+    let letKeyword: string
+    let mutableKeyword: string
+    let threadlocalKeyword: string
+    let varKeyword: string
+    let setKeyword: string
+    let classKeyword: string
+    let extendsKeyword: string
+    let initializerKeyword: string
+    let allocatorKeyword: string
+    let methodKeyword: string
+    let functionKeyword: string
+    let operatorKeyword: string
+    let thisKeyword: string
+    let newKeyword: string
+    let sizeofKeyword: string
+    let catchKeyword: string
+    let throwsKeyword: string
+    let asKeyword: string
+    let isKeyword: string
+    let ifKeyword: string
+    let elseKeyword: string
+    let switchKeyword: string
+    let caseKeyword: string
+    let defaultKeyword: string
+    let forKeyword: string
+    let inKeyword: string
+    let whileKeyword: string
+    let doKeyword: string
+    let loopKeyword: string
+    let breakKeyword: string
+    let continueKeyword: string
+    let returnKeyword: string
+    let throwKeyword: string
+    let semicolon: string
+    let leftCurly: string
+    let rightCurly: string
+    let leftParen: string
+    let rightParen: string
+    let leftBracket: string
+    let rightBracket: string
+    let dot: string
+    let comma: string
+    let colon: string
+    let question: string
+    let exclamation: string
+    let at: string
+    let hash: string
+    let dollar: string
+    let underscore: string
+    let backtick: string
+}
+
+class Visitor {
+    function openProgram(program: Program): bool {
+        true
+    }
+
+    function closeProgram(program: Program) {
+    }
+
+    function openFile(file: File): bool {
+        true
+    }
+
+    function closeFile(file: File) {
+    }
+
+    function openUsing(using: Using): bool {
+        true
+    }
+
+    function closeUsing(using: Using) {
+    }
+
+    function openName(name: Name): bool {
+        true
+    }
+
+    function closeName(name: Name) {
+    }
+
+    function visitExtension(extension: Extension) {
+    }
+
+    function openNamespace(namespace: Namespace): bool {
+        true
+    }
+
+    function closeNamespace(namespace: Namespace) {
+    }
+
+    function openTypeDefinition(typeDefinition: TypeDefinition): bool {
+        true
+    }
+
+    function closeTypeDefinition(typeDefinition: TypeDefinition) {
+    }
+
+    function openLet(let: Let): bool {
+        true
+    }
+
+    function closeLet(let: Let) {
+    }
+
+    function openVar(var: Var): bool {
+        true
+    }
+
+    function closeVar(var: Var) {
+    }
+
+    function openMutable(mutable: Mutable): bool {
+        true
+    }
+
+    function closeMutable(mutable: Mutable) {
+    }
+
+    function openThreadLocal(threadLocal: ThreadLocal): bool {
+        true
+    }
+
+    function closeThreadLocal(threadLocal: ThreadLocal) {
+    }
+
+    function openBinding(binding: Binding): bool {
+        true
+    }
+
+    function closeBinding(binding: Binding) {
+    }
+
+    function openSet(set: Set): bool {
+        true
+    }
+
+    function closeSet(set: Set) {
+    }
+
+    function openCalculation(calculation: Calculation): bool {
+        true
+    }
+
+    function closeCalculation(calculation: Calculation) {
+    }
+
+    function openOperation(operation: Operation): bool {
+        true
+    }
+
+    function closeOperation(operation: Operation) {
+    }
+
+    function openOperand(operand: Operand): bool {
+        true
+    }
+
+    function closeOperand(operand: Operand) {
+    }
+
+    function visitMemberAccess(memberAccess: MemberAccess) {
+    }
+
+    function openAs(as: As): bool {
+        true
+    }
+
+    function closeAs(as: As) {
+    }
+
+    function openIs(is: Is): bool {
+        true
+    }
+
+    function closeIs(is: Is) {
+    }
+
+    function visitUnwrap(unwrap: Unwrap) {
+    }
+
+    function openCatch(catch: Catch): bool {
+        true
+    }
+
+    function closeCatch(catch: Catch) {
+    }
+
+    function openWildCardCatchPattern(wildCardCatchPattern: WildCardCatchPattern): bool {
+        true
+    }
+
+    function closeWildCardCatchPattern(wildCardCatchPattern: WildCardCatchPattern) {
+    }
+
+    function openNameCatchPattern(nameCatchPattern: NameCatchPattern): bool {
+        true
+    }
+
+    function closeNameCatchPattern(nameCatchPattern: NameCatchPattern) {
+    }
+
+    function openBlock(block: Block): bool {
+        true
+    }
+
+    function closeBlock(block: Block) {
+    }
+
+    function visitConstant(constant: Constant) {
+    }
+
+    function openIf(if: If): bool {
+        true
+    }
+
+    function closeIf(if: If) {
+    }
+
+    function openElse(else: Else): bool {
+        true
+    }
+
+    function closeElse(else: Else) {
+    }
+
+    function openSwitch(switch: Switch): bool {
+        true
+    }
+
+    function closeSwitch(switch: Switch) {
+    }
+
+    function openSwitchCase(switchCase: SwitchCase): bool {
+        true
+    }
+
+    function closeSwitchCase(switchCase: SwitchCase) {
+    }
+
+    function openItemCaseLabel(itemCaseLabel: ItemCaseLabel): bool {
+        true
+    }
+
+    function closeItemCaseLabel(itemCaseLabel: ItemCaseLabel) {
+    }
+
+    function openCaseItem(caseItem: CaseItem): bool {
+        true
+    }
+
+    function closeCaseItem(caseItem: CaseItem) {
+    }
+
+    function openConstantPattern(constantPattern: ConstantPattern): bool {
+        true
+    }
+
+    function closeConstantPattern(constantPattern: ConstantPattern) {
+    }
+
+    function visitWildcardPattern(wildcardPattern: WildcardPattern) {
+    }
+
+    function openNamePattern(namePattern: NamePattern): bool {
+        true
+    }
+
+    function closeNamePattern(namePattern: NamePattern) {
+    }
+
+    function visitDefaultCaseLabel(defaultCaseLabel: DefaultCaseLabel) {
+    }
+
+    function openFor(for: For): bool {
+        true
+    }
+
+    function closeFor(for: For) {
+    }
+
+    function openWhile(while: While): bool {
+        true
+    }
+
+    function closeWhile(while: While) {
+    }
+
+    function openDo(do: Do): bool {
+        true
+    }
+
+    function closeDo(do: Do) {
+    }
+
+    function openSimpleLoop(simpleLoop: SimpleLoop): bool {
+        true
+    }
+
+    function closeSimpleLoop(simpleLoop: SimpleLoop) {
+    }
+
+    function openNamedLoop(namedLoop: NamedLoop): bool {
+        true
+    }
+
+    function closeNamedLoop(namedLoop: NamedLoop) {
+    }
+
+    function visitThis(this: This) {
+    }
+
+    function openNew(new: New): bool {
+        true
+    }
+
+    function closeNew(new: New) {
+    }
+
+    function openObject(object: Object): bool {
+        true
+    }
+
+    function closeObject(object: Object) {
+    }
+
+    function openArray(array: Array): bool {
+        true
+    }
+
+    function closeArray(array: Array) {
+    }
+
+    function openItem(item: Item): bool {
+        true
+    }
+
+    function closeItem(item: Item) {
+    }
+
+    function openSizeOf(sizeOf: SizeOf): bool {
+        true
+    }
+
+    function closeSizeOf(sizeOf: SizeOf) {
+    }
+
+    function visitBreak(break: Break) {
+    }
+
+    function visitContinue(continue: Continue) {
+    }
+
+    function openReturn(return: Return): bool {
+        true
+    }
+
+    function closeReturn(return: Return) {
+    }
+
+    function openThrow(throw: Throw): bool {
+        true
+    }
+
+    function closeThrow(throw: Throw) {
+    }
+
+    function openClass(class: Class): bool {
+        true
+    }
+
+    function closeClass(class: Class) {
+    }
+
+    function openGenericParameters(genericParameters: GenericParameters): bool {
+        true
+    }
+
+    function closeGenericParameters(genericParameters: GenericParameters) {
+    }
+
+    function visitGenericParameter(genericParameter: GenericParameter) {
+    }
+
+    function openExtends(extends: Extends): bool {
+        true
+    }
+
+    function closeExtends(extends: Extends) {
+    }
+
+    function openStructure(structure: Structure): bool {
+        true
+    }
+
+    function closeStructure(structure: Structure) {
+    }
+
+    function openComponent(component: Component): bool {
+        true
+    }
+
+    function closeComponent(component: Component) {
+    }
+
+    function openClassBody(classBody: ClassBody): bool {
+        true
+    }
+
+    function closeClassBody(classBody: ClassBody) {
+    }
+
+    function openLetMember(letMember: LetMember): bool {
+        true
+    }
+
+    function closeLetMember(letMember: LetMember) {
+    }
+
+    function openMutableMember(mutableMember: MutableMember): bool {
+        true
+    }
+
+    function closeMutableMember(mutableMember: MutableMember) {
+    }
+
+    function openSetInitialization(setInitialization: SetInitialization): bool {
+        true
+    }
+
+    function closeSetInitialization(setInitialization: SetInitialization) {
+    }
+
+    function openMethod(method: Method): bool {
+        true
+    }
+
+    function closeMethod(method: Method) {
+    }
+
+    function openStaticFunction(staticFunction: StaticFunction): bool {
+        true
+    }
+
+    function closeStaticFunction(staticFunction: StaticFunction) {
+    }
+
+    function openOperator(operator: Operator): bool {
+        true
+    }
+
+    function closeOperator(operator: Operator) {
+    }
+
+    function openInitializer(initializer: Initializer): bool {
+        true
+    }
+
+    function closeInitializer(initializer: Initializer) {
+    }
+
+    function openAllocator(allocator: Allocator): bool {
+        true
+    }
+
+    function closeAllocator(allocator: Allocator) {
+    }
+
+    function openFunction(function: Function): bool {
+        true
+    }
+
+    function closeFunction(function: Function) {
+    }
+
+    function openProcedure(procedure: Procedure): bool {
+        true
+    }
+
+    function closeProcedure(procedure: Procedure) {
+    }
+
+    function openRoutine(routine: Routine): bool {
+        true
+    }
+
+    function closeRoutine(routine: Routine) {
+    }
+
+    function openTypeAnnotation(typeAnnotation: TypeAnnotation): bool {
+        true
+    }
+
+    function closeTypeAnnotation(typeAnnotation: TypeAnnotation) {
+    }
+
+    function openType(type: Type): bool {
+        true
+    }
+
+    function closeType(type: Type) {
+    }
+
+    function openVariant(variant: Variant): bool {
+        true
+    }
+
+    function closeVariant(variant: Variant) {
+    }
+
+    function openThrows(throws: Throws): bool {
+        true
+    }
+
+    function closeThrows(throws: Throws) {
+    }
+
+    function openGenericArguments(genericArguments: GenericArguments): bool {
+        true
+    }
+
+    function closeGenericArguments(genericArguments: GenericArguments) {
+    }
+
+    function openGenericArgument(genericArgument: GenericArgument): bool {
+        true
+    }
+
+    function closeGenericArgument(genericArgument: GenericArgument) {
+    }
+
+    function visitOptional(optional: Optional) {
+    }
+
+    function visitRoot(root: Root) {
+    }
+
+    function visitLocal(local: Local) {
+    }
+
+    function visitReference(reference: Reference) {
+    }
+
+    function visitThrown(thrown: Thrown) {
+    }
+}
+
+class SyntaxNode {
+    let start: Position
+    let end: Position
+    mutable parent: SyntaxNode&
+}
+
+class Program extends SyntaxNode {
+
+    constructor(name: string, files: File[]) {
+        start = new Position(0, 0)
+        end = new Position(0, 0)
+        this.name = name
+        this.modules = modules
+        this.parent = null
+        this.start = start
+        this.end = end
+    }
+
+    function accept(mutable visitor: Visitor) {
+        if !visitor.openProgram(this)
+            return
+        if files != null {
+            for node: File in files
+                node.accept(visitor)
+        }
+        visitor.closeProgram(this)
+    }
+
+    let name: string
+    let files: File[]
+}
+
+class File extends SyntaxNode {
+
+    constructor(usings: Using[], statements: Statement[], start: Position, end: Position) {
+        this.usings = usings
+        this.statements = statements
+    }
+
+    function accept(mutable visitor: Visitor) {
+        if !visitor.openFile(this)
+            return
+        if usings != null {
+            for node: Using in usings
+                node.accept(visitor)
+        }
+        if statements != null {
+            for node: Statement in statements
+                node.accept(visitor)
+        }
+        visitor.closeFile(this)
+    }
+
+    let usings: Using[]
+    let statements: Statement[]
+}
+
+class Statement extends SyntaxNode {
+
+    function accept(mutable visitor: Visitor) {
+    }
+
+}
+
+class Using extends SyntaxNode {
+
+    constructor(name: Name, start: Position, end: Position) {
+        this.name = name
+    }
+
+    function accept(mutable visitor: Visitor) {
+        if !visitor.openUsing(this)
+            return
+        name.accept(visitor)
+        visitor.closeUsing(this)
+    }
+
+    let name: Name
+}
+
+class Name extends Expression {
+
+    constructor(name: string, extensions: Extension[], start: Position, end: Position) {
+        this.name = name
+        this.extensions = extensions
+    }
+
+    function accept(mutable visitor: Visitor) {
+        if !visitor.openName(this)
+            return
+        if extensions != null {
+            for node: Extension in extensions
+                node.accept(visitor)
+        }
+        visitor.closeName(this)
+    }
+
+    let name: string
+    let extensions: Extension[]
+}
+
+class Extension extends SyntaxNode {
+
+    constructor(name: string, start: Position, end: Position) {
+        this.name = name
+    }
+
+    function accept(mutable visitor: Visitor) {
+        visitor.visitExtension(this)
+    }
+
+    let name: string
+}
+
+class Namespace extends Statement {
+
+    constructor(name: Name, usings: Using[], statements: Statement[], start: Position, end: Position) {
+        this.name = name
+        this.usings = usings
+        this.statements = statements
+    }
+
+    function accept(mutable visitor: Visitor) {
+        if !visitor.openNamespace(this)
+            return
+        name.accept(visitor)
+        if usings != null {
+            for node: Using in usings
+                node.accept(visitor)
+        }
+        if statements != null {
+            for node: Statement in statements
+                node.accept(visitor)
+        }
+        visitor.closeNamespace(this)
+    }
+
+    let name: Name
+    let usings: Using[]
+    let statements: Statement[]
+}
+
+class TypeDefinition extends Statement {
+
+    constructor(typeName: string, typeSpec: TypeSpec, start: Position, end: Position) {
+        this.typeName = typeName
+        this.typeSpec = typeSpec
+    }
+
+    function accept(mutable visitor: Visitor) {
+        if !visitor.openTypeDefinition(this)
+            return
+        typeSpec.accept(visitor)
+        visitor.closeTypeDefinition(this)
+    }
+
+    let typeName: string
+    let typeSpec: TypeSpec
+}
+
+class Let extends Statement {
+
+    constructor(binding: Binding, start: Position, end: Position) {
+        this.binding = binding
+    }
+
+    function accept(mutable visitor: Visitor) {
+        if !visitor.openLet(this)
+            return
+        binding.accept(visitor)
+        visitor.closeLet(this)
+    }
+
+    let binding: Binding
+}
+
+class Var extends Statement {
+
+    constructor(binding: Binding, start: Position, end: Position) {
+        this.binding = binding
+    }
+
+    function accept(mutable visitor: Visitor) {
+        if !visitor.openVar(this)
+            return
+        binding.accept(visitor)
+        visitor.closeVar(this)
+    }
+
+    let binding: Binding
+}
+
+class Mutable extends Statement {
+
+    constructor(binding: Binding, start: Position, end: Position) {
+        this.binding = binding
+    }
+
+    function accept(mutable visitor: Visitor) {
+        if !visitor.openMutable(this)
+            return
+        binding.accept(visitor)
+        visitor.closeMutable(this)
+    }
+
+    let binding: Binding
+}
+
+class ThreadLocal extends Statement {
+
+    constructor(binding: Binding, start: Position, end: Position) {
+        this.binding = binding
+    }
+
+    function accept(mutable visitor: Visitor) {
+        if !visitor.openThreadLocal(this)
+            return
+        binding.accept(visitor)
+        visitor.closeThreadLocal(this)
+    }
+
+    let binding: Binding
+}
+
+class Binding extends SyntaxNode {
+
+    constructor(name: Name, typeAnnotation: TypeAnnotation, calculation: Calculation, start: Position, end: Position) {
+        this.name = name
+        this.typeAnnotation = typeAnnotation
+        this.calculation = calculation
+    }
+
+    function accept(mutable visitor: Visitor) {
+        if !visitor.openBinding(this)
+            return
+        name.accept(visitor)
+        if typeAnnotation != null
+            typeAnnotation.accept(visitor)
+        calculation.accept(visitor)
+        visitor.closeBinding(this)
+    }
+
+    let name: Name
+    let typeAnnotation: TypeAnnotation
+    let calculation: Calculation
+}
+
+class Set extends Statement {
+
+    constructor(lValue: Operation, rValue: Calculation, start: Position, end: Position) {
+        this.lValue = lValue
+        this.rValue = rValue
+    }
+
+    function accept(mutable visitor: Visitor) {
+        if !visitor.openSet(this)
+            return
+        lValue.accept(visitor)
+        rValue.accept(visitor)
+        visitor.closeSet(this)
+    }
+
+    let lValue: Operation
+    let rValue: Calculation
+}
+
+class Calculation extends Statement {
+
+    constructor(operation: Operation, start: Position, end: Position) {
+        this.operation = operation
+    }
+
+    function accept(mutable visitor: Visitor) {
+        if !visitor.openCalculation(this)
+            return
+        operation.accept(visitor)
+        visitor.closeCalculation(this)
+    }
+
+    let operation: Operation
+}
+
+class Operation extends SyntaxNode {
+
+    constructor(op: Operand[], start: Position, end: Position) {
+        this.op = op
+    }
+
+    function accept(mutable visitor: Visitor) {
+        if !visitor.openOperation(this)
+            return
+        if op != null {
+            for node: Operand in op
+                node.accept(visitor)
+        }
+        visitor.closeOperation(this)
+    }
+
+    let op: Operand[]
+}
+
+class Operand extends Statement {
+
+    constructor(primary: Expression, postfixes: Postfix[], start: Position, end: Position) {
+        this.primary = primary
+        this.postfixes = postfixes
+    }
+
+    function accept(mutable visitor: Visitor) {
+        if !visitor.openOperand(this)
+            return
+        primary.accept(visitor)
+        if postfixes != null {
+            for node: Postfix in postfixes
+                node.accept(visitor)
+        }
+        visitor.closeOperand(this)
+    }
+
+    let primary: Expression
+    let postfixes: Postfix[]
+}
+
+class Postfix extends SyntaxNode {
+
+    function accept(mutable visitor: Visitor) {
+    }
+
+}
+
+class MemberAccess extends Postfix {
+
+    constructor(member: string, start: Position, end: Position) {
+        this.member = member
+    }
+
+    function accept(mutable visitor: Visitor) {
+        visitor.visitMemberAccess(this)
+    }
+
+    let member: string
+}
+
+class As extends Postfix {
+
+    constructor(typeSpec: TypeSpec, start: Position, end: Position) {
+        this.typeSpec = typeSpec
+    }
+
+    function accept(mutable visitor: Visitor) {
+        if !visitor.openAs(this)
+            return
+        typeSpec.accept(visitor)
+        visitor.closeAs(this)
+    }
+
+    let typeSpec: TypeSpec
+}
+
+class Is extends Postfix {
+
+    constructor(typeSpec: TypeSpec, start: Position, end: Position) {
+        this.typeSpec = typeSpec
+    }
+
+    function accept(mutable visitor: Visitor) {
+        if !visitor.openIs(this)
+            return
+        typeSpec.accept(visitor)
+        visitor.closeIs(this)
+    }
+
+    let typeSpec: TypeSpec
+}
+
+class Unwrap extends Postfix {
+
+    constructor(start: Position, end: Position) {
+    }
+
+    function accept(mutable visitor: Visitor) {
+        visitor.visitUnwrap(this)
+    }
+
+}
+
+class Catch extends Postfix {
+
+    constructor(typeSpec: CatchPattern, handler: Block, start: Position, end: Position) {
+        this.typeSpec = typeSpec
+        this.handler = handler
+    }
+
+    function accept(mutable visitor: Visitor) {
+        if !visitor.openCatch(this)
+            return
+        typeSpec.accept(visitor)
+        handler.accept(visitor)
+        visitor.closeCatch(this)
+    }
+
+    let typeSpec: CatchPattern
+    let handler: Block
+}
+
+class CatchPattern extends SyntaxNode {
+
+    function accept(mutable visitor: Visitor) {
+    }
+
+}
+
+class WildCardCatchPattern extends CatchPattern {
+
+    constructor(pattern: WildcardPattern, start: Position, end: Position) {
+        this.pattern = pattern
+    }
+
+    function accept(mutable visitor: Visitor) {
+        if !visitor.openWildCardCatchPattern(this)
+            return
+        pattern.accept(visitor)
+        visitor.closeWildCardCatchPattern(this)
+    }
+
+    let pattern: WildcardPattern
+}
+
+class NameCatchPattern extends CatchPattern {
+
+    constructor(name: Name, errorName: string, start: Position, end: Position) {
+        this.name = name
+        this.errorName = errorName
+    }
+
+    function accept(mutable visitor: Visitor) {
+        if !visitor.openNameCatchPattern(this)
+            return
+        if name != null
+            name.accept(visitor)
+        visitor.closeNameCatchPattern(this)
+    }
+
+    let name: Name
+    let errorName: string
+}
+
+class Expression extends SyntaxNode {
+
+    function accept(mutable visitor: Visitor) {
+    }
+
+}
+
+class Block extends Expression {
+
+    constructor(statements: Statement[], start: Position, end: Position) {
+        this.statements = statements
+    }
+
+    function accept(mutable visitor: Visitor) {
+        if !visitor.openBlock(this)
+            return
+        if statements != null {
+            for node: Statement in statements
+                node.accept(visitor)
+        }
+        visitor.closeBlock(this)
+    }
+
+    let statements: Statement[]
+}
+
+class Constant extends Expression {
+
+    constructor(literal: Literal, start: Position, end: Position) {
+        this.literal = literal
+    }
+
+    function accept(mutable visitor: Visitor) {
+        visitor.visitConstant(this)
+    }
+
+    let literal: Literal
+}
+
+class If extends Expression {
+
+    constructor(condition: Operation, consequent: Block, elseClause: Else, start: Position, end: Position) {
+        this.condition = condition
+        this.consequent = consequent
+        this.elseClause = elseClause
+    }
+
+    function accept(mutable visitor: Visitor) {
+        if !visitor.openIf(this)
+            return
+        condition.accept(visitor)
+        consequent.accept(visitor)
+        if elseClause != null
+            elseClause.accept(visitor)
+        visitor.closeIf(this)
+    }
+
+    let condition: Operation
+    let consequent: Block
+    let elseClause: Else
+}
+
+class Else extends SyntaxNode {
+
+    constructor(alternative: Block, start: Position, end: Position) {
+        this.alternative = alternative
+    }
+
+    function accept(mutable visitor: Visitor) {
+        if !visitor.openElse(this)
+            return
+        alternative.accept(visitor)
+        visitor.closeElse(this)
+    }
+
+    let alternative: Block
+}
+
+class Switch extends Expression {
+
+    constructor(condition: Operation, cases: SwitchCase[], start: Position, end: Position) {
+        this.condition = condition
+        this.cases = cases
+    }
+
+    function accept(mutable visitor: Visitor) {
+        if !visitor.openSwitch(this)
+            return
+        condition.accept(visitor)
+        if cases != null {
+            for node: SwitchCase in cases
+                node.accept(visitor)
+        }
+        visitor.closeSwitch(this)
+    }
+
+    let condition: Operation
+    let cases: SwitchCase[]
+}
+
+class SwitchCase extends SyntaxNode {
+
+    constructor(label: CaseLabel, content: Block, start: Position, end: Position) {
+        this.label = label
+        this.content = content
+    }
+
+    function accept(mutable visitor: Visitor) {
+        if !visitor.openSwitchCase(this)
+            return
+        label.accept(visitor)
+        content.accept(visitor)
+        visitor.closeSwitchCase(this)
+    }
+
+    let label: CaseLabel
+    let content: Block
+}
+
+class CaseLabel extends SyntaxNode {
+
+    function accept(mutable visitor: Visitor) {
+    }
+
+}
+
+class ItemCaseLabel extends CaseLabel {
+
+    constructor(items: CaseItem[], start: Position, end: Position) {
+        this.items = items
+    }
+
+    function accept(mutable visitor: Visitor) {
+        if !visitor.openItemCaseLabel(this)
+            return
+        if items != null {
+            for node: CaseItem in items
+                node.accept(visitor)
+        }
+        visitor.closeItemCaseLabel(this)
+    }
+
+    let items: CaseItem[]
+}
+
+class CaseItem extends SyntaxNode {
+
+    constructor(pattern: CasePattern, start: Position, end: Position) {
+        this.pattern = pattern
+    }
+
+    function accept(mutable visitor: Visitor) {
+        if !visitor.openCaseItem(this)
+            return
+        pattern.accept(visitor)
+        visitor.closeCaseItem(this)
+    }
+
+    let pattern: CasePattern
+}
+
+class CasePattern extends SyntaxNode {
+
+    function accept(mutable visitor: Visitor) {
+    }
+
+}
+
+class ConstantPattern extends CasePattern {
+
+    constructor(constant: Constant, start: Position, end: Position) {
+        this.constant = constant
+    }
+
+    function accept(mutable visitor: Visitor) {
+        if !visitor.openConstantPattern(this)
+            return
+        constant.accept(visitor)
+        visitor.closeConstantPattern(this)
+    }
+
+    let constant: Constant
+}
+
+class WildcardPattern extends CasePattern {
+
+    constructor(start: Position, end: Position) {
+    }
+
+    function accept(mutable visitor: Visitor) {
+        visitor.visitWildcardPattern(this)
+    }
+
+}
+
+class NamePattern extends CasePattern {
+
+    constructor(name: Name, start: Position, end: Position) {
+        this.name = name
+    }
+
+    function accept(mutable visitor: Visitor) {
+        if !visitor.openNamePattern(this)
+            return
+        name.accept(visitor)
+        visitor.closeNamePattern(this)
+    }
+
+    let name: Name
+}
+
+class DefaultCaseLabel extends CaseLabel {
+
+    constructor(start: Position, end: Position) {
+    }
+
+    function accept(mutable visitor: Visitor) {
+        visitor.visitDefaultCaseLabel(this)
+    }
+
+}
+
+class For extends Expression {
+
+    constructor(index: string, typeAnnotation: TypeAnnotation, operation: Operation, iteration: Loop, start: Position, end: Position) {
+        this.index = index
+        this.typeAnnotation = typeAnnotation
+        this.operation = operation
+        this.iteration = iteration
+    }
+
+    function accept(mutable visitor: Visitor) {
+        if !visitor.openFor(this)
+            return
+        if typeAnnotation != null
+            typeAnnotation.accept(visitor)
+        operation.accept(visitor)
+        iteration.accept(visitor)
+        visitor.closeFor(this)
+    }
+
+    let index: string
+    let typeAnnotation: TypeAnnotation
+    let operation: Operation
+    let iteration: Loop
+}
+
+class While extends Expression {
+
+    constructor(condition: Operation, iteration: Loop, start: Position, end: Position) {
+        this.condition = condition
+        this.iteration = iteration
+    }
+
+    function accept(mutable visitor: Visitor) {
+        if !visitor.openWhile(this)
+            return
+        condition.accept(visitor)
+        iteration.accept(visitor)
+        visitor.closeWhile(this)
+    }
+
+    let condition: Operation
+    let iteration: Loop
+}
+
+class Do extends Expression {
+
+    constructor(iteration: Loop, condition: Operation, start: Position, end: Position) {
+        this.iteration = iteration
+        this.condition = condition
+    }
+
+    function accept(mutable visitor: Visitor) {
+        if !visitor.openDo(this)
+            return
+        iteration.accept(visitor)
+        condition.accept(visitor)
+        visitor.closeDo(this)
+    }
+
+    let iteration: Loop
+    let condition: Operation
+}
+
+class Loop extends SyntaxNode {
+
+    function accept(mutable visitor: Visitor) {
+    }
+
+}
+
+class SimpleLoop extends Loop {
+
+    constructor(code: Block, start: Position, end: Position) {
+        this.code = code
+    }
+
+    function accept(mutable visitor: Visitor) {
+        if !visitor.openSimpleLoop(this)
+            return
+        code.accept(visitor)
+        visitor.closeSimpleLoop(this)
+    }
+
+    let code: Block
+}
+
+class NamedLoop extends Loop {
+
+    constructor(name: string, code: Block, start: Position, end: Position) {
+        this.name = name
+        this.code = code
+    }
+
+    function accept(mutable visitor: Visitor) {
+        if !visitor.openNamedLoop(this)
+            return
+        code.accept(visitor)
+        visitor.closeNamedLoop(this)
+    }
+
+    let name: string
+    let code: Block
+}
+
+class This extends Expression {
+
+    constructor(start: Position, end: Position) {
+    }
+
+    function accept(mutable visitor: Visitor) {
+        visitor.visitThis(this)
+    }
+
+}
+
+class New extends Expression {
+
+    constructor(typeSpec: Type, start: Position, end: Position) {
+        this.typeSpec = typeSpec
+    }
+
+    function accept(mutable visitor: Visitor) {
+        if !visitor.openNew(this)
+            return
+        typeSpec.accept(visitor)
+        visitor.closeNew(this)
+    }
+
+    let typeSpec: Type
+}
+
+class Object extends Expression {
+
+    constructor(firstOp: Operation, additionalOps: Item[], start: Position, end: Position) {
+        this.firstOp = firstOp
+        this.additionalOps = additionalOps
+    }
+
+    function accept(mutable visitor: Visitor) {
+        if !visitor.openObject(this)
+            return
+        if firstOp != null
+            firstOp.accept(visitor)
+        if additionalOps != null {
+            for node: Item in additionalOps
+                node.accept(visitor)
+        }
+        visitor.closeObject(this)
+    }
+
+    let firstOp: Operation
+    let additionalOps: Item[]
+}
+
+class Array extends Expression {
+
+    constructor(firstOp: Operation, additionalOps: Item[], start: Position, end: Position) {
+        this.firstOp = firstOp
+        this.additionalOps = additionalOps
+    }
+
+    function accept(mutable visitor: Visitor) {
+        if !visitor.openArray(this)
+            return
+        if firstOp != null
+            firstOp.accept(visitor)
+        if additionalOps != null {
+            for node: Item in additionalOps
+                node.accept(visitor)
+        }
+        visitor.closeArray(this)
+    }
+
+    let firstOp: Operation
+    let additionalOps: Item[]
+}
+
+class Item extends SyntaxNode {
+
+    constructor(operation: Operation, start: Position, end: Position) {
+        this.operation = operation
+    }
+
+    function accept(mutable visitor: Visitor) {
+        if !visitor.openItem(this)
+            return
+        operation.accept(visitor)
+        visitor.closeItem(this)
+    }
+
+    let operation: Operation
+}
+
+class SizeOf extends Expression {
+
+    constructor(typeSpec: Type, start: Position, end: Position) {
+        this.typeSpec = typeSpec
+    }
+
+    function accept(mutable visitor: Visitor) {
+        if !visitor.openSizeOf(this)
+            return
+        typeSpec.accept(visitor)
+        visitor.closeSizeOf(this)
+    }
+
+    let typeSpec: Type
+}
+
+class Break extends Statement {
+
+    constructor(iteration: string, start: Position, end: Position) {
+        this.iteration = iteration
+    }
+
+    function accept(mutable visitor: Visitor) {
+        visitor.visitBreak(this)
+    }
+
+    let iteration: string
+}
+
+class Continue extends Statement {
+
+    constructor(iteration: string, start: Position, end: Position) {
+        this.iteration = iteration
+    }
+
+    function accept(mutable visitor: Visitor) {
+        visitor.visitContinue(this)
+    }
+
+    let iteration: string
+}
+
+class Return extends Statement {
+
+    constructor(result: Calculation, start: Position, end: Position) {
+        this.result = result
+    }
+
+    function accept(mutable visitor: Visitor) {
+        if !visitor.openReturn(this)
+            return
+        if result != null
+            result.accept(visitor)
+        visitor.closeReturn(this)
+    }
+
+    let result: Calculation
+}
+
+class Throw extends Statement {
+
+    constructor(exception: Calculation, start: Position, end: Position) {
+        this.exception = exception
+    }
+
+    function accept(mutable visitor: Visitor) {
+        if !visitor.openThrow(this)
+            return
+        exception.accept(visitor)
+        visitor.closeThrow(this)
+    }
+
+    let exception: Calculation
+}
+
+class Class extends Statement {
+
+    constructor(name: Name, generics: GenericParameters, contents: Structure, baseClass: Extends, body: ClassBody, start: Position, end: Position) {
+        this.name = name
+        this.generics = generics
+        this.contents = contents
+        this.baseClass = baseClass
+        this.body = body
+    }
+
+    function accept(mutable visitor: Visitor) {
+        if !visitor.openClass(this)
+            return
+        name.accept(visitor)
+        if generics != null
+            generics.accept(visitor)
+        if contents != null
+            contents.accept(visitor)
+        if baseClass != null
+            baseClass.accept(visitor)
+        if body != null
+            body.accept(visitor)
+        visitor.closeClass(this)
+    }
+
+    let name: Name
+    let generics: GenericParameters
+    let contents: Structure
+    let baseClass: Extends
+    let body: ClassBody
+}
+
+class GenericParameters extends SyntaxNode {
+
+    constructor(name: string, additionalGenerics: GenericParameter[], start: Position, end: Position) {
+        this.name = name
+        this.additionalGenerics = additionalGenerics
+    }
+
+    function accept(mutable visitor: Visitor) {
+        if !visitor.openGenericParameters(this)
+            return
+        if additionalGenerics != null {
+            for node: GenericParameter in additionalGenerics
+                node.accept(visitor)
+        }
+        visitor.closeGenericParameters(this)
+    }
+
+    let name: string
+    let additionalGenerics: GenericParameter[]
+}
+
+class GenericParameter extends SyntaxNode {
+
+    constructor(name: string, start: Position, end: Position) {
+        this.name = name
+    }
+
+    function accept(mutable visitor: Visitor) {
+        visitor.visitGenericParameter(this)
+    }
+
+    let name: string
+}
+
+class Extends extends SyntaxNode {
+
+    constructor(name: Name, start: Position, end: Position) {
+        this.name = name
+    }
+
+    function accept(mutable visitor: Visitor) {
+        if !visitor.openExtends(this)
+            return
+        name.accept(visitor)
+        visitor.closeExtends(this)
+    }
+
+    let name: Name
+}
+
+class Structure extends SyntaxNode {
+
+    constructor(components: Component[], start: Position, end: Position) {
+        this.components = components
+    }
+
+    function accept(mutable visitor: Visitor) {
+        if !visitor.openStructure(this)
+            return
+        if components != null {
+            for node: Component in components
+                node.accept(visitor)
+        }
+        visitor.closeStructure(this)
+    }
+
+    let components: Component[]
+}
+
+class Component extends SyntaxNode {
+
+    constructor(name: string, typeAnnotation: TypeAnnotation, start: Position, end: Position) {
+        this.name = name
+        this.typeAnnotation = typeAnnotation
+    }
+
+    function accept(mutable visitor: Visitor) {
+        if !visitor.openComponent(this)
+            return
+        if typeAnnotation != null
+            typeAnnotation.accept(visitor)
+        visitor.closeComponent(this)
+    }
+
+    let name: string
+    let typeAnnotation: TypeAnnotation
+}
+
+class ClassBody extends SyntaxNode {
+
+    constructor(members: Member[], start: Position, end: Position) {
+        this.members = members
+    }
+
+    function accept(mutable visitor: Visitor) {
+        if !visitor.openClassBody(this)
+            return
+        if members != null {
+            for node: Member in members
+                node.accept(visitor)
+        }
+        visitor.closeClassBody(this)
+    }
+
+    let members: Member[]
+}
+
+class Member extends SyntaxNode {
+
+    function accept(mutable visitor: Visitor) {
+    }
+
+}
+
+class LetMember extends Member {
+
+    constructor(definition: Let, start: Position, end: Position) {
+        this.definition = definition
+    }
+
+    function accept(mutable visitor: Visitor) {
+        if !visitor.openLetMember(this)
+            return
+        definition.accept(visitor)
+        visitor.closeLetMember(this)
+    }
+
+    let definition: Let
+}
+
+class MutableMember extends Member {
+
+    constructor(definition: Mutable, start: Position, end: Position) {
+        this.definition = definition
+    }
+
+    function accept(mutable visitor: Visitor) {
+        if !visitor.openMutableMember(this)
+            return
+        definition.accept(visitor)
+        visitor.closeMutableMember(this)
+    }
+
+    let definition: Mutable
+}
+
+class SetInitialization extends Member {
+
+    constructor(definition: Set, start: Position, end: Position) {
+        this.definition = definition
+    }
+
+    function accept(mutable visitor: Visitor) {
+        if !visitor.openSetInitialization(this)
+            return
+        definition.accept(visitor)
+        visitor.closeSetInitialization(this)
+    }
+
+    let definition: Set
+}
+
+class Method extends Member {
+
+    constructor(procedure: Procedure, start: Position, end: Position) {
+        this.procedure = procedure
+    }
+
+    function accept(mutable visitor: Visitor) {
+        if !visitor.openMethod(this)
+            return
+        procedure.accept(visitor)
+        visitor.closeMethod(this)
+    }
+
+    let procedure: Procedure
+}
+
+class StaticFunction extends Member {
+
+    constructor(procedure: Function, start: Position, end: Position) {
+        this.procedure = procedure
+    }
+
+    function accept(mutable visitor: Visitor) {
+        if !visitor.openStaticFunction(this)
+            return
+        procedure.accept(visitor)
+        visitor.closeStaticFunction(this)
+    }
+
+    let procedure: Function
+}
+
+class Operator extends Member {
+
+    constructor(routine: Routine, start: Position, end: Position) {
+        this.routine = routine
+    }
+
+    function accept(mutable visitor: Visitor) {
+        if !visitor.openOperator(this)
+            return
+        routine.accept(visitor)
+        visitor.closeOperator(this)
+    }
+
+    let routine: Routine
+}
+
+class Initializer extends Member {
+
+    constructor(input: Structure, body: Block, start: Position, end: Position) {
+        this.input = input
+        this.body = body
+    }
+
+    function accept(mutable visitor: Visitor) {
+        if !visitor.openInitializer(this)
+            return
+        if input != null
+            input.accept(visitor)
+        body.accept(visitor)
+        visitor.closeInitializer(this)
+    }
+
+    let input: Structure
+    let body: Block
+}
+
+class Allocator extends Member {
+
+    constructor(input: Structure, body: Block, start: Position, end: Position) {
+        this.input = input
+        this.body = body
+    }
+
+    function accept(mutable visitor: Visitor) {
+        if !visitor.openAllocator(this)
+            return
+        if input != null
+            input.accept(visitor)
+        body.accept(visitor)
+        visitor.closeAllocator(this)
+    }
+
+    let input: Structure
+    let body: Block
+}
+
+class Function extends Statement {
+
+    constructor(procedure: Procedure, start: Position, end: Position) {
+        this.procedure = procedure
+    }
+
+    function accept(mutable visitor: Visitor) {
+        if !visitor.openFunction(this)
+            return
+        procedure.accept(visitor)
+        visitor.closeFunction(this)
+    }
+
+    let procedure: Procedure
+}
+
+class Procedure extends SyntaxNode {
+
+    constructor(name: string, routine: Routine, start: Position, end: Position) {
+        this.name = name
+        this.routine = routine
+    }
+
+    function accept(mutable visitor: Visitor) {
+        if !visitor.openProcedure(this)
+            return
+        routine.accept(visitor)
+        visitor.closeProcedure(this)
+    }
+
+    let name: string
+    let routine: Routine
+}
+
+class Routine extends SyntaxNode {
+
+    constructor(input: Structure, output: TypeAnnotation, throwsClause: Throws, body: Block, start: Position, end: Position) {
+        this.input = input
+        this.output = output
+        this.throwsClause = throwsClause
+        this.body = body
+    }
+
+    function accept(mutable visitor: Visitor) {
+        if !visitor.openRoutine(this)
+            return
+        if input != null
+            input.accept(visitor)
+        if output != null
+            output.accept(visitor)
+        if throwsClause != null
+            throwsClause.accept(visitor)
+        body.accept(visitor)
+        visitor.closeRoutine(this)
+    }
+
+    let input: Structure
+    let output: TypeAnnotation
+    let throwsClause: Throws
+    let body: Block
+}
+
+class TypeAnnotation extends SyntaxNode {
+
+    constructor(typeSpec: TypeSpec, start: Position, end: Position) {
+        this.typeSpec = typeSpec
+    }
+
+    function accept(mutable visitor: Visitor) {
+        if !visitor.openTypeAnnotation(this)
+            return
+        typeSpec.accept(visitor)
+        visitor.closeTypeAnnotation(this)
+    }
+
+    let typeSpec: TypeSpec
+}
+
+class TypeSpec extends SyntaxNode {
+
+    function accept(mutable visitor: Visitor) {
+    }
+
+}
+
+class Type extends TypeSpec {
+
+    constructor(name: Name, generics: GenericArguments, optional: Optional, lifeTime: LifeTime, start: Position, end: Position) {
+        this.name = name
+        this.generics = generics
+        this.optional = optional
+        this.lifeTime = lifeTime
+    }
+
+    function accept(mutable visitor: Visitor) {
+        if !visitor.openType(this)
+            return
+        name.accept(visitor)
+        if generics != null
+            generics.accept(visitor)
+        if optional != null
+            optional.accept(visitor)
+        if lifeTime != null
+            lifeTime.accept(visitor)
+        visitor.closeType(this)
+    }
+
+    let name: Name
+    let generics: GenericArguments
+    let optional: Optional
+    let lifeTime: LifeTime
+}
+
+class Variant extends TypeSpec {
+
+    constructor(types: Type[], start: Position, end: Position) {
+        this.types = types
+    }
+
+    function accept(mutable visitor: Visitor) {
+        if !visitor.openVariant(this)
+            return
+        if types != null {
+            for node: Type in types
+                node.accept(visitor)
+        }
+        visitor.closeVariant(this)
+    }
+
+    let types: Type[]
+}
+
+class Throws extends SyntaxNode {
+
+    constructor(throwsType: TypeSpec, start: Position, end: Position) {
+        this.throwsType = throwsType
+    }
+
+    function accept(mutable visitor: Visitor) {
+        if !visitor.openThrows(this)
+            return
+        throwsType.accept(visitor)
+        visitor.closeThrows(this)
+    }
+
+    let throwsType: TypeSpec
+}
+
+class GenericArguments extends SyntaxNode {
+
+    constructor(generic: Type, additionalGenerics: GenericArgument[], start: Position, end: Position) {
+        this.generic = generic
+        this.additionalGenerics = additionalGenerics
+    }
+
+    function accept(mutable visitor: Visitor) {
+        if !visitor.openGenericArguments(this)
+            return
+        generic.accept(visitor)
+        if additionalGenerics != null {
+            for node: GenericArgument in additionalGenerics
+                node.accept(visitor)
+        }
+        visitor.closeGenericArguments(this)
+    }
+
+    let generic: Type
+    let additionalGenerics: GenericArgument[]
+}
+
+class GenericArgument extends SyntaxNode {
+
+    constructor(typeSpec: Type, start: Position, end: Position) {
+        this.typeSpec = typeSpec
+    }
+
+    function accept(mutable visitor: Visitor) {
+        if !visitor.openGenericArgument(this)
+            return
+        typeSpec.accept(visitor)
+        visitor.closeGenericArgument(this)
+    }
+
+    let typeSpec: Type
+}
+
+class Optional extends SyntaxNode {
+
+    constructor(start: Position, end: Position) {
+    }
+
+    function accept(mutable visitor: Visitor) {
+        visitor.visitOptional(this)
+    }
+
+}
+
+class LifeTime extends SyntaxNode {
+
+    function accept(mutable visitor: Visitor) {
+    }
+
+}
+
+class Root extends LifeTime {
+
+    constructor(start: Position, end: Position) {
+    }
+
+    function accept(mutable visitor: Visitor) {
+        visitor.visitRoot(this)
+    }
+
+}
+
+class Local extends LifeTime {
+
+    constructor(location: string, start: Position, end: Position) {
+        this.location = location
+    }
+
+    function accept(mutable visitor: Visitor) {
+        visitor.visitLocal(this)
+    }
+
+    let location: string
+}
+
+class Reference extends LifeTime {
+
+    constructor(age: Literal, start: Position, end: Position) {
+        this.age = age
+    }
+
+    function accept(mutable visitor: Visitor) {
+        visitor.visitReference(this)
+    }
+
+    let age: Literal
+}
+
+class Thrown extends LifeTime {
+
+    constructor(start: Position, end: Position) {
+    }
+
+    function accept(mutable visitor: Visitor) {
+        visitor.visitThrown(this)
+    }
+
+}

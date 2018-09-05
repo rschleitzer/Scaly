@@ -1,8 +1,8 @@
 namespace scaly {
     class string {
         allocator(page: Page, cstring: pointer[char]) {
-            let length strlen cstring
-            let packedLength getPackedLength(length)
+            let length: int strlen cstring
+            let packedLength: int getPackedLength(length)
             let buffer: pointer[string] page.allocateObject (packedLength + length)
             writePackedLength(buffer, length)
             copyNativeString(cstring, buffer + packedLength, length)

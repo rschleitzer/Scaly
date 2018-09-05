@@ -7,10 +7,10 @@
         <content link = File                  multiple          property = files
 
     <syntax id = File                                           top
+        <content link = Using                 multiple optional property = usings
         <content link = Statement             multiple optional property = statements
 
     <syntax id = Statement                    multiple abstract
-        <content link = Using
         <content link = Namespace
         <content link = TypeDefinition
         <content link = Let
@@ -21,16 +21,12 @@
         <content link = Calculation
         <content link = Function
         <content link = Class
-        <content link = Initializer
-        <content link = Allocator
-        <content link = Method
-        <content link = Operator
         <content link = Break
         <content link = Continue
         <content link = Return
         <content link = Throw
 
-    <syntax id = Using                                          base = Statement
+    <syntax id = Using                        multiple
         <content link = using
         <content link = Name                                    property = name
 
@@ -45,7 +41,10 @@
     <syntax id = Namespace                                      base = Statement
         <content link = namespace
         <content link = Name                                    property = name
-        <content link = Block                                   property = scope
+        <content link = leftCurly
+        <content link = Using                 multiple optional property = usings
+        <content link = Statement             multiple optional property = statements
+        <content link = rightCurly
 
     <syntax id = TypeDefinition                                 base = Statement
         <content link = typedef
@@ -249,9 +248,7 @@
 
     <syntax id = New                                            base = Expression
         <content link = new
-        <content link = Name                                    property = name
-        <content link = GenericArguments               optional property = generics
-        <content link = LifeTime                       optional property = lifeTime
+        <content link = Type                                    property = typeSpec
 
     <syntax id = Object                                         base = Expression
         <content link = leftParen
@@ -293,11 +290,11 @@
 
     <syntax id = Class                                          base = Statement
         <content link = class
-        <content identifier                                     property = name
+        <content link = Name                                    property = name
         <content link = GenericParameters              optional property = generics
         <content link = Structure                      optional property = contents
         <content link = Extends                        optional property = baseClass
-        <content link = Block                          optional property = body
+        <content link = ClassBody                      optional property = body
 
     <syntax id = GenericParameters
         <content link = leftBracket
@@ -323,27 +320,54 @@
         <content link = TypeAnnotation                 optional property = typeAnnotation
         <content link = comma                          optional
 
-    <syntax id = Initializer                                    base = Statement
+    <syntax id = ClassBody
+        <content link = leftCurly
+        <content link = Member                multiple optional property = members
+        <content link = rightCurly
+
+    <syntax id = Member                       multiple abstract
+        <content link = LetMember
+        <content link = MutableMember
+        <content link = SetInitialization
+        <content link = Method
+        <content link = StaticFunction
+        <content link = Operator
+        <content link = Initializer
+        <content link = Allocator
+
+    <syntax id = LetMember                                      base = Member
+        <content link = Let                                     property = definition
+
+    <syntax id = MutableMember                                  base = Member
+        <content link = Mutable                                 property = definition
+
+    <syntax id = SetInitialization                              base = Member
+        <content link = Set                                     property = definition
+
+    <syntax id = Method                                         base = Member
+        <content link = method
+        <content link = Procedure                               property = procedure
+
+    <syntax id = StaticFunction                                 base = Member
+        <content link = Function                                property = procedure
+
+    <syntax id = Operator                                       base = Member
+        <content link = operator
+        <content link = Routine                                 property = routine
+
+    <syntax id = Initializer                                    base = Member
         <content link = initializer
         <content link = Structure                      optional property = input
         <content link = Block                                   property = body
 
-    <syntax id = Allocator                                      base = Statement
+    <syntax id = Allocator                                      base = Member
         <content link = allocator
         <content link = Structure                      optional property = input
         <content link = Block                                   property = body
 
-    <syntax id = Method                                         base = Statement
-        <content link = method
-        <content link = Procedure                               property = procedure
-
     <syntax id = Function                                       base = Statement
         <content link = function
         <content link = Procedure                               property = procedure
-
-    <syntax id = Operator                                       base = Statement
-        <content link = operator
-        <content link = Routine                                 property = routine
 
     <syntax id = Procedure
         <content identifier                                     property = name
@@ -371,7 +395,7 @@
 
     <syntax id = Variant                                        base = TypeSpec
         <content link = leftParen
-        <content link = TypeSpec              multiple optional property = types
+        <content link = Type                  multiple optional property = types
         <content link = rightParen
 
     <syntax id = Throws

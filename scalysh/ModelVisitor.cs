@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace scalysh
+namespace scalyc
 {
     class ProgramModel
     {
@@ -23,8 +23,32 @@ namespace scalysh
         public string name;
         public NamespaceModel parentNamespace;
         public ClassModel parentClass;
+        public List<AllocatorModel> allocators = new List<AllocatorModel>();
         public Dictionary<string, ClassModel> subClasses = new Dictionary<string, ClassModel>();
         public Dictionary<string, FunctionModel> functions = new Dictionary<string, FunctionModel>();
+    }
+
+    class AllocatorModel
+    {
+        public ClassModel parentClass;
+        public StructureModel structure;
+    }
+
+    class StructureModel
+    {
+        public Dictionary<string, ComponentModel> components = new Dictionary<string, ComponentModel>();
+    }
+
+    class ComponentModel
+    {
+        public string name;
+        public List<TypeModel> types = new List<TypeModel>();
+    }
+
+    class TypeModel
+    {
+        public List<string> names = new List<string>();
+        public List<TypeModel> generics = new List<TypeModel>();
     }
 
     class FunctionModel
@@ -41,6 +65,11 @@ namespace scalysh
         string currentFile;
         Stack<NamespaceModel> namespaceStack = new Stack<NamespaceModel>();
         Stack<ClassModel> classStack = new Stack<ClassModel>();
+        AllocatorModel currentAllocator;
+        StructureModel currentStructure;
+        ComponentModel currentComponent;
+        Stack<TypeModel> typeStack = new Stack<TypeModel>();
+        Stack<TypeModel> genericStack = new Stack<TypeModel>();
 
 
         public override bool openProgram(ProgramSyntax programSyntax)
@@ -58,12 +87,32 @@ namespace scalysh
         public override bool openNamespace(NamespaceSyntax namespaceSyntax)
         {
             var name = namespaceSyntax.name.name;
-            NamespaceModel theNamespace = null;
             NamespaceModel currentNamespace = null;
 
+            NamespaceModel theNamespace = AddNamespace(namespaceSyntax.name.name);
+            currentNamespace = theNamespace;
+
+            if (namespaceSyntax.name.extensions != null)
+                foreach (var extension in namespaceSyntax.name.extensions)
+                    AddNamespace(extension.name);
+
+            foreach (var statement in namespaceSyntax.statements)
+                statement.accept(this);
+
+            namespaceStack.Pop();
+            if (namespaceSyntax.name.extensions != null)
+                foreach (var extension in namespaceSyntax.name.extensions)
+                    namespaceStack.Pop();
+
+            return false;
+        }
+
+        NamespaceModel AddNamespace(string name)
+        {
+            NamespaceModel theNamespace = null;
             if (namespaceStack.Count > 0)
             {
-                currentNamespace = namespaceStack.Peek();
+                var currentNamespace = namespaceStack.Peek();
                 if (currentNamespace.subNamespaces.ContainsKey(name))
                 {
                     theNamespace = currentNamespace.subNamespaces[name];
@@ -85,74 +134,46 @@ namespace scalysh
                     theNamespace = new NamespaceModel() { name = name };
                     programModel.namespaces.Add(name, theNamespace);
                 }
-                
             }
 
             namespaceStack.Push(theNamespace);
-            currentNamespace = theNamespace;
 
-            if (namespaceSyntax.name.extensions != null)
-            {
-                foreach (var extension in namespaceSyntax.name.extensions)
-                {
-
-                    NamespaceModel subNamespaceModel = null;
-                    if (currentNamespace.subNamespaces.ContainsKey(extension.name))
-                    {
-                        subNamespaceModel = currentNamespace.subNamespaces[extension.name];
-                    }
-                    else 
-                    {
-                        subNamespaceModel = new NamespaceModel() { name = extension.name, parentNamespace = currentNamespace  };
-                        currentNamespace.subNamespaces.Add(extension.name, subNamespaceModel);
-                    }
-
-                    namespaceStack.Push(subNamespaceModel);
-                    currentNamespace = subNamespaceModel;
-                    name = extension.name;
-                }
-            }
-
-            namespaceSyntax.scope.accept(this);
-
-            namespaceStack.Pop();
-            if (namespaceSyntax.name.extensions != null)
-                foreach (var extension in namespaceSyntax.name.extensions)
-                    namespaceStack.Pop();
-            return false;
+            return theNamespace;
         }
 
         public override bool openClass(ClassSyntax classSyntax)
         {
             ClassModel theClass = null;
 
-            var name = classSyntax.name;
+            var name = classSyntax.name.name;
+            if (classSyntax.name.extensions != null)
+            {
+                foreach (var extension in classSyntax.name.extensions)
+                {
+                    AddNamespace(name);
+                    name = extension.name;
+                }
+            }
+
+            ClassModel currentClass = null;
+            NamespaceModel currentNamespace = null;
+
             if (classStack.Count > 0)
             {
-                ClassModel currentClass = classStack.Peek();
+                currentClass = classStack.Peek();
                 if (currentClass.subClasses.ContainsKey(name))
                 {
                     theClass = currentClass.subClasses[name];
-                }
-                else
-                {
-                    theClass = new ClassModel() { name = name, parentClass = currentClass };
-                    currentClass.subClasses.Add(name, theClass);
                 }
             }
             else
             {
                 if (namespaceStack.Count > 0)
                 {
-                    NamespaceModel currentNamespace = namespaceStack.Peek();
+                    currentNamespace = namespaceStack.Peek();
                     if (currentNamespace.classes.ContainsKey(name))
                     {
                         theClass = currentNamespace.classes[name];
-                    }
-                    else
-                    {
-                        theClass = new ClassModel() { name = name, parentNamespace = currentNamespace };
-                        currentNamespace.classes.Add(name, theClass);
                     }
                 }
                 else
@@ -161,13 +182,21 @@ namespace scalysh
                     {
                         theClass = programModel.classes[name];
                     }
-                    else
-                    {
-                        theClass = new ClassModel() { name = name};
-                        programModel.classes.Add(name, theClass);
-                    }
-                   
                 }
+            }
+
+            if (theClass == null)
+            {
+                theClass = new ClassModel() { name = name, parentClass = currentClass, parentNamespace = currentNamespace };
+
+                if (currentClass != null)
+                    currentClass.subClasses.Add(name, theClass);
+
+                else if (currentNamespace != null)
+                    currentNamespace.classes.Add(name, theClass);
+
+                else
+                    programModel.classes.Add(name, theClass);
             }
 
             classStack.Push(theClass);
@@ -179,7 +208,97 @@ namespace scalysh
                 classSyntax.body.accept(this);
 
             classStack.Pop();
+
+            if (classSyntax.name.extensions != null)
+                foreach (var extension in classSyntax.name.extensions)
+                    namespaceStack.Pop();
+
             return false;
+        }
+
+        public override bool openAllocator(AllocatorSyntax allocatorSyntax)
+        {
+            var currentClass = classStack.Peek();
+            currentAllocator = new AllocatorModel() { parentClass = currentClass };
+            currentClass.allocators.Add(currentAllocator);
+
+            return true;
+        }
+
+        public override void closeAllocator(AllocatorSyntax allocatorSyntax)
+        {
+            currentAllocator = null;
+        }
+
+        public override bool openStructure(StructureSyntax structureSyntax)
+        {
+            currentStructure = new StructureModel();
+            if (currentAllocator != null)
+                currentAllocator.structure = currentStructure;
+
+            return true;
+        }
+
+        public override void closeStructure(StructureSyntax structureSyntax)
+        {
+            currentStructure = null;
+        }
+
+        public override bool openComponent(ComponentSyntax componentSyntax)
+        {
+            currentComponent = new ComponentModel() { name = componentSyntax.name };
+            if (currentStructure != null)
+                currentStructure.components.Add(componentSyntax.name, currentComponent);
+
+            return true;
+        }
+
+        public override void closeComponent(ComponentSyntax componentSyntax)
+        {
+            currentComponent = null;
+        }
+
+        public override bool openType(TypeSyntax typeSyntax)
+        {
+            var typeModel = new TypeModel();
+            typeModel.names.Add(typeSyntax.name.name);
+            if (typeSyntax.name.extensions != null)
+                foreach (var extension in typeSyntax.name.extensions)
+                    typeModel.names.Add(extension.name);
+
+            if (genericStack.Count > 0)
+            {
+                var currentGeneric = genericStack.Peek();
+                currentGeneric.generics.Add(typeModel);
+            }
+            else 
+            {
+                if (currentComponent != null)
+                    currentComponent.types.Add(typeModel);
+            }
+
+            typeStack.Push(typeModel);
+
+            return true;
+        }
+
+        public override void closeType(TypeSyntax typeSyntax)
+        {
+            typeStack.Pop();
+        }
+
+        public override bool openGenericArguments(GenericArgumentsSyntax genericArgumentSyntax)
+        {
+            var currentType = typeStack.Peek();
+
+            genericStack.Push(currentType);
+
+            return true;
+        }
+
+        public override void closeGenericArguments(GenericArgumentsSyntax genericArgumentsSyntax)
+        {
+            genericStack.Pop();
         }
 
         public override bool openFunction(FunctionSyntax functionSyntax)

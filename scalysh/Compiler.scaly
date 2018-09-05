@@ -1,7 +1,10 @@
-class Compiler {
-    function compileFiles(options: Options) {
-        let files options.files;
-        mutable sources "";
+class scalyc.Compiler {
+
+    method compileFiles(options: Options) {
+
+        let files options.files
+        mutable sources ""
+
         for (file in files) loop test {
             let source: string@sources = File.readToString(file)
                 catch FileNotFoundError() {
@@ -38,7 +41,7 @@ class Compiler {
         print(message) catch _ { return }
     }
 
-    function parseUnit(moduleName: string, text: string): Module throws CompilerError {
+    method parseUnit(moduleName: string, text: string): Module throws CompilerError {
         mutable parser Parser(moduleName, text)
 
         let module: Module = parser.parseModule()

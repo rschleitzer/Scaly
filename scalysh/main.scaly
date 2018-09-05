@@ -1,9 +1,9 @@
-using Scaly
+using scalyc
 
-function main(argc: int, argv: pointer): int {
+function main(argc: int, argv: pointer[char]): int {
 
     // Collect the arguments into a string Array
-    mutable arguments: Array[string?]$ new Array[string?](argc - 1)
+    mutable arguments: Array[string?]$ new Array[string?]$(argc - 1)
 
     mutable i: int 1
     while (i < argc) {
@@ -12,7 +12,7 @@ function main(argc: int, argv: pointer): int {
     }
 
     // Call Scaly's top-level code
-    var ret Scaly.main(arguments)
+    var ret scalyc.main(arguments)
 
     // Only for monitoring, debugging and stuff
     CurrentTask.dispose()

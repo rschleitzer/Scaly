@@ -2,20 +2,13 @@ namespace scaly {
 
 class Array[T] {
 
-    mutable size: int
-    mutable capacity: int
-    mutable rawArray: pointer[T]
-
-    initializer() {
-        set size: 0
-        set capacity: 0
-        set rawArray: 0
-    }
+    mutable size: int 0
+    mutable capacity: int 0
+    mutable rawArray: pointer[T] ()
 
     initializer(capacity: int) {
-        set size: 0
         set this.capacity: capacity
-        set rawArray: 0
+        set rawArray: ()
     }
 
     initializer(array: Array[T]) {
@@ -32,16 +25,16 @@ class Array[T] {
         return rawArray + (i * sizeof T) as T
     }
 
-    function length(): int {
+    method length(): int {
         return size
     }
 
-    function getRawArray(): pointer {
+    method getRawArray(): pointer {
         return rawArray;
     }
 
     // Append a value to the array
-    function push(item: T) {
+    method push(item: T) {
         if (rawArray = ()) {
             set capacity: 1
             set size: 0
@@ -57,7 +50,7 @@ class Array[T] {
     }
 
     // Take away a value from the array's end
-    function pop(): T? {
+    method pop(): T? {
         if (size = 0) {
             return ()
         }
@@ -69,7 +62,7 @@ class Array[T] {
     }
 
     // Remove a value from the array
-    function remove(t: T) {
+    method remove(t: T) {
         mutable i: int 0
         do {
             if (this[i] = t) {
@@ -84,7 +77,7 @@ class Array[T] {
         } while (i < size)
     }
 
-    function reAllocate(newCapacity: int) {
+    method reAllocate(newCapacity: int) {
         let oldArray: pointer[T] rawArray
         set capacity: newCapacity
         allocate()
@@ -95,7 +88,7 @@ class Array[T] {
             getPage().reclaimArray(oldArray) }
     }
 
-    void allocate() {
+    method allocate() {
         set rawArray: getPage().allocateObject(capacity * sizeof pointer[T])
     }
 }
