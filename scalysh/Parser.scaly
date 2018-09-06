@@ -1,4 +1,6 @@
-class scalyc.Parser(
+namespace scalyc {
+
+class Parser(
 
     fileName: string,
     text: string
@@ -176,18 +178,6 @@ class scalyc.Parser(
         }
 
         {
-            let node: Intrinsic = parseIntrinsic()
-            if (node <> ()) {
-                return node }
-        }
-
-        {
-            let node: Define = parseDefine()
-            if (node <> ()) {
-                return node }
-        }
-
-        {
             let node: Break = parseBreak()
             if (node <> ()) {
                 return node }
@@ -207,6 +197,18 @@ class scalyc.Parser(
 
         {
             let node: Throw = parseThrow()
+            if (node <> ()) {
+                return node }
+        }
+
+        {
+            let node: Intrinsic = parseIntrinsic()
+            if (node <> ()) {
+                return node }
+        }
+
+        {
+            let node: Define = parseDefine()
             if (node <> ()) {
                 return node }
         }
@@ -4671,3 +4673,5 @@ class Define extends Statement (
         visitor.closeDefine(this)
     }
 }
+
+} // namespace scalyc

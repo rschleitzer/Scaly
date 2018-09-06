@@ -9,15 +9,12 @@ namespace scalyc
     {
         Lexer lexer;
         string fileName;
-
+        HashSet<""string> keywords = new HashSet<""string>(new string[] {
 "   (apply-to-selected-children "keyword" (lambda (keyword) ($
-"        readonly string "(name keyword)" = \""(id keyword)"\";
+"            \""(id keyword)"\",
 "   )))
-"
-"   (apply-to-selected-children "punctuation" (lambda (punctuation) ($
-"        readonly string "(id punctuation)" = \""(value punctuation)"\";
-"   )))
-"
+"       });
+
         public Parser(string theFileName, string text)
         {
             lexer = new Lexer(text);
@@ -107,7 +104,7 @@ namespace scalyc
             )
             " = lexer.parse"
             (case (type content)(("identifier") "Identifier")(("literal") "Literal")(("keyword") "Keyword")(("punctuation") "Punctuation"))
-            "("(case (type content)(("keyword") (name-of-link content)) (("punctuation") (link content)) (else ""))");
+            "("(case (type content)(("keyword") ($ "\""(link content)"\"")) (("punctuation") ($ "\""(value (element-with-id (link content)))"\"")) (else ""))");
             if ("(case (type content) (("keyword" "punctuation") ($ "success"(if (property content) (string-firstchar-upcase (property content)) ($ (string-firstchar-upcase (link content))(number->string (child-number content))))))(("identifier") ($ "("(property content)" != null) && isIdentifier("(property content)")")) (else ($ (property content)" != null")))")
                 lexer.advance();
 "                           (if (optional? content) "" ($
@@ -164,13 +161,10 @@ namespace scalyc
         }
 
         bool isIdentifier(string id)
-        {"
-   (apply-to-selected-children "keyword" (lambda (keyword) ($
-"
-            if (id == "(name keyword)")
+        {
+            if (keywords.Contains(id))
                 return false;
-"   )))
-"
+
             return true;
         }
     }
@@ -179,7 +173,9 @@ namespace scalyc
 ))
 
 (define (parser) ($
-"class scalyc.Parser(
+"namespace scalyc {
+
+class Parser(
 
     fileName: string,
     text: string

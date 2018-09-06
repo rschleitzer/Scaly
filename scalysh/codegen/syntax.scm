@@ -218,4 +218,6 @@ class "(id syntax-node)" extends "(if (base syntax-node) (base syntax-node) "Syn
 "    }
 }
 "   )))
-))
+"
+} // namespace scalyc
+"))

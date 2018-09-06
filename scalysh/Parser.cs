@@ -8,63 +8,46 @@ namespace scalyc
     {
         Lexer lexer;
         string fileName;
-
-        readonly string usingKeyword = "using";
-        readonly string namespaceKeyword = "namespace";
-        readonly string typedefKeyword = "typedef";
-        readonly string letKeyword = "let";
-        readonly string mutableKeyword = "mutable";
-        readonly string threadlocalKeyword = "threadlocal";
-        readonly string varKeyword = "var";
-        readonly string setKeyword = "set";
-        readonly string classKeyword = "class";
-        readonly string extendsKeyword = "extends";
-        readonly string initializerKeyword = "initializer";
-        readonly string allocatorKeyword = "allocator";
-        readonly string methodKeyword = "method";
-        readonly string functionKeyword = "function";
-        readonly string operatorKeyword = "operator";
-        readonly string thisKeyword = "this";
-        readonly string newKeyword = "new";
-        readonly string sizeofKeyword = "sizeof";
-        readonly string catchKeyword = "catch";
-        readonly string throwsKeyword = "throws";
-        readonly string asKeyword = "as";
-        readonly string isKeyword = "is";
-        readonly string ifKeyword = "if";
-        readonly string elseKeyword = "else";
-        readonly string switchKeyword = "switch";
-        readonly string caseKeyword = "case";
-        readonly string defaultKeyword = "default";
-        readonly string forKeyword = "for";
-        readonly string inKeyword = "in";
-        readonly string whileKeyword = "while";
-        readonly string doKeyword = "do";
-        readonly string loopKeyword = "loop";
-        readonly string breakKeyword = "break";
-        readonly string continueKeyword = "continue";
-        readonly string returnKeyword = "return";
-        readonly string throwKeyword = "throw";
-        readonly string intrinsicKeyword = "intrinsic";
-        readonly string defineKeyword = "define";
-
-        readonly string semicolon = ";";
-        readonly string leftCurly = "{";
-        readonly string rightCurly = "}";
-        readonly string leftParen = "(";
-        readonly string rightParen = ")";
-        readonly string leftBracket = "[";
-        readonly string rightBracket = "]";
-        readonly string dot = ".";
-        readonly string comma = ",";
-        readonly string colon = ":";
-        readonly string question = "?";
-        readonly string exclamation = "!";
-        readonly string at = "@";
-        readonly string hash = "#";
-        readonly string dollar = "$";
-        readonly string underscore = "_";
-        readonly string backtick = "`";
+        HashSet<string> keywords = new HashSet<string>(new string[] {
+            "using",
+            "namespace",
+            "typedef",
+            "let",
+            "mutable",
+            "threadlocal",
+            "var",
+            "set",
+            "class",
+            "extends",
+            "initializer",
+            "allocator",
+            "method",
+            "function",
+            "operator",
+            "this",
+            "new",
+            "sizeof",
+            "catch",
+            "throws",
+            "as",
+            "is",
+            "if",
+            "else",
+            "switch",
+            "case",
+            "default",
+            "for",
+            "in",
+            "while",
+            "do",
+            "loop",
+            "break",
+            "continue",
+            "return",
+            "throw",
+            "intrinsic",
+            "define",
+       });
 
         public Parser(string theFileName, string text)
         {
@@ -190,18 +173,6 @@ namespace scalyc
             }
 
             {
-                IntrinsicSyntax node = parseIntrinsic();
-                if (node != null)
-                    return node;
-            }
-
-            {
-                DefineSyntax node = parseDefine();
-                if (node != null)
-                    return node;
-            }
-
-            {
                 BreakSyntax node = parseBreak();
                 if (node != null)
                     return node;
@@ -221,6 +192,18 @@ namespace scalyc
 
             {
                 ThrowSyntax node = parseThrow();
+                if (node != null)
+                    return node;
+            }
+
+            {
+                IntrinsicSyntax node = parseIntrinsic();
+                if (node != null)
+                    return node;
+            }
+
+            {
+                DefineSyntax node = parseDefine();
                 if (node != null)
                     return node;
             }
@@ -253,7 +236,7 @@ namespace scalyc
         {
             Position start = lexer.getPreviousPosition();
 
-            bool successUsing1 = lexer.parseKeyword(usingKeyword);
+            bool successUsing1 = lexer.parseKeyword("using");
             if (successUsing1)
                 lexer.advance();
             else
@@ -322,7 +305,7 @@ namespace scalyc
         {
             Position start = lexer.getPreviousPosition();
 
-            bool successDot1 = lexer.parsePunctuation(dot);
+            bool successDot1 = lexer.parsePunctuation(".");
             if (successDot1)
                 lexer.advance();
             else
@@ -346,7 +329,7 @@ namespace scalyc
         {
             Position start = lexer.getPreviousPosition();
 
-            bool successNamespace1 = lexer.parseKeyword(namespaceKeyword);
+            bool successNamespace1 = lexer.parseKeyword("namespace");
             if (successNamespace1)
                 lexer.advance();
             else
@@ -356,7 +339,7 @@ namespace scalyc
             if (name == null)
                 throw new ParserException(fileName, lexer.line, lexer.column);
 
-            bool successLeftCurly3 = lexer.parsePunctuation(leftCurly);
+            bool successLeftCurly3 = lexer.parsePunctuation("{");
             if (successLeftCurly3)
                 lexer.advance();
             else
@@ -366,7 +349,7 @@ namespace scalyc
 
             StatementSyntax[] statements = parseStatementList();
 
-            bool successRightCurly6 = lexer.parsePunctuation(rightCurly);
+            bool successRightCurly6 = lexer.parsePunctuation("}");
             if (successRightCurly6)
                 lexer.advance();
             else
@@ -395,7 +378,7 @@ namespace scalyc
         {
             Position start = lexer.getPreviousPosition();
 
-            bool successTypedef1 = lexer.parseKeyword(typedefKeyword);
+            bool successTypedef1 = lexer.parseKeyword("typedef");
             if (successTypedef1)
                 lexer.advance();
             else
@@ -424,7 +407,7 @@ namespace scalyc
         {
             Position start = lexer.getPreviousPosition();
 
-            bool successLet1 = lexer.parseKeyword(letKeyword);
+            bool successLet1 = lexer.parseKeyword("let");
             if (successLet1)
                 lexer.advance();
             else
@@ -447,7 +430,7 @@ namespace scalyc
         {
             Position start = lexer.getPreviousPosition();
 
-            bool successVar1 = lexer.parseKeyword(varKeyword);
+            bool successVar1 = lexer.parseKeyword("var");
             if (successVar1)
                 lexer.advance();
             else
@@ -470,7 +453,7 @@ namespace scalyc
         {
             Position start = lexer.getPreviousPosition();
 
-            bool successMutable1 = lexer.parseKeyword(mutableKeyword);
+            bool successMutable1 = lexer.parseKeyword("mutable");
             if (successMutable1)
                 lexer.advance();
             else
@@ -493,7 +476,7 @@ namespace scalyc
         {
             Position start = lexer.getPreviousPosition();
 
-            bool successThreadlocal1 = lexer.parseKeyword(threadlocalKeyword);
+            bool successThreadlocal1 = lexer.parseKeyword("threadlocal");
             if (successThreadlocal1)
                 lexer.advance();
             else
@@ -542,7 +525,7 @@ namespace scalyc
         {
             Position start = lexer.getPreviousPosition();
 
-            bool successSet1 = lexer.parseKeyword(setKeyword);
+            bool successSet1 = lexer.parseKeyword("set");
             if (successSet1)
                 lexer.advance();
             else
@@ -552,7 +535,7 @@ namespace scalyc
             if (lValue == null)
                 throw new ParserException(fileName, lexer.line, lexer.column);
 
-            bool successColon3 = lexer.parsePunctuation(colon);
+            bool successColon3 = lexer.parsePunctuation(":");
             if (successColon3)
                 lexer.advance();
             else
@@ -580,7 +563,7 @@ namespace scalyc
             if (operation == null)
                 return null;
 
-            bool successSemicolon2 = lexer.parsePunctuation(semicolon);
+            bool successSemicolon2 = lexer.parsePunctuation(";");
             if (successSemicolon2)
                 lexer.advance();
 
@@ -719,7 +702,7 @@ namespace scalyc
         {
             Position start = lexer.getPreviousPosition();
 
-            bool successDot1 = lexer.parsePunctuation(dot);
+            bool successDot1 = lexer.parsePunctuation(".");
             if (successDot1)
                 lexer.advance();
             else
@@ -743,7 +726,7 @@ namespace scalyc
         {
             Position start = lexer.getPreviousPosition();
 
-            bool successAs1 = lexer.parseKeyword(asKeyword);
+            bool successAs1 = lexer.parseKeyword("as");
             if (successAs1)
                 lexer.advance();
             else
@@ -766,7 +749,7 @@ namespace scalyc
         {
             Position start = lexer.getPreviousPosition();
 
-            bool successIs1 = lexer.parseKeyword(isKeyword);
+            bool successIs1 = lexer.parseKeyword("is");
             if (successIs1)
                 lexer.advance();
             else
@@ -789,7 +772,7 @@ namespace scalyc
         {
             Position start = lexer.getPreviousPosition();
 
-            bool successExclamation1 = lexer.parsePunctuation(exclamation);
+            bool successExclamation1 = lexer.parsePunctuation("!");
             if (successExclamation1)
                 lexer.advance();
             else
@@ -807,7 +790,7 @@ namespace scalyc
         {
             Position start = lexer.getPreviousPosition();
 
-            bool successCatch1 = lexer.parseKeyword(catchKeyword);
+            bool successCatch1 = lexer.parseKeyword("catch");
             if (successCatch1)
                 lexer.advance();
             else
@@ -871,7 +854,7 @@ namespace scalyc
 
             NameSyntax name = parseName();
 
-            bool successLeftParen2 = lexer.parsePunctuation(leftParen);
+            bool successLeftParen2 = lexer.parsePunctuation("(");
             if (successLeftParen2)
                 lexer.advance();
             else
@@ -881,7 +864,7 @@ namespace scalyc
             if ((errorName != null) && isIdentifier(errorName))
                 lexer.advance();
 
-            bool successRightParen4 = lexer.parsePunctuation(rightParen);
+            bool successRightParen4 = lexer.parsePunctuation(")");
             if (successRightParen4)
                 lexer.advance();
             else
@@ -1005,7 +988,7 @@ namespace scalyc
         {
             Position start = lexer.getPreviousPosition();
 
-            bool successLeftCurly1 = lexer.parsePunctuation(leftCurly);
+            bool successLeftCurly1 = lexer.parsePunctuation("{");
             if (successLeftCurly1)
                 lexer.advance();
             else
@@ -1013,7 +996,7 @@ namespace scalyc
 
             StatementSyntax[] statements = parseStatementList();
 
-            bool successRightCurly3 = lexer.parsePunctuation(rightCurly);
+            bool successRightCurly3 = lexer.parsePunctuation("}");
             if (successRightCurly3)
                 lexer.advance();
             else
@@ -1054,13 +1037,13 @@ namespace scalyc
         {
             Position start = lexer.getPreviousPosition();
 
-            bool successIf1 = lexer.parseKeyword(ifKeyword);
+            bool successIf1 = lexer.parseKeyword("if");
             if (successIf1)
                 lexer.advance();
             else
                 return null;
 
-            bool successLeftParen2 = lexer.parsePunctuation(leftParen);
+            bool successLeftParen2 = lexer.parsePunctuation("(");
             if (successLeftParen2)
                 lexer.advance();
             else
@@ -1070,7 +1053,7 @@ namespace scalyc
             if (condition == null)
                 throw new ParserException(fileName, lexer.line, lexer.column);
 
-            bool successRightParen4 = lexer.parsePunctuation(rightParen);
+            bool successRightParen4 = lexer.parsePunctuation(")");
             if (successRightParen4)
                 lexer.advance();
             else
@@ -1098,7 +1081,7 @@ namespace scalyc
         {
             Position start = lexer.getPreviousPosition();
 
-            bool successElse1 = lexer.parseKeyword(elseKeyword);
+            bool successElse1 = lexer.parseKeyword("else");
             if (successElse1)
                 lexer.advance();
             else
@@ -1121,13 +1104,13 @@ namespace scalyc
         {
             Position start = lexer.getPreviousPosition();
 
-            bool successSwitch1 = lexer.parseKeyword(switchKeyword);
+            bool successSwitch1 = lexer.parseKeyword("switch");
             if (successSwitch1)
                 lexer.advance();
             else
                 return null;
 
-            bool successLeftParen2 = lexer.parsePunctuation(leftParen);
+            bool successLeftParen2 = lexer.parsePunctuation("(");
             if (successLeftParen2)
                 lexer.advance();
             else
@@ -1137,13 +1120,13 @@ namespace scalyc
             if (condition == null)
                 throw new ParserException(fileName, lexer.line, lexer.column);
 
-            bool successRightParen4 = lexer.parsePunctuation(rightParen);
+            bool successRightParen4 = lexer.parsePunctuation(")");
             if (successRightParen4)
                 lexer.advance();
             else
                 throw new ParserException(fileName, lexer.line, lexer.column);
 
-            bool successLeftCurly5 = lexer.parsePunctuation(leftCurly);
+            bool successLeftCurly5 = lexer.parsePunctuation("{");
             if (successLeftCurly5)
                 lexer.advance();
             else
@@ -1153,7 +1136,7 @@ namespace scalyc
             if (cases == null)
                 throw new ParserException(fileName, lexer.line, lexer.column);
 
-            bool successRightCurly7 = lexer.parsePunctuation(rightCurly);
+            bool successRightCurly7 = lexer.parsePunctuation("}");
             if (successRightCurly7)
                 lexer.advance();
             else
@@ -1237,7 +1220,7 @@ namespace scalyc
         {
             Position start = lexer.getPreviousPosition();
 
-            bool successCase1 = lexer.parseKeyword(caseKeyword);
+            bool successCase1 = lexer.parseKeyword("case");
             if (successCase1)
                 lexer.advance();
             else
@@ -1289,7 +1272,7 @@ namespace scalyc
             if (pattern == null)
                 return null;
 
-            bool successComma2 = lexer.parsePunctuation(comma);
+            bool successComma2 = lexer.parsePunctuation(",");
             if (successComma2)
                 lexer.advance();
 
@@ -1367,7 +1350,7 @@ namespace scalyc
         {
             Position start = lexer.getPreviousPosition();
 
-            bool successUnderscore1 = lexer.parsePunctuation(underscore);
+            bool successUnderscore1 = lexer.parsePunctuation("_");
             if (successUnderscore1)
                 lexer.advance();
             else
@@ -1402,7 +1385,7 @@ namespace scalyc
         {
             Position start = lexer.getPreviousPosition();
 
-            bool successDefault1 = lexer.parseKeyword(defaultKeyword);
+            bool successDefault1 = lexer.parseKeyword("default");
             if (successDefault1)
                 lexer.advance();
             else
@@ -1420,13 +1403,13 @@ namespace scalyc
         {
             Position start = lexer.getPreviousPosition();
 
-            bool successFor1 = lexer.parseKeyword(forKeyword);
+            bool successFor1 = lexer.parseKeyword("for");
             if (successFor1)
                 lexer.advance();
             else
                 return null;
 
-            bool successLeftParen2 = lexer.parsePunctuation(leftParen);
+            bool successLeftParen2 = lexer.parsePunctuation("(");
             if (successLeftParen2)
                 lexer.advance();
             else
@@ -1440,7 +1423,7 @@ namespace scalyc
 
             TypeAnnotationSyntax typeAnnotation = parseTypeAnnotation();
 
-            bool successIn5 = lexer.parseKeyword(inKeyword);
+            bool successIn5 = lexer.parseKeyword("in");
             if (successIn5)
                 lexer.advance();
             else
@@ -1450,7 +1433,7 @@ namespace scalyc
             if (operation == null)
                 throw new ParserException(fileName, lexer.line, lexer.column);
 
-            bool successRightParen7 = lexer.parsePunctuation(rightParen);
+            bool successRightParen7 = lexer.parsePunctuation(")");
             if (successRightParen7)
                 lexer.advance();
             else
@@ -1476,13 +1459,13 @@ namespace scalyc
         {
             Position start = lexer.getPreviousPosition();
 
-            bool successWhile1 = lexer.parseKeyword(whileKeyword);
+            bool successWhile1 = lexer.parseKeyword("while");
             if (successWhile1)
                 lexer.advance();
             else
                 return null;
 
-            bool successLeftParen2 = lexer.parsePunctuation(leftParen);
+            bool successLeftParen2 = lexer.parsePunctuation("(");
             if (successLeftParen2)
                 lexer.advance();
             else
@@ -1492,7 +1475,7 @@ namespace scalyc
             if (condition == null)
                 throw new ParserException(fileName, lexer.line, lexer.column);
 
-            bool successRightParen4 = lexer.parsePunctuation(rightParen);
+            bool successRightParen4 = lexer.parsePunctuation(")");
             if (successRightParen4)
                 lexer.advance();
             else
@@ -1516,7 +1499,7 @@ namespace scalyc
         {
             Position start = lexer.getPreviousPosition();
 
-            bool successDo1 = lexer.parseKeyword(doKeyword);
+            bool successDo1 = lexer.parseKeyword("do");
             if (successDo1)
                 lexer.advance();
             else
@@ -1526,13 +1509,13 @@ namespace scalyc
             if (iteration == null)
                 throw new ParserException(fileName, lexer.line, lexer.column);
 
-            bool successWhile3 = lexer.parseKeyword(whileKeyword);
+            bool successWhile3 = lexer.parseKeyword("while");
             if (successWhile3)
                 lexer.advance();
             else
                 throw new ParserException(fileName, lexer.line, lexer.column);
 
-            bool successLeftParen4 = lexer.parsePunctuation(leftParen);
+            bool successLeftParen4 = lexer.parsePunctuation("(");
             if (successLeftParen4)
                 lexer.advance();
             else
@@ -1542,7 +1525,7 @@ namespace scalyc
             if (condition == null)
                 throw new ParserException(fileName, lexer.line, lexer.column);
 
-            bool successRightParen6 = lexer.parsePunctuation(rightParen);
+            bool successRightParen6 = lexer.parsePunctuation(")");
             if (successRightParen6)
                 lexer.advance();
             else
@@ -1596,7 +1579,7 @@ namespace scalyc
         {
             Position start = lexer.getPreviousPosition();
 
-            bool successLoop1 = lexer.parseKeyword(loopKeyword);
+            bool successLoop1 = lexer.parseKeyword("loop");
             if (successLoop1)
                 lexer.advance();
             else
@@ -1625,7 +1608,7 @@ namespace scalyc
         {
             Position start = lexer.getPreviousPosition();
 
-            bool successThis1 = lexer.parseKeyword(thisKeyword);
+            bool successThis1 = lexer.parseKeyword("this");
             if (successThis1)
                 lexer.advance();
             else
@@ -1643,7 +1626,7 @@ namespace scalyc
         {
             Position start = lexer.getPreviousPosition();
 
-            bool successNew1 = lexer.parseKeyword(newKeyword);
+            bool successNew1 = lexer.parseKeyword("new");
             if (successNew1)
                 lexer.advance();
             else
@@ -1666,7 +1649,7 @@ namespace scalyc
         {
             Position start = lexer.getPreviousPosition();
 
-            bool successLeftParen1 = lexer.parsePunctuation(leftParen);
+            bool successLeftParen1 = lexer.parsePunctuation("(");
             if (successLeftParen1)
                 lexer.advance();
             else
@@ -1676,7 +1659,7 @@ namespace scalyc
 
             ItemSyntax[] additionalOps = parseItemList();
 
-            bool successRightParen4 = lexer.parsePunctuation(rightParen);
+            bool successRightParen4 = lexer.parsePunctuation(")");
             if (successRightParen4)
                 lexer.advance();
             else
@@ -1701,7 +1684,7 @@ namespace scalyc
         {
             Position start = lexer.getPreviousPosition();
 
-            bool successLeftBracket1 = lexer.parsePunctuation(leftBracket);
+            bool successLeftBracket1 = lexer.parsePunctuation("[");
             if (successLeftBracket1)
                 lexer.advance();
             else
@@ -1711,7 +1694,7 @@ namespace scalyc
 
             ItemSyntax[] additionalOps = parseItemList();
 
-            bool successRightBracket4 = lexer.parsePunctuation(rightBracket);
+            bool successRightBracket4 = lexer.parsePunctuation("]");
             if (successRightBracket4)
                 lexer.advance();
             else
@@ -1757,7 +1740,7 @@ namespace scalyc
         {
             Position start = lexer.getPreviousPosition();
 
-            bool successComma1 = lexer.parsePunctuation(comma);
+            bool successComma1 = lexer.parsePunctuation(",");
             if (successComma1)
                 lexer.advance();
             else
@@ -1780,7 +1763,7 @@ namespace scalyc
         {
             Position start = lexer.getPreviousPosition();
 
-            bool successSizeof1 = lexer.parseKeyword(sizeofKeyword);
+            bool successSizeof1 = lexer.parseKeyword("sizeof");
             if (successSizeof1)
                 lexer.advance();
             else
@@ -1803,7 +1786,7 @@ namespace scalyc
         {
             Position start = lexer.getPreviousPosition();
 
-            bool successBreak1 = lexer.parseKeyword(breakKeyword);
+            bool successBreak1 = lexer.parseKeyword("break");
             if (successBreak1)
                 lexer.advance();
             else
@@ -1813,7 +1796,7 @@ namespace scalyc
             if ((iteration != null) && isIdentifier(iteration))
                 lexer.advance();
 
-            bool successSemicolon3 = lexer.parsePunctuation(semicolon);
+            bool successSemicolon3 = lexer.parsePunctuation(";");
             if (successSemicolon3)
                 lexer.advance();
 
@@ -1829,7 +1812,7 @@ namespace scalyc
         {
             Position start = lexer.getPreviousPosition();
 
-            bool successContinue1 = lexer.parseKeyword(continueKeyword);
+            bool successContinue1 = lexer.parseKeyword("continue");
             if (successContinue1)
                 lexer.advance();
             else
@@ -1839,7 +1822,7 @@ namespace scalyc
             if ((iteration != null) && isIdentifier(iteration))
                 lexer.advance();
 
-            bool successSemicolon3 = lexer.parsePunctuation(semicolon);
+            bool successSemicolon3 = lexer.parsePunctuation(";");
             if (successSemicolon3)
                 lexer.advance();
 
@@ -1855,7 +1838,7 @@ namespace scalyc
         {
             Position start = lexer.getPreviousPosition();
 
-            bool successReturn1 = lexer.parseKeyword(returnKeyword);
+            bool successReturn1 = lexer.parseKeyword("return");
             if (successReturn1)
                 lexer.advance();
             else
@@ -1877,7 +1860,7 @@ namespace scalyc
         {
             Position start = lexer.getPreviousPosition();
 
-            bool successThrow1 = lexer.parseKeyword(throwKeyword);
+            bool successThrow1 = lexer.parseKeyword("throw");
             if (successThrow1)
                 lexer.advance();
             else
@@ -1900,7 +1883,7 @@ namespace scalyc
         {
             Position start = lexer.getPreviousPosition();
 
-            bool successClass1 = lexer.parseKeyword(classKeyword);
+            bool successClass1 = lexer.parseKeyword("class");
             if (successClass1)
                 lexer.advance();
             else
@@ -1939,7 +1922,7 @@ namespace scalyc
         {
             Position start = lexer.getPreviousPosition();
 
-            bool successLeftBracket1 = lexer.parsePunctuation(leftBracket);
+            bool successLeftBracket1 = lexer.parsePunctuation("[");
             if (successLeftBracket1)
                 lexer.advance();
             else
@@ -1953,7 +1936,7 @@ namespace scalyc
 
             GenericParameterSyntax[] additionalGenerics = parseGenericParameterList();
 
-            bool successRightBracket4 = lexer.parsePunctuation(rightBracket);
+            bool successRightBracket4 = lexer.parsePunctuation("]");
             if (successRightBracket4)
                 lexer.advance();
             else
@@ -1997,7 +1980,7 @@ namespace scalyc
         {
             Position start = lexer.getPreviousPosition();
 
-            bool successComma1 = lexer.parsePunctuation(comma);
+            bool successComma1 = lexer.parsePunctuation(",");
             if (successComma1)
                 lexer.advance();
             else
@@ -2021,7 +2004,7 @@ namespace scalyc
         {
             Position start = lexer.getPreviousPosition();
 
-            bool successExtends1 = lexer.parseKeyword(extendsKeyword);
+            bool successExtends1 = lexer.parseKeyword("extends");
             if (successExtends1)
                 lexer.advance();
             else
@@ -2044,7 +2027,7 @@ namespace scalyc
         {
             Position start = lexer.getPreviousPosition();
 
-            bool successLeftParen1 = lexer.parsePunctuation(leftParen);
+            bool successLeftParen1 = lexer.parsePunctuation("(");
             if (successLeftParen1)
                 lexer.advance();
             else
@@ -2052,7 +2035,7 @@ namespace scalyc
 
             ComponentSyntax[] components = parseComponentList();
 
-            bool successRightParen3 = lexer.parsePunctuation(rightParen);
+            bool successRightParen3 = lexer.parsePunctuation(")");
             if (successRightParen3)
                 lexer.advance();
             else
@@ -2104,7 +2087,7 @@ namespace scalyc
 
             TypeAnnotationSyntax typeAnnotation = parseTypeAnnotation();
 
-            bool successComma3 = lexer.parsePunctuation(comma);
+            bool successComma3 = lexer.parsePunctuation(",");
             if (successComma3)
                 lexer.advance();
 
@@ -2122,7 +2105,7 @@ namespace scalyc
         {
             Position start = lexer.getPreviousPosition();
 
-            bool successLeftCurly1 = lexer.parsePunctuation(leftCurly);
+            bool successLeftCurly1 = lexer.parsePunctuation("{");
             if (successLeftCurly1)
                 lexer.advance();
             else
@@ -2130,7 +2113,7 @@ namespace scalyc
 
             MemberSyntax[] members = parseMemberList();
 
-            bool successRightCurly3 = lexer.parsePunctuation(rightCurly);
+            bool successRightCurly3 = lexer.parsePunctuation("}");
             if (successRightCurly3)
                 lexer.advance();
             else
@@ -2301,7 +2284,7 @@ namespace scalyc
         {
             Position start = lexer.getPreviousPosition();
 
-            bool successMethod1 = lexer.parseKeyword(methodKeyword);
+            bool successMethod1 = lexer.parseKeyword("method");
             if (successMethod1)
                 lexer.advance();
             else
@@ -2341,7 +2324,7 @@ namespace scalyc
         {
             Position start = lexer.getPreviousPosition();
 
-            bool successOperator1 = lexer.parseKeyword(operatorKeyword);
+            bool successOperator1 = lexer.parseKeyword("operator");
             if (successOperator1)
                 lexer.advance();
             else
@@ -2364,7 +2347,7 @@ namespace scalyc
         {
             Position start = lexer.getPreviousPosition();
 
-            bool successInitializer1 = lexer.parseKeyword(initializerKeyword);
+            bool successInitializer1 = lexer.parseKeyword("initializer");
             if (successInitializer1)
                 lexer.advance();
             else
@@ -2391,7 +2374,7 @@ namespace scalyc
         {
             Position start = lexer.getPreviousPosition();
 
-            bool successAllocator1 = lexer.parseKeyword(allocatorKeyword);
+            bool successAllocator1 = lexer.parseKeyword("allocator");
             if (successAllocator1)
                 lexer.advance();
             else
@@ -2418,7 +2401,7 @@ namespace scalyc
         {
             Position start = lexer.getPreviousPosition();
 
-            bool successFunction1 = lexer.parseKeyword(functionKeyword);
+            bool successFunction1 = lexer.parseKeyword("function");
             if (successFunction1)
                 lexer.advance();
             else
@@ -2493,7 +2476,7 @@ namespace scalyc
         {
             Position start = lexer.getPreviousPosition();
 
-            bool successColon1 = lexer.parsePunctuation(colon);
+            bool successColon1 = lexer.parsePunctuation(":");
             if (successColon1)
                 lexer.advance();
             else
@@ -2604,7 +2587,7 @@ namespace scalyc
         {
             Position start = lexer.getPreviousPosition();
 
-            bool successLeftParen1 = lexer.parsePunctuation(leftParen);
+            bool successLeftParen1 = lexer.parsePunctuation("(");
             if (successLeftParen1)
                 lexer.advance();
             else
@@ -2612,7 +2595,7 @@ namespace scalyc
 
             TypeSyntax[] types = parseTypeList();
 
-            bool successRightParen3 = lexer.parsePunctuation(rightParen);
+            bool successRightParen3 = lexer.parsePunctuation(")");
             if (successRightParen3)
                 lexer.advance();
             else
@@ -2635,7 +2618,7 @@ namespace scalyc
         {
             Position start = lexer.getPreviousPosition();
 
-            bool successThrows1 = lexer.parseKeyword(throwsKeyword);
+            bool successThrows1 = lexer.parseKeyword("throws");
             if (successThrows1)
                 lexer.advance();
             else
@@ -2658,7 +2641,7 @@ namespace scalyc
         {
             Position start = lexer.getPreviousPosition();
 
-            bool successLeftBracket1 = lexer.parsePunctuation(leftBracket);
+            bool successLeftBracket1 = lexer.parsePunctuation("[");
             if (successLeftBracket1)
                 lexer.advance();
             else
@@ -2670,7 +2653,7 @@ namespace scalyc
 
             GenericArgumentSyntax[] additionalGenerics = parseGenericArgumentList();
 
-            bool successRightBracket4 = lexer.parsePunctuation(rightBracket);
+            bool successRightBracket4 = lexer.parsePunctuation("]");
             if (successRightBracket4)
                 lexer.advance();
             else
@@ -2715,7 +2698,7 @@ namespace scalyc
         {
             Position start = lexer.getPreviousPosition();
 
-            bool successComma1 = lexer.parsePunctuation(comma);
+            bool successComma1 = lexer.parsePunctuation(",");
             if (successComma1)
                 lexer.advance();
             else
@@ -2738,7 +2721,7 @@ namespace scalyc
         {
             Position start = lexer.getPreviousPosition();
 
-            bool successQuestion1 = lexer.parsePunctuation(question);
+            bool successQuestion1 = lexer.parsePunctuation("?");
             if (successQuestion1)
                 lexer.advance();
             else
@@ -2785,7 +2768,7 @@ namespace scalyc
         {
             Position start = lexer.getPreviousPosition();
 
-            bool successDollar1 = lexer.parsePunctuation(dollar);
+            bool successDollar1 = lexer.parsePunctuation("$");
             if (successDollar1)
                 lexer.advance();
             else
@@ -2803,7 +2786,7 @@ namespace scalyc
         {
             Position start = lexer.getPreviousPosition();
 
-            bool successAt1 = lexer.parsePunctuation(at);
+            bool successAt1 = lexer.parsePunctuation("@");
             if (successAt1)
                 lexer.advance();
             else
@@ -2827,7 +2810,7 @@ namespace scalyc
         {
             Position start = lexer.getPreviousPosition();
 
-            bool successBacktick1 = lexer.parsePunctuation(backtick);
+            bool successBacktick1 = lexer.parsePunctuation("`");
             if (successBacktick1)
                 lexer.advance();
             else
@@ -2849,7 +2832,7 @@ namespace scalyc
         {
             Position start = lexer.getPreviousPosition();
 
-            bool successHash1 = lexer.parsePunctuation(hash);
+            bool successHash1 = lexer.parsePunctuation("#");
             if (successHash1)
                 lexer.advance();
             else
@@ -2867,7 +2850,7 @@ namespace scalyc
         {
             Position start = lexer.getPreviousPosition();
 
-            bool successIntrinsic1 = lexer.parseKeyword(intrinsicKeyword);
+            bool successIntrinsic1 = lexer.parseKeyword("intrinsic");
             if (successIntrinsic1)
                 lexer.advance();
             else
@@ -2891,7 +2874,7 @@ namespace scalyc
         {
             Position start = lexer.getPreviousPosition();
 
-            bool successDefine1 = lexer.parseKeyword(defineKeyword);
+            bool successDefine1 = lexer.parseKeyword("define");
             if (successDefine1)
                 lexer.advance();
             else
@@ -2922,118 +2905,7 @@ namespace scalyc
 
         bool isIdentifier(string id)
         {
-            if (id == usingKeyword)
-                return false;
-
-            if (id == namespaceKeyword)
-                return false;
-
-            if (id == typedefKeyword)
-                return false;
-
-            if (id == letKeyword)
-                return false;
-
-            if (id == mutableKeyword)
-                return false;
-
-            if (id == threadlocalKeyword)
-                return false;
-
-            if (id == varKeyword)
-                return false;
-
-            if (id == setKeyword)
-                return false;
-
-            if (id == classKeyword)
-                return false;
-
-            if (id == extendsKeyword)
-                return false;
-
-            if (id == initializerKeyword)
-                return false;
-
-            if (id == allocatorKeyword)
-                return false;
-
-            if (id == methodKeyword)
-                return false;
-
-            if (id == functionKeyword)
-                return false;
-
-            if (id == operatorKeyword)
-                return false;
-
-            if (id == thisKeyword)
-                return false;
-
-            if (id == newKeyword)
-                return false;
-
-            if (id == sizeofKeyword)
-                return false;
-
-            if (id == catchKeyword)
-                return false;
-
-            if (id == throwsKeyword)
-                return false;
-
-            if (id == asKeyword)
-                return false;
-
-            if (id == isKeyword)
-                return false;
-
-            if (id == ifKeyword)
-                return false;
-
-            if (id == elseKeyword)
-                return false;
-
-            if (id == switchKeyword)
-                return false;
-
-            if (id == caseKeyword)
-                return false;
-
-            if (id == defaultKeyword)
-                return false;
-
-            if (id == forKeyword)
-                return false;
-
-            if (id == inKeyword)
-                return false;
-
-            if (id == whileKeyword)
-                return false;
-
-            if (id == doKeyword)
-                return false;
-
-            if (id == loopKeyword)
-                return false;
-
-            if (id == breakKeyword)
-                return false;
-
-            if (id == continueKeyword)
-                return false;
-
-            if (id == returnKeyword)
-                return false;
-
-            if (id == throwKeyword)
-                return false;
-
-            if (id == intrinsicKeyword)
-                return false;
-
-            if (id == defineKeyword)
+            if (keywords.Contains(id))
                 return false;
 
             return true;
