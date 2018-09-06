@@ -25,6 +25,8 @@
         <content link = Continue
         <content link = Return
         <content link = Throw
+        <content link = Intrinsic
+        <content link = Define
 
     <syntax id = Using                        multiple
         <content link = using
@@ -292,8 +294,8 @@
         <content link = class
         <content link = Name                                    property = name
         <content link = GenericParameters              optional property = generics
-        <content link = Structure                      optional property = contents
         <content link = Extends                        optional property = baseClass
+        <content link = Structure                      optional property = contents
         <content link = ClassBody                      optional property = body
 
     <syntax id = GenericParameters
@@ -327,6 +329,7 @@
 
     <syntax id = Member                       multiple abstract
         <content link = LetMember
+        <content link = VarMember
         <content link = MutableMember
         <content link = SetInitialization
         <content link = Method
@@ -337,6 +340,9 @@
 
     <syntax id = LetMember                                      base = Member
         <content link = Let                                     property = definition
+
+    <syntax id = VarMember                                      base = Member
+        <content link = Var                                     property = definition
 
     <syntax id = MutableMember                                  base = Member
         <content link = Mutable                                 property = definition
@@ -435,6 +441,15 @@
     <syntax id = Thrown                                         base = LifeTime
         <content link = hash
 
+    <syntax id = Intrinsic                                      base = Statement
+        <content link = intrinsic
+        <content identifier                                     property = name
+
+    <syntax id = Define                                         base = Statement
+        <content link = define
+        <content link = Name                                    property = name
+        <content link = Type                                    property = typeSpec
+
     <keyword id = using
     <keyword id = namespace
     <keyword id = typedef
@@ -471,6 +486,8 @@
     <keyword id = continue
     <keyword id = return
     <keyword id = throw
+    <keyword id = intrinsic
+    <keyword id = define
 
     <punctuation id = semicolon         value = ";"
     <punctuation id = leftCurly         value = "{"

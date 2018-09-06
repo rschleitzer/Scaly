@@ -1,4 +1,10 @@
-threadlocal scaly.currentPage : Page? ()
+namespace scaly {
+
+let alignment       : int   8
+let pageSize        : size  0x1000
+let maxStackPages   : size  0x1000
+
+threadlocal currentPage : Page? ()
 
 class scaly.Page
 (
@@ -7,9 +13,6 @@ class scaly.Page
     exclusivePages      : int
 )
 {
-    let alignment       : int   8
-    let pageSize        : size  0x1000
-    let maxStackPages   : size  0x1000
 
     set currentPage: ()
 
@@ -295,3 +298,5 @@ class scaly.Page
         return true
     }
 }
+
+} // namespace scaly

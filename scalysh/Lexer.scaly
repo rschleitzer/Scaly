@@ -472,11 +472,11 @@ class Position(line: number, column: number) {
 class Token
 class EofToken extends Token
 class InvalidToken extends Token
-class Identifier(name: string) extends Token
+class Identifier extends Token (name: string)
 class Literal extends Token
-class StringLiteral(value: string) extends Literal
-class CharacterLiteral(value: string) extends Literal
-class NumericLiteral(value: string) extends Literal
-class Punctuation(sign: string) extends Token
+class StringLiteral extends Literal (value: string)
+class CharacterLiteral extends Literal (value: string)
+class NumericLiteral extends Literal (value: string)
+class Punctuation extends Token (sign: string)
 
 }

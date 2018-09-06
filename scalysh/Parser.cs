@@ -45,6 +45,8 @@ namespace scalyc
         readonly string continueKeyword = "continue";
         readonly string returnKeyword = "return";
         readonly string throwKeyword = "throw";
+        readonly string intrinsicKeyword = "intrinsic";
+        readonly string defineKeyword = "define";
 
         readonly string semicolon = ";";
         readonly string leftCurly = "{";
@@ -183,6 +185,18 @@ namespace scalyc
 
             {
                 ClassSyntax node = parseClass();
+                if (node != null)
+                    return node;
+            }
+
+            {
+                IntrinsicSyntax node = parseIntrinsic();
+                if (node != null)
+                    return node;
+            }
+
+            {
+                DefineSyntax node = parseDefine();
                 if (node != null)
                     return node;
             }
@@ -1898,23 +1912,23 @@ namespace scalyc
 
             GenericParametersSyntax generics = parseGenericParameters();
 
-            StructureSyntax contents = parseStructure();
-
             ExtendsSyntax baseClass = parseExtends();
+
+            StructureSyntax contents = parseStructure();
 
             ClassBodySyntax body = parseClassBody();
 
             Position end = lexer.getPosition();
 
-            ClassSyntax ret = new ClassSyntax(start, end, name, generics, contents, baseClass, body);
+            ClassSyntax ret = new ClassSyntax(start, end, name, generics, baseClass, contents, body);
 
             name.parent = ret;
             if (generics != null)
                 generics.parent = ret;
-            if (contents != null)
-                contents.parent = ret;
             if (baseClass != null)
                 baseClass.parent = ret;
+            if (contents != null)
+                contents.parent = ret;
             if (body != null)
                 body.parent = ret;
 
@@ -2165,6 +2179,12 @@ namespace scalyc
             }
 
             {
+                VarMemberSyntax node = parseVarMember();
+                if (node != null)
+                    return node;
+            }
+
+            {
                 MutableMemberSyntax node = parseMutableMember();
                 if (node != null)
                     return node;
@@ -2220,6 +2240,23 @@ namespace scalyc
             Position end = lexer.getPosition();
 
             LetMemberSyntax ret = new LetMemberSyntax(start, end, definition);
+
+            definition.parent = ret;
+
+            return ret;
+        }
+
+        public VarMemberSyntax parseVarMember()
+        {
+            Position start = lexer.getPreviousPosition();
+
+            VarSyntax definition = parseVar();
+            if (definition == null)
+                return null;
+
+            Position end = lexer.getPosition();
+
+            VarMemberSyntax ret = new VarMemberSyntax(start, end, definition);
 
             definition.parent = ret;
 
@@ -2826,6 +2863,58 @@ namespace scalyc
             return ret;
         }
 
+        public IntrinsicSyntax parseIntrinsic()
+        {
+            Position start = lexer.getPreviousPosition();
+
+            bool successIntrinsic1 = lexer.parseKeyword(intrinsicKeyword);
+            if (successIntrinsic1)
+                lexer.advance();
+            else
+                return null;
+
+            string name = lexer.parseIdentifier();
+            if ((name != null) && isIdentifier(name))
+                lexer.advance();
+            else
+                throw new ParserException(fileName, lexer.line, lexer.column);
+
+            Position end = lexer.getPosition();
+
+            IntrinsicSyntax ret = new IntrinsicSyntax(start, end, name);
+
+
+            return ret;
+        }
+
+        public DefineSyntax parseDefine()
+        {
+            Position start = lexer.getPreviousPosition();
+
+            bool successDefine1 = lexer.parseKeyword(defineKeyword);
+            if (successDefine1)
+                lexer.advance();
+            else
+                return null;
+
+            NameSyntax name = parseName();
+            if (name == null)
+                throw new ParserException(fileName, lexer.line, lexer.column);
+
+            TypeSyntax typeSpec = parseType();
+            if (typeSpec == null)
+                throw new ParserException(fileName, lexer.line, lexer.column);
+
+            Position end = lexer.getPosition();
+
+            DefineSyntax ret = new DefineSyntax(start, end, name, typeSpec);
+
+            name.parent = ret;
+            typeSpec.parent = ret;
+
+            return ret;
+        }
+
         bool isAtEnd()
         {
             return lexer.isAtEnd();
@@ -2939,6 +3028,12 @@ namespace scalyc
                 return false;
 
             if (id == throwKeyword)
+                return false;
+
+            if (id == intrinsicKeyword)
+                return false;
+
+            if (id == defineKeyword)
                 return false;
 
             return true;
@@ -3419,6 +3514,15 @@ namespace scalyc
         {
         }
 
+        public virtual bool openVarMember(VarMemberSyntax varMemberSyntax)
+        {
+            return true;
+        }
+
+        public virtual void closeVarMember(VarMemberSyntax varMemberSyntax)
+        {
+        }
+
         public virtual bool openMutableMember(MutableMemberSyntax mutableMemberSyntax)
         {
             return true;
@@ -3580,6 +3684,19 @@ namespace scalyc
         }
 
         public virtual void visitThrown(ThrownSyntax thrownSyntax)
+        {
+        }
+
+        public virtual void visitIntrinsic(IntrinsicSyntax intrinsicSyntax)
+        {
+        }
+
+        public virtual bool openDefine(DefineSyntax defineSyntax)
+        {
+            return true;
+        }
+
+        public virtual void closeDefine(DefineSyntax defineSyntax)
         {
         }
     }
@@ -4788,17 +4905,17 @@ namespace scalyc
     {
         public NameSyntax name;
         public GenericParametersSyntax generics;
-        public StructureSyntax contents;
         public ExtendsSyntax baseClass;
+        public StructureSyntax contents;
         public ClassBodySyntax body;
-        public ClassSyntax(Position start, Position end, NameSyntax name, GenericParametersSyntax generics, StructureSyntax contents, ExtendsSyntax baseClass, ClassBodySyntax body)
+        public ClassSyntax(Position start, Position end, NameSyntax name, GenericParametersSyntax generics, ExtendsSyntax baseClass, StructureSyntax contents, ClassBodySyntax body)
         {
             this.start = start;
             this.end = end;
             this.name = name;
             this.generics = generics;
-            this.contents = contents;
             this.baseClass = baseClass;
+            this.contents = contents;
             this.body = body;
         }
 
@@ -4812,11 +4929,11 @@ namespace scalyc
             if (generics != null)
                 generics.accept(visitor);
 
-            if (contents != null)
-                contents.accept(visitor);
-
             if (baseClass != null)
                 baseClass.accept(visitor);
+
+            if (contents != null)
+                contents.accept(visitor);
 
             if (body != null)
                 body.accept(visitor);
@@ -4988,6 +5105,27 @@ namespace scalyc
             definition.accept(visitor);
 
             visitor.closeLetMember(this);
+        }
+    }
+
+    public class VarMemberSyntax : MemberSyntax
+    {
+        public VarSyntax definition;
+        public VarMemberSyntax(Position start, Position end, VarSyntax definition)
+        {
+            this.start = start;
+            this.end = end;
+            this.definition = definition;
+        }
+
+        public override void accept(SyntaxVisitor visitor)
+        {
+            if (!visitor.openVarMember(this))
+                return;
+
+            definition.accept(visitor);
+
+            visitor.closeVarMember(this);
         }
     }
 
@@ -5466,6 +5604,47 @@ namespace scalyc
         public override void accept(SyntaxVisitor visitor)
         {
             visitor.visitThrown(this);
+        }
+    }
+
+    public class IntrinsicSyntax : StatementSyntax
+    {
+        public string name;
+        public IntrinsicSyntax(Position start, Position end, string name)
+        {
+            this.start = start;
+            this.end = end;
+            this.name = name;
+        }
+
+        public override void accept(SyntaxVisitor visitor)
+        {
+            visitor.visitIntrinsic(this);
+        }
+    }
+
+    public class DefineSyntax : StatementSyntax
+    {
+        public NameSyntax name;
+        public TypeSyntax typeSpec;
+        public DefineSyntax(Position start, Position end, NameSyntax name, TypeSyntax typeSpec)
+        {
+            this.start = start;
+            this.end = end;
+            this.name = name;
+            this.typeSpec = typeSpec;
+        }
+
+        public override void accept(SyntaxVisitor visitor)
+        {
+            if (!visitor.openDefine(this))
+                return;
+
+            name.accept(visitor);
+
+            typeSpec.accept(visitor);
+
+            visitor.closeDefine(this);
         }
     }
 }

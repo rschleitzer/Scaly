@@ -1,0 +1,4 @@
+intrinsic char
+intrinsic int
+intrinsic size_t
+define size size_t

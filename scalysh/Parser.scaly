@@ -43,6 +43,8 @@ class scalyc.Parser(
     let continueKeyword: string = new string("continue")
     let returnKeyword: string = new string("return")
     let throwKeyword: string = new string("throw")
+    let intrinsicKeyword: string = new string("intrinsic")
+    let defineKeyword: string = new string("define")
     let semicolon: string = new string(";")
     let leftCurly: string = new string("{")
     let rightCurly: string = new string("}")
@@ -169,6 +171,18 @@ class scalyc.Parser(
 
         {
             let node: Class = parseClass()
+            if (node <> ()) {
+                return node }
+        }
+
+        {
+            let node: Intrinsic = parseIntrinsic()
+            if (node <> ()) {
+                return node }
+        }
+
+        {
+            let node: Define = parseDefine()
             if (node <> ()) {
                 return node }
         }
@@ -1729,22 +1743,22 @@ class scalyc.Parser(
 
         let generics: GenericParameters = parseGenericParameters()
 
-        let contents: Structure = parseStructure()
-
         let baseClass: Extends = parseExtends()
+
+        let contents: Structure = parseStructure()
 
         let body: ClassBody = parseClassBody()
 
         let end: Position$ lexer.getPosition()
 
-        let ret: Class new Class(name, generics, contents, baseClass, body, new Position(start), new Position(end))
+        let ret: Class new Class(name, generics, baseClass, contents, body, new Position(start), new Position(end))
         name.parent = ret
         if (generics <> ()) {
             generics.parent = ret }
-        if (contents <> ()) {
-            contents.parent = ret }
         if (baseClass <> ()) {
             baseClass.parent = ret }
+        if (contents <> ()) {
+            contents.parent = ret }
         if (body <> ()) {
             body.parent = ret }
 
@@ -1967,6 +1981,12 @@ class scalyc.Parser(
         }
 
         {
+            let node: VarMember = parseVarMember()
+            if (node <> ()) {
+                return node }
+        }
+
+        {
             let node: MutableMember = parseMutableMember()
             if (node <> ()) {
                 return node }
@@ -2021,6 +2041,21 @@ class scalyc.Parser(
         let end: Position$ lexer.getPosition()
 
         let ret: LetMember new LetMember(definition, new Position(start), new Position(end))
+        definition.parent = ret
+
+        ret
+    }
+
+    function parseVarMember(): VarMember {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let definition: Var = parseVar()
+        if (definition = ()) {
+            return () }
+
+        let end: Position$ lexer.getPosition()
+
+        let ret: VarMember new VarMember(definition, new Position(start), new Position(end))
         definition.parent = ret
 
         ret
@@ -2568,6 +2603,54 @@ class scalyc.Parser(
         ret
     }
 
+    function parseIntrinsic(): Intrinsic {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let successIntrinsic1: bool = lexer.parseKeyword(intrinsicKeyword)
+        if (successIntrinsic1) {
+            lexer.advance() }
+        else {
+            return () }
+
+        let name: string = lexer.parseIdentifier()
+        if ((name <> ()) && isIdentifier(name)) {
+            lexer.advance() }
+        else {
+            return () }
+
+        let end: Position$ lexer.getPosition()
+
+        let ret: Intrinsic new Intrinsic(name, new Position(start), new Position(end))
+
+        ret
+    }
+
+    function parseDefine(): Define {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let successDefine1: bool = lexer.parseKeyword(defineKeyword)
+        if (successDefine1) {
+            lexer.advance() }
+        else {
+            return () }
+
+        let name: Name = parseName()
+        if (name = ()) {
+            return () }
+
+        let typeSpec: Type = parseType()
+        if (typeSpec = ()) {
+            return () }
+
+        let end: Position$ lexer.getPosition()
+
+        let ret: Define new Define(name, typeSpec, new Position(start), new Position(end))
+        name.parent = ret
+        typeSpec.parent = ret
+
+        ret
+    }
+
     function isAtEnd(): bool {
         lexer.isAtEnd()
     }
@@ -2679,6 +2762,12 @@ class scalyc.Parser(
             return false }
 
         if (id.equals(throwKeyword)) {
+            return false }
+
+        if (id.equals(intrinsicKeyword)) {
+            return false }
+
+        if (id.equals(defineKeyword)) {
             return false }
 
         true
@@ -3052,6 +3141,13 @@ class Visitor {
     function closeLetMember(letMemberSyntax: LetMemberSyntax) {
     }
 
+    function openVarMember(varMemberSyntax: VarMemberSyntax): bool {
+        true
+    }
+
+    function closeVarMember(varMemberSyntax: VarMemberSyntax) {
+    }
+
     function openMutableMember(mutableMemberSyntax: MutableMemberSyntax): bool {
         true
     }
@@ -3178,1475 +3274,1400 @@ class Visitor {
 
     function visitThrown(thrownSyntax: ThrownSyntax) {
     }
-}
 
-class SyntaxNode {
-    let start: Position
-    let end: Position
-    mutable parent: SyntaxNode&
-}
-
-class Program extends SyntaxNode {
-
-    constructor(name: string, files: File[]) {
-        start = new Position(0, 0)
-        end = new Position(0, 0)
-        this.name = name
-        this.modules = modules
-        this.parent = null
-        this.start = start
-        this.end = end
+    function visitIntrinsic(intrinsicSyntax: IntrinsicSyntax) {
     }
 
-    function accept(mutable visitor: Visitor) {
-        if !visitor.openProgram(this)
-            return
-        if files != null {
-            for node: File in files
-                node.accept(visitor)
-        }
+    function openDefine(defineSyntax: DefineSyntax): bool {
+        true
+    }
+
+    function closeDefine(defineSyntax: DefineSyntax) {
+    }
+}
+
+class SyntaxNode (
+
+    start: Position,
+    end: Position
+
+    ) {
+
+    var parent: SyntaxNode? ()
+}
+
+class Program extends SyntaxNode (
+
+    name: string, 
+    files: Array[File]
+
+    ) {
+    function accept(visitor: Visitor) {
+
+        if (visitor.openProgram(this) = false) {
+            return }
+
+        if (files <> ()) {
+            for (node: File in files) {
+                node.accept(visitor) } }
+
         visitor.closeProgram(this)
     }
-
-    let name: string
-    let files: File[]
 }
 
-class File extends SyntaxNode {
+class File extends SyntaxNode (
 
-    constructor(usings: Using[], statements: Statement[], start: Position, end: Position) {
-        this.usings = usings
-        this.statements = statements
-    }
+    usings: Array[Using], 
+    statements: Array[Statement]
 
-    function accept(mutable visitor: Visitor) {
-        if !visitor.openFile(this)
-            return
-        if usings != null {
-            for node: Using in usings
-                node.accept(visitor)
-        }
-        if statements != null {
-            for node: Statement in statements
-                node.accept(visitor)
-        }
+    ) {
+    function accept(visitor: Visitor) {
+
+        if (visitor.openFile(this) = false) {
+            return }
+
+        if (usings <> ()) {
+            for (node: Using in usings) {
+                node.accept(visitor) } }
+
+        if (statements <> ()) {
+            for (node: Statement in statements) {
+                node.accept(visitor) } }
+
         visitor.closeFile(this)
     }
-
-    let usings: Using[]
-    let statements: Statement[]
 }
 
 class Statement extends SyntaxNode {
-
-    function accept(mutable visitor: Visitor) {
+    function accept(visitor: Visitor) {
     }
-
 }
 
-class Using extends SyntaxNode {
+class Using extends SyntaxNode (
 
-    constructor(name: Name, start: Position, end: Position) {
-        this.name = name
-    }
+    name: Name
 
-    function accept(mutable visitor: Visitor) {
-        if !visitor.openUsing(this)
-            return
+    ) {
+    function accept(visitor: Visitor) {
+
+        if (visitor.openUsing(this) = false) {
+            return }
         name.accept(visitor)
+
         visitor.closeUsing(this)
     }
-
-    let name: Name
 }
 
-class Name extends Expression {
+class Name extends Expression (
 
-    constructor(name: string, extensions: Extension[], start: Position, end: Position) {
-        this.name = name
-        this.extensions = extensions
-    }
+    name: string, 
+    extensions: Array[Extension]
 
-    function accept(mutable visitor: Visitor) {
-        if !visitor.openName(this)
-            return
-        if extensions != null {
-            for node: Extension in extensions
-                node.accept(visitor)
-        }
+    ) {
+    function accept(visitor: Visitor) {
+
+        if (visitor.openName(this) = false) {
+            return }
+
+        if (extensions <> ()) {
+            for (node: Extension in extensions) {
+                node.accept(visitor) } }
+
         visitor.closeName(this)
     }
-
-    let name: string
-    let extensions: Extension[]
 }
 
-class Extension extends SyntaxNode {
+class Extension extends SyntaxNode (
 
-    constructor(name: string, start: Position, end: Position) {
-        this.name = name
-    }
+    name: string
 
-    function accept(mutable visitor: Visitor) {
+    ) {
+    function accept(visitor: Visitor) {
+
         visitor.visitExtension(this)
     }
-
-    let name: string
 }
 
-class Namespace extends Statement {
+class Namespace extends Statement (
 
-    constructor(name: Name, usings: Using[], statements: Statement[], start: Position, end: Position) {
-        this.name = name
-        this.usings = usings
-        this.statements = statements
-    }
+    name: Name, 
+    usings: Array[Using], 
+    statements: Array[Statement], 
 
-    function accept(mutable visitor: Visitor) {
-        if !visitor.openNamespace(this)
-            return
+    ) {
+    function accept(visitor: Visitor) {
+
+        if (visitor.openNamespace(this) = false) {
+            return }
         name.accept(visitor)
-        if usings != null {
-            for node: Using in usings
-                node.accept(visitor)
-        }
-        if statements != null {
-            for node: Statement in statements
-                node.accept(visitor)
-        }
+
+        if (usings <> ()) {
+            for (node: Using in usings) {
+                node.accept(visitor) } }
+
+        if (statements <> ()) {
+            for (node: Statement in statements) {
+                node.accept(visitor) } }
+
         visitor.closeNamespace(this)
     }
-
-    let name: Name
-    let usings: Using[]
-    let statements: Statement[]
 }
 
-class TypeDefinition extends Statement {
+class TypeDefinition extends Statement (
 
-    constructor(typeName: string, typeSpec: TypeSpec, start: Position, end: Position) {
-        this.typeName = typeName
-        this.typeSpec = typeSpec
-    }
+    typeName: string, 
+    typeSpec: TypeSpec
 
-    function accept(mutable visitor: Visitor) {
-        if !visitor.openTypeDefinition(this)
-            return
+    ) {
+    function accept(visitor: Visitor) {
+
+        if (visitor.openTypeDefinition(this) = false) {
+            return }
         typeSpec.accept(visitor)
+
         visitor.closeTypeDefinition(this)
     }
-
-    let typeName: string
-    let typeSpec: TypeSpec
 }
 
-class Let extends Statement {
+class Let extends Statement (
 
-    constructor(binding: Binding, start: Position, end: Position) {
-        this.binding = binding
-    }
+    binding: Binding
 
-    function accept(mutable visitor: Visitor) {
-        if !visitor.openLet(this)
-            return
+    ) {
+    function accept(visitor: Visitor) {
+
+        if (visitor.openLet(this) = false) {
+            return }
         binding.accept(visitor)
+
         visitor.closeLet(this)
     }
-
-    let binding: Binding
 }
 
-class Var extends Statement {
+class Var extends Statement (
 
-    constructor(binding: Binding, start: Position, end: Position) {
-        this.binding = binding
-    }
+    binding: Binding
 
-    function accept(mutable visitor: Visitor) {
-        if !visitor.openVar(this)
-            return
+    ) {
+    function accept(visitor: Visitor) {
+
+        if (visitor.openVar(this) = false) {
+            return }
         binding.accept(visitor)
+
         visitor.closeVar(this)
     }
-
-    let binding: Binding
 }
 
-class Mutable extends Statement {
+class Mutable extends Statement (
 
-    constructor(binding: Binding, start: Position, end: Position) {
-        this.binding = binding
-    }
+    binding: Binding
 
-    function accept(mutable visitor: Visitor) {
-        if !visitor.openMutable(this)
-            return
+    ) {
+    function accept(visitor: Visitor) {
+
+        if (visitor.openMutable(this) = false) {
+            return }
         binding.accept(visitor)
+
         visitor.closeMutable(this)
     }
-
-    let binding: Binding
 }
 
-class ThreadLocal extends Statement {
+class ThreadLocal extends Statement (
 
-    constructor(binding: Binding, start: Position, end: Position) {
-        this.binding = binding
-    }
+    binding: Binding
 
-    function accept(mutable visitor: Visitor) {
-        if !visitor.openThreadLocal(this)
-            return
+    ) {
+    function accept(visitor: Visitor) {
+
+        if (visitor.openThreadLocal(this) = false) {
+            return }
         binding.accept(visitor)
+
         visitor.closeThreadLocal(this)
     }
-
-    let binding: Binding
 }
 
-class Binding extends SyntaxNode {
+class Binding extends SyntaxNode (
 
-    constructor(name: Name, typeAnnotation: TypeAnnotation, calculation: Calculation, start: Position, end: Position) {
-        this.name = name
-        this.typeAnnotation = typeAnnotation
-        this.calculation = calculation
-    }
+    name: Name, 
+    typeAnnotation: TypeAnnotation, 
+    calculation: Calculation
 
-    function accept(mutable visitor: Visitor) {
-        if !visitor.openBinding(this)
-            return
+    ) {
+    function accept(visitor: Visitor) {
+
+        if (visitor.openBinding(this) = false) {
+            return }
         name.accept(visitor)
-        if typeAnnotation != null
-            typeAnnotation.accept(visitor)
+
+        if (typeAnnotation <> ()) {
+            typeAnnotation.accept(visitor) }
         calculation.accept(visitor)
+
         visitor.closeBinding(this)
     }
-
-    let name: Name
-    let typeAnnotation: TypeAnnotation
-    let calculation: Calculation
 }
 
-class Set extends Statement {
+class Set extends Statement (
 
-    constructor(lValue: Operation, rValue: Calculation, start: Position, end: Position) {
-        this.lValue = lValue
-        this.rValue = rValue
-    }
+    lValue: Operation, 
+    rValue: Calculation
 
-    function accept(mutable visitor: Visitor) {
-        if !visitor.openSet(this)
-            return
+    ) {
+    function accept(visitor: Visitor) {
+
+        if (visitor.openSet(this) = false) {
+            return }
         lValue.accept(visitor)
         rValue.accept(visitor)
+
         visitor.closeSet(this)
     }
-
-    let lValue: Operation
-    let rValue: Calculation
 }
 
-class Calculation extends Statement {
+class Calculation extends Statement (
 
-    constructor(operation: Operation, start: Position, end: Position) {
-        this.operation = operation
-    }
+    operation: Operation, 
 
-    function accept(mutable visitor: Visitor) {
-        if !visitor.openCalculation(this)
-            return
+    ) {
+    function accept(visitor: Visitor) {
+
+        if (visitor.openCalculation(this) = false) {
+            return }
         operation.accept(visitor)
+
         visitor.closeCalculation(this)
     }
-
-    let operation: Operation
 }
 
-class Operation extends SyntaxNode {
+class Operation extends SyntaxNode (
 
-    constructor(op: Operand[], start: Position, end: Position) {
-        this.op = op
-    }
+    op: Array[Operand]
 
-    function accept(mutable visitor: Visitor) {
-        if !visitor.openOperation(this)
-            return
-        if op != null {
-            for node: Operand in op
-                node.accept(visitor)
-        }
+    ) {
+    function accept(visitor: Visitor) {
+
+        if (visitor.openOperation(this) = false) {
+            return }
+
+        if (op <> ()) {
+            for (node: Operand in op) {
+                node.accept(visitor) } }
+
         visitor.closeOperation(this)
     }
-
-    let op: Operand[]
 }
 
-class Operand extends Statement {
+class Operand extends Statement (
 
-    constructor(primary: Expression, postfixes: Postfix[], start: Position, end: Position) {
-        this.primary = primary
-        this.postfixes = postfixes
-    }
+    primary: Expression, 
+    postfixes: Array[Postfix]
 
-    function accept(mutable visitor: Visitor) {
-        if !visitor.openOperand(this)
-            return
+    ) {
+    function accept(visitor: Visitor) {
+
+        if (visitor.openOperand(this) = false) {
+            return }
         primary.accept(visitor)
-        if postfixes != null {
-            for node: Postfix in postfixes
-                node.accept(visitor)
-        }
+
+        if (postfixes <> ()) {
+            for (node: Postfix in postfixes) {
+                node.accept(visitor) } }
+
         visitor.closeOperand(this)
     }
-
-    let primary: Expression
-    let postfixes: Postfix[]
 }
 
 class Postfix extends SyntaxNode {
-
-    function accept(mutable visitor: Visitor) {
+    function accept(visitor: Visitor) {
     }
-
 }
 
-class MemberAccess extends Postfix {
+class MemberAccess extends Postfix (
 
-    constructor(member: string, start: Position, end: Position) {
-        this.member = member
-    }
+    member: string
 
-    function accept(mutable visitor: Visitor) {
+    ) {
+    function accept(visitor: Visitor) {
+
         visitor.visitMemberAccess(this)
     }
-
-    let member: string
 }
 
-class As extends Postfix {
+class As extends Postfix (
 
-    constructor(typeSpec: TypeSpec, start: Position, end: Position) {
-        this.typeSpec = typeSpec
-    }
+    typeSpec: TypeSpec
 
-    function accept(mutable visitor: Visitor) {
-        if !visitor.openAs(this)
-            return
+    ) {
+    function accept(visitor: Visitor) {
+
+        if (visitor.openAs(this) = false) {
+            return }
         typeSpec.accept(visitor)
+
         visitor.closeAs(this)
     }
-
-    let typeSpec: TypeSpec
 }
 
-class Is extends Postfix {
+class Is extends Postfix (
 
-    constructor(typeSpec: TypeSpec, start: Position, end: Position) {
-        this.typeSpec = typeSpec
-    }
+    typeSpec: TypeSpec
 
-    function accept(mutable visitor: Visitor) {
-        if !visitor.openIs(this)
-            return
+    ) {
+    function accept(visitor: Visitor) {
+
+        if (visitor.openIs(this) = false) {
+            return }
         typeSpec.accept(visitor)
+
         visitor.closeIs(this)
     }
-
-    let typeSpec: TypeSpec
 }
 
-class Unwrap extends Postfix {
+class Unwrap extends Postfix (
 
-    constructor(start: Position, end: Position) {
-    }
 
-    function accept(mutable visitor: Visitor) {
+    ) {
+    function accept(visitor: Visitor) {
+
         visitor.visitUnwrap(this)
     }
-
 }
 
-class Catch extends Postfix {
+class Catch extends Postfix (
 
-    constructor(typeSpec: CatchPattern, handler: Block, start: Position, end: Position) {
-        this.typeSpec = typeSpec
-        this.handler = handler
-    }
+    typeSpec: CatchPattern, 
+    handler: Block
 
-    function accept(mutable visitor: Visitor) {
-        if !visitor.openCatch(this)
-            return
+    ) {
+    function accept(visitor: Visitor) {
+
+        if (visitor.openCatch(this) = false) {
+            return }
         typeSpec.accept(visitor)
         handler.accept(visitor)
+
         visitor.closeCatch(this)
     }
-
-    let typeSpec: CatchPattern
-    let handler: Block
 }
 
 class CatchPattern extends SyntaxNode {
-
-    function accept(mutable visitor: Visitor) {
+    function accept(visitor: Visitor) {
     }
-
 }
 
-class WildCardCatchPattern extends CatchPattern {
+class WildCardCatchPattern extends CatchPattern (
 
-    constructor(pattern: WildcardPattern, start: Position, end: Position) {
-        this.pattern = pattern
-    }
+    pattern: WildcardPattern
 
-    function accept(mutable visitor: Visitor) {
-        if !visitor.openWildCardCatchPattern(this)
-            return
+    ) {
+    function accept(visitor: Visitor) {
+
+        if (visitor.openWildCardCatchPattern(this) = false) {
+            return }
         pattern.accept(visitor)
+
         visitor.closeWildCardCatchPattern(this)
     }
-
-    let pattern: WildcardPattern
 }
 
-class NameCatchPattern extends CatchPattern {
+class NameCatchPattern extends CatchPattern (
 
-    constructor(name: Name, errorName: string, start: Position, end: Position) {
-        this.name = name
-        this.errorName = errorName
-    }
+    name: Name, 
+    errorName: string, 
 
-    function accept(mutable visitor: Visitor) {
-        if !visitor.openNameCatchPattern(this)
-            return
-        if name != null
-            name.accept(visitor)
+    ) {
+    function accept(visitor: Visitor) {
+
+        if (visitor.openNameCatchPattern(this) = false) {
+            return }
+
+        if (name <> ()) {
+            name.accept(visitor) }
+
         visitor.closeNameCatchPattern(this)
     }
-
-    let name: Name
-    let errorName: string
 }
 
 class Expression extends SyntaxNode {
-
-    function accept(mutable visitor: Visitor) {
+    function accept(visitor: Visitor) {
     }
-
 }
 
-class Block extends Expression {
+class Block extends Expression (
 
-    constructor(statements: Statement[], start: Position, end: Position) {
-        this.statements = statements
-    }
+    statements: Array[Statement], 
 
-    function accept(mutable visitor: Visitor) {
-        if !visitor.openBlock(this)
-            return
-        if statements != null {
-            for node: Statement in statements
-                node.accept(visitor)
-        }
+    ) {
+    function accept(visitor: Visitor) {
+
+        if (visitor.openBlock(this) = false) {
+            return }
+
+        if (statements <> ()) {
+            for (node: Statement in statements) {
+                node.accept(visitor) } }
+
         visitor.closeBlock(this)
     }
-
-    let statements: Statement[]
 }
 
-class Constant extends Expression {
+class Constant extends Expression (
 
-    constructor(literal: Literal, start: Position, end: Position) {
-        this.literal = literal
-    }
+    literal: Literal
 
-    function accept(mutable visitor: Visitor) {
+    ) {
+    function accept(visitor: Visitor) {
+
         visitor.visitConstant(this)
     }
-
-    let literal: Literal
 }
 
-class If extends Expression {
+class If extends Expression (
 
-    constructor(condition: Operation, consequent: Block, elseClause: Else, start: Position, end: Position) {
-        this.condition = condition
-        this.consequent = consequent
-        this.elseClause = elseClause
-    }
+    condition: Operation, 
+    consequent: Block, 
+    elseClause: Else
 
-    function accept(mutable visitor: Visitor) {
-        if !visitor.openIf(this)
-            return
+    ) {
+    function accept(visitor: Visitor) {
+
+        if (visitor.openIf(this) = false) {
+            return }
         condition.accept(visitor)
         consequent.accept(visitor)
-        if elseClause != null
-            elseClause.accept(visitor)
+
+        if (elseClause <> ()) {
+            elseClause.accept(visitor) }
+
         visitor.closeIf(this)
     }
-
-    let condition: Operation
-    let consequent: Block
-    let elseClause: Else
 }
 
-class Else extends SyntaxNode {
+class Else extends SyntaxNode (
 
-    constructor(alternative: Block, start: Position, end: Position) {
-        this.alternative = alternative
-    }
+    alternative: Block
 
-    function accept(mutable visitor: Visitor) {
-        if !visitor.openElse(this)
-            return
+    ) {
+    function accept(visitor: Visitor) {
+
+        if (visitor.openElse(this) = false) {
+            return }
         alternative.accept(visitor)
+
         visitor.closeElse(this)
     }
-
-    let alternative: Block
 }
 
-class Switch extends Expression {
+class Switch extends Expression (
 
-    constructor(condition: Operation, cases: SwitchCase[], start: Position, end: Position) {
-        this.condition = condition
-        this.cases = cases
-    }
+    condition: Operation, 
+    cases: Array[SwitchCase], 
 
-    function accept(mutable visitor: Visitor) {
-        if !visitor.openSwitch(this)
-            return
+    ) {
+    function accept(visitor: Visitor) {
+
+        if (visitor.openSwitch(this) = false) {
+            return }
         condition.accept(visitor)
-        if cases != null {
-            for node: SwitchCase in cases
-                node.accept(visitor)
-        }
+
+        if (cases <> ()) {
+            for (node: SwitchCase in cases) {
+                node.accept(visitor) } }
+
         visitor.closeSwitch(this)
     }
-
-    let condition: Operation
-    let cases: SwitchCase[]
 }
 
-class SwitchCase extends SyntaxNode {
+class SwitchCase extends SyntaxNode (
 
-    constructor(label: CaseLabel, content: Block, start: Position, end: Position) {
-        this.label = label
-        this.content = content
-    }
+    label: CaseLabel, 
+    content: Block
 
-    function accept(mutable visitor: Visitor) {
-        if !visitor.openSwitchCase(this)
-            return
+    ) {
+    function accept(visitor: Visitor) {
+
+        if (visitor.openSwitchCase(this) = false) {
+            return }
         label.accept(visitor)
         content.accept(visitor)
+
         visitor.closeSwitchCase(this)
     }
-
-    let label: CaseLabel
-    let content: Block
 }
 
 class CaseLabel extends SyntaxNode {
-
-    function accept(mutable visitor: Visitor) {
+    function accept(visitor: Visitor) {
     }
-
 }
 
-class ItemCaseLabel extends CaseLabel {
+class ItemCaseLabel extends CaseLabel (
 
-    constructor(items: CaseItem[], start: Position, end: Position) {
-        this.items = items
-    }
+    items: Array[CaseItem]
 
-    function accept(mutable visitor: Visitor) {
-        if !visitor.openItemCaseLabel(this)
-            return
-        if items != null {
-            for node: CaseItem in items
-                node.accept(visitor)
-        }
+    ) {
+    function accept(visitor: Visitor) {
+
+        if (visitor.openItemCaseLabel(this) = false) {
+            return }
+
+        if (items <> ()) {
+            for (node: CaseItem in items) {
+                node.accept(visitor) } }
+
         visitor.closeItemCaseLabel(this)
     }
-
-    let items: CaseItem[]
 }
 
-class CaseItem extends SyntaxNode {
+class CaseItem extends SyntaxNode (
 
-    constructor(pattern: CasePattern, start: Position, end: Position) {
-        this.pattern = pattern
-    }
+    pattern: CasePattern, 
 
-    function accept(mutable visitor: Visitor) {
-        if !visitor.openCaseItem(this)
-            return
+    ) {
+    function accept(visitor: Visitor) {
+
+        if (visitor.openCaseItem(this) = false) {
+            return }
         pattern.accept(visitor)
+
         visitor.closeCaseItem(this)
     }
-
-    let pattern: CasePattern
 }
 
 class CasePattern extends SyntaxNode {
-
-    function accept(mutable visitor: Visitor) {
+    function accept(visitor: Visitor) {
     }
-
 }
 
-class ConstantPattern extends CasePattern {
+class ConstantPattern extends CasePattern (
 
-    constructor(constant: Constant, start: Position, end: Position) {
-        this.constant = constant
-    }
+    constant: Constant
 
-    function accept(mutable visitor: Visitor) {
-        if !visitor.openConstantPattern(this)
-            return
+    ) {
+    function accept(visitor: Visitor) {
+
+        if (visitor.openConstantPattern(this) = false) {
+            return }
         constant.accept(visitor)
+
         visitor.closeConstantPattern(this)
     }
-
-    let constant: Constant
 }
 
-class WildcardPattern extends CasePattern {
+class WildcardPattern extends CasePattern (
 
-    constructor(start: Position, end: Position) {
-    }
 
-    function accept(mutable visitor: Visitor) {
+    ) {
+    function accept(visitor: Visitor) {
+
         visitor.visitWildcardPattern(this)
     }
-
 }
 
-class NamePattern extends CasePattern {
+class NamePattern extends CasePattern (
 
-    constructor(name: Name, start: Position, end: Position) {
-        this.name = name
-    }
+    name: Name
 
-    function accept(mutable visitor: Visitor) {
-        if !visitor.openNamePattern(this)
-            return
+    ) {
+    function accept(visitor: Visitor) {
+
+        if (visitor.openNamePattern(this) = false) {
+            return }
         name.accept(visitor)
+
         visitor.closeNamePattern(this)
     }
-
-    let name: Name
 }
 
-class DefaultCaseLabel extends CaseLabel {
+class DefaultCaseLabel extends CaseLabel (
 
-    constructor(start: Position, end: Position) {
-    }
 
-    function accept(mutable visitor: Visitor) {
+    ) {
+    function accept(visitor: Visitor) {
+
         visitor.visitDefaultCaseLabel(this)
     }
-
 }
 
-class For extends Expression {
+class For extends Expression (
 
-    constructor(index: string, typeAnnotation: TypeAnnotation, operation: Operation, iteration: Loop, start: Position, end: Position) {
-        this.index = index
-        this.typeAnnotation = typeAnnotation
-        this.operation = operation
-        this.iteration = iteration
-    }
+    index: string, 
+    typeAnnotation: TypeAnnotation, 
+    operation: Operation, 
+    iteration: Loop
 
-    function accept(mutable visitor: Visitor) {
-        if !visitor.openFor(this)
-            return
-        if typeAnnotation != null
-            typeAnnotation.accept(visitor)
+    ) {
+    function accept(visitor: Visitor) {
+
+        if (visitor.openFor(this) = false) {
+            return }
+
+        if (typeAnnotation <> ()) {
+            typeAnnotation.accept(visitor) }
         operation.accept(visitor)
         iteration.accept(visitor)
+
         visitor.closeFor(this)
     }
-
-    let index: string
-    let typeAnnotation: TypeAnnotation
-    let operation: Operation
-    let iteration: Loop
 }
 
-class While extends Expression {
+class While extends Expression (
 
-    constructor(condition: Operation, iteration: Loop, start: Position, end: Position) {
-        this.condition = condition
-        this.iteration = iteration
-    }
+    condition: Operation, 
+    iteration: Loop
 
-    function accept(mutable visitor: Visitor) {
-        if !visitor.openWhile(this)
-            return
+    ) {
+    function accept(visitor: Visitor) {
+
+        if (visitor.openWhile(this) = false) {
+            return }
         condition.accept(visitor)
         iteration.accept(visitor)
+
         visitor.closeWhile(this)
     }
-
-    let condition: Operation
-    let iteration: Loop
 }
 
-class Do extends Expression {
+class Do extends Expression (
 
-    constructor(iteration: Loop, condition: Operation, start: Position, end: Position) {
-        this.iteration = iteration
-        this.condition = condition
-    }
+    iteration: Loop, 
+    condition: Operation, 
 
-    function accept(mutable visitor: Visitor) {
-        if !visitor.openDo(this)
-            return
+    ) {
+    function accept(visitor: Visitor) {
+
+        if (visitor.openDo(this) = false) {
+            return }
         iteration.accept(visitor)
         condition.accept(visitor)
+
         visitor.closeDo(this)
     }
-
-    let iteration: Loop
-    let condition: Operation
 }
 
 class Loop extends SyntaxNode {
-
-    function accept(mutable visitor: Visitor) {
+    function accept(visitor: Visitor) {
     }
-
 }
 
-class SimpleLoop extends Loop {
+class SimpleLoop extends Loop (
 
-    constructor(code: Block, start: Position, end: Position) {
-        this.code = code
-    }
+    code: Block
 
-    function accept(mutable visitor: Visitor) {
-        if !visitor.openSimpleLoop(this)
-            return
+    ) {
+    function accept(visitor: Visitor) {
+
+        if (visitor.openSimpleLoop(this) = false) {
+            return }
         code.accept(visitor)
+
         visitor.closeSimpleLoop(this)
     }
-
-    let code: Block
 }
 
-class NamedLoop extends Loop {
+class NamedLoop extends Loop (
 
-    constructor(name: string, code: Block, start: Position, end: Position) {
-        this.name = name
-        this.code = code
-    }
+    name: string, 
+    code: Block
 
-    function accept(mutable visitor: Visitor) {
-        if !visitor.openNamedLoop(this)
-            return
+    ) {
+    function accept(visitor: Visitor) {
+
+        if (visitor.openNamedLoop(this) = false) {
+            return }
         code.accept(visitor)
+
         visitor.closeNamedLoop(this)
     }
-
-    let name: string
-    let code: Block
 }
 
-class This extends Expression {
+class This extends Expression (
 
-    constructor(start: Position, end: Position) {
-    }
 
-    function accept(mutable visitor: Visitor) {
+    ) {
+    function accept(visitor: Visitor) {
+
         visitor.visitThis(this)
     }
-
 }
 
-class New extends Expression {
+class New extends Expression (
 
-    constructor(typeSpec: Type, start: Position, end: Position) {
-        this.typeSpec = typeSpec
-    }
+    typeSpec: Type
 
-    function accept(mutable visitor: Visitor) {
-        if !visitor.openNew(this)
-            return
+    ) {
+    function accept(visitor: Visitor) {
+
+        if (visitor.openNew(this) = false) {
+            return }
         typeSpec.accept(visitor)
+
         visitor.closeNew(this)
     }
-
-    let typeSpec: Type
 }
 
-class Object extends Expression {
+class Object extends Expression (
 
-    constructor(firstOp: Operation, additionalOps: Item[], start: Position, end: Position) {
-        this.firstOp = firstOp
-        this.additionalOps = additionalOps
-    }
+    firstOp: Operation, 
+    additionalOps: Array[Item], 
 
-    function accept(mutable visitor: Visitor) {
-        if !visitor.openObject(this)
-            return
-        if firstOp != null
-            firstOp.accept(visitor)
-        if additionalOps != null {
-            for node: Item in additionalOps
-                node.accept(visitor)
-        }
+    ) {
+    function accept(visitor: Visitor) {
+
+        if (visitor.openObject(this) = false) {
+            return }
+
+        if (firstOp <> ()) {
+            firstOp.accept(visitor) }
+
+        if (additionalOps <> ()) {
+            for (node: Item in additionalOps) {
+                node.accept(visitor) } }
+
         visitor.closeObject(this)
     }
-
-    let firstOp: Operation
-    let additionalOps: Item[]
 }
 
-class Array extends Expression {
+class Array extends Expression (
 
-    constructor(firstOp: Operation, additionalOps: Item[], start: Position, end: Position) {
-        this.firstOp = firstOp
-        this.additionalOps = additionalOps
-    }
+    firstOp: Operation, 
+    additionalOps: Array[Item], 
 
-    function accept(mutable visitor: Visitor) {
-        if !visitor.openArray(this)
-            return
-        if firstOp != null
-            firstOp.accept(visitor)
-        if additionalOps != null {
-            for node: Item in additionalOps
-                node.accept(visitor)
-        }
+    ) {
+    function accept(visitor: Visitor) {
+
+        if (visitor.openArray(this) = false) {
+            return }
+
+        if (firstOp <> ()) {
+            firstOp.accept(visitor) }
+
+        if (additionalOps <> ()) {
+            for (node: Item in additionalOps) {
+                node.accept(visitor) } }
+
         visitor.closeArray(this)
     }
-
-    let firstOp: Operation
-    let additionalOps: Item[]
 }
 
-class Item extends SyntaxNode {
+class Item extends SyntaxNode (
 
-    constructor(operation: Operation, start: Position, end: Position) {
-        this.operation = operation
-    }
+    operation: Operation
 
-    function accept(mutable visitor: Visitor) {
-        if !visitor.openItem(this)
-            return
+    ) {
+    function accept(visitor: Visitor) {
+
+        if (visitor.openItem(this) = false) {
+            return }
         operation.accept(visitor)
+
         visitor.closeItem(this)
     }
-
-    let operation: Operation
 }
 
-class SizeOf extends Expression {
+class SizeOf extends Expression (
 
-    constructor(typeSpec: Type, start: Position, end: Position) {
-        this.typeSpec = typeSpec
-    }
+    typeSpec: Type
 
-    function accept(mutable visitor: Visitor) {
-        if !visitor.openSizeOf(this)
-            return
+    ) {
+    function accept(visitor: Visitor) {
+
+        if (visitor.openSizeOf(this) = false) {
+            return }
         typeSpec.accept(visitor)
+
         visitor.closeSizeOf(this)
     }
-
-    let typeSpec: Type
 }
 
-class Break extends Statement {
+class Break extends Statement (
 
-    constructor(iteration: string, start: Position, end: Position) {
-        this.iteration = iteration
-    }
+    iteration: string, 
 
-    function accept(mutable visitor: Visitor) {
+    ) {
+    function accept(visitor: Visitor) {
+
         visitor.visitBreak(this)
     }
-
-    let iteration: string
 }
 
-class Continue extends Statement {
+class Continue extends Statement (
 
-    constructor(iteration: string, start: Position, end: Position) {
-        this.iteration = iteration
-    }
+    iteration: string, 
 
-    function accept(mutable visitor: Visitor) {
+    ) {
+    function accept(visitor: Visitor) {
+
         visitor.visitContinue(this)
     }
-
-    let iteration: string
 }
 
-class Return extends Statement {
+class Return extends Statement (
 
-    constructor(result: Calculation, start: Position, end: Position) {
-        this.result = result
-    }
+    result: Calculation
 
-    function accept(mutable visitor: Visitor) {
-        if !visitor.openReturn(this)
-            return
-        if result != null
-            result.accept(visitor)
+    ) {
+    function accept(visitor: Visitor) {
+
+        if (visitor.openReturn(this) = false) {
+            return }
+
+        if (result <> ()) {
+            result.accept(visitor) }
+
         visitor.closeReturn(this)
     }
-
-    let result: Calculation
 }
 
-class Throw extends Statement {
+class Throw extends Statement (
 
-    constructor(exception: Calculation, start: Position, end: Position) {
-        this.exception = exception
-    }
+    exception: Calculation
 
-    function accept(mutable visitor: Visitor) {
-        if !visitor.openThrow(this)
-            return
+    ) {
+    function accept(visitor: Visitor) {
+
+        if (visitor.openThrow(this) = false) {
+            return }
         exception.accept(visitor)
+
         visitor.closeThrow(this)
     }
-
-    let exception: Calculation
 }
 
-class Class extends Statement {
+class Class extends Statement (
 
-    constructor(name: Name, generics: GenericParameters, contents: Structure, baseClass: Extends, body: ClassBody, start: Position, end: Position) {
-        this.name = name
-        this.generics = generics
-        this.contents = contents
-        this.baseClass = baseClass
-        this.body = body
-    }
+    name: Name, 
+    generics: GenericParameters, 
+    baseClass: Extends, 
+    contents: Structure, 
+    body: ClassBody
 
-    function accept(mutable visitor: Visitor) {
-        if !visitor.openClass(this)
-            return
+    ) {
+    function accept(visitor: Visitor) {
+
+        if (visitor.openClass(this) = false) {
+            return }
         name.accept(visitor)
-        if generics != null
-            generics.accept(visitor)
-        if contents != null
-            contents.accept(visitor)
-        if baseClass != null
-            baseClass.accept(visitor)
-        if body != null
-            body.accept(visitor)
+
+        if (generics <> ()) {
+            generics.accept(visitor) }
+
+        if (baseClass <> ()) {
+            baseClass.accept(visitor) }
+
+        if (contents <> ()) {
+            contents.accept(visitor) }
+
+        if (body <> ()) {
+            body.accept(visitor) }
+
         visitor.closeClass(this)
     }
-
-    let name: Name
-    let generics: GenericParameters
-    let contents: Structure
-    let baseClass: Extends
-    let body: ClassBody
 }
 
-class GenericParameters extends SyntaxNode {
+class GenericParameters extends SyntaxNode (
 
-    constructor(name: string, additionalGenerics: GenericParameter[], start: Position, end: Position) {
-        this.name = name
-        this.additionalGenerics = additionalGenerics
-    }
+    name: string, 
+    additionalGenerics: Array[GenericParameter], 
 
-    function accept(mutable visitor: Visitor) {
-        if !visitor.openGenericParameters(this)
-            return
-        if additionalGenerics != null {
-            for node: GenericParameter in additionalGenerics
-                node.accept(visitor)
-        }
+    ) {
+    function accept(visitor: Visitor) {
+
+        if (visitor.openGenericParameters(this) = false) {
+            return }
+
+        if (additionalGenerics <> ()) {
+            for (node: GenericParameter in additionalGenerics) {
+                node.accept(visitor) } }
+
         visitor.closeGenericParameters(this)
     }
-
-    let name: string
-    let additionalGenerics: GenericParameter[]
 }
 
-class GenericParameter extends SyntaxNode {
+class GenericParameter extends SyntaxNode (
 
-    constructor(name: string, start: Position, end: Position) {
-        this.name = name
-    }
+    name: string
 
-    function accept(mutable visitor: Visitor) {
+    ) {
+    function accept(visitor: Visitor) {
+
         visitor.visitGenericParameter(this)
     }
-
-    let name: string
 }
 
-class Extends extends SyntaxNode {
+class Extends extends SyntaxNode (
 
-    constructor(name: Name, start: Position, end: Position) {
-        this.name = name
-    }
+    name: Name
 
-    function accept(mutable visitor: Visitor) {
-        if !visitor.openExtends(this)
-            return
+    ) {
+    function accept(visitor: Visitor) {
+
+        if (visitor.openExtends(this) = false) {
+            return }
         name.accept(visitor)
+
         visitor.closeExtends(this)
     }
-
-    let name: Name
 }
 
-class Structure extends SyntaxNode {
+class Structure extends SyntaxNode (
 
-    constructor(components: Component[], start: Position, end: Position) {
-        this.components = components
-    }
+    components: Array[Component], 
 
-    function accept(mutable visitor: Visitor) {
-        if !visitor.openStructure(this)
-            return
-        if components != null {
-            for node: Component in components
-                node.accept(visitor)
-        }
+    ) {
+    function accept(visitor: Visitor) {
+
+        if (visitor.openStructure(this) = false) {
+            return }
+
+        if (components <> ()) {
+            for (node: Component in components) {
+                node.accept(visitor) } }
+
         visitor.closeStructure(this)
     }
-
-    let components: Component[]
 }
 
-class Component extends SyntaxNode {
+class Component extends SyntaxNode (
 
-    constructor(name: string, typeAnnotation: TypeAnnotation, start: Position, end: Position) {
-        this.name = name
-        this.typeAnnotation = typeAnnotation
-    }
+    name: string, 
+    typeAnnotation: TypeAnnotation, 
 
-    function accept(mutable visitor: Visitor) {
-        if !visitor.openComponent(this)
-            return
-        if typeAnnotation != null
-            typeAnnotation.accept(visitor)
+    ) {
+    function accept(visitor: Visitor) {
+
+        if (visitor.openComponent(this) = false) {
+            return }
+
+        if (typeAnnotation <> ()) {
+            typeAnnotation.accept(visitor) }
+
         visitor.closeComponent(this)
     }
-
-    let name: string
-    let typeAnnotation: TypeAnnotation
 }
 
-class ClassBody extends SyntaxNode {
+class ClassBody extends SyntaxNode (
 
-    constructor(members: Member[], start: Position, end: Position) {
-        this.members = members
-    }
+    members: Array[Member], 
 
-    function accept(mutable visitor: Visitor) {
-        if !visitor.openClassBody(this)
-            return
-        if members != null {
-            for node: Member in members
-                node.accept(visitor)
-        }
+    ) {
+    function accept(visitor: Visitor) {
+
+        if (visitor.openClassBody(this) = false) {
+            return }
+
+        if (members <> ()) {
+            for (node: Member in members) {
+                node.accept(visitor) } }
+
         visitor.closeClassBody(this)
     }
-
-    let members: Member[]
 }
 
 class Member extends SyntaxNode {
-
-    function accept(mutable visitor: Visitor) {
+    function accept(visitor: Visitor) {
     }
-
 }
 
-class LetMember extends Member {
+class LetMember extends Member (
 
-    constructor(definition: Let, start: Position, end: Position) {
-        this.definition = definition
-    }
+    definition: Let
 
-    function accept(mutable visitor: Visitor) {
-        if !visitor.openLetMember(this)
-            return
+    ) {
+    function accept(visitor: Visitor) {
+
+        if (visitor.openLetMember(this) = false) {
+            return }
         definition.accept(visitor)
+
         visitor.closeLetMember(this)
     }
-
-    let definition: Let
 }
 
-class MutableMember extends Member {
+class VarMember extends Member (
 
-    constructor(definition: Mutable, start: Position, end: Position) {
-        this.definition = definition
-    }
+    definition: Var
 
-    function accept(mutable visitor: Visitor) {
-        if !visitor.openMutableMember(this)
-            return
+    ) {
+    function accept(visitor: Visitor) {
+
+        if (visitor.openVarMember(this) = false) {
+            return }
         definition.accept(visitor)
+
+        visitor.closeVarMember(this)
+    }
+}
+
+class MutableMember extends Member (
+
+    definition: Mutable
+
+    ) {
+    function accept(visitor: Visitor) {
+
+        if (visitor.openMutableMember(this) = false) {
+            return }
+        definition.accept(visitor)
+
         visitor.closeMutableMember(this)
     }
-
-    let definition: Mutable
 }
 
-class SetInitialization extends Member {
+class SetInitialization extends Member (
 
-    constructor(definition: Set, start: Position, end: Position) {
-        this.definition = definition
-    }
+    definition: Set
 
-    function accept(mutable visitor: Visitor) {
-        if !visitor.openSetInitialization(this)
-            return
+    ) {
+    function accept(visitor: Visitor) {
+
+        if (visitor.openSetInitialization(this) = false) {
+            return }
         definition.accept(visitor)
+
         visitor.closeSetInitialization(this)
     }
-
-    let definition: Set
 }
 
-class Method extends Member {
+class Method extends Member (
 
-    constructor(procedure: Procedure, start: Position, end: Position) {
-        this.procedure = procedure
-    }
+    procedure: Procedure
 
-    function accept(mutable visitor: Visitor) {
-        if !visitor.openMethod(this)
-            return
+    ) {
+    function accept(visitor: Visitor) {
+
+        if (visitor.openMethod(this) = false) {
+            return }
         procedure.accept(visitor)
+
         visitor.closeMethod(this)
     }
-
-    let procedure: Procedure
 }
 
-class StaticFunction extends Member {
+class StaticFunction extends Member (
 
-    constructor(procedure: Function, start: Position, end: Position) {
-        this.procedure = procedure
-    }
+    procedure: Function
 
-    function accept(mutable visitor: Visitor) {
-        if !visitor.openStaticFunction(this)
-            return
+    ) {
+    function accept(visitor: Visitor) {
+
+        if (visitor.openStaticFunction(this) = false) {
+            return }
         procedure.accept(visitor)
+
         visitor.closeStaticFunction(this)
     }
-
-    let procedure: Function
 }
 
-class Operator extends Member {
+class Operator extends Member (
 
-    constructor(routine: Routine, start: Position, end: Position) {
-        this.routine = routine
-    }
+    routine: Routine
 
-    function accept(mutable visitor: Visitor) {
-        if !visitor.openOperator(this)
-            return
+    ) {
+    function accept(visitor: Visitor) {
+
+        if (visitor.openOperator(this) = false) {
+            return }
         routine.accept(visitor)
+
         visitor.closeOperator(this)
     }
-
-    let routine: Routine
 }
 
-class Initializer extends Member {
+class Initializer extends Member (
 
-    constructor(input: Structure, body: Block, start: Position, end: Position) {
-        this.input = input
-        this.body = body
-    }
+    input: Structure, 
+    body: Block
 
-    function accept(mutable visitor: Visitor) {
-        if !visitor.openInitializer(this)
-            return
-        if input != null
-            input.accept(visitor)
+    ) {
+    function accept(visitor: Visitor) {
+
+        if (visitor.openInitializer(this) = false) {
+            return }
+
+        if (input <> ()) {
+            input.accept(visitor) }
         body.accept(visitor)
+
         visitor.closeInitializer(this)
     }
-
-    let input: Structure
-    let body: Block
 }
 
-class Allocator extends Member {
+class Allocator extends Member (
 
-    constructor(input: Structure, body: Block, start: Position, end: Position) {
-        this.input = input
-        this.body = body
-    }
+    input: Structure, 
+    body: Block
 
-    function accept(mutable visitor: Visitor) {
-        if !visitor.openAllocator(this)
-            return
-        if input != null
-            input.accept(visitor)
+    ) {
+    function accept(visitor: Visitor) {
+
+        if (visitor.openAllocator(this) = false) {
+            return }
+
+        if (input <> ()) {
+            input.accept(visitor) }
         body.accept(visitor)
+
         visitor.closeAllocator(this)
     }
-
-    let input: Structure
-    let body: Block
 }
 
-class Function extends Statement {
+class Function extends Statement (
 
-    constructor(procedure: Procedure, start: Position, end: Position) {
-        this.procedure = procedure
-    }
+    procedure: Procedure
 
-    function accept(mutable visitor: Visitor) {
-        if !visitor.openFunction(this)
-            return
+    ) {
+    function accept(visitor: Visitor) {
+
+        if (visitor.openFunction(this) = false) {
+            return }
         procedure.accept(visitor)
+
         visitor.closeFunction(this)
     }
-
-    let procedure: Procedure
 }
 
-class Procedure extends SyntaxNode {
+class Procedure extends SyntaxNode (
 
-    constructor(name: string, routine: Routine, start: Position, end: Position) {
-        this.name = name
-        this.routine = routine
-    }
+    name: string, 
+    routine: Routine
 
-    function accept(mutable visitor: Visitor) {
-        if !visitor.openProcedure(this)
-            return
+    ) {
+    function accept(visitor: Visitor) {
+
+        if (visitor.openProcedure(this) = false) {
+            return }
         routine.accept(visitor)
+
         visitor.closeProcedure(this)
     }
-
-    let name: string
-    let routine: Routine
 }
 
-class Routine extends SyntaxNode {
+class Routine extends SyntaxNode (
 
-    constructor(input: Structure, output: TypeAnnotation, throwsClause: Throws, body: Block, start: Position, end: Position) {
-        this.input = input
-        this.output = output
-        this.throwsClause = throwsClause
-        this.body = body
-    }
+    input: Structure, 
+    output: TypeAnnotation, 
+    throwsClause: Throws, 
+    body: Block
 
-    function accept(mutable visitor: Visitor) {
-        if !visitor.openRoutine(this)
-            return
-        if input != null
-            input.accept(visitor)
-        if output != null
-            output.accept(visitor)
-        if throwsClause != null
-            throwsClause.accept(visitor)
+    ) {
+    function accept(visitor: Visitor) {
+
+        if (visitor.openRoutine(this) = false) {
+            return }
+
+        if (input <> ()) {
+            input.accept(visitor) }
+
+        if (output <> ()) {
+            output.accept(visitor) }
+
+        if (throwsClause <> ()) {
+            throwsClause.accept(visitor) }
         body.accept(visitor)
+
         visitor.closeRoutine(this)
     }
-
-    let input: Structure
-    let output: TypeAnnotation
-    let throwsClause: Throws
-    let body: Block
 }
 
-class TypeAnnotation extends SyntaxNode {
+class TypeAnnotation extends SyntaxNode (
 
-    constructor(typeSpec: TypeSpec, start: Position, end: Position) {
-        this.typeSpec = typeSpec
-    }
+    typeSpec: TypeSpec
 
-    function accept(mutable visitor: Visitor) {
-        if !visitor.openTypeAnnotation(this)
-            return
+    ) {
+    function accept(visitor: Visitor) {
+
+        if (visitor.openTypeAnnotation(this) = false) {
+            return }
         typeSpec.accept(visitor)
+
         visitor.closeTypeAnnotation(this)
     }
-
-    let typeSpec: TypeSpec
 }
 
 class TypeSpec extends SyntaxNode {
-
-    function accept(mutable visitor: Visitor) {
+    function accept(visitor: Visitor) {
     }
-
 }
 
-class Type extends TypeSpec {
+class Type extends TypeSpec (
 
-    constructor(name: Name, generics: GenericArguments, optional: Optional, lifeTime: LifeTime, start: Position, end: Position) {
-        this.name = name
-        this.generics = generics
-        this.optional = optional
-        this.lifeTime = lifeTime
-    }
+    name: Name, 
+    generics: GenericArguments, 
+    optional: Optional, 
+    lifeTime: LifeTime
 
-    function accept(mutable visitor: Visitor) {
-        if !visitor.openType(this)
-            return
+    ) {
+    function accept(visitor: Visitor) {
+
+        if (visitor.openType(this) = false) {
+            return }
         name.accept(visitor)
-        if generics != null
-            generics.accept(visitor)
-        if optional != null
-            optional.accept(visitor)
-        if lifeTime != null
-            lifeTime.accept(visitor)
+
+        if (generics <> ()) {
+            generics.accept(visitor) }
+
+        if (optional <> ()) {
+            optional.accept(visitor) }
+
+        if (lifeTime <> ()) {
+            lifeTime.accept(visitor) }
+
         visitor.closeType(this)
     }
-
-    let name: Name
-    let generics: GenericArguments
-    let optional: Optional
-    let lifeTime: LifeTime
 }
 
-class Variant extends TypeSpec {
+class Variant extends TypeSpec (
 
-    constructor(types: Type[], start: Position, end: Position) {
-        this.types = types
-    }
+    types: Array[Type], 
 
-    function accept(mutable visitor: Visitor) {
-        if !visitor.openVariant(this)
-            return
-        if types != null {
-            for node: Type in types
-                node.accept(visitor)
-        }
+    ) {
+    function accept(visitor: Visitor) {
+
+        if (visitor.openVariant(this) = false) {
+            return }
+
+        if (types <> ()) {
+            for (node: Type in types) {
+                node.accept(visitor) } }
+
         visitor.closeVariant(this)
     }
-
-    let types: Type[]
 }
 
-class Throws extends SyntaxNode {
+class Throws extends SyntaxNode (
 
-    constructor(throwsType: TypeSpec, start: Position, end: Position) {
-        this.throwsType = throwsType
-    }
+    throwsType: TypeSpec
 
-    function accept(mutable visitor: Visitor) {
-        if !visitor.openThrows(this)
-            return
+    ) {
+    function accept(visitor: Visitor) {
+
+        if (visitor.openThrows(this) = false) {
+            return }
         throwsType.accept(visitor)
+
         visitor.closeThrows(this)
     }
-
-    let throwsType: TypeSpec
 }
 
-class GenericArguments extends SyntaxNode {
+class GenericArguments extends SyntaxNode (
 
-    constructor(generic: Type, additionalGenerics: GenericArgument[], start: Position, end: Position) {
-        this.generic = generic
-        this.additionalGenerics = additionalGenerics
-    }
+    generic: Type, 
+    additionalGenerics: Array[GenericArgument], 
 
-    function accept(mutable visitor: Visitor) {
-        if !visitor.openGenericArguments(this)
-            return
+    ) {
+    function accept(visitor: Visitor) {
+
+        if (visitor.openGenericArguments(this) = false) {
+            return }
         generic.accept(visitor)
-        if additionalGenerics != null {
-            for node: GenericArgument in additionalGenerics
-                node.accept(visitor)
-        }
+
+        if (additionalGenerics <> ()) {
+            for (node: GenericArgument in additionalGenerics) {
+                node.accept(visitor) } }
+
         visitor.closeGenericArguments(this)
     }
-
-    let generic: Type
-    let additionalGenerics: GenericArgument[]
 }
 
-class GenericArgument extends SyntaxNode {
+class GenericArgument extends SyntaxNode (
 
-    constructor(typeSpec: Type, start: Position, end: Position) {
-        this.typeSpec = typeSpec
-    }
+    typeSpec: Type
 
-    function accept(mutable visitor: Visitor) {
-        if !visitor.openGenericArgument(this)
-            return
+    ) {
+    function accept(visitor: Visitor) {
+
+        if (visitor.openGenericArgument(this) = false) {
+            return }
         typeSpec.accept(visitor)
+
         visitor.closeGenericArgument(this)
     }
-
-    let typeSpec: Type
 }
 
-class Optional extends SyntaxNode {
+class Optional extends SyntaxNode (
 
-    constructor(start: Position, end: Position) {
-    }
 
-    function accept(mutable visitor: Visitor) {
+    ) {
+    function accept(visitor: Visitor) {
+
         visitor.visitOptional(this)
     }
-
 }
 
 class LifeTime extends SyntaxNode {
-
-    function accept(mutable visitor: Visitor) {
+    function accept(visitor: Visitor) {
     }
-
 }
 
-class Root extends LifeTime {
+class Root extends LifeTime (
 
-    constructor(start: Position, end: Position) {
-    }
 
-    function accept(mutable visitor: Visitor) {
+    ) {
+    function accept(visitor: Visitor) {
+
         visitor.visitRoot(this)
     }
-
 }
 
-class Local extends LifeTime {
+class Local extends LifeTime (
 
-    constructor(location: string, start: Position, end: Position) {
-        this.location = location
-    }
+    location: string
 
-    function accept(mutable visitor: Visitor) {
+    ) {
+    function accept(visitor: Visitor) {
+
         visitor.visitLocal(this)
     }
-
-    let location: string
 }
 
-class Reference extends LifeTime {
+class Reference extends LifeTime (
 
-    constructor(age: Literal, start: Position, end: Position) {
-        this.age = age
-    }
+    age: Literal
 
-    function accept(mutable visitor: Visitor) {
+    ) {
+    function accept(visitor: Visitor) {
+
         visitor.visitReference(this)
     }
-
-    let age: Literal
 }
 
-class Thrown extends LifeTime {
+class Thrown extends LifeTime (
 
-    constructor(start: Position, end: Position) {
-    }
 
-    function accept(mutable visitor: Visitor) {
+    ) {
+    function accept(visitor: Visitor) {
+
         visitor.visitThrown(this)
     }
+}
 
+class Intrinsic extends Statement (
+
+    name: string
+
+    ) {
+    function accept(visitor: Visitor) {
+
+        visitor.visitIntrinsic(this)
+    }
+}
+
+class Define extends Statement (
+
+    name: Name, 
+    typeSpec: Type
+
+    ) {
+    function accept(visitor: Visitor) {
+
+        if (visitor.openDefine(this) = false) {
+            return }
+        name.accept(visitor)
+        typeSpec.accept(visitor)
+
+        visitor.closeDefine(this)
+    }
 }
