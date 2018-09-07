@@ -35,25 +35,10 @@ namespace scalyc
         public List<string> names = new List<string>();
     }
 
-    class ClassModel
+    class TypeModel
     {
-        public string name;
-        public NamespaceModel parentNamespace;
-        public ClassModel parentClass;
-        public List<AllocatorModel> allocators = new List<AllocatorModel>();
-        public Dictionary<string, ClassModel> subClasses = new Dictionary<string, ClassModel>();
-        public Dictionary<string, FunctionModel> functions = new Dictionary<string, FunctionModel>();
-    }
-
-    class AllocatorModel
-    {
-        public ClassModel parentClass;
-        public StructureModel structure;
-    }
-
-    class StructureModel
-    {
-        public Dictionary<string, ComponentModel> components = new Dictionary<string, ComponentModel>();
+        public List<string> names = new List<string>();
+        public List<TypeModel> generics = new List<TypeModel>();
     }
 
     class ComponentModel
@@ -62,17 +47,63 @@ namespace scalyc
         public List<TypeModel> types = new List<TypeModel>();
     }
 
-    class TypeModel
+    class StructureModel
     {
-        public List<string> names = new List<string>();
-        public List<TypeModel> generics = new List<TypeModel>();
+        public Dictionary<string, ComponentModel> components = new Dictionary<string, ComponentModel>();
     }
 
-    class FunctionModel
+    class CallableModel
+    {
+        public StructureModel structure;
+    }
+
+    class BlockModel
+    {
+
+    }
+
+    class LambdaModel : CallableModel
+    {
+        public BlockModel code;
+    }
+
+    class ClassModel : CallableModel
     {
         public string name;
         public NamespaceModel parentNamespace;
         public ClassModel parentClass;
+        public Dictionary<string, ClassModel> subClasses = new Dictionary<string, ClassModel>();
+        public List<AllocatorModel> allocators = new List<AllocatorModel>();
+        public List<InitializerModel> initializers = new List<InitializerModel>();
+        public Dictionary<string, MethodModel> methods = new Dictionary<string, MethodModel>();
+        public Dictionary<string, FunctionModel> functions = new Dictionary<string, FunctionModel>();
+    }
+
+    class ClassCodeModel : LambdaModel
+    {
+        public ClassModel parentClass;
+    }
+
+    class AllocatorModel : ClassCodeModel
+    {
+    }
+
+    class InitializerModel : ClassCodeModel
+    {
+    }
+
+    class ProcedureModel : ClassCodeModel
+    {
+        public string name;
+    }
+
+    class MethodModel : ProcedureModel
+    {
+    }
+
+    class FunctionModel : ProcedureModel
+    {
+        public NamespaceModel parentNamespace;
     }
 
     class DefineModel
@@ -88,13 +119,12 @@ namespace scalyc
 
         Stack<NamespaceModel> namespaceStack = new Stack<NamespaceModel>();
         Stack<ClassModel> classStack = new Stack<ClassModel>();
-        AllocatorModel currentAllocator;
+        CallableModel currentCallable;
         StructureModel currentStructure;
         ComponentModel currentComponent;
         DefineModel currentDefine;
         Stack<TypeModel> typeStack = new Stack<TypeModel>();
         Stack<TypeModel> genericStack = new Stack<TypeModel>();
-
 
         public override bool openProgram(ProgramSyntax programSyntax)
         {
@@ -114,8 +144,9 @@ namespace scalyc
         {
             var theUsing = new UsingModel();
             theUsing.names.Add(usingSyntax.name.name);
-            foreach (var extension in usingSyntax.name.extensions)
-                theUsing.names.Add(extension.name);
+            if (usingSyntax.name.extensions != null)
+                foreach (var extension in usingSyntax.name.extensions)
+                    theUsing.names.Add(extension.name);
 
             if (namespaceStack.Count > 0)
                 namespaceStack.Peek().usings.Add(theUsing);
@@ -242,8 +273,17 @@ namespace scalyc
 
             classStack.Push(theClass);
 
+            if (classSyntax.baseClass != null)
+            {
+                // base class to go here
+            }
+
+            currentCallable = theClass;
+
             if (classSyntax.contents != null)
                 classSyntax.contents.accept(this);
+
+            currentCallable = null;
             
             if (classSyntax.body != null)
                 classSyntax.body.accept(this);
@@ -257,25 +297,11 @@ namespace scalyc
             return false;
         }
 
-        public override bool openAllocator(AllocatorSyntax allocatorSyntax)
-        {
-            var currentClass = classStack.Peek();
-            currentAllocator = new AllocatorModel() { parentClass = currentClass };
-            currentClass.allocators.Add(currentAllocator);
-
-            return true;
-        }
-
-        public override void closeAllocator(AllocatorSyntax allocatorSyntax)
-        {
-            currentAllocator = null;
-        }
-
         public override bool openStructure(StructureSyntax structureSyntax)
         {
             currentStructure = new StructureModel();
-            if (currentAllocator != null)
-                currentAllocator.structure = currentStructure;
+            if (currentCallable != null)
+                currentCallable.structure = currentStructure;
 
             return true;
         }
@@ -283,6 +309,7 @@ namespace scalyc
         public override void closeStructure(StructureSyntax structureSyntax)
         {
             currentStructure = null;
+            currentCallable = null;
         }
 
         public override bool openComponent(ComponentSyntax componentSyntax)
@@ -297,6 +324,78 @@ namespace scalyc
         public override void closeComponent(ComponentSyntax componentSyntax)
         {
             currentComponent = null;
+        }
+
+        public override bool openMethod(MethodSyntax methodSyntax)
+        {
+            var methodName = methodSyntax.procedure.name;
+
+            if ((classStack.Count > 0) && (classStack.Peek().methods.ContainsKey(methodName))) 
+                throw new ModelException($"Function {methodName} already defined in {classStack.Peek().name}.", currentFile.name, methodSyntax.start.line, methodSyntax.start.column);
+
+            var theMethod = new MethodModel() {
+                name = methodName,
+                parentClass = classStack.Count > 0 ? classStack.Peek(): null
+            };
+
+            if (classStack.Count > 0)
+                classStack.Peek().methods.Add(methodName, theMethod);
+
+            currentCallable = theMethod;
+
+            return true;
+        }
+
+        public override bool openInitializer(InitializerSyntax initializerSyntax)
+        {
+            var currentClass = classStack.Peek();
+            var initializerModel = new InitializerModel() { parentClass = currentClass };
+            currentClass.initializers.Add(initializerModel);
+            currentCallable = initializerModel;
+
+            return true;
+        }
+
+        public override bool openAllocator(AllocatorSyntax allocatorSyntax)
+        {
+            var currentClass = classStack.Peek();
+            var allocatorModel = new AllocatorModel() { parentClass = currentClass };
+            currentClass.allocators.Add(allocatorModel);
+            currentCallable = allocatorModel;
+
+            return true;
+        }
+
+        public override bool openFunction(FunctionSyntax functionSyntax)
+        {
+            var functionName = functionSyntax.procedure.name;
+
+            if ((classStack.Count > 0) && (classStack.Peek().functions.ContainsKey(functionName))) 
+                throw new ModelException($"Function {functionName} already defined in {classStack.Peek().name}.", currentFile.name, functionSyntax.start.line, functionSyntax.start.column);
+
+            if (programModel.functions.ContainsKey(functionName))
+                throw new ModelException($"Function {functionName} already defined.", currentFile.name, functionSyntax.start.line, functionSyntax.start.column);
+
+            var theFunction = new FunctionModel() {
+                name = functionName,
+                parentClass = classStack.Count > 0 ? classStack.Peek(): null,
+                parentNamespace = namespaceStack.Count > 0 && classStack.Count == 0 ? namespaceStack.Peek() : null
+            };
+
+            if (classStack.Count > 0)
+                classStack.Peek().functions.Add(functionName, theFunction);
+            else
+                programModel.functions.Add(functionName, theFunction);
+
+            currentCallable = theFunction;
+
+            return true;
+        }
+
+
+        public override bool openRoutine(RoutineSyntax routineSyntax)
+        {
+            return true;
         }
 
         public override bool openType(TypeSyntax typeSyntax)
@@ -347,34 +446,6 @@ namespace scalyc
         public override void closeGenericArguments(GenericArgumentsSyntax genericArgumentsSyntax)
         {
             genericStack.Pop();
-        }
-
-        public override bool openFunction(FunctionSyntax functionSyntax)
-        {
-            var functionName = functionSyntax.procedure.name;
-
-            if ((classStack.Count > 0) && (classStack.Peek().functions.ContainsKey(functionName))) 
-                throw new ModelException($"Function {functionName} already defined in {classStack.Peek().name}.", currentFile.name, functionSyntax.start.line, functionSyntax.start.column);
-
-            if (programModel.functions.ContainsKey(functionName))
-                throw new ModelException($"Function {functionName} already defined.", currentFile.name, functionSyntax.start.line, functionSyntax.start.column);
-
-            var function = new FunctionModel() {
-                name = functionName,
-                parentClass = classStack.Count > 0 ? classStack.Peek(): null,
-                parentNamespace = namespaceStack.Count > 0 && classStack.Count == 0 ? namespaceStack.Peek() : null
-            };
-
-            if (classStack.Count > 0)
-                classStack.Peek().functions.Add(functionName, function);
-            else
-                programModel.functions.Add(functionName, function);
-
-            return true;
-        }
-
-        public override void closeFunction(FunctionSyntax functionSyntax)
-        {
         }
 
         public override void visitIntrinsic(IntrinsicSyntax intrinsicSyntax)
