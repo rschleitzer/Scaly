@@ -68,8 +68,24 @@ class Parser(
     function parseFile(): File throws ParserError {
         let start: Position$ = lexer.getPreviousPosition()
 
+        let intrinsics: Array[Intrinsic] = parseIntrinsicList()
+        if (intrinsics <> null) {
+            if (isAtEnd() = false) {
+                let errorPos: Position$ = lexer.getPreviousPosition()
+                throw syntax(errorPos.line, errorPos.column)
+            }
+        }
+
         let usings: Array[Using] = parseUsingList()
         if (usings <> null) {
+            if (isAtEnd() = false) {
+                let errorPos: Position$ = lexer.getPreviousPosition()
+                throw syntax(errorPos.line, errorPos.column)
+            }
+        }
+
+        let defines: Array[Define] = parseDefineList()
+        if (defines <> null) {
             if (isAtEnd() = false) {
                 let errorPos: Position$ = lexer.getPreviousPosition()
                 throw syntax(errorPos.line, errorPos.column)
@@ -86,9 +102,17 @@ class Parser(
 
         let end: Position$ lexer.getPosition()
 
-        let ret: File new File(usings, statements, new Position(start), new Position(end))
+        let ret: File new File(intrinsics, usings, defines, statements, new Position(start), new Position(end))
+        if (intrinsics <> ()) {
+            for (item: Intrinsic in intrinsics) {
+                item.parent = ret }
+        }
         if (usings <> ()) {
             for (item: Using in usings) {
+                item.parent = ret }
+        }
+        if (defines <> ()) {
+            for (item: Define in defines) {
                 item.parent = ret }
         }
         if (statements <> ()) {
@@ -197,18 +221,6 @@ class Parser(
 
         {
             let node: Throw = parseThrow()
-            if (node <> ()) {
-                return node }
-        }
-
-        {
-            let node: Intrinsic = parseIntrinsic()
-            if (node <> ()) {
-                return node }
-        }
-
-        {
-            let node: Define = parseDefine()
             if (node <> ()) {
                 return node }
         }
@@ -336,20 +348,26 @@ class Parser(
 
         let usings: Array[Using] = parseUsingList()
 
+        let defines: Array[Define] = parseDefineList()
+
         let statements: Array[Statement] = parseStatementList()
 
-        let successRightCurly6: bool = lexer.parsePunctuation(rightCurly)
-        if (successRightCurly6) {
+        let successRightCurly7: bool = lexer.parsePunctuation(rightCurly)
+        if (successRightCurly7) {
             lexer.advance() }
         else {
             return () }
 
         let end: Position$ lexer.getPosition()
 
-        let ret: Namespace new Namespace(name, usings, statements, new Position(start), new Position(end))
+        let ret: Namespace new Namespace(name, usings, defines, statements, new Position(start), new Position(end))
         name.parent = ret
         if (usings <> ()) {
             for (item: Using in usings) {
+                item.parent = ret }
+        }
+        if (defines <> ()) {
+            for (item: Define in defines) {
                 item.parent = ret }
         }
         if (statements <> ()) {
@@ -2605,6 +2623,23 @@ class Parser(
         ret
     }
 
+    method parseIntrinsicList(): Array[Intrinsic] {
+        mutable ret: Array[Intrinsic]$ = null
+        while (true) {
+
+            let node: Intrinsic parseIntrinsic()
+            if (node = ()) {
+                break }
+
+            if (ret = ()) {
+                ret = new Array[Intrinsic]() }
+
+            ret.add(node)
+        }
+
+        ret
+    }
+
     function parseIntrinsic(): Intrinsic {
         let start: Position$ = lexer.getPreviousPosition()
 
@@ -2623,6 +2658,23 @@ class Parser(
         let end: Position$ lexer.getPosition()
 
         let ret: Intrinsic new Intrinsic(name, new Position(start), new Position(end))
+
+        ret
+    }
+
+    method parseDefineList(): Array[Define] {
+        mutable ret: Array[Define]$ = null
+        while (true) {
+
+            let node: Define parseDefine()
+            if (node = ()) {
+                break }
+
+            if (ret = ()) {
+                ret = new Array[Define]() }
+
+            ret.add(node)
+        }
 
         ret
     }
@@ -3319,7 +3371,9 @@ class Program extends SyntaxNode (
 
 class File extends SyntaxNode (
 
+    intrinsics: Array[Intrinsic], 
     usings: Array[Using], 
+    defines: Array[Define], 
     statements: Array[Statement]
 
     ) {
@@ -3328,8 +3382,16 @@ class File extends SyntaxNode (
         if (visitor.openFile(this) = false) {
             return }
 
+        if (intrinsics <> ()) {
+            for (node: Intrinsic in intrinsics) {
+                node.accept(visitor) } }
+
         if (usings <> ()) {
             for (node: Using in usings) {
+                node.accept(visitor) } }
+
+        if (defines <> ()) {
+            for (node: Define in defines) {
                 node.accept(visitor) } }
 
         if (statements <> ()) {
@@ -3394,6 +3456,7 @@ class Namespace extends Statement (
 
     name: Name, 
     usings: Array[Using], 
+    defines: Array[Define], 
     statements: Array[Statement], 
 
     ) {
@@ -3405,6 +3468,10 @@ class Namespace extends Statement (
 
         if (usings <> ()) {
             for (node: Using in usings) {
+                node.accept(visitor) } }
+
+        if (defines <> ()) {
+            for (node: Define in defines) {
                 node.accept(visitor) } }
 
         if (statements <> ()) {
@@ -4646,7 +4713,7 @@ class Thrown extends LifeTime (
     }
 }
 
-class Intrinsic extends Statement (
+class Intrinsic extends SyntaxNode (
 
     name: string
 
@@ -4657,7 +4724,7 @@ class Intrinsic extends Statement (
     }
 }
 
-class Define extends Statement (
+class Define extends SyntaxNode (
 
     name: Name, 
     typeSpec: Type

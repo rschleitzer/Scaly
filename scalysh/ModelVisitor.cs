@@ -6,8 +6,10 @@ namespace scalyc
     {
         public string name;
         public Dictionary<string, NamespaceModel> namespaces = new Dictionary<string, NamespaceModel>();
+        public Dictionary<string, DefineModel> defines = new Dictionary<string, DefineModel>();
         public Dictionary<string, ClassModel> classes = new Dictionary<string, ClassModel>();
         public Dictionary<string, FunctionModel> functions = new Dictionary<string, FunctionModel>();
+        public HashSet<string> intrinsics = new HashSet<string>();
     }
 
     class NamespaceModel
@@ -15,7 +17,9 @@ namespace scalyc
         public string name;
         public NamespaceModel parentNamespace;
         public Dictionary<string, NamespaceModel> subNamespaces = new Dictionary<string, NamespaceModel>();
+        public Dictionary<string, DefineModel> defines = new Dictionary<string, DefineModel>();
         public Dictionary<string, ClassModel> classes = new Dictionary<string, ClassModel>();
+        public Dictionary<string, FunctionModel> functions = new Dictionary<string, FunctionModel>();
     }    
 
     class ClassModel
@@ -58,6 +62,12 @@ namespace scalyc
         public ClassModel parentClass;
     }
 
+    class DefineModel
+    {
+        public string name;
+        public List<TypeModel> types = new List<TypeModel>();
+    }
+
     class ModelVisitor : SyntaxVisitor
     {
         public ProgramModel programModel;
@@ -68,6 +78,7 @@ namespace scalyc
         AllocatorModel currentAllocator;
         StructureModel currentStructure;
         ComponentModel currentComponent;
+        DefineModel currentDefine;
         Stack<TypeModel> typeStack = new Stack<TypeModel>();
         Stack<TypeModel> genericStack = new Stack<TypeModel>();
 
@@ -274,7 +285,14 @@ namespace scalyc
             else 
             {
                 if (currentComponent != null)
+                {
                     currentComponent.types.Add(typeModel);
+                }
+                else
+                {
+                    if (currentDefine != null)
+                        currentDefine.types.Add(typeModel);
+                }
             }
 
             typeStack.Push(typeModel);
@@ -327,6 +345,47 @@ namespace scalyc
 
         public override void closeFunction(FunctionSyntax functionSyntax)
         {
+        }
+
+        public override void visitIntrinsic(IntrinsicSyntax intrinsicSyntax)
+        {
+            programModel.intrinsics.Add(intrinsicSyntax.name);
+        }
+
+        public override bool openDefine(DefineSyntax defineSyntax)
+        {
+            var name = defineSyntax.name.name;
+            if (defineSyntax.name.extensions != null)
+            {
+                foreach (var extension in defineSyntax.name.extensions)
+                {
+                    AddNamespace(name);
+                    name = extension.name;
+                }
+            }
+
+            currentDefine = new DefineModel() { name = name };
+
+            if (namespaceStack.Count > 0)
+            {
+                var currentNamespace = namespaceStack.Peek();
+                if (currentNamespace.defines.ContainsKey(name))
+                    throw new ModelException($"{name} already defined!", currentFile, defineSyntax.start.line, defineSyntax.start.column);
+                currentNamespace.defines.Add(name, currentDefine);
+            }
+            else
+            {
+                if (programModel.defines.ContainsKey(name))
+                    throw new ModelException($"{name} already defined!", currentFile, defineSyntax.start.line, defineSyntax.start.column);
+                programModel.defines.Add(name, currentDefine);
+            }
+
+            return true;
+        }
+
+        public override void closeDefine(DefineSyntax defineSyntax)
+        {
+            currentDefine = null;
         }
     }
 }

@@ -59,7 +59,11 @@ namespace scalyc
         {
             Position start = lexer.getPreviousPosition();
 
+            IntrinsicSyntax[] intrinsics = parseIntrinsicList();
+
             UsingSyntax[] usings = parseUsingList();
+
+            DefineSyntax[] defines = parseDefineList();
 
             StatementSyntax[] statements = parseStatementList();
             if (statements != null)
@@ -73,11 +77,21 @@ namespace scalyc
 
             Position end = lexer.getPosition();
 
-            FileSyntax ret = new FileSyntax(start, end, usings, statements);
+            FileSyntax ret = new FileSyntax(start, end, intrinsics, usings, defines, statements);
 
+            if (intrinsics != null)
+            {
+                foreach (IntrinsicSyntax item in intrinsics)
+                    item.parent = ret;
+            }
             if (usings != null)
             {
                 foreach (UsingSyntax item in usings)
+                    item.parent = ret;
+            }
+            if (defines != null)
+            {
+                foreach (DefineSyntax item in defines)
                     item.parent = ret;
             }
             if (statements != null)
@@ -192,18 +206,6 @@ namespace scalyc
 
             {
                 ThrowSyntax node = parseThrow();
-                if (node != null)
-                    return node;
-            }
-
-            {
-                IntrinsicSyntax node = parseIntrinsic();
-                if (node != null)
-                    return node;
-            }
-
-            {
-                DefineSyntax node = parseDefine();
                 if (node != null)
                     return node;
             }
@@ -347,22 +349,29 @@ namespace scalyc
 
             UsingSyntax[] usings = parseUsingList();
 
+            DefineSyntax[] defines = parseDefineList();
+
             StatementSyntax[] statements = parseStatementList();
 
-            bool successRightCurly6 = lexer.parsePunctuation("}");
-            if (successRightCurly6)
+            bool successRightCurly7 = lexer.parsePunctuation("}");
+            if (successRightCurly7)
                 lexer.advance();
             else
                 throw new ParserException(fileName, lexer.line, lexer.column);
 
             Position end = lexer.getPosition();
 
-            NamespaceSyntax ret = new NamespaceSyntax(start, end, name, usings, statements);
+            NamespaceSyntax ret = new NamespaceSyntax(start, end, name, usings, defines, statements);
 
             name.parent = ret;
             if (usings != null)
             {
                 foreach (UsingSyntax item in usings)
+                    item.parent = ret;
+            }
+            if (defines != null)
+            {
+                foreach (DefineSyntax item in defines)
                     item.parent = ret;
             }
             if (statements != null)
@@ -2846,6 +2855,27 @@ namespace scalyc
             return ret;
         }
 
+        public IntrinsicSyntax[] parseIntrinsicList()
+        {
+            List<IntrinsicSyntax> ret = null;
+            while (true)
+            {
+                IntrinsicSyntax node = parseIntrinsic();
+                if (node == null)
+                    break;
+
+                if (ret == null)
+                    ret = new List<IntrinsicSyntax>();
+
+                ret.Add(node);
+            }
+
+            if (ret != null)
+                return ret.ToArray();
+            else
+                return null;
+        }
+
         public IntrinsicSyntax parseIntrinsic()
         {
             Position start = lexer.getPreviousPosition();
@@ -2868,6 +2898,27 @@ namespace scalyc
 
 
             return ret;
+        }
+
+        public DefineSyntax[] parseDefineList()
+        {
+            List<DefineSyntax> ret = null;
+            while (true)
+            {
+                DefineSyntax node = parseDefine();
+                if (node == null)
+                    break;
+
+                if (ret == null)
+                    ret = new List<DefineSyntax>();
+
+                ret.Add(node);
+            }
+
+            if (ret != null)
+                return ret.ToArray();
+            else
+                return null;
         }
 
         public DefineSyntax parseDefine()
@@ -3612,14 +3663,18 @@ namespace scalyc
 
     public class FileSyntax : SyntaxNode
     {
+        public IntrinsicSyntax[] intrinsics;
         public UsingSyntax[] usings;
+        public DefineSyntax[] defines;
         public StatementSyntax[] statements;
         public string fileName;
-        public FileSyntax(Position start, Position end, UsingSyntax[] usings, StatementSyntax[] statements)
+        public FileSyntax(Position start, Position end, IntrinsicSyntax[] intrinsics, UsingSyntax[] usings, DefineSyntax[] defines, StatementSyntax[] statements)
         {
             this.start = start;
             this.end = end;
+            this.intrinsics = intrinsics;
             this.usings = usings;
+            this.defines = defines;
             this.statements = statements;
         }
 
@@ -3628,9 +3683,21 @@ namespace scalyc
             if (!visitor.openFile(this))
                 return;
 
+            if (intrinsics != null)
+            {
+                foreach (IntrinsicSyntax node in intrinsics)
+                    node.accept(visitor);
+            }
+
             if (usings != null)
             {
                 foreach (UsingSyntax node in usings)
+                    node.accept(visitor);
+            }
+
+            if (defines != null)
+            {
+                foreach (DefineSyntax node in defines)
                     node.accept(visitor);
             }
 
@@ -3719,13 +3786,15 @@ namespace scalyc
     {
         public NameSyntax name;
         public UsingSyntax[] usings;
+        public DefineSyntax[] defines;
         public StatementSyntax[] statements;
-        public NamespaceSyntax(Position start, Position end, NameSyntax name, UsingSyntax[] usings, StatementSyntax[] statements)
+        public NamespaceSyntax(Position start, Position end, NameSyntax name, UsingSyntax[] usings, DefineSyntax[] defines, StatementSyntax[] statements)
         {
             this.start = start;
             this.end = end;
             this.name = name;
             this.usings = usings;
+            this.defines = defines;
             this.statements = statements;
         }
 
@@ -3739,6 +3808,12 @@ namespace scalyc
             if (usings != null)
             {
                 foreach (UsingSyntax node in usings)
+                    node.accept(visitor);
+            }
+
+            if (defines != null)
+            {
+                foreach (DefineSyntax node in defines)
                     node.accept(visitor);
             }
 
@@ -5479,7 +5554,7 @@ namespace scalyc
         }
     }
 
-    public class IntrinsicSyntax : StatementSyntax
+    public class IntrinsicSyntax : SyntaxNode
     {
         public string name;
         public IntrinsicSyntax(Position start, Position end, string name)
@@ -5495,7 +5570,7 @@ namespace scalyc
         }
     }
 
-    public class DefineSyntax : StatementSyntax
+    public class DefineSyntax : SyntaxNode
     {
         public NameSyntax name;
         public TypeSyntax typeSpec;

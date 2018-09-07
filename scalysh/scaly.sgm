@@ -7,7 +7,9 @@
         <content link = File                  multiple          property = files
 
     <syntax id = File                                           top
+        <content link = Intrinsic             multiple optional property = intrinsics
         <content link = Using                 multiple optional property = usings
+        <content link = Define                multiple optional property = defines
         <content link = Statement             multiple optional property = statements
 
     <syntax id = Statement                    multiple abstract
@@ -25,8 +27,6 @@
         <content link = Continue
         <content link = Return
         <content link = Throw
-        <content link = Intrinsic
-        <content link = Define
 
     <syntax id = Using                        multiple
         <content link = using
@@ -45,6 +45,7 @@
         <content link = Name                                    property = name
         <content link = leftCurly
         <content link = Using                 multiple optional property = usings
+        <content link = Define                multiple optional property = defines
         <content link = Statement             multiple optional property = statements
         <content link = rightCurly
 
@@ -441,11 +442,11 @@
     <syntax id = Thrown                                         base = LifeTime
         <content link = hash
 
-    <syntax id = Intrinsic                                      base = Statement
+    <syntax id = Intrinsic                    multiple
         <content link = intrinsic
         <content identifier                                     property = name
 
-    <syntax id = Define                                         base = Statement
+    <syntax id = Define                       multiple
         <content link = define
         <content link = Name                                    property = name
         <content link = Type                                    property = typeSpec
