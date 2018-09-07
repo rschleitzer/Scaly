@@ -5,11 +5,18 @@ namespace scalyc
     class ProgramModel
     {
         public string name;
+        public Dictionary<string, FileModel> files = new Dictionary<string, FileModel>();
         public Dictionary<string, NamespaceModel> namespaces = new Dictionary<string, NamespaceModel>();
-        public Dictionary<string, DefineModel> defines = new Dictionary<string, DefineModel>();
         public Dictionary<string, ClassModel> classes = new Dictionary<string, ClassModel>();
         public Dictionary<string, FunctionModel> functions = new Dictionary<string, FunctionModel>();
         public HashSet<string> intrinsics = new HashSet<string>();
+    }
+
+    class FileModel
+    {
+        public string name;
+        public List<UsingModel> usings = new List<UsingModel>();
+        public Dictionary<string, DefineModel> defines = new Dictionary<string, DefineModel>();
     }
 
     class NamespaceModel
@@ -17,10 +24,16 @@ namespace scalyc
         public string name;
         public NamespaceModel parentNamespace;
         public Dictionary<string, NamespaceModel> subNamespaces = new Dictionary<string, NamespaceModel>();
+        public List<UsingModel> usings = new List<UsingModel>();
         public Dictionary<string, DefineModel> defines = new Dictionary<string, DefineModel>();
         public Dictionary<string, ClassModel> classes = new Dictionary<string, ClassModel>();
         public Dictionary<string, FunctionModel> functions = new Dictionary<string, FunctionModel>();
-    }    
+    }
+
+    class UsingModel
+    {
+        public List<string> names = new List<string>();
+    }
 
     class ClassModel
     {
@@ -71,8 +84,8 @@ namespace scalyc
     class ModelVisitor : SyntaxVisitor
     {
         public ProgramModel programModel;
+        FileModel currentFile;
 
-        string currentFile;
         Stack<NamespaceModel> namespaceStack = new Stack<NamespaceModel>();
         Stack<ClassModel> classStack = new Stack<ClassModel>();
         AllocatorModel currentAllocator;
@@ -91,8 +104,25 @@ namespace scalyc
 
         public override bool openFile(FileSyntax fileSyntax)
         {
-            currentFile = fileSyntax.fileName;
+            currentFile = new FileModel() { name = fileSyntax.fileName };
+            programModel.files.Add(fileSyntax.fileName, currentFile);
+
             return true;
+        }
+
+        public override bool openUsing(UsingSyntax usingSyntax)
+        {
+            var theUsing = new UsingModel();
+            theUsing.names.Add(usingSyntax.name.name);
+            foreach (var extension in usingSyntax.name.extensions)
+                theUsing.names.Add(extension.name);
+
+            if (namespaceStack.Count > 0)
+                namespaceStack.Peek().usings.Add(theUsing);
+            else
+                currentFile.usings.Add(theUsing);
+
+            return false;
         }
 
         public override bool openNamespace(NamespaceSyntax namespaceSyntax)
@@ -324,10 +354,10 @@ namespace scalyc
             var functionName = functionSyntax.procedure.name;
 
             if ((classStack.Count > 0) && (classStack.Peek().functions.ContainsKey(functionName))) 
-                throw new ModelException($"Function {functionName} already defined in {classStack.Peek().name}.", currentFile, functionSyntax.start.line, functionSyntax.start.column);
+                throw new ModelException($"Function {functionName} already defined in {classStack.Peek().name}.", currentFile.name, functionSyntax.start.line, functionSyntax.start.column);
 
             if (programModel.functions.ContainsKey(functionName))
-                throw new ModelException($"Function {functionName} already defined.", currentFile, functionSyntax.start.line, functionSyntax.start.column);
+                throw new ModelException($"Function {functionName} already defined.", currentFile.name, functionSyntax.start.line, functionSyntax.start.column);
 
             var function = new FunctionModel() {
                 name = functionName,
@@ -370,14 +400,14 @@ namespace scalyc
             {
                 var currentNamespace = namespaceStack.Peek();
                 if (currentNamespace.defines.ContainsKey(name))
-                    throw new ModelException($"{name} already defined!", currentFile, defineSyntax.start.line, defineSyntax.start.column);
+                    throw new ModelException($"{name} already defined!", currentFile.name, defineSyntax.start.line, defineSyntax.start.column);
                 currentNamespace.defines.Add(name, currentDefine);
             }
             else
             {
-                if (programModel.defines.ContainsKey(name))
-                    throw new ModelException($"{name} already defined!", currentFile, defineSyntax.start.line, defineSyntax.start.column);
-                programModel.defines.Add(name, currentDefine);
+                if (currentFile.defines.ContainsKey(name))
+                    throw new ModelException($"{name} already defined!", currentFile.name, defineSyntax.start.line, defineSyntax.start.column);
+                currentFile.defines.Add(name, currentDefine);
             }
 
             return true;
