@@ -14,7 +14,6 @@
 
     <syntax id = Statement                    multiple abstract
         <content link = Namespace
-        <content link = TypeDefinition
         <content link = Let
         <content link = Var
         <content link = Mutable
@@ -48,11 +47,6 @@
         <content link = Define                multiple optional property = defines
         <content link = Statement             multiple optional property = statements
         <content link = rightCurly
-
-    <syntax id = TypeDefinition                                 base = Statement
-        <content link = typedef
-        <content identifier                                     property = typeName
-        <content link = TypeSpec                                property = typeSpec
 
     <syntax id = Let                                            base = Statement
         <content link = let

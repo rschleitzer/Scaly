@@ -224,6 +224,7 @@ namespace scalyc
 
         public override bool openBlock(BlockSyntax blockSyntax)
         {
+            var blockModel = new BlockModel() { };
             return true;
         }
 
