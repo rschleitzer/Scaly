@@ -148,12 +148,6 @@ class Parser(
         }
 
         {
-            let node: TypeDefinition = parseTypeDefinition()
-            if (node <> ()) {
-                return node }
-        }
-
-        {
             let node: Let = parseLet()
             if (node <> ()) {
                 return node }
@@ -374,33 +368,6 @@ class Parser(
             for (item: Statement in statements) {
                 item.parent = ret }
         }
-
-        ret
-    }
-
-    function parseTypeDefinition(): TypeDefinition {
-        let start: Position$ = lexer.getPreviousPosition()
-
-        let successTypedef1: bool = lexer.parseKeyword(typedefKeyword)
-        if (successTypedef1) {
-            lexer.advance() }
-        else {
-            return () }
-
-        let typeName: string = lexer.parseIdentifier()
-        if ((typeName <> ()) && isIdentifier(typeName)) {
-            lexer.advance() }
-        else {
-            return () }
-
-        let typeSpec: TypeSpec = parseTypeSpec()
-        if (typeSpec = ()) {
-            return () }
-
-        let end: Position$ lexer.getPosition()
-
-        let ret: TypeDefinition new TypeDefinition(typeName, typeSpec, new Position(start), new Position(end))
-        typeSpec.parent = ret
 
         ret
     }
@@ -2867,13 +2834,6 @@ class Visitor {
     function closeNamespace(namespaceSyntax: NamespaceSyntax) {
     }
 
-    function openTypeDefinition(typeDefinitionSyntax: TypeDefinitionSyntax): bool {
-        true
-    }
-
-    function closeTypeDefinition(typeDefinitionSyntax: TypeDefinitionSyntax) {
-    }
-
     function openLet(letSyntax: LetSyntax): bool {
         true
     }
@@ -3479,22 +3439,6 @@ class Namespace extends Statement (
                 node.accept(visitor) } }
 
         visitor.closeNamespace(this)
-    }
-}
-
-class TypeDefinition extends Statement (
-
-    typeName: string, 
-    typeSpec: TypeSpec
-
-    ) {
-    function accept(visitor: Visitor) {
-
-        if (visitor.openTypeDefinition(this) = false) {
-            return }
-        typeSpec.accept(visitor)
-
-        visitor.closeTypeDefinition(this)
     }
 }
 

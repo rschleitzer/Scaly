@@ -133,12 +133,6 @@ namespace scalyc
             }
 
             {
-                TypeDefinitionSyntax node = parseTypeDefinition();
-                if (node != null)
-                    return node;
-            }
-
-            {
                 LetSyntax node = parseLet();
                 if (node != null)
                     return node;
@@ -379,35 +373,6 @@ namespace scalyc
                 foreach (StatementSyntax item in statements)
                     item.parent = ret;
             }
-
-            return ret;
-        }
-
-        public TypeDefinitionSyntax parseTypeDefinition()
-        {
-            Position start = lexer.getPreviousPosition();
-
-            bool successTypedef1 = lexer.parseKeyword("typedef");
-            if (successTypedef1)
-                lexer.advance();
-            else
-                return null;
-
-            string typeName = lexer.parseIdentifier();
-            if ((typeName != null) && isIdentifier(typeName))
-                lexer.advance();
-            else
-                throw new ParserException(fileName, lexer.line, lexer.column);
-
-            TypeSpecSyntax typeSpec = parseTypeSpec();
-            if (typeSpec == null)
-                throw new ParserException(fileName, lexer.line, lexer.column);
-
-            Position end = lexer.getPosition();
-
-            TypeDefinitionSyntax ret = new TypeDefinitionSyntax(start, end, typeName, typeSpec);
-
-            typeSpec.parent = ret;
 
             return ret;
         }
@@ -3014,15 +2979,6 @@ namespace scalyc
         {
         }
 
-        public virtual bool openTypeDefinition(TypeDefinitionSyntax typeDefinitionSyntax)
-        {
-            return true;
-        }
-
-        public virtual void closeTypeDefinition(TypeDefinitionSyntax typeDefinitionSyntax)
-        {
-        }
-
         public virtual bool openLet(LetSyntax letSyntax)
         {
             return true;
@@ -3824,29 +3780,6 @@ namespace scalyc
             }
 
             visitor.closeNamespace(this);
-        }
-    }
-
-    public class TypeDefinitionSyntax : StatementSyntax
-    {
-        public string typeName;
-        public TypeSpecSyntax typeSpec;
-        public TypeDefinitionSyntax(Position start, Position end, string typeName, TypeSpecSyntax typeSpec)
-        {
-            this.start = start;
-            this.end = end;
-            this.typeName = typeName;
-            this.typeSpec = typeSpec;
-        }
-
-        public override void accept(SyntaxVisitor visitor)
-        {
-            if (!visitor.openTypeDefinition(this))
-                return;
-
-            typeSpec.accept(visitor);
-
-            visitor.closeTypeDefinition(this);
         }
     }
 
