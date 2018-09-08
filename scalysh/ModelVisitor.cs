@@ -97,12 +97,19 @@ namespace scalyc
         public string name;
     }
 
+    class RoutineModel : LambdaModel
+    {
+        public TypeModel output;
+        public TypeModel error;
+    }
+
     class MethodModel : ProcedureModel
     {
     }
 
-    class FunctionModel : ProcedureModel
+    class FunctionModel : RoutineModel
     {
+        public string name;
         public NamespaceModel parentNamespace;
     }
 
@@ -123,6 +130,8 @@ namespace scalyc
         StructureModel currentStructure;
         ComponentModel currentComponent;
         DefineModel currentDefine;
+        RoutineModel currentRoutine;
+        bool routineOutput;
         Stack<TypeModel> typeStack = new Stack<TypeModel>();
         Stack<TypeModel> genericStack = new Stack<TypeModel>();
 
@@ -211,6 +220,11 @@ namespace scalyc
             namespaceStack.Push(theNamespace);
 
             return theNamespace;
+        }
+
+        public override bool openBlock(BlockSyntax blockSyntax)
+        {
+            return true;
         }
 
         public override bool openClass(ClassSyntax classSyntax)
@@ -378,7 +392,6 @@ namespace scalyc
 
             var theFunction = new FunctionModel() {
                 name = functionName,
-                parentClass = classStack.Count > 0 ? classStack.Peek(): null,
                 parentNamespace = namespaceStack.Count > 0 && classStack.Count == 0 ? namespaceStack.Peek() : null
             };
 
@@ -388,14 +401,29 @@ namespace scalyc
                 programModel.functions.Add(functionName, theFunction);
 
             currentCallable = theFunction;
+            currentRoutine = theFunction;
 
             return true;
         }
 
-
         public override bool openRoutine(RoutineSyntax routineSyntax)
         {
-            return true;
+            if (routineSyntax.output != null)
+            {
+                routineOutput = true;
+                routineSyntax.output.accept(this);
+                routineOutput = false;
+            }
+
+            if (routineSyntax.throwsClause != null)
+            {
+                routineSyntax.throwsClause.accept(this);
+            }
+
+            routineSyntax.body.accept(this);
+
+            currentRoutine = null;
+            return false;
         }
 
         public override bool openType(TypeSyntax typeSyntax)
@@ -419,8 +447,20 @@ namespace scalyc
                 }
                 else
                 {
-                    if (currentDefine != null)
-                        currentDefine.types.Add(typeModel);
+                    if (currentRoutine != null)
+                    {
+                        if (routineOutput)
+                            currentRoutine.output = typeModel;
+                        else
+                            currentRoutine.error = typeModel;
+                    }
+                    else
+                    {
+                        if (currentDefine != null)
+                        {
+                            currentDefine.types.Add(typeModel);
+                        }
+                    }
                 }
             }
 

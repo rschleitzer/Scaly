@@ -2,7 +2,8 @@
   "profiles": {
     "scalysh": {
       "commandName": "Project",
-      "commandLineArgs": "-o scalyc Lexer.scaly Compiler.scaly main.scaly"
+      //"commandLineArgs": "-o scalyc ctypes.scaly main.scaly scaly.scaly Page.scaly string.scaly Array.scaly Options.scaly Compiler.scaly Lexer.scaly Parser.scaly"
+      "commandLineArgs": "-o scalyc main.scaly"
     }
   }
 }
