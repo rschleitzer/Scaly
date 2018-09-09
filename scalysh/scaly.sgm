@@ -10,26 +10,21 @@
         <content link = Intrinsic             multiple optional property = intrinsics
         <content link = Using                 multiple optional property = usings
         <content link = Define                multiple optional property = defines
+        <content link = Declaration           multiple optional property = declarations
         <content link = Statement             multiple optional property = statements
 
-    <syntax id = Statement                    multiple abstract
-        <content link = Namespace
-        <content link = Let
-        <content link = Var
-        <content link = Mutable
-        <content link = ThreadLocal
-        <content link = Set
-        <content link = Calculation
-        <content link = Function
-        <content link = Class
-        <content link = Break
-        <content link = Continue
-        <content link = Return
-        <content link = Throw
+    <syntax id = Intrinsic                    multiple
+        <content link = intrinsic
+        <content identifier                                     property = name
 
     <syntax id = Using                        multiple
         <content link = using
         <content link = Name                                    property = name
+
+    <syntax id = Define                       multiple
+        <content link = define
+        <content link = Name                                    property = name
+        <content link = Type                                    property = typeSpec
 
     <syntax id = Name                                           base = Expression
         <content identifier                                     property = name
@@ -39,14 +34,61 @@
         <content link = dot
         <content identifier                                     property = name
 
-    <syntax id = Namespace                                      base = Statement
+    <syntax id = Declaration                  multiple abstract
+        <content link = Namespace
+        <content link = Function
+        <content link = Class
+        <content link = LetDeclaration
+        <content link = VarDeclaration
+        <content link = MutableDeclaration
+        <content link = ThreadLocalDeclaration
+
+    <syntax id = Namespace                                      base = Declaration
         <content link = namespace
         <content link = Name                                    property = name
         <content link = leftCurly
         <content link = Using                 multiple optional property = usings
         <content link = Define                multiple optional property = defines
-        <content link = Statement             multiple optional property = statements
+        <content link = Declaration           multiple optional property = declarations
         <content link = rightCurly
+
+    <syntax id = Function                                       base = Declaration
+        <content link = function
+        <content link = Procedure                               property = procedure
+
+    <syntax id = Procedure
+        <content identifier                                     property = name
+        <content link = Routine                                 property = routine
+
+    <syntax id = Routine
+        <content link = Structure                      optional property = input
+        <content link = TypeAnnotation                 optional property = output
+        <content link = Throws                         optional property = throwsClause
+        <content link = Block                                   property = body
+
+    <syntax id = LetDeclaration                                 base = Declaration
+        <content link = Let                                     property = declaration
+
+    <syntax id = VarDeclaration                                 base = Declaration
+        <content link = Var                                     property = declaration
+
+    <syntax id = MutableDeclaration                             base = Declaration
+        <content link = Mutable                                 property = declaration
+
+    <syntax id = ThreadLocalDeclaration                         base = Declaration
+        <content link = ThreadLocal                             property = declaration
+
+    <syntax id = Statement                    multiple abstract
+        <content link = Let
+        <content link = Var
+        <content link = Mutable
+        <content link = ThreadLocal
+        <content link = Set
+        <content link = Calculation
+        <content link = Break
+        <content link = Continue
+        <content link = Return
+        <content link = Throw
 
     <syntax id = Let                                            base = Statement
         <content link = let
@@ -285,7 +327,7 @@
         <content link = throw
         <content link = Calculation                             property = exception
 
-    <syntax id = Class                                          base = Statement
+    <syntax id = Class                                          base = Declaration
         <content link = class
         <content link = Name                                    property = name
         <content link = GenericParameters              optional property = generics
@@ -319,10 +361,10 @@
 
     <syntax id = ClassBody
         <content link = leftCurly
-        <content link = Member                multiple optional property = members
+        <content link = ClassMember           multiple optional property = members
         <content link = rightCurly
 
-    <syntax id = Member                       multiple abstract
+    <syntax id = ClassMember                  multiple abstract
         <content link = LetMember
         <content link = VarMember
         <content link = MutableMember
@@ -333,51 +375,37 @@
         <content link = Initializer
         <content link = Allocator
 
-    <syntax id = LetMember                                      base = Member
-        <content link = Let                                     property = definition
+    <syntax id = LetMember                                      base = ClassMember
+        <content link = Let                                     property = declaration
 
-    <syntax id = VarMember                                      base = Member
-        <content link = Var                                     property = definition
+    <syntax id = VarMember                                      base = ClassMember
+        <content link = Var                                     property = declaration
 
-    <syntax id = MutableMember                                  base = Member
-        <content link = Mutable                                 property = definition
+    <syntax id = MutableMember                                  base = ClassMember
+        <content link = Mutable                                 property = declaration
 
-    <syntax id = SetInitialization                              base = Member
+    <syntax id = SetInitialization                              base = ClassMember
         <content link = Set                                     property = definition
 
-    <syntax id = Method                                         base = Member
+    <syntax id = Method                                         base = ClassMember
         <content link = method
         <content link = Procedure                               property = procedure
 
-    <syntax id = StaticFunction                                 base = Member
+    <syntax id = StaticFunction                                 base = ClassMember
         <content link = Function                                property = procedure
 
-    <syntax id = Operator                                       base = Member
+    <syntax id = Operator                                       base = ClassMember
         <content link = operator
         <content link = Routine                                 property = routine
 
-    <syntax id = Initializer                                    base = Member
+    <syntax id = Initializer                                    base = ClassMember
         <content link = initializer
         <content link = Structure                      optional property = input
         <content link = Block                                   property = body
 
-    <syntax id = Allocator                                      base = Member
+    <syntax id = Allocator                                      base = ClassMember
         <content link = allocator
         <content link = Structure                      optional property = input
-        <content link = Block                                   property = body
-
-    <syntax id = Function                                       base = Statement
-        <content link = function
-        <content link = Procedure                               property = procedure
-
-    <syntax id = Procedure
-        <content identifier                                     property = name
-        <content link = Routine                                 property = routine
-
-    <syntax id = Routine
-        <content link = Structure                      optional property = input
-        <content link = TypeAnnotation                 optional property = output
-        <content link = Throws                         optional property = throwsClause
         <content link = Block                                   property = body
 
     <syntax id = TypeAnnotation
@@ -435,15 +463,6 @@
 
     <syntax id = Thrown                                         base = LifeTime
         <content link = hash
-
-    <syntax id = Intrinsic                    multiple
-        <content link = intrinsic
-        <content identifier                                     property = name
-
-    <syntax id = Define                       multiple
-        <content link = define
-        <content link = Name                                    property = name
-        <content link = Type                                    property = typeSpec
 
     <keyword id = using
     <keyword id = namespace

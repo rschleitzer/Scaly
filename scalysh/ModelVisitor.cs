@@ -177,8 +177,8 @@ namespace scalyc
                 foreach (var extension in namespaceSyntax.name.extensions)
                     AddNamespace(extension.name);
 
-            foreach (var statement in namespaceSyntax.statements)
-                statement.accept(this);
+            foreach (var declaration in namespaceSyntax.declarations)
+                declaration.accept(this);
 
             namespaceStack.Pop();
             if (namespaceSyntax.name.extensions != null)

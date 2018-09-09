@@ -65,6 +65,8 @@ namespace scalyc
 
             DefineSyntax[] defines = parseDefineList();
 
+            DeclarationSyntax[] declarations = parseDeclarationList();
+
             StatementSyntax[] statements = parseStatementList();
             if (statements != null)
             {
@@ -77,7 +79,7 @@ namespace scalyc
 
             Position end = lexer.getPosition();
 
-            FileSyntax ret = new FileSyntax(start, end, intrinsics, usings, defines, statements);
+            FileSyntax ret = new FileSyntax(start, end, intrinsics, usings, defines, declarations, statements);
 
             if (intrinsics != null)
             {
@@ -94,6 +96,11 @@ namespace scalyc
                 foreach (DefineSyntax item in defines)
                     item.parent = ret;
             }
+            if (declarations != null)
+            {
+                foreach (DeclarationSyntax item in declarations)
+                    item.parent = ret;
+            }
             if (statements != null)
             {
                 foreach (StatementSyntax item in statements)
@@ -103,17 +110,17 @@ namespace scalyc
             return ret;
         }
 
-        public StatementSyntax[] parseStatementList()
+        public IntrinsicSyntax[] parseIntrinsicList()
         {
-            List<StatementSyntax> ret = null;
+            List<IntrinsicSyntax> ret = null;
             while (true)
             {
-                StatementSyntax node = parseStatement();
+                IntrinsicSyntax node = parseIntrinsic();
                 if (node == null)
                     break;
 
                 if (ret == null)
-                    ret = new List<StatementSyntax>();
+                    ret = new List<IntrinsicSyntax>();
 
                 ret.Add(node);
             }
@@ -124,87 +131,28 @@ namespace scalyc
                 return null;
         }
 
-        public StatementSyntax parseStatement()
+        public IntrinsicSyntax parseIntrinsic()
         {
-            {
-                NamespaceSyntax node = parseNamespace();
-                if (node != null)
-                    return node;
-            }
+            Position start = lexer.getPreviousPosition();
 
-            {
-                LetSyntax node = parseLet();
-                if (node != null)
-                    return node;
-            }
+            bool successIntrinsic1 = lexer.parseKeyword("intrinsic");
+            if (successIntrinsic1)
+                lexer.advance();
+            else
+                return null;
 
-            {
-                VarSyntax node = parseVar();
-                if (node != null)
-                    return node;
-            }
+            string name = lexer.parseIdentifier();
+            if ((name != null) && isIdentifier(name))
+                lexer.advance();
+            else
+                throw new ParserException(fileName, lexer.line, lexer.column);
 
-            {
-                MutableSyntax node = parseMutable();
-                if (node != null)
-                    return node;
-            }
+            Position end = lexer.getPosition();
 
-            {
-                ThreadLocalSyntax node = parseThreadLocal();
-                if (node != null)
-                    return node;
-            }
+            IntrinsicSyntax ret = new IntrinsicSyntax(start, end, name);
 
-            {
-                SetSyntax node = parseSet();
-                if (node != null)
-                    return node;
-            }
 
-            {
-                CalculationSyntax node = parseCalculation();
-                if (node != null)
-                    return node;
-            }
-
-            {
-                FunctionSyntax node = parseFunction();
-                if (node != null)
-                    return node;
-            }
-
-            {
-                ClassSyntax node = parseClass();
-                if (node != null)
-                    return node;
-            }
-
-            {
-                BreakSyntax node = parseBreak();
-                if (node != null)
-                    return node;
-            }
-
-            {
-                ContinueSyntax node = parseContinue();
-                if (node != null)
-                    return node;
-            }
-
-            {
-                ReturnSyntax node = parseReturn();
-                if (node != null)
-                    return node;
-            }
-
-            {
-                ThrowSyntax node = parseThrow();
-                if (node != null)
-                    return node;
-            }
-
-            return null;
+            return ret;
         }
 
         public UsingSyntax[] parseUsingList()
@@ -249,6 +197,408 @@ namespace scalyc
             name.parent = ret;
 
             return ret;
+        }
+
+        public DefineSyntax[] parseDefineList()
+        {
+            List<DefineSyntax> ret = null;
+            while (true)
+            {
+                DefineSyntax node = parseDefine();
+                if (node == null)
+                    break;
+
+                if (ret == null)
+                    ret = new List<DefineSyntax>();
+
+                ret.Add(node);
+            }
+
+            if (ret != null)
+                return ret.ToArray();
+            else
+                return null;
+        }
+
+        public DefineSyntax parseDefine()
+        {
+            Position start = lexer.getPreviousPosition();
+
+            bool successDefine1 = lexer.parseKeyword("define");
+            if (successDefine1)
+                lexer.advance();
+            else
+                return null;
+
+            NameSyntax name = parseName();
+            if (name == null)
+                throw new ParserException(fileName, lexer.line, lexer.column);
+
+            TypeSyntax typeSpec = parseType();
+            if (typeSpec == null)
+                throw new ParserException(fileName, lexer.line, lexer.column);
+
+            Position end = lexer.getPosition();
+
+            DefineSyntax ret = new DefineSyntax(start, end, name, typeSpec);
+
+            name.parent = ret;
+            typeSpec.parent = ret;
+
+            return ret;
+        }
+
+        public DeclarationSyntax[] parseDeclarationList()
+        {
+            List<DeclarationSyntax> ret = null;
+            while (true)
+            {
+                DeclarationSyntax node = parseDeclaration();
+                if (node == null)
+                    break;
+
+                if (ret == null)
+                    ret = new List<DeclarationSyntax>();
+
+                ret.Add(node);
+            }
+
+            if (ret != null)
+                return ret.ToArray();
+            else
+                return null;
+        }
+
+        public DeclarationSyntax parseDeclaration()
+        {
+            {
+                NamespaceSyntax node = parseNamespace();
+                if (node != null)
+                    return node;
+            }
+
+            {
+                FunctionSyntax node = parseFunction();
+                if (node != null)
+                    return node;
+            }
+
+            {
+                ClassSyntax node = parseClass();
+                if (node != null)
+                    return node;
+            }
+
+            {
+                LetDeclarationSyntax node = parseLetDeclaration();
+                if (node != null)
+                    return node;
+            }
+
+            {
+                VarDeclarationSyntax node = parseVarDeclaration();
+                if (node != null)
+                    return node;
+            }
+
+            {
+                MutableDeclarationSyntax node = parseMutableDeclaration();
+                if (node != null)
+                    return node;
+            }
+
+            {
+                ThreadLocalDeclarationSyntax node = parseThreadLocalDeclaration();
+                if (node != null)
+                    return node;
+            }
+
+            return null;
+        }
+
+        public NamespaceSyntax parseNamespace()
+        {
+            Position start = lexer.getPreviousPosition();
+
+            bool successNamespace1 = lexer.parseKeyword("namespace");
+            if (successNamespace1)
+                lexer.advance();
+            else
+                return null;
+
+            NameSyntax name = parseName();
+            if (name == null)
+                throw new ParserException(fileName, lexer.line, lexer.column);
+
+            bool successLeftCurly3 = lexer.parsePunctuation("{");
+            if (successLeftCurly3)
+                lexer.advance();
+            else
+                throw new ParserException(fileName, lexer.line, lexer.column);
+
+            UsingSyntax[] usings = parseUsingList();
+
+            DefineSyntax[] defines = parseDefineList();
+
+            DeclarationSyntax[] declarations = parseDeclarationList();
+
+            bool successRightCurly7 = lexer.parsePunctuation("}");
+            if (successRightCurly7)
+                lexer.advance();
+            else
+                throw new ParserException(fileName, lexer.line, lexer.column);
+
+            Position end = lexer.getPosition();
+
+            NamespaceSyntax ret = new NamespaceSyntax(start, end, name, usings, defines, declarations);
+
+            name.parent = ret;
+            if (usings != null)
+            {
+                foreach (UsingSyntax item in usings)
+                    item.parent = ret;
+            }
+            if (defines != null)
+            {
+                foreach (DefineSyntax item in defines)
+                    item.parent = ret;
+            }
+            if (declarations != null)
+            {
+                foreach (DeclarationSyntax item in declarations)
+                    item.parent = ret;
+            }
+
+            return ret;
+        }
+
+        public FunctionSyntax parseFunction()
+        {
+            Position start = lexer.getPreviousPosition();
+
+            bool successFunction1 = lexer.parseKeyword("function");
+            if (successFunction1)
+                lexer.advance();
+            else
+                return null;
+
+            ProcedureSyntax procedure = parseProcedure();
+            if (procedure == null)
+                throw new ParserException(fileName, lexer.line, lexer.column);
+
+            Position end = lexer.getPosition();
+
+            FunctionSyntax ret = new FunctionSyntax(start, end, procedure);
+
+            procedure.parent = ret;
+
+            return ret;
+        }
+
+        public ProcedureSyntax parseProcedure()
+        {
+            Position start = lexer.getPreviousPosition();
+
+            string name = lexer.parseIdentifier();
+            if ((name != null) && isIdentifier(name))
+                lexer.advance();
+            else
+                return null;
+
+            RoutineSyntax routine = parseRoutine();
+            if (routine == null)
+                throw new ParserException(fileName, lexer.line, lexer.column);
+
+            Position end = lexer.getPosition();
+
+            ProcedureSyntax ret = new ProcedureSyntax(start, end, name, routine);
+
+            routine.parent = ret;
+
+            return ret;
+        }
+
+        public RoutineSyntax parseRoutine()
+        {
+            Position start = lexer.getPreviousPosition();
+
+            StructureSyntax input = parseStructure();
+
+            TypeAnnotationSyntax output = parseTypeAnnotation();
+
+            ThrowsSyntax throwsClause = parseThrows();
+
+            BlockSyntax body = parseBlock();
+            if (body == null)
+                throw new ParserException(fileName, lexer.line, lexer.column);
+
+            Position end = lexer.getPosition();
+
+            RoutineSyntax ret = new RoutineSyntax(start, end, input, output, throwsClause, body);
+
+            if (input != null)
+                input.parent = ret;
+            if (output != null)
+                output.parent = ret;
+            if (throwsClause != null)
+                throwsClause.parent = ret;
+            body.parent = ret;
+
+            return ret;
+        }
+
+        public LetDeclarationSyntax parseLetDeclaration()
+        {
+            Position start = lexer.getPreviousPosition();
+
+            LetSyntax declaration = parseLet();
+            if (declaration == null)
+                return null;
+
+            Position end = lexer.getPosition();
+
+            LetDeclarationSyntax ret = new LetDeclarationSyntax(start, end, declaration);
+
+            declaration.parent = ret;
+
+            return ret;
+        }
+
+        public VarDeclarationSyntax parseVarDeclaration()
+        {
+            Position start = lexer.getPreviousPosition();
+
+            VarSyntax declaration = parseVar();
+            if (declaration == null)
+                return null;
+
+            Position end = lexer.getPosition();
+
+            VarDeclarationSyntax ret = new VarDeclarationSyntax(start, end, declaration);
+
+            declaration.parent = ret;
+
+            return ret;
+        }
+
+        public MutableDeclarationSyntax parseMutableDeclaration()
+        {
+            Position start = lexer.getPreviousPosition();
+
+            MutableSyntax declaration = parseMutable();
+            if (declaration == null)
+                return null;
+
+            Position end = lexer.getPosition();
+
+            MutableDeclarationSyntax ret = new MutableDeclarationSyntax(start, end, declaration);
+
+            declaration.parent = ret;
+
+            return ret;
+        }
+
+        public ThreadLocalDeclarationSyntax parseThreadLocalDeclaration()
+        {
+            Position start = lexer.getPreviousPosition();
+
+            ThreadLocalSyntax declaration = parseThreadLocal();
+            if (declaration == null)
+                return null;
+
+            Position end = lexer.getPosition();
+
+            ThreadLocalDeclarationSyntax ret = new ThreadLocalDeclarationSyntax(start, end, declaration);
+
+            declaration.parent = ret;
+
+            return ret;
+        }
+
+        public StatementSyntax[] parseStatementList()
+        {
+            List<StatementSyntax> ret = null;
+            while (true)
+            {
+                StatementSyntax node = parseStatement();
+                if (node == null)
+                    break;
+
+                if (ret == null)
+                    ret = new List<StatementSyntax>();
+
+                ret.Add(node);
+            }
+
+            if (ret != null)
+                return ret.ToArray();
+            else
+                return null;
+        }
+
+        public StatementSyntax parseStatement()
+        {
+            {
+                LetSyntax node = parseLet();
+                if (node != null)
+                    return node;
+            }
+
+            {
+                VarSyntax node = parseVar();
+                if (node != null)
+                    return node;
+            }
+
+            {
+                MutableSyntax node = parseMutable();
+                if (node != null)
+                    return node;
+            }
+
+            {
+                ThreadLocalSyntax node = parseThreadLocal();
+                if (node != null)
+                    return node;
+            }
+
+            {
+                SetSyntax node = parseSet();
+                if (node != null)
+                    return node;
+            }
+
+            {
+                CalculationSyntax node = parseCalculation();
+                if (node != null)
+                    return node;
+            }
+
+            {
+                BreakSyntax node = parseBreak();
+                if (node != null)
+                    return node;
+            }
+
+            {
+                ContinueSyntax node = parseContinue();
+                if (node != null)
+                    return node;
+            }
+
+            {
+                ReturnSyntax node = parseReturn();
+                if (node != null)
+                    return node;
+            }
+
+            {
+                ThrowSyntax node = parseThrow();
+                if (node != null)
+                    return node;
+            }
+
+            return null;
         }
 
         public NameSyntax parseName()
@@ -317,62 +667,6 @@ namespace scalyc
 
             ExtensionSyntax ret = new ExtensionSyntax(start, end, name);
 
-
-            return ret;
-        }
-
-        public NamespaceSyntax parseNamespace()
-        {
-            Position start = lexer.getPreviousPosition();
-
-            bool successNamespace1 = lexer.parseKeyword("namespace");
-            if (successNamespace1)
-                lexer.advance();
-            else
-                return null;
-
-            NameSyntax name = parseName();
-            if (name == null)
-                throw new ParserException(fileName, lexer.line, lexer.column);
-
-            bool successLeftCurly3 = lexer.parsePunctuation("{");
-            if (successLeftCurly3)
-                lexer.advance();
-            else
-                throw new ParserException(fileName, lexer.line, lexer.column);
-
-            UsingSyntax[] usings = parseUsingList();
-
-            DefineSyntax[] defines = parseDefineList();
-
-            StatementSyntax[] statements = parseStatementList();
-
-            bool successRightCurly7 = lexer.parsePunctuation("}");
-            if (successRightCurly7)
-                lexer.advance();
-            else
-                throw new ParserException(fileName, lexer.line, lexer.column);
-
-            Position end = lexer.getPosition();
-
-            NamespaceSyntax ret = new NamespaceSyntax(start, end, name, usings, defines, statements);
-
-            name.parent = ret;
-            if (usings != null)
-            {
-                foreach (UsingSyntax item in usings)
-                    item.parent = ret;
-            }
-            if (defines != null)
-            {
-                foreach (DefineSyntax item in defines)
-                    item.parent = ret;
-            }
-            if (statements != null)
-            {
-                foreach (StatementSyntax item in statements)
-                    item.parent = ret;
-            }
 
             return ret;
         }
@@ -2085,7 +2379,7 @@ namespace scalyc
             else
                 return null;
 
-            MemberSyntax[] members = parseMemberList();
+            ClassMemberSyntax[] members = parseClassMemberList();
 
             bool successRightCurly3 = lexer.parsePunctuation("}");
             if (successRightCurly3)
@@ -2099,24 +2393,24 @@ namespace scalyc
 
             if (members != null)
             {
-                foreach (MemberSyntax item in members)
+                foreach (ClassMemberSyntax item in members)
                     item.parent = ret;
             }
 
             return ret;
         }
 
-        public MemberSyntax[] parseMemberList()
+        public ClassMemberSyntax[] parseClassMemberList()
         {
-            List<MemberSyntax> ret = null;
+            List<ClassMemberSyntax> ret = null;
             while (true)
             {
-                MemberSyntax node = parseMember();
+                ClassMemberSyntax node = parseClassMember();
                 if (node == null)
                     break;
 
                 if (ret == null)
-                    ret = new List<MemberSyntax>();
+                    ret = new List<ClassMemberSyntax>();
 
                 ret.Add(node);
             }
@@ -2127,7 +2421,7 @@ namespace scalyc
                 return null;
         }
 
-        public MemberSyntax parseMember()
+        public ClassMemberSyntax parseClassMember()
         {
             {
                 LetMemberSyntax node = parseLetMember();
@@ -2190,15 +2484,15 @@ namespace scalyc
         {
             Position start = lexer.getPreviousPosition();
 
-            LetSyntax definition = parseLet();
-            if (definition == null)
+            LetSyntax declaration = parseLet();
+            if (declaration == null)
                 return null;
 
             Position end = lexer.getPosition();
 
-            LetMemberSyntax ret = new LetMemberSyntax(start, end, definition);
+            LetMemberSyntax ret = new LetMemberSyntax(start, end, declaration);
 
-            definition.parent = ret;
+            declaration.parent = ret;
 
             return ret;
         }
@@ -2207,15 +2501,15 @@ namespace scalyc
         {
             Position start = lexer.getPreviousPosition();
 
-            VarSyntax definition = parseVar();
-            if (definition == null)
+            VarSyntax declaration = parseVar();
+            if (declaration == null)
                 return null;
 
             Position end = lexer.getPosition();
 
-            VarMemberSyntax ret = new VarMemberSyntax(start, end, definition);
+            VarMemberSyntax ret = new VarMemberSyntax(start, end, declaration);
 
-            definition.parent = ret;
+            declaration.parent = ret;
 
             return ret;
         }
@@ -2224,15 +2518,15 @@ namespace scalyc
         {
             Position start = lexer.getPreviousPosition();
 
-            MutableSyntax definition = parseMutable();
-            if (definition == null)
+            MutableSyntax declaration = parseMutable();
+            if (declaration == null)
                 return null;
 
             Position end = lexer.getPosition();
 
-            MutableMemberSyntax ret = new MutableMemberSyntax(start, end, definition);
+            MutableMemberSyntax ret = new MutableMemberSyntax(start, end, declaration);
 
-            definition.parent = ret;
+            declaration.parent = ret;
 
             return ret;
         }
@@ -2366,81 +2660,6 @@ namespace scalyc
 
             if (input != null)
                 input.parent = ret;
-            body.parent = ret;
-
-            return ret;
-        }
-
-        public FunctionSyntax parseFunction()
-        {
-            Position start = lexer.getPreviousPosition();
-
-            bool successFunction1 = lexer.parseKeyword("function");
-            if (successFunction1)
-                lexer.advance();
-            else
-                return null;
-
-            ProcedureSyntax procedure = parseProcedure();
-            if (procedure == null)
-                throw new ParserException(fileName, lexer.line, lexer.column);
-
-            Position end = lexer.getPosition();
-
-            FunctionSyntax ret = new FunctionSyntax(start, end, procedure);
-
-            procedure.parent = ret;
-
-            return ret;
-        }
-
-        public ProcedureSyntax parseProcedure()
-        {
-            Position start = lexer.getPreviousPosition();
-
-            string name = lexer.parseIdentifier();
-            if ((name != null) && isIdentifier(name))
-                lexer.advance();
-            else
-                return null;
-
-            RoutineSyntax routine = parseRoutine();
-            if (routine == null)
-                throw new ParserException(fileName, lexer.line, lexer.column);
-
-            Position end = lexer.getPosition();
-
-            ProcedureSyntax ret = new ProcedureSyntax(start, end, name, routine);
-
-            routine.parent = ret;
-
-            return ret;
-        }
-
-        public RoutineSyntax parseRoutine()
-        {
-            Position start = lexer.getPreviousPosition();
-
-            StructureSyntax input = parseStructure();
-
-            TypeAnnotationSyntax output = parseTypeAnnotation();
-
-            ThrowsSyntax throwsClause = parseThrows();
-
-            BlockSyntax body = parseBlock();
-            if (body == null)
-                throw new ParserException(fileName, lexer.line, lexer.column);
-
-            Position end = lexer.getPosition();
-
-            RoutineSyntax ret = new RoutineSyntax(start, end, input, output, throwsClause, body);
-
-            if (input != null)
-                input.parent = ret;
-            if (output != null)
-                output.parent = ret;
-            if (throwsClause != null)
-                throwsClause.parent = ret;
             body.parent = ret;
 
             return ret;
@@ -2820,100 +3039,6 @@ namespace scalyc
             return ret;
         }
 
-        public IntrinsicSyntax[] parseIntrinsicList()
-        {
-            List<IntrinsicSyntax> ret = null;
-            while (true)
-            {
-                IntrinsicSyntax node = parseIntrinsic();
-                if (node == null)
-                    break;
-
-                if (ret == null)
-                    ret = new List<IntrinsicSyntax>();
-
-                ret.Add(node);
-            }
-
-            if (ret != null)
-                return ret.ToArray();
-            else
-                return null;
-        }
-
-        public IntrinsicSyntax parseIntrinsic()
-        {
-            Position start = lexer.getPreviousPosition();
-
-            bool successIntrinsic1 = lexer.parseKeyword("intrinsic");
-            if (successIntrinsic1)
-                lexer.advance();
-            else
-                return null;
-
-            string name = lexer.parseIdentifier();
-            if ((name != null) && isIdentifier(name))
-                lexer.advance();
-            else
-                throw new ParserException(fileName, lexer.line, lexer.column);
-
-            Position end = lexer.getPosition();
-
-            IntrinsicSyntax ret = new IntrinsicSyntax(start, end, name);
-
-
-            return ret;
-        }
-
-        public DefineSyntax[] parseDefineList()
-        {
-            List<DefineSyntax> ret = null;
-            while (true)
-            {
-                DefineSyntax node = parseDefine();
-                if (node == null)
-                    break;
-
-                if (ret == null)
-                    ret = new List<DefineSyntax>();
-
-                ret.Add(node);
-            }
-
-            if (ret != null)
-                return ret.ToArray();
-            else
-                return null;
-        }
-
-        public DefineSyntax parseDefine()
-        {
-            Position start = lexer.getPreviousPosition();
-
-            bool successDefine1 = lexer.parseKeyword("define");
-            if (successDefine1)
-                lexer.advance();
-            else
-                return null;
-
-            NameSyntax name = parseName();
-            if (name == null)
-                throw new ParserException(fileName, lexer.line, lexer.column);
-
-            TypeSyntax typeSpec = parseType();
-            if (typeSpec == null)
-                throw new ParserException(fileName, lexer.line, lexer.column);
-
-            Position end = lexer.getPosition();
-
-            DefineSyntax ret = new DefineSyntax(start, end, name, typeSpec);
-
-            name.parent = ret;
-            typeSpec.parent = ret;
-
-            return ret;
-        }
-
         bool isAtEnd()
         {
             return lexer.isAtEnd();
@@ -2948,12 +3073,97 @@ namespace scalyc
         {
         }
 
+        public virtual void visitIntrinsic(IntrinsicSyntax intrinsicSyntax)
+        {
+        }
+
         public virtual bool openUsing(UsingSyntax usingSyntax)
         {
             return true;
         }
 
         public virtual void closeUsing(UsingSyntax usingSyntax)
+        {
+        }
+
+        public virtual bool openDefine(DefineSyntax defineSyntax)
+        {
+            return true;
+        }
+
+        public virtual void closeDefine(DefineSyntax defineSyntax)
+        {
+        }
+
+        public virtual bool openNamespace(NamespaceSyntax namespaceSyntax)
+        {
+            return true;
+        }
+
+        public virtual void closeNamespace(NamespaceSyntax namespaceSyntax)
+        {
+        }
+
+        public virtual bool openFunction(FunctionSyntax functionSyntax)
+        {
+            return true;
+        }
+
+        public virtual void closeFunction(FunctionSyntax functionSyntax)
+        {
+        }
+
+        public virtual bool openProcedure(ProcedureSyntax procedureSyntax)
+        {
+            return true;
+        }
+
+        public virtual void closeProcedure(ProcedureSyntax procedureSyntax)
+        {
+        }
+
+        public virtual bool openRoutine(RoutineSyntax routineSyntax)
+        {
+            return true;
+        }
+
+        public virtual void closeRoutine(RoutineSyntax routineSyntax)
+        {
+        }
+
+        public virtual bool openLetDeclaration(LetDeclarationSyntax letDeclarationSyntax)
+        {
+            return true;
+        }
+
+        public virtual void closeLetDeclaration(LetDeclarationSyntax letDeclarationSyntax)
+        {
+        }
+
+        public virtual bool openVarDeclaration(VarDeclarationSyntax varDeclarationSyntax)
+        {
+            return true;
+        }
+
+        public virtual void closeVarDeclaration(VarDeclarationSyntax varDeclarationSyntax)
+        {
+        }
+
+        public virtual bool openMutableDeclaration(MutableDeclarationSyntax mutableDeclarationSyntax)
+        {
+            return true;
+        }
+
+        public virtual void closeMutableDeclaration(MutableDeclarationSyntax mutableDeclarationSyntax)
+        {
+        }
+
+        public virtual bool openThreadLocalDeclaration(ThreadLocalDeclarationSyntax threadLocalDeclarationSyntax)
+        {
+            return true;
+        }
+
+        public virtual void closeThreadLocalDeclaration(ThreadLocalDeclarationSyntax threadLocalDeclarationSyntax)
         {
         }
 
@@ -2967,15 +3177,6 @@ namespace scalyc
         }
 
         public virtual void visitExtension(ExtensionSyntax extensionSyntax)
-        {
-        }
-
-        public virtual bool openNamespace(NamespaceSyntax namespaceSyntax)
-        {
-            return true;
-        }
-
-        public virtual void closeNamespace(NamespaceSyntax namespaceSyntax)
         {
         }
 
@@ -3465,33 +3666,6 @@ namespace scalyc
         {
         }
 
-        public virtual bool openFunction(FunctionSyntax functionSyntax)
-        {
-            return true;
-        }
-
-        public virtual void closeFunction(FunctionSyntax functionSyntax)
-        {
-        }
-
-        public virtual bool openProcedure(ProcedureSyntax procedureSyntax)
-        {
-            return true;
-        }
-
-        public virtual void closeProcedure(ProcedureSyntax procedureSyntax)
-        {
-        }
-
-        public virtual bool openRoutine(RoutineSyntax routineSyntax)
-        {
-            return true;
-        }
-
-        public virtual void closeRoutine(RoutineSyntax routineSyntax)
-        {
-        }
-
         public virtual bool openTypeAnnotation(TypeAnnotationSyntax typeAnnotationSyntax)
         {
             return true;
@@ -3565,19 +3739,6 @@ namespace scalyc
         public virtual void visitThrown(ThrownSyntax thrownSyntax)
         {
         }
-
-        public virtual void visitIntrinsic(IntrinsicSyntax intrinsicSyntax)
-        {
-        }
-
-        public virtual bool openDefine(DefineSyntax defineSyntax)
-        {
-            return true;
-        }
-
-        public virtual void closeDefine(DefineSyntax defineSyntax)
-        {
-        }
     }
 
     public abstract class SyntaxNode
@@ -3622,15 +3783,17 @@ namespace scalyc
         public IntrinsicSyntax[] intrinsics;
         public UsingSyntax[] usings;
         public DefineSyntax[] defines;
+        public DeclarationSyntax[] declarations;
         public StatementSyntax[] statements;
         public string fileName;
-        public FileSyntax(Position start, Position end, IntrinsicSyntax[] intrinsics, UsingSyntax[] usings, DefineSyntax[] defines, StatementSyntax[] statements)
+        public FileSyntax(Position start, Position end, IntrinsicSyntax[] intrinsics, UsingSyntax[] usings, DefineSyntax[] defines, DeclarationSyntax[] declarations, StatementSyntax[] statements)
         {
             this.start = start;
             this.end = end;
             this.intrinsics = intrinsics;
             this.usings = usings;
             this.defines = defines;
+            this.declarations = declarations;
             this.statements = statements;
         }
 
@@ -3657,6 +3820,12 @@ namespace scalyc
                     node.accept(visitor);
             }
 
+            if (declarations != null)
+            {
+                foreach (DeclarationSyntax node in declarations)
+                    node.accept(visitor);
+            }
+
             if (statements != null)
             {
                 foreach (StatementSyntax node in statements)
@@ -3667,10 +3836,19 @@ namespace scalyc
         }
     }
 
-    public class StatementSyntax : SyntaxNode
+    public class IntrinsicSyntax : SyntaxNode
     {
+        public string name;
+        public IntrinsicSyntax(Position start, Position end, string name)
+        {
+            this.start = start;
+            this.end = end;
+            this.name = name;
+        }
+
         public override void accept(SyntaxVisitor visitor)
         {
+            visitor.visitIntrinsic(this);
         }
     }
 
@@ -3692,6 +3870,254 @@ namespace scalyc
             name.accept(visitor);
 
             visitor.closeUsing(this);
+        }
+    }
+
+    public class DefineSyntax : SyntaxNode
+    {
+        public NameSyntax name;
+        public TypeSyntax typeSpec;
+        public DefineSyntax(Position start, Position end, NameSyntax name, TypeSyntax typeSpec)
+        {
+            this.start = start;
+            this.end = end;
+            this.name = name;
+            this.typeSpec = typeSpec;
+        }
+
+        public override void accept(SyntaxVisitor visitor)
+        {
+            if (!visitor.openDefine(this))
+                return;
+
+            name.accept(visitor);
+
+            typeSpec.accept(visitor);
+
+            visitor.closeDefine(this);
+        }
+    }
+
+    public class DeclarationSyntax : SyntaxNode
+    {
+        public override void accept(SyntaxVisitor visitor)
+        {
+        }
+    }
+
+    public class NamespaceSyntax : DeclarationSyntax
+    {
+        public NameSyntax name;
+        public UsingSyntax[] usings;
+        public DefineSyntax[] defines;
+        public DeclarationSyntax[] declarations;
+        public NamespaceSyntax(Position start, Position end, NameSyntax name, UsingSyntax[] usings, DefineSyntax[] defines, DeclarationSyntax[] declarations)
+        {
+            this.start = start;
+            this.end = end;
+            this.name = name;
+            this.usings = usings;
+            this.defines = defines;
+            this.declarations = declarations;
+        }
+
+        public override void accept(SyntaxVisitor visitor)
+        {
+            if (!visitor.openNamespace(this))
+                return;
+
+            name.accept(visitor);
+
+            if (usings != null)
+            {
+                foreach (UsingSyntax node in usings)
+                    node.accept(visitor);
+            }
+
+            if (defines != null)
+            {
+                foreach (DefineSyntax node in defines)
+                    node.accept(visitor);
+            }
+
+            if (declarations != null)
+            {
+                foreach (DeclarationSyntax node in declarations)
+                    node.accept(visitor);
+            }
+
+            visitor.closeNamespace(this);
+        }
+    }
+
+    public class FunctionSyntax : DeclarationSyntax
+    {
+        public ProcedureSyntax procedure;
+        public FunctionSyntax(Position start, Position end, ProcedureSyntax procedure)
+        {
+            this.start = start;
+            this.end = end;
+            this.procedure = procedure;
+        }
+
+        public override void accept(SyntaxVisitor visitor)
+        {
+            if (!visitor.openFunction(this))
+                return;
+
+            procedure.accept(visitor);
+
+            visitor.closeFunction(this);
+        }
+    }
+
+    public class ProcedureSyntax : SyntaxNode
+    {
+        public string name;
+        public RoutineSyntax routine;
+        public ProcedureSyntax(Position start, Position end, string name, RoutineSyntax routine)
+        {
+            this.start = start;
+            this.end = end;
+            this.name = name;
+            this.routine = routine;
+        }
+
+        public override void accept(SyntaxVisitor visitor)
+        {
+            if (!visitor.openProcedure(this))
+                return;
+
+            routine.accept(visitor);
+
+            visitor.closeProcedure(this);
+        }
+    }
+
+    public class RoutineSyntax : SyntaxNode
+    {
+        public StructureSyntax input;
+        public TypeAnnotationSyntax output;
+        public ThrowsSyntax throwsClause;
+        public BlockSyntax body;
+        public RoutineSyntax(Position start, Position end, StructureSyntax input, TypeAnnotationSyntax output, ThrowsSyntax throwsClause, BlockSyntax body)
+        {
+            this.start = start;
+            this.end = end;
+            this.input = input;
+            this.output = output;
+            this.throwsClause = throwsClause;
+            this.body = body;
+        }
+
+        public override void accept(SyntaxVisitor visitor)
+        {
+            if (!visitor.openRoutine(this))
+                return;
+
+            if (input != null)
+                input.accept(visitor);
+
+            if (output != null)
+                output.accept(visitor);
+
+            if (throwsClause != null)
+                throwsClause.accept(visitor);
+
+            body.accept(visitor);
+
+            visitor.closeRoutine(this);
+        }
+    }
+
+    public class LetDeclarationSyntax : DeclarationSyntax
+    {
+        public LetSyntax declaration;
+        public LetDeclarationSyntax(Position start, Position end, LetSyntax declaration)
+        {
+            this.start = start;
+            this.end = end;
+            this.declaration = declaration;
+        }
+
+        public override void accept(SyntaxVisitor visitor)
+        {
+            if (!visitor.openLetDeclaration(this))
+                return;
+
+            declaration.accept(visitor);
+
+            visitor.closeLetDeclaration(this);
+        }
+    }
+
+    public class VarDeclarationSyntax : DeclarationSyntax
+    {
+        public VarSyntax declaration;
+        public VarDeclarationSyntax(Position start, Position end, VarSyntax declaration)
+        {
+            this.start = start;
+            this.end = end;
+            this.declaration = declaration;
+        }
+
+        public override void accept(SyntaxVisitor visitor)
+        {
+            if (!visitor.openVarDeclaration(this))
+                return;
+
+            declaration.accept(visitor);
+
+            visitor.closeVarDeclaration(this);
+        }
+    }
+
+    public class MutableDeclarationSyntax : DeclarationSyntax
+    {
+        public MutableSyntax declaration;
+        public MutableDeclarationSyntax(Position start, Position end, MutableSyntax declaration)
+        {
+            this.start = start;
+            this.end = end;
+            this.declaration = declaration;
+        }
+
+        public override void accept(SyntaxVisitor visitor)
+        {
+            if (!visitor.openMutableDeclaration(this))
+                return;
+
+            declaration.accept(visitor);
+
+            visitor.closeMutableDeclaration(this);
+        }
+    }
+
+    public class ThreadLocalDeclarationSyntax : DeclarationSyntax
+    {
+        public ThreadLocalSyntax declaration;
+        public ThreadLocalDeclarationSyntax(Position start, Position end, ThreadLocalSyntax declaration)
+        {
+            this.start = start;
+            this.end = end;
+            this.declaration = declaration;
+        }
+
+        public override void accept(SyntaxVisitor visitor)
+        {
+            if (!visitor.openThreadLocalDeclaration(this))
+                return;
+
+            declaration.accept(visitor);
+
+            visitor.closeThreadLocalDeclaration(this);
+        }
+    }
+
+    public class StatementSyntax : SyntaxNode
+    {
+        public override void accept(SyntaxVisitor visitor)
+        {
         }
     }
 
@@ -3735,51 +4161,6 @@ namespace scalyc
         public override void accept(SyntaxVisitor visitor)
         {
             visitor.visitExtension(this);
-        }
-    }
-
-    public class NamespaceSyntax : StatementSyntax
-    {
-        public NameSyntax name;
-        public UsingSyntax[] usings;
-        public DefineSyntax[] defines;
-        public StatementSyntax[] statements;
-        public NamespaceSyntax(Position start, Position end, NameSyntax name, UsingSyntax[] usings, DefineSyntax[] defines, StatementSyntax[] statements)
-        {
-            this.start = start;
-            this.end = end;
-            this.name = name;
-            this.usings = usings;
-            this.defines = defines;
-            this.statements = statements;
-        }
-
-        public override void accept(SyntaxVisitor visitor)
-        {
-            if (!visitor.openNamespace(this))
-                return;
-
-            name.accept(visitor);
-
-            if (usings != null)
-            {
-                foreach (UsingSyntax node in usings)
-                    node.accept(visitor);
-            }
-
-            if (defines != null)
-            {
-                foreach (DefineSyntax node in defines)
-                    node.accept(visitor);
-            }
-
-            if (statements != null)
-            {
-                foreach (StatementSyntax node in statements)
-                    node.accept(visitor);
-            }
-
-            visitor.closeNamespace(this);
         }
     }
 
@@ -4781,7 +5162,7 @@ namespace scalyc
         }
     }
 
-    public class ClassSyntax : StatementSyntax
+    public class ClassSyntax : DeclarationSyntax
     {
         public NameSyntax name;
         public GenericParametersSyntax generics;
@@ -4937,8 +5318,8 @@ namespace scalyc
 
     public class ClassBodySyntax : SyntaxNode
     {
-        public MemberSyntax[] members;
-        public ClassBodySyntax(Position start, Position end, MemberSyntax[] members)
+        public ClassMemberSyntax[] members;
+        public ClassBodySyntax(Position start, Position end, ClassMemberSyntax[] members)
         {
             this.start = start;
             this.end = end;
@@ -4952,7 +5333,7 @@ namespace scalyc
 
             if (members != null)
             {
-                foreach (MemberSyntax node in members)
+                foreach (ClassMemberSyntax node in members)
                     node.accept(visitor);
             }
 
@@ -4960,21 +5341,21 @@ namespace scalyc
         }
     }
 
-    public class MemberSyntax : SyntaxNode
+    public class ClassMemberSyntax : SyntaxNode
     {
         public override void accept(SyntaxVisitor visitor)
         {
         }
     }
 
-    public class LetMemberSyntax : MemberSyntax
+    public class LetMemberSyntax : ClassMemberSyntax
     {
-        public LetSyntax definition;
-        public LetMemberSyntax(Position start, Position end, LetSyntax definition)
+        public LetSyntax declaration;
+        public LetMemberSyntax(Position start, Position end, LetSyntax declaration)
         {
             this.start = start;
             this.end = end;
-            this.definition = definition;
+            this.declaration = declaration;
         }
 
         public override void accept(SyntaxVisitor visitor)
@@ -4982,20 +5363,20 @@ namespace scalyc
             if (!visitor.openLetMember(this))
                 return;
 
-            definition.accept(visitor);
+            declaration.accept(visitor);
 
             visitor.closeLetMember(this);
         }
     }
 
-    public class VarMemberSyntax : MemberSyntax
+    public class VarMemberSyntax : ClassMemberSyntax
     {
-        public VarSyntax definition;
-        public VarMemberSyntax(Position start, Position end, VarSyntax definition)
+        public VarSyntax declaration;
+        public VarMemberSyntax(Position start, Position end, VarSyntax declaration)
         {
             this.start = start;
             this.end = end;
-            this.definition = definition;
+            this.declaration = declaration;
         }
 
         public override void accept(SyntaxVisitor visitor)
@@ -5003,20 +5384,20 @@ namespace scalyc
             if (!visitor.openVarMember(this))
                 return;
 
-            definition.accept(visitor);
+            declaration.accept(visitor);
 
             visitor.closeVarMember(this);
         }
     }
 
-    public class MutableMemberSyntax : MemberSyntax
+    public class MutableMemberSyntax : ClassMemberSyntax
     {
-        public MutableSyntax definition;
-        public MutableMemberSyntax(Position start, Position end, MutableSyntax definition)
+        public MutableSyntax declaration;
+        public MutableMemberSyntax(Position start, Position end, MutableSyntax declaration)
         {
             this.start = start;
             this.end = end;
-            this.definition = definition;
+            this.declaration = declaration;
         }
 
         public override void accept(SyntaxVisitor visitor)
@@ -5024,13 +5405,13 @@ namespace scalyc
             if (!visitor.openMutableMember(this))
                 return;
 
-            definition.accept(visitor);
+            declaration.accept(visitor);
 
             visitor.closeMutableMember(this);
         }
     }
 
-    public class SetInitializationSyntax : MemberSyntax
+    public class SetInitializationSyntax : ClassMemberSyntax
     {
         public SetSyntax definition;
         public SetInitializationSyntax(Position start, Position end, SetSyntax definition)
@@ -5051,7 +5432,7 @@ namespace scalyc
         }
     }
 
-    public class MethodSyntax : MemberSyntax
+    public class MethodSyntax : ClassMemberSyntax
     {
         public ProcedureSyntax procedure;
         public MethodSyntax(Position start, Position end, ProcedureSyntax procedure)
@@ -5072,7 +5453,7 @@ namespace scalyc
         }
     }
 
-    public class StaticFunctionSyntax : MemberSyntax
+    public class StaticFunctionSyntax : ClassMemberSyntax
     {
         public FunctionSyntax procedure;
         public StaticFunctionSyntax(Position start, Position end, FunctionSyntax procedure)
@@ -5093,7 +5474,7 @@ namespace scalyc
         }
     }
 
-    public class OperatorSyntax : MemberSyntax
+    public class OperatorSyntax : ClassMemberSyntax
     {
         public RoutineSyntax routine;
         public OperatorSyntax(Position start, Position end, RoutineSyntax routine)
@@ -5114,7 +5495,7 @@ namespace scalyc
         }
     }
 
-    public class InitializerSyntax : MemberSyntax
+    public class InitializerSyntax : ClassMemberSyntax
     {
         public StructureSyntax input;
         public BlockSyntax body;
@@ -5140,7 +5521,7 @@ namespace scalyc
         }
     }
 
-    public class AllocatorSyntax : MemberSyntax
+    public class AllocatorSyntax : ClassMemberSyntax
     {
         public StructureSyntax input;
         public BlockSyntax body;
@@ -5163,86 +5544,6 @@ namespace scalyc
             body.accept(visitor);
 
             visitor.closeAllocator(this);
-        }
-    }
-
-    public class FunctionSyntax : StatementSyntax
-    {
-        public ProcedureSyntax procedure;
-        public FunctionSyntax(Position start, Position end, ProcedureSyntax procedure)
-        {
-            this.start = start;
-            this.end = end;
-            this.procedure = procedure;
-        }
-
-        public override void accept(SyntaxVisitor visitor)
-        {
-            if (!visitor.openFunction(this))
-                return;
-
-            procedure.accept(visitor);
-
-            visitor.closeFunction(this);
-        }
-    }
-
-    public class ProcedureSyntax : SyntaxNode
-    {
-        public string name;
-        public RoutineSyntax routine;
-        public ProcedureSyntax(Position start, Position end, string name, RoutineSyntax routine)
-        {
-            this.start = start;
-            this.end = end;
-            this.name = name;
-            this.routine = routine;
-        }
-
-        public override void accept(SyntaxVisitor visitor)
-        {
-            if (!visitor.openProcedure(this))
-                return;
-
-            routine.accept(visitor);
-
-            visitor.closeProcedure(this);
-        }
-    }
-
-    public class RoutineSyntax : SyntaxNode
-    {
-        public StructureSyntax input;
-        public TypeAnnotationSyntax output;
-        public ThrowsSyntax throwsClause;
-        public BlockSyntax body;
-        public RoutineSyntax(Position start, Position end, StructureSyntax input, TypeAnnotationSyntax output, ThrowsSyntax throwsClause, BlockSyntax body)
-        {
-            this.start = start;
-            this.end = end;
-            this.input = input;
-            this.output = output;
-            this.throwsClause = throwsClause;
-            this.body = body;
-        }
-
-        public override void accept(SyntaxVisitor visitor)
-        {
-            if (!visitor.openRoutine(this))
-                return;
-
-            if (input != null)
-                input.accept(visitor);
-
-            if (output != null)
-                output.accept(visitor);
-
-            if (throwsClause != null)
-                throwsClause.accept(visitor);
-
-            body.accept(visitor);
-
-            visitor.closeRoutine(this);
         }
     }
 
@@ -5484,47 +5785,6 @@ namespace scalyc
         public override void accept(SyntaxVisitor visitor)
         {
             visitor.visitThrown(this);
-        }
-    }
-
-    public class IntrinsicSyntax : SyntaxNode
-    {
-        public string name;
-        public IntrinsicSyntax(Position start, Position end, string name)
-        {
-            this.start = start;
-            this.end = end;
-            this.name = name;
-        }
-
-        public override void accept(SyntaxVisitor visitor)
-        {
-            visitor.visitIntrinsic(this);
-        }
-    }
-
-    public class DefineSyntax : SyntaxNode
-    {
-        public NameSyntax name;
-        public TypeSyntax typeSpec;
-        public DefineSyntax(Position start, Position end, NameSyntax name, TypeSyntax typeSpec)
-        {
-            this.start = start;
-            this.end = end;
-            this.name = name;
-            this.typeSpec = typeSpec;
-        }
-
-        public override void accept(SyntaxVisitor visitor)
-        {
-            if (!visitor.openDefine(this))
-                return;
-
-            name.accept(visitor);
-
-            typeSpec.accept(visitor);
-
-            visitor.closeDefine(this);
         }
     }
 }

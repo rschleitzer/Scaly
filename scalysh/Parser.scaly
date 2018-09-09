@@ -92,6 +92,14 @@ class Parser(
             }
         }
 
+        let declarations: Array[Declaration] = parseDeclarationList()
+        if (declarations <> null) {
+            if (isAtEnd() = false) {
+                let errorPos: Position$ = lexer.getPreviousPosition()
+                throw syntax(errorPos.line, errorPos.column)
+            }
+        }
+
         let statements: Array[Statement] = parseStatementList()
         if (statements <> null) {
             if (isAtEnd() = false) {
@@ -102,7 +110,7 @@ class Parser(
 
         let end: Position$ lexer.getPosition()
 
-        let ret: File new File(intrinsics, usings, defines, statements, new Position(start), new Position(end))
+        let ret: File new File(intrinsics, usings, defines, declarations, statements, new Position(start), new Position(end))
         if (intrinsics <> ()) {
             for (item: Intrinsic in intrinsics) {
                 item.parent = ret }
@@ -115,6 +123,10 @@ class Parser(
             for (item: Define in defines) {
                 item.parent = ret }
         }
+        if (declarations <> ()) {
+            for (item: Declaration in declarations) {
+                item.parent = ret }
+        }
         if (statements <> ()) {
             for (item: Statement in statements) {
                 item.parent = ret }
@@ -123,16 +135,16 @@ class Parser(
         ret
     }
 
-    method parseStatementList(): Array[Statement] {
-        mutable ret: Array[Statement]$ = null
+    method parseIntrinsicList(): Array[Intrinsic] {
+        mutable ret: Array[Intrinsic]$ = null
         while (true) {
 
-            let node: Statement parseStatement()
+            let node: Intrinsic parseIntrinsic()
             if (node = ()) {
                 break }
 
             if (ret = ()) {
-                ret = new Array[Statement]() }
+                ret = new Array[Intrinsic]() }
 
             ret.add(node)
         }
@@ -140,86 +152,26 @@ class Parser(
         ret
     }
 
-    function parseStatement(): Statement {
-        {
-            let node: Namespace = parseNamespace()
-            if (node <> ()) {
-                return node }
-        }
+    function parseIntrinsic(): Intrinsic {
+        let start: Position$ = lexer.getPreviousPosition()
 
-        {
-            let node: Let = parseLet()
-            if (node <> ()) {
-                return node }
-        }
+        let successIntrinsic1: bool = lexer.parseKeyword(intrinsicKeyword)
+        if (successIntrinsic1) {
+            lexer.advance() }
+        else {
+            return () }
 
-        {
-            let node: Var = parseVar()
-            if (node <> ()) {
-                return node }
-        }
+        let name: string = lexer.parseIdentifier()
+        if ((name <> ()) && isIdentifier(name)) {
+            lexer.advance() }
+        else {
+            return () }
 
-        {
-            let node: Mutable = parseMutable()
-            if (node <> ()) {
-                return node }
-        }
+        let end: Position$ lexer.getPosition()
 
-        {
-            let node: ThreadLocal = parseThreadLocal()
-            if (node <> ()) {
-                return node }
-        }
+        let ret: Intrinsic new Intrinsic(name, new Position(start), new Position(end))
 
-        {
-            let node: Set = parseSet()
-            if (node <> ()) {
-                return node }
-        }
-
-        {
-            let node: Calculation = parseCalculation()
-            if (node <> ()) {
-                return node }
-        }
-
-        {
-            let node: Function = parseFunction()
-            if (node <> ()) {
-                return node }
-        }
-
-        {
-            let node: Class = parseClass()
-            if (node <> ()) {
-                return node }
-        }
-
-        {
-            let node: Break = parseBreak()
-            if (node <> ()) {
-                return node }
-        }
-
-        {
-            let node: Continue = parseContinue()
-            if (node <> ()) {
-                return node }
-        }
-
-        {
-            let node: Return = parseReturn()
-            if (node <> ()) {
-                return node }
-        }
-
-        {
-            let node: Throw = parseThrow()
-            if (node <> ()) {
-                return node }
-        }
-
-        null
+        ret
     }
 
     method parseUsingList(): Array[Using] {
@@ -258,6 +210,373 @@ class Parser(
         name.parent = ret
 
         ret
+    }
+
+    method parseDefineList(): Array[Define] {
+        mutable ret: Array[Define]$ = null
+        while (true) {
+
+            let node: Define parseDefine()
+            if (node = ()) {
+                break }
+
+            if (ret = ()) {
+                ret = new Array[Define]() }
+
+            ret.add(node)
+        }
+
+        ret
+    }
+
+    function parseDefine(): Define {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let successDefine1: bool = lexer.parseKeyword(defineKeyword)
+        if (successDefine1) {
+            lexer.advance() }
+        else {
+            return () }
+
+        let name: Name = parseName()
+        if (name = ()) {
+            return () }
+
+        let typeSpec: Type = parseType()
+        if (typeSpec = ()) {
+            return () }
+
+        let end: Position$ lexer.getPosition()
+
+        let ret: Define new Define(name, typeSpec, new Position(start), new Position(end))
+        name.parent = ret
+        typeSpec.parent = ret
+
+        ret
+    }
+
+    method parseDeclarationList(): Array[Declaration] {
+        mutable ret: Array[Declaration]$ = null
+        while (true) {
+
+            let node: Declaration parseDeclaration()
+            if (node = ()) {
+                break }
+
+            if (ret = ()) {
+                ret = new Array[Declaration]() }
+
+            ret.add(node)
+        }
+
+        ret
+    }
+
+    function parseDeclaration(): Declaration {
+        {
+            let node: Namespace = parseNamespace()
+            if (node <> ()) {
+                return node }
+        }
+
+        {
+            let node: Function = parseFunction()
+            if (node <> ()) {
+                return node }
+        }
+
+        {
+            let node: Class = parseClass()
+            if (node <> ()) {
+                return node }
+        }
+
+        {
+            let node: LetDeclaration = parseLetDeclaration()
+            if (node <> ()) {
+                return node }
+        }
+
+        {
+            let node: VarDeclaration = parseVarDeclaration()
+            if (node <> ()) {
+                return node }
+        }
+
+        {
+            let node: MutableDeclaration = parseMutableDeclaration()
+            if (node <> ()) {
+                return node }
+        }
+
+        {
+            let node: ThreadLocalDeclaration = parseThreadLocalDeclaration()
+            if (node <> ()) {
+                return node }
+        }
+
+        null
+    }
+
+    function parseNamespace(): Namespace {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let successNamespace1: bool = lexer.parseKeyword(namespaceKeyword)
+        if (successNamespace1) {
+            lexer.advance() }
+        else {
+            return () }
+
+        let name: Name = parseName()
+        if (name = ()) {
+            return () }
+
+        let successLeftCurly3: bool = lexer.parsePunctuation(leftCurly)
+        if (successLeftCurly3) {
+            lexer.advance() }
+        else {
+            return () }
+
+        let usings: Array[Using] = parseUsingList()
+
+        let defines: Array[Define] = parseDefineList()
+
+        let declarations: Array[Declaration] = parseDeclarationList()
+
+        let successRightCurly7: bool = lexer.parsePunctuation(rightCurly)
+        if (successRightCurly7) {
+            lexer.advance() }
+        else {
+            return () }
+
+        let end: Position$ lexer.getPosition()
+
+        let ret: Namespace new Namespace(name, usings, defines, declarations, new Position(start), new Position(end))
+        name.parent = ret
+        if (usings <> ()) {
+            for (item: Using in usings) {
+                item.parent = ret }
+        }
+        if (defines <> ()) {
+            for (item: Define in defines) {
+                item.parent = ret }
+        }
+        if (declarations <> ()) {
+            for (item: Declaration in declarations) {
+                item.parent = ret }
+        }
+
+        ret
+    }
+
+    function parseFunction(): Function {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let successFunction1: bool = lexer.parseKeyword(functionKeyword)
+        if (successFunction1) {
+            lexer.advance() }
+        else {
+            return () }
+
+        let procedure: Procedure = parseProcedure()
+        if (procedure = ()) {
+            return () }
+
+        let end: Position$ lexer.getPosition()
+
+        let ret: Function new Function(procedure, new Position(start), new Position(end))
+        procedure.parent = ret
+
+        ret
+    }
+
+    function parseProcedure(): Procedure {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let name: string = lexer.parseIdentifier()
+        if ((name <> ()) && isIdentifier(name)) {
+            lexer.advance() }
+        else {
+            return () }
+
+        let routine: Routine = parseRoutine()
+        if (routine = ()) {
+            return () }
+
+        let end: Position$ lexer.getPosition()
+
+        let ret: Procedure new Procedure(name, routine, new Position(start), new Position(end))
+        routine.parent = ret
+
+        ret
+    }
+
+    function parseRoutine(): Routine {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let input: Structure = parseStructure()
+
+        let output: TypeAnnotation = parseTypeAnnotation()
+
+        let throwsClause: Throws = parseThrows()
+
+        let body: Block = parseBlock()
+        if (body = ()) {
+            return () }
+
+        let end: Position$ lexer.getPosition()
+
+        let ret: Routine new Routine(input, output, throwsClause, body, new Position(start), new Position(end))
+        if (input <> ()) {
+            input.parent = ret }
+        if (output <> ()) {
+            output.parent = ret }
+        if (throwsClause <> ()) {
+            throwsClause.parent = ret }
+        body.parent = ret
+
+        ret
+    }
+
+    function parseLetDeclaration(): LetDeclaration {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let declaration: Let = parseLet()
+        if (declaration = ()) {
+            return () }
+
+        let end: Position$ lexer.getPosition()
+
+        let ret: LetDeclaration new LetDeclaration(declaration, new Position(start), new Position(end))
+        declaration.parent = ret
+
+        ret
+    }
+
+    function parseVarDeclaration(): VarDeclaration {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let declaration: Var = parseVar()
+        if (declaration = ()) {
+            return () }
+
+        let end: Position$ lexer.getPosition()
+
+        let ret: VarDeclaration new VarDeclaration(declaration, new Position(start), new Position(end))
+        declaration.parent = ret
+
+        ret
+    }
+
+    function parseMutableDeclaration(): MutableDeclaration {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let declaration: Mutable = parseMutable()
+        if (declaration = ()) {
+            return () }
+
+        let end: Position$ lexer.getPosition()
+
+        let ret: MutableDeclaration new MutableDeclaration(declaration, new Position(start), new Position(end))
+        declaration.parent = ret
+
+        ret
+    }
+
+    function parseThreadLocalDeclaration(): ThreadLocalDeclaration {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let declaration: ThreadLocal = parseThreadLocal()
+        if (declaration = ()) {
+            return () }
+
+        let end: Position$ lexer.getPosition()
+
+        let ret: ThreadLocalDeclaration new ThreadLocalDeclaration(declaration, new Position(start), new Position(end))
+        declaration.parent = ret
+
+        ret
+    }
+
+    method parseStatementList(): Array[Statement] {
+        mutable ret: Array[Statement]$ = null
+        while (true) {
+
+            let node: Statement parseStatement()
+            if (node = ()) {
+                break }
+
+            if (ret = ()) {
+                ret = new Array[Statement]() }
+
+            ret.add(node)
+        }
+
+        ret
+    }
+
+    function parseStatement(): Statement {
+        {
+            let node: Let = parseLet()
+            if (node <> ()) {
+                return node }
+        }
+
+        {
+            let node: Var = parseVar()
+            if (node <> ()) {
+                return node }
+        }
+
+        {
+            let node: Mutable = parseMutable()
+            if (node <> ()) {
+                return node }
+        }
+
+        {
+            let node: ThreadLocal = parseThreadLocal()
+            if (node <> ()) {
+                return node }
+        }
+
+        {
+            let node: Set = parseSet()
+            if (node <> ()) {
+                return node }
+        }
+
+        {
+            let node: Calculation = parseCalculation()
+            if (node <> ()) {
+                return node }
+        }
+
+        {
+            let node: Break = parseBreak()
+            if (node <> ()) {
+                return node }
+        }
+
+        {
+            let node: Continue = parseContinue()
+            if (node <> ()) {
+                return node }
+        }
+
+        {
+            let node: Return = parseReturn()
+            if (node <> ()) {
+                return node }
+        }
+
+        {
+            let node: Throw = parseThrow()
+            if (node <> ()) {
+                return node }
+        }
+
+        null
     }
 
     function parseName(): Name {
@@ -317,57 +636,6 @@ class Parser(
         let end: Position$ lexer.getPosition()
 
         let ret: Extension new Extension(name, new Position(start), new Position(end))
-
-        ret
-    }
-
-    function parseNamespace(): Namespace {
-        let start: Position$ = lexer.getPreviousPosition()
-
-        let successNamespace1: bool = lexer.parseKeyword(namespaceKeyword)
-        if (successNamespace1) {
-            lexer.advance() }
-        else {
-            return () }
-
-        let name: Name = parseName()
-        if (name = ()) {
-            return () }
-
-        let successLeftCurly3: bool = lexer.parsePunctuation(leftCurly)
-        if (successLeftCurly3) {
-            lexer.advance() }
-        else {
-            return () }
-
-        let usings: Array[Using] = parseUsingList()
-
-        let defines: Array[Define] = parseDefineList()
-
-        let statements: Array[Statement] = parseStatementList()
-
-        let successRightCurly7: bool = lexer.parsePunctuation(rightCurly)
-        if (successRightCurly7) {
-            lexer.advance() }
-        else {
-            return () }
-
-        let end: Position$ lexer.getPosition()
-
-        let ret: Namespace new Namespace(name, usings, defines, statements, new Position(start), new Position(end))
-        name.parent = ret
-        if (usings <> ()) {
-            for (item: Using in usings) {
-                item.parent = ret }
-        }
-        if (defines <> ()) {
-            for (item: Define in defines) {
-                item.parent = ret }
-        }
-        if (statements <> ()) {
-            for (item: Statement in statements) {
-                item.parent = ret }
-        }
 
         ret
     }
@@ -1924,7 +2192,7 @@ class Parser(
         else {
             return () }
 
-        let members: Array[Member] = parseMemberList()
+        let members: Array[ClassMember] = parseClassMemberList()
 
         let successRightCurly3: bool = lexer.parsePunctuation(rightCurly)
         if (successRightCurly3) {
@@ -1936,23 +2204,23 @@ class Parser(
 
         let ret: ClassBody new ClassBody(members, new Position(start), new Position(end))
         if (members <> ()) {
-            for (item: Member in members) {
+            for (item: ClassMember in members) {
                 item.parent = ret }
         }
 
         ret
     }
 
-    method parseMemberList(): Array[Member] {
-        mutable ret: Array[Member]$ = null
+    method parseClassMemberList(): Array[ClassMember] {
+        mutable ret: Array[ClassMember]$ = null
         while (true) {
 
-            let node: Member parseMember()
+            let node: ClassMember parseClassMember()
             if (node = ()) {
                 break }
 
             if (ret = ()) {
-                ret = new Array[Member]() }
+                ret = new Array[ClassMember]() }
 
             ret.add(node)
         }
@@ -1960,7 +2228,7 @@ class Parser(
         ret
     }
 
-    function parseMember(): Member {
+    function parseClassMember(): ClassMember {
         {
             let node: LetMember = parseLetMember()
             if (node <> ()) {
@@ -2021,14 +2289,14 @@ class Parser(
     function parseLetMember(): LetMember {
         let start: Position$ = lexer.getPreviousPosition()
 
-        let definition: Let = parseLet()
-        if (definition = ()) {
+        let declaration: Let = parseLet()
+        if (declaration = ()) {
             return () }
 
         let end: Position$ lexer.getPosition()
 
-        let ret: LetMember new LetMember(definition, new Position(start), new Position(end))
-        definition.parent = ret
+        let ret: LetMember new LetMember(declaration, new Position(start), new Position(end))
+        declaration.parent = ret
 
         ret
     }
@@ -2036,14 +2304,14 @@ class Parser(
     function parseVarMember(): VarMember {
         let start: Position$ = lexer.getPreviousPosition()
 
-        let definition: Var = parseVar()
-        if (definition = ()) {
+        let declaration: Var = parseVar()
+        if (declaration = ()) {
             return () }
 
         let end: Position$ lexer.getPosition()
 
-        let ret: VarMember new VarMember(definition, new Position(start), new Position(end))
-        definition.parent = ret
+        let ret: VarMember new VarMember(declaration, new Position(start), new Position(end))
+        declaration.parent = ret
 
         ret
     }
@@ -2051,14 +2319,14 @@ class Parser(
     function parseMutableMember(): MutableMember {
         let start: Position$ = lexer.getPreviousPosition()
 
-        let definition: Mutable = parseMutable()
-        if (definition = ()) {
+        let declaration: Mutable = parseMutable()
+        if (declaration = ()) {
             return () }
 
         let end: Position$ lexer.getPosition()
 
-        let ret: MutableMember new MutableMember(definition, new Position(start), new Position(end))
-        definition.parent = ret
+        let ret: MutableMember new MutableMember(declaration, new Position(start), new Position(end))
+        declaration.parent = ret
 
         ret
     }
@@ -2180,75 +2448,6 @@ class Parser(
         let ret: Allocator new Allocator(input, body, new Position(start), new Position(end))
         if (input <> ()) {
             input.parent = ret }
-        body.parent = ret
-
-        ret
-    }
-
-    function parseFunction(): Function {
-        let start: Position$ = lexer.getPreviousPosition()
-
-        let successFunction1: bool = lexer.parseKeyword(functionKeyword)
-        if (successFunction1) {
-            lexer.advance() }
-        else {
-            return () }
-
-        let procedure: Procedure = parseProcedure()
-        if (procedure = ()) {
-            return () }
-
-        let end: Position$ lexer.getPosition()
-
-        let ret: Function new Function(procedure, new Position(start), new Position(end))
-        procedure.parent = ret
-
-        ret
-    }
-
-    function parseProcedure(): Procedure {
-        let start: Position$ = lexer.getPreviousPosition()
-
-        let name: string = lexer.parseIdentifier()
-        if ((name <> ()) && isIdentifier(name)) {
-            lexer.advance() }
-        else {
-            return () }
-
-        let routine: Routine = parseRoutine()
-        if (routine = ()) {
-            return () }
-
-        let end: Position$ lexer.getPosition()
-
-        let ret: Procedure new Procedure(name, routine, new Position(start), new Position(end))
-        routine.parent = ret
-
-        ret
-    }
-
-    function parseRoutine(): Routine {
-        let start: Position$ = lexer.getPreviousPosition()
-
-        let input: Structure = parseStructure()
-
-        let output: TypeAnnotation = parseTypeAnnotation()
-
-        let throwsClause: Throws = parseThrows()
-
-        let body: Block = parseBlock()
-        if (body = ()) {
-            return () }
-
-        let end: Position$ lexer.getPosition()
-
-        let ret: Routine new Routine(input, output, throwsClause, body, new Position(start), new Position(end))
-        if (input <> ()) {
-            input.parent = ret }
-        if (output <> ()) {
-            output.parent = ret }
-        if (throwsClause <> ()) {
-            throwsClause.parent = ret }
         body.parent = ret
 
         ret
@@ -2590,88 +2789,6 @@ class Parser(
         ret
     }
 
-    method parseIntrinsicList(): Array[Intrinsic] {
-        mutable ret: Array[Intrinsic]$ = null
-        while (true) {
-
-            let node: Intrinsic parseIntrinsic()
-            if (node = ()) {
-                break }
-
-            if (ret = ()) {
-                ret = new Array[Intrinsic]() }
-
-            ret.add(node)
-        }
-
-        ret
-    }
-
-    function parseIntrinsic(): Intrinsic {
-        let start: Position$ = lexer.getPreviousPosition()
-
-        let successIntrinsic1: bool = lexer.parseKeyword(intrinsicKeyword)
-        if (successIntrinsic1) {
-            lexer.advance() }
-        else {
-            return () }
-
-        let name: string = lexer.parseIdentifier()
-        if ((name <> ()) && isIdentifier(name)) {
-            lexer.advance() }
-        else {
-            return () }
-
-        let end: Position$ lexer.getPosition()
-
-        let ret: Intrinsic new Intrinsic(name, new Position(start), new Position(end))
-
-        ret
-    }
-
-    method parseDefineList(): Array[Define] {
-        mutable ret: Array[Define]$ = null
-        while (true) {
-
-            let node: Define parseDefine()
-            if (node = ()) {
-                break }
-
-            if (ret = ()) {
-                ret = new Array[Define]() }
-
-            ret.add(node)
-        }
-
-        ret
-    }
-
-    function parseDefine(): Define {
-        let start: Position$ = lexer.getPreviousPosition()
-
-        let successDefine1: bool = lexer.parseKeyword(defineKeyword)
-        if (successDefine1) {
-            lexer.advance() }
-        else {
-            return () }
-
-        let name: Name = parseName()
-        if (name = ()) {
-            return () }
-
-        let typeSpec: Type = parseType()
-        if (typeSpec = ()) {
-            return () }
-
-        let end: Position$ lexer.getPosition()
-
-        let ret: Define new Define(name, typeSpec, new Position(start), new Position(end))
-        name.parent = ret
-        typeSpec.parent = ret
-
-        ret
-    }
-
     function isAtEnd(): bool {
         lexer.isAtEnd()
     }
@@ -2810,11 +2927,77 @@ class Visitor {
     function closeFile(fileSyntax: FileSyntax) {
     }
 
+    function visitIntrinsic(intrinsicSyntax: IntrinsicSyntax) {
+    }
+
     function openUsing(usingSyntax: UsingSyntax): bool {
         true
     }
 
     function closeUsing(usingSyntax: UsingSyntax) {
+    }
+
+    function openDefine(defineSyntax: DefineSyntax): bool {
+        true
+    }
+
+    function closeDefine(defineSyntax: DefineSyntax) {
+    }
+
+    function openNamespace(namespaceSyntax: NamespaceSyntax): bool {
+        true
+    }
+
+    function closeNamespace(namespaceSyntax: NamespaceSyntax) {
+    }
+
+    function openFunction(functionSyntax: FunctionSyntax): bool {
+        true
+    }
+
+    function closeFunction(functionSyntax: FunctionSyntax) {
+    }
+
+    function openProcedure(procedureSyntax: ProcedureSyntax): bool {
+        true
+    }
+
+    function closeProcedure(procedureSyntax: ProcedureSyntax) {
+    }
+
+    function openRoutine(routineSyntax: RoutineSyntax): bool {
+        true
+    }
+
+    function closeRoutine(routineSyntax: RoutineSyntax) {
+    }
+
+    function openLetDeclaration(letDeclarationSyntax: LetDeclarationSyntax): bool {
+        true
+    }
+
+    function closeLetDeclaration(letDeclarationSyntax: LetDeclarationSyntax) {
+    }
+
+    function openVarDeclaration(varDeclarationSyntax: VarDeclarationSyntax): bool {
+        true
+    }
+
+    function closeVarDeclaration(varDeclarationSyntax: VarDeclarationSyntax) {
+    }
+
+    function openMutableDeclaration(mutableDeclarationSyntax: MutableDeclarationSyntax): bool {
+        true
+    }
+
+    function closeMutableDeclaration(mutableDeclarationSyntax: MutableDeclarationSyntax) {
+    }
+
+    function openThreadLocalDeclaration(threadLocalDeclarationSyntax: ThreadLocalDeclarationSyntax): bool {
+        true
+    }
+
+    function closeThreadLocalDeclaration(threadLocalDeclarationSyntax: ThreadLocalDeclarationSyntax) {
     }
 
     function openName(nameSyntax: NameSyntax): bool {
@@ -2825,13 +3008,6 @@ class Visitor {
     }
 
     function visitExtension(extensionSyntax: ExtensionSyntax) {
-    }
-
-    function openNamespace(namespaceSyntax: NamespaceSyntax): bool {
-        true
-    }
-
-    function closeNamespace(namespaceSyntax: NamespaceSyntax) {
     }
 
     function openLet(letSyntax: LetSyntax): bool {
@@ -3211,27 +3387,6 @@ class Visitor {
     function closeAllocator(allocatorSyntax: AllocatorSyntax) {
     }
 
-    function openFunction(functionSyntax: FunctionSyntax): bool {
-        true
-    }
-
-    function closeFunction(functionSyntax: FunctionSyntax) {
-    }
-
-    function openProcedure(procedureSyntax: ProcedureSyntax): bool {
-        true
-    }
-
-    function closeProcedure(procedureSyntax: ProcedureSyntax) {
-    }
-
-    function openRoutine(routineSyntax: RoutineSyntax): bool {
-        true
-    }
-
-    function closeRoutine(routineSyntax: RoutineSyntax) {
-    }
-
     function openTypeAnnotation(typeAnnotationSyntax: TypeAnnotationSyntax): bool {
         true
     }
@@ -3288,16 +3443,6 @@ class Visitor {
 
     function visitThrown(thrownSyntax: ThrownSyntax) {
     }
-
-    function visitIntrinsic(intrinsicSyntax: IntrinsicSyntax) {
-    }
-
-    function openDefine(defineSyntax: DefineSyntax): bool {
-        true
-    }
-
-    function closeDefine(defineSyntax: DefineSyntax) {
-    }
 }
 
 class SyntaxNode (
@@ -3334,6 +3479,7 @@ class File extends SyntaxNode (
     intrinsics: Array[Intrinsic], 
     usings: Array[Using], 
     defines: Array[Define], 
+    declarations: Array[Declaration], 
     statements: Array[Statement]
 
     ) {
@@ -3354,6 +3500,10 @@ class File extends SyntaxNode (
             for (node: Define in defines) {
                 node.accept(visitor) } }
 
+        if (declarations <> ()) {
+            for (node: Declaration in declarations) {
+                node.accept(visitor) } }
+
         if (statements <> ()) {
             for (node: Statement in statements) {
                 node.accept(visitor) } }
@@ -3362,8 +3512,14 @@ class File extends SyntaxNode (
     }
 }
 
-class Statement extends SyntaxNode {
+class Intrinsic extends SyntaxNode (
+
+    name: string
+
+    ) {
     function accept(visitor: Visitor) {
+
+        visitor.visitIntrinsic(this)
     }
 }
 
@@ -3379,6 +3535,181 @@ class Using extends SyntaxNode (
         name.accept(visitor)
 
         visitor.closeUsing(this)
+    }
+}
+
+class Define extends SyntaxNode (
+
+    name: Name, 
+    typeSpec: Type
+
+    ) {
+    function accept(visitor: Visitor) {
+
+        if (visitor.openDefine(this) = false) {
+            return }
+        name.accept(visitor)
+        typeSpec.accept(visitor)
+
+        visitor.closeDefine(this)
+    }
+}
+
+class Declaration extends SyntaxNode {
+    function accept(visitor: Visitor) {
+    }
+}
+
+class Namespace extends Declaration (
+
+    name: Name, 
+    usings: Array[Using], 
+    defines: Array[Define], 
+    declarations: Array[Declaration], 
+
+    ) {
+    function accept(visitor: Visitor) {
+
+        if (visitor.openNamespace(this) = false) {
+            return }
+        name.accept(visitor)
+
+        if (usings <> ()) {
+            for (node: Using in usings) {
+                node.accept(visitor) } }
+
+        if (defines <> ()) {
+            for (node: Define in defines) {
+                node.accept(visitor) } }
+
+        if (declarations <> ()) {
+            for (node: Declaration in declarations) {
+                node.accept(visitor) } }
+
+        visitor.closeNamespace(this)
+    }
+}
+
+class Function extends Declaration (
+
+    procedure: Procedure
+
+    ) {
+    function accept(visitor: Visitor) {
+
+        if (visitor.openFunction(this) = false) {
+            return }
+        procedure.accept(visitor)
+
+        visitor.closeFunction(this)
+    }
+}
+
+class Procedure extends SyntaxNode (
+
+    name: string, 
+    routine: Routine
+
+    ) {
+    function accept(visitor: Visitor) {
+
+        if (visitor.openProcedure(this) = false) {
+            return }
+        routine.accept(visitor)
+
+        visitor.closeProcedure(this)
+    }
+}
+
+class Routine extends SyntaxNode (
+
+    input: Structure, 
+    output: TypeAnnotation, 
+    throwsClause: Throws, 
+    body: Block
+
+    ) {
+    function accept(visitor: Visitor) {
+
+        if (visitor.openRoutine(this) = false) {
+            return }
+
+        if (input <> ()) {
+            input.accept(visitor) }
+
+        if (output <> ()) {
+            output.accept(visitor) }
+
+        if (throwsClause <> ()) {
+            throwsClause.accept(visitor) }
+        body.accept(visitor)
+
+        visitor.closeRoutine(this)
+    }
+}
+
+class LetDeclaration extends Declaration (
+
+    declaration: Let
+
+    ) {
+    function accept(visitor: Visitor) {
+
+        if (visitor.openLetDeclaration(this) = false) {
+            return }
+        declaration.accept(visitor)
+
+        visitor.closeLetDeclaration(this)
+    }
+}
+
+class VarDeclaration extends Declaration (
+
+    declaration: Var
+
+    ) {
+    function accept(visitor: Visitor) {
+
+        if (visitor.openVarDeclaration(this) = false) {
+            return }
+        declaration.accept(visitor)
+
+        visitor.closeVarDeclaration(this)
+    }
+}
+
+class MutableDeclaration extends Declaration (
+
+    declaration: Mutable
+
+    ) {
+    function accept(visitor: Visitor) {
+
+        if (visitor.openMutableDeclaration(this) = false) {
+            return }
+        declaration.accept(visitor)
+
+        visitor.closeMutableDeclaration(this)
+    }
+}
+
+class ThreadLocalDeclaration extends Declaration (
+
+    declaration: ThreadLocal
+
+    ) {
+    function accept(visitor: Visitor) {
+
+        if (visitor.openThreadLocalDeclaration(this) = false) {
+            return }
+        declaration.accept(visitor)
+
+        visitor.closeThreadLocalDeclaration(this)
+    }
+}
+
+class Statement extends SyntaxNode {
+    function accept(visitor: Visitor) {
     }
 }
 
@@ -3409,36 +3740,6 @@ class Extension extends SyntaxNode (
     function accept(visitor: Visitor) {
 
         visitor.visitExtension(this)
-    }
-}
-
-class Namespace extends Statement (
-
-    name: Name, 
-    usings: Array[Using], 
-    defines: Array[Define], 
-    statements: Array[Statement], 
-
-    ) {
-    function accept(visitor: Visitor) {
-
-        if (visitor.openNamespace(this) = false) {
-            return }
-        name.accept(visitor)
-
-        if (usings <> ()) {
-            for (node: Using in usings) {
-                node.accept(visitor) } }
-
-        if (defines <> ()) {
-            for (node: Define in defines) {
-                node.accept(visitor) } }
-
-        if (statements <> ()) {
-            for (node: Statement in statements) {
-                node.accept(visitor) } }
-
-        visitor.closeNamespace(this)
     }
 }
 
@@ -4149,7 +4450,7 @@ class Throw extends Statement (
     }
 }
 
-class Class extends Statement (
+class Class extends Declaration (
 
     name: Name, 
     generics: GenericParameters, 
@@ -4263,7 +4564,7 @@ class Component extends SyntaxNode (
 
 class ClassBody extends SyntaxNode (
 
-    members: Array[Member], 
+    members: Array[ClassMember], 
 
     ) {
     function accept(visitor: Visitor) {
@@ -4272,64 +4573,64 @@ class ClassBody extends SyntaxNode (
             return }
 
         if (members <> ()) {
-            for (node: Member in members) {
+            for (node: ClassMember in members) {
                 node.accept(visitor) } }
 
         visitor.closeClassBody(this)
     }
 }
 
-class Member extends SyntaxNode {
+class ClassMember extends SyntaxNode {
     function accept(visitor: Visitor) {
     }
 }
 
-class LetMember extends Member (
+class LetMember extends ClassMember (
 
-    definition: Let
+    declaration: Let
 
     ) {
     function accept(visitor: Visitor) {
 
         if (visitor.openLetMember(this) = false) {
             return }
-        definition.accept(visitor)
+        declaration.accept(visitor)
 
         visitor.closeLetMember(this)
     }
 }
 
-class VarMember extends Member (
+class VarMember extends ClassMember (
 
-    definition: Var
+    declaration: Var
 
     ) {
     function accept(visitor: Visitor) {
 
         if (visitor.openVarMember(this) = false) {
             return }
-        definition.accept(visitor)
+        declaration.accept(visitor)
 
         visitor.closeVarMember(this)
     }
 }
 
-class MutableMember extends Member (
+class MutableMember extends ClassMember (
 
-    definition: Mutable
+    declaration: Mutable
 
     ) {
     function accept(visitor: Visitor) {
 
         if (visitor.openMutableMember(this) = false) {
             return }
-        definition.accept(visitor)
+        declaration.accept(visitor)
 
         visitor.closeMutableMember(this)
     }
 }
 
-class SetInitialization extends Member (
+class SetInitialization extends ClassMember (
 
     definition: Set
 
@@ -4344,7 +4645,7 @@ class SetInitialization extends Member (
     }
 }
 
-class Method extends Member (
+class Method extends ClassMember (
 
     procedure: Procedure
 
@@ -4359,7 +4660,7 @@ class Method extends Member (
     }
 }
 
-class StaticFunction extends Member (
+class StaticFunction extends ClassMember (
 
     procedure: Function
 
@@ -4374,7 +4675,7 @@ class StaticFunction extends Member (
     }
 }
 
-class Operator extends Member (
+class Operator extends ClassMember (
 
     routine: Routine
 
@@ -4389,7 +4690,7 @@ class Operator extends Member (
     }
 }
 
-class Initializer extends Member (
+class Initializer extends ClassMember (
 
     input: Structure, 
     body: Block
@@ -4408,7 +4709,7 @@ class Initializer extends Member (
     }
 }
 
-class Allocator extends Member (
+class Allocator extends ClassMember (
 
     input: Structure, 
     body: Block
@@ -4424,64 +4725,6 @@ class Allocator extends Member (
         body.accept(visitor)
 
         visitor.closeAllocator(this)
-    }
-}
-
-class Function extends Statement (
-
-    procedure: Procedure
-
-    ) {
-    function accept(visitor: Visitor) {
-
-        if (visitor.openFunction(this) = false) {
-            return }
-        procedure.accept(visitor)
-
-        visitor.closeFunction(this)
-    }
-}
-
-class Procedure extends SyntaxNode (
-
-    name: string, 
-    routine: Routine
-
-    ) {
-    function accept(visitor: Visitor) {
-
-        if (visitor.openProcedure(this) = false) {
-            return }
-        routine.accept(visitor)
-
-        visitor.closeProcedure(this)
-    }
-}
-
-class Routine extends SyntaxNode (
-
-    input: Structure, 
-    output: TypeAnnotation, 
-    throwsClause: Throws, 
-    body: Block
-
-    ) {
-    function accept(visitor: Visitor) {
-
-        if (visitor.openRoutine(this) = false) {
-            return }
-
-        if (input <> ()) {
-            input.accept(visitor) }
-
-        if (output <> ()) {
-            output.accept(visitor) }
-
-        if (throwsClause <> ()) {
-            throwsClause.accept(visitor) }
-        body.accept(visitor)
-
-        visitor.closeRoutine(this)
     }
 }
 
@@ -4654,34 +4897,6 @@ class Thrown extends LifeTime (
     function accept(visitor: Visitor) {
 
         visitor.visitThrown(this)
-    }
-}
-
-class Intrinsic extends SyntaxNode (
-
-    name: string
-
-    ) {
-    function accept(visitor: Visitor) {
-
-        visitor.visitIntrinsic(this)
-    }
-}
-
-class Define extends SyntaxNode (
-
-    name: Name, 
-    typeSpec: Type
-
-    ) {
-    function accept(visitor: Visitor) {
-
-        if (visitor.openDefine(this) = false) {
-            return }
-        name.accept(visitor)
-        typeSpec.accept(visitor)
-
-        visitor.closeDefine(this)
     }
 }
 
