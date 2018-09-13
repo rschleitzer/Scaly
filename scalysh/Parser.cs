@@ -248,6 +248,76 @@ namespace scalyc
             return ret;
         }
 
+        public NameSyntax parseName()
+        {
+            Position start = lexer.getPreviousPosition();
+
+            string name = lexer.parseIdentifier();
+            if ((name != null) && isIdentifier(name))
+                lexer.advance();
+            else
+                return null;
+
+            ExtensionSyntax[] extensions = parseExtensionList();
+
+            Position end = lexer.getPosition();
+
+            NameSyntax ret = new NameSyntax(start, end, name, extensions);
+
+            if (extensions != null)
+            {
+                foreach (ExtensionSyntax item in extensions)
+                    item.parent = ret;
+            }
+
+            return ret;
+        }
+
+        public ExtensionSyntax[] parseExtensionList()
+        {
+            List<ExtensionSyntax> ret = null;
+            while (true)
+            {
+                ExtensionSyntax node = parseExtension();
+                if (node == null)
+                    break;
+
+                if (ret == null)
+                    ret = new List<ExtensionSyntax>();
+
+                ret.Add(node);
+            }
+
+            if (ret != null)
+                return ret.ToArray();
+            else
+                return null;
+        }
+
+        public ExtensionSyntax parseExtension()
+        {
+            Position start = lexer.getPreviousPosition();
+
+            bool successDot1 = lexer.parsePunctuation(".");
+            if (successDot1)
+                lexer.advance();
+            else
+                return null;
+
+            string name = lexer.parseIdentifier();
+            if ((name != null) && isIdentifier(name))
+                lexer.advance();
+            else
+                throw new ParserException(fileName, lexer.line, lexer.column);
+
+            Position end = lexer.getPosition();
+
+            ExtensionSyntax ret = new ExtensionSyntax(start, end, name);
+
+
+            return ret;
+        }
+
         public DeclarationSyntax[] parseDeclarationList()
         {
             List<DeclarationSyntax> ret = null;
@@ -599,76 +669,6 @@ namespace scalyc
             }
 
             return null;
-        }
-
-        public NameSyntax parseName()
-        {
-            Position start = lexer.getPreviousPosition();
-
-            string name = lexer.parseIdentifier();
-            if ((name != null) && isIdentifier(name))
-                lexer.advance();
-            else
-                return null;
-
-            ExtensionSyntax[] extensions = parseExtensionList();
-
-            Position end = lexer.getPosition();
-
-            NameSyntax ret = new NameSyntax(start, end, name, extensions);
-
-            if (extensions != null)
-            {
-                foreach (ExtensionSyntax item in extensions)
-                    item.parent = ret;
-            }
-
-            return ret;
-        }
-
-        public ExtensionSyntax[] parseExtensionList()
-        {
-            List<ExtensionSyntax> ret = null;
-            while (true)
-            {
-                ExtensionSyntax node = parseExtension();
-                if (node == null)
-                    break;
-
-                if (ret == null)
-                    ret = new List<ExtensionSyntax>();
-
-                ret.Add(node);
-            }
-
-            if (ret != null)
-                return ret.ToArray();
-            else
-                return null;
-        }
-
-        public ExtensionSyntax parseExtension()
-        {
-            Position start = lexer.getPreviousPosition();
-
-            bool successDot1 = lexer.parsePunctuation(".");
-            if (successDot1)
-                lexer.advance();
-            else
-                return null;
-
-            string name = lexer.parseIdentifier();
-            if ((name != null) && isIdentifier(name))
-                lexer.advance();
-            else
-                throw new ParserException(fileName, lexer.line, lexer.column);
-
-            Position end = lexer.getPosition();
-
-            ExtensionSyntax ret = new ExtensionSyntax(start, end, name);
-
-
-            return ret;
         }
 
         public LetSyntax parseLet()
@@ -3095,6 +3095,19 @@ namespace scalyc
         {
         }
 
+        public virtual bool openName(NameSyntax nameSyntax)
+        {
+            return true;
+        }
+
+        public virtual void closeName(NameSyntax nameSyntax)
+        {
+        }
+
+        public virtual void visitExtension(ExtensionSyntax extensionSyntax)
+        {
+        }
+
         public virtual bool openNamespace(NamespaceSyntax namespaceSyntax)
         {
             return true;
@@ -3164,19 +3177,6 @@ namespace scalyc
         }
 
         public virtual void closeThreadLocalDeclaration(ThreadLocalDeclarationSyntax threadLocalDeclarationSyntax)
-        {
-        }
-
-        public virtual bool openName(NameSyntax nameSyntax)
-        {
-            return true;
-        }
-
-        public virtual void closeName(NameSyntax nameSyntax)
-        {
-        }
-
-        public virtual void visitExtension(ExtensionSyntax extensionSyntax)
         {
         }
 
@@ -3898,6 +3898,49 @@ namespace scalyc
         }
     }
 
+    public class NameSyntax : ExpressionSyntax
+    {
+        public string name;
+        public ExtensionSyntax[] extensions;
+        public NameSyntax(Position start, Position end, string name, ExtensionSyntax[] extensions)
+        {
+            this.start = start;
+            this.end = end;
+            this.name = name;
+            this.extensions = extensions;
+        }
+
+        public override void accept(SyntaxVisitor visitor)
+        {
+            if (!visitor.openName(this))
+                return;
+
+            if (extensions != null)
+            {
+                foreach (ExtensionSyntax node in extensions)
+                    node.accept(visitor);
+            }
+
+            visitor.closeName(this);
+        }
+    }
+
+    public class ExtensionSyntax : SyntaxNode
+    {
+        public string name;
+        public ExtensionSyntax(Position start, Position end, string name)
+        {
+            this.start = start;
+            this.end = end;
+            this.name = name;
+        }
+
+        public override void accept(SyntaxVisitor visitor)
+        {
+            visitor.visitExtension(this);
+        }
+    }
+
     public class DeclarationSyntax : SyntaxNode
     {
         public override void accept(SyntaxVisitor visitor)
@@ -4118,49 +4161,6 @@ namespace scalyc
     {
         public override void accept(SyntaxVisitor visitor)
         {
-        }
-    }
-
-    public class NameSyntax : ExpressionSyntax
-    {
-        public string name;
-        public ExtensionSyntax[] extensions;
-        public NameSyntax(Position start, Position end, string name, ExtensionSyntax[] extensions)
-        {
-            this.start = start;
-            this.end = end;
-            this.name = name;
-            this.extensions = extensions;
-        }
-
-        public override void accept(SyntaxVisitor visitor)
-        {
-            if (!visitor.openName(this))
-                return;
-
-            if (extensions != null)
-            {
-                foreach (ExtensionSyntax node in extensions)
-                    node.accept(visitor);
-            }
-
-            visitor.closeName(this);
-        }
-    }
-
-    public class ExtensionSyntax : SyntaxNode
-    {
-        public string name;
-        public ExtensionSyntax(Position start, Position end, string name)
-        {
-            this.start = start;
-            this.end = end;
-            this.name = name;
-        }
-
-        public override void accept(SyntaxVisitor visitor)
-        {
-            visitor.visitExtension(this);
         }
     }
 

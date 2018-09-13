@@ -255,6 +255,67 @@ class Parser(
         ret
     }
 
+    function parseName(): Name {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let name: string = lexer.parseIdentifier()
+        if ((name <> ()) && isIdentifier(name)) {
+            lexer.advance() }
+        else {
+            return () }
+
+        let extensions: Array[Extension] = parseExtensionList()
+
+        let end: Position$ lexer.getPosition()
+
+        let ret: Name new Name(name, extensions, new Position(start), new Position(end))
+        if (extensions <> ()) {
+            for (item: Extension in extensions) {
+                item.parent = ret }
+        }
+
+        ret
+    }
+
+    method parseExtensionList(): Array[Extension] {
+        mutable ret: Array[Extension]$ = null
+        while (true) {
+
+            let node: Extension parseExtension()
+            if (node = ()) {
+                break }
+
+            if (ret = ()) {
+                ret = new Array[Extension]() }
+
+            ret.add(node)
+        }
+
+        ret
+    }
+
+    function parseExtension(): Extension {
+        let start: Position$ = lexer.getPreviousPosition()
+
+        let successDot1: bool = lexer.parsePunctuation(dot)
+        if (successDot1) {
+            lexer.advance() }
+        else {
+            return () }
+
+        let name: string = lexer.parseIdentifier()
+        if ((name <> ()) && isIdentifier(name)) {
+            lexer.advance() }
+        else {
+            return () }
+
+        let end: Position$ lexer.getPosition()
+
+        let ret: Extension new Extension(name, new Position(start), new Position(end))
+
+        ret
+    }
+
     method parseDeclarationList(): Array[Declaration] {
         mutable ret: Array[Declaration]$ = null
         while (true) {
@@ -577,67 +638,6 @@ class Parser(
         }
 
         null
-    }
-
-    function parseName(): Name {
-        let start: Position$ = lexer.getPreviousPosition()
-
-        let name: string = lexer.parseIdentifier()
-        if ((name <> ()) && isIdentifier(name)) {
-            lexer.advance() }
-        else {
-            return () }
-
-        let extensions: Array[Extension] = parseExtensionList()
-
-        let end: Position$ lexer.getPosition()
-
-        let ret: Name new Name(name, extensions, new Position(start), new Position(end))
-        if (extensions <> ()) {
-            for (item: Extension in extensions) {
-                item.parent = ret }
-        }
-
-        ret
-    }
-
-    method parseExtensionList(): Array[Extension] {
-        mutable ret: Array[Extension]$ = null
-        while (true) {
-
-            let node: Extension parseExtension()
-            if (node = ()) {
-                break }
-
-            if (ret = ()) {
-                ret = new Array[Extension]() }
-
-            ret.add(node)
-        }
-
-        ret
-    }
-
-    function parseExtension(): Extension {
-        let start: Position$ = lexer.getPreviousPosition()
-
-        let successDot1: bool = lexer.parsePunctuation(dot)
-        if (successDot1) {
-            lexer.advance() }
-        else {
-            return () }
-
-        let name: string = lexer.parseIdentifier()
-        if ((name <> ()) && isIdentifier(name)) {
-            lexer.advance() }
-        else {
-            return () }
-
-        let end: Position$ lexer.getPosition()
-
-        let ret: Extension new Extension(name, new Position(start), new Position(end))
-
-        ret
     }
 
     function parseLet(): Let {
@@ -2944,6 +2944,16 @@ class Visitor {
     function closeDefine(defineSyntax: DefineSyntax) {
     }
 
+    function openName(nameSyntax: NameSyntax): bool {
+        true
+    }
+
+    function closeName(nameSyntax: NameSyntax) {
+    }
+
+    function visitExtension(extensionSyntax: ExtensionSyntax) {
+    }
+
     function openNamespace(namespaceSyntax: NamespaceSyntax): bool {
         true
     }
@@ -2998,16 +3008,6 @@ class Visitor {
     }
 
     function closeThreadLocalDeclaration(threadLocalDeclarationSyntax: ThreadLocalDeclarationSyntax) {
-    }
-
-    function openName(nameSyntax: NameSyntax): bool {
-        true
-    }
-
-    function closeName(nameSyntax: NameSyntax) {
-    }
-
-    function visitExtension(extensionSyntax: ExtensionSyntax) {
     }
 
     function openLet(letSyntax: LetSyntax): bool {
@@ -3555,6 +3555,36 @@ class Define extends SyntaxNode (
     }
 }
 
+class Name extends Expression (
+
+    name: string, 
+    extensions: Array[Extension]
+
+    ) {
+    function accept(visitor: Visitor) {
+
+        if (visitor.openName(this) = false) {
+            return }
+
+        if (extensions <> ()) {
+            for (node: Extension in extensions) {
+                node.accept(visitor) } }
+
+        visitor.closeName(this)
+    }
+}
+
+class Extension extends SyntaxNode (
+
+    name: string
+
+    ) {
+    function accept(visitor: Visitor) {
+
+        visitor.visitExtension(this)
+    }
+}
+
 class Declaration extends SyntaxNode {
     function accept(visitor: Visitor) {
     }
@@ -3710,36 +3740,6 @@ class ThreadLocalDeclaration extends Declaration (
 
 class Statement extends SyntaxNode {
     function accept(visitor: Visitor) {
-    }
-}
-
-class Name extends Expression (
-
-    name: string, 
-    extensions: Array[Extension]
-
-    ) {
-    function accept(visitor: Visitor) {
-
-        if (visitor.openName(this) = false) {
-            return }
-
-        if (extensions <> ()) {
-            for (node: Extension in extensions) {
-                node.accept(visitor) } }
-
-        visitor.closeName(this)
-    }
-}
-
-class Extension extends SyntaxNode (
-
-    name: string
-
-    ) {
-    function accept(visitor: Visitor) {
-
-        visitor.visitExtension(this)
     }
 }
 
