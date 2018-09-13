@@ -1092,7 +1092,7 @@ namespace scalyc
             }
 
             {
-                NameCatchPatternSyntax node = parseNameCatchPattern();
+                TypeCatchPatternSyntax node = parseTypeCatchPattern();
                 if (node != null)
                     return node;
             }
@@ -1117,34 +1117,23 @@ namespace scalyc
             return ret;
         }
 
-        public NameCatchPatternSyntax parseNameCatchPattern()
+        public TypeCatchPatternSyntax parseTypeCatchPattern()
         {
             Position start = lexer.getPreviousPosition();
 
-            NameSyntax name = parseName();
-
-            bool successLeftParen2 = lexer.parsePunctuation("(");
-            if (successLeftParen2)
-                lexer.advance();
-            else
-                throw new ParserException(fileName, lexer.line, lexer.column);
+            TypeSpecSyntax typeSpec = parseTypeSpec();
+            if (typeSpec == null)
+                return null;
 
             string errorName = lexer.parseIdentifier();
             if ((errorName != null) && isIdentifier(errorName))
                 lexer.advance();
 
-            bool successRightParen4 = lexer.parsePunctuation(")");
-            if (successRightParen4)
-                lexer.advance();
-            else
-                throw new ParserException(fileName, lexer.line, lexer.column);
-
             Position end = lexer.getPosition();
 
-            NameCatchPatternSyntax ret = new NameCatchPatternSyntax(start, end, name, errorName);
+            TypeCatchPatternSyntax ret = new TypeCatchPatternSyntax(start, end, typeSpec, errorName);
 
-            if (name != null)
-                name.parent = ret;
+            typeSpec.parent = ret;
 
             return ret;
         }
@@ -3306,12 +3295,12 @@ namespace scalyc
         {
         }
 
-        public virtual bool openNameCatchPattern(NameCatchPatternSyntax nameCatchPatternSyntax)
+        public virtual bool openTypeCatchPattern(TypeCatchPatternSyntax typeCatchPatternSyntax)
         {
             return true;
         }
 
-        public virtual void closeNameCatchPattern(NameCatchPatternSyntax nameCatchPatternSyntax)
+        public virtual void closeTypeCatchPattern(TypeCatchPatternSyntax typeCatchPatternSyntax)
         {
         }
 
@@ -4509,27 +4498,26 @@ namespace scalyc
         }
     }
 
-    public class NameCatchPatternSyntax : CatchPatternSyntax
+    public class TypeCatchPatternSyntax : CatchPatternSyntax
     {
-        public NameSyntax name;
+        public TypeSpecSyntax typeSpec;
         public string errorName;
-        public NameCatchPatternSyntax(Position start, Position end, NameSyntax name, string errorName)
+        public TypeCatchPatternSyntax(Position start, Position end, TypeSpecSyntax typeSpec, string errorName)
         {
             this.start = start;
             this.end = end;
-            this.name = name;
+            this.typeSpec = typeSpec;
             this.errorName = errorName;
         }
 
         public override void accept(SyntaxVisitor visitor)
         {
-            if (!visitor.openNameCatchPattern(this))
+            if (!visitor.openTypeCatchPattern(this))
                 return;
 
-            if (name != null)
-                name.accept(visitor);
+            typeSpec.accept(visitor);
 
-            visitor.closeNameCatchPattern(this);
+            visitor.closeTypeCatchPattern(this);
         }
     }
 

@@ -157,16 +157,14 @@
 
     <syntax id = CatchPattern                          abstract
         <content link = WildCardCatchPattern
-        <content link = NameCatchPattern
+        <content link = TypeCatchPattern
 
     <syntax id = WildCardCatchPattern                           base = CatchPattern
         <content link = WildcardPattern                         property = pattern
 
-    <syntax id = NameCatchPattern                               base = CatchPattern
-        <content link = Name                           optional property = name
-        <content link = leftParen
+    <syntax id = TypeCatchPattern                               base = CatchPattern
+        <content link = TypeSpec                                property = typeSpec
         <content identifier                            optional property = errorName
-        <content link = rightParen
 
     <syntax id = Expression                   multiple abstract
         <content link = Block

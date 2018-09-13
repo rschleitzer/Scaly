@@ -1019,7 +1019,7 @@ class Parser(
         }
 
         {
-            let node: NameCatchPattern = parseNameCatchPattern()
+            let node: TypeCatchPattern = parseTypeCatchPattern()
             if (node <> ()) {
                 return node }
         }
@@ -1042,32 +1042,21 @@ class Parser(
         ret
     }
 
-    function parseNameCatchPattern(): NameCatchPattern {
+    function parseTypeCatchPattern(): TypeCatchPattern {
         let start: Position$ = lexer.getPreviousPosition()
 
-        let name: Name = parseName()
-
-        let successLeftParen2: bool = lexer.parsePunctuation(leftParen)
-        if (successLeftParen2) {
-            lexer.advance() }
-        else {
+        let typeSpec: TypeSpec = parseTypeSpec()
+        if (typeSpec = ()) {
             return () }
 
         let errorName: string = lexer.parseIdentifier()
         if ((errorName <> ()) && isIdentifier(errorName)) {
             lexer.advance() }
 
-        let successRightParen4: bool = lexer.parsePunctuation(rightParen)
-        if (successRightParen4) {
-            lexer.advance() }
-        else {
-            return () }
-
         let end: Position$ lexer.getPosition()
 
-        let ret: NameCatchPattern new NameCatchPattern(name, errorName, new Position(start), new Position(end))
-        if (name <> ()) {
-            name.parent = ret }
+        let ret: TypeCatchPattern new TypeCatchPattern(typeSpec, errorName, new Position(start), new Position(end))
+        typeSpec.parent = ret
 
         ret
     }
@@ -3108,11 +3097,11 @@ class Visitor {
     function closeWildCardCatchPattern(wildCardCatchPatternSyntax: WildCardCatchPatternSyntax) {
     }
 
-    function openNameCatchPattern(nameCatchPatternSyntax: NameCatchPatternSyntax): bool {
+    function openTypeCatchPattern(typeCatchPatternSyntax: TypeCatchPatternSyntax): bool {
         true
     }
 
-    function closeNameCatchPattern(nameCatchPatternSyntax: NameCatchPatternSyntax) {
+    function closeTypeCatchPattern(typeCatchPatternSyntax: TypeCatchPatternSyntax) {
     }
 
     function openBlock(blockSyntax: BlockSyntax): bool {
@@ -3987,21 +3976,19 @@ class WildCardCatchPattern extends CatchPattern (
     }
 }
 
-class NameCatchPattern extends CatchPattern (
+class TypeCatchPattern extends CatchPattern (
 
-    name: Name, 
-    errorName: string, 
+    typeSpec: TypeSpec, 
+    errorName: string
 
     ) {
     function accept(visitor: Visitor) {
 
-        if (visitor.openNameCatchPattern(this) = false) {
+        if (visitor.openTypeCatchPattern(this) = false) {
             return }
+        typeSpec.accept(visitor)
 
-        if (name <> ()) {
-            name.accept(visitor) }
-
-        visitor.closeNameCatchPattern(this)
+        visitor.closeTypeCatchPattern(this)
     }
 }
 

@@ -7,7 +7,7 @@ class scalyc.Compiler {
 
         for (file in files) loop test {
             let source: string@sources = File.readToString(file)
-                catch FileNotFoundError() {
+                catch FileNotFoundError {
                     print("Can't read file: "file"\n") catch _ {}
                     return
                 }
@@ -19,7 +19,7 @@ class scalyc.Compiler {
         let index: number 0
         for (source in sources) {
             let module: Module?@program = parseUnit(Path.getFileNameWithoutExtension(files[index]), source)
-                catch ParserCompilerError(e) {
+                catch ParserCompilerError e {
                     print ("Syntax error in "files[index]" at "e.line", "e.column"\n") catch _ {}
                     return
                 }
@@ -45,7 +45,7 @@ class scalyc.Compiler {
         mutable parser Parser(moduleName, text)
 
         let module: Module = parser.parseModule()
-            catch ParserError(e) {
+            catch ParserError e {
                 throw parser(e.line, e.column)
             }
 
