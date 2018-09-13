@@ -107,7 +107,7 @@
         <content link = Binding                                 property = binding
 
     <syntax id = Binding
-        <content link = Name                                    property = name
+        <content identifier                                     property = name
         <content link = TypeAnnotation                 optional property = typeAnnotation
         <content link = Calculation                             property = calculation
 
@@ -120,7 +120,7 @@
     <syntax id = Calculation                                    base = Statement
         <content link = Operation                               property = operation
         <content link = semicolon                      optional
-    
+
     <syntax id = Operation
         <content link = Operand               multiple          property = op
 

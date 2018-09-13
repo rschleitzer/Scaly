@@ -767,8 +767,10 @@ namespace scalyc
         {
             Position start = lexer.getPreviousPosition();
 
-            NameSyntax name = parseName();
-            if (name == null)
+            string name = lexer.parseIdentifier();
+            if ((name != null) && isIdentifier(name))
+                lexer.advance();
+            else
                 return null;
 
             TypeAnnotationSyntax typeAnnotation = parseTypeAnnotation();
@@ -781,7 +783,6 @@ namespace scalyc
 
             BindingSyntax ret = new BindingSyntax(start, end, name, typeAnnotation, calculation);
 
-            name.parent = ret;
             if (typeAnnotation != null)
                 typeAnnotation.parent = ret;
             calculation.parent = ret;
@@ -4250,10 +4251,10 @@ namespace scalyc
 
     public class BindingSyntax : SyntaxNode
     {
-        public NameSyntax name;
+        public string name;
         public TypeAnnotationSyntax typeAnnotation;
         public CalculationSyntax calculation;
-        public BindingSyntax(Position start, Position end, NameSyntax name, TypeAnnotationSyntax typeAnnotation, CalculationSyntax calculation)
+        public BindingSyntax(Position start, Position end, string name, TypeAnnotationSyntax typeAnnotation, CalculationSyntax calculation)
         {
             this.start = start;
             this.end = end;
@@ -4266,8 +4267,6 @@ namespace scalyc
         {
             if (!visitor.openBinding(this))
                 return;
-
-            name.accept(visitor);
 
             if (typeAnnotation != null)
                 typeAnnotation.accept(visitor);

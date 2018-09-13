@@ -32,8 +32,8 @@
             }
             catch (CompilerException e)
             {
-                var message = $"Compiler error at line {e.line}, column {e.column}.";
-                try { System.Console.WriteLine("No files to compile."); } catch { return -4; }
+                var message = $"Compiler error in file {e.file} at line {e.line}, column {e.column}.";
+                try { System.Console.WriteLine(message); } catch { return -4; }
             }
             return 0;
         }

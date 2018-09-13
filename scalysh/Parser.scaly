@@ -727,8 +727,10 @@ class Parser(
     function parseBinding(): Binding {
         let start: Position$ = lexer.getPreviousPosition()
 
-        let name: Name = parseName()
-        if (name = ()) {
+        let name: string = lexer.parseIdentifier()
+        if ((name <> ()) && isIdentifier(name)) {
+            lexer.advance() }
+        else {
             return () }
 
         let typeAnnotation: TypeAnnotation = parseTypeAnnotation()
@@ -740,7 +742,6 @@ class Parser(
         let end: Position$ lexer.getPosition()
 
         let ret: Binding new Binding(name, typeAnnotation, calculation, new Position(start), new Position(end))
-        name.parent = ret
         if (typeAnnotation <> ()) {
             typeAnnotation.parent = ret }
         calculation.parent = ret
@@ -3805,7 +3806,7 @@ class ThreadLocal extends Statement (
 
 class Binding extends SyntaxNode (
 
-    name: Name, 
+    name: string, 
     typeAnnotation: TypeAnnotation, 
     calculation: Calculation
 
@@ -3814,7 +3815,6 @@ class Binding extends SyntaxNode (
 
         if (visitor.openBinding(this) = false) {
             return }
-        name.accept(visitor)
 
         if (typeAnnotation <> ()) {
             typeAnnotation.accept(visitor) }
