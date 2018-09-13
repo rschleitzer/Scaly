@@ -21,4 +21,5 @@ scalysh/obj
 scalysh/.vs
 scalysh/scalysh.csproj.user
 scalysh/scalysh.userprefs
+scalysh/Properties/launchSettings.json
 .vs
