@@ -1,16 +1,15 @@
-.. Scaly documentation master file, created by
-   sphinx-quickstart on Thu Dec  6 01:54:05 2018.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
+The Scaly Book
+==============
 
-Welcome to Scaly's documentation!
-=================================
+A Guide to the Scaly Programming Language
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. toctree::
    :maxdepth: 2
-   :caption: Contents:
 
-
+   introduction
+   reference
+   design
 
 Indices and tables
 ==================

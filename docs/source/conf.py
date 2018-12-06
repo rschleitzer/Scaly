@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 #
 # Scaly documentation build configuration file, created by
-# sphinx-quickstart on Thu Dec  6 01:54:05 2018.
+# sphinx-quickstart on Thu Dec  6 02:16:52 2018.
 #
 # This file is execfile()d with the current directory set to its
 # containing dir.

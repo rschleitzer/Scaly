@@ -1,0 +1,595 @@
+.. _design:
+
+######
+Design
+######
+
+.. _whyscaly:
+
+**********
+Why Scaly?
+**********
+
+It's a bit hard these days to justify developing a new programming language. 
+And yet, there seems to be a sweet spot for Scaly which wants to be a unique language - 
+a language which enables you to easily develop programs which run in parallel 
+in a heterogeneous and distributed environment with outstanding performance.
+
+In the following, the main design points of Scaly are explained and how Scaly compares 
+to existing programming languages.
+
+If we consider where processor development has gone in the last ten years, 
+we see that the performance of a single processor core had not increased as it used to 
+in the decades before. Instead, the progress made in semiconductor industry was used to 
+increase the number of cores we find in processors used in servers, workstations, 
+laptops, tablets and even smartphones.
+
+Today's most popular programming languages, however, descend from the C programming language 
+which was not designed from the start with parallel and distributed computing in mind. 
+Even though some of these languages have mitigated some problems which plagued 
+legions of C and C++ programmers, they do not support you by design in 
+writing programs which are free of concurrency bugs.
+
+********************************************
+Avoiding Data Races and Concurrency Problems
+********************************************
+
+One big problem is that these languages permit code which accesses writable data 
+from more than one thread at the same time. Such code frequently suffers from *data races*. 
+A data race causes your code to depend on timing. 
+
+Often, bugs of this kind are likely to reveal themselves not before your code runs in production 
+at your customer's site or at a server in the cloud runnning your customer's web app. 
+And to make things worse, the failures are typically unable to be reproduced 
+in your development environment. That's why you did not find these bugs in the first place 
+while developing and testing your code. And even if you *are* able to reproduce the problem, 
+you might not be able to find the reason by stepping through your code or even by tracing, 
+because data races depend on timing - and the timing of code execution 
+typically is different while debugging code, or when writing trace records.
+
+The only way to get rid of data races is to avoid accessing writable data 
+from more than one thread at the same time. There are two things that can be done about that:
+
+1. Synchronize accesses to writable data
+2. Forbid making writable data accessible for more then one thread
+
+Without going into much detail, it can be said that trying to synchronize accesses 
+to writable data can lead to all kinds of locking problems - deadlocks cause two or more 
+of your threads to wait forever, making them fail to succeed in their computation, 
+livelocks make your threads burn your valuable CPU time without making any progress. 
+As with data races, these failures are hard to find, to reproduce and to debug. 
+
+Even in the absence of these problems, locking in general is an impediment to performance 
+because it lets your threads wait frequently for locks held by other threads to be released.
+
+A better way is the second - never making writable data accessible to more than one thread. 
+There are two ways to acheiving that goal:
+
+1. Make all data immutable
+2. Do not share mutable data among threads
+
+Functional Languages
+====================
+
+Programming languages which know only immutable data have been known for decades. 
+Pure functional languages like `Haskell <https://www.haskell.org/>`_ do not offer a way 
+to alter (or to mutate) a datum after it has been created. 
+
+The price paid for this is pretty high, though. With a pure functional language, 
+you cannot use many coding patterns which are commonplace in the most popular 
+programming languages like variables which can be re-assigned or explicit loops. 
+Your data must be read-only. Loops have to carefully be transformed into recursions (only to 
+end up as loops again on machine code level). Performing even simple I/O tasks 
+requires advanced concepts like monades. This might be the reason why this kind of 
+programming language never gained top popularity.
+
+Two languages, `Rust <http://rust-lang.org>`_ and `ParaSail <http://parasail-lang.org>`_ 
+have recently emerged which choose the second option - they allow you to use mutable data 
+but ensure that mutable data cannot be accessed by more than one thread at the same time.
+
+Rust
+====
+
+The `Rust programming language <http://rust-lang.org>`_, sponsored by the Mozilla foundation, 
+avoids sharing mutable data by using the concept of ownership and borrowing. This concept, 
+after some time needed getting used to it while fighting the borrow checker, 
+works perfectly with data which live on the stack.
+
+There are many problems, however, which are hard to solve relying on data which directly live 
+on the stack alone. Try to write a a compiler that way, for instance. When it comes to 
+more complex data structures like growable trees or directed graphs in general, 
+it turns out that this concept is of limited use. Nodes in such structures typically 
+cannot live on the stack directly. Instead, they have to expressed with helpers 
+like ``Box``, ``Cell``, or ``RefCell`` which hold them. These either forbid using the data they hold 
+from more than one location, or make use of hidden sychronization mechanisms 
+which might hamper performance by locking contention.
+
+And what's more, the Rust standard library allocates objects which cannot live on the stack 
+dynamically allocated from a heap. This in turn means that a mechanism is needed to release the 
+memory they use them when they are no longer needed. All of the mechanisms employed 
+eventually use the underlying allocation library to free each object individually. 
+Since big data structures usually are disposed as a whole, there is no need for de-allocating 
+each and every node of the structure individually. Here, Scaly can do much better, 
+as we will see now.
+
+***************************
+Efficient Memory Management
+***************************
+
+All programming languages enjoying top popularity solve the problem of recycling the memory 
+of objects which are no longer used in one three ways:
+
+1. You are required to release the memory of heap-allocated objects by writing explicit code.
+2. You are offered to use reference counting
+3. The objects are garbage-collected when they are no longer used.
+
+The first option is the one used traditionally by C (``free``) and C++ (``delete``) and leads notoriously 
+to problems like memory leaks (if you forget to release the memory of your objects 
+when they are no longer used), or worse, memory corruptions (if you release their memory too soon). 
+Especially the latter problem is likely to go undetected until your code is deployed 
+at your customer or at your cloud provider and crash the process which runs your code.
+
+Many programs written in C++ in a modern programming style, or programs written in Rust or 
+`Swift <https://developer.apple.com/swift>`_ make use of the second option. 
+Each object is accompanied by a counter keeping track of the number of references to that object, 
+and if the counter reaches ``0``, the object is de-allocated. (``unique_ptr`` in C++ and ``Box`` in Rust 
+could be interpreted as a special case where only one reference is possible.)
+
+Apart from the overhead which is caused by the reference counter which is needed for every 
+shared object, and the fact that special measures need to be taken for getting rid of objects 
+which take part in reference cycles, it is simply inefficient to release each and every object 
+taking part in a data structure which is disposed individually.
+
+That is why the third option, garbage collection, is used by many popular programming languages 
+like Java, C#, and JavaScript. Garbage collection works in the background, detecting objects 
+which are no longer accessible and recycling their memory. All the problems and difficulties 
+with the first two approaches are solved. And, since allocation is typically implemented by
+essentially advancing a pointer to a heap location, allocating an object is rather fast compared 
+to traditional heap allocation methods which at first have to find a suitable memory location 
+for the object.
+
+Unfortunately, garbage collection introduces two major problems: 
+
+1. When a garbage collection occurs, one or more threads are halted once or multiple times 
+   until the garbage collection is over. Since garbage collections can take many milliseconds, 
+   the responsiveness of your app can be impaired. Garbage collection times of many seconds 
+   have been reported.
+2. Through a garbage gollection, all objects are traversed for accessibility checks, 
+   and heaps need to be compacted to avoid fragmentation which involves shifting surviving objects. 
+   This way of churning the whole data (at least that of the youngest generation) defeats caching.
+
+The bad thing about these two phenomena is that they are not visible when dealing with 
+small amounts of data which entirely fit in first or second level caches, and whose data can be 
+garbage-collected in less than a few milliseconds.
+
+Then, when you have bought into the promise of getting memory management for free, you scale up 
+your code into serving hundreds of users simutaneously, allocating gigabytes per second, 
+growing the heaps of your process way beyond the size of your caches - then you run 
+into the problems described above. 
+
+If you are lucky, your customer is ready to buy more server machines, or your cloud business 
+cashflow allows for throwing in more expensive EC2 instances behind your load balancer 
+(hampering your or your customer's profit).
+
+If the problems, however, occur on some backbone service, or if the end-users of your code are 
+online gamers which are annoyed by latencies of a few hundred milliseconds, throwing in more 
+Intel power does not help, and the business which is backed by your code is in trouble.
+
+Fortunately, garbage collection is not the last word here. 
+Scaly uses `region-based memory management <https://en.wikipedia.org/wiki/Region-based_memory_management>`_ 
+which avoids all problems of the memory management strategies described above.
+
+The idea of region-based memory managenent is not new, and related concepts, 
+known as memory pools or arenas are used, for instance by the Apache web server. The Rust 
+standard library offers ``Arena`` and ``TypedArena`` which you can use. On deletion, however, the whole 
+arena is traversed in order to call ``drop`` on objects which implement the ``Drop`` trait. 
+As with a garbage collection, this might defeat caching. Apart from that, 
+arenas are still an unstable feature of Rust's standard library, and whether they will enter 
+the stable state or will be dropped remains to be seen.
+
+Few languages are known where region-based memory management is an integral part of the design 
+and works for you behind the scenes. The `Cyclone <https://cyclone.thelanguage.org/>`_ 
+programming language (which is no longer supported) makes use of it, 
+and, very recently, ParaSail.
+
+ParaSail
+========
+
+The `ParaSail <http://parasail-lang.org>`_ programming language is using 
+region based memory memory management, and, in fact, its objectives match most of Scaly's features.
+
+Departing from the traditional patterns comes at a price - and that price, of course, 
+depends on the way you go. Opting for Haskell, as an example, requires abandoning many 
+programming patterns commonly used in mainstream programming languages, and learning new ways 
+of programming like using recursions and monads. That price is fairly high, 
+and the popularity of Haskell is still far behind that of the mainstream languages. 
+According to Google Trends, it actually stalled in the last years and is now challenged 
+by Rust's rapidly growing popularity.
+
+ParaSail, instead, takes another approach to safe parallel programming. When programming 
+in ParaSail, you can keep an imperative programming style. The price you pay for migrating 
+from a language like Java or C# is essentially the following:
+
+1. You cannot use global data.
+2. No pointers or references can be used, they are replaced by expandable objects.
+3. You cannot use run-time exceptions.
+
+ParaSail shares the avoidance of traditional run-time exceptions with Scaly, so we can focus 
+on the first two points.
+
+First, ParaSail does not allow global data. All data must be passed as parameters to your function. 
+
+Scaly allows global data as long as they are immutable. As an example, program configuration data, 
+command-line arguments, or user context information during a web request can be offered 
+for read-only access. If these data are accessible as immutable global data, they do not have 
+to be passed with the help of parameters to your function.
+
+Second, since ParaSail does not allow you to use explicit references, 
+only strictly hierarchcal data can be expressed directly, as is the case with Scaly's structures. 
+For using graphs in ParaSail, you have to make use of ParaSail's generalized indexing facility. 
+This effectively requires you to implement your graphs on top of numerically indexed arrays, 
+and to manage orphaned graph nodes manually - which does not support you avoiding memory leaks.
+
+In Scaly, in addition to structures you can use classes which are accessed through references. 
+You can build up a mutable graph (your code will not fork in that phase, continuing to be 
+executed by a single thread in respect to that graph), return it as immutable, and then using it 
+from multiple tasks.
+
+As an example, if you build a compiler, your code could parse hundreds of source code files, 
+working in parrallel with multiple tasks on them using mutable classes for building up 
+abstract syntax trees (AST) of the files. Then, the parse trees are bundled to a single 
+immutable AST of the whole program. Then you would perform semantic analysis which could 
+scale up by forking tasks, because the AST data are immutable now. (In fact, 
+the reference implementation of the Scaly programming language is designed that way.)
+
+The bottom line is, with Scaly you do not have to sacrifice programming with references 
+like with ParaSail when you write code targeting a multithreaded environment. 
+
+When it comes to heterogeneous and distributed environments, however, things are different. 
+Data have to be serialized and transmitted to a GPU or to peer nodes in a cluster or supercomputer. 
+Scaly's classes and references are no help here, because Scaly's class objects cannot be 
+serialized. But you can still use Scaly's structure objects then which scale well 
+in a heterogeneous or distributed environment.
+
+*******************************
+Safety Against Program Failures
+*******************************
+
+When you write code in Scaly, you can be sure that your program will not suddenly terminate 
+because of a fatal error which makes continuing impossible. There are only three conditions 
+which cause your code to stop executing:
+
+1. The hardware, the operating system, or unsafe code crashes your process.
+2. Your program runs out of memory.
+3. Your program causes a stack overflow.
+
+As long as your program lives in a healthy environment, does not call buggy unsafe code, 
+is able to allocate memory and does not exhaust stack space, Scaly guarantees 
+that your program will never stop working unexpectedly. 
+That is a huge advantage over most mainstream programming languages!
+
+C and C++ allow your program bugs to crash your process. C++, Java, C#, JavaScript, 
+and Python programs are terminated if their code fails to catch an exception. Even a program 
+written in a language as new as Rust can panic, i.e., stop working because of a run-time error.
+
+Scaly does not know exeptions or run-time errors. To panic and quit is no option for Scaly. 
+If your code does fails to handle an error that can occur, Scaly won't compile it.
+
+Swift's error handling is a bit advanced. It requires you to handle errors 
+which are raised. Unfortunately, you can circumvent that noble principle by writing ``try!`` 
+before an expression that might throw, leading to a runtime error. Apart from that, 
+Swift cannot handle exceptions which were raised by Objective-C code 
+and which will be handled as run-time errors.
+
+Of all other languages mentioned so far, ParaSail is the only one which eliminates 
+run-time exceptions completely, replacing them with strong compile-time checking of preconditions.
+
+Conclusion
+==========
+
+To sum up everything that was said so far: Of all programming languages mentioned here, 
+only the approach of ParaSail comes close to Scaly's design principles. And yet, 
+omitting globals and assignable references completely is not necessary as long the globals 
+are immutable and if you accept that code portions which build up data structures using 
+classes do not spawn new tasks as long as the data are visible in a mutable way. Apart from that, 
+ParaSail is still at a very early stage, and whether implementations emerge which deliver on the 
+performance promises still remains to be seen.
+
+All other languages mentioned here do not offer the safety and ease of parallel and distributed 
+programming of Scaly.
+
+
+.. _memorymanagement:
+
+*****************
+Memory Management
+*****************
+
+Scaly uses 
+https://en.wikipedia.org/wiki/Region-based_memory_management[region-based memory management]
+where objects conceptually live on the stack. No heap is used, and therefore, 
+neither garbage collection nor reference counting is required. Objects are accessed via references 
+within well-defined constraints which ensure safe parallel execution of the code.
+
+Regions
+=======
+
+With Scaly's region-based memory management, objects are not allocated from a global heap, 
+but from a region. A region is formed each time program execution enters a block 
+in which at least one fresh object is assigned to a reference which is defined 
+in that block. An example::
+
+  function f() {
+      let a = new A()
+      let b = createB()
+      {
+          let c = new C()
+          {
+              c.d = new D()
+          }
+      }
+  }
+
+When a thread enters ``f``, the outermost block of that function allocates a region in which
+two objects are created: one object of type ``A`` to which the reference ``a`` points is created with 
+``new``, and then one object of type ``B`` to which the reference ``b`` points, is created by a function 
+``createB()`` (which might create the object by itself using ``new`` or call another function 
+which creates the object).
+
+Then, the next block is entered, and a new region is allocated in which an object of type ``C`` 
+is created and then assigned to the reference ``c``. 
+
+The innermost block of the function, however, creates no region because no object is assigned to a 
+reference which is defined in that block. The new ``D`` object is created in ``C``'s region instead 
+since it is assigned to ``d`` which is a member of ``d``.
+
+When the block which contains ``c`` is left, its region is recycled, and both the object to which ``c`` 
+points and the object to which its member reference ``d`` points cease to exist.
+
+When the thread leaves ``f``, the region which was created by its outermost block is recycled, too, 
+and the objects to which ``a`` and ``b`` pointed, vanish as well.
+
+References like ``a``, ``b``, and ``c`` which are defined in a block are called *root references*. 
+A root reference cannot be returned by a function because the region in which the object lives 
+to which that reference points is already recycled since its block is left 
+before the function returns. 
+
+References like ``d`` are called *local references*. A local reference 
+points to an object which lives in the region of a containing object as a member, array element, 
+or dictionary key or value. A local reference can only be returned from a function if it is 
+contained in an object which was created before the function was entered.
+
+The bootstrapping compiler which is currently the only (known) implementation of Scaly is written 
+in C++. It uses a special form of the C++ ``new`` operator which is called *placement new*
+to create new objects in the appropriate region. The runtime library which comes with the compiler 
+provides the necessary mechanisms for managing the memory in regions.
+
+Pages
+=====
+
+This compiler would compile the above function to a C++ function to something like the following::
+
+  void f() {
+      _Region _region; _Page* _p = _region.get();
+      A* a = new(_p) A();
+      B* b = createB(_p);
+      {
+          _Region _region; _Page* _p = _region.get();
+          C* c = new(_p) C();
+          {
+              c->d = new(c->getPage()) D();
+          }
+      }
+  }
+
+When the function is entered, a ``_Region`` object is created for its block to provide memory for 
+allocating objects which are rooted in this block. The memory of a region is divided in pages 
+of constant size (typically 4 or 8 kB). Therefore, a ``_Page`` object ``_p`` is obtained 
+from that region.  Then a new object of type ``A`` is created in ``_p`` using the placement 
+variant of ``new``.
+
+All classes implement the *placement new* operator by getting memory from the page in a way 
+similar to this code (some error handling removed for brevity)::
+
+  void* Object::operator new(size_t size, _Page* page) {
+      return page->allocateObject(size); }
+
+Next, the ``createB`` function is used to create a new ``B`` object in our current page ``_p``. 
+Since ``createB`` needs to know in which page the object is to be created, 
+it is passed to that function. The function ``createB`` can use *placement new* to create the object 
+or use another function, passing the pointer to the page to it.
+
+Then, the next block is entered, and a new region is created and a page is obtained from that page 
+which is used to create a new ``C`` object.
+
+In the innermost block, a ``D`` object is created in the page of ``c``. For that reason, ``c`` is asked 
+to provide its page for creating the object in. All classes implement a function ``_getPage()`` for 
+this purpose::
+
+  _Page* Object::_getPage() {
+      return _Page::getPage(this);
+  }
+
+Since pages are always aligned and have a size of a multiple of 2, the page of an address 
+can be calculated easily by setting the relevant lower bits of the address to zero::
+
+  _Page* _Page::getPage(void* address) {
+      return (_Page*) (((intptr_t)address) & ~(intptr_t)(_pageSize - 1));
+  }
+
+Root Page Allocation
+====================
+
+We have seen that each region provides a page upon block entry. The ``_Region`` class allocates its 
+page out of a large chunk of memory which is thread local:
+
+  __thread _Page* __CurrentPage = 0;
+
+At thread start, before regions kick in, this memory is allocated:
+
+  posix_memalign((void**)&__CurrentPage, _pageSize, _pageSize * _maxStackPages);
+
+The ``_Region`` class itself actually is only a very small helper. 
+At block entry, it shifts the ``__CurrentPage`` pointer up and initializes a ``_Page`` object 
+at this position::
+
+  _Region::_Region(){
+      __CurrentPage = (_Page*)(((char*)__CurrentPage) + _pageSize);
+      __CurrentPage->reset();
+  }
+ 
+At block exit, the extension Pages and exclusive Pages of the page (we will come to this later) 
+are deallocated, and the ``__CurrentPage`` pointer is shifted down::
+
+  _Region::~_Region() {
+      __CurrentPage->deallocateExtensions();
+      __CurrentPage = (_Page*)(((char*)__CurrentPage) - _pageSize);
+  }
+
+This way, the memory area accessed by the ``__CurrentPage`` pointer during thread execution 
+forms a logical stack, and the pages which live in this area are called _root pages_ 
+(as opposed to _extension pages_ which we will cover in a later section of this chapter).
+Allocating a fresh region is done by shifting a thread-local pointer.
+
+Object Allocation
+=================
+
+As we have seen, the ``_Region`` class itself only shifts the current root page pointer up and 
+down the root page stack as thread execution enters and leaves blocks which declare root references. 
+
+Most of the memory management logic is performed by the ``_Page`` class. This class provides memory 
+for allocating objects and, if required, extends the available memory by allocating a new page 
+if its own memory is exhausted.
+
+A page is a memory area which is aligned to multiples of the page size which is usually 4 or 8 kB. 
+This memory area is controlled by a ``_Page`` object which lives at the start address of the page 
+and contains (among a few other things) an offset to the next object to be allocated, 
+counted from the page start address::
+
+    int nextObjectOffset;
+
+If the space fits for a particular object to allocate, allocation is done by adding to 
+``nextObjectOffset`` and returning the current location. Here a code snippet of the 
+``allocateObject`` method of ``_Page`` which is used by the placement new operator of ``Object``::
+
+  void* location = getNextObject();
+  void* nextLocation = align((char*)location + size);
+  if (nextLocation <= (void*) getNextExclusivePageLocation()) {
+      setNextObject(nextLocation);
+      return location; }
+
+Here are two of the three helpers used (``getNextExclusivePageLocation()`` will be explained later)::
+
+  void* _Page::getNextObject() {
+      return (char*)this + nextObjectOffset; }
+
+  void _Page::setNextObject(void* object) {
+      nextObjectOffset = (char*)object - (char*)this; }
+
+With this code, allocating an object is done taking the following steps::
+
+* The ``location`` of the next object to be allocated is calculated by adding ``nextObjectOffset`` to the start of the page
+
+* The upper boundary of the object is calculated by adding the object size to ``location`` and aligning the result
+
+* If the upper boundary is within limits, ``nextObjectOffset`` is calculated, and ``location`` is returned as the new object address.
+
+Thus, object allocation typically boils down to adding to an offset and checking it. 
+
+
+Extension pages
+===============
+
+An extension page is allocated and used if the current page cannot provide enough memory 
+to allocate an object of the desired size. If the size required exceeds the maximum size 
+which can be stored in a fresh page, an oversized page is allocated directly from the operating 
+system via ``posix_memalign`` and is registered with the current page as an *exclusive page*. 
+We will discuss exclusive pages in one of the following sections. If the size required does fit in a fresh page, 
+an *extension page* is allocated by the following method of the ``_Page`` class::
+
+  _Page* _Page::allocateExtensionPage() {
+      _Page* extensionPage = __CurrentTask->getExtensionPage();
+      if (!extensionPage)
+          return 0;
+      extensionPage->reset();
+      *getExtensionPageLocation() = extensionPage;
+      currentPage = extensionPage;
+      return extensionPage;
+  }
+
+The `getExtensionPage()` method of the `_Task` class which is called first, allocates a page out of 
+a thread-local page pool whose start-up size is 4096 pages (one chunk) and which can extend itself 
+by adding more chunks. The pages in a chunk are bit mapped in an allocation map of that chunk, and 
+allocating a page in a chunk is a quick constant-time action.
+
+Then, after the extension page is initialized with *placement new*, its address is stored 
+at a memory location at the very end of the page to be accessed at deallocation time::
+
+  _Page** _Page::getExtensionPageLocation() {
+      return ((_Page**) ((char*) this + _pageSize)) - 1; }
+
+Before `allocateExtensionPage()` returns, the extension page location is stored also in the 
+`currentPage` member as a shortcut to a page where allocation space should be available. 
+This member is updated also if a further allocation attempt results in an object which lives in 
+an even newer extension page.
+
+This way, allocation can start from a root page forming a chain of extension pages if many objects 
+are allocated in the region of that root page. When this region is left, 
+the `deallocateExtensions()` method deallocates all extension pages 
+by freeing them in the thread local page pool.
+
+Exclusive pages
+===============
+
+We have seen that a region can grow by extending its root page with an extension page, which can 
+in turn be extended by another extension page, and so on. When thread execution leaves the region, 
+all extension pages are deallocated from the page pool. But while our region is alive, 
+we have seen no way for deleting objects from a region -- but that is what we need 
+for ``mutable`` object data, because otherwise we would leak memory by abandoning objects 
+pointed to by ``mutable`` references if we set those references to fresh objects.
+
+For this reason, fresh objects which are assigned to ``mutable`` references, get their own (root) 
+page, a so-called *exclusive page*. An exclusive page can be easily deallocated 
+if its leading object is deleted while its region remains active.
+
+Here are the relevant code lines which allocate and register an exclusive page::
+
+  _Page* exclusivePage = __CurrentTask->getExtensionPage();
+  exclusivePage->reset();
+  *getNextExclusivePageLocation() = exclusivePage;
+  exclusivePages++;
+
+The number of active exclusive pages is stored in the ``int`` member ``exclusivePages`` of the page, 
+and the pointer to the next exclusive page address is calculated by the following helper method::
+
+  _Page** _Page::getNextExclusivePageLocation() {
+      return getExtensionPageLocation() - exclusivePages - 1; }
+
+Exclusive pages are allocated and initialized in the same way as an extension page, but they are 
+registered not at the very end of the current page but in the next lower addresses. Several 
+exclusive pages can be allocated and registered with a page, while their locations are stored in 
+an area which grows downward from the end of that page (while the space allocated by objects 
+grows from the start of the page). 
+
+If an exclusive page is deallocated, it is unregistered with the page holding it 
+by shifting all lower exclusive page addresses up if applicable and decrementing ``exclusivePages``.
+
+Oversized pages
+===============
+
+String and array buffers can have sizes that exceed the net space of a freshly allocated page. 
+If we are to store such a thing, we allocate the necessary space directly from the operating system::
+
+  _Page* page;
+  posix_memalign((void**)&page, _pageSize, size + sizeof(_Page));
+  page->reset();
+  page->currentPage = nullptr;
+  *getNextExclusivePageLocation() = page;
+  exclusivePages++;
+  return ((char*)page) + sizeof(_Page);
+
+Thus, we initialize the memory area as a page, mark it as oversized by setting ``currentPage`` 
+to ``nullptr``, register the page as an exclusive page and return the memory address 
+directly after the page object data.
+
+
