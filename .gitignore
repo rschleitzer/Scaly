@@ -26,3 +26,4 @@ scalysh/Properties/launchSettings.json
 rusty/target
 rusty/.vscode
 docs/build
+docs/source/_build
