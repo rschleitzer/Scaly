@@ -32,7 +32,7 @@ Hello World
 ***********
 
 Scaly comes with a standard library which among other stuff
-containsa function which prints a string to the standard output (which is the
+contains a function which prints a string to the standard output (which is the
 output of your terminal, or a debug console, depending on the environment
 in which your program was started into). The function has the name ``print``
 and accepts a string, returning nothing to the caller. We use it to write up
@@ -54,9 +54,32 @@ or want more compact code, you can use an escape sequence as well::
 
   print "Hello World!\n"
 
-**********************
-Command line arguments
-**********************
+A more convenient function of the standard library is the function
+``print_line`` which prints the string with a trailing line break::
+
+  print_line "Hello World!"
+
+****************************
+Building a command line tool
+****************************
+
+With the obligatory *Hello World* out of the way, we can now try to do
+something useful.
+
+Let's write a parser for a toy language (which happens to be a subset of the
+Scaly programming language).  We create an empty file and give it the name
+``scalyc.scaly``.
+
+First, we want to read the command line arguments and parse them into compiler
+arguments and options. We will have the following compiler options:
+
+1. ``-o`` sets the name of the program which the compiler will produce.
+
+2. ``-d`` sets the directory of the output of the compiler.
+
+All other arguments
+will supply the input files to the
+compiler.
 
 To return an ``int`` value (even an implict ``0``) is part of the
 calling convention for stand-alone programs: Zero or more string
@@ -65,6 +88,9 @@ which acts as an error code which might be useful in extreme error situations
 if all other means of diagnosis like logging or tracing fail because they
 do not work for some pathologic reason which can be indicated
 by that error code.
+
+Getting the length of an array
+==============================
 
 The arguments passed to the program are bound to one parameter which
 is visible at the top code level whose name is ``arguments``.
@@ -76,65 +102,4 @@ returns the number of arguments passed at the command line::
 
 This expression actually consists of two parts: an item identified by the
 ``arguments`` identifier and the access of its ``length`` field via the dot.
-
-***********
-Code Blocks
-***********
-
-In all but the simplest programs, you structure your code using blocks.
-Like in commonplace languages of C descent, a block starts with a
-left curly brace, followed by zero or more statements, and ends with a
-right curly brace. An example::
-
-  {
-      let a: int = 2
-      let b: int = 3
-      a + b
-  }
-
-But there are important differences to C and friends:
-
-First, *code blocks are expressions* - they may return a value.
-Because of this, if the last statement of a code block is an expression,
-the value which is returned by that statement is the value which the
-code block returns. Obviously, our example block returns an ``int``
-whose value is ``5``, and therefore is a valid Scaly program.
-
-Second, the statements of a block can be *executed in any order*
-as far as data dependencies and the pureness of called functions allow.
-That is the main selling point of Scaly - it automatically schedules
-parallel and even distributed computation wherever possible.
-
-******************
-Parallel Execution
-******************
-
-
-Not only statements in a block are executed in parallel, but also
-*function arguments* and *operands*, as long they are *pure*
-and do not depend on earlier computations in the block.
-
-A computation is called pure if it does not depend on anything else
-than its input parameters. (With some care, even computations that obtain
-information from external input can be declared pure by you if needed.)
-
-That said, scheduling parallel computation comes at a cost - tasks have to be
-created and scheduled for execution by a local worker thread pool, by a GPU,
-or even by a cluster of remote machines. In the latter case, input data have
-to be serialized and sent via the network to the remote node, where the data
-are deserialized. When the computation is done, its results have to be
-sent back. Last not least the parallel work has to be synchronized.
-
-Therefore, a Scaly implementation has to justify parallel execution at least
-by some heuristic reasoning, better by profiling a set of reference
-computation workloads. Scheduling some single floating point additions which
-might each take nanoseconds or less for parallel execution surely isn't worth
-the overhead. Parsing a multitude of source files in contrast can be expected
-to speed up compiling a program, and performing heavy number crunching needed
-for fluid mechanics calculations in parallel would a safe bet.
-
-Adjusting the granularity of parallel execution, however, is beyond the
-Scaly language specification which only states what computations can
-*potentially* be done in parallel, or to be exact, makes no statement
-about the order in which independent computations are done.
 
