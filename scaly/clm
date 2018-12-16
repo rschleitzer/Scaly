@@ -1,5 +1,0 @@
-#!/bin/bash
-clang++ -std=c++17 -g -S -emit-llvm main.cpp
-llc -filetype=obj main.ll
-clang++ -lstdc++ main.o -o scalyc
-./scalyc

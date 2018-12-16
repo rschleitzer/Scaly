@@ -9,18 +9,28 @@ Hello World
 As it is tradition with language tutorials, our first program will be the
 famous *Hello World* program.
 
-Scaly comes with a standard library which among other stuff
-contains a function which prints a string to the standard output (which is the
-output of your terminal, or a debug console, depending on the environment
-in which your program was started into). The function has the name ``print``
-and accepts a string, returning nothing to the caller. We use it to write up
-the *Hello World* program in Scaly::
+So we create a file with the name ``hello.scaly`` and enter the following line
+of code::
 
   print "Hello World!"
 
+After saving the file, execute the following command from the command line
+(assuming that the Scaly compiler can be started from the directory you are
+in)::
+
+  scalyc hello.scaly
+
+The Scaly compiler takes the file which you currently have created, compiles
+it into an executable program with the name ``hello`` which, as you might
+have guessed) from the base name of your source file.
+
+Then execute the program that you just have compiled::
+
+  ./hello
+
 When you run that program you will notice that no line break is printed.
-The reason is that we did not include one in our string literal,
-and the print function does not print a line break by itself.
+The reason is that we did not include one in our string literal, and the print
+function does not print a line break by itself.
 We correct that by inserting a line break literally::
 
   print "Hello World!
@@ -48,23 +58,20 @@ Let's write a parser for a toy language (which happens to be a subset of the
 Scaly programming language).  We create an empty file and give it the name
 ``scalyc.scaly``.
 
-First, we want to read the command line arguments and parse them into compiler
-arguments and options. We will have the following compiler options:
+We compile and run it with the following two commands::
 
-1. ``-o`` sets the name of the program which the compiler will produce.
+  scalyc scalyc.scaly
+  ./scalyc
 
-2. ``-d`` sets the directory of the output of the compiler.
-
-All other arguments
-will supply the input files to the
-compiler.
+The program does exactly nothing, as we have entered no code yet into the
+``scalyc.scaly`` file.
 
 Getting the command line arguments
 ==================================
 
 The arguments passed to a command line program are bound to a variable which
-is visible at the top code level whose name is ``arguments``.
-This parameter is a string iterator, which we can iterate on to fetch
-each argument from the command line.
+is visible at the top code level whose name is ``arguments``. This parameter
+is a string iterator, which we can iterate on to fetch each argument from the
+command line.
 
 
