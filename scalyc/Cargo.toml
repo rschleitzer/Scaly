@@ -2,6 +2,7 @@
 name = "scalyc"
 version = "0.0.6"
 authors = ["rschleitzer"]
-edition = "2018"
+description = "Compiler for the Scaly programming language"
+license = "MIT"
 
 [dependencies]
