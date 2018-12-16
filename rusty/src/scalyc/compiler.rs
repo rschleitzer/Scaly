@@ -1,5 +1,5 @@
 use scalyc::options::*;
 
-pub fn compile(options: Options) {
+pub fn compile(_options: Options) {
 
 }
