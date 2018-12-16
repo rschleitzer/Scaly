@@ -1,4 +1,14 @@
 [[package]]
+name = "scaly"
+version = "0.0.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
 name = "scalyc"
 version = "0.0.6"
+dependencies = [
+ "scaly 0.0.6 (registry+https://github.com/rust-lang/crates.io-index)",
+]
 
+[metadata]
+"checksum scaly 0.0.6 (registry+https://github.com/rust-lang/crates.io-index)" = "1dccd24c3e04221ba1bf9a369f28c344f4b6f0a5d95abb09b202bd6917e74f8d"

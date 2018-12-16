@@ -29,3 +29,5 @@ docs/build
 docs/source/_build
 scalyc/target
 scalyc/.vscode
+scaly/target
+scaly/.vscode

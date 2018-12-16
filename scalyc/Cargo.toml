@@ -6,3 +6,4 @@ description = "Compiler for the Scaly programming language"
 license = "MIT"
 
 [dependencies]
+scaly = "0.0.6"
