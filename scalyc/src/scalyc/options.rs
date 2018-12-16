@@ -16,9 +16,15 @@ impl Options {
         let mut output_name = String::new();
         let mut directory = String::new();
         let mut files: Vec<String> = vec![];
+        let mut first_argument: bool = true;
 
         loop {
             let arg = args.next();
+            if first_argument {
+                first_argument = false;
+                continue;
+            }
+
             match arg {
                 None => return Ok(Options {
                     output_name: output_name,

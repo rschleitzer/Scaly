@@ -1,6 +1,6 @@
 [package]
 name = "scalyc"
-version = "0.0.6"
+version = "0.0.7"
 authors = ["rschleitzer"]
 description = "Compiler for the Scaly programming language"
 license = "MIT"

@@ -5,7 +5,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "scalyc"
-version = "0.0.6"
+version = "0.0.7"
 dependencies = [
  "scaly 0.0.6 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
