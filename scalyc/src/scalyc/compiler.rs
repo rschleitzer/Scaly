@@ -1,5 +1,10 @@
 use scalyc::options::*;
 
-pub fn compile(_options: Options) {
+pub struct Compiler {
+}
+
+impl Compiler {
+    pub fn compile(_options: Options) {
+    }
 
 }

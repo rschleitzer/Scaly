@@ -15,6 +15,6 @@ pub fn _scalyc_main(arguments: std::env::Args) {
             OptionsError::InvalidOption(option) => println!("Invalid option {}", option),
             OptionsError::UnknownOption(option) => println!("Unknown option {}", option),
         }
-        Ok(options) => compile(options)
+        Ok(options) => Compiler::compile(options)
     }
 }

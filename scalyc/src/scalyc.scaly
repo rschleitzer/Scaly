@@ -1,0 +1,22 @@
+use scalyc.options
+use scalyc.compiler
+
+let options = Options.parse_arguments(arguments)
+  catch NullLengthArgument {
+      print "Null length argument!"
+      return
+  }
+  catch EmptyOption {
+      print "Empty option!"
+      return
+  }
+  catch InvalidOption(option) {
+      print "Invalid option" option "!"
+      return
+  }
+  catch UnknownOption(option) {
+      print "Unknown option" option "!"
+      return
+  }
+
+  Compiler.compile(options)

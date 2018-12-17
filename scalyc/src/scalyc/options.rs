@@ -4,13 +4,6 @@ pub struct Options {
     pub directory: String,
 }
 
-pub enum OptionsError {
-    NullLengthArgument,
-    EmptyOption,
-    InvalidOption(String),
-    UnknownOption(String),
-}
-
 impl Options {
     pub fn parse_arguments(mut args: std::env::Args) -> Result<Options, OptionsError> {
         let mut output_name = String::new();
@@ -70,4 +63,11 @@ impl Options {
             }
         }
     }
+}
+
+pub enum OptionsError {
+    NullLengthArgument,
+    EmptyOption,
+    InvalidOption(String),
+    UnknownOption(String),
 }
