@@ -1,13 +1,15 @@
 mod scalyc;
 
 fn main() {
-    _scalyc_main(std::env::args())
+    let argvec = std::env::args().collect::<Vec<String>>();
+    let arguments: Vec<&str> = argvec.iter().map(AsRef::as_ref).collect();
+    _scalyc_main(&arguments)
 }
 
 use scalyc::options::*;
 use scalyc::compiler::*;
 
-pub fn _scalyc_main(arguments: std::env::Args) {
+pub fn _scalyc_main(arguments: &Vec<&str>) {
     match Options::parse_arguments(arguments) {
         Err(error) => match error {
             OptionsError::NullLengthArgument => println!("Null length argument!"),

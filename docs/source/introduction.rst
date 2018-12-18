@@ -148,9 +148,9 @@ We create a new file ``options.scaly`` and enter the following code::
 
       class Options {
 
-          files: Array[String]
-          output_name: String
-          directory: String
+          let files: Array[String]
+          let output_name: String
+          let directory: String
 
           function parse_arguments(var args: std.env.Args) : Options ! OptionsError {
 
@@ -163,32 +163,27 @@ We create a new file ``options.scaly`` and enter the following code::
                   let arg args.next()
                       catch return Options(output_name, directory, files)
 
-                  if first_argument {
-                      set first_argument: false
-                      continue
-                  }
-
                   var char_iterator arg.chars()
 
                   let first_char char_iterator.next()
                       catch throw NullLengthArgument
 
                   if first_char <> '-' {
-                      files.push(arg.clone())
+                      files.push(arg)
                       continue
                   }
 
-                  let second_char = char_iterator.next()
+                  let second_char char_iterator.next()
                       catch throw EmptyOption
 
                   switch second_char {
                       'o': set output_name args.next()
-                          catch throw InvalidOption(arg.clone())
+                          catch throw InvalidOption(arg)
 
                       'd': set directory args.next()
-                          catch throw InvalidOption(arg.clone())
+                          catch throw InvalidOption(arg)
 
-                      default: throw UnknownOption(arg.clone()))
+                      default: throw UnknownOption(arg))
                   }
               }
           }
@@ -221,25 +216,27 @@ The next line begins to define a class ``Options`` in that namespace::
 which would have had the same effect). The next lines define the data members
 of the class::
 
-  files: Array[String]
-  output_name: String
-  directory: String
+  let files: Array[String]
+  let output_name: String
+  let directory: String
 
-The ``files`` member is an array of strings, and the ``output_name`` and
-``directory`` members are strings.
+These declarations describe members of the ``Options`` class.
+The ``let`` keyword tells us that these members cannot be changed after the
+creation of the object. The ``files`` member is an array of strings, and the
+``output_name`` and ``directory`` members are strings.
 
 Then the member function ``parse_arguments`` of the ``Options`` class is
 opened::
 
   function parse_arguments(var args: std.env.Args) : Options ! OptionsError {
 
-This function takes exactly one argument ``args`` of the type ``Args`` class
+This function takes exactly one argument ``args`` of the ``Args`` class type
 in the ``std.env`` namespace. (We did not bother to ``use std.env`` so we
 need to fully qualify the name here.)
 
-It returns an ``Options`` object as indicated by the ``:`` clause, and the
-``!`` clause tells us that in case of an error the function throws an
-``OptionsError`` object.
+It returns an ``Options`` object as indicated by the ``:`` clause, and since
+that clause is followed by a ``!`` sign, we see that the function might throw
+an error which is of the ``OptionsError`` class type.
 
 Next, some local variables are defined and initialized::
 
@@ -248,10 +245,70 @@ Next, some local variables are defined and initialized::
   var files: Array[String] []
   var first_argument true
 
-The ``var`` keyword tells us that the items are *variables* which means that
-their initial values can be changed later on, as we will see. After the name,
-an type annotation can follow, like for the ``files`` variable. In fact,
-the ``files`` variable needs the type because the ``[]`` expression does not
-tell here what type of array we need. The type of the other three variables
-can be inferred from their initialization values.
+The ``var`` keyword means that the items are *variables*. Their initial values
+can be changed later on, as we will see. After the name, an type annotation can
+follow, like for the ``files`` variable. In fact, the ``files`` variable needs
+the type annotation because the ``[]`` expression does not tell us here what
+type of array we need. The ``Array`` type here is *generic*, and in this case
+our array contains strings. The type of the other three variables can be
+inferred from their initialization values which follow.
 
+The parsing of the argument takes place in an infinite loop which opens at the
+next line::
+
+  loop {
+
+The first action in that loop is to grab the next argument::
+
+    let arg args.next()
+        catch return Options(output_name, directory, files)
+
+We declare a local item ``arg`` that is immutable. Its type is inferred from
+its initialization value which is provided by ``args.next()`` followed by the
+``catch`` clause which we will cover in a minute.
+
+Since ``args`` is an iterator over ``String`` values, the type of the value
+returned by its ``next()`` method is ``String?``. The question mark indicates
+that an item of this type either contains a value, or nothing. In other words,
+the item contains an optional value. (We could have written ``Option[String]``
+instead since the question mark is syntactic sugar for the generic
+``Option[T]`` type which contains either a value of the ``T`` type,
+or nothing).
+
+The ``catch`` clause which follows either
+
+1. unwraps the optional value,  if it contains data, or
+2. provides a replacement value if no data is contained. If no replacement
+   value can be created or creating such a value makes no sense in the current
+   context, it can leave the current scope.
+
+Our ``catch`` clause chooses the second option. It creates an ``Options``
+object from the data collected so far and returns it to the caller of the
+``parse_arguments`` function. That makes sense, because returning to value
+means that the iteration is over because no more arguments are available.
+
+If we get after the ``catch`` clause, ``arg`` contains a string, and we can
+start parsing the argument by first getting an iterator over its characters::
+
+  var char_iterator arg.chars()
+
+Then, we get the first character of the string::
+
+    let first_char char_iterator.next()
+        catch throw NullLengthArgument
+
+As with ``args``, our character iterator returns an optional character which
+needs to be unwrapped. If our string would be empty (which in our case should
+be impossible), our function would throw an ``OptionsError`` of the
+``NullLengthArgument`` case.
+
+Now that we hold the first character safely in our hands, we check whether it
+is a minus sign::
+
+  if first_char <> '-' {
+      files.push(arg)
+      continue
+  }
+
+If it is no minus sign, we extend the ``files`` array by our
+argument string.

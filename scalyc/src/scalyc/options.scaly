@@ -2,9 +2,9 @@ namespace scalyc.options {
 
     class Options {
 
-        files: Array[String]
-        output_name: String
-        directory: String
+        let files: Array[String]
+        let output_name: String
+        let directory: String
 
         function parse_arguments(var args: std.env.Args) : Options ! OptionsError {
 
@@ -17,32 +17,27 @@ namespace scalyc.options {
                 let arg args.next()
                     catch return Options(output_name, directory, files)
 
-                if first_argument {
-                    set first_argument: false
-                    continue
-                }
-
                 var char_iterator arg.chars()
 
                 let first_char char_iterator.next()
                     catch throw NullLengthArgument
 
                 if first_char <> '-' {
-                    files.push(arg.clone())
+                    files.push(arg)
                     continue
                 }
 
-                let second_char = char_iterator.next()
+                let second_char char_iterator.next()
                     catch throw EmptyOption
 
                 switch second_char {
                     'o': set output_name args.next()
-                        catch throw InvalidOption(arg.clone())
+                        catch throw InvalidOption(arg)
 
                     'd': set directory args.next()
-                        catch throw InvalidOption(arg.clone())
+                        catch throw InvalidOption(arg)
 
-                    default: throw UnknownOption(arg.clone()))
+                    default: throw UnknownOption(arg))
                 }
             }
         }

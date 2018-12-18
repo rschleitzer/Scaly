@@ -1,16 +1,17 @@
-pub struct Options {
-    pub files: Vec<String>,
-    pub output_name: String,
-    pub directory: String,
+pub struct Options<'a> {
+    pub files: Vec<&'a str>,
+    pub output_name: &'a str,
+    pub directory: &'a str,
 }
 
-impl Options {
-    pub fn parse_arguments(mut args: std::env::Args) -> Result<Options, OptionsError> {
-        let mut output_name = String::new();
-        let mut directory = String::new();
-        let mut files: Vec<String> = vec![];
+impl<'a> Options<'a> {
+    pub fn parse_arguments(arguments: &Vec<&'a str>) -> Result<Options<'a>, OptionsError<'a>> {
+        let mut output_name = "";
+        let mut directory = "";
+        let mut files: Vec<&'a str> = vec![];
         let mut first_argument: bool = true;
 
+        let mut args = arguments.iter();
         loop {
             let arg = args.next();
             if first_argument {
@@ -32,7 +33,7 @@ impl Options {
                     };
 
                     if first_char != '-' {
-                        files.push(arg.clone());
+                        files.push(arg);
                         continue
                     }
 
@@ -46,17 +47,17 @@ impl Options {
                         'o' => {
                             output_name = match args.next() {
                                 Some(o) => o,
-                                None => return Err(OptionsError::InvalidOption(arg.clone())),
+                                None => return Err(OptionsError::InvalidOption(arg)),
                             }
                         }
 
                         'd' => {
                             directory = match args.next() {
                                 Some(o) => o,
-                                None => return Err(OptionsError::InvalidOption(arg.clone())),
+                                None => return Err(OptionsError::InvalidOption(arg)),
                             }
                         }
-                        _ => return Err(OptionsError::UnknownOption(arg.clone()))
+                        _ => return Err(OptionsError::UnknownOption(arg))
                     };
 
                 }
@@ -65,9 +66,9 @@ impl Options {
     }
 }
 
-pub enum OptionsError {
+pub enum OptionsError<'a> {
     NullLengthArgument,
     EmptyOption,
-    InvalidOption(String),
-    UnknownOption(String),
+    InvalidOption(&'a str),
+    UnknownOption(&'a str),
 }
