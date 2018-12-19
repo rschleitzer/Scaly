@@ -31,10 +31,10 @@ namespace scalyc.options {
                     catch throw EmptyOption
 
                 switch second_char {
-                    'o': set output_name args.next()
+                    'o': set output_name: args.next()
                         catch throw InvalidOption(arg)
 
-                    'd': set directory args.next()
+                    'd': set directory: args.next()
                         catch throw InvalidOption(arg)
 
                     default: throw UnknownOption(arg))
