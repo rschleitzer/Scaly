@@ -23,8 +23,6 @@ scalysh/scalysh.csproj.user
 scalysh/scalysh.userprefs
 scalysh/Properties/launchSettings.json
 .vs
-rusty/target
-rusty/.vscode
 docs/build
 docs/source/_build
 scalyc/target
