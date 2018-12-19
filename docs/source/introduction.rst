@@ -251,10 +251,10 @@ follow, like for the ``files`` variable. In fact, the ``files`` variable needs
 the type annotation because the ``[]`` expression does not tell us here what
 type of array we need. The ``Array`` type here is *generic*, and in this case
 our array contains strings. The type of the other three variables can be
-inferred from their initialization values which follow.
-
-The parsing of the argument takes place in an infinite loop which opens at the
-next line::
+inferred from their initialization values which follow. No ``=`` sign is needed
+here. In fact, the ``=`` sign is reserved for its traditional purpose which is
+comparison. The parsing of the argument takes place in an infinite loop which
+opens at the next line::
 
   loop {
 
@@ -310,5 +310,50 @@ is a minus sign::
       continue
   }
 
-If it is no minus sign, we extend the ``files`` array by our
-argument string.
+If it is no minus sign, we extend the ``files`` array by our argument string.
+Then, our loop will ``continue`` with the next run.
+
+Next, we assign the second character and throw the ``EmptyOption`` error if
+the string contains no second character::
+
+  let second_char char_iterator.next()
+    catch throw EmptyOption
+
+The second character decides which option will be set::
+
+  switch second_char {
+      'o': set output_name: args.next()
+          catch throw InvalidOption(arg)
+
+      'd': set directory: args.next()
+          catch throw InvalidOption(arg)
+
+      default: throw UnknownOption(arg))
+  }
+
+The ``switch`` is familiar from many languages in the ``C`` syntax tradition.
+As subtle difference to some of those languages is that Scaly's ``switch`` has
+no fallthrough semantics, therefore no ``break`` is needed after each branch.
+Another difference here is the fact that Scaly's ``switch`` is an expression,
+whereas in many of the ``C`` style languages it is a statement.
+
+In the two branches of our ``switch`` expression, we see a ``set`` statement
+which does not need the ``=`` either. But it does need the colon (``:``)
+because the left side of a ``set`` statement can be a complex expression, in
+which case the colon may separate the left hand side from the right hand side.
+The ``default`` branch, as you might have guessed, handles all other cases.
+
+Last but not least, we still have to introduce the ``OptionsError`` which can
+be thrown by our function::
+
+  variant OptionsError {
+      NullLengthArgument
+      EmptyOption
+      InvalidOption(string)
+      UnknownOption(string)
+  }
+
+This type is a ``variant`` type which means that it can take on one of the
+cases, each of which can carry data or not. The type of that data is declared
+in the parentheses optionally. Variants are used as error types to be thrown,
+just as in our function.
