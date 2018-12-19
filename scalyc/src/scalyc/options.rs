@@ -12,6 +12,7 @@ impl<'a> Options<'a> {
         let mut first_argument: bool = true;
 
         let mut args = arguments.iter();
+        
         loop {
             let arg = args.next();
             if first_argument {

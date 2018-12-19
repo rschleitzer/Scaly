@@ -17,6 +17,11 @@ namespace scalyc.options {
                 let arg args.next()
                     catch return Options(output_name, directory, files)
 
+                if first_argument {
+                    set first_argument: false
+                    continue
+                }
+
                 var char_iterator arg.chars()
 
                 let first_char char_iterator.next()

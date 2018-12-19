@@ -152,16 +152,23 @@ We create a new file ``options.scaly`` and enter the following code::
           let output_name: String
           let directory: String
 
-          function parse_arguments(var args: std.env.Args) : Options ! OptionsError {
+          function parse_arguments(arguments: Array[String]) : Options ! OptionsError {
 
               var output_name ""
               var directory ""
               var files: Array[String] []
               var first_argument true
 
+              var args arguments.iter()
+
               loop {
                   let arg args.next()
                       catch return Options(output_name, directory, files)
+
+                  if first_argument {
+                      set first_argument: false
+                      continue
+                  }
 
                   var char_iterator arg.chars()
 
@@ -228,7 +235,7 @@ creation of the object. The ``files`` member is an array of strings, and the
 Then the member function ``parse_arguments`` of the ``Options`` class is
 opened::
 
-  function parse_arguments(var args: std.env.Args) : Options ! OptionsError {
+  function parse_arguments(arguments: Array[String]) : Options ! OptionsError {
 
 This function takes exactly one argument ``args`` of the ``Args`` class type
 in the ``std.env`` namespace. (We did not bother to ``use std.env`` so we
@@ -253,7 +260,14 @@ type of array we need. The ``Array`` type here is *generic*, and in this case
 our array contains strings. The type of the other three variables can be
 inferred from their initialization values which follow. No ``=`` sign is needed
 here. In fact, the ``=`` sign is reserved for its traditional purpose which is
-comparison. The parsing of the argument takes place in an infinite loop which
+comparison.
+
+Then we create an iterator from the ``arguments`` array to be able to
+conveniently loop over the array:;
+
+  var args arguments.iter()
+
+The parsing of the argument takes place in an infinite loop which
 opens at the next line::
 
   loop {
@@ -284,18 +298,36 @@ The ``catch`` clause which follows either
 
 Our ``catch`` clause chooses the second option. It creates an ``Options``
 object from the data collected so far and returns it to the caller of the
-``parse_arguments`` function. That makes sense, because returning to value
+``parse_arguments`` function. That makes sense, because returning no value
 means that the iteration is over because no more arguments are available.
 
-If we get after the ``catch`` clause, ``arg`` contains a string, and we can
-start parsing the argument by first getting an iterator over its characters::
+If we get after the ``catch`` clause, ``arg`` contains a string. But it
+contains the first argument passed by the program, and this is usually the
+name of our executable, and this argument is of no use for our program.
+We skip this argument::
+
+  if first_argument {
+      set first_argument: false
+      continue
+  }
+
+The ``if`` condition does not need parentheses, although you could use them
+here if you wanted to. The ``set`` statement changes the value of a variable,
+and it does not need an equality operator ``=`` either. But it does need the
+colon (``:``) because the left side of a ``set`` statement can be a complex
+expression, in which case the colon may separate the left hand side from the
+right hand side. We just keep in mind that we skipped the first argument, and
+``continue`` with the next loop iteration.
+
+Now we can start parsing the argument by first getting an iterator over its
+characters::
 
   var char_iterator arg.chars()
 
 Then, we get the first character of the string::
 
-    let first_char char_iterator.next()
-        catch throw NullLengthArgument
+  let first_char char_iterator.next()
+      catch throw NullLengthArgument
 
 As with ``args``, our character iterator returns an optional character which
 needs to be unwrapped. If our string would be empty (which in our case should
@@ -311,7 +343,7 @@ is a minus sign::
   }
 
 If it is no minus sign, we extend the ``files`` array by our argument string.
-Then, our loop will ``continue`` with the next run.
+Then, our loop will ``continue`` to process the next argument.
 
 Next, we assign the second character and throw the ``EmptyOption`` error if
 the string contains no second character::
@@ -336,11 +368,6 @@ As subtle difference to some of those languages is that Scaly's ``switch`` has
 no fallthrough semantics, therefore no ``break`` is needed after each branch.
 Another difference here is the fact that Scaly's ``switch`` is an expression,
 whereas in many of the ``C`` style languages it is a statement.
-
-In the two branches of our ``switch`` expression, we see a ``set`` statement
-which does not need the ``=`` either. But it does need the colon (``:``)
-because the left side of a ``set`` statement can be a complex expression, in
-which case the colon may separate the left hand side from the right hand side.
 The ``default`` branch, as you might have guessed, handles all other cases.
 
 Last but not least, we still have to introduce the ``OptionsError`` which can
