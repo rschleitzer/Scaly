@@ -1,7 +1,7 @@
 const _PAGE_SIZE: usize = 0x1000;
 
 pub struct _Page<'a> {
-    current_page: Option<&'a _Page<'a>>,
+    current_page: *mut _Page<'a>,
     next_object_offset: i32,
     exclusive_pages: i32
 }
@@ -9,12 +9,12 @@ pub struct _Page<'a> {
 impl<'a> _Page<'a> {
 
     pub unsafe fn reset(&mut self) {
-        *self.get_extension_page_location() = Option::None;
+        *(self.get_extension_page_location() as *mut *const _Page) = std::ptr::null();
         self.next_object_offset = 0;
         self.exclusive_pages = 0;
         
         // currentPage = this;
-        self.current_page = std::mem::transmute::<&mut _Page, Option<&'a _Page<'a>>>(self);
+        self.current_page = &mut *self;
     }
 
     pub unsafe fn clear(&mut self) {
@@ -23,36 +23,104 @@ impl<'a> _Page<'a> {
     }
 
     pub fn is_oversized(&self) -> bool {
-        match self.current_page { None => true, _ => false }
+        self.current_page.is_null()
     }
 
-    unsafe fn get_extension_page_location(&self) -> *mut Option<&'a _Page<'a>> {
+    unsafe fn get_extension_page_location(&self) -> usize {
 
-        // Convert self to u8 pointer
-        let u8_ptr = std::mem::transmute::<*const _Page, *const u8>(&*self);
+        // Convert self to page location
+        let self_location = self as *const _Page as usize;
         
         // Advance one page size so we are past the end of our page
-        let ptr_advanced_by_page_size = u8_ptr.offset(_PAGE_SIZE as isize);
-
-        // Convert to *_Page?
-        let ptr_next_page = std::mem::transmute::<*const u8, *mut Option<&'a _Page<'a>>>(ptr_advanced_by_page_size);
+        let location_behind_page = self_location + _PAGE_SIZE;
 
         // Go back one pointer size
-        let ptr_at_end_of_page = ptr_next_page.offset(-1);
-
-        // Convert to mutable pointer to the optional extension page
-        &mut *ptr_at_end_of_page
+        location_behind_page - std::mem::size_of::<*const _Page>()
     }
 
-    unsafe fn _get_next_object(&self) -> *mut u8 {
-        let u8_ptr = std::mem::transmute::<*const _Page, *const u8>(&*self);
-        let offset_pointer = u8_ptr.offset(self.next_object_offset as isize);
-        offset_pointer as *mut u8
+    unsafe fn get_next_location(&self) -> usize {
+        self as *const _Page as usize + self.next_object_offset as usize
     }
 
-    unsafe fn _set_next_object(&mut self, object: *const u8) {
-        let self_ptr = std::mem::transmute::<*const _Page, *const u8>(&*self);
-        self.next_object_offset = (object as usize - self_ptr as usize) as i32;
+    unsafe fn set_next_location(&mut self, location: usize) {
+        let self_location = self as *const _Page as usize;
+        self.next_object_offset = (location - self_location as usize) as i32;
+    }
+
+    unsafe fn get_next_exclusive_page_location(&self) -> usize  {
+        self.get_extension_page_location() - (self.exclusive_pages as usize + 1) * std::mem::size_of::<*const _Page>()
+    }
+
+    pub unsafe fn allocate_raw(&mut self, size: usize, align: usize) -> *mut u8 {
+        if !std::ptr::eq(self, self.current_page) {
+
+            // We're already known to be full, so we delegate to the current page
+            let new_object = (*self.current_page).allocate_raw(size, align);
+
+            // Possibly our current page was also full so we propagate back the new current page
+            let allocating_page = _Page::get_page(new_object);
+            if !std::ptr::eq(allocating_page, self.current_page) && (!allocating_page.is_oversized()) {
+                self.current_page = allocating_page;
+            }
+            return new_object;
+        }
+
+        // Try to allocate from ourselves
+        let location = self.get_next_location();
+        let next_location = (location + align - 1) & !(align - 1);
+        if next_location <= self.get_next_exclusive_page_location() as usize {
+            self.set_next_location(next_location);
+            return location as *mut u8
+        }
+
+        // So the space did not fit.
+
+        // Calculate gross size to decide whether we're oversized
+        let gross_size = std::mem::size_of::<_Page>() + size + std::mem::size_of::<*const _Page>();
+        if gross_size > _PAGE_SIZE {
+            if self.get_next_location() >= self.get_extension_page_location() {
+
+                // Allocate an extension page with default size
+                let extension_page = self.allocate_extension_page();
+
+                // Try again with the new extension page
+                return extension_page.allocate_raw(size, align);
+            }
+
+            // We allocate oversized objects directly.
+            let memory = std::alloc::alloc(std::alloc::Layout::from_size_align_unchecked(size + std::mem::size_of::<_Page>(), _PAGE_SIZE) );
+
+            // Initialize a _Page object at the page start
+            let page = memory as *mut _Page<'a>;
+            (*page).reset();
+
+            // Oversized pages have no current_page
+            (*page).current_page = std::ptr::null_mut();
+            
+            *(self.get_next_exclusive_page_location() as *mut *const _Page) = page;
+            self.exclusive_pages = self.exclusive_pages + 1;
+            return page.offset(1) as *mut u8;
+        }
+
+        // So we're not oversized. Create extension page and let it allocate.
+        self.allocate_extension_page().allocate_raw(size, align)
+    }
+
+    unsafe fn allocate_extension_page(&mut self) -> &'a mut _Page<'a> {
+
+        // Allocate a page
+        let memory = std::alloc::alloc(std::alloc::Layout::from_size_align_unchecked(_PAGE_SIZE, _PAGE_SIZE) );
+
+        // Initialize a _Page object at the page start
+        let page = memory as *mut _Page<'a>;
+        (*page).reset();
+        *(self.get_extension_page_location() as *mut *const _Page) = page;
+        self.current_page = page;
+        &mut *page
+    }
+
+    pub unsafe fn get_page(address: *mut u8) -> &'a mut _Page<'a> {
+        &mut *((address as usize & !_PAGE_SIZE - 1) as *mut _Page)
     }
 
     unsafe fn deallocate_extensions(&mut self) {
@@ -76,7 +144,7 @@ fn test_page() {
         }
 
         // Initialize a _Page object at the page start
-        let page = &mut*std::mem::transmute::<*mut u8, *mut _Page>(memory);
+        let page = &mut *(memory as *mut _Page);
 
         assert_ne!(page.next_object_offset, 0);
         assert_ne!(page.exclusive_pages, 0);
@@ -85,8 +153,8 @@ fn test_page() {
 
         assert_eq!(page.next_object_offset, 0);
         assert_eq!(page.exclusive_pages, 0);
-        assert_eq!(page.current_page.unwrap().next_object_offset, 0);
-        assert_eq!(page.current_page.unwrap().exclusive_pages, 0);
+        assert_eq!((*(page.current_page)).next_object_offset, 0);
+        assert_eq!((*(page.current_page)).exclusive_pages, 0);
         assert_eq!(page.is_oversized(), false);
 
     }
