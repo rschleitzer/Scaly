@@ -16,16 +16,16 @@ pub struct _Page<'a> {
 
 impl<'a> _Page<'a> {
 
-    pub unsafe fn reset(&mut self) {
-        *(self.get_extension_page_location() as *mut *const _Page) = null();
+    pub fn reset(&mut self) {
+        unsafe {
+            *(self.get_extension_page_location() as *mut *const _Page) = null();
+        }
         self.next_object_offset = 0;
-        self.exclusive_pages = 0;
-        
-        // currentPage = this;
+        self.exclusive_pages = 0;        
         self.current_page = &mut *self;
     }
 
-    pub unsafe fn clear(&mut self) {
+    pub fn clear(&mut self) {
         self.deallocate_extensions();
         self.reset();
     }
@@ -34,7 +34,7 @@ impl<'a> _Page<'a> {
         self.current_page.is_null()
     }
 
-    unsafe fn get_extension_page_location(&self) -> usize {
+    fn get_extension_page_location(&self) -> usize {
 
         // Convert self to page location
         let self_location = self as *const _Page as usize;
@@ -46,31 +46,32 @@ impl<'a> _Page<'a> {
         location_behind_page - size_of::<*const _Page>()
     }
 
-    unsafe fn get_next_location(&self) -> usize {
+    fn get_next_location(&self) -> usize {
         self as *const _Page as usize + self.next_object_offset as usize
     }
 
-    unsafe fn set_next_location(&mut self, location: usize) {
+    fn set_next_location(&mut self, location: usize) {
         let self_location = self as *const _Page as usize;
         self.next_object_offset = (location - self_location as usize) as i32;
     }
 
-    unsafe fn get_next_exclusive_page_location(&self) -> usize  {
+    fn get_next_exclusive_page_location(&self) -> usize  {
         self.get_extension_page_location() - (self.exclusive_pages as usize + 1) * size_of::<*const _Page>()
     }
 
-    pub unsafe fn allocate_raw(&mut self, size: usize, align: usize) -> *mut u8 {
+    pub fn allocate_raw(&mut self, size: usize, align: usize) -> *mut u8 {
         if !eq(self, self.current_page) {
+            unsafe {
+                // We're already known to be full, so we delegate to the current page
+                let new_object = (*self.current_page).allocate_raw(size, align);
 
-            // We're already known to be full, so we delegate to the current page
-            let new_object = (*self.current_page).allocate_raw(size, align);
-
-            // Possibly our current page was also full so we propagate back the new current page
-            let allocating_page = _Page::get_page(new_object);
-            if !eq(allocating_page, self.current_page) && (!allocating_page.is_oversized()) {
-                self.current_page = allocating_page;
+                // Possibly our current page was also full so we propagate back the new current page
+                let allocating_page = _Page::get_page(new_object);
+                if !eq(allocating_page, self.current_page) && (!allocating_page.is_oversized()) {
+                    self.current_page = allocating_page;
+                }
+                return new_object;
             }
-            return new_object;
         }
 
         // Try to allocate from ourselves
@@ -84,8 +85,7 @@ impl<'a> _Page<'a> {
         // So the space did not fit.
 
         // Calculate gross size to decide whether we're oversized
-        let gross_size = size_of::<_Page>() + size + size_of::<*const _Page>();
-        if gross_size > _PAGE_SIZE {
+        if size_of::<_Page>() + size + size_of::<*const _Page>() > _PAGE_SIZE {
             if self.get_next_location() >= self.get_extension_page_location() {
 
                 // Allocate an extension page with default size
@@ -95,44 +95,55 @@ impl<'a> _Page<'a> {
                 return extension_page.allocate_raw(size, align);
             }
 
-            // We allocate oversized objects directly.
-            let memory = alloc(Layout::from_size_align_unchecked(size + size_of::<_Page>(), _PAGE_SIZE) );
+            unsafe {
+                // We allocate oversized objects directly.
+                let memory = alloc(Layout::from_size_align_unchecked(size + size_of::<_Page>(), _PAGE_SIZE) );
 
-            // Initialize a _Page object at the page start
-            let page = memory as *mut _Page<'a>;
-            (*page).reset();
+                // Initialize a _Page object at the page start
+                let page = memory as *mut _Page<'a>;
 
-            // Oversized pages have no current_page
-            (*page).current_page = null_mut();
-            
-            *(self.get_next_exclusive_page_location() as *mut *const _Page) = page;
-            self.exclusive_pages += 1;
-            return page.offset(1) as *mut u8;
+                // Oversized pages have no current_page
+                (*page).current_page = null_mut();
+
+                // Set the size since we will need it when deallocating
+                (*page).next_object_offset = (size % 0x100000000) as i32;
+                (*page).exclusive_pages =    (size / 0x100000000) as i32;
+                
+                *(self.get_next_exclusive_page_location() as *mut *const _Page) = page;
+                self.exclusive_pages += 1;
+                return page.offset(1) as *mut u8;
+            }
         }
 
         // So we're not oversized. Create extension page and let it allocate.
         self.allocate_extension_page().allocate_raw(size, align)
     }
 
-    unsafe fn allocate_extension_page(&mut self) -> &'a mut _Page<'a> {
-        let page = _Page::allocate_page();
-        *(self.get_extension_page_location() as *mut *const _Page) = page;
-        self.current_page = page;
-        &mut *page
+    fn allocate_extension_page(&mut self) -> &'a mut _Page<'a> {
+        unsafe {
+            let page = _Page::allocate_page();
+            *(self.get_extension_page_location() as *mut *const _Page) = page;
+            self.current_page = page;
+            &mut *page
+        }
     }
 
-    unsafe fn allocate_page() -> *mut _Page<'a> {
-        let memory = alloc(Layout::from_size_align_unchecked(_PAGE_SIZE, _PAGE_SIZE));
-        let page = memory as *mut _Page<'a>;
-        (*page).reset();
-        page
+    fn allocate_page() -> *mut _Page<'a> {
+        unsafe {
+            let memory = alloc(Layout::from_size_align_unchecked(_PAGE_SIZE, _PAGE_SIZE));
+            let page = memory as *mut _Page<'a>;
+            (*page).reset();
+            page
+        }
     }
 
-    pub unsafe fn allocate_exclusive_page(&mut self) -> &'a mut _Page<'a> {
+    pub fn allocate_exclusive_page(&mut self) -> &'a mut _Page<'a> {
 
         if !eq(self, self.current_page) {
-            // We're already known to be full, so we delegate to the current page
-            return (*self.current_page).allocate_exclusive_page();
+            unsafe {
+                // We're already known to be full, so we delegate to the current page
+                return (*self.current_page).allocate_exclusive_page();
+            }
         }
 
         // Check first whether we need an ordinary extension
@@ -143,23 +154,24 @@ impl<'a> _Page<'a> {
         }
 
         let page = _Page::allocate_page();
-        *(self.get_next_exclusive_page_location() as *mut *const _Page) = page;
-        self.exclusive_pages += 1;
-        &mut *page
+        unsafe {
+            *(self.get_next_exclusive_page_location() as *mut *const _Page) = page;
+            self.exclusive_pages += 1;
+            &mut *page
+        }
     }
 
     pub fn extend(&mut self, top: usize, size: usize) -> bool {
-        unsafe {
-            if top != self.get_next_location() {
-                return false;
-            }
-
-            let new_top = top + size;
-            if new_top > self.get_next_exclusive_page_location() {
-                return false;
-            }
-            self.set_next_location(new_top);
+        if top != self.get_next_location() {
+            return false;
         }
+
+        let new_top = top + size;
+        if new_top > self.get_next_exclusive_page_location() {
+            return false;
+        }
+        self.set_next_location(new_top);
+
         true 
     }
 
@@ -186,13 +198,66 @@ impl<'a> _Page<'a> {
     }
 
     pub fn forget(&self) {
+        let size = if self.current_page == null_mut() {
+            self.next_object_offset as usize + self.exclusive_pages as usize * 0x100000000
+        } else {
+            _PAGE_SIZE
+        };
         unsafe {
-            dealloc(self as *const _Page as *mut u8, Layout::from_size_align_unchecked(_PAGE_SIZE, _PAGE_SIZE))
+            dealloc(self as *const _Page as *mut u8, Layout::from_size_align_unchecked(size, _PAGE_SIZE))
         }
     }
 
-    pub unsafe fn get_page(address: *mut u8) -> &'a mut _Page<'a> {
-        &mut *((address as usize & !_PAGE_SIZE - 1) as *mut _Page)
+    pub fn reclaim_array(&mut self, address: usize) -> bool {
+        unsafe {
+            let mut page: *mut _Page<'a> = self;
+            while !page.is_null() {
+                if (*page).deallocate_exclusive_page(&mut *(address as *mut _Page<'a>)) {
+                    return true;
+                }
+                page = (*page).get_extension_page_location() as *mut _Page<'a>; 
+            }
+        }
+
+        // If we arrive here, we have a memory leak.
+        false
+    }
+
+    pub fn get_page(address: *mut u8) -> &'a mut _Page<'a> {
+        unsafe {
+            &mut *((address as usize & !_PAGE_SIZE - 1) as *mut _Page)
+        }
+    }
+
+    fn deallocate_exclusive_page(&mut self, page: &'a mut _Page<'a>) -> bool {
+        // Find the extension Page pointer
+        let mut extension_location = self.get_extension_page_location() - size_of::<*const _Page>();
+        let next_extension_page_location = self.get_next_exclusive_page_location();
+        while extension_location > next_extension_page_location {
+            if eq(extension_location as *const _Page, page) {
+                break; }
+            extension_location -= size_of::<*const _Page>();
+        }
+
+        // Report if we could not find it
+        if extension_location == next_extension_page_location {
+            return false;
+        }
+
+        // Shift the remaining array one position up
+        while extension_location > next_extension_page_location {
+            let pp_page = extension_location as *mut *const _Page;
+            unsafe {
+                *pp_page = *(pp_page.offset(- 1));
+            }
+            extension_location -= size_of::<*const _Page>();
+        }
+
+        // Make room for one more extension
+        self.exclusive_pages -= 1;
+        page.forget();
+
+        true
     }
 }
 
