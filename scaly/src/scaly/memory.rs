@@ -1,3 +1,11 @@
+use std::alloc::alloc;
+use std::alloc::dealloc;
+use std::alloc::Layout;
+use std::mem::size_of;
+use std::ptr::eq;
+use std::ptr::null;
+use std::ptr::null_mut;
+
 const _PAGE_SIZE: usize = 0x1000;
 
 pub struct _Page<'a> {
@@ -9,7 +17,7 @@ pub struct _Page<'a> {
 impl<'a> _Page<'a> {
 
     pub unsafe fn reset(&mut self) {
-        *(self.get_extension_page_location() as *mut *const _Page) = std::ptr::null();
+        *(self.get_extension_page_location() as *mut *const _Page) = null();
         self.next_object_offset = 0;
         self.exclusive_pages = 0;
         
@@ -35,7 +43,7 @@ impl<'a> _Page<'a> {
         let location_behind_page = self_location + _PAGE_SIZE;
 
         // Go back one pointer size
-        location_behind_page - std::mem::size_of::<*const _Page>()
+        location_behind_page - size_of::<*const _Page>()
     }
 
     unsafe fn get_next_location(&self) -> usize {
@@ -48,18 +56,18 @@ impl<'a> _Page<'a> {
     }
 
     unsafe fn get_next_exclusive_page_location(&self) -> usize  {
-        self.get_extension_page_location() - (self.exclusive_pages as usize + 1) * std::mem::size_of::<*const _Page>()
+        self.get_extension_page_location() - (self.exclusive_pages as usize + 1) * size_of::<*const _Page>()
     }
 
     pub unsafe fn allocate_raw(&mut self, size: usize, align: usize) -> *mut u8 {
-        if !std::ptr::eq(self, self.current_page) {
+        if !eq(self, self.current_page) {
 
             // We're already known to be full, so we delegate to the current page
             let new_object = (*self.current_page).allocate_raw(size, align);
 
             // Possibly our current page was also full so we propagate back the new current page
             let allocating_page = _Page::get_page(new_object);
-            if !std::ptr::eq(allocating_page, self.current_page) && (!allocating_page.is_oversized()) {
+            if !eq(allocating_page, self.current_page) && (!allocating_page.is_oversized()) {
                 self.current_page = allocating_page;
             }
             return new_object;
@@ -76,7 +84,7 @@ impl<'a> _Page<'a> {
         // So the space did not fit.
 
         // Calculate gross size to decide whether we're oversized
-        let gross_size = std::mem::size_of::<_Page>() + size + std::mem::size_of::<*const _Page>();
+        let gross_size = size_of::<_Page>() + size + size_of::<*const _Page>();
         if gross_size > _PAGE_SIZE {
             if self.get_next_location() >= self.get_extension_page_location() {
 
@@ -88,14 +96,14 @@ impl<'a> _Page<'a> {
             }
 
             // We allocate oversized objects directly.
-            let memory = std::alloc::alloc(std::alloc::Layout::from_size_align_unchecked(size + std::mem::size_of::<_Page>(), _PAGE_SIZE) );
+            let memory = alloc(Layout::from_size_align_unchecked(size + size_of::<_Page>(), _PAGE_SIZE) );
 
             // Initialize a _Page object at the page start
             let page = memory as *mut _Page<'a>;
             (*page).reset();
 
             // Oversized pages have no current_page
-            (*page).current_page = std::ptr::null_mut();
+            (*page).current_page = null_mut();
             
             *(self.get_next_exclusive_page_location() as *mut *const _Page) = page;
             self.exclusive_pages += 1;
@@ -114,7 +122,7 @@ impl<'a> _Page<'a> {
     }
 
     unsafe fn allocate_page() -> *mut _Page<'a> {
-        let memory = std::alloc::alloc(std::alloc::Layout::from_size_align_unchecked(_PAGE_SIZE, _PAGE_SIZE));
+        let memory = alloc(Layout::from_size_align_unchecked(_PAGE_SIZE, _PAGE_SIZE));
         let page = memory as *mut _Page<'a>;
         (*page).reset();
         page
@@ -122,7 +130,7 @@ impl<'a> _Page<'a> {
 
     pub unsafe fn allocate_exclusive_page(&mut self) -> &'a mut _Page<'a> {
 
-        if !std::ptr::eq(self, self.current_page) {
+        if !eq(self, self.current_page) {
             // We're already known to be full, so we delegate to the current page
             return (*self.current_page).allocate_exclusive_page();
         }
@@ -155,12 +163,36 @@ impl<'a> _Page<'a> {
         true 
     }
 
-    pub unsafe fn get_page(address: *mut u8) -> &'a mut _Page<'a> {
-        &mut *((address as usize & !_PAGE_SIZE - 1) as *mut _Page)
+    pub fn deallocate_extensions(&mut self) {
+        let mut page: *mut _Page<'a> = self;
+        unsafe {
+            while !page.is_null() {
+                let extension_location = (*page).get_extension_page_location();
+                for i in 1..(*page).exclusive_pages {
+                    let mut exclusive_page = &mut *((extension_location - (i as usize * size_of::<*const _Page> as usize)) as *mut _Page<'a>);
+                    if !exclusive_page.is_oversized() {
+                        exclusive_page.deallocate_extensions();
+                    }
+                    exclusive_page.forget();
+                }
+
+                if !eq(page, self) {
+                    (*page).forget();
+                }
+
+                page = extension_location as *mut _Page<'a>; 
+            }
+        }
     }
 
-    unsafe fn deallocate_extensions(&mut self) {
-        unimplemented!()
+    pub fn forget(&self) {
+        unsafe {
+            dealloc(self as *const _Page as *mut u8, Layout::from_size_align_unchecked(_PAGE_SIZE, _PAGE_SIZE))
+        }
+    }
+
+    pub unsafe fn get_page(address: *mut u8) -> &'a mut _Page<'a> {
+        &mut *((address as usize & !_PAGE_SIZE - 1) as *mut _Page)
     }
 }
 
@@ -170,8 +202,8 @@ fn test_page() {
     unsafe {
 
         // Allocate a page
-        let memory = std::alloc::alloc(std::alloc::Layout::from_size_align_unchecked(_PAGE_SIZE, _PAGE_SIZE) );
-        assert_ne!(memory, std::ptr::null_mut());
+        let memory = alloc(Layout::from_size_align_unchecked(_PAGE_SIZE, _PAGE_SIZE) );
+        assert_ne!(memory, null_mut());
 
         // Write some numbers to the page memory
         for i in 0.._PAGE_SIZE {
