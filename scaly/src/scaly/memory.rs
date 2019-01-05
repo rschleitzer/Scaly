@@ -98,7 +98,7 @@ impl<'a> _Page<'a> {
             (*page).current_page = std::ptr::null_mut();
             
             *(self.get_next_exclusive_page_location() as *mut *const _Page) = page;
-            self.exclusive_pages = self.exclusive_pages + 1;
+            self.exclusive_pages += 1;
             return page.offset(1) as *mut u8;
         }
 
@@ -107,15 +107,36 @@ impl<'a> _Page<'a> {
     }
 
     unsafe fn allocate_extension_page(&mut self) -> &'a mut _Page<'a> {
-
-        // Allocate a page
-        let memory = std::alloc::alloc(std::alloc::Layout::from_size_align_unchecked(_PAGE_SIZE, _PAGE_SIZE) );
-
-        // Initialize a _Page object at the page start
-        let page = memory as *mut _Page<'a>;
-        (*page).reset();
+        let page = _Page::allocate_page();
         *(self.get_extension_page_location() as *mut *const _Page) = page;
         self.current_page = page;
+        &mut *page
+    }
+
+    unsafe fn allocate_page() -> *mut _Page<'a> {
+        let memory = std::alloc::alloc(std::alloc::Layout::from_size_align_unchecked(_PAGE_SIZE, _PAGE_SIZE));
+        let page = memory as *mut _Page<'a>;
+        (*page).reset();
+        page
+    }
+
+    pub unsafe fn allocate_exclusive_page(&mut self) -> &'a mut _Page<'a> {
+
+        if !std::ptr::eq(self, self.current_page) {
+            // We're already known to be full, so we delegate to the current page
+            return (*self.current_page).allocate_exclusive_page();
+        }
+
+        // Check first whether we need an ordinary extension
+        if self.get_next_location() >= self.get_next_exclusive_page_location() {
+
+            // Allocate an extension page with default size
+            return self.allocate_extension_page().allocate_exclusive_page();
+        }
+
+        let page = _Page::allocate_page();
+        *(self.get_next_exclusive_page_location() as *mut *const _Page) = page;
+        self.exclusive_pages += 1;
         &mut *page
     }
 
