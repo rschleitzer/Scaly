@@ -140,6 +140,21 @@ impl<'a> _Page<'a> {
         &mut *page
     }
 
+    pub fn extend(&mut self, top: usize, size: usize) -> bool {
+        unsafe {
+            if top != self.get_next_location() {
+                return false;
+            }
+
+            let new_top = top + size;
+            if new_top > self.get_next_exclusive_page_location() {
+                return false;
+            }
+            self.set_next_location(new_top);
+        }
+        true 
+    }
+
     pub unsafe fn get_page(address: *mut u8) -> &'a mut _Page<'a> {
         &mut *((address as usize & !_PAGE_SIZE - 1) as *mut _Page)
     }
