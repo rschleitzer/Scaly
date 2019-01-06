@@ -173,7 +173,7 @@ impl _Page {
         true
     }
 
-    pub fn deallocate_extensions(&mut self) {
+    fn deallocate_extensions(&mut self) {
         let mut page: *mut _Page = self;
         unsafe {
             while !page.is_null() {
@@ -304,14 +304,49 @@ fn test_page() {
                 page as *const _Page as usize + size_of::<_Page>()
             );
 
-            let mut memory = page.allocate_raw(1, 1);
+            let answer = page.allocate_raw(1, 1);
             location += 1;
             assert_eq!(page.get_next_location(), location);
-            *memory = 42;
-            memory = page.allocate_raw(1, 2);
+            *answer = 42;
+
+            let another = page.allocate_raw(1, 2);
             location += 2;
             assert_eq!(page.get_next_location(), location);
-            *memory = 43;
+            *another = 43;
+
+            let eau = page.allocate_raw(4, 4) as *mut i32;
+            location += 5;
+            assert_eq!(page.get_next_location(), location);
+            *eau = 4711;
+
+            // Allocate an oversized page which should cause allocating an exclusive page
+            let array = page.allocate_raw(_PAGE_SIZE, 8) as *mut usize;
+            for i in 0.._PAGE_SIZE / size_of::<usize>() - 1 {
+                *(array.offset(i as isize)) = i;
+            }
+            assert_eq!(page.get_next_location(), location);
+            assert_eq!(page as *mut _Page, page.current_page);
+
+            // Overflow the page
+            for _ in 0.._PAGE_SIZE {
+                page.allocate_raw(1, 1);
+            }
+            assert_ne!(page as *mut _Page, page.current_page);
+            assert_eq!(*(page.get_extension_page_location()), page.current_page);
+            assert_eq!((*page.current_page).exclusive_pages, 0);
+            assert_eq!((*page.current_page).current_page, page.current_page);
+
+            assert_eq!(page.exclusive_pages, 1);
+            assert_eq!(*answer, 42);
+            assert_eq!(*another, 43);
+            assert_eq!(*eau, 4711);
+
+            let exclusive_page = page.get_next_exclusive_page_location().offset(1);
+            assert_eq!((**exclusive_page).current_page, null_mut());
+
+            page.clear();
+            assert_eq!(page.exclusive_pages, 0);
+            page.forget();
         }
     }
 }
