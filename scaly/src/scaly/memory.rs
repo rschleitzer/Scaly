@@ -65,7 +65,7 @@ impl _Page {
                 let new_object = (*self.current_page).allocate_raw(size, align);
 
                 // Possibly our current page was also full so we propagate back the new current page
-                let allocating_page = _Page::get_page(new_object);
+                let allocating_page = _Page::get_page(new_object as usize);
                 if allocating_page != self.current_page && (!(*allocating_page).is_oversized()) {
                     self.current_page = allocating_page;
                 }
@@ -209,11 +209,11 @@ impl _Page {
         }
     }
 
-    pub fn reclaim_array(&mut self, address: usize) -> bool {
+    pub fn reclaim_array(&mut self, address: *mut _Page) -> bool {
         unsafe {
             let mut page: *mut _Page = self;
             while !page.is_null() {
-                if (*page).deallocate_exclusive_page(address as *mut _Page) {
+                if (*page).deallocate_exclusive_page(address) {
                     return true;
                 }
                 page = *(*page).get_extension_page_location();
@@ -224,8 +224,8 @@ impl _Page {
         false
     }
 
-    pub fn get_page(address: *mut u8) -> *mut _Page {
-        unsafe { &mut *((address as usize & !_PAGE_SIZE - 1) as *mut _Page) }
+    pub fn get_page(address: usize) -> *mut _Page {
+        (address & !(_PAGE_SIZE - 1)) as *mut _Page
     }
 
     fn deallocate_exclusive_page(&mut self, page: *mut _Page) -> bool {
@@ -318,6 +318,7 @@ fn test_page() {
             location += 5;
             assert_eq!(page.get_next_location(), location);
             *eau = 4711;
+            assert_eq!(_Page::get_page(eau as usize), page as *mut _Page);
 
             // Allocate an oversized page which should cause allocating an exclusive page
             let array = page.allocate_raw(_PAGE_SIZE, 8) as *mut usize;
@@ -343,9 +344,13 @@ fn test_page() {
 
             let exclusive_page = page.get_next_exclusive_page_location().offset(1);
             assert_eq!((**exclusive_page).current_page, null_mut());
+            assert_eq!(_Page::get_page(array as usize), *exclusive_page);
+
+            let success = page.reclaim_array(_Page::get_page(array as usize));
+            assert_eq!(success, true);
+            assert_eq!(page.exclusive_pages, 0);
 
             page.clear();
-            assert_eq!(page.exclusive_pages, 0);
             page.forget();
         }
     }
