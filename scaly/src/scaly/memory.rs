@@ -2,7 +2,9 @@ use std::alloc::alloc;
 use std::alloc::dealloc;
 use std::alloc::Layout;
 use std::mem::size_of;
+use std::mem::align_of;
 use std::ptr::null_mut;
+use std::ptr::write;
 
 const _PAGE_SIZE: usize = 0x1000;
 
@@ -55,6 +57,17 @@ impl _Page {
         unsafe {
             self.get_extension_page_location()
                 .offset(-(self.exclusive_pages as isize + 1))
+        }
+    }
+
+    pub fn allocate<T>(&mut self, object: T) -> *mut T {
+
+        let memory = self.allocate_raw(size_of::<T>(), align_of::<T>()) as *mut T;
+
+        unsafe {
+            // Write into uninitialized memory.
+            write(memory, object);
+            memory
         }
     }
 
@@ -305,18 +318,17 @@ fn test_page() {
                 page as *const _Page as usize + size_of::<_Page>()
             );
 
-            let answer = page.allocate_raw(1, 1);
-            location += 1;
+            let answer = page.allocate(42);
+            location += 4;
             assert_eq!(page.get_next_location(), location);
-            *answer = 42;
 
             let another = page.allocate_raw(1, 2);
-            location += 2;
+            location += 1;
             assert_eq!(page.get_next_location(), location);
             *another = 43;
 
             let eau = page.allocate_raw(4, 4) as *mut i32;
-            location += 5;
+            location += 7;
             assert_eq!(page.get_next_location(), location);
             *eau = 4711;
             assert_eq!(_Page::get_page(eau as usize), page as *mut _Page);
