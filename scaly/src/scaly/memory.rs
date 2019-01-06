@@ -94,9 +94,10 @@ impl _Page {
             }
 
             unsafe {
+                let gross_size = size + size_of::<_Page>();
                 // We allocate oversized objects directly.
                 let memory = alloc(Layout::from_size_align_unchecked(
-                    size + size_of::<_Page>(),
+                    gross_size,
                     _PAGE_SIZE,
                 ));
 
@@ -107,8 +108,8 @@ impl _Page {
                 (*page).current_page = null_mut();
 
                 // Set the size since we will need it when deallocating
-                (*page).next_object_offset = (size % 0x100000000) as i32;
-                (*page).exclusive_pages = (size / 0x100000000) as i32;
+                (*page).next_object_offset = (gross_size % 0x100000000) as i32;
+                (*page).exclusive_pages = (gross_size / 0x100000000) as i32;
 
                 *(self.get_next_exclusive_page_location()) = page;
                 self.exclusive_pages += 1;
@@ -332,6 +333,7 @@ fn test_page() {
             for _ in 0.._PAGE_SIZE {
                 page.allocate_raw(1, 1);
             }
+
             assert_ne!(page as *mut _Page, page.current_page);
             assert_eq!(*(page.get_extension_page_location()), page.current_page);
             assert_eq!((*page.current_page).exclusive_pages, 0);
@@ -344,6 +346,8 @@ fn test_page() {
 
             let exclusive_page = page.get_next_exclusive_page_location().offset(1);
             assert_eq!((**exclusive_page).current_page, null_mut());
+            assert_eq!((**exclusive_page).exclusive_pages, 0);
+            assert_eq!((**exclusive_page).next_object_offset as usize, size_of::<_Page>() + _PAGE_SIZE );
             assert_eq!(_Page::get_page(array as usize), *exclusive_page);
 
             let success = page.reclaim_array(_Page::get_page(array as usize));
