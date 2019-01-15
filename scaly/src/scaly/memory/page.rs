@@ -6,7 +6,7 @@ use std::mem::align_of;
 use std::ptr::null_mut;
 use std::ptr::write;
 
-const _PAGE_SIZE: usize = 0x1000;
+pub const _PAGE_SIZE: usize = 0x1000;
 
 pub struct _Page {
     current_page: *mut _Page,
@@ -187,7 +187,7 @@ impl _Page {
         true
     }
 
-    fn deallocate_extensions(&mut self) {
+    pub fn deallocate_extensions(&mut self) {
         let mut page: *mut _Page = self;
         unsafe {
             while !page.is_null() {
