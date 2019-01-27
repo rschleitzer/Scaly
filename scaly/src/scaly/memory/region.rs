@@ -75,18 +75,19 @@ impl _StackBucket {
         }
     }
 
-    pub fn deallocate(& self) {
+    pub fn deallocate(&self) {
         let mut bucket = self as *const _StackBucket;
         unsafe {
             while !(*bucket).next_bucket.is_null() {
                 let next_bucket = (*bucket).next_bucket;
                 let page = _Page::get_page(bucket as usize);
-                dealloc (
+                dealloc(
                     page as *mut u8,
                     Layout::from_size_align_unchecked(
-                    _PAGE_SIZE * _STACK_BUCKET_PAGES,
-                    _PAGE_SIZE * _STACK_BUCKET_PAGES,
-                ));
+                        _PAGE_SIZE * _STACK_BUCKET_PAGES,
+                        _PAGE_SIZE * _STACK_BUCKET_PAGES,
+                    ),
+                );
 
                 bucket = next_bucket;
             }
