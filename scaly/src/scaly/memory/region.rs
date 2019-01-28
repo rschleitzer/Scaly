@@ -38,10 +38,6 @@ impl _StackBucket {
     pub fn new_page(page: &_Page) -> *mut _Page {
         let page_address = page as *const _Page as usize;
         let stack_bucket_page_address = page_address & !(_PAGE_SIZE * _STACK_BUCKET_PAGES - 1);
-        _StackBucket::get_next_page(stack_bucket_page_address, page_address)
-    }
-
-    fn get_next_page(stack_bucket_page_address: usize, page_address: usize) -> *mut _Page {
         let overflowed_page_address = stack_bucket_page_address + _PAGE_SIZE * _STACK_BUCKET_PAGES;
         let our_page_address = page_address + _PAGE_SIZE;
         if overflowed_page_address == our_page_address {
