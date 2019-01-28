@@ -13,11 +13,14 @@ pub struct _Region<'a> {
 }
 
 impl<'a> _Region<'a> {
-    pub fn create(page: &_Page) -> _Region<'a> {
+    pub fn create_from_page(page: &_Page) -> _Region<'a> {
         let our_page_address = _StackBucket::new_page(page);
         _Region {
             page: unsafe { &mut *(our_page_address as *mut _Page) },
         }
+    }
+    pub fn create(region: &_Region<'a>) -> _Region<'a> {
+        _Region::create_from_page(region.page)
     }
 }
 
@@ -105,11 +108,11 @@ impl Drop for _StackBucket {
 fn test_region() {
     unsafe {
         let root_stack_bucket = _StackBucket::create();
-        let r1 = _Region::create(&*_Page::get_page(root_stack_bucket as usize));
+        let r1 = _Region::create_from_page(&*_Page::get_page(root_stack_bucket as usize));
         {
-            let r2 = _Region::create(r1.page);
+            let r2 = _Region::create(&r1);
             {
-                let _ = _Region::create(r2.page);
+                let _ = _Region::create(&r2);
             }
         }
         (*root_stack_bucket).deallocate();
@@ -117,9 +120,9 @@ fn test_region() {
     unsafe {
         let root_stack_bucket = _StackBucket::create();
 
-        let mut r = _Region::create(&*_Page::get_page(root_stack_bucket as usize));
+        let mut r = _Region::create_from_page(&*_Page::get_page(root_stack_bucket as usize));
         for _ in 1.._STACK_BUCKET_PAGES * 2 {
-            r = _Region::create(r.page);
+            r = _Region::create(&r);
         }
 
         (*root_stack_bucket).deallocate();
