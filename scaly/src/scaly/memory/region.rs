@@ -30,11 +30,16 @@ impl<'a> Drop for Region<'a> {
     }
 }
 
-enum Bucket {
+pub enum Bucket {
     Stack(StackBucket),
+    Heap(HeapBucket),
 }
 
-struct StackBucket {
+pub struct HeapBucket {
+    map: usize,
+}
+
+pub struct StackBucket {
     next_bucket: *mut StackBucket,
 }
 
@@ -45,8 +50,7 @@ impl StackBucket {
         let overflowed_page_address = stack_bucket_page_address + PAGE_SIZE * STACK_BUCKET_PAGES;
         let our_page_address = page_address + PAGE_SIZE;
         if overflowed_page_address == our_page_address {
-            let stack_bucket =
-                (stack_bucket_page_address + size_of::<Page>()) as *mut StackBucket;
+            let stack_bucket = (stack_bucket_page_address + size_of::<Page>()) as *mut StackBucket;
             unsafe { (*stack_bucket).get_page_from_next_bucket() }
         } else {
             our_page_address as *mut Page
