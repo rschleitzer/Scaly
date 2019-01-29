@@ -1,6 +1,7 @@
 use scaly::memory::page::Page;
 use scaly::memory::page::PAGE_SIZE;
 use std::alloc::alloc;
+use std::alloc::alloc_zeroed;
 use std::alloc::dealloc;
 use std::alloc::Layout;
 use std::mem::size_of;
@@ -37,6 +38,54 @@ pub enum Bucket {
 
 pub struct HeapBucket {
     map: usize,
+}
+
+pub struct Pool {
+    root_map: usize,
+    maps: *mut usize,
+    pointers: *mut HeapBucket,
+}
+
+const MAPS_SIZE: usize = size_of::<usize>() * 8 * size_of::<usize>();
+const POINTERS_SIZE: usize = MAPS_SIZE * 8 * size_of::<usize>();
+
+impl Pool {
+    pub fn create() -> Pool {
+        unsafe {
+            let maps_memory = alloc_zeroed(Layout::from_size_align_unchecked(MAPS_SIZE, PAGE_SIZE));
+            if maps_memory == null_mut() {
+                panic!("Unable to allocate maps memory: Out of memory.");
+            }
+            let pointers_memory =
+                alloc_zeroed(Layout::from_size_align_unchecked(POINTERS_SIZE, PAGE_SIZE));
+            if pointers_memory == null_mut() {
+                panic!("Unable to allocate maps memory: Out of memory.");
+            }
+            Pool {
+                root_map: 0,
+                maps: maps_memory as *mut usize,
+                pointers: pointers_memory as *mut HeapBucket,
+            }
+        }
+    }
+}
+
+impl Drop for Pool {
+    fn drop(&mut self) {
+        if self.root_map != 0 {
+            panic!("Pool is not empty!")
+        }
+        unsafe {
+            dealloc(
+                self.maps as *mut u8,
+                Layout::from_size_align_unchecked(MAPS_SIZE, PAGE_SIZE),
+            );
+            dealloc(
+                self.pointers as *mut u8,
+                Layout::from_size_align_unchecked(POINTERS_SIZE, PAGE_SIZE),
+            );
+        }
+    }
 }
 
 pub struct StackBucket {
