@@ -31,8 +31,8 @@ impl<'a> Drop for Region<'a> {
     }
 }
 
-pub enum Bucket {
-    Stack(StackBucket),
+pub enum Bucket<'a> {
+    Stack(StackBucket<'a>),
     Heap(HeapBucket),
 }
 
@@ -88,12 +88,12 @@ impl Drop for Pool {
     }
 }
 
-pub struct StackBucket {
-    next_bucket: *mut StackBucket,
-    pool: *mut Pool,
+pub struct StackBucket<'a> {
+    next_bucket: *mut StackBucket<'a>,
+    pool: &'a mut Pool,
 }
 
-impl StackBucket {
+impl<'a> StackBucket<'a> {
     pub fn new_page(page: &Page) -> *mut Page {
         let page_address = page as *const Page as usize;
         let stack_bucket_page_address = page_address & !(PAGE_SIZE * STACK_BUCKET_PAGES - 1);
@@ -107,14 +107,14 @@ impl StackBucket {
         }
     }
 
-    fn get_page_from_next_bucket(self: &mut StackBucket) -> *mut Page {
+    fn get_page_from_next_bucket(self: &'a mut StackBucket<'a>) -> *mut Page {
         if self.next_bucket == null_mut() {
             self.next_bucket = StackBucket::create(self.pool);
         }
         Page::get_page(self.next_bucket as usize)
     }
 
-    fn create(pool: *mut Pool) -> *mut StackBucket {
+    fn create(pool: &'a mut Pool) -> *mut StackBucket<'a> {
         unsafe {
             let memory = alloc(Layout::from_size_align_unchecked(
                 PAGE_SIZE * STACK_BUCKET_PAGES,
@@ -153,7 +153,7 @@ impl StackBucket {
     }
 }
 
-impl Drop for StackBucket {
+impl<'a> Drop for StackBucket<'a> {
     fn drop(&mut self) {
         self.deallocate();
     }
