@@ -90,6 +90,7 @@ impl Drop for Pool {
 
 pub struct StackBucket {
     next_bucket: *mut StackBucket,
+    pool: *mut Pool,
 }
 
 impl StackBucket {
@@ -108,12 +109,12 @@ impl StackBucket {
 
     fn get_page_from_next_bucket(self: &mut StackBucket) -> *mut Page {
         if self.next_bucket == null_mut() {
-            self.next_bucket = StackBucket::create();
+            self.next_bucket = StackBucket::create(self.pool);
         }
         Page::get_page(self.next_bucket as usize)
     }
 
-    fn create() -> *mut StackBucket {
+    fn create(pool: *mut Pool) -> *mut StackBucket {
         unsafe {
             let memory = alloc(Layout::from_size_align_unchecked(
                 PAGE_SIZE * STACK_BUCKET_PAGES,
@@ -126,6 +127,7 @@ impl StackBucket {
             page.reset();
             let bucket = page.allocate(StackBucket {
                 next_bucket: null_mut(),
+                pool: pool,
             });
             bucket
         }
@@ -160,7 +162,8 @@ impl Drop for StackBucket {
 #[test]
 fn test_region() {
     unsafe {
-        let root_stack_bucket = StackBucket::create();
+        let mut pool = Pool::create();
+        let root_stack_bucket = StackBucket::create(&mut pool);
         let r1 = Region::create_from_page(&*Page::get_page(root_stack_bucket as usize));
         {
             let r2 = Region::create(&r1);
@@ -171,7 +174,8 @@ fn test_region() {
         (*root_stack_bucket).deallocate();
     }
     unsafe {
-        let root_stack_bucket = StackBucket::create();
+        let mut pool = Pool::create();
+        let root_stack_bucket = StackBucket::create(&mut pool);
 
         let mut r = Region::create_from_page(&*Page::get_page(root_stack_bucket as usize));
         for _ in 1..STACK_BUCKET_PAGES * 2 {
