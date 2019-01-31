@@ -61,7 +61,6 @@ impl Page {
     }
 
     pub fn allocate<T>(&mut self, object: T) -> *mut T {
-
         let memory = self.allocate_raw(size_of::<T>(), align_of::<T>()) as *mut T;
 
         unsafe {

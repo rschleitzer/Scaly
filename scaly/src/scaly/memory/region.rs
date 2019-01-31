@@ -16,6 +16,7 @@ pub struct Region<'a> {
 impl<'a> Region<'a> {
     pub fn create_from_page(page: &Page) -> Region<'a> {
         let our_page_address = StackBucket::new_page(page);
+        //println!("our_page_address:{:X}", our_page_address as usize);
         Region {
             page: unsafe { &mut *(our_page_address as *mut Page) },
         }
@@ -61,6 +62,7 @@ impl Pool {
             if pointers_memory == null_mut() {
                 panic!("Unable to allocate maps memory: Out of memory.");
             }
+            //println!("pool.maps:{:X}, pool.pointers:{:X}", maps_memory as usize, pointers_memory as usize);
             Pool {
                 root_map: 0,
                 maps: maps_memory as *mut usize,
@@ -103,7 +105,11 @@ impl<'a> StackBucket<'a> {
             let stack_bucket = (stack_bucket_page_address + size_of::<Page>()) as *mut StackBucket;
             unsafe { (*stack_bucket).get_page_from_next_bucket() }
         } else {
-            our_page_address as *mut Page
+            let our_page = our_page_address as *mut Page;
+            unsafe {
+                (*our_page).reset();
+            }
+            our_page
         }
     }
 
@@ -123,12 +129,14 @@ impl<'a> StackBucket<'a> {
             if memory == null_mut() {
                 panic!("Unable to crete a new stack bucket: Out of memory.");
             }
+            //println!("bucket memory:{:X}", memory as usize);
             let page = &mut *(memory as *mut Page);
             page.reset();
             let bucket = page.allocate(StackBucket {
                 next_bucket: null_mut(),
                 pool: pool,
             });
+            //println!("stack bucket object:{:X}", bucket as usize);
             bucket
         }
     }
@@ -165,12 +173,40 @@ fn test_region() {
         let mut pool = Pool::create();
         let root_stack_bucket = StackBucket::create(&mut pool);
         let r1 = Region::create_from_page(&*Page::get_page(root_stack_bucket as usize));
+        //println!("r1.page:{:X}", r1.page as *mut Page as usize);
+        let one = r1.page.allocate(1);
+        assert_eq!(*one, 1);
+        let two = r1.page.allocate(2);
+        assert_eq!(*two, 2);
         {
-            let r2 = Region::create(&r1);
-            {
-                let _ = Region::create(&r2);
-            }
+            let r2a = Region::create(&r1);
+            //println!("r2a.page:{:X}", r2a.page as *mut Page as usize);
+            let three = r2a.page.allocate(3);
+            //println!("three:{:X}", three as usize);
+            assert_eq!(*three, 3);
+            let four = r2a.page.allocate(4);
+            //println!("four:{:X}", four as usize);
+            assert_eq!(*four, 4);
+            assert_eq!(*three, 3);
+            let five = r2a.page.allocate(5);
+            //println!("five:{:X}", five as usize);
+            assert_eq!(*five, 5);
+            assert_eq!(*four, 4);
+            assert_eq!(*three, 3);
         }
+        {
+            let r2b = Region::create(&r1);
+            // println!("r2b.page:{:X}", r2b.page as *mut Page as usize);
+            let six = r2b.page.allocate(6);
+            // println!("six:{:X}", six as usize);
+            assert_eq!(*six, 6);
+            let seven = r2b.page.allocate(7);
+            // println!("seven:{:X}", seven as usize);
+            assert_eq!(*seven, 7);
+            assert_eq!(*six, 6);
+        }
+        assert_eq!(*one, 1);
+        assert_eq!(*two, 2);
         (*root_stack_bucket).deallocate();
     }
     unsafe {
