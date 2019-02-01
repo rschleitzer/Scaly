@@ -24,6 +24,10 @@ impl<'a> Region<'a> {
     pub fn create(region: &Region<'a>) -> Region<'a> {
         Region::create_from_page(region.page)
     }
+
+    pub fn new<T>(&mut self, object: T) -> &'a mut T {
+        unsafe { &mut *(*self.page).allocate(object) }
+    }
 }
 
 impl<'a> Drop for Region<'a> {
@@ -172,35 +176,35 @@ fn test_region() {
     unsafe {
         let mut pool = Pool::create();
         let root_stack_bucket = StackBucket::create(&mut pool);
-        let r1 = Region::create_from_page(&*Page::get_page(root_stack_bucket as usize));
+        let mut r1 = Region::create_from_page(&*Page::get_page(root_stack_bucket as usize));
         //println!("r1.page:{:X}", r1.page as *mut Page as usize);
-        let one = r1.page.allocate(1);
+        let one = r1.new(1);
         assert_eq!(*one, 1);
-        let two = r1.page.allocate(2);
+        let two = r1.new(2);
         assert_eq!(*two, 2);
         {
-            let r2a = Region::create(&r1);
+            let mut r2a = Region::create(&r1);
             //println!("r2a.page:{:X}", r2a.page as *mut Page as usize);
-            let three = r2a.page.allocate(3);
+            let three = r2a.new(3);
             //println!("three:{:X}", three as usize);
             assert_eq!(*three, 3);
-            let four = r2a.page.allocate(4);
+            let four = r2a.new(4);
             //println!("four:{:X}", four as usize);
             assert_eq!(*four, 4);
             assert_eq!(*three, 3);
-            let five = r2a.page.allocate(5);
+            let five = r2a.new(5);
             //println!("five:{:X}", five as usize);
             assert_eq!(*five, 5);
             assert_eq!(*four, 4);
             assert_eq!(*three, 3);
         }
         {
-            let r2b = Region::create(&r1);
+            let mut r2b = Region::create(&r1);
             // println!("r2b.page:{:X}", r2b.page as *mut Page as usize);
-            let six = r2b.page.allocate(6);
+            let six = r2b.new(6);
             // println!("six:{:X}", six as usize);
             assert_eq!(*six, 6);
-            let seven = r2b.page.allocate(7);
+            let seven = r2b.new(7);
             // println!("seven:{:X}", seven as usize);
             assert_eq!(*seven, 7);
             assert_eq!(*six, 6);
