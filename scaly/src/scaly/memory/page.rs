@@ -1,8 +1,8 @@
 use std::alloc::alloc;
 use std::alloc::dealloc;
 use std::alloc::Layout;
-use std::mem::size_of;
 use std::mem::align_of;
+use std::mem::size_of;
 use std::ptr::null_mut;
 use std::ptr::write;
 
@@ -77,7 +77,7 @@ impl Page {
                 let new_object = (*self.current_page).allocate_raw(size, align);
 
                 // Possibly our current page was also full so we propagate back the new current page
-                let allocating_page = Page::get_page(new_object as usize);
+                let allocating_page = Page::get(new_object as usize);
                 if allocating_page != self.current_page && (!(*allocating_page).is_oversized()) {
                     self.current_page = allocating_page;
                 }
@@ -108,10 +108,7 @@ impl Page {
             unsafe {
                 let gross_size = size + size_of::<Page>();
                 // We allocate oversized objects directly.
-                let memory = alloc(Layout::from_size_align_unchecked(
-                    gross_size,
-                    PAGE_SIZE,
-                ));
+                let memory = alloc(Layout::from_size_align_unchecked(gross_size, PAGE_SIZE));
 
                 // Initialize a Page object at the page start
                 let page = memory as *mut Page;
@@ -144,8 +141,7 @@ impl Page {
 
     fn allocate_page() -> *mut Page {
         unsafe {
-            let page =
-                alloc(Layout::from_size_align_unchecked(PAGE_SIZE, PAGE_SIZE)) as *mut Page;
+            let page = alloc(Layout::from_size_align_unchecked(PAGE_SIZE, PAGE_SIZE)) as *mut Page;
             (*page).reset();
             page
         }
@@ -237,7 +233,7 @@ impl Page {
         false
     }
 
-    pub fn get_page(address: usize) -> *mut Page {
+    pub fn get(address: usize) -> *mut Page {
         (address & !(PAGE_SIZE - 1)) as *mut Page
     }
 
@@ -330,7 +326,7 @@ fn test_page() {
             location += 7;
             assert_eq!(page.get_next_location(), location);
             *eau = 4711;
-            assert_eq!(Page::get_page(eau as usize), page as *mut Page);
+            assert_eq!(Page::get(eau as usize), page as *mut Page);
 
             // Allocate an oversized page which should cause allocating an exclusive page
             let array = page.allocate_raw(PAGE_SIZE, 8) as *mut usize;
@@ -358,10 +354,13 @@ fn test_page() {
             let exclusive_page = page.get_next_exclusive_page_location().offset(1);
             assert_eq!((**exclusive_page).current_page, null_mut());
             assert_eq!((**exclusive_page).exclusive_pages, 0);
-            assert_eq!((**exclusive_page).next_object_offset as usize, size_of::<Page>() + PAGE_SIZE );
-            assert_eq!(Page::get_page(array as usize), *exclusive_page);
+            assert_eq!(
+                (**exclusive_page).next_object_offset as usize,
+                size_of::<Page>() + PAGE_SIZE
+            );
+            assert_eq!(Page::get(array as usize), *exclusive_page);
 
-            let success = page.reclaim_array(Page::get_page(array as usize));
+            let success = page.reclaim_array(Page::get(array as usize));
             assert_eq!(success, true);
             assert_eq!(page.exclusive_pages, 0);
 
