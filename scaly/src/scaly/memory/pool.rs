@@ -45,7 +45,7 @@ impl Pool {
     }
 
     pub fn allocate_bucket(&mut self) {
-        println!("Pool allocating bucket.");
+        //println!("Pool allocating bucket.");
         self.current_bucket = HeapBucket::create(self as *mut Pool);
     }
 

@@ -4,8 +4,6 @@ use scaly::memory::bucket::Bucket::Stack;
 use scaly::memory::page::Page;
 use scaly::memory::page::PAGE_SIZE;
 use scaly::memory::pool::Pool;
-use std::alloc::alloc;
-use std::alloc::Layout;
 use std::mem::size_of;
 use std::usize::MAX;
 
@@ -89,9 +87,9 @@ impl HeapBucket {
 
         if self.map == 0 {
             unsafe {
-                println!("self.pool: {:X}", self.pool as usize);
+                //println!("self.pool: {:X}", self.pool as usize);
                 if self as *mut HeapBucket == (*self.pool).current_bucket {
-                    println!("Let the pool allocate a new one.");
+                    //println!("Let the pool allocate a new one.");
                     (*self.pool).allocate_bucket();
                 }
                 return (*(*self.pool).current_bucket).allocate_page();
@@ -99,12 +97,13 @@ impl HeapBucket {
         }
 
         let position = HeapBucket::find_least_position(self.map);
-        println!("HeapBucket position: {}", position);
+        //println!("HeapBucket position: {}", position);
         self.map = self.map & !(1 << position);
 
-        let page =
-            unsafe { alloc(Layout::from_size_align_unchecked(PAGE_SIZE, PAGE_SIZE)) as *mut Page };
-        println!("HeapBucket allocated page:{:X}", page as usize);
+        let page = (Page::get(self as *const HeapBucket as usize) as usize
+            + (size_of::<usize>() * 8 - position) * PAGE_SIZE) as *mut Page;
+        //println!("HeapBucket allocated page:{:X}", page as usize);
+        unsafe { (*page).reset() }
         page
     }
 }
@@ -113,10 +112,10 @@ impl HeapBucket {
 fn test_heapbucket() {
     unsafe {
         let mut pool = Pool::create();
-        println!("pool: {:X}", &pool as *const Pool as usize);
+        //println!("pool: {:X}", &pool as *const Pool as usize);
         let bucket = HeapBucket::create(&mut pool);
-        for i in 0..100 {
-            println!("Run {}:", i);
+        for _i in 0..100 {
+            //println!("Run {}:", _i);
             (*bucket).allocate_page();
         }
     }
