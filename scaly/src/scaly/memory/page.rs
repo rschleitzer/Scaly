@@ -278,7 +278,7 @@ impl Page {
 
 #[test]
 fn test_page() {
-    use scaly::memory::bucket::StackBucket;
+    use scaly::memory::stackbucket::StackBucket;
     use scaly::memory::Pool;
     use scaly::memory::Region;
     unsafe {

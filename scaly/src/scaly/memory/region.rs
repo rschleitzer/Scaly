@@ -1,5 +1,5 @@
-use scaly::memory::bucket::StackBucket;
 use scaly::memory::page::Page;
+use scaly::memory::stackbucket::StackBucket;
 
 pub struct Region<'a> {
     pub page: &'a mut Page,

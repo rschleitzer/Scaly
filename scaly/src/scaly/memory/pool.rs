@@ -1,6 +1,6 @@
 use scaly::memory::bucket::Bucket;
-use scaly::memory::bucket::HeapBucket;
 use scaly::memory::bucket::BUCKET_PAGES;
+use scaly::memory::heapbucket::HeapBucket;
 use scaly::memory::page::Page;
 use scaly::memory::page::PAGE_SIZE;
 use std::alloc::alloc;
