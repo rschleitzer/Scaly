@@ -1,7 +1,9 @@
 use scaly::memory::bucket::Bucket;
 use scaly::memory::bucket::HeapBucket;
 use scaly::memory::bucket::BUCKET_PAGES;
+use scaly::memory::page::Page;
 use scaly::memory::page::PAGE_SIZE;
+use std::alloc::alloc;
 use std::alloc::alloc_zeroed;
 use std::alloc::dealloc;
 use std::alloc::Layout;
@@ -29,13 +31,22 @@ impl Pool {
             if pointers_memory == null_mut() {
                 panic!("Unable to allocate maps memory: Out of memory.");
             }
-            //println!("pool.maps:{:X}, pool.pointers:{:X}", maps_memory as usize, pointers_memory as usize);
+            // println!(
+            //     "pool.maps:{:X}, pool.pointers:{:X}",
+            //     maps_memory as usize, pointers_memory as usize
+            // );
             Pool {
                 root_map: 0,
                 maps: maps_memory as *mut usize,
                 pointers: pointers_memory as *mut HeapBucket,
             }
         }
+    }
+    pub fn allocate_page(&mut self) -> *mut Page {
+        let page =
+            unsafe { alloc(Layout::from_size_align_unchecked(PAGE_SIZE, PAGE_SIZE)) as *mut Page };
+        //println!("Pool allocated page at {:X}", page as usize);
+        page
     }
 }
 
@@ -45,10 +56,12 @@ impl Drop for Pool {
             panic!("Pool is not empty!")
         }
         unsafe {
+            //println!("Pool: dealloc {:X}", self.maps as *const u8 as usize);
             dealloc(
                 self.maps as *mut u8,
                 Layout::from_size_align_unchecked(MAPS_SIZE, PAGE_SIZE),
             );
+            //println!("Pool: dealloc {:X}", self.pointers as *const u8 as usize);
             dealloc(
                 self.pointers as *mut u8,
                 Layout::from_size_align_unchecked(POINTERS_SIZE, PAGE_SIZE),

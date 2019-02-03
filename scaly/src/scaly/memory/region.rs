@@ -2,7 +2,7 @@ use scaly::memory::bucket::StackBucket;
 use scaly::memory::page::Page;
 
 pub struct Region<'a> {
-    page: &'a mut Page,
+    pub page: &'a mut Page,
 }
 
 impl<'a> Region<'a> {
@@ -70,9 +70,11 @@ fn test_region() {
             assert_eq!(*seven, 7);
             assert_eq!(*six, 6);
         }
+        // println!("one:{:X}", one as *mut i32 as usize);
+        // println!("one value: {}", *one);
         assert_eq!(*one, 1);
         assert_eq!(*two, 2);
-        (*root_stack_bucket).deallocate();
+        // (*root_stack_bucket).deallocate();
     }
     unsafe {
         let mut pool = Pool::create();
@@ -83,6 +85,6 @@ fn test_region() {
             r = Region::create(&r);
         }
 
-        (*root_stack_bucket).deallocate();
+        //(*root_stack_bucket).deallocate();
     }
 }

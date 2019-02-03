@@ -1,3 +1,4 @@
+use scaly::memory::Bucket;
 use std::alloc::alloc;
 use std::alloc::dealloc;
 use std::alloc::Layout;
@@ -132,16 +133,18 @@ impl Page {
 
     fn allocate_extension_page(&mut self) -> *mut Page {
         unsafe {
-            let page = Page::allocate_page();
+            let page = self.allocate_page();
             *(self.get_extension_page_location()) = page;
             self.current_page = page;
             &mut *page
         }
     }
 
-    fn allocate_page() -> *mut Page {
+    fn allocate_page(&mut self) -> *mut Page {
         unsafe {
-            let page = alloc(Layout::from_size_align_unchecked(PAGE_SIZE, PAGE_SIZE)) as *mut Page;
+            let bucket = Bucket::get(self as *const Page as usize);
+            //println!("Bucket: {:X}", bucket as usize);
+            let page = (*bucket).allocate_page();
             (*page).reset();
             page
         }
@@ -161,7 +164,7 @@ impl Page {
                 return (*self.allocate_extension_page()).allocate_exclusive_page();
             }
 
-            let page = Page::allocate_page();
+            let page = self.allocate_page();
             *(self.get_next_exclusive_page_location()) = page;
             self.exclusive_pages += 1;
             &mut *page
@@ -211,6 +214,7 @@ impl Page {
             PAGE_SIZE
         };
         unsafe {
+            //println!("Page: dealloc {:X}", self as *const Page as usize);
             dealloc(
                 self as *const Page as *mut u8,
                 Layout::from_size_align_unchecked(size, PAGE_SIZE),
@@ -274,84 +278,74 @@ impl Page {
 
 #[test]
 fn test_page() {
+    use scaly::memory::bucket::StackBucket;
+    use scaly::memory::Pool;
+    use scaly::memory::Region;
     unsafe {
         // Allocate a page
-        let memory = alloc(Layout::from_size_align_unchecked(PAGE_SIZE, PAGE_SIZE));
-        assert_ne!(memory, null_mut());
+        let mut pool = Pool::create();
+        let root_stack_bucket = StackBucket::create(&mut pool);
+        let r = Region::create_from_page(&*Page::get(root_stack_bucket as usize));
 
-        // Write some numbers to the page memory
-        for i in 0..PAGE_SIZE {
-            let ptr = memory.offset(i as isize);
-            *ptr = i as u8
-        }
-
-        // Initialize a Page object at the page start
-        let page = &mut *(memory as *mut Page);
-
-        assert_ne!(page.next_object_offset, 0);
-        assert_ne!(page.exclusive_pages, 0);
-
-        page.reset();
-
-        assert_eq!(page.next_object_offset, size_of::<Page>() as i32);
-        assert_eq!(page.exclusive_pages, 0);
-        assert_eq!(page.is_oversized(), false);
-        assert_eq!(page as *mut Page, page.current_page);
+        assert_eq!(r.page.next_object_offset, size_of::<Page>() as i32);
+        assert_eq!(r.page.exclusive_pages, 0);
+        assert_eq!(r.page.is_oversized(), false);
+        assert_eq!(r.page as *mut Page, r.page.current_page);
 
         {
-            let extension_page_location = page.get_extension_page_location();
+            let extension_page_location = r.page.get_extension_page_location();
             assert_eq!(
                 extension_page_location as usize,
-                page as *const Page as usize + PAGE_SIZE - size_of::<*mut *mut Page>()
+                r.page as *const Page as usize + PAGE_SIZE - size_of::<*mut *mut Page>()
             );
         }
 
         {
-            let mut location = page.get_next_location();
+            let mut location = r.page.get_next_location();
             assert_eq!(
                 location as usize,
-                page as *const Page as usize + size_of::<Page>()
+                r.page as *const Page as usize + size_of::<Page>()
             );
 
-            let answer = page.allocate(42);
+            let answer = r.page.allocate(42);
             location += 4;
-            assert_eq!(page.get_next_location(), location);
+            assert_eq!(r.page.get_next_location(), location);
 
-            let another = page.allocate_raw(1, 2);
+            let another = r.page.allocate_raw(1, 2);
             location += 1;
-            assert_eq!(page.get_next_location(), location);
+            assert_eq!(r.page.get_next_location(), location);
             *another = 43;
 
-            let eau = page.allocate_raw(4, 4) as *mut i32;
+            let eau = r.page.allocate_raw(4, 4) as *mut i32;
             location += 7;
-            assert_eq!(page.get_next_location(), location);
+            assert_eq!(r.page.get_next_location(), location);
             *eau = 4711;
-            assert_eq!(Page::get(eau as usize), page as *mut Page);
+            assert_eq!(Page::get(eau as usize), r.page as *mut Page);
 
             // Allocate an oversized page which should cause allocating an exclusive page
-            let array = page.allocate_raw(PAGE_SIZE, 8) as *mut usize;
+            let array = r.page.allocate_raw(PAGE_SIZE, 8) as *mut usize;
             for i in 0..PAGE_SIZE / size_of::<usize>() - 1 {
                 *(array.offset(i as isize)) = i;
             }
-            assert_eq!(page.get_next_location(), location);
-            assert_eq!(page as *mut Page, page.current_page);
+            assert_eq!(r.page.get_next_location(), location);
+            assert_eq!(r.page as *mut Page, r.page.current_page);
 
             // Overflow the page
             for _ in 0..PAGE_SIZE {
-                page.allocate_raw(1, 1);
+                r.page.allocate_raw(1, 1);
             }
 
-            assert_ne!(page as *mut Page, page.current_page);
-            assert_eq!(*(page.get_extension_page_location()), page.current_page);
-            assert_eq!((*page.current_page).exclusive_pages, 0);
-            assert_eq!((*page.current_page).current_page, page.current_page);
+            assert_ne!(r.page as *mut Page, r.page.current_page);
+            assert_eq!(*(r.page.get_extension_page_location()), r.page.current_page);
+            assert_eq!((*r.page.current_page).exclusive_pages, 0);
+            assert_eq!((*r.page.current_page).current_page, r.page.current_page);
 
-            assert_eq!(page.exclusive_pages, 1);
+            assert_eq!(r.page.exclusive_pages, 1);
             assert_eq!(*answer, 42);
             assert_eq!(*another, 43);
             assert_eq!(*eau, 4711);
 
-            let exclusive_page = page.get_next_exclusive_page_location().offset(1);
+            let exclusive_page = r.page.get_next_exclusive_page_location().offset(1);
             assert_eq!((**exclusive_page).current_page, null_mut());
             assert_eq!((**exclusive_page).exclusive_pages, 0);
             assert_eq!(
@@ -360,12 +354,12 @@ fn test_page() {
             );
             assert_eq!(Page::get(array as usize), *exclusive_page);
 
-            let success = page.reclaim_array(Page::get(array as usize));
+            let success = r.page.reclaim_array(Page::get(array as usize));
             assert_eq!(success, true);
-            assert_eq!(page.exclusive_pages, 0);
+            assert_eq!(r.page.exclusive_pages, 0);
 
-            page.clear();
-            page.forget();
+            r.page.clear();
+            r.page.forget();
         }
     }
 }
