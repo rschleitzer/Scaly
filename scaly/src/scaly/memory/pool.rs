@@ -3,7 +3,6 @@ use scaly::memory::bucket::BUCKET_PAGES;
 use scaly::memory::heapbucket::HeapBucket;
 use scaly::memory::page::Page;
 use scaly::memory::page::PAGE_SIZE;
-use std::alloc::alloc;
 use std::alloc::alloc_zeroed;
 use std::alloc::dealloc;
 use std::alloc::Layout;
@@ -14,6 +13,7 @@ pub struct Pool {
     root_map: usize,
     maps: *mut usize,
     pointers: *mut HeapBucket,
+    pub current_bucket: *mut HeapBucket,
 }
 
 const MAPS_SIZE: usize = BUCKET_PAGES * BUCKET_PAGES / size_of::<u8>();
@@ -39,14 +39,26 @@ impl Pool {
                 root_map: 0,
                 maps: maps_memory as *mut usize,
                 pointers: pointers_memory as *mut HeapBucket,
+                current_bucket: null_mut(),
             }
         }
     }
+
+    pub fn allocate_bucket(&mut self) {
+        println!("Pool allocating bucket.");
+        self.current_bucket = HeapBucket::create(self as *mut Pool);
+    }
+
     pub fn allocate_page(&mut self) -> *mut Page {
-        let page =
-            unsafe { alloc(Layout::from_size_align_unchecked(PAGE_SIZE, PAGE_SIZE)) as *mut Page };
-        //println!("Pool allocated page at {:X}", page as usize);
-        page
+        if self.current_bucket == null_mut() {
+            self.allocate_bucket();
+        };
+        unsafe {
+            //println!("Pool current_bucket {:X}", self.current_bucket as usize);
+            let page = (*self.current_bucket).allocate_page();
+            //println!("Pool allocated page at {:X}", page as usize);
+            page
+        }
     }
 }
 
