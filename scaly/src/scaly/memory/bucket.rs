@@ -28,6 +28,16 @@ impl Bucket {
         }
     }
 
+    pub fn deallocate_page(&mut self, page: &Page) {
+        match self {
+            Heap(h) => h.deallocate_page(page),
+            Stack(_) => panic!(
+                "Tried to deallocate the page {:X} from a StackBucket.",
+                page as *const Page as usize
+            ),
+        }
+    }
+
     pub fn allocate_bucket() -> *mut Page {
         unsafe {
             let memory = alloc(Layout::from_size_align_unchecked(

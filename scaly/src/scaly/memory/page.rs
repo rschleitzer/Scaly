@@ -208,18 +208,23 @@ impl Page {
     }
 
     pub fn forget(&self) {
-        let size = if self.current_page == null_mut() {
-            self.next_object_offset as usize + self.exclusive_pages as usize * 0x100000000
-        } else {
-            PAGE_SIZE
-        };
+        //println!("Page: dealloc {:X}", self as *const Page as usize);
         unsafe {
-            //println!("Page: dealloc {:X}", self as *const Page as usize);
-            dealloc(
-                self as *const Page as *mut u8,
-                Layout::from_size_align_unchecked(size, PAGE_SIZE),
-            )
-        }
+            if self.current_page == null_mut() {
+                dealloc(
+                    self as *const Page as *mut u8,
+                    Layout::from_size_align_unchecked(
+                        self.next_object_offset as usize
+                            + self.exclusive_pages as usize * 0x100000000,
+                        PAGE_SIZE,
+                    ),
+                );
+            } else {
+                let bucket = Bucket::get(self as *const Page as usize);
+                //println!("Bucket: {:X}", bucket as usize);
+                (*bucket).deallocate_page(self);
+            }
+        };
     }
 
     pub fn reclaim_array(&mut self, address: *mut Page) -> bool {
@@ -359,7 +364,7 @@ fn test_page() {
             assert_eq!(r.page.exclusive_pages, 0);
 
             r.page.clear();
-            r.page.forget();
+            // r.page.forget();
         }
     }
 }
