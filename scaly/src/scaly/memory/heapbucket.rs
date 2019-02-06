@@ -44,7 +44,7 @@ impl HeapBucket {
             unsafe {
                 // println!("self.pool: {:X}", self.pool as usize);
                 if self as *mut HeapBucket == (*self.pool).current_bucket {
-                    //println!("Let the pool allocate a new one.");
+                    // println!("Let the pool allocate a new one.");
                     (*self.pool).allocate_bucket();
                 }
                 return (*(*self.pool).current_bucket).allocate_page();
@@ -73,7 +73,11 @@ impl HeapBucket {
         if position > BUCKET_PAGES - 1 {
             panic!("Position invalid for page {:X}", base_page)
         };
-        let bit = 1 << (BUCKET_PAGES - position);
+        let bit = if position == 0 {
+            1
+        } else {
+            1 << (BUCKET_PAGES - position)
+        };
         // println!("Bit for deallocation: {:X}", bit);
         if self.map & bit != 0 {
             panic!("Page {:X} was not allocated!", base_page)
