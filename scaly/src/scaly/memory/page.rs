@@ -288,8 +288,8 @@ fn test_page() {
     use scaly::memory::Region;
     unsafe {
         // Allocate a page
-        let mut pool = Pool::create();
-        let root_stack_bucket = StackBucket::create(&mut pool);
+        let pool = Pool::create();
+        let root_stack_bucket = StackBucket::create(pool);
         let r = Region::create_from_page(&*Page::get(root_stack_bucket as usize));
 
         assert_eq!(r.page.next_object_offset, size_of::<Page>() as i32);

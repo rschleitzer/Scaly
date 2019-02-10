@@ -3,80 +3,103 @@ use scaly::memory::bucket::BUCKET_PAGES;
 use scaly::memory::heapbucket::HeapBucket;
 use scaly::memory::page::Page;
 use scaly::memory::page::PAGE_SIZE;
-use std::alloc::alloc_zeroed;
+use std::alloc::alloc;
 use std::alloc::dealloc;
 use std::alloc::Layout;
 use std::mem::size_of;
 use std::ptr::null_mut;
+use std::usize::MAX;
 
 pub struct Pool {
-    root_map: usize,
-    maps: *mut usize,
-    pointers: *mut HeapBucket,
-    pub current_bucket: *mut HeapBucket,
+    map: usize,
 }
 
-const MAPS_SIZE: usize = BUCKET_PAGES * BUCKET_PAGES / size_of::<u8>();
-const POINTERS_SIZE: usize = BUCKET_PAGES * BUCKET_PAGES * size_of::<*const Bucket>();
-
 impl Pool {
-    pub fn create() -> Pool {
+    pub fn create() -> *mut Pool {
         unsafe {
-            let maps_memory = alloc_zeroed(Layout::from_size_align_unchecked(MAPS_SIZE, PAGE_SIZE));
-            if maps_memory == null_mut() {
-                panic!("Unable to allocate maps memory: Out of memory.");
+            let memory = alloc(Layout::from_size_align_unchecked(
+                PAGE_SIZE * BUCKET_PAGES * BUCKET_PAGES,
+                PAGE_SIZE * BUCKET_PAGES,
+            ));
+            println!("Pool memory: {:X}.", memory as usize);
+            if memory == null_mut() {
+                panic!("Unable to crete pool: Out of memory.");
             }
-            let pointers_memory =
-                alloc_zeroed(Layout::from_size_align_unchecked(POINTERS_SIZE, PAGE_SIZE));
-            if pointers_memory == null_mut() {
-                panic!("Unable to allocate maps memory: Out of memory.");
-            }
-            // println!(
-            //     "pool.maps:{:X}, pool.pointers:{:X}",
-            //     maps_memory as usize, pointers_memory as usize
-            // );
-            Pool {
-                root_map: 0,
-                maps: maps_memory as *mut usize,
-                pointers: pointers_memory as *mut HeapBucket,
-                current_bucket: null_mut(),
-            }
-        }
-    }
+            let mut pool: *mut Pool = null_mut();
 
-    pub fn allocate_bucket(&mut self) {
-        //println!("Pool allocating bucket.");
-        self.current_bucket = HeapBucket::create(self as *mut Pool);
+            for i in 0..BUCKET_PAGES - 1 {
+                let bucket_page = (memory as usize + PAGE_SIZE * BUCKET_PAGES * i) as *mut Page;
+                // println!("Bucket page: {:X}.", bucket_page as usize);
+                (*bucket_page).reset();
+                let bucket = (*bucket_page).allocate(Bucket::Heap(HeapBucket {
+                    pool: null_mut(),
+                    map: MAX,
+                }));
+                // println!("Bucket: {:X}.", bucket as usize);
+                if i == 0 {
+                    let page = memory as *mut Page;
+                    pool = (*page).allocate(Pool { map: MAX });
+                    println!("Pool object: {:X}.", pool as usize);
+                }
+                (*bucket).set_pool(pool);
+            }
+            pool
+        }
     }
 
     pub fn allocate_page(&mut self) -> *mut Page {
-        if self.current_bucket == null_mut() {
-            self.allocate_bucket();
-        };
-        unsafe {
-            //println!("Pool current_bucket {:X}", self.current_bucket as usize);
-            let page = (*self.current_bucket).allocate_page();
-            //println!("Pool allocated page at {:X}", page as usize);
-            page
+        //println!("Pool allocating page.");
+        if self.map == 0 {
+            panic!("Not more than one pool supported currently.");
         }
+        let pool_page_address = Page::get(self as *const Pool as usize) as usize;
+        let bucket_page_address = if self.map == MAX {
+            Page::get(self as *const Pool as usize) as usize
+        } else {
+            let position = Bucket::find_least_position(self.map);
+            pool_page_address + PAGE_SIZE * BUCKET_PAGES * position
+        };
+        let bucket = (bucket_page_address + size_of::<Page>()) as *mut Bucket;
+        unsafe { (*bucket).allocate_page() }
+    }
+
+    fn get_allocation_bit(&self, page: usize) -> usize {
+        let first_bucket_address = Page::get(self as *const Pool as usize) as usize;
+        let distance = page - first_bucket_address;
+        let position = distance / PAGE_SIZE / BUCKET_PAGES;
+        // println!("Pool position to be marked as full: {}", position);
+        if position == 0 {
+            1
+        } else {
+            1 << (BUCKET_PAGES - position)
+        }
+    }
+
+    pub fn mark_as_full(&mut self, page: usize) {
+        let bit = self.get_allocation_bit(page);
+        // println!("Pool bit to be marked as full: {":X"}", bit);
+        self.map = self.map & !bit;
+    }
+
+    pub fn mark_as_free(&mut self, page: usize) {
+        let bit = self.get_allocation_bit(page);
+        self.map = self.map | bit;
     }
 }
 
 impl Drop for Pool {
     fn drop(&mut self) {
-        if self.root_map != 0 {
+        if self.map != 0 {
             panic!("Pool is not empty!")
         }
         unsafe {
-            //println!("Pool: dealloc {:X}", self.maps as *const u8 as usize);
-            dealloc(
-                self.maps as *mut u8,
-                Layout::from_size_align_unchecked(MAPS_SIZE, PAGE_SIZE),
-            );
             //println!("Pool: dealloc {:X}", self.pointers as *const u8 as usize);
             dealloc(
-                self.pointers as *mut u8,
-                Layout::from_size_align_unchecked(POINTERS_SIZE, PAGE_SIZE),
+                &*self as *const Pool as *mut u8,
+                Layout::from_size_align_unchecked(
+                    PAGE_SIZE * BUCKET_PAGES * BUCKET_PAGES,
+                    PAGE_SIZE * BUCKET_PAGES,
+                ),
             );
         }
     }

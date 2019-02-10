@@ -5,13 +5,14 @@ use scaly::memory::bucket::BUCKET_PAGES;
 use scaly::memory::page::Page;
 use scaly::memory::page::PAGE_SIZE;
 use scaly::memory::pool::Pool;
+use std::alloc::alloc;
 use std::alloc::dealloc;
 use std::alloc::Layout;
 use std::mem::size_of;
 use std::ptr::null_mut;
 
 pub struct StackBucket {
-    pool: *mut Pool,
+    pub pool: *mut Pool,
     next_bucket: *mut StackBucket,
 }
 
@@ -54,7 +55,7 @@ impl StackBucket {
     pub fn create(pool: *mut Pool) -> *mut StackBucket {
         unsafe {
             // println!("BEFORE Bucket::allocate_bucket");
-            let page = Bucket::allocate_bucket();
+            let page = StackBucket::allocate_bucket();
             let bucket = (*page).allocate(Bucket::Stack(StackBucket {
                 next_bucket: null_mut(),
                 pool: pool,
@@ -69,7 +70,21 @@ impl StackBucket {
             stack_bucket_pointer
         }
     }
-
+    pub fn allocate_bucket() -> *mut Page {
+        unsafe {
+            let memory = alloc(Layout::from_size_align_unchecked(
+                PAGE_SIZE * BUCKET_PAGES,
+                PAGE_SIZE * BUCKET_PAGES,
+            ));
+            if memory == null_mut() {
+                panic!("Unable to crete a new stack bucket: Out of memory.");
+            }
+            //println!("bucket memory:{:X}", memory as usize);
+            let page = memory as *mut Page;
+            (*page).reset();
+            page
+        }
+    }
     pub fn deallocate(&self) {
         let mut bucket = self as *const StackBucket;
         unsafe {

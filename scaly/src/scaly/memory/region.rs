@@ -33,8 +33,8 @@ fn test_region() {
     use scaly::memory::bucket::BUCKET_PAGES;
     use scaly::memory::Pool;
     unsafe {
-        let mut pool = Pool::create();
-        let root_stack_bucket = StackBucket::create(&mut pool);
+        let pool = Pool::create();
+        let root_stack_bucket = StackBucket::create(pool);
         let mut r1 = Region::create_from_page(&*Page::get(root_stack_bucket as usize));
         //println!("r1.page:{:X}", r1.page as *mut Page as usize);
         let one = r1.new(1);
@@ -77,8 +77,8 @@ fn test_region() {
         // (*root_stack_bucket).deallocate();
     }
     unsafe {
-        let mut pool = Pool::create();
-        let root_stack_bucket = StackBucket::create(&mut pool);
+        let pool = Pool::create();
+        let root_stack_bucket = StackBucket::create(pool);
 
         let mut r = Region::create_from_page(&*Page::get(root_stack_bucket as usize));
         for _ in 1..BUCKET_PAGES * 2 {
