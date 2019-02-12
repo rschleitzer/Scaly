@@ -21,7 +21,7 @@ impl Pool {
                 PAGE_SIZE * BUCKET_PAGES * BUCKET_PAGES,
                 PAGE_SIZE * BUCKET_PAGES,
             ));
-            println!("Pool memory: {:X}.", memory as usize);
+            // println!("Pool memory: {:X}.", memory as usize);
             if memory == null_mut() {
                 panic!("Unable to crete pool: Out of memory.");
             }
@@ -39,7 +39,7 @@ impl Pool {
                 if i == 0 {
                     let page = memory as *mut Page;
                     pool = (*page).allocate(Pool { map: MAX });
-                    println!("Pool object: {:X}.", pool as usize);
+                    // println!("Pool object: {:X}.", pool as usize);
                 }
                 (*bucket).set_pool(pool);
             }
@@ -101,6 +101,22 @@ impl Drop for Pool {
                     PAGE_SIZE * BUCKET_PAGES,
                 ),
             );
+        }
+    }
+}
+
+#[test]
+fn test_pool() {
+    use scaly::memory::region::Region;
+    use scaly::memory::stackbucket::StackBucket;
+    let pool = Pool::create();
+    unsafe {
+        let root_stack_bucket = StackBucket::create(pool);
+        {
+            let mut r = Region::create_from_page(&*Page::get(root_stack_bucket as usize));
+            for i in 1..60000 {
+                r.new(i);
+            }
         }
     }
 }

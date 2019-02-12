@@ -134,6 +134,7 @@ impl Page {
     fn allocate_extension_page(&mut self) -> *mut Page {
         unsafe {
             let page = self.allocate_page();
+            // println!("Allocated extension page: {:X}", page as usize);
             *(self.get_extension_page_location()) = page;
             self.current_page = page;
             &mut *page
@@ -143,9 +144,8 @@ impl Page {
     fn allocate_page(&mut self) -> *mut Page {
         unsafe {
             let bucket = Bucket::get(self as *const Page as usize);
-            //println!("Bucket: {:X}", bucket as usize);
+            // println!("Bucket: {:X}", bucket as usize);
             let page = (*bucket).allocate_page();
-            (*page).reset();
             page
         }
     }

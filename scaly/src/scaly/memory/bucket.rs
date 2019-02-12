@@ -16,9 +16,9 @@ pub enum Bucket {
 
 impl Bucket {
     pub fn get(address: usize) -> *mut Bucket {
-        println!("address: {:X}", address);
+        // println!("address: {:X}", address);
         let address_masked = address & !(PAGE_SIZE * BUCKET_PAGES - 1);
-        println!("address_masked: {:X}", address_masked);
+        // println!("address_masked: {:X}", address_masked);
         (address_masked + size_of::<Page>()) as *mut Bucket
     }
 
