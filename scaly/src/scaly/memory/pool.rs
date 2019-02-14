@@ -23,23 +23,24 @@ impl Pool {
             ));
             // println!("Pool memory: {:X}.", memory as usize);
             if memory == null_mut() {
-                panic!("Unable to crete pool: Out of memory.");
+                panic!("Unable to create pool: Out of memory.");
             }
             let mut pool: *mut Pool = null_mut();
 
-            for i in 0..BUCKET_PAGES - 1 {
+            for i in 0..BUCKET_PAGES {
                 let bucket_page = (memory as usize + PAGE_SIZE * BUCKET_PAGES * i) as *mut Page;
-                // println!("Bucket page: {:X}.", bucket_page as usize);
+                // println!("Bucket page: {}, {:X}.", i, bucket_page as usize);
                 (*bucket_page).reset();
                 let bucket = (*bucket_page).allocate(Bucket::Heap(HeapBucket {
                     pool: null_mut(),
                     map: MAX,
                 }));
-                // println!("Bucket: {:X}.", bucket as usize);
+                // println!("Bucket initialized: {:X}.", bucket as usize);
                 if i == 0 {
                     let page = memory as *mut Page;
                     pool = (*page).allocate(Pool { map: MAX });
                     // println!("Pool object: {:X}.", pool as usize);
+                    // println!("Pool map after creation: {:X}.", (*pool).map);
                 }
                 (*bucket).set_pool(pool);
             }
@@ -48,18 +49,22 @@ impl Pool {
     }
 
     pub fn allocate_page(&mut self) -> *mut Page {
-        //println!("Pool allocating page.");
+        // println!("Pool map before allocation: {:X}.", self.map);
         if self.map == 0 {
             panic!("Not more than one pool supported currently.");
         }
         let pool_page_address = Page::get(self as *const Pool as usize) as usize;
+        // println!("Pool page address: {:X}.", pool_page_address);
         let bucket_page_address = if self.map == MAX {
             Page::get(self as *const Pool as usize) as usize
         } else {
             let position = Bucket::find_least_position(self.map);
-            pool_page_address + PAGE_SIZE * BUCKET_PAGES * position
+            // println!("Pool least position: {}.", position);
+            pool_page_address + PAGE_SIZE * BUCKET_PAGES * (position - 1)
         };
+        // println!("Bucket page address: {:X}.", bucket_page_address);
         let bucket = (bucket_page_address + size_of::<Page>()) as *mut Bucket;
+        // println!("Bucket address: {:X}.", bucket as usize);
         unsafe { (*bucket).allocate_page() }
     }
 
@@ -67,17 +72,12 @@ impl Pool {
         let first_bucket_address = Page::get(self as *const Pool as usize) as usize;
         let distance = page - first_bucket_address;
         let position = distance / PAGE_SIZE / BUCKET_PAGES;
-        // println!("Pool position to be marked as full: {}", position);
-        if position == 0 {
-            1
-        } else {
-            1 << (BUCKET_PAGES - position)
-        }
+        1 << (BUCKET_PAGES - 1 - position)
     }
 
     pub fn mark_as_full(&mut self, page: usize) {
         let bit = self.get_allocation_bit(page);
-        // println!("Pool bit to be marked as full: {":X"}", bit);
+        // println!("Pool bit to be marked as full: {:X}", bit);
         self.map = self.map & !bit;
     }
 
@@ -114,7 +114,7 @@ fn test_pool() {
         let root_stack_bucket = StackBucket::create(pool);
         {
             let mut r = Region::create_from_page(&*Page::get(root_stack_bucket as usize));
-            for i in 1..60000 {
+            for i in 1..4000000 {
                 r.new(i);
             }
         }

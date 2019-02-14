@@ -12,6 +12,8 @@ pub struct HeapBucket {
 
 impl HeapBucket {
     pub fn allocate_page(&mut self) -> *mut Page {
+        // println!("HeapBucket self:{:X}", self as *const HeapBucket as usize);
+        // println!("HeapBucket map:{:X}", self.map);
         if self.map == MAX {
             self.map = self.map - 1;
             let page = Page::get(self as *const HeapBucket as usize);
@@ -23,7 +25,7 @@ impl HeapBucket {
             unsafe {
                 // println!("self.pool: {:X}", self.pool as usize);
                 (*self.pool).mark_as_full(Page::get(self as *const HeapBucket as usize) as usize);
-                (*self.pool).allocate_page();
+                return (*self.pool).allocate_page();
             }
         }
 
