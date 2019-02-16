@@ -31,9 +31,11 @@ impl<'a> Drop for Region<'a> {
 #[test]
 fn test_region() {
     use scaly::memory::bucket::BUCKET_PAGES;
+    use scaly::memory::heap::Heap;
     use scaly::memory::Pool;
     unsafe {
-        let pool = Pool::create();
+        let mut heap = Heap::create();
+        let pool = Pool::create(&mut heap);
         let root_stack_bucket = StackBucket::create(pool);
         let mut r1 = Region::create_from_page(&*Page::get(root_stack_bucket as usize));
         //println!("r1.page:{:X}", r1.page as *mut Page as usize);
@@ -77,7 +79,9 @@ fn test_region() {
         // (*root_stack_bucket).deallocate();
     }
     unsafe {
-        let pool = Pool::create();
+        use scaly::memory::heap::Heap;
+        let mut heap = Heap::create();
+        let pool = Pool::create(&mut heap);
         let root_stack_bucket = StackBucket::create(pool);
 
         let mut r = Region::create_from_page(&*Page::get(root_stack_bucket as usize));

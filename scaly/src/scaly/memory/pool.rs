@@ -1,5 +1,6 @@
 use scaly::memory::bucket::Bucket;
 use scaly::memory::bucket::BUCKET_PAGES;
+use scaly::memory::heap::Heap;
 use scaly::memory::heapbucket::HeapBucket;
 use scaly::memory::page::Page;
 use scaly::memory::page::PAGE_SIZE;
@@ -12,10 +13,11 @@ use std::usize::MAX;
 
 pub struct Pool {
     map: usize,
+    heap: *mut Heap,
 }
 
 impl Pool {
-    pub fn create() -> *mut Pool {
+    pub fn create(heap: *mut Heap) -> *mut Pool {
         unsafe {
             let memory = alloc(Layout::from_size_align_unchecked(
                 PAGE_SIZE * BUCKET_PAGES * BUCKET_PAGES,
@@ -38,7 +40,10 @@ impl Pool {
                 // println!("Bucket initialized: {:X}.", bucket as usize);
                 if i == 0 {
                     let page = memory as *mut Page;
-                    pool = (*page).allocate(Pool { map: MAX });
+                    pool = (*page).allocate(Pool {
+                        map: MAX,
+                        heap: heap,
+                    });
                     // println!("Pool object: {:X}.", pool as usize);
                     // println!("Pool map after creation: {:X}.", (*pool).map);
                 }
@@ -51,7 +56,10 @@ impl Pool {
     pub fn allocate_page(&mut self) -> *mut Page {
         // println!("Pool map before allocation: {:X}.", self.map);
         if self.map == 0 {
-            panic!("Not more than one pool supported currently.");
+            unsafe {
+                (*self.heap).mark_as_full(self);
+                (*self.heap).allocate_page()
+            };
         }
         let pool_page_address = Page::get(self as *const Pool as usize) as usize;
         // println!("Pool page address: {:X}.", pool_page_address);
@@ -83,12 +91,22 @@ impl Pool {
 
     pub fn mark_as_free(&mut self, page: usize) {
         let bit = self.get_allocation_bit(page);
+        // println!("Pool bit to be marked as free: {:X}", bit);
+        let old_map = self.map;
         self.map = self.map | bit;
+        if self.map == MAX {
+            unsafe {
+                (*self.heap).deallocate(self);
+            }
+        }
+        if old_map == 0 {
+            unsafe {
+                (*self.heap).mark_as_free(self);
+            }
+        }
     }
-}
 
-impl Drop for Pool {
-    fn drop(&mut self) {
+    pub fn deallocate(&mut self) {
         if self.map != 0 {
             panic!("Pool is not empty!")
         }
@@ -109,7 +127,8 @@ impl Drop for Pool {
 fn test_pool() {
     use scaly::memory::region::Region;
     use scaly::memory::stackbucket::StackBucket;
-    let pool = Pool::create();
+    let mut heap = Heap::create();
+    let pool = Pool::create(&mut heap);
     unsafe {
         let root_stack_bucket = StackBucket::create(pool);
         {

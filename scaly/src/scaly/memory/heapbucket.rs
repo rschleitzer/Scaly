@@ -61,9 +61,10 @@ impl HeapBucket {
             panic!("Page {:X} was not allocated!", base_page)
         }
         // println!("self.map before deallocation: {:X}", self.map);
+        let old_map = self.map;
         self.map = self.map | bit;
         // println!("self.map after deallocation: {:X}", self.map);
-        if self.map == MAX {
+        if old_map == MAX {
             unsafe {
                 (*self.pool).mark_as_free(base_page);
             }
@@ -73,10 +74,11 @@ impl HeapBucket {
 
 #[test]
 fn test_heapbucket() {
-    use scaly::memory::bucket::Bucket::Heap;
-    use scaly::memory::bucket::Bucket::Stack;
+    use scaly::memory::bucket::Bucket;
+    use scaly::memory::heap::Heap;
     unsafe {
-        let pool = Pool::create();
+        let mut heap = Heap::create();
+        let pool = Pool::create(&mut heap);
         println!("pool: {:X}", pool as usize);
         let bucket = Bucket::get(pool as usize);
         let _page00 = (*bucket).allocate_page();
@@ -145,8 +147,8 @@ fn test_heapbucket() {
         let page63 = (*bucket).allocate_page();
         assert_eq!(
             match *bucket {
-                Stack(ref _s) => 0,
-                Heap(ref h) => h.map,
+                Bucket::Stack(ref _s) => 0,
+                Bucket::Heap(ref h) => h.map,
             },
             0
         );
@@ -155,8 +157,8 @@ fn test_heapbucket() {
         assert_eq!(page62, page62a);
         assert_eq!(
             match *bucket {
-                Stack(ref _s) => 0,
-                Heap(ref h) => h.map,
+                Bucket::Stack(ref _s) => 0,
+                Bucket::Heap(ref h) => h.map,
             },
             0
         );
@@ -174,8 +176,8 @@ fn test_heapbucket() {
         assert_eq!(page05, page05a);
         assert_eq!(
             match *bucket {
-                Stack(ref _s) => 0,
-                Heap(ref h) => h.map,
+                Bucket::Stack(ref _s) => 0,
+                Bucket::Heap(ref h) => h.map,
             },
             0
         );
@@ -187,8 +189,8 @@ fn test_heapbucket() {
         assert_eq!(page18, page18a);
         assert_eq!(
             match *bucket {
-                Stack(ref _s) => 0,
-                Heap(ref h) => h.map,
+                Bucket::Stack(ref _s) => 0,
+                Bucket::Heap(ref h) => h.map,
             },
             0
         );
@@ -197,8 +199,8 @@ fn test_heapbucket() {
         assert_eq!(page63, page63a);
         assert_eq!(
             match *bucket {
-                Stack(ref _s) => 0,
-                Heap(ref h) => h.map,
+                Bucket::Stack(ref _s) => 0,
+                Bucket::Heap(ref h) => h.map,
             },
             0
         );

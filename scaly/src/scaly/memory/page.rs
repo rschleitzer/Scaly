@@ -283,12 +283,14 @@ impl Page {
 
 #[test]
 fn test_page() {
+    use scaly::memory::heap::Heap;
     use scaly::memory::stackbucket::StackBucket;
     use scaly::memory::Pool;
     use scaly::memory::Region;
     unsafe {
         // Allocate a page
-        let pool = Pool::create();
+        let mut heap = Heap::create();
+        let pool = Pool::create(&mut heap);
         let root_stack_bucket = StackBucket::create(pool);
         let r = Region::create_from_page(&*Page::get(root_stack_bucket as usize));
 
