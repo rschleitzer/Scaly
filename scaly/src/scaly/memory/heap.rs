@@ -86,4 +86,7 @@ fn test_heap() {
             }
         }
     }
+    // if heap.map != MAX {
+    //     panic!("Heap not empty at the end.")
+    // }
 }

@@ -108,13 +108,13 @@ impl Pool {
     }
 
     pub fn deallocate(&mut self) {
-        if self.map != 0 {
+        if self.map != MAX {
             panic!("Pool is not empty!")
         }
         unsafe {
             //println!("Pool: dealloc {:X}", self.pointers as *const u8 as usize);
             dealloc(
-                &*self as *const Pool as *mut u8,
+                Page::get(self as *const Pool as usize) as *mut u8,
                 Layout::from_size_align_unchecked(
                     PAGE_SIZE * BUCKET_PAGES * BUCKET_PAGES,
                     PAGE_SIZE * BUCKET_PAGES,
