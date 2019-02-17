@@ -24,15 +24,16 @@ impl Heap {
             panic!("Not more than one heap supported currently.");
         }
 
-        let position = Bucket::find_least_position(self.map);
-        if self.pools[position] == null_mut() {
-            self.pools[position] = Pool::create(self);
-            println!(
-                "Heap allocated pool at: {:X}.",
-                self.pools[position] as usize
-            );
+        let index = Bucket::find_least_position(self.map) - 1;
+        // println!("Heap index: {}.", index);
+        if self.pools[index] == null_mut() {
+            self.pools[index] = Pool::create(self);
+            println!("Heap allocated pool at: {:X}.", self.pools[index] as usize);
         }
-        unsafe { (*self.pools[position]).allocate_page() }
+        // println!("Heap allocated pool has a map: {:X}.", unsafe {
+        //     (*self.pools[index]).map
+        // });
+        unsafe { (*self.pools[index]).allocate_page() }
     }
 
     pub fn get_allocation_position(&self, pool: *mut Pool) -> usize {
@@ -53,6 +54,7 @@ impl Heap {
         let bit = self.get_allocation_bit(pool);
         // println!("Heap bit to be marked as full: {:X}", bit);
         self.map = self.map & !bit;
+        // println!("Heap map after mark as full: {:X}.", self.map);
     }
 
     pub fn mark_as_free(&mut self, pool: *mut Pool) {
@@ -72,11 +74,16 @@ impl Heap {
 
 #[test]
 fn test_heap() {
+    use scaly::memory::region::Region;
+    use scaly::memory::stackbucket::StackBucket;
     let mut heap = Heap::create();
-    let page = heap.allocate_page();
-    for i in 0..1000 {
-        unsafe {
-            (*page).allocate(i);
+    unsafe {
+        let root_stack_bucket = StackBucket::create(&mut heap);
+        {
+            let mut r = Region::create_from_page(&*Page::get(root_stack_bucket as usize));
+            for i in 1..266000000 {
+                r.new(i);
+            }
         }
     }
 }

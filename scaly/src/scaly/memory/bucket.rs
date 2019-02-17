@@ -3,7 +3,6 @@ use scaly::memory::bucket::Bucket::Stack;
 use scaly::memory::heapbucket::HeapBucket;
 use scaly::memory::page::Page;
 use scaly::memory::page::PAGE_SIZE;
-use scaly::memory::pool::Pool;
 use scaly::memory::stackbucket::StackBucket;
 use std::mem::size_of;
 
@@ -26,13 +25,6 @@ impl Bucket {
         match self {
             Stack(s) => s.allocate_page(),
             Heap(h) => h.allocate_page(),
-        }
-    }
-
-    pub fn set_pool(&mut self, pool: *mut Pool) {
-        match self {
-            Stack(s) => s.pool = pool,
-            Heap(h) => h.pool = pool,
         }
     }
 

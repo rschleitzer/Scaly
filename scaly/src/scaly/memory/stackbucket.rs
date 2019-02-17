@@ -1,10 +1,8 @@
 use scaly::memory::bucket::Bucket;
-use scaly::memory::bucket::Bucket::Heap;
-use scaly::memory::bucket::Bucket::Stack;
 use scaly::memory::bucket::BUCKET_PAGES;
+use scaly::memory::heap::Heap;
 use scaly::memory::page::Page;
 use scaly::memory::page::PAGE_SIZE;
-use scaly::memory::pool::Pool;
 use std::alloc::alloc;
 use std::alloc::dealloc;
 use std::alloc::Layout;
@@ -12,13 +10,13 @@ use std::mem::size_of;
 use std::ptr::null_mut;
 
 pub struct StackBucket {
-    pub pool: *mut Pool,
+    pub heap: *mut Heap,
     next_bucket: *mut StackBucket,
 }
 
 impl StackBucket {
     pub fn allocate_page(&mut self) -> *mut Page {
-        unsafe { (*self.pool).allocate_page() }
+        unsafe { (*self.heap).allocate_page() }
     }
     pub fn new_page(page: &Page) -> *mut Page {
         let page_address = page as *const Page as usize;
@@ -29,8 +27,8 @@ impl StackBucket {
             let bucket = (stack_bucket_page_address + size_of::<Page>()) as *mut Bucket;
             let stack_bucket = unsafe {
                 match *bucket {
-                    Stack(ref mut s) => s,
-                    Heap(_) => panic!("Oops, we have a heap bucket which cannot happen."),
+                    Bucket::Stack(ref mut s) => s,
+                    Bucket::Heap(_) => panic!("Oops, we have a heap bucket which cannot happen."),
                 }
             };
             (*stack_bucket).get_page_from_next_bucket()
@@ -46,24 +44,24 @@ impl StackBucket {
     fn get_page_from_next_bucket(self: &mut StackBucket) -> *mut Page {
         // println!("get_page_from_next_bucket");
         if self.next_bucket == null_mut() {
-            self.next_bucket = StackBucket::create(self.pool);
+            self.next_bucket = StackBucket::create(self.heap);
         }
         // println!("self.next_bucket: {:X}", self.next_bucket as usize);
         Page::get(self.next_bucket as usize)
     }
 
-    pub fn create(pool: *mut Pool) -> *mut StackBucket {
+    pub fn create(heap: *mut Heap) -> *mut StackBucket {
         unsafe {
             // println!("BEFORE Bucket::allocate_bucket");
             let page = StackBucket::allocate_bucket();
             let bucket = (*page).allocate(Bucket::Stack(StackBucket {
                 next_bucket: null_mut(),
-                pool: pool,
+                heap: heap,
             }));
             // println!("Bucket object:{:X}", bucket as usize);
             let stack_bucket = match *bucket {
-                Stack(ref mut s) => s,
-                Heap(_) => panic!("Oops, we have a heap bucket which cannot happen."),
+                Bucket::Stack(ref mut s) => s,
+                Bucket::Heap(_) => panic!("Oops, we have a heap bucket which cannot happen."),
             };
             let stack_bucket_pointer = stack_bucket as *const StackBucket as *mut StackBucket;
             //println!("Stack bucket object:{:X}", stack_bucket_pointer as usize);

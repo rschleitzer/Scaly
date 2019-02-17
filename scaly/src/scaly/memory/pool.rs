@@ -12,7 +12,7 @@ use std::ptr::null_mut;
 use std::usize::MAX;
 
 pub struct Pool {
-    map: usize,
+    pub map: usize,
     heap: *mut Heap,
 }
 
@@ -33,7 +33,7 @@ impl Pool {
                 let bucket_page = (memory as usize + PAGE_SIZE * BUCKET_PAGES * i) as *mut Page;
                 // println!("Bucket page: {}, {:X}.", i, bucket_page as usize);
                 (*bucket_page).reset();
-                let bucket = (*bucket_page).allocate(Bucket::Heap(HeapBucket {
+                let mut bucket = (*bucket_page).allocate(Bucket::Heap(HeapBucket {
                     pool: null_mut(),
                     map: MAX,
                 }));
@@ -47,7 +47,10 @@ impl Pool {
                     // println!("Pool object: {:X}.", pool as usize);
                     // println!("Pool map after creation: {:X}.", (*pool).map);
                 }
-                (*bucket).set_pool(pool);
+                match *bucket {
+                    Bucket::Stack(ref _s) => (),
+                    Bucket::Heap(ref mut h) => h.pool = pool,
+                }
             }
             pool
         }
@@ -58,14 +61,12 @@ impl Pool {
         if self.map == 0 {
             unsafe {
                 (*self.heap).mark_as_full(self);
-                (*self.heap).allocate_page()
+                return (*self.heap).allocate_page();
             };
         }
         let pool_page_address = Page::get(self as *const Pool as usize) as usize;
         // println!("Pool page address: {:X}.", pool_page_address);
-        let bucket_page_address = if self.map == MAX {
-            Page::get(self as *const Pool as usize) as usize
-        } else {
+        let bucket_page_address = {
             let position = Bucket::find_least_position(self.map);
             // println!("Pool least position: {}.", position);
             pool_page_address + PAGE_SIZE * BUCKET_PAGES * (position - 1)
@@ -119,23 +120,6 @@ impl Pool {
                     PAGE_SIZE * BUCKET_PAGES,
                 ),
             );
-        }
-    }
-}
-
-#[test]
-fn test_pool() {
-    use scaly::memory::region::Region;
-    use scaly::memory::stackbucket::StackBucket;
-    let mut heap = Heap::create();
-    let pool = Pool::create(&mut heap);
-    unsafe {
-        let root_stack_bucket = StackBucket::create(pool);
-        {
-            let mut r = Region::create_from_page(&*Page::get(root_stack_bucket as usize));
-            for i in 1..4000000 {
-                r.new(i);
-            }
         }
     }
 }
