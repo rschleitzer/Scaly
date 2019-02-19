@@ -81,12 +81,12 @@ fn test_heap() {
         let root_stack_bucket = StackBucket::create(&mut heap);
         {
             let mut r = Region::create_from_page(&*Page::get(root_stack_bucket as usize));
-            for i in 1..266000000 {
+            for i in 1..8323313 {
                 r.new(i);
             }
         }
     }
-    // if heap.map != MAX {
-    //     panic!("Heap not empty at the end.")
-    // }
+    if heap.map != MAX {
+        panic!("Heap not empty at the end.")
+    }
 }

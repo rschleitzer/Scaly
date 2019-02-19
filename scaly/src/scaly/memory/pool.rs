@@ -39,8 +39,7 @@ impl Pool {
                 }));
                 // println!("Bucket initialized: {:X}.", bucket as usize);
                 if i == 0 {
-                    let page = memory as *mut Page;
-                    pool = (*page).allocate(Pool {
+                    pool = (*bucket_page).allocate(Pool {
                         map: MAX,
                         heap: heap,
                     });

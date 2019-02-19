@@ -3,6 +3,8 @@ use scaly::memory::bucket::BUCKET_PAGES;
 use scaly::memory::page::Page;
 use scaly::memory::page::PAGE_SIZE;
 use scaly::memory::pool::Pool;
+use std::mem::align_of;
+use std::mem::size_of;
 use std::usize::MAX;
 
 pub struct HeapBucket {
@@ -31,8 +33,17 @@ impl HeapBucket {
         let page = (Page::get(self as *const HeapBucket as usize) as usize
             + (position - 1) * PAGE_SIZE) as *mut Page;
         // println!("HeapBucket allocated page:{:X}", page as usize);
-        if position != 1 {
-            unsafe { (*page).reset() }
+
+        unsafe {
+            (*page).reset();
+
+            if position == 1 {
+                (*page).allocate_raw(size_of::<Bucket>(), align_of::<Bucket>());
+            }
+
+            if page == Page::get(self.pool as usize) {
+                (*page).allocate_raw(size_of::<Pool>(), align_of::<Pool>());
+            }
         }
         page
     }
