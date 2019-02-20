@@ -80,9 +80,22 @@ fn test_heap() {
     unsafe {
         let root_stack_bucket = StackBucket::create(&mut heap);
         {
-            let mut r = Region::create_from_page(&*Page::get(root_stack_bucket as usize));
-            for i in 1..8323313 {
-                r.new(i);
+            let root_page = Page::get(root_stack_bucket as usize);
+            let mut r = Region::create_from_page(&*root_page);
+            for _i in 1..8323313 {
+                // for i in 1..266000000 {
+                r.new(0);
+            }
+            let extension_location = r.page.get_extension_page_location();
+            println!("Root extension page: {:X}", *extension_location as usize);
+            let mut page = *extension_location;
+            let mut page_counter = 1;
+            while !page.is_null() {
+                let extension_page = *(*page).get_extension_page_location();
+                println!("Extension page: {:X}", extension_page as usize);
+                page = extension_page;
+                page_counter += 1;
+                println!("Pages counted: {}", page_counter);
             }
         }
     }
