@@ -23,7 +23,7 @@ impl Pool {
                 PAGE_SIZE * BUCKET_PAGES * BUCKET_PAGES,
                 PAGE_SIZE * BUCKET_PAGES,
             ));
-            println!("Pool memory: {:X}.", memory as usize);
+            // println!("Pool memory: {:X}.", memory as usize);
             if memory == null_mut() {
                 panic!("Unable to create pool: Out of memory.");
             }
@@ -94,11 +94,6 @@ impl Pool {
         // println!("Pool bit to be marked as free: {:X}", bit);
         let old_map = self.map;
         self.map = self.map | bit;
-        if self.map == MAX {
-            unsafe {
-                (*self.heap).deallocate(self);
-            }
-        }
         if old_map == 0 {
             unsafe {
                 (*self.heap).mark_as_free(self);
@@ -111,16 +106,17 @@ impl Pool {
             panic!("Pool is not empty!")
         }
         unsafe {
-            println!(
-                "Pool: dealloc {:X}",
-                Page::get(self as *const Pool as usize) as usize
-            );
+            // println!(
+            //     "Pool: dealloc {:X}",
+            //     Page::get(self as *const Pool as usize) as usize
+            // );
             dealloc(
                 Page::get(self as *const Pool as usize) as *mut u8,
-                Layout::from_size_align_unchecked(
+                Layout::from_size_align(
                     PAGE_SIZE * BUCKET_PAGES * BUCKET_PAGES,
                     PAGE_SIZE * BUCKET_PAGES,
-                ),
+                )
+                .unwrap(),
             );
         }
     }

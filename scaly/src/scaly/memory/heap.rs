@@ -74,14 +74,16 @@ impl Heap {
         }
     }
 
-    pub fn check_empty(&self) {
+    pub fn empty(&self) {
         if self.map != MAX {
             panic! {"Heap map: {:X}", self.map};
         }
 
         for i in 0..BUCKET_PAGES {
             if self.pools[i] != null_mut() {
-                panic!("Heap pool {} not empty.", i);
+                unsafe {
+                    (*self.pools[i]).deallocate();
+                }
             }
         }
     }
@@ -101,7 +103,7 @@ fn test_heap() {
             let mut u_start = 0usize;
             let mut pu_previous: *mut usize = null_mut();
             let mut _pu: *mut usize = null_mut();
-            let pointers = 2081082;
+            let pointers = 133157244;
             for i in 1..pointers + 1 {
                 _pu = r.new(0usize);
                 if i == 1 {
@@ -138,5 +140,5 @@ fn test_heap() {
             println!("Pages counted: {}", page_counter);
         }
     }
-    heap.check_empty();
+    heap.empty();
 }
