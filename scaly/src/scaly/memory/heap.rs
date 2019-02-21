@@ -82,9 +82,19 @@ fn test_heap() {
         {
             let root_page = Page::get(root_stack_bucket as usize);
             let mut r = Region::create_from_page(&*root_page);
-            for _i in 1..8323313 {
-                // for i in 1..266000000 {
-                r.new(0);
+
+            let mut u: usize = 0;
+            let mut _pu_start: usize = 0;
+            // let mut ppu_next: *mut *mut usize = &mut pu;
+            // let mut ppu_start: *mut *mut usize = null_mut();
+            for i in 1..8323313 {
+                let ru = r.new(u);
+                if i == 1 {
+                    _pu_start = ru as *mut usize as usize;
+                }
+                u = ru as *mut usize as usize;
+                // **ppu_next = ppu as usize;
+                // ppu_next = ppu;
             }
             let extension_location = r.page.get_extension_page_location();
             println!("Root extension page: {:X}", *extension_location as usize);
