@@ -28,7 +28,7 @@ impl Heap {
         // println!("Heap index: {}.", index);
         if self.pools[index] == null_mut() {
             self.pools[index] = Pool::create(self);
-            println!("Heap allocated pool at: {:X}.", self.pools[index] as usize);
+            // println!("Heap allocated pool at: {:X}.", self.pools[index] as usize);
         }
         // println!("Heap allocated pool has a map: {:X}.", unsafe {
         //     (*self.pools[index]).map
@@ -43,7 +43,10 @@ impl Heap {
                 return i;
             }
         }
-        panic!("The pool pointer {:X} is not from my pools array!")
+        panic!(
+            "The pool pointer {:X} is not from my pools array!",
+            pool as usize
+        )
     }
 
     pub fn get_allocation_bit(&self, pool: *mut Pool) -> usize {
@@ -70,6 +73,18 @@ impl Heap {
             (*pool).deallocate();
         }
     }
+
+    pub fn check_empty(&self) {
+        if self.map != MAX {
+            panic! {"Heap map: {:X}", self.map};
+        }
+
+        for i in 0..BUCKET_PAGES {
+            if self.pools[i] != null_mut() {
+                panic!("Heap pool {} not empty.", i);
+            }
+        }
+    }
 }
 
 #[test]
@@ -83,33 +98,45 @@ fn test_heap() {
             let root_page = Page::get(root_stack_bucket as usize);
             let mut r = Region::create_from_page(&*root_page);
 
-            let mut u: usize = 0;
-            let mut _pu_start: usize = 0;
-            // let mut ppu_next: *mut *mut usize = &mut pu;
-            // let mut ppu_start: *mut *mut usize = null_mut();
-            for i in 1..8323313 {
-                let ru = r.new(u);
+            let mut u_start = 0usize;
+            let mut pu_previous: *mut usize = null_mut();
+            let mut _pu: *mut usize = null_mut();
+            let pointers = 2081082;
+            for i in 1..pointers + 1 {
+                _pu = r.new(0usize);
                 if i == 1 {
-                    _pu_start = ru as *mut usize as usize;
+                    u_start = _pu as usize;
+                } else {
+                    *pu_previous = _pu as usize;
                 }
-                u = ru as *mut usize as usize;
-                // **ppu_next = ppu as usize;
-                // ppu_next = ppu;
+                pu_previous = _pu;
             }
+
+            // Check the pointer chain
+            let mut counter = 0;
+            let mut pu_check = u_start as *mut usize;
+            while pu_check != null_mut() {
+                counter += 1;
+                //println!("Address: {:X}", pu_check as usize);
+                pu_check = (*pu_check) as *mut usize;
+            }
+            if counter != pointers {
+                panic!("Check failed at {}.", pointers);
+            }
+
+            // Walk the page chain
             let extension_location = r.page.get_extension_page_location();
-            println!("Root extension page: {:X}", *extension_location as usize);
+            // println!("Root extension page: {:X}", *extension_location as usize);
             let mut page = *extension_location;
-            let mut page_counter = 1;
+            let mut page_counter = 0;
             while !page.is_null() {
                 let extension_page = *(*page).get_extension_page_location();
-                println!("Extension page: {:X}", extension_page as usize);
+                // println!("Extension page: {:X}", extension_page as usize);
                 page = extension_page;
                 page_counter += 1;
-                println!("Pages counted: {}", page_counter);
             }
+            println!("Pages counted: {}", page_counter);
         }
     }
-    if heap.map != MAX {
-        panic!("Heap not empty at the end.")
-    }
+    heap.check_empty();
 }

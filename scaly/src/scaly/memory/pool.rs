@@ -23,7 +23,7 @@ impl Pool {
                 PAGE_SIZE * BUCKET_PAGES * BUCKET_PAGES,
                 PAGE_SIZE * BUCKET_PAGES,
             ));
-            // println!("Pool memory: {:X}.", memory as usize);
+            println!("Pool memory: {:X}.", memory as usize);
             if memory == null_mut() {
                 panic!("Unable to create pool: Out of memory.");
             }
@@ -111,7 +111,10 @@ impl Pool {
             panic!("Pool is not empty!")
         }
         unsafe {
-            //println!("Pool: dealloc {:X}", self.pointers as *const u8 as usize);
+            println!(
+                "Pool: dealloc {:X}",
+                Page::get(self as *const Pool as usize) as usize
+            );
             dealloc(
                 Page::get(self as *const Pool as usize) as *mut u8,
                 Layout::from_size_align_unchecked(
