@@ -89,56 +89,56 @@ impl Heap {
     }
 }
 
-#[test]
-fn test_heap() {
-    use scaly::memory::region::Region;
-    use scaly::memory::stackbucket::StackBucket;
-    let mut heap = Heap::create();
-    unsafe {
-        let root_stack_bucket = StackBucket::create(&mut heap);
-        {
-            let root_page = Page::get(root_stack_bucket as usize);
-            let mut r = Region::create_from_page(&*root_page);
+// #[test]
+// fn test_heap() {
+//     use scaly::memory::region::Region;
+//     use scaly::memory::stackbucket::StackBucket;
+//     let mut heap = Heap::create();
+//     unsafe {
+//         let root_stack_bucket = StackBucket::create(&mut heap);
+//         {
+//             let root_page = Page::get(root_stack_bucket as usize);
+//             let mut r = Region::create_from_page(&*root_page);
 
-            let mut u_start = 0usize;
-            let mut pu_previous: *mut usize = null_mut();
-            let mut _pu: *mut usize = null_mut();
-            let pointers = 133157244;
-            for i in 1..pointers + 1 {
-                _pu = r.new(0usize);
-                if i == 1 {
-                    u_start = _pu as usize;
-                } else {
-                    *pu_previous = _pu as usize;
-                }
-                pu_previous = _pu;
-            }
+//             let mut u_start = 0usize;
+//             let mut pu_previous: *mut usize = null_mut();
+//             let mut _pu: *mut usize = null_mut();
+//             let pointers = 133157244;
+//             for i in 1..pointers + 1 {
+//                 _pu = r.new(0usize);
+//                 if i == 1 {
+//                     u_start = _pu as usize;
+//                 } else {
+//                     *pu_previous = _pu as usize;
+//                 }
+//                 pu_previous = _pu;
+//             }
 
-            // Check the pointer chain
-            let mut counter = 0;
-            let mut pu_check = u_start as *mut usize;
-            while pu_check != null_mut() {
-                counter += 1;
-                //println!("Address: {:X}", pu_check as usize);
-                pu_check = (*pu_check) as *mut usize;
-            }
-            if counter != pointers {
-                panic!("Check failed at {}.", pointers);
-            }
+//             // Check the pointer chain
+//             let mut counter = 0;
+//             let mut pu_check = u_start as *mut usize;
+//             while pu_check != null_mut() {
+//                 counter += 1;
+//                 //println!("Address: {:X}", pu_check as usize);
+//                 pu_check = (*pu_check) as *mut usize;
+//             }
+//             if counter != pointers {
+//                 panic!("Check failed at {}.", pointers);
+//             }
 
-            // Walk the page chain
-            let extension_location = r.page.get_extension_page_location();
-            // println!("Root extension page: {:X}", *extension_location as usize);
-            let mut page = *extension_location;
-            let mut page_counter = 0;
-            while !page.is_null() {
-                let extension_page = *(*page).get_extension_page_location();
-                // println!("Extension page: {:X}", extension_page as usize);
-                page = extension_page;
-                page_counter += 1;
-            }
-            println!("Pages counted: {}", page_counter);
-        }
-    }
-    heap.empty();
-}
+//             // Walk the page chain
+//             let extension_location = r.page.get_extension_page_location();
+//             // println!("Root extension page: {:X}", *extension_location as usize);
+//             let mut page = *extension_location;
+//             let mut page_counter = 0;
+//             while !page.is_null() {
+//                 let extension_page = *(*page).get_extension_page_location();
+//                 // println!("Extension page: {:X}", extension_page as usize);
+//                 page = extension_page;
+//                 page_counter += 1;
+//             }
+//             println!("Pages counted: {}", page_counter);
+//         }
+//     }
+//     heap.empty();
+// }

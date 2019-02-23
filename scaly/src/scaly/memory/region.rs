@@ -20,6 +20,10 @@ impl<'a> Region<'a> {
     pub fn new<T>(&mut self, object: T) -> &'a mut T {
         unsafe { &mut *(*self.page).allocate(object) }
     }
+
+    pub fn allocate(&mut self, length: usize) -> *mut u8 {
+        (*self.page).allocate_raw(length, 1)
+    }
 }
 
 impl<'a> Drop for Region<'a> {

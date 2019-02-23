@@ -1,13 +1,13 @@
 mod scalyc;
 
 fn main() {
-    let argvec = std::env::args().collect::<Vec<String>>();
+    let argvec = std::env::args().collect::<Vec<std::string::String>>();
     let arguments: Vec<&str> = argvec.iter().map(AsRef::as_ref).collect();
     _scalyc_main(&arguments)
 }
 
-use scalyc::options::*;
-use scalyc::compiler::*;
+use scalyc::compiler::Compiler;
+use scalyc::options::{Options, OptionsError};
 
 pub fn _scalyc_main(arguments: &Vec<&str>) {
     match Options::parse_arguments(arguments) {
@@ -16,7 +16,7 @@ pub fn _scalyc_main(arguments: &Vec<&str>) {
             OptionsError::EmptyOption => println!("Empty option!"),
             OptionsError::InvalidOption(option) => println!("Invalid option {}", option),
             OptionsError::UnknownOption(option) => println!("Unknown option {}", option),
-        }
-        Ok(options) => Compiler::compile(options)
+        },
+        Ok(options) => Compiler::compile(options),
     }
 }
