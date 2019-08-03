@@ -1,4 +1,4 @@
-use scaly::memory::Bucket;
+use memory::Bucket;
 use std::alloc::alloc;
 use std::alloc::dealloc;
 use std::alloc::Layout;
@@ -283,9 +283,9 @@ impl Page {
 
 // #[test]
 // fn test_page() {
-//     use scaly::memory::heap::Heap;
-//     use scaly::memory::stackbucket::StackBucket;
-//     use scaly::memory::Region;
+//     use memory::heap::Heap;
+//     use memory::stackbucket::StackBucket;
+//     use memory::Region;
 //     unsafe {
 //         // Allocate a page
 //         let mut heap = Heap::create();

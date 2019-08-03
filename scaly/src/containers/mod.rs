@@ -1,6 +1,6 @@
-mod array;
-mod string;
-mod vector;
+pub mod array;
+pub mod string;
+pub mod vector;
 
 pub use self::array::Array;
 pub use self::string::String;

@@ -1,9 +1,9 @@
-use scaly::memory::bucket::Bucket;
-use scaly::memory::bucket::BUCKET_PAGES;
-use scaly::memory::heap::Heap;
-use scaly::memory::heapbucket::HeapBucket;
-use scaly::memory::page::Page;
-use scaly::memory::page::PAGE_SIZE;
+use memory::bucket::Bucket;
+use memory::bucket::BUCKET_PAGES;
+use memory::heap::Heap;
+use memory::heapbucket::HeapBucket;
+use memory::page::Page;
+use memory::page::PAGE_SIZE;
 use std::alloc::alloc;
 use std::alloc::dealloc;
 use std::alloc::Layout;

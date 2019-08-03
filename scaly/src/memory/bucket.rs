@@ -1,9 +1,9 @@
-use scaly::memory::bucket::Bucket::Heap;
-use scaly::memory::bucket::Bucket::Stack;
-use scaly::memory::heapbucket::HeapBucket;
-use scaly::memory::page::Page;
-use scaly::memory::page::PAGE_SIZE;
-use scaly::memory::stackbucket::StackBucket;
+use memory::bucket::Bucket::Heap;
+use memory::bucket::Bucket::Stack;
+use memory::heapbucket::HeapBucket;
+use memory::page::Page;
+use memory::page::PAGE_SIZE;
+use memory::stackbucket::StackBucket;
 use std::mem::size_of;
 
 pub const BUCKET_PAGES: usize = size_of::<usize>() * 8;

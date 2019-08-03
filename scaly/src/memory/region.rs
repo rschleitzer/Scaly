@@ -1,5 +1,5 @@
-use scaly::memory::page::Page;
-use scaly::memory::stackbucket::StackBucket;
+use memory::page::Page;
+use memory::stackbucket::StackBucket;
 
 pub struct Region<'a> {
     pub page: &'a mut Page,
@@ -34,8 +34,8 @@ impl<'a> Drop for Region<'a> {
 
 // #[test]
 // fn test_region() {
-//     use scaly::memory::bucket::BUCKET_PAGES;
-//     use scaly::memory::heap::Heap;
+//     use memory::bucket::BUCKET_PAGES;
+//     use memory::heap::Heap;
 //     unsafe {
 //         let mut heap = Heap::create();
 //         let root_stack_bucket = StackBucket::create(&mut heap);
@@ -81,7 +81,7 @@ impl<'a> Drop for Region<'a> {
 //         // (*root_stack_bucket).deallocate();
 //     }
 //     unsafe {
-//         use scaly::memory::heap::Heap;
+//         use memory::heap::Heap;
 //         let mut heap = Heap::create();
 //         let root_stack_bucket = StackBucket::create(&mut heap);
 

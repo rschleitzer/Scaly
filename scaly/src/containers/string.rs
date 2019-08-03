@@ -1,4 +1,4 @@
-use scaly::memory::Region;
+use memory::Region;
 use std::mem::size_of;
 use std::ptr;
 
@@ -9,7 +9,7 @@ pub struct String {
 const PACKED_SIZE: usize = size_of::<usize>() * 8 / 7;
 
 impl String {
-    fn create(region: &mut Region, data: *const u8, length: usize) -> String {
+    pub fn create(region: &mut Region, data: *const u8, length: usize) -> String {
         let mut length_array: [u8; PACKED_SIZE] = [0; PACKED_SIZE];
         let mut rest = length;
         let mut counter: usize = 0;
@@ -56,9 +56,9 @@ impl String {
 
 #[test]
 fn test_string() {
-    use scaly::memory::Heap;
-    use scaly::memory::Page;
-    use scaly::memory::StackBucket;
+    use memory::Heap;
+    use memory::Page;
+    use memory::StackBucket;
     let mut heap = Heap::create();
     unsafe {
         let root_stack_bucket = StackBucket::create(&mut heap);

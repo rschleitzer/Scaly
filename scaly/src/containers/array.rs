@@ -1,4 +1,4 @@
-use scaly::containers::Vector;
+use containers::Vector;
 use std::ptr::null_mut;
 
 pub struct Array<T> {

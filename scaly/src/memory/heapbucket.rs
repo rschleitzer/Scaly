@@ -1,8 +1,8 @@
-use scaly::memory::bucket::Bucket;
-use scaly::memory::bucket::BUCKET_PAGES;
-use scaly::memory::page::Page;
-use scaly::memory::page::PAGE_SIZE;
-use scaly::memory::pool::Pool;
+use memory::bucket::Bucket;
+use memory::bucket::BUCKET_PAGES;
+use memory::page::Page;
+use memory::page::PAGE_SIZE;
+use memory::pool::Pool;
 use std::mem::align_of;
 use std::mem::size_of;
 use std::usize::MAX;
@@ -76,8 +76,8 @@ impl HeapBucket {
 
 // #[test]
 // fn test_heapbucket() {
-//     use scaly::memory::bucket::Bucket;
-//     use scaly::memory::heap::Heap;
+//     use memory::bucket::Bucket;
+//     use memory::heap::Heap;
 //     unsafe {
 //         let mut heap = Heap::create();
 //         let pool = Pool::create(&mut heap);

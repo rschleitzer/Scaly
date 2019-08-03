@@ -1,7 +1,7 @@
-use scaly::memory::bucket::Bucket;
-use scaly::memory::bucket::BUCKET_PAGES;
-use scaly::memory::page::Page;
-use scaly::memory::pool::Pool;
+use memory::bucket::Bucket;
+use memory::bucket::BUCKET_PAGES;
+use memory::page::Page;
+use memory::pool::Pool;
 use std::ptr::null_mut;
 use std::usize::MAX;
 
@@ -91,8 +91,8 @@ impl Heap {
 
 // #[test]
 // fn test_heap() {
-//     use scaly::memory::region::Region;
-//     use scaly::memory::stackbucket::StackBucket;
+//     use memory::region::Region;
+//     use memory::stackbucket::StackBucket;
 //     let mut heap = Heap::create();
 //     unsafe {
 //         let root_stack_bucket = StackBucket::create(&mut heap);
