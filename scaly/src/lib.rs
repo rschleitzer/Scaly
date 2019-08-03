@@ -1,5 +1,5 @@
-mod containers;
-mod memory;
+pub mod containers;
+pub mod memory;
 
 pub use self::memory::bucket::Bucket;
 pub use self::memory::heap::Heap;

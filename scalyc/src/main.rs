@@ -4,7 +4,7 @@ extern crate scaly;
 use libc::c_char;
 use libc::c_int;
 
-use scaly::scaly::memory::StackBucket;
+use scaly::memory::StackBucket;
 
 use std::ffi::CString;
 
