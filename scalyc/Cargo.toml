@@ -7,3 +7,4 @@ license = "MIT"
 
 [dependencies]
 scaly = "0.0.6"
+libc = "0.2.60"

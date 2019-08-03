@@ -1,10 +1,10 @@
-use scalyc::options::*;
+// use scalyc::options::*;
 
-pub struct Compiler {
-}
+// pub struct Compiler {
+// }
 
-impl Compiler {
-    pub fn compile(_options: Options) {
-    }
+// impl Compiler {
+//     pub fn compile(_options: Options) {
+//     }
 
-}
+// }

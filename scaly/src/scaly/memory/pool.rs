@@ -33,7 +33,7 @@ impl Pool {
                 let bucket_page = (memory as usize + PAGE_SIZE * BUCKET_PAGES * i) as *mut Page;
                 // println!("Bucket page: {}, {:X}.", i, bucket_page as usize);
                 (*bucket_page).reset();
-                let mut bucket = (*bucket_page).allocate(Bucket::Heap(HeapBucket {
+                let bucket = (*bucket_page).allocate(Bucket::Heap(HeapBucket {
                     pool: null_mut(),
                     map: MAX,
                 }));

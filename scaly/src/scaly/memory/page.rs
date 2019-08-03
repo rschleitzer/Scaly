@@ -191,7 +191,7 @@ impl Page {
             while !page.is_null() {
                 let extension_pointer = (*page).get_extension_page_location();
                 for i in 1..(*page).exclusive_pages {
-                    let mut exclusive_page = &mut **(extension_pointer.offset(-(i as isize)));
+                    let exclusive_page = &mut **(extension_pointer.offset(-(i as isize)));
                     if !exclusive_page.is_oversized() {
                         exclusive_page.deallocate_extensions();
                     }
