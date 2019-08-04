@@ -13,7 +13,7 @@ impl<T> Ref<T> {
         }
     }
 
-    pub fn get_page(&mut self) -> *mut Page {
+    pub fn get_page(&self) -> *mut Page {
         Page::get(self.data as usize)
     }
 }
