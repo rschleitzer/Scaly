@@ -35,16 +35,16 @@ fn _main(argc: c_int, argv: *const *const c_char)
     let r = Region::create_from_page(root_page);
     unsafe {
         let r1 = Region::create(&r);
-        let arguments: Ref<Array<String>> = Ref::new(r1.page, Array::new());
+        let mut arguments: Ref<Array<String>> = Ref::new(r1.page, Array::new());
         for n in 0..argc {
             if n == 0 {
                 continue;
             }
 
             let arg = argv.offset(n as isize);
-            let s = String::from_c_string(arguments.get_page(), *arg);
-            (*arguments).add(arguments.get_page(), s);
-            println!("{}", s.get_length());
+            let page = arguments.get_page();
+            let s = String::from_c_string(page, *arg);
+            (*arguments).add(page, s);
         }
     }
 }
