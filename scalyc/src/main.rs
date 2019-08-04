@@ -9,6 +9,8 @@ use scaly::memory::StackBucket;
 use scaly::memory::Page;
 use scaly::memory::Region;
 use scaly::containers::String;
+use scaly::containers::Ref;
+use scaly::containers::Array;
 
 use std::ffi::CString;
 
@@ -30,8 +32,10 @@ fn _main(argc: c_int, argv: *const *const c_char)
     let mut heap = Heap::create();
     let root_stack_bucket = StackBucket::create(&mut heap);
     let root_page = Page::get(root_stack_bucket as usize);
+    let mut r = Region::create_from_page(root_page);
     unsafe {
-        let mut r = Region::create_from_page(&*root_page);
+        let mut r1 = Region::create(&r);
+        let mut arguments = Ref::new(r1.page as *mut Page, Array::new());
 
         for n in 0..argc {
             if n == 0 {

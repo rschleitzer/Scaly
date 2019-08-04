@@ -7,14 +7,14 @@ pub struct Ref<T> {
 }
 
 impl<T> Ref<T> {
-    pub fn new(page: &mut Page, object: T) -> Ref<T> {
+    pub fn new(page: *mut Page, object: T) -> Ref<T> {
         Ref {
-            data: page.allocate(object),
+            data: unsafe { (*page).allocate(object) },
         }
     }
 
-    pub fn get_page(&mut self) -> &mut Page {
-        unsafe { &mut *Page::get(self.data as usize) }
+    pub fn get_page(&mut self) -> *mut Page {
+        Page::get(self.data as usize)
     }
 }
 
