@@ -18,7 +18,7 @@ impl StackBucket {
     pub fn allocate_page(&mut self) -> *mut Page {
         unsafe { (*self.heap).allocate_page() }
     }
-    pub fn new_page(page: &Page) -> *mut Page {
+    pub fn new_page(page: *mut Page) -> *mut Page {
         let page_address = page as *const Page as usize;
         let stack_bucket_page_address = page_address & !(PAGE_SIZE * BUCKET_PAGES - 1);
         let overflowed_page_address = stack_bucket_page_address + PAGE_SIZE * BUCKET_PAGES;

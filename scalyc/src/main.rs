@@ -4,7 +4,11 @@ extern crate scaly;
 use libc::c_char;
 use libc::c_int;
 
+use scaly::memory::Heap;
 use scaly::memory::StackBucket;
+use scaly::memory::Page;
+use scaly::memory::Region;
+use scaly::containers::String;
 
 use std::ffi::CString;
 
@@ -23,13 +27,19 @@ fn main() {
 // C style main function which converts args to Scaly's main convention (would be provided by the LLVM backend)
 fn _main(argc: c_int, argv: *const *const c_char)
 {
-    for n in 0..argc {
-        unsafe {
+    let mut heap = Heap::create();
+    let root_stack_bucket = StackBucket::create(&mut heap);
+    let root_page = Page::get(root_stack_bucket as usize);
+    unsafe {
+        let mut r = Region::create_from_page(&*root_page);
+
+        for n in 0..argc {
             if n == 0 {
                 continue;
             }
 
             let arg = argv.offset(n as isize);
+            let _s = String::new(&mut r, "Hello world!");
             println!("{}", arg as usize);
         }
     }

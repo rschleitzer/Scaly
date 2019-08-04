@@ -1,34 +1,36 @@
 use memory::page::Page;
 use memory::stackbucket::StackBucket;
 
-pub struct Region<'a> {
-    pub page: &'a mut Page,
+pub struct Region {
+    pub page: *mut Page,
 }
 
-impl<'a> Region<'a> {
-    pub fn create_from_page(page: &Page) -> Region<'a> {
+impl Region {
+    pub fn create_from_page(page: *mut Page) -> Region {
         let our_page_address = StackBucket::new_page(page);
         //println!("our_page_address:{:X}", our_page_address as usize);
         Region {
-            page: unsafe { &mut *(our_page_address as *mut Page) },
+            page: our_page_address,
         }
     }
-    pub fn create(region: &Region<'a>) -> Region<'a> {
+    pub fn create(region: &Region) -> Region {
         Region::create_from_page(region.page)
     }
 
-    pub fn new<T>(&mut self, object: T) -> &'a mut T {
-        unsafe { &mut *(*self.page).allocate(object) }
+    pub fn new<T>(&mut self, object: T) -> *mut T {
+        unsafe { (*self.page).allocate(object) }
     }
 
     pub fn allocate(&mut self, length: usize) -> *mut u8 {
-        (*self.page).allocate_raw(length, 1)
+        unsafe { (*self.page).allocate_raw(length, 1) }
     }
 }
 
-impl<'a> Drop for Region<'a> {
+impl Drop for Region {
     fn drop(&mut self) {
-        self.page.deallocate_extensions();
+        unsafe {
+            (*self.page).deallocate_extensions();
+        }
     }
 }
 
