@@ -34,16 +34,15 @@ fn _main(argc: c_int, argv: *const *const c_char)
     let root_page = Page::get(root_stack_bucket as usize);
     let mut r = Region::create_from_page(root_page);
     unsafe {
-        let mut r1 = Region::create(&r);
-        let mut arguments = Ref::new(r1.page as *mut Page, Array::new());
-
+        let r1 = Region::create(&r);
+        let arguments: Ref<Array<Ref<String>>> = Ref::new(r1.page, Array::new());
         for n in 0..argc {
             if n == 0 {
                 continue;
             }
 
             let arg = argv.offset(n as isize);
-            let _s = String::new(&mut r, "Hello world!");
+            let _s = String::from_c_string(arguments.get_page(), arg);
             println!("{}", arg as usize);
         }
     }

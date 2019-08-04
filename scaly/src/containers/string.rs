@@ -1,4 +1,8 @@
-use memory::Region;
+extern crate libc;
+
+use self::libc::c_char;
+use self::libc::strlen;
+use memory::Page;
 use std::mem::size_of;
 use std::ptr;
 
@@ -9,7 +13,7 @@ pub struct String {
 const PACKED_SIZE: usize = size_of::<usize>() * 8 / 7;
 
 impl String {
-    pub fn create(region: &mut Region, data: *const u8, length: usize) -> String {
+    pub fn create(page: *mut Page, data: *const u8, length: usize) -> String {
         let mut length_array: [u8; PACKED_SIZE] = [0; PACKED_SIZE];
         let mut rest = length;
         let mut counter: usize = 0;
@@ -20,17 +24,24 @@ impl String {
         }
         length_array[counter] = rest as u8;
         let overall_length = counter + 1 + length;
-        let pointer = region.allocate(overall_length);
         unsafe {
+            let pointer = (*page).allocate_raw(overall_length, 1);
             ptr::copy_nonoverlapping(length_array.as_ptr(), pointer, counter + 1);
             ptr::copy_nonoverlapping(data, pointer.offset((counter + 1) as isize), length);
+            String { data: pointer }
         }
-        String { data: pointer }
     }
 
-    pub fn new(region: &mut Region, string: &str) -> String {
+    pub fn new(page: *mut Page, string: &str) -> String {
         let length = string.len();
-        String::create(region, string.as_ptr(), length)
+        String::create(page, string.as_ptr(), length)
+    }
+
+    pub fn from_c_string(page: *mut Page, c_string: *const c_char) -> String {
+        unsafe {
+            let length = strlen(c_string);
+            String::create(page, c_string as *const u8, length)
+        }
     }
 
     pub fn get_length(&self) -> usize {
@@ -60,16 +71,13 @@ fn test_string() {
     use memory::Page;
     use memory::StackBucket;
     let mut heap = Heap::create();
-    unsafe {
-        let root_stack_bucket = StackBucket::create(&mut heap);
-        {
-            let root_page = Page::get(root_stack_bucket as usize);
-            let mut r = Region::create_from_page(&*root_page);
-            let string = String::new(&mut r, "Hello world!");
-            let length = string.get_length();
-            assert_eq!(length, 12);
-            let long_string = String::new(&mut r, "1234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890");
-            assert_eq!(long_string.get_length(), 130);
-        }
+    let root_stack_bucket = StackBucket::create(&mut heap);
+    {
+        let root_page = Page::get(root_stack_bucket as usize);
+        let string = String::new(root_page, "Hello world!");
+        let length = string.get_length();
+        assert_eq!(length, 12);
+        let long_string = String::new(root_page, "1234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890");
+        assert_eq!(long_string.get_length(), 130);
     }
 }
