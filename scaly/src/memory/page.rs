@@ -71,6 +71,13 @@ impl Page {
         }
     }
 
+    pub fn get_capacity<T>(&self) -> usize {
+        let location = self.get_next_location();
+        let align = align_of::<T>();
+        let aligned_location = (location + align - 1) & !(align - 1);
+        self.get_next_exclusive_page_location() as usize - aligned_location
+    }
+
     pub fn allocate_raw(&mut self, size: usize, align: usize) -> *mut u8 {
         if self as *mut Page != self.current_page {
             unsafe {

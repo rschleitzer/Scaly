@@ -32,18 +32,19 @@ fn _main(argc: c_int, argv: *const *const c_char)
     let mut heap = Heap::create();
     let root_stack_bucket = StackBucket::create(&mut heap);
     let root_page = Page::get(root_stack_bucket as usize);
-    let mut r = Region::create_from_page(root_page);
+    let r = Region::create_from_page(root_page);
     unsafe {
         let r1 = Region::create(&r);
-        let arguments: Ref<Array<Ref<String>>> = Ref::new(r1.page, Array::new());
+        let mut arguments: Ref<Array<String>> = Ref::new(r1.page, Array::new());
         for n in 0..argc {
             if n == 0 {
                 continue;
             }
 
             let arg = argv.offset(n as isize);
-            let _s = String::from_c_string(arguments.get_page(), arg);
-            println!("{}", arg as usize);
+            let s = String::from_c_string(arguments.get_page(), *arg);
+            (*arguments).add(arguments.get_page(), s);
+            println!("{}", s.get_length());
         }
     }
 }
