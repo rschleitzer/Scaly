@@ -4,13 +4,13 @@ extern crate scaly;
 use libc::c_char;
 use libc::c_int;
 
+use scaly::containers::Array;
+use scaly::containers::Ref;
+use scaly::containers::String;
 use scaly::memory::Heap;
-use scaly::memory::StackBucket;
 use scaly::memory::Page;
 use scaly::memory::Region;
-use scaly::containers::String;
-use scaly::containers::Ref;
-use scaly::containers::Array;
+use scaly::memory::StackBucket;
 
 use std::ffi::CString;
 
@@ -18,7 +18,9 @@ mod scalyc;
 
 // Rust's main which converts args back to C's main convention (used here for the Rust backend)
 fn main() {
-    let args = std::env::args().map(|arg| CString::new(arg).unwrap()).collect::<Vec<CString>>();
+    let args = std::env::args()
+        .map(|arg| CString::new(arg).unwrap())
+        .collect::<Vec<CString>>();
     let c_args = args
         .iter()
         .map(|arg| arg.as_ptr())
@@ -27,8 +29,7 @@ fn main() {
 }
 
 // C style main function which converts args to Scaly's main convention (would be provided by the LLVM backend)
-fn _main(argc: c_int, argv: *const *const c_char)
-{
+fn _main(argc: c_int, argv: *const *const c_char) {
     let mut heap = Heap::create();
     let root_stack_bucket = StackBucket::create(&mut heap);
     let root_page = Page::get(root_stack_bucket as usize);
@@ -49,6 +50,7 @@ fn _main(argc: c_int, argv: *const *const c_char)
     }
 }
 
+fn _scalyc_main(_arguments: Ref<Array<String>>) {}
 // use scalyc::compiler::Compiler;
 // use scalyc::options::{Options, OptionsError};
 
