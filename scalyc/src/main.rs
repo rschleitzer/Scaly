@@ -35,8 +35,8 @@ fn _main(argc: c_int, argv: *const *const c_char) {
     let root_page = Page::get(root_stack_bucket as usize);
     let r = Region::create_from_page(root_page);
     unsafe {
-        let r1 = Region::create(&r);
-        let mut arguments: Ref<Array<String>> = Ref::new(r1.page, Array::new());
+        let _r_1 = Region::create(&r);
+        let mut arguments: Ref<Array<String>> = Ref::new(_r_1.page, Array::new());
         for n in 0..argc {
             if n == 0 {
                 continue;
@@ -47,21 +47,15 @@ fn _main(argc: c_int, argv: *const *const c_char) {
             let s = String::from_c_string(page, *arg);
             (*arguments).add(page, s);
         }
+
+        _scalyc_main(&_r_1, arguments);
     }
 }
 
-fn _scalyc_main(_arguments: Ref<Array<String>>) {}
-// use scalyc::compiler::Compiler;
-// use scalyc::options::{Options, OptionsError};
+fn _scalyc_main(_pr: &Region, _arguments: Ref<Array<String>>) {
+    use scalyc::compiler::Compiler;
+    let _r = Region::create(_pr);
 
-// pub fn _scalyc_main(arguments: &Vec<&str>) {
-//     match Options::parse_arguments(arguments) {
-//         Err(error) => match error {
-//             OptionsError::NullLengthArgument => println!("Null length argument!"),
-//             OptionsError::EmptyOption => println!("Empty option!"),
-//             OptionsError::InvalidOption(option) => println!("Invalid option {}", option),
-//             OptionsError::UnknownOption(option) => println!("Unknown option {}", option),
-//         },
-//         Ok(options) => Compiler::compile(options),
-//     }
-// }
+    let compiler = Ref::new(_r.page, Compiler::new(_r.page));
+    (*compiler).compile(&_r);
+}
