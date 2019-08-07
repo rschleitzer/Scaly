@@ -55,10 +55,9 @@ impl String {
 
     pub fn append_character(&self, page: *mut Page, c: char) -> String {
         unsafe {
-            let length = self.get_length() + 1;
-            let s = String::create(page, self.data, length);
+            let s = String::create(page, self.data, self.get_length() + 1);
             let data = s.data as *mut char;
-            let char_pointer = data.offset(length as isize);
+            let char_pointer = data.offset(self.get_length() as isize);
             write(char_pointer, c);
             s
         }

@@ -18,7 +18,11 @@ impl Compiler {
         let _r = Region::create(_pr);
         loop {
             let _r_1 = Region::create(&_r);
-            Console::write(&_r_1, String::from_string_slice(_r_1.page, "Scaly>"));
+            Console::write(
+                &_r_1,
+                String::from_string_slice(_r_1.page, "Scaly compiler.\n"),
+            );
+            Console::write(&_r_1, String::from_string_slice(_r_1.page, ">"));
             // let parser = Ref::new(_p, Parser::new(_p, Ref::new(_r_1.page, ReplStream::new(_r_1.page)));
             let _statement = (*self.parser).parse_statement(&_r_1, _r_1.page);
             break;
