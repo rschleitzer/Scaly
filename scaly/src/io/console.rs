@@ -1,6 +1,10 @@
 extern crate libc;
 
+use self::libc::fdopen;
+use self::libc::fflush;
+use self::libc::STDOUT_FILENO;
 use self::libc::printf;
+use self::libc::c_char;
 use containers::String;
 use memory::region::Region;
 
@@ -11,6 +15,7 @@ impl Console {
         let scaly_string = s.append_character(_r.page, '\0');
         unsafe {
             printf(scaly_string.to_c_string());
+            fflush(fdopen(STDOUT_FILENO, "w\0".as_ptr() as *const c_char));
         }
     }
 }
