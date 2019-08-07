@@ -41,7 +41,7 @@ fn _main(argc: c_int, argv: *const *const c_char) {
             if n == 0 {
                 continue;
             }
-mut 
+
             let arg = argv.offset(n as isize);
             let page = arguments.get_page();
             let s = String::from_c_string(page, *arg);
