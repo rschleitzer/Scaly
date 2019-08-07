@@ -5,6 +5,7 @@ use self::libc::strlen;
 use memory::Page;
 use std::mem::size_of;
 use std::ptr;
+use std::ptr::write;
 
 pub struct String {
     pub data: *const u8,
@@ -41,6 +42,25 @@ impl String {
         unsafe {
             let length = strlen(c_string);
             String::create(page, c_string as *const u8, length)
+        }
+    }
+
+    pub fn to_c_string(&self) -> *const c_char {
+        self.data as *const c_char
+    }
+
+    pub fn from_string_slice(page: *mut Page, s: &str) -> String {
+        String::create(page, s.as_ptr() as *const u8, s.len())
+    }
+
+    pub fn append_character(&self, page: *mut Page, c: char) -> String {
+        unsafe {
+            let length = self.get_length() + 1;
+            let s = String::create(page, self.data, length);
+            let data = s.data as *mut char;
+            let char_pointer = data.offset(length as isize);
+            write(char_pointer, c);
+            s
         }
     }
 

@@ -1,4 +1,5 @@
 use scaly::containers::Ref;
+use scaly::io::Console;
 use scaly::memory::Region;
 use scaly::Page;
 use scalyc::parser::Parser;
@@ -9,12 +10,18 @@ pub struct Compiler {
 
 impl Compiler {
     pub fn new(_p: *mut Page) -> Compiler {
+        let parser = Ref::new(_p, Parser::new(_p));
         Compiler {
-            parser: Ref::new(_p, Parser::new(_p)),
+            parser: parser,
         }
     }
     pub fn compile(&self, _pr: &Region) {
         let _r = Region::create(_pr);
-        (*self.parser).parse_statement(&_r, _r.page);
+        while true {
+            let _r_1 = Region::create(&_r);
+            Console::write(&_r_1, String::from_string_slice(_r_1.page, "Scaly>"));
+            // let parser = Ref::new(_p, Parser::new(_p, Ref::new(_r_1.page, ReplStream::new(_r_1.page)));
+            let _statement = (*self.parser).parse_statement(&_r_1, _r_1.page);
+        }
     }
 }
