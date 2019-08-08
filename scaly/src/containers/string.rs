@@ -45,7 +45,18 @@ impl String {
         }
     }
 
+    #[allow(unreachable_code)]
     pub fn to_c_string(&self) -> *const c_char {
+        let mut length_pointer: *const u8 = self.data as *const u8;
+        loop {
+            unsafe {
+                if (*length_pointer) < 127 {
+                    length_pointer = length_pointer.offset(1);
+                    return length_pointer as *const c_char;
+                }
+                length_pointer = length_pointer.offset(1);
+            }
+        }
         self.data as *const c_char
     }
 
@@ -57,7 +68,7 @@ impl String {
         unsafe {
             let s = String::create(page, self.data, self.get_length() + 1);
             let data = s.data as *mut char;
-            let char_pointer = data.offset(self.get_length() as isize);
+            let char_pointer = data.offset((self.get_length() - 1) as isize);
             write(char_pointer, c);
             s
         }
