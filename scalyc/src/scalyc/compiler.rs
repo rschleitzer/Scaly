@@ -1,5 +1,6 @@
 use scaly::containers::Ref;
-use scaly::io::Console;
+use scaly::io::{Console, ConsoleStream};
+use scaly::io::Stream;
 use scaly::memory::Region;
 use scaly::Page;
 use scaly::String;
@@ -18,12 +19,8 @@ impl Compiler {
         let _r = Region::create(_pr);
         loop {
             let _r_1 = Region::create(&_r);
-            Console::write(
-                &_r_1,
-                String::from_string_slice(_r_1.page, "Scaly compiler.\n"),
-            );
-            Console::write(&_r_1, String::from_string_slice(_r_1.page, ">"));
-            // let parser = Ref::new(_p, Parser::new(_p, Ref::new(_r_1.page, ReplStream::new(_r_1.page)));
+            Console::write(&_r_1, String::from_string_slice(_r_1.page, "Scaly>"));
+            let parser = Ref::new(_p, Parser::new(_p, Ref::new(_r_1.page, ConsoleStream::));
             let _statement = (*self.parser).parse_statement(&_r_1, _r_1.page);
             break;
         }
