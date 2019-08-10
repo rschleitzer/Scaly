@@ -12,6 +12,7 @@ pub use self::memory::stackbucket::StackBucket;
 pub use self::containers::Array;
 pub use self::containers::String;
 pub use self::containers::Vector;
+pub use self::containers::HashSet;
 
 #[cfg(test)]
 mod tests {}
