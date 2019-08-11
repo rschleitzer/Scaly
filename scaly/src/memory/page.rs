@@ -253,6 +253,10 @@ impl Page {
         (address & !(PAGE_SIZE - 1)) as *mut Page
     }
 
+    pub fn own<T>(object: &T) -> *mut Page {
+        Page::get(object as *const T as usize)
+    }
+
     fn deallocate_exclusive_page(&mut self, page: *mut Page) -> bool {
         unsafe {
             // Find the extension Page pointer

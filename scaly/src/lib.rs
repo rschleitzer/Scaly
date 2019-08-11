@@ -3,6 +3,8 @@ pub mod io;
 pub mod memory;
 
 pub use self::containers::Array;
+pub use self::containers::Equal;
+pub use self::containers::Hash;
 pub use self::containers::HashSet;
 pub use self::containers::String;
 pub use self::containers::Vector;

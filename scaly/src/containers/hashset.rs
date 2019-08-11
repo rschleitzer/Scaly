@@ -2,15 +2,23 @@ use containers::reference::Ref;
 use containers::vector::Vector;
 use memory::page::Page;
 
-pub struct HashSet<T> {
+pub struct HashSet<T: Hash<T>> {
     _map: Option<Ref<HashMap<T>>>,
 }
 
-impl<T> HashSet<T> {
-    pub fn from_raw_array(_page: *mut Page, _array: *const T, length: usize) -> HashSet<T> {
-        HashSet {
-            _map: Some(Ref::new(_page, HashMap::new(_page, length))),
-        }
+impl<T: Hash<T>> HashSet<T> {
+    pub fn from_vector(_page: *mut Page, vector: Ref<Vector<T>>) -> Ref<HashSet<T>> {
+        let mut hash_set = Ref::new(_page, HashSet { _map: None });
+        (*hash_set).initialize_from_vector(vector);
+        hash_set
+    }
+
+    fn initialize_from_vector(&mut self, vector: Ref<Vector<T>>) {
+        let map = Ref::new(
+            Page::own(self),
+            HashMap::new(Page::own(self), (*vector).length),
+        );
+        self._map = Some(map);
     }
 }
 
@@ -77,4 +85,23 @@ impl HashPrimeHelper {
 
         candidate == 2
     }
+}
+
+pub trait Equal<T: ?Sized = Self> {
+    fn equals(&self, other: &T) -> bool;
+}
+
+pub trait Hash<T: ?Sized = Self>: Equal<T> {
+    fn hash(&self) -> usize;
+}
+
+// FNV-1a hash
+pub fn hash(data: *const u8, length: usize) -> usize {
+    let bytes = unsafe { std::slice::from_raw_parts(data, length) };
+    let mut hash: u64 = 0xcbf29ce484222325;
+    for byte in bytes.iter() {
+        hash = hash ^ (*byte as u64);
+        hash = hash.wrapping_mul(0x100000001b3);
+    }
+    hash as usize
 }

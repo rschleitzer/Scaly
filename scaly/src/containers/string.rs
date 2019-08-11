@@ -1,7 +1,10 @@
 extern crate libc;
 
-use self::libc::c_char;
-use self::libc::strlen;
+use self::libc::{c_char, c_void};
+use self::libc::{memcmp, strlen};
+use containers::hashset::hash;
+use containers::hashset::Equal;
+use containers::hashset::Hash;
 use memory::Page;
 use std::mem::size_of;
 use std::ptr;
@@ -92,6 +95,29 @@ impl String {
             index += 1;
         }
         result
+    }
+}
+
+impl Equal for String {
+    fn equals(&self, other: &String) -> bool {
+        let length = self.get_length();
+        if length != other.get_length() {
+            return false;
+        }
+
+        unsafe {
+            memcmp(
+                self.data as *const c_void,
+                other.data as *const c_void,
+                length,
+            ) == 0
+        }
+    }
+}
+
+impl Hash for String {
+    fn hash(&self) -> usize {
+        hash(self.data, self.get_length())
     }
 }
 
