@@ -1,10 +1,12 @@
+use scaly::io::Stream;
 use scaly::Page;
-//use scaly::containers::Ref;
 
-pub struct Lexer {}
+pub struct Lexer {
+    _stream: *mut Stream,
+}
 
 impl Lexer {
-    pub fn new(_p: *mut Page) -> Lexer {
-        Lexer {}
+    pub fn new(_p: *mut Page, stream: *mut Stream) -> Lexer {
+        Lexer { _stream: stream }
     }
 }
