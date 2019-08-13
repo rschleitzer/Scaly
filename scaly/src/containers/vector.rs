@@ -41,24 +41,24 @@ impl<T: Copy> Index<usize> for Vector<T> {
 
 #[test]
 fn test_hash_map() {
-    use containers::String;
+    use containers::{Ref, String};
     use io::Console;
-    use memory::Heap;
-    use memory::Page;
-    use memory::Region;
-    use memory::StackBucket;
+    use memory::{Heap, Page, Region, StackBucket};
     let mut heap = Heap::create();
     let root_stack_bucket = StackBucket::create(&mut heap);
     let root_page = Page::get(root_stack_bucket as usize);
     let r = Region::create_from_page(root_page);
     let _r_1 = Region::create(&r);
-    let vector = Vector::from_raw_array(
+    let vector = Ref::new(
         _r_1.page,
-        &[
-            String::from_string_slice(_r_1.page, "using"),
-            String::from_string_slice(_r_1.page, "namespace"),
-            String::from_string_slice(_r_1.page, "typedef"),
-        ],
+        Vector::from_raw_array(
+            _r_1.page,
+            &[
+                String::from_string_slice(_r_1.page, "using"),
+                String::from_string_slice(_r_1.page, "namespace"),
+                String::from_string_slice(_r_1.page, "typedef"),
+            ],
+        ),
     );
     Console::write(&_r_1, vector[0]);
     Console::write(&_r_1, vector[1]);
