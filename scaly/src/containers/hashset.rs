@@ -105,3 +105,23 @@ pub fn hash(data: *const u8, length: usize) -> usize {
     }
     hash as usize
 }
+
+#[test]
+fn test_hash_map() {
+    use containers::Ref;
+    use memory::Heap;
+    use memory::Page;
+    use memory::Region;
+    use memory::StackBucket;
+    let mut heap = Heap::create();
+    let root_stack_bucket = StackBucket::create(&mut heap);
+    let root_page = Page::get(root_stack_bucket as usize);
+    let r = Region::create_from_page(root_page);
+    unsafe {
+        let _r_1 = Region::create(&r);
+        // let keywords: HashSet<Ref<String>> = HashSet::from_vector(
+        //     _r_1.page,
+        //     Vector::from_raw_array(_r_1.page, ["using", "namespace", "typedef"]),
+        // );
+    }
+}
