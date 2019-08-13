@@ -9,12 +9,12 @@ use std::mem::size_of;
 use std::ptr::null_mut;
 use std::ptr::write;
 
-pub struct Array<T> {
+pub struct Array<T: Copy> {
     vector: Vector<T>,
     length: usize,
 }
 
-impl<T> Array<T> {
+impl<T: Copy> Array<T> {
     pub fn new() -> Array<T> {
         Array {
             vector: Vector {

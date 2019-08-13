@@ -3,6 +3,7 @@ use memory::Page;
 use std::ops::Deref;
 use std::ops::DerefMut;
 
+#[derive(Copy, Clone)]
 pub struct Ref<T> {
     pub data: *mut T,
 }

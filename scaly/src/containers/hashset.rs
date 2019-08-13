@@ -2,11 +2,12 @@ use containers::reference::Ref;
 use containers::vector::Vector;
 use memory::page::Page;
 
-pub struct HashSet<T: Hash<T>> {
+#[derive(Copy, Clone)]
+pub struct HashSet<T: Hash<T> + Copy> {
     _map: Option<Ref<HashMap<T>>>,
 }
 
-impl<T: Hash<T>> HashSet<T> {
+impl<T: Hash<T> + Copy> HashSet<T> {
     pub fn from_vector(_page: *mut Page, vector: Ref<Vector<T>>) -> Ref<HashSet<T>> {
         let mut hash_set = Ref::new(_page, HashSet { _map: None });
         (*hash_set).initialize_from_vector(vector);
@@ -20,14 +21,19 @@ impl<T: Hash<T>> HashSet<T> {
         );
         self._map = Some(map);
     }
+
+    pub fn contains(&self, _item: T) -> bool {
+        true
+    }
 }
 
-struct HashMap<T> {
+#[derive(Copy, Clone)]
+struct HashMap<T: Copy> {
     _buckets: Vector<i32>,
     _slots: Vector<Slot<T>>,
 }
 
-impl<T> HashMap<T> {
+impl<T: Copy> HashMap<T> {
     pub fn new(_page: *mut Page, size: usize) -> HashMap<T> {
         let hash_size = HashPrimeHelper::get_prime(size);
         HashMap {
@@ -37,7 +43,8 @@ impl<T> HashMap<T> {
     }
 }
 
-struct Slot<T> {
+#[derive(Copy, Clone)]
+struct Slot<T: Copy> {
     _hash_code: usize,
     _next: usize,
     _value: T,
@@ -108,7 +115,7 @@ pub fn hash(data: *const u8, length: usize) -> usize {
 
 #[test]
 fn test_hash_map() {
-    use containers::Ref;
+    use containers::String;
     use memory::Heap;
     use memory::Page;
     use memory::Region;
@@ -117,11 +124,36 @@ fn test_hash_map() {
     let root_stack_bucket = StackBucket::create(&mut heap);
     let root_page = Page::get(root_stack_bucket as usize);
     let r = Region::create_from_page(root_page);
-    unsafe {
-        let _r_1 = Region::create(&r);
-        // let keywords: HashSet<Ref<String>> = HashSet::from_vector(
-        //     _r_1.page,
-        //     Vector::from_raw_array(_r_1.page, ["using", "namespace", "typedef"]),
-        // );
-    }
+    let _r_1 = Region::create(&r);
+    let keywords = HashSet::from_vector(
+        _r_1.page,
+        Ref::new(
+            _r_1.page,
+            Vector::from_raw_array(
+                _r_1.page,
+                &[
+                    String::from_string_slice(_r_1.page, "using"),
+                    String::from_string_slice(_r_1.page, "namespace"),
+                    String::from_string_slice(_r_1.page, "typedef"),
+                ],
+            ),
+        ),
+    );
+
+    assert_eq!(
+        (*keywords).contains(String::from_string_slice(_r_1.page, "using")),
+        true
+    );
+    assert_eq!(
+        (*keywords).contains(String::from_string_slice(_r_1.page, "namespace")),
+        true
+    );
+    assert_eq!(
+        (*keywords).contains(String::from_string_slice(_r_1.page, "typedef")),
+        true
+    );
+    assert_eq!(
+        (*keywords).contains(String::from_string_slice(_r_1.page, "nix")),
+        true
+    );
 }

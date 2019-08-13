@@ -10,6 +10,7 @@ use std::mem::size_of;
 use std::ptr;
 use std::ptr::write;
 
+#[derive(Copy, Clone)]
 pub struct String {
     pub data: *const u8,
 }

@@ -2,7 +2,6 @@ extern crate libc;
 
 use self::libc::c_void;
 use self::libc::{read, write, STDIN_FILENO, STDOUT_FILENO};
-//use containers::Ref;
 use containers::String;
 use io::{Disposable, Stream};
 use memory::region::Region;
@@ -24,18 +23,6 @@ impl Console {
     pub fn open_standard_output(_rp: *mut Page) -> *mut Stream {
         unsafe { (*_rp).allocate(ConsoleStream {}) }
     }
-
-    // pub fn open_standard_output_box(_rp: *mut Page) -> Box<Stream> {
-    //     Box::new(ConsoleStream {})
-    // }
-
-    // pub fn open_standard_output_ref(_rp: *mut Page) -> Ref<Stream> {
-    //     unsafe {
-    //         Ref {
-    //             data: (*_rp).allocate(ConsoleStream {}),
-    //         }
-    //     }
-    // }
 }
 
 pub struct ConsoleStream {}
@@ -70,14 +57,14 @@ fn test_console() {
     {
         let root_page = Page::get(root_stack_bucket as usize);
         Console::write(&r1, String::from_string_slice(root_page, "Scaly>"));
-        let stdout = Console::open_standard_output(root_page);
-        unsafe {
-            let byte1 = (*stdout).read_byte();
-            let byte2 = (*stdout).read_byte();
-            let byte3 = (*stdout).read_byte();
-            (*stdout).write_byte(byte1);
-            (*stdout).write_byte(byte2);
-            (*stdout).write_byte(byte3);
-        }
+        // let stdout = Console::open_standard_output(root_page);
+        // unsafe {
+        //     let byte1 = (*stdout).read_byte();
+        //     let byte2 = (*stdout).read_byte();
+        //     let byte3 = (*stdout).read_byte();
+        //     (*stdout).write_byte(byte1);
+        //     (*stdout).write_byte(byte2);
+        //     (*stdout).write_byte(byte3);
+        // }
     }
 }
