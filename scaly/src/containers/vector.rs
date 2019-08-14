@@ -1,6 +1,7 @@
 use memory::page::Page;
 use std::mem::{align_of, size_of};
 use std::ops::Index;
+use std::ops::{Deref, DerefMut};
 use std::ptr::write;
 
 #[derive(Copy, Clone)]
@@ -39,8 +40,21 @@ impl<T: Copy> Index<usize> for Vector<T> {
     }
 }
 
+impl<T: Copy> Deref for Vector<T> {
+    type Target = [T];
+    fn deref(&self) -> &[T] {
+        unsafe { ::std::slice::from_raw_parts(self.data, self.length) }
+    }
+}
+
+impl<T: Copy> DerefMut for Vector<T> {
+    fn deref_mut(&mut self) -> &mut [T] {
+        unsafe { ::std::slice::from_raw_parts_mut(self.data, self.length) }
+    }
+}
+
 #[test]
-fn test_hash_map() {
+fn test_vector() {
     use containers::{Ref, String};
     use io::Console;
     use memory::{Heap, Page, Region, StackBucket};

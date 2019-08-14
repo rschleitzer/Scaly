@@ -15,11 +15,12 @@ impl<T: Hash<T> + Copy> HashSet<T> {
     }
 
     fn initialize_from_vector(&mut self, vector: Ref<Vector<T>>) {
-        let map = Ref::new(
+        let mut map = Ref::new(
             Page::own(self),
             HashMap::new(Page::own(self), (*vector).length),
         );
         self._map = Some(map);
+        map.initialize_from_vector(vector);
     }
 
     pub fn contains(&self, _item: T) -> bool {
@@ -29,25 +30,48 @@ impl<T: Hash<T> + Copy> HashSet<T> {
 
 #[derive(Copy, Clone)]
 struct HashMap<T: Copy> {
-    _buckets: Vector<i32>,
-    _slots: Vector<Slot<T>>,
+    buckets: Vector<isize>,
+    slots: Vector<Slot<T>>,
 }
 
-impl<T: Copy> HashMap<T> {
+impl<T: Copy + Hash<T>> HashMap<T> {
     pub fn new(_page: *mut Page, size: usize) -> HashMap<T> {
         let hash_size = HashPrimeHelper::get_prime(size);
         HashMap {
-            _buckets: Vector::new(_page, hash_size),
-            _slots: Vector::new(_page, hash_size),
+            buckets: Vector::new(_page, hash_size),
+            slots: Vector::new(_page, hash_size),
+        }
+    }
+
+    fn initialize_from_vector(&mut self, vector: Ref<Vector<T>>) {
+        for value in vector.iter() {
+            self.add(value);
+        }
+    }
+
+    fn add(&mut self, value: &T) {
+        let hash_code = value.hash();
+        let bucket = hash_code % self.buckets.length;
+        {
+            let mut i = self.buckets[bucket] - 1;
+            while i >= 0 {
+                if self.slots[i as usize].hash_code == hash_code
+                    && self.slots[i as usize].value.equals(value)
+                {
+                    return;
+                }
+
+                i = self.slots[i as usize].next;
+            }
         }
     }
 }
 
 #[derive(Copy, Clone)]
 struct Slot<T: Copy> {
-    _hash_code: usize,
-    _next: usize,
-    _value: T,
+    hash_code: usize,
+    next: isize,
+    value: T,
 }
 
 struct HashPrimeHelper {}
@@ -62,7 +86,7 @@ static HASH_PRIMES: &'static [usize] = &[
 impl HashPrimeHelper {
     pub fn get_prime(size: usize) -> usize {
         for i in HASH_PRIMES {
-            if *i > size {
+            if *i >= size {
                 return *i;
             }
         }
