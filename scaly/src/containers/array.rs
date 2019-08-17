@@ -8,6 +8,8 @@ use std::mem::align_of;
 use std::mem::size_of;
 use std::ptr::null_mut;
 use std::ptr::write;
+use std::ops::Index;
+use std::ops::{Deref, DerefMut};
 
 pub struct Array<T: Copy> {
     vector: Vector<T>,
@@ -67,5 +69,25 @@ impl<T: Copy> Array<T> {
                 (*old_exclusive_page).forget();
             }
         }
+    }
+}
+
+impl<T: Copy> Index<usize> for Array<T> {
+    type Output = T;
+    fn index(&self, offset: usize) -> &Self::Output {
+        unsafe { &*self.vector.data.offset(offset as isize) }
+    }
+}
+
+impl<T: Copy> Deref for Array<T> {
+    type Target = [T];
+    fn deref(&self) -> &[T] {
+        unsafe { ::std::slice::from_raw_parts(self.vector.data, self.length) }
+    }
+}
+
+impl<T: Copy> DerefMut for Array<T> {
+    fn deref_mut(&mut self) -> &mut [T] {
+        unsafe { ::std::slice::from_raw_parts_mut(self.vector.data, self.length) }
     }
 }

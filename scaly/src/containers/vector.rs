@@ -1,4 +1,5 @@
 use memory::page::Page;
+use containers::{Array, Ref};
 use std::mem::{align_of, size_of};
 use std::ops::Index;
 use std::ops::{Deref, DerefMut};
@@ -24,6 +25,18 @@ impl<T: Copy> Vector<T> {
         let vector = Vector::new(_page, array.len());
         let mut address = vector.data;
         for item in array {
+            unsafe {
+                write(address, *item);
+                address = address.offset(1);
+            }
+        }
+        vector
+    }
+
+    pub fn from_array(_page: *mut Page, array: Ref<Array<T>>) -> Vector<T> {
+        let vector = Vector::new(_page, array.get_length());
+        let mut address = vector.data;
+        for item in array.iter() {
             unsafe {
                 write(address, *item);
                 address = address.offset(1);

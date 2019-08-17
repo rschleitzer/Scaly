@@ -1,6 +1,7 @@
 use memory::page::Page;
 use std::ptr::null_mut;
 
+#[derive(Copy, Clone)]
 pub struct List<T: Copy> {
     head: *mut Node<T>,
 }

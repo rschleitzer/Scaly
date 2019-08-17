@@ -1,77 +1,66 @@
+use containers::array::Array;
+use containers::list::List;
 use containers::reference::Ref;
 use containers::vector::Vector;
 use memory::page::Page;
 
 #[derive(Copy, Clone)]
 pub struct HashSet<T: Hash<T> + Copy> {
-    _map: Option<Ref<HashMap<T>>>,
+    slots: Ref<Vector<List<Slot<T>>>>,
 }
 
 impl<T: Hash<T> + Copy> HashSet<T> {
     pub fn from_vector(_page: *mut Page, vector: Ref<Vector<T>>) -> Ref<HashSet<T>> {
-        let mut hash_set = Ref::new(_page, HashSet { _map: None });
-        (*hash_set).initialize_from_vector(vector);
+        let hash_size = HashPrimeHelper::get_prime(vector.length);
+        let mut array: Ref<Array<List<Slot<T>>>> = Ref::new(_page, Array::new());
+        for _ in 1..hash_size {
+            array.add(_page, List::new());
+        }
+        let slots = Ref::new(_page, Vector::from_array(_page, array));
+        let mut hash_set = Ref::new(_page, HashSet { slots: slots });
+        hash_set.initialize_from_vector(_page, vector);
         hash_set
     }
 
-    fn initialize_from_vector(&mut self, vector: Ref<Vector<T>>) {
-        let mut map = Ref::new(
-            Page::own(self),
-            HashMap::new(Page::own(self), (*vector).length),
-        );
-        self._map = Some(map);
-        map.initialize_from_vector(vector);
-    }
-
-    pub fn contains(&self, _item: T) -> bool {
-        true
-    }
-}
-
-#[derive(Copy, Clone)]
-struct HashMap<T: Copy> {
-    buckets: Vector<isize>,
-    slots: Vector<Slot<T>>,
-}
-
-impl<T: Copy + Hash<T>> HashMap<T> {
-    pub fn new(_page: *mut Page, size: usize) -> HashMap<T> {
-        let hash_size = HashPrimeHelper::get_prime(size);
-        HashMap {
-            buckets: Vector::new(_page, hash_size),
-            slots: Vector::new(_page, hash_size),
-        }
-    }
-
-    fn initialize_from_vector(&mut self, vector: Ref<Vector<T>>) {
+    fn initialize_from_vector(&mut self, _page: *mut Page, vector: Ref<Vector<T>>) {
         for value in vector.iter() {
-            self.add(value);
+            self.add(_page, value);
         }
     }
 
-    fn add(&mut self, value: &T) {
+    fn add(&mut self, _page: *mut Page, value: &T) {
         let hash_code = value.hash();
-        let bucket = hash_code % self.buckets.length;
-        {
-            let mut i = self.buckets[bucket] - 1;
-            while i >= 0 {
-                if self.slots[i as usize].hash_code == hash_code
-                    && self.slots[i as usize].value.equals(value)
-                {
-                    return;
-                }
-
-                i = self.slots[i as usize].next;
+        let mut slot_list = self.slots[hash_code % self.slots.length];
+        for slot in slot_list.get_iterator() {
+            if value.equals(&slot.value) {
+                return;
             }
         }
+
+        slot_list.add(
+            _page,
+            Slot {
+                hash_code: hash_code,
+                value: *value,
+            },
+        );
+    }
+
+    pub fn contains(&self, value: T) -> bool {
+        for slot in self.slots[value.hash() % self.slots.length].get_iterator() {
+            if value.equals(&slot.value) {
+                return true;
+            }
+        }
+
+        false
     }
 }
 
 #[derive(Copy, Clone)]
 struct Slot<T: Copy> {
-    hash_code: usize,
-    next: isize,
     value: T,
+    hash_code: usize,
 }
 
 struct HashPrimeHelper {}
