@@ -3,6 +3,6 @@ pub trait Disposable {
 }
 
 pub trait Stream: Disposable {
-    fn read_byte(&self) -> u8;
+    fn read_byte(&self) -> i32;
     fn write_byte(&self, u8);
 }

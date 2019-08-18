@@ -1,7 +1,7 @@
 extern crate libc;
 
 use self::libc::c_void;
-use self::libc::{read, write, STDIN_FILENO, STDOUT_FILENO};
+use self::libc::{__errno_location, read, write, STDIN_FILENO, STDOUT_FILENO};
 use containers::String;
 use io::{Disposable, Stream};
 use memory::region::Region;
@@ -32,12 +32,15 @@ impl Disposable for ConsoleStream {
 }
 
 impl Stream for ConsoleStream {
-    fn read_byte(&self) -> u8 {
+    fn read_byte(&self) -> i32 {
         let mut the_byte: u8 = 0;
         unsafe {
             read(STDIN_FILENO, &mut the_byte as *mut u8 as *mut c_void, 1);
+            if *__errno_location() != 0 {
+                return -1;
+            }
         }
-        the_byte
+        the_byte as i32
     }
 
     fn write_byte(&self, the_byte: u8) {

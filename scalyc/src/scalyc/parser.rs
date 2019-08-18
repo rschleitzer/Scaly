@@ -66,7 +66,7 @@ impl Parser {
             ),
         );
         Parser {
-            lexer: Ref::new(_rp, Lexer::new(_rp, stream)),
+            lexer: Lexer::new(_rp, stream),
             file_name: file_name,
             _keywords: keywords,
         }
