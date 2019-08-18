@@ -3,47 +3,47 @@ use containers::list::List;
 use containers::reference::Ref;
 use containers::vector::Vector;
 use memory::page::Page;
+use memory::region::Region;
 
 #[derive(Copy, Clone)]
 pub struct HashSet<T: Hash<T> + Copy> {
-    slots: Ref<Vector<List<Slot<T>>>>,
+    slots: Ref<Vector<Ref<List<Slot<T>>>>>,
 }
 
 impl<T: Hash<T> + Copy> HashSet<T> {
-    pub fn from_vector(_page: *mut Page, vector: Ref<Vector<T>>) -> Ref<HashSet<T>> {
+    pub fn from_vector(_pr: &Region, _rp: *mut Page, vector: Ref<Vector<T>>) -> Ref<HashSet<T>> {
+        let _r = Region::create(_pr);
         let hash_size = HashPrimeHelper::get_prime(vector.length);
-        let mut array: Ref<Array<List<Slot<T>>>> = Ref::new(_page, Array::new());
+        let mut array: Ref<Array<Ref<List<Slot<T>>>>> = Ref::new(_r.page, Array::new());
         for _ in 0..hash_size {
-            array.add(_page, List::new());
+            array.add(Ref::new(_r.page, List::new()));
         }
-        let slots = Ref::new(_page, Vector::from_array(_page, array));
-        let mut hash_set = Ref::new(_page, HashSet { slots: slots });
-        hash_set.initialize_from_vector(_page, vector);
+        let slots = Ref::new(_rp, Vector::from_array(_rp, array));
+        let mut hash_set = Ref::new(_rp, HashSet { slots: slots });
+        hash_set.initialize_from_vector(_rp, vector);
         hash_set
     }
 
-    fn initialize_from_vector(&mut self, _page: *mut Page, vector: Ref<Vector<T>>) {
+    fn initialize_from_vector(&mut self, _rp: *mut Page, vector: Ref<Vector<T>>) {
         for value in vector.iter() {
-            self.add(_page, value);
+            self.add(_rp, value);
         }
     }
 
-    fn add(&mut self, _page: *mut Page, value: &T) {
+    fn add(&mut self, _rp: *mut Page, value: &T) {
         let hash_code = value.hash();
-        let mut slot_list = self.slots[hash_code % self.slots.length];
+        let slot_number = hash_code % self.slots.length;
+        let mut slot_list = self.slots[slot_number];
         for slot in slot_list.get_iterator() {
             if value.equals(&slot.value) {
                 return;
             }
         }
 
-        slot_list.add(
-            _page,
-            Slot {
-                hash_code: hash_code,
-                value: *value,
-            },
-        );
+        slot_list.add(Slot {
+            hash_code: hash_code,
+            value: *value,
+        });
     }
 
     pub fn contains(&self, value: T) -> bool {
@@ -136,37 +136,37 @@ fn test_hash_map() {
     let mut heap = Heap::create();
     let root_stack_bucket = StackBucket::create(&mut heap);
     let root_page = Page::get(root_stack_bucket as usize);
-    let r = Region::create_from_page(root_page);
-    let _r_1 = Region::create(&r);
+    let _r = Region::create_from_page(root_page);
     let keywords = HashSet::from_vector(
-        _r_1.page,
+        &_r,
+        _r.page,
         Ref::new(
-            _r_1.page,
+            _r.page,
             Vector::from_raw_array(
-                _r_1.page,
+                _r.page,
                 &[
-                    String::from_string_slice(_r_1.page, "using"),
-                    String::from_string_slice(_r_1.page, "namespace"),
-                    String::from_string_slice(_r_1.page, "typedef"),
+                    String::from_string_slice(_r.page, "using"),
+                    String::from_string_slice(_r.page, "namespace"),
+                    String::from_string_slice(_r.page, "typedef"),
                 ],
             ),
         ),
     );
 
     assert_eq!(
-        (*keywords).contains(String::from_string_slice(_r_1.page, "using")),
+        (*keywords).contains(String::from_string_slice(_r.page, "using")),
         true
     );
     assert_eq!(
-        (*keywords).contains(String::from_string_slice(_r_1.page, "namespace")),
+        (*keywords).contains(String::from_string_slice(_r.page, "namespace")),
         true
     );
     assert_eq!(
-        (*keywords).contains(String::from_string_slice(_r_1.page, "typedef")),
+        (*keywords).contains(String::from_string_slice(_r.page, "typedef")),
         true
     );
     assert_eq!(
-        (*keywords).contains(String::from_string_slice(_r_1.page, "nix")),
-        true
+        (*keywords).contains(String::from_string_slice(_r.page, "nix")),
+        false
     );
 }

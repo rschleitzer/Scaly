@@ -31,9 +31,9 @@ impl<T: Copy> Array<T> {
         self.length
     }
 
-    pub fn add(&mut self, page: *mut Page, item: T) {
+    pub fn add(&mut self, item: T) {
         if self.length == self.vector.length {
-            self.reallocate(page);
+            self.reallocate();
         }
 
         unsafe {
@@ -44,11 +44,12 @@ impl<T: Copy> Array<T> {
         self.length += 1;
     }
 
-    fn reallocate(&mut self, page: *mut Page) {
+    fn reallocate(&mut self) {
+        let _own_page = Page::own(self);
         let size = size_of::<T>();
         unsafe {
             if self.vector.length == 0 {
-                let exclusive_page = (*page).allocate_exclusive_page();
+                let exclusive_page = (*_own_page).allocate_exclusive_page();
                 let capacity = (*exclusive_page).get_capacity::<T>();
                 self.vector.length = capacity / size;
                 self.vector.data = (*exclusive_page)
@@ -59,7 +60,7 @@ impl<T: Copy> Array<T> {
                 self.vector.length *= 2;
                 let old_data = self.vector.data;
                 self.vector.data =
-                    (*page).allocate_raw(self.vector.length * size, align_of::<T>()) as *mut T;
+                    (*_own_page).allocate_raw(self.vector.length * size, align_of::<T>()) as *mut T;
                 memcpy(
                     self.vector.data as *mut c_void,
                     old_data as *mut c_void,

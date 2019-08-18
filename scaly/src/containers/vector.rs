@@ -1,5 +1,5 @@
-use memory::page::Page;
 use containers::{Array, Ref};
+use memory::page::Page;
 use std::mem::{align_of, size_of};
 use std::ops::Index;
 use std::ops::{Deref, DerefMut};
@@ -12,17 +12,17 @@ pub struct Vector<T: Copy> {
 }
 
 impl<T: Copy> Vector<T> {
-    pub fn new(_page: *mut Page, length: usize) -> Vector<T> {
+    fn new(_rp: *mut Page, length: usize) -> Vector<T> {
         unsafe {
             Vector {
-                data: (*_page).allocate_raw(length * size_of::<T>(), align_of::<T>()) as *mut T,
+                data: (*_rp).allocate_raw(length * size_of::<T>(), align_of::<T>()) as *mut T,
                 length: length,
             }
         }
     }
 
-    pub fn from_raw_array(_page: *mut Page, array: &[T]) -> Vector<T> {
-        let vector = Vector::new(_page, array.len());
+    pub fn from_raw_array(_rp: *mut Page, array: &[T]) -> Vector<T> {
+        let vector = Vector::new(_rp, array.len());
         let mut address = vector.data;
         for item in array {
             unsafe {
@@ -33,8 +33,8 @@ impl<T: Copy> Vector<T> {
         vector
     }
 
-    pub fn from_array(_page: *mut Page, array: Ref<Array<T>>) -> Vector<T> {
-        let vector = Vector::new(_page, array.get_length());
+    pub fn from_array(_rp: *mut Page, array: Ref<Array<T>>) -> Vector<T> {
+        let vector = Vector::new(_rp, array.get_length());
         let mut address = vector.data;
         for item in array.iter() {
             unsafe {

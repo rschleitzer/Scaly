@@ -16,9 +16,10 @@ impl<T: Copy> List<T> {
         List { head: null_mut() }
     }
 
-    pub fn add(&mut self, _page: *mut Page, element: T) {
+    pub fn add(&mut self, element: T) {
+        let _own_page = Page::own(self);
         let new_node = unsafe {
-            (*_page).allocate(Node {
+            (*_own_page).allocate(Node {
                 element: element,
                 next: self.head,
             })
@@ -66,9 +67,9 @@ fn test_list() {
     let _r_1 = Region::create(&r);
     let mut list = Ref::new(_r_1.page, List::new());
 
-    list.add(_r_1.page, 1);
-    list.add(_r_1.page, 2);
-    list.add(_r_1.page, 3);
+    list.add(1);
+    list.add(2);
+    list.add(3);
 
     for i in list.get_iterator() {
         println!("Item: {}", i)
