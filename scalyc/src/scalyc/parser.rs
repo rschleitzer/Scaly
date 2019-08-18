@@ -2,16 +2,18 @@ use scaly::containers::{Array, HashSet, Ref, String, Vector};
 use scaly::io::Stream;
 use scaly::memory::Region;
 use scaly::Page;
+use scalyc::errors::ParserError;
 use scalyc::lexer::Lexer;
 use scalyc::lexer::Position;
 
 pub struct Parser {
     lexer: Ref<Lexer>,
+    file_name: String,
     _keywords: Ref<HashSet<String>>,
 }
 
 impl Parser {
-    pub fn new(_pr: &Region, _rp: *mut Page, _file_name: String, stream: *mut Stream) -> Parser {
+    pub fn new(_pr: &Region, _rp: *mut Page, file_name: String, stream: *mut Stream) -> Parser {
         let _r = Region::create(_pr);
         let keywords = HashSet::from_vector(
             &_r,
@@ -65,11 +67,17 @@ impl Parser {
         );
         Parser {
             lexer: Ref::new(_rp, Lexer::new(_rp, stream)),
+            file_name: file_name,
             _keywords: keywords,
         }
     }
 
-    pub fn _parse_file(&mut self, _pr: &Region, _rp: *mut Page) -> Ref<_FileSyntax> {
+    pub fn parse_file(
+        &mut self,
+        _pr: &Region,
+        _rp: *mut Page,
+        _ep: *mut Page,
+    ) -> Result<Ref<FileSyntax>, Ref<ParserError>> {
         let _r = Region::create(_pr);
         let start: Position = self.lexer.get_previous_position();
 
@@ -81,21 +89,29 @@ impl Parser {
 
         // DeclarationSyntax[] declarations = parseDeclarationList();
 
-        // StatementSyntax[] statements = parseStatementList();
-        // if (statements != null)
-        // {
-        //     if (!isAtEnd())
-        //     {
-        //         Position errorPos = lexer.getPreviousPosition();
-        //         throw new ParserException(fileName, errorPos.line, errorPos.column);
-        //     }
-        // }
+        let statements = self.parse_statement_list(&_r, _rp);
+        match statements {
+            Some(_) => {
+                if !self.is_at_end() {
+                    let error_pos = self.lexer.get_previous_position();
+                    return Result::Err(Ref::new(
+                        _ep,
+                        ParserError {
+                            file_name: self.file_name,
+                            line: error_pos.line,
+                            column: error_pos.column,
+                        },
+                    ));
+                }
+            }
+            None => (),
+        }
 
         let end: Position = self.lexer.get_position();
 
-        let ret: Ref<_FileSyntax> = Ref::new(
+        let ret: Ref<FileSyntax> = Ref::new(
             _rp,
-            _FileSyntax {
+            FileSyntax {
                 start: start,
                 end: end,
             },
@@ -127,10 +143,14 @@ impl Parser {
         //         item.parent = ret;
         // }
 
-        ret
+        Ok(ret)
     }
 
-    pub fn parse_statement_list(&mut self, _pr: &Region, _rp: *mut Page) -> Option<Ref<Vector<Ref<StatementSyntax>>>> {
+    pub fn parse_statement_list(
+        &mut self,
+        _pr: &Region,
+        _rp: *mut Page,
+    ) -> Option<Ref<Vector<Ref<StatementSyntax>>>> {
         let _r = Region::create(_pr);
         let mut ret: Option<Ref<Array<Ref<StatementSyntax>>>> = Option::None;
         loop {
@@ -140,7 +160,7 @@ impl Parser {
                 Some(node) => {
                     match ret {
                         None => ret = Some(Ref::new(_rp, Array::new())),
-                        Some(_) => () 
+                        Some(_) => (),
                     };
                     ret.unwrap().add(node);
                 }
@@ -149,11 +169,15 @@ impl Parser {
 
         match ret {
             Some(ret) => Some(Ref::new(_rp, Vector::from_array(_rp, ret))),
-            None => None
+            None => None,
         }
     }
 
-    pub fn parse_statement(&mut self, _pr: &Region, _rp: *mut Page) -> Option<Ref<StatementSyntax>> {
+    pub fn parse_statement(
+        &mut self,
+        _pr: &Region,
+        _rp: *mut Page,
+    ) -> Option<Ref<StatementSyntax>> {
         let _r = Region::create(_pr);
         let start: Position = self.lexer.get_previous_position();
         let end: Position = self.lexer.get_position();
@@ -166,10 +190,22 @@ impl Parser {
         );
         Some(ret)
     }
+
+    fn is_at_end(&self) -> bool {
+        self.lexer.is_at_end()
+    }
+
+    fn _is_identifier(&self, id: String) -> bool {
+        if self._keywords.contains(id) {
+            false
+        } else {
+            true
+        }
+    }
 }
 
 #[derive(Copy, Clone)]
-pub struct _FileSyntax {
+pub struct FileSyntax {
     pub start: Position,
     pub end: Position,
 }

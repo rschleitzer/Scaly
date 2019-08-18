@@ -25,7 +25,7 @@ impl Compiler {
                     Console::open_standard_output(_r_1.page),
                 ),
             );
-            let _statement = parser.parse_statement(&_r_1, _r_1.page);
+            let _file_syntax = parser.parse_file(&_r_1, _r_1.page, _r_1.page);
             break;
         }
     }

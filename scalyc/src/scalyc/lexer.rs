@@ -1,5 +1,6 @@
 use scaly::io::Stream;
 use scaly::Page;
+use scaly::String;
 
 pub struct Lexer {
     pub token: Token,
@@ -22,6 +23,13 @@ impl Lexer {
     pub fn get_previous_position(&self) -> Position {
         Position { line: self.previous_line, column: self.previous_column }
     }
+
+    pub fn is_at_end(&self) -> bool {
+        match self.token {
+            Token::_EofToken => true,
+            _ => false,    
+        }
+    }
 }
 
 #[derive(Copy, Clone)]
@@ -30,6 +38,7 @@ pub struct Position {
     pub column: usize,
 }
 
+#[derive(Copy, Clone)]
 pub enum Token {
     _EofToken,
     InvalidToken,
