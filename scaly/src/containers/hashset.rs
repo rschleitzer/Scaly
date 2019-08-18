@@ -20,17 +20,17 @@ impl<T: Hash<T> + Copy> HashSet<T> {
         }
         let slots = Ref::new(_rp, Vector::from_array(_rp, array));
         let mut hash_set = Ref::new(_rp, HashSet { slots: slots });
-        hash_set.initialize_from_vector(_rp, vector);
+        hash_set.initialize_from_vector(vector);
         hash_set
     }
 
-    fn initialize_from_vector(&mut self, _rp: *mut Page, vector: Ref<Vector<T>>) {
+    fn initialize_from_vector(&mut self, vector: Ref<Vector<T>>) {
         for value in vector.iter() {
-            self.add(_rp, value);
+            self.add(value);
         }
     }
 
-    fn add(&mut self, _rp: *mut Page, value: &T) {
+    fn add(&mut self, value: &T) {
         let hash_code = value.hash();
         let slot_number = hash_code % self.slots.length;
         let mut slot_list = self.slots[slot_number];
