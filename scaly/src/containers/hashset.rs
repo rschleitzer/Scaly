@@ -13,7 +13,7 @@ impl<T: Hash<T> + Copy> HashSet<T> {
     pub fn from_vector(_page: *mut Page, vector: Ref<Vector<T>>) -> Ref<HashSet<T>> {
         let hash_size = HashPrimeHelper::get_prime(vector.length);
         let mut array: Ref<Array<List<Slot<T>>>> = Ref::new(_page, Array::new());
-        for _ in 1..hash_size {
+        for _ in 0..hash_size {
             array.add(_page, List::new());
         }
         let slots = Ref::new(_page, Vector::from_array(_page, array));
