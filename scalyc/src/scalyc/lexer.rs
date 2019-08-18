@@ -29,202 +29,189 @@ impl Lexer {
                 column: 0,
             },
         );
+        lexer.read_character();
         lexer.advance();
         lexer
     }
 
-    pub fn advance(&mut self) {
-        //skip_whitespace();
-        self.previous_line = self.line;
-        self.previous_column = self.previous_column;
-    }
-
     fn read_character(&mut self) {
         unsafe {
-            let character = (*self.stream).read_byte();
+            let read_result: i32 = (*self.stream).read_byte();
+            if read_result == -1 {
+                self.is_at_end = true;
+                self.character = 0 as char;
+            }
         }
     }
 
-    // fn skip_whitespace(&self) {
-    //     loop {
-    //         let c = (*(self.stream)).read_byte() as char;
-    //         switch (text[position])
-    //         {
-    //             case ' ':
-    //             {
-    //                 position = position + 1;
-    //                 column = column + 1;
-    //                 continue;
-    //             }
+    pub fn advance(&mut self) {
+        self.skip_whitespace();
+        self.previous_line = self.line;
+        self.previous_column = self.previous_column;
+        if self.is_at_end {
+            return
+        }
+    }
 
-    //             case '\t':
-    //             {
-    //                 position = position + 1;
-    //                 column = column + 4;
-    //                 continue;
-    //             }
+    fn skip_whitespace(&mut self) {
+        loop {
+            if self.is_at_end {
+                return
+            }
 
-    //             case '\r':
-    //             {
-    //                 position = position + 1;
-    //                 continue;
-    //             }
+            match self.character {
+                ' ' => {
+                    self.read_character();;
+                    self.column = self.column + 1;
+                    continue
+                }
 
-    //             case '\n': {
-    //                 position = position + 1;
-    //                 column = 1;
-    //                 line = line + 1;
-    //                 continue;
-    //             }
+                '\t' => {
+                    self.read_character();
+                    self.column = self.column + 4;
+                    continue
+                }
 
-    //             case '/':
-    //             {
-    //                 position = position + 1;
-    //                 column = column + 1;
+                '\r' => {
+                    self.read_character();
+                    continue
+                }
 
-    //                 if (position == end)
-    //                     return;
+                '\n' => {
+                    self.read_character();
+                    self.column = 1;
+                    self.line = self.line + 1;
+                    continue
+                }
 
-    //                 if (text[position] == '/')
-    //                 {
-    //                     handleSingleLineComment();
-    //                 }
-    //                 else
-    //                 {
-    //                     if (text[position] == '*')
-    //                         handleMultiLineComment();
-    //                     else
-    //                         return;
-    //                 }
-    //                     break;
-    //             }
-    //             default:
-    //                 return;
-    //         }
-    //     }
-    //     while (true);
-    // }
+                '/' => {
+                    self.read_character();
+                    self.column = self.column + 1;
 
-    // void handleSingleLineComment()
-    // {
-    //     do
-    //     {
-    //         if (position == end)
-    //             return;
+                    if self.is_at_end {
+                        return
+                    }
 
-    //         switch (text[position])
-    //         {
-    //             case '\t':
-    //             {
-    //                 position = position + 1;
-    //                 column = column + 4;
-    //                 continue;
-    //             }
+                    if self.character == '/' {
+                        self.handle_single_line_comment();
+                    }
+                    else {
+                        if self.character == '*' {
+                        self.handle_multi_line_comment();
+                        }
+                        else {
+                            return
+                        }
+                    }
+                }
 
-    //             case '\r':
-    //             {
-    //                 position = position + 1;
-    //                 continue;
-    //             }
+                _ =>
+                    return
+            }
+        }
+    }
 
-    //             case '\n':
-    //             {
-    //                 position = position + 1;
-    //                 column = 1;
-    //                 line = line + 1;
-    //                 return;
-    //             }
+    fn handle_single_line_comment(&mut self) {
+        loop {
+            if self.is_at_end() {
+                return
+            }
 
-    //             default:
-    //             {
-    //                 position = position + 1;
-    //                 column = column + 1;
-    //                 continue;
-    //             }
-    //         }
-    //     }
-    //     while (true);
-    // }
+            match self.character {
+                '\t'=> {
+                    self.read_character();
+                    self.column = self.column + 4;
+                    continue
+                }
 
-    // void handleMultiLineComment()
-    // {
-    //     do
-    //     {
-    //         if (position == end)
-    //             return;
+                '\r' => {
+                    self.read_character();
+                    continue
+                }
 
-    //         switch (text[position])
-    //         {
-    //             case '/':
-    //             {
-    //                 position = position + 1;
-    //                 column = column + 1;
+                '\n' => {
+                    self.read_character();
+                    self.column = 1;
+                    self.line = self.line + 1;
+                    return
+                }
 
-    //                 if (position == end)
-    //                 {
-    //                     return;
-    //                 }
-    //                 else
-    //                 {
-    //                     if (text[position] == '*')
-    //                         handleMultiLineComment();
-    //                     else
-    //                         return;
-    //                 }
-    //                 break;
-    //             }
+                _ => {
+                    self.read_character();
+                    self.column = self.column + 1;
+                    continue;
+                }
+            }
+        }
+    }
 
-    //             case '*':
-    //             {
-    //                 position = position + 1;
-    //                 column = column + 1;
+    fn handle_multi_line_comment(&mut self) {
+        loop {
+            if self.is_at_end() {
+                return
+            }
 
-    //                     if (position == end)
-    //                     {
-    //                         return;
-    //                     }
-    //                     else
-    //                     {
-    //                         if (text[position] == '/')
-    //                         {
-    //                             position = position + 1;
-    //                             column = column + 1;
-    //                             return;
-    //                         }
-    //                     }
-    //                 break;
-    //             }
+            match self.character {
+                '/' => {
+                    self.read_character();
+                    self.column = self.column + 1;
 
-    //             case '\t':
-    //             {
-    //                 position = position + 1;
-    //                 column = column + 4;
-    //                 continue;
-    //             }
+                    if self.is_at_end() {
+                        return
+                    }
+                    else
+                    {
+                        if self.character == '*' {
+                            self.handle_multi_line_comment();
+                        }
+                        else {
+                            return
+                        }
+                    }
+                }
 
-    //             case '\r':
-    //             {
-    //                 position = position + 1;
-    //                 continue;
-    //             }
+                '*' => {
+                    self.read_character();
+                    self.column = self.column + 1;
 
-    //             case '\n':
-    //             {
-    //                 position = position + 1;
-    //                 column = 1;
-    //                 line = line + 1;
-    //                 return;
-    //             }
-    //             default:
-    //             {
-    //                 position = position + 1;
-    //                 column = column + 1;
-    //                 continue;
-    //             }
-    //         }
-    //     }
-    //     while (true);
-    // }
+                    if self.is_at_end() {
+                        return
+                    }
+                    else {
+                        if self.character == '/' {
+                            self.read_character();
+                            self.column = self.column + 1;
+                            return
+                        }
+                    }
+                }
+
+                '\t' => {
+                    self.read_character();
+                    self.column = self.column + 4;
+                    continue
+                }
+
+                '\r' => {
+                    self.read_character();
+                    continue
+                }
+
+                '\n' => {
+                    self.read_character();
+                    self.column = 1;
+                    self.line = self.line + 1;
+                    return
+                }
+
+                _ => {
+                    self.read_character();
+                    self.column = self.column + 1;
+                    continue
+                }
+            }
+        }
+    }
 
     pub fn get_position(&self) -> Position {
         Position {
