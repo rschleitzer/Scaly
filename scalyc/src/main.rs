@@ -4,9 +4,7 @@ extern crate scaly;
 use libc::c_char;
 use libc::c_int;
 
-use scaly::containers::Array;
-use scaly::containers::Ref;
-use scaly::containers::String;
+use scaly::containers::{Array, Ref, String, Vector};
 use scaly::memory::Heap;
 use scaly::memory::Page;
 use scaly::memory::Region;
@@ -30,29 +28,26 @@ fn main() {
 
 // C style main function which converts args to Scaly's main convention (would be provided by the LLVM backend)
 fn _main(argc: c_int, argv: *const *const c_char) {
-    let mut heap = Heap::create();
-    let root_stack_bucket = StackBucket::create(&mut heap);
-    let root_page = Page::get(root_stack_bucket as usize);
-    let r = Region::create_from_page(root_page);
-    unsafe {
-        let _r_1 = Region::create(&r);
+    let _r = Region::create_from_page(Page::get(StackBucket::create(&mut Heap::create()) as usize));
+    _scalyc_main(&_r, {
+        let _r_1 = Region::create(&_r);
         let mut arguments: Ref<Array<String>> = Ref::new(_r_1.page, Array::new());
         for n in 0..argc {
             if n == 0 {
                 continue;
             }
-
-            let arg = argv.offset(n as isize);
-            let page = arguments.get_page();
-            let s = String::from_c_string(page, *arg);
-            (*arguments).add(page, s);
+            unsafe {
+                let arg = argv.offset(n as isize);
+                let s = String::from_c_string(_r.page, *arg);
+                (*arguments).add(s);
+            }
         }
 
-        _scalyc_main(&_r_1, arguments);
-    }
+        Ref::new(_r.page, Vector::from_array(_r.page, arguments))
+    });
 }
 
-fn _scalyc_main(_pr: &Region, _arguments: Ref<Array<String>>) {
+fn _scalyc_main(_pr: &Region, _arguments: Ref<Vector<String>>) {
     use scalyc::compiler::Compiler;
     let _r = Region::create(_pr);
 
