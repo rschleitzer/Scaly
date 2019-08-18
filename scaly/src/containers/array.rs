@@ -6,11 +6,12 @@ use containers::Vector;
 use memory::Page;
 use std::mem::align_of;
 use std::mem::size_of;
-use std::ptr::null_mut;
-use std::ptr::write;
 use std::ops::Index;
 use std::ops::{Deref, DerefMut};
+use std::ptr::null_mut;
+use std::ptr::write;
 
+#[derive(Copy, Clone)]
 pub struct Array<T: Copy> {
     vector: Vector<T>,
     length: usize,
