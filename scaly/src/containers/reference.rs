@@ -9,9 +9,9 @@ pub struct Ref<T> {
 }
 
 impl<T> Ref<T> {
-    pub fn new(page: *mut Page, object: T) -> Ref<T> {
+    pub fn new(_rp: *mut Page, object: T) -> Ref<T> {
         Ref {
-            data: unsafe { (*page).allocate(object) },
+            data: unsafe { (*_rp).allocate(object) },
         }
     }
 

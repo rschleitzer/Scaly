@@ -18,7 +18,7 @@ pub struct String {
 const PACKED_SIZE: usize = size_of::<usize>() * 8 / 7;
 
 impl String {
-    pub fn create(page: *mut Page, data: *const u8, length: usize) -> String {
+    pub fn create(_rp: *mut Page, data: *const u8, length: usize) -> String {
         let mut length_array: [u8; PACKED_SIZE] = [0; PACKED_SIZE];
         let mut rest = length;
         let mut counter: usize = 0;
@@ -30,22 +30,22 @@ impl String {
         length_array[counter] = rest as u8;
         let overall_length = counter + 1 + length;
         unsafe {
-            let pointer = (*page).allocate_raw(overall_length, 1);
+            let pointer = (*_rp).allocate_raw(overall_length, 1);
             ptr::copy_nonoverlapping(length_array.as_ptr(), pointer, counter + 1);
             ptr::copy_nonoverlapping(data, pointer.offset((counter + 1) as isize), length);
             String { data: pointer }
         }
     }
 
-    pub fn new(page: *mut Page, string: &str) -> String {
+    pub fn new(_rp: *mut Page, string: &str) -> String {
         let length = string.len();
-        String::create(page, string.as_ptr(), length)
+        String::create(_rp, string.as_ptr(), length)
     }
 
-    pub fn from_c_string(page: *mut Page, c_string: *const c_char) -> String {
+    pub fn from_c_string(_rp: *mut Page, c_string: *const c_char) -> String {
         unsafe {
             let length = strlen(c_string);
-            String::create(page, c_string as *const u8, length)
+            String::create(_rp, c_string as *const u8, length)
         }
     }
 
@@ -64,13 +64,13 @@ impl String {
         self.data as *const c_char
     }
 
-    pub fn from_string_slice(page: *mut Page, s: &str) -> String {
-        String::create(page, s.as_ptr() as *const u8, s.len())
+    pub fn from_string_slice(_rp: *mut Page, s: &str) -> String {
+        String::create(_rp, s.as_ptr() as *const u8, s.len())
     }
 
-    pub fn append_character(&self, page: *mut Page, c: char) -> String {
+    pub fn append_character(&self, _rp: *mut Page, c: char) -> String {
         unsafe {
-            let s = String::create(page, self.data, self.get_length() + 1);
+            let s = String::create(_rp, self.data, self.get_length() + 1);
             let data = s.data as *mut char;
             let char_pointer = data.offset((self.get_length() - 1) as isize);
             write(char_pointer, c);
