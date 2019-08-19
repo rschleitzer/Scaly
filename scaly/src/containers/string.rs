@@ -42,6 +42,26 @@ impl String {
         String::create(_rp, string.as_ptr(), length)
     }
 
+    pub fn copy(_rp: *mut Page, other: String) -> String {
+        let mut length_array: [u8; PACKED_SIZE] = [0; PACKED_SIZE];
+        let length = other.get_length();
+        let mut rest = length;
+        let mut counter: usize = 0;
+        while rest >= 0x80 {
+            length_array[counter] = rest as u8 | 0x80;
+            rest >>= 7;
+            counter += 1;
+        }
+        length_array[counter] = rest as u8;
+        let overall_length = counter + 1 + length;
+        unsafe {
+            let pointer = (*_rp).allocate_raw(overall_length, 1);
+            ptr::copy_nonoverlapping(length_array.as_ptr(), pointer, counter + 1);
+            ptr::copy_nonoverlapping(other.data.offset((counter + 1) as isize), pointer.offset((counter + 1) as isize), length);
+            String { data: pointer }
+        }
+    }
+
     pub fn from_c_string(_rp: *mut Page, c_string: *const c_char) -> String {
         unsafe {
             let length = strlen(c_string);

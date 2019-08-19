@@ -1,10 +1,11 @@
+use scaly::memory::Region;
 use scaly::containers::Ref;
 use scaly::io::Stream;
 use scaly::Page;
 use scaly::String;
 
 pub struct Lexer {
-    pub token: Token,
+    pub token: Ref<Token>,
     character: char,
     stream: *mut Stream,
     is_at_end: bool,
@@ -15,13 +16,16 @@ pub struct Lexer {
 }
 
 impl Lexer {
-    pub fn new(_rp: *mut Page, stream: *mut Stream) -> Ref<Lexer> {
+    pub fn new(_pr: &Region, _rp: *mut Page, stream: *mut Stream) -> Ref<Lexer> {
+        let _r = Region::create(_pr);
+        let _token_page = (*_rp).allocate_exclusive_page();
+        (*_token_page).reset();
         let mut lexer = Ref::new(
             _rp,
             Lexer {
                 stream: stream,
                 is_at_end: false,
-                token: Token::InvalidToken,
+                token: Ref::new(_token_page, Token::InvalidToken),
                 character: 0 as char,
                 previous_line: 1,
                 previous_column: 0,
@@ -30,7 +34,7 @@ impl Lexer {
             },
         );
         lexer.read_character();
-        lexer.advance();
+        lexer.advance(&_r);
         lexer
     }
 
@@ -44,7 +48,8 @@ impl Lexer {
         }
     }
 
-    pub fn advance(&mut self) {
+    pub fn advance(&mut self, _pr: &Region) {
+        let _r = Region::create(_pr);
         self.skip_whitespace();
         self.previous_line = self.line;
         self.previous_column = self.previous_column;
@@ -55,55 +60,75 @@ impl Lexer {
         let c = self.character;
 
         if ((c >= 'a') && (c <= 'z')) || ((c >= 'A') && (c <= 'Z')) {
-            unsafe {(*(Page::own(&self.token))).reset();}
-            self.token = self.scan_identifier();
+            {
+                let _token_page = Page::own(&self.token); unsafe {(*_token_page).reset();}
+                self.token = Ref::new( _token_page, Token::Identifier(self.scan_identifier(&_r, _token_page)));
+            }
             return
         }
 
         if (c >= '0') && (c <= '9') {
-            // token = self.scan_numeric_literal();
+            {
+                let _token_page = Page::own(&self.token); unsafe {(*_token_page).reset();}
+                self.token = Ref::new( _token_page, Token::NumericLiteral(self.scan_numeric_literal(&_r, _token_page)));
+            }
             return
         }
 
         match c {
             '+' | '-' | '*' | '/' | '=' | '%' | '&' | '|' | '^' | '~' | '<' | '>' => {
-                unsafe {(*(Page::own(&self.token))).reset();}
-                self.token = self.scan_operator();
+                {
+                    let _token_page = Page::own(&self.token); unsafe {(*_token_page).reset();}
+                    self.token = Ref::new( _token_page, Token::Identifier(self.scan_operator(&_r, _token_page)));
+                }
             }
 
             '\"' => {
-                unsafe {(*(Page::own(&self.token))).reset();}
-                self.token = self.scan_string_literal();
+                {
+                    let _token_page = Page::own(&self.token); unsafe {(*_token_page).reset();}
+                    self.token = Ref::new( _token_page, Token::StringLiteral(self.scan_string_literal(&_r, _token_page)));
+                }
             }
 
             '\'' => {
-                unsafe {(*(Page::own(&self.token))).reset();}
-                self.token = self.scan_character_literal();
+                {
+                    let _token_page = Page::own(&self.token); unsafe {(*_token_page).reset();}
+                    self.token = Ref::new( _token_page, Token::CharacterLiteral(self.scan_character_literal(&_r, _token_page)));
+                }
             }
 
             '{' | '}' | '(' | ')' | '[' | ']' | '.' | ',' | ':' | ';' | '?' | '!' | '@' | '#' | '$' | '_' | '`' => {
-                unsafe {(*(Page::own(&self.token))).reset();}
-                self.token = Token::_Punctuation(String::from_character(Page::own(self), c));
+                {
+                    let _token_page = Page::own(&self.token); unsafe {(*_token_page).reset();}
+                    self.token = Ref::new( _token_page, Token::Punctuation(String::from_character(Page::own(self), c)));
+                }
                 self.read_character();
                 self.column = self.column + 1;
             }
 
             _ => {
-                self.token = Token::InvalidToken
+                {
+                    let _token_page = Page::own(&self.token); unsafe {(*_token_page).reset();}
+                    self.token = Ref::new( _token_page, Token::InvalidToken);
+                }
             }
         }
     }
 
-    fn scan_identifier(&mut self) -> Identifier {
-        string name = new string(text[position], 1);
+    fn scan_identifier(&mut self, _pr: &Region, _rp: *mut Page) -> String {
+        let _r = Region::create(_pr);
+        let _name_page = (*_r.page).allocate_exclusive_page();
+        (*_name_page).reset();
+        let mut name: String = String::from_character(_r.page, self.character);
 
-        do
+        loop
         {
-            position = position + 1;
-            column = column + 1;
+            self.read_character();
+            self.column = self.column + 1;
 
-            if (position == end)
-                return (new Identifier(name));
+            if self.is_at_end() {
+                return String::copy(_rp, name);
+            }
 
             char c = text[position];
             if (((c >= 'a') && (c <= 'z')) ||
@@ -114,7 +139,6 @@ impl Lexer {
             else
                 return (new Identifier(name));
         }
-        while (true);
     }
 
     Identifier scanOperator()
@@ -472,8 +496,8 @@ impl Lexer {
     }
 
     pub fn is_at_end(&self) -> bool {
-        match self.token {
-            Token::_EofToken => true,
+        match *self.token {
+            Token::EofToken => true,
             _ => false,
         }
     }
@@ -487,8 +511,12 @@ pub struct Position {
 
 #[derive(Copy, Clone)]
 pub enum Token {
-    _EofToken,
+    EofToken,
     InvalidToken,
-    _Identifier(String),
-    _Punctuation(String),
+    Identifier(String),
+    StringLiteral(String),
+    CharacterLiteral(String),
+    NumericLiteral(String),
+    HexLiteral(String),
+    Punctuation(String),
 }
