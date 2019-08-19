@@ -7,8 +7,12 @@ pub struct StringBuilder {
 }
 
 impl StringBuilder {
+    pub fn new(_rp: *mut Page) -> Ref<StringBuilder> {
+        Ref::new(_rp, StringBuilder{ buffer: Array::new() })
+    }
+
     pub fn from_character(_rp: *mut Page, character: char) -> Ref<StringBuilder> {
-        let mut string_builder = Ref::new(_rp, StringBuilder{ buffer: Array::new() });
+        let mut string_builder = StringBuilder::new(_rp);
         string_builder.append_character(character);
         string_builder
     }

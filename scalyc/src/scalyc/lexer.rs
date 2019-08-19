@@ -1,8 +1,7 @@
 use scaly::memory::Region;
 use scaly::containers::Ref;
 use scaly::io::Stream;
-use scaly::Page;
-use scaly::String;
+use scaly::{Page, String, StringBuilder};
 
 pub struct Lexer {
     pub token: Ref<Token>,
@@ -117,57 +116,51 @@ impl Lexer {
 
     fn scan_identifier(&mut self, _pr: &Region, _rp: *mut Page) -> String {
         let _r = Region::create(_pr);
-        let _name_page = (*_r.page).allocate_exclusive_page();
-        (*_name_page).reset();
-        let mut name: String = String::from_character(_r.page, self.character);
+        let mut name: Ref<StringBuilder> = StringBuilder::from_character(_r.page, self.character);
 
-        loop
-        {
+        loop {
             self.read_character();
             self.column = self.column + 1;
 
             if self.is_at_end() {
-                return String::copy(_rp, name);
+                return name.to_string(_rp);
             }
 
-            char c = text[position];
-            if (((c >= 'a') && (c <= 'z')) ||
+            let c = self.character;
+            if ((c >= 'a') && (c <= 'z')) ||
                 ((c >= 'A') && (c <= 'Z')) ||
                 ((c >= '0') && (c <= '9')) ||
-                    (c == '_'))
-                name = name + c;
-            else
-                return (new Identifier(name));
-        }
-    }
-
-    Identifier scanOperator()
-    {
-        string operation = new string(text[position], 1);
-
-        do
-        {
-            position = position + 1;
-            column = column + 1;
-
-            if (position == end)
-                return (new Identifier(operation));
-
-            switch (text[position])
-            {
-                case '+': case '-': case '*': case '/': case '=': case '%': case '&': case '|': case '^': case '~': case '<': case '>':
-                    operation = operation + text[position];
-                    break;
-
-                default:
-                    return (new Identifier(operation));
+                    (c == '_') {
+                name.append_character(c);
+            }
+            else {
+                return name.to_string(_rp);
             }
         }
-        while (true);
     }
 
-    public Token scanStringLiteral()
-    {
+    fn scan_operator(&mut self, _pr: &Region, _rp: *mut Page) -> String {
+        let _r = Region::create(_pr);
+        let mut operation: Ref<StringBuilder> = StringBuilder::from_character(_r.page, self.character);
+
+        loop {
+            self.read_character();
+            self.column = self.column + 1;
+
+            if self.is_at_end() {
+                return operation.to_string(_rp);
+            }
+
+            match self.character {
+                '+' | '-' | '*' | '/' | '=' | '%' | '&' | '|' | '^' | '~' | '<' | '>' =>
+                    operation.append_character(self.character),
+
+                _ =>  return operation.to_string(_rp)
+            }
+        }
+    }
+
+    fn scan_string_literal(&mut self, _pr: &Region, _rp: *mut Page) -> String {
         var value = "";
 
         do
