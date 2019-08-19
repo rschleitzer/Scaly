@@ -51,6 +51,250 @@ impl Lexer {
         if self.is_at_end {
             return
         }
+
+        let c = self.character;
+
+        if ((c >= 'a') && (c <= 'z')) || ((c >= 'A') && (c <= 'Z')) {
+            unsafe {(*(Page::own(&self.token))).reset();}
+            self.token = self.scan_identifier();
+            return
+        }
+
+        if (c >= '0') && (c <= '9') {
+            // token = self.scan_numeric_literal();
+            return
+        }
+
+        match c {
+            '+' | '-' | '*' | '/' | '=' | '%' | '&' | '|' | '^' | '~' | '<' | '>' => {
+                unsafe {(*(Page::own(&self.token))).reset();}
+                self.token = self.scan_operator();
+            }
+
+            '\"' => {
+                unsafe {(*(Page::own(&self.token))).reset();}
+                self.token = self.scan_string_literal();
+            }
+
+            '\'' => {
+                unsafe {(*(Page::own(&self.token))).reset();}
+                self.token = self.scan_character_literal();
+            }
+
+            '{' | '}' | '(' | ')' | '[' | ']' | '.' | ',' | ':' | ';' | '?' | '!' | '@' | '#' | '$' | '_' | '`' => {
+                unsafe {(*(Page::own(&self.token))).reset();}
+                self.token = Token::_Punctuation(String::from_character(Page::own(self), c));
+                self.read_character();
+                self.column = self.column + 1;
+            }
+
+            _ => {
+                self.token = Token::InvalidToken
+            }
+        }
+    }
+
+    fn scan_identifier(&mut self) -> Identifier {
+        string name = new string(text[position], 1);
+
+        do
+        {
+            position = position + 1;
+            column = column + 1;
+
+            if (position == end)
+                return (new Identifier(name));
+
+            char c = text[position];
+            if (((c >= 'a') && (c <= 'z')) ||
+                ((c >= 'A') && (c <= 'Z')) ||
+                ((c >= '0') && (c <= '9')) ||
+                    (c == '_'))
+                name = name + c;
+            else
+                return (new Identifier(name));
+        }
+        while (true);
+    }
+
+    Identifier scanOperator()
+    {
+        string operation = new string(text[position], 1);
+
+        do
+        {
+            position = position + 1;
+            column = column + 1;
+
+            if (position == end)
+                return (new Identifier(operation));
+
+            switch (text[position])
+            {
+                case '+': case '-': case '*': case '/': case '=': case '%': case '&': case '|': case '^': case '~': case '<': case '>':
+                    operation = operation + text[position];
+                    break;
+
+                default:
+                    return (new Identifier(operation));
+            }
+        }
+        while (true);
+    }
+
+    public Token scanStringLiteral()
+    {
+        var value = "";
+
+        do
+        {
+            position = position + 1;
+            column = column + 1;
+
+            if (position == end)
+                return (new InvalidToken());
+
+            switch (text[position])
+            {
+                case '\"':
+                {
+                    position = position + 1;
+                    column = column + 1;
+                    return (new StringLiteral(value));
+                }
+                case '\\':
+                {
+                    position = position + 1;
+                    column = column + 1;
+                    switch (text[position])
+                    {
+                        case '\"': case '\\': case '\'':
+                        {
+                            value = value + '\\';
+                            value = value + text[position];
+                            break;
+                        }
+                        case 'n': value = value + "\\n"; break;
+                        case 'r': value = value + "\\r"; break;
+                        case 't': value = value + "\\t"; break;
+                        case '0': value = value + "\\0"; break;
+                        default: return (new InvalidToken());
+                    }
+                    break;
+                }
+                default:
+                    value = value + text[position];
+                    break;
+            }
+        }
+        while (true);
+    }
+
+    Token scanCharacterLiteral()
+    {
+        var value = "";
+
+        do
+        {
+            position = position + 1;
+            column = column + 1;
+
+            if (position == end)
+                return (new InvalidToken());
+
+            switch (text[position])
+            {
+                case '\'':
+                {
+                    position = position + 1;
+                    column = column + 1;
+                    return (new CharacterLiteral(value));
+                }
+                case '\\':
+                {
+                    position = position + 1;
+                    column = column + 1;
+                    switch (text[position])
+                    {
+                        case '\"': case '\\': case '\'':
+                        {
+                            value = value + '\\';
+                            value = value + text[position];
+                            break;
+                        }
+                        case 'n': value = value + "\\n"; break;
+                        case 'r': value = value + "\\r"; break;
+                        case 't': value = value + "\\t"; break;
+                        case '0': value = value + "\\0"; break;
+                        default: return (new InvalidToken());
+                    }
+                    break;
+                }
+                default:
+                    value = value + text[position];
+                    break;
+            }
+        }
+        while (true);
+    }
+
+    NumericLiteral scanNumericLiteral()
+    {
+        var value = new string(text[position], 1);
+
+        position = position + 1;
+        column = column + 1;
+
+        if (position == end)
+            return (new NumericLiteral(value));
+        
+        var x = text[position];
+        if (x == 'x')
+        {
+            return scanHexLiteral();
+        }
+        else
+        {
+            position = position - 1;
+            column = column - 1;
+        }
+
+        do
+        {
+            position = position + 1;
+            column = column + 1;
+
+            if (position == end)
+                return (new NumericLiteral(value));
+
+            var c = text[position];
+            if ((c >= '0') && (c <= '9'))
+                value = value + text[position];
+            else
+                return (new NumericLiteral(value));
+        }
+        while (true);
+    }
+
+    HexLiteral scanHexLiteral()
+    {
+        var value = new string(text[position], 1);
+
+        do
+        {
+            position = position + 1;
+            column = column + 1;
+
+            if (position == end)
+                return (new HexLiteral(value));
+
+            var c = text[position];
+            if (((c >= '0') && (c <= '9')) || ((c >= 'a') && (c <= 'f')) || ((c >= 'A') && (c <= 'F')))
+                value = value + text[position];
+            else
+                return (new HexLiteral(value));
+        }
+        while (true);
     }
 
     fn skip_whitespace(&mut self) {
@@ -246,4 +490,5 @@ pub enum Token {
     _EofToken,
     InvalidToken,
     _Identifier(String),
+    _Punctuation(String),
 }

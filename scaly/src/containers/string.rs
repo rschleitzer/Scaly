@@ -49,6 +49,10 @@ impl String {
         }
     }
 
+    pub fn from_ccharacter(_rp: *mut Page, character: char) -> String {
+        String::create(_rp, &character as *const char as *const u8, 1)
+    }
+
     #[allow(unreachable_code)]
     pub fn to_c_string(&self) -> *const c_char {
         let mut length_pointer: *const u8 = self.data as *const u8;
