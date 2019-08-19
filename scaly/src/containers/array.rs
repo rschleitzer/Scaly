@@ -28,6 +28,10 @@ impl<T: Copy> Array<T> {
         }
     }
 
+    pub fn get_buffer(&self) -> *const T {
+        self.vector.data
+    }
+
     pub fn get_length(&self) -> usize {
         self.length
     }
