@@ -7,6 +7,7 @@ pub use self::containers::Equal;
 pub use self::containers::Hash;
 pub use self::containers::HashSet;
 pub use self::containers::String;
+pub use self::containers::StringBuilder;
 pub use self::containers::Vector;
 
 pub use self::io::Console;
