@@ -1,0 +1,15 @@
+let options: Options$ = Options.parseArguments(arguments)
+    catch InvalidOptionError e {
+        print("Invalid option "e.option" .\n") catch IOError { return }
+        return
+    }
+    catch NoOutputOptionError {
+        print "No output option.\n" catch IOError { return }
+        return
+    }
+    catch NoFilesToCompileError {
+        print "No files to compile.\n" catch IOError { return }
+        return
+    }
+
+Compiler.compileFiles(options)
