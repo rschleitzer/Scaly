@@ -45,7 +45,7 @@ impl Parser {
         &""mut self,
         _pr: &""Region,
         _rp: *mut Page,
-    ) -> Option<""Ref<""Vector<""Ref"(id syntax)"Syntax>>>> {
+    ) -> Option<""Ref<""Vector<""Ref<"(id syntax)"Syntax>>>> {
         let _r = Region::create(_pr);
         let mut ret: Option<""Ref<""Array<""Ref<"(id syntax)"Syntax>>>> = Option::None;
         loop {
@@ -60,11 +60,6 @@ impl Parser {
                     ret.unwrap().add(node);
                 }
             }
-
-            if (ret == null)
-                ret = new List<"(id syntax)"Syntax>();
-
-            ret.Add(node);
         }
 
         match ret {
@@ -81,7 +76,6 @@ impl Parser {
         _ep: *mut Page,
     ) -> Result<""Ref<"(id syntax)">, Ref<""ParserError>> {
         let _r = Region::create(_pr);
-        let start: Position = self.lexer.get_previous_position();
 "
         (if (abstract? syntax)
             ($
@@ -105,109 +99,150 @@ impl Parser {
             )
             ($ ; non-abstract syntax
 "
-            Position start = lexer.getPreviousPosition();
+        let start: Position = self.lexer.get_previous_position();
 "                (apply-to-children-of syntax (lambda (content) ($
                    (if (string=? "syntax" (type content))
                         ($ ; non-terminals
 "
-            "(link content)"Syntax"(if (multiple? content) "[]" "")" "(property content)" = parse"(link content)(if (multiple? content) "List" "")"();
+        let "(property content)": "(if (optional? content) "Option<" "")"Ref<"(if (multiple? content) "Vector<" "")(link content)"Syntax"(if (multiple? content) ">" "")">"(if (optional? content) ">" "")" = parse_"(string-firstchar-downcase (link content))(if (multiple? content) "_list" "")"();
 "
-                    (if (optional? content) "" ($
-"            if ("(property content)" == null)
-"
-                        (if (equal? 1 (child-number content))
-                            ($
-"                return null;
-"                           )
-                            ($
-"                throw new ParserException(fileName, lexer.line, lexer.column);
-"                           )
-                        )
+                            (if (optional? content) "" ($
+"        match "(property content)" {
+            None => {
+"                               (if (equal? 1 (child-number content))
+                                    ($
+"                return Ok(None)
+"                                   )
+                                    ($
+"                return Err(Ref::new(_ep, parser_exception(String::copy(_ep, self.file_name), lexer.line, lexer.column))
+"                                   )
+                                )
+"            }
+"                           ))
+                            (if (and (top? syntax) (last-sibling? content)) ($
+"        match "(property content)" {
+            Some =>
+                if !self.is_at_end() {
+                    let error_pos = self.lexer.get_previous_position();
+                    return Result::Err(Ref::new(
+                        _ep,
+                        ParserError {
+                            file_name: self.file_name,
+                            line: error_pos.line,
+                            column: error_pos.column,
+                        },
                     ))
-                           (if (and (top? syntax) (last-sibling? content)) ($
-"            if ("(property content)" != null)
-            {
-                if (!isAtEnd())
-                {
-                    Position errorPos = lexer.getPreviousPosition();
-                    throw new ParserException(fileName, errorPos.line, errorPos.column);
                 }
-            }
+            None => (),
+        }
 "                           )"")
                         )
                         ($ ; terminals
 "
-            "(case (type content)
-                (("keyword" "punctuation") ($ "bool success"(if (property content) (string-firstchar-upcase (property content)) ($ (string-firstchar-upcase (link content))(number->string (child-number content))))))
-                (("literal") ($ "Literal "(property content)))
-                (else ($ "string "(property content)))
-            )
-            " = lexer.parse"
-            (case (type content)(("identifier") "Identifier")(("literal") "Literal")(("keyword") "Keyword")(("punctuation") "Punctuation"))
-            "("(case (type content)(("keyword") ($ "\""(link content)"\"")) (("punctuation") ($ "\""(value (element-with-id (link content)))"\"")) (else ""))");
-            if ("(case (type content) (("keyword" "punctuation") ($ "success"(if (property content) (string-firstchar-upcase (property content)) ($ (string-firstchar-upcase (link content))(number->string (child-number content))))))(("identifier") ($ "("(property content)" != null) && isIdentifier("(property content)")")) (else ($ (property content)" != null")))")
-                lexer.advance();
-"                           (if (optional? content) "" ($
-"            else
-"                               (if (equal? 1 (child-number content))
-                                    ($
-"                return null;
-"                                   )
-                                    ($
-"                throw new ParserException(fileName, lexer.line, lexer.column);
-"                                    )
+        let "
+                            (case (type content)
+                                (("keyword" "punctuation") ($ "success"(if (property content) (string-firstchar-upcase (property content)) ($ (string-firstchar-upcase (link content))(number->string (child-number content))))))
+                                (else (property content))
+                            )
+            ": "
+                            (case (type content)
+                                (("keyword" "punctuation") "bool")
+                                (("literal") "Literal")
+                                (else "String")
+                            )
+            " = self.lexer.parse_"(type content)"("(case (type content)(("keyword") ($ "\""(link content)"\"")) (("punctuation") ($ "\""(value (element-with-id (link content)))"\"")) (else ""))");
+        match "
+                            (case (type content)
+                                (("keyword" "punctuation") ($ "success"(if (property content) (string-firstchar-upcase (property content)) ($ (string-firstchar-upcase (link content))(number->string (child-number content))))))
+                                (("identifier") ($ "("(property content)" != null) && isIdentifier("(property content)")"))
+                                (else ($ (property content)" != null"))
+                            )" {
+            Some (x) =>
+                lexer.advance(),
+            None =>
+"                           (if (optional? content) 
+                                "()"
+                                ($
+                                    (if (equal? 1 (child-number content))
+                                        ($
+"                return None
+"                                       )
+                                        ($
+"                return Result::Err(Ref::new(
+                    _ep,
+                    ParserError {
+                        file_name: self.file_name,
+                        line: self.lexer.line,
+                        column: self.lexer.column,
+                    },
+                ))
+"                                       )
+                                    )
                                 )
-                           ))
+                            )
+"        }
+"
                         )
                     ) ; syntax or terminal
                 ))) ; apply to children of syntax
 "
-            Position end = lexer.getPosition();
+        let end: Position = self.lexer.get_position();
 
-            "(id syntax)"Syntax ret = new "(id syntax)"Syntax(start, end"
+        let ret: "(id syntax)"Syntax = Ref::new(_rp, "(id syntax)"Syntax { start: start, end: end"
                 (apply-to-property-children-of syntax (lambda (content) ($
-                    ", "(property content)
+                    ", "(property content)": "(property content)
                 )))
-                ");
-
+                "});
 "                (apply-to-property-children-of syntax (lambda (content)
                     (if (multiple? content)
                         ($
-"            if ("(property content)" != null)
-            {
-                foreach ("(link content)"Syntax item in "(property content)")
-                    item.parent = ret;
+"
+        match "(property content)" {
+            Some(x) => for item in x {
+                item.parent = ret;
             }
+            None => ()
+        }
 "                       )
                         (if (string=? "syntax" (type content)) ($
-                            (if (optional? content) ($
-"            if ("(property content)" != null)
-    "                       )"")
-"            "(property content)".parent = ret;
-"                       )"")
+                            (if (optional? content)
+                                ($
+"
+        match "(property content)" {
+            Some(x) => 
+                x.parent = ret;
+            None => ()
+        }
+"                               )
+                                ($
+"
+            "(property content)".parent = ret;
+"                               )
+                            )
+                        )"")
                     )
                 ))
 "
-            return ret;
+        ret
 "
             ) ; $
         ) ; abstract or not
-"        }
+"    }
 "   ))))
 "
-        bool isAtEnd()
-        {
-            return lexer.isAtEnd();
+    fn is_at_end() -> bool {
+        self.lexer.is_at_end()
+    }
+
+    fn is_identifier(id: Ref<""String>) {
+        if keywords.contains(id) {
+            false
         }
-
-        bool isIdentifier(string id)
-        {
-            if (keywords.Contains(id))
-                return false;
-
-            return true;
+        else {
+            true;
         }
     }
+}
 "
 
 ))
