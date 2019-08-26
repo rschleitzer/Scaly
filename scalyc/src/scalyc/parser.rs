@@ -4714,11 +4714,10 @@ impl Parser {
     }
 
     fn is_identifier(id: Ref<String>) {
-        if keywords.contains(id) {
+        if self.keywords.contains(id) {
             false
-        }
-        else {
-            true;
+        } else {
+            true
         }
     }
 }
