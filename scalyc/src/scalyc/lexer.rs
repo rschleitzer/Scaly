@@ -2,6 +2,7 @@ use scaly::containers::Ref;
 use scaly::io::Stream;
 use scaly::memory::Region;
 use scaly::{Page, String, StringBuilder};
+use scaly::Equal;
 
 pub struct Lexer {
     pub token: Ref<Token>,
@@ -10,8 +11,8 @@ pub struct Lexer {
     is_at_end: bool,
     previous_line: usize,
     previous_column: usize,
-    line: usize,
-    column: usize,
+    pub line: usize,
+    pub column: usize,
 }
 
 impl Lexer {
@@ -492,6 +493,41 @@ impl Lexer {
         }
     }
 
+    pub fn parse_keyword(&self, fixed_string: String) -> bool
+    {
+        match *self.token {
+            Token::Identifier(name) => return name.equals(&fixed_string),
+            _ => return false,
+        }
+    }
+
+    pub fn parse_identifier(&self, _rp: *mut Page) -> Option<String> {
+        match *self.token {
+            Token::Identifier(name) => return Some(String::copy(_rp, name)),
+            _ => return None,
+        }
+    }
+
+    pub fn parse_punctuation(&self, fixed_string: String) -> bool
+    {
+        match *self.token {
+            Token::Punctuation(name) => return name.equals(&fixed_string),
+            _ => return false,
+        }
+    }
+
+    pub fn parse_literal(&self, _rp: *mut Page) -> Option<String>
+    {
+        match *self.token {
+            Token::StringLiteral(name) | Token::CharacterLiteral (name) | Token::HexLiteral (name) | Token::NumericLiteral (name) => Some(String::copy(_rp, name)),
+            _ => None
+        }
+    }
+
+    pub fn is_at_end(&self) -> bool {
+        self.is_at_end
+    }
+
     pub fn get_position(&self) -> Position {
         Position {
             line: self.line,
@@ -504,10 +540,6 @@ impl Lexer {
             line: self.previous_line,
             column: self.previous_column,
         }
-    }
-
-    pub fn is_at_end(&self) -> bool {
-        self.is_at_end
     }
 }
 

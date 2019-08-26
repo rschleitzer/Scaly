@@ -3,8 +3,8 @@
         (file ($ "parser.rs")
             ($ 
                 (parser-rs)
-                ;(visitor-rs)
-                ;(syntax-rs)
+                (visitor-rs)
+                (syntax-rs)
             )
         )
         (file ($ "parser.scaly")

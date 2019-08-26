@@ -2,42 +2,51 @@
 
 "
 pub trait SyntaxNode {
-    fn accept(visitor: Ref<""SyntaxVisitor>);
+    fn accept(&""mut self, visitor: *mut SyntaxVisitor);
 }
 "
     (apply-to-selected-children "syntax" (lambda (syntax-node) ($
 "
-pub struct "(id syntax-node)"Syntax {"
-        (if (top? syntax-node)
+#[derive(Copy, Clone)]
+pub "(if (abstract? syntax-node) "enum" "struct")" "(id syntax-node)"Syntax {"
+        (if (abstract? syntax-node)
+            (apply-to-children-of syntax-node (lambda (content) ($
 "
-    pub file_name: String;"
+   "(link content)"("(link content)"Syntax),"
+            )))
+            ($
+                (if (top? syntax-node)
 "
-    pub start: Position;
-    pub end: Position;
-    pub parent: SyntaxNode;"
-        )
-        (apply-to-children-of syntax-node (lambda (content) ($
-            (if (property content) ($
+    pub file_name: String,"
+"
+    pub start: Position,
+    pub end: Position,
+    pub parent: *mut SyntaxNode,"                )
+
+                (apply-to-children-of syntax-node (lambda (content) ($
+                    (if (property content) ($
 "
     pub "(property content)": "
                 (case (type content)
-                    (("syntax") ($ "Ref<"(if (multiple? content)"Vector<" "")(link content)"Syntax"(if (multiple? content)">" "")">"))
-                    (("identifier") "string")
+                    (("syntax") ($ (if (optional? content)"Option<" "")"Ref<"(if (multiple? content) ($ "Vector<""Ref<") "")(link content)"Syntax>"(if (multiple? content)">>" "")(if (optional? content)">" "")))
+                    (("identifier") ($ (if (optional? content)"Option<" "")"String"(if (optional? content)">" "")))
                     (("literal") "Literal")
                     (("keyword" "punctuation") "bool")
                 )
-                ";"
-          )"")
-        )))
+                ","
+                    )"")
+                )))
+            )
+        )
 "
 }
 
 impl SyntaxNode for "(id syntax-node)"Syntax {
-    accept(visitor: Ref<""SyntaxVisitor>) {
+    fn accept(&""mut self, visitor: *mut SyntaxVisitor) {
 "       (if (abstract? syntax-node) "" ($
             (if (has-syntax-children? syntax-node)
                 ($
-"        if !visitor.open"(id syntax-node)"(this) {
+"        if !(*visitor).open"(id syntax-node)"(self) {
             return
         }"
                     (apply-to-children-of syntax-node (lambda (content)
@@ -68,21 +77,16 @@ impl SyntaxNode for "(id syntax-node)"Syntax {
 "                                            )
                                         )
                                     )
-                                    (if (and (optional? content) (not (multiple? content))) ($
-"        match self."(property content)" {
-            Some(x) =>
-"
-                                    )"")
                                 ))
                             ))
                             (else "")
                         )
                     ))
-"        visitor.close"(id syntax-node)"(this)
+"        visitor.close"(id syntax-node)"(self)
 "
                 )
                 ($
-"        visitor.visit"(id syntax-node)"(this)
+"        visitor.visit"(id syntax-node)"(self)
 "
                 )
             )
