@@ -21,7 +21,7 @@ impl<T> Ref<T> {
 }
 
 impl<T> From<*mut T> for Ref<T> {
-    fn from(p: *mut T) -> Ref<T> {
+    fn from(p: *mut T) -> Self {
         Ref { data: p }
     }
 }
@@ -50,4 +50,12 @@ impl<T: Hash<T>> Hash<T> for Ref<T> {
     fn hash(&self) -> usize {
         unsafe { (*self.data).hash() }
     }
+}
+
+#[test]
+fn test_ref() {
+    let mut a: f64 = 2.0;
+    let b: *mut f64 = &mut a as *mut f64;
+    let c: Ref<f64> = Ref::from(b);
+    let _ = c.get_page();
 }
