@@ -30,7 +30,7 @@ pub "(if (abstract? syntax-node) "enum" "struct")" "(id syntax-node)"Syntax {"
                 (case (type content)
                     (("syntax") ($ (if (optional? content)"Option<" "")"Ref<"(if (multiple? content) ($ "Vector<""Ref<") "")(link content)"Syntax>"(if (multiple? content)">>" "")(if (optional? content)">" "")))
                     (("identifier") ($ (if (optional? content)"Option<" "")"String"(if (optional? content)">" "")))
-                    (("literal") "Literal")
+                    (("literal") ($ (if (optional? content)"Option<" "")"Literal"(if (optional? content)">" "")))
                     (("keyword" "punctuation") "bool")
                 )
                 ","
@@ -46,7 +46,7 @@ impl SyntaxNode for "(id syntax-node)"Syntax {
 "       (if (abstract? syntax-node) "" ($
             (if (has-syntax-children? syntax-node)
                 ($
-"        if !(*visitor).open"(id syntax-node)"(self) {
+"        if !(*visitor).open"(id syntax-node)"(Ref::from(self as *mut "(id syntax-node)"Syntax)) {
             return
         }"
                     (apply-to-children-of syntax-node (lambda (content)
@@ -55,25 +55,35 @@ impl SyntaxNode for "(id syntax-node)"Syntax {
                                 (if (abstract? syntax-node) "" ($
                                     (if (multiple? content)
                                         ($
+                                            (if (optional? content)
+                                                ($
 "
         match self."(property content)" {
-            Some(x) => for node in "(property content)" {
+            Some(x) => for node in x.iter() {
                 node.accept(visitor)
             },
             None => ()
         };
-"                                       )
+"                                               )
+                                                ($
+"
+        for node in self."(property content)".iter() {
+            node.accept(visitor)
+        };
+"                                               )
+                                            )
+                                        )
                                         (if (optional? content)
                                             ($
 "
         match self."(property content)" {
-            Some(x) => "(property content)".accept(visitor),
+            Some(x) => x.accept(visitor),
             None => ()
         };
 "                                           )
                                             ($
 "
-        "(property content)".accept(visitor);
+        self."(property content)".accept(visitor);
 "                                            )
                                         )
                                     )
@@ -82,11 +92,11 @@ impl SyntaxNode for "(id syntax-node)"Syntax {
                             (else "")
                         )
                     ))
-"        visitor.close"(id syntax-node)"(self)
+"        (*visitor).close"(id syntax-node)"(Ref::from(self as *mut "(id syntax-node)"Syntax))
 "
                 )
                 ($
-"        visitor.visit"(id syntax-node)"(self)
+"        (*visitor).visit"(id syntax-node)"(Ref::from(self as *mut "(id syntax-node)"Syntax))
 "
                 )
             )

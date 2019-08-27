@@ -4,8 +4,7 @@ use scaly::io::Stream;
 use scaly::memory::Region;
 use scaly::Page;
 use scalyc::errors::ParserError;
-use scalyc::lexer::Lexer;
-use scalyc::lexer::Position;
+use scalyc::lexer::{Lexer, Literal, Position};
 use std::ptr::null_mut;
 
 pub struct Parser {

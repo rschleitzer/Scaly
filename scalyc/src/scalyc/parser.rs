@@ -3,8 +3,7 @@ use scaly::io::Stream;
 use scaly::memory::Region;
 use scaly::Page;
 use scalyc::errors::ParserError;
-use scalyc::lexer::Lexer;
-use scalyc::lexer::Position;
+use scalyc::lexer::{Lexer, Literal, Position};
 use std::ptr::null_mut;
 
 pub struct Parser {
@@ -5041,16 +5040,13 @@ pub struct ProgramSyntax {
 
 impl SyntaxNode for ProgramSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openProgram(self) {
+        if !(*visitor).openProgram(Ref::from(self as *mut ProgramSyntax)) {
             return
         }
-        match self.files {
-            Some(x) => for node in files {
-                node.accept(visitor)
-            },
-            None => ()
+        for node in self.files.iter() {
+            node.accept(visitor)
         };
-        visitor.closeProgram(self)
+        (*visitor).closeProgram(Ref::from(self as *mut ProgramSyntax))
     }
 }
 
@@ -5066,44 +5062,44 @@ pub struct FileSyntax {
 
 impl SyntaxNode for FileSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openFile(self) {
+        if !(*visitor).openFile(Ref::from(self as *mut FileSyntax)) {
             return
         }
         match self.intrinsics {
-            Some(x) => for node in intrinsics {
+            Some(x) => for node in x.iter() {
                 node.accept(visitor)
             },
             None => ()
         };
 
         match self.usings {
-            Some(x) => for node in usings {
+            Some(x) => for node in x.iter() {
                 node.accept(visitor)
             },
             None => ()
         };
 
         match self.defines {
-            Some(x) => for node in defines {
+            Some(x) => for node in x.iter() {
                 node.accept(visitor)
             },
             None => ()
         };
 
         match self.declarations {
-            Some(x) => for node in declarations {
+            Some(x) => for node in x.iter() {
                 node.accept(visitor)
             },
             None => ()
         };
 
         match self.statements {
-            Some(x) => for node in statements {
+            Some(x) => for node in x.iter() {
                 node.accept(visitor)
             },
             None => ()
         };
-        visitor.closeFile(self)
+        (*visitor).closeFile(Ref::from(self as *mut FileSyntax))
     }
 }
 
@@ -5117,7 +5113,7 @@ pub struct IntrinsicSyntax {
 
 impl SyntaxNode for IntrinsicSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        visitor.visitIntrinsic(self)
+        (*visitor).visitIntrinsic(Ref::from(self as *mut IntrinsicSyntax))
     }
 }
 
@@ -5131,11 +5127,11 @@ pub struct UsingSyntax {
 
 impl SyntaxNode for UsingSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openUsing(self) {
+        if !(*visitor).openUsing(Ref::from(self as *mut UsingSyntax)) {
             return
         }
-        name.accept(visitor);
-        visitor.closeUsing(self)
+        self.name.accept(visitor);
+        (*visitor).closeUsing(Ref::from(self as *mut UsingSyntax))
     }
 }
 
@@ -5150,13 +5146,13 @@ pub struct DefineSyntax {
 
 impl SyntaxNode for DefineSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openDefine(self) {
+        if !(*visitor).openDefine(Ref::from(self as *mut DefineSyntax)) {
             return
         }
-        name.accept(visitor);
+        self.name.accept(visitor);
 
-        typeSpec.accept(visitor);
-        visitor.closeDefine(self)
+        self.typeSpec.accept(visitor);
+        (*visitor).closeDefine(Ref::from(self as *mut DefineSyntax))
     }
 }
 
@@ -5171,16 +5167,16 @@ pub struct NameSyntax {
 
 impl SyntaxNode for NameSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openName(self) {
+        if !(*visitor).openName(Ref::from(self as *mut NameSyntax)) {
             return
         }
         match self.extensions {
-            Some(x) => for node in extensions {
+            Some(x) => for node in x.iter() {
                 node.accept(visitor)
             },
             None => ()
         };
-        visitor.closeName(self)
+        (*visitor).closeName(Ref::from(self as *mut NameSyntax))
     }
 }
 
@@ -5194,7 +5190,7 @@ pub struct ExtensionSyntax {
 
 impl SyntaxNode for ExtensionSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        visitor.visitExtension(self)
+        (*visitor).visitExtension(Ref::from(self as *mut ExtensionSyntax))
     }
 }
 
@@ -5227,32 +5223,32 @@ pub struct NamespaceSyntax {
 
 impl SyntaxNode for NamespaceSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openNamespace(self) {
+        if !(*visitor).openNamespace(Ref::from(self as *mut NamespaceSyntax)) {
             return
         }
-        name.accept(visitor);
+        self.name.accept(visitor);
 
         match self.usings {
-            Some(x) => for node in usings {
+            Some(x) => for node in x.iter() {
                 node.accept(visitor)
             },
             None => ()
         };
 
         match self.defines {
-            Some(x) => for node in defines {
+            Some(x) => for node in x.iter() {
                 node.accept(visitor)
             },
             None => ()
         };
 
         match self.declarations {
-            Some(x) => for node in declarations {
+            Some(x) => for node in x.iter() {
                 node.accept(visitor)
             },
             None => ()
         };
-        visitor.closeNamespace(self)
+        (*visitor).closeNamespace(Ref::from(self as *mut NamespaceSyntax))
     }
 }
 
@@ -5266,11 +5262,11 @@ pub struct FunctionSyntax {
 
 impl SyntaxNode for FunctionSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openFunction(self) {
+        if !(*visitor).openFunction(Ref::from(self as *mut FunctionSyntax)) {
             return
         }
-        procedure.accept(visitor);
-        visitor.closeFunction(self)
+        self.procedure.accept(visitor);
+        (*visitor).closeFunction(Ref::from(self as *mut FunctionSyntax))
     }
 }
 
@@ -5285,11 +5281,11 @@ pub struct ProcedureSyntax {
 
 impl SyntaxNode for ProcedureSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openProcedure(self) {
+        if !(*visitor).openProcedure(Ref::from(self as *mut ProcedureSyntax)) {
             return
         }
-        routine.accept(visitor);
-        visitor.closeProcedure(self)
+        self.routine.accept(visitor);
+        (*visitor).closeProcedure(Ref::from(self as *mut ProcedureSyntax))
     }
 }
 
@@ -5306,26 +5302,26 @@ pub struct RoutineSyntax {
 
 impl SyntaxNode for RoutineSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openRoutine(self) {
+        if !(*visitor).openRoutine(Ref::from(self as *mut RoutineSyntax)) {
             return
         }
         match self.input {
-            Some(x) => input.accept(visitor),
+            Some(x) => x.accept(visitor),
             None => ()
         };
 
         match self.output {
-            Some(x) => output.accept(visitor),
+            Some(x) => x.accept(visitor),
             None => ()
         };
 
         match self.throwsClause {
-            Some(x) => throwsClause.accept(visitor),
+            Some(x) => x.accept(visitor),
             None => ()
         };
 
-        body.accept(visitor);
-        visitor.closeRoutine(self)
+        self.body.accept(visitor);
+        (*visitor).closeRoutine(Ref::from(self as *mut RoutineSyntax))
     }
 }
 
@@ -5339,11 +5335,11 @@ pub struct LetDeclarationSyntax {
 
 impl SyntaxNode for LetDeclarationSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openLetDeclaration(self) {
+        if !(*visitor).openLetDeclaration(Ref::from(self as *mut LetDeclarationSyntax)) {
             return
         }
-        declaration.accept(visitor);
-        visitor.closeLetDeclaration(self)
+        self.declaration.accept(visitor);
+        (*visitor).closeLetDeclaration(Ref::from(self as *mut LetDeclarationSyntax))
     }
 }
 
@@ -5357,11 +5353,11 @@ pub struct VarDeclarationSyntax {
 
 impl SyntaxNode for VarDeclarationSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openVarDeclaration(self) {
+        if !(*visitor).openVarDeclaration(Ref::from(self as *mut VarDeclarationSyntax)) {
             return
         }
-        declaration.accept(visitor);
-        visitor.closeVarDeclaration(self)
+        self.declaration.accept(visitor);
+        (*visitor).closeVarDeclaration(Ref::from(self as *mut VarDeclarationSyntax))
     }
 }
 
@@ -5375,11 +5371,11 @@ pub struct MutableDeclarationSyntax {
 
 impl SyntaxNode for MutableDeclarationSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openMutableDeclaration(self) {
+        if !(*visitor).openMutableDeclaration(Ref::from(self as *mut MutableDeclarationSyntax)) {
             return
         }
-        declaration.accept(visitor);
-        visitor.closeMutableDeclaration(self)
+        self.declaration.accept(visitor);
+        (*visitor).closeMutableDeclaration(Ref::from(self as *mut MutableDeclarationSyntax))
     }
 }
 
@@ -5393,11 +5389,11 @@ pub struct ThreadLocalDeclarationSyntax {
 
 impl SyntaxNode for ThreadLocalDeclarationSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openThreadLocalDeclaration(self) {
+        if !(*visitor).openThreadLocalDeclaration(Ref::from(self as *mut ThreadLocalDeclarationSyntax)) {
             return
         }
-        declaration.accept(visitor);
-        visitor.closeThreadLocalDeclaration(self)
+        self.declaration.accept(visitor);
+        (*visitor).closeThreadLocalDeclaration(Ref::from(self as *mut ThreadLocalDeclarationSyntax))
     }
 }
 
@@ -5430,11 +5426,11 @@ pub struct LetSyntax {
 
 impl SyntaxNode for LetSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openLet(self) {
+        if !(*visitor).openLet(Ref::from(self as *mut LetSyntax)) {
             return
         }
-        binding.accept(visitor);
-        visitor.closeLet(self)
+        self.binding.accept(visitor);
+        (*visitor).closeLet(Ref::from(self as *mut LetSyntax))
     }
 }
 
@@ -5448,11 +5444,11 @@ pub struct VarSyntax {
 
 impl SyntaxNode for VarSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openVar(self) {
+        if !(*visitor).openVar(Ref::from(self as *mut VarSyntax)) {
             return
         }
-        binding.accept(visitor);
-        visitor.closeVar(self)
+        self.binding.accept(visitor);
+        (*visitor).closeVar(Ref::from(self as *mut VarSyntax))
     }
 }
 
@@ -5466,11 +5462,11 @@ pub struct MutableSyntax {
 
 impl SyntaxNode for MutableSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openMutable(self) {
+        if !(*visitor).openMutable(Ref::from(self as *mut MutableSyntax)) {
             return
         }
-        binding.accept(visitor);
-        visitor.closeMutable(self)
+        self.binding.accept(visitor);
+        (*visitor).closeMutable(Ref::from(self as *mut MutableSyntax))
     }
 }
 
@@ -5484,11 +5480,11 @@ pub struct ThreadLocalSyntax {
 
 impl SyntaxNode for ThreadLocalSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openThreadLocal(self) {
+        if !(*visitor).openThreadLocal(Ref::from(self as *mut ThreadLocalSyntax)) {
             return
         }
-        binding.accept(visitor);
-        visitor.closeThreadLocal(self)
+        self.binding.accept(visitor);
+        (*visitor).closeThreadLocal(Ref::from(self as *mut ThreadLocalSyntax))
     }
 }
 
@@ -5504,16 +5500,16 @@ pub struct BindingSyntax {
 
 impl SyntaxNode for BindingSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openBinding(self) {
+        if !(*visitor).openBinding(Ref::from(self as *mut BindingSyntax)) {
             return
         }
         match self.typeAnnotation {
-            Some(x) => typeAnnotation.accept(visitor),
+            Some(x) => x.accept(visitor),
             None => ()
         };
 
-        calculation.accept(visitor);
-        visitor.closeBinding(self)
+        self.calculation.accept(visitor);
+        (*visitor).closeBinding(Ref::from(self as *mut BindingSyntax))
     }
 }
 
@@ -5528,13 +5524,13 @@ pub struct SetSyntax {
 
 impl SyntaxNode for SetSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openSet(self) {
+        if !(*visitor).openSet(Ref::from(self as *mut SetSyntax)) {
             return
         }
-        lValue.accept(visitor);
+        self.lValue.accept(visitor);
 
-        rValue.accept(visitor);
-        visitor.closeSet(self)
+        self.rValue.accept(visitor);
+        (*visitor).closeSet(Ref::from(self as *mut SetSyntax))
     }
 }
 
@@ -5548,11 +5544,11 @@ pub struct CalculationSyntax {
 
 impl SyntaxNode for CalculationSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openCalculation(self) {
+        if !(*visitor).openCalculation(Ref::from(self as *mut CalculationSyntax)) {
             return
         }
-        operation.accept(visitor);
-        visitor.closeCalculation(self)
+        self.operation.accept(visitor);
+        (*visitor).closeCalculation(Ref::from(self as *mut CalculationSyntax))
     }
 }
 
@@ -5566,16 +5562,13 @@ pub struct OperationSyntax {
 
 impl SyntaxNode for OperationSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openOperation(self) {
+        if !(*visitor).openOperation(Ref::from(self as *mut OperationSyntax)) {
             return
         }
-        match self.op {
-            Some(x) => for node in op {
-                node.accept(visitor)
-            },
-            None => ()
+        for node in self.op.iter() {
+            node.accept(visitor)
         };
-        visitor.closeOperation(self)
+        (*visitor).closeOperation(Ref::from(self as *mut OperationSyntax))
     }
 }
 
@@ -5590,18 +5583,18 @@ pub struct OperandSyntax {
 
 impl SyntaxNode for OperandSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openOperand(self) {
+        if !(*visitor).openOperand(Ref::from(self as *mut OperandSyntax)) {
             return
         }
-        primary.accept(visitor);
+        self.primary.accept(visitor);
 
         match self.postfixes {
-            Some(x) => for node in postfixes {
+            Some(x) => for node in x.iter() {
                 node.accept(visitor)
             },
             None => ()
         };
-        visitor.closeOperand(self)
+        (*visitor).closeOperand(Ref::from(self as *mut OperandSyntax))
     }
 }
 
@@ -5629,7 +5622,7 @@ pub struct MemberAccessSyntax {
 
 impl SyntaxNode for MemberAccessSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        visitor.visitMemberAccess(self)
+        (*visitor).visitMemberAccess(Ref::from(self as *mut MemberAccessSyntax))
     }
 }
 
@@ -5643,11 +5636,11 @@ pub struct AsSyntax {
 
 impl SyntaxNode for AsSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openAs(self) {
+        if !(*visitor).openAs(Ref::from(self as *mut AsSyntax)) {
             return
         }
-        typeSpec.accept(visitor);
-        visitor.closeAs(self)
+        self.typeSpec.accept(visitor);
+        (*visitor).closeAs(Ref::from(self as *mut AsSyntax))
     }
 }
 
@@ -5661,11 +5654,11 @@ pub struct IsSyntax {
 
 impl SyntaxNode for IsSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openIs(self) {
+        if !(*visitor).openIs(Ref::from(self as *mut IsSyntax)) {
             return
         }
-        typeSpec.accept(visitor);
-        visitor.closeIs(self)
+        self.typeSpec.accept(visitor);
+        (*visitor).closeIs(Ref::from(self as *mut IsSyntax))
     }
 }
 
@@ -5678,7 +5671,7 @@ pub struct UnwrapSyntax {
 
 impl SyntaxNode for UnwrapSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        visitor.visitUnwrap(self)
+        (*visitor).visitUnwrap(Ref::from(self as *mut UnwrapSyntax))
     }
 }
 
@@ -5693,13 +5686,13 @@ pub struct CatchSyntax {
 
 impl SyntaxNode for CatchSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openCatch(self) {
+        if !(*visitor).openCatch(Ref::from(self as *mut CatchSyntax)) {
             return
         }
-        typeSpec.accept(visitor);
+        self.typeSpec.accept(visitor);
 
-        handler.accept(visitor);
-        visitor.closeCatch(self)
+        self.handler.accept(visitor);
+        (*visitor).closeCatch(Ref::from(self as *mut CatchSyntax))
     }
 }
 
@@ -5724,11 +5717,11 @@ pub struct WildCardCatchPatternSyntax {
 
 impl SyntaxNode for WildCardCatchPatternSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openWildCardCatchPattern(self) {
+        if !(*visitor).openWildCardCatchPattern(Ref::from(self as *mut WildCardCatchPatternSyntax)) {
             return
         }
-        pattern.accept(visitor);
-        visitor.closeWildCardCatchPattern(self)
+        self.pattern.accept(visitor);
+        (*visitor).closeWildCardCatchPattern(Ref::from(self as *mut WildCardCatchPatternSyntax))
     }
 }
 
@@ -5743,11 +5736,11 @@ pub struct TypeCatchPatternSyntax {
 
 impl SyntaxNode for TypeCatchPatternSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openTypeCatchPattern(self) {
+        if !(*visitor).openTypeCatchPattern(Ref::from(self as *mut TypeCatchPatternSyntax)) {
             return
         }
-        typeSpec.accept(visitor);
-        visitor.closeTypeCatchPattern(self)
+        self.typeSpec.accept(visitor);
+        (*visitor).closeTypeCatchPattern(Ref::from(self as *mut TypeCatchPatternSyntax))
     }
 }
 
@@ -5783,16 +5776,16 @@ pub struct BlockSyntax {
 
 impl SyntaxNode for BlockSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openBlock(self) {
+        if !(*visitor).openBlock(Ref::from(self as *mut BlockSyntax)) {
             return
         }
         match self.statements {
-            Some(x) => for node in statements {
+            Some(x) => for node in x.iter() {
                 node.accept(visitor)
             },
             None => ()
         };
-        visitor.closeBlock(self)
+        (*visitor).closeBlock(Ref::from(self as *mut BlockSyntax))
     }
 }
 
@@ -5806,7 +5799,7 @@ pub struct ConstantSyntax {
 
 impl SyntaxNode for ConstantSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        visitor.visitConstant(self)
+        (*visitor).visitConstant(Ref::from(self as *mut ConstantSyntax))
     }
 }
 
@@ -5822,18 +5815,18 @@ pub struct IfSyntax {
 
 impl SyntaxNode for IfSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openIf(self) {
+        if !(*visitor).openIf(Ref::from(self as *mut IfSyntax)) {
             return
         }
-        condition.accept(visitor);
+        self.condition.accept(visitor);
 
-        consequent.accept(visitor);
+        self.consequent.accept(visitor);
 
         match self.elseClause {
-            Some(x) => elseClause.accept(visitor),
+            Some(x) => x.accept(visitor),
             None => ()
         };
-        visitor.closeIf(self)
+        (*visitor).closeIf(Ref::from(self as *mut IfSyntax))
     }
 }
 
@@ -5847,11 +5840,11 @@ pub struct ElseSyntax {
 
 impl SyntaxNode for ElseSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openElse(self) {
+        if !(*visitor).openElse(Ref::from(self as *mut ElseSyntax)) {
             return
         }
-        alternative.accept(visitor);
-        visitor.closeElse(self)
+        self.alternative.accept(visitor);
+        (*visitor).closeElse(Ref::from(self as *mut ElseSyntax))
     }
 }
 
@@ -5866,18 +5859,15 @@ pub struct SwitchSyntax {
 
 impl SyntaxNode for SwitchSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openSwitch(self) {
+        if !(*visitor).openSwitch(Ref::from(self as *mut SwitchSyntax)) {
             return
         }
-        condition.accept(visitor);
+        self.condition.accept(visitor);
 
-        match self.cases {
-            Some(x) => for node in cases {
-                node.accept(visitor)
-            },
-            None => ()
+        for node in self.cases.iter() {
+            node.accept(visitor)
         };
-        visitor.closeSwitch(self)
+        (*visitor).closeSwitch(Ref::from(self as *mut SwitchSyntax))
     }
 }
 
@@ -5892,13 +5882,13 @@ pub struct SwitchCaseSyntax {
 
 impl SyntaxNode for SwitchCaseSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openSwitchCase(self) {
+        if !(*visitor).openSwitchCase(Ref::from(self as *mut SwitchCaseSyntax)) {
             return
         }
-        label.accept(visitor);
+        self.label.accept(visitor);
 
-        content.accept(visitor);
-        visitor.closeSwitchCase(self)
+        self.content.accept(visitor);
+        (*visitor).closeSwitchCase(Ref::from(self as *mut SwitchCaseSyntax))
     }
 }
 
@@ -5923,16 +5913,13 @@ pub struct ItemCaseLabelSyntax {
 
 impl SyntaxNode for ItemCaseLabelSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openItemCaseLabel(self) {
+        if !(*visitor).openItemCaseLabel(Ref::from(self as *mut ItemCaseLabelSyntax)) {
             return
         }
-        match self.items {
-            Some(x) => for node in items {
-                node.accept(visitor)
-            },
-            None => ()
+        for node in self.items.iter() {
+            node.accept(visitor)
         };
-        visitor.closeItemCaseLabel(self)
+        (*visitor).closeItemCaseLabel(Ref::from(self as *mut ItemCaseLabelSyntax))
     }
 }
 
@@ -5946,11 +5933,11 @@ pub struct CaseItemSyntax {
 
 impl SyntaxNode for CaseItemSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openCaseItem(self) {
+        if !(*visitor).openCaseItem(Ref::from(self as *mut CaseItemSyntax)) {
             return
         }
-        pattern.accept(visitor);
-        visitor.closeCaseItem(self)
+        self.pattern.accept(visitor);
+        (*visitor).closeCaseItem(Ref::from(self as *mut CaseItemSyntax))
     }
 }
 
@@ -5976,11 +5963,11 @@ pub struct ConstantPatternSyntax {
 
 impl SyntaxNode for ConstantPatternSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openConstantPattern(self) {
+        if !(*visitor).openConstantPattern(Ref::from(self as *mut ConstantPatternSyntax)) {
             return
         }
-        constant.accept(visitor);
-        visitor.closeConstantPattern(self)
+        self.constant.accept(visitor);
+        (*visitor).closeConstantPattern(Ref::from(self as *mut ConstantPatternSyntax))
     }
 }
 
@@ -5993,7 +5980,7 @@ pub struct WildcardPatternSyntax {
 
 impl SyntaxNode for WildcardPatternSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        visitor.visitWildcardPattern(self)
+        (*visitor).visitWildcardPattern(Ref::from(self as *mut WildcardPatternSyntax))
     }
 }
 
@@ -6007,11 +5994,11 @@ pub struct NamePatternSyntax {
 
 impl SyntaxNode for NamePatternSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openNamePattern(self) {
+        if !(*visitor).openNamePattern(Ref::from(self as *mut NamePatternSyntax)) {
             return
         }
-        name.accept(visitor);
-        visitor.closeNamePattern(self)
+        self.name.accept(visitor);
+        (*visitor).closeNamePattern(Ref::from(self as *mut NamePatternSyntax))
     }
 }
 
@@ -6024,7 +6011,7 @@ pub struct DefaultCaseLabelSyntax {
 
 impl SyntaxNode for DefaultCaseLabelSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        visitor.visitDefaultCaseLabel(self)
+        (*visitor).visitDefaultCaseLabel(Ref::from(self as *mut DefaultCaseLabelSyntax))
     }
 }
 
@@ -6041,18 +6028,18 @@ pub struct ForSyntax {
 
 impl SyntaxNode for ForSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openFor(self) {
+        if !(*visitor).openFor(Ref::from(self as *mut ForSyntax)) {
             return
         }
         match self.typeAnnotation {
-            Some(x) => typeAnnotation.accept(visitor),
+            Some(x) => x.accept(visitor),
             None => ()
         };
 
-        operation.accept(visitor);
+        self.operation.accept(visitor);
 
-        iteration.accept(visitor);
-        visitor.closeFor(self)
+        self.iteration.accept(visitor);
+        (*visitor).closeFor(Ref::from(self as *mut ForSyntax))
     }
 }
 
@@ -6067,13 +6054,13 @@ pub struct WhileSyntax {
 
 impl SyntaxNode for WhileSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openWhile(self) {
+        if !(*visitor).openWhile(Ref::from(self as *mut WhileSyntax)) {
             return
         }
-        condition.accept(visitor);
+        self.condition.accept(visitor);
 
-        iteration.accept(visitor);
-        visitor.closeWhile(self)
+        self.iteration.accept(visitor);
+        (*visitor).closeWhile(Ref::from(self as *mut WhileSyntax))
     }
 }
 
@@ -6088,13 +6075,13 @@ pub struct DoSyntax {
 
 impl SyntaxNode for DoSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openDo(self) {
+        if !(*visitor).openDo(Ref::from(self as *mut DoSyntax)) {
             return
         }
-        iteration.accept(visitor);
+        self.iteration.accept(visitor);
 
-        condition.accept(visitor);
-        visitor.closeDo(self)
+        self.condition.accept(visitor);
+        (*visitor).closeDo(Ref::from(self as *mut DoSyntax))
     }
 }
 
@@ -6119,11 +6106,11 @@ pub struct SimpleLoopSyntax {
 
 impl SyntaxNode for SimpleLoopSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openSimpleLoop(self) {
+        if !(*visitor).openSimpleLoop(Ref::from(self as *mut SimpleLoopSyntax)) {
             return
         }
-        code.accept(visitor);
-        visitor.closeSimpleLoop(self)
+        self.code.accept(visitor);
+        (*visitor).closeSimpleLoop(Ref::from(self as *mut SimpleLoopSyntax))
     }
 }
 
@@ -6138,11 +6125,11 @@ pub struct NamedLoopSyntax {
 
 impl SyntaxNode for NamedLoopSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openNamedLoop(self) {
+        if !(*visitor).openNamedLoop(Ref::from(self as *mut NamedLoopSyntax)) {
             return
         }
-        code.accept(visitor);
-        visitor.closeNamedLoop(self)
+        self.code.accept(visitor);
+        (*visitor).closeNamedLoop(Ref::from(self as *mut NamedLoopSyntax))
     }
 }
 
@@ -6155,7 +6142,7 @@ pub struct ThisSyntax {
 
 impl SyntaxNode for ThisSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        visitor.visitThis(self)
+        (*visitor).visitThis(Ref::from(self as *mut ThisSyntax))
     }
 }
 
@@ -6169,11 +6156,11 @@ pub struct NewSyntax {
 
 impl SyntaxNode for NewSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openNew(self) {
+        if !(*visitor).openNew(Ref::from(self as *mut NewSyntax)) {
             return
         }
-        typeSpec.accept(visitor);
-        visitor.closeNew(self)
+        self.typeSpec.accept(visitor);
+        (*visitor).closeNew(Ref::from(self as *mut NewSyntax))
     }
 }
 
@@ -6188,21 +6175,21 @@ pub struct ObjectSyntax {
 
 impl SyntaxNode for ObjectSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openObject(self) {
+        if !(*visitor).openObject(Ref::from(self as *mut ObjectSyntax)) {
             return
         }
         match self.firstOp {
-            Some(x) => firstOp.accept(visitor),
+            Some(x) => x.accept(visitor),
             None => ()
         };
 
         match self.additionalOps {
-            Some(x) => for node in additionalOps {
+            Some(x) => for node in x.iter() {
                 node.accept(visitor)
             },
             None => ()
         };
-        visitor.closeObject(self)
+        (*visitor).closeObject(Ref::from(self as *mut ObjectSyntax))
     }
 }
 
@@ -6217,21 +6204,21 @@ pub struct ArraySyntax {
 
 impl SyntaxNode for ArraySyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openArray(self) {
+        if !(*visitor).openArray(Ref::from(self as *mut ArraySyntax)) {
             return
         }
         match self.firstOp {
-            Some(x) => firstOp.accept(visitor),
+            Some(x) => x.accept(visitor),
             None => ()
         };
 
         match self.additionalOps {
-            Some(x) => for node in additionalOps {
+            Some(x) => for node in x.iter() {
                 node.accept(visitor)
             },
             None => ()
         };
-        visitor.closeArray(self)
+        (*visitor).closeArray(Ref::from(self as *mut ArraySyntax))
     }
 }
 
@@ -6245,11 +6232,11 @@ pub struct ItemSyntax {
 
 impl SyntaxNode for ItemSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openItem(self) {
+        if !(*visitor).openItem(Ref::from(self as *mut ItemSyntax)) {
             return
         }
-        operation.accept(visitor);
-        visitor.closeItem(self)
+        self.operation.accept(visitor);
+        (*visitor).closeItem(Ref::from(self as *mut ItemSyntax))
     }
 }
 
@@ -6263,11 +6250,11 @@ pub struct SizeOfSyntax {
 
 impl SyntaxNode for SizeOfSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openSizeOf(self) {
+        if !(*visitor).openSizeOf(Ref::from(self as *mut SizeOfSyntax)) {
             return
         }
-        typeSpec.accept(visitor);
-        visitor.closeSizeOf(self)
+        self.typeSpec.accept(visitor);
+        (*visitor).closeSizeOf(Ref::from(self as *mut SizeOfSyntax))
     }
 }
 
@@ -6281,7 +6268,7 @@ pub struct BreakSyntax {
 
 impl SyntaxNode for BreakSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        visitor.visitBreak(self)
+        (*visitor).visitBreak(Ref::from(self as *mut BreakSyntax))
     }
 }
 
@@ -6295,7 +6282,7 @@ pub struct ContinueSyntax {
 
 impl SyntaxNode for ContinueSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        visitor.visitContinue(self)
+        (*visitor).visitContinue(Ref::from(self as *mut ContinueSyntax))
     }
 }
 
@@ -6309,14 +6296,14 @@ pub struct ReturnSyntax {
 
 impl SyntaxNode for ReturnSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openReturn(self) {
+        if !(*visitor).openReturn(Ref::from(self as *mut ReturnSyntax)) {
             return
         }
         match self.result {
-            Some(x) => result.accept(visitor),
+            Some(x) => x.accept(visitor),
             None => ()
         };
-        visitor.closeReturn(self)
+        (*visitor).closeReturn(Ref::from(self as *mut ReturnSyntax))
     }
 }
 
@@ -6330,11 +6317,11 @@ pub struct ThrowSyntax {
 
 impl SyntaxNode for ThrowSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openThrow(self) {
+        if !(*visitor).openThrow(Ref::from(self as *mut ThrowSyntax)) {
             return
         }
-        exception.accept(visitor);
-        visitor.closeThrow(self)
+        self.exception.accept(visitor);
+        (*visitor).closeThrow(Ref::from(self as *mut ThrowSyntax))
     }
 }
 
@@ -6352,31 +6339,31 @@ pub struct ClassSyntax {
 
 impl SyntaxNode for ClassSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openClass(self) {
+        if !(*visitor).openClass(Ref::from(self as *mut ClassSyntax)) {
             return
         }
-        name.accept(visitor);
+        self.name.accept(visitor);
 
         match self.generics {
-            Some(x) => generics.accept(visitor),
+            Some(x) => x.accept(visitor),
             None => ()
         };
 
         match self.baseClass {
-            Some(x) => baseClass.accept(visitor),
+            Some(x) => x.accept(visitor),
             None => ()
         };
 
         match self.contents {
-            Some(x) => contents.accept(visitor),
+            Some(x) => x.accept(visitor),
             None => ()
         };
 
         match self.body {
-            Some(x) => body.accept(visitor),
+            Some(x) => x.accept(visitor),
             None => ()
         };
-        visitor.closeClass(self)
+        (*visitor).closeClass(Ref::from(self as *mut ClassSyntax))
     }
 }
 
@@ -6391,16 +6378,16 @@ pub struct GenericParametersSyntax {
 
 impl SyntaxNode for GenericParametersSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openGenericParameters(self) {
+        if !(*visitor).openGenericParameters(Ref::from(self as *mut GenericParametersSyntax)) {
             return
         }
         match self.additionalGenerics {
-            Some(x) => for node in additionalGenerics {
+            Some(x) => for node in x.iter() {
                 node.accept(visitor)
             },
             None => ()
         };
-        visitor.closeGenericParameters(self)
+        (*visitor).closeGenericParameters(Ref::from(self as *mut GenericParametersSyntax))
     }
 }
 
@@ -6414,7 +6401,7 @@ pub struct GenericParameterSyntax {
 
 impl SyntaxNode for GenericParameterSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        visitor.visitGenericParameter(self)
+        (*visitor).visitGenericParameter(Ref::from(self as *mut GenericParameterSyntax))
     }
 }
 
@@ -6428,11 +6415,11 @@ pub struct ExtendsSyntax {
 
 impl SyntaxNode for ExtendsSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openExtends(self) {
+        if !(*visitor).openExtends(Ref::from(self as *mut ExtendsSyntax)) {
             return
         }
-        name.accept(visitor);
-        visitor.closeExtends(self)
+        self.name.accept(visitor);
+        (*visitor).closeExtends(Ref::from(self as *mut ExtendsSyntax))
     }
 }
 
@@ -6446,16 +6433,16 @@ pub struct StructureSyntax {
 
 impl SyntaxNode for StructureSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openStructure(self) {
+        if !(*visitor).openStructure(Ref::from(self as *mut StructureSyntax)) {
             return
         }
         match self.components {
-            Some(x) => for node in components {
+            Some(x) => for node in x.iter() {
                 node.accept(visitor)
             },
             None => ()
         };
-        visitor.closeStructure(self)
+        (*visitor).closeStructure(Ref::from(self as *mut StructureSyntax))
     }
 }
 
@@ -6470,14 +6457,14 @@ pub struct ComponentSyntax {
 
 impl SyntaxNode for ComponentSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openComponent(self) {
+        if !(*visitor).openComponent(Ref::from(self as *mut ComponentSyntax)) {
             return
         }
         match self.typeAnnotation {
-            Some(x) => typeAnnotation.accept(visitor),
+            Some(x) => x.accept(visitor),
             None => ()
         };
-        visitor.closeComponent(self)
+        (*visitor).closeComponent(Ref::from(self as *mut ComponentSyntax))
     }
 }
 
@@ -6491,16 +6478,16 @@ pub struct ClassBodySyntax {
 
 impl SyntaxNode for ClassBodySyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openClassBody(self) {
+        if !(*visitor).openClassBody(Ref::from(self as *mut ClassBodySyntax)) {
             return
         }
         match self.members {
-            Some(x) => for node in members {
+            Some(x) => for node in x.iter() {
                 node.accept(visitor)
             },
             None => ()
         };
-        visitor.closeClassBody(self)
+        (*visitor).closeClassBody(Ref::from(self as *mut ClassBodySyntax))
     }
 }
 
@@ -6532,11 +6519,11 @@ pub struct LetMemberSyntax {
 
 impl SyntaxNode for LetMemberSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openLetMember(self) {
+        if !(*visitor).openLetMember(Ref::from(self as *mut LetMemberSyntax)) {
             return
         }
-        declaration.accept(visitor);
-        visitor.closeLetMember(self)
+        self.declaration.accept(visitor);
+        (*visitor).closeLetMember(Ref::from(self as *mut LetMemberSyntax))
     }
 }
 
@@ -6550,11 +6537,11 @@ pub struct VarMemberSyntax {
 
 impl SyntaxNode for VarMemberSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openVarMember(self) {
+        if !(*visitor).openVarMember(Ref::from(self as *mut VarMemberSyntax)) {
             return
         }
-        declaration.accept(visitor);
-        visitor.closeVarMember(self)
+        self.declaration.accept(visitor);
+        (*visitor).closeVarMember(Ref::from(self as *mut VarMemberSyntax))
     }
 }
 
@@ -6568,11 +6555,11 @@ pub struct MutableMemberSyntax {
 
 impl SyntaxNode for MutableMemberSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openMutableMember(self) {
+        if !(*visitor).openMutableMember(Ref::from(self as *mut MutableMemberSyntax)) {
             return
         }
-        declaration.accept(visitor);
-        visitor.closeMutableMember(self)
+        self.declaration.accept(visitor);
+        (*visitor).closeMutableMember(Ref::from(self as *mut MutableMemberSyntax))
     }
 }
 
@@ -6586,11 +6573,11 @@ pub struct SetInitializationSyntax {
 
 impl SyntaxNode for SetInitializationSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openSetInitialization(self) {
+        if !(*visitor).openSetInitialization(Ref::from(self as *mut SetInitializationSyntax)) {
             return
         }
-        definition.accept(visitor);
-        visitor.closeSetInitialization(self)
+        self.definition.accept(visitor);
+        (*visitor).closeSetInitialization(Ref::from(self as *mut SetInitializationSyntax))
     }
 }
 
@@ -6604,11 +6591,11 @@ pub struct MethodSyntax {
 
 impl SyntaxNode for MethodSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openMethod(self) {
+        if !(*visitor).openMethod(Ref::from(self as *mut MethodSyntax)) {
             return
         }
-        procedure.accept(visitor);
-        visitor.closeMethod(self)
+        self.procedure.accept(visitor);
+        (*visitor).closeMethod(Ref::from(self as *mut MethodSyntax))
     }
 }
 
@@ -6622,11 +6609,11 @@ pub struct StaticFunctionSyntax {
 
 impl SyntaxNode for StaticFunctionSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openStaticFunction(self) {
+        if !(*visitor).openStaticFunction(Ref::from(self as *mut StaticFunctionSyntax)) {
             return
         }
-        procedure.accept(visitor);
-        visitor.closeStaticFunction(self)
+        self.procedure.accept(visitor);
+        (*visitor).closeStaticFunction(Ref::from(self as *mut StaticFunctionSyntax))
     }
 }
 
@@ -6640,11 +6627,11 @@ pub struct OperatorSyntax {
 
 impl SyntaxNode for OperatorSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openOperator(self) {
+        if !(*visitor).openOperator(Ref::from(self as *mut OperatorSyntax)) {
             return
         }
-        routine.accept(visitor);
-        visitor.closeOperator(self)
+        self.routine.accept(visitor);
+        (*visitor).closeOperator(Ref::from(self as *mut OperatorSyntax))
     }
 }
 
@@ -6659,16 +6646,16 @@ pub struct InitializerSyntax {
 
 impl SyntaxNode for InitializerSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openInitializer(self) {
+        if !(*visitor).openInitializer(Ref::from(self as *mut InitializerSyntax)) {
             return
         }
         match self.input {
-            Some(x) => input.accept(visitor),
+            Some(x) => x.accept(visitor),
             None => ()
         };
 
-        body.accept(visitor);
-        visitor.closeInitializer(self)
+        self.body.accept(visitor);
+        (*visitor).closeInitializer(Ref::from(self as *mut InitializerSyntax))
     }
 }
 
@@ -6683,16 +6670,16 @@ pub struct AllocatorSyntax {
 
 impl SyntaxNode for AllocatorSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openAllocator(self) {
+        if !(*visitor).openAllocator(Ref::from(self as *mut AllocatorSyntax)) {
             return
         }
         match self.input {
-            Some(x) => input.accept(visitor),
+            Some(x) => x.accept(visitor),
             None => ()
         };
 
-        body.accept(visitor);
-        visitor.closeAllocator(self)
+        self.body.accept(visitor);
+        (*visitor).closeAllocator(Ref::from(self as *mut AllocatorSyntax))
     }
 }
 
@@ -6706,11 +6693,11 @@ pub struct TypeAnnotationSyntax {
 
 impl SyntaxNode for TypeAnnotationSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openTypeAnnotation(self) {
+        if !(*visitor).openTypeAnnotation(Ref::from(self as *mut TypeAnnotationSyntax)) {
             return
         }
-        typeSpec.accept(visitor);
-        visitor.closeTypeAnnotation(self)
+        self.typeSpec.accept(visitor);
+        (*visitor).closeTypeAnnotation(Ref::from(self as *mut TypeAnnotationSyntax))
     }
 }
 
@@ -6738,26 +6725,26 @@ pub struct TypeSyntax {
 
 impl SyntaxNode for TypeSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openType(self) {
+        if !(*visitor).openType(Ref::from(self as *mut TypeSyntax)) {
             return
         }
-        name.accept(visitor);
+        self.name.accept(visitor);
 
         match self.generics {
-            Some(x) => generics.accept(visitor),
+            Some(x) => x.accept(visitor),
             None => ()
         };
 
         match self.optional {
-            Some(x) => optional.accept(visitor),
+            Some(x) => x.accept(visitor),
             None => ()
         };
 
         match self.lifeTime {
-            Some(x) => lifeTime.accept(visitor),
+            Some(x) => x.accept(visitor),
             None => ()
         };
-        visitor.closeType(self)
+        (*visitor).closeType(Ref::from(self as *mut TypeSyntax))
     }
 }
 
@@ -6771,16 +6758,16 @@ pub struct VariantSyntax {
 
 impl SyntaxNode for VariantSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openVariant(self) {
+        if !(*visitor).openVariant(Ref::from(self as *mut VariantSyntax)) {
             return
         }
         match self.types {
-            Some(x) => for node in types {
+            Some(x) => for node in x.iter() {
                 node.accept(visitor)
             },
             None => ()
         };
-        visitor.closeVariant(self)
+        (*visitor).closeVariant(Ref::from(self as *mut VariantSyntax))
     }
 }
 
@@ -6794,11 +6781,11 @@ pub struct ThrowsSyntax {
 
 impl SyntaxNode for ThrowsSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openThrows(self) {
+        if !(*visitor).openThrows(Ref::from(self as *mut ThrowsSyntax)) {
             return
         }
-        throwsType.accept(visitor);
-        visitor.closeThrows(self)
+        self.throwsType.accept(visitor);
+        (*visitor).closeThrows(Ref::from(self as *mut ThrowsSyntax))
     }
 }
 
@@ -6813,18 +6800,18 @@ pub struct GenericArgumentsSyntax {
 
 impl SyntaxNode for GenericArgumentsSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openGenericArguments(self) {
+        if !(*visitor).openGenericArguments(Ref::from(self as *mut GenericArgumentsSyntax)) {
             return
         }
-        generic.accept(visitor);
+        self.generic.accept(visitor);
 
         match self.additionalGenerics {
-            Some(x) => for node in additionalGenerics {
+            Some(x) => for node in x.iter() {
                 node.accept(visitor)
             },
             None => ()
         };
-        visitor.closeGenericArguments(self)
+        (*visitor).closeGenericArguments(Ref::from(self as *mut GenericArgumentsSyntax))
     }
 }
 
@@ -6838,11 +6825,11 @@ pub struct GenericArgumentSyntax {
 
 impl SyntaxNode for GenericArgumentSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openGenericArgument(self) {
+        if !(*visitor).openGenericArgument(Ref::from(self as *mut GenericArgumentSyntax)) {
             return
         }
-        typeSpec.accept(visitor);
-        visitor.closeGenericArgument(self)
+        self.typeSpec.accept(visitor);
+        (*visitor).closeGenericArgument(Ref::from(self as *mut GenericArgumentSyntax))
     }
 }
 
@@ -6855,7 +6842,7 @@ pub struct OptionalSyntax {
 
 impl SyntaxNode for OptionalSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        visitor.visitOptional(self)
+        (*visitor).visitOptional(Ref::from(self as *mut OptionalSyntax))
     }
 }
 
@@ -6881,7 +6868,7 @@ pub struct RootSyntax {
 
 impl SyntaxNode for RootSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        visitor.visitRoot(self)
+        (*visitor).visitRoot(Ref::from(self as *mut RootSyntax))
     }
 }
 
@@ -6895,7 +6882,7 @@ pub struct LocalSyntax {
 
 impl SyntaxNode for LocalSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        visitor.visitLocal(self)
+        (*visitor).visitLocal(Ref::from(self as *mut LocalSyntax))
     }
 }
 
@@ -6904,12 +6891,12 @@ pub struct ReferenceSyntax {
     pub start: Position,
     pub end: Position,
     pub parent: *mut SyntaxNode,
-    pub age: Literal,
+    pub age: Option<Literal>,
 }
 
 impl SyntaxNode for ReferenceSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        visitor.visitReference(self)
+        (*visitor).visitReference(Ref::from(self as *mut ReferenceSyntax))
     }
 }
 
@@ -6922,6 +6909,6 @@ pub struct ThrownSyntax {
 
 impl SyntaxNode for ThrownSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        visitor.visitThrown(self)
+        (*visitor).visitThrown(Ref::from(self as *mut ThrownSyntax))
     }
 }

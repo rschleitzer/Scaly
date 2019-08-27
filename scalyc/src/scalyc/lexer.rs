@@ -196,7 +196,7 @@ impl Lexer {
                 '\"' => {
                     self.read_character();
                     self.column = self.column + 1;
-                    return Ref::new(_rp, Token::StringLiteral(value.to_string(_rp)));
+                    return Ref::new(_rp, Token::Literal(Literal::String(value.to_string(_rp))));
                 }
 
                 '\\' => {
@@ -247,7 +247,7 @@ impl Lexer {
                 '\'' => {
                     self.read_character();
                     self.column = self.column + 1;
-                    return Ref::new(_rp, Token::CharacterLiteral(value.to_string(_rp)));
+                    return Ref::new(_rp, Token::Literal(Literal::Character(value.to_string(_rp))));
                 }
 
                 '\\' => {
@@ -290,7 +290,7 @@ impl Lexer {
         self.column = self.column + 1;
 
         if self.is_at_end() {
-            return Ref::new(_rp, Token::NumericLiteral(value.to_string(_rp)));
+            return Ref::new(_rp, Token::Literal(Literal::Numeric(value.to_string(_rp))));
         }
         if self.character == 'x' {
             return self.scan_hex_literal(&_r, _rp);
@@ -304,14 +304,14 @@ impl Lexer {
             self.column = self.column + 1;
 
             if self.is_at_end() {
-                return Ref::new(_rp, Token::NumericLiteral(value.to_string(_rp)));
+                return Ref::new(_rp, Token::Literal(Literal::Numeric(value.to_string(_rp))));
             }
 
             let c = self.character;
             if (c >= '0') && (c <= '9') {
                 value.append_character(self.character)
             } else {
-                return Ref::new(_rp, Token::NumericLiteral(value.to_string(_rp)));
+                return Ref::new(_rp, Token::Literal(Literal::Numeric(value.to_string(_rp))));
             }
         }
     }
@@ -325,7 +325,7 @@ impl Lexer {
             self.column = self.column + 1;
 
             if self.is_at_end() {
-                return Ref::new(_rp, Token::HexLiteral(value.to_string(_rp)));
+                return Ref::new(_rp, Token::Literal(Literal::Hex(value.to_string(_rp))));
             }
 
             let c = self.character;
@@ -335,7 +335,7 @@ impl Lexer {
             {
                 value.append_character(self.character)
             } else {
-                return Ref::new(_rp, Token::HexLiteral(value.to_string(_rp)));
+                return Ref::new(_rp, Token::Literal(Literal::Hex(value.to_string(_rp))));
             }
         }
     }
@@ -516,10 +516,13 @@ impl Lexer {
         }
     }
 
-    pub fn parse_literal(&self, _rp: *mut Page) -> Option<String>
+    pub fn parse_literal(&self, _rp: *mut Page) -> Option<Literal>
     {
         match *self.token {
-            Token::StringLiteral(name) | Token::CharacterLiteral (name) | Token::HexLiteral (name) | Token::NumericLiteral (name) => Some(String::copy(_rp, name)),
+            Token::Literal(Literal::String(name)) => Some(Literal::String(String::copy(_rp, name))),
+            Token::Literal(Literal::Character(name)) => Some(Literal::Character(String::copy(_rp, name))),
+            Token::Literal(Literal::Numeric(name)) => Some(Literal::Numeric(String::copy(_rp, name))),
+            Token::Literal(Literal::Hex(name)) => Some(Literal::Hex(String::copy(_rp, name))),
             _ => None
         }
     }
@@ -553,9 +556,14 @@ pub struct Position {
 pub enum Token {
     InvalidToken,
     Identifier(String),
-    StringLiteral(String),
-    CharacterLiteral(String),
-    NumericLiteral(String),
-    HexLiteral(String),
+    Literal(Literal),
     Punctuation(String),
+}
+
+#[derive(Copy, Clone)]
+pub enum Literal {
+    String(String),
+    Character(String),
+    Numeric(String),
+    Hex(String),
 }
