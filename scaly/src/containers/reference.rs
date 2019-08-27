@@ -20,6 +20,12 @@ impl<T> Ref<T> {
     }
 }
 
+impl<T> From<*mut T> for Ref<T> {
+    fn from(p: *mut T) -> Ref<T> {
+        Ref { data: p }
+    }
+}
+
 impl<T> Deref for Ref<T> {
     type Target = T;
 
