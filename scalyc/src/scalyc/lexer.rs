@@ -1,8 +1,8 @@
 use scaly::containers::Ref;
 use scaly::io::Stream;
 use scaly::memory::Region;
-use scaly::{Page, String, StringBuilder};
 use scaly::Equal;
+use scaly::{Page, String, StringBuilder};
 
 pub struct Lexer {
     pub token: Ref<Token>,
@@ -44,6 +44,8 @@ impl Lexer {
             if read_result == -1 {
                 self.is_at_end = true;
                 self.character = 0 as char;
+            } else {
+                self.character = read_result as u8 as char;
             }
         }
     }
@@ -247,7 +249,10 @@ impl Lexer {
                 '\'' => {
                     self.read_character();
                     self.column = self.column + 1;
-                    return Ref::new(_rp, Token::Literal(Literal::Character(value.to_string(_rp))));
+                    return Ref::new(
+                        _rp,
+                        Token::Literal(Literal::Character(value.to_string(_rp))),
+                    );
                 }
 
                 '\\' => {
@@ -493,8 +498,7 @@ impl Lexer {
         }
     }
 
-    pub fn parse_keyword(&self, fixed_string: String) -> bool
-    {
+    pub fn parse_keyword(&self, fixed_string: String) -> bool {
         match *self.token {
             Token::Identifier(name) => return name.equals(&fixed_string),
             _ => return false,
@@ -508,22 +512,24 @@ impl Lexer {
         }
     }
 
-    pub fn parse_punctuation(&self, fixed_string: String) -> bool
-    {
+    pub fn parse_punctuation(&self, fixed_string: String) -> bool {
         match *self.token {
             Token::Punctuation(name) => return name.equals(&fixed_string),
             _ => return false,
         }
     }
 
-    pub fn parse_literal(&self, _rp: *mut Page) -> Option<Literal>
-    {
+    pub fn parse_literal(&self, _rp: *mut Page) -> Option<Literal> {
         match *self.token {
             Token::Literal(Literal::String(name)) => Some(Literal::String(String::copy(_rp, name))),
-            Token::Literal(Literal::Character(name)) => Some(Literal::Character(String::copy(_rp, name))),
-            Token::Literal(Literal::Numeric(name)) => Some(Literal::Numeric(String::copy(_rp, name))),
+            Token::Literal(Literal::Character(name)) => {
+                Some(Literal::Character(String::copy(_rp, name)))
+            }
+            Token::Literal(Literal::Numeric(name)) => {
+                Some(Literal::Numeric(String::copy(_rp, name)))
+            }
             Token::Literal(Literal::Hex(name)) => Some(Literal::Hex(String::copy(_rp, name))),
-            _ => None
+            _ => None,
         }
     }
 
