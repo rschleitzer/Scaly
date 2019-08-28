@@ -54,7 +54,7 @@ impl Lexer {
         let _r = Region::create(_pr);
         self.skip_whitespace();
         self.previous_line = self.line;
-        self.previous_column = self.previous_column;
+        self.previous_column = self.column;
         if self.is_at_end {
             return;
         }
@@ -299,23 +299,19 @@ impl Lexer {
         }
         if self.character == 'x' {
             return self.scan_hex_literal(&_r, _rp);
-        } else {
-            self.read_character();
-            self.column = self.column + 1;
         }
 
         loop {
-            self.read_character();
-            self.column = self.column + 1;
-
-            if self.is_at_end() {
-                return Ref::new(_rp, Token::Literal(Literal::Numeric(value.to_string(_rp))));
-            }
-
             let c = self.character;
             if (c >= '0') && (c <= '9') {
                 value.append_character(self.character)
             } else {
+                return Ref::new(_rp, Token::Literal(Literal::Numeric(value.to_string(_rp))));
+            }
+            self.read_character();
+            self.column = self.column + 1;
+
+            if self.is_at_end() {
                 return Ref::new(_rp, Token::Literal(Literal::Numeric(value.to_string(_rp))));
             }
         }
