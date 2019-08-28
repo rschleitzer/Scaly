@@ -3,6 +3,7 @@ extern crate libc;
 use self::libc::c_void;
 use self::libc::memcpy;
 use containers::Vector;
+use containers::reference::Ref;
 use memory::Page;
 use std::mem::align_of;
 use std::mem::size_of;
@@ -50,7 +51,7 @@ impl<T: Copy> Array<T> {
     }
 
     fn reallocate(&mut self) {
-        let _own_page = Page::own(self);
+        let _own_page = Page::own(Ref::from(self as *mut Array<T>));
         let size = size_of::<T>();
         unsafe {
             if self.vector.length == 0 {

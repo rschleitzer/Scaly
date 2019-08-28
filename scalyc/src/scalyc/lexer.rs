@@ -63,7 +63,7 @@ impl Lexer {
 
         if ((c >= 'a') && (c <= 'z')) || ((c >= 'A') && (c <= 'Z')) {
             {
-                let _token_page = Page::own(&self.token);
+                let _token_page = Page::own(self.token);
                 unsafe {
                     (*_token_page).reset();
                 }
@@ -74,7 +74,7 @@ impl Lexer {
 
         if (c >= '0') && (c <= '9') {
             {
-                let _token_page = Page::own(&self.token);
+                let _token_page = Page::own(self.token);
                 unsafe {
                     (*_token_page).reset();
                 }
@@ -85,7 +85,7 @@ impl Lexer {
 
         match c {
             '+' | '-' | '*' | '/' | '=' | '%' | '&' | '|' | '^' | '~' | '<' | '>' => {
-                let _token_page = Page::own(&self.token);
+                let _token_page = Page::own(self.token);
                 unsafe {
                     (*_token_page).reset();
                 }
@@ -93,7 +93,7 @@ impl Lexer {
             }
 
             '\"' => {
-                let _token_page = Page::own(&self.token);
+                let _token_page = Page::own(self.token);
                 unsafe {
                     (*_token_page).reset();
                 }
@@ -101,7 +101,7 @@ impl Lexer {
             }
 
             '\'' => {
-                let _token_page = Page::own(&self.token);
+                let _token_page = Page::own(self.token);
                 unsafe {
                     (*_token_page).reset();
                 }
@@ -111,13 +111,13 @@ impl Lexer {
             '{' | '}' | '(' | ')' | '[' | ']' | '.' | ',' | ':' | ';' | '?' | '!' | '@' | '#'
             | '$' | '_' | '`' => {
                 {
-                    let _token_page = Page::own(&self.token);
+                    let _token_page = Page::own(self.token);
                     unsafe {
                         (*_token_page).reset();
                     }
                     self.token = Ref::new(
                         _token_page,
-                        Token::Punctuation(String::from_character(Page::own(self), c)),
+                        Token::Punctuation(String::from_character(_token_page, c)),
                     );
                 }
                 self.read_character();
@@ -125,7 +125,7 @@ impl Lexer {
             }
 
             _ => {
-                let _token_page = Page::own(&self.token);
+                let _token_page = Page::own(self.token);
                 unsafe {
                     (*_token_page).reset();
                 }

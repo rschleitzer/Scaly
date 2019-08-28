@@ -1,3 +1,4 @@
+use containers::reference::Ref;
 use memory::page::Page;
 use std::ptr::null_mut;
 
@@ -17,7 +18,7 @@ impl<T: Copy> List<T> {
     }
 
     pub fn add(&mut self, element: T) {
-        let _own_page = Page::own(self);
+        let _own_page = Page::own(Ref::from(self as *mut List<T>));
         let new_node = unsafe {
             (*_own_page).allocate(Node {
                 element: element,

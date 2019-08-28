@@ -1,3 +1,4 @@
+use containers::reference::Ref;
 use memory::Bucket;
 use std::alloc::alloc;
 use std::alloc::dealloc;
@@ -253,8 +254,8 @@ impl Page {
         (address & !(PAGE_SIZE - 1)) as *mut Page
     }
 
-    pub fn own<T>(object: &T) -> *mut Page {
-        Page::get(object as *const T as usize)
+    pub fn own<T>(object: Ref<T>) -> *mut Page {
+        Page::get(object.data as usize)
     }
 
     fn deallocate_exclusive_page(&mut self, page: *mut Page) -> bool {
