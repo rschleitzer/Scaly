@@ -48,12 +48,12 @@ class Parser(
     let intrinsicKeyword: string = new string("intrinsic")
     let defineKeyword: string = new string("define")
     let semicolon: string = new string(";")
-    let leftCurly: string = new string("{")
-    let rightCurly: string = new string("}")
-    let leftParen: string = new string("(")
-    let rightParen: string = new string(")")
-    let leftBracket: string = new string("[")
-    let rightBracket: string = new string("]")
+    let left_curly: string = new string("{")
+    let right_curly: string = new string("}")
+    let left_paren: string = new string("(")
+    let right_paren: string = new string(")")
+    let left_bracket: string = new string("[")
+    let right_bracket: string = new string("]")
     let dot: string = new string(".")
     let comma: string = new string(",")
     let colon: string = new string(":")
@@ -155,8 +155,8 @@ class Parser(
     function parseIntrinsic(): Intrinsic {
         let start: Position$ = lexer.getPreviousPosition()
 
-        let successIntrinsic1: bool = lexer.parseKeyword(intrinsicKeyword)
-        if (successIntrinsic1) {
+        let success_intrinsic_1: bool = lexer.parseKeyword(intrinsicKeyword)
+        if (success_intrinsic_1) {
             lexer.advance() }
         else {
             return () }
@@ -194,8 +194,8 @@ class Parser(
     function parseUsing(): Using {
         let start: Position$ = lexer.getPreviousPosition()
 
-        let successUsing1: bool = lexer.parseKeyword(usingKeyword)
-        if (successUsing1) {
+        let success_using_1: bool = lexer.parseKeyword(usingKeyword)
+        if (success_using_1) {
             lexer.advance() }
         else {
             return () }
@@ -232,8 +232,8 @@ class Parser(
     function parseDefine(): Define {
         let start: Position$ = lexer.getPreviousPosition()
 
-        let successDefine1: bool = lexer.parseKeyword(defineKeyword)
-        if (successDefine1) {
+        let success_define_1: bool = lexer.parseKeyword(defineKeyword)
+        if (success_define_1) {
             lexer.advance() }
         else {
             return () }
@@ -242,15 +242,15 @@ class Parser(
         if (name = ()) {
             return () }
 
-        let typeSpec: Type = parseType()
-        if (typeSpec = ()) {
+        let type_spec: Type = parseType()
+        if (type_spec = ()) {
             return () }
 
         let end: Position$ lexer.getPosition()
 
-        let ret: Define new Define(name, typeSpec, new Position(start), new Position(end))
+        let ret: Define new Define(name, type_spec, new Position(start), new Position(end))
         name.parent = ret
-        typeSpec.parent = ret
+        type_spec.parent = ret
 
         ret
     }
@@ -297,8 +297,8 @@ class Parser(
     function parseExtension(): Extension {
         let start: Position$ = lexer.getPreviousPosition()
 
-        let successDot1: bool = lexer.parsePunctuation(dot)
-        if (successDot1) {
+        let success_dot_1: bool = lexer.parsePunctuation(dot)
+        if (success_dot_1) {
             lexer.advance() }
         else {
             return () }
@@ -382,8 +382,8 @@ class Parser(
     function parseNamespace(): Namespace {
         let start: Position$ = lexer.getPreviousPosition()
 
-        let successNamespace1: bool = lexer.parseKeyword(namespaceKeyword)
-        if (successNamespace1) {
+        let success_namespace_1: bool = lexer.parseKeyword(namespaceKeyword)
+        if (success_namespace_1) {
             lexer.advance() }
         else {
             return () }
@@ -392,8 +392,8 @@ class Parser(
         if (name = ()) {
             return () }
 
-        let successLeftCurly3: bool = lexer.parsePunctuation(leftCurly)
-        if (successLeftCurly3) {
+        let success_left_curly_3: bool = lexer.parsePunctuation(left_curly)
+        if (success_left_curly_3) {
             lexer.advance() }
         else {
             return () }
@@ -404,8 +404,8 @@ class Parser(
 
         let declarations: Array[Declaration] = parseDeclarationList()
 
-        let successRightCurly7: bool = lexer.parsePunctuation(rightCurly)
-        if (successRightCurly7) {
+        let success_right_curly_7: bool = lexer.parsePunctuation(right_curly)
+        if (success_right_curly_7) {
             lexer.advance() }
         else {
             return () }
@@ -433,8 +433,8 @@ class Parser(
     function parseFunction(): Function {
         let start: Position$ = lexer.getPreviousPosition()
 
-        let successFunction1: bool = lexer.parseKeyword(functionKeyword)
-        if (successFunction1) {
+        let success_function_1: bool = lexer.parseKeyword(functionKeyword)
+        if (success_function_1) {
             lexer.advance() }
         else {
             return () }
@@ -479,7 +479,7 @@ class Parser(
 
         let output: TypeAnnotation = parseTypeAnnotation()
 
-        let throwsClause: Throws = parseThrows()
+        let throws_clause: Throws = parseThrows()
 
         let body: Block = parseBlock()
         if (body = ()) {
@@ -487,13 +487,13 @@ class Parser(
 
         let end: Position$ lexer.getPosition()
 
-        let ret: Routine new Routine(input, output, throwsClause, body, new Position(start), new Position(end))
+        let ret: Routine new Routine(input, output, throws_clause, body, new Position(start), new Position(end))
         if (input <> ()) {
             input.parent = ret }
         if (output <> ()) {
             output.parent = ret }
-        if (throwsClause <> ()) {
-            throwsClause.parent = ret }
+        if (throws_clause <> ()) {
+            throws_clause.parent = ret }
         body.parent = ret
 
         ret
@@ -643,8 +643,8 @@ class Parser(
     function parseLet(): Let {
         let start: Position$ = lexer.getPreviousPosition()
 
-        let successLet1: bool = lexer.parseKeyword(letKeyword)
-        if (successLet1) {
+        let success_let_1: bool = lexer.parseKeyword(letKeyword)
+        if (success_let_1) {
             lexer.advance() }
         else {
             return () }
@@ -664,8 +664,8 @@ class Parser(
     function parseVar(): Var {
         let start: Position$ = lexer.getPreviousPosition()
 
-        let successVar1: bool = lexer.parseKeyword(varKeyword)
-        if (successVar1) {
+        let success_var_1: bool = lexer.parseKeyword(varKeyword)
+        if (success_var_1) {
             lexer.advance() }
         else {
             return () }
@@ -685,8 +685,8 @@ class Parser(
     function parseMutable(): Mutable {
         let start: Position$ = lexer.getPreviousPosition()
 
-        let successMutable1: bool = lexer.parseKeyword(mutableKeyword)
-        if (successMutable1) {
+        let success_mutable_1: bool = lexer.parseKeyword(mutableKeyword)
+        if (success_mutable_1) {
             lexer.advance() }
         else {
             return () }
@@ -706,8 +706,8 @@ class Parser(
     function parseThreadLocal(): ThreadLocal {
         let start: Position$ = lexer.getPreviousPosition()
 
-        let successThreadlocal1: bool = lexer.parseKeyword(threadlocalKeyword)
-        if (successThreadlocal1) {
+        let success_threadlocal_1: bool = lexer.parseKeyword(threadlocalKeyword)
+        if (success_threadlocal_1) {
             lexer.advance() }
         else {
             return () }
@@ -733,7 +733,7 @@ class Parser(
         else {
             return () }
 
-        let typeAnnotation: TypeAnnotation = parseTypeAnnotation()
+        let type_annotation: TypeAnnotation = parseTypeAnnotation()
 
         let calculation: Calculation = parseCalculation()
         if (calculation = ()) {
@@ -741,9 +741,9 @@ class Parser(
 
         let end: Position$ lexer.getPosition()
 
-        let ret: Binding new Binding(name, typeAnnotation, calculation, new Position(start), new Position(end))
-        if (typeAnnotation <> ()) {
-            typeAnnotation.parent = ret }
+        let ret: Binding new Binding(name, type_annotation, calculation, new Position(start), new Position(end))
+        if (type_annotation <> ()) {
+            type_annotation.parent = ret }
         calculation.parent = ret
 
         ret
@@ -752,31 +752,31 @@ class Parser(
     function parseSet(): Set {
         let start: Position$ = lexer.getPreviousPosition()
 
-        let successSet1: bool = lexer.parseKeyword(setKeyword)
-        if (successSet1) {
+        let success_set_1: bool = lexer.parseKeyword(setKeyword)
+        if (success_set_1) {
             lexer.advance() }
         else {
             return () }
 
-        let lValue: Operation = parseOperation()
-        if (lValue = ()) {
+        let l_value: Operation = parseOperation()
+        if (l_value = ()) {
             return () }
 
-        let successColon3: bool = lexer.parsePunctuation(colon)
-        if (successColon3) {
+        let success_colon_3: bool = lexer.parsePunctuation(colon)
+        if (success_colon_3) {
             lexer.advance() }
         else {
             return () }
 
-        let rValue: Calculation = parseCalculation()
-        if (rValue = ()) {
+        let r_value: Calculation = parseCalculation()
+        if (r_value = ()) {
             return () }
 
         let end: Position$ lexer.getPosition()
 
-        let ret: Set new Set(lValue, rValue, new Position(start), new Position(end))
-        lValue.parent = ret
-        rValue.parent = ret
+        let ret: Set new Set(l_value, r_value, new Position(start), new Position(end))
+        l_value.parent = ret
+        r_value.parent = ret
 
         ret
     }
@@ -788,8 +788,8 @@ class Parser(
         if (operation = ()) {
             return () }
 
-        let successSemicolon2: bool = lexer.parsePunctuation(semicolon)
-        if (successSemicolon2) {
+        let success_semicolon_2: bool = lexer.parsePunctuation(semicolon)
+        if (success_semicolon_2) {
             lexer.advance() }
 
         let end: Position$ lexer.getPosition()
@@ -908,8 +908,8 @@ class Parser(
     function parseMemberAccess(): MemberAccess {
         let start: Position$ = lexer.getPreviousPosition()
 
-        let successDot1: bool = lexer.parsePunctuation(dot)
-        if (successDot1) {
+        let success_dot_1: bool = lexer.parsePunctuation(dot)
+        if (success_dot_1) {
             lexer.advance() }
         else {
             return () }
@@ -930,20 +930,20 @@ class Parser(
     function parseAs(): As {
         let start: Position$ = lexer.getPreviousPosition()
 
-        let successAs1: bool = lexer.parseKeyword(asKeyword)
-        if (successAs1) {
+        let success_as_1: bool = lexer.parseKeyword(asKeyword)
+        if (success_as_1) {
             lexer.advance() }
         else {
             return () }
 
-        let typeSpec: TypeSpec = parseTypeSpec()
-        if (typeSpec = ()) {
+        let type_spec: TypeSpec = parseTypeSpec()
+        if (type_spec = ()) {
             return () }
 
         let end: Position$ lexer.getPosition()
 
-        let ret: As new As(typeSpec, new Position(start), new Position(end))
-        typeSpec.parent = ret
+        let ret: As new As(type_spec, new Position(start), new Position(end))
+        type_spec.parent = ret
 
         ret
     }
@@ -951,20 +951,20 @@ class Parser(
     function parseIs(): Is {
         let start: Position$ = lexer.getPreviousPosition()
 
-        let successIs1: bool = lexer.parseKeyword(isKeyword)
-        if (successIs1) {
+        let success_is_1: bool = lexer.parseKeyword(isKeyword)
+        if (success_is_1) {
             lexer.advance() }
         else {
             return () }
 
-        let typeSpec: TypeSpec = parseTypeSpec()
-        if (typeSpec = ()) {
+        let type_spec: TypeSpec = parseTypeSpec()
+        if (type_spec = ()) {
             return () }
 
         let end: Position$ lexer.getPosition()
 
-        let ret: Is new Is(typeSpec, new Position(start), new Position(end))
-        typeSpec.parent = ret
+        let ret: Is new Is(type_spec, new Position(start), new Position(end))
+        type_spec.parent = ret
 
         ret
     }
@@ -972,8 +972,8 @@ class Parser(
     function parseUnwrap(): Unwrap {
         let start: Position$ = lexer.getPreviousPosition()
 
-        let successExclamation1: bool = lexer.parsePunctuation(exclamation)
-        if (successExclamation1) {
+        let success_exclamation_1: bool = lexer.parsePunctuation(exclamation)
+        if (success_exclamation_1) {
             lexer.advance() }
         else {
             return () }
@@ -988,14 +988,14 @@ class Parser(
     function parseCatch(): Catch {
         let start: Position$ = lexer.getPreviousPosition()
 
-        let successCatch1: bool = lexer.parseKeyword(catchKeyword)
-        if (successCatch1) {
+        let success_catch_1: bool = lexer.parseKeyword(catchKeyword)
+        if (success_catch_1) {
             lexer.advance() }
         else {
             return () }
 
-        let typeSpec: CatchPattern = parseCatchPattern()
-        if (typeSpec = ()) {
+        let type_spec: CatchPattern = parseCatchPattern()
+        if (type_spec = ()) {
             return () }
 
         let handler: Block = parseBlock()
@@ -1004,8 +1004,8 @@ class Parser(
 
         let end: Position$ lexer.getPosition()
 
-        let ret: Catch new Catch(typeSpec, handler, new Position(start), new Position(end))
-        typeSpec.parent = ret
+        let ret: Catch new Catch(type_spec, handler, new Position(start), new Position(end))
+        type_spec.parent = ret
         handler.parent = ret
 
         ret
@@ -1045,35 +1045,18 @@ class Parser(
     function parseTypeCatchPattern(): TypeCatchPattern {
         let start: Position$ = lexer.getPreviousPosition()
 
-        let typeSpec: TypeSpec = parseTypeSpec()
-        if (typeSpec = ()) {
+        let type_spec: TypeSpec = parseTypeSpec()
+        if (type_spec = ()) {
             return () }
 
-        let errorName: string = lexer.parseIdentifier()
-        if ((errorName <> ()) && isIdentifier(errorName)) {
+        let error_name: string = lexer.parseIdentifier()
+        if ((error_name <> ()) && isIdentifier(error_name)) {
             lexer.advance() }
 
         let end: Position$ lexer.getPosition()
 
-        let ret: TypeCatchPattern new TypeCatchPattern(typeSpec, errorName, new Position(start), new Position(end))
-        typeSpec.parent = ret
-
-        ret
-    }
-
-    method parseExpressionList(): Array[Expression] {
-        mutable ret: Array[Expression]$ = null
-        while (true) {
-
-            let node: Expression parseExpression()
-            if (node = ()) {
-                break }
-
-            if (ret = ()) {
-                ret = new Array[Expression]() }
-
-            ret.add(node)
-        }
+        let ret: TypeCatchPattern new TypeCatchPattern(type_spec, error_name, new Position(start), new Position(end))
+        type_spec.parent = ret
 
         ret
     }
@@ -1163,16 +1146,16 @@ class Parser(
     function parseBlock(): Block {
         let start: Position$ = lexer.getPreviousPosition()
 
-        let successLeftCurly1: bool = lexer.parsePunctuation(leftCurly)
-        if (successLeftCurly1) {
+        let success_left_curly_1: bool = lexer.parsePunctuation(left_curly)
+        if (success_left_curly_1) {
             lexer.advance() }
         else {
             return () }
 
         let statements: Array[Statement] = parseStatementList()
 
-        let successRightCurly3: bool = lexer.parsePunctuation(rightCurly)
-        if (successRightCurly3) {
+        let success_right_curly_3: bool = lexer.parsePunctuation(right_curly)
+        if (success_right_curly_3) {
             lexer.advance() }
         else {
             return () }
@@ -1207,14 +1190,14 @@ class Parser(
     function parseIf(): If {
         let start: Position$ = lexer.getPreviousPosition()
 
-        let successIf1: bool = lexer.parseKeyword(ifKeyword)
-        if (successIf1) {
+        let success_if_1: bool = lexer.parseKeyword(ifKeyword)
+        if (success_if_1) {
             lexer.advance() }
         else {
             return () }
 
-        let successLeftParen2: bool = lexer.parsePunctuation(leftParen)
-        if (successLeftParen2) {
+        let success_left_paren_2: bool = lexer.parsePunctuation(left_paren)
+        if (success_left_paren_2) {
             lexer.advance() }
         else {
             return () }
@@ -1223,8 +1206,8 @@ class Parser(
         if (condition = ()) {
             return () }
 
-        let successRightParen4: bool = lexer.parsePunctuation(rightParen)
-        if (successRightParen4) {
+        let success_right_paren_4: bool = lexer.parsePunctuation(right_paren)
+        if (success_right_paren_4) {
             lexer.advance() }
         else {
             return () }
@@ -1233,15 +1216,15 @@ class Parser(
         if (consequent = ()) {
             return () }
 
-        let elseClause: Else = parseElse()
+        let else_clause: Else = parseElse()
 
         let end: Position$ lexer.getPosition()
 
-        let ret: If new If(condition, consequent, elseClause, new Position(start), new Position(end))
+        let ret: If new If(condition, consequent, else_clause, new Position(start), new Position(end))
         condition.parent = ret
         consequent.parent = ret
-        if (elseClause <> ()) {
-            elseClause.parent = ret }
+        if (else_clause <> ()) {
+            else_clause.parent = ret }
 
         ret
     }
@@ -1249,8 +1232,8 @@ class Parser(
     function parseElse(): Else {
         let start: Position$ = lexer.getPreviousPosition()
 
-        let successElse1: bool = lexer.parseKeyword(elseKeyword)
-        if (successElse1) {
+        let success_else_1: bool = lexer.parseKeyword(elseKeyword)
+        if (success_else_1) {
             lexer.advance() }
         else {
             return () }
@@ -1270,14 +1253,14 @@ class Parser(
     function parseSwitch(): Switch {
         let start: Position$ = lexer.getPreviousPosition()
 
-        let successSwitch1: bool = lexer.parseKeyword(switchKeyword)
-        if (successSwitch1) {
+        let success_switch_1: bool = lexer.parseKeyword(switchKeyword)
+        if (success_switch_1) {
             lexer.advance() }
         else {
             return () }
 
-        let successLeftParen2: bool = lexer.parsePunctuation(leftParen)
-        if (successLeftParen2) {
+        let success_left_paren_2: bool = lexer.parsePunctuation(left_paren)
+        if (success_left_paren_2) {
             lexer.advance() }
         else {
             return () }
@@ -1286,22 +1269,22 @@ class Parser(
         if (condition = ()) {
             return () }
 
-        let successRightParen4: bool = lexer.parsePunctuation(rightParen)
-        if (successRightParen4) {
+        let success_right_paren_4: bool = lexer.parsePunctuation(right_paren)
+        if (success_right_paren_4) {
             lexer.advance() }
         else {
             return () }
 
-        let successLeftCurly5: bool = lexer.parsePunctuation(leftCurly)
-        if (successLeftCurly5) {
+        let success_left_curly_5: bool = lexer.parsePunctuation(left_curly)
+        if (success_left_curly_5) {
             lexer.advance() }
         else {
             return () }
 
         let cases: Array[SwitchCase] = parseSwitchCaseList()
 
-        let successRightCurly7: bool = lexer.parsePunctuation(rightCurly)
-        if (successRightCurly7) {
+        let success_right_curly_7: bool = lexer.parsePunctuation(right_curly)
+        if (success_right_curly_7) {
             lexer.advance() }
         else {
             return () }
@@ -1374,8 +1357,8 @@ class Parser(
     function parseItemCaseLabel(): ItemCaseLabel {
         let start: Position$ = lexer.getPreviousPosition()
 
-        let successCase1: bool = lexer.parseKeyword(caseKeyword)
-        if (successCase1) {
+        let success_case_1: bool = lexer.parseKeyword(caseKeyword)
+        if (success_case_1) {
             lexer.advance() }
         else {
             return () }
@@ -1417,31 +1400,14 @@ class Parser(
         if (pattern = ()) {
             return () }
 
-        let successComma2: bool = lexer.parsePunctuation(comma)
-        if (successComma2) {
+        let success_comma_2: bool = lexer.parsePunctuation(comma)
+        if (success_comma_2) {
             lexer.advance() }
 
         let end: Position$ lexer.getPosition()
 
         let ret: CaseItem new CaseItem(pattern, new Position(start), new Position(end))
         pattern.parent = ret
-
-        ret
-    }
-
-    method parseCasePatternList(): Array[CasePattern] {
-        mutable ret: Array[CasePattern]$ = null
-        while (true) {
-
-            let node: CasePattern parseCasePattern()
-            if (node = ()) {
-                break }
-
-            if (ret = ()) {
-                ret = new Array[CasePattern]() }
-
-            ret.add(node)
-        }
 
         ret
     }
@@ -1486,8 +1452,8 @@ class Parser(
     function parseWildcardPattern(): WildcardPattern {
         let start: Position$ = lexer.getPreviousPosition()
 
-        let successUnderscore1: bool = lexer.parsePunctuation(underscore)
-        if (successUnderscore1) {
+        let success_underscore_1: bool = lexer.parsePunctuation(underscore)
+        if (success_underscore_1) {
             lexer.advance() }
         else {
             return () }
@@ -1517,8 +1483,8 @@ class Parser(
     function parseDefaultCaseLabel(): DefaultCaseLabel {
         let start: Position$ = lexer.getPreviousPosition()
 
-        let successDefault1: bool = lexer.parseKeyword(defaultKeyword)
-        if (successDefault1) {
+        let success_default_1: bool = lexer.parseKeyword(defaultKeyword)
+        if (success_default_1) {
             lexer.advance() }
         else {
             return () }
@@ -1533,14 +1499,14 @@ class Parser(
     function parseFor(): For {
         let start: Position$ = lexer.getPreviousPosition()
 
-        let successFor1: bool = lexer.parseKeyword(forKeyword)
-        if (successFor1) {
+        let success_for_1: bool = lexer.parseKeyword(forKeyword)
+        if (success_for_1) {
             lexer.advance() }
         else {
             return () }
 
-        let successLeftParen2: bool = lexer.parsePunctuation(leftParen)
-        if (successLeftParen2) {
+        let success_left_paren_2: bool = lexer.parsePunctuation(left_paren)
+        if (success_left_paren_2) {
             lexer.advance() }
         else {
             return () }
@@ -1551,10 +1517,10 @@ class Parser(
         else {
             return () }
 
-        let typeAnnotation: TypeAnnotation = parseTypeAnnotation()
+        let type_annotation: TypeAnnotation = parseTypeAnnotation()
 
-        let successIn5: bool = lexer.parseKeyword(inKeyword)
-        if (successIn5) {
+        let success_in_5: bool = lexer.parseKeyword(inKeyword)
+        if (success_in_5) {
             lexer.advance() }
         else {
             return () }
@@ -1563,8 +1529,8 @@ class Parser(
         if (operation = ()) {
             return () }
 
-        let successRightParen7: bool = lexer.parsePunctuation(rightParen)
-        if (successRightParen7) {
+        let success_right_paren_7: bool = lexer.parsePunctuation(right_paren)
+        if (success_right_paren_7) {
             lexer.advance() }
         else {
             return () }
@@ -1575,9 +1541,9 @@ class Parser(
 
         let end: Position$ lexer.getPosition()
 
-        let ret: For new For(index, typeAnnotation, operation, iteration, new Position(start), new Position(end))
-        if (typeAnnotation <> ()) {
-            typeAnnotation.parent = ret }
+        let ret: For new For(index, type_annotation, operation, iteration, new Position(start), new Position(end))
+        if (type_annotation <> ()) {
+            type_annotation.parent = ret }
         operation.parent = ret
         iteration.parent = ret
 
@@ -1587,14 +1553,14 @@ class Parser(
     function parseWhile(): While {
         let start: Position$ = lexer.getPreviousPosition()
 
-        let successWhile1: bool = lexer.parseKeyword(whileKeyword)
-        if (successWhile1) {
+        let success_while_1: bool = lexer.parseKeyword(whileKeyword)
+        if (success_while_1) {
             lexer.advance() }
         else {
             return () }
 
-        let successLeftParen2: bool = lexer.parsePunctuation(leftParen)
-        if (successLeftParen2) {
+        let success_left_paren_2: bool = lexer.parsePunctuation(left_paren)
+        if (success_left_paren_2) {
             lexer.advance() }
         else {
             return () }
@@ -1603,8 +1569,8 @@ class Parser(
         if (condition = ()) {
             return () }
 
-        let successRightParen4: bool = lexer.parsePunctuation(rightParen)
-        if (successRightParen4) {
+        let success_right_paren_4: bool = lexer.parsePunctuation(right_paren)
+        if (success_right_paren_4) {
             lexer.advance() }
         else {
             return () }
@@ -1625,8 +1591,8 @@ class Parser(
     function parseDo(): Do {
         let start: Position$ = lexer.getPreviousPosition()
 
-        let successDo1: bool = lexer.parseKeyword(doKeyword)
-        if (successDo1) {
+        let success_do_1: bool = lexer.parseKeyword(doKeyword)
+        if (success_do_1) {
             lexer.advance() }
         else {
             return () }
@@ -1635,14 +1601,14 @@ class Parser(
         if (iteration = ()) {
             return () }
 
-        let successWhile3: bool = lexer.parseKeyword(whileKeyword)
-        if (successWhile3) {
+        let success_while_3: bool = lexer.parseKeyword(whileKeyword)
+        if (success_while_3) {
             lexer.advance() }
         else {
             return () }
 
-        let successLeftParen4: bool = lexer.parsePunctuation(leftParen)
-        if (successLeftParen4) {
+        let success_left_paren_4: bool = lexer.parsePunctuation(left_paren)
+        if (success_left_paren_4) {
             lexer.advance() }
         else {
             return () }
@@ -1651,8 +1617,8 @@ class Parser(
         if (condition = ()) {
             return () }
 
-        let successRightParen6: bool = lexer.parsePunctuation(rightParen)
-        if (successRightParen6) {
+        let success_right_paren_6: bool = lexer.parsePunctuation(right_paren)
+        if (success_right_paren_6) {
             lexer.advance() }
         else {
             return () }
@@ -1700,8 +1666,8 @@ class Parser(
     function parseNamedLoop(): NamedLoop {
         let start: Position$ = lexer.getPreviousPosition()
 
-        let successLoop1: bool = lexer.parseKeyword(loopKeyword)
-        if (successLoop1) {
+        let success_loop_1: bool = lexer.parseKeyword(loopKeyword)
+        if (success_loop_1) {
             lexer.advance() }
         else {
             return () }
@@ -1727,8 +1693,8 @@ class Parser(
     function parseThis(): This {
         let start: Position$ = lexer.getPreviousPosition()
 
-        let successThis1: bool = lexer.parseKeyword(thisKeyword)
-        if (successThis1) {
+        let success_this_1: bool = lexer.parseKeyword(thisKeyword)
+        if (success_this_1) {
             lexer.advance() }
         else {
             return () }
@@ -1743,20 +1709,20 @@ class Parser(
     function parseNew(): New {
         let start: Position$ = lexer.getPreviousPosition()
 
-        let successNew1: bool = lexer.parseKeyword(newKeyword)
-        if (successNew1) {
+        let success_new_1: bool = lexer.parseKeyword(newKeyword)
+        if (success_new_1) {
             lexer.advance() }
         else {
             return () }
 
-        let typeSpec: Type = parseType()
-        if (typeSpec = ()) {
+        let type_spec: Type = parseType()
+        if (type_spec = ()) {
             return () }
 
         let end: Position$ lexer.getPosition()
 
-        let ret: New new New(typeSpec, new Position(start), new Position(end))
-        typeSpec.parent = ret
+        let ret: New new New(type_spec, new Position(start), new Position(end))
+        type_spec.parent = ret
 
         ret
     }
@@ -1764,29 +1730,29 @@ class Parser(
     function parseObject(): Object {
         let start: Position$ = lexer.getPreviousPosition()
 
-        let successLeftParen1: bool = lexer.parsePunctuation(leftParen)
-        if (successLeftParen1) {
+        let success_left_paren_1: bool = lexer.parsePunctuation(left_paren)
+        if (success_left_paren_1) {
             lexer.advance() }
         else {
             return () }
 
-        let firstOp: Operation = parseOperation()
+        let first_op: Operation = parseOperation()
 
-        let additionalOps: Array[Item] = parseItemList()
+        let additional_ops: Array[Item] = parseItemList()
 
-        let successRightParen4: bool = lexer.parsePunctuation(rightParen)
-        if (successRightParen4) {
+        let success_right_paren_4: bool = lexer.parsePunctuation(right_paren)
+        if (success_right_paren_4) {
             lexer.advance() }
         else {
             return () }
 
         let end: Position$ lexer.getPosition()
 
-        let ret: Object new Object(firstOp, additionalOps, new Position(start), new Position(end))
-        if (firstOp <> ()) {
-            firstOp.parent = ret }
-        if (additionalOps <> ()) {
-            for (item: Item in additionalOps) {
+        let ret: Object new Object(first_op, additional_ops, new Position(start), new Position(end))
+        if (first_op <> ()) {
+            first_op.parent = ret }
+        if (additional_ops <> ()) {
+            for (item: Item in additional_ops) {
                 item.parent = ret }
         }
 
@@ -1796,29 +1762,29 @@ class Parser(
     function parseArray(): Array {
         let start: Position$ = lexer.getPreviousPosition()
 
-        let successLeftBracket1: bool = lexer.parsePunctuation(leftBracket)
-        if (successLeftBracket1) {
+        let success_left_bracket_1: bool = lexer.parsePunctuation(left_bracket)
+        if (success_left_bracket_1) {
             lexer.advance() }
         else {
             return () }
 
-        let firstOp: Operation = parseOperation()
+        let first_op: Operation = parseOperation()
 
-        let additionalOps: Array[Item] = parseItemList()
+        let additional_ops: Array[Item] = parseItemList()
 
-        let successRightBracket4: bool = lexer.parsePunctuation(rightBracket)
-        if (successRightBracket4) {
+        let success_right_bracket_4: bool = lexer.parsePunctuation(right_bracket)
+        if (success_right_bracket_4) {
             lexer.advance() }
         else {
             return () }
 
         let end: Position$ lexer.getPosition()
 
-        let ret: Array new Array(firstOp, additionalOps, new Position(start), new Position(end))
-        if (firstOp <> ()) {
-            firstOp.parent = ret }
-        if (additionalOps <> ()) {
-            for (item: Item in additionalOps) {
+        let ret: Array new Array(first_op, additional_ops, new Position(start), new Position(end))
+        if (first_op <> ()) {
+            first_op.parent = ret }
+        if (additional_ops <> ()) {
+            for (item: Item in additional_ops) {
                 item.parent = ret }
         }
 
@@ -1845,8 +1811,8 @@ class Parser(
     function parseItem(): Item {
         let start: Position$ = lexer.getPreviousPosition()
 
-        let successComma1: bool = lexer.parsePunctuation(comma)
-        if (successComma1) {
+        let success_comma_1: bool = lexer.parsePunctuation(comma)
+        if (success_comma_1) {
             lexer.advance() }
         else {
             return () }
@@ -1866,20 +1832,20 @@ class Parser(
     function parseSizeOf(): SizeOf {
         let start: Position$ = lexer.getPreviousPosition()
 
-        let successSizeof1: bool = lexer.parseKeyword(sizeofKeyword)
-        if (successSizeof1) {
+        let success_sizeof_1: bool = lexer.parseKeyword(sizeofKeyword)
+        if (success_sizeof_1) {
             lexer.advance() }
         else {
             return () }
 
-        let typeSpec: Type = parseType()
-        if (typeSpec = ()) {
+        let type_spec: Type = parseType()
+        if (type_spec = ()) {
             return () }
 
         let end: Position$ lexer.getPosition()
 
-        let ret: SizeOf new SizeOf(typeSpec, new Position(start), new Position(end))
-        typeSpec.parent = ret
+        let ret: SizeOf new SizeOf(type_spec, new Position(start), new Position(end))
+        type_spec.parent = ret
 
         ret
     }
@@ -1887,8 +1853,8 @@ class Parser(
     function parseBreak(): Break {
         let start: Position$ = lexer.getPreviousPosition()
 
-        let successBreak1: bool = lexer.parseKeyword(breakKeyword)
-        if (successBreak1) {
+        let success_break_1: bool = lexer.parseKeyword(breakKeyword)
+        if (success_break_1) {
             lexer.advance() }
         else {
             return () }
@@ -1897,8 +1863,8 @@ class Parser(
         if ((iteration <> ()) && isIdentifier(iteration)) {
             lexer.advance() }
 
-        let successSemicolon3: bool = lexer.parsePunctuation(semicolon)
-        if (successSemicolon3) {
+        let success_semicolon_3: bool = lexer.parsePunctuation(semicolon)
+        if (success_semicolon_3) {
             lexer.advance() }
 
         let end: Position$ lexer.getPosition()
@@ -1911,8 +1877,8 @@ class Parser(
     function parseContinue(): Continue {
         let start: Position$ = lexer.getPreviousPosition()
 
-        let successContinue1: bool = lexer.parseKeyword(continueKeyword)
-        if (successContinue1) {
+        let success_continue_1: bool = lexer.parseKeyword(continueKeyword)
+        if (success_continue_1) {
             lexer.advance() }
         else {
             return () }
@@ -1921,8 +1887,8 @@ class Parser(
         if ((iteration <> ()) && isIdentifier(iteration)) {
             lexer.advance() }
 
-        let successSemicolon3: bool = lexer.parsePunctuation(semicolon)
-        if (successSemicolon3) {
+        let success_semicolon_3: bool = lexer.parsePunctuation(semicolon)
+        if (success_semicolon_3) {
             lexer.advance() }
 
         let end: Position$ lexer.getPosition()
@@ -1935,8 +1901,8 @@ class Parser(
     function parseReturn(): Return {
         let start: Position$ = lexer.getPreviousPosition()
 
-        let successReturn1: bool = lexer.parseKeyword(returnKeyword)
-        if (successReturn1) {
+        let success_return_1: bool = lexer.parseKeyword(returnKeyword)
+        if (success_return_1) {
             lexer.advance() }
         else {
             return () }
@@ -1955,8 +1921,8 @@ class Parser(
     function parseThrow(): Throw {
         let start: Position$ = lexer.getPreviousPosition()
 
-        let successThrow1: bool = lexer.parseKeyword(throwKeyword)
-        if (successThrow1) {
+        let success_throw_1: bool = lexer.parseKeyword(throwKeyword)
+        if (success_throw_1) {
             lexer.advance() }
         else {
             return () }
@@ -1976,8 +1942,8 @@ class Parser(
     function parseClass(): Class {
         let start: Position$ = lexer.getPreviousPosition()
 
-        let successClass1: bool = lexer.parseKeyword(classKeyword)
-        if (successClass1) {
+        let success_class_1: bool = lexer.parseKeyword(classKeyword)
+        if (success_class_1) {
             lexer.advance() }
         else {
             return () }
@@ -1988,7 +1954,7 @@ class Parser(
 
         let generics: GenericParameters = parseGenericParameters()
 
-        let baseClass: Extends = parseExtends()
+        let base_class: Extends = parseExtends()
 
         let contents: Structure = parseStructure()
 
@@ -1996,12 +1962,12 @@ class Parser(
 
         let end: Position$ lexer.getPosition()
 
-        let ret: Class new Class(name, generics, baseClass, contents, body, new Position(start), new Position(end))
+        let ret: Class new Class(name, generics, base_class, contents, body, new Position(start), new Position(end))
         name.parent = ret
         if (generics <> ()) {
             generics.parent = ret }
-        if (baseClass <> ()) {
-            baseClass.parent = ret }
+        if (base_class <> ()) {
+            base_class.parent = ret }
         if (contents <> ()) {
             contents.parent = ret }
         if (body <> ()) {
@@ -2013,8 +1979,8 @@ class Parser(
     function parseGenericParameters(): GenericParameters {
         let start: Position$ = lexer.getPreviousPosition()
 
-        let successLeftBracket1: bool = lexer.parsePunctuation(leftBracket)
-        if (successLeftBracket1) {
+        let success_left_bracket_1: bool = lexer.parsePunctuation(left_bracket)
+        if (success_left_bracket_1) {
             lexer.advance() }
         else {
             return () }
@@ -2025,19 +1991,19 @@ class Parser(
         else {
             return () }
 
-        let additionalGenerics: Array[GenericParameter] = parseGenericParameterList()
+        let additional_generics: Array[GenericParameter] = parseGenericParameterList()
 
-        let successRightBracket4: bool = lexer.parsePunctuation(rightBracket)
-        if (successRightBracket4) {
+        let success_right_bracket_4: bool = lexer.parsePunctuation(right_bracket)
+        if (success_right_bracket_4) {
             lexer.advance() }
         else {
             return () }
 
         let end: Position$ lexer.getPosition()
 
-        let ret: GenericParameters new GenericParameters(name, additionalGenerics, new Position(start), new Position(end))
-        if (additionalGenerics <> ()) {
-            for (item: GenericParameter in additionalGenerics) {
+        let ret: GenericParameters new GenericParameters(name, additional_generics, new Position(start), new Position(end))
+        if (additional_generics <> ()) {
+            for (item: GenericParameter in additional_generics) {
                 item.parent = ret }
         }
 
@@ -2064,8 +2030,8 @@ class Parser(
     function parseGenericParameter(): GenericParameter {
         let start: Position$ = lexer.getPreviousPosition()
 
-        let successComma1: bool = lexer.parsePunctuation(comma)
-        if (successComma1) {
+        let success_comma_1: bool = lexer.parsePunctuation(comma)
+        if (success_comma_1) {
             lexer.advance() }
         else {
             return () }
@@ -2086,8 +2052,8 @@ class Parser(
     function parseExtends(): Extends {
         let start: Position$ = lexer.getPreviousPosition()
 
-        let successExtends1: bool = lexer.parseKeyword(extendsKeyword)
-        if (successExtends1) {
+        let success_extends_1: bool = lexer.parseKeyword(extendsKeyword)
+        if (success_extends_1) {
             lexer.advance() }
         else {
             return () }
@@ -2107,16 +2073,16 @@ class Parser(
     function parseStructure(): Structure {
         let start: Position$ = lexer.getPreviousPosition()
 
-        let successLeftParen1: bool = lexer.parsePunctuation(leftParen)
-        if (successLeftParen1) {
+        let success_left_paren_1: bool = lexer.parsePunctuation(left_paren)
+        if (success_left_paren_1) {
             lexer.advance() }
         else {
             return () }
 
         let components: Array[Component] = parseComponentList()
 
-        let successRightParen3: bool = lexer.parsePunctuation(rightParen)
-        if (successRightParen3) {
+        let success_right_paren_3: bool = lexer.parsePunctuation(right_paren)
+        if (success_right_paren_3) {
             lexer.advance() }
         else {
             return () }
@@ -2158,17 +2124,17 @@ class Parser(
         else {
             return () }
 
-        let typeAnnotation: TypeAnnotation = parseTypeAnnotation()
+        let type_annotation: TypeAnnotation = parseTypeAnnotation()
 
-        let successComma3: bool = lexer.parsePunctuation(comma)
-        if (successComma3) {
+        let success_comma_3: bool = lexer.parsePunctuation(comma)
+        if (success_comma_3) {
             lexer.advance() }
 
         let end: Position$ lexer.getPosition()
 
-        let ret: Component new Component(name, typeAnnotation, new Position(start), new Position(end))
-        if (typeAnnotation <> ()) {
-            typeAnnotation.parent = ret }
+        let ret: Component new Component(name, type_annotation, new Position(start), new Position(end))
+        if (type_annotation <> ()) {
+            type_annotation.parent = ret }
 
         ret
     }
@@ -2176,16 +2142,16 @@ class Parser(
     function parseClassBody(): ClassBody {
         let start: Position$ = lexer.getPreviousPosition()
 
-        let successLeftCurly1: bool = lexer.parsePunctuation(leftCurly)
-        if (successLeftCurly1) {
+        let success_left_curly_1: bool = lexer.parsePunctuation(left_curly)
+        if (success_left_curly_1) {
             lexer.advance() }
         else {
             return () }
 
         let members: Array[ClassMember] = parseClassMemberList()
 
-        let successRightCurly3: bool = lexer.parsePunctuation(rightCurly)
-        if (successRightCurly3) {
+        let success_right_curly_3: bool = lexer.parsePunctuation(right_curly)
+        if (success_right_curly_3) {
             lexer.advance() }
         else {
             return () }
@@ -2339,8 +2305,8 @@ class Parser(
     function parseMethod(): Method {
         let start: Position$ = lexer.getPreviousPosition()
 
-        let successMethod1: bool = lexer.parseKeyword(methodKeyword)
-        if (successMethod1) {
+        let success_method_1: bool = lexer.parseKeyword(methodKeyword)
+        if (success_method_1) {
             lexer.advance() }
         else {
             return () }
@@ -2375,8 +2341,8 @@ class Parser(
     function parseOperator(): Operator {
         let start: Position$ = lexer.getPreviousPosition()
 
-        let successOperator1: bool = lexer.parseKeyword(operatorKeyword)
-        if (successOperator1) {
+        let success_operator_1: bool = lexer.parseKeyword(operatorKeyword)
+        if (success_operator_1) {
             lexer.advance() }
         else {
             return () }
@@ -2396,8 +2362,8 @@ class Parser(
     function parseInitializer(): Initializer {
         let start: Position$ = lexer.getPreviousPosition()
 
-        let successInitializer1: bool = lexer.parseKeyword(initializerKeyword)
-        if (successInitializer1) {
+        let success_initializer_1: bool = lexer.parseKeyword(initializerKeyword)
+        if (success_initializer_1) {
             lexer.advance() }
         else {
             return () }
@@ -2421,8 +2387,8 @@ class Parser(
     function parseAllocator(): Allocator {
         let start: Position$ = lexer.getPreviousPosition()
 
-        let successAllocator1: bool = lexer.parseKeyword(allocatorKeyword)
-        if (successAllocator1) {
+        let success_allocator_1: bool = lexer.parseKeyword(allocatorKeyword)
+        if (success_allocator_1) {
             lexer.advance() }
         else {
             return () }
@@ -2446,37 +2412,20 @@ class Parser(
     function parseTypeAnnotation(): TypeAnnotation {
         let start: Position$ = lexer.getPreviousPosition()
 
-        let successColon1: bool = lexer.parsePunctuation(colon)
-        if (successColon1) {
+        let success_colon_1: bool = lexer.parsePunctuation(colon)
+        if (success_colon_1) {
             lexer.advance() }
         else {
             return () }
 
-        let typeSpec: TypeSpec = parseTypeSpec()
-        if (typeSpec = ()) {
+        let type_spec: TypeSpec = parseTypeSpec()
+        if (type_spec = ()) {
             return () }
 
         let end: Position$ lexer.getPosition()
 
-        let ret: TypeAnnotation new TypeAnnotation(typeSpec, new Position(start), new Position(end))
-        typeSpec.parent = ret
-
-        ret
-    }
-
-    method parseTypeSpecList(): Array[TypeSpec] {
-        mutable ret: Array[TypeSpec]$ = null
-        while (true) {
-
-            let node: TypeSpec parseTypeSpec()
-            if (node = ()) {
-                break }
-
-            if (ret = ()) {
-                ret = new Array[TypeSpec]() }
-
-            ret.add(node)
-        }
+        let ret: TypeAnnotation new TypeAnnotation(type_spec, new Position(start), new Position(end))
+        type_spec.parent = ret
 
         ret
     }
@@ -2525,18 +2474,18 @@ class Parser(
 
         let optional: Optional = parseOptional()
 
-        let lifeTime: LifeTime = parseLifeTime()
+        let life_time: LifeTime = parseLifeTime()
 
         let end: Position$ lexer.getPosition()
 
-        let ret: Type new Type(name, generics, optional, lifeTime, new Position(start), new Position(end))
+        let ret: Type new Type(name, generics, optional, life_time, new Position(start), new Position(end))
         name.parent = ret
         if (generics <> ()) {
             generics.parent = ret }
         if (optional <> ()) {
             optional.parent = ret }
-        if (lifeTime <> ()) {
-            lifeTime.parent = ret }
+        if (life_time <> ()) {
+            life_time.parent = ret }
 
         ret
     }
@@ -2544,16 +2493,16 @@ class Parser(
     function parseVariant(): Variant {
         let start: Position$ = lexer.getPreviousPosition()
 
-        let successLeftParen1: bool = lexer.parsePunctuation(leftParen)
-        if (successLeftParen1) {
+        let success_left_paren_1: bool = lexer.parsePunctuation(left_paren)
+        if (success_left_paren_1) {
             lexer.advance() }
         else {
             return () }
 
         let types: Array[Type] = parseTypeList()
 
-        let successRightParen3: bool = lexer.parsePunctuation(rightParen)
-        if (successRightParen3) {
+        let success_right_paren_3: bool = lexer.parsePunctuation(right_paren)
+        if (success_right_paren_3) {
             lexer.advance() }
         else {
             return () }
@@ -2572,20 +2521,20 @@ class Parser(
     function parseThrows(): Throws {
         let start: Position$ = lexer.getPreviousPosition()
 
-        let successThrows1: bool = lexer.parseKeyword(throwsKeyword)
-        if (successThrows1) {
+        let success_throws_1: bool = lexer.parseKeyword(throwsKeyword)
+        if (success_throws_1) {
             lexer.advance() }
         else {
             return () }
 
-        let throwsType: TypeSpec = parseTypeSpec()
-        if (throwsType = ()) {
+        let throws_type: TypeSpec = parseTypeSpec()
+        if (throws_type = ()) {
             return () }
 
         let end: Position$ lexer.getPosition()
 
-        let ret: Throws new Throws(throwsType, new Position(start), new Position(end))
-        throwsType.parent = ret
+        let ret: Throws new Throws(throws_type, new Position(start), new Position(end))
+        throws_type.parent = ret
 
         ret
     }
@@ -2593,8 +2542,8 @@ class Parser(
     function parseGenericArguments(): GenericArguments {
         let start: Position$ = lexer.getPreviousPosition()
 
-        let successLeftBracket1: bool = lexer.parsePunctuation(leftBracket)
-        if (successLeftBracket1) {
+        let success_left_bracket_1: bool = lexer.parsePunctuation(left_bracket)
+        if (success_left_bracket_1) {
             lexer.advance() }
         else {
             return () }
@@ -2603,20 +2552,20 @@ class Parser(
         if (generic = ()) {
             return () }
 
-        let additionalGenerics: Array[GenericArgument] = parseGenericArgumentList()
+        let additional_generics: Array[GenericArgument] = parseGenericArgumentList()
 
-        let successRightBracket4: bool = lexer.parsePunctuation(rightBracket)
-        if (successRightBracket4) {
+        let success_right_bracket_4: bool = lexer.parsePunctuation(right_bracket)
+        if (success_right_bracket_4) {
             lexer.advance() }
         else {
             return () }
 
         let end: Position$ lexer.getPosition()
 
-        let ret: GenericArguments new GenericArguments(generic, additionalGenerics, new Position(start), new Position(end))
+        let ret: GenericArguments new GenericArguments(generic, additional_generics, new Position(start), new Position(end))
         generic.parent = ret
-        if (additionalGenerics <> ()) {
-            for (item: GenericArgument in additionalGenerics) {
+        if (additional_generics <> ()) {
+            for (item: GenericArgument in additional_generics) {
                 item.parent = ret }
         }
 
@@ -2643,20 +2592,20 @@ class Parser(
     function parseGenericArgument(): GenericArgument {
         let start: Position$ = lexer.getPreviousPosition()
 
-        let successComma1: bool = lexer.parsePunctuation(comma)
-        if (successComma1) {
+        let success_comma_1: bool = lexer.parsePunctuation(comma)
+        if (success_comma_1) {
             lexer.advance() }
         else {
             return () }
 
-        let typeSpec: Type = parseType()
-        if (typeSpec = ()) {
+        let type_spec: Type = parseType()
+        if (type_spec = ()) {
             return () }
 
         let end: Position$ lexer.getPosition()
 
-        let ret: GenericArgument new GenericArgument(typeSpec, new Position(start), new Position(end))
-        typeSpec.parent = ret
+        let ret: GenericArgument new GenericArgument(type_spec, new Position(start), new Position(end))
+        type_spec.parent = ret
 
         ret
     }
@@ -2664,8 +2613,8 @@ class Parser(
     function parseOptional(): Optional {
         let start: Position$ = lexer.getPreviousPosition()
 
-        let successQuestion1: bool = lexer.parsePunctuation(question)
-        if (successQuestion1) {
+        let success_question_1: bool = lexer.parsePunctuation(question)
+        if (success_question_1) {
             lexer.advance() }
         else {
             return () }
@@ -2708,8 +2657,8 @@ class Parser(
     function parseRoot(): Root {
         let start: Position$ = lexer.getPreviousPosition()
 
-        let successDollar1: bool = lexer.parsePunctuation(dollar)
-        if (successDollar1) {
+        let success_dollar_1: bool = lexer.parsePunctuation(dollar)
+        if (success_dollar_1) {
             lexer.advance() }
         else {
             return () }
@@ -2724,8 +2673,8 @@ class Parser(
     function parseLocal(): Local {
         let start: Position$ = lexer.getPreviousPosition()
 
-        let successAt1: bool = lexer.parsePunctuation(at)
-        if (successAt1) {
+        let success_at_1: bool = lexer.parsePunctuation(at)
+        if (success_at_1) {
             lexer.advance() }
         else {
             return () }
@@ -2746,8 +2695,8 @@ class Parser(
     function parseReference(): Reference {
         let start: Position$ = lexer.getPreviousPosition()
 
-        let successBacktick1: bool = lexer.parsePunctuation(backtick)
-        if (successBacktick1) {
+        let success_backtick_1: bool = lexer.parsePunctuation(backtick)
+        if (success_backtick_1) {
             lexer.advance() }
         else {
             return () }
@@ -2766,8 +2715,8 @@ class Parser(
     function parseThrown(): Thrown {
         let start: Position$ = lexer.getPreviousPosition()
 
-        let successHash1: bool = lexer.parsePunctuation(hash)
-        if (successHash1) {
+        let success_hash_1: bool = lexer.parsePunctuation(hash)
+        if (success_hash_1) {
             lexer.advance() }
         else {
             return () }
@@ -2903,535 +2852,535 @@ class Parser(
 }
 
 class Visitor {
-    function openProgram(programSyntax: ProgramSyntax): bool {
+    function open_program(programSyntax: ProgramSyntax): bool {
         true
     }
 
-    function closeProgram(programSyntax: ProgramSyntax) {
+    function close_program(programSyntax: ProgramSyntax) {
     }
 
-    function openFile(fileSyntax: FileSyntax): bool {
+    function open_file(fileSyntax: FileSyntax): bool {
         true
     }
 
-    function closeFile(fileSyntax: FileSyntax) {
+    function close_file(fileSyntax: FileSyntax) {
     }
 
-    function visitIntrinsic(intrinsicSyntax: IntrinsicSyntax) {
+    function visit_intrinsic(intrinsicSyntax: IntrinsicSyntax) {
     }
 
-    function openUsing(usingSyntax: UsingSyntax): bool {
+    function open_using(usingSyntax: UsingSyntax): bool {
         true
     }
 
-    function closeUsing(usingSyntax: UsingSyntax) {
+    function close_using(usingSyntax: UsingSyntax) {
     }
 
-    function openDefine(defineSyntax: DefineSyntax): bool {
+    function open_define(defineSyntax: DefineSyntax): bool {
         true
     }
 
-    function closeDefine(defineSyntax: DefineSyntax) {
+    function close_define(defineSyntax: DefineSyntax) {
     }
 
-    function openName(nameSyntax: NameSyntax): bool {
+    function open_name(nameSyntax: NameSyntax): bool {
         true
     }
 
-    function closeName(nameSyntax: NameSyntax) {
+    function close_name(nameSyntax: NameSyntax) {
     }
 
-    function visitExtension(extensionSyntax: ExtensionSyntax) {
+    function visit_extension(extensionSyntax: ExtensionSyntax) {
     }
 
-    function openNamespace(namespaceSyntax: NamespaceSyntax): bool {
+    function open_namespace(namespaceSyntax: NamespaceSyntax): bool {
         true
     }
 
-    function closeNamespace(namespaceSyntax: NamespaceSyntax) {
+    function close_namespace(namespaceSyntax: NamespaceSyntax) {
     }
 
-    function openFunction(functionSyntax: FunctionSyntax): bool {
+    function open_function(functionSyntax: FunctionSyntax): bool {
         true
     }
 
-    function closeFunction(functionSyntax: FunctionSyntax) {
+    function close_function(functionSyntax: FunctionSyntax) {
     }
 
-    function openProcedure(procedureSyntax: ProcedureSyntax): bool {
+    function open_procedure(procedureSyntax: ProcedureSyntax): bool {
         true
     }
 
-    function closeProcedure(procedureSyntax: ProcedureSyntax) {
+    function close_procedure(procedureSyntax: ProcedureSyntax) {
     }
 
-    function openRoutine(routineSyntax: RoutineSyntax): bool {
+    function open_routine(routineSyntax: RoutineSyntax): bool {
         true
     }
 
-    function closeRoutine(routineSyntax: RoutineSyntax) {
+    function close_routine(routineSyntax: RoutineSyntax) {
     }
 
-    function openLetDeclaration(letDeclarationSyntax: LetDeclarationSyntax): bool {
+    function open_letdeclaration(letdeclarationSyntax: LetDeclarationSyntax): bool {
         true
     }
 
-    function closeLetDeclaration(letDeclarationSyntax: LetDeclarationSyntax) {
+    function close_letdeclaration(letdeclarationSyntax: LetDeclarationSyntax) {
     }
 
-    function openVarDeclaration(varDeclarationSyntax: VarDeclarationSyntax): bool {
+    function open_vardeclaration(vardeclarationSyntax: VarDeclarationSyntax): bool {
         true
     }
 
-    function closeVarDeclaration(varDeclarationSyntax: VarDeclarationSyntax) {
+    function close_vardeclaration(vardeclarationSyntax: VarDeclarationSyntax) {
     }
 
-    function openMutableDeclaration(mutableDeclarationSyntax: MutableDeclarationSyntax): bool {
+    function open_mutabledeclaration(mutabledeclarationSyntax: MutableDeclarationSyntax): bool {
         true
     }
 
-    function closeMutableDeclaration(mutableDeclarationSyntax: MutableDeclarationSyntax) {
+    function close_mutabledeclaration(mutabledeclarationSyntax: MutableDeclarationSyntax) {
     }
 
-    function openThreadLocalDeclaration(threadLocalDeclarationSyntax: ThreadLocalDeclarationSyntax): bool {
+    function open_threadlocaldeclaration(threadlocaldeclarationSyntax: ThreadLocalDeclarationSyntax): bool {
         true
     }
 
-    function closeThreadLocalDeclaration(threadLocalDeclarationSyntax: ThreadLocalDeclarationSyntax) {
+    function close_threadlocaldeclaration(threadlocaldeclarationSyntax: ThreadLocalDeclarationSyntax) {
     }
 
-    function openLet(letSyntax: LetSyntax): bool {
+    function open_let(letSyntax: LetSyntax): bool {
         true
     }
 
-    function closeLet(letSyntax: LetSyntax) {
+    function close_let(letSyntax: LetSyntax) {
     }
 
-    function openVar(varSyntax: VarSyntax): bool {
+    function open_var(varSyntax: VarSyntax): bool {
         true
     }
 
-    function closeVar(varSyntax: VarSyntax) {
+    function close_var(varSyntax: VarSyntax) {
     }
 
-    function openMutable(mutableSyntax: MutableSyntax): bool {
+    function open_mutable(mutableSyntax: MutableSyntax): bool {
         true
     }
 
-    function closeMutable(mutableSyntax: MutableSyntax) {
+    function close_mutable(mutableSyntax: MutableSyntax) {
     }
 
-    function openThreadLocal(threadLocalSyntax: ThreadLocalSyntax): bool {
+    function open_threadlocal(threadlocalSyntax: ThreadLocalSyntax): bool {
         true
     }
 
-    function closeThreadLocal(threadLocalSyntax: ThreadLocalSyntax) {
+    function close_threadlocal(threadlocalSyntax: ThreadLocalSyntax) {
     }
 
-    function openBinding(bindingSyntax: BindingSyntax): bool {
+    function open_binding(bindingSyntax: BindingSyntax): bool {
         true
     }
 
-    function closeBinding(bindingSyntax: BindingSyntax) {
+    function close_binding(bindingSyntax: BindingSyntax) {
     }
 
-    function openSet(setSyntax: SetSyntax): bool {
+    function open_set(setSyntax: SetSyntax): bool {
         true
     }
 
-    function closeSet(setSyntax: SetSyntax) {
+    function close_set(setSyntax: SetSyntax) {
     }
 
-    function openCalculation(calculationSyntax: CalculationSyntax): bool {
+    function open_calculation(calculationSyntax: CalculationSyntax): bool {
         true
     }
 
-    function closeCalculation(calculationSyntax: CalculationSyntax) {
+    function close_calculation(calculationSyntax: CalculationSyntax) {
     }
 
-    function openOperation(operationSyntax: OperationSyntax): bool {
+    function open_operation(operationSyntax: OperationSyntax): bool {
         true
     }
 
-    function closeOperation(operationSyntax: OperationSyntax) {
+    function close_operation(operationSyntax: OperationSyntax) {
     }
 
-    function openOperand(operandSyntax: OperandSyntax): bool {
+    function open_operand(operandSyntax: OperandSyntax): bool {
         true
     }
 
-    function closeOperand(operandSyntax: OperandSyntax) {
+    function close_operand(operandSyntax: OperandSyntax) {
     }
 
-    function visitMemberAccess(memberAccessSyntax: MemberAccessSyntax) {
+    function visit_memberaccess(memberaccessSyntax: MemberAccessSyntax) {
     }
 
-    function openAs(asSyntax: AsSyntax): bool {
+    function open_as(asSyntax: AsSyntax): bool {
         true
     }
 
-    function closeAs(asSyntax: AsSyntax) {
+    function close_as(asSyntax: AsSyntax) {
     }
 
-    function openIs(isSyntax: IsSyntax): bool {
+    function open_is(isSyntax: IsSyntax): bool {
         true
     }
 
-    function closeIs(isSyntax: IsSyntax) {
+    function close_is(isSyntax: IsSyntax) {
     }
 
-    function visitUnwrap(unwrapSyntax: UnwrapSyntax) {
+    function visit_unwrap(unwrapSyntax: UnwrapSyntax) {
     }
 
-    function openCatch(catchSyntax: CatchSyntax): bool {
+    function open_catch(catchSyntax: CatchSyntax): bool {
         true
     }
 
-    function closeCatch(catchSyntax: CatchSyntax) {
+    function close_catch(catchSyntax: CatchSyntax) {
     }
 
-    function openWildCardCatchPattern(wildCardCatchPatternSyntax: WildCardCatchPatternSyntax): bool {
+    function open_wildcardcatchpattern(wildcardcatchpatternSyntax: WildCardCatchPatternSyntax): bool {
         true
     }
 
-    function closeWildCardCatchPattern(wildCardCatchPatternSyntax: WildCardCatchPatternSyntax) {
+    function close_wildcardcatchpattern(wildcardcatchpatternSyntax: WildCardCatchPatternSyntax) {
     }
 
-    function openTypeCatchPattern(typeCatchPatternSyntax: TypeCatchPatternSyntax): bool {
+    function open_typecatchpattern(typecatchpatternSyntax: TypeCatchPatternSyntax): bool {
         true
     }
 
-    function closeTypeCatchPattern(typeCatchPatternSyntax: TypeCatchPatternSyntax) {
+    function close_typecatchpattern(typecatchpatternSyntax: TypeCatchPatternSyntax) {
     }
 
-    function openBlock(blockSyntax: BlockSyntax): bool {
+    function open_block(blockSyntax: BlockSyntax): bool {
         true
     }
 
-    function closeBlock(blockSyntax: BlockSyntax) {
+    function close_block(blockSyntax: BlockSyntax) {
     }
 
-    function visitConstant(constantSyntax: ConstantSyntax) {
+    function visit_constant(constantSyntax: ConstantSyntax) {
     }
 
-    function openIf(ifSyntax: IfSyntax): bool {
+    function open_if(ifSyntax: IfSyntax): bool {
         true
     }
 
-    function closeIf(ifSyntax: IfSyntax) {
+    function close_if(ifSyntax: IfSyntax) {
     }
 
-    function openElse(elseSyntax: ElseSyntax): bool {
+    function open_else(elseSyntax: ElseSyntax): bool {
         true
     }
 
-    function closeElse(elseSyntax: ElseSyntax) {
+    function close_else(elseSyntax: ElseSyntax) {
     }
 
-    function openSwitch(switchSyntax: SwitchSyntax): bool {
+    function open_switch(switchSyntax: SwitchSyntax): bool {
         true
     }
 
-    function closeSwitch(switchSyntax: SwitchSyntax) {
+    function close_switch(switchSyntax: SwitchSyntax) {
     }
 
-    function openSwitchCase(switchCaseSyntax: SwitchCaseSyntax): bool {
+    function open_switchcase(switchcaseSyntax: SwitchCaseSyntax): bool {
         true
     }
 
-    function closeSwitchCase(switchCaseSyntax: SwitchCaseSyntax) {
+    function close_switchcase(switchcaseSyntax: SwitchCaseSyntax) {
     }
 
-    function openItemCaseLabel(itemCaseLabelSyntax: ItemCaseLabelSyntax): bool {
+    function open_itemcaselabel(itemcaselabelSyntax: ItemCaseLabelSyntax): bool {
         true
     }
 
-    function closeItemCaseLabel(itemCaseLabelSyntax: ItemCaseLabelSyntax) {
+    function close_itemcaselabel(itemcaselabelSyntax: ItemCaseLabelSyntax) {
     }
 
-    function openCaseItem(caseItemSyntax: CaseItemSyntax): bool {
+    function open_caseitem(caseitemSyntax: CaseItemSyntax): bool {
         true
     }
 
-    function closeCaseItem(caseItemSyntax: CaseItemSyntax) {
+    function close_caseitem(caseitemSyntax: CaseItemSyntax) {
     }
 
-    function openConstantPattern(constantPatternSyntax: ConstantPatternSyntax): bool {
+    function open_constantpattern(constantpatternSyntax: ConstantPatternSyntax): bool {
         true
     }
 
-    function closeConstantPattern(constantPatternSyntax: ConstantPatternSyntax) {
+    function close_constantpattern(constantpatternSyntax: ConstantPatternSyntax) {
     }
 
-    function visitWildcardPattern(wildcardPatternSyntax: WildcardPatternSyntax) {
+    function visit_wildcardpattern(wildcardpatternSyntax: WildcardPatternSyntax) {
     }
 
-    function openNamePattern(namePatternSyntax: NamePatternSyntax): bool {
+    function open_namepattern(namepatternSyntax: NamePatternSyntax): bool {
         true
     }
 
-    function closeNamePattern(namePatternSyntax: NamePatternSyntax) {
+    function close_namepattern(namepatternSyntax: NamePatternSyntax) {
     }
 
-    function visitDefaultCaseLabel(defaultCaseLabelSyntax: DefaultCaseLabelSyntax) {
+    function visit_defaultcaselabel(defaultcaselabelSyntax: DefaultCaseLabelSyntax) {
     }
 
-    function openFor(forSyntax: ForSyntax): bool {
+    function open_for(forSyntax: ForSyntax): bool {
         true
     }
 
-    function closeFor(forSyntax: ForSyntax) {
+    function close_for(forSyntax: ForSyntax) {
     }
 
-    function openWhile(whileSyntax: WhileSyntax): bool {
+    function open_while(whileSyntax: WhileSyntax): bool {
         true
     }
 
-    function closeWhile(whileSyntax: WhileSyntax) {
+    function close_while(whileSyntax: WhileSyntax) {
     }
 
-    function openDo(doSyntax: DoSyntax): bool {
+    function open_do(doSyntax: DoSyntax): bool {
         true
     }
 
-    function closeDo(doSyntax: DoSyntax) {
+    function close_do(doSyntax: DoSyntax) {
     }
 
-    function openSimpleLoop(simpleLoopSyntax: SimpleLoopSyntax): bool {
+    function open_simpleloop(simpleloopSyntax: SimpleLoopSyntax): bool {
         true
     }
 
-    function closeSimpleLoop(simpleLoopSyntax: SimpleLoopSyntax) {
+    function close_simpleloop(simpleloopSyntax: SimpleLoopSyntax) {
     }
 
-    function openNamedLoop(namedLoopSyntax: NamedLoopSyntax): bool {
+    function open_namedloop(namedloopSyntax: NamedLoopSyntax): bool {
         true
     }
 
-    function closeNamedLoop(namedLoopSyntax: NamedLoopSyntax) {
+    function close_namedloop(namedloopSyntax: NamedLoopSyntax) {
     }
 
-    function visitThis(thisSyntax: ThisSyntax) {
+    function visit_this(thisSyntax: ThisSyntax) {
     }
 
-    function openNew(newSyntax: NewSyntax): bool {
+    function open_new(newSyntax: NewSyntax): bool {
         true
     }
 
-    function closeNew(newSyntax: NewSyntax) {
+    function close_new(newSyntax: NewSyntax) {
     }
 
-    function openObject(objectSyntax: ObjectSyntax): bool {
+    function open_object(objectSyntax: ObjectSyntax): bool {
         true
     }
 
-    function closeObject(objectSyntax: ObjectSyntax) {
+    function close_object(objectSyntax: ObjectSyntax) {
     }
 
-    function openArray(arraySyntax: ArraySyntax): bool {
+    function open_array(arraySyntax: ArraySyntax): bool {
         true
     }
 
-    function closeArray(arraySyntax: ArraySyntax) {
+    function close_array(arraySyntax: ArraySyntax) {
     }
 
-    function openItem(itemSyntax: ItemSyntax): bool {
+    function open_item(itemSyntax: ItemSyntax): bool {
         true
     }
 
-    function closeItem(itemSyntax: ItemSyntax) {
+    function close_item(itemSyntax: ItemSyntax) {
     }
 
-    function openSizeOf(sizeOfSyntax: SizeOfSyntax): bool {
+    function open_sizeof(sizeofSyntax: SizeOfSyntax): bool {
         true
     }
 
-    function closeSizeOf(sizeOfSyntax: SizeOfSyntax) {
+    function close_sizeof(sizeofSyntax: SizeOfSyntax) {
     }
 
-    function visitBreak(breakSyntax: BreakSyntax) {
+    function visit_break(breakSyntax: BreakSyntax) {
     }
 
-    function visitContinue(continueSyntax: ContinueSyntax) {
+    function visit_continue(continueSyntax: ContinueSyntax) {
     }
 
-    function openReturn(returnSyntax: ReturnSyntax): bool {
+    function open_return(returnSyntax: ReturnSyntax): bool {
         true
     }
 
-    function closeReturn(returnSyntax: ReturnSyntax) {
+    function close_return(returnSyntax: ReturnSyntax) {
     }
 
-    function openThrow(throwSyntax: ThrowSyntax): bool {
+    function open_throw(throwSyntax: ThrowSyntax): bool {
         true
     }
 
-    function closeThrow(throwSyntax: ThrowSyntax) {
+    function close_throw(throwSyntax: ThrowSyntax) {
     }
 
-    function openClass(classSyntax: ClassSyntax): bool {
+    function open_class(classSyntax: ClassSyntax): bool {
         true
     }
 
-    function closeClass(classSyntax: ClassSyntax) {
+    function close_class(classSyntax: ClassSyntax) {
     }
 
-    function openGenericParameters(genericParametersSyntax: GenericParametersSyntax): bool {
+    function open_genericparameters(genericparametersSyntax: GenericParametersSyntax): bool {
         true
     }
 
-    function closeGenericParameters(genericParametersSyntax: GenericParametersSyntax) {
+    function close_genericparameters(genericparametersSyntax: GenericParametersSyntax) {
     }
 
-    function visitGenericParameter(genericParameterSyntax: GenericParameterSyntax) {
+    function visit_genericparameter(genericparameterSyntax: GenericParameterSyntax) {
     }
 
-    function openExtends(extendsSyntax: ExtendsSyntax): bool {
+    function open_extends(extendsSyntax: ExtendsSyntax): bool {
         true
     }
 
-    function closeExtends(extendsSyntax: ExtendsSyntax) {
+    function close_extends(extendsSyntax: ExtendsSyntax) {
     }
 
-    function openStructure(structureSyntax: StructureSyntax): bool {
+    function open_structure(structureSyntax: StructureSyntax): bool {
         true
     }
 
-    function closeStructure(structureSyntax: StructureSyntax) {
+    function close_structure(structureSyntax: StructureSyntax) {
     }
 
-    function openComponent(componentSyntax: ComponentSyntax): bool {
+    function open_component(componentSyntax: ComponentSyntax): bool {
         true
     }
 
-    function closeComponent(componentSyntax: ComponentSyntax) {
+    function close_component(componentSyntax: ComponentSyntax) {
     }
 
-    function openClassBody(classBodySyntax: ClassBodySyntax): bool {
+    function open_classbody(classbodySyntax: ClassBodySyntax): bool {
         true
     }
 
-    function closeClassBody(classBodySyntax: ClassBodySyntax) {
+    function close_classbody(classbodySyntax: ClassBodySyntax) {
     }
 
-    function openLetMember(letMemberSyntax: LetMemberSyntax): bool {
+    function open_letmember(letmemberSyntax: LetMemberSyntax): bool {
         true
     }
 
-    function closeLetMember(letMemberSyntax: LetMemberSyntax) {
+    function close_letmember(letmemberSyntax: LetMemberSyntax) {
     }
 
-    function openVarMember(varMemberSyntax: VarMemberSyntax): bool {
+    function open_varmember(varmemberSyntax: VarMemberSyntax): bool {
         true
     }
 
-    function closeVarMember(varMemberSyntax: VarMemberSyntax) {
+    function close_varmember(varmemberSyntax: VarMemberSyntax) {
     }
 
-    function openMutableMember(mutableMemberSyntax: MutableMemberSyntax): bool {
+    function open_mutablemember(mutablememberSyntax: MutableMemberSyntax): bool {
         true
     }
 
-    function closeMutableMember(mutableMemberSyntax: MutableMemberSyntax) {
+    function close_mutablemember(mutablememberSyntax: MutableMemberSyntax) {
     }
 
-    function openSetInitialization(setInitializationSyntax: SetInitializationSyntax): bool {
+    function open_setinitialization(setinitializationSyntax: SetInitializationSyntax): bool {
         true
     }
 
-    function closeSetInitialization(setInitializationSyntax: SetInitializationSyntax) {
+    function close_setinitialization(setinitializationSyntax: SetInitializationSyntax) {
     }
 
-    function openMethod(methodSyntax: MethodSyntax): bool {
+    function open_method(methodSyntax: MethodSyntax): bool {
         true
     }
 
-    function closeMethod(methodSyntax: MethodSyntax) {
+    function close_method(methodSyntax: MethodSyntax) {
     }
 
-    function openStaticFunction(staticFunctionSyntax: StaticFunctionSyntax): bool {
+    function open_staticfunction(staticfunctionSyntax: StaticFunctionSyntax): bool {
         true
     }
 
-    function closeStaticFunction(staticFunctionSyntax: StaticFunctionSyntax) {
+    function close_staticfunction(staticfunctionSyntax: StaticFunctionSyntax) {
     }
 
-    function openOperator(operatorSyntax: OperatorSyntax): bool {
+    function open_operator(operatorSyntax: OperatorSyntax): bool {
         true
     }
 
-    function closeOperator(operatorSyntax: OperatorSyntax) {
+    function close_operator(operatorSyntax: OperatorSyntax) {
     }
 
-    function openInitializer(initializerSyntax: InitializerSyntax): bool {
+    function open_initializer(initializerSyntax: InitializerSyntax): bool {
         true
     }
 
-    function closeInitializer(initializerSyntax: InitializerSyntax) {
+    function close_initializer(initializerSyntax: InitializerSyntax) {
     }
 
-    function openAllocator(allocatorSyntax: AllocatorSyntax): bool {
+    function open_allocator(allocatorSyntax: AllocatorSyntax): bool {
         true
     }
 
-    function closeAllocator(allocatorSyntax: AllocatorSyntax) {
+    function close_allocator(allocatorSyntax: AllocatorSyntax) {
     }
 
-    function openTypeAnnotation(typeAnnotationSyntax: TypeAnnotationSyntax): bool {
+    function open_typeannotation(typeannotationSyntax: TypeAnnotationSyntax): bool {
         true
     }
 
-    function closeTypeAnnotation(typeAnnotationSyntax: TypeAnnotationSyntax) {
+    function close_typeannotation(typeannotationSyntax: TypeAnnotationSyntax) {
     }
 
-    function openType(typeSyntax: TypeSyntax): bool {
+    function open_type(typeSyntax: TypeSyntax): bool {
         true
     }
 
-    function closeType(typeSyntax: TypeSyntax) {
+    function close_type(typeSyntax: TypeSyntax) {
     }
 
-    function openVariant(variantSyntax: VariantSyntax): bool {
+    function open_variant(variantSyntax: VariantSyntax): bool {
         true
     }
 
-    function closeVariant(variantSyntax: VariantSyntax) {
+    function close_variant(variantSyntax: VariantSyntax) {
     }
 
-    function openThrows(throwsSyntax: ThrowsSyntax): bool {
+    function open_throws(throwsSyntax: ThrowsSyntax): bool {
         true
     }
 
-    function closeThrows(throwsSyntax: ThrowsSyntax) {
+    function close_throws(throwsSyntax: ThrowsSyntax) {
     }
 
-    function openGenericArguments(genericArgumentsSyntax: GenericArgumentsSyntax): bool {
+    function open_genericarguments(genericargumentsSyntax: GenericArgumentsSyntax): bool {
         true
     }
 
-    function closeGenericArguments(genericArgumentsSyntax: GenericArgumentsSyntax) {
+    function close_genericarguments(genericargumentsSyntax: GenericArgumentsSyntax) {
     }
 
-    function openGenericArgument(genericArgumentSyntax: GenericArgumentSyntax): bool {
+    function open_genericargument(genericargumentSyntax: GenericArgumentSyntax): bool {
         true
     }
 
-    function closeGenericArgument(genericArgumentSyntax: GenericArgumentSyntax) {
+    function close_genericargument(genericargumentSyntax: GenericArgumentSyntax) {
     }
 
-    function visitOptional(optionalSyntax: OptionalSyntax) {
+    function visit_optional(optionalSyntax: OptionalSyntax) {
     }
 
-    function visitRoot(rootSyntax: RootSyntax) {
+    function visit_root(rootSyntax: RootSyntax) {
     }
 
-    function visitLocal(localSyntax: LocalSyntax) {
+    function visit_local(localSyntax: LocalSyntax) {
     }
 
-    function visitReference(referenceSyntax: ReferenceSyntax) {
+    function visit_reference(referenceSyntax: ReferenceSyntax) {
     }
 
-    function visitThrown(thrownSyntax: ThrownSyntax) {
+    function visit_thrown(thrownSyntax: ThrownSyntax) {
     }
 }
 
@@ -3531,7 +3480,7 @@ class Using extends SyntaxNode (
 class Define extends SyntaxNode (
 
     name: Name, 
-    typeSpec: Type
+    type_spec: Type
 
     ) {
     function accept(visitor: Visitor) {
@@ -3539,7 +3488,7 @@ class Define extends SyntaxNode (
         if (visitor.openDefine(this) = false) {
             return }
         name.accept(visitor)
-        typeSpec.accept(visitor)
+        type_spec.accept(visitor)
 
         visitor.closeDefine(this)
     }
@@ -3645,7 +3594,7 @@ class Routine extends SyntaxNode (
 
     input: Structure, 
     output: TypeAnnotation, 
-    throwsClause: Throws, 
+    throws_clause: Throws, 
     body: Block
 
     ) {
@@ -3660,8 +3609,8 @@ class Routine extends SyntaxNode (
         if (output <> ()) {
             output.accept(visitor) }
 
-        if (throwsClause <> ()) {
-            throwsClause.accept(visitor) }
+        if (throws_clause <> ()) {
+            throws_clause.accept(visitor) }
         body.accept(visitor)
 
         visitor.closeRoutine(this)
@@ -3796,7 +3745,7 @@ class ThreadLocal extends Statement (
 class Binding extends SyntaxNode (
 
     name: string, 
-    typeAnnotation: TypeAnnotation, 
+    type_annotation: TypeAnnotation, 
     calculation: Calculation
 
     ) {
@@ -3805,8 +3754,8 @@ class Binding extends SyntaxNode (
         if (visitor.openBinding(this) = false) {
             return }
 
-        if (typeAnnotation <> ()) {
-            typeAnnotation.accept(visitor) }
+        if (type_annotation <> ()) {
+            type_annotation.accept(visitor) }
         calculation.accept(visitor)
 
         visitor.closeBinding(this)
@@ -3815,16 +3764,16 @@ class Binding extends SyntaxNode (
 
 class Set extends Statement (
 
-    lValue: Operation, 
-    rValue: Calculation
+    l_value: Operation, 
+    r_value: Calculation
 
     ) {
     function accept(visitor: Visitor) {
 
         if (visitor.openSet(this) = false) {
             return }
-        lValue.accept(visitor)
-        rValue.accept(visitor)
+        l_value.accept(visitor)
+        r_value.accept(visitor)
 
         visitor.closeSet(this)
     }
@@ -3901,14 +3850,14 @@ class MemberAccess extends Postfix (
 
 class As extends Postfix (
 
-    typeSpec: TypeSpec
+    type_spec: TypeSpec
 
     ) {
     function accept(visitor: Visitor) {
 
         if (visitor.openAs(this) = false) {
             return }
-        typeSpec.accept(visitor)
+        type_spec.accept(visitor)
 
         visitor.closeAs(this)
     }
@@ -3916,14 +3865,14 @@ class As extends Postfix (
 
 class Is extends Postfix (
 
-    typeSpec: TypeSpec
+    type_spec: TypeSpec
 
     ) {
     function accept(visitor: Visitor) {
 
         if (visitor.openIs(this) = false) {
             return }
-        typeSpec.accept(visitor)
+        type_spec.accept(visitor)
 
         visitor.closeIs(this)
     }
@@ -3941,7 +3890,7 @@ class Unwrap extends Postfix (
 
 class Catch extends Postfix (
 
-    typeSpec: CatchPattern, 
+    type_spec: CatchPattern, 
     handler: Block
 
     ) {
@@ -3949,7 +3898,7 @@ class Catch extends Postfix (
 
         if (visitor.openCatch(this) = false) {
             return }
-        typeSpec.accept(visitor)
+        type_spec.accept(visitor)
         handler.accept(visitor)
 
         visitor.closeCatch(this)
@@ -3978,15 +3927,15 @@ class WildCardCatchPattern extends CatchPattern (
 
 class TypeCatchPattern extends CatchPattern (
 
-    typeSpec: TypeSpec, 
-    errorName: string
+    type_spec: TypeSpec, 
+    error_name: string
 
     ) {
     function accept(visitor: Visitor) {
 
         if (visitor.openTypeCatchPattern(this) = false) {
             return }
-        typeSpec.accept(visitor)
+        type_spec.accept(visitor)
 
         visitor.closeTypeCatchPattern(this)
     }
@@ -4030,7 +3979,7 @@ class If extends Expression (
 
     condition: Operation, 
     consequent: Block, 
-    elseClause: Else
+    else_clause: Else
 
     ) {
     function accept(visitor: Visitor) {
@@ -4040,8 +3989,8 @@ class If extends Expression (
         condition.accept(visitor)
         consequent.accept(visitor)
 
-        if (elseClause <> ()) {
-            elseClause.accept(visitor) }
+        if (else_clause <> ()) {
+            else_clause.accept(visitor) }
 
         visitor.closeIf(this)
     }
@@ -4195,7 +4144,7 @@ class DefaultCaseLabel extends CaseLabel (
 class For extends Expression (
 
     index: string, 
-    typeAnnotation: TypeAnnotation, 
+    type_annotation: TypeAnnotation, 
     operation: Operation, 
     iteration: Loop
 
@@ -4205,8 +4154,8 @@ class For extends Expression (
         if (visitor.openFor(this) = false) {
             return }
 
-        if (typeAnnotation <> ()) {
-            typeAnnotation.accept(visitor) }
+        if (type_annotation <> ()) {
+            type_annotation.accept(visitor) }
         operation.accept(visitor)
         iteration.accept(visitor)
 
@@ -4296,14 +4245,14 @@ class This extends Expression (
 
 class New extends Expression (
 
-    typeSpec: Type
+    type_spec: Type
 
     ) {
     function accept(visitor: Visitor) {
 
         if (visitor.openNew(this) = false) {
             return }
-        typeSpec.accept(visitor)
+        type_spec.accept(visitor)
 
         visitor.closeNew(this)
     }
@@ -4311,8 +4260,8 @@ class New extends Expression (
 
 class Object extends Expression (
 
-    firstOp: Operation, 
-    additionalOps: Array[Item], 
+    first_op: Operation, 
+    additional_ops: Array[Item], 
 
     ) {
     function accept(visitor: Visitor) {
@@ -4320,11 +4269,11 @@ class Object extends Expression (
         if (visitor.openObject(this) = false) {
             return }
 
-        if (firstOp <> ()) {
-            firstOp.accept(visitor) }
+        if (first_op <> ()) {
+            first_op.accept(visitor) }
 
-        if (additionalOps <> ()) {
-            for (node: Item in additionalOps) {
+        if (additional_ops <> ()) {
+            for (node: Item in additional_ops) {
                 node.accept(visitor) } }
 
         visitor.closeObject(this)
@@ -4333,8 +4282,8 @@ class Object extends Expression (
 
 class Array extends Expression (
 
-    firstOp: Operation, 
-    additionalOps: Array[Item], 
+    first_op: Operation, 
+    additional_ops: Array[Item], 
 
     ) {
     function accept(visitor: Visitor) {
@@ -4342,11 +4291,11 @@ class Array extends Expression (
         if (visitor.openArray(this) = false) {
             return }
 
-        if (firstOp <> ()) {
-            firstOp.accept(visitor) }
+        if (first_op <> ()) {
+            first_op.accept(visitor) }
 
-        if (additionalOps <> ()) {
-            for (node: Item in additionalOps) {
+        if (additional_ops <> ()) {
+            for (node: Item in additional_ops) {
                 node.accept(visitor) } }
 
         visitor.closeArray(this)
@@ -4370,14 +4319,14 @@ class Item extends SyntaxNode (
 
 class SizeOf extends Expression (
 
-    typeSpec: Type
+    type_spec: Type
 
     ) {
     function accept(visitor: Visitor) {
 
         if (visitor.openSizeOf(this) = false) {
             return }
-        typeSpec.accept(visitor)
+        type_spec.accept(visitor)
 
         visitor.closeSizeOf(this)
     }
@@ -4441,7 +4390,7 @@ class Class extends Declaration (
 
     name: Name, 
     generics: GenericParameters, 
-    baseClass: Extends, 
+    base_class: Extends, 
     contents: Structure, 
     body: ClassBody
 
@@ -4455,8 +4404,8 @@ class Class extends Declaration (
         if (generics <> ()) {
             generics.accept(visitor) }
 
-        if (baseClass <> ()) {
-            baseClass.accept(visitor) }
+        if (base_class <> ()) {
+            base_class.accept(visitor) }
 
         if (contents <> ()) {
             contents.accept(visitor) }
@@ -4471,7 +4420,7 @@ class Class extends Declaration (
 class GenericParameters extends SyntaxNode (
 
     name: string, 
-    additionalGenerics: Array[GenericParameter], 
+    additional_generics: Array[GenericParameter], 
 
     ) {
     function accept(visitor: Visitor) {
@@ -4479,8 +4428,8 @@ class GenericParameters extends SyntaxNode (
         if (visitor.openGenericParameters(this) = false) {
             return }
 
-        if (additionalGenerics <> ()) {
-            for (node: GenericParameter in additionalGenerics) {
+        if (additional_generics <> ()) {
+            for (node: GenericParameter in additional_generics) {
                 node.accept(visitor) } }
 
         visitor.closeGenericParameters(this)
@@ -4534,7 +4483,7 @@ class Structure extends SyntaxNode (
 class Component extends SyntaxNode (
 
     name: string, 
-    typeAnnotation: TypeAnnotation, 
+    type_annotation: TypeAnnotation, 
 
     ) {
     function accept(visitor: Visitor) {
@@ -4542,8 +4491,8 @@ class Component extends SyntaxNode (
         if (visitor.openComponent(this) = false) {
             return }
 
-        if (typeAnnotation <> ()) {
-            typeAnnotation.accept(visitor) }
+        if (type_annotation <> ()) {
+            type_annotation.accept(visitor) }
 
         visitor.closeComponent(this)
     }
@@ -4717,14 +4666,14 @@ class Allocator extends ClassMember (
 
 class TypeAnnotation extends SyntaxNode (
 
-    typeSpec: TypeSpec
+    type_spec: TypeSpec
 
     ) {
     function accept(visitor: Visitor) {
 
         if (visitor.openTypeAnnotation(this) = false) {
             return }
-        typeSpec.accept(visitor)
+        type_spec.accept(visitor)
 
         visitor.closeTypeAnnotation(this)
     }
@@ -4740,7 +4689,7 @@ class Type extends TypeSpec (
     name: Name, 
     generics: GenericArguments, 
     optional: Optional, 
-    lifeTime: LifeTime
+    life_time: LifeTime
 
     ) {
     function accept(visitor: Visitor) {
@@ -4755,8 +4704,8 @@ class Type extends TypeSpec (
         if (optional <> ()) {
             optional.accept(visitor) }
 
-        if (lifeTime <> ()) {
-            lifeTime.accept(visitor) }
+        if (life_time <> ()) {
+            life_time.accept(visitor) }
 
         visitor.closeType(this)
     }
@@ -4782,14 +4731,14 @@ class Variant extends TypeSpec (
 
 class Throws extends SyntaxNode (
 
-    throwsType: TypeSpec
+    throws_type: TypeSpec
 
     ) {
     function accept(visitor: Visitor) {
 
         if (visitor.openThrows(this) = false) {
             return }
-        throwsType.accept(visitor)
+        throws_type.accept(visitor)
 
         visitor.closeThrows(this)
     }
@@ -4798,7 +4747,7 @@ class Throws extends SyntaxNode (
 class GenericArguments extends SyntaxNode (
 
     generic: Type, 
-    additionalGenerics: Array[GenericArgument], 
+    additional_generics: Array[GenericArgument], 
 
     ) {
     function accept(visitor: Visitor) {
@@ -4807,8 +4756,8 @@ class GenericArguments extends SyntaxNode (
             return }
         generic.accept(visitor)
 
-        if (additionalGenerics <> ()) {
-            for (node: GenericArgument in additionalGenerics) {
+        if (additional_generics <> ()) {
+            for (node: GenericArgument in additional_generics) {
                 node.accept(visitor) } }
 
         visitor.closeGenericArguments(this)
@@ -4817,14 +4766,14 @@ class GenericArguments extends SyntaxNode (
 
 class GenericArgument extends SyntaxNode (
 
-    typeSpec: Type
+    type_spec: Type
 
     ) {
     function accept(visitor: Visitor) {
 
         if (visitor.openGenericArgument(this) = false) {
             return }
-        typeSpec.accept(visitor)
+        type_spec.accept(visitor)
 
         visitor.closeGenericArgument(this)
     }

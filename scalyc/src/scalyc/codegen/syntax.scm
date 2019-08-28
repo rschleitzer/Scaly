@@ -4,6 +4,13 @@
 pub trait SyntaxNode {
     fn accept(&""mut self, visitor: *mut SyntaxVisitor);
 }
+
+#[derive(Copy, Clone)]
+pub enum ParentNode {
+"    (apply-to-nodelist (node-list-filter (lambda (node) (not (abstract? node))) (select-elements (children (current-node)) "syntax")) (lambda (syntax-node) ($
+"    "(id syntax-node)"(Ref<"(id syntax-node)"Syntax>),
+"   )))
+"}
 "
     (apply-to-selected-children "syntax" (lambda (syntax-node) ($
 "
@@ -16,12 +23,17 @@ pub "(if (abstract? syntax-node) "enum" "struct")" "(id syntax-node)"Syntax {"
             )))
             ($
                 (if (top? syntax-node)
+                    ($
 "
     pub file_name: String,"
+                    )
+                    ($
 "
     pub start: Position,
     pub end: Position,
-    pub parent: *mut SyntaxNode,"                )
+    pub parent: Option<""ParentNode>,"
+                    )
+                )
 
                 (apply-to-children-of syntax-node (lambda (content) ($
                     (if (property content) ($
@@ -46,8 +58,10 @@ impl SyntaxNode for "(id syntax-node)"Syntax {
 "       (if (abstract? syntax-node) "" ($
             (if (has-syntax-children? syntax-node)
                 ($
-"        if !(*visitor).open"(id syntax-node)"(Ref::from(self as *mut "(id syntax-node)"Syntax)) {
-            return
+"        unsafe {
+            if !(*visitor).open_"(downcase-string (id syntax-node))"(Ref::from(self as *mut "(id syntax-node)"Syntax)) {
+                return
+            }
         }"
                     (apply-to-children-of syntax-node (lambda (content)
                         (case (type content)
@@ -59,7 +73,7 @@ impl SyntaxNode for "(id syntax-node)"Syntax {
                                                 ($
 "
         match self."(property content)" {
-            Some(x) => for node in x.iter() {
+            Some(mut x) => for node in x.iter_mut() {
                 node.accept(visitor)
             },
             None => ()
@@ -67,7 +81,7 @@ impl SyntaxNode for "(id syntax-node)"Syntax {
 "                                               )
                                                 ($
 "
-        for node in self."(property content)".iter() {
+        for node in self."(property content)".iter_mut() {
             node.accept(visitor)
         };
 "                                               )
@@ -77,7 +91,7 @@ impl SyntaxNode for "(id syntax-node)"Syntax {
                                             ($
 "
         match self."(property content)" {
-            Some(x) => x.accept(visitor),
+            Some(mut x) => x.accept(visitor),
             None => ()
         };
 "                                           )
@@ -92,11 +106,15 @@ impl SyntaxNode for "(id syntax-node)"Syntax {
                             (else "")
                         )
                     ))
-"        (*visitor).close"(id syntax-node)"(Ref::from(self as *mut "(id syntax-node)"Syntax))
+"        unsafe {
+            (*visitor).close_"(downcase-string (id syntax-node))"(Ref::from(self as *mut "(id syntax-node)"Syntax))
+        }
 "
                 )
                 ($
-"        (*visitor).visit"(id syntax-node)"(Ref::from(self as *mut "(id syntax-node)"Syntax))
+"        unsafe {
+            (*visitor).visit_"(downcase-string (id syntax-node))"(Ref::from(self as *mut "(id syntax-node)"Syntax))
+        }
 "
                 )
             )

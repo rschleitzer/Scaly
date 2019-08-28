@@ -4,7 +4,6 @@ use scaly::memory::Region;
 use scaly::Page;
 use scalyc::errors::ParserError;
 use scalyc::lexer::{Lexer, Literal, Position};
-use std::ptr::null_mut;
 
 pub struct Parser {
     lexer: Ref<Lexer>,
@@ -80,8 +79,6 @@ impl Parser {
     ) -> Result<Option<Ref<FileSyntax>>, Ref<ParserError>> {
         let _r = Region::create(_pr);
 
-        let start: Position = self.lexer.get_previous_position();
-
         let intrinsics = self.parse_intrinsic_list(&_r, _rp, _ep)?;
 
         let usings = self.parse_using_list(&_r, _rp, _ep)?;
@@ -107,59 +104,57 @@ impl Parser {
             None => (),
         }
 
-        let end: Position = self.lexer.get_position();
-
         let ret = Ref::new(_rp, FileSyntax { file_name: self.file_name, intrinsics: intrinsics, usings: usings, defines: defines, declarations: declarations, statements: statements });
 
         match intrinsics {
-            Some(x) => for item in x.iter() {
-                item.parent = ret.data as *mut SyntaxNode;
+            Some(mut x) => for item in x.iter_mut() {
+                item.parent = Some(ParentNode::File(ret));
             }
             None => ()
         }
 
         match usings {
-            Some(x) => for item in x.iter() {
-                item.parent = ret.data as *mut SyntaxNode;
+            Some(mut x) => for item in x.iter_mut() {
+                item.parent = Some(ParentNode::File(ret));
             }
             None => ()
         }
 
         match defines {
-            Some(x) => for item in x.iter() {
-                item.parent = ret.data as *mut SyntaxNode;
+            Some(mut x) => for item in x.iter_mut() {
+                item.parent = Some(ParentNode::File(ret));
             }
             None => ()
         }
 
         match declarations {
-            Some(x) => for item in x.iter() {
+            Some(mut x) => for item in x.iter_mut() {
                 match **item {
-                    DeclarationSyntax::Namespace(y) => y.parent = ret.data as *mut SyntaxNode,
-                    DeclarationSyntax::Function(y) => y.parent = ret.data as *mut SyntaxNode,
-                    DeclarationSyntax::Class(y) => y.parent = ret.data as *mut SyntaxNode,
-                    DeclarationSyntax::LetDeclaration(y) => y.parent = ret.data as *mut SyntaxNode,
-                    DeclarationSyntax::VarDeclaration(y) => y.parent = ret.data as *mut SyntaxNode,
-                    DeclarationSyntax::MutableDeclaration(y) => y.parent = ret.data as *mut SyntaxNode,
-                    DeclarationSyntax::ThreadLocalDeclaration(y) => y.parent = ret.data as *mut SyntaxNode,
+                    DeclarationSyntax::Namespace(mut y) => y.parent = Some(ParentNode::File(ret)),
+                    DeclarationSyntax::Function(mut y) => y.parent = Some(ParentNode::File(ret)),
+                    DeclarationSyntax::Class(mut y) => y.parent = Some(ParentNode::File(ret)),
+                    DeclarationSyntax::LetDeclaration(mut y) => y.parent = Some(ParentNode::File(ret)),
+                    DeclarationSyntax::VarDeclaration(mut y) => y.parent = Some(ParentNode::File(ret)),
+                    DeclarationSyntax::MutableDeclaration(mut y) => y.parent = Some(ParentNode::File(ret)),
+                    DeclarationSyntax::ThreadLocalDeclaration(mut y) => y.parent = Some(ParentNode::File(ret)),
                 }
             }
             None => ()
         }
 
         match statements {
-            Some(x) => for item in x.iter() {
+            Some(mut x) => for item in x.iter_mut() {
                 match **item {
-                    StatementSyntax::Let(y) => y.parent = ret.data as *mut SyntaxNode,
-                    StatementSyntax::Var(y) => y.parent = ret.data as *mut SyntaxNode,
-                    StatementSyntax::Mutable(y) => y.parent = ret.data as *mut SyntaxNode,
-                    StatementSyntax::ThreadLocal(y) => y.parent = ret.data as *mut SyntaxNode,
-                    StatementSyntax::Set(y) => y.parent = ret.data as *mut SyntaxNode,
-                    StatementSyntax::Calculation(y) => y.parent = ret.data as *mut SyntaxNode,
-                    StatementSyntax::Break(y) => y.parent = ret.data as *mut SyntaxNode,
-                    StatementSyntax::Continue(y) => y.parent = ret.data as *mut SyntaxNode,
-                    StatementSyntax::Return(y) => y.parent = ret.data as *mut SyntaxNode,
-                    StatementSyntax::Throw(y) => y.parent = ret.data as *mut SyntaxNode,
+                    StatementSyntax::Let(mut y) => y.parent = Some(ParentNode::File(ret)),
+                    StatementSyntax::Var(mut y) => y.parent = Some(ParentNode::File(ret)),
+                    StatementSyntax::Mutable(mut y) => y.parent = Some(ParentNode::File(ret)),
+                    StatementSyntax::ThreadLocal(mut y) => y.parent = Some(ParentNode::File(ret)),
+                    StatementSyntax::Set(mut y) => y.parent = Some(ParentNode::File(ret)),
+                    StatementSyntax::Calculation(mut y) => y.parent = Some(ParentNode::File(ret)),
+                    StatementSyntax::Break(mut y) => y.parent = Some(ParentNode::File(ret)),
+                    StatementSyntax::Continue(mut y) => y.parent = Some(ParentNode::File(ret)),
+                    StatementSyntax::Return(mut y) => y.parent = Some(ParentNode::File(ret)),
+                    StatementSyntax::Throw(mut y) => y.parent = Some(ParentNode::File(ret)),
                 }
             }
             None => ()
@@ -206,8 +201,8 @@ impl Parser {
 
         let start: Position = self.lexer.get_previous_position();
 
-        let successIntrinsic1 = self.lexer.parse_keyword(String::from_string_slice(_r.page, "intrinsic"));
-        if successIntrinsic1 {
+        let success_intrinsic_1 = self.lexer.parse_keyword(String::from_string_slice(_r.page, "intrinsic"));
+        if success_intrinsic_1 {
             self.lexer.advance(&_r)
         } else {
             return Ok(None)
@@ -241,7 +236,7 @@ impl Parser {
 
         let end: Position = self.lexer.get_position();
 
-        let ret = Ref::new(_rp, IntrinsicSyntax { parent: null_mut(), start: start, end: end, name: name.unwrap() });
+        let ret = Ref::new(_rp, IntrinsicSyntax { parent: None, start: start, end: end, name: name.unwrap() });
 
         Ok(Some(ret))
     }
@@ -284,8 +279,8 @@ impl Parser {
 
         let start: Position = self.lexer.get_previous_position();
 
-        let successUsing1 = self.lexer.parse_keyword(String::from_string_slice(_r.page, "using"));
-        if successUsing1 {
+        let success_using_1 = self.lexer.parse_keyword(String::from_string_slice(_r.page, "using"));
+        if success_using_1 {
             self.lexer.advance(&_r)
         } else {
             return Ok(None)
@@ -300,9 +295,9 @@ impl Parser {
 
         let end: Position = self.lexer.get_position();
 
-        let ret = Ref::new(_rp, UsingSyntax { parent: null_mut(), start: start, end: end, name: name.unwrap() });
+        let ret = Ref::new(_rp, UsingSyntax { parent: None, start: start, end: end, name: name.unwrap() });
 
-        name.unwrap().parent = ret.data as *mut SyntaxNode;
+        name.unwrap().parent = Some(ParentNode::Using(ret));
 
         Ok(Some(ret))
     }
@@ -345,8 +340,8 @@ impl Parser {
 
         let start: Position = self.lexer.get_previous_position();
 
-        let successDefine1 = self.lexer.parse_keyword(String::from_string_slice(_r.page, "define"));
-        if successDefine1 {
+        let success_define_1 = self.lexer.parse_keyword(String::from_string_slice(_r.page, "define"));
+        if success_define_1 {
             self.lexer.advance(&_r)
         } else {
             return Ok(None)
@@ -359,8 +354,8 @@ impl Parser {
             Some(_) => ()
         }
 
-        let typeSpec = self.parse_type(&_r, _rp, _ep)?;
-        match typeSpec {
+        let type_spec = self.parse_type(&_r, _rp, _ep)?;
+        match type_spec {
             None =>
                 return Err(Ref::new(_ep, ParserError { file_name: String::copy(_ep, self.file_name), line: self.lexer.line, column: self.lexer.column })),
             Some(_) => ()
@@ -368,11 +363,11 @@ impl Parser {
 
         let end: Position = self.lexer.get_position();
 
-        let ret = Ref::new(_rp, DefineSyntax { parent: null_mut(), start: start, end: end, name: name.unwrap(), typeSpec: typeSpec.unwrap() });
+        let ret = Ref::new(_rp, DefineSyntax { parent: None, start: start, end: end, name: name.unwrap(), type_spec: type_spec.unwrap() });
 
-        name.unwrap().parent = ret.data as *mut SyntaxNode;
+        name.unwrap().parent = Some(ParentNode::Define(ret));
 
-        typeSpec.unwrap().parent = ret.data as *mut SyntaxNode;
+        type_spec.unwrap().parent = Some(ParentNode::Define(ret));
 
         Ok(Some(ret))
     }
@@ -401,11 +396,11 @@ impl Parser {
 
         let end: Position = self.lexer.get_position();
 
-        let ret = Ref::new(_rp, NameSyntax { parent: null_mut(), start: start, end: end, name: name.unwrap(), extensions: extensions });
+        let ret = Ref::new(_rp, NameSyntax { parent: None, start: start, end: end, name: name.unwrap(), extensions: extensions });
 
         match extensions {
-            Some(x) => for item in x.iter() {
-                item.parent = ret.data as *mut SyntaxNode;
+            Some(mut x) => for item in x.iter_mut() {
+                item.parent = Some(ParentNode::Name(ret));
             }
             None => ()
         }
@@ -451,8 +446,8 @@ impl Parser {
 
         let start: Position = self.lexer.get_previous_position();
 
-        let successDot1 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, "."));
-        if successDot1 {
+        let success_dot_1 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, "."));
+        if success_dot_1 {
             self.lexer.advance(&_r)
         } else {
             return Ok(None)
@@ -486,7 +481,7 @@ impl Parser {
 
         let end: Position = self.lexer.get_position();
 
-        let ret = Ref::new(_rp, ExtensionSyntax { parent: null_mut(), start: start, end: end, name: name.unwrap() });
+        let ret = Ref::new(_rp, ExtensionSyntax { parent: None, start: start, end: end, name: name.unwrap() });
 
         Ok(Some(ret))
     }
@@ -596,8 +591,8 @@ impl Parser {
 
         let start: Position = self.lexer.get_previous_position();
 
-        let successNamespace1 = self.lexer.parse_keyword(String::from_string_slice(_r.page, "namespace"));
-        if successNamespace1 {
+        let success_namespace_1 = self.lexer.parse_keyword(String::from_string_slice(_r.page, "namespace"));
+        if success_namespace_1 {
             self.lexer.advance(&_r)
         } else {
             return Ok(None)
@@ -610,8 +605,8 @@ impl Parser {
             Some(_) => ()
         }
 
-        let successLeftCurly3 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, "{"));
-        if successLeftCurly3 {
+        let success_left_curly_3 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, "{"));
+        if success_left_curly_3 {
             self.lexer.advance(&_r)
         } else {
 
@@ -631,8 +626,8 @@ impl Parser {
 
         let declarations = self.parse_declaration_list(&_r, _rp, _ep)?;
 
-        let successRightCurly7 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, "}"));
-        if successRightCurly7 {
+        let success_right_curly_7 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, "}"));
+        if success_right_curly_7 {
             self.lexer.advance(&_r)
         } else {
 
@@ -648,34 +643,34 @@ impl Parser {
 
         let end: Position = self.lexer.get_position();
 
-        let ret = Ref::new(_rp, NamespaceSyntax { parent: null_mut(), start: start, end: end, name: name.unwrap(), usings: usings, defines: defines, declarations: declarations });
+        let ret = Ref::new(_rp, NamespaceSyntax { parent: None, start: start, end: end, name: name.unwrap(), usings: usings, defines: defines, declarations: declarations });
 
-        name.unwrap().parent = ret.data as *mut SyntaxNode;
+        name.unwrap().parent = Some(ParentNode::Namespace(ret));
 
         match usings {
-            Some(x) => for item in x.iter() {
-                item.parent = ret.data as *mut SyntaxNode;
+            Some(mut x) => for item in x.iter_mut() {
+                item.parent = Some(ParentNode::Namespace(ret));
             }
             None => ()
         }
 
         match defines {
-            Some(x) => for item in x.iter() {
-                item.parent = ret.data as *mut SyntaxNode;
+            Some(mut x) => for item in x.iter_mut() {
+                item.parent = Some(ParentNode::Namespace(ret));
             }
             None => ()
         }
 
         match declarations {
-            Some(x) => for item in x.iter() {
+            Some(mut x) => for item in x.iter_mut() {
                 match **item {
-                    DeclarationSyntax::Namespace(y) => y.parent = ret.data as *mut SyntaxNode,
-                    DeclarationSyntax::Function(y) => y.parent = ret.data as *mut SyntaxNode,
-                    DeclarationSyntax::Class(y) => y.parent = ret.data as *mut SyntaxNode,
-                    DeclarationSyntax::LetDeclaration(y) => y.parent = ret.data as *mut SyntaxNode,
-                    DeclarationSyntax::VarDeclaration(y) => y.parent = ret.data as *mut SyntaxNode,
-                    DeclarationSyntax::MutableDeclaration(y) => y.parent = ret.data as *mut SyntaxNode,
-                    DeclarationSyntax::ThreadLocalDeclaration(y) => y.parent = ret.data as *mut SyntaxNode,
+                    DeclarationSyntax::Namespace(mut y) => y.parent = Some(ParentNode::Namespace(ret)),
+                    DeclarationSyntax::Function(mut y) => y.parent = Some(ParentNode::Namespace(ret)),
+                    DeclarationSyntax::Class(mut y) => y.parent = Some(ParentNode::Namespace(ret)),
+                    DeclarationSyntax::LetDeclaration(mut y) => y.parent = Some(ParentNode::Namespace(ret)),
+                    DeclarationSyntax::VarDeclaration(mut y) => y.parent = Some(ParentNode::Namespace(ret)),
+                    DeclarationSyntax::MutableDeclaration(mut y) => y.parent = Some(ParentNode::Namespace(ret)),
+                    DeclarationSyntax::ThreadLocalDeclaration(mut y) => y.parent = Some(ParentNode::Namespace(ret)),
                 }
             }
             None => ()
@@ -694,8 +689,8 @@ impl Parser {
 
         let start: Position = self.lexer.get_previous_position();
 
-        let successFunction1 = self.lexer.parse_keyword(String::from_string_slice(_r.page, "function"));
-        if successFunction1 {
+        let success_function_1 = self.lexer.parse_keyword(String::from_string_slice(_r.page, "function"));
+        if success_function_1 {
             self.lexer.advance(&_r)
         } else {
             return Ok(None)
@@ -710,9 +705,9 @@ impl Parser {
 
         let end: Position = self.lexer.get_position();
 
-        let ret = Ref::new(_rp, FunctionSyntax { parent: null_mut(), start: start, end: end, procedure: procedure.unwrap() });
+        let ret = Ref::new(_rp, FunctionSyntax { parent: None, start: start, end: end, procedure: procedure.unwrap() });
 
-        procedure.unwrap().parent = ret.data as *mut SyntaxNode;
+        procedure.unwrap().parent = Some(ParentNode::Function(ret));
 
         Ok(Some(ret))
     }
@@ -746,9 +741,9 @@ impl Parser {
 
         let end: Position = self.lexer.get_position();
 
-        let ret = Ref::new(_rp, ProcedureSyntax { parent: null_mut(), start: start, end: end, name: name.unwrap(), routine: routine.unwrap() });
+        let ret = Ref::new(_rp, ProcedureSyntax { parent: None, start: start, end: end, name: name.unwrap(), routine: routine.unwrap() });
 
-        routine.unwrap().parent = ret.data as *mut SyntaxNode;
+        routine.unwrap().parent = Some(ParentNode::Procedure(ret));
 
         Ok(Some(ret))
     }
@@ -767,7 +762,7 @@ impl Parser {
 
         let output = self.parse_typeannotation(&_r, _rp, _ep)?;
 
-        let throwsClause = self.parse_throws(&_r, _rp, _ep)?;
+        let throws_clause = self.parse_throws(&_r, _rp, _ep)?;
 
         let body = self.parse_block(&_r, _rp, _ep)?;
         match body {
@@ -778,27 +773,27 @@ impl Parser {
 
         let end: Position = self.lexer.get_position();
 
-        let ret = Ref::new(_rp, RoutineSyntax { parent: null_mut(), start: start, end: end, input: input, output: output, throwsClause: throwsClause, body: body.unwrap() });
+        let ret = Ref::new(_rp, RoutineSyntax { parent: None, start: start, end: end, input: input, output: output, throws_clause: throws_clause, body: body.unwrap() });
 
         match input {
-            Some(x) => 
-                x.parent = ret.data as *mut SyntaxNode,
+            Some(mut x) => 
+                x.parent = Some(ParentNode::Routine(ret)),
             None => ()
         }
 
         match output {
-            Some(x) => 
-                x.parent = ret.data as *mut SyntaxNode,
+            Some(mut x) => 
+                x.parent = Some(ParentNode::Routine(ret)),
             None => ()
         }
 
-        match throwsClause {
-            Some(x) => 
-                x.parent = ret.data as *mut SyntaxNode,
+        match throws_clause {
+            Some(mut x) => 
+                x.parent = Some(ParentNode::Routine(ret)),
             None => ()
         }
 
-        body.unwrap().parent = ret.data as *mut SyntaxNode;
+        body.unwrap().parent = Some(ParentNode::Routine(ret));
 
         Ok(Some(ret))
     }
@@ -822,9 +817,9 @@ impl Parser {
 
         let end: Position = self.lexer.get_position();
 
-        let ret = Ref::new(_rp, LetDeclarationSyntax { parent: null_mut(), start: start, end: end, declaration: declaration.unwrap() });
+        let ret = Ref::new(_rp, LetDeclarationSyntax { parent: None, start: start, end: end, declaration: declaration.unwrap() });
 
-        declaration.unwrap().parent = ret.data as *mut SyntaxNode;
+        declaration.unwrap().parent = Some(ParentNode::LetDeclaration(ret));
 
         Ok(Some(ret))
     }
@@ -848,9 +843,9 @@ impl Parser {
 
         let end: Position = self.lexer.get_position();
 
-        let ret = Ref::new(_rp, VarDeclarationSyntax { parent: null_mut(), start: start, end: end, declaration: declaration.unwrap() });
+        let ret = Ref::new(_rp, VarDeclarationSyntax { parent: None, start: start, end: end, declaration: declaration.unwrap() });
 
-        declaration.unwrap().parent = ret.data as *mut SyntaxNode;
+        declaration.unwrap().parent = Some(ParentNode::VarDeclaration(ret));
 
         Ok(Some(ret))
     }
@@ -874,9 +869,9 @@ impl Parser {
 
         let end: Position = self.lexer.get_position();
 
-        let ret = Ref::new(_rp, MutableDeclarationSyntax { parent: null_mut(), start: start, end: end, declaration: declaration.unwrap() });
+        let ret = Ref::new(_rp, MutableDeclarationSyntax { parent: None, start: start, end: end, declaration: declaration.unwrap() });
 
-        declaration.unwrap().parent = ret.data as *mut SyntaxNode;
+        declaration.unwrap().parent = Some(ParentNode::MutableDeclaration(ret));
 
         Ok(Some(ret))
     }
@@ -900,9 +895,9 @@ impl Parser {
 
         let end: Position = self.lexer.get_position();
 
-        let ret = Ref::new(_rp, ThreadLocalDeclarationSyntax { parent: null_mut(), start: start, end: end, declaration: declaration.unwrap() });
+        let ret = Ref::new(_rp, ThreadLocalDeclarationSyntax { parent: None, start: start, end: end, declaration: declaration.unwrap() });
 
-        declaration.unwrap().parent = ret.data as *mut SyntaxNode;
+        declaration.unwrap().parent = Some(ParentNode::ThreadLocalDeclaration(ret));
 
         Ok(Some(ret))
     }
@@ -1036,8 +1031,8 @@ impl Parser {
 
         let start: Position = self.lexer.get_previous_position();
 
-        let successLet1 = self.lexer.parse_keyword(String::from_string_slice(_r.page, "let"));
-        if successLet1 {
+        let success_let_1 = self.lexer.parse_keyword(String::from_string_slice(_r.page, "let"));
+        if success_let_1 {
             self.lexer.advance(&_r)
         } else {
             return Ok(None)
@@ -1052,9 +1047,9 @@ impl Parser {
 
         let end: Position = self.lexer.get_position();
 
-        let ret = Ref::new(_rp, LetSyntax { parent: null_mut(), start: start, end: end, binding: binding.unwrap() });
+        let ret = Ref::new(_rp, LetSyntax { parent: None, start: start, end: end, binding: binding.unwrap() });
 
-        binding.unwrap().parent = ret.data as *mut SyntaxNode;
+        binding.unwrap().parent = Some(ParentNode::Let(ret));
 
         Ok(Some(ret))
     }
@@ -1069,8 +1064,8 @@ impl Parser {
 
         let start: Position = self.lexer.get_previous_position();
 
-        let successVar1 = self.lexer.parse_keyword(String::from_string_slice(_r.page, "var"));
-        if successVar1 {
+        let success_var_1 = self.lexer.parse_keyword(String::from_string_slice(_r.page, "var"));
+        if success_var_1 {
             self.lexer.advance(&_r)
         } else {
             return Ok(None)
@@ -1085,9 +1080,9 @@ impl Parser {
 
         let end: Position = self.lexer.get_position();
 
-        let ret = Ref::new(_rp, VarSyntax { parent: null_mut(), start: start, end: end, binding: binding.unwrap() });
+        let ret = Ref::new(_rp, VarSyntax { parent: None, start: start, end: end, binding: binding.unwrap() });
 
-        binding.unwrap().parent = ret.data as *mut SyntaxNode;
+        binding.unwrap().parent = Some(ParentNode::Var(ret));
 
         Ok(Some(ret))
     }
@@ -1102,8 +1097,8 @@ impl Parser {
 
         let start: Position = self.lexer.get_previous_position();
 
-        let successMutable1 = self.lexer.parse_keyword(String::from_string_slice(_r.page, "mutable"));
-        if successMutable1 {
+        let success_mutable_1 = self.lexer.parse_keyword(String::from_string_slice(_r.page, "mutable"));
+        if success_mutable_1 {
             self.lexer.advance(&_r)
         } else {
             return Ok(None)
@@ -1118,9 +1113,9 @@ impl Parser {
 
         let end: Position = self.lexer.get_position();
 
-        let ret = Ref::new(_rp, MutableSyntax { parent: null_mut(), start: start, end: end, binding: binding.unwrap() });
+        let ret = Ref::new(_rp, MutableSyntax { parent: None, start: start, end: end, binding: binding.unwrap() });
 
-        binding.unwrap().parent = ret.data as *mut SyntaxNode;
+        binding.unwrap().parent = Some(ParentNode::Mutable(ret));
 
         Ok(Some(ret))
     }
@@ -1135,8 +1130,8 @@ impl Parser {
 
         let start: Position = self.lexer.get_previous_position();
 
-        let successThreadlocal1 = self.lexer.parse_keyword(String::from_string_slice(_r.page, "threadlocal"));
-        if successThreadlocal1 {
+        let success_threadlocal_1 = self.lexer.parse_keyword(String::from_string_slice(_r.page, "threadlocal"));
+        if success_threadlocal_1 {
             self.lexer.advance(&_r)
         } else {
             return Ok(None)
@@ -1151,9 +1146,9 @@ impl Parser {
 
         let end: Position = self.lexer.get_position();
 
-        let ret = Ref::new(_rp, ThreadLocalSyntax { parent: null_mut(), start: start, end: end, binding: binding.unwrap() });
+        let ret = Ref::new(_rp, ThreadLocalSyntax { parent: None, start: start, end: end, binding: binding.unwrap() });
 
-        binding.unwrap().parent = ret.data as *mut SyntaxNode;
+        binding.unwrap().parent = Some(ParentNode::ThreadLocal(ret));
 
         Ok(Some(ret))
     }
@@ -1178,7 +1173,7 @@ impl Parser {
             None =>             return Ok(None)
         }
 
-        let typeAnnotation = self.parse_typeannotation(&_r, _rp, _ep)?;
+        let type_annotation = self.parse_typeannotation(&_r, _rp, _ep)?;
 
         let calculation = self.parse_calculation(&_r, _rp, _ep)?;
         match calculation {
@@ -1189,15 +1184,15 @@ impl Parser {
 
         let end: Position = self.lexer.get_position();
 
-        let ret = Ref::new(_rp, BindingSyntax { parent: null_mut(), start: start, end: end, name: name.unwrap(), typeAnnotation: typeAnnotation, calculation: calculation.unwrap() });
+        let ret = Ref::new(_rp, BindingSyntax { parent: None, start: start, end: end, name: name.unwrap(), type_annotation: type_annotation, calculation: calculation.unwrap() });
 
-        match typeAnnotation {
-            Some(x) => 
-                x.parent = ret.data as *mut SyntaxNode,
+        match type_annotation {
+            Some(mut x) => 
+                x.parent = Some(ParentNode::Binding(ret)),
             None => ()
         }
 
-        calculation.unwrap().parent = ret.data as *mut SyntaxNode;
+        calculation.unwrap().parent = Some(ParentNode::Binding(ret));
 
         Ok(Some(ret))
     }
@@ -1212,22 +1207,22 @@ impl Parser {
 
         let start: Position = self.lexer.get_previous_position();
 
-        let successSet1 = self.lexer.parse_keyword(String::from_string_slice(_r.page, "set"));
-        if successSet1 {
+        let success_set_1 = self.lexer.parse_keyword(String::from_string_slice(_r.page, "set"));
+        if success_set_1 {
             self.lexer.advance(&_r)
         } else {
             return Ok(None)
         }
 
-        let lValue = self.parse_operation(&_r, _rp, _ep)?;
-        match lValue {
+        let l_value = self.parse_operation(&_r, _rp, _ep)?;
+        match l_value {
             None =>
                 return Err(Ref::new(_ep, ParserError { file_name: String::copy(_ep, self.file_name), line: self.lexer.line, column: self.lexer.column })),
             Some(_) => ()
         }
 
-        let successColon3 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, ":"));
-        if successColon3 {
+        let success_colon_3 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, ":"));
+        if success_colon_3 {
             self.lexer.advance(&_r)
         } else {
 
@@ -1241,8 +1236,8 @@ impl Parser {
             ))
         }
 
-        let rValue = self.parse_calculation(&_r, _rp, _ep)?;
-        match rValue {
+        let r_value = self.parse_calculation(&_r, _rp, _ep)?;
+        match r_value {
             None =>
                 return Err(Ref::new(_ep, ParserError { file_name: String::copy(_ep, self.file_name), line: self.lexer.line, column: self.lexer.column })),
             Some(_) => ()
@@ -1250,11 +1245,11 @@ impl Parser {
 
         let end: Position = self.lexer.get_position();
 
-        let ret = Ref::new(_rp, SetSyntax { parent: null_mut(), start: start, end: end, lValue: lValue.unwrap(), rValue: rValue.unwrap() });
+        let ret = Ref::new(_rp, SetSyntax { parent: None, start: start, end: end, l_value: l_value.unwrap(), r_value: r_value.unwrap() });
 
-        lValue.unwrap().parent = ret.data as *mut SyntaxNode;
+        l_value.unwrap().parent = Some(ParentNode::Set(ret));
 
-        rValue.unwrap().parent = ret.data as *mut SyntaxNode;
+        r_value.unwrap().parent = Some(ParentNode::Set(ret));
 
         Ok(Some(ret))
     }
@@ -1276,8 +1271,8 @@ impl Parser {
             Some(_) => ()
         }
 
-        let successSemicolon2 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, ";"));
-        if successSemicolon2 {
+        let success_semicolon_2 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, ";"));
+        if success_semicolon_2 {
             self.lexer.advance(&_r)
         } else {
 ()
@@ -1285,9 +1280,9 @@ impl Parser {
 
         let end: Position = self.lexer.get_position();
 
-        let ret = Ref::new(_rp, CalculationSyntax { parent: null_mut(), start: start, end: end, operation: operation.unwrap() });
+        let ret = Ref::new(_rp, CalculationSyntax { parent: None, start: start, end: end, operation: operation.unwrap() });
 
-        operation.unwrap().parent = ret.data as *mut SyntaxNode;
+        operation.unwrap().parent = Some(ParentNode::Calculation(ret));
 
         Ok(Some(ret))
     }
@@ -1311,11 +1306,11 @@ impl Parser {
 
         let end: Position = self.lexer.get_position();
 
-        let ret = Ref::new(_rp, OperationSyntax { parent: null_mut(), start: start, end: end, op: op.unwrap() });
+        let ret = Ref::new(_rp, OperationSyntax { parent: None, start: start, end: end, op: op.unwrap() });
 
         match op {
-            Some(x) => for item in x.iter() {
-                item.parent = ret.data as *mut SyntaxNode;
+            Some(mut x) => for item in x.iter_mut() {
+                item.parent = Some(ParentNode::Operation(ret));
             }
             None => ()
         }
@@ -1372,32 +1367,32 @@ impl Parser {
 
         let end: Position = self.lexer.get_position();
 
-        let ret = Ref::new(_rp, OperandSyntax { parent: null_mut(), start: start, end: end, primary: primary.unwrap(), postfixes: postfixes });
+        let ret = Ref::new(_rp, OperandSyntax { parent: None, start: start, end: end, primary: primary.unwrap(), postfixes: postfixes });
 
         match *primary.unwrap() {
-            ExpressionSyntax::Block(x) => x.parent = ret.data as *mut SyntaxNode,
-            ExpressionSyntax::Name(x) => x.parent = ret.data as *mut SyntaxNode,
-            ExpressionSyntax::Constant(x) => x.parent = ret.data as *mut SyntaxNode,
-            ExpressionSyntax::If(x) => x.parent = ret.data as *mut SyntaxNode,
-            ExpressionSyntax::Switch(x) => x.parent = ret.data as *mut SyntaxNode,
-            ExpressionSyntax::For(x) => x.parent = ret.data as *mut SyntaxNode,
-            ExpressionSyntax::While(x) => x.parent = ret.data as *mut SyntaxNode,
-            ExpressionSyntax::Do(x) => x.parent = ret.data as *mut SyntaxNode,
-            ExpressionSyntax::This(x) => x.parent = ret.data as *mut SyntaxNode,
-            ExpressionSyntax::New(x) => x.parent = ret.data as *mut SyntaxNode,
-            ExpressionSyntax::Object(x) => x.parent = ret.data as *mut SyntaxNode,
-            ExpressionSyntax::Array(x) => x.parent = ret.data as *mut SyntaxNode,
-            ExpressionSyntax::SizeOf(x) => x.parent = ret.data as *mut SyntaxNode,
+            ExpressionSyntax::Block(mut x) => x.parent = Some(ParentNode::Operand(ret)),
+            ExpressionSyntax::Name(mut x) => x.parent = Some(ParentNode::Operand(ret)),
+            ExpressionSyntax::Constant(mut x) => x.parent = Some(ParentNode::Operand(ret)),
+            ExpressionSyntax::If(mut x) => x.parent = Some(ParentNode::Operand(ret)),
+            ExpressionSyntax::Switch(mut x) => x.parent = Some(ParentNode::Operand(ret)),
+            ExpressionSyntax::For(mut x) => x.parent = Some(ParentNode::Operand(ret)),
+            ExpressionSyntax::While(mut x) => x.parent = Some(ParentNode::Operand(ret)),
+            ExpressionSyntax::Do(mut x) => x.parent = Some(ParentNode::Operand(ret)),
+            ExpressionSyntax::This(mut x) => x.parent = Some(ParentNode::Operand(ret)),
+            ExpressionSyntax::New(mut x) => x.parent = Some(ParentNode::Operand(ret)),
+            ExpressionSyntax::Object(mut x) => x.parent = Some(ParentNode::Operand(ret)),
+            ExpressionSyntax::Array(mut x) => x.parent = Some(ParentNode::Operand(ret)),
+            ExpressionSyntax::SizeOf(mut x) => x.parent = Some(ParentNode::Operand(ret)),
         }
 
         match postfixes {
-            Some(x) => for item in x.iter() {
+            Some(mut x) => for item in x.iter_mut() {
                 match **item {
-                    PostfixSyntax::MemberAccess(y) => y.parent = ret.data as *mut SyntaxNode,
-                    PostfixSyntax::As(y) => y.parent = ret.data as *mut SyntaxNode,
-                    PostfixSyntax::Is(y) => y.parent = ret.data as *mut SyntaxNode,
-                    PostfixSyntax::Unwrap(y) => y.parent = ret.data as *mut SyntaxNode,
-                    PostfixSyntax::Catch(y) => y.parent = ret.data as *mut SyntaxNode,
+                    PostfixSyntax::MemberAccess(mut y) => y.parent = Some(ParentNode::Operand(ret)),
+                    PostfixSyntax::As(mut y) => y.parent = Some(ParentNode::Operand(ret)),
+                    PostfixSyntax::Is(mut y) => y.parent = Some(ParentNode::Operand(ret)),
+                    PostfixSyntax::Unwrap(mut y) => y.parent = Some(ParentNode::Operand(ret)),
+                    PostfixSyntax::Catch(mut y) => y.parent = Some(ParentNode::Operand(ret)),
                 }
             }
             None => ()
@@ -1495,8 +1490,8 @@ impl Parser {
 
         let start: Position = self.lexer.get_previous_position();
 
-        let successDot1 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, "."));
-        if successDot1 {
+        let success_dot_1 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, "."));
+        if success_dot_1 {
             self.lexer.advance(&_r)
         } else {
             return Ok(None)
@@ -1530,7 +1525,7 @@ impl Parser {
 
         let end: Position = self.lexer.get_position();
 
-        let ret = Ref::new(_rp, MemberAccessSyntax { parent: null_mut(), start: start, end: end, member: member.unwrap() });
+        let ret = Ref::new(_rp, MemberAccessSyntax { parent: None, start: start, end: end, member: member.unwrap() });
 
         Ok(Some(ret))
     }
@@ -1545,15 +1540,15 @@ impl Parser {
 
         let start: Position = self.lexer.get_previous_position();
 
-        let successAs1 = self.lexer.parse_keyword(String::from_string_slice(_r.page, "as"));
-        if successAs1 {
+        let success_as_1 = self.lexer.parse_keyword(String::from_string_slice(_r.page, "as"));
+        if success_as_1 {
             self.lexer.advance(&_r)
         } else {
             return Ok(None)
         }
 
-        let typeSpec = self.parse_typespec(&_r, _rp, _ep)?;
-        match typeSpec {
+        let type_spec = self.parse_typespec(&_r, _rp, _ep)?;
+        match type_spec {
             None =>
                 return Err(Ref::new(_ep, ParserError { file_name: String::copy(_ep, self.file_name), line: self.lexer.line, column: self.lexer.column })),
             Some(_) => ()
@@ -1561,11 +1556,11 @@ impl Parser {
 
         let end: Position = self.lexer.get_position();
 
-        let ret = Ref::new(_rp, AsSyntax { parent: null_mut(), start: start, end: end, typeSpec: typeSpec.unwrap() });
+        let ret = Ref::new(_rp, AsSyntax { parent: None, start: start, end: end, type_spec: type_spec.unwrap() });
 
-        match *typeSpec.unwrap() {
-            TypeSpecSyntax::Type(x) => x.parent = ret.data as *mut SyntaxNode,
-            TypeSpecSyntax::Variant(x) => x.parent = ret.data as *mut SyntaxNode,
+        match *type_spec.unwrap() {
+            TypeSpecSyntax::Type(mut x) => x.parent = Some(ParentNode::As(ret)),
+            TypeSpecSyntax::Variant(mut x) => x.parent = Some(ParentNode::As(ret)),
         }
 
         Ok(Some(ret))
@@ -1581,15 +1576,15 @@ impl Parser {
 
         let start: Position = self.lexer.get_previous_position();
 
-        let successIs1 = self.lexer.parse_keyword(String::from_string_slice(_r.page, "is"));
-        if successIs1 {
+        let success_is_1 = self.lexer.parse_keyword(String::from_string_slice(_r.page, "is"));
+        if success_is_1 {
             self.lexer.advance(&_r)
         } else {
             return Ok(None)
         }
 
-        let typeSpec = self.parse_typespec(&_r, _rp, _ep)?;
-        match typeSpec {
+        let type_spec = self.parse_typespec(&_r, _rp, _ep)?;
+        match type_spec {
             None =>
                 return Err(Ref::new(_ep, ParserError { file_name: String::copy(_ep, self.file_name), line: self.lexer.line, column: self.lexer.column })),
             Some(_) => ()
@@ -1597,11 +1592,11 @@ impl Parser {
 
         let end: Position = self.lexer.get_position();
 
-        let ret = Ref::new(_rp, IsSyntax { parent: null_mut(), start: start, end: end, typeSpec: typeSpec.unwrap() });
+        let ret = Ref::new(_rp, IsSyntax { parent: None, start: start, end: end, type_spec: type_spec.unwrap() });
 
-        match *typeSpec.unwrap() {
-            TypeSpecSyntax::Type(x) => x.parent = ret.data as *mut SyntaxNode,
-            TypeSpecSyntax::Variant(x) => x.parent = ret.data as *mut SyntaxNode,
+        match *type_spec.unwrap() {
+            TypeSpecSyntax::Type(mut x) => x.parent = Some(ParentNode::Is(ret)),
+            TypeSpecSyntax::Variant(mut x) => x.parent = Some(ParentNode::Is(ret)),
         }
 
         Ok(Some(ret))
@@ -1617,8 +1612,8 @@ impl Parser {
 
         let start: Position = self.lexer.get_previous_position();
 
-        let successExclamation1 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, "!"));
-        if successExclamation1 {
+        let success_exclamation_1 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, "!"));
+        if success_exclamation_1 {
             self.lexer.advance(&_r)
         } else {
             return Ok(None)
@@ -1626,7 +1621,7 @@ impl Parser {
 
         let end: Position = self.lexer.get_position();
 
-        let ret = Ref::new(_rp, UnwrapSyntax { parent: null_mut(), start: start, end: end });
+        let ret = Ref::new(_rp, UnwrapSyntax { parent: None, start: start, end: end });
 
         Ok(Some(ret))
     }
@@ -1641,15 +1636,15 @@ impl Parser {
 
         let start: Position = self.lexer.get_previous_position();
 
-        let successCatch1 = self.lexer.parse_keyword(String::from_string_slice(_r.page, "catch"));
-        if successCatch1 {
+        let success_catch_1 = self.lexer.parse_keyword(String::from_string_slice(_r.page, "catch"));
+        if success_catch_1 {
             self.lexer.advance(&_r)
         } else {
             return Ok(None)
         }
 
-        let typeSpec = self.parse_catchpattern(&_r, _rp, _ep)?;
-        match typeSpec {
+        let type_spec = self.parse_catchpattern(&_r, _rp, _ep)?;
+        match type_spec {
             None =>
                 return Err(Ref::new(_ep, ParserError { file_name: String::copy(_ep, self.file_name), line: self.lexer.line, column: self.lexer.column })),
             Some(_) => ()
@@ -1664,14 +1659,14 @@ impl Parser {
 
         let end: Position = self.lexer.get_position();
 
-        let ret = Ref::new(_rp, CatchSyntax { parent: null_mut(), start: start, end: end, typeSpec: typeSpec.unwrap(), handler: handler.unwrap() });
+        let ret = Ref::new(_rp, CatchSyntax { parent: None, start: start, end: end, type_spec: type_spec.unwrap(), handler: handler.unwrap() });
 
-        match *typeSpec.unwrap() {
-            CatchPatternSyntax::WildCardCatchPattern(x) => x.parent = ret.data as *mut SyntaxNode,
-            CatchPatternSyntax::TypeCatchPattern(x) => x.parent = ret.data as *mut SyntaxNode,
+        match *type_spec.unwrap() {
+            CatchPatternSyntax::WildCardCatchPattern(mut x) => x.parent = Some(ParentNode::Catch(ret)),
+            CatchPatternSyntax::TypeCatchPattern(mut x) => x.parent = Some(ParentNode::Catch(ret)),
         }
 
-        handler.unwrap().parent = ret.data as *mut SyntaxNode;
+        handler.unwrap().parent = Some(ParentNode::Catch(ret));
 
         Ok(Some(ret))
     }
@@ -1722,9 +1717,9 @@ impl Parser {
 
         let end: Position = self.lexer.get_position();
 
-        let ret = Ref::new(_rp, WildCardCatchPatternSyntax { parent: null_mut(), start: start, end: end, pattern: pattern.unwrap() });
+        let ret = Ref::new(_rp, WildCardCatchPatternSyntax { parent: None, start: start, end: end, pattern: pattern.unwrap() });
 
-        pattern.unwrap().parent = ret.data as *mut SyntaxNode;
+        pattern.unwrap().parent = Some(ParentNode::WildCardCatchPattern(ret));
 
         Ok(Some(ret))
     }
@@ -1739,16 +1734,16 @@ impl Parser {
 
         let start: Position = self.lexer.get_previous_position();
 
-        let typeSpec = self.parse_typespec(&_r, _rp, _ep)?;
-        match typeSpec {
+        let type_spec = self.parse_typespec(&_r, _rp, _ep)?;
+        match type_spec {
             None =>
                 return Ok(None),
             Some(_) => ()
         }
 
-        let errorName = self.lexer.parse_identifier(_rp);
-        match errorName {
-            Some(errorName) => if self.is_identifier(errorName) {
+        let error_name = self.lexer.parse_identifier(_rp);
+        match error_name {
+            Some(error_name) => if self.is_identifier(error_name) {
                 self.lexer.advance(&_r)
             } else {
 ()
@@ -1758,42 +1753,14 @@ impl Parser {
 
         let end: Position = self.lexer.get_position();
 
-        let ret = Ref::new(_rp, TypeCatchPatternSyntax { parent: null_mut(), start: start, end: end, typeSpec: typeSpec.unwrap(), errorName: errorName });
+        let ret = Ref::new(_rp, TypeCatchPatternSyntax { parent: None, start: start, end: end, type_spec: type_spec.unwrap(), error_name: error_name });
 
-        match *typeSpec.unwrap() {
-            TypeSpecSyntax::Type(x) => x.parent = ret.data as *mut SyntaxNode,
-            TypeSpecSyntax::Variant(x) => x.parent = ret.data as *mut SyntaxNode,
+        match *type_spec.unwrap() {
+            TypeSpecSyntax::Type(mut x) => x.parent = Some(ParentNode::TypeCatchPattern(ret)),
+            TypeSpecSyntax::Variant(mut x) => x.parent = Some(ParentNode::TypeCatchPattern(ret)),
         }
 
         Ok(Some(ret))
-    }
-
-    pub fn parse_expression_list(
-        &mut self,
-        _pr: &Region,
-        _rp: *mut Page,
-        _ep: *mut Page,
-    ) -> Result<Option<Ref<Vector<Ref<ExpressionSyntax>>>>, Ref<ParserError>> {
-        let _r = Region::create(_pr);
-        let mut ret: Option<Ref<Array<Ref<ExpressionSyntax>>>> = Option::None;
-        loop {
-            let node = self.parse_expression(&_r, _rp, _ep)?;
-            match node {
-                None => break,
-                Some(node) => {
-                    match ret {
-                        None => ret = Some(Ref::new(_rp, Array::new())),
-                        Some(_) => (),
-                    };
-                    ret.unwrap().add(node);
-                }
-            }
-        }
-
-        match ret {
-            Some(ret) => Ok(Some(Ref::new(_rp, Vector::from_array(_rp, ret)))),
-            None => Ok(None),
-        }
     }
 
     pub fn parse_expression(
@@ -1921,8 +1888,8 @@ impl Parser {
 
         let start: Position = self.lexer.get_previous_position();
 
-        let successLeftCurly1 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, "{"));
-        if successLeftCurly1 {
+        let success_left_curly_1 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, "{"));
+        if success_left_curly_1 {
             self.lexer.advance(&_r)
         } else {
             return Ok(None)
@@ -1930,8 +1897,8 @@ impl Parser {
 
         let statements = self.parse_statement_list(&_r, _rp, _ep)?;
 
-        let successRightCurly3 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, "}"));
-        if successRightCurly3 {
+        let success_right_curly_3 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, "}"));
+        if success_right_curly_3 {
             self.lexer.advance(&_r)
         } else {
 
@@ -1947,21 +1914,21 @@ impl Parser {
 
         let end: Position = self.lexer.get_position();
 
-        let ret = Ref::new(_rp, BlockSyntax { parent: null_mut(), start: start, end: end, statements: statements });
+        let ret = Ref::new(_rp, BlockSyntax { parent: None, start: start, end: end, statements: statements });
 
         match statements {
-            Some(x) => for item in x.iter() {
+            Some(mut x) => for item in x.iter_mut() {
                 match **item {
-                    StatementSyntax::Let(y) => y.parent = ret.data as *mut SyntaxNode,
-                    StatementSyntax::Var(y) => y.parent = ret.data as *mut SyntaxNode,
-                    StatementSyntax::Mutable(y) => y.parent = ret.data as *mut SyntaxNode,
-                    StatementSyntax::ThreadLocal(y) => y.parent = ret.data as *mut SyntaxNode,
-                    StatementSyntax::Set(y) => y.parent = ret.data as *mut SyntaxNode,
-                    StatementSyntax::Calculation(y) => y.parent = ret.data as *mut SyntaxNode,
-                    StatementSyntax::Break(y) => y.parent = ret.data as *mut SyntaxNode,
-                    StatementSyntax::Continue(y) => y.parent = ret.data as *mut SyntaxNode,
-                    StatementSyntax::Return(y) => y.parent = ret.data as *mut SyntaxNode,
-                    StatementSyntax::Throw(y) => y.parent = ret.data as *mut SyntaxNode,
+                    StatementSyntax::Let(mut y) => y.parent = Some(ParentNode::Block(ret)),
+                    StatementSyntax::Var(mut y) => y.parent = Some(ParentNode::Block(ret)),
+                    StatementSyntax::Mutable(mut y) => y.parent = Some(ParentNode::Block(ret)),
+                    StatementSyntax::ThreadLocal(mut y) => y.parent = Some(ParentNode::Block(ret)),
+                    StatementSyntax::Set(mut y) => y.parent = Some(ParentNode::Block(ret)),
+                    StatementSyntax::Calculation(mut y) => y.parent = Some(ParentNode::Block(ret)),
+                    StatementSyntax::Break(mut y) => y.parent = Some(ParentNode::Block(ret)),
+                    StatementSyntax::Continue(mut y) => y.parent = Some(ParentNode::Block(ret)),
+                    StatementSyntax::Return(mut y) => y.parent = Some(ParentNode::Block(ret)),
+                    StatementSyntax::Throw(mut y) => y.parent = Some(ParentNode::Block(ret)),
                 }
             }
             None => ()
@@ -1982,14 +1949,14 @@ impl Parser {
 
         let literal = self.lexer.parse_literal(_rp);
         match literal {
-            Some(x) =>
+            Some(_) =>
                 self.lexer.advance(&_r),
             None =>             return Ok(None)
         }
 
         let end: Position = self.lexer.get_position();
 
-        let ret = Ref::new(_rp, ConstantSyntax { parent: null_mut(), start: start, end: end, literal: literal.unwrap() });
+        let ret = Ref::new(_rp, ConstantSyntax { parent: None, start: start, end: end, literal: literal.unwrap() });
 
         Ok(Some(ret))
     }
@@ -2004,15 +1971,15 @@ impl Parser {
 
         let start: Position = self.lexer.get_previous_position();
 
-        let successIf1 = self.lexer.parse_keyword(String::from_string_slice(_r.page, "if"));
-        if successIf1 {
+        let success_if_1 = self.lexer.parse_keyword(String::from_string_slice(_r.page, "if"));
+        if success_if_1 {
             self.lexer.advance(&_r)
         } else {
             return Ok(None)
         }
 
-        let successLeftParen2 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, "("));
-        if successLeftParen2 {
+        let success_left_paren_2 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, "("));
+        if success_left_paren_2 {
             self.lexer.advance(&_r)
         } else {
 
@@ -2033,8 +2000,8 @@ impl Parser {
             Some(_) => ()
         }
 
-        let successRightParen4 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, ")"));
-        if successRightParen4 {
+        let success_right_paren_4 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, ")"));
+        if success_right_paren_4 {
             self.lexer.advance(&_r)
         } else {
 
@@ -2055,19 +2022,19 @@ impl Parser {
             Some(_) => ()
         }
 
-        let elseClause = self.parse_else(&_r, _rp, _ep)?;
+        let else_clause = self.parse_else(&_r, _rp, _ep)?;
 
         let end: Position = self.lexer.get_position();
 
-        let ret = Ref::new(_rp, IfSyntax { parent: null_mut(), start: start, end: end, condition: condition.unwrap(), consequent: consequent.unwrap(), elseClause: elseClause });
+        let ret = Ref::new(_rp, IfSyntax { parent: None, start: start, end: end, condition: condition.unwrap(), consequent: consequent.unwrap(), else_clause: else_clause });
 
-        condition.unwrap().parent = ret.data as *mut SyntaxNode;
+        condition.unwrap().parent = Some(ParentNode::If(ret));
 
-        consequent.unwrap().parent = ret.data as *mut SyntaxNode;
+        consequent.unwrap().parent = Some(ParentNode::If(ret));
 
-        match elseClause {
-            Some(x) => 
-                x.parent = ret.data as *mut SyntaxNode,
+        match else_clause {
+            Some(mut x) => 
+                x.parent = Some(ParentNode::If(ret)),
             None => ()
         }
 
@@ -2084,8 +2051,8 @@ impl Parser {
 
         let start: Position = self.lexer.get_previous_position();
 
-        let successElse1 = self.lexer.parse_keyword(String::from_string_slice(_r.page, "else"));
-        if successElse1 {
+        let success_else_1 = self.lexer.parse_keyword(String::from_string_slice(_r.page, "else"));
+        if success_else_1 {
             self.lexer.advance(&_r)
         } else {
             return Ok(None)
@@ -2100,9 +2067,9 @@ impl Parser {
 
         let end: Position = self.lexer.get_position();
 
-        let ret = Ref::new(_rp, ElseSyntax { parent: null_mut(), start: start, end: end, alternative: alternative.unwrap() });
+        let ret = Ref::new(_rp, ElseSyntax { parent: None, start: start, end: end, alternative: alternative.unwrap() });
 
-        alternative.unwrap().parent = ret.data as *mut SyntaxNode;
+        alternative.unwrap().parent = Some(ParentNode::Else(ret));
 
         Ok(Some(ret))
     }
@@ -2117,15 +2084,15 @@ impl Parser {
 
         let start: Position = self.lexer.get_previous_position();
 
-        let successSwitch1 = self.lexer.parse_keyword(String::from_string_slice(_r.page, "switch"));
-        if successSwitch1 {
+        let success_switch_1 = self.lexer.parse_keyword(String::from_string_slice(_r.page, "switch"));
+        if success_switch_1 {
             self.lexer.advance(&_r)
         } else {
             return Ok(None)
         }
 
-        let successLeftParen2 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, "("));
-        if successLeftParen2 {
+        let success_left_paren_2 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, "("));
+        if success_left_paren_2 {
             self.lexer.advance(&_r)
         } else {
 
@@ -2146,8 +2113,8 @@ impl Parser {
             Some(_) => ()
         }
 
-        let successRightParen4 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, ")"));
-        if successRightParen4 {
+        let success_right_paren_4 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, ")"));
+        if success_right_paren_4 {
             self.lexer.advance(&_r)
         } else {
 
@@ -2161,8 +2128,8 @@ impl Parser {
             ))
         }
 
-        let successLeftCurly5 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, "{"));
-        if successLeftCurly5 {
+        let success_left_curly_5 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, "{"));
+        if success_left_curly_5 {
             self.lexer.advance(&_r)
         } else {
 
@@ -2183,8 +2150,8 @@ impl Parser {
             Some(_) => ()
         }
 
-        let successRightCurly7 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, "}"));
-        if successRightCurly7 {
+        let success_right_curly_7 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, "}"));
+        if success_right_curly_7 {
             self.lexer.advance(&_r)
         } else {
 
@@ -2200,13 +2167,13 @@ impl Parser {
 
         let end: Position = self.lexer.get_position();
 
-        let ret = Ref::new(_rp, SwitchSyntax { parent: null_mut(), start: start, end: end, condition: condition.unwrap(), cases: cases.unwrap() });
+        let ret = Ref::new(_rp, SwitchSyntax { parent: None, start: start, end: end, condition: condition.unwrap(), cases: cases.unwrap() });
 
-        condition.unwrap().parent = ret.data as *mut SyntaxNode;
+        condition.unwrap().parent = Some(ParentNode::Switch(ret));
 
         match cases {
-            Some(x) => for item in x.iter() {
-                item.parent = ret.data as *mut SyntaxNode;
+            Some(mut x) => for item in x.iter_mut() {
+                item.parent = Some(ParentNode::Switch(ret));
             }
             None => ()
         }
@@ -2268,14 +2235,14 @@ impl Parser {
 
         let end: Position = self.lexer.get_position();
 
-        let ret = Ref::new(_rp, SwitchCaseSyntax { parent: null_mut(), start: start, end: end, label: label.unwrap(), content: content.unwrap() });
+        let ret = Ref::new(_rp, SwitchCaseSyntax { parent: None, start: start, end: end, label: label.unwrap(), content: content.unwrap() });
 
         match *label.unwrap() {
-            CaseLabelSyntax::ItemCaseLabel(x) => x.parent = ret.data as *mut SyntaxNode,
-            CaseLabelSyntax::DefaultCaseLabel(x) => x.parent = ret.data as *mut SyntaxNode,
+            CaseLabelSyntax::ItemCaseLabel(mut x) => x.parent = Some(ParentNode::SwitchCase(ret)),
+            CaseLabelSyntax::DefaultCaseLabel(mut x) => x.parent = Some(ParentNode::SwitchCase(ret)),
         }
 
-        content.unwrap().parent = ret.data as *mut SyntaxNode;
+        content.unwrap().parent = Some(ParentNode::SwitchCase(ret));
 
         Ok(Some(ret))
     }
@@ -2317,8 +2284,8 @@ impl Parser {
 
         let start: Position = self.lexer.get_previous_position();
 
-        let successCase1 = self.lexer.parse_keyword(String::from_string_slice(_r.page, "case"));
-        if successCase1 {
+        let success_case_1 = self.lexer.parse_keyword(String::from_string_slice(_r.page, "case"));
+        if success_case_1 {
             self.lexer.advance(&_r)
         } else {
             return Ok(None)
@@ -2333,11 +2300,11 @@ impl Parser {
 
         let end: Position = self.lexer.get_position();
 
-        let ret = Ref::new(_rp, ItemCaseLabelSyntax { parent: null_mut(), start: start, end: end, items: items.unwrap() });
+        let ret = Ref::new(_rp, ItemCaseLabelSyntax { parent: None, start: start, end: end, items: items.unwrap() });
 
         match items {
-            Some(x) => for item in x.iter() {
-                item.parent = ret.data as *mut SyntaxNode;
+            Some(mut x) => for item in x.iter_mut() {
+                item.parent = Some(ParentNode::ItemCaseLabel(ret));
             }
             None => ()
         }
@@ -2390,8 +2357,8 @@ impl Parser {
             Some(_) => ()
         }
 
-        let successComma2 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, ","));
-        if successComma2 {
+        let success_comma_2 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, ","));
+        if success_comma_2 {
             self.lexer.advance(&_r)
         } else {
 ()
@@ -2399,43 +2366,15 @@ impl Parser {
 
         let end: Position = self.lexer.get_position();
 
-        let ret = Ref::new(_rp, CaseItemSyntax { parent: null_mut(), start: start, end: end, pattern: pattern.unwrap() });
+        let ret = Ref::new(_rp, CaseItemSyntax { parent: None, start: start, end: end, pattern: pattern.unwrap() });
 
         match *pattern.unwrap() {
-            CasePatternSyntax::ConstantPattern(x) => x.parent = ret.data as *mut SyntaxNode,
-            CasePatternSyntax::WildcardPattern(x) => x.parent = ret.data as *mut SyntaxNode,
-            CasePatternSyntax::NamePattern(x) => x.parent = ret.data as *mut SyntaxNode,
+            CasePatternSyntax::ConstantPattern(mut x) => x.parent = Some(ParentNode::CaseItem(ret)),
+            CasePatternSyntax::WildcardPattern(mut x) => x.parent = Some(ParentNode::CaseItem(ret)),
+            CasePatternSyntax::NamePattern(mut x) => x.parent = Some(ParentNode::CaseItem(ret)),
         }
 
         Ok(Some(ret))
-    }
-
-    pub fn parse_casepattern_list(
-        &mut self,
-        _pr: &Region,
-        _rp: *mut Page,
-        _ep: *mut Page,
-    ) -> Result<Option<Ref<Vector<Ref<CasePatternSyntax>>>>, Ref<ParserError>> {
-        let _r = Region::create(_pr);
-        let mut ret: Option<Ref<Array<Ref<CasePatternSyntax>>>> = Option::None;
-        loop {
-            let node = self.parse_casepattern(&_r, _rp, _ep)?;
-            match node {
-                None => break,
-                Some(node) => {
-                    match ret {
-                        None => ret = Some(Ref::new(_rp, Array::new())),
-                        Some(_) => (),
-                    };
-                    ret.unwrap().add(node);
-                }
-            }
-        }
-
-        match ret {
-            Some(ret) => Ok(Some(Ref::new(_rp, Vector::from_array(_rp, ret)))),
-            None => Ok(None),
-        }
     }
 
     pub fn parse_casepattern(
@@ -2492,9 +2431,9 @@ impl Parser {
 
         let end: Position = self.lexer.get_position();
 
-        let ret = Ref::new(_rp, ConstantPatternSyntax { parent: null_mut(), start: start, end: end, constant: constant.unwrap() });
+        let ret = Ref::new(_rp, ConstantPatternSyntax { parent: None, start: start, end: end, constant: constant.unwrap() });
 
-        constant.unwrap().parent = ret.data as *mut SyntaxNode;
+        constant.unwrap().parent = Some(ParentNode::ConstantPattern(ret));
 
         Ok(Some(ret))
     }
@@ -2509,8 +2448,8 @@ impl Parser {
 
         let start: Position = self.lexer.get_previous_position();
 
-        let successUnderscore1 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, "_"));
-        if successUnderscore1 {
+        let success_underscore_1 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, "_"));
+        if success_underscore_1 {
             self.lexer.advance(&_r)
         } else {
             return Ok(None)
@@ -2518,7 +2457,7 @@ impl Parser {
 
         let end: Position = self.lexer.get_position();
 
-        let ret = Ref::new(_rp, WildcardPatternSyntax { parent: null_mut(), start: start, end: end });
+        let ret = Ref::new(_rp, WildcardPatternSyntax { parent: None, start: start, end: end });
 
         Ok(Some(ret))
     }
@@ -2542,9 +2481,9 @@ impl Parser {
 
         let end: Position = self.lexer.get_position();
 
-        let ret = Ref::new(_rp, NamePatternSyntax { parent: null_mut(), start: start, end: end, name: name.unwrap() });
+        let ret = Ref::new(_rp, NamePatternSyntax { parent: None, start: start, end: end, name: name.unwrap() });
 
-        name.unwrap().parent = ret.data as *mut SyntaxNode;
+        name.unwrap().parent = Some(ParentNode::NamePattern(ret));
 
         Ok(Some(ret))
     }
@@ -2559,8 +2498,8 @@ impl Parser {
 
         let start: Position = self.lexer.get_previous_position();
 
-        let successDefault1 = self.lexer.parse_keyword(String::from_string_slice(_r.page, "default"));
-        if successDefault1 {
+        let success_default_1 = self.lexer.parse_keyword(String::from_string_slice(_r.page, "default"));
+        if success_default_1 {
             self.lexer.advance(&_r)
         } else {
             return Ok(None)
@@ -2568,7 +2507,7 @@ impl Parser {
 
         let end: Position = self.lexer.get_position();
 
-        let ret = Ref::new(_rp, DefaultCaseLabelSyntax { parent: null_mut(), start: start, end: end });
+        let ret = Ref::new(_rp, DefaultCaseLabelSyntax { parent: None, start: start, end: end });
 
         Ok(Some(ret))
     }
@@ -2583,15 +2522,15 @@ impl Parser {
 
         let start: Position = self.lexer.get_previous_position();
 
-        let successFor1 = self.lexer.parse_keyword(String::from_string_slice(_r.page, "for"));
-        if successFor1 {
+        let success_for_1 = self.lexer.parse_keyword(String::from_string_slice(_r.page, "for"));
+        if success_for_1 {
             self.lexer.advance(&_r)
         } else {
             return Ok(None)
         }
 
-        let successLeftParen2 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, "("));
-        if successLeftParen2 {
+        let success_left_paren_2 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, "("));
+        if success_left_paren_2 {
             self.lexer.advance(&_r)
         } else {
 
@@ -2631,10 +2570,10 @@ impl Parser {
             ))
         }
 
-        let typeAnnotation = self.parse_typeannotation(&_r, _rp, _ep)?;
+        let type_annotation = self.parse_typeannotation(&_r, _rp, _ep)?;
 
-        let successIn5 = self.lexer.parse_keyword(String::from_string_slice(_r.page, "in"));
-        if successIn5 {
+        let success_in_5 = self.lexer.parse_keyword(String::from_string_slice(_r.page, "in"));
+        if success_in_5 {
             self.lexer.advance(&_r)
         } else {
 
@@ -2655,8 +2594,8 @@ impl Parser {
             Some(_) => ()
         }
 
-        let successRightParen7 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, ")"));
-        if successRightParen7 {
+        let success_right_paren_7 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, ")"));
+        if success_right_paren_7 {
             self.lexer.advance(&_r)
         } else {
 
@@ -2679,19 +2618,19 @@ impl Parser {
 
         let end: Position = self.lexer.get_position();
 
-        let ret = Ref::new(_rp, ForSyntax { parent: null_mut(), start: start, end: end, index: index.unwrap(), typeAnnotation: typeAnnotation, operation: operation.unwrap(), iteration: iteration.unwrap() });
+        let ret = Ref::new(_rp, ForSyntax { parent: None, start: start, end: end, index: index.unwrap(), type_annotation: type_annotation, operation: operation.unwrap(), iteration: iteration.unwrap() });
 
-        match typeAnnotation {
-            Some(x) => 
-                x.parent = ret.data as *mut SyntaxNode,
+        match type_annotation {
+            Some(mut x) => 
+                x.parent = Some(ParentNode::For(ret)),
             None => ()
         }
 
-        operation.unwrap().parent = ret.data as *mut SyntaxNode;
+        operation.unwrap().parent = Some(ParentNode::For(ret));
 
         match *iteration.unwrap() {
-            LoopSyntax::SimpleLoop(x) => x.parent = ret.data as *mut SyntaxNode,
-            LoopSyntax::NamedLoop(x) => x.parent = ret.data as *mut SyntaxNode,
+            LoopSyntax::SimpleLoop(mut x) => x.parent = Some(ParentNode::For(ret)),
+            LoopSyntax::NamedLoop(mut x) => x.parent = Some(ParentNode::For(ret)),
         }
 
         Ok(Some(ret))
@@ -2707,15 +2646,15 @@ impl Parser {
 
         let start: Position = self.lexer.get_previous_position();
 
-        let successWhile1 = self.lexer.parse_keyword(String::from_string_slice(_r.page, "while"));
-        if successWhile1 {
+        let success_while_1 = self.lexer.parse_keyword(String::from_string_slice(_r.page, "while"));
+        if success_while_1 {
             self.lexer.advance(&_r)
         } else {
             return Ok(None)
         }
 
-        let successLeftParen2 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, "("));
-        if successLeftParen2 {
+        let success_left_paren_2 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, "("));
+        if success_left_paren_2 {
             self.lexer.advance(&_r)
         } else {
 
@@ -2736,8 +2675,8 @@ impl Parser {
             Some(_) => ()
         }
 
-        let successRightParen4 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, ")"));
-        if successRightParen4 {
+        let success_right_paren_4 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, ")"));
+        if success_right_paren_4 {
             self.lexer.advance(&_r)
         } else {
 
@@ -2760,13 +2699,13 @@ impl Parser {
 
         let end: Position = self.lexer.get_position();
 
-        let ret = Ref::new(_rp, WhileSyntax { parent: null_mut(), start: start, end: end, condition: condition.unwrap(), iteration: iteration.unwrap() });
+        let ret = Ref::new(_rp, WhileSyntax { parent: None, start: start, end: end, condition: condition.unwrap(), iteration: iteration.unwrap() });
 
-        condition.unwrap().parent = ret.data as *mut SyntaxNode;
+        condition.unwrap().parent = Some(ParentNode::While(ret));
 
         match *iteration.unwrap() {
-            LoopSyntax::SimpleLoop(x) => x.parent = ret.data as *mut SyntaxNode,
-            LoopSyntax::NamedLoop(x) => x.parent = ret.data as *mut SyntaxNode,
+            LoopSyntax::SimpleLoop(mut x) => x.parent = Some(ParentNode::While(ret)),
+            LoopSyntax::NamedLoop(mut x) => x.parent = Some(ParentNode::While(ret)),
         }
 
         Ok(Some(ret))
@@ -2782,8 +2721,8 @@ impl Parser {
 
         let start: Position = self.lexer.get_previous_position();
 
-        let successDo1 = self.lexer.parse_keyword(String::from_string_slice(_r.page, "do"));
-        if successDo1 {
+        let success_do_1 = self.lexer.parse_keyword(String::from_string_slice(_r.page, "do"));
+        if success_do_1 {
             self.lexer.advance(&_r)
         } else {
             return Ok(None)
@@ -2796,8 +2735,8 @@ impl Parser {
             Some(_) => ()
         }
 
-        let successWhile3 = self.lexer.parse_keyword(String::from_string_slice(_r.page, "while"));
-        if successWhile3 {
+        let success_while_3 = self.lexer.parse_keyword(String::from_string_slice(_r.page, "while"));
+        if success_while_3 {
             self.lexer.advance(&_r)
         } else {
 
@@ -2811,8 +2750,8 @@ impl Parser {
             ))
         }
 
-        let successLeftParen4 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, "("));
-        if successLeftParen4 {
+        let success_left_paren_4 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, "("));
+        if success_left_paren_4 {
             self.lexer.advance(&_r)
         } else {
 
@@ -2833,8 +2772,8 @@ impl Parser {
             Some(_) => ()
         }
 
-        let successRightParen6 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, ")"));
-        if successRightParen6 {
+        let success_right_paren_6 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, ")"));
+        if success_right_paren_6 {
             self.lexer.advance(&_r)
         } else {
 
@@ -2850,14 +2789,14 @@ impl Parser {
 
         let end: Position = self.lexer.get_position();
 
-        let ret = Ref::new(_rp, DoSyntax { parent: null_mut(), start: start, end: end, iteration: iteration.unwrap(), condition: condition.unwrap() });
+        let ret = Ref::new(_rp, DoSyntax { parent: None, start: start, end: end, iteration: iteration.unwrap(), condition: condition.unwrap() });
 
         match *iteration.unwrap() {
-            LoopSyntax::SimpleLoop(x) => x.parent = ret.data as *mut SyntaxNode,
-            LoopSyntax::NamedLoop(x) => x.parent = ret.data as *mut SyntaxNode,
+            LoopSyntax::SimpleLoop(mut x) => x.parent = Some(ParentNode::Do(ret)),
+            LoopSyntax::NamedLoop(mut x) => x.parent = Some(ParentNode::Do(ret)),
         }
 
-        condition.unwrap().parent = ret.data as *mut SyntaxNode;
+        condition.unwrap().parent = Some(ParentNode::Do(ret));
 
         Ok(Some(ret))
     }
@@ -2908,9 +2847,9 @@ impl Parser {
 
         let end: Position = self.lexer.get_position();
 
-        let ret = Ref::new(_rp, SimpleLoopSyntax { parent: null_mut(), start: start, end: end, code: code.unwrap() });
+        let ret = Ref::new(_rp, SimpleLoopSyntax { parent: None, start: start, end: end, code: code.unwrap() });
 
-        code.unwrap().parent = ret.data as *mut SyntaxNode;
+        code.unwrap().parent = Some(ParentNode::SimpleLoop(ret));
 
         Ok(Some(ret))
     }
@@ -2925,8 +2864,8 @@ impl Parser {
 
         let start: Position = self.lexer.get_previous_position();
 
-        let successLoop1 = self.lexer.parse_keyword(String::from_string_slice(_r.page, "loop"));
-        if successLoop1 {
+        let success_loop_1 = self.lexer.parse_keyword(String::from_string_slice(_r.page, "loop"));
+        if success_loop_1 {
             self.lexer.advance(&_r)
         } else {
             return Ok(None)
@@ -2967,9 +2906,9 @@ impl Parser {
 
         let end: Position = self.lexer.get_position();
 
-        let ret = Ref::new(_rp, NamedLoopSyntax { parent: null_mut(), start: start, end: end, name: name.unwrap(), code: code.unwrap() });
+        let ret = Ref::new(_rp, NamedLoopSyntax { parent: None, start: start, end: end, name: name.unwrap(), code: code.unwrap() });
 
-        code.unwrap().parent = ret.data as *mut SyntaxNode;
+        code.unwrap().parent = Some(ParentNode::NamedLoop(ret));
 
         Ok(Some(ret))
     }
@@ -2984,8 +2923,8 @@ impl Parser {
 
         let start: Position = self.lexer.get_previous_position();
 
-        let successThis1 = self.lexer.parse_keyword(String::from_string_slice(_r.page, "this"));
-        if successThis1 {
+        let success_this_1 = self.lexer.parse_keyword(String::from_string_slice(_r.page, "this"));
+        if success_this_1 {
             self.lexer.advance(&_r)
         } else {
             return Ok(None)
@@ -2993,7 +2932,7 @@ impl Parser {
 
         let end: Position = self.lexer.get_position();
 
-        let ret = Ref::new(_rp, ThisSyntax { parent: null_mut(), start: start, end: end });
+        let ret = Ref::new(_rp, ThisSyntax { parent: None, start: start, end: end });
 
         Ok(Some(ret))
     }
@@ -3008,15 +2947,15 @@ impl Parser {
 
         let start: Position = self.lexer.get_previous_position();
 
-        let successNew1 = self.lexer.parse_keyword(String::from_string_slice(_r.page, "new"));
-        if successNew1 {
+        let success_new_1 = self.lexer.parse_keyword(String::from_string_slice(_r.page, "new"));
+        if success_new_1 {
             self.lexer.advance(&_r)
         } else {
             return Ok(None)
         }
 
-        let typeSpec = self.parse_type(&_r, _rp, _ep)?;
-        match typeSpec {
+        let type_spec = self.parse_type(&_r, _rp, _ep)?;
+        match type_spec {
             None =>
                 return Err(Ref::new(_ep, ParserError { file_name: String::copy(_ep, self.file_name), line: self.lexer.line, column: self.lexer.column })),
             Some(_) => ()
@@ -3024,9 +2963,9 @@ impl Parser {
 
         let end: Position = self.lexer.get_position();
 
-        let ret = Ref::new(_rp, NewSyntax { parent: null_mut(), start: start, end: end, typeSpec: typeSpec.unwrap() });
+        let ret = Ref::new(_rp, NewSyntax { parent: None, start: start, end: end, type_spec: type_spec.unwrap() });
 
-        typeSpec.unwrap().parent = ret.data as *mut SyntaxNode;
+        type_spec.unwrap().parent = Some(ParentNode::New(ret));
 
         Ok(Some(ret))
     }
@@ -3041,19 +2980,19 @@ impl Parser {
 
         let start: Position = self.lexer.get_previous_position();
 
-        let successLeftParen1 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, "("));
-        if successLeftParen1 {
+        let success_left_paren_1 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, "("));
+        if success_left_paren_1 {
             self.lexer.advance(&_r)
         } else {
             return Ok(None)
         }
 
-        let firstOp = self.parse_operation(&_r, _rp, _ep)?;
+        let first_op = self.parse_operation(&_r, _rp, _ep)?;
 
-        let additionalOps = self.parse_item_list(&_r, _rp, _ep)?;
+        let additional_ops = self.parse_item_list(&_r, _rp, _ep)?;
 
-        let successRightParen4 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, ")"));
-        if successRightParen4 {
+        let success_right_paren_4 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, ")"));
+        if success_right_paren_4 {
             self.lexer.advance(&_r)
         } else {
 
@@ -3069,17 +3008,17 @@ impl Parser {
 
         let end: Position = self.lexer.get_position();
 
-        let ret = Ref::new(_rp, ObjectSyntax { parent: null_mut(), start: start, end: end, firstOp: firstOp, additionalOps: additionalOps });
+        let ret = Ref::new(_rp, ObjectSyntax { parent: None, start: start, end: end, first_op: first_op, additional_ops: additional_ops });
 
-        match firstOp {
-            Some(x) => 
-                x.parent = ret.data as *mut SyntaxNode,
+        match first_op {
+            Some(mut x) => 
+                x.parent = Some(ParentNode::Object(ret)),
             None => ()
         }
 
-        match additionalOps {
-            Some(x) => for item in x.iter() {
-                item.parent = ret.data as *mut SyntaxNode;
+        match additional_ops {
+            Some(mut x) => for item in x.iter_mut() {
+                item.parent = Some(ParentNode::Object(ret));
             }
             None => ()
         }
@@ -3097,19 +3036,19 @@ impl Parser {
 
         let start: Position = self.lexer.get_previous_position();
 
-        let successLeftBracket1 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, "["));
-        if successLeftBracket1 {
+        let success_left_bracket_1 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, "["));
+        if success_left_bracket_1 {
             self.lexer.advance(&_r)
         } else {
             return Ok(None)
         }
 
-        let firstOp = self.parse_operation(&_r, _rp, _ep)?;
+        let first_op = self.parse_operation(&_r, _rp, _ep)?;
 
-        let additionalOps = self.parse_item_list(&_r, _rp, _ep)?;
+        let additional_ops = self.parse_item_list(&_r, _rp, _ep)?;
 
-        let successRightBracket4 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, "]"));
-        if successRightBracket4 {
+        let success_right_bracket_4 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, "]"));
+        if success_right_bracket_4 {
             self.lexer.advance(&_r)
         } else {
 
@@ -3125,17 +3064,17 @@ impl Parser {
 
         let end: Position = self.lexer.get_position();
 
-        let ret = Ref::new(_rp, ArraySyntax { parent: null_mut(), start: start, end: end, firstOp: firstOp, additionalOps: additionalOps });
+        let ret = Ref::new(_rp, ArraySyntax { parent: None, start: start, end: end, first_op: first_op, additional_ops: additional_ops });
 
-        match firstOp {
-            Some(x) => 
-                x.parent = ret.data as *mut SyntaxNode,
+        match first_op {
+            Some(mut x) => 
+                x.parent = Some(ParentNode::Array(ret)),
             None => ()
         }
 
-        match additionalOps {
-            Some(x) => for item in x.iter() {
-                item.parent = ret.data as *mut SyntaxNode;
+        match additional_ops {
+            Some(mut x) => for item in x.iter_mut() {
+                item.parent = Some(ParentNode::Array(ret));
             }
             None => ()
         }
@@ -3181,8 +3120,8 @@ impl Parser {
 
         let start: Position = self.lexer.get_previous_position();
 
-        let successComma1 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, ","));
-        if successComma1 {
+        let success_comma_1 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, ","));
+        if success_comma_1 {
             self.lexer.advance(&_r)
         } else {
             return Ok(None)
@@ -3197,9 +3136,9 @@ impl Parser {
 
         let end: Position = self.lexer.get_position();
 
-        let ret = Ref::new(_rp, ItemSyntax { parent: null_mut(), start: start, end: end, operation: operation.unwrap() });
+        let ret = Ref::new(_rp, ItemSyntax { parent: None, start: start, end: end, operation: operation.unwrap() });
 
-        operation.unwrap().parent = ret.data as *mut SyntaxNode;
+        operation.unwrap().parent = Some(ParentNode::Item(ret));
 
         Ok(Some(ret))
     }
@@ -3214,15 +3153,15 @@ impl Parser {
 
         let start: Position = self.lexer.get_previous_position();
 
-        let successSizeof1 = self.lexer.parse_keyword(String::from_string_slice(_r.page, "sizeof"));
-        if successSizeof1 {
+        let success_sizeof_1 = self.lexer.parse_keyword(String::from_string_slice(_r.page, "sizeof"));
+        if success_sizeof_1 {
             self.lexer.advance(&_r)
         } else {
             return Ok(None)
         }
 
-        let typeSpec = self.parse_type(&_r, _rp, _ep)?;
-        match typeSpec {
+        let type_spec = self.parse_type(&_r, _rp, _ep)?;
+        match type_spec {
             None =>
                 return Err(Ref::new(_ep, ParserError { file_name: String::copy(_ep, self.file_name), line: self.lexer.line, column: self.lexer.column })),
             Some(_) => ()
@@ -3230,9 +3169,9 @@ impl Parser {
 
         let end: Position = self.lexer.get_position();
 
-        let ret = Ref::new(_rp, SizeOfSyntax { parent: null_mut(), start: start, end: end, typeSpec: typeSpec.unwrap() });
+        let ret = Ref::new(_rp, SizeOfSyntax { parent: None, start: start, end: end, type_spec: type_spec.unwrap() });
 
-        typeSpec.unwrap().parent = ret.data as *mut SyntaxNode;
+        type_spec.unwrap().parent = Some(ParentNode::SizeOf(ret));
 
         Ok(Some(ret))
     }
@@ -3247,8 +3186,8 @@ impl Parser {
 
         let start: Position = self.lexer.get_previous_position();
 
-        let successBreak1 = self.lexer.parse_keyword(String::from_string_slice(_r.page, "break"));
-        if successBreak1 {
+        let success_break_1 = self.lexer.parse_keyword(String::from_string_slice(_r.page, "break"));
+        if success_break_1 {
             self.lexer.advance(&_r)
         } else {
             return Ok(None)
@@ -3264,8 +3203,8 @@ impl Parser {
             None => ()
         }
 
-        let successSemicolon3 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, ";"));
-        if successSemicolon3 {
+        let success_semicolon_3 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, ";"));
+        if success_semicolon_3 {
             self.lexer.advance(&_r)
         } else {
 ()
@@ -3273,7 +3212,7 @@ impl Parser {
 
         let end: Position = self.lexer.get_position();
 
-        let ret = Ref::new(_rp, BreakSyntax { parent: null_mut(), start: start, end: end, iteration: iteration });
+        let ret = Ref::new(_rp, BreakSyntax { parent: None, start: start, end: end, iteration: iteration });
 
         Ok(Some(ret))
     }
@@ -3288,8 +3227,8 @@ impl Parser {
 
         let start: Position = self.lexer.get_previous_position();
 
-        let successContinue1 = self.lexer.parse_keyword(String::from_string_slice(_r.page, "continue"));
-        if successContinue1 {
+        let success_continue_1 = self.lexer.parse_keyword(String::from_string_slice(_r.page, "continue"));
+        if success_continue_1 {
             self.lexer.advance(&_r)
         } else {
             return Ok(None)
@@ -3305,8 +3244,8 @@ impl Parser {
             None => ()
         }
 
-        let successSemicolon3 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, ";"));
-        if successSemicolon3 {
+        let success_semicolon_3 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, ";"));
+        if success_semicolon_3 {
             self.lexer.advance(&_r)
         } else {
 ()
@@ -3314,7 +3253,7 @@ impl Parser {
 
         let end: Position = self.lexer.get_position();
 
-        let ret = Ref::new(_rp, ContinueSyntax { parent: null_mut(), start: start, end: end, iteration: iteration });
+        let ret = Ref::new(_rp, ContinueSyntax { parent: None, start: start, end: end, iteration: iteration });
 
         Ok(Some(ret))
     }
@@ -3329,8 +3268,8 @@ impl Parser {
 
         let start: Position = self.lexer.get_previous_position();
 
-        let successReturn1 = self.lexer.parse_keyword(String::from_string_slice(_r.page, "return"));
-        if successReturn1 {
+        let success_return_1 = self.lexer.parse_keyword(String::from_string_slice(_r.page, "return"));
+        if success_return_1 {
             self.lexer.advance(&_r)
         } else {
             return Ok(None)
@@ -3340,11 +3279,11 @@ impl Parser {
 
         let end: Position = self.lexer.get_position();
 
-        let ret = Ref::new(_rp, ReturnSyntax { parent: null_mut(), start: start, end: end, result: result });
+        let ret = Ref::new(_rp, ReturnSyntax { parent: None, start: start, end: end, result: result });
 
         match result {
-            Some(x) => 
-                x.parent = ret.data as *mut SyntaxNode,
+            Some(mut x) => 
+                x.parent = Some(ParentNode::Return(ret)),
             None => ()
         }
 
@@ -3361,8 +3300,8 @@ impl Parser {
 
         let start: Position = self.lexer.get_previous_position();
 
-        let successThrow1 = self.lexer.parse_keyword(String::from_string_slice(_r.page, "throw"));
-        if successThrow1 {
+        let success_throw_1 = self.lexer.parse_keyword(String::from_string_slice(_r.page, "throw"));
+        if success_throw_1 {
             self.lexer.advance(&_r)
         } else {
             return Ok(None)
@@ -3377,9 +3316,9 @@ impl Parser {
 
         let end: Position = self.lexer.get_position();
 
-        let ret = Ref::new(_rp, ThrowSyntax { parent: null_mut(), start: start, end: end, exception: exception.unwrap() });
+        let ret = Ref::new(_rp, ThrowSyntax { parent: None, start: start, end: end, exception: exception.unwrap() });
 
-        exception.unwrap().parent = ret.data as *mut SyntaxNode;
+        exception.unwrap().parent = Some(ParentNode::Throw(ret));
 
         Ok(Some(ret))
     }
@@ -3394,8 +3333,8 @@ impl Parser {
 
         let start: Position = self.lexer.get_previous_position();
 
-        let successClass1 = self.lexer.parse_keyword(String::from_string_slice(_r.page, "class"));
-        if successClass1 {
+        let success_class_1 = self.lexer.parse_keyword(String::from_string_slice(_r.page, "class"));
+        if success_class_1 {
             self.lexer.advance(&_r)
         } else {
             return Ok(None)
@@ -3410,7 +3349,7 @@ impl Parser {
 
         let generics = self.parse_genericparameters(&_r, _rp, _ep)?;
 
-        let baseClass = self.parse_extends(&_r, _rp, _ep)?;
+        let base_class = self.parse_extends(&_r, _rp, _ep)?;
 
         let contents = self.parse_structure(&_r, _rp, _ep)?;
 
@@ -3418,31 +3357,31 @@ impl Parser {
 
         let end: Position = self.lexer.get_position();
 
-        let ret = Ref::new(_rp, ClassSyntax { parent: null_mut(), start: start, end: end, name: name.unwrap(), generics: generics, baseClass: baseClass, contents: contents, body: body });
+        let ret = Ref::new(_rp, ClassSyntax { parent: None, start: start, end: end, name: name.unwrap(), generics: generics, base_class: base_class, contents: contents, body: body });
 
-        name.unwrap().parent = ret.data as *mut SyntaxNode;
+        name.unwrap().parent = Some(ParentNode::Class(ret));
 
         match generics {
-            Some(x) => 
-                x.parent = ret.data as *mut SyntaxNode,
+            Some(mut x) => 
+                x.parent = Some(ParentNode::Class(ret)),
             None => ()
         }
 
-        match baseClass {
-            Some(x) => 
-                x.parent = ret.data as *mut SyntaxNode,
+        match base_class {
+            Some(mut x) => 
+                x.parent = Some(ParentNode::Class(ret)),
             None => ()
         }
 
         match contents {
-            Some(x) => 
-                x.parent = ret.data as *mut SyntaxNode,
+            Some(mut x) => 
+                x.parent = Some(ParentNode::Class(ret)),
             None => ()
         }
 
         match body {
-            Some(x) => 
-                x.parent = ret.data as *mut SyntaxNode,
+            Some(mut x) => 
+                x.parent = Some(ParentNode::Class(ret)),
             None => ()
         }
 
@@ -3459,8 +3398,8 @@ impl Parser {
 
         let start: Position = self.lexer.get_previous_position();
 
-        let successLeftBracket1 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, "["));
-        if successLeftBracket1 {
+        let success_left_bracket_1 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, "["));
+        if success_left_bracket_1 {
             self.lexer.advance(&_r)
         } else {
             return Ok(None)
@@ -3492,10 +3431,10 @@ impl Parser {
             ))
         }
 
-        let additionalGenerics = self.parse_genericparameter_list(&_r, _rp, _ep)?;
+        let additional_generics = self.parse_genericparameter_list(&_r, _rp, _ep)?;
 
-        let successRightBracket4 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, "]"));
-        if successRightBracket4 {
+        let success_right_bracket_4 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, "]"));
+        if success_right_bracket_4 {
             self.lexer.advance(&_r)
         } else {
 
@@ -3511,11 +3450,11 @@ impl Parser {
 
         let end: Position = self.lexer.get_position();
 
-        let ret = Ref::new(_rp, GenericParametersSyntax { parent: null_mut(), start: start, end: end, name: name.unwrap(), additionalGenerics: additionalGenerics });
+        let ret = Ref::new(_rp, GenericParametersSyntax { parent: None, start: start, end: end, name: name.unwrap(), additional_generics: additional_generics });
 
-        match additionalGenerics {
-            Some(x) => for item in x.iter() {
-                item.parent = ret.data as *mut SyntaxNode;
+        match additional_generics {
+            Some(mut x) => for item in x.iter_mut() {
+                item.parent = Some(ParentNode::GenericParameters(ret));
             }
             None => ()
         }
@@ -3561,8 +3500,8 @@ impl Parser {
 
         let start: Position = self.lexer.get_previous_position();
 
-        let successComma1 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, ","));
-        if successComma1 {
+        let success_comma_1 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, ","));
+        if success_comma_1 {
             self.lexer.advance(&_r)
         } else {
             return Ok(None)
@@ -3596,7 +3535,7 @@ impl Parser {
 
         let end: Position = self.lexer.get_position();
 
-        let ret = Ref::new(_rp, GenericParameterSyntax { parent: null_mut(), start: start, end: end, name: name.unwrap() });
+        let ret = Ref::new(_rp, GenericParameterSyntax { parent: None, start: start, end: end, name: name.unwrap() });
 
         Ok(Some(ret))
     }
@@ -3611,8 +3550,8 @@ impl Parser {
 
         let start: Position = self.lexer.get_previous_position();
 
-        let successExtends1 = self.lexer.parse_keyword(String::from_string_slice(_r.page, "extends"));
-        if successExtends1 {
+        let success_extends_1 = self.lexer.parse_keyword(String::from_string_slice(_r.page, "extends"));
+        if success_extends_1 {
             self.lexer.advance(&_r)
         } else {
             return Ok(None)
@@ -3627,9 +3566,9 @@ impl Parser {
 
         let end: Position = self.lexer.get_position();
 
-        let ret = Ref::new(_rp, ExtendsSyntax { parent: null_mut(), start: start, end: end, name: name.unwrap() });
+        let ret = Ref::new(_rp, ExtendsSyntax { parent: None, start: start, end: end, name: name.unwrap() });
 
-        name.unwrap().parent = ret.data as *mut SyntaxNode;
+        name.unwrap().parent = Some(ParentNode::Extends(ret));
 
         Ok(Some(ret))
     }
@@ -3644,8 +3583,8 @@ impl Parser {
 
         let start: Position = self.lexer.get_previous_position();
 
-        let successLeftParen1 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, "("));
-        if successLeftParen1 {
+        let success_left_paren_1 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, "("));
+        if success_left_paren_1 {
             self.lexer.advance(&_r)
         } else {
             return Ok(None)
@@ -3653,8 +3592,8 @@ impl Parser {
 
         let components = self.parse_component_list(&_r, _rp, _ep)?;
 
-        let successRightParen3 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, ")"));
-        if successRightParen3 {
+        let success_right_paren_3 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, ")"));
+        if success_right_paren_3 {
             self.lexer.advance(&_r)
         } else {
 
@@ -3670,11 +3609,11 @@ impl Parser {
 
         let end: Position = self.lexer.get_position();
 
-        let ret = Ref::new(_rp, StructureSyntax { parent: null_mut(), start: start, end: end, components: components });
+        let ret = Ref::new(_rp, StructureSyntax { parent: None, start: start, end: end, components: components });
 
         match components {
-            Some(x) => for item in x.iter() {
-                item.parent = ret.data as *mut SyntaxNode;
+            Some(mut x) => for item in x.iter_mut() {
+                item.parent = Some(ParentNode::Structure(ret));
             }
             None => ()
         }
@@ -3730,10 +3669,10 @@ impl Parser {
             None =>             return Ok(None)
         }
 
-        let typeAnnotation = self.parse_typeannotation(&_r, _rp, _ep)?;
+        let type_annotation = self.parse_typeannotation(&_r, _rp, _ep)?;
 
-        let successComma3 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, ","));
-        if successComma3 {
+        let success_comma_3 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, ","));
+        if success_comma_3 {
             self.lexer.advance(&_r)
         } else {
 ()
@@ -3741,11 +3680,11 @@ impl Parser {
 
         let end: Position = self.lexer.get_position();
 
-        let ret = Ref::new(_rp, ComponentSyntax { parent: null_mut(), start: start, end: end, name: name.unwrap(), typeAnnotation: typeAnnotation });
+        let ret = Ref::new(_rp, ComponentSyntax { parent: None, start: start, end: end, name: name.unwrap(), type_annotation: type_annotation });
 
-        match typeAnnotation {
-            Some(x) => 
-                x.parent = ret.data as *mut SyntaxNode,
+        match type_annotation {
+            Some(mut x) => 
+                x.parent = Some(ParentNode::Component(ret)),
             None => ()
         }
 
@@ -3762,8 +3701,8 @@ impl Parser {
 
         let start: Position = self.lexer.get_previous_position();
 
-        let successLeftCurly1 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, "{"));
-        if successLeftCurly1 {
+        let success_left_curly_1 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, "{"));
+        if success_left_curly_1 {
             self.lexer.advance(&_r)
         } else {
             return Ok(None)
@@ -3771,8 +3710,8 @@ impl Parser {
 
         let members = self.parse_classmember_list(&_r, _rp, _ep)?;
 
-        let successRightCurly3 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, "}"));
-        if successRightCurly3 {
+        let success_right_curly_3 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, "}"));
+        if success_right_curly_3 {
             self.lexer.advance(&_r)
         } else {
 
@@ -3788,20 +3727,20 @@ impl Parser {
 
         let end: Position = self.lexer.get_position();
 
-        let ret = Ref::new(_rp, ClassBodySyntax { parent: null_mut(), start: start, end: end, members: members });
+        let ret = Ref::new(_rp, ClassBodySyntax { parent: None, start: start, end: end, members: members });
 
         match members {
-            Some(x) => for item in x.iter() {
+            Some(mut x) => for item in x.iter_mut() {
                 match **item {
-                    ClassMemberSyntax::LetMember(y) => y.parent = ret.data as *mut SyntaxNode,
-                    ClassMemberSyntax::VarMember(y) => y.parent = ret.data as *mut SyntaxNode,
-                    ClassMemberSyntax::MutableMember(y) => y.parent = ret.data as *mut SyntaxNode,
-                    ClassMemberSyntax::SetInitialization(y) => y.parent = ret.data as *mut SyntaxNode,
-                    ClassMemberSyntax::Method(y) => y.parent = ret.data as *mut SyntaxNode,
-                    ClassMemberSyntax::StaticFunction(y) => y.parent = ret.data as *mut SyntaxNode,
-                    ClassMemberSyntax::Operator(y) => y.parent = ret.data as *mut SyntaxNode,
-                    ClassMemberSyntax::Initializer(y) => y.parent = ret.data as *mut SyntaxNode,
-                    ClassMemberSyntax::Allocator(y) => y.parent = ret.data as *mut SyntaxNode,
+                    ClassMemberSyntax::LetMember(mut y) => y.parent = Some(ParentNode::ClassBody(ret)),
+                    ClassMemberSyntax::VarMember(mut y) => y.parent = Some(ParentNode::ClassBody(ret)),
+                    ClassMemberSyntax::MutableMember(mut y) => y.parent = Some(ParentNode::ClassBody(ret)),
+                    ClassMemberSyntax::SetInitialization(mut y) => y.parent = Some(ParentNode::ClassBody(ret)),
+                    ClassMemberSyntax::Method(mut y) => y.parent = Some(ParentNode::ClassBody(ret)),
+                    ClassMemberSyntax::StaticFunction(mut y) => y.parent = Some(ParentNode::ClassBody(ret)),
+                    ClassMemberSyntax::Operator(mut y) => y.parent = Some(ParentNode::ClassBody(ret)),
+                    ClassMemberSyntax::Initializer(mut y) => y.parent = Some(ParentNode::ClassBody(ret)),
+                    ClassMemberSyntax::Allocator(mut y) => y.parent = Some(ParentNode::ClassBody(ret)),
                 }
             }
             None => ()
@@ -3940,9 +3879,9 @@ impl Parser {
 
         let end: Position = self.lexer.get_position();
 
-        let ret = Ref::new(_rp, LetMemberSyntax { parent: null_mut(), start: start, end: end, declaration: declaration.unwrap() });
+        let ret = Ref::new(_rp, LetMemberSyntax { parent: None, start: start, end: end, declaration: declaration.unwrap() });
 
-        declaration.unwrap().parent = ret.data as *mut SyntaxNode;
+        declaration.unwrap().parent = Some(ParentNode::LetMember(ret));
 
         Ok(Some(ret))
     }
@@ -3966,9 +3905,9 @@ impl Parser {
 
         let end: Position = self.lexer.get_position();
 
-        let ret = Ref::new(_rp, VarMemberSyntax { parent: null_mut(), start: start, end: end, declaration: declaration.unwrap() });
+        let ret = Ref::new(_rp, VarMemberSyntax { parent: None, start: start, end: end, declaration: declaration.unwrap() });
 
-        declaration.unwrap().parent = ret.data as *mut SyntaxNode;
+        declaration.unwrap().parent = Some(ParentNode::VarMember(ret));
 
         Ok(Some(ret))
     }
@@ -3992,9 +3931,9 @@ impl Parser {
 
         let end: Position = self.lexer.get_position();
 
-        let ret = Ref::new(_rp, MutableMemberSyntax { parent: null_mut(), start: start, end: end, declaration: declaration.unwrap() });
+        let ret = Ref::new(_rp, MutableMemberSyntax { parent: None, start: start, end: end, declaration: declaration.unwrap() });
 
-        declaration.unwrap().parent = ret.data as *mut SyntaxNode;
+        declaration.unwrap().parent = Some(ParentNode::MutableMember(ret));
 
         Ok(Some(ret))
     }
@@ -4018,9 +3957,9 @@ impl Parser {
 
         let end: Position = self.lexer.get_position();
 
-        let ret = Ref::new(_rp, SetInitializationSyntax { parent: null_mut(), start: start, end: end, definition: definition.unwrap() });
+        let ret = Ref::new(_rp, SetInitializationSyntax { parent: None, start: start, end: end, definition: definition.unwrap() });
 
-        definition.unwrap().parent = ret.data as *mut SyntaxNode;
+        definition.unwrap().parent = Some(ParentNode::SetInitialization(ret));
 
         Ok(Some(ret))
     }
@@ -4035,8 +3974,8 @@ impl Parser {
 
         let start: Position = self.lexer.get_previous_position();
 
-        let successMethod1 = self.lexer.parse_keyword(String::from_string_slice(_r.page, "method"));
-        if successMethod1 {
+        let success_method_1 = self.lexer.parse_keyword(String::from_string_slice(_r.page, "method"));
+        if success_method_1 {
             self.lexer.advance(&_r)
         } else {
             return Ok(None)
@@ -4051,9 +3990,9 @@ impl Parser {
 
         let end: Position = self.lexer.get_position();
 
-        let ret = Ref::new(_rp, MethodSyntax { parent: null_mut(), start: start, end: end, procedure: procedure.unwrap() });
+        let ret = Ref::new(_rp, MethodSyntax { parent: None, start: start, end: end, procedure: procedure.unwrap() });
 
-        procedure.unwrap().parent = ret.data as *mut SyntaxNode;
+        procedure.unwrap().parent = Some(ParentNode::Method(ret));
 
         Ok(Some(ret))
     }
@@ -4077,9 +4016,9 @@ impl Parser {
 
         let end: Position = self.lexer.get_position();
 
-        let ret = Ref::new(_rp, StaticFunctionSyntax { parent: null_mut(), start: start, end: end, procedure: procedure.unwrap() });
+        let ret = Ref::new(_rp, StaticFunctionSyntax { parent: None, start: start, end: end, procedure: procedure.unwrap() });
 
-        procedure.unwrap().parent = ret.data as *mut SyntaxNode;
+        procedure.unwrap().parent = Some(ParentNode::StaticFunction(ret));
 
         Ok(Some(ret))
     }
@@ -4094,8 +4033,8 @@ impl Parser {
 
         let start: Position = self.lexer.get_previous_position();
 
-        let successOperator1 = self.lexer.parse_keyword(String::from_string_slice(_r.page, "operator"));
-        if successOperator1 {
+        let success_operator_1 = self.lexer.parse_keyword(String::from_string_slice(_r.page, "operator"));
+        if success_operator_1 {
             self.lexer.advance(&_r)
         } else {
             return Ok(None)
@@ -4110,9 +4049,9 @@ impl Parser {
 
         let end: Position = self.lexer.get_position();
 
-        let ret = Ref::new(_rp, OperatorSyntax { parent: null_mut(), start: start, end: end, routine: routine.unwrap() });
+        let ret = Ref::new(_rp, OperatorSyntax { parent: None, start: start, end: end, routine: routine.unwrap() });
 
-        routine.unwrap().parent = ret.data as *mut SyntaxNode;
+        routine.unwrap().parent = Some(ParentNode::Operator(ret));
 
         Ok(Some(ret))
     }
@@ -4127,8 +4066,8 @@ impl Parser {
 
         let start: Position = self.lexer.get_previous_position();
 
-        let successInitializer1 = self.lexer.parse_keyword(String::from_string_slice(_r.page, "initializer"));
-        if successInitializer1 {
+        let success_initializer_1 = self.lexer.parse_keyword(String::from_string_slice(_r.page, "initializer"));
+        if success_initializer_1 {
             self.lexer.advance(&_r)
         } else {
             return Ok(None)
@@ -4145,15 +4084,15 @@ impl Parser {
 
         let end: Position = self.lexer.get_position();
 
-        let ret = Ref::new(_rp, InitializerSyntax { parent: null_mut(), start: start, end: end, input: input, body: body.unwrap() });
+        let ret = Ref::new(_rp, InitializerSyntax { parent: None, start: start, end: end, input: input, body: body.unwrap() });
 
         match input {
-            Some(x) => 
-                x.parent = ret.data as *mut SyntaxNode,
+            Some(mut x) => 
+                x.parent = Some(ParentNode::Initializer(ret)),
             None => ()
         }
 
-        body.unwrap().parent = ret.data as *mut SyntaxNode;
+        body.unwrap().parent = Some(ParentNode::Initializer(ret));
 
         Ok(Some(ret))
     }
@@ -4168,8 +4107,8 @@ impl Parser {
 
         let start: Position = self.lexer.get_previous_position();
 
-        let successAllocator1 = self.lexer.parse_keyword(String::from_string_slice(_r.page, "allocator"));
-        if successAllocator1 {
+        let success_allocator_1 = self.lexer.parse_keyword(String::from_string_slice(_r.page, "allocator"));
+        if success_allocator_1 {
             self.lexer.advance(&_r)
         } else {
             return Ok(None)
@@ -4186,15 +4125,15 @@ impl Parser {
 
         let end: Position = self.lexer.get_position();
 
-        let ret = Ref::new(_rp, AllocatorSyntax { parent: null_mut(), start: start, end: end, input: input, body: body.unwrap() });
+        let ret = Ref::new(_rp, AllocatorSyntax { parent: None, start: start, end: end, input: input, body: body.unwrap() });
 
         match input {
-            Some(x) => 
-                x.parent = ret.data as *mut SyntaxNode,
+            Some(mut x) => 
+                x.parent = Some(ParentNode::Allocator(ret)),
             None => ()
         }
 
-        body.unwrap().parent = ret.data as *mut SyntaxNode;
+        body.unwrap().parent = Some(ParentNode::Allocator(ret));
 
         Ok(Some(ret))
     }
@@ -4209,15 +4148,15 @@ impl Parser {
 
         let start: Position = self.lexer.get_previous_position();
 
-        let successColon1 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, ":"));
-        if successColon1 {
+        let success_colon_1 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, ":"));
+        if success_colon_1 {
             self.lexer.advance(&_r)
         } else {
             return Ok(None)
         }
 
-        let typeSpec = self.parse_typespec(&_r, _rp, _ep)?;
-        match typeSpec {
+        let type_spec = self.parse_typespec(&_r, _rp, _ep)?;
+        match type_spec {
             None =>
                 return Err(Ref::new(_ep, ParserError { file_name: String::copy(_ep, self.file_name), line: self.lexer.line, column: self.lexer.column })),
             Some(_) => ()
@@ -4225,42 +4164,14 @@ impl Parser {
 
         let end: Position = self.lexer.get_position();
 
-        let ret = Ref::new(_rp, TypeAnnotationSyntax { parent: null_mut(), start: start, end: end, typeSpec: typeSpec.unwrap() });
+        let ret = Ref::new(_rp, TypeAnnotationSyntax { parent: None, start: start, end: end, type_spec: type_spec.unwrap() });
 
-        match *typeSpec.unwrap() {
-            TypeSpecSyntax::Type(x) => x.parent = ret.data as *mut SyntaxNode,
-            TypeSpecSyntax::Variant(x) => x.parent = ret.data as *mut SyntaxNode,
+        match *type_spec.unwrap() {
+            TypeSpecSyntax::Type(mut x) => x.parent = Some(ParentNode::TypeAnnotation(ret)),
+            TypeSpecSyntax::Variant(mut x) => x.parent = Some(ParentNode::TypeAnnotation(ret)),
         }
 
         Ok(Some(ret))
-    }
-
-    pub fn parse_typespec_list(
-        &mut self,
-        _pr: &Region,
-        _rp: *mut Page,
-        _ep: *mut Page,
-    ) -> Result<Option<Ref<Vector<Ref<TypeSpecSyntax>>>>, Ref<ParserError>> {
-        let _r = Region::create(_pr);
-        let mut ret: Option<Ref<Array<Ref<TypeSpecSyntax>>>> = Option::None;
-        loop {
-            let node = self.parse_typespec(&_r, _rp, _ep)?;
-            match node {
-                None => break,
-                Some(node) => {
-                    match ret {
-                        None => ret = Some(Ref::new(_rp, Array::new())),
-                        Some(_) => (),
-                    };
-                    ret.unwrap().add(node);
-                }
-            }
-        }
-
-        match ret {
-            Some(ret) => Ok(Some(Ref::new(_rp, Vector::from_array(_rp, ret)))),
-            None => Ok(None),
-        }
     }
 
     pub fn parse_typespec(
@@ -4339,33 +4250,33 @@ impl Parser {
 
         let optional = self.parse_optional(&_r, _rp, _ep)?;
 
-        let lifeTime = self.parse_lifetime(&_r, _rp, _ep)?;
+        let life_time = self.parse_lifetime(&_r, _rp, _ep)?;
 
         let end: Position = self.lexer.get_position();
 
-        let ret = Ref::new(_rp, TypeSyntax { parent: null_mut(), start: start, end: end, name: name.unwrap(), generics: generics, optional: optional, lifeTime: lifeTime });
+        let ret = Ref::new(_rp, TypeSyntax { parent: None, start: start, end: end, name: name.unwrap(), generics: generics, optional: optional, life_time: life_time });
 
-        name.unwrap().parent = ret.data as *mut SyntaxNode;
+        name.unwrap().parent = Some(ParentNode::Type(ret));
 
         match generics {
-            Some(x) => 
-                x.parent = ret.data as *mut SyntaxNode,
+            Some(mut x) => 
+                x.parent = Some(ParentNode::Type(ret)),
             None => ()
         }
 
         match optional {
-            Some(x) => 
-                x.parent = ret.data as *mut SyntaxNode,
+            Some(mut x) => 
+                x.parent = Some(ParentNode::Type(ret)),
             None => ()
         }
 
-        match lifeTime {
+        match life_time {
             Some(x) => 
                 match *x {
-                    LifeTimeSyntax::Root(y) => y.parent = ret.data as *mut SyntaxNode,
-                    LifeTimeSyntax::Local(y) => y.parent = ret.data as *mut SyntaxNode,
-                    LifeTimeSyntax::Reference(y) => y.parent = ret.data as *mut SyntaxNode,
-                    LifeTimeSyntax::Thrown(y) => y.parent = ret.data as *mut SyntaxNode,
+                    LifeTimeSyntax::Root(mut y) => y.parent = Some(ParentNode::Type(ret)),
+                    LifeTimeSyntax::Local(mut y) => y.parent = Some(ParentNode::Type(ret)),
+                    LifeTimeSyntax::Reference(mut y) => y.parent = Some(ParentNode::Type(ret)),
+                    LifeTimeSyntax::Thrown(mut y) => y.parent = Some(ParentNode::Type(ret)),
                 },
             None => ()
         }
@@ -4383,8 +4294,8 @@ impl Parser {
 
         let start: Position = self.lexer.get_previous_position();
 
-        let successLeftParen1 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, "("));
-        if successLeftParen1 {
+        let success_left_paren_1 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, "("));
+        if success_left_paren_1 {
             self.lexer.advance(&_r)
         } else {
             return Ok(None)
@@ -4392,8 +4303,8 @@ impl Parser {
 
         let types = self.parse_type_list(&_r, _rp, _ep)?;
 
-        let successRightParen3 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, ")"));
-        if successRightParen3 {
+        let success_right_paren_3 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, ")"));
+        if success_right_paren_3 {
             self.lexer.advance(&_r)
         } else {
 
@@ -4409,11 +4320,11 @@ impl Parser {
 
         let end: Position = self.lexer.get_position();
 
-        let ret = Ref::new(_rp, VariantSyntax { parent: null_mut(), start: start, end: end, types: types });
+        let ret = Ref::new(_rp, VariantSyntax { parent: None, start: start, end: end, types: types });
 
         match types {
-            Some(x) => for item in x.iter() {
-                item.parent = ret.data as *mut SyntaxNode;
+            Some(mut x) => for item in x.iter_mut() {
+                item.parent = Some(ParentNode::Variant(ret));
             }
             None => ()
         }
@@ -4431,15 +4342,15 @@ impl Parser {
 
         let start: Position = self.lexer.get_previous_position();
 
-        let successThrows1 = self.lexer.parse_keyword(String::from_string_slice(_r.page, "throws"));
-        if successThrows1 {
+        let success_throws_1 = self.lexer.parse_keyword(String::from_string_slice(_r.page, "throws"));
+        if success_throws_1 {
             self.lexer.advance(&_r)
         } else {
             return Ok(None)
         }
 
-        let throwsType = self.parse_typespec(&_r, _rp, _ep)?;
-        match throwsType {
+        let throws_type = self.parse_typespec(&_r, _rp, _ep)?;
+        match throws_type {
             None =>
                 return Err(Ref::new(_ep, ParserError { file_name: String::copy(_ep, self.file_name), line: self.lexer.line, column: self.lexer.column })),
             Some(_) => ()
@@ -4447,11 +4358,11 @@ impl Parser {
 
         let end: Position = self.lexer.get_position();
 
-        let ret = Ref::new(_rp, ThrowsSyntax { parent: null_mut(), start: start, end: end, throwsType: throwsType.unwrap() });
+        let ret = Ref::new(_rp, ThrowsSyntax { parent: None, start: start, end: end, throws_type: throws_type.unwrap() });
 
-        match *throwsType.unwrap() {
-            TypeSpecSyntax::Type(x) => x.parent = ret.data as *mut SyntaxNode,
-            TypeSpecSyntax::Variant(x) => x.parent = ret.data as *mut SyntaxNode,
+        match *throws_type.unwrap() {
+            TypeSpecSyntax::Type(mut x) => x.parent = Some(ParentNode::Throws(ret)),
+            TypeSpecSyntax::Variant(mut x) => x.parent = Some(ParentNode::Throws(ret)),
         }
 
         Ok(Some(ret))
@@ -4467,8 +4378,8 @@ impl Parser {
 
         let start: Position = self.lexer.get_previous_position();
 
-        let successLeftBracket1 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, "["));
-        if successLeftBracket1 {
+        let success_left_bracket_1 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, "["));
+        if success_left_bracket_1 {
             self.lexer.advance(&_r)
         } else {
             return Ok(None)
@@ -4481,10 +4392,10 @@ impl Parser {
             Some(_) => ()
         }
 
-        let additionalGenerics = self.parse_genericargument_list(&_r, _rp, _ep)?;
+        let additional_generics = self.parse_genericargument_list(&_r, _rp, _ep)?;
 
-        let successRightBracket4 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, "]"));
-        if successRightBracket4 {
+        let success_right_bracket_4 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, "]"));
+        if success_right_bracket_4 {
             self.lexer.advance(&_r)
         } else {
 
@@ -4500,13 +4411,13 @@ impl Parser {
 
         let end: Position = self.lexer.get_position();
 
-        let ret = Ref::new(_rp, GenericArgumentsSyntax { parent: null_mut(), start: start, end: end, generic: generic.unwrap(), additionalGenerics: additionalGenerics });
+        let ret = Ref::new(_rp, GenericArgumentsSyntax { parent: None, start: start, end: end, generic: generic.unwrap(), additional_generics: additional_generics });
 
-        generic.unwrap().parent = ret.data as *mut SyntaxNode;
+        generic.unwrap().parent = Some(ParentNode::GenericArguments(ret));
 
-        match additionalGenerics {
-            Some(x) => for item in x.iter() {
-                item.parent = ret.data as *mut SyntaxNode;
+        match additional_generics {
+            Some(mut x) => for item in x.iter_mut() {
+                item.parent = Some(ParentNode::GenericArguments(ret));
             }
             None => ()
         }
@@ -4552,15 +4463,15 @@ impl Parser {
 
         let start: Position = self.lexer.get_previous_position();
 
-        let successComma1 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, ","));
-        if successComma1 {
+        let success_comma_1 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, ","));
+        if success_comma_1 {
             self.lexer.advance(&_r)
         } else {
             return Ok(None)
         }
 
-        let typeSpec = self.parse_type(&_r, _rp, _ep)?;
-        match typeSpec {
+        let type_spec = self.parse_type(&_r, _rp, _ep)?;
+        match type_spec {
             None =>
                 return Err(Ref::new(_ep, ParserError { file_name: String::copy(_ep, self.file_name), line: self.lexer.line, column: self.lexer.column })),
             Some(_) => ()
@@ -4568,9 +4479,9 @@ impl Parser {
 
         let end: Position = self.lexer.get_position();
 
-        let ret = Ref::new(_rp, GenericArgumentSyntax { parent: null_mut(), start: start, end: end, typeSpec: typeSpec.unwrap() });
+        let ret = Ref::new(_rp, GenericArgumentSyntax { parent: None, start: start, end: end, type_spec: type_spec.unwrap() });
 
-        typeSpec.unwrap().parent = ret.data as *mut SyntaxNode;
+        type_spec.unwrap().parent = Some(ParentNode::GenericArgument(ret));
 
         Ok(Some(ret))
     }
@@ -4585,8 +4496,8 @@ impl Parser {
 
         let start: Position = self.lexer.get_previous_position();
 
-        let successQuestion1 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, "?"));
-        if successQuestion1 {
+        let success_question_1 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, "?"));
+        if success_question_1 {
             self.lexer.advance(&_r)
         } else {
             return Ok(None)
@@ -4594,7 +4505,7 @@ impl Parser {
 
         let end: Position = self.lexer.get_position();
 
-        let ret = Ref::new(_rp, OptionalSyntax { parent: null_mut(), start: start, end: end });
+        let ret = Ref::new(_rp, OptionalSyntax { parent: None, start: start, end: end });
 
         Ok(Some(ret))
     }
@@ -4652,8 +4563,8 @@ impl Parser {
 
         let start: Position = self.lexer.get_previous_position();
 
-        let successDollar1 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, "$"));
-        if successDollar1 {
+        let success_dollar_1 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, "$"));
+        if success_dollar_1 {
             self.lexer.advance(&_r)
         } else {
             return Ok(None)
@@ -4661,7 +4572,7 @@ impl Parser {
 
         let end: Position = self.lexer.get_position();
 
-        let ret = Ref::new(_rp, RootSyntax { parent: null_mut(), start: start, end: end });
+        let ret = Ref::new(_rp, RootSyntax { parent: None, start: start, end: end });
 
         Ok(Some(ret))
     }
@@ -4676,8 +4587,8 @@ impl Parser {
 
         let start: Position = self.lexer.get_previous_position();
 
-        let successAt1 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, "@"));
-        if successAt1 {
+        let success_at_1 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, "@"));
+        if success_at_1 {
             self.lexer.advance(&_r)
         } else {
             return Ok(None)
@@ -4711,7 +4622,7 @@ impl Parser {
 
         let end: Position = self.lexer.get_position();
 
-        let ret = Ref::new(_rp, LocalSyntax { parent: null_mut(), start: start, end: end, location: location.unwrap() });
+        let ret = Ref::new(_rp, LocalSyntax { parent: None, start: start, end: end, location: location.unwrap() });
 
         Ok(Some(ret))
     }
@@ -4726,8 +4637,8 @@ impl Parser {
 
         let start: Position = self.lexer.get_previous_position();
 
-        let successBacktick1 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, "`"));
-        if successBacktick1 {
+        let success_backtick_1 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, "`"));
+        if success_backtick_1 {
             self.lexer.advance(&_r)
         } else {
             return Ok(None)
@@ -4735,14 +4646,14 @@ impl Parser {
 
         let age = self.lexer.parse_literal(_rp);
         match age {
-            Some(x) =>
+            Some(_) =>
                 self.lexer.advance(&_r),
             None => ()
         }
 
         let end: Position = self.lexer.get_position();
 
-        let ret = Ref::new(_rp, ReferenceSyntax { parent: null_mut(), start: start, end: end, age: age });
+        let ret = Ref::new(_rp, ReferenceSyntax { parent: None, start: start, end: end, age: age });
 
         Ok(Some(ret))
     }
@@ -4757,8 +4668,8 @@ impl Parser {
 
         let start: Position = self.lexer.get_previous_position();
 
-        let successHash1 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, "#"));
-        if successHash1 {
+        let success_hash_1 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, "#"));
+        if success_hash_1 {
             self.lexer.advance(&_r)
         } else {
             return Ok(None)
@@ -4766,7 +4677,7 @@ impl Parser {
 
         let end: Position = self.lexer.get_position();
 
-        let ret = Ref::new(_rp, ThrownSyntax { parent: null_mut(), start: start, end: end });
+        let ret = Ref::new(_rp, ThrownSyntax { parent: None, start: start, end: end });
 
         Ok(Some(ret))
     }
@@ -4785,244 +4696,244 @@ impl Parser {
 }
 
 pub trait SyntaxVisitor {
-    fn openProgram(&mut self, programSyntax: Ref<ProgramSyntax>) -> bool;
-    fn closeProgram(&mut self, programSyntax: Ref<ProgramSyntax>);
+    fn open_program(&mut self, program_syntax: Ref<ProgramSyntax>) -> bool;
+    fn close_program(&mut self, program_syntax: Ref<ProgramSyntax>);
 
-    fn openFile(&mut self, fileSyntax: Ref<FileSyntax>) -> bool;
-    fn closeFile(&mut self, fileSyntax: Ref<FileSyntax>);
+    fn open_file(&mut self, file_syntax: Ref<FileSyntax>) -> bool;
+    fn close_file(&mut self, file_syntax: Ref<FileSyntax>);
 
-    fn visitIntrinsic(&mut self, intrinsicSyntax: Ref<IntrinsicSyntax>);
+    fn visit_intrinsic(&mut self, intrinsic_syntax: Ref<IntrinsicSyntax>);
 
-    fn openUsing(&mut self, usingSyntax: Ref<UsingSyntax>) -> bool;
-    fn closeUsing(&mut self, usingSyntax: Ref<UsingSyntax>);
+    fn open_using(&mut self, using_syntax: Ref<UsingSyntax>) -> bool;
+    fn close_using(&mut self, using_syntax: Ref<UsingSyntax>);
 
-    fn openDefine(&mut self, defineSyntax: Ref<DefineSyntax>) -> bool;
-    fn closeDefine(&mut self, defineSyntax: Ref<DefineSyntax>);
+    fn open_define(&mut self, define_syntax: Ref<DefineSyntax>) -> bool;
+    fn close_define(&mut self, define_syntax: Ref<DefineSyntax>);
 
-    fn openName(&mut self, nameSyntax: Ref<NameSyntax>) -> bool;
-    fn closeName(&mut self, nameSyntax: Ref<NameSyntax>);
+    fn open_name(&mut self, name_syntax: Ref<NameSyntax>) -> bool;
+    fn close_name(&mut self, name_syntax: Ref<NameSyntax>);
 
-    fn visitExtension(&mut self, extensionSyntax: Ref<ExtensionSyntax>);
+    fn visit_extension(&mut self, extension_syntax: Ref<ExtensionSyntax>);
 
-    fn openNamespace(&mut self, namespaceSyntax: Ref<NamespaceSyntax>) -> bool;
-    fn closeNamespace(&mut self, namespaceSyntax: Ref<NamespaceSyntax>);
+    fn open_namespace(&mut self, namespace_syntax: Ref<NamespaceSyntax>) -> bool;
+    fn close_namespace(&mut self, namespace_syntax: Ref<NamespaceSyntax>);
 
-    fn openFunction(&mut self, functionSyntax: Ref<FunctionSyntax>) -> bool;
-    fn closeFunction(&mut self, functionSyntax: Ref<FunctionSyntax>);
+    fn open_function(&mut self, function_syntax: Ref<FunctionSyntax>) -> bool;
+    fn close_function(&mut self, function_syntax: Ref<FunctionSyntax>);
 
-    fn openProcedure(&mut self, procedureSyntax: Ref<ProcedureSyntax>) -> bool;
-    fn closeProcedure(&mut self, procedureSyntax: Ref<ProcedureSyntax>);
+    fn open_procedure(&mut self, procedure_syntax: Ref<ProcedureSyntax>) -> bool;
+    fn close_procedure(&mut self, procedure_syntax: Ref<ProcedureSyntax>);
 
-    fn openRoutine(&mut self, routineSyntax: Ref<RoutineSyntax>) -> bool;
-    fn closeRoutine(&mut self, routineSyntax: Ref<RoutineSyntax>);
+    fn open_routine(&mut self, routine_syntax: Ref<RoutineSyntax>) -> bool;
+    fn close_routine(&mut self, routine_syntax: Ref<RoutineSyntax>);
 
-    fn openLetDeclaration(&mut self, letDeclarationSyntax: Ref<LetDeclarationSyntax>) -> bool;
-    fn closeLetDeclaration(&mut self, letDeclarationSyntax: Ref<LetDeclarationSyntax>);
+    fn open_letdeclaration(&mut self, letdeclaration_syntax: Ref<LetDeclarationSyntax>) -> bool;
+    fn close_letdeclaration(&mut self, letdeclaration_syntax: Ref<LetDeclarationSyntax>);
 
-    fn openVarDeclaration(&mut self, varDeclarationSyntax: Ref<VarDeclarationSyntax>) -> bool;
-    fn closeVarDeclaration(&mut self, varDeclarationSyntax: Ref<VarDeclarationSyntax>);
+    fn open_vardeclaration(&mut self, vardeclaration_syntax: Ref<VarDeclarationSyntax>) -> bool;
+    fn close_vardeclaration(&mut self, vardeclaration_syntax: Ref<VarDeclarationSyntax>);
 
-    fn openMutableDeclaration(&mut self, mutableDeclarationSyntax: Ref<MutableDeclarationSyntax>) -> bool;
-    fn closeMutableDeclaration(&mut self, mutableDeclarationSyntax: Ref<MutableDeclarationSyntax>);
+    fn open_mutabledeclaration(&mut self, mutabledeclaration_syntax: Ref<MutableDeclarationSyntax>) -> bool;
+    fn close_mutabledeclaration(&mut self, mutabledeclaration_syntax: Ref<MutableDeclarationSyntax>);
 
-    fn openThreadLocalDeclaration(&mut self, threadLocalDeclarationSyntax: Ref<ThreadLocalDeclarationSyntax>) -> bool;
-    fn closeThreadLocalDeclaration(&mut self, threadLocalDeclarationSyntax: Ref<ThreadLocalDeclarationSyntax>);
+    fn open_threadlocaldeclaration(&mut self, threadlocaldeclaration_syntax: Ref<ThreadLocalDeclarationSyntax>) -> bool;
+    fn close_threadlocaldeclaration(&mut self, threadlocaldeclaration_syntax: Ref<ThreadLocalDeclarationSyntax>);
 
-    fn openLet(&mut self, letSyntax: Ref<LetSyntax>) -> bool;
-    fn closeLet(&mut self, letSyntax: Ref<LetSyntax>);
+    fn open_let(&mut self, let_syntax: Ref<LetSyntax>) -> bool;
+    fn close_let(&mut self, let_syntax: Ref<LetSyntax>);
 
-    fn openVar(&mut self, varSyntax: Ref<VarSyntax>) -> bool;
-    fn closeVar(&mut self, varSyntax: Ref<VarSyntax>);
+    fn open_var(&mut self, var_syntax: Ref<VarSyntax>) -> bool;
+    fn close_var(&mut self, var_syntax: Ref<VarSyntax>);
 
-    fn openMutable(&mut self, mutableSyntax: Ref<MutableSyntax>) -> bool;
-    fn closeMutable(&mut self, mutableSyntax: Ref<MutableSyntax>);
+    fn open_mutable(&mut self, mutable_syntax: Ref<MutableSyntax>) -> bool;
+    fn close_mutable(&mut self, mutable_syntax: Ref<MutableSyntax>);
 
-    fn openThreadLocal(&mut self, threadLocalSyntax: Ref<ThreadLocalSyntax>) -> bool;
-    fn closeThreadLocal(&mut self, threadLocalSyntax: Ref<ThreadLocalSyntax>);
+    fn open_threadlocal(&mut self, threadlocal_syntax: Ref<ThreadLocalSyntax>) -> bool;
+    fn close_threadlocal(&mut self, threadlocal_syntax: Ref<ThreadLocalSyntax>);
 
-    fn openBinding(&mut self, bindingSyntax: Ref<BindingSyntax>) -> bool;
-    fn closeBinding(&mut self, bindingSyntax: Ref<BindingSyntax>);
+    fn open_binding(&mut self, binding_syntax: Ref<BindingSyntax>) -> bool;
+    fn close_binding(&mut self, binding_syntax: Ref<BindingSyntax>);
 
-    fn openSet(&mut self, setSyntax: Ref<SetSyntax>) -> bool;
-    fn closeSet(&mut self, setSyntax: Ref<SetSyntax>);
+    fn open_set(&mut self, set_syntax: Ref<SetSyntax>) -> bool;
+    fn close_set(&mut self, set_syntax: Ref<SetSyntax>);
 
-    fn openCalculation(&mut self, calculationSyntax: Ref<CalculationSyntax>) -> bool;
-    fn closeCalculation(&mut self, calculationSyntax: Ref<CalculationSyntax>);
+    fn open_calculation(&mut self, calculation_syntax: Ref<CalculationSyntax>) -> bool;
+    fn close_calculation(&mut self, calculation_syntax: Ref<CalculationSyntax>);
 
-    fn openOperation(&mut self, operationSyntax: Ref<OperationSyntax>) -> bool;
-    fn closeOperation(&mut self, operationSyntax: Ref<OperationSyntax>);
+    fn open_operation(&mut self, operation_syntax: Ref<OperationSyntax>) -> bool;
+    fn close_operation(&mut self, operation_syntax: Ref<OperationSyntax>);
 
-    fn openOperand(&mut self, operandSyntax: Ref<OperandSyntax>) -> bool;
-    fn closeOperand(&mut self, operandSyntax: Ref<OperandSyntax>);
+    fn open_operand(&mut self, operand_syntax: Ref<OperandSyntax>) -> bool;
+    fn close_operand(&mut self, operand_syntax: Ref<OperandSyntax>);
 
-    fn visitMemberAccess(&mut self, memberAccessSyntax: Ref<MemberAccessSyntax>);
+    fn visit_memberaccess(&mut self, memberaccess_syntax: Ref<MemberAccessSyntax>);
 
-    fn openAs(&mut self, asSyntax: Ref<AsSyntax>) -> bool;
-    fn closeAs(&mut self, asSyntax: Ref<AsSyntax>);
+    fn open_as(&mut self, as_syntax: Ref<AsSyntax>) -> bool;
+    fn close_as(&mut self, as_syntax: Ref<AsSyntax>);
 
-    fn openIs(&mut self, isSyntax: Ref<IsSyntax>) -> bool;
-    fn closeIs(&mut self, isSyntax: Ref<IsSyntax>);
+    fn open_is(&mut self, is_syntax: Ref<IsSyntax>) -> bool;
+    fn close_is(&mut self, is_syntax: Ref<IsSyntax>);
 
-    fn visitUnwrap(&mut self, unwrapSyntax: Ref<UnwrapSyntax>);
+    fn visit_unwrap(&mut self, unwrap_syntax: Ref<UnwrapSyntax>);
 
-    fn openCatch(&mut self, catchSyntax: Ref<CatchSyntax>) -> bool;
-    fn closeCatch(&mut self, catchSyntax: Ref<CatchSyntax>);
+    fn open_catch(&mut self, catch_syntax: Ref<CatchSyntax>) -> bool;
+    fn close_catch(&mut self, catch_syntax: Ref<CatchSyntax>);
 
-    fn openWildCardCatchPattern(&mut self, wildCardCatchPatternSyntax: Ref<WildCardCatchPatternSyntax>) -> bool;
-    fn closeWildCardCatchPattern(&mut self, wildCardCatchPatternSyntax: Ref<WildCardCatchPatternSyntax>);
+    fn open_wildcardcatchpattern(&mut self, wildcardcatchpattern_syntax: Ref<WildCardCatchPatternSyntax>) -> bool;
+    fn close_wildcardcatchpattern(&mut self, wildcardcatchpattern_syntax: Ref<WildCardCatchPatternSyntax>);
 
-    fn openTypeCatchPattern(&mut self, typeCatchPatternSyntax: Ref<TypeCatchPatternSyntax>) -> bool;
-    fn closeTypeCatchPattern(&mut self, typeCatchPatternSyntax: Ref<TypeCatchPatternSyntax>);
+    fn open_typecatchpattern(&mut self, typecatchpattern_syntax: Ref<TypeCatchPatternSyntax>) -> bool;
+    fn close_typecatchpattern(&mut self, typecatchpattern_syntax: Ref<TypeCatchPatternSyntax>);
 
-    fn openBlock(&mut self, blockSyntax: Ref<BlockSyntax>) -> bool;
-    fn closeBlock(&mut self, blockSyntax: Ref<BlockSyntax>);
+    fn open_block(&mut self, block_syntax: Ref<BlockSyntax>) -> bool;
+    fn close_block(&mut self, block_syntax: Ref<BlockSyntax>);
 
-    fn visitConstant(&mut self, constantSyntax: Ref<ConstantSyntax>);
+    fn visit_constant(&mut self, constant_syntax: Ref<ConstantSyntax>);
 
-    fn openIf(&mut self, ifSyntax: Ref<IfSyntax>) -> bool;
-    fn closeIf(&mut self, ifSyntax: Ref<IfSyntax>);
+    fn open_if(&mut self, if_syntax: Ref<IfSyntax>) -> bool;
+    fn close_if(&mut self, if_syntax: Ref<IfSyntax>);
 
-    fn openElse(&mut self, elseSyntax: Ref<ElseSyntax>) -> bool;
-    fn closeElse(&mut self, elseSyntax: Ref<ElseSyntax>);
+    fn open_else(&mut self, else_syntax: Ref<ElseSyntax>) -> bool;
+    fn close_else(&mut self, else_syntax: Ref<ElseSyntax>);
 
-    fn openSwitch(&mut self, switchSyntax: Ref<SwitchSyntax>) -> bool;
-    fn closeSwitch(&mut self, switchSyntax: Ref<SwitchSyntax>);
+    fn open_switch(&mut self, switch_syntax: Ref<SwitchSyntax>) -> bool;
+    fn close_switch(&mut self, switch_syntax: Ref<SwitchSyntax>);
 
-    fn openSwitchCase(&mut self, switchCaseSyntax: Ref<SwitchCaseSyntax>) -> bool;
-    fn closeSwitchCase(&mut self, switchCaseSyntax: Ref<SwitchCaseSyntax>);
+    fn open_switchcase(&mut self, switchcase_syntax: Ref<SwitchCaseSyntax>) -> bool;
+    fn close_switchcase(&mut self, switchcase_syntax: Ref<SwitchCaseSyntax>);
 
-    fn openItemCaseLabel(&mut self, itemCaseLabelSyntax: Ref<ItemCaseLabelSyntax>) -> bool;
-    fn closeItemCaseLabel(&mut self, itemCaseLabelSyntax: Ref<ItemCaseLabelSyntax>);
+    fn open_itemcaselabel(&mut self, itemcaselabel_syntax: Ref<ItemCaseLabelSyntax>) -> bool;
+    fn close_itemcaselabel(&mut self, itemcaselabel_syntax: Ref<ItemCaseLabelSyntax>);
 
-    fn openCaseItem(&mut self, caseItemSyntax: Ref<CaseItemSyntax>) -> bool;
-    fn closeCaseItem(&mut self, caseItemSyntax: Ref<CaseItemSyntax>);
+    fn open_caseitem(&mut self, caseitem_syntax: Ref<CaseItemSyntax>) -> bool;
+    fn close_caseitem(&mut self, caseitem_syntax: Ref<CaseItemSyntax>);
 
-    fn openConstantPattern(&mut self, constantPatternSyntax: Ref<ConstantPatternSyntax>) -> bool;
-    fn closeConstantPattern(&mut self, constantPatternSyntax: Ref<ConstantPatternSyntax>);
+    fn open_constantpattern(&mut self, constantpattern_syntax: Ref<ConstantPatternSyntax>) -> bool;
+    fn close_constantpattern(&mut self, constantpattern_syntax: Ref<ConstantPatternSyntax>);
 
-    fn visitWildcardPattern(&mut self, wildcardPatternSyntax: Ref<WildcardPatternSyntax>);
+    fn visit_wildcardpattern(&mut self, wildcardpattern_syntax: Ref<WildcardPatternSyntax>);
 
-    fn openNamePattern(&mut self, namePatternSyntax: Ref<NamePatternSyntax>) -> bool;
-    fn closeNamePattern(&mut self, namePatternSyntax: Ref<NamePatternSyntax>);
+    fn open_namepattern(&mut self, namepattern_syntax: Ref<NamePatternSyntax>) -> bool;
+    fn close_namepattern(&mut self, namepattern_syntax: Ref<NamePatternSyntax>);
 
-    fn visitDefaultCaseLabel(&mut self, defaultCaseLabelSyntax: Ref<DefaultCaseLabelSyntax>);
+    fn visit_defaultcaselabel(&mut self, defaultcaselabel_syntax: Ref<DefaultCaseLabelSyntax>);
 
-    fn openFor(&mut self, forSyntax: Ref<ForSyntax>) -> bool;
-    fn closeFor(&mut self, forSyntax: Ref<ForSyntax>);
+    fn open_for(&mut self, for_syntax: Ref<ForSyntax>) -> bool;
+    fn close_for(&mut self, for_syntax: Ref<ForSyntax>);
 
-    fn openWhile(&mut self, whileSyntax: Ref<WhileSyntax>) -> bool;
-    fn closeWhile(&mut self, whileSyntax: Ref<WhileSyntax>);
+    fn open_while(&mut self, while_syntax: Ref<WhileSyntax>) -> bool;
+    fn close_while(&mut self, while_syntax: Ref<WhileSyntax>);
 
-    fn openDo(&mut self, doSyntax: Ref<DoSyntax>) -> bool;
-    fn closeDo(&mut self, doSyntax: Ref<DoSyntax>);
+    fn open_do(&mut self, do_syntax: Ref<DoSyntax>) -> bool;
+    fn close_do(&mut self, do_syntax: Ref<DoSyntax>);
 
-    fn openSimpleLoop(&mut self, simpleLoopSyntax: Ref<SimpleLoopSyntax>) -> bool;
-    fn closeSimpleLoop(&mut self, simpleLoopSyntax: Ref<SimpleLoopSyntax>);
+    fn open_simpleloop(&mut self, simpleloop_syntax: Ref<SimpleLoopSyntax>) -> bool;
+    fn close_simpleloop(&mut self, simpleloop_syntax: Ref<SimpleLoopSyntax>);
 
-    fn openNamedLoop(&mut self, namedLoopSyntax: Ref<NamedLoopSyntax>) -> bool;
-    fn closeNamedLoop(&mut self, namedLoopSyntax: Ref<NamedLoopSyntax>);
+    fn open_namedloop(&mut self, namedloop_syntax: Ref<NamedLoopSyntax>) -> bool;
+    fn close_namedloop(&mut self, namedloop_syntax: Ref<NamedLoopSyntax>);
 
-    fn visitThis(&mut self, thisSyntax: Ref<ThisSyntax>);
+    fn visit_this(&mut self, this_syntax: Ref<ThisSyntax>);
 
-    fn openNew(&mut self, newSyntax: Ref<NewSyntax>) -> bool;
-    fn closeNew(&mut self, newSyntax: Ref<NewSyntax>);
+    fn open_new(&mut self, new_syntax: Ref<NewSyntax>) -> bool;
+    fn close_new(&mut self, new_syntax: Ref<NewSyntax>);
 
-    fn openObject(&mut self, objectSyntax: Ref<ObjectSyntax>) -> bool;
-    fn closeObject(&mut self, objectSyntax: Ref<ObjectSyntax>);
+    fn open_object(&mut self, object_syntax: Ref<ObjectSyntax>) -> bool;
+    fn close_object(&mut self, object_syntax: Ref<ObjectSyntax>);
 
-    fn openArray(&mut self, arraySyntax: Ref<ArraySyntax>) -> bool;
-    fn closeArray(&mut self, arraySyntax: Ref<ArraySyntax>);
+    fn open_array(&mut self, array_syntax: Ref<ArraySyntax>) -> bool;
+    fn close_array(&mut self, array_syntax: Ref<ArraySyntax>);
 
-    fn openItem(&mut self, itemSyntax: Ref<ItemSyntax>) -> bool;
-    fn closeItem(&mut self, itemSyntax: Ref<ItemSyntax>);
+    fn open_item(&mut self, item_syntax: Ref<ItemSyntax>) -> bool;
+    fn close_item(&mut self, item_syntax: Ref<ItemSyntax>);
 
-    fn openSizeOf(&mut self, sizeOfSyntax: Ref<SizeOfSyntax>) -> bool;
-    fn closeSizeOf(&mut self, sizeOfSyntax: Ref<SizeOfSyntax>);
+    fn open_sizeof(&mut self, sizeof_syntax: Ref<SizeOfSyntax>) -> bool;
+    fn close_sizeof(&mut self, sizeof_syntax: Ref<SizeOfSyntax>);
 
-    fn visitBreak(&mut self, breakSyntax: Ref<BreakSyntax>);
+    fn visit_break(&mut self, break_syntax: Ref<BreakSyntax>);
 
-    fn visitContinue(&mut self, continueSyntax: Ref<ContinueSyntax>);
+    fn visit_continue(&mut self, continue_syntax: Ref<ContinueSyntax>);
 
-    fn openReturn(&mut self, returnSyntax: Ref<ReturnSyntax>) -> bool;
-    fn closeReturn(&mut self, returnSyntax: Ref<ReturnSyntax>);
+    fn open_return(&mut self, return_syntax: Ref<ReturnSyntax>) -> bool;
+    fn close_return(&mut self, return_syntax: Ref<ReturnSyntax>);
 
-    fn openThrow(&mut self, throwSyntax: Ref<ThrowSyntax>) -> bool;
-    fn closeThrow(&mut self, throwSyntax: Ref<ThrowSyntax>);
+    fn open_throw(&mut self, throw_syntax: Ref<ThrowSyntax>) -> bool;
+    fn close_throw(&mut self, throw_syntax: Ref<ThrowSyntax>);
 
-    fn openClass(&mut self, classSyntax: Ref<ClassSyntax>) -> bool;
-    fn closeClass(&mut self, classSyntax: Ref<ClassSyntax>);
+    fn open_class(&mut self, class_syntax: Ref<ClassSyntax>) -> bool;
+    fn close_class(&mut self, class_syntax: Ref<ClassSyntax>);
 
-    fn openGenericParameters(&mut self, genericParametersSyntax: Ref<GenericParametersSyntax>) -> bool;
-    fn closeGenericParameters(&mut self, genericParametersSyntax: Ref<GenericParametersSyntax>);
+    fn open_genericparameters(&mut self, genericparameters_syntax: Ref<GenericParametersSyntax>) -> bool;
+    fn close_genericparameters(&mut self, genericparameters_syntax: Ref<GenericParametersSyntax>);
 
-    fn visitGenericParameter(&mut self, genericParameterSyntax: Ref<GenericParameterSyntax>);
+    fn visit_genericparameter(&mut self, genericparameter_syntax: Ref<GenericParameterSyntax>);
 
-    fn openExtends(&mut self, extendsSyntax: Ref<ExtendsSyntax>) -> bool;
-    fn closeExtends(&mut self, extendsSyntax: Ref<ExtendsSyntax>);
+    fn open_extends(&mut self, extends_syntax: Ref<ExtendsSyntax>) -> bool;
+    fn close_extends(&mut self, extends_syntax: Ref<ExtendsSyntax>);
 
-    fn openStructure(&mut self, structureSyntax: Ref<StructureSyntax>) -> bool;
-    fn closeStructure(&mut self, structureSyntax: Ref<StructureSyntax>);
+    fn open_structure(&mut self, structure_syntax: Ref<StructureSyntax>) -> bool;
+    fn close_structure(&mut self, structure_syntax: Ref<StructureSyntax>);
 
-    fn openComponent(&mut self, componentSyntax: Ref<ComponentSyntax>) -> bool;
-    fn closeComponent(&mut self, componentSyntax: Ref<ComponentSyntax>);
+    fn open_component(&mut self, component_syntax: Ref<ComponentSyntax>) -> bool;
+    fn close_component(&mut self, component_syntax: Ref<ComponentSyntax>);
 
-    fn openClassBody(&mut self, classBodySyntax: Ref<ClassBodySyntax>) -> bool;
-    fn closeClassBody(&mut self, classBodySyntax: Ref<ClassBodySyntax>);
+    fn open_classbody(&mut self, classbody_syntax: Ref<ClassBodySyntax>) -> bool;
+    fn close_classbody(&mut self, classbody_syntax: Ref<ClassBodySyntax>);
 
-    fn openLetMember(&mut self, letMemberSyntax: Ref<LetMemberSyntax>) -> bool;
-    fn closeLetMember(&mut self, letMemberSyntax: Ref<LetMemberSyntax>);
+    fn open_letmember(&mut self, letmember_syntax: Ref<LetMemberSyntax>) -> bool;
+    fn close_letmember(&mut self, letmember_syntax: Ref<LetMemberSyntax>);
 
-    fn openVarMember(&mut self, varMemberSyntax: Ref<VarMemberSyntax>) -> bool;
-    fn closeVarMember(&mut self, varMemberSyntax: Ref<VarMemberSyntax>);
+    fn open_varmember(&mut self, varmember_syntax: Ref<VarMemberSyntax>) -> bool;
+    fn close_varmember(&mut self, varmember_syntax: Ref<VarMemberSyntax>);
 
-    fn openMutableMember(&mut self, mutableMemberSyntax: Ref<MutableMemberSyntax>) -> bool;
-    fn closeMutableMember(&mut self, mutableMemberSyntax: Ref<MutableMemberSyntax>);
+    fn open_mutablemember(&mut self, mutablemember_syntax: Ref<MutableMemberSyntax>) -> bool;
+    fn close_mutablemember(&mut self, mutablemember_syntax: Ref<MutableMemberSyntax>);
 
-    fn openSetInitialization(&mut self, setInitializationSyntax: Ref<SetInitializationSyntax>) -> bool;
-    fn closeSetInitialization(&mut self, setInitializationSyntax: Ref<SetInitializationSyntax>);
+    fn open_setinitialization(&mut self, setinitialization_syntax: Ref<SetInitializationSyntax>) -> bool;
+    fn close_setinitialization(&mut self, setinitialization_syntax: Ref<SetInitializationSyntax>);
 
-    fn openMethod(&mut self, methodSyntax: Ref<MethodSyntax>) -> bool;
-    fn closeMethod(&mut self, methodSyntax: Ref<MethodSyntax>);
+    fn open_method(&mut self, method_syntax: Ref<MethodSyntax>) -> bool;
+    fn close_method(&mut self, method_syntax: Ref<MethodSyntax>);
 
-    fn openStaticFunction(&mut self, staticFunctionSyntax: Ref<StaticFunctionSyntax>) -> bool;
-    fn closeStaticFunction(&mut self, staticFunctionSyntax: Ref<StaticFunctionSyntax>);
+    fn open_staticfunction(&mut self, staticfunction_syntax: Ref<StaticFunctionSyntax>) -> bool;
+    fn close_staticfunction(&mut self, staticfunction_syntax: Ref<StaticFunctionSyntax>);
 
-    fn openOperator(&mut self, operatorSyntax: Ref<OperatorSyntax>) -> bool;
-    fn closeOperator(&mut self, operatorSyntax: Ref<OperatorSyntax>);
+    fn open_operator(&mut self, operator_syntax: Ref<OperatorSyntax>) -> bool;
+    fn close_operator(&mut self, operator_syntax: Ref<OperatorSyntax>);
 
-    fn openInitializer(&mut self, initializerSyntax: Ref<InitializerSyntax>) -> bool;
-    fn closeInitializer(&mut self, initializerSyntax: Ref<InitializerSyntax>);
+    fn open_initializer(&mut self, initializer_syntax: Ref<InitializerSyntax>) -> bool;
+    fn close_initializer(&mut self, initializer_syntax: Ref<InitializerSyntax>);
 
-    fn openAllocator(&mut self, allocatorSyntax: Ref<AllocatorSyntax>) -> bool;
-    fn closeAllocator(&mut self, allocatorSyntax: Ref<AllocatorSyntax>);
+    fn open_allocator(&mut self, allocator_syntax: Ref<AllocatorSyntax>) -> bool;
+    fn close_allocator(&mut self, allocator_syntax: Ref<AllocatorSyntax>);
 
-    fn openTypeAnnotation(&mut self, typeAnnotationSyntax: Ref<TypeAnnotationSyntax>) -> bool;
-    fn closeTypeAnnotation(&mut self, typeAnnotationSyntax: Ref<TypeAnnotationSyntax>);
+    fn open_typeannotation(&mut self, typeannotation_syntax: Ref<TypeAnnotationSyntax>) -> bool;
+    fn close_typeannotation(&mut self, typeannotation_syntax: Ref<TypeAnnotationSyntax>);
 
-    fn openType(&mut self, typeSyntax: Ref<TypeSyntax>) -> bool;
-    fn closeType(&mut self, typeSyntax: Ref<TypeSyntax>);
+    fn open_type(&mut self, type_syntax: Ref<TypeSyntax>) -> bool;
+    fn close_type(&mut self, type_syntax: Ref<TypeSyntax>);
 
-    fn openVariant(&mut self, variantSyntax: Ref<VariantSyntax>) -> bool;
-    fn closeVariant(&mut self, variantSyntax: Ref<VariantSyntax>);
+    fn open_variant(&mut self, variant_syntax: Ref<VariantSyntax>) -> bool;
+    fn close_variant(&mut self, variant_syntax: Ref<VariantSyntax>);
 
-    fn openThrows(&mut self, throwsSyntax: Ref<ThrowsSyntax>) -> bool;
-    fn closeThrows(&mut self, throwsSyntax: Ref<ThrowsSyntax>);
+    fn open_throws(&mut self, throws_syntax: Ref<ThrowsSyntax>) -> bool;
+    fn close_throws(&mut self, throws_syntax: Ref<ThrowsSyntax>);
 
-    fn openGenericArguments(&mut self, genericArgumentsSyntax: Ref<GenericArgumentsSyntax>) -> bool;
-    fn closeGenericArguments(&mut self, genericArgumentsSyntax: Ref<GenericArgumentsSyntax>);
+    fn open_genericarguments(&mut self, genericarguments_syntax: Ref<GenericArgumentsSyntax>) -> bool;
+    fn close_genericarguments(&mut self, genericarguments_syntax: Ref<GenericArgumentsSyntax>);
 
-    fn openGenericArgument(&mut self, genericArgumentSyntax: Ref<GenericArgumentSyntax>) -> bool;
-    fn closeGenericArgument(&mut self, genericArgumentSyntax: Ref<GenericArgumentSyntax>);
+    fn open_genericargument(&mut self, genericargument_syntax: Ref<GenericArgumentSyntax>) -> bool;
+    fn close_genericargument(&mut self, genericargument_syntax: Ref<GenericArgumentSyntax>);
 
-    fn visitOptional(&mut self, optionalSyntax: Ref<OptionalSyntax>);
+    fn visit_optional(&mut self, optional_syntax: Ref<OptionalSyntax>);
 
-    fn visitRoot(&mut self, rootSyntax: Ref<RootSyntax>);
+    fn visit_root(&mut self, root_syntax: Ref<RootSyntax>);
 
-    fn visitLocal(&mut self, localSyntax: Ref<LocalSyntax>);
+    fn visit_local(&mut self, local_syntax: Ref<LocalSyntax>);
 
-    fn visitReference(&mut self, referenceSyntax: Ref<ReferenceSyntax>);
+    fn visit_reference(&mut self, reference_syntax: Ref<ReferenceSyntax>);
 
-    fn visitThrown(&mut self, thrownSyntax: Ref<ThrownSyntax>);
+    fn visit_thrown(&mut self, thrown_syntax: Ref<ThrownSyntax>);
 }
 
 pub trait SyntaxNode {
@@ -5030,23 +4941,116 @@ pub trait SyntaxNode {
 }
 
 #[derive(Copy, Clone)]
+pub enum ParentNode {
+    Program(Ref<ProgramSyntax>),
+    File(Ref<FileSyntax>),
+    Intrinsic(Ref<IntrinsicSyntax>),
+    Using(Ref<UsingSyntax>),
+    Define(Ref<DefineSyntax>),
+    Name(Ref<NameSyntax>),
+    Extension(Ref<ExtensionSyntax>),
+    Namespace(Ref<NamespaceSyntax>),
+    Function(Ref<FunctionSyntax>),
+    Procedure(Ref<ProcedureSyntax>),
+    Routine(Ref<RoutineSyntax>),
+    LetDeclaration(Ref<LetDeclarationSyntax>),
+    VarDeclaration(Ref<VarDeclarationSyntax>),
+    MutableDeclaration(Ref<MutableDeclarationSyntax>),
+    ThreadLocalDeclaration(Ref<ThreadLocalDeclarationSyntax>),
+    Let(Ref<LetSyntax>),
+    Var(Ref<VarSyntax>),
+    Mutable(Ref<MutableSyntax>),
+    ThreadLocal(Ref<ThreadLocalSyntax>),
+    Binding(Ref<BindingSyntax>),
+    Set(Ref<SetSyntax>),
+    Calculation(Ref<CalculationSyntax>),
+    Operation(Ref<OperationSyntax>),
+    Operand(Ref<OperandSyntax>),
+    MemberAccess(Ref<MemberAccessSyntax>),
+    As(Ref<AsSyntax>),
+    Is(Ref<IsSyntax>),
+    Unwrap(Ref<UnwrapSyntax>),
+    Catch(Ref<CatchSyntax>),
+    WildCardCatchPattern(Ref<WildCardCatchPatternSyntax>),
+    TypeCatchPattern(Ref<TypeCatchPatternSyntax>),
+    Block(Ref<BlockSyntax>),
+    Constant(Ref<ConstantSyntax>),
+    If(Ref<IfSyntax>),
+    Else(Ref<ElseSyntax>),
+    Switch(Ref<SwitchSyntax>),
+    SwitchCase(Ref<SwitchCaseSyntax>),
+    ItemCaseLabel(Ref<ItemCaseLabelSyntax>),
+    CaseItem(Ref<CaseItemSyntax>),
+    ConstantPattern(Ref<ConstantPatternSyntax>),
+    WildcardPattern(Ref<WildcardPatternSyntax>),
+    NamePattern(Ref<NamePatternSyntax>),
+    DefaultCaseLabel(Ref<DefaultCaseLabelSyntax>),
+    For(Ref<ForSyntax>),
+    While(Ref<WhileSyntax>),
+    Do(Ref<DoSyntax>),
+    SimpleLoop(Ref<SimpleLoopSyntax>),
+    NamedLoop(Ref<NamedLoopSyntax>),
+    This(Ref<ThisSyntax>),
+    New(Ref<NewSyntax>),
+    Object(Ref<ObjectSyntax>),
+    Array(Ref<ArraySyntax>),
+    Item(Ref<ItemSyntax>),
+    SizeOf(Ref<SizeOfSyntax>),
+    Break(Ref<BreakSyntax>),
+    Continue(Ref<ContinueSyntax>),
+    Return(Ref<ReturnSyntax>),
+    Throw(Ref<ThrowSyntax>),
+    Class(Ref<ClassSyntax>),
+    GenericParameters(Ref<GenericParametersSyntax>),
+    GenericParameter(Ref<GenericParameterSyntax>),
+    Extends(Ref<ExtendsSyntax>),
+    Structure(Ref<StructureSyntax>),
+    Component(Ref<ComponentSyntax>),
+    ClassBody(Ref<ClassBodySyntax>),
+    LetMember(Ref<LetMemberSyntax>),
+    VarMember(Ref<VarMemberSyntax>),
+    MutableMember(Ref<MutableMemberSyntax>),
+    SetInitialization(Ref<SetInitializationSyntax>),
+    Method(Ref<MethodSyntax>),
+    StaticFunction(Ref<StaticFunctionSyntax>),
+    Operator(Ref<OperatorSyntax>),
+    Initializer(Ref<InitializerSyntax>),
+    Allocator(Ref<AllocatorSyntax>),
+    TypeAnnotation(Ref<TypeAnnotationSyntax>),
+    Type(Ref<TypeSyntax>),
+    Variant(Ref<VariantSyntax>),
+    Throws(Ref<ThrowsSyntax>),
+    GenericArguments(Ref<GenericArgumentsSyntax>),
+    GenericArgument(Ref<GenericArgumentSyntax>),
+    Optional(Ref<OptionalSyntax>),
+    Root(Ref<RootSyntax>),
+    Local(Ref<LocalSyntax>),
+    Reference(Ref<ReferenceSyntax>),
+    Thrown(Ref<ThrownSyntax>),
+}
+
+#[derive(Copy, Clone)]
 pub struct ProgramSyntax {
     pub start: Position,
     pub end: Position,
-    pub parent: *mut SyntaxNode,
+    pub parent: Option<ParentNode>,
     pub name: String,
     pub files: Ref<Vector<Ref<FileSyntax>>>,
 }
 
 impl SyntaxNode for ProgramSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openProgram(Ref::from(self as *mut ProgramSyntax)) {
-            return
+        unsafe {
+            if !(*visitor).open_program(Ref::from(self as *mut ProgramSyntax)) {
+                return
+            }
         }
-        for node in self.files.iter() {
+        for node in self.files.iter_mut() {
             node.accept(visitor)
         };
-        (*visitor).closeProgram(Ref::from(self as *mut ProgramSyntax))
+        unsafe {
+            (*visitor).close_program(Ref::from(self as *mut ProgramSyntax))
+        }
     }
 }
 
@@ -5062,44 +5066,48 @@ pub struct FileSyntax {
 
 impl SyntaxNode for FileSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openFile(Ref::from(self as *mut FileSyntax)) {
-            return
+        unsafe {
+            if !(*visitor).open_file(Ref::from(self as *mut FileSyntax)) {
+                return
+            }
         }
         match self.intrinsics {
-            Some(x) => for node in x.iter() {
+            Some(mut x) => for node in x.iter_mut() {
                 node.accept(visitor)
             },
             None => ()
         };
 
         match self.usings {
-            Some(x) => for node in x.iter() {
+            Some(mut x) => for node in x.iter_mut() {
                 node.accept(visitor)
             },
             None => ()
         };
 
         match self.defines {
-            Some(x) => for node in x.iter() {
+            Some(mut x) => for node in x.iter_mut() {
                 node.accept(visitor)
             },
             None => ()
         };
 
         match self.declarations {
-            Some(x) => for node in x.iter() {
+            Some(mut x) => for node in x.iter_mut() {
                 node.accept(visitor)
             },
             None => ()
         };
 
         match self.statements {
-            Some(x) => for node in x.iter() {
+            Some(mut x) => for node in x.iter_mut() {
                 node.accept(visitor)
             },
             None => ()
         };
-        (*visitor).closeFile(Ref::from(self as *mut FileSyntax))
+        unsafe {
+            (*visitor).close_file(Ref::from(self as *mut FileSyntax))
+        }
     }
 }
 
@@ -5107,13 +5115,15 @@ impl SyntaxNode for FileSyntax {
 pub struct IntrinsicSyntax {
     pub start: Position,
     pub end: Position,
-    pub parent: *mut SyntaxNode,
+    pub parent: Option<ParentNode>,
     pub name: String,
 }
 
 impl SyntaxNode for IntrinsicSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        (*visitor).visitIntrinsic(Ref::from(self as *mut IntrinsicSyntax))
+        unsafe {
+            (*visitor).visit_intrinsic(Ref::from(self as *mut IntrinsicSyntax))
+        }
     }
 }
 
@@ -5121,17 +5131,21 @@ impl SyntaxNode for IntrinsicSyntax {
 pub struct UsingSyntax {
     pub start: Position,
     pub end: Position,
-    pub parent: *mut SyntaxNode,
+    pub parent: Option<ParentNode>,
     pub name: Ref<NameSyntax>,
 }
 
 impl SyntaxNode for UsingSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openUsing(Ref::from(self as *mut UsingSyntax)) {
-            return
+        unsafe {
+            if !(*visitor).open_using(Ref::from(self as *mut UsingSyntax)) {
+                return
+            }
         }
         self.name.accept(visitor);
-        (*visitor).closeUsing(Ref::from(self as *mut UsingSyntax))
+        unsafe {
+            (*visitor).close_using(Ref::from(self as *mut UsingSyntax))
+        }
     }
 }
 
@@ -5139,20 +5153,24 @@ impl SyntaxNode for UsingSyntax {
 pub struct DefineSyntax {
     pub start: Position,
     pub end: Position,
-    pub parent: *mut SyntaxNode,
+    pub parent: Option<ParentNode>,
     pub name: Ref<NameSyntax>,
-    pub typeSpec: Ref<TypeSyntax>,
+    pub type_spec: Ref<TypeSyntax>,
 }
 
 impl SyntaxNode for DefineSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openDefine(Ref::from(self as *mut DefineSyntax)) {
-            return
+        unsafe {
+            if !(*visitor).open_define(Ref::from(self as *mut DefineSyntax)) {
+                return
+            }
         }
         self.name.accept(visitor);
 
-        self.typeSpec.accept(visitor);
-        (*visitor).closeDefine(Ref::from(self as *mut DefineSyntax))
+        self.type_spec.accept(visitor);
+        unsafe {
+            (*visitor).close_define(Ref::from(self as *mut DefineSyntax))
+        }
     }
 }
 
@@ -5160,23 +5178,27 @@ impl SyntaxNode for DefineSyntax {
 pub struct NameSyntax {
     pub start: Position,
     pub end: Position,
-    pub parent: *mut SyntaxNode,
+    pub parent: Option<ParentNode>,
     pub name: String,
     pub extensions: Option<Ref<Vector<Ref<ExtensionSyntax>>>>,
 }
 
 impl SyntaxNode for NameSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openName(Ref::from(self as *mut NameSyntax)) {
-            return
+        unsafe {
+            if !(*visitor).open_name(Ref::from(self as *mut NameSyntax)) {
+                return
+            }
         }
         match self.extensions {
-            Some(x) => for node in x.iter() {
+            Some(mut x) => for node in x.iter_mut() {
                 node.accept(visitor)
             },
             None => ()
         };
-        (*visitor).closeName(Ref::from(self as *mut NameSyntax))
+        unsafe {
+            (*visitor).close_name(Ref::from(self as *mut NameSyntax))
+        }
     }
 }
 
@@ -5184,13 +5206,15 @@ impl SyntaxNode for NameSyntax {
 pub struct ExtensionSyntax {
     pub start: Position,
     pub end: Position,
-    pub parent: *mut SyntaxNode,
+    pub parent: Option<ParentNode>,
     pub name: String,
 }
 
 impl SyntaxNode for ExtensionSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        (*visitor).visitExtension(Ref::from(self as *mut ExtensionSyntax))
+        unsafe {
+            (*visitor).visit_extension(Ref::from(self as *mut ExtensionSyntax))
+        }
     }
 }
 
@@ -5214,7 +5238,7 @@ impl SyntaxNode for DeclarationSyntax {
 pub struct NamespaceSyntax {
     pub start: Position,
     pub end: Position,
-    pub parent: *mut SyntaxNode,
+    pub parent: Option<ParentNode>,
     pub name: Ref<NameSyntax>,
     pub usings: Option<Ref<Vector<Ref<UsingSyntax>>>>,
     pub defines: Option<Ref<Vector<Ref<DefineSyntax>>>>,
@@ -5223,32 +5247,36 @@ pub struct NamespaceSyntax {
 
 impl SyntaxNode for NamespaceSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openNamespace(Ref::from(self as *mut NamespaceSyntax)) {
-            return
+        unsafe {
+            if !(*visitor).open_namespace(Ref::from(self as *mut NamespaceSyntax)) {
+                return
+            }
         }
         self.name.accept(visitor);
 
         match self.usings {
-            Some(x) => for node in x.iter() {
+            Some(mut x) => for node in x.iter_mut() {
                 node.accept(visitor)
             },
             None => ()
         };
 
         match self.defines {
-            Some(x) => for node in x.iter() {
+            Some(mut x) => for node in x.iter_mut() {
                 node.accept(visitor)
             },
             None => ()
         };
 
         match self.declarations {
-            Some(x) => for node in x.iter() {
+            Some(mut x) => for node in x.iter_mut() {
                 node.accept(visitor)
             },
             None => ()
         };
-        (*visitor).closeNamespace(Ref::from(self as *mut NamespaceSyntax))
+        unsafe {
+            (*visitor).close_namespace(Ref::from(self as *mut NamespaceSyntax))
+        }
     }
 }
 
@@ -5256,17 +5284,21 @@ impl SyntaxNode for NamespaceSyntax {
 pub struct FunctionSyntax {
     pub start: Position,
     pub end: Position,
-    pub parent: *mut SyntaxNode,
+    pub parent: Option<ParentNode>,
     pub procedure: Ref<ProcedureSyntax>,
 }
 
 impl SyntaxNode for FunctionSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openFunction(Ref::from(self as *mut FunctionSyntax)) {
-            return
+        unsafe {
+            if !(*visitor).open_function(Ref::from(self as *mut FunctionSyntax)) {
+                return
+            }
         }
         self.procedure.accept(visitor);
-        (*visitor).closeFunction(Ref::from(self as *mut FunctionSyntax))
+        unsafe {
+            (*visitor).close_function(Ref::from(self as *mut FunctionSyntax))
+        }
     }
 }
 
@@ -5274,18 +5306,22 @@ impl SyntaxNode for FunctionSyntax {
 pub struct ProcedureSyntax {
     pub start: Position,
     pub end: Position,
-    pub parent: *mut SyntaxNode,
+    pub parent: Option<ParentNode>,
     pub name: String,
     pub routine: Ref<RoutineSyntax>,
 }
 
 impl SyntaxNode for ProcedureSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openProcedure(Ref::from(self as *mut ProcedureSyntax)) {
-            return
+        unsafe {
+            if !(*visitor).open_procedure(Ref::from(self as *mut ProcedureSyntax)) {
+                return
+            }
         }
         self.routine.accept(visitor);
-        (*visitor).closeProcedure(Ref::from(self as *mut ProcedureSyntax))
+        unsafe {
+            (*visitor).close_procedure(Ref::from(self as *mut ProcedureSyntax))
+        }
     }
 }
 
@@ -5293,35 +5329,39 @@ impl SyntaxNode for ProcedureSyntax {
 pub struct RoutineSyntax {
     pub start: Position,
     pub end: Position,
-    pub parent: *mut SyntaxNode,
+    pub parent: Option<ParentNode>,
     pub input: Option<Ref<StructureSyntax>>,
     pub output: Option<Ref<TypeAnnotationSyntax>>,
-    pub throwsClause: Option<Ref<ThrowsSyntax>>,
+    pub throws_clause: Option<Ref<ThrowsSyntax>>,
     pub body: Ref<BlockSyntax>,
 }
 
 impl SyntaxNode for RoutineSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openRoutine(Ref::from(self as *mut RoutineSyntax)) {
-            return
+        unsafe {
+            if !(*visitor).open_routine(Ref::from(self as *mut RoutineSyntax)) {
+                return
+            }
         }
         match self.input {
-            Some(x) => x.accept(visitor),
+            Some(mut x) => x.accept(visitor),
             None => ()
         };
 
         match self.output {
-            Some(x) => x.accept(visitor),
+            Some(mut x) => x.accept(visitor),
             None => ()
         };
 
-        match self.throwsClause {
-            Some(x) => x.accept(visitor),
+        match self.throws_clause {
+            Some(mut x) => x.accept(visitor),
             None => ()
         };
 
         self.body.accept(visitor);
-        (*visitor).closeRoutine(Ref::from(self as *mut RoutineSyntax))
+        unsafe {
+            (*visitor).close_routine(Ref::from(self as *mut RoutineSyntax))
+        }
     }
 }
 
@@ -5329,17 +5369,21 @@ impl SyntaxNode for RoutineSyntax {
 pub struct LetDeclarationSyntax {
     pub start: Position,
     pub end: Position,
-    pub parent: *mut SyntaxNode,
+    pub parent: Option<ParentNode>,
     pub declaration: Ref<LetSyntax>,
 }
 
 impl SyntaxNode for LetDeclarationSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openLetDeclaration(Ref::from(self as *mut LetDeclarationSyntax)) {
-            return
+        unsafe {
+            if !(*visitor).open_letdeclaration(Ref::from(self as *mut LetDeclarationSyntax)) {
+                return
+            }
         }
         self.declaration.accept(visitor);
-        (*visitor).closeLetDeclaration(Ref::from(self as *mut LetDeclarationSyntax))
+        unsafe {
+            (*visitor).close_letdeclaration(Ref::from(self as *mut LetDeclarationSyntax))
+        }
     }
 }
 
@@ -5347,17 +5391,21 @@ impl SyntaxNode for LetDeclarationSyntax {
 pub struct VarDeclarationSyntax {
     pub start: Position,
     pub end: Position,
-    pub parent: *mut SyntaxNode,
+    pub parent: Option<ParentNode>,
     pub declaration: Ref<VarSyntax>,
 }
 
 impl SyntaxNode for VarDeclarationSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openVarDeclaration(Ref::from(self as *mut VarDeclarationSyntax)) {
-            return
+        unsafe {
+            if !(*visitor).open_vardeclaration(Ref::from(self as *mut VarDeclarationSyntax)) {
+                return
+            }
         }
         self.declaration.accept(visitor);
-        (*visitor).closeVarDeclaration(Ref::from(self as *mut VarDeclarationSyntax))
+        unsafe {
+            (*visitor).close_vardeclaration(Ref::from(self as *mut VarDeclarationSyntax))
+        }
     }
 }
 
@@ -5365,17 +5413,21 @@ impl SyntaxNode for VarDeclarationSyntax {
 pub struct MutableDeclarationSyntax {
     pub start: Position,
     pub end: Position,
-    pub parent: *mut SyntaxNode,
+    pub parent: Option<ParentNode>,
     pub declaration: Ref<MutableSyntax>,
 }
 
 impl SyntaxNode for MutableDeclarationSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openMutableDeclaration(Ref::from(self as *mut MutableDeclarationSyntax)) {
-            return
+        unsafe {
+            if !(*visitor).open_mutabledeclaration(Ref::from(self as *mut MutableDeclarationSyntax)) {
+                return
+            }
         }
         self.declaration.accept(visitor);
-        (*visitor).closeMutableDeclaration(Ref::from(self as *mut MutableDeclarationSyntax))
+        unsafe {
+            (*visitor).close_mutabledeclaration(Ref::from(self as *mut MutableDeclarationSyntax))
+        }
     }
 }
 
@@ -5383,17 +5435,21 @@ impl SyntaxNode for MutableDeclarationSyntax {
 pub struct ThreadLocalDeclarationSyntax {
     pub start: Position,
     pub end: Position,
-    pub parent: *mut SyntaxNode,
+    pub parent: Option<ParentNode>,
     pub declaration: Ref<ThreadLocalSyntax>,
 }
 
 impl SyntaxNode for ThreadLocalDeclarationSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openThreadLocalDeclaration(Ref::from(self as *mut ThreadLocalDeclarationSyntax)) {
-            return
+        unsafe {
+            if !(*visitor).open_threadlocaldeclaration(Ref::from(self as *mut ThreadLocalDeclarationSyntax)) {
+                return
+            }
         }
         self.declaration.accept(visitor);
-        (*visitor).closeThreadLocalDeclaration(Ref::from(self as *mut ThreadLocalDeclarationSyntax))
+        unsafe {
+            (*visitor).close_threadlocaldeclaration(Ref::from(self as *mut ThreadLocalDeclarationSyntax))
+        }
     }
 }
 
@@ -5420,17 +5476,21 @@ impl SyntaxNode for StatementSyntax {
 pub struct LetSyntax {
     pub start: Position,
     pub end: Position,
-    pub parent: *mut SyntaxNode,
+    pub parent: Option<ParentNode>,
     pub binding: Ref<BindingSyntax>,
 }
 
 impl SyntaxNode for LetSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openLet(Ref::from(self as *mut LetSyntax)) {
-            return
+        unsafe {
+            if !(*visitor).open_let(Ref::from(self as *mut LetSyntax)) {
+                return
+            }
         }
         self.binding.accept(visitor);
-        (*visitor).closeLet(Ref::from(self as *mut LetSyntax))
+        unsafe {
+            (*visitor).close_let(Ref::from(self as *mut LetSyntax))
+        }
     }
 }
 
@@ -5438,17 +5498,21 @@ impl SyntaxNode for LetSyntax {
 pub struct VarSyntax {
     pub start: Position,
     pub end: Position,
-    pub parent: *mut SyntaxNode,
+    pub parent: Option<ParentNode>,
     pub binding: Ref<BindingSyntax>,
 }
 
 impl SyntaxNode for VarSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openVar(Ref::from(self as *mut VarSyntax)) {
-            return
+        unsafe {
+            if !(*visitor).open_var(Ref::from(self as *mut VarSyntax)) {
+                return
+            }
         }
         self.binding.accept(visitor);
-        (*visitor).closeVar(Ref::from(self as *mut VarSyntax))
+        unsafe {
+            (*visitor).close_var(Ref::from(self as *mut VarSyntax))
+        }
     }
 }
 
@@ -5456,17 +5520,21 @@ impl SyntaxNode for VarSyntax {
 pub struct MutableSyntax {
     pub start: Position,
     pub end: Position,
-    pub parent: *mut SyntaxNode,
+    pub parent: Option<ParentNode>,
     pub binding: Ref<BindingSyntax>,
 }
 
 impl SyntaxNode for MutableSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openMutable(Ref::from(self as *mut MutableSyntax)) {
-            return
+        unsafe {
+            if !(*visitor).open_mutable(Ref::from(self as *mut MutableSyntax)) {
+                return
+            }
         }
         self.binding.accept(visitor);
-        (*visitor).closeMutable(Ref::from(self as *mut MutableSyntax))
+        unsafe {
+            (*visitor).close_mutable(Ref::from(self as *mut MutableSyntax))
+        }
     }
 }
 
@@ -5474,17 +5542,21 @@ impl SyntaxNode for MutableSyntax {
 pub struct ThreadLocalSyntax {
     pub start: Position,
     pub end: Position,
-    pub parent: *mut SyntaxNode,
+    pub parent: Option<ParentNode>,
     pub binding: Ref<BindingSyntax>,
 }
 
 impl SyntaxNode for ThreadLocalSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openThreadLocal(Ref::from(self as *mut ThreadLocalSyntax)) {
-            return
+        unsafe {
+            if !(*visitor).open_threadlocal(Ref::from(self as *mut ThreadLocalSyntax)) {
+                return
+            }
         }
         self.binding.accept(visitor);
-        (*visitor).closeThreadLocal(Ref::from(self as *mut ThreadLocalSyntax))
+        unsafe {
+            (*visitor).close_threadlocal(Ref::from(self as *mut ThreadLocalSyntax))
+        }
     }
 }
 
@@ -5492,24 +5564,28 @@ impl SyntaxNode for ThreadLocalSyntax {
 pub struct BindingSyntax {
     pub start: Position,
     pub end: Position,
-    pub parent: *mut SyntaxNode,
+    pub parent: Option<ParentNode>,
     pub name: String,
-    pub typeAnnotation: Option<Ref<TypeAnnotationSyntax>>,
+    pub type_annotation: Option<Ref<TypeAnnotationSyntax>>,
     pub calculation: Ref<CalculationSyntax>,
 }
 
 impl SyntaxNode for BindingSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openBinding(Ref::from(self as *mut BindingSyntax)) {
-            return
+        unsafe {
+            if !(*visitor).open_binding(Ref::from(self as *mut BindingSyntax)) {
+                return
+            }
         }
-        match self.typeAnnotation {
-            Some(x) => x.accept(visitor),
+        match self.type_annotation {
+            Some(mut x) => x.accept(visitor),
             None => ()
         };
 
         self.calculation.accept(visitor);
-        (*visitor).closeBinding(Ref::from(self as *mut BindingSyntax))
+        unsafe {
+            (*visitor).close_binding(Ref::from(self as *mut BindingSyntax))
+        }
     }
 }
 
@@ -5517,20 +5593,24 @@ impl SyntaxNode for BindingSyntax {
 pub struct SetSyntax {
     pub start: Position,
     pub end: Position,
-    pub parent: *mut SyntaxNode,
-    pub lValue: Ref<OperationSyntax>,
-    pub rValue: Ref<CalculationSyntax>,
+    pub parent: Option<ParentNode>,
+    pub l_value: Ref<OperationSyntax>,
+    pub r_value: Ref<CalculationSyntax>,
 }
 
 impl SyntaxNode for SetSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openSet(Ref::from(self as *mut SetSyntax)) {
-            return
+        unsafe {
+            if !(*visitor).open_set(Ref::from(self as *mut SetSyntax)) {
+                return
+            }
         }
-        self.lValue.accept(visitor);
+        self.l_value.accept(visitor);
 
-        self.rValue.accept(visitor);
-        (*visitor).closeSet(Ref::from(self as *mut SetSyntax))
+        self.r_value.accept(visitor);
+        unsafe {
+            (*visitor).close_set(Ref::from(self as *mut SetSyntax))
+        }
     }
 }
 
@@ -5538,17 +5618,21 @@ impl SyntaxNode for SetSyntax {
 pub struct CalculationSyntax {
     pub start: Position,
     pub end: Position,
-    pub parent: *mut SyntaxNode,
+    pub parent: Option<ParentNode>,
     pub operation: Ref<OperationSyntax>,
 }
 
 impl SyntaxNode for CalculationSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openCalculation(Ref::from(self as *mut CalculationSyntax)) {
-            return
+        unsafe {
+            if !(*visitor).open_calculation(Ref::from(self as *mut CalculationSyntax)) {
+                return
+            }
         }
         self.operation.accept(visitor);
-        (*visitor).closeCalculation(Ref::from(self as *mut CalculationSyntax))
+        unsafe {
+            (*visitor).close_calculation(Ref::from(self as *mut CalculationSyntax))
+        }
     }
 }
 
@@ -5556,19 +5640,23 @@ impl SyntaxNode for CalculationSyntax {
 pub struct OperationSyntax {
     pub start: Position,
     pub end: Position,
-    pub parent: *mut SyntaxNode,
+    pub parent: Option<ParentNode>,
     pub op: Ref<Vector<Ref<OperandSyntax>>>,
 }
 
 impl SyntaxNode for OperationSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openOperation(Ref::from(self as *mut OperationSyntax)) {
-            return
+        unsafe {
+            if !(*visitor).open_operation(Ref::from(self as *mut OperationSyntax)) {
+                return
+            }
         }
-        for node in self.op.iter() {
+        for node in self.op.iter_mut() {
             node.accept(visitor)
         };
-        (*visitor).closeOperation(Ref::from(self as *mut OperationSyntax))
+        unsafe {
+            (*visitor).close_operation(Ref::from(self as *mut OperationSyntax))
+        }
     }
 }
 
@@ -5576,25 +5664,29 @@ impl SyntaxNode for OperationSyntax {
 pub struct OperandSyntax {
     pub start: Position,
     pub end: Position,
-    pub parent: *mut SyntaxNode,
+    pub parent: Option<ParentNode>,
     pub primary: Ref<ExpressionSyntax>,
     pub postfixes: Option<Ref<Vector<Ref<PostfixSyntax>>>>,
 }
 
 impl SyntaxNode for OperandSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openOperand(Ref::from(self as *mut OperandSyntax)) {
-            return
+        unsafe {
+            if !(*visitor).open_operand(Ref::from(self as *mut OperandSyntax)) {
+                return
+            }
         }
         self.primary.accept(visitor);
 
         match self.postfixes {
-            Some(x) => for node in x.iter() {
+            Some(mut x) => for node in x.iter_mut() {
                 node.accept(visitor)
             },
             None => ()
         };
-        (*visitor).closeOperand(Ref::from(self as *mut OperandSyntax))
+        unsafe {
+            (*visitor).close_operand(Ref::from(self as *mut OperandSyntax))
+        }
     }
 }
 
@@ -5616,13 +5708,15 @@ impl SyntaxNode for PostfixSyntax {
 pub struct MemberAccessSyntax {
     pub start: Position,
     pub end: Position,
-    pub parent: *mut SyntaxNode,
+    pub parent: Option<ParentNode>,
     pub member: String,
 }
 
 impl SyntaxNode for MemberAccessSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        (*visitor).visitMemberAccess(Ref::from(self as *mut MemberAccessSyntax))
+        unsafe {
+            (*visitor).visit_memberaccess(Ref::from(self as *mut MemberAccessSyntax))
+        }
     }
 }
 
@@ -5630,17 +5724,21 @@ impl SyntaxNode for MemberAccessSyntax {
 pub struct AsSyntax {
     pub start: Position,
     pub end: Position,
-    pub parent: *mut SyntaxNode,
-    pub typeSpec: Ref<TypeSpecSyntax>,
+    pub parent: Option<ParentNode>,
+    pub type_spec: Ref<TypeSpecSyntax>,
 }
 
 impl SyntaxNode for AsSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openAs(Ref::from(self as *mut AsSyntax)) {
-            return
+        unsafe {
+            if !(*visitor).open_as(Ref::from(self as *mut AsSyntax)) {
+                return
+            }
         }
-        self.typeSpec.accept(visitor);
-        (*visitor).closeAs(Ref::from(self as *mut AsSyntax))
+        self.type_spec.accept(visitor);
+        unsafe {
+            (*visitor).close_as(Ref::from(self as *mut AsSyntax))
+        }
     }
 }
 
@@ -5648,17 +5746,21 @@ impl SyntaxNode for AsSyntax {
 pub struct IsSyntax {
     pub start: Position,
     pub end: Position,
-    pub parent: *mut SyntaxNode,
-    pub typeSpec: Ref<TypeSpecSyntax>,
+    pub parent: Option<ParentNode>,
+    pub type_spec: Ref<TypeSpecSyntax>,
 }
 
 impl SyntaxNode for IsSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openIs(Ref::from(self as *mut IsSyntax)) {
-            return
+        unsafe {
+            if !(*visitor).open_is(Ref::from(self as *mut IsSyntax)) {
+                return
+            }
         }
-        self.typeSpec.accept(visitor);
-        (*visitor).closeIs(Ref::from(self as *mut IsSyntax))
+        self.type_spec.accept(visitor);
+        unsafe {
+            (*visitor).close_is(Ref::from(self as *mut IsSyntax))
+        }
     }
 }
 
@@ -5666,12 +5768,14 @@ impl SyntaxNode for IsSyntax {
 pub struct UnwrapSyntax {
     pub start: Position,
     pub end: Position,
-    pub parent: *mut SyntaxNode,
+    pub parent: Option<ParentNode>,
 }
 
 impl SyntaxNode for UnwrapSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        (*visitor).visitUnwrap(Ref::from(self as *mut UnwrapSyntax))
+        unsafe {
+            (*visitor).visit_unwrap(Ref::from(self as *mut UnwrapSyntax))
+        }
     }
 }
 
@@ -5679,20 +5783,24 @@ impl SyntaxNode for UnwrapSyntax {
 pub struct CatchSyntax {
     pub start: Position,
     pub end: Position,
-    pub parent: *mut SyntaxNode,
-    pub typeSpec: Ref<CatchPatternSyntax>,
+    pub parent: Option<ParentNode>,
+    pub type_spec: Ref<CatchPatternSyntax>,
     pub handler: Ref<BlockSyntax>,
 }
 
 impl SyntaxNode for CatchSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openCatch(Ref::from(self as *mut CatchSyntax)) {
-            return
+        unsafe {
+            if !(*visitor).open_catch(Ref::from(self as *mut CatchSyntax)) {
+                return
+            }
         }
-        self.typeSpec.accept(visitor);
+        self.type_spec.accept(visitor);
 
         self.handler.accept(visitor);
-        (*visitor).closeCatch(Ref::from(self as *mut CatchSyntax))
+        unsafe {
+            (*visitor).close_catch(Ref::from(self as *mut CatchSyntax))
+        }
     }
 }
 
@@ -5711,17 +5819,21 @@ impl SyntaxNode for CatchPatternSyntax {
 pub struct WildCardCatchPatternSyntax {
     pub start: Position,
     pub end: Position,
-    pub parent: *mut SyntaxNode,
+    pub parent: Option<ParentNode>,
     pub pattern: Ref<WildcardPatternSyntax>,
 }
 
 impl SyntaxNode for WildCardCatchPatternSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openWildCardCatchPattern(Ref::from(self as *mut WildCardCatchPatternSyntax)) {
-            return
+        unsafe {
+            if !(*visitor).open_wildcardcatchpattern(Ref::from(self as *mut WildCardCatchPatternSyntax)) {
+                return
+            }
         }
         self.pattern.accept(visitor);
-        (*visitor).closeWildCardCatchPattern(Ref::from(self as *mut WildCardCatchPatternSyntax))
+        unsafe {
+            (*visitor).close_wildcardcatchpattern(Ref::from(self as *mut WildCardCatchPatternSyntax))
+        }
     }
 }
 
@@ -5729,18 +5841,22 @@ impl SyntaxNode for WildCardCatchPatternSyntax {
 pub struct TypeCatchPatternSyntax {
     pub start: Position,
     pub end: Position,
-    pub parent: *mut SyntaxNode,
-    pub typeSpec: Ref<TypeSpecSyntax>,
-    pub errorName: Option<String>,
+    pub parent: Option<ParentNode>,
+    pub type_spec: Ref<TypeSpecSyntax>,
+    pub error_name: Option<String>,
 }
 
 impl SyntaxNode for TypeCatchPatternSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openTypeCatchPattern(Ref::from(self as *mut TypeCatchPatternSyntax)) {
-            return
+        unsafe {
+            if !(*visitor).open_typecatchpattern(Ref::from(self as *mut TypeCatchPatternSyntax)) {
+                return
+            }
         }
-        self.typeSpec.accept(visitor);
-        (*visitor).closeTypeCatchPattern(Ref::from(self as *mut TypeCatchPatternSyntax))
+        self.type_spec.accept(visitor);
+        unsafe {
+            (*visitor).close_typecatchpattern(Ref::from(self as *mut TypeCatchPatternSyntax))
+        }
     }
 }
 
@@ -5770,22 +5886,26 @@ impl SyntaxNode for ExpressionSyntax {
 pub struct BlockSyntax {
     pub start: Position,
     pub end: Position,
-    pub parent: *mut SyntaxNode,
+    pub parent: Option<ParentNode>,
     pub statements: Option<Ref<Vector<Ref<StatementSyntax>>>>,
 }
 
 impl SyntaxNode for BlockSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openBlock(Ref::from(self as *mut BlockSyntax)) {
-            return
+        unsafe {
+            if !(*visitor).open_block(Ref::from(self as *mut BlockSyntax)) {
+                return
+            }
         }
         match self.statements {
-            Some(x) => for node in x.iter() {
+            Some(mut x) => for node in x.iter_mut() {
                 node.accept(visitor)
             },
             None => ()
         };
-        (*visitor).closeBlock(Ref::from(self as *mut BlockSyntax))
+        unsafe {
+            (*visitor).close_block(Ref::from(self as *mut BlockSyntax))
+        }
     }
 }
 
@@ -5793,13 +5913,15 @@ impl SyntaxNode for BlockSyntax {
 pub struct ConstantSyntax {
     pub start: Position,
     pub end: Position,
-    pub parent: *mut SyntaxNode,
+    pub parent: Option<ParentNode>,
     pub literal: Literal,
 }
 
 impl SyntaxNode for ConstantSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        (*visitor).visitConstant(Ref::from(self as *mut ConstantSyntax))
+        unsafe {
+            (*visitor).visit_constant(Ref::from(self as *mut ConstantSyntax))
+        }
     }
 }
 
@@ -5807,26 +5929,30 @@ impl SyntaxNode for ConstantSyntax {
 pub struct IfSyntax {
     pub start: Position,
     pub end: Position,
-    pub parent: *mut SyntaxNode,
+    pub parent: Option<ParentNode>,
     pub condition: Ref<OperationSyntax>,
     pub consequent: Ref<BlockSyntax>,
-    pub elseClause: Option<Ref<ElseSyntax>>,
+    pub else_clause: Option<Ref<ElseSyntax>>,
 }
 
 impl SyntaxNode for IfSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openIf(Ref::from(self as *mut IfSyntax)) {
-            return
+        unsafe {
+            if !(*visitor).open_if(Ref::from(self as *mut IfSyntax)) {
+                return
+            }
         }
         self.condition.accept(visitor);
 
         self.consequent.accept(visitor);
 
-        match self.elseClause {
-            Some(x) => x.accept(visitor),
+        match self.else_clause {
+            Some(mut x) => x.accept(visitor),
             None => ()
         };
-        (*visitor).closeIf(Ref::from(self as *mut IfSyntax))
+        unsafe {
+            (*visitor).close_if(Ref::from(self as *mut IfSyntax))
+        }
     }
 }
 
@@ -5834,17 +5960,21 @@ impl SyntaxNode for IfSyntax {
 pub struct ElseSyntax {
     pub start: Position,
     pub end: Position,
-    pub parent: *mut SyntaxNode,
+    pub parent: Option<ParentNode>,
     pub alternative: Ref<BlockSyntax>,
 }
 
 impl SyntaxNode for ElseSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openElse(Ref::from(self as *mut ElseSyntax)) {
-            return
+        unsafe {
+            if !(*visitor).open_else(Ref::from(self as *mut ElseSyntax)) {
+                return
+            }
         }
         self.alternative.accept(visitor);
-        (*visitor).closeElse(Ref::from(self as *mut ElseSyntax))
+        unsafe {
+            (*visitor).close_else(Ref::from(self as *mut ElseSyntax))
+        }
     }
 }
 
@@ -5852,22 +5982,26 @@ impl SyntaxNode for ElseSyntax {
 pub struct SwitchSyntax {
     pub start: Position,
     pub end: Position,
-    pub parent: *mut SyntaxNode,
+    pub parent: Option<ParentNode>,
     pub condition: Ref<OperationSyntax>,
     pub cases: Ref<Vector<Ref<SwitchCaseSyntax>>>,
 }
 
 impl SyntaxNode for SwitchSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openSwitch(Ref::from(self as *mut SwitchSyntax)) {
-            return
+        unsafe {
+            if !(*visitor).open_switch(Ref::from(self as *mut SwitchSyntax)) {
+                return
+            }
         }
         self.condition.accept(visitor);
 
-        for node in self.cases.iter() {
+        for node in self.cases.iter_mut() {
             node.accept(visitor)
         };
-        (*visitor).closeSwitch(Ref::from(self as *mut SwitchSyntax))
+        unsafe {
+            (*visitor).close_switch(Ref::from(self as *mut SwitchSyntax))
+        }
     }
 }
 
@@ -5875,20 +6009,24 @@ impl SyntaxNode for SwitchSyntax {
 pub struct SwitchCaseSyntax {
     pub start: Position,
     pub end: Position,
-    pub parent: *mut SyntaxNode,
+    pub parent: Option<ParentNode>,
     pub label: Ref<CaseLabelSyntax>,
     pub content: Ref<BlockSyntax>,
 }
 
 impl SyntaxNode for SwitchCaseSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openSwitchCase(Ref::from(self as *mut SwitchCaseSyntax)) {
-            return
+        unsafe {
+            if !(*visitor).open_switchcase(Ref::from(self as *mut SwitchCaseSyntax)) {
+                return
+            }
         }
         self.label.accept(visitor);
 
         self.content.accept(visitor);
-        (*visitor).closeSwitchCase(Ref::from(self as *mut SwitchCaseSyntax))
+        unsafe {
+            (*visitor).close_switchcase(Ref::from(self as *mut SwitchCaseSyntax))
+        }
     }
 }
 
@@ -5907,19 +6045,23 @@ impl SyntaxNode for CaseLabelSyntax {
 pub struct ItemCaseLabelSyntax {
     pub start: Position,
     pub end: Position,
-    pub parent: *mut SyntaxNode,
+    pub parent: Option<ParentNode>,
     pub items: Ref<Vector<Ref<CaseItemSyntax>>>,
 }
 
 impl SyntaxNode for ItemCaseLabelSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openItemCaseLabel(Ref::from(self as *mut ItemCaseLabelSyntax)) {
-            return
+        unsafe {
+            if !(*visitor).open_itemcaselabel(Ref::from(self as *mut ItemCaseLabelSyntax)) {
+                return
+            }
         }
-        for node in self.items.iter() {
+        for node in self.items.iter_mut() {
             node.accept(visitor)
         };
-        (*visitor).closeItemCaseLabel(Ref::from(self as *mut ItemCaseLabelSyntax))
+        unsafe {
+            (*visitor).close_itemcaselabel(Ref::from(self as *mut ItemCaseLabelSyntax))
+        }
     }
 }
 
@@ -5927,17 +6069,21 @@ impl SyntaxNode for ItemCaseLabelSyntax {
 pub struct CaseItemSyntax {
     pub start: Position,
     pub end: Position,
-    pub parent: *mut SyntaxNode,
+    pub parent: Option<ParentNode>,
     pub pattern: Ref<CasePatternSyntax>,
 }
 
 impl SyntaxNode for CaseItemSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openCaseItem(Ref::from(self as *mut CaseItemSyntax)) {
-            return
+        unsafe {
+            if !(*visitor).open_caseitem(Ref::from(self as *mut CaseItemSyntax)) {
+                return
+            }
         }
         self.pattern.accept(visitor);
-        (*visitor).closeCaseItem(Ref::from(self as *mut CaseItemSyntax))
+        unsafe {
+            (*visitor).close_caseitem(Ref::from(self as *mut CaseItemSyntax))
+        }
     }
 }
 
@@ -5957,17 +6103,21 @@ impl SyntaxNode for CasePatternSyntax {
 pub struct ConstantPatternSyntax {
     pub start: Position,
     pub end: Position,
-    pub parent: *mut SyntaxNode,
+    pub parent: Option<ParentNode>,
     pub constant: Ref<ConstantSyntax>,
 }
 
 impl SyntaxNode for ConstantPatternSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openConstantPattern(Ref::from(self as *mut ConstantPatternSyntax)) {
-            return
+        unsafe {
+            if !(*visitor).open_constantpattern(Ref::from(self as *mut ConstantPatternSyntax)) {
+                return
+            }
         }
         self.constant.accept(visitor);
-        (*visitor).closeConstantPattern(Ref::from(self as *mut ConstantPatternSyntax))
+        unsafe {
+            (*visitor).close_constantpattern(Ref::from(self as *mut ConstantPatternSyntax))
+        }
     }
 }
 
@@ -5975,12 +6125,14 @@ impl SyntaxNode for ConstantPatternSyntax {
 pub struct WildcardPatternSyntax {
     pub start: Position,
     pub end: Position,
-    pub parent: *mut SyntaxNode,
+    pub parent: Option<ParentNode>,
 }
 
 impl SyntaxNode for WildcardPatternSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        (*visitor).visitWildcardPattern(Ref::from(self as *mut WildcardPatternSyntax))
+        unsafe {
+            (*visitor).visit_wildcardpattern(Ref::from(self as *mut WildcardPatternSyntax))
+        }
     }
 }
 
@@ -5988,17 +6140,21 @@ impl SyntaxNode for WildcardPatternSyntax {
 pub struct NamePatternSyntax {
     pub start: Position,
     pub end: Position,
-    pub parent: *mut SyntaxNode,
+    pub parent: Option<ParentNode>,
     pub name: Ref<NameSyntax>,
 }
 
 impl SyntaxNode for NamePatternSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openNamePattern(Ref::from(self as *mut NamePatternSyntax)) {
-            return
+        unsafe {
+            if !(*visitor).open_namepattern(Ref::from(self as *mut NamePatternSyntax)) {
+                return
+            }
         }
         self.name.accept(visitor);
-        (*visitor).closeNamePattern(Ref::from(self as *mut NamePatternSyntax))
+        unsafe {
+            (*visitor).close_namepattern(Ref::from(self as *mut NamePatternSyntax))
+        }
     }
 }
 
@@ -6006,12 +6162,14 @@ impl SyntaxNode for NamePatternSyntax {
 pub struct DefaultCaseLabelSyntax {
     pub start: Position,
     pub end: Position,
-    pub parent: *mut SyntaxNode,
+    pub parent: Option<ParentNode>,
 }
 
 impl SyntaxNode for DefaultCaseLabelSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        (*visitor).visitDefaultCaseLabel(Ref::from(self as *mut DefaultCaseLabelSyntax))
+        unsafe {
+            (*visitor).visit_defaultcaselabel(Ref::from(self as *mut DefaultCaseLabelSyntax))
+        }
     }
 }
 
@@ -6019,27 +6177,31 @@ impl SyntaxNode for DefaultCaseLabelSyntax {
 pub struct ForSyntax {
     pub start: Position,
     pub end: Position,
-    pub parent: *mut SyntaxNode,
+    pub parent: Option<ParentNode>,
     pub index: String,
-    pub typeAnnotation: Option<Ref<TypeAnnotationSyntax>>,
+    pub type_annotation: Option<Ref<TypeAnnotationSyntax>>,
     pub operation: Ref<OperationSyntax>,
     pub iteration: Ref<LoopSyntax>,
 }
 
 impl SyntaxNode for ForSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openFor(Ref::from(self as *mut ForSyntax)) {
-            return
+        unsafe {
+            if !(*visitor).open_for(Ref::from(self as *mut ForSyntax)) {
+                return
+            }
         }
-        match self.typeAnnotation {
-            Some(x) => x.accept(visitor),
+        match self.type_annotation {
+            Some(mut x) => x.accept(visitor),
             None => ()
         };
 
         self.operation.accept(visitor);
 
         self.iteration.accept(visitor);
-        (*visitor).closeFor(Ref::from(self as *mut ForSyntax))
+        unsafe {
+            (*visitor).close_for(Ref::from(self as *mut ForSyntax))
+        }
     }
 }
 
@@ -6047,20 +6209,24 @@ impl SyntaxNode for ForSyntax {
 pub struct WhileSyntax {
     pub start: Position,
     pub end: Position,
-    pub parent: *mut SyntaxNode,
+    pub parent: Option<ParentNode>,
     pub condition: Ref<OperationSyntax>,
     pub iteration: Ref<LoopSyntax>,
 }
 
 impl SyntaxNode for WhileSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openWhile(Ref::from(self as *mut WhileSyntax)) {
-            return
+        unsafe {
+            if !(*visitor).open_while(Ref::from(self as *mut WhileSyntax)) {
+                return
+            }
         }
         self.condition.accept(visitor);
 
         self.iteration.accept(visitor);
-        (*visitor).closeWhile(Ref::from(self as *mut WhileSyntax))
+        unsafe {
+            (*visitor).close_while(Ref::from(self as *mut WhileSyntax))
+        }
     }
 }
 
@@ -6068,20 +6234,24 @@ impl SyntaxNode for WhileSyntax {
 pub struct DoSyntax {
     pub start: Position,
     pub end: Position,
-    pub parent: *mut SyntaxNode,
+    pub parent: Option<ParentNode>,
     pub iteration: Ref<LoopSyntax>,
     pub condition: Ref<OperationSyntax>,
 }
 
 impl SyntaxNode for DoSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openDo(Ref::from(self as *mut DoSyntax)) {
-            return
+        unsafe {
+            if !(*visitor).open_do(Ref::from(self as *mut DoSyntax)) {
+                return
+            }
         }
         self.iteration.accept(visitor);
 
         self.condition.accept(visitor);
-        (*visitor).closeDo(Ref::from(self as *mut DoSyntax))
+        unsafe {
+            (*visitor).close_do(Ref::from(self as *mut DoSyntax))
+        }
     }
 }
 
@@ -6100,17 +6270,21 @@ impl SyntaxNode for LoopSyntax {
 pub struct SimpleLoopSyntax {
     pub start: Position,
     pub end: Position,
-    pub parent: *mut SyntaxNode,
+    pub parent: Option<ParentNode>,
     pub code: Ref<BlockSyntax>,
 }
 
 impl SyntaxNode for SimpleLoopSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openSimpleLoop(Ref::from(self as *mut SimpleLoopSyntax)) {
-            return
+        unsafe {
+            if !(*visitor).open_simpleloop(Ref::from(self as *mut SimpleLoopSyntax)) {
+                return
+            }
         }
         self.code.accept(visitor);
-        (*visitor).closeSimpleLoop(Ref::from(self as *mut SimpleLoopSyntax))
+        unsafe {
+            (*visitor).close_simpleloop(Ref::from(self as *mut SimpleLoopSyntax))
+        }
     }
 }
 
@@ -6118,18 +6292,22 @@ impl SyntaxNode for SimpleLoopSyntax {
 pub struct NamedLoopSyntax {
     pub start: Position,
     pub end: Position,
-    pub parent: *mut SyntaxNode,
+    pub parent: Option<ParentNode>,
     pub name: String,
     pub code: Ref<BlockSyntax>,
 }
 
 impl SyntaxNode for NamedLoopSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openNamedLoop(Ref::from(self as *mut NamedLoopSyntax)) {
-            return
+        unsafe {
+            if !(*visitor).open_namedloop(Ref::from(self as *mut NamedLoopSyntax)) {
+                return
+            }
         }
         self.code.accept(visitor);
-        (*visitor).closeNamedLoop(Ref::from(self as *mut NamedLoopSyntax))
+        unsafe {
+            (*visitor).close_namedloop(Ref::from(self as *mut NamedLoopSyntax))
+        }
     }
 }
 
@@ -6137,12 +6315,14 @@ impl SyntaxNode for NamedLoopSyntax {
 pub struct ThisSyntax {
     pub start: Position,
     pub end: Position,
-    pub parent: *mut SyntaxNode,
+    pub parent: Option<ParentNode>,
 }
 
 impl SyntaxNode for ThisSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        (*visitor).visitThis(Ref::from(self as *mut ThisSyntax))
+        unsafe {
+            (*visitor).visit_this(Ref::from(self as *mut ThisSyntax))
+        }
     }
 }
 
@@ -6150,17 +6330,21 @@ impl SyntaxNode for ThisSyntax {
 pub struct NewSyntax {
     pub start: Position,
     pub end: Position,
-    pub parent: *mut SyntaxNode,
-    pub typeSpec: Ref<TypeSyntax>,
+    pub parent: Option<ParentNode>,
+    pub type_spec: Ref<TypeSyntax>,
 }
 
 impl SyntaxNode for NewSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openNew(Ref::from(self as *mut NewSyntax)) {
-            return
+        unsafe {
+            if !(*visitor).open_new(Ref::from(self as *mut NewSyntax)) {
+                return
+            }
         }
-        self.typeSpec.accept(visitor);
-        (*visitor).closeNew(Ref::from(self as *mut NewSyntax))
+        self.type_spec.accept(visitor);
+        unsafe {
+            (*visitor).close_new(Ref::from(self as *mut NewSyntax))
+        }
     }
 }
 
@@ -6168,28 +6352,32 @@ impl SyntaxNode for NewSyntax {
 pub struct ObjectSyntax {
     pub start: Position,
     pub end: Position,
-    pub parent: *mut SyntaxNode,
-    pub firstOp: Option<Ref<OperationSyntax>>,
-    pub additionalOps: Option<Ref<Vector<Ref<ItemSyntax>>>>,
+    pub parent: Option<ParentNode>,
+    pub first_op: Option<Ref<OperationSyntax>>,
+    pub additional_ops: Option<Ref<Vector<Ref<ItemSyntax>>>>,
 }
 
 impl SyntaxNode for ObjectSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openObject(Ref::from(self as *mut ObjectSyntax)) {
-            return
+        unsafe {
+            if !(*visitor).open_object(Ref::from(self as *mut ObjectSyntax)) {
+                return
+            }
         }
-        match self.firstOp {
-            Some(x) => x.accept(visitor),
+        match self.first_op {
+            Some(mut x) => x.accept(visitor),
             None => ()
         };
 
-        match self.additionalOps {
-            Some(x) => for node in x.iter() {
+        match self.additional_ops {
+            Some(mut x) => for node in x.iter_mut() {
                 node.accept(visitor)
             },
             None => ()
         };
-        (*visitor).closeObject(Ref::from(self as *mut ObjectSyntax))
+        unsafe {
+            (*visitor).close_object(Ref::from(self as *mut ObjectSyntax))
+        }
     }
 }
 
@@ -6197,28 +6385,32 @@ impl SyntaxNode for ObjectSyntax {
 pub struct ArraySyntax {
     pub start: Position,
     pub end: Position,
-    pub parent: *mut SyntaxNode,
-    pub firstOp: Option<Ref<OperationSyntax>>,
-    pub additionalOps: Option<Ref<Vector<Ref<ItemSyntax>>>>,
+    pub parent: Option<ParentNode>,
+    pub first_op: Option<Ref<OperationSyntax>>,
+    pub additional_ops: Option<Ref<Vector<Ref<ItemSyntax>>>>,
 }
 
 impl SyntaxNode for ArraySyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openArray(Ref::from(self as *mut ArraySyntax)) {
-            return
+        unsafe {
+            if !(*visitor).open_array(Ref::from(self as *mut ArraySyntax)) {
+                return
+            }
         }
-        match self.firstOp {
-            Some(x) => x.accept(visitor),
+        match self.first_op {
+            Some(mut x) => x.accept(visitor),
             None => ()
         };
 
-        match self.additionalOps {
-            Some(x) => for node in x.iter() {
+        match self.additional_ops {
+            Some(mut x) => for node in x.iter_mut() {
                 node.accept(visitor)
             },
             None => ()
         };
-        (*visitor).closeArray(Ref::from(self as *mut ArraySyntax))
+        unsafe {
+            (*visitor).close_array(Ref::from(self as *mut ArraySyntax))
+        }
     }
 }
 
@@ -6226,17 +6418,21 @@ impl SyntaxNode for ArraySyntax {
 pub struct ItemSyntax {
     pub start: Position,
     pub end: Position,
-    pub parent: *mut SyntaxNode,
+    pub parent: Option<ParentNode>,
     pub operation: Ref<OperationSyntax>,
 }
 
 impl SyntaxNode for ItemSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openItem(Ref::from(self as *mut ItemSyntax)) {
-            return
+        unsafe {
+            if !(*visitor).open_item(Ref::from(self as *mut ItemSyntax)) {
+                return
+            }
         }
         self.operation.accept(visitor);
-        (*visitor).closeItem(Ref::from(self as *mut ItemSyntax))
+        unsafe {
+            (*visitor).close_item(Ref::from(self as *mut ItemSyntax))
+        }
     }
 }
 
@@ -6244,17 +6440,21 @@ impl SyntaxNode for ItemSyntax {
 pub struct SizeOfSyntax {
     pub start: Position,
     pub end: Position,
-    pub parent: *mut SyntaxNode,
-    pub typeSpec: Ref<TypeSyntax>,
+    pub parent: Option<ParentNode>,
+    pub type_spec: Ref<TypeSyntax>,
 }
 
 impl SyntaxNode for SizeOfSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openSizeOf(Ref::from(self as *mut SizeOfSyntax)) {
-            return
+        unsafe {
+            if !(*visitor).open_sizeof(Ref::from(self as *mut SizeOfSyntax)) {
+                return
+            }
         }
-        self.typeSpec.accept(visitor);
-        (*visitor).closeSizeOf(Ref::from(self as *mut SizeOfSyntax))
+        self.type_spec.accept(visitor);
+        unsafe {
+            (*visitor).close_sizeof(Ref::from(self as *mut SizeOfSyntax))
+        }
     }
 }
 
@@ -6262,13 +6462,15 @@ impl SyntaxNode for SizeOfSyntax {
 pub struct BreakSyntax {
     pub start: Position,
     pub end: Position,
-    pub parent: *mut SyntaxNode,
+    pub parent: Option<ParentNode>,
     pub iteration: Option<String>,
 }
 
 impl SyntaxNode for BreakSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        (*visitor).visitBreak(Ref::from(self as *mut BreakSyntax))
+        unsafe {
+            (*visitor).visit_break(Ref::from(self as *mut BreakSyntax))
+        }
     }
 }
 
@@ -6276,13 +6478,15 @@ impl SyntaxNode for BreakSyntax {
 pub struct ContinueSyntax {
     pub start: Position,
     pub end: Position,
-    pub parent: *mut SyntaxNode,
+    pub parent: Option<ParentNode>,
     pub iteration: Option<String>,
 }
 
 impl SyntaxNode for ContinueSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        (*visitor).visitContinue(Ref::from(self as *mut ContinueSyntax))
+        unsafe {
+            (*visitor).visit_continue(Ref::from(self as *mut ContinueSyntax))
+        }
     }
 }
 
@@ -6290,20 +6494,24 @@ impl SyntaxNode for ContinueSyntax {
 pub struct ReturnSyntax {
     pub start: Position,
     pub end: Position,
-    pub parent: *mut SyntaxNode,
+    pub parent: Option<ParentNode>,
     pub result: Option<Ref<CalculationSyntax>>,
 }
 
 impl SyntaxNode for ReturnSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openReturn(Ref::from(self as *mut ReturnSyntax)) {
-            return
+        unsafe {
+            if !(*visitor).open_return(Ref::from(self as *mut ReturnSyntax)) {
+                return
+            }
         }
         match self.result {
-            Some(x) => x.accept(visitor),
+            Some(mut x) => x.accept(visitor),
             None => ()
         };
-        (*visitor).closeReturn(Ref::from(self as *mut ReturnSyntax))
+        unsafe {
+            (*visitor).close_return(Ref::from(self as *mut ReturnSyntax))
+        }
     }
 }
 
@@ -6311,17 +6519,21 @@ impl SyntaxNode for ReturnSyntax {
 pub struct ThrowSyntax {
     pub start: Position,
     pub end: Position,
-    pub parent: *mut SyntaxNode,
+    pub parent: Option<ParentNode>,
     pub exception: Ref<CalculationSyntax>,
 }
 
 impl SyntaxNode for ThrowSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openThrow(Ref::from(self as *mut ThrowSyntax)) {
-            return
+        unsafe {
+            if !(*visitor).open_throw(Ref::from(self as *mut ThrowSyntax)) {
+                return
+            }
         }
         self.exception.accept(visitor);
-        (*visitor).closeThrow(Ref::from(self as *mut ThrowSyntax))
+        unsafe {
+            (*visitor).close_throw(Ref::from(self as *mut ThrowSyntax))
+        }
     }
 }
 
@@ -6329,41 +6541,45 @@ impl SyntaxNode for ThrowSyntax {
 pub struct ClassSyntax {
     pub start: Position,
     pub end: Position,
-    pub parent: *mut SyntaxNode,
+    pub parent: Option<ParentNode>,
     pub name: Ref<NameSyntax>,
     pub generics: Option<Ref<GenericParametersSyntax>>,
-    pub baseClass: Option<Ref<ExtendsSyntax>>,
+    pub base_class: Option<Ref<ExtendsSyntax>>,
     pub contents: Option<Ref<StructureSyntax>>,
     pub body: Option<Ref<ClassBodySyntax>>,
 }
 
 impl SyntaxNode for ClassSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openClass(Ref::from(self as *mut ClassSyntax)) {
-            return
+        unsafe {
+            if !(*visitor).open_class(Ref::from(self as *mut ClassSyntax)) {
+                return
+            }
         }
         self.name.accept(visitor);
 
         match self.generics {
-            Some(x) => x.accept(visitor),
+            Some(mut x) => x.accept(visitor),
             None => ()
         };
 
-        match self.baseClass {
-            Some(x) => x.accept(visitor),
+        match self.base_class {
+            Some(mut x) => x.accept(visitor),
             None => ()
         };
 
         match self.contents {
-            Some(x) => x.accept(visitor),
+            Some(mut x) => x.accept(visitor),
             None => ()
         };
 
         match self.body {
-            Some(x) => x.accept(visitor),
+            Some(mut x) => x.accept(visitor),
             None => ()
         };
-        (*visitor).closeClass(Ref::from(self as *mut ClassSyntax))
+        unsafe {
+            (*visitor).close_class(Ref::from(self as *mut ClassSyntax))
+        }
     }
 }
 
@@ -6371,23 +6587,27 @@ impl SyntaxNode for ClassSyntax {
 pub struct GenericParametersSyntax {
     pub start: Position,
     pub end: Position,
-    pub parent: *mut SyntaxNode,
+    pub parent: Option<ParentNode>,
     pub name: String,
-    pub additionalGenerics: Option<Ref<Vector<Ref<GenericParameterSyntax>>>>,
+    pub additional_generics: Option<Ref<Vector<Ref<GenericParameterSyntax>>>>,
 }
 
 impl SyntaxNode for GenericParametersSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openGenericParameters(Ref::from(self as *mut GenericParametersSyntax)) {
-            return
+        unsafe {
+            if !(*visitor).open_genericparameters(Ref::from(self as *mut GenericParametersSyntax)) {
+                return
+            }
         }
-        match self.additionalGenerics {
-            Some(x) => for node in x.iter() {
+        match self.additional_generics {
+            Some(mut x) => for node in x.iter_mut() {
                 node.accept(visitor)
             },
             None => ()
         };
-        (*visitor).closeGenericParameters(Ref::from(self as *mut GenericParametersSyntax))
+        unsafe {
+            (*visitor).close_genericparameters(Ref::from(self as *mut GenericParametersSyntax))
+        }
     }
 }
 
@@ -6395,13 +6615,15 @@ impl SyntaxNode for GenericParametersSyntax {
 pub struct GenericParameterSyntax {
     pub start: Position,
     pub end: Position,
-    pub parent: *mut SyntaxNode,
+    pub parent: Option<ParentNode>,
     pub name: String,
 }
 
 impl SyntaxNode for GenericParameterSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        (*visitor).visitGenericParameter(Ref::from(self as *mut GenericParameterSyntax))
+        unsafe {
+            (*visitor).visit_genericparameter(Ref::from(self as *mut GenericParameterSyntax))
+        }
     }
 }
 
@@ -6409,17 +6631,21 @@ impl SyntaxNode for GenericParameterSyntax {
 pub struct ExtendsSyntax {
     pub start: Position,
     pub end: Position,
-    pub parent: *mut SyntaxNode,
+    pub parent: Option<ParentNode>,
     pub name: Ref<NameSyntax>,
 }
 
 impl SyntaxNode for ExtendsSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openExtends(Ref::from(self as *mut ExtendsSyntax)) {
-            return
+        unsafe {
+            if !(*visitor).open_extends(Ref::from(self as *mut ExtendsSyntax)) {
+                return
+            }
         }
         self.name.accept(visitor);
-        (*visitor).closeExtends(Ref::from(self as *mut ExtendsSyntax))
+        unsafe {
+            (*visitor).close_extends(Ref::from(self as *mut ExtendsSyntax))
+        }
     }
 }
 
@@ -6427,22 +6653,26 @@ impl SyntaxNode for ExtendsSyntax {
 pub struct StructureSyntax {
     pub start: Position,
     pub end: Position,
-    pub parent: *mut SyntaxNode,
+    pub parent: Option<ParentNode>,
     pub components: Option<Ref<Vector<Ref<ComponentSyntax>>>>,
 }
 
 impl SyntaxNode for StructureSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openStructure(Ref::from(self as *mut StructureSyntax)) {
-            return
+        unsafe {
+            if !(*visitor).open_structure(Ref::from(self as *mut StructureSyntax)) {
+                return
+            }
         }
         match self.components {
-            Some(x) => for node in x.iter() {
+            Some(mut x) => for node in x.iter_mut() {
                 node.accept(visitor)
             },
             None => ()
         };
-        (*visitor).closeStructure(Ref::from(self as *mut StructureSyntax))
+        unsafe {
+            (*visitor).close_structure(Ref::from(self as *mut StructureSyntax))
+        }
     }
 }
 
@@ -6450,21 +6680,25 @@ impl SyntaxNode for StructureSyntax {
 pub struct ComponentSyntax {
     pub start: Position,
     pub end: Position,
-    pub parent: *mut SyntaxNode,
+    pub parent: Option<ParentNode>,
     pub name: String,
-    pub typeAnnotation: Option<Ref<TypeAnnotationSyntax>>,
+    pub type_annotation: Option<Ref<TypeAnnotationSyntax>>,
 }
 
 impl SyntaxNode for ComponentSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openComponent(Ref::from(self as *mut ComponentSyntax)) {
-            return
+        unsafe {
+            if !(*visitor).open_component(Ref::from(self as *mut ComponentSyntax)) {
+                return
+            }
         }
-        match self.typeAnnotation {
-            Some(x) => x.accept(visitor),
+        match self.type_annotation {
+            Some(mut x) => x.accept(visitor),
             None => ()
         };
-        (*visitor).closeComponent(Ref::from(self as *mut ComponentSyntax))
+        unsafe {
+            (*visitor).close_component(Ref::from(self as *mut ComponentSyntax))
+        }
     }
 }
 
@@ -6472,22 +6706,26 @@ impl SyntaxNode for ComponentSyntax {
 pub struct ClassBodySyntax {
     pub start: Position,
     pub end: Position,
-    pub parent: *mut SyntaxNode,
+    pub parent: Option<ParentNode>,
     pub members: Option<Ref<Vector<Ref<ClassMemberSyntax>>>>,
 }
 
 impl SyntaxNode for ClassBodySyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openClassBody(Ref::from(self as *mut ClassBodySyntax)) {
-            return
+        unsafe {
+            if !(*visitor).open_classbody(Ref::from(self as *mut ClassBodySyntax)) {
+                return
+            }
         }
         match self.members {
-            Some(x) => for node in x.iter() {
+            Some(mut x) => for node in x.iter_mut() {
                 node.accept(visitor)
             },
             None => ()
         };
-        (*visitor).closeClassBody(Ref::from(self as *mut ClassBodySyntax))
+        unsafe {
+            (*visitor).close_classbody(Ref::from(self as *mut ClassBodySyntax))
+        }
     }
 }
 
@@ -6513,17 +6751,21 @@ impl SyntaxNode for ClassMemberSyntax {
 pub struct LetMemberSyntax {
     pub start: Position,
     pub end: Position,
-    pub parent: *mut SyntaxNode,
+    pub parent: Option<ParentNode>,
     pub declaration: Ref<LetSyntax>,
 }
 
 impl SyntaxNode for LetMemberSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openLetMember(Ref::from(self as *mut LetMemberSyntax)) {
-            return
+        unsafe {
+            if !(*visitor).open_letmember(Ref::from(self as *mut LetMemberSyntax)) {
+                return
+            }
         }
         self.declaration.accept(visitor);
-        (*visitor).closeLetMember(Ref::from(self as *mut LetMemberSyntax))
+        unsafe {
+            (*visitor).close_letmember(Ref::from(self as *mut LetMemberSyntax))
+        }
     }
 }
 
@@ -6531,17 +6773,21 @@ impl SyntaxNode for LetMemberSyntax {
 pub struct VarMemberSyntax {
     pub start: Position,
     pub end: Position,
-    pub parent: *mut SyntaxNode,
+    pub parent: Option<ParentNode>,
     pub declaration: Ref<VarSyntax>,
 }
 
 impl SyntaxNode for VarMemberSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openVarMember(Ref::from(self as *mut VarMemberSyntax)) {
-            return
+        unsafe {
+            if !(*visitor).open_varmember(Ref::from(self as *mut VarMemberSyntax)) {
+                return
+            }
         }
         self.declaration.accept(visitor);
-        (*visitor).closeVarMember(Ref::from(self as *mut VarMemberSyntax))
+        unsafe {
+            (*visitor).close_varmember(Ref::from(self as *mut VarMemberSyntax))
+        }
     }
 }
 
@@ -6549,17 +6795,21 @@ impl SyntaxNode for VarMemberSyntax {
 pub struct MutableMemberSyntax {
     pub start: Position,
     pub end: Position,
-    pub parent: *mut SyntaxNode,
+    pub parent: Option<ParentNode>,
     pub declaration: Ref<MutableSyntax>,
 }
 
 impl SyntaxNode for MutableMemberSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openMutableMember(Ref::from(self as *mut MutableMemberSyntax)) {
-            return
+        unsafe {
+            if !(*visitor).open_mutablemember(Ref::from(self as *mut MutableMemberSyntax)) {
+                return
+            }
         }
         self.declaration.accept(visitor);
-        (*visitor).closeMutableMember(Ref::from(self as *mut MutableMemberSyntax))
+        unsafe {
+            (*visitor).close_mutablemember(Ref::from(self as *mut MutableMemberSyntax))
+        }
     }
 }
 
@@ -6567,17 +6817,21 @@ impl SyntaxNode for MutableMemberSyntax {
 pub struct SetInitializationSyntax {
     pub start: Position,
     pub end: Position,
-    pub parent: *mut SyntaxNode,
+    pub parent: Option<ParentNode>,
     pub definition: Ref<SetSyntax>,
 }
 
 impl SyntaxNode for SetInitializationSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openSetInitialization(Ref::from(self as *mut SetInitializationSyntax)) {
-            return
+        unsafe {
+            if !(*visitor).open_setinitialization(Ref::from(self as *mut SetInitializationSyntax)) {
+                return
+            }
         }
         self.definition.accept(visitor);
-        (*visitor).closeSetInitialization(Ref::from(self as *mut SetInitializationSyntax))
+        unsafe {
+            (*visitor).close_setinitialization(Ref::from(self as *mut SetInitializationSyntax))
+        }
     }
 }
 
@@ -6585,17 +6839,21 @@ impl SyntaxNode for SetInitializationSyntax {
 pub struct MethodSyntax {
     pub start: Position,
     pub end: Position,
-    pub parent: *mut SyntaxNode,
+    pub parent: Option<ParentNode>,
     pub procedure: Ref<ProcedureSyntax>,
 }
 
 impl SyntaxNode for MethodSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openMethod(Ref::from(self as *mut MethodSyntax)) {
-            return
+        unsafe {
+            if !(*visitor).open_method(Ref::from(self as *mut MethodSyntax)) {
+                return
+            }
         }
         self.procedure.accept(visitor);
-        (*visitor).closeMethod(Ref::from(self as *mut MethodSyntax))
+        unsafe {
+            (*visitor).close_method(Ref::from(self as *mut MethodSyntax))
+        }
     }
 }
 
@@ -6603,17 +6861,21 @@ impl SyntaxNode for MethodSyntax {
 pub struct StaticFunctionSyntax {
     pub start: Position,
     pub end: Position,
-    pub parent: *mut SyntaxNode,
+    pub parent: Option<ParentNode>,
     pub procedure: Ref<FunctionSyntax>,
 }
 
 impl SyntaxNode for StaticFunctionSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openStaticFunction(Ref::from(self as *mut StaticFunctionSyntax)) {
-            return
+        unsafe {
+            if !(*visitor).open_staticfunction(Ref::from(self as *mut StaticFunctionSyntax)) {
+                return
+            }
         }
         self.procedure.accept(visitor);
-        (*visitor).closeStaticFunction(Ref::from(self as *mut StaticFunctionSyntax))
+        unsafe {
+            (*visitor).close_staticfunction(Ref::from(self as *mut StaticFunctionSyntax))
+        }
     }
 }
 
@@ -6621,17 +6883,21 @@ impl SyntaxNode for StaticFunctionSyntax {
 pub struct OperatorSyntax {
     pub start: Position,
     pub end: Position,
-    pub parent: *mut SyntaxNode,
+    pub parent: Option<ParentNode>,
     pub routine: Ref<RoutineSyntax>,
 }
 
 impl SyntaxNode for OperatorSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openOperator(Ref::from(self as *mut OperatorSyntax)) {
-            return
+        unsafe {
+            if !(*visitor).open_operator(Ref::from(self as *mut OperatorSyntax)) {
+                return
+            }
         }
         self.routine.accept(visitor);
-        (*visitor).closeOperator(Ref::from(self as *mut OperatorSyntax))
+        unsafe {
+            (*visitor).close_operator(Ref::from(self as *mut OperatorSyntax))
+        }
     }
 }
 
@@ -6639,23 +6905,27 @@ impl SyntaxNode for OperatorSyntax {
 pub struct InitializerSyntax {
     pub start: Position,
     pub end: Position,
-    pub parent: *mut SyntaxNode,
+    pub parent: Option<ParentNode>,
     pub input: Option<Ref<StructureSyntax>>,
     pub body: Ref<BlockSyntax>,
 }
 
 impl SyntaxNode for InitializerSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openInitializer(Ref::from(self as *mut InitializerSyntax)) {
-            return
+        unsafe {
+            if !(*visitor).open_initializer(Ref::from(self as *mut InitializerSyntax)) {
+                return
+            }
         }
         match self.input {
-            Some(x) => x.accept(visitor),
+            Some(mut x) => x.accept(visitor),
             None => ()
         };
 
         self.body.accept(visitor);
-        (*visitor).closeInitializer(Ref::from(self as *mut InitializerSyntax))
+        unsafe {
+            (*visitor).close_initializer(Ref::from(self as *mut InitializerSyntax))
+        }
     }
 }
 
@@ -6663,23 +6933,27 @@ impl SyntaxNode for InitializerSyntax {
 pub struct AllocatorSyntax {
     pub start: Position,
     pub end: Position,
-    pub parent: *mut SyntaxNode,
+    pub parent: Option<ParentNode>,
     pub input: Option<Ref<StructureSyntax>>,
     pub body: Ref<BlockSyntax>,
 }
 
 impl SyntaxNode for AllocatorSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openAllocator(Ref::from(self as *mut AllocatorSyntax)) {
-            return
+        unsafe {
+            if !(*visitor).open_allocator(Ref::from(self as *mut AllocatorSyntax)) {
+                return
+            }
         }
         match self.input {
-            Some(x) => x.accept(visitor),
+            Some(mut x) => x.accept(visitor),
             None => ()
         };
 
         self.body.accept(visitor);
-        (*visitor).closeAllocator(Ref::from(self as *mut AllocatorSyntax))
+        unsafe {
+            (*visitor).close_allocator(Ref::from(self as *mut AllocatorSyntax))
+        }
     }
 }
 
@@ -6687,17 +6961,21 @@ impl SyntaxNode for AllocatorSyntax {
 pub struct TypeAnnotationSyntax {
     pub start: Position,
     pub end: Position,
-    pub parent: *mut SyntaxNode,
-    pub typeSpec: Ref<TypeSpecSyntax>,
+    pub parent: Option<ParentNode>,
+    pub type_spec: Ref<TypeSpecSyntax>,
 }
 
 impl SyntaxNode for TypeAnnotationSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openTypeAnnotation(Ref::from(self as *mut TypeAnnotationSyntax)) {
-            return
+        unsafe {
+            if !(*visitor).open_typeannotation(Ref::from(self as *mut TypeAnnotationSyntax)) {
+                return
+            }
         }
-        self.typeSpec.accept(visitor);
-        (*visitor).closeTypeAnnotation(Ref::from(self as *mut TypeAnnotationSyntax))
+        self.type_spec.accept(visitor);
+        unsafe {
+            (*visitor).close_typeannotation(Ref::from(self as *mut TypeAnnotationSyntax))
+        }
     }
 }
 
@@ -6716,35 +6994,39 @@ impl SyntaxNode for TypeSpecSyntax {
 pub struct TypeSyntax {
     pub start: Position,
     pub end: Position,
-    pub parent: *mut SyntaxNode,
+    pub parent: Option<ParentNode>,
     pub name: Ref<NameSyntax>,
     pub generics: Option<Ref<GenericArgumentsSyntax>>,
     pub optional: Option<Ref<OptionalSyntax>>,
-    pub lifeTime: Option<Ref<LifeTimeSyntax>>,
+    pub life_time: Option<Ref<LifeTimeSyntax>>,
 }
 
 impl SyntaxNode for TypeSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openType(Ref::from(self as *mut TypeSyntax)) {
-            return
+        unsafe {
+            if !(*visitor).open_type(Ref::from(self as *mut TypeSyntax)) {
+                return
+            }
         }
         self.name.accept(visitor);
 
         match self.generics {
-            Some(x) => x.accept(visitor),
+            Some(mut x) => x.accept(visitor),
             None => ()
         };
 
         match self.optional {
-            Some(x) => x.accept(visitor),
+            Some(mut x) => x.accept(visitor),
             None => ()
         };
 
-        match self.lifeTime {
-            Some(x) => x.accept(visitor),
+        match self.life_time {
+            Some(mut x) => x.accept(visitor),
             None => ()
         };
-        (*visitor).closeType(Ref::from(self as *mut TypeSyntax))
+        unsafe {
+            (*visitor).close_type(Ref::from(self as *mut TypeSyntax))
+        }
     }
 }
 
@@ -6752,22 +7034,26 @@ impl SyntaxNode for TypeSyntax {
 pub struct VariantSyntax {
     pub start: Position,
     pub end: Position,
-    pub parent: *mut SyntaxNode,
+    pub parent: Option<ParentNode>,
     pub types: Option<Ref<Vector<Ref<TypeSyntax>>>>,
 }
 
 impl SyntaxNode for VariantSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openVariant(Ref::from(self as *mut VariantSyntax)) {
-            return
+        unsafe {
+            if !(*visitor).open_variant(Ref::from(self as *mut VariantSyntax)) {
+                return
+            }
         }
         match self.types {
-            Some(x) => for node in x.iter() {
+            Some(mut x) => for node in x.iter_mut() {
                 node.accept(visitor)
             },
             None => ()
         };
-        (*visitor).closeVariant(Ref::from(self as *mut VariantSyntax))
+        unsafe {
+            (*visitor).close_variant(Ref::from(self as *mut VariantSyntax))
+        }
     }
 }
 
@@ -6775,17 +7061,21 @@ impl SyntaxNode for VariantSyntax {
 pub struct ThrowsSyntax {
     pub start: Position,
     pub end: Position,
-    pub parent: *mut SyntaxNode,
-    pub throwsType: Ref<TypeSpecSyntax>,
+    pub parent: Option<ParentNode>,
+    pub throws_type: Ref<TypeSpecSyntax>,
 }
 
 impl SyntaxNode for ThrowsSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openThrows(Ref::from(self as *mut ThrowsSyntax)) {
-            return
+        unsafe {
+            if !(*visitor).open_throws(Ref::from(self as *mut ThrowsSyntax)) {
+                return
+            }
         }
-        self.throwsType.accept(visitor);
-        (*visitor).closeThrows(Ref::from(self as *mut ThrowsSyntax))
+        self.throws_type.accept(visitor);
+        unsafe {
+            (*visitor).close_throws(Ref::from(self as *mut ThrowsSyntax))
+        }
     }
 }
 
@@ -6793,25 +7083,29 @@ impl SyntaxNode for ThrowsSyntax {
 pub struct GenericArgumentsSyntax {
     pub start: Position,
     pub end: Position,
-    pub parent: *mut SyntaxNode,
+    pub parent: Option<ParentNode>,
     pub generic: Ref<TypeSyntax>,
-    pub additionalGenerics: Option<Ref<Vector<Ref<GenericArgumentSyntax>>>>,
+    pub additional_generics: Option<Ref<Vector<Ref<GenericArgumentSyntax>>>>,
 }
 
 impl SyntaxNode for GenericArgumentsSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openGenericArguments(Ref::from(self as *mut GenericArgumentsSyntax)) {
-            return
+        unsafe {
+            if !(*visitor).open_genericarguments(Ref::from(self as *mut GenericArgumentsSyntax)) {
+                return
+            }
         }
         self.generic.accept(visitor);
 
-        match self.additionalGenerics {
-            Some(x) => for node in x.iter() {
+        match self.additional_generics {
+            Some(mut x) => for node in x.iter_mut() {
                 node.accept(visitor)
             },
             None => ()
         };
-        (*visitor).closeGenericArguments(Ref::from(self as *mut GenericArgumentsSyntax))
+        unsafe {
+            (*visitor).close_genericarguments(Ref::from(self as *mut GenericArgumentsSyntax))
+        }
     }
 }
 
@@ -6819,17 +7113,21 @@ impl SyntaxNode for GenericArgumentsSyntax {
 pub struct GenericArgumentSyntax {
     pub start: Position,
     pub end: Position,
-    pub parent: *mut SyntaxNode,
-    pub typeSpec: Ref<TypeSyntax>,
+    pub parent: Option<ParentNode>,
+    pub type_spec: Ref<TypeSyntax>,
 }
 
 impl SyntaxNode for GenericArgumentSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        if !(*visitor).openGenericArgument(Ref::from(self as *mut GenericArgumentSyntax)) {
-            return
+        unsafe {
+            if !(*visitor).open_genericargument(Ref::from(self as *mut GenericArgumentSyntax)) {
+                return
+            }
         }
-        self.typeSpec.accept(visitor);
-        (*visitor).closeGenericArgument(Ref::from(self as *mut GenericArgumentSyntax))
+        self.type_spec.accept(visitor);
+        unsafe {
+            (*visitor).close_genericargument(Ref::from(self as *mut GenericArgumentSyntax))
+        }
     }
 }
 
@@ -6837,12 +7135,14 @@ impl SyntaxNode for GenericArgumentSyntax {
 pub struct OptionalSyntax {
     pub start: Position,
     pub end: Position,
-    pub parent: *mut SyntaxNode,
+    pub parent: Option<ParentNode>,
 }
 
 impl SyntaxNode for OptionalSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        (*visitor).visitOptional(Ref::from(self as *mut OptionalSyntax))
+        unsafe {
+            (*visitor).visit_optional(Ref::from(self as *mut OptionalSyntax))
+        }
     }
 }
 
@@ -6863,12 +7163,14 @@ impl SyntaxNode for LifeTimeSyntax {
 pub struct RootSyntax {
     pub start: Position,
     pub end: Position,
-    pub parent: *mut SyntaxNode,
+    pub parent: Option<ParentNode>,
 }
 
 impl SyntaxNode for RootSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        (*visitor).visitRoot(Ref::from(self as *mut RootSyntax))
+        unsafe {
+            (*visitor).visit_root(Ref::from(self as *mut RootSyntax))
+        }
     }
 }
 
@@ -6876,13 +7178,15 @@ impl SyntaxNode for RootSyntax {
 pub struct LocalSyntax {
     pub start: Position,
     pub end: Position,
-    pub parent: *mut SyntaxNode,
+    pub parent: Option<ParentNode>,
     pub location: String,
 }
 
 impl SyntaxNode for LocalSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        (*visitor).visitLocal(Ref::from(self as *mut LocalSyntax))
+        unsafe {
+            (*visitor).visit_local(Ref::from(self as *mut LocalSyntax))
+        }
     }
 }
 
@@ -6890,13 +7194,15 @@ impl SyntaxNode for LocalSyntax {
 pub struct ReferenceSyntax {
     pub start: Position,
     pub end: Position,
-    pub parent: *mut SyntaxNode,
+    pub parent: Option<ParentNode>,
     pub age: Option<Literal>,
 }
 
 impl SyntaxNode for ReferenceSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        (*visitor).visitReference(Ref::from(self as *mut ReferenceSyntax))
+        unsafe {
+            (*visitor).visit_reference(Ref::from(self as *mut ReferenceSyntax))
+        }
     }
 }
 
@@ -6904,11 +7210,13 @@ impl SyntaxNode for ReferenceSyntax {
 pub struct ThrownSyntax {
     pub start: Position,
     pub end: Position,
-    pub parent: *mut SyntaxNode,
+    pub parent: Option<ParentNode>,
 }
 
 impl SyntaxNode for ThrownSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
-        (*visitor).visitThrown(Ref::from(self as *mut ThrownSyntax))
+        unsafe {
+            (*visitor).visit_thrown(Ref::from(self as *mut ThrownSyntax))
+        }
     }
 }

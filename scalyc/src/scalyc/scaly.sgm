@@ -24,7 +24,7 @@
     <syntax id = Define                       multiple
         <content link = define
         <content link = Name                                    property = name
-        <content link = Type                                    property = typeSpec
+        <content link = Type                                    property = type_spec
 
     <syntax id = Name                                           base = Expression
         <content identifier                                     property = name
@@ -46,11 +46,11 @@
     <syntax id = Namespace                                      base = Declaration
         <content link = namespace
         <content link = Name                                    property = name
-        <content link = leftCurly
+        <content link = left_curly
         <content link = Using                 multiple optional property = usings
         <content link = Define                multiple optional property = defines
         <content link = Declaration           multiple optional property = declarations
-        <content link = rightCurly
+        <content link = right_curly
 
     <syntax id = Function                                       base = Declaration
         <content link = function
@@ -63,7 +63,7 @@
     <syntax id = Routine
         <content link = Structure                      optional property = input
         <content link = TypeAnnotation                 optional property = output
-        <content link = Throws                         optional property = throwsClause
+        <content link = Throws                         optional property = throws_clause
         <content link = Block                                   property = body
 
     <syntax id = LetDeclaration                                 base = Declaration
@@ -108,14 +108,14 @@
 
     <syntax id = Binding
         <content identifier                                     property = name
-        <content link = TypeAnnotation                 optional property = typeAnnotation
+        <content link = TypeAnnotation                 optional property = type_annotation
         <content link = Calculation                             property = calculation
 
     <syntax id = Set                                            base = Statement
         <content link = set
-        <content link = Operation                               property = lValue
+        <content link = Operation                               property = l_value
         <content link = colon
-        <content link = Calculation                             property = rValue
+        <content link = Calculation                             property = r_value
 
     <syntax id = Calculation                                    base = Statement
         <content link = Operation                               property = operation
@@ -141,18 +141,18 @@
 
     <syntax id = As                                             base = Postfix
         <content link = as
-        <content link = TypeSpec                                property = typeSpec
+        <content link = TypeSpec                                property = type_spec
 
     <syntax id = Is                                             base = Postfix
         <content link = is
-        <content link = TypeSpec                                property = typeSpec
+        <content link = TypeSpec                                property = type_spec
 
     <syntax id = Unwrap                                         base = Postfix
         <content link = exclamation
 
     <syntax id = Catch                                          base = Postfix
         <content link = catch
-        <content link = CatchPattern                            property = typeSpec
+        <content link = CatchPattern                            property = type_spec
         <content link = Block                                   property = handler
 
     <syntax id = CatchPattern                          abstract
@@ -163,10 +163,10 @@
         <content link = WildcardPattern                         property = pattern
 
     <syntax id = TypeCatchPattern                               base = CatchPattern
-        <content link = TypeSpec                                property = typeSpec
-        <content identifier                            optional property = errorName
+        <content link = TypeSpec                                property = type_spec
+        <content identifier                            optional property = error_name
 
-    <syntax id = Expression                   multiple abstract
+    <syntax id = Expression                            abstract
         <content link = Block
         <content link = Name
         <content link = Constant
@@ -182,20 +182,20 @@
         <content link = SizeOf
 
     <syntax id = Block                                          base = Expression
-        <content link = leftCurly
+        <content link = left_curly
         <content link = Statement             multiple optional property = statements
-        <content link = rightCurly
+        <content link = right_curly
 
     <syntax id = Constant                                       base = Expression
         <content literal                                        property = literal
 
     <syntax id = If                                             base = Expression
         <content link = if
-        <content link = leftParen
+        <content link = left_paren
         <content link = Operation                               property = condition
-        <content link = rightParen
+        <content link = right_paren
         <content link = Block                                   property = consequent
-        <content link = Else                           optional property = elseClause
+        <content link = Else                           optional property = else_clause
 
     <syntax id = Else
         <content link = else
@@ -203,12 +203,12 @@
 
     <syntax id = Switch                                         base = Expression
         <content link = switch
-        <content link = leftParen
+        <content link = left_paren
         <content link = Operation                               property = condition
-        <content link = rightParen
-        <content link = leftCurly
+        <content link = right_paren
+        <content link = left_curly
         <content link = SwitchCase            multiple          property = cases
-        <content link = rightCurly
+        <content link = right_curly
 
     <syntax id = SwitchCase                   multiple
         <content link = CaseLabel                               property = label
@@ -226,7 +226,7 @@
         <content link = CasePattern                             property = pattern
         <content link = comma                          optional
 
-    <syntax id = CasePattern                  multiple abstract
+    <syntax id = CasePattern                           abstract
         <content link = ConstantPattern
         <content link = WildcardPattern
         <content link = NamePattern
@@ -245,28 +245,28 @@
 
     <syntax id = For                                            base = Expression
         <content link = for
-        <content link = leftParen
+        <content link = left_paren
         <content identifier                                     property = index
-        <content link = TypeAnnotation                 optional property = typeAnnotation
+        <content link = TypeAnnotation                 optional property = type_annotation
         <content link = in
         <content link = Operation                               property = operation
-        <content link = rightParen
+        <content link = right_paren
         <content link = Loop                                    property = iteration
 
     <syntax id = While                                          base = Expression
         <content link = while
-        <content link = leftParen
+        <content link = left_paren
         <content link = Operation                               property = condition
-        <content link = rightParen
+        <content link = right_paren
         <content link = Loop                                    property = iteration
 
     <syntax id = Do                                             base = Expression
         <content link = do
         <content link = Loop                                    property = iteration
         <content link = while
-        <content link = leftParen
+        <content link = left_paren
         <content link = Operation                               property = condition
-        <content link = rightParen
+        <content link = right_paren
 
     <syntax id = Loop                                  abstract
         <content link = SimpleLoop
@@ -285,19 +285,19 @@
 
     <syntax id = New                                            base = Expression
         <content link = new
-        <content link = Type                                    property = typeSpec
+        <content link = Type                                    property = type_spec
 
     <syntax id = Object                                         base = Expression
-        <content link = leftParen
-        <content link = Operation                      optional property = firstOp
-        <content link = Item                  multiple optional property = additionalOps
-        <content link = rightParen
+        <content link = left_paren
+        <content link = Operation                      optional property = first_op
+        <content link = Item                  multiple optional property = additional_ops
+        <content link = right_paren
 
     <syntax id = Array                                          base = Expression
-        <content link = leftBracket
-        <content link = Operation                      optional property = firstOp
-        <content link = Item                  multiple optional property = additionalOps
-        <content link = rightBracket
+        <content link = left_bracket
+        <content link = Operation                      optional property = first_op
+        <content link = Item                  multiple optional property = additional_ops
+        <content link = right_bracket
 
     <syntax id = Item                         multiple
         <content link = comma
@@ -305,7 +305,7 @@
 
     <syntax id = SizeOf                                         base = Expression
         <content link = sizeof
-        <content link = Type                                    property = typeSpec
+        <content link = Type                                    property = type_spec
 
     <syntax id = Break                                          base = Statement
         <content link = break
@@ -329,15 +329,15 @@
         <content link = class
         <content link = Name                                    property = name
         <content link = GenericParameters              optional property = generics
-        <content link = Extends                        optional property = baseClass
+        <content link = Extends                        optional property = base_class
         <content link = Structure                      optional property = contents
         <content link = ClassBody                      optional property = body
 
     <syntax id = GenericParameters
-        <content link = leftBracket
+        <content link = left_bracket
         <content identifier                                     property = name
-        <content link = GenericParameter      multiple optional property = additionalGenerics
-        <content link = rightBracket
+        <content link = GenericParameter      multiple optional property = additional_generics
+        <content link = right_bracket
 
     <syntax id = GenericParameter             multiple
         <content link = comma
@@ -348,19 +348,19 @@
         <content link = Name                                    property = name
 
     <syntax id = Structure
-        <content link = leftParen
+        <content link = left_paren
         <content link = Component             multiple optional property = components
-        <content link = rightParen
+        <content link = right_paren
 
     <syntax id = Component                    multiple
         <content identifier                                     property = name
-        <content link = TypeAnnotation                 optional property = typeAnnotation
+        <content link = TypeAnnotation                 optional property = type_annotation
         <content link = comma                          optional
 
     <syntax id = ClassBody
-        <content link = leftCurly
+        <content link = left_curly
         <content link = ClassMember           multiple optional property = members
-        <content link = rightCurly
+        <content link = right_curly
 
     <syntax id = ClassMember                  multiple abstract
         <content link = LetMember
@@ -408,9 +408,9 @@
 
     <syntax id = TypeAnnotation
         <content link = colon
-        <content link = TypeSpec                                property = typeSpec
+        <content link = TypeSpec                                property = type_spec
 
-    <syntax id = TypeSpec                     multiple abstract
+    <syntax id = TypeSpec                              abstract
         <content link = Type
         <content link = Variant
 
@@ -418,26 +418,26 @@
         <content link = Name                                    property = name
         <content link = GenericArguments               optional property = generics
         <content link = Optional                       optional property = optional
-        <content link = LifeTime                       optional property = lifeTime
+        <content link = LifeTime                       optional property = life_time
 
     <syntax id = Variant                                        base = TypeSpec
-        <content link = leftParen
+        <content link = left_paren
         <content link = Type                  multiple optional property = types
-        <content link = rightParen
+        <content link = right_paren
 
     <syntax id = Throws
         <content link = throws
-        <content link = TypeSpec                                property = throwsType
+        <content link = TypeSpec                                property = throws_type
 
     <syntax id = GenericArguments
-        <content link = leftBracket
+        <content link = left_bracket
         <content link = Type                                    property = generic
-        <content link = GenericArgument       multiple optional property = additionalGenerics
-        <content link = rightBracket
+        <content link = GenericArgument       multiple optional property = additional_generics
+        <content link = right_bracket
 
     <syntax id = GenericArgument              multiple
         <content link = comma
-        <content link = Type                                    property = typeSpec
+        <content link = Type                                    property = type_spec
 
     <syntax id = Optional
         <content link = question
@@ -502,12 +502,12 @@
     <keyword id = define
 
     <punctuation id = semicolon         value = ";"
-    <punctuation id = leftCurly         value = "{"
-    <punctuation id = rightCurly        value = "}"
-    <punctuation id = leftParen         value = "("
-    <punctuation id = rightParen        value = ")"
-    <punctuation id = leftBracket       value = "["
-    <punctuation id = rightBracket      value = "]"
+    <punctuation id = left_curly         value = "{"
+    <punctuation id = right_curly        value = "}"
+    <punctuation id = left_paren         value = "("
+    <punctuation id = right_paren        value = ")"
+    <punctuation id = left_bracket       value = "["
+    <punctuation id = right_bracket      value = "]"
     <punctuation id = dot               value = "."
     <punctuation id = comma             value = ","
     <punctuation id = colon             value = ":"

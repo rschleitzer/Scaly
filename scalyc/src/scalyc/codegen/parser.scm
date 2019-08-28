@@ -5,7 +5,6 @@ use scaly::memory::Region;
 use scaly::Page;
 use scalyc::errors::ParserError;
 use scalyc::lexer::{Lexer, Literal, Position};
-use std::ptr::null_mut;
 
 pub struct Parser {
     lexer: Ref<""Lexer>,
@@ -96,9 +95,11 @@ impl Parser {
 "
             )
             ($ ; non-abstract syntax
+                (if (top? syntax) ""
 "
         let start: Position = self.lexer.get_previous_position();
-"                (apply-to-children-of syntax (lambda (content) ($
+"               )
+                (apply-to-children-of syntax (lambda (content) ($
                    (if (string=? "syntax" (type content))
                         ($ ; non-terminals
 "
@@ -140,7 +141,7 @@ impl Parser {
 "
         let "
                             (case (type content)
-                                (("keyword" "punctuation") ($ "success"(if (property content) (string-firstchar-upcase (property content)) ($ (string-firstchar-upcase (link content))(number->string (child-number content))))))
+                                (("keyword" "punctuation") ($ "success_"(if (property content) (property content) ($ (link content)"_"(number->string (child-number content))))))
                                 (else (property content))
                             )
             " = self.lexer.parse_"(type content)"("
@@ -176,7 +177,7 @@ impl Parser {
                                 ))
                                 (case (type content)
                                     (("keyword" "punctuation") ($ 
-"        if success"(if (property content) (string-firstchar-upcase (property content)) ($ (string-firstchar-upcase (link content))(number->string (child-number content))))" {
+"        if success_"(if (property content) (property content) ($ (link content)"_"(number->string (child-number content))))" {
             self.lexer.advance(&""_r)
         } else {
 "                   null-handler
@@ -196,7 +197,7 @@ impl Parser {
 "                                    ))
                                     (else ($ 
 "        match "(property content)" {
-            Some(x) =>
+            Some(_) =>
                 self.lexer.advance(&""_r),
             None => "
                                         null-handler
@@ -207,10 +208,13 @@ impl Parser {
                         ) ; terminal
                     ) ; syntax or terminal
                 ))) ; apply to children of syntax
+
+                (if (top? syntax) ""
 "
         let end: Position = self.lexer.get_position();
-
-        let ret = Ref::new(_rp, "(id syntax)"Syntax { "(if (top? syntax) "file_name: self.file_name" "parent: null_mut(), start: start, end: end")
+"               )
+"
+        let ret = Ref::new(_rp, "(id syntax)"Syntax { "(if (top? syntax) "file_name: self.file_name" "parent: None, start: start, end: end")
                 (apply-to-property-children-of syntax (lambda (content) ($
                     ", "(property content)": "(property content)(if (optional? content) "" ".unwrap()")
                 )))
@@ -220,17 +224,17 @@ impl Parser {
                         ($
 "
         match "(property content)" {
-            Some(x) => for item in x.iter() {
+            Some(mut x) => for item in x.iter_mut() {
 "                           (if (abstract? (element-with-id (link content)))
                                 ($
 "                match **item {
 "                                   (apply-to-children-of (element-with-id (link content)) (lambda (variant) ($
-"                    "(link content)"Syntax::"(link variant)"(y) => y.parent = ret.data as *mut SyntaxNode,
+"                    "(link content)"Syntax::"(link variant)"(mut y) => y.parent = Some(ParentNode::"(id syntax)"(ret)),
 "                                   )))
 "                }
 "                               )
                                 ($
-"                item.parent = ret.data as *mut SyntaxNode;
+"                item.parent = Some(ParentNode::"(id syntax)"(ret));
 "                               )
                             )
 "            }
@@ -242,17 +246,17 @@ impl Parser {
                                 ($
 "
         match "(property content)" {
-            Some(x) => 
+            Some("(if (abstract? (element-with-id (link content))) "" "mut ")"x) => 
 "                                   (if (abstract? (element-with-id (link content)))
                                         ($
 "                match *x {
 "                                   (apply-to-children-of (element-with-id (link content)) (lambda (variant) ($
-"                    "(link content)"Syntax::"(link variant)"(y) => y.parent = ret.data as *mut SyntaxNode,
+"                    "(link content)"Syntax::"(link variant)"(mut y) => y.parent = Some(ParentNode::"(id syntax)"(ret)),
 "                                   )))
 "                },
 "                                        )
                                         ($
-"                x.parent = ret.data as *mut SyntaxNode,
+"                x.parent = Some(ParentNode::"(id syntax)"(ret)),
 "                                       )
                                     )
 "            None => ()
@@ -263,13 +267,13 @@ impl Parser {
 "
         match *"(property content)".unwrap() {
 "                                       (apply-to-children-of (element-with-id (link content)) (lambda (variant) ($
-"            "(link content)"Syntax::"(link variant)"(x) => x.parent = ret.data as *mut SyntaxNode,
+"            "(link content)"Syntax::"(link variant)"(mut x) => x.parent = Some(ParentNode::"(id syntax)"(ret)),
 "                                       )))
 "        }
 "                                    )
                                     ($
 "
-        "(property content)".unwrap().parent = ret.data as *mut SyntaxNode;
+        "(property content)".unwrap().parent = Some(ParentNode::"(id syntax)"(ret));
 "                                   )
                                 )
                             )
@@ -381,10 +385,10 @@ class Parser(
                         )
                         ($ ; terminals
 "
-        let "(case (type content) (("keyword" "punctuation") ($ "success"(if (property content) (string-firstchar-upcase (property content)) ($ (string-firstchar-upcase (link content))(number->string (child-number content))))": bool"))(("literal") ($ (property content)": Literal"))(else ($ (property content)": string")))
+        let "(case (type content) (("keyword" "punctuation") ($ "success_"(if (property content) (property content) ($ (link content)"_"(number->string (child-number content))))": bool"))(("literal") ($ (property content)": Literal"))(else ($ (property content)": string")))
             " = lexer.parse"(case (type content)(("identifier") "Identifier")(("literal") "Literal")(("keyword") "Keyword")(("punctuation") "Punctuation"))
             "("(case (type content)(("keyword") (name-of-link content)) (("punctuation") (link content)) (else ""))")
-        if ("(case (type content) (("keyword" "punctuation") ($ "success"(if (property content) (string-firstchar-upcase (property content)) ($ (string-firstchar-upcase (link content))(number->string (child-number content))))))(("identifier") ($ "("(property content)" <""> ()) && isIdentifier("(property content)")")) (else ($ (property content)" <""> ()")))") {
+        if ("(case (type content) (("keyword" "punctuation") ($ "success_"(if (property content) (property content) ($ (link content)"_"(number->string (child-number content))))))(("identifier") ($ "("(property content)" <""> ()) && isIdentifier("(property content)")")) (else ($ (property content)" <""> ()")))") {
             lexer.advance() }
 "                           (if (optional? content) "" ($
 "        else {
