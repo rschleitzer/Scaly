@@ -4942,13 +4942,10 @@ pub trait SyntaxNode {
 
 #[derive(Copy, Clone)]
 pub enum ParentNode {
-    Program(Ref<ProgramSyntax>),
     File(Ref<FileSyntax>),
-    Intrinsic(Ref<IntrinsicSyntax>),
     Using(Ref<UsingSyntax>),
     Define(Ref<DefineSyntax>),
     Name(Ref<NameSyntax>),
-    Extension(Ref<ExtensionSyntax>),
     Namespace(Ref<NamespaceSyntax>),
     Function(Ref<FunctionSyntax>),
     Procedure(Ref<ProcedureSyntax>),
@@ -4966,15 +4963,12 @@ pub enum ParentNode {
     Calculation(Ref<CalculationSyntax>),
     Operation(Ref<OperationSyntax>),
     Operand(Ref<OperandSyntax>),
-    MemberAccess(Ref<MemberAccessSyntax>),
     As(Ref<AsSyntax>),
     Is(Ref<IsSyntax>),
-    Unwrap(Ref<UnwrapSyntax>),
     Catch(Ref<CatchSyntax>),
     WildCardCatchPattern(Ref<WildCardCatchPatternSyntax>),
     TypeCatchPattern(Ref<TypeCatchPatternSyntax>),
     Block(Ref<BlockSyntax>),
-    Constant(Ref<ConstantSyntax>),
     If(Ref<IfSyntax>),
     Else(Ref<ElseSyntax>),
     Switch(Ref<SwitchSyntax>),
@@ -4982,27 +4976,21 @@ pub enum ParentNode {
     ItemCaseLabel(Ref<ItemCaseLabelSyntax>),
     CaseItem(Ref<CaseItemSyntax>),
     ConstantPattern(Ref<ConstantPatternSyntax>),
-    WildcardPattern(Ref<WildcardPatternSyntax>),
     NamePattern(Ref<NamePatternSyntax>),
-    DefaultCaseLabel(Ref<DefaultCaseLabelSyntax>),
     For(Ref<ForSyntax>),
     While(Ref<WhileSyntax>),
     Do(Ref<DoSyntax>),
     SimpleLoop(Ref<SimpleLoopSyntax>),
     NamedLoop(Ref<NamedLoopSyntax>),
-    This(Ref<ThisSyntax>),
     New(Ref<NewSyntax>),
     Object(Ref<ObjectSyntax>),
     Array(Ref<ArraySyntax>),
     Item(Ref<ItemSyntax>),
     SizeOf(Ref<SizeOfSyntax>),
-    Break(Ref<BreakSyntax>),
-    Continue(Ref<ContinueSyntax>),
     Return(Ref<ReturnSyntax>),
     Throw(Ref<ThrowSyntax>),
     Class(Ref<ClassSyntax>),
     GenericParameters(Ref<GenericParametersSyntax>),
-    GenericParameter(Ref<GenericParameterSyntax>),
     Extends(Ref<ExtendsSyntax>),
     Structure(Ref<StructureSyntax>),
     Component(Ref<ComponentSyntax>),
@@ -5022,11 +5010,6 @@ pub enum ParentNode {
     Throws(Ref<ThrowsSyntax>),
     GenericArguments(Ref<GenericArgumentsSyntax>),
     GenericArgument(Ref<GenericArgumentSyntax>),
-    Optional(Ref<OptionalSyntax>),
-    Root(Ref<RootSyntax>),
-    Local(Ref<LocalSyntax>),
-    Reference(Ref<ReferenceSyntax>),
-    Thrown(Ref<ThrownSyntax>),
 }
 
 #[derive(Copy, Clone)]
@@ -5143,7 +5126,7 @@ impl SyntaxNode for UsingSyntax {
             }
         }
         self.name.accept(visitor);
-        unsafe {
+            unsafe {
             (*visitor).close_using(Ref::from(self as *mut UsingSyntax))
         }
     }
@@ -5166,9 +5149,9 @@ impl SyntaxNode for DefineSyntax {
             }
         }
         self.name.accept(visitor);
-
+    
         self.type_spec.accept(visitor);
-        unsafe {
+            unsafe {
             (*visitor).close_define(Ref::from(self as *mut DefineSyntax))
         }
     }
@@ -5231,6 +5214,15 @@ pub enum DeclarationSyntax {
 
 impl SyntaxNode for DeclarationSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
+        match self {
+            DeclarationSyntax::Namespace(syntax) => syntax.accept(visitor),
+            DeclarationSyntax::Function(syntax) => syntax.accept(visitor),
+            DeclarationSyntax::Class(syntax) => syntax.accept(visitor),
+            DeclarationSyntax::LetDeclaration(syntax) => syntax.accept(visitor),
+            DeclarationSyntax::VarDeclaration(syntax) => syntax.accept(visitor),
+            DeclarationSyntax::MutableDeclaration(syntax) => syntax.accept(visitor),
+            DeclarationSyntax::ThreadLocalDeclaration(syntax) => syntax.accept(visitor),
+        }
     }
 }
 
@@ -5253,7 +5245,7 @@ impl SyntaxNode for NamespaceSyntax {
             }
         }
         self.name.accept(visitor);
-
+    
         match self.usings {
             Some(mut x) => for node in x.iter_mut() {
                 node.accept(visitor)
@@ -5296,7 +5288,7 @@ impl SyntaxNode for FunctionSyntax {
             }
         }
         self.procedure.accept(visitor);
-        unsafe {
+            unsafe {
             (*visitor).close_function(Ref::from(self as *mut FunctionSyntax))
         }
     }
@@ -5319,7 +5311,7 @@ impl SyntaxNode for ProcedureSyntax {
             }
         }
         self.routine.accept(visitor);
-        unsafe {
+            unsafe {
             (*visitor).close_procedure(Ref::from(self as *mut ProcedureSyntax))
         }
     }
@@ -5359,7 +5351,7 @@ impl SyntaxNode for RoutineSyntax {
         };
 
         self.body.accept(visitor);
-        unsafe {
+            unsafe {
             (*visitor).close_routine(Ref::from(self as *mut RoutineSyntax))
         }
     }
@@ -5381,7 +5373,7 @@ impl SyntaxNode for LetDeclarationSyntax {
             }
         }
         self.declaration.accept(visitor);
-        unsafe {
+            unsafe {
             (*visitor).close_letdeclaration(Ref::from(self as *mut LetDeclarationSyntax))
         }
     }
@@ -5403,7 +5395,7 @@ impl SyntaxNode for VarDeclarationSyntax {
             }
         }
         self.declaration.accept(visitor);
-        unsafe {
+            unsafe {
             (*visitor).close_vardeclaration(Ref::from(self as *mut VarDeclarationSyntax))
         }
     }
@@ -5425,7 +5417,7 @@ impl SyntaxNode for MutableDeclarationSyntax {
             }
         }
         self.declaration.accept(visitor);
-        unsafe {
+            unsafe {
             (*visitor).close_mutabledeclaration(Ref::from(self as *mut MutableDeclarationSyntax))
         }
     }
@@ -5447,7 +5439,7 @@ impl SyntaxNode for ThreadLocalDeclarationSyntax {
             }
         }
         self.declaration.accept(visitor);
-        unsafe {
+            unsafe {
             (*visitor).close_threadlocaldeclaration(Ref::from(self as *mut ThreadLocalDeclarationSyntax))
         }
     }
@@ -5469,6 +5461,18 @@ pub enum StatementSyntax {
 
 impl SyntaxNode for StatementSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
+        match self {
+            StatementSyntax::Let(syntax) => syntax.accept(visitor),
+            StatementSyntax::Var(syntax) => syntax.accept(visitor),
+            StatementSyntax::Mutable(syntax) => syntax.accept(visitor),
+            StatementSyntax::ThreadLocal(syntax) => syntax.accept(visitor),
+            StatementSyntax::Set(syntax) => syntax.accept(visitor),
+            StatementSyntax::Calculation(syntax) => syntax.accept(visitor),
+            StatementSyntax::Break(syntax) => syntax.accept(visitor),
+            StatementSyntax::Continue(syntax) => syntax.accept(visitor),
+            StatementSyntax::Return(syntax) => syntax.accept(visitor),
+            StatementSyntax::Throw(syntax) => syntax.accept(visitor),
+        }
     }
 }
 
@@ -5488,7 +5492,7 @@ impl SyntaxNode for LetSyntax {
             }
         }
         self.binding.accept(visitor);
-        unsafe {
+            unsafe {
             (*visitor).close_let(Ref::from(self as *mut LetSyntax))
         }
     }
@@ -5510,7 +5514,7 @@ impl SyntaxNode for VarSyntax {
             }
         }
         self.binding.accept(visitor);
-        unsafe {
+            unsafe {
             (*visitor).close_var(Ref::from(self as *mut VarSyntax))
         }
     }
@@ -5532,7 +5536,7 @@ impl SyntaxNode for MutableSyntax {
             }
         }
         self.binding.accept(visitor);
-        unsafe {
+            unsafe {
             (*visitor).close_mutable(Ref::from(self as *mut MutableSyntax))
         }
     }
@@ -5554,7 +5558,7 @@ impl SyntaxNode for ThreadLocalSyntax {
             }
         }
         self.binding.accept(visitor);
-        unsafe {
+            unsafe {
             (*visitor).close_threadlocal(Ref::from(self as *mut ThreadLocalSyntax))
         }
     }
@@ -5583,7 +5587,7 @@ impl SyntaxNode for BindingSyntax {
         };
 
         self.calculation.accept(visitor);
-        unsafe {
+            unsafe {
             (*visitor).close_binding(Ref::from(self as *mut BindingSyntax))
         }
     }
@@ -5606,9 +5610,9 @@ impl SyntaxNode for SetSyntax {
             }
         }
         self.l_value.accept(visitor);
-
+    
         self.r_value.accept(visitor);
-        unsafe {
+            unsafe {
             (*visitor).close_set(Ref::from(self as *mut SetSyntax))
         }
     }
@@ -5630,7 +5634,7 @@ impl SyntaxNode for CalculationSyntax {
             }
         }
         self.operation.accept(visitor);
-        unsafe {
+            unsafe {
             (*visitor).close_calculation(Ref::from(self as *mut CalculationSyntax))
         }
     }
@@ -5677,7 +5681,7 @@ impl SyntaxNode for OperandSyntax {
             }
         }
         self.primary.accept(visitor);
-
+    
         match self.postfixes {
             Some(mut x) => for node in x.iter_mut() {
                 node.accept(visitor)
@@ -5701,6 +5705,13 @@ pub enum PostfixSyntax {
 
 impl SyntaxNode for PostfixSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
+        match self {
+            PostfixSyntax::MemberAccess(syntax) => syntax.accept(visitor),
+            PostfixSyntax::As(syntax) => syntax.accept(visitor),
+            PostfixSyntax::Is(syntax) => syntax.accept(visitor),
+            PostfixSyntax::Unwrap(syntax) => syntax.accept(visitor),
+            PostfixSyntax::Catch(syntax) => syntax.accept(visitor),
+        }
     }
 }
 
@@ -5736,7 +5747,7 @@ impl SyntaxNode for AsSyntax {
             }
         }
         self.type_spec.accept(visitor);
-        unsafe {
+            unsafe {
             (*visitor).close_as(Ref::from(self as *mut AsSyntax))
         }
     }
@@ -5758,7 +5769,7 @@ impl SyntaxNode for IsSyntax {
             }
         }
         self.type_spec.accept(visitor);
-        unsafe {
+            unsafe {
             (*visitor).close_is(Ref::from(self as *mut IsSyntax))
         }
     }
@@ -5796,9 +5807,9 @@ impl SyntaxNode for CatchSyntax {
             }
         }
         self.type_spec.accept(visitor);
-
+    
         self.handler.accept(visitor);
-        unsafe {
+            unsafe {
             (*visitor).close_catch(Ref::from(self as *mut CatchSyntax))
         }
     }
@@ -5812,6 +5823,10 @@ pub enum CatchPatternSyntax {
 
 impl SyntaxNode for CatchPatternSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
+        match self {
+            CatchPatternSyntax::WildCardCatchPattern(syntax) => syntax.accept(visitor),
+            CatchPatternSyntax::TypeCatchPattern(syntax) => syntax.accept(visitor),
+        }
     }
 }
 
@@ -5831,7 +5846,7 @@ impl SyntaxNode for WildCardCatchPatternSyntax {
             }
         }
         self.pattern.accept(visitor);
-        unsafe {
+            unsafe {
             (*visitor).close_wildcardcatchpattern(Ref::from(self as *mut WildCardCatchPatternSyntax))
         }
     }
@@ -5854,7 +5869,7 @@ impl SyntaxNode for TypeCatchPatternSyntax {
             }
         }
         self.type_spec.accept(visitor);
-        unsafe {
+            unsafe {
             (*visitor).close_typecatchpattern(Ref::from(self as *mut TypeCatchPatternSyntax))
         }
     }
@@ -5879,6 +5894,21 @@ pub enum ExpressionSyntax {
 
 impl SyntaxNode for ExpressionSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
+        match self {
+            ExpressionSyntax::Block(syntax) => syntax.accept(visitor),
+            ExpressionSyntax::Name(syntax) => syntax.accept(visitor),
+            ExpressionSyntax::Constant(syntax) => syntax.accept(visitor),
+            ExpressionSyntax::If(syntax) => syntax.accept(visitor),
+            ExpressionSyntax::Switch(syntax) => syntax.accept(visitor),
+            ExpressionSyntax::For(syntax) => syntax.accept(visitor),
+            ExpressionSyntax::While(syntax) => syntax.accept(visitor),
+            ExpressionSyntax::Do(syntax) => syntax.accept(visitor),
+            ExpressionSyntax::This(syntax) => syntax.accept(visitor),
+            ExpressionSyntax::New(syntax) => syntax.accept(visitor),
+            ExpressionSyntax::Object(syntax) => syntax.accept(visitor),
+            ExpressionSyntax::Array(syntax) => syntax.accept(visitor),
+            ExpressionSyntax::SizeOf(syntax) => syntax.accept(visitor),
+        }
     }
 }
 
@@ -5943,9 +5973,9 @@ impl SyntaxNode for IfSyntax {
             }
         }
         self.condition.accept(visitor);
-
+    
         self.consequent.accept(visitor);
-
+    
         match self.else_clause {
             Some(mut x) => x.accept(visitor),
             None => ()
@@ -5972,7 +6002,7 @@ impl SyntaxNode for ElseSyntax {
             }
         }
         self.alternative.accept(visitor);
-        unsafe {
+            unsafe {
             (*visitor).close_else(Ref::from(self as *mut ElseSyntax))
         }
     }
@@ -5995,7 +6025,7 @@ impl SyntaxNode for SwitchSyntax {
             }
         }
         self.condition.accept(visitor);
-
+    
         for node in self.cases.iter_mut() {
             node.accept(visitor)
         };
@@ -6022,9 +6052,9 @@ impl SyntaxNode for SwitchCaseSyntax {
             }
         }
         self.label.accept(visitor);
-
+    
         self.content.accept(visitor);
-        unsafe {
+            unsafe {
             (*visitor).close_switchcase(Ref::from(self as *mut SwitchCaseSyntax))
         }
     }
@@ -6038,6 +6068,10 @@ pub enum CaseLabelSyntax {
 
 impl SyntaxNode for CaseLabelSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
+        match self {
+            CaseLabelSyntax::ItemCaseLabel(syntax) => syntax.accept(visitor),
+            CaseLabelSyntax::DefaultCaseLabel(syntax) => syntax.accept(visitor),
+        }
     }
 }
 
@@ -6081,7 +6115,7 @@ impl SyntaxNode for CaseItemSyntax {
             }
         }
         self.pattern.accept(visitor);
-        unsafe {
+            unsafe {
             (*visitor).close_caseitem(Ref::from(self as *mut CaseItemSyntax))
         }
     }
@@ -6096,6 +6130,11 @@ pub enum CasePatternSyntax {
 
 impl SyntaxNode for CasePatternSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
+        match self {
+            CasePatternSyntax::ConstantPattern(syntax) => syntax.accept(visitor),
+            CasePatternSyntax::WildcardPattern(syntax) => syntax.accept(visitor),
+            CasePatternSyntax::NamePattern(syntax) => syntax.accept(visitor),
+        }
     }
 }
 
@@ -6115,7 +6154,7 @@ impl SyntaxNode for ConstantPatternSyntax {
             }
         }
         self.constant.accept(visitor);
-        unsafe {
+            unsafe {
             (*visitor).close_constantpattern(Ref::from(self as *mut ConstantPatternSyntax))
         }
     }
@@ -6152,7 +6191,7 @@ impl SyntaxNode for NamePatternSyntax {
             }
         }
         self.name.accept(visitor);
-        unsafe {
+            unsafe {
             (*visitor).close_namepattern(Ref::from(self as *mut NamePatternSyntax))
         }
     }
@@ -6197,9 +6236,9 @@ impl SyntaxNode for ForSyntax {
         };
 
         self.operation.accept(visitor);
-
+    
         self.iteration.accept(visitor);
-        unsafe {
+            unsafe {
             (*visitor).close_for(Ref::from(self as *mut ForSyntax))
         }
     }
@@ -6222,9 +6261,9 @@ impl SyntaxNode for WhileSyntax {
             }
         }
         self.condition.accept(visitor);
-
+    
         self.iteration.accept(visitor);
-        unsafe {
+            unsafe {
             (*visitor).close_while(Ref::from(self as *mut WhileSyntax))
         }
     }
@@ -6247,9 +6286,9 @@ impl SyntaxNode for DoSyntax {
             }
         }
         self.iteration.accept(visitor);
-
+    
         self.condition.accept(visitor);
-        unsafe {
+            unsafe {
             (*visitor).close_do(Ref::from(self as *mut DoSyntax))
         }
     }
@@ -6263,6 +6302,10 @@ pub enum LoopSyntax {
 
 impl SyntaxNode for LoopSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
+        match self {
+            LoopSyntax::SimpleLoop(syntax) => syntax.accept(visitor),
+            LoopSyntax::NamedLoop(syntax) => syntax.accept(visitor),
+        }
     }
 }
 
@@ -6282,7 +6325,7 @@ impl SyntaxNode for SimpleLoopSyntax {
             }
         }
         self.code.accept(visitor);
-        unsafe {
+            unsafe {
             (*visitor).close_simpleloop(Ref::from(self as *mut SimpleLoopSyntax))
         }
     }
@@ -6305,7 +6348,7 @@ impl SyntaxNode for NamedLoopSyntax {
             }
         }
         self.code.accept(visitor);
-        unsafe {
+            unsafe {
             (*visitor).close_namedloop(Ref::from(self as *mut NamedLoopSyntax))
         }
     }
@@ -6342,7 +6385,7 @@ impl SyntaxNode for NewSyntax {
             }
         }
         self.type_spec.accept(visitor);
-        unsafe {
+            unsafe {
             (*visitor).close_new(Ref::from(self as *mut NewSyntax))
         }
     }
@@ -6430,7 +6473,7 @@ impl SyntaxNode for ItemSyntax {
             }
         }
         self.operation.accept(visitor);
-        unsafe {
+            unsafe {
             (*visitor).close_item(Ref::from(self as *mut ItemSyntax))
         }
     }
@@ -6452,7 +6495,7 @@ impl SyntaxNode for SizeOfSyntax {
             }
         }
         self.type_spec.accept(visitor);
-        unsafe {
+            unsafe {
             (*visitor).close_sizeof(Ref::from(self as *mut SizeOfSyntax))
         }
     }
@@ -6531,7 +6574,7 @@ impl SyntaxNode for ThrowSyntax {
             }
         }
         self.exception.accept(visitor);
-        unsafe {
+            unsafe {
             (*visitor).close_throw(Ref::from(self as *mut ThrowSyntax))
         }
     }
@@ -6557,7 +6600,7 @@ impl SyntaxNode for ClassSyntax {
             }
         }
         self.name.accept(visitor);
-
+    
         match self.generics {
             Some(mut x) => x.accept(visitor),
             None => ()
@@ -6643,7 +6686,7 @@ impl SyntaxNode for ExtendsSyntax {
             }
         }
         self.name.accept(visitor);
-        unsafe {
+            unsafe {
             (*visitor).close_extends(Ref::from(self as *mut ExtendsSyntax))
         }
     }
@@ -6744,6 +6787,17 @@ pub enum ClassMemberSyntax {
 
 impl SyntaxNode for ClassMemberSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
+        match self {
+            ClassMemberSyntax::LetMember(syntax) => syntax.accept(visitor),
+            ClassMemberSyntax::VarMember(syntax) => syntax.accept(visitor),
+            ClassMemberSyntax::MutableMember(syntax) => syntax.accept(visitor),
+            ClassMemberSyntax::SetInitialization(syntax) => syntax.accept(visitor),
+            ClassMemberSyntax::Method(syntax) => syntax.accept(visitor),
+            ClassMemberSyntax::StaticFunction(syntax) => syntax.accept(visitor),
+            ClassMemberSyntax::Operator(syntax) => syntax.accept(visitor),
+            ClassMemberSyntax::Initializer(syntax) => syntax.accept(visitor),
+            ClassMemberSyntax::Allocator(syntax) => syntax.accept(visitor),
+        }
     }
 }
 
@@ -6763,7 +6817,7 @@ impl SyntaxNode for LetMemberSyntax {
             }
         }
         self.declaration.accept(visitor);
-        unsafe {
+            unsafe {
             (*visitor).close_letmember(Ref::from(self as *mut LetMemberSyntax))
         }
     }
@@ -6785,7 +6839,7 @@ impl SyntaxNode for VarMemberSyntax {
             }
         }
         self.declaration.accept(visitor);
-        unsafe {
+            unsafe {
             (*visitor).close_varmember(Ref::from(self as *mut VarMemberSyntax))
         }
     }
@@ -6807,7 +6861,7 @@ impl SyntaxNode for MutableMemberSyntax {
             }
         }
         self.declaration.accept(visitor);
-        unsafe {
+            unsafe {
             (*visitor).close_mutablemember(Ref::from(self as *mut MutableMemberSyntax))
         }
     }
@@ -6829,7 +6883,7 @@ impl SyntaxNode for SetInitializationSyntax {
             }
         }
         self.definition.accept(visitor);
-        unsafe {
+            unsafe {
             (*visitor).close_setinitialization(Ref::from(self as *mut SetInitializationSyntax))
         }
     }
@@ -6851,7 +6905,7 @@ impl SyntaxNode for MethodSyntax {
             }
         }
         self.procedure.accept(visitor);
-        unsafe {
+            unsafe {
             (*visitor).close_method(Ref::from(self as *mut MethodSyntax))
         }
     }
@@ -6873,7 +6927,7 @@ impl SyntaxNode for StaticFunctionSyntax {
             }
         }
         self.procedure.accept(visitor);
-        unsafe {
+            unsafe {
             (*visitor).close_staticfunction(Ref::from(self as *mut StaticFunctionSyntax))
         }
     }
@@ -6895,7 +6949,7 @@ impl SyntaxNode for OperatorSyntax {
             }
         }
         self.routine.accept(visitor);
-        unsafe {
+            unsafe {
             (*visitor).close_operator(Ref::from(self as *mut OperatorSyntax))
         }
     }
@@ -6923,7 +6977,7 @@ impl SyntaxNode for InitializerSyntax {
         };
 
         self.body.accept(visitor);
-        unsafe {
+            unsafe {
             (*visitor).close_initializer(Ref::from(self as *mut InitializerSyntax))
         }
     }
@@ -6951,7 +7005,7 @@ impl SyntaxNode for AllocatorSyntax {
         };
 
         self.body.accept(visitor);
-        unsafe {
+            unsafe {
             (*visitor).close_allocator(Ref::from(self as *mut AllocatorSyntax))
         }
     }
@@ -6973,7 +7027,7 @@ impl SyntaxNode for TypeAnnotationSyntax {
             }
         }
         self.type_spec.accept(visitor);
-        unsafe {
+            unsafe {
             (*visitor).close_typeannotation(Ref::from(self as *mut TypeAnnotationSyntax))
         }
     }
@@ -6987,6 +7041,10 @@ pub enum TypeSpecSyntax {
 
 impl SyntaxNode for TypeSpecSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
+        match self {
+            TypeSpecSyntax::Type(syntax) => syntax.accept(visitor),
+            TypeSpecSyntax::Variant(syntax) => syntax.accept(visitor),
+        }
     }
 }
 
@@ -7009,7 +7067,7 @@ impl SyntaxNode for TypeSyntax {
             }
         }
         self.name.accept(visitor);
-
+    
         match self.generics {
             Some(mut x) => x.accept(visitor),
             None => ()
@@ -7073,7 +7131,7 @@ impl SyntaxNode for ThrowsSyntax {
             }
         }
         self.throws_type.accept(visitor);
-        unsafe {
+            unsafe {
             (*visitor).close_throws(Ref::from(self as *mut ThrowsSyntax))
         }
     }
@@ -7096,7 +7154,7 @@ impl SyntaxNode for GenericArgumentsSyntax {
             }
         }
         self.generic.accept(visitor);
-
+    
         match self.additional_generics {
             Some(mut x) => for node in x.iter_mut() {
                 node.accept(visitor)
@@ -7125,7 +7183,7 @@ impl SyntaxNode for GenericArgumentSyntax {
             }
         }
         self.type_spec.accept(visitor);
-        unsafe {
+            unsafe {
             (*visitor).close_genericargument(Ref::from(self as *mut GenericArgumentSyntax))
         }
     }
@@ -7156,6 +7214,12 @@ pub enum LifeTimeSyntax {
 
 impl SyntaxNode for LifeTimeSyntax {
     fn accept(&mut self, visitor: *mut SyntaxVisitor) {
+        match self {
+            LifeTimeSyntax::Root(syntax) => syntax.accept(visitor),
+            LifeTimeSyntax::Local(syntax) => syntax.accept(visitor),
+            LifeTimeSyntax::Reference(syntax) => syntax.accept(visitor),
+            LifeTimeSyntax::Thrown(syntax) => syntax.accept(visitor),
+        }
     }
 }
 
