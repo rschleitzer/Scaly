@@ -151,12 +151,11 @@ impl Lexer {
             self.column = self.column + 1;
 
             if self.is_at_end() {
-                // if name.get_length() == 0 {
-                //     return Ref::new(_rp, Token::Invalid);
-                // }
-                // else {
+                if name.get_length() == 0 {
+                    return Ref::new(_rp, Token::Invalid);
+                } else {
                     return Ref::new(_rp, Token::Identifier(name.to_string(_rp)));
-                // }
+                }
             }
 
             let c = self.character;
@@ -182,12 +181,11 @@ impl Lexer {
             self.column = self.column + 1;
 
             if self.is_at_end() {
-                // if operation.get_length() == 0 {
-                //     return Ref::new(_rp, Token::Invalid);
-                // }
-                // else {
+                if operation.get_length() == 0 {
+                    return Ref::new(_rp, Token::Invalid);
+                } else {
                     return Ref::new(_rp, Token::Identifier(operation.to_string(_rp)));
-                // }
+                }
             }
 
             match self.character {

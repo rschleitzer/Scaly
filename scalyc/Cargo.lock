@@ -7,7 +7,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "scaly"
-version = "0.0.33"
+version = "0.0.34"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "libc 0.2.60 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -18,9 +18,9 @@ name = "scalyc"
 version = "0.0.7"
 dependencies = [
  "libc 0.2.60 (registry+https://github.com/rust-lang/crates.io-index)",
- "scaly 0.0.33 (registry+https://github.com/rust-lang/crates.io-index)",
+ "scaly 0.0.34 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [metadata]
 "checksum libc 0.2.60 (registry+https://github.com/rust-lang/crates.io-index)" = "d44e80633f007889c7eff624b709ab43c92d708caad982295768a7b13ca3b5eb"
-"checksum scaly 0.0.33 (registry+https://github.com/rust-lang/crates.io-index)" = "b6204d5a5df8f8c711f357455af19f0047a317fb238eb41f2f2734d3cf708909"
+"checksum scaly 0.0.34 (registry+https://github.com/rust-lang/crates.io-index)" = "a647657594f7762d8bb3dffac2fa6b369422bbb68687db3e5cd4e549b40fc180"
