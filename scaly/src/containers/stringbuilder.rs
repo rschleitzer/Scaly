@@ -8,7 +8,12 @@ pub struct StringBuilder {
 
 impl StringBuilder {
     pub fn new(_rp: *mut Page) -> Ref<StringBuilder> {
-        Ref::new(_rp, StringBuilder{ buffer: Array::new() })
+        Ref::new(
+            _rp,
+            StringBuilder {
+                buffer: Array::new(),
+            },
+        )
     }
 
     pub fn from_character(_rp: *mut Page, character: char) -> Ref<StringBuilder> {
@@ -19,6 +24,10 @@ impl StringBuilder {
 
     pub fn append_character(&mut self, character: char) {
         self.buffer.add(character as u8);
+    }
+
+    pub fn get_length(&self) -> usize {
+        return self.buffer.get_length();
     }
 
     pub fn to_string(&self, _rp: *mut Page) -> String {

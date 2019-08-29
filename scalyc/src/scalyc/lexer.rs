@@ -53,7 +53,6 @@ impl Lexer {
     pub fn advance(&mut self, _pr: &Region) {
         let _r = Region::create(_pr);
         self.skip_whitespace();
-        self.read_character();
         self.previous_line = self.line;
         self.previous_column = self.column;
         if self.is_at_end {
@@ -121,7 +120,7 @@ impl Lexer {
                         Token::Punctuation(String::from_character(_token_page, c)),
                     );
                 }
-                self.read_character();
+                self.character = 0 as char;
                 self.column = self.column + 1;
             }
 
@@ -145,14 +144,19 @@ impl Lexer {
 
     fn scan_identifier(&mut self, _pr: &Region, _rp: *mut Page) -> Ref<Token> {
         let _r = Region::create(_pr);
-        let mut name: Ref<StringBuilder> = StringBuilder::from_character(_r.page, self.character);
+        let mut name: Ref<StringBuilder> = StringBuilder::new(_r.page);
 
         loop {
             self.read_character();
             self.column = self.column + 1;
 
             if self.is_at_end() {
-                return Ref::new(_rp, Token::Identifier(name.to_string(_rp)));
+                // if name.get_length() == 0 {
+                //     return Ref::new(_rp, Token::Invalid);
+                // }
+                // else {
+                    return Ref::new(_rp, Token::Identifier(name.to_string(_rp)));
+                // }
             }
 
             let c = self.character;
@@ -171,15 +175,19 @@ impl Lexer {
 
     fn scan_operator(&mut self, _pr: &Region, _rp: *mut Page) -> Ref<Token> {
         let _r = Region::create(_pr);
-        let mut operation: Ref<StringBuilder> =
-            StringBuilder::from_character(_r.page, self.character);
+        let mut operation: Ref<StringBuilder> = StringBuilder::new(_r.page);
 
         loop {
             self.read_character();
             self.column = self.column + 1;
 
             if self.is_at_end() {
-                return Ref::new(_rp, Token::Identifier(operation.to_string(_rp)));
+                // if operation.get_length() == 0 {
+                //     return Ref::new(_rp, Token::Invalid);
+                // }
+                // else {
+                    return Ref::new(_rp, Token::Identifier(operation.to_string(_rp)));
+                // }
             }
 
             match self.character {
@@ -359,36 +367,38 @@ impl Lexer {
 
     fn skip_whitespace(&mut self) {
         loop {
+            self.read_character();
             if self.is_at_end {
                 return;
             }
 
             match self.character {
                 ' ' => {
-                    self.read_character();;
+                    self.character = 0 as char;
                     self.column = self.column + 1;
                     continue;
                 }
 
                 '\t' => {
-                    self.read_character();
+                    self.character = 0 as char;
                     self.column = self.column + 4;
                     continue;
                 }
 
                 '\r' => {
-                    self.read_character();
+                    self.character = 0 as char;
                     continue;
                 }
 
                 '\n' => {
-                    self.read_character();
+                    self.character = 0 as char;
                     self.column = 1;
                     self.line = self.line + 1;
                     continue;
                 }
 
                 '/' => {
+                    self.character = 0 as char;
                     self.read_character();
                     self.column = self.column + 1;
 
@@ -414,31 +424,32 @@ impl Lexer {
 
     fn handle_single_line_comment(&mut self) {
         loop {
+            self.read_character();
             if self.is_at_end() {
                 return;
             }
 
             match self.character {
                 '\t' => {
-                    self.read_character();
+                    self.character = 0 as char;
                     self.column = self.column + 4;
                     continue;
                 }
 
                 '\r' => {
-                    self.read_character();
+                    self.character = 0 as char;
                     continue;
                 }
 
                 '\n' => {
-                    self.read_character();
+                    self.character = 0 as char;
                     self.column = 1;
                     self.line = self.line + 1;
                     return;
                 }
 
                 _ => {
-                    self.read_character();
+                    self.character = 0 as char;
                     self.column = self.column + 1;
                     continue;
                 }
@@ -448,12 +459,14 @@ impl Lexer {
 
     fn handle_multi_line_comment(&mut self) {
         loop {
+            self.read_character();
             if self.is_at_end() {
                 return;
             }
 
             match self.character {
                 '/' => {
+                    self.character = 0 as char;
                     self.read_character();
                     self.column = self.column + 1;
 
@@ -469,6 +482,7 @@ impl Lexer {
                 }
 
                 '*' => {
+                    self.character = 0 as char;
                     self.read_character();
                     self.column = self.column + 1;
 
@@ -476,6 +490,7 @@ impl Lexer {
                         return;
                     } else {
                         if self.character == '/' {
+                            self.character = 0 as char;
                             self.read_character();
                             self.column = self.column + 1;
                             return;
@@ -484,25 +499,25 @@ impl Lexer {
                 }
 
                 '\t' => {
-                    self.read_character();
+                    self.character = 0 as char;
                     self.column = self.column + 4;
                     continue;
                 }
 
                 '\r' => {
-                    self.read_character();
+                    self.character = 0 as char;
                     continue;
                 }
 
                 '\n' => {
-                    self.read_character();
+                    self.character = 0 as char;
                     self.column = 1;
                     self.line = self.line + 1;
                     return;
                 }
 
                 _ => {
-                    self.read_character();
+                    self.character = 0 as char;
                     self.column = self.column + 1;
                     continue;
                 }
