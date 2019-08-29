@@ -57,7 +57,11 @@ impl String {
         unsafe {
             let pointer = (*_rp).allocate_raw(overall_length, 1);
             ptr::copy_nonoverlapping(length_array.as_ptr(), pointer, counter + 1);
-            ptr::copy_nonoverlapping(other.data.offset((counter + 1) as isize), pointer.offset((counter + 1) as isize), length);
+            ptr::copy_nonoverlapping(
+                other.data.offset((counter + 1) as isize),
+                pointer.offset((counter + 1) as isize),
+                length,
+            );
             String { data: pointer }
         }
     }
@@ -125,15 +129,31 @@ impl String {
 
 impl Equal for String {
     fn equals(&self, other: &String) -> bool {
-        let length = self.get_length();
+        let mut length: usize = 0;
+        let mut bit_count = 0;
+        let mut index = 0;
+        loop {
+            if bit_count == PACKED_SIZE * 7 {
+                panic!("Bad string length.");
+            }
+
+            let byte: u8 = unsafe { *(self.data.offset(index)) };
+            length |= ((byte & 0x7F) as usize) << bit_count;
+            if (byte & 0x80) == 0 {
+                break;
+            }
+            bit_count += 7;
+            index += 1;
+        }
+
         if length != other.get_length() {
             return false;
         }
 
         unsafe {
             memcmp(
-                self.data as *const c_void,
-                other.data as *const c_void,
+                (self.data as *const c_void).offset(index + 1),
+                (other.data as *const c_void).offset(index + 1),
                 length,
             ) == 0
         }
@@ -160,5 +180,11 @@ fn test_string() {
         assert_eq!(length, 12);
         let long_string = String::new(root_page, "1234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890");
         assert_eq!(long_string.get_length(), 130);
+
+        let semi = String::new(root_page, ";");
+        let dot = String::new(root_page, ".");
+        assert_eq!(semi.equals(&dot), false);
+        let semi2 = String::new(root_page, ";");
+        assert_eq!(semi.equals(&semi2), true);
     }
 }

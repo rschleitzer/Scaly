@@ -37,21 +37,23 @@ impl Lexer {
     }
 
     fn read_character(&mut self) {
-        unsafe {
-            let read_result: i32 = (*self.stream).read_byte();
-            if read_result == -1 {
-                self.is_at_end = true;
-                self.character = 0 as char;
-            } else {
-                self.character = read_result as u8 as char;
+        if self.character == 0 as char {
+            unsafe {
+                let read_result: i32 = (*self.stream).read_byte();
+                if read_result == -1 {
+                    self.is_at_end = true;
+                    self.character = 0 as char;
+                } else {
+                    self.character = read_result as u8 as char;
+                }
             }
         }
     }
 
     pub fn advance(&mut self, _pr: &Region) {
         let _r = Region::create(_pr);
-        self.read_character();
         self.skip_whitespace();
+        self.read_character();
         self.previous_line = self.line;
         self.previous_column = self.column;
         if self.is_at_end {
@@ -160,6 +162,7 @@ impl Lexer {
                 || (c == '_')
             {
                 name.append_character(c);
+                self.character = 0 as char
             } else {
                 return Ref::new(_rp, Token::Identifier(name.to_string(_rp)));
             }
@@ -181,7 +184,8 @@ impl Lexer {
 
             match self.character {
                 '+' | '-' | '*' | '/' | '=' | '%' | '&' | '|' | '^' | '~' | '<' | '>' => {
-                    operation.append_character(self.character)
+                    operation.append_character(self.character);
+                    self.character = 0 as char
                 }
 
                 _ => return Ref::new(_rp, Token::Identifier(operation.to_string(_rp))),
@@ -289,7 +293,10 @@ impl Lexer {
                         _ => return Ref::new(_rp, Token::Invalid),
                     }
                 }
-                _ => value.append_character(self.character),
+                _ => {
+                    value.append_character(self.character);
+                    self.character = 0 as char
+                }
             }
         }
     }
@@ -311,7 +318,8 @@ impl Lexer {
         loop {
             let c = self.character;
             if (c >= '0') && (c <= '9') {
-                value.append_character(self.character)
+                value.append_character(self.character);
+                self.character = 0 as char
             } else {
                 return Ref::new(_rp, Token::Literal(Literal::Numeric(value.to_string(_rp))));
             }
@@ -341,7 +349,8 @@ impl Lexer {
                 || ((c >= 'a') && (c <= 'f'))
                 || ((c >= 'A') && (c <= 'F'))
             {
-                value.append_character(self.character)
+                value.append_character(self.character);
+                self.character = 0 as char
             } else {
                 return Ref::new(_rp, Token::Literal(Literal::Hex(value.to_string(_rp))));
             }
@@ -541,8 +550,11 @@ impl Lexer {
         }
         match *self.token {
             Token::Punctuation(name) => {
-                self.empty();
-                return name.equals(&fixed_string);
+                let ret = name.equals(&fixed_string);
+                if ret {
+                    self.empty();
+                }
+                return ret;
             }
             _ => return false,
         }
