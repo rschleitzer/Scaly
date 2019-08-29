@@ -201,18 +201,15 @@ impl Parser {
 
         let start: Position = self.lexer.get_previous_position();
 
-        let success_intrinsic_1 = self.lexer.parse_keyword(String::from_string_slice(_r.page, "intrinsic"));
-        if success_intrinsic_1 {
-            self.lexer.advance(&_r)
-        } else {
+        let success_intrinsic_1 = self.lexer.parse_keyword(&_r, String::from_string_slice(_r.page, "intrinsic"));
+        if !success_intrinsic_1 {
+
             return Ok(None)
         }
 
-        let name = self.lexer.parse_identifier(_rp);
+        let name = self.lexer.parse_identifier(&_r, _rp);
         match name {
-            Some(name) => if self.is_identifier(name) {
-                self.lexer.advance(&_r)
-            } else {
+            Some(name) => if !self.is_identifier(name) {
 
             return Result::Err(Ref::new(
                 _ep,
@@ -279,10 +276,9 @@ impl Parser {
 
         let start: Position = self.lexer.get_previous_position();
 
-        let success_using_1 = self.lexer.parse_keyword(String::from_string_slice(_r.page, "using"));
-        if success_using_1 {
-            self.lexer.advance(&_r)
-        } else {
+        let success_using_1 = self.lexer.parse_keyword(&_r, String::from_string_slice(_r.page, "using"));
+        if !success_using_1 {
+
             return Ok(None)
         }
 
@@ -340,10 +336,9 @@ impl Parser {
 
         let start: Position = self.lexer.get_previous_position();
 
-        let success_define_1 = self.lexer.parse_keyword(String::from_string_slice(_r.page, "define"));
-        if success_define_1 {
-            self.lexer.advance(&_r)
-        } else {
+        let success_define_1 = self.lexer.parse_keyword(&_r, String::from_string_slice(_r.page, "define"));
+        if !success_define_1 {
+
             return Ok(None)
         }
 
@@ -382,14 +377,14 @@ impl Parser {
 
         let start: Position = self.lexer.get_previous_position();
 
-        let name = self.lexer.parse_identifier(_rp);
+        let name = self.lexer.parse_identifier(&_r, _rp);
         match name {
-            Some(name) => if self.is_identifier(name) {
-                self.lexer.advance(&_r)
-            } else {
+            Some(name) => if !self.is_identifier(name) {
+
             return Ok(None)
            },
-            None =>             return Ok(None)
+            None => 
+            return Ok(None)
         }
 
         let extensions = self.parse_extension_list(&_r, _rp, _ep)?;
@@ -446,18 +441,15 @@ impl Parser {
 
         let start: Position = self.lexer.get_previous_position();
 
-        let success_dot_1 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, "."));
-        if success_dot_1 {
-            self.lexer.advance(&_r)
-        } else {
+        let success_dot_1 = self.lexer.parse_punctuation(&_r, String::from_string_slice(_r.page, "."));
+        if !success_dot_1 {
+
             return Ok(None)
         }
 
-        let name = self.lexer.parse_identifier(_rp);
+        let name = self.lexer.parse_identifier(&_r, _rp);
         match name {
-            Some(name) => if self.is_identifier(name) {
-                self.lexer.advance(&_r)
-            } else {
+            Some(name) => if !self.is_identifier(name) {
 
             return Result::Err(Ref::new(
                 _ep,
@@ -591,10 +583,9 @@ impl Parser {
 
         let start: Position = self.lexer.get_previous_position();
 
-        let success_namespace_1 = self.lexer.parse_keyword(String::from_string_slice(_r.page, "namespace"));
-        if success_namespace_1 {
-            self.lexer.advance(&_r)
-        } else {
+        let success_namespace_1 = self.lexer.parse_keyword(&_r, String::from_string_slice(_r.page, "namespace"));
+        if !success_namespace_1 {
+
             return Ok(None)
         }
 
@@ -605,10 +596,8 @@ impl Parser {
             Some(_) => ()
         }
 
-        let success_left_curly_3 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, "{"));
-        if success_left_curly_3 {
-            self.lexer.advance(&_r)
-        } else {
+        let success_left_curly_3 = self.lexer.parse_punctuation(&_r, String::from_string_slice(_r.page, "{"));
+        if !success_left_curly_3 {
 
             return Result::Err(Ref::new(
                 _ep,
@@ -626,10 +615,8 @@ impl Parser {
 
         let declarations = self.parse_declaration_list(&_r, _rp, _ep)?;
 
-        let success_right_curly_7 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, "}"));
-        if success_right_curly_7 {
-            self.lexer.advance(&_r)
-        } else {
+        let success_right_curly_7 = self.lexer.parse_punctuation(&_r, String::from_string_slice(_r.page, "}"));
+        if !success_right_curly_7 {
 
             return Result::Err(Ref::new(
                 _ep,
@@ -689,10 +676,9 @@ impl Parser {
 
         let start: Position = self.lexer.get_previous_position();
 
-        let success_function_1 = self.lexer.parse_keyword(String::from_string_slice(_r.page, "function"));
-        if success_function_1 {
-            self.lexer.advance(&_r)
-        } else {
+        let success_function_1 = self.lexer.parse_keyword(&_r, String::from_string_slice(_r.page, "function"));
+        if !success_function_1 {
+
             return Ok(None)
         }
 
@@ -722,14 +708,14 @@ impl Parser {
 
         let start: Position = self.lexer.get_previous_position();
 
-        let name = self.lexer.parse_identifier(_rp);
+        let name = self.lexer.parse_identifier(&_r, _rp);
         match name {
-            Some(name) => if self.is_identifier(name) {
-                self.lexer.advance(&_r)
-            } else {
+            Some(name) => if !self.is_identifier(name) {
+
             return Ok(None)
            },
-            None =>             return Ok(None)
+            None => 
+            return Ok(None)
         }
 
         let routine = self.parse_routine(&_r, _rp, _ep)?;
@@ -1031,10 +1017,9 @@ impl Parser {
 
         let start: Position = self.lexer.get_previous_position();
 
-        let success_let_1 = self.lexer.parse_keyword(String::from_string_slice(_r.page, "let"));
-        if success_let_1 {
-            self.lexer.advance(&_r)
-        } else {
+        let success_let_1 = self.lexer.parse_keyword(&_r, String::from_string_slice(_r.page, "let"));
+        if !success_let_1 {
+
             return Ok(None)
         }
 
@@ -1064,10 +1049,9 @@ impl Parser {
 
         let start: Position = self.lexer.get_previous_position();
 
-        let success_var_1 = self.lexer.parse_keyword(String::from_string_slice(_r.page, "var"));
-        if success_var_1 {
-            self.lexer.advance(&_r)
-        } else {
+        let success_var_1 = self.lexer.parse_keyword(&_r, String::from_string_slice(_r.page, "var"));
+        if !success_var_1 {
+
             return Ok(None)
         }
 
@@ -1097,10 +1081,9 @@ impl Parser {
 
         let start: Position = self.lexer.get_previous_position();
 
-        let success_mutable_1 = self.lexer.parse_keyword(String::from_string_slice(_r.page, "mutable"));
-        if success_mutable_1 {
-            self.lexer.advance(&_r)
-        } else {
+        let success_mutable_1 = self.lexer.parse_keyword(&_r, String::from_string_slice(_r.page, "mutable"));
+        if !success_mutable_1 {
+
             return Ok(None)
         }
 
@@ -1130,10 +1113,9 @@ impl Parser {
 
         let start: Position = self.lexer.get_previous_position();
 
-        let success_threadlocal_1 = self.lexer.parse_keyword(String::from_string_slice(_r.page, "threadlocal"));
-        if success_threadlocal_1 {
-            self.lexer.advance(&_r)
-        } else {
+        let success_threadlocal_1 = self.lexer.parse_keyword(&_r, String::from_string_slice(_r.page, "threadlocal"));
+        if !success_threadlocal_1 {
+
             return Ok(None)
         }
 
@@ -1163,14 +1145,14 @@ impl Parser {
 
         let start: Position = self.lexer.get_previous_position();
 
-        let name = self.lexer.parse_identifier(_rp);
+        let name = self.lexer.parse_identifier(&_r, _rp);
         match name {
-            Some(name) => if self.is_identifier(name) {
-                self.lexer.advance(&_r)
-            } else {
+            Some(name) => if !self.is_identifier(name) {
+
             return Ok(None)
            },
-            None =>             return Ok(None)
+            None => 
+            return Ok(None)
         }
 
         let type_annotation = self.parse_typeannotation(&_r, _rp, _ep)?;
@@ -1207,10 +1189,9 @@ impl Parser {
 
         let start: Position = self.lexer.get_previous_position();
 
-        let success_set_1 = self.lexer.parse_keyword(String::from_string_slice(_r.page, "set"));
-        if success_set_1 {
-            self.lexer.advance(&_r)
-        } else {
+        let success_set_1 = self.lexer.parse_keyword(&_r, String::from_string_slice(_r.page, "set"));
+        if !success_set_1 {
+
             return Ok(None)
         }
 
@@ -1221,10 +1202,8 @@ impl Parser {
             Some(_) => ()
         }
 
-        let success_colon_3 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, ":"));
-        if success_colon_3 {
-            self.lexer.advance(&_r)
-        } else {
+        let success_colon_3 = self.lexer.parse_punctuation(&_r, String::from_string_slice(_r.page, ":"));
+        if !success_colon_3 {
 
             return Result::Err(Ref::new(
                 _ep,
@@ -1271,11 +1250,10 @@ impl Parser {
             Some(_) => ()
         }
 
-        let success_semicolon_2 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, ";"));
-        if success_semicolon_2 {
-            self.lexer.advance(&_r)
-        } else {
-()
+        let success_semicolon_2 = self.lexer.parse_punctuation(&_r, String::from_string_slice(_r.page, ";"));
+        if !success_semicolon_2 {
+
+            ()
         }
 
         let end: Position = self.lexer.get_position();
@@ -1490,18 +1468,15 @@ impl Parser {
 
         let start: Position = self.lexer.get_previous_position();
 
-        let success_dot_1 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, "."));
-        if success_dot_1 {
-            self.lexer.advance(&_r)
-        } else {
+        let success_dot_1 = self.lexer.parse_punctuation(&_r, String::from_string_slice(_r.page, "."));
+        if !success_dot_1 {
+
             return Ok(None)
         }
 
-        let member = self.lexer.parse_identifier(_rp);
+        let member = self.lexer.parse_identifier(&_r, _rp);
         match member {
-            Some(member) => if self.is_identifier(member) {
-                self.lexer.advance(&_r)
-            } else {
+            Some(member) => if !self.is_identifier(member) {
 
             return Result::Err(Ref::new(
                 _ep,
@@ -1540,10 +1515,9 @@ impl Parser {
 
         let start: Position = self.lexer.get_previous_position();
 
-        let success_as_1 = self.lexer.parse_keyword(String::from_string_slice(_r.page, "as"));
-        if success_as_1 {
-            self.lexer.advance(&_r)
-        } else {
+        let success_as_1 = self.lexer.parse_keyword(&_r, String::from_string_slice(_r.page, "as"));
+        if !success_as_1 {
+
             return Ok(None)
         }
 
@@ -1576,10 +1550,9 @@ impl Parser {
 
         let start: Position = self.lexer.get_previous_position();
 
-        let success_is_1 = self.lexer.parse_keyword(String::from_string_slice(_r.page, "is"));
-        if success_is_1 {
-            self.lexer.advance(&_r)
-        } else {
+        let success_is_1 = self.lexer.parse_keyword(&_r, String::from_string_slice(_r.page, "is"));
+        if !success_is_1 {
+
             return Ok(None)
         }
 
@@ -1612,10 +1585,9 @@ impl Parser {
 
         let start: Position = self.lexer.get_previous_position();
 
-        let success_exclamation_1 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, "!"));
-        if success_exclamation_1 {
-            self.lexer.advance(&_r)
-        } else {
+        let success_exclamation_1 = self.lexer.parse_punctuation(&_r, String::from_string_slice(_r.page, "!"));
+        if !success_exclamation_1 {
+
             return Ok(None)
         }
 
@@ -1636,10 +1608,9 @@ impl Parser {
 
         let start: Position = self.lexer.get_previous_position();
 
-        let success_catch_1 = self.lexer.parse_keyword(String::from_string_slice(_r.page, "catch"));
-        if success_catch_1 {
-            self.lexer.advance(&_r)
-        } else {
+        let success_catch_1 = self.lexer.parse_keyword(&_r, String::from_string_slice(_r.page, "catch"));
+        if !success_catch_1 {
+
             return Ok(None)
         }
 
@@ -1741,14 +1712,14 @@ impl Parser {
             Some(_) => ()
         }
 
-        let error_name = self.lexer.parse_identifier(_rp);
+        let error_name = self.lexer.parse_identifier(&_r, _rp);
         match error_name {
-            Some(error_name) => if self.is_identifier(error_name) {
-                self.lexer.advance(&_r)
-            } else {
-()
+            Some(error_name) => if !self.is_identifier(error_name) {
+
+            ()
            },
-            None => ()
+            None => 
+            ()
         }
 
         let end: Position = self.lexer.get_position();
@@ -1888,19 +1859,16 @@ impl Parser {
 
         let start: Position = self.lexer.get_previous_position();
 
-        let success_left_curly_1 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, "{"));
-        if success_left_curly_1 {
-            self.lexer.advance(&_r)
-        } else {
+        let success_left_curly_1 = self.lexer.parse_punctuation(&_r, String::from_string_slice(_r.page, "{"));
+        if !success_left_curly_1 {
+
             return Ok(None)
         }
 
         let statements = self.parse_statement_list(&_r, _rp, _ep)?;
 
-        let success_right_curly_3 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, "}"));
-        if success_right_curly_3 {
-            self.lexer.advance(&_r)
-        } else {
+        let success_right_curly_3 = self.lexer.parse_punctuation(&_r, String::from_string_slice(_r.page, "}"));
+        if !success_right_curly_3 {
 
             return Result::Err(Ref::new(
                 _ep,
@@ -1947,11 +1915,11 @@ impl Parser {
 
         let start: Position = self.lexer.get_previous_position();
 
-        let literal = self.lexer.parse_literal(_rp);
+        let literal = self.lexer.parse_literal(&_r, _rp);
         match literal {
-            Some(_) =>
-                self.lexer.advance(&_r),
-            None =>             return Ok(None)
+            None => 
+            return Ok(None)
+,            _ => ()
         }
 
         let end: Position = self.lexer.get_position();
@@ -1971,17 +1939,14 @@ impl Parser {
 
         let start: Position = self.lexer.get_previous_position();
 
-        let success_if_1 = self.lexer.parse_keyword(String::from_string_slice(_r.page, "if"));
-        if success_if_1 {
-            self.lexer.advance(&_r)
-        } else {
+        let success_if_1 = self.lexer.parse_keyword(&_r, String::from_string_slice(_r.page, "if"));
+        if !success_if_1 {
+
             return Ok(None)
         }
 
-        let success_left_paren_2 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, "("));
-        if success_left_paren_2 {
-            self.lexer.advance(&_r)
-        } else {
+        let success_left_paren_2 = self.lexer.parse_punctuation(&_r, String::from_string_slice(_r.page, "("));
+        if !success_left_paren_2 {
 
             return Result::Err(Ref::new(
                 _ep,
@@ -2000,10 +1965,8 @@ impl Parser {
             Some(_) => ()
         }
 
-        let success_right_paren_4 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, ")"));
-        if success_right_paren_4 {
-            self.lexer.advance(&_r)
-        } else {
+        let success_right_paren_4 = self.lexer.parse_punctuation(&_r, String::from_string_slice(_r.page, ")"));
+        if !success_right_paren_4 {
 
             return Result::Err(Ref::new(
                 _ep,
@@ -2051,10 +2014,9 @@ impl Parser {
 
         let start: Position = self.lexer.get_previous_position();
 
-        let success_else_1 = self.lexer.parse_keyword(String::from_string_slice(_r.page, "else"));
-        if success_else_1 {
-            self.lexer.advance(&_r)
-        } else {
+        let success_else_1 = self.lexer.parse_keyword(&_r, String::from_string_slice(_r.page, "else"));
+        if !success_else_1 {
+
             return Ok(None)
         }
 
@@ -2084,17 +2046,14 @@ impl Parser {
 
         let start: Position = self.lexer.get_previous_position();
 
-        let success_switch_1 = self.lexer.parse_keyword(String::from_string_slice(_r.page, "switch"));
-        if success_switch_1 {
-            self.lexer.advance(&_r)
-        } else {
+        let success_switch_1 = self.lexer.parse_keyword(&_r, String::from_string_slice(_r.page, "switch"));
+        if !success_switch_1 {
+
             return Ok(None)
         }
 
-        let success_left_paren_2 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, "("));
-        if success_left_paren_2 {
-            self.lexer.advance(&_r)
-        } else {
+        let success_left_paren_2 = self.lexer.parse_punctuation(&_r, String::from_string_slice(_r.page, "("));
+        if !success_left_paren_2 {
 
             return Result::Err(Ref::new(
                 _ep,
@@ -2113,10 +2072,8 @@ impl Parser {
             Some(_) => ()
         }
 
-        let success_right_paren_4 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, ")"));
-        if success_right_paren_4 {
-            self.lexer.advance(&_r)
-        } else {
+        let success_right_paren_4 = self.lexer.parse_punctuation(&_r, String::from_string_slice(_r.page, ")"));
+        if !success_right_paren_4 {
 
             return Result::Err(Ref::new(
                 _ep,
@@ -2128,10 +2085,8 @@ impl Parser {
             ))
         }
 
-        let success_left_curly_5 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, "{"));
-        if success_left_curly_5 {
-            self.lexer.advance(&_r)
-        } else {
+        let success_left_curly_5 = self.lexer.parse_punctuation(&_r, String::from_string_slice(_r.page, "{"));
+        if !success_left_curly_5 {
 
             return Result::Err(Ref::new(
                 _ep,
@@ -2150,10 +2105,8 @@ impl Parser {
             Some(_) => ()
         }
 
-        let success_right_curly_7 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, "}"));
-        if success_right_curly_7 {
-            self.lexer.advance(&_r)
-        } else {
+        let success_right_curly_7 = self.lexer.parse_punctuation(&_r, String::from_string_slice(_r.page, "}"));
+        if !success_right_curly_7 {
 
             return Result::Err(Ref::new(
                 _ep,
@@ -2284,10 +2237,9 @@ impl Parser {
 
         let start: Position = self.lexer.get_previous_position();
 
-        let success_case_1 = self.lexer.parse_keyword(String::from_string_slice(_r.page, "case"));
-        if success_case_1 {
-            self.lexer.advance(&_r)
-        } else {
+        let success_case_1 = self.lexer.parse_keyword(&_r, String::from_string_slice(_r.page, "case"));
+        if !success_case_1 {
+
             return Ok(None)
         }
 
@@ -2357,11 +2309,10 @@ impl Parser {
             Some(_) => ()
         }
 
-        let success_comma_2 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, ","));
-        if success_comma_2 {
-            self.lexer.advance(&_r)
-        } else {
-()
+        let success_comma_2 = self.lexer.parse_punctuation(&_r, String::from_string_slice(_r.page, ","));
+        if !success_comma_2 {
+
+            ()
         }
 
         let end: Position = self.lexer.get_position();
@@ -2448,10 +2399,9 @@ impl Parser {
 
         let start: Position = self.lexer.get_previous_position();
 
-        let success_underscore_1 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, "_"));
-        if success_underscore_1 {
-            self.lexer.advance(&_r)
-        } else {
+        let success_underscore_1 = self.lexer.parse_punctuation(&_r, String::from_string_slice(_r.page, "_"));
+        if !success_underscore_1 {
+
             return Ok(None)
         }
 
@@ -2498,10 +2448,9 @@ impl Parser {
 
         let start: Position = self.lexer.get_previous_position();
 
-        let success_default_1 = self.lexer.parse_keyword(String::from_string_slice(_r.page, "default"));
-        if success_default_1 {
-            self.lexer.advance(&_r)
-        } else {
+        let success_default_1 = self.lexer.parse_keyword(&_r, String::from_string_slice(_r.page, "default"));
+        if !success_default_1 {
+
             return Ok(None)
         }
 
@@ -2522,17 +2471,14 @@ impl Parser {
 
         let start: Position = self.lexer.get_previous_position();
 
-        let success_for_1 = self.lexer.parse_keyword(String::from_string_slice(_r.page, "for"));
-        if success_for_1 {
-            self.lexer.advance(&_r)
-        } else {
+        let success_for_1 = self.lexer.parse_keyword(&_r, String::from_string_slice(_r.page, "for"));
+        if !success_for_1 {
+
             return Ok(None)
         }
 
-        let success_left_paren_2 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, "("));
-        if success_left_paren_2 {
-            self.lexer.advance(&_r)
-        } else {
+        let success_left_paren_2 = self.lexer.parse_punctuation(&_r, String::from_string_slice(_r.page, "("));
+        if !success_left_paren_2 {
 
             return Result::Err(Ref::new(
                 _ep,
@@ -2544,11 +2490,9 @@ impl Parser {
             ))
         }
 
-        let index = self.lexer.parse_identifier(_rp);
+        let index = self.lexer.parse_identifier(&_r, _rp);
         match index {
-            Some(index) => if self.is_identifier(index) {
-                self.lexer.advance(&_r)
-            } else {
+            Some(index) => if !self.is_identifier(index) {
 
             return Result::Err(Ref::new(
                 _ep,
@@ -2572,10 +2516,8 @@ impl Parser {
 
         let type_annotation = self.parse_typeannotation(&_r, _rp, _ep)?;
 
-        let success_in_5 = self.lexer.parse_keyword(String::from_string_slice(_r.page, "in"));
-        if success_in_5 {
-            self.lexer.advance(&_r)
-        } else {
+        let success_in_5 = self.lexer.parse_keyword(&_r, String::from_string_slice(_r.page, "in"));
+        if !success_in_5 {
 
             return Result::Err(Ref::new(
                 _ep,
@@ -2594,10 +2536,8 @@ impl Parser {
             Some(_) => ()
         }
 
-        let success_right_paren_7 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, ")"));
-        if success_right_paren_7 {
-            self.lexer.advance(&_r)
-        } else {
+        let success_right_paren_7 = self.lexer.parse_punctuation(&_r, String::from_string_slice(_r.page, ")"));
+        if !success_right_paren_7 {
 
             return Result::Err(Ref::new(
                 _ep,
@@ -2646,17 +2586,14 @@ impl Parser {
 
         let start: Position = self.lexer.get_previous_position();
 
-        let success_while_1 = self.lexer.parse_keyword(String::from_string_slice(_r.page, "while"));
-        if success_while_1 {
-            self.lexer.advance(&_r)
-        } else {
+        let success_while_1 = self.lexer.parse_keyword(&_r, String::from_string_slice(_r.page, "while"));
+        if !success_while_1 {
+
             return Ok(None)
         }
 
-        let success_left_paren_2 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, "("));
-        if success_left_paren_2 {
-            self.lexer.advance(&_r)
-        } else {
+        let success_left_paren_2 = self.lexer.parse_punctuation(&_r, String::from_string_slice(_r.page, "("));
+        if !success_left_paren_2 {
 
             return Result::Err(Ref::new(
                 _ep,
@@ -2675,10 +2612,8 @@ impl Parser {
             Some(_) => ()
         }
 
-        let success_right_paren_4 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, ")"));
-        if success_right_paren_4 {
-            self.lexer.advance(&_r)
-        } else {
+        let success_right_paren_4 = self.lexer.parse_punctuation(&_r, String::from_string_slice(_r.page, ")"));
+        if !success_right_paren_4 {
 
             return Result::Err(Ref::new(
                 _ep,
@@ -2721,10 +2656,9 @@ impl Parser {
 
         let start: Position = self.lexer.get_previous_position();
 
-        let success_do_1 = self.lexer.parse_keyword(String::from_string_slice(_r.page, "do"));
-        if success_do_1 {
-            self.lexer.advance(&_r)
-        } else {
+        let success_do_1 = self.lexer.parse_keyword(&_r, String::from_string_slice(_r.page, "do"));
+        if !success_do_1 {
+
             return Ok(None)
         }
 
@@ -2735,10 +2669,8 @@ impl Parser {
             Some(_) => ()
         }
 
-        let success_while_3 = self.lexer.parse_keyword(String::from_string_slice(_r.page, "while"));
-        if success_while_3 {
-            self.lexer.advance(&_r)
-        } else {
+        let success_while_3 = self.lexer.parse_keyword(&_r, String::from_string_slice(_r.page, "while"));
+        if !success_while_3 {
 
             return Result::Err(Ref::new(
                 _ep,
@@ -2750,10 +2682,8 @@ impl Parser {
             ))
         }
 
-        let success_left_paren_4 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, "("));
-        if success_left_paren_4 {
-            self.lexer.advance(&_r)
-        } else {
+        let success_left_paren_4 = self.lexer.parse_punctuation(&_r, String::from_string_slice(_r.page, "("));
+        if !success_left_paren_4 {
 
             return Result::Err(Ref::new(
                 _ep,
@@ -2772,10 +2702,8 @@ impl Parser {
             Some(_) => ()
         }
 
-        let success_right_paren_6 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, ")"));
-        if success_right_paren_6 {
-            self.lexer.advance(&_r)
-        } else {
+        let success_right_paren_6 = self.lexer.parse_punctuation(&_r, String::from_string_slice(_r.page, ")"));
+        if !success_right_paren_6 {
 
             return Result::Err(Ref::new(
                 _ep,
@@ -2864,18 +2792,15 @@ impl Parser {
 
         let start: Position = self.lexer.get_previous_position();
 
-        let success_loop_1 = self.lexer.parse_keyword(String::from_string_slice(_r.page, "loop"));
-        if success_loop_1 {
-            self.lexer.advance(&_r)
-        } else {
+        let success_loop_1 = self.lexer.parse_keyword(&_r, String::from_string_slice(_r.page, "loop"));
+        if !success_loop_1 {
+
             return Ok(None)
         }
 
-        let name = self.lexer.parse_identifier(_rp);
+        let name = self.lexer.parse_identifier(&_r, _rp);
         match name {
-            Some(name) => if self.is_identifier(name) {
-                self.lexer.advance(&_r)
-            } else {
+            Some(name) => if !self.is_identifier(name) {
 
             return Result::Err(Ref::new(
                 _ep,
@@ -2923,10 +2848,9 @@ impl Parser {
 
         let start: Position = self.lexer.get_previous_position();
 
-        let success_this_1 = self.lexer.parse_keyword(String::from_string_slice(_r.page, "this"));
-        if success_this_1 {
-            self.lexer.advance(&_r)
-        } else {
+        let success_this_1 = self.lexer.parse_keyword(&_r, String::from_string_slice(_r.page, "this"));
+        if !success_this_1 {
+
             return Ok(None)
         }
 
@@ -2947,10 +2871,9 @@ impl Parser {
 
         let start: Position = self.lexer.get_previous_position();
 
-        let success_new_1 = self.lexer.parse_keyword(String::from_string_slice(_r.page, "new"));
-        if success_new_1 {
-            self.lexer.advance(&_r)
-        } else {
+        let success_new_1 = self.lexer.parse_keyword(&_r, String::from_string_slice(_r.page, "new"));
+        if !success_new_1 {
+
             return Ok(None)
         }
 
@@ -2980,10 +2903,9 @@ impl Parser {
 
         let start: Position = self.lexer.get_previous_position();
 
-        let success_left_paren_1 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, "("));
-        if success_left_paren_1 {
-            self.lexer.advance(&_r)
-        } else {
+        let success_left_paren_1 = self.lexer.parse_punctuation(&_r, String::from_string_slice(_r.page, "("));
+        if !success_left_paren_1 {
+
             return Ok(None)
         }
 
@@ -2991,10 +2913,8 @@ impl Parser {
 
         let additional_ops = self.parse_item_list(&_r, _rp, _ep)?;
 
-        let success_right_paren_4 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, ")"));
-        if success_right_paren_4 {
-            self.lexer.advance(&_r)
-        } else {
+        let success_right_paren_4 = self.lexer.parse_punctuation(&_r, String::from_string_slice(_r.page, ")"));
+        if !success_right_paren_4 {
 
             return Result::Err(Ref::new(
                 _ep,
@@ -3036,10 +2956,9 @@ impl Parser {
 
         let start: Position = self.lexer.get_previous_position();
 
-        let success_left_bracket_1 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, "["));
-        if success_left_bracket_1 {
-            self.lexer.advance(&_r)
-        } else {
+        let success_left_bracket_1 = self.lexer.parse_punctuation(&_r, String::from_string_slice(_r.page, "["));
+        if !success_left_bracket_1 {
+
             return Ok(None)
         }
 
@@ -3047,10 +2966,8 @@ impl Parser {
 
         let additional_ops = self.parse_item_list(&_r, _rp, _ep)?;
 
-        let success_right_bracket_4 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, "]"));
-        if success_right_bracket_4 {
-            self.lexer.advance(&_r)
-        } else {
+        let success_right_bracket_4 = self.lexer.parse_punctuation(&_r, String::from_string_slice(_r.page, "]"));
+        if !success_right_bracket_4 {
 
             return Result::Err(Ref::new(
                 _ep,
@@ -3120,10 +3037,9 @@ impl Parser {
 
         let start: Position = self.lexer.get_previous_position();
 
-        let success_comma_1 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, ","));
-        if success_comma_1 {
-            self.lexer.advance(&_r)
-        } else {
+        let success_comma_1 = self.lexer.parse_punctuation(&_r, String::from_string_slice(_r.page, ","));
+        if !success_comma_1 {
+
             return Ok(None)
         }
 
@@ -3153,10 +3069,9 @@ impl Parser {
 
         let start: Position = self.lexer.get_previous_position();
 
-        let success_sizeof_1 = self.lexer.parse_keyword(String::from_string_slice(_r.page, "sizeof"));
-        if success_sizeof_1 {
-            self.lexer.advance(&_r)
-        } else {
+        let success_sizeof_1 = self.lexer.parse_keyword(&_r, String::from_string_slice(_r.page, "sizeof"));
+        if !success_sizeof_1 {
+
             return Ok(None)
         }
 
@@ -3186,28 +3101,26 @@ impl Parser {
 
         let start: Position = self.lexer.get_previous_position();
 
-        let success_break_1 = self.lexer.parse_keyword(String::from_string_slice(_r.page, "break"));
-        if success_break_1 {
-            self.lexer.advance(&_r)
-        } else {
+        let success_break_1 = self.lexer.parse_keyword(&_r, String::from_string_slice(_r.page, "break"));
+        if !success_break_1 {
+
             return Ok(None)
         }
 
-        let iteration = self.lexer.parse_identifier(_rp);
+        let iteration = self.lexer.parse_identifier(&_r, _rp);
         match iteration {
-            Some(iteration) => if self.is_identifier(iteration) {
-                self.lexer.advance(&_r)
-            } else {
-()
+            Some(iteration) => if !self.is_identifier(iteration) {
+
+            ()
            },
-            None => ()
+            None => 
+            ()
         }
 
-        let success_semicolon_3 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, ";"));
-        if success_semicolon_3 {
-            self.lexer.advance(&_r)
-        } else {
-()
+        let success_semicolon_3 = self.lexer.parse_punctuation(&_r, String::from_string_slice(_r.page, ";"));
+        if !success_semicolon_3 {
+
+            ()
         }
 
         let end: Position = self.lexer.get_position();
@@ -3227,28 +3140,26 @@ impl Parser {
 
         let start: Position = self.lexer.get_previous_position();
 
-        let success_continue_1 = self.lexer.parse_keyword(String::from_string_slice(_r.page, "continue"));
-        if success_continue_1 {
-            self.lexer.advance(&_r)
-        } else {
+        let success_continue_1 = self.lexer.parse_keyword(&_r, String::from_string_slice(_r.page, "continue"));
+        if !success_continue_1 {
+
             return Ok(None)
         }
 
-        let iteration = self.lexer.parse_identifier(_rp);
+        let iteration = self.lexer.parse_identifier(&_r, _rp);
         match iteration {
-            Some(iteration) => if self.is_identifier(iteration) {
-                self.lexer.advance(&_r)
-            } else {
-()
+            Some(iteration) => if !self.is_identifier(iteration) {
+
+            ()
            },
-            None => ()
+            None => 
+            ()
         }
 
-        let success_semicolon_3 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, ";"));
-        if success_semicolon_3 {
-            self.lexer.advance(&_r)
-        } else {
-()
+        let success_semicolon_3 = self.lexer.parse_punctuation(&_r, String::from_string_slice(_r.page, ";"));
+        if !success_semicolon_3 {
+
+            ()
         }
 
         let end: Position = self.lexer.get_position();
@@ -3268,10 +3179,9 @@ impl Parser {
 
         let start: Position = self.lexer.get_previous_position();
 
-        let success_return_1 = self.lexer.parse_keyword(String::from_string_slice(_r.page, "return"));
-        if success_return_1 {
-            self.lexer.advance(&_r)
-        } else {
+        let success_return_1 = self.lexer.parse_keyword(&_r, String::from_string_slice(_r.page, "return"));
+        if !success_return_1 {
+
             return Ok(None)
         }
 
@@ -3300,10 +3210,9 @@ impl Parser {
 
         let start: Position = self.lexer.get_previous_position();
 
-        let success_throw_1 = self.lexer.parse_keyword(String::from_string_slice(_r.page, "throw"));
-        if success_throw_1 {
-            self.lexer.advance(&_r)
-        } else {
+        let success_throw_1 = self.lexer.parse_keyword(&_r, String::from_string_slice(_r.page, "throw"));
+        if !success_throw_1 {
+
             return Ok(None)
         }
 
@@ -3333,10 +3242,9 @@ impl Parser {
 
         let start: Position = self.lexer.get_previous_position();
 
-        let success_class_1 = self.lexer.parse_keyword(String::from_string_slice(_r.page, "class"));
-        if success_class_1 {
-            self.lexer.advance(&_r)
-        } else {
+        let success_class_1 = self.lexer.parse_keyword(&_r, String::from_string_slice(_r.page, "class"));
+        if !success_class_1 {
+
             return Ok(None)
         }
 
@@ -3398,18 +3306,15 @@ impl Parser {
 
         let start: Position = self.lexer.get_previous_position();
 
-        let success_left_bracket_1 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, "["));
-        if success_left_bracket_1 {
-            self.lexer.advance(&_r)
-        } else {
+        let success_left_bracket_1 = self.lexer.parse_punctuation(&_r, String::from_string_slice(_r.page, "["));
+        if !success_left_bracket_1 {
+
             return Ok(None)
         }
 
-        let name = self.lexer.parse_identifier(_rp);
+        let name = self.lexer.parse_identifier(&_r, _rp);
         match name {
-            Some(name) => if self.is_identifier(name) {
-                self.lexer.advance(&_r)
-            } else {
+            Some(name) => if !self.is_identifier(name) {
 
             return Result::Err(Ref::new(
                 _ep,
@@ -3433,10 +3338,8 @@ impl Parser {
 
         let additional_generics = self.parse_genericparameter_list(&_r, _rp, _ep)?;
 
-        let success_right_bracket_4 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, "]"));
-        if success_right_bracket_4 {
-            self.lexer.advance(&_r)
-        } else {
+        let success_right_bracket_4 = self.lexer.parse_punctuation(&_r, String::from_string_slice(_r.page, "]"));
+        if !success_right_bracket_4 {
 
             return Result::Err(Ref::new(
                 _ep,
@@ -3500,18 +3403,15 @@ impl Parser {
 
         let start: Position = self.lexer.get_previous_position();
 
-        let success_comma_1 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, ","));
-        if success_comma_1 {
-            self.lexer.advance(&_r)
-        } else {
+        let success_comma_1 = self.lexer.parse_punctuation(&_r, String::from_string_slice(_r.page, ","));
+        if !success_comma_1 {
+
             return Ok(None)
         }
 
-        let name = self.lexer.parse_identifier(_rp);
+        let name = self.lexer.parse_identifier(&_r, _rp);
         match name {
-            Some(name) => if self.is_identifier(name) {
-                self.lexer.advance(&_r)
-            } else {
+            Some(name) => if !self.is_identifier(name) {
 
             return Result::Err(Ref::new(
                 _ep,
@@ -3550,10 +3450,9 @@ impl Parser {
 
         let start: Position = self.lexer.get_previous_position();
 
-        let success_extends_1 = self.lexer.parse_keyword(String::from_string_slice(_r.page, "extends"));
-        if success_extends_1 {
-            self.lexer.advance(&_r)
-        } else {
+        let success_extends_1 = self.lexer.parse_keyword(&_r, String::from_string_slice(_r.page, "extends"));
+        if !success_extends_1 {
+
             return Ok(None)
         }
 
@@ -3583,19 +3482,16 @@ impl Parser {
 
         let start: Position = self.lexer.get_previous_position();
 
-        let success_left_paren_1 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, "("));
-        if success_left_paren_1 {
-            self.lexer.advance(&_r)
-        } else {
+        let success_left_paren_1 = self.lexer.parse_punctuation(&_r, String::from_string_slice(_r.page, "("));
+        if !success_left_paren_1 {
+
             return Ok(None)
         }
 
         let components = self.parse_component_list(&_r, _rp, _ep)?;
 
-        let success_right_paren_3 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, ")"));
-        if success_right_paren_3 {
-            self.lexer.advance(&_r)
-        } else {
+        let success_right_paren_3 = self.lexer.parse_punctuation(&_r, String::from_string_slice(_r.page, ")"));
+        if !success_right_paren_3 {
 
             return Result::Err(Ref::new(
                 _ep,
@@ -3659,23 +3555,22 @@ impl Parser {
 
         let start: Position = self.lexer.get_previous_position();
 
-        let name = self.lexer.parse_identifier(_rp);
+        let name = self.lexer.parse_identifier(&_r, _rp);
         match name {
-            Some(name) => if self.is_identifier(name) {
-                self.lexer.advance(&_r)
-            } else {
+            Some(name) => if !self.is_identifier(name) {
+
             return Ok(None)
            },
-            None =>             return Ok(None)
+            None => 
+            return Ok(None)
         }
 
         let type_annotation = self.parse_typeannotation(&_r, _rp, _ep)?;
 
-        let success_comma_3 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, ","));
-        if success_comma_3 {
-            self.lexer.advance(&_r)
-        } else {
-()
+        let success_comma_3 = self.lexer.parse_punctuation(&_r, String::from_string_slice(_r.page, ","));
+        if !success_comma_3 {
+
+            ()
         }
 
         let end: Position = self.lexer.get_position();
@@ -3701,19 +3596,16 @@ impl Parser {
 
         let start: Position = self.lexer.get_previous_position();
 
-        let success_left_curly_1 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, "{"));
-        if success_left_curly_1 {
-            self.lexer.advance(&_r)
-        } else {
+        let success_left_curly_1 = self.lexer.parse_punctuation(&_r, String::from_string_slice(_r.page, "{"));
+        if !success_left_curly_1 {
+
             return Ok(None)
         }
 
         let members = self.parse_classmember_list(&_r, _rp, _ep)?;
 
-        let success_right_curly_3 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, "}"));
-        if success_right_curly_3 {
-            self.lexer.advance(&_r)
-        } else {
+        let success_right_curly_3 = self.lexer.parse_punctuation(&_r, String::from_string_slice(_r.page, "}"));
+        if !success_right_curly_3 {
 
             return Result::Err(Ref::new(
                 _ep,
@@ -3974,10 +3866,9 @@ impl Parser {
 
         let start: Position = self.lexer.get_previous_position();
 
-        let success_method_1 = self.lexer.parse_keyword(String::from_string_slice(_r.page, "method"));
-        if success_method_1 {
-            self.lexer.advance(&_r)
-        } else {
+        let success_method_1 = self.lexer.parse_keyword(&_r, String::from_string_slice(_r.page, "method"));
+        if !success_method_1 {
+
             return Ok(None)
         }
 
@@ -4033,10 +3924,9 @@ impl Parser {
 
         let start: Position = self.lexer.get_previous_position();
 
-        let success_operator_1 = self.lexer.parse_keyword(String::from_string_slice(_r.page, "operator"));
-        if success_operator_1 {
-            self.lexer.advance(&_r)
-        } else {
+        let success_operator_1 = self.lexer.parse_keyword(&_r, String::from_string_slice(_r.page, "operator"));
+        if !success_operator_1 {
+
             return Ok(None)
         }
 
@@ -4066,10 +3956,9 @@ impl Parser {
 
         let start: Position = self.lexer.get_previous_position();
 
-        let success_initializer_1 = self.lexer.parse_keyword(String::from_string_slice(_r.page, "initializer"));
-        if success_initializer_1 {
-            self.lexer.advance(&_r)
-        } else {
+        let success_initializer_1 = self.lexer.parse_keyword(&_r, String::from_string_slice(_r.page, "initializer"));
+        if !success_initializer_1 {
+
             return Ok(None)
         }
 
@@ -4107,10 +3996,9 @@ impl Parser {
 
         let start: Position = self.lexer.get_previous_position();
 
-        let success_allocator_1 = self.lexer.parse_keyword(String::from_string_slice(_r.page, "allocator"));
-        if success_allocator_1 {
-            self.lexer.advance(&_r)
-        } else {
+        let success_allocator_1 = self.lexer.parse_keyword(&_r, String::from_string_slice(_r.page, "allocator"));
+        if !success_allocator_1 {
+
             return Ok(None)
         }
 
@@ -4148,10 +4036,9 @@ impl Parser {
 
         let start: Position = self.lexer.get_previous_position();
 
-        let success_colon_1 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, ":"));
-        if success_colon_1 {
-            self.lexer.advance(&_r)
-        } else {
+        let success_colon_1 = self.lexer.parse_punctuation(&_r, String::from_string_slice(_r.page, ":"));
+        if !success_colon_1 {
+
             return Ok(None)
         }
 
@@ -4294,19 +4181,16 @@ impl Parser {
 
         let start: Position = self.lexer.get_previous_position();
 
-        let success_left_paren_1 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, "("));
-        if success_left_paren_1 {
-            self.lexer.advance(&_r)
-        } else {
+        let success_left_paren_1 = self.lexer.parse_punctuation(&_r, String::from_string_slice(_r.page, "("));
+        if !success_left_paren_1 {
+
             return Ok(None)
         }
 
         let types = self.parse_type_list(&_r, _rp, _ep)?;
 
-        let success_right_paren_3 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, ")"));
-        if success_right_paren_3 {
-            self.lexer.advance(&_r)
-        } else {
+        let success_right_paren_3 = self.lexer.parse_punctuation(&_r, String::from_string_slice(_r.page, ")"));
+        if !success_right_paren_3 {
 
             return Result::Err(Ref::new(
                 _ep,
@@ -4342,10 +4226,9 @@ impl Parser {
 
         let start: Position = self.lexer.get_previous_position();
 
-        let success_throws_1 = self.lexer.parse_keyword(String::from_string_slice(_r.page, "throws"));
-        if success_throws_1 {
-            self.lexer.advance(&_r)
-        } else {
+        let success_throws_1 = self.lexer.parse_keyword(&_r, String::from_string_slice(_r.page, "throws"));
+        if !success_throws_1 {
+
             return Ok(None)
         }
 
@@ -4378,10 +4261,9 @@ impl Parser {
 
         let start: Position = self.lexer.get_previous_position();
 
-        let success_left_bracket_1 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, "["));
-        if success_left_bracket_1 {
-            self.lexer.advance(&_r)
-        } else {
+        let success_left_bracket_1 = self.lexer.parse_punctuation(&_r, String::from_string_slice(_r.page, "["));
+        if !success_left_bracket_1 {
+
             return Ok(None)
         }
 
@@ -4394,10 +4276,8 @@ impl Parser {
 
         let additional_generics = self.parse_genericargument_list(&_r, _rp, _ep)?;
 
-        let success_right_bracket_4 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, "]"));
-        if success_right_bracket_4 {
-            self.lexer.advance(&_r)
-        } else {
+        let success_right_bracket_4 = self.lexer.parse_punctuation(&_r, String::from_string_slice(_r.page, "]"));
+        if !success_right_bracket_4 {
 
             return Result::Err(Ref::new(
                 _ep,
@@ -4463,10 +4343,9 @@ impl Parser {
 
         let start: Position = self.lexer.get_previous_position();
 
-        let success_comma_1 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, ","));
-        if success_comma_1 {
-            self.lexer.advance(&_r)
-        } else {
+        let success_comma_1 = self.lexer.parse_punctuation(&_r, String::from_string_slice(_r.page, ","));
+        if !success_comma_1 {
+
             return Ok(None)
         }
 
@@ -4496,10 +4375,9 @@ impl Parser {
 
         let start: Position = self.lexer.get_previous_position();
 
-        let success_question_1 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, "?"));
-        if success_question_1 {
-            self.lexer.advance(&_r)
-        } else {
+        let success_question_1 = self.lexer.parse_punctuation(&_r, String::from_string_slice(_r.page, "?"));
+        if !success_question_1 {
+
             return Ok(None)
         }
 
@@ -4563,10 +4441,9 @@ impl Parser {
 
         let start: Position = self.lexer.get_previous_position();
 
-        let success_dollar_1 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, "$"));
-        if success_dollar_1 {
-            self.lexer.advance(&_r)
-        } else {
+        let success_dollar_1 = self.lexer.parse_punctuation(&_r, String::from_string_slice(_r.page, "$"));
+        if !success_dollar_1 {
+
             return Ok(None)
         }
 
@@ -4587,18 +4464,15 @@ impl Parser {
 
         let start: Position = self.lexer.get_previous_position();
 
-        let success_at_1 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, "@"));
-        if success_at_1 {
-            self.lexer.advance(&_r)
-        } else {
+        let success_at_1 = self.lexer.parse_punctuation(&_r, String::from_string_slice(_r.page, "@"));
+        if !success_at_1 {
+
             return Ok(None)
         }
 
-        let location = self.lexer.parse_identifier(_rp);
+        let location = self.lexer.parse_identifier(&_r, _rp);
         match location {
-            Some(location) => if self.is_identifier(location) {
-                self.lexer.advance(&_r)
-            } else {
+            Some(location) => if !self.is_identifier(location) {
 
             return Result::Err(Ref::new(
                 _ep,
@@ -4637,18 +4511,17 @@ impl Parser {
 
         let start: Position = self.lexer.get_previous_position();
 
-        let success_backtick_1 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, "`"));
-        if success_backtick_1 {
-            self.lexer.advance(&_r)
-        } else {
+        let success_backtick_1 = self.lexer.parse_punctuation(&_r, String::from_string_slice(_r.page, "`"));
+        if !success_backtick_1 {
+
             return Ok(None)
         }
 
-        let age = self.lexer.parse_literal(_rp);
+        let age = self.lexer.parse_literal(&_r, _rp);
         match age {
-            Some(_) =>
-                self.lexer.advance(&_r),
-            None => ()
+            None => 
+            ()
+,            _ => ()
         }
 
         let end: Position = self.lexer.get_position();
@@ -4668,10 +4541,9 @@ impl Parser {
 
         let start: Position = self.lexer.get_previous_position();
 
-        let success_hash_1 = self.lexer.parse_punctuation(String::from_string_slice(_r.page, "#"));
-        if success_hash_1 {
-            self.lexer.advance(&_r)
-        } else {
+        let success_hash_1 = self.lexer.parse_punctuation(&_r, String::from_string_slice(_r.page, "#"));
+        if !success_hash_1 {
+
             return Ok(None)
         }
 

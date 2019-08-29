@@ -146,19 +146,21 @@ impl Parser {
                             )
             " = self.lexer.parse_"(type content)"("
                             (case (type content)
-                                (("keyword")     ($ "String::from_string_slice(_r.page, \""(link content)"\")"))
-                                (("punctuation") ($ "String::from_string_slice(_r.page, \""(value (element-with-id (link content)))"\")"))
-                                (else "_rp"))");
+                                (("keyword")     ($ "&""_r, String::from_string_slice(_r.page, \""(link content)"\")"))
+                                (("punctuation") ($ "&""_r, String::from_string_slice(_r.page, \""(value (element-with-id (link content)))"\")"))
+                                (else ($"&""_r, _rp")))");
 "
                             (let
                                 ((null-handler
                                     (if (optional? content) 
-                                "()
+"
+            ()
 "
                                         ($
                                             (if (equal? 1 (child-number content))
                                                 ($
-"            return Ok(None)
+"
+            return Ok(None)
 "                                               )
                                                 ($
 "
@@ -177,31 +179,26 @@ impl Parser {
                                 ))
                                 (case (type content)
                                     (("keyword" "punctuation") ($ 
-"        if success_"(if (property content) (property content) ($ (link content)"_"(number->string (child-number content))))" {
-            self.lexer.advance(&""_r)
-        } else {
-"                   null-handler
+"        if !success_"(if (property content) (property content) ($ (link content)"_"(number->string (child-number content))))" {
+"                                       null-handler
 "        }
 "
                                     ))
                                     (("identifier") ($ 
 "        match "(property content)" {
-            Some("(property content)") => if self.is_identifier("(property content)") {
-                self.lexer.advance(&""_r)
-            } else {
+            Some("(property content)") => if !self.is_identifier("(property content)") {
 "                   null-handler
 "           },
             None => "
                                         null-handler
 "        }
-"                                    ))
+"                                   ))
                                     (else ($ 
 "        match "(property content)" {
-            Some(_) =>
-                self.lexer.advance(&""_r),
             None => "
                                         null-handler
-"        }
+",            _ => ()
+        }
 "                                   ))
                                 )
                             )

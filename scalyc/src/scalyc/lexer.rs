@@ -20,12 +20,12 @@ impl Lexer {
         let _r = Region::create(_pr);
         let _token_page = unsafe { (*_rp).allocate_exclusive_page() };
         unsafe { (*_token_page).reset() };
-        let mut lexer = Ref::new(
+        let lexer = Ref::new(
             _rp,
             Lexer {
                 stream: stream,
                 is_at_end: false,
-                token: Ref::new(_token_page, Token::InvalidToken),
+                token: Ref::new(_token_page, Token::Empty),
                 character: 0 as char,
                 previous_line: 1,
                 previous_column: 0,
@@ -33,8 +33,6 @@ impl Lexer {
                 column: 0,
             },
         );
-        lexer.read_character();
-        lexer.advance(&_r);
         lexer
     }
 
@@ -52,6 +50,7 @@ impl Lexer {
 
     pub fn advance(&mut self, _pr: &Region) {
         let _r = Region::create(_pr);
+        self.read_character();
         self.skip_whitespace();
         self.previous_line = self.line;
         self.previous_column = self.column;
@@ -129,9 +128,17 @@ impl Lexer {
                 unsafe {
                     (*_token_page).reset();
                 }
-                self.token = Ref::new(_token_page, Token::InvalidToken);
+                self.token = Ref::new(_token_page, Token::Invalid);
             }
         }
+    }
+
+    pub fn empty(&mut self) {
+        let _token_page = Page::own(self.token);
+        unsafe {
+            (*_token_page).reset();
+        }
+        self.token = Ref::new(_token_page, Token::Empty);
     }
 
     fn scan_identifier(&mut self, _pr: &Region, _rp: *mut Page) -> Ref<Token> {
@@ -191,7 +198,7 @@ impl Lexer {
             self.column = self.column + 1;
 
             if self.is_at_end() {
-                return Ref::new(_rp, Token::InvalidToken);
+                return Ref::new(_rp, Token::Invalid);
             }
 
             match self.character {
@@ -225,7 +232,7 @@ impl Lexer {
                             value.append_character('\\');
                             value.append_character('0');
                         }
-                        _ => return Ref::new(_rp, Token::InvalidToken),
+                        _ => return Ref::new(_rp, Token::Invalid),
                     }
                 }
                 _ => value.append_character(self.character),
@@ -242,7 +249,7 @@ impl Lexer {
             self.column = self.column + 1;
 
             if self.is_at_end() {
-                return Ref::new(_rp, Token::InvalidToken);
+                return Ref::new(_rp, Token::Invalid);
             }
 
             match self.character {
@@ -279,7 +286,7 @@ impl Lexer {
                             value.append_character('\\');
                             value.append_character('0');
                         }
-                        _ => return Ref::new(_rp, Token::InvalidToken),
+                        _ => return Ref::new(_rp, Token::Invalid),
                     }
                 }
                 _ => value.append_character(self.character),
@@ -494,37 +501,80 @@ impl Lexer {
         }
     }
 
-    pub fn parse_keyword(&self, fixed_string: String) -> bool {
+    pub fn parse_keyword(&mut self, _pr: &Region, fixed_string: String) -> bool {
+        let _r = Region::create(_pr);
         match *self.token {
-            Token::Identifier(name) => return name.equals(&fixed_string),
+            Token::Empty => self.advance(&_r),
+            _ => (),
+        }
+        match *self.token {
+            Token::Identifier(name) => {
+                let right_keyword = name.equals(&fixed_string);
+                self.empty();
+                return right_keyword;
+            }
             _ => return false,
         }
     }
 
-    pub fn parse_identifier(&self, _rp: *mut Page) -> Option<String> {
+    pub fn parse_identifier(&mut self, _pr: &Region, _rp: *mut Page) -> Option<String> {
+        let _r = Region::create(_pr);
         match *self.token {
-            Token::Identifier(name) => return Some(String::copy(_rp, name)),
+            Token::Empty => self.advance(&_r),
+            _ => (),
+        }
+        match *self.token {
+            Token::Identifier(name) => {
+                let ret = String::copy(_rp, name);
+                self.empty();
+                return Some(ret);
+            }
             _ => return None,
         }
     }
 
-    pub fn parse_punctuation(&self, fixed_string: String) -> bool {
+    pub fn parse_punctuation(&mut self, _pr: &Region, fixed_string: String) -> bool {
+        let _r = Region::create(_pr);
         match *self.token {
-            Token::Punctuation(name) => return name.equals(&fixed_string),
+            Token::Empty => self.advance(&_r),
+            _ => (),
+        }
+        match *self.token {
+            Token::Punctuation(name) => {
+                self.empty();
+                return name.equals(&fixed_string);
+            }
             _ => return false,
         }
     }
 
-    pub fn parse_literal(&self, _rp: *mut Page) -> Option<Literal> {
+    pub fn parse_literal(&mut self, _pr: &Region, _rp: *mut Page) -> Option<Literal> {
+        let _r = Region::create(_pr);
         match *self.token {
-            Token::Literal(Literal::String(name)) => Some(Literal::String(String::copy(_rp, name))),
+            Token::Empty => self.advance(&_r),
+            _ => (),
+        }
+        match *self.token {
+            Token::Literal(Literal::String(name)) => {
+                let ret = String::copy(_rp, name);
+                self.empty();
+                Some(Literal::String(ret))
+            }
             Token::Literal(Literal::Character(name)) => {
-                Some(Literal::Character(String::copy(_rp, name)))
+                let ret = String::copy(_rp, name);
+                self.empty();
+                Some(Literal::Character(ret))
             }
             Token::Literal(Literal::Numeric(name)) => {
-                Some(Literal::Numeric(String::copy(_rp, name)))
+                let ret = String::copy(_rp, name);
+                self.empty();
+                Some(Literal::Numeric(ret))
             }
-            Token::Literal(Literal::Hex(name)) => Some(Literal::Hex(String::copy(_rp, name))),
+            Token::Literal(Literal::Hex(name)) => {
+                let ret = String::copy(_rp, name);
+                self.empty();
+                Some(Literal::Hex(ret))
+            }
             _ => None,
         }
     }
@@ -556,7 +606,8 @@ pub struct Position {
 
 #[derive(Copy, Clone)]
 pub enum Token {
-    InvalidToken,
+    Empty,
+    Invalid,
     Identifier(String),
     Literal(Literal),
     Punctuation(String),
