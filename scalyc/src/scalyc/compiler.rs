@@ -3,16 +3,37 @@ use scaly::io::Console;
 use scaly::memory::Region;
 use scaly::Page;
 use scaly::String;
+use scaly::Vector;
+use scalyc::options::Options;
 use scalyc::parser::Parser;
 
-pub struct Compiler {}
+pub struct Compiler {
+    arguments: Ref<Vector<String>>,
+}
 
 impl Compiler {
-    pub fn new(_p: *mut Page) -> Compiler {
-        Compiler {}
+    pub fn new(_p: *mut Page, arguments: Ref<Vector<String>>) -> Compiler {
+        Compiler {
+            arguments: arguments,
+        }
     }
-    pub fn compile(&self, _pr: &Region) {
+
+    pub fn compile(&self, _pr: &Region, _rp: *mut Page, _ep: *mut Page) {
         let _r = Region::create(_pr);
+        let options = Options::parse_arguments(&_r, _rp, _ep, self.arguments);
+        for file in options.files.iter() {
+            let _r_1 = Region::create(&_r);
+            let mut parser = Ref::new(
+                _r_1.page,
+                Parser::new(
+                    &_r_1,
+                    _r_1.page,
+                    *file,
+                    Console::open_standard_output(_r_1.page),
+                ),
+            );
+            let _file_syntax = parser.parse_file(&_r_1, _r_1.page, _r_1.page);
+        }
         loop {
             let _r_1 = Region::create(&_r);
             Console::write(&_r_1, String::from_string_slice(_r_1.page, "Scaly>"));
@@ -25,7 +46,7 @@ impl Compiler {
                     Console::open_standard_output(_r_1.page),
                 ),
             );
-            let _file_syntax = parser.parse_file(&_r_1, _r_1.page, _r_1.page);
+            let _file_syntax = parser.parse_statement(&_r_1, _r_1.page, _r_1.page);
             break;
         }
     }

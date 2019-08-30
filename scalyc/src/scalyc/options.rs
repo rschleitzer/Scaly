@@ -1,75 +1,68 @@
-// pub struct Options<'a> {
-//     pub files: Vec<&'a str>,
-//     pub output_name: &'a str,
-//     pub directory: &'a str,
-// }
+use scaly::containers::Ref;
+use scaly::memory::Region;
+use scaly::Equal;
+use scaly::Page;
+use scaly::{Array, String, Vector};
 
-// impl<'a> Options<'a> {
-//     pub fn parse_arguments(arguments: &Vec<&'a str>) -> Result<Options<'a>, OptionsError<'a>> {
-//         let mut output_name = "";
-//         let mut directory = "";
-//         let mut files: Vec<&'a str> = vec![];
-//         let mut first_argument: bool = true;
+pub struct Options {
+    pub files: Ref<Vector<String>>,
+    pub output_name: Option<String>,
+    pub directory: Option<String>,
+}
 
-//         let mut args = arguments.iter();
-        
-//         loop {
-//             let arg = args.next();
-//             if first_argument {
-//                 first_argument = false;
-//                 continue;
-//             }
+impl Options {
+    pub fn parse_arguments(
+        _pr: &Region,
+        _rp: *mut Page,
+        _ep: *mut Page,
+        arguments: Ref<Vector<String>>,
+    ) -> Ref<Options> {
+        let _r = Region::create(_pr);
+        let mut output_name: Option<String> = None;
+        let mut directory: Option<String> = None;
+        let mut files: Ref<Array<String>> = Ref::new(_r.page, Array::new());
+        let mut first_argument: bool = true;
 
-//             match arg {
-//                 None => return Ok(Options {
-//                     output_name: output_name,
-//                     directory: directory,
-//                     files: files
-//                 }),
-//                 Some(arg) => {
-//                     let mut char_iterator = arg.chars();
-//                     let first_char = match char_iterator.next() {
-//                         Some(c) => c,
-//                         None => return Err(OptionsError::NullLengthArgument)
-//                     };
+        let mut args = arguments.iter();
+        loop {
+            let mut arg = args.next();
+            if let None = arg {
+                break;
+            }
 
-//                     if first_char != '-' {
-//                         files.push(arg);
-//                         continue
-//                     }
+            if first_argument {
+                first_argument = false;
+                continue;
+            }
 
-//                     let second_char = match char_iterator.next() {
-//                         Some(c) => c,
-//                         None => return Err(OptionsError::EmptyOption)
-//                     };
+            {
+                let _r_1 = Region::create(_pr);
+                if (arg.unwrap()).equals(&String::from_string_slice(_r_1.page, "-o")) {
+                    arg = args.next();
+                    output_name = Some(*arg.unwrap());
+                    continue;
+                }
+            }
 
-//                     match second_char {
+            {
+                let _r_1 = Region::create(_pr);
+                if (arg.unwrap()).equals(&String::from_string_slice(_r_1.page, "-d")) {
+                    arg = args.next();
+                    directory = Some(*arg.unwrap());
+                    continue;
+                }
+            }
 
-//                         'o' => {
-//                             output_name = match args.next() {
-//                                 Some(o) => o,
-//                                 None => return Err(OptionsError::InvalidOption(arg)),
-//                             }
-//                         }
+            files.add(*arg.unwrap());
+        }
 
-//                         'd' => {
-//                             directory = match args.next() {
-//                                 Some(o) => o,
-//                                 None => return Err(OptionsError::InvalidOption(arg)),
-//                             }
-//                         }
-//                         _ => return Err(OptionsError::UnknownOption(arg))
-//                     };
-
-//                 }
-//             }
-//         }
-//     }
-// }
-
-// pub enum OptionsError<'a> {
-//     NullLengthArgument,
-//     EmptyOption,
-//     InvalidOption(&'a str),
-//     UnknownOption(&'a str),
-// }
+        Ref::new(
+            _rp,
+            Options {
+                files: Ref::new(_rp, Vector::from_array(_rp, files)),
+                output_name: output_name,
+                directory: directory,
+            },
+        )
+    }
+}

@@ -47,10 +47,10 @@ fn _main(argc: c_int, argv: *const *const c_char) {
     });
 }
 
-fn _scalyc_main(_pr: &Region, _arguments: Ref<Vector<String>>) {
+fn _scalyc_main(_pr: &Region, arguments: Ref<Vector<String>>) {
     use scalyc::compiler::Compiler;
     let _r = Region::create(_pr);
 
-    let compiler = Ref::new(_r.page, Compiler::new(_r.page));
-    (*compiler).compile(&_r);
+    let compiler = Ref::new(_r.page, Compiler::new(_r.page, arguments));
+    (*compiler).compile(&_r, _r.page, _r.page);
 }
