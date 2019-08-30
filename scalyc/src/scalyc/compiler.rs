@@ -21,6 +21,7 @@ impl Compiler {
     pub fn compile(&self, _pr: &Region, _rp: *mut Page, _ep: *mut Page) {
         let _r = Region::create(_pr);
         let options = Options::parse_arguments(&_r, _rp, _ep, self.arguments);
+
         for file in options.files.iter() {
             let _r_1 = Region::create(&_r);
             let mut parser = Ref::new(
@@ -34,20 +35,22 @@ impl Compiler {
             );
             let _file_syntax = parser.parse_file(&_r_1, _r_1.page, _r_1.page);
         }
-        loop {
-            let _r_1 = Region::create(&_r);
-            Console::write(&_r_1, String::from_string_slice(_r_1.page, "Scaly>"));
-            let mut parser = Ref::new(
-                _r_1.page,
-                Parser::new(
-                    &_r_1,
+
+        if let None = options.output_name {
+            loop {
+                let _r_1 = Region::create(&_r);
+                Console::write(&_r_1, String::from_string_slice(_r_1.page, "Scaly>"));
+                let mut parser = Ref::new(
                     _r_1.page,
-                    String::from_string_slice(_r_1.page, "<stdin>"),
-                    Console::open_standard_output(_r_1.page),
-                ),
-            );
-            let _file_syntax = parser.parse_statement(&_r_1, _r_1.page, _r_1.page);
-            break;
+                    Parser::new(
+                        &_r_1,
+                        _r_1.page,
+                        String::from_string_slice(_r_1.page, "<stdin>"),
+                        Console::open_standard_output(_r_1.page),
+                    ),
+                );
+                let _file_syntax = parser.parse_statement(&_r_1, _r_1.page, _r_1.page);
+            }
         }
     }
 }

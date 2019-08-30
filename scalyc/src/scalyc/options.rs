@@ -21,18 +21,12 @@ impl Options {
         let mut output_name: Option<String> = None;
         let mut directory: Option<String> = None;
         let mut files: Ref<Array<String>> = Ref::new(_r.page, Array::new());
-        let mut first_argument: bool = true;
 
         let mut args = arguments.iter();
         loop {
             let mut arg = args.next();
             if let None = arg {
                 break;
-            }
-
-            if first_argument {
-                first_argument = false;
-                continue;
             }
 
             {
