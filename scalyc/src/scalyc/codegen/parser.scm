@@ -50,21 +50,20 @@ impl Parser {
         let mut ret: Option<""Ref<""Array<""Ref<"(id syntax)"Syntax>>>> = Option::None;
         loop {
             let node = self.parse_"(downcase-string (id syntax))"(&""_r, _rp, _ep)?;
-            match node {
-                None => break,
-                Some(node) => {
-                    match ret {
-                        None => ret = Some(Ref::new(_rp, Array::new())),
-                        Some(_) => (),
-                    };
-                    ret.unwrap().add(node);
-                }
+            if let Some(node) = node {
+                if let None = ret {
+                    ret = Some(Ref::new(_rp, Array::new()))
+                };
+                ret.unwrap().add(node);
+            } else {
+                break;
             }
         }
 
-        match ret {
-            Some(ret) => Ok(Some(Ref::new(_rp, Vector::from_array(_rp, ret)))),
-            None => Ok(None),
+        if let Some(ret) = ret {
+            Ok(Some(Ref::new(_rp, Vector::from_array(_rp, ret))))
+        } else {
+            Ok(None)
         }
     }
 "       )"")
@@ -83,15 +82,13 @@ impl Parser {
 "
         {
             let node = self.parse_"(downcase-string (link content))"(&""_r, _rp, _ep)?;
-            match node {
-                Some(it) => return Ok(Some(Ref::new(_rp, "(id syntax)"Syntax::"(link content)"(*it)))),
-                None => ()
+            if let Some(node) = node {
+                return Ok(Some(Ref::new(_rp, "(id syntax)"Syntax::"(link content)"(*node))))
             }
         }
 "
                 )))
-"
-        return Ok(None)
+"        return Ok(None)
 "
             )
             ($ ; non-abstract syntax
@@ -106,34 +103,30 @@ impl Parser {
         let "(property content)" = self.parse_"(downcase-string (link content))(if (multiple? content) "_list" "")"(&""_r, _rp, _ep)?;
 "
                             (if (optional? content) "" ($
-"        match "(property content)" {
-            None =>
+"        if let None = "(property content)" {
 "                               (if (equal? 1 (child-number content))
                                     ($
-"                return Ok(None),
+"            return Ok(None)
 "                                   )
                                     ($
-"                return Err(Ref::new(_ep, ParserError { file_name: String::copy(_ep, self.file_name), line: self.lexer.line, column: self.lexer.column })),
+"            return Err(Ref::new(_ep, ParserError { file_name: String::copy(_ep, self.file_name), line: self.lexer.line, column: self.lexer.column }))
 "                                   )
                                 )
-"            Some(_) => ()
-        }
+"        }
 "                           ))
                             (if (and (top? syntax) (last-sibling? content)) ($
-"        match "(property content)" {
-            Some(_) =>
-                if !self.is_at_end() {
-                    let error_pos = self.lexer.get_previous_position();
-                    return Result::Err(Ref::new(
-                        _ep,
-                        ParserError {
-                            file_name: String::copy(_ep, self.file_name),
-                            line: error_pos.line,
-                            column: error_pos.column,
-                        },
-                    ))
-                }
-            None => (),
+"        if let Some(_) = "(property content)" {
+            if !self.is_at_end() {
+                let error_pos = self.lexer.get_previous_position();
+                return Result::Err(Ref::new(
+                    _ep,
+                    ParserError {
+                        file_name: String::copy(_ep, self.file_name),
+                        line: error_pos.line,
+                        column: error_pos.column,
+                    },
+                ))
+            }
         }
 "                           )"")
                         )
@@ -159,8 +152,7 @@ impl Parser {
                                         ($
                                             (if (equal? 1 (child-number content))
                                                 ($
-"
-            return Ok(None)
+"            return Ok(None)
 "                                               )
                                                 ($
 "
@@ -185,20 +177,18 @@ impl Parser {
 "
                                     ))
                                     (("identifier") ($ 
-"        match "(property content)" {
-            Some("(property content)") => if !self.is_identifier("(property content)") {
+"        if let Some("(property content)") = "(property content)" {
+            if !self.is_identifier("(property content)") {
 "                   null-handler
-"           },
-            None => "
+"           }
+        } else {"
                                         null-handler
 "        }
 "                                   ))
                                     (else ($ 
-"        match "(property content)" {
-            None => "
+"        if let None = "(property content)" {"
                                         null-handler
-",            _ => ()
-        }
+"        }
 "                                   ))
                                 )
                             )
@@ -220,8 +210,8 @@ impl Parser {
                     (if (multiple? content)
                         ($
 "
-        match "(property content)" {
-            Some(mut x) => for item in x.iter_mut() {
+        if let Some(mut "(property content)") = "(property content)" {
+            for item in "(property content)".iter_mut() {
 "                           (if (abstract? (element-with-id (link content)))
                                 ($
 "                match **item {
@@ -235,29 +225,26 @@ impl Parser {
 "                               )
                             )
 "            }
-            None => ()
         }
 "                       )
                         (if (string=? "syntax" (type content)) ($
                             (if (optional? content)
                                 ($
 "
-        match "(property content)" {
-            Some("(if (abstract? (element-with-id (link content))) "" "mut ")"x) => 
+        if let Some("(if (abstract? (element-with-id (link content))) "" "mut ")"x) = "(property content)" {
 "                                   (if (abstract? (element-with-id (link content)))
                                         ($
-"                match *x {
+"            match *x {
 "                                   (apply-to-children-of (element-with-id (link content)) (lambda (variant) ($
-"                    "(link content)"Syntax::"(link variant)"(mut y) => y.parent = Some(ParentNode::"(id syntax)"(ret)),
+"                "(link content)"Syntax::"(link variant)"(mut y) => y.parent = Some(ParentNode::"(id syntax)"(ret)),
 "                                   )))
-"                },
+"            }
 "                                        )
                                         ($
-"                x.parent = Some(ParentNode::"(id syntax)"(ret)),
+"            x.parent = Some(ParentNode::"(id syntax)"(ret))
 "                                       )
                                     )
-"            None => ()
-        }
+"        }
 "                               )
                                 (if (abstract? (element-with-id (link content)))
                                     ($

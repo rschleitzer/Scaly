@@ -88,47 +88,42 @@ impl Parser {
         let declarations = self.parse_declaration_list(&_r, _rp, _ep)?;
 
         let statements = self.parse_statement_list(&_r, _rp, _ep)?;
-        match statements {
-            Some(_) =>
-                if !self.is_at_end() {
-                    let error_pos = self.lexer.get_previous_position();
-                    return Result::Err(Ref::new(
-                        _ep,
-                        ParserError {
-                            file_name: String::copy(_ep, self.file_name),
-                            line: error_pos.line,
-                            column: error_pos.column,
-                        },
-                    ))
-                }
-            None => (),
+        if let Some(_) = statements {
+            if !self.is_at_end() {
+                let error_pos = self.lexer.get_previous_position();
+                return Result::Err(Ref::new(
+                    _ep,
+                    ParserError {
+                        file_name: String::copy(_ep, self.file_name),
+                        line: error_pos.line,
+                        column: error_pos.column,
+                    },
+                ))
+            }
         }
 
         let ret = Ref::new(_rp, FileSyntax { file_name: self.file_name, intrinsics: intrinsics, usings: usings, defines: defines, declarations: declarations, statements: statements });
 
-        match intrinsics {
-            Some(mut x) => for item in x.iter_mut() {
+        if let Some(mut intrinsics) = intrinsics {
+            for item in intrinsics.iter_mut() {
                 item.parent = Some(ParentNode::File(ret));
             }
-            None => ()
         }
 
-        match usings {
-            Some(mut x) => for item in x.iter_mut() {
+        if let Some(mut usings) = usings {
+            for item in usings.iter_mut() {
                 item.parent = Some(ParentNode::File(ret));
             }
-            None => ()
         }
 
-        match defines {
-            Some(mut x) => for item in x.iter_mut() {
+        if let Some(mut defines) = defines {
+            for item in defines.iter_mut() {
                 item.parent = Some(ParentNode::File(ret));
             }
-            None => ()
         }
 
-        match declarations {
-            Some(mut x) => for item in x.iter_mut() {
+        if let Some(mut declarations) = declarations {
+            for item in declarations.iter_mut() {
                 match **item {
                     DeclarationSyntax::Namespace(mut y) => y.parent = Some(ParentNode::File(ret)),
                     DeclarationSyntax::Function(mut y) => y.parent = Some(ParentNode::File(ret)),
@@ -139,11 +134,10 @@ impl Parser {
                     DeclarationSyntax::ThreadLocalDeclaration(mut y) => y.parent = Some(ParentNode::File(ret)),
                 }
             }
-            None => ()
         }
 
-        match statements {
-            Some(mut x) => for item in x.iter_mut() {
+        if let Some(mut statements) = statements {
+            for item in statements.iter_mut() {
                 match **item {
                     StatementSyntax::Let(mut y) => y.parent = Some(ParentNode::File(ret)),
                     StatementSyntax::Var(mut y) => y.parent = Some(ParentNode::File(ret)),
@@ -157,7 +151,6 @@ impl Parser {
                     StatementSyntax::Throw(mut y) => y.parent = Some(ParentNode::File(ret)),
                 }
             }
-            None => ()
         }
 
         Ok(Some(ret))
@@ -173,21 +166,20 @@ impl Parser {
         let mut ret: Option<Ref<Array<Ref<IntrinsicSyntax>>>> = Option::None;
         loop {
             let node = self.parse_intrinsic(&_r, _rp, _ep)?;
-            match node {
-                None => break,
-                Some(node) => {
-                    match ret {
-                        None => ret = Some(Ref::new(_rp, Array::new())),
-                        Some(_) => (),
-                    };
-                    ret.unwrap().add(node);
-                }
+            if let Some(node) = node {
+                if let None = ret {
+                    ret = Some(Ref::new(_rp, Array::new()))
+                };
+                ret.unwrap().add(node);
+            } else {
+                break;
             }
         }
 
-        match ret {
-            Some(ret) => Ok(Some(Ref::new(_rp, Vector::from_array(_rp, ret)))),
-            None => Ok(None),
+        if let Some(ret) = ret {
+            Ok(Some(Ref::new(_rp, Vector::from_array(_rp, ret))))
+        } else {
+            Ok(None)
         }
     }
 
@@ -203,13 +195,12 @@ impl Parser {
 
         let success_intrinsic_1 = self.lexer.parse_keyword(&_r, String::from_string_slice(_r.page, "intrinsic"));
         if !success_intrinsic_1 {
-
             return Ok(None)
         }
 
         let name = self.lexer.parse_identifier(&_r, _rp);
-        match name {
-            Some(name) => if !self.is_identifier(name) {
+        if let Some(name) = name {
+            if !self.is_identifier(name) {
 
             return Result::Err(Ref::new(
                 _ep,
@@ -219,8 +210,8 @@ impl Parser {
                     column: self.lexer.column,
                 },
             ))
-           },
-            None => 
+           }
+        } else {
             return Result::Err(Ref::new(
                 _ep,
                 ParserError {
@@ -248,21 +239,20 @@ impl Parser {
         let mut ret: Option<Ref<Array<Ref<UsingSyntax>>>> = Option::None;
         loop {
             let node = self.parse_using(&_r, _rp, _ep)?;
-            match node {
-                None => break,
-                Some(node) => {
-                    match ret {
-                        None => ret = Some(Ref::new(_rp, Array::new())),
-                        Some(_) => (),
-                    };
-                    ret.unwrap().add(node);
-                }
+            if let Some(node) = node {
+                if let None = ret {
+                    ret = Some(Ref::new(_rp, Array::new()))
+                };
+                ret.unwrap().add(node);
+            } else {
+                break;
             }
         }
 
-        match ret {
-            Some(ret) => Ok(Some(Ref::new(_rp, Vector::from_array(_rp, ret)))),
-            None => Ok(None),
+        if let Some(ret) = ret {
+            Ok(Some(Ref::new(_rp, Vector::from_array(_rp, ret))))
+        } else {
+            Ok(None)
         }
     }
 
@@ -278,15 +268,12 @@ impl Parser {
 
         let success_using_1 = self.lexer.parse_keyword(&_r, String::from_string_slice(_r.page, "using"));
         if !success_using_1 {
-
             return Ok(None)
         }
 
         let name = self.parse_name(&_r, _rp, _ep)?;
-        match name {
-            None =>
-                return Err(Ref::new(_ep, ParserError { file_name: String::copy(_ep, self.file_name), line: self.lexer.line, column: self.lexer.column })),
-            Some(_) => ()
+        if let None = name {
+            return Err(Ref::new(_ep, ParserError { file_name: String::copy(_ep, self.file_name), line: self.lexer.line, column: self.lexer.column }))
         }
 
         let end: Position = self.lexer.get_position();
@@ -308,21 +295,20 @@ impl Parser {
         let mut ret: Option<Ref<Array<Ref<DefineSyntax>>>> = Option::None;
         loop {
             let node = self.parse_define(&_r, _rp, _ep)?;
-            match node {
-                None => break,
-                Some(node) => {
-                    match ret {
-                        None => ret = Some(Ref::new(_rp, Array::new())),
-                        Some(_) => (),
-                    };
-                    ret.unwrap().add(node);
-                }
+            if let Some(node) = node {
+                if let None = ret {
+                    ret = Some(Ref::new(_rp, Array::new()))
+                };
+                ret.unwrap().add(node);
+            } else {
+                break;
             }
         }
 
-        match ret {
-            Some(ret) => Ok(Some(Ref::new(_rp, Vector::from_array(_rp, ret)))),
-            None => Ok(None),
+        if let Some(ret) = ret {
+            Ok(Some(Ref::new(_rp, Vector::from_array(_rp, ret))))
+        } else {
+            Ok(None)
         }
     }
 
@@ -338,22 +324,17 @@ impl Parser {
 
         let success_define_1 = self.lexer.parse_keyword(&_r, String::from_string_slice(_r.page, "define"));
         if !success_define_1 {
-
             return Ok(None)
         }
 
         let name = self.parse_name(&_r, _rp, _ep)?;
-        match name {
-            None =>
-                return Err(Ref::new(_ep, ParserError { file_name: String::copy(_ep, self.file_name), line: self.lexer.line, column: self.lexer.column })),
-            Some(_) => ()
+        if let None = name {
+            return Err(Ref::new(_ep, ParserError { file_name: String::copy(_ep, self.file_name), line: self.lexer.line, column: self.lexer.column }))
         }
 
         let type_spec = self.parse_type(&_r, _rp, _ep)?;
-        match type_spec {
-            None =>
-                return Err(Ref::new(_ep, ParserError { file_name: String::copy(_ep, self.file_name), line: self.lexer.line, column: self.lexer.column })),
-            Some(_) => ()
+        if let None = type_spec {
+            return Err(Ref::new(_ep, ParserError { file_name: String::copy(_ep, self.file_name), line: self.lexer.line, column: self.lexer.column }))
         }
 
         let end: Position = self.lexer.get_position();
@@ -378,13 +359,11 @@ impl Parser {
         let start: Position = self.lexer.get_previous_position();
 
         let name = self.lexer.parse_identifier(&_r, _rp);
-        match name {
-            Some(name) => if !self.is_identifier(name) {
-
+        if let Some(name) = name {
+            if !self.is_identifier(name) {
             return Ok(None)
-           },
-            None => 
-            return Ok(None)
+           }
+        } else {            return Ok(None)
         }
 
         let extensions = self.parse_extension_list(&_r, _rp, _ep)?;
@@ -393,11 +372,10 @@ impl Parser {
 
         let ret = Ref::new(_rp, NameSyntax { parent: None, start: start, end: end, name: name.unwrap(), extensions: extensions });
 
-        match extensions {
-            Some(mut x) => for item in x.iter_mut() {
+        if let Some(mut extensions) = extensions {
+            for item in extensions.iter_mut() {
                 item.parent = Some(ParentNode::Name(ret));
             }
-            None => ()
         }
 
         Ok(Some(ret))
@@ -413,21 +391,20 @@ impl Parser {
         let mut ret: Option<Ref<Array<Ref<ExtensionSyntax>>>> = Option::None;
         loop {
             let node = self.parse_extension(&_r, _rp, _ep)?;
-            match node {
-                None => break,
-                Some(node) => {
-                    match ret {
-                        None => ret = Some(Ref::new(_rp, Array::new())),
-                        Some(_) => (),
-                    };
-                    ret.unwrap().add(node);
-                }
+            if let Some(node) = node {
+                if let None = ret {
+                    ret = Some(Ref::new(_rp, Array::new()))
+                };
+                ret.unwrap().add(node);
+            } else {
+                break;
             }
         }
 
-        match ret {
-            Some(ret) => Ok(Some(Ref::new(_rp, Vector::from_array(_rp, ret)))),
-            None => Ok(None),
+        if let Some(ret) = ret {
+            Ok(Some(Ref::new(_rp, Vector::from_array(_rp, ret))))
+        } else {
+            Ok(None)
         }
     }
 
@@ -443,13 +420,12 @@ impl Parser {
 
         let success_dot_1 = self.lexer.parse_punctuation(&_r, String::from_string_slice(_r.page, "."));
         if !success_dot_1 {
-
             return Ok(None)
         }
 
         let name = self.lexer.parse_identifier(&_r, _rp);
-        match name {
-            Some(name) => if !self.is_identifier(name) {
+        if let Some(name) = name {
+            if !self.is_identifier(name) {
 
             return Result::Err(Ref::new(
                 _ep,
@@ -459,8 +435,8 @@ impl Parser {
                     column: self.lexer.column,
                 },
             ))
-           },
-            None => 
+           }
+        } else {
             return Result::Err(Ref::new(
                 _ep,
                 ParserError {
@@ -488,21 +464,20 @@ impl Parser {
         let mut ret: Option<Ref<Array<Ref<DeclarationSyntax>>>> = Option::None;
         loop {
             let node = self.parse_declaration(&_r, _rp, _ep)?;
-            match node {
-                None => break,
-                Some(node) => {
-                    match ret {
-                        None => ret = Some(Ref::new(_rp, Array::new())),
-                        Some(_) => (),
-                    };
-                    ret.unwrap().add(node);
-                }
+            if let Some(node) = node {
+                if let None = ret {
+                    ret = Some(Ref::new(_rp, Array::new()))
+                };
+                ret.unwrap().add(node);
+            } else {
+                break;
             }
         }
 
-        match ret {
-            Some(ret) => Ok(Some(Ref::new(_rp, Vector::from_array(_rp, ret)))),
-            None => Ok(None),
+        if let Some(ret) = ret {
+            Ok(Some(Ref::new(_rp, Vector::from_array(_rp, ret))))
+        } else {
+            Ok(None)
         }
     }
 
@@ -516,60 +491,52 @@ impl Parser {
 
         {
             let node = self.parse_namespace(&_r, _rp, _ep)?;
-            match node {
-                Some(it) => return Ok(Some(Ref::new(_rp, DeclarationSyntax::Namespace(*it)))),
-                None => ()
+            if let Some(node) = node {
+                return Ok(Some(Ref::new(_rp, DeclarationSyntax::Namespace(*node))))
             }
         }
 
         {
             let node = self.parse_function(&_r, _rp, _ep)?;
-            match node {
-                Some(it) => return Ok(Some(Ref::new(_rp, DeclarationSyntax::Function(*it)))),
-                None => ()
+            if let Some(node) = node {
+                return Ok(Some(Ref::new(_rp, DeclarationSyntax::Function(*node))))
             }
         }
 
         {
             let node = self.parse_class(&_r, _rp, _ep)?;
-            match node {
-                Some(it) => return Ok(Some(Ref::new(_rp, DeclarationSyntax::Class(*it)))),
-                None => ()
+            if let Some(node) = node {
+                return Ok(Some(Ref::new(_rp, DeclarationSyntax::Class(*node))))
             }
         }
 
         {
             let node = self.parse_letdeclaration(&_r, _rp, _ep)?;
-            match node {
-                Some(it) => return Ok(Some(Ref::new(_rp, DeclarationSyntax::LetDeclaration(*it)))),
-                None => ()
+            if let Some(node) = node {
+                return Ok(Some(Ref::new(_rp, DeclarationSyntax::LetDeclaration(*node))))
             }
         }
 
         {
             let node = self.parse_vardeclaration(&_r, _rp, _ep)?;
-            match node {
-                Some(it) => return Ok(Some(Ref::new(_rp, DeclarationSyntax::VarDeclaration(*it)))),
-                None => ()
+            if let Some(node) = node {
+                return Ok(Some(Ref::new(_rp, DeclarationSyntax::VarDeclaration(*node))))
             }
         }
 
         {
             let node = self.parse_mutabledeclaration(&_r, _rp, _ep)?;
-            match node {
-                Some(it) => return Ok(Some(Ref::new(_rp, DeclarationSyntax::MutableDeclaration(*it)))),
-                None => ()
+            if let Some(node) = node {
+                return Ok(Some(Ref::new(_rp, DeclarationSyntax::MutableDeclaration(*node))))
             }
         }
 
         {
             let node = self.parse_threadlocaldeclaration(&_r, _rp, _ep)?;
-            match node {
-                Some(it) => return Ok(Some(Ref::new(_rp, DeclarationSyntax::ThreadLocalDeclaration(*it)))),
-                None => ()
+            if let Some(node) = node {
+                return Ok(Some(Ref::new(_rp, DeclarationSyntax::ThreadLocalDeclaration(*node))))
             }
         }
-
         return Ok(None)
     }
 
@@ -585,15 +552,12 @@ impl Parser {
 
         let success_namespace_1 = self.lexer.parse_keyword(&_r, String::from_string_slice(_r.page, "namespace"));
         if !success_namespace_1 {
-
             return Ok(None)
         }
 
         let name = self.parse_name(&_r, _rp, _ep)?;
-        match name {
-            None =>
-                return Err(Ref::new(_ep, ParserError { file_name: String::copy(_ep, self.file_name), line: self.lexer.line, column: self.lexer.column })),
-            Some(_) => ()
+        if let None = name {
+            return Err(Ref::new(_ep, ParserError { file_name: String::copy(_ep, self.file_name), line: self.lexer.line, column: self.lexer.column }))
         }
 
         let success_left_curly_3 = self.lexer.parse_punctuation(&_r, String::from_string_slice(_r.page, "{"));
@@ -634,22 +598,20 @@ impl Parser {
 
         name.unwrap().parent = Some(ParentNode::Namespace(ret));
 
-        match usings {
-            Some(mut x) => for item in x.iter_mut() {
+        if let Some(mut usings) = usings {
+            for item in usings.iter_mut() {
                 item.parent = Some(ParentNode::Namespace(ret));
             }
-            None => ()
         }
 
-        match defines {
-            Some(mut x) => for item in x.iter_mut() {
+        if let Some(mut defines) = defines {
+            for item in defines.iter_mut() {
                 item.parent = Some(ParentNode::Namespace(ret));
             }
-            None => ()
         }
 
-        match declarations {
-            Some(mut x) => for item in x.iter_mut() {
+        if let Some(mut declarations) = declarations {
+            for item in declarations.iter_mut() {
                 match **item {
                     DeclarationSyntax::Namespace(mut y) => y.parent = Some(ParentNode::Namespace(ret)),
                     DeclarationSyntax::Function(mut y) => y.parent = Some(ParentNode::Namespace(ret)),
@@ -660,7 +622,6 @@ impl Parser {
                     DeclarationSyntax::ThreadLocalDeclaration(mut y) => y.parent = Some(ParentNode::Namespace(ret)),
                 }
             }
-            None => ()
         }
 
         Ok(Some(ret))
@@ -678,15 +639,12 @@ impl Parser {
 
         let success_function_1 = self.lexer.parse_keyword(&_r, String::from_string_slice(_r.page, "function"));
         if !success_function_1 {
-
             return Ok(None)
         }
 
         let procedure = self.parse_procedure(&_r, _rp, _ep)?;
-        match procedure {
-            None =>
-                return Err(Ref::new(_ep, ParserError { file_name: String::copy(_ep, self.file_name), line: self.lexer.line, column: self.lexer.column })),
-            Some(_) => ()
+        if let None = procedure {
+            return Err(Ref::new(_ep, ParserError { file_name: String::copy(_ep, self.file_name), line: self.lexer.line, column: self.lexer.column }))
         }
 
         let end: Position = self.lexer.get_position();
@@ -709,20 +667,16 @@ impl Parser {
         let start: Position = self.lexer.get_previous_position();
 
         let name = self.lexer.parse_identifier(&_r, _rp);
-        match name {
-            Some(name) => if !self.is_identifier(name) {
-
+        if let Some(name) = name {
+            if !self.is_identifier(name) {
             return Ok(None)
-           },
-            None => 
-            return Ok(None)
+           }
+        } else {            return Ok(None)
         }
 
         let routine = self.parse_routine(&_r, _rp, _ep)?;
-        match routine {
-            None =>
-                return Err(Ref::new(_ep, ParserError { file_name: String::copy(_ep, self.file_name), line: self.lexer.line, column: self.lexer.column })),
-            Some(_) => ()
+        if let None = routine {
+            return Err(Ref::new(_ep, ParserError { file_name: String::copy(_ep, self.file_name), line: self.lexer.line, column: self.lexer.column }))
         }
 
         let end: Position = self.lexer.get_position();
@@ -751,32 +705,24 @@ impl Parser {
         let throws_clause = self.parse_throws(&_r, _rp, _ep)?;
 
         let body = self.parse_block(&_r, _rp, _ep)?;
-        match body {
-            None =>
-                return Err(Ref::new(_ep, ParserError { file_name: String::copy(_ep, self.file_name), line: self.lexer.line, column: self.lexer.column })),
-            Some(_) => ()
+        if let None = body {
+            return Err(Ref::new(_ep, ParserError { file_name: String::copy(_ep, self.file_name), line: self.lexer.line, column: self.lexer.column }))
         }
 
         let end: Position = self.lexer.get_position();
 
         let ret = Ref::new(_rp, RoutineSyntax { parent: None, start: start, end: end, input: input, output: output, throws_clause: throws_clause, body: body.unwrap() });
 
-        match input {
-            Some(mut x) => 
-                x.parent = Some(ParentNode::Routine(ret)),
-            None => ()
+        if let Some(mut x) = input {
+            x.parent = Some(ParentNode::Routine(ret))
         }
 
-        match output {
-            Some(mut x) => 
-                x.parent = Some(ParentNode::Routine(ret)),
-            None => ()
+        if let Some(mut x) = output {
+            x.parent = Some(ParentNode::Routine(ret))
         }
 
-        match throws_clause {
-            Some(mut x) => 
-                x.parent = Some(ParentNode::Routine(ret)),
-            None => ()
+        if let Some(mut x) = throws_clause {
+            x.parent = Some(ParentNode::Routine(ret))
         }
 
         body.unwrap().parent = Some(ParentNode::Routine(ret));
@@ -795,10 +741,8 @@ impl Parser {
         let start: Position = self.lexer.get_previous_position();
 
         let declaration = self.parse_let(&_r, _rp, _ep)?;
-        match declaration {
-            None =>
-                return Ok(None),
-            Some(_) => ()
+        if let None = declaration {
+            return Ok(None)
         }
 
         let end: Position = self.lexer.get_position();
@@ -821,10 +765,8 @@ impl Parser {
         let start: Position = self.lexer.get_previous_position();
 
         let declaration = self.parse_var(&_r, _rp, _ep)?;
-        match declaration {
-            None =>
-                return Ok(None),
-            Some(_) => ()
+        if let None = declaration {
+            return Ok(None)
         }
 
         let end: Position = self.lexer.get_position();
@@ -847,10 +789,8 @@ impl Parser {
         let start: Position = self.lexer.get_previous_position();
 
         let declaration = self.parse_mutable(&_r, _rp, _ep)?;
-        match declaration {
-            None =>
-                return Ok(None),
-            Some(_) => ()
+        if let None = declaration {
+            return Ok(None)
         }
 
         let end: Position = self.lexer.get_position();
@@ -873,10 +813,8 @@ impl Parser {
         let start: Position = self.lexer.get_previous_position();
 
         let declaration = self.parse_threadlocal(&_r, _rp, _ep)?;
-        match declaration {
-            None =>
-                return Ok(None),
-            Some(_) => ()
+        if let None = declaration {
+            return Ok(None)
         }
 
         let end: Position = self.lexer.get_position();
@@ -898,21 +836,20 @@ impl Parser {
         let mut ret: Option<Ref<Array<Ref<StatementSyntax>>>> = Option::None;
         loop {
             let node = self.parse_statement(&_r, _rp, _ep)?;
-            match node {
-                None => break,
-                Some(node) => {
-                    match ret {
-                        None => ret = Some(Ref::new(_rp, Array::new())),
-                        Some(_) => (),
-                    };
-                    ret.unwrap().add(node);
-                }
+            if let Some(node) = node {
+                if let None = ret {
+                    ret = Some(Ref::new(_rp, Array::new()))
+                };
+                ret.unwrap().add(node);
+            } else {
+                break;
             }
         }
 
-        match ret {
-            Some(ret) => Ok(Some(Ref::new(_rp, Vector::from_array(_rp, ret)))),
-            None => Ok(None),
+        if let Some(ret) = ret {
+            Ok(Some(Ref::new(_rp, Vector::from_array(_rp, ret))))
+        } else {
+            Ok(None)
         }
     }
 
@@ -926,84 +863,73 @@ impl Parser {
 
         {
             let node = self.parse_let(&_r, _rp, _ep)?;
-            match node {
-                Some(it) => return Ok(Some(Ref::new(_rp, StatementSyntax::Let(*it)))),
-                None => ()
+            if let Some(node) = node {
+                return Ok(Some(Ref::new(_rp, StatementSyntax::Let(*node))))
             }
         }
 
         {
             let node = self.parse_var(&_r, _rp, _ep)?;
-            match node {
-                Some(it) => return Ok(Some(Ref::new(_rp, StatementSyntax::Var(*it)))),
-                None => ()
+            if let Some(node) = node {
+                return Ok(Some(Ref::new(_rp, StatementSyntax::Var(*node))))
             }
         }
 
         {
             let node = self.parse_mutable(&_r, _rp, _ep)?;
-            match node {
-                Some(it) => return Ok(Some(Ref::new(_rp, StatementSyntax::Mutable(*it)))),
-                None => ()
+            if let Some(node) = node {
+                return Ok(Some(Ref::new(_rp, StatementSyntax::Mutable(*node))))
             }
         }
 
         {
             let node = self.parse_threadlocal(&_r, _rp, _ep)?;
-            match node {
-                Some(it) => return Ok(Some(Ref::new(_rp, StatementSyntax::ThreadLocal(*it)))),
-                None => ()
+            if let Some(node) = node {
+                return Ok(Some(Ref::new(_rp, StatementSyntax::ThreadLocal(*node))))
             }
         }
 
         {
             let node = self.parse_set(&_r, _rp, _ep)?;
-            match node {
-                Some(it) => return Ok(Some(Ref::new(_rp, StatementSyntax::Set(*it)))),
-                None => ()
+            if let Some(node) = node {
+                return Ok(Some(Ref::new(_rp, StatementSyntax::Set(*node))))
             }
         }
 
         {
             let node = self.parse_calculation(&_r, _rp, _ep)?;
-            match node {
-                Some(it) => return Ok(Some(Ref::new(_rp, StatementSyntax::Calculation(*it)))),
-                None => ()
+            if let Some(node) = node {
+                return Ok(Some(Ref::new(_rp, StatementSyntax::Calculation(*node))))
             }
         }
 
         {
             let node = self.parse_break(&_r, _rp, _ep)?;
-            match node {
-                Some(it) => return Ok(Some(Ref::new(_rp, StatementSyntax::Break(*it)))),
-                None => ()
+            if let Some(node) = node {
+                return Ok(Some(Ref::new(_rp, StatementSyntax::Break(*node))))
             }
         }
 
         {
             let node = self.parse_continue(&_r, _rp, _ep)?;
-            match node {
-                Some(it) => return Ok(Some(Ref::new(_rp, StatementSyntax::Continue(*it)))),
-                None => ()
+            if let Some(node) = node {
+                return Ok(Some(Ref::new(_rp, StatementSyntax::Continue(*node))))
             }
         }
 
         {
             let node = self.parse_return(&_r, _rp, _ep)?;
-            match node {
-                Some(it) => return Ok(Some(Ref::new(_rp, StatementSyntax::Return(*it)))),
-                None => ()
+            if let Some(node) = node {
+                return Ok(Some(Ref::new(_rp, StatementSyntax::Return(*node))))
             }
         }
 
         {
             let node = self.parse_throw(&_r, _rp, _ep)?;
-            match node {
-                Some(it) => return Ok(Some(Ref::new(_rp, StatementSyntax::Throw(*it)))),
-                None => ()
+            if let Some(node) = node {
+                return Ok(Some(Ref::new(_rp, StatementSyntax::Throw(*node))))
             }
         }
-
         return Ok(None)
     }
 
@@ -1019,15 +945,12 @@ impl Parser {
 
         let success_let_1 = self.lexer.parse_keyword(&_r, String::from_string_slice(_r.page, "let"));
         if !success_let_1 {
-
             return Ok(None)
         }
 
         let binding = self.parse_binding(&_r, _rp, _ep)?;
-        match binding {
-            None =>
-                return Err(Ref::new(_ep, ParserError { file_name: String::copy(_ep, self.file_name), line: self.lexer.line, column: self.lexer.column })),
-            Some(_) => ()
+        if let None = binding {
+            return Err(Ref::new(_ep, ParserError { file_name: String::copy(_ep, self.file_name), line: self.lexer.line, column: self.lexer.column }))
         }
 
         let end: Position = self.lexer.get_position();
@@ -1051,15 +974,12 @@ impl Parser {
 
         let success_var_1 = self.lexer.parse_keyword(&_r, String::from_string_slice(_r.page, "var"));
         if !success_var_1 {
-
             return Ok(None)
         }
 
         let binding = self.parse_binding(&_r, _rp, _ep)?;
-        match binding {
-            None =>
-                return Err(Ref::new(_ep, ParserError { file_name: String::copy(_ep, self.file_name), line: self.lexer.line, column: self.lexer.column })),
-            Some(_) => ()
+        if let None = binding {
+            return Err(Ref::new(_ep, ParserError { file_name: String::copy(_ep, self.file_name), line: self.lexer.line, column: self.lexer.column }))
         }
 
         let end: Position = self.lexer.get_position();
@@ -1083,15 +1003,12 @@ impl Parser {
 
         let success_mutable_1 = self.lexer.parse_keyword(&_r, String::from_string_slice(_r.page, "mutable"));
         if !success_mutable_1 {
-
             return Ok(None)
         }
 
         let binding = self.parse_binding(&_r, _rp, _ep)?;
-        match binding {
-            None =>
-                return Err(Ref::new(_ep, ParserError { file_name: String::copy(_ep, self.file_name), line: self.lexer.line, column: self.lexer.column })),
-            Some(_) => ()
+        if let None = binding {
+            return Err(Ref::new(_ep, ParserError { file_name: String::copy(_ep, self.file_name), line: self.lexer.line, column: self.lexer.column }))
         }
 
         let end: Position = self.lexer.get_position();
@@ -1115,15 +1032,12 @@ impl Parser {
 
         let success_threadlocal_1 = self.lexer.parse_keyword(&_r, String::from_string_slice(_r.page, "threadlocal"));
         if !success_threadlocal_1 {
-
             return Ok(None)
         }
 
         let binding = self.parse_binding(&_r, _rp, _ep)?;
-        match binding {
-            None =>
-                return Err(Ref::new(_ep, ParserError { file_name: String::copy(_ep, self.file_name), line: self.lexer.line, column: self.lexer.column })),
-            Some(_) => ()
+        if let None = binding {
+            return Err(Ref::new(_ep, ParserError { file_name: String::copy(_ep, self.file_name), line: self.lexer.line, column: self.lexer.column }))
         }
 
         let end: Position = self.lexer.get_position();
@@ -1146,32 +1060,26 @@ impl Parser {
         let start: Position = self.lexer.get_previous_position();
 
         let name = self.lexer.parse_identifier(&_r, _rp);
-        match name {
-            Some(name) => if !self.is_identifier(name) {
-
+        if let Some(name) = name {
+            if !self.is_identifier(name) {
             return Ok(None)
-           },
-            None => 
-            return Ok(None)
+           }
+        } else {            return Ok(None)
         }
 
         let type_annotation = self.parse_typeannotation(&_r, _rp, _ep)?;
 
         let calculation = self.parse_calculation(&_r, _rp, _ep)?;
-        match calculation {
-            None =>
-                return Err(Ref::new(_ep, ParserError { file_name: String::copy(_ep, self.file_name), line: self.lexer.line, column: self.lexer.column })),
-            Some(_) => ()
+        if let None = calculation {
+            return Err(Ref::new(_ep, ParserError { file_name: String::copy(_ep, self.file_name), line: self.lexer.line, column: self.lexer.column }))
         }
 
         let end: Position = self.lexer.get_position();
 
         let ret = Ref::new(_rp, BindingSyntax { parent: None, start: start, end: end, name: name.unwrap(), type_annotation: type_annotation, calculation: calculation.unwrap() });
 
-        match type_annotation {
-            Some(mut x) => 
-                x.parent = Some(ParentNode::Binding(ret)),
-            None => ()
+        if let Some(mut x) = type_annotation {
+            x.parent = Some(ParentNode::Binding(ret))
         }
 
         calculation.unwrap().parent = Some(ParentNode::Binding(ret));
@@ -1191,15 +1099,12 @@ impl Parser {
 
         let success_set_1 = self.lexer.parse_keyword(&_r, String::from_string_slice(_r.page, "set"));
         if !success_set_1 {
-
             return Ok(None)
         }
 
         let l_value = self.parse_operation(&_r, _rp, _ep)?;
-        match l_value {
-            None =>
-                return Err(Ref::new(_ep, ParserError { file_name: String::copy(_ep, self.file_name), line: self.lexer.line, column: self.lexer.column })),
-            Some(_) => ()
+        if let None = l_value {
+            return Err(Ref::new(_ep, ParserError { file_name: String::copy(_ep, self.file_name), line: self.lexer.line, column: self.lexer.column }))
         }
 
         let success_colon_3 = self.lexer.parse_punctuation(&_r, String::from_string_slice(_r.page, ":"));
@@ -1216,10 +1121,8 @@ impl Parser {
         }
 
         let r_value = self.parse_calculation(&_r, _rp, _ep)?;
-        match r_value {
-            None =>
-                return Err(Ref::new(_ep, ParserError { file_name: String::copy(_ep, self.file_name), line: self.lexer.line, column: self.lexer.column })),
-            Some(_) => ()
+        if let None = r_value {
+            return Err(Ref::new(_ep, ParserError { file_name: String::copy(_ep, self.file_name), line: self.lexer.line, column: self.lexer.column }))
         }
 
         let end: Position = self.lexer.get_position();
@@ -1244,10 +1147,8 @@ impl Parser {
         let start: Position = self.lexer.get_previous_position();
 
         let operation = self.parse_operation(&_r, _rp, _ep)?;
-        match operation {
-            None =>
-                return Ok(None),
-            Some(_) => ()
+        if let None = operation {
+            return Ok(None)
         }
 
         let success_semicolon_2 = self.lexer.parse_punctuation(&_r, String::from_string_slice(_r.page, ";"));
@@ -1276,21 +1177,18 @@ impl Parser {
         let start: Position = self.lexer.get_previous_position();
 
         let op = self.parse_operand_list(&_r, _rp, _ep)?;
-        match op {
-            None =>
-                return Ok(None),
-            Some(_) => ()
+        if let None = op {
+            return Ok(None)
         }
 
         let end: Position = self.lexer.get_position();
 
         let ret = Ref::new(_rp, OperationSyntax { parent: None, start: start, end: end, op: op.unwrap() });
 
-        match op {
-            Some(mut x) => for item in x.iter_mut() {
+        if let Some(mut op) = op {
+            for item in op.iter_mut() {
                 item.parent = Some(ParentNode::Operation(ret));
             }
-            None => ()
         }
 
         Ok(Some(ret))
@@ -1306,21 +1204,20 @@ impl Parser {
         let mut ret: Option<Ref<Array<Ref<OperandSyntax>>>> = Option::None;
         loop {
             let node = self.parse_operand(&_r, _rp, _ep)?;
-            match node {
-                None => break,
-                Some(node) => {
-                    match ret {
-                        None => ret = Some(Ref::new(_rp, Array::new())),
-                        Some(_) => (),
-                    };
-                    ret.unwrap().add(node);
-                }
+            if let Some(node) = node {
+                if let None = ret {
+                    ret = Some(Ref::new(_rp, Array::new()))
+                };
+                ret.unwrap().add(node);
+            } else {
+                break;
             }
         }
 
-        match ret {
-            Some(ret) => Ok(Some(Ref::new(_rp, Vector::from_array(_rp, ret)))),
-            None => Ok(None),
+        if let Some(ret) = ret {
+            Ok(Some(Ref::new(_rp, Vector::from_array(_rp, ret))))
+        } else {
+            Ok(None)
         }
     }
 
@@ -1335,10 +1232,8 @@ impl Parser {
         let start: Position = self.lexer.get_previous_position();
 
         let primary = self.parse_expression(&_r, _rp, _ep)?;
-        match primary {
-            None =>
-                return Ok(None),
-            Some(_) => ()
+        if let None = primary {
+            return Ok(None)
         }
 
         let postfixes = self.parse_postfix_list(&_r, _rp, _ep)?;
@@ -1363,8 +1258,8 @@ impl Parser {
             ExpressionSyntax::SizeOf(mut x) => x.parent = Some(ParentNode::Operand(ret)),
         }
 
-        match postfixes {
-            Some(mut x) => for item in x.iter_mut() {
+        if let Some(mut postfixes) = postfixes {
+            for item in postfixes.iter_mut() {
                 match **item {
                     PostfixSyntax::MemberAccess(mut y) => y.parent = Some(ParentNode::Operand(ret)),
                     PostfixSyntax::As(mut y) => y.parent = Some(ParentNode::Operand(ret)),
@@ -1373,7 +1268,6 @@ impl Parser {
                     PostfixSyntax::Catch(mut y) => y.parent = Some(ParentNode::Operand(ret)),
                 }
             }
-            None => ()
         }
 
         Ok(Some(ret))
@@ -1389,21 +1283,20 @@ impl Parser {
         let mut ret: Option<Ref<Array<Ref<PostfixSyntax>>>> = Option::None;
         loop {
             let node = self.parse_postfix(&_r, _rp, _ep)?;
-            match node {
-                None => break,
-                Some(node) => {
-                    match ret {
-                        None => ret = Some(Ref::new(_rp, Array::new())),
-                        Some(_) => (),
-                    };
-                    ret.unwrap().add(node);
-                }
+            if let Some(node) = node {
+                if let None = ret {
+                    ret = Some(Ref::new(_rp, Array::new()))
+                };
+                ret.unwrap().add(node);
+            } else {
+                break;
             }
         }
 
-        match ret {
-            Some(ret) => Ok(Some(Ref::new(_rp, Vector::from_array(_rp, ret)))),
-            None => Ok(None),
+        if let Some(ret) = ret {
+            Ok(Some(Ref::new(_rp, Vector::from_array(_rp, ret))))
+        } else {
+            Ok(None)
         }
     }
 
@@ -1417,44 +1310,38 @@ impl Parser {
 
         {
             let node = self.parse_memberaccess(&_r, _rp, _ep)?;
-            match node {
-                Some(it) => return Ok(Some(Ref::new(_rp, PostfixSyntax::MemberAccess(*it)))),
-                None => ()
+            if let Some(node) = node {
+                return Ok(Some(Ref::new(_rp, PostfixSyntax::MemberAccess(*node))))
             }
         }
 
         {
             let node = self.parse_as(&_r, _rp, _ep)?;
-            match node {
-                Some(it) => return Ok(Some(Ref::new(_rp, PostfixSyntax::As(*it)))),
-                None => ()
+            if let Some(node) = node {
+                return Ok(Some(Ref::new(_rp, PostfixSyntax::As(*node))))
             }
         }
 
         {
             let node = self.parse_is(&_r, _rp, _ep)?;
-            match node {
-                Some(it) => return Ok(Some(Ref::new(_rp, PostfixSyntax::Is(*it)))),
-                None => ()
+            if let Some(node) = node {
+                return Ok(Some(Ref::new(_rp, PostfixSyntax::Is(*node))))
             }
         }
 
         {
             let node = self.parse_unwrap(&_r, _rp, _ep)?;
-            match node {
-                Some(it) => return Ok(Some(Ref::new(_rp, PostfixSyntax::Unwrap(*it)))),
-                None => ()
+            if let Some(node) = node {
+                return Ok(Some(Ref::new(_rp, PostfixSyntax::Unwrap(*node))))
             }
         }
 
         {
             let node = self.parse_catch(&_r, _rp, _ep)?;
-            match node {
-                Some(it) => return Ok(Some(Ref::new(_rp, PostfixSyntax::Catch(*it)))),
-                None => ()
+            if let Some(node) = node {
+                return Ok(Some(Ref::new(_rp, PostfixSyntax::Catch(*node))))
             }
         }
-
         return Ok(None)
     }
 
@@ -1470,13 +1357,12 @@ impl Parser {
 
         let success_dot_1 = self.lexer.parse_punctuation(&_r, String::from_string_slice(_r.page, "."));
         if !success_dot_1 {
-
             return Ok(None)
         }
 
         let member = self.lexer.parse_identifier(&_r, _rp);
-        match member {
-            Some(member) => if !self.is_identifier(member) {
+        if let Some(member) = member {
+            if !self.is_identifier(member) {
 
             return Result::Err(Ref::new(
                 _ep,
@@ -1486,8 +1372,8 @@ impl Parser {
                     column: self.lexer.column,
                 },
             ))
-           },
-            None => 
+           }
+        } else {
             return Result::Err(Ref::new(
                 _ep,
                 ParserError {
@@ -1517,15 +1403,12 @@ impl Parser {
 
         let success_as_1 = self.lexer.parse_keyword(&_r, String::from_string_slice(_r.page, "as"));
         if !success_as_1 {
-
             return Ok(None)
         }
 
         let type_spec = self.parse_typespec(&_r, _rp, _ep)?;
-        match type_spec {
-            None =>
-                return Err(Ref::new(_ep, ParserError { file_name: String::copy(_ep, self.file_name), line: self.lexer.line, column: self.lexer.column })),
-            Some(_) => ()
+        if let None = type_spec {
+            return Err(Ref::new(_ep, ParserError { file_name: String::copy(_ep, self.file_name), line: self.lexer.line, column: self.lexer.column }))
         }
 
         let end: Position = self.lexer.get_position();
@@ -1552,15 +1435,12 @@ impl Parser {
 
         let success_is_1 = self.lexer.parse_keyword(&_r, String::from_string_slice(_r.page, "is"));
         if !success_is_1 {
-
             return Ok(None)
         }
 
         let type_spec = self.parse_typespec(&_r, _rp, _ep)?;
-        match type_spec {
-            None =>
-                return Err(Ref::new(_ep, ParserError { file_name: String::copy(_ep, self.file_name), line: self.lexer.line, column: self.lexer.column })),
-            Some(_) => ()
+        if let None = type_spec {
+            return Err(Ref::new(_ep, ParserError { file_name: String::copy(_ep, self.file_name), line: self.lexer.line, column: self.lexer.column }))
         }
 
         let end: Position = self.lexer.get_position();
@@ -1587,7 +1467,6 @@ impl Parser {
 
         let success_exclamation_1 = self.lexer.parse_punctuation(&_r, String::from_string_slice(_r.page, "!"));
         if !success_exclamation_1 {
-
             return Ok(None)
         }
 
@@ -1610,22 +1489,17 @@ impl Parser {
 
         let success_catch_1 = self.lexer.parse_keyword(&_r, String::from_string_slice(_r.page, "catch"));
         if !success_catch_1 {
-
             return Ok(None)
         }
 
         let type_spec = self.parse_catchpattern(&_r, _rp, _ep)?;
-        match type_spec {
-            None =>
-                return Err(Ref::new(_ep, ParserError { file_name: String::copy(_ep, self.file_name), line: self.lexer.line, column: self.lexer.column })),
-            Some(_) => ()
+        if let None = type_spec {
+            return Err(Ref::new(_ep, ParserError { file_name: String::copy(_ep, self.file_name), line: self.lexer.line, column: self.lexer.column }))
         }
 
         let handler = self.parse_block(&_r, _rp, _ep)?;
-        match handler {
-            None =>
-                return Err(Ref::new(_ep, ParserError { file_name: String::copy(_ep, self.file_name), line: self.lexer.line, column: self.lexer.column })),
-            Some(_) => ()
+        if let None = handler {
+            return Err(Ref::new(_ep, ParserError { file_name: String::copy(_ep, self.file_name), line: self.lexer.line, column: self.lexer.column }))
         }
 
         let end: Position = self.lexer.get_position();
@@ -1652,20 +1526,17 @@ impl Parser {
 
         {
             let node = self.parse_wildcardcatchpattern(&_r, _rp, _ep)?;
-            match node {
-                Some(it) => return Ok(Some(Ref::new(_rp, CatchPatternSyntax::WildCardCatchPattern(*it)))),
-                None => ()
+            if let Some(node) = node {
+                return Ok(Some(Ref::new(_rp, CatchPatternSyntax::WildCardCatchPattern(*node))))
             }
         }
 
         {
             let node = self.parse_typecatchpattern(&_r, _rp, _ep)?;
-            match node {
-                Some(it) => return Ok(Some(Ref::new(_rp, CatchPatternSyntax::TypeCatchPattern(*it)))),
-                None => ()
+            if let Some(node) = node {
+                return Ok(Some(Ref::new(_rp, CatchPatternSyntax::TypeCatchPattern(*node))))
             }
         }
-
         return Ok(None)
     }
 
@@ -1680,10 +1551,8 @@ impl Parser {
         let start: Position = self.lexer.get_previous_position();
 
         let pattern = self.parse_wildcardpattern(&_r, _rp, _ep)?;
-        match pattern {
-            None =>
-                return Ok(None),
-            Some(_) => ()
+        if let None = pattern {
+            return Ok(None)
         }
 
         let end: Position = self.lexer.get_position();
@@ -1706,19 +1575,17 @@ impl Parser {
         let start: Position = self.lexer.get_previous_position();
 
         let type_spec = self.parse_typespec(&_r, _rp, _ep)?;
-        match type_spec {
-            None =>
-                return Ok(None),
-            Some(_) => ()
+        if let None = type_spec {
+            return Ok(None)
         }
 
         let error_name = self.lexer.parse_identifier(&_r, _rp);
-        match error_name {
-            Some(error_name) => if !self.is_identifier(error_name) {
+        if let Some(error_name) = error_name {
+            if !self.is_identifier(error_name) {
 
             ()
-           },
-            None => 
+           }
+        } else {
             ()
         }
 
@@ -1744,108 +1611,94 @@ impl Parser {
 
         {
             let node = self.parse_block(&_r, _rp, _ep)?;
-            match node {
-                Some(it) => return Ok(Some(Ref::new(_rp, ExpressionSyntax::Block(*it)))),
-                None => ()
+            if let Some(node) = node {
+                return Ok(Some(Ref::new(_rp, ExpressionSyntax::Block(*node))))
             }
         }
 
         {
             let node = self.parse_name(&_r, _rp, _ep)?;
-            match node {
-                Some(it) => return Ok(Some(Ref::new(_rp, ExpressionSyntax::Name(*it)))),
-                None => ()
+            if let Some(node) = node {
+                return Ok(Some(Ref::new(_rp, ExpressionSyntax::Name(*node))))
             }
         }
 
         {
             let node = self.parse_constant(&_r, _rp, _ep)?;
-            match node {
-                Some(it) => return Ok(Some(Ref::new(_rp, ExpressionSyntax::Constant(*it)))),
-                None => ()
+            if let Some(node) = node {
+                return Ok(Some(Ref::new(_rp, ExpressionSyntax::Constant(*node))))
             }
         }
 
         {
             let node = self.parse_if(&_r, _rp, _ep)?;
-            match node {
-                Some(it) => return Ok(Some(Ref::new(_rp, ExpressionSyntax::If(*it)))),
-                None => ()
+            if let Some(node) = node {
+                return Ok(Some(Ref::new(_rp, ExpressionSyntax::If(*node))))
             }
         }
 
         {
             let node = self.parse_switch(&_r, _rp, _ep)?;
-            match node {
-                Some(it) => return Ok(Some(Ref::new(_rp, ExpressionSyntax::Switch(*it)))),
-                None => ()
+            if let Some(node) = node {
+                return Ok(Some(Ref::new(_rp, ExpressionSyntax::Switch(*node))))
             }
         }
 
         {
             let node = self.parse_for(&_r, _rp, _ep)?;
-            match node {
-                Some(it) => return Ok(Some(Ref::new(_rp, ExpressionSyntax::For(*it)))),
-                None => ()
+            if let Some(node) = node {
+                return Ok(Some(Ref::new(_rp, ExpressionSyntax::For(*node))))
             }
         }
 
         {
             let node = self.parse_while(&_r, _rp, _ep)?;
-            match node {
-                Some(it) => return Ok(Some(Ref::new(_rp, ExpressionSyntax::While(*it)))),
-                None => ()
+            if let Some(node) = node {
+                return Ok(Some(Ref::new(_rp, ExpressionSyntax::While(*node))))
             }
         }
 
         {
             let node = self.parse_do(&_r, _rp, _ep)?;
-            match node {
-                Some(it) => return Ok(Some(Ref::new(_rp, ExpressionSyntax::Do(*it)))),
-                None => ()
+            if let Some(node) = node {
+                return Ok(Some(Ref::new(_rp, ExpressionSyntax::Do(*node))))
             }
         }
 
         {
             let node = self.parse_this(&_r, _rp, _ep)?;
-            match node {
-                Some(it) => return Ok(Some(Ref::new(_rp, ExpressionSyntax::This(*it)))),
-                None => ()
+            if let Some(node) = node {
+                return Ok(Some(Ref::new(_rp, ExpressionSyntax::This(*node))))
             }
         }
 
         {
             let node = self.parse_new(&_r, _rp, _ep)?;
-            match node {
-                Some(it) => return Ok(Some(Ref::new(_rp, ExpressionSyntax::New(*it)))),
-                None => ()
+            if let Some(node) = node {
+                return Ok(Some(Ref::new(_rp, ExpressionSyntax::New(*node))))
             }
         }
 
         {
             let node = self.parse_object(&_r, _rp, _ep)?;
-            match node {
-                Some(it) => return Ok(Some(Ref::new(_rp, ExpressionSyntax::Object(*it)))),
-                None => ()
+            if let Some(node) = node {
+                return Ok(Some(Ref::new(_rp, ExpressionSyntax::Object(*node))))
             }
         }
 
         {
             let node = self.parse_array(&_r, _rp, _ep)?;
-            match node {
-                Some(it) => return Ok(Some(Ref::new(_rp, ExpressionSyntax::Array(*it)))),
-                None => ()
+            if let Some(node) = node {
+                return Ok(Some(Ref::new(_rp, ExpressionSyntax::Array(*node))))
             }
         }
 
         {
             let node = self.parse_sizeof(&_r, _rp, _ep)?;
-            match node {
-                Some(it) => return Ok(Some(Ref::new(_rp, ExpressionSyntax::SizeOf(*it)))),
-                None => ()
+            if let Some(node) = node {
+                return Ok(Some(Ref::new(_rp, ExpressionSyntax::SizeOf(*node))))
             }
         }
-
         return Ok(None)
     }
 
@@ -1861,7 +1714,6 @@ impl Parser {
 
         let success_left_curly_1 = self.lexer.parse_punctuation(&_r, String::from_string_slice(_r.page, "{"));
         if !success_left_curly_1 {
-
             return Ok(None)
         }
 
@@ -1884,8 +1736,8 @@ impl Parser {
 
         let ret = Ref::new(_rp, BlockSyntax { parent: None, start: start, end: end, statements: statements });
 
-        match statements {
-            Some(mut x) => for item in x.iter_mut() {
+        if let Some(mut statements) = statements {
+            for item in statements.iter_mut() {
                 match **item {
                     StatementSyntax::Let(mut y) => y.parent = Some(ParentNode::Block(ret)),
                     StatementSyntax::Var(mut y) => y.parent = Some(ParentNode::Block(ret)),
@@ -1899,7 +1751,6 @@ impl Parser {
                     StatementSyntax::Throw(mut y) => y.parent = Some(ParentNode::Block(ret)),
                 }
             }
-            None => ()
         }
 
         Ok(Some(ret))
@@ -1916,10 +1767,7 @@ impl Parser {
         let start: Position = self.lexer.get_previous_position();
 
         let literal = self.lexer.parse_literal(&_r, _rp);
-        match literal {
-            None => 
-            return Ok(None)
-,            _ => ()
+        if let None = literal {            return Ok(None)
         }
 
         let end: Position = self.lexer.get_position();
@@ -1941,7 +1789,6 @@ impl Parser {
 
         let success_if_1 = self.lexer.parse_keyword(&_r, String::from_string_slice(_r.page, "if"));
         if !success_if_1 {
-
             return Ok(None)
         }
 
@@ -1959,10 +1806,8 @@ impl Parser {
         }
 
         let condition = self.parse_operation(&_r, _rp, _ep)?;
-        match condition {
-            None =>
-                return Err(Ref::new(_ep, ParserError { file_name: String::copy(_ep, self.file_name), line: self.lexer.line, column: self.lexer.column })),
-            Some(_) => ()
+        if let None = condition {
+            return Err(Ref::new(_ep, ParserError { file_name: String::copy(_ep, self.file_name), line: self.lexer.line, column: self.lexer.column }))
         }
 
         let success_right_paren_4 = self.lexer.parse_punctuation(&_r, String::from_string_slice(_r.page, ")"));
@@ -1979,10 +1824,8 @@ impl Parser {
         }
 
         let consequent = self.parse_block(&_r, _rp, _ep)?;
-        match consequent {
-            None =>
-                return Err(Ref::new(_ep, ParserError { file_name: String::copy(_ep, self.file_name), line: self.lexer.line, column: self.lexer.column })),
-            Some(_) => ()
+        if let None = consequent {
+            return Err(Ref::new(_ep, ParserError { file_name: String::copy(_ep, self.file_name), line: self.lexer.line, column: self.lexer.column }))
         }
 
         let else_clause = self.parse_else(&_r, _rp, _ep)?;
@@ -1995,10 +1838,8 @@ impl Parser {
 
         consequent.unwrap().parent = Some(ParentNode::If(ret));
 
-        match else_clause {
-            Some(mut x) => 
-                x.parent = Some(ParentNode::If(ret)),
-            None => ()
+        if let Some(mut x) = else_clause {
+            x.parent = Some(ParentNode::If(ret))
         }
 
         Ok(Some(ret))
@@ -2016,15 +1857,12 @@ impl Parser {
 
         let success_else_1 = self.lexer.parse_keyword(&_r, String::from_string_slice(_r.page, "else"));
         if !success_else_1 {
-
             return Ok(None)
         }
 
         let alternative = self.parse_block(&_r, _rp, _ep)?;
-        match alternative {
-            None =>
-                return Err(Ref::new(_ep, ParserError { file_name: String::copy(_ep, self.file_name), line: self.lexer.line, column: self.lexer.column })),
-            Some(_) => ()
+        if let None = alternative {
+            return Err(Ref::new(_ep, ParserError { file_name: String::copy(_ep, self.file_name), line: self.lexer.line, column: self.lexer.column }))
         }
 
         let end: Position = self.lexer.get_position();
@@ -2048,7 +1886,6 @@ impl Parser {
 
         let success_switch_1 = self.lexer.parse_keyword(&_r, String::from_string_slice(_r.page, "switch"));
         if !success_switch_1 {
-
             return Ok(None)
         }
 
@@ -2066,10 +1903,8 @@ impl Parser {
         }
 
         let condition = self.parse_operation(&_r, _rp, _ep)?;
-        match condition {
-            None =>
-                return Err(Ref::new(_ep, ParserError { file_name: String::copy(_ep, self.file_name), line: self.lexer.line, column: self.lexer.column })),
-            Some(_) => ()
+        if let None = condition {
+            return Err(Ref::new(_ep, ParserError { file_name: String::copy(_ep, self.file_name), line: self.lexer.line, column: self.lexer.column }))
         }
 
         let success_right_paren_4 = self.lexer.parse_punctuation(&_r, String::from_string_slice(_r.page, ")"));
@@ -2099,10 +1934,8 @@ impl Parser {
         }
 
         let cases = self.parse_switchcase_list(&_r, _rp, _ep)?;
-        match cases {
-            None =>
-                return Err(Ref::new(_ep, ParserError { file_name: String::copy(_ep, self.file_name), line: self.lexer.line, column: self.lexer.column })),
-            Some(_) => ()
+        if let None = cases {
+            return Err(Ref::new(_ep, ParserError { file_name: String::copy(_ep, self.file_name), line: self.lexer.line, column: self.lexer.column }))
         }
 
         let success_right_curly_7 = self.lexer.parse_punctuation(&_r, String::from_string_slice(_r.page, "}"));
@@ -2124,11 +1957,10 @@ impl Parser {
 
         condition.unwrap().parent = Some(ParentNode::Switch(ret));
 
-        match cases {
-            Some(mut x) => for item in x.iter_mut() {
+        if let Some(mut cases) = cases {
+            for item in cases.iter_mut() {
                 item.parent = Some(ParentNode::Switch(ret));
             }
-            None => ()
         }
 
         Ok(Some(ret))
@@ -2144,21 +1976,20 @@ impl Parser {
         let mut ret: Option<Ref<Array<Ref<SwitchCaseSyntax>>>> = Option::None;
         loop {
             let node = self.parse_switchcase(&_r, _rp, _ep)?;
-            match node {
-                None => break,
-                Some(node) => {
-                    match ret {
-                        None => ret = Some(Ref::new(_rp, Array::new())),
-                        Some(_) => (),
-                    };
-                    ret.unwrap().add(node);
-                }
+            if let Some(node) = node {
+                if let None = ret {
+                    ret = Some(Ref::new(_rp, Array::new()))
+                };
+                ret.unwrap().add(node);
+            } else {
+                break;
             }
         }
 
-        match ret {
-            Some(ret) => Ok(Some(Ref::new(_rp, Vector::from_array(_rp, ret)))),
-            None => Ok(None),
+        if let Some(ret) = ret {
+            Ok(Some(Ref::new(_rp, Vector::from_array(_rp, ret))))
+        } else {
+            Ok(None)
         }
     }
 
@@ -2173,17 +2004,13 @@ impl Parser {
         let start: Position = self.lexer.get_previous_position();
 
         let label = self.parse_caselabel(&_r, _rp, _ep)?;
-        match label {
-            None =>
-                return Ok(None),
-            Some(_) => ()
+        if let None = label {
+            return Ok(None)
         }
 
         let content = self.parse_block(&_r, _rp, _ep)?;
-        match content {
-            None =>
-                return Err(Ref::new(_ep, ParserError { file_name: String::copy(_ep, self.file_name), line: self.lexer.line, column: self.lexer.column })),
-            Some(_) => ()
+        if let None = content {
+            return Err(Ref::new(_ep, ParserError { file_name: String::copy(_ep, self.file_name), line: self.lexer.line, column: self.lexer.column }))
         }
 
         let end: Position = self.lexer.get_position();
@@ -2210,20 +2037,17 @@ impl Parser {
 
         {
             let node = self.parse_itemcaselabel(&_r, _rp, _ep)?;
-            match node {
-                Some(it) => return Ok(Some(Ref::new(_rp, CaseLabelSyntax::ItemCaseLabel(*it)))),
-                None => ()
+            if let Some(node) = node {
+                return Ok(Some(Ref::new(_rp, CaseLabelSyntax::ItemCaseLabel(*node))))
             }
         }
 
         {
             let node = self.parse_defaultcaselabel(&_r, _rp, _ep)?;
-            match node {
-                Some(it) => return Ok(Some(Ref::new(_rp, CaseLabelSyntax::DefaultCaseLabel(*it)))),
-                None => ()
+            if let Some(node) = node {
+                return Ok(Some(Ref::new(_rp, CaseLabelSyntax::DefaultCaseLabel(*node))))
             }
         }
-
         return Ok(None)
     }
 
@@ -2239,26 +2063,22 @@ impl Parser {
 
         let success_case_1 = self.lexer.parse_keyword(&_r, String::from_string_slice(_r.page, "case"));
         if !success_case_1 {
-
             return Ok(None)
         }
 
         let items = self.parse_caseitem_list(&_r, _rp, _ep)?;
-        match items {
-            None =>
-                return Err(Ref::new(_ep, ParserError { file_name: String::copy(_ep, self.file_name), line: self.lexer.line, column: self.lexer.column })),
-            Some(_) => ()
+        if let None = items {
+            return Err(Ref::new(_ep, ParserError { file_name: String::copy(_ep, self.file_name), line: self.lexer.line, column: self.lexer.column }))
         }
 
         let end: Position = self.lexer.get_position();
 
         let ret = Ref::new(_rp, ItemCaseLabelSyntax { parent: None, start: start, end: end, items: items.unwrap() });
 
-        match items {
-            Some(mut x) => for item in x.iter_mut() {
+        if let Some(mut items) = items {
+            for item in items.iter_mut() {
                 item.parent = Some(ParentNode::ItemCaseLabel(ret));
             }
-            None => ()
         }
 
         Ok(Some(ret))
@@ -2274,21 +2094,20 @@ impl Parser {
         let mut ret: Option<Ref<Array<Ref<CaseItemSyntax>>>> = Option::None;
         loop {
             let node = self.parse_caseitem(&_r, _rp, _ep)?;
-            match node {
-                None => break,
-                Some(node) => {
-                    match ret {
-                        None => ret = Some(Ref::new(_rp, Array::new())),
-                        Some(_) => (),
-                    };
-                    ret.unwrap().add(node);
-                }
+            if let Some(node) = node {
+                if let None = ret {
+                    ret = Some(Ref::new(_rp, Array::new()))
+                };
+                ret.unwrap().add(node);
+            } else {
+                break;
             }
         }
 
-        match ret {
-            Some(ret) => Ok(Some(Ref::new(_rp, Vector::from_array(_rp, ret)))),
-            None => Ok(None),
+        if let Some(ret) = ret {
+            Ok(Some(Ref::new(_rp, Vector::from_array(_rp, ret))))
+        } else {
+            Ok(None)
         }
     }
 
@@ -2303,10 +2122,8 @@ impl Parser {
         let start: Position = self.lexer.get_previous_position();
 
         let pattern = self.parse_casepattern(&_r, _rp, _ep)?;
-        match pattern {
-            None =>
-                return Ok(None),
-            Some(_) => ()
+        if let None = pattern {
+            return Ok(None)
         }
 
         let success_comma_2 = self.lexer.parse_punctuation(&_r, String::from_string_slice(_r.page, ","));
@@ -2338,28 +2155,24 @@ impl Parser {
 
         {
             let node = self.parse_constantpattern(&_r, _rp, _ep)?;
-            match node {
-                Some(it) => return Ok(Some(Ref::new(_rp, CasePatternSyntax::ConstantPattern(*it)))),
-                None => ()
+            if let Some(node) = node {
+                return Ok(Some(Ref::new(_rp, CasePatternSyntax::ConstantPattern(*node))))
             }
         }
 
         {
             let node = self.parse_wildcardpattern(&_r, _rp, _ep)?;
-            match node {
-                Some(it) => return Ok(Some(Ref::new(_rp, CasePatternSyntax::WildcardPattern(*it)))),
-                None => ()
+            if let Some(node) = node {
+                return Ok(Some(Ref::new(_rp, CasePatternSyntax::WildcardPattern(*node))))
             }
         }
 
         {
             let node = self.parse_namepattern(&_r, _rp, _ep)?;
-            match node {
-                Some(it) => return Ok(Some(Ref::new(_rp, CasePatternSyntax::NamePattern(*it)))),
-                None => ()
+            if let Some(node) = node {
+                return Ok(Some(Ref::new(_rp, CasePatternSyntax::NamePattern(*node))))
             }
         }
-
         return Ok(None)
     }
 
@@ -2374,10 +2187,8 @@ impl Parser {
         let start: Position = self.lexer.get_previous_position();
 
         let constant = self.parse_constant(&_r, _rp, _ep)?;
-        match constant {
-            None =>
-                return Ok(None),
-            Some(_) => ()
+        if let None = constant {
+            return Ok(None)
         }
 
         let end: Position = self.lexer.get_position();
@@ -2401,7 +2212,6 @@ impl Parser {
 
         let success_underscore_1 = self.lexer.parse_punctuation(&_r, String::from_string_slice(_r.page, "_"));
         if !success_underscore_1 {
-
             return Ok(None)
         }
 
@@ -2423,10 +2233,8 @@ impl Parser {
         let start: Position = self.lexer.get_previous_position();
 
         let name = self.parse_name(&_r, _rp, _ep)?;
-        match name {
-            None =>
-                return Ok(None),
-            Some(_) => ()
+        if let None = name {
+            return Ok(None)
         }
 
         let end: Position = self.lexer.get_position();
@@ -2450,7 +2258,6 @@ impl Parser {
 
         let success_default_1 = self.lexer.parse_keyword(&_r, String::from_string_slice(_r.page, "default"));
         if !success_default_1 {
-
             return Ok(None)
         }
 
@@ -2473,7 +2280,6 @@ impl Parser {
 
         let success_for_1 = self.lexer.parse_keyword(&_r, String::from_string_slice(_r.page, "for"));
         if !success_for_1 {
-
             return Ok(None)
         }
 
@@ -2491,8 +2297,8 @@ impl Parser {
         }
 
         let index = self.lexer.parse_identifier(&_r, _rp);
-        match index {
-            Some(index) => if !self.is_identifier(index) {
+        if let Some(index) = index {
+            if !self.is_identifier(index) {
 
             return Result::Err(Ref::new(
                 _ep,
@@ -2502,8 +2308,8 @@ impl Parser {
                     column: self.lexer.column,
                 },
             ))
-           },
-            None => 
+           }
+        } else {
             return Result::Err(Ref::new(
                 _ep,
                 ParserError {
@@ -2530,10 +2336,8 @@ impl Parser {
         }
 
         let operation = self.parse_operation(&_r, _rp, _ep)?;
-        match operation {
-            None =>
-                return Err(Ref::new(_ep, ParserError { file_name: String::copy(_ep, self.file_name), line: self.lexer.line, column: self.lexer.column })),
-            Some(_) => ()
+        if let None = operation {
+            return Err(Ref::new(_ep, ParserError { file_name: String::copy(_ep, self.file_name), line: self.lexer.line, column: self.lexer.column }))
         }
 
         let success_right_paren_7 = self.lexer.parse_punctuation(&_r, String::from_string_slice(_r.page, ")"));
@@ -2550,20 +2354,16 @@ impl Parser {
         }
 
         let iteration = self.parse_loop(&_r, _rp, _ep)?;
-        match iteration {
-            None =>
-                return Err(Ref::new(_ep, ParserError { file_name: String::copy(_ep, self.file_name), line: self.lexer.line, column: self.lexer.column })),
-            Some(_) => ()
+        if let None = iteration {
+            return Err(Ref::new(_ep, ParserError { file_name: String::copy(_ep, self.file_name), line: self.lexer.line, column: self.lexer.column }))
         }
 
         let end: Position = self.lexer.get_position();
 
         let ret = Ref::new(_rp, ForSyntax { parent: None, start: start, end: end, index: index.unwrap(), type_annotation: type_annotation, operation: operation.unwrap(), iteration: iteration.unwrap() });
 
-        match type_annotation {
-            Some(mut x) => 
-                x.parent = Some(ParentNode::For(ret)),
-            None => ()
+        if let Some(mut x) = type_annotation {
+            x.parent = Some(ParentNode::For(ret))
         }
 
         operation.unwrap().parent = Some(ParentNode::For(ret));
@@ -2588,7 +2388,6 @@ impl Parser {
 
         let success_while_1 = self.lexer.parse_keyword(&_r, String::from_string_slice(_r.page, "while"));
         if !success_while_1 {
-
             return Ok(None)
         }
 
@@ -2606,10 +2405,8 @@ impl Parser {
         }
 
         let condition = self.parse_operation(&_r, _rp, _ep)?;
-        match condition {
-            None =>
-                return Err(Ref::new(_ep, ParserError { file_name: String::copy(_ep, self.file_name), line: self.lexer.line, column: self.lexer.column })),
-            Some(_) => ()
+        if let None = condition {
+            return Err(Ref::new(_ep, ParserError { file_name: String::copy(_ep, self.file_name), line: self.lexer.line, column: self.lexer.column }))
         }
 
         let success_right_paren_4 = self.lexer.parse_punctuation(&_r, String::from_string_slice(_r.page, ")"));
@@ -2626,10 +2423,8 @@ impl Parser {
         }
 
         let iteration = self.parse_loop(&_r, _rp, _ep)?;
-        match iteration {
-            None =>
-                return Err(Ref::new(_ep, ParserError { file_name: String::copy(_ep, self.file_name), line: self.lexer.line, column: self.lexer.column })),
-            Some(_) => ()
+        if let None = iteration {
+            return Err(Ref::new(_ep, ParserError { file_name: String::copy(_ep, self.file_name), line: self.lexer.line, column: self.lexer.column }))
         }
 
         let end: Position = self.lexer.get_position();
@@ -2658,15 +2453,12 @@ impl Parser {
 
         let success_do_1 = self.lexer.parse_keyword(&_r, String::from_string_slice(_r.page, "do"));
         if !success_do_1 {
-
             return Ok(None)
         }
 
         let iteration = self.parse_loop(&_r, _rp, _ep)?;
-        match iteration {
-            None =>
-                return Err(Ref::new(_ep, ParserError { file_name: String::copy(_ep, self.file_name), line: self.lexer.line, column: self.lexer.column })),
-            Some(_) => ()
+        if let None = iteration {
+            return Err(Ref::new(_ep, ParserError { file_name: String::copy(_ep, self.file_name), line: self.lexer.line, column: self.lexer.column }))
         }
 
         let success_while_3 = self.lexer.parse_keyword(&_r, String::from_string_slice(_r.page, "while"));
@@ -2696,10 +2488,8 @@ impl Parser {
         }
 
         let condition = self.parse_operation(&_r, _rp, _ep)?;
-        match condition {
-            None =>
-                return Err(Ref::new(_ep, ParserError { file_name: String::copy(_ep, self.file_name), line: self.lexer.line, column: self.lexer.column })),
-            Some(_) => ()
+        if let None = condition {
+            return Err(Ref::new(_ep, ParserError { file_name: String::copy(_ep, self.file_name), line: self.lexer.line, column: self.lexer.column }))
         }
 
         let success_right_paren_6 = self.lexer.parse_punctuation(&_r, String::from_string_slice(_r.page, ")"));
@@ -2739,20 +2529,17 @@ impl Parser {
 
         {
             let node = self.parse_simpleloop(&_r, _rp, _ep)?;
-            match node {
-                Some(it) => return Ok(Some(Ref::new(_rp, LoopSyntax::SimpleLoop(*it)))),
-                None => ()
+            if let Some(node) = node {
+                return Ok(Some(Ref::new(_rp, LoopSyntax::SimpleLoop(*node))))
             }
         }
 
         {
             let node = self.parse_namedloop(&_r, _rp, _ep)?;
-            match node {
-                Some(it) => return Ok(Some(Ref::new(_rp, LoopSyntax::NamedLoop(*it)))),
-                None => ()
+            if let Some(node) = node {
+                return Ok(Some(Ref::new(_rp, LoopSyntax::NamedLoop(*node))))
             }
         }
-
         return Ok(None)
     }
 
@@ -2767,10 +2554,8 @@ impl Parser {
         let start: Position = self.lexer.get_previous_position();
 
         let code = self.parse_block(&_r, _rp, _ep)?;
-        match code {
-            None =>
-                return Ok(None),
-            Some(_) => ()
+        if let None = code {
+            return Ok(None)
         }
 
         let end: Position = self.lexer.get_position();
@@ -2794,13 +2579,12 @@ impl Parser {
 
         let success_loop_1 = self.lexer.parse_keyword(&_r, String::from_string_slice(_r.page, "loop"));
         if !success_loop_1 {
-
             return Ok(None)
         }
 
         let name = self.lexer.parse_identifier(&_r, _rp);
-        match name {
-            Some(name) => if !self.is_identifier(name) {
+        if let Some(name) = name {
+            if !self.is_identifier(name) {
 
             return Result::Err(Ref::new(
                 _ep,
@@ -2810,8 +2594,8 @@ impl Parser {
                     column: self.lexer.column,
                 },
             ))
-           },
-            None => 
+           }
+        } else {
             return Result::Err(Ref::new(
                 _ep,
                 ParserError {
@@ -2823,10 +2607,8 @@ impl Parser {
         }
 
         let code = self.parse_block(&_r, _rp, _ep)?;
-        match code {
-            None =>
-                return Err(Ref::new(_ep, ParserError { file_name: String::copy(_ep, self.file_name), line: self.lexer.line, column: self.lexer.column })),
-            Some(_) => ()
+        if let None = code {
+            return Err(Ref::new(_ep, ParserError { file_name: String::copy(_ep, self.file_name), line: self.lexer.line, column: self.lexer.column }))
         }
 
         let end: Position = self.lexer.get_position();
@@ -2850,7 +2632,6 @@ impl Parser {
 
         let success_this_1 = self.lexer.parse_keyword(&_r, String::from_string_slice(_r.page, "this"));
         if !success_this_1 {
-
             return Ok(None)
         }
 
@@ -2873,15 +2654,12 @@ impl Parser {
 
         let success_new_1 = self.lexer.parse_keyword(&_r, String::from_string_slice(_r.page, "new"));
         if !success_new_1 {
-
             return Ok(None)
         }
 
         let type_spec = self.parse_type(&_r, _rp, _ep)?;
-        match type_spec {
-            None =>
-                return Err(Ref::new(_ep, ParserError { file_name: String::copy(_ep, self.file_name), line: self.lexer.line, column: self.lexer.column })),
-            Some(_) => ()
+        if let None = type_spec {
+            return Err(Ref::new(_ep, ParserError { file_name: String::copy(_ep, self.file_name), line: self.lexer.line, column: self.lexer.column }))
         }
 
         let end: Position = self.lexer.get_position();
@@ -2905,7 +2683,6 @@ impl Parser {
 
         let success_left_paren_1 = self.lexer.parse_punctuation(&_r, String::from_string_slice(_r.page, "("));
         if !success_left_paren_1 {
-
             return Ok(None)
         }
 
@@ -2930,17 +2707,14 @@ impl Parser {
 
         let ret = Ref::new(_rp, ObjectSyntax { parent: None, start: start, end: end, first_op: first_op, additional_ops: additional_ops });
 
-        match first_op {
-            Some(mut x) => 
-                x.parent = Some(ParentNode::Object(ret)),
-            None => ()
+        if let Some(mut x) = first_op {
+            x.parent = Some(ParentNode::Object(ret))
         }
 
-        match additional_ops {
-            Some(mut x) => for item in x.iter_mut() {
+        if let Some(mut additional_ops) = additional_ops {
+            for item in additional_ops.iter_mut() {
                 item.parent = Some(ParentNode::Object(ret));
             }
-            None => ()
         }
 
         Ok(Some(ret))
@@ -2958,7 +2732,6 @@ impl Parser {
 
         let success_left_bracket_1 = self.lexer.parse_punctuation(&_r, String::from_string_slice(_r.page, "["));
         if !success_left_bracket_1 {
-
             return Ok(None)
         }
 
@@ -2983,17 +2756,14 @@ impl Parser {
 
         let ret = Ref::new(_rp, ArraySyntax { parent: None, start: start, end: end, first_op: first_op, additional_ops: additional_ops });
 
-        match first_op {
-            Some(mut x) => 
-                x.parent = Some(ParentNode::Array(ret)),
-            None => ()
+        if let Some(mut x) = first_op {
+            x.parent = Some(ParentNode::Array(ret))
         }
 
-        match additional_ops {
-            Some(mut x) => for item in x.iter_mut() {
+        if let Some(mut additional_ops) = additional_ops {
+            for item in additional_ops.iter_mut() {
                 item.parent = Some(ParentNode::Array(ret));
             }
-            None => ()
         }
 
         Ok(Some(ret))
@@ -3009,21 +2779,20 @@ impl Parser {
         let mut ret: Option<Ref<Array<Ref<ItemSyntax>>>> = Option::None;
         loop {
             let node = self.parse_item(&_r, _rp, _ep)?;
-            match node {
-                None => break,
-                Some(node) => {
-                    match ret {
-                        None => ret = Some(Ref::new(_rp, Array::new())),
-                        Some(_) => (),
-                    };
-                    ret.unwrap().add(node);
-                }
+            if let Some(node) = node {
+                if let None = ret {
+                    ret = Some(Ref::new(_rp, Array::new()))
+                };
+                ret.unwrap().add(node);
+            } else {
+                break;
             }
         }
 
-        match ret {
-            Some(ret) => Ok(Some(Ref::new(_rp, Vector::from_array(_rp, ret)))),
-            None => Ok(None),
+        if let Some(ret) = ret {
+            Ok(Some(Ref::new(_rp, Vector::from_array(_rp, ret))))
+        } else {
+            Ok(None)
         }
     }
 
@@ -3039,15 +2808,12 @@ impl Parser {
 
         let success_comma_1 = self.lexer.parse_punctuation(&_r, String::from_string_slice(_r.page, ","));
         if !success_comma_1 {
-
             return Ok(None)
         }
 
         let operation = self.parse_operation(&_r, _rp, _ep)?;
-        match operation {
-            None =>
-                return Err(Ref::new(_ep, ParserError { file_name: String::copy(_ep, self.file_name), line: self.lexer.line, column: self.lexer.column })),
-            Some(_) => ()
+        if let None = operation {
+            return Err(Ref::new(_ep, ParserError { file_name: String::copy(_ep, self.file_name), line: self.lexer.line, column: self.lexer.column }))
         }
 
         let end: Position = self.lexer.get_position();
@@ -3071,15 +2837,12 @@ impl Parser {
 
         let success_sizeof_1 = self.lexer.parse_keyword(&_r, String::from_string_slice(_r.page, "sizeof"));
         if !success_sizeof_1 {
-
             return Ok(None)
         }
 
         let type_spec = self.parse_type(&_r, _rp, _ep)?;
-        match type_spec {
-            None =>
-                return Err(Ref::new(_ep, ParserError { file_name: String::copy(_ep, self.file_name), line: self.lexer.line, column: self.lexer.column })),
-            Some(_) => ()
+        if let None = type_spec {
+            return Err(Ref::new(_ep, ParserError { file_name: String::copy(_ep, self.file_name), line: self.lexer.line, column: self.lexer.column }))
         }
 
         let end: Position = self.lexer.get_position();
@@ -3103,17 +2866,16 @@ impl Parser {
 
         let success_break_1 = self.lexer.parse_keyword(&_r, String::from_string_slice(_r.page, "break"));
         if !success_break_1 {
-
             return Ok(None)
         }
 
         let iteration = self.lexer.parse_identifier(&_r, _rp);
-        match iteration {
-            Some(iteration) => if !self.is_identifier(iteration) {
+        if let Some(iteration) = iteration {
+            if !self.is_identifier(iteration) {
 
             ()
-           },
-            None => 
+           }
+        } else {
             ()
         }
 
@@ -3142,17 +2904,16 @@ impl Parser {
 
         let success_continue_1 = self.lexer.parse_keyword(&_r, String::from_string_slice(_r.page, "continue"));
         if !success_continue_1 {
-
             return Ok(None)
         }
 
         let iteration = self.lexer.parse_identifier(&_r, _rp);
-        match iteration {
-            Some(iteration) => if !self.is_identifier(iteration) {
+        if let Some(iteration) = iteration {
+            if !self.is_identifier(iteration) {
 
             ()
-           },
-            None => 
+           }
+        } else {
             ()
         }
 
@@ -3181,7 +2942,6 @@ impl Parser {
 
         let success_return_1 = self.lexer.parse_keyword(&_r, String::from_string_slice(_r.page, "return"));
         if !success_return_1 {
-
             return Ok(None)
         }
 
@@ -3191,10 +2951,8 @@ impl Parser {
 
         let ret = Ref::new(_rp, ReturnSyntax { parent: None, start: start, end: end, result: result });
 
-        match result {
-            Some(mut x) => 
-                x.parent = Some(ParentNode::Return(ret)),
-            None => ()
+        if let Some(mut x) = result {
+            x.parent = Some(ParentNode::Return(ret))
         }
 
         Ok(Some(ret))
@@ -3212,15 +2970,12 @@ impl Parser {
 
         let success_throw_1 = self.lexer.parse_keyword(&_r, String::from_string_slice(_r.page, "throw"));
         if !success_throw_1 {
-
             return Ok(None)
         }
 
         let exception = self.parse_calculation(&_r, _rp, _ep)?;
-        match exception {
-            None =>
-                return Err(Ref::new(_ep, ParserError { file_name: String::copy(_ep, self.file_name), line: self.lexer.line, column: self.lexer.column })),
-            Some(_) => ()
+        if let None = exception {
+            return Err(Ref::new(_ep, ParserError { file_name: String::copy(_ep, self.file_name), line: self.lexer.line, column: self.lexer.column }))
         }
 
         let end: Position = self.lexer.get_position();
@@ -3244,15 +2999,12 @@ impl Parser {
 
         let success_class_1 = self.lexer.parse_keyword(&_r, String::from_string_slice(_r.page, "class"));
         if !success_class_1 {
-
             return Ok(None)
         }
 
         let name = self.parse_name(&_r, _rp, _ep)?;
-        match name {
-            None =>
-                return Err(Ref::new(_ep, ParserError { file_name: String::copy(_ep, self.file_name), line: self.lexer.line, column: self.lexer.column })),
-            Some(_) => ()
+        if let None = name {
+            return Err(Ref::new(_ep, ParserError { file_name: String::copy(_ep, self.file_name), line: self.lexer.line, column: self.lexer.column }))
         }
 
         let generics = self.parse_genericparameters(&_r, _rp, _ep)?;
@@ -3269,28 +3021,20 @@ impl Parser {
 
         name.unwrap().parent = Some(ParentNode::Class(ret));
 
-        match generics {
-            Some(mut x) => 
-                x.parent = Some(ParentNode::Class(ret)),
-            None => ()
+        if let Some(mut x) = generics {
+            x.parent = Some(ParentNode::Class(ret))
         }
 
-        match base_class {
-            Some(mut x) => 
-                x.parent = Some(ParentNode::Class(ret)),
-            None => ()
+        if let Some(mut x) = base_class {
+            x.parent = Some(ParentNode::Class(ret))
         }
 
-        match contents {
-            Some(mut x) => 
-                x.parent = Some(ParentNode::Class(ret)),
-            None => ()
+        if let Some(mut x) = contents {
+            x.parent = Some(ParentNode::Class(ret))
         }
 
-        match body {
-            Some(mut x) => 
-                x.parent = Some(ParentNode::Class(ret)),
-            None => ()
+        if let Some(mut x) = body {
+            x.parent = Some(ParentNode::Class(ret))
         }
 
         Ok(Some(ret))
@@ -3308,13 +3052,12 @@ impl Parser {
 
         let success_left_bracket_1 = self.lexer.parse_punctuation(&_r, String::from_string_slice(_r.page, "["));
         if !success_left_bracket_1 {
-
             return Ok(None)
         }
 
         let name = self.lexer.parse_identifier(&_r, _rp);
-        match name {
-            Some(name) => if !self.is_identifier(name) {
+        if let Some(name) = name {
+            if !self.is_identifier(name) {
 
             return Result::Err(Ref::new(
                 _ep,
@@ -3324,8 +3067,8 @@ impl Parser {
                     column: self.lexer.column,
                 },
             ))
-           },
-            None => 
+           }
+        } else {
             return Result::Err(Ref::new(
                 _ep,
                 ParserError {
@@ -3355,11 +3098,10 @@ impl Parser {
 
         let ret = Ref::new(_rp, GenericParametersSyntax { parent: None, start: start, end: end, name: name.unwrap(), additional_generics: additional_generics });
 
-        match additional_generics {
-            Some(mut x) => for item in x.iter_mut() {
+        if let Some(mut additional_generics) = additional_generics {
+            for item in additional_generics.iter_mut() {
                 item.parent = Some(ParentNode::GenericParameters(ret));
             }
-            None => ()
         }
 
         Ok(Some(ret))
@@ -3375,21 +3117,20 @@ impl Parser {
         let mut ret: Option<Ref<Array<Ref<GenericParameterSyntax>>>> = Option::None;
         loop {
             let node = self.parse_genericparameter(&_r, _rp, _ep)?;
-            match node {
-                None => break,
-                Some(node) => {
-                    match ret {
-                        None => ret = Some(Ref::new(_rp, Array::new())),
-                        Some(_) => (),
-                    };
-                    ret.unwrap().add(node);
-                }
+            if let Some(node) = node {
+                if let None = ret {
+                    ret = Some(Ref::new(_rp, Array::new()))
+                };
+                ret.unwrap().add(node);
+            } else {
+                break;
             }
         }
 
-        match ret {
-            Some(ret) => Ok(Some(Ref::new(_rp, Vector::from_array(_rp, ret)))),
-            None => Ok(None),
+        if let Some(ret) = ret {
+            Ok(Some(Ref::new(_rp, Vector::from_array(_rp, ret))))
+        } else {
+            Ok(None)
         }
     }
 
@@ -3405,13 +3146,12 @@ impl Parser {
 
         let success_comma_1 = self.lexer.parse_punctuation(&_r, String::from_string_slice(_r.page, ","));
         if !success_comma_1 {
-
             return Ok(None)
         }
 
         let name = self.lexer.parse_identifier(&_r, _rp);
-        match name {
-            Some(name) => if !self.is_identifier(name) {
+        if let Some(name) = name {
+            if !self.is_identifier(name) {
 
             return Result::Err(Ref::new(
                 _ep,
@@ -3421,8 +3161,8 @@ impl Parser {
                     column: self.lexer.column,
                 },
             ))
-           },
-            None => 
+           }
+        } else {
             return Result::Err(Ref::new(
                 _ep,
                 ParserError {
@@ -3452,15 +3192,12 @@ impl Parser {
 
         let success_extends_1 = self.lexer.parse_keyword(&_r, String::from_string_slice(_r.page, "extends"));
         if !success_extends_1 {
-
             return Ok(None)
         }
 
         let name = self.parse_name(&_r, _rp, _ep)?;
-        match name {
-            None =>
-                return Err(Ref::new(_ep, ParserError { file_name: String::copy(_ep, self.file_name), line: self.lexer.line, column: self.lexer.column })),
-            Some(_) => ()
+        if let None = name {
+            return Err(Ref::new(_ep, ParserError { file_name: String::copy(_ep, self.file_name), line: self.lexer.line, column: self.lexer.column }))
         }
 
         let end: Position = self.lexer.get_position();
@@ -3484,7 +3221,6 @@ impl Parser {
 
         let success_left_paren_1 = self.lexer.parse_punctuation(&_r, String::from_string_slice(_r.page, "("));
         if !success_left_paren_1 {
-
             return Ok(None)
         }
 
@@ -3507,11 +3243,10 @@ impl Parser {
 
         let ret = Ref::new(_rp, StructureSyntax { parent: None, start: start, end: end, components: components });
 
-        match components {
-            Some(mut x) => for item in x.iter_mut() {
+        if let Some(mut components) = components {
+            for item in components.iter_mut() {
                 item.parent = Some(ParentNode::Structure(ret));
             }
-            None => ()
         }
 
         Ok(Some(ret))
@@ -3527,21 +3262,20 @@ impl Parser {
         let mut ret: Option<Ref<Array<Ref<ComponentSyntax>>>> = Option::None;
         loop {
             let node = self.parse_component(&_r, _rp, _ep)?;
-            match node {
-                None => break,
-                Some(node) => {
-                    match ret {
-                        None => ret = Some(Ref::new(_rp, Array::new())),
-                        Some(_) => (),
-                    };
-                    ret.unwrap().add(node);
-                }
+            if let Some(node) = node {
+                if let None = ret {
+                    ret = Some(Ref::new(_rp, Array::new()))
+                };
+                ret.unwrap().add(node);
+            } else {
+                break;
             }
         }
 
-        match ret {
-            Some(ret) => Ok(Some(Ref::new(_rp, Vector::from_array(_rp, ret)))),
-            None => Ok(None),
+        if let Some(ret) = ret {
+            Ok(Some(Ref::new(_rp, Vector::from_array(_rp, ret))))
+        } else {
+            Ok(None)
         }
     }
 
@@ -3556,13 +3290,11 @@ impl Parser {
         let start: Position = self.lexer.get_previous_position();
 
         let name = self.lexer.parse_identifier(&_r, _rp);
-        match name {
-            Some(name) => if !self.is_identifier(name) {
-
+        if let Some(name) = name {
+            if !self.is_identifier(name) {
             return Ok(None)
-           },
-            None => 
-            return Ok(None)
+           }
+        } else {            return Ok(None)
         }
 
         let type_annotation = self.parse_typeannotation(&_r, _rp, _ep)?;
@@ -3577,10 +3309,8 @@ impl Parser {
 
         let ret = Ref::new(_rp, ComponentSyntax { parent: None, start: start, end: end, name: name.unwrap(), type_annotation: type_annotation });
 
-        match type_annotation {
-            Some(mut x) => 
-                x.parent = Some(ParentNode::Component(ret)),
-            None => ()
+        if let Some(mut x) = type_annotation {
+            x.parent = Some(ParentNode::Component(ret))
         }
 
         Ok(Some(ret))
@@ -3598,7 +3328,6 @@ impl Parser {
 
         let success_left_curly_1 = self.lexer.parse_punctuation(&_r, String::from_string_slice(_r.page, "{"));
         if !success_left_curly_1 {
-
             return Ok(None)
         }
 
@@ -3621,8 +3350,8 @@ impl Parser {
 
         let ret = Ref::new(_rp, ClassBodySyntax { parent: None, start: start, end: end, members: members });
 
-        match members {
-            Some(mut x) => for item in x.iter_mut() {
+        if let Some(mut members) = members {
+            for item in members.iter_mut() {
                 match **item {
                     ClassMemberSyntax::LetMember(mut y) => y.parent = Some(ParentNode::ClassBody(ret)),
                     ClassMemberSyntax::VarMember(mut y) => y.parent = Some(ParentNode::ClassBody(ret)),
@@ -3635,7 +3364,6 @@ impl Parser {
                     ClassMemberSyntax::Allocator(mut y) => y.parent = Some(ParentNode::ClassBody(ret)),
                 }
             }
-            None => ()
         }
 
         Ok(Some(ret))
@@ -3651,21 +3379,20 @@ impl Parser {
         let mut ret: Option<Ref<Array<Ref<ClassMemberSyntax>>>> = Option::None;
         loop {
             let node = self.parse_classmember(&_r, _rp, _ep)?;
-            match node {
-                None => break,
-                Some(node) => {
-                    match ret {
-                        None => ret = Some(Ref::new(_rp, Array::new())),
-                        Some(_) => (),
-                    };
-                    ret.unwrap().add(node);
-                }
+            if let Some(node) = node {
+                if let None = ret {
+                    ret = Some(Ref::new(_rp, Array::new()))
+                };
+                ret.unwrap().add(node);
+            } else {
+                break;
             }
         }
 
-        match ret {
-            Some(ret) => Ok(Some(Ref::new(_rp, Vector::from_array(_rp, ret)))),
-            None => Ok(None),
+        if let Some(ret) = ret {
+            Ok(Some(Ref::new(_rp, Vector::from_array(_rp, ret))))
+        } else {
+            Ok(None)
         }
     }
 
@@ -3679,76 +3406,66 @@ impl Parser {
 
         {
             let node = self.parse_letmember(&_r, _rp, _ep)?;
-            match node {
-                Some(it) => return Ok(Some(Ref::new(_rp, ClassMemberSyntax::LetMember(*it)))),
-                None => ()
+            if let Some(node) = node {
+                return Ok(Some(Ref::new(_rp, ClassMemberSyntax::LetMember(*node))))
             }
         }
 
         {
             let node = self.parse_varmember(&_r, _rp, _ep)?;
-            match node {
-                Some(it) => return Ok(Some(Ref::new(_rp, ClassMemberSyntax::VarMember(*it)))),
-                None => ()
+            if let Some(node) = node {
+                return Ok(Some(Ref::new(_rp, ClassMemberSyntax::VarMember(*node))))
             }
         }
 
         {
             let node = self.parse_mutablemember(&_r, _rp, _ep)?;
-            match node {
-                Some(it) => return Ok(Some(Ref::new(_rp, ClassMemberSyntax::MutableMember(*it)))),
-                None => ()
+            if let Some(node) = node {
+                return Ok(Some(Ref::new(_rp, ClassMemberSyntax::MutableMember(*node))))
             }
         }
 
         {
             let node = self.parse_setinitialization(&_r, _rp, _ep)?;
-            match node {
-                Some(it) => return Ok(Some(Ref::new(_rp, ClassMemberSyntax::SetInitialization(*it)))),
-                None => ()
+            if let Some(node) = node {
+                return Ok(Some(Ref::new(_rp, ClassMemberSyntax::SetInitialization(*node))))
             }
         }
 
         {
             let node = self.parse_method(&_r, _rp, _ep)?;
-            match node {
-                Some(it) => return Ok(Some(Ref::new(_rp, ClassMemberSyntax::Method(*it)))),
-                None => ()
+            if let Some(node) = node {
+                return Ok(Some(Ref::new(_rp, ClassMemberSyntax::Method(*node))))
             }
         }
 
         {
             let node = self.parse_staticfunction(&_r, _rp, _ep)?;
-            match node {
-                Some(it) => return Ok(Some(Ref::new(_rp, ClassMemberSyntax::StaticFunction(*it)))),
-                None => ()
+            if let Some(node) = node {
+                return Ok(Some(Ref::new(_rp, ClassMemberSyntax::StaticFunction(*node))))
             }
         }
 
         {
             let node = self.parse_operator(&_r, _rp, _ep)?;
-            match node {
-                Some(it) => return Ok(Some(Ref::new(_rp, ClassMemberSyntax::Operator(*it)))),
-                None => ()
+            if let Some(node) = node {
+                return Ok(Some(Ref::new(_rp, ClassMemberSyntax::Operator(*node))))
             }
         }
 
         {
             let node = self.parse_initializer(&_r, _rp, _ep)?;
-            match node {
-                Some(it) => return Ok(Some(Ref::new(_rp, ClassMemberSyntax::Initializer(*it)))),
-                None => ()
+            if let Some(node) = node {
+                return Ok(Some(Ref::new(_rp, ClassMemberSyntax::Initializer(*node))))
             }
         }
 
         {
             let node = self.parse_allocator(&_r, _rp, _ep)?;
-            match node {
-                Some(it) => return Ok(Some(Ref::new(_rp, ClassMemberSyntax::Allocator(*it)))),
-                None => ()
+            if let Some(node) = node {
+                return Ok(Some(Ref::new(_rp, ClassMemberSyntax::Allocator(*node))))
             }
         }
-
         return Ok(None)
     }
 
@@ -3763,10 +3480,8 @@ impl Parser {
         let start: Position = self.lexer.get_previous_position();
 
         let declaration = self.parse_let(&_r, _rp, _ep)?;
-        match declaration {
-            None =>
-                return Ok(None),
-            Some(_) => ()
+        if let None = declaration {
+            return Ok(None)
         }
 
         let end: Position = self.lexer.get_position();
@@ -3789,10 +3504,8 @@ impl Parser {
         let start: Position = self.lexer.get_previous_position();
 
         let declaration = self.parse_var(&_r, _rp, _ep)?;
-        match declaration {
-            None =>
-                return Ok(None),
-            Some(_) => ()
+        if let None = declaration {
+            return Ok(None)
         }
 
         let end: Position = self.lexer.get_position();
@@ -3815,10 +3528,8 @@ impl Parser {
         let start: Position = self.lexer.get_previous_position();
 
         let declaration = self.parse_mutable(&_r, _rp, _ep)?;
-        match declaration {
-            None =>
-                return Ok(None),
-            Some(_) => ()
+        if let None = declaration {
+            return Ok(None)
         }
 
         let end: Position = self.lexer.get_position();
@@ -3841,10 +3552,8 @@ impl Parser {
         let start: Position = self.lexer.get_previous_position();
 
         let definition = self.parse_set(&_r, _rp, _ep)?;
-        match definition {
-            None =>
-                return Ok(None),
-            Some(_) => ()
+        if let None = definition {
+            return Ok(None)
         }
 
         let end: Position = self.lexer.get_position();
@@ -3868,15 +3577,12 @@ impl Parser {
 
         let success_method_1 = self.lexer.parse_keyword(&_r, String::from_string_slice(_r.page, "method"));
         if !success_method_1 {
-
             return Ok(None)
         }
 
         let procedure = self.parse_procedure(&_r, _rp, _ep)?;
-        match procedure {
-            None =>
-                return Err(Ref::new(_ep, ParserError { file_name: String::copy(_ep, self.file_name), line: self.lexer.line, column: self.lexer.column })),
-            Some(_) => ()
+        if let None = procedure {
+            return Err(Ref::new(_ep, ParserError { file_name: String::copy(_ep, self.file_name), line: self.lexer.line, column: self.lexer.column }))
         }
 
         let end: Position = self.lexer.get_position();
@@ -3899,10 +3605,8 @@ impl Parser {
         let start: Position = self.lexer.get_previous_position();
 
         let procedure = self.parse_function(&_r, _rp, _ep)?;
-        match procedure {
-            None =>
-                return Ok(None),
-            Some(_) => ()
+        if let None = procedure {
+            return Ok(None)
         }
 
         let end: Position = self.lexer.get_position();
@@ -3926,15 +3630,12 @@ impl Parser {
 
         let success_operator_1 = self.lexer.parse_keyword(&_r, String::from_string_slice(_r.page, "operator"));
         if !success_operator_1 {
-
             return Ok(None)
         }
 
         let routine = self.parse_routine(&_r, _rp, _ep)?;
-        match routine {
-            None =>
-                return Err(Ref::new(_ep, ParserError { file_name: String::copy(_ep, self.file_name), line: self.lexer.line, column: self.lexer.column })),
-            Some(_) => ()
+        if let None = routine {
+            return Err(Ref::new(_ep, ParserError { file_name: String::copy(_ep, self.file_name), line: self.lexer.line, column: self.lexer.column }))
         }
 
         let end: Position = self.lexer.get_position();
@@ -3958,27 +3659,22 @@ impl Parser {
 
         let success_initializer_1 = self.lexer.parse_keyword(&_r, String::from_string_slice(_r.page, "initializer"));
         if !success_initializer_1 {
-
             return Ok(None)
         }
 
         let input = self.parse_structure(&_r, _rp, _ep)?;
 
         let body = self.parse_block(&_r, _rp, _ep)?;
-        match body {
-            None =>
-                return Err(Ref::new(_ep, ParserError { file_name: String::copy(_ep, self.file_name), line: self.lexer.line, column: self.lexer.column })),
-            Some(_) => ()
+        if let None = body {
+            return Err(Ref::new(_ep, ParserError { file_name: String::copy(_ep, self.file_name), line: self.lexer.line, column: self.lexer.column }))
         }
 
         let end: Position = self.lexer.get_position();
 
         let ret = Ref::new(_rp, InitializerSyntax { parent: None, start: start, end: end, input: input, body: body.unwrap() });
 
-        match input {
-            Some(mut x) => 
-                x.parent = Some(ParentNode::Initializer(ret)),
-            None => ()
+        if let Some(mut x) = input {
+            x.parent = Some(ParentNode::Initializer(ret))
         }
 
         body.unwrap().parent = Some(ParentNode::Initializer(ret));
@@ -3998,27 +3694,22 @@ impl Parser {
 
         let success_allocator_1 = self.lexer.parse_keyword(&_r, String::from_string_slice(_r.page, "allocator"));
         if !success_allocator_1 {
-
             return Ok(None)
         }
 
         let input = self.parse_structure(&_r, _rp, _ep)?;
 
         let body = self.parse_block(&_r, _rp, _ep)?;
-        match body {
-            None =>
-                return Err(Ref::new(_ep, ParserError { file_name: String::copy(_ep, self.file_name), line: self.lexer.line, column: self.lexer.column })),
-            Some(_) => ()
+        if let None = body {
+            return Err(Ref::new(_ep, ParserError { file_name: String::copy(_ep, self.file_name), line: self.lexer.line, column: self.lexer.column }))
         }
 
         let end: Position = self.lexer.get_position();
 
         let ret = Ref::new(_rp, AllocatorSyntax { parent: None, start: start, end: end, input: input, body: body.unwrap() });
 
-        match input {
-            Some(mut x) => 
-                x.parent = Some(ParentNode::Allocator(ret)),
-            None => ()
+        if let Some(mut x) = input {
+            x.parent = Some(ParentNode::Allocator(ret))
         }
 
         body.unwrap().parent = Some(ParentNode::Allocator(ret));
@@ -4038,15 +3729,12 @@ impl Parser {
 
         let success_colon_1 = self.lexer.parse_punctuation(&_r, String::from_string_slice(_r.page, ":"));
         if !success_colon_1 {
-
             return Ok(None)
         }
 
         let type_spec = self.parse_typespec(&_r, _rp, _ep)?;
-        match type_spec {
-            None =>
-                return Err(Ref::new(_ep, ParserError { file_name: String::copy(_ep, self.file_name), line: self.lexer.line, column: self.lexer.column })),
-            Some(_) => ()
+        if let None = type_spec {
+            return Err(Ref::new(_ep, ParserError { file_name: String::copy(_ep, self.file_name), line: self.lexer.line, column: self.lexer.column }))
         }
 
         let end: Position = self.lexer.get_position();
@@ -4071,20 +3759,17 @@ impl Parser {
 
         {
             let node = self.parse_type(&_r, _rp, _ep)?;
-            match node {
-                Some(it) => return Ok(Some(Ref::new(_rp, TypeSpecSyntax::Type(*it)))),
-                None => ()
+            if let Some(node) = node {
+                return Ok(Some(Ref::new(_rp, TypeSpecSyntax::Type(*node))))
             }
         }
 
         {
             let node = self.parse_variant(&_r, _rp, _ep)?;
-            match node {
-                Some(it) => return Ok(Some(Ref::new(_rp, TypeSpecSyntax::Variant(*it)))),
-                None => ()
+            if let Some(node) = node {
+                return Ok(Some(Ref::new(_rp, TypeSpecSyntax::Variant(*node))))
             }
         }
-
         return Ok(None)
     }
 
@@ -4098,21 +3783,20 @@ impl Parser {
         let mut ret: Option<Ref<Array<Ref<TypeSyntax>>>> = Option::None;
         loop {
             let node = self.parse_type(&_r, _rp, _ep)?;
-            match node {
-                None => break,
-                Some(node) => {
-                    match ret {
-                        None => ret = Some(Ref::new(_rp, Array::new())),
-                        Some(_) => (),
-                    };
-                    ret.unwrap().add(node);
-                }
+            if let Some(node) = node {
+                if let None = ret {
+                    ret = Some(Ref::new(_rp, Array::new()))
+                };
+                ret.unwrap().add(node);
+            } else {
+                break;
             }
         }
 
-        match ret {
-            Some(ret) => Ok(Some(Ref::new(_rp, Vector::from_array(_rp, ret)))),
-            None => Ok(None),
+        if let Some(ret) = ret {
+            Ok(Some(Ref::new(_rp, Vector::from_array(_rp, ret))))
+        } else {
+            Ok(None)
         }
     }
 
@@ -4127,10 +3811,8 @@ impl Parser {
         let start: Position = self.lexer.get_previous_position();
 
         let name = self.parse_name(&_r, _rp, _ep)?;
-        match name {
-            None =>
-                return Ok(None),
-            Some(_) => ()
+        if let None = name {
+            return Ok(None)
         }
 
         let generics = self.parse_genericarguments(&_r, _rp, _ep)?;
@@ -4145,27 +3827,21 @@ impl Parser {
 
         name.unwrap().parent = Some(ParentNode::Type(ret));
 
-        match generics {
-            Some(mut x) => 
-                x.parent = Some(ParentNode::Type(ret)),
-            None => ()
+        if let Some(mut x) = generics {
+            x.parent = Some(ParentNode::Type(ret))
         }
 
-        match optional {
-            Some(mut x) => 
-                x.parent = Some(ParentNode::Type(ret)),
-            None => ()
+        if let Some(mut x) = optional {
+            x.parent = Some(ParentNode::Type(ret))
         }
 
-        match life_time {
-            Some(x) => 
-                match *x {
-                    LifeTimeSyntax::Root(mut y) => y.parent = Some(ParentNode::Type(ret)),
-                    LifeTimeSyntax::Local(mut y) => y.parent = Some(ParentNode::Type(ret)),
-                    LifeTimeSyntax::Reference(mut y) => y.parent = Some(ParentNode::Type(ret)),
-                    LifeTimeSyntax::Thrown(mut y) => y.parent = Some(ParentNode::Type(ret)),
-                },
-            None => ()
+        if let Some(x) = life_time {
+            match *x {
+                LifeTimeSyntax::Root(mut y) => y.parent = Some(ParentNode::Type(ret)),
+                LifeTimeSyntax::Local(mut y) => y.parent = Some(ParentNode::Type(ret)),
+                LifeTimeSyntax::Reference(mut y) => y.parent = Some(ParentNode::Type(ret)),
+                LifeTimeSyntax::Thrown(mut y) => y.parent = Some(ParentNode::Type(ret)),
+            }
         }
 
         Ok(Some(ret))
@@ -4183,7 +3859,6 @@ impl Parser {
 
         let success_left_paren_1 = self.lexer.parse_punctuation(&_r, String::from_string_slice(_r.page, "("));
         if !success_left_paren_1 {
-
             return Ok(None)
         }
 
@@ -4206,11 +3881,10 @@ impl Parser {
 
         let ret = Ref::new(_rp, VariantSyntax { parent: None, start: start, end: end, types: types });
 
-        match types {
-            Some(mut x) => for item in x.iter_mut() {
+        if let Some(mut types) = types {
+            for item in types.iter_mut() {
                 item.parent = Some(ParentNode::Variant(ret));
             }
-            None => ()
         }
 
         Ok(Some(ret))
@@ -4228,15 +3902,12 @@ impl Parser {
 
         let success_throws_1 = self.lexer.parse_keyword(&_r, String::from_string_slice(_r.page, "throws"));
         if !success_throws_1 {
-
             return Ok(None)
         }
 
         let throws_type = self.parse_typespec(&_r, _rp, _ep)?;
-        match throws_type {
-            None =>
-                return Err(Ref::new(_ep, ParserError { file_name: String::copy(_ep, self.file_name), line: self.lexer.line, column: self.lexer.column })),
-            Some(_) => ()
+        if let None = throws_type {
+            return Err(Ref::new(_ep, ParserError { file_name: String::copy(_ep, self.file_name), line: self.lexer.line, column: self.lexer.column }))
         }
 
         let end: Position = self.lexer.get_position();
@@ -4263,15 +3934,12 @@ impl Parser {
 
         let success_left_bracket_1 = self.lexer.parse_punctuation(&_r, String::from_string_slice(_r.page, "["));
         if !success_left_bracket_1 {
-
             return Ok(None)
         }
 
         let generic = self.parse_type(&_r, _rp, _ep)?;
-        match generic {
-            None =>
-                return Err(Ref::new(_ep, ParserError { file_name: String::copy(_ep, self.file_name), line: self.lexer.line, column: self.lexer.column })),
-            Some(_) => ()
+        if let None = generic {
+            return Err(Ref::new(_ep, ParserError { file_name: String::copy(_ep, self.file_name), line: self.lexer.line, column: self.lexer.column }))
         }
 
         let additional_generics = self.parse_genericargument_list(&_r, _rp, _ep)?;
@@ -4295,11 +3963,10 @@ impl Parser {
 
         generic.unwrap().parent = Some(ParentNode::GenericArguments(ret));
 
-        match additional_generics {
-            Some(mut x) => for item in x.iter_mut() {
+        if let Some(mut additional_generics) = additional_generics {
+            for item in additional_generics.iter_mut() {
                 item.parent = Some(ParentNode::GenericArguments(ret));
             }
-            None => ()
         }
 
         Ok(Some(ret))
@@ -4315,21 +3982,20 @@ impl Parser {
         let mut ret: Option<Ref<Array<Ref<GenericArgumentSyntax>>>> = Option::None;
         loop {
             let node = self.parse_genericargument(&_r, _rp, _ep)?;
-            match node {
-                None => break,
-                Some(node) => {
-                    match ret {
-                        None => ret = Some(Ref::new(_rp, Array::new())),
-                        Some(_) => (),
-                    };
-                    ret.unwrap().add(node);
-                }
+            if let Some(node) = node {
+                if let None = ret {
+                    ret = Some(Ref::new(_rp, Array::new()))
+                };
+                ret.unwrap().add(node);
+            } else {
+                break;
             }
         }
 
-        match ret {
-            Some(ret) => Ok(Some(Ref::new(_rp, Vector::from_array(_rp, ret)))),
-            None => Ok(None),
+        if let Some(ret) = ret {
+            Ok(Some(Ref::new(_rp, Vector::from_array(_rp, ret))))
+        } else {
+            Ok(None)
         }
     }
 
@@ -4345,15 +4011,12 @@ impl Parser {
 
         let success_comma_1 = self.lexer.parse_punctuation(&_r, String::from_string_slice(_r.page, ","));
         if !success_comma_1 {
-
             return Ok(None)
         }
 
         let type_spec = self.parse_type(&_r, _rp, _ep)?;
-        match type_spec {
-            None =>
-                return Err(Ref::new(_ep, ParserError { file_name: String::copy(_ep, self.file_name), line: self.lexer.line, column: self.lexer.column })),
-            Some(_) => ()
+        if let None = type_spec {
+            return Err(Ref::new(_ep, ParserError { file_name: String::copy(_ep, self.file_name), line: self.lexer.line, column: self.lexer.column }))
         }
 
         let end: Position = self.lexer.get_position();
@@ -4377,7 +4040,6 @@ impl Parser {
 
         let success_question_1 = self.lexer.parse_punctuation(&_r, String::from_string_slice(_r.page, "?"));
         if !success_question_1 {
-
             return Ok(None)
         }
 
@@ -4398,36 +4060,31 @@ impl Parser {
 
         {
             let node = self.parse_root(&_r, _rp, _ep)?;
-            match node {
-                Some(it) => return Ok(Some(Ref::new(_rp, LifeTimeSyntax::Root(*it)))),
-                None => ()
+            if let Some(node) = node {
+                return Ok(Some(Ref::new(_rp, LifeTimeSyntax::Root(*node))))
             }
         }
 
         {
             let node = self.parse_local(&_r, _rp, _ep)?;
-            match node {
-                Some(it) => return Ok(Some(Ref::new(_rp, LifeTimeSyntax::Local(*it)))),
-                None => ()
+            if let Some(node) = node {
+                return Ok(Some(Ref::new(_rp, LifeTimeSyntax::Local(*node))))
             }
         }
 
         {
             let node = self.parse_reference(&_r, _rp, _ep)?;
-            match node {
-                Some(it) => return Ok(Some(Ref::new(_rp, LifeTimeSyntax::Reference(*it)))),
-                None => ()
+            if let Some(node) = node {
+                return Ok(Some(Ref::new(_rp, LifeTimeSyntax::Reference(*node))))
             }
         }
 
         {
             let node = self.parse_thrown(&_r, _rp, _ep)?;
-            match node {
-                Some(it) => return Ok(Some(Ref::new(_rp, LifeTimeSyntax::Thrown(*it)))),
-                None => ()
+            if let Some(node) = node {
+                return Ok(Some(Ref::new(_rp, LifeTimeSyntax::Thrown(*node))))
             }
         }
-
         return Ok(None)
     }
 
@@ -4443,7 +4100,6 @@ impl Parser {
 
         let success_dollar_1 = self.lexer.parse_punctuation(&_r, String::from_string_slice(_r.page, "$"));
         if !success_dollar_1 {
-
             return Ok(None)
         }
 
@@ -4466,13 +4122,12 @@ impl Parser {
 
         let success_at_1 = self.lexer.parse_punctuation(&_r, String::from_string_slice(_r.page, "@"));
         if !success_at_1 {
-
             return Ok(None)
         }
 
         let location = self.lexer.parse_identifier(&_r, _rp);
-        match location {
-            Some(location) => if !self.is_identifier(location) {
+        if let Some(location) = location {
+            if !self.is_identifier(location) {
 
             return Result::Err(Ref::new(
                 _ep,
@@ -4482,8 +4137,8 @@ impl Parser {
                     column: self.lexer.column,
                 },
             ))
-           },
-            None => 
+           }
+        } else {
             return Result::Err(Ref::new(
                 _ep,
                 ParserError {
@@ -4513,15 +4168,12 @@ impl Parser {
 
         let success_backtick_1 = self.lexer.parse_punctuation(&_r, String::from_string_slice(_r.page, "`"));
         if !success_backtick_1 {
-
             return Ok(None)
         }
 
         let age = self.lexer.parse_literal(&_r, _rp);
-        match age {
-            None => 
+        if let None = age {
             ()
-,            _ => ()
         }
 
         let end: Position = self.lexer.get_position();
@@ -4543,7 +4195,6 @@ impl Parser {
 
         let success_hash_1 = self.lexer.parse_punctuation(&_r, String::from_string_slice(_r.page, "#"));
         if !success_hash_1 {
-
             return Ok(None)
         }
 
