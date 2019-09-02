@@ -1,7 +1,7 @@
 extern crate libc;
 
 use self::libc::{c_char, c_void};
-use self::libc::{memcmp, strlen};
+use self::libc::{memcmp, memcpy, strlen};
 use containers::hashset::hash;
 use containers::hashset::Equal;
 use containers::hashset::Hash;
@@ -78,18 +78,37 @@ impl String {
     }
 
     #[allow(unreachable_code)]
-    pub fn to_c_string(&self) -> *const c_char {
-        let mut length_pointer: *const u8 = self.data as *const u8;
+    pub fn to_c_string(&self, _rp: *mut Page) -> *const c_char {
+        let mut length: usize = 0;
+        let mut bit_count = 0;
+        let mut index: usize = 0;
         loop {
-            unsafe {
-                if (*length_pointer) < 127 {
-                    length_pointer = length_pointer.offset(1);
-                    return length_pointer as *const c_char;
-                }
-                length_pointer = length_pointer.offset(1);
+            if bit_count == PACKED_SIZE * 7 {
+                panic!("Bad string length.");
             }
+
+            let byte: u8 = unsafe { *(self.data.offset(index as isize)) };
+            length |= ((byte & 0x7F) as usize) << bit_count;
+            if (byte & 0x80) == 0 {
+                break;
+            }
+            bit_count += 7;
+            index += 1;
         }
-        self.data as *const c_char
+
+        unsafe {
+            let dest = (*_rp).allocate_raw(length + 1, 1);
+            memcpy(
+                dest as *mut c_void,
+                self.data.offset((index + 1) as isize) as *mut c_void,
+                length,
+            );
+
+            let zero = 0 as u8;
+            write(dest.offset((index + 1 + length) as isize), zero);
+
+            dest as *const c_char
+        }
     }
 
     pub fn from_string_slice(_rp: *mut Page, s: &str) -> String {
@@ -180,6 +199,8 @@ fn test_string() {
         assert_eq!(length, 12);
         let long_string = String::new(root_page, "1234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890");
         assert_eq!(long_string.get_length(), 130);
+        let c_string = long_string.to_c_string(root_page);
+        let _string_c = String::from_c_string(root_page, c_string);
 
         let semi = String::new(root_page, ";");
         let dot = String::new(root_page, ".");

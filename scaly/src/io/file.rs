@@ -5,14 +5,15 @@ use self::libc::{
 };
 use containers::{Ref, String};
 use io::{Disposable, IoError, Stream};
-use memory::Page;
+use memory::{Page, Region};
 use std::ptr::null_mut;
 
 pub struct File {}
 impl File {
-    pub fn open_read(_rp: *mut Page, path: String) -> Result<*mut Stream, IoError> {
+    pub fn open_read(_pr: &Region, _rp: *mut Page, path: String) -> Result<*mut Stream, IoError> {
+        let _r = Region::create(_pr);
         unsafe {
-            let file_path = path.to_c_string();
+            let file_path = path.to_c_string(_r.page);
             let file_descriptor = open(file_path, O_RDONLY);
             if file_descriptor == -1 {
                 return Err(IoError {
@@ -29,9 +30,10 @@ impl File {
         }
     }
 
-    pub fn open_write(_rp: *mut Page, path: String) -> Result<*mut Stream, IoError> {
+    pub fn open_write(_pr: &Region, _rp: *mut Page, path: String) -> Result<*mut Stream, IoError> {
+        let _r = Region::create(_pr);
         unsafe {
-            let file_path = path.to_c_string();
+            let file_path = path.to_c_string(_r.page);
             let file_descriptor = open(file_path, O_CREAT | O_TRUNC | O_WRONLY, 0o644);
             if file_descriptor == -1 {
                 return Err(IoError {
@@ -48,9 +50,10 @@ impl File {
         }
     }
 
-    pub fn delete(path: String) -> Result<(), IoError> {
+    pub fn delete(_pr: &Region, path: String) -> Result<(), IoError> {
+        let _r = Region::create(_pr);
         unsafe {
-            let file_path = path.to_c_string();
+            let file_path = path.to_c_string(_r.page);
             let ret = unlink(file_path);
             if ret == -1 {
                 return Err(IoError {
@@ -144,13 +147,16 @@ fn test_file() {
     let root_stack_bucket = StackBucket::create(&mut heap);
     {
         let root_page = Page::get(root_stack_bucket as usize);
+        let _r = Region::create_from_page(root_page);
         match File::open_read(
+            &_r,
             root_page,
             String::from_string_slice(root_page, "/tmp/0.scaly"),
         ) {
             Ok(file_in) => unsafe {
                 let _file_in_disposer = Disposer { stream: file_in };
                 match File::open_write(
+                    &_r,
                     root_page,
                     String::from_string_slice(root_page, "/tmp/1.scaly"),
                 ) {
@@ -173,7 +179,7 @@ fn test_file() {
             Err(_) => (),
         };
 
-        match File::delete(String::from_string_slice(root_page, "/tmp/1.scaly")) {
+        match File::delete(&_r, String::from_string_slice(root_page, "/tmp/1.scaly")) {
             Ok(_) => (),
             Err(_) => (),
         }

@@ -4,8 +4,7 @@ use self::libc::c_void;
 use self::libc::{__errno_location, read, write, STDIN_FILENO, STDOUT_FILENO};
 use containers::String;
 use io::{Disposable, IoError, Stream};
-use memory::region::Region;
-use memory::Page;
+use memory::{Page, Region};
 
 pub struct Console {}
 impl Console {
@@ -14,7 +13,7 @@ impl Console {
         unsafe {
             write(
                 STDOUT_FILENO,
-                s.to_c_string() as *const c_void,
+                s.to_c_string(_r.page) as *const c_void,
                 s.get_length(),
             );
         }
