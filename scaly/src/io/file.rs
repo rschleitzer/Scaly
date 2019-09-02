@@ -1,18 +1,54 @@
 extern crate libc;
-use self::libc::{c_int, c_void, close, open, read, write, O_RDONLY};
+use self::libc::{
+    __errno_location, c_int, c_void, close, open, read, unlink, write, O_CREAT, O_RDONLY, O_TRUNC,
+    O_WRONLY,
+};
 use containers::String;
-use io::{Disposable, Stream};
+use io::{Disposable, IoError, Stream};
 use memory::Page;
 
 pub struct File {}
 impl File {
-    pub fn open_read(_rp: *mut Page, path: String) -> *mut Stream {
+    pub fn open_read(_rp: *mut Page, path: String) -> Result<*mut Stream, IoError> {
         unsafe {
             let file_path = path.to_c_string();
             let file_descriptor = open(file_path, O_RDONLY);
-            (*_rp).allocate(FileStream {
+            if file_descriptor == -1 {
+                return Err(IoError {
+                    error_code: (*__errno_location() as i32),
+                });
+            }
+            Ok((*_rp).allocate(FileStream {
                 file_descriptor: file_descriptor,
-            })
+            }))
+        }
+    }
+
+    pub fn open_write(_rp: *mut Page, path: String) -> Result<*mut Stream, IoError> {
+        unsafe {
+            let file_path = path.to_c_string();
+            let file_descriptor = open(file_path, O_CREAT | O_TRUNC | O_WRONLY, 0o644);
+            if file_descriptor == -1 {
+                return Err(IoError {
+                    error_code: (*__errno_location() as i32),
+                });
+            }
+            Ok((*_rp).allocate(FileStream {
+                file_descriptor: file_descriptor,
+            }))
+        }
+    }
+
+    pub fn delete(path: String) -> Result<(), IoError> {
+        unsafe {
+            let file_path = path.to_c_string();
+            let ret = unlink(file_path);
+            if ret == -1 {
+                return Err(IoError {
+                    error_code: (*__errno_location() as i32),
+                });
+            };
+            Ok(())
         }
     }
 }
@@ -65,20 +101,34 @@ fn test_file() {
     let root_stack_bucket = StackBucket::create(&mut heap);
     {
         let root_page = Page::get(root_stack_bucket as usize);
-        let file = File::open_read(
+        match File::open_read(
             root_page,
             String::from_string_slice(root_page, "/tmp/0.scaly"),
-        );
-        let _file_disposer = Disposer { stream: file };
-        unsafe {
-            let byte1 = (*file).read_byte();
-            let byte2 = (*file).read_byte();
-            let byte3 = (*file).read_byte();
-            let byte4 = (*file).read_byte();
-            (*file).write_byte(byte1 as u8);
-            (*file).write_byte(byte2 as u8);
-            (*file).write_byte(byte3 as u8);
-            (*file).write_byte(byte4 as u8);
+        ) {
+            Ok(file_in) => unsafe {
+                let _file_in_disposer = Disposer { stream: file_in };
+                let byte1 = (*file_in).read_byte();
+                let byte2 = (*file_in).read_byte();
+                let byte3 = (*file_in).read_byte();
+                match File::open_write(
+                    root_page,
+                    String::from_string_slice(root_page, "/tmp/1.scaly"),
+                ) {
+                    Ok(file_out) => {
+                        let _file_out_disposer = Disposer { stream: file_out };
+                        (*file_out).write_byte(byte1 as u8);
+                        (*file_out).write_byte(byte2 as u8);
+                        (*file_out).write_byte(byte3 as u8);
+                    }
+                    Err(_) => (),
+                }
+            },
+            Err(_) => (),
+        };
+
+        match File::delete(String::from_string_slice(root_page, "/tmp/1.scaly")) {
+            Ok(_) => (),
+            Err(_) => (),
         }
     }
 }
