@@ -5,7 +5,7 @@ pub trait Disposable {
 }
 
 pub trait Stream: Disposable {
-    fn read_byte(&mut self) -> i32;
+    fn read_byte(&mut self) -> Result<i32, IoError>;
     fn write_byte(&mut self, u8) -> Result<(), IoError>;
 }
 

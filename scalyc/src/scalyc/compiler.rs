@@ -49,6 +49,16 @@ impl Compiler {
                     ),
                 );
                 let _file_syntax = parser.parse_statement(&_r_1, _r_1.page, _r_1.page);
+                // match parser.parse_statement(&_r_1, _r_1.page, _r_1.page) {
+                //     Ok(optional_statement) => {
+                //         if let Some(_statement) = optional_statement {
+
+                //         } else {
+                //             break;
+                //         }
+                //     }
+                //     Err(_) => break,
+                // }
             }
         }
     }

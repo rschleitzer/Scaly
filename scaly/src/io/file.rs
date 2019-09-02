@@ -82,7 +82,7 @@ impl Disposable for FileStream {
 }
 
 impl Stream for FileStream {
-    fn read_byte(&mut self) -> i32 {
+    fn read_byte(&mut self) -> Result<i32, IoError> {
         unsafe {
             if self.buffer == null_mut() {
                 let exclusive_page =
@@ -94,8 +94,13 @@ impl Stream for FileStream {
                     self.buffer as *mut c_void,
                     self.capacity,
                 );
+                if bytes_read == -1 {
+                    return Err(IoError {
+                        error_code: (*__errno_location() as i32),
+                    });
+                }
                 if bytes_read == 0 {
-                    return -1;
+                    return Ok(-1);
                 }
                 self.length = bytes_read as usize;
             }
@@ -106,8 +111,13 @@ impl Stream for FileStream {
                     self.buffer as *mut c_void,
                     self.capacity,
                 );
+                if bytes_read == -1 {
+                    return Err(IoError {
+                        error_code: (*__errno_location() as i32),
+                    });
+                }
                 if bytes_read == 0 {
-                    return -1;
+                    return Ok(-1);
                 }
                 self.length = bytes_read as usize;
                 self.position = 0;
@@ -115,7 +125,7 @@ impl Stream for FileStream {
 
             let the_byte = *(self.buffer.offset(self.position as isize));
             self.position += 1;
-            the_byte as i32
+            Ok(the_byte as i32)
         }
     }
 
@@ -163,13 +173,17 @@ fn test_file() {
                     Ok(file_out) => {
                         let _file_out_disposer = Disposer { stream: file_out };
                         loop {
-                            let the_byte = (*file_in).read_byte();
-                            if the_byte == -1 {
-                                break;
-                            }
-                            match (*file_out).write_byte(the_byte as u8) {
+                            match (*file_in).read_byte() {
+                                Ok(the_byte) => {
+                                    if the_byte == -1 {
+                                        break;
+                                    }
+                                    match (*file_out).write_byte(the_byte as u8) {
+                                        Err(_) => break,
+                                        Ok(_) => (),
+                                    }
+                                }
                                 Err(_) => break,
-                                Ok(_) => (),
                             }
                         }
                     }
