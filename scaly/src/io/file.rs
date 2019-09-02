@@ -1,7 +1,5 @@
 extern crate libc;
-
-use self::libc::{__errno_location, close, open, read, write, O_RDONLY};
-use self::libc::{c_int, c_void};
+use self::libc::{c_int, c_void, close, open, read, write, O_RDONLY};
 use containers::String;
 use io::{Disposable, Stream};
 use memory::Page;
@@ -35,12 +33,12 @@ impl Stream for FileStream {
     fn read_byte(&self) -> i32 {
         let mut the_byte: u8 = 0;
         unsafe {
-            read(
+            let bytes_read = read(
                 self.file_descriptor,
                 &mut the_byte as *mut u8 as *mut c_void,
                 1,
             );
-            if *__errno_location() != 0 {
+            if bytes_read == 0 {
                 return -1;
             }
         }
@@ -59,27 +57,28 @@ impl Stream for FileStream {
 }
 
 #[test]
-fn test_console() {
-    use io::Console;
-    use memory::region::Region;
+fn test_file() {
+    use io::stream::Disposer;
     use memory::Heap;
     use memory::StackBucket;
     let mut heap = Heap::create();
     let root_stack_bucket = StackBucket::create(&mut heap);
-    let r1 = Region::create_from_page(Page::get(root_stack_bucket as usize));
     {
         let root_page = Page::get(root_stack_bucket as usize);
-        let stdout = File::open_read(root_page, String::from_string_slice(root_page, "Scaly>"));
+        let file = File::open_read(
+            root_page,
+            String::from_string_slice(root_page, "/tmp/0.scaly"),
+        );
+        let _file_disposer = Disposer { stream: file };
         unsafe {
-            let byte1 = (*stdout).read_byte();
-            let byte2 = (*stdout).read_byte();
-            let byte3 = (*stdout).read_byte();
-            let stdout = Console::open_standard_output(root_page);
-            unsafe {
-                (*stdout).write_byte(byte1);
-                (*stdout).write_byte(byte2);
-                (*stdout).write_byte(byte3);
-            }
+            let byte1 = (*file).read_byte();
+            let byte2 = (*file).read_byte();
+            let byte3 = (*file).read_byte();
+            let byte4 = (*file).read_byte();
+            (*file).write_byte(byte1 as u8);
+            (*file).write_byte(byte2 as u8);
+            (*file).write_byte(byte3 as u8);
+            (*file).write_byte(byte4 as u8);
         }
     }
 }
