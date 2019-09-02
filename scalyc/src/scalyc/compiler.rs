@@ -1,5 +1,5 @@
 use scaly::containers::Ref;
-use scaly::io::Console;
+use scaly::io::{File, Console};
 use scaly::memory::Region;
 use scaly::Page;
 use scaly::String;
@@ -24,16 +24,22 @@ impl Compiler {
 
         for file in options.files.iter() {
             let _r_1 = Region::create(&_r);
-            let mut parser = Ref::new(
-                _r_1.page,
-                Parser::new(
-                    &_r_1,
-                    _r_1.page,
-                    *file,
-                    Console::open_standard_output(_r_1.page),
-                ),
-            );
-            let _file_syntax = parser.parse_file(&_r_1, _r_1.page, _r_1.page);
+            let file_result = File::open_read(_r_1.page, *file);
+            match file_result {
+                Ok(file_stream) => {
+                    let mut parser = Ref::new(
+                        _r_1.page,
+                        Parser::new(
+                            &_r_1,
+                            _r_1.page,
+                            *file,
+                            file_stream,
+                        ),
+                    );
+                    let _file_syntax = parser.parse_file(&_r_1, _r_1.page, _r_1.page);
+                },
+                Err(_) => continue
+            }
         }
 
         if let None = options.output_name {
