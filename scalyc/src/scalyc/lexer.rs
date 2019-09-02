@@ -39,12 +39,19 @@ impl Lexer {
     fn read_character(&mut self) {
         if self.character == 0 as char {
             unsafe {
-                let read_result: i32 = (*self.stream).read_byte();
-                if read_result == -1 {
-                    self.is_at_end = true;
-                    self.character = 0 as char;
-                } else {
-                    self.character = read_result as u8 as char;
+                match (*self.stream).read_byte() {
+                    Ok(read_result) => {
+                        if read_result == -1 {
+                            self.is_at_end = true;
+                            self.character = 0 as char;
+                        } else {
+                            self.character = read_result as u8 as char;
+                        }
+                    }
+                    Err(_) => {
+                        self.is_at_end = true;
+                        self.character = 0 as char;
+                    }
                 }
             }
         }
