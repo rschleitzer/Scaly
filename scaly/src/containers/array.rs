@@ -2,15 +2,11 @@ extern crate libc;
 
 use self::libc::c_void;
 use self::libc::memcpy;
-use containers::Vector;
-use containers::reference::Ref;
+use containers::{Ref, Vector};
 use memory::Page;
-use std::mem::align_of;
-use std::mem::size_of;
-use std::ops::Index;
-use std::ops::{Deref, DerefMut};
-use std::ptr::null_mut;
-use std::ptr::write;
+use std::mem::{align_of, size_of};
+use std::ops::{Deref, DerefMut, Index};
+use std::ptr::{null_mut, write};
 
 #[derive(Copy, Clone)]
 pub struct Array<T: Copy> {
@@ -37,6 +33,10 @@ impl<T: Copy> Array<T> {
         self.length
     }
 
+    pub fn get_capacity(&self) -> usize {
+        self.vector.length
+    }
+
     pub fn add(&mut self, item: T) {
         if self.length == self.vector.length {
             self.reallocate();
@@ -50,7 +50,7 @@ impl<T: Copy> Array<T> {
         self.length += 1;
     }
 
-    fn reallocate(&mut self) {
+    pub fn reallocate(&mut self) {
         let _own_page = Page::own(Ref::from(self as *mut Array<T>));
         let size = size_of::<T>();
         unsafe {

@@ -1,10 +1,12 @@
+use io::{IoError};
+
 pub trait Disposable {
     fn dispose(&self);
 }
 
 pub trait Stream: Disposable {
-    fn read_byte(&self) -> i32;
-    fn write_byte(&self, u8);
+    fn read_byte(&mut self) -> i32;
+    fn write_byte(&mut self, u8) -> Result<(), IoError>;
 }
 
 pub struct Disposer {

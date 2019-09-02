@@ -3,9 +3,10 @@ use self::libc::{
     __errno_location, c_int, c_void, close, open, read, unlink, write, O_CREAT, O_RDONLY, O_TRUNC,
     O_WRONLY,
 };
-use containers::String;
+use containers::{Ref, String};
 use io::{Disposable, IoError, Stream};
 use memory::Page;
+use std::ptr::null_mut;
 
 pub struct File {}
 impl File {
@@ -20,6 +21,10 @@ impl File {
             }
             Ok((*_rp).allocate(FileStream {
                 file_descriptor: file_descriptor,
+                buffer: null_mut(),
+                capacity: 0,
+                length: 0,
+                position: 0,
             }))
         }
     }
@@ -35,6 +40,10 @@ impl File {
             }
             Ok((*_rp).allocate(FileStream {
                 file_descriptor: file_descriptor,
+                buffer: null_mut(),
+                capacity: 0,
+                length: 0,
+                position: 0,
             }))
         }
     }
@@ -55,6 +64,10 @@ impl File {
 
 pub struct FileStream {
     file_descriptor: c_int,
+    buffer: *mut u8,
+    capacity: usize,
+    length: usize,
+    position: usize,
 }
 
 impl Disposable for FileStream {
@@ -66,28 +79,58 @@ impl Disposable for FileStream {
 }
 
 impl Stream for FileStream {
-    fn read_byte(&self) -> i32 {
-        let mut the_byte: u8 = 0;
+    fn read_byte(&mut self) -> i32 {
         unsafe {
-            let bytes_read = read(
-                self.file_descriptor,
-                &mut the_byte as *mut u8 as *mut c_void,
-                1,
-            );
-            if bytes_read == 0 {
-                return -1;
+            if self.buffer == null_mut() {
+                let exclusive_page =
+                    (*Page::own(Ref::from(self as *mut FileStream))).allocate_exclusive_page();
+                self.capacity = (*exclusive_page).get_capacity::<u8>();
+                self.buffer = (*exclusive_page).allocate_raw(self.capacity, 1) as *mut u8;
+                let bytes_read = read(
+                    self.file_descriptor,
+                    self.buffer as *mut c_void,
+                    self.capacity,
+                );
+                if bytes_read == 0 {
+                    return -1;
+                }
+                self.length = bytes_read as usize;
             }
+
+            if self.position == self.length {
+                let bytes_read = read(
+                    self.file_descriptor,
+                    self.buffer as *mut c_void,
+                    self.capacity,
+                );
+                if bytes_read == 0 {
+                    return -1;
+                }
+                self.length = bytes_read as usize;
+                self.position = 0;
+            }
+
+            let the_byte = *(self.buffer.offset(self.position as isize));
+            self.position += 1;
+            the_byte as i32
         }
-        the_byte as i32
     }
 
-    fn write_byte(&self, the_byte: u8) {
+    fn write_byte(&mut self, the_byte: u8) -> Result<(), IoError> {
         unsafe {
-            write(
+            let bytes_written = write(
                 self.file_descriptor,
                 &the_byte as *const u8 as *const c_void,
                 1,
             );
+
+            if bytes_written == 1 {
+                Ok(())
+            } else {
+                Err(IoError {
+                    error_code: (*__errno_location() as i32),
+                })
+            }
         }
     }
 }
@@ -107,18 +150,22 @@ fn test_file() {
         ) {
             Ok(file_in) => unsafe {
                 let _file_in_disposer = Disposer { stream: file_in };
-                let byte1 = (*file_in).read_byte();
-                let byte2 = (*file_in).read_byte();
-                let byte3 = (*file_in).read_byte();
                 match File::open_write(
                     root_page,
                     String::from_string_slice(root_page, "/tmp/1.scaly"),
                 ) {
                     Ok(file_out) => {
                         let _file_out_disposer = Disposer { stream: file_out };
-                        (*file_out).write_byte(byte1 as u8);
-                        (*file_out).write_byte(byte2 as u8);
-                        (*file_out).write_byte(byte3 as u8);
+                        loop {
+                            let the_byte = (*file_in).read_byte();
+                            if the_byte == -1 {
+                                break;
+                            }
+                            match (*file_out).write_byte(the_byte as u8) {
+                                Err(_) => break,
+                                Ok(_) => (),
+                            }
+                        }
                     }
                     Err(_) => (),
                 }

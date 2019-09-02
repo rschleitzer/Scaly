@@ -3,7 +3,7 @@ extern crate libc;
 use self::libc::c_void;
 use self::libc::{__errno_location, read, write, STDIN_FILENO, STDOUT_FILENO};
 use containers::String;
-use io::{Disposable, Stream};
+use io::{Disposable, IoError, Stream};
 use memory::region::Region;
 use memory::Page;
 
@@ -32,7 +32,7 @@ impl Disposable for ConsoleStream {
 }
 
 impl Stream for ConsoleStream {
-    fn read_byte(&self) -> i32 {
+    fn read_byte(&mut self) -> i32 {
         let mut the_byte: u8 = 0;
         unsafe {
             read(STDIN_FILENO, &mut the_byte as *mut u8 as *mut c_void, 1);
@@ -43,9 +43,22 @@ impl Stream for ConsoleStream {
         the_byte as i32
     }
 
-    fn write_byte(&self, the_byte: u8) {
+    fn write_byte(&mut self, the_byte: u8) -> Result<(), IoError> {
         unsafe {
-            write(STDOUT_FILENO, &the_byte as *const u8 as *const c_void, 1);
+            let bytes_written = write(
+                STDOUT_FILENO,
+                &the_byte as *const u8 as *const c_void,
+                1,
+            );
+
+            if bytes_written == 1 {
+                Ok(())
+            }
+            else {
+                Err(IoError {
+                    error_code: (*__errno_location() as i32),
+                })
+            }
         }
     }
 }
