@@ -1,6 +1,6 @@
 [package]
 name = "scaly"
-version = "0.0.34"
+version = "0.0.35"
 authors = ["rschleitzer"]
 description = "Library for the Scaly programming language"
 license = "MIT"
