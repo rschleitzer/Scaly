@@ -35,7 +35,7 @@ impl Compiler {
             }
         }
 
-        if let None = options.output_name {
+        if options.repl {
             loop {
                 let _r_1 = Region::create(&_r);
                 Console::write(&_r_1, String::from_string_slice(_r_1.page, "Scaly>"));
