@@ -3,7 +3,6 @@
   <grammar>
 
     <syntax id = Program                                        program
-        <content identifier                                     property = name
         <content link = File                  multiple          property = files
 
     <syntax id = File                                           top

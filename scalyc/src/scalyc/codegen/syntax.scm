@@ -27,12 +27,12 @@ pub "(if (abstract? syntax-node) "enum" "struct")" "(id syntax-node)"Syntax {"
 "
     pub file_name: String,"
                     )
-                    ($
+                    (if (program? syntax-node) "" ($
 "
     pub start: Position,
     pub end: Position,
     pub parent: Option<""ParentNode>,"
-                    )
+                    ))
                 )
 
                 (apply-to-children-of syntax-node (lambda (content) ($

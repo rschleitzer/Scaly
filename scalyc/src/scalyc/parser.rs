@@ -392,10 +392,6 @@ pub enum ParentNode {
 
 #[derive(Copy, Clone)]
 pub struct ProgramSyntax {
-    pub start: Position,
-    pub end: Position,
-    pub parent: Option<ParentNode>,
-    pub name: String,
     pub files: Ref<Vector<Ref<FileSyntax>>>,
 }
 

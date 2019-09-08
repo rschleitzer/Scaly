@@ -272,7 +272,6 @@ class SyntaxNode (
 
 class Program extends SyntaxNode (
 
-    name: string, 
     files: Array[File]
 
     ) {
