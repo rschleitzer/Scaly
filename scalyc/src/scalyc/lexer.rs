@@ -335,17 +335,17 @@ impl Lexer {
 
         let mut value: Ref<StringBuilder> = StringBuilder::new(_rp);
 
+        value.append_character(c);
+
         loop {
-            if (c >= '0') && (c <= '9') {
-                value.append_character(c);
+            if (self.character >= '0') && (self.character <= '9') {
+                value.append_character(self.character);
+                self.character = 0 as char;
+                self.read_character();
+                self.column = self.column + 1;
             } else {
                 return Ref::new(_rp, Token::Literal(Literal::Numeric(value.to_string(_rp))));
             }
-
-            c = self.character;
-            self.character = 0 as char;
-            self.read_character();
-            self.column = self.column + 1;
         }
     }
 
