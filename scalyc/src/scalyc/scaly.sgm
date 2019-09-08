@@ -8,15 +8,17 @@
 
     <syntax id = File                                           top
         <content link = Intrinsic             multiple optional property = intrinsics
+<!--
         <content link = Using                 multiple optional property = usings
         <content link = Define                multiple optional property = defines
         <content link = Declaration           multiple optional property = declarations
+-->
         <content link = Statement             multiple optional property = statements
 
     <syntax id = Intrinsic                    multiple
         <content link = intrinsic
         <content identifier                                     property = name
-
+<!--
     <syntax id = Using                        multiple
         <content link = using
         <content link = Name                                    property = name
@@ -77,14 +79,15 @@
 
     <syntax id = ThreadLocalDeclaration                         base = Declaration
         <content link = ThreadLocal                             property = declaration
-
+-->
     <syntax id = Statement                    multiple abstract
+        <content link = Calculation
+<!--
         <content link = Let
         <content link = Var
         <content link = Mutable
         <content link = ThreadLocal
         <content link = Set
-        <content link = Calculation
         <content link = Break
         <content link = Continue
         <content link = Return
@@ -116,7 +119,7 @@
         <content link = Operation                               property = l_value
         <content link = colon
         <content link = Calculation                             property = r_value
-
+-->
     <syntax id = Calculation                                    base = Statement
         <content link = Operation                               property = operation
         <content link = semicolon                      optional
@@ -126,6 +129,7 @@
 
     <syntax id = Operand                      multiple          base = Statement
         <content link = Expression                              property = primary
+<!--
         <content link = Postfix               multiple optional property = postfixes
 
     <syntax id = Postfix                      multiple abstract
@@ -165,11 +169,12 @@
     <syntax id = TypeCatchPattern                               base = CatchPattern
         <content link = TypeSpec                                property = type_spec
         <content identifier                            optional property = error_name
-
+-->
     <syntax id = Expression                            abstract
+        <content link = Constant
+<!--
         <content link = Block
         <content link = Name
-        <content link = Constant
         <content link = If
         <content link = Switch
         <content link = For
@@ -185,10 +190,10 @@
         <content link = left_curly
         <content link = Statement             multiple optional property = statements
         <content link = right_curly
-
+-->
     <syntax id = Constant                                       base = Expression
         <content literal                                        property = literal
-
+<!--
     <syntax id = If                                             base = Expression
         <content link = if
         <content link = left_paren
@@ -461,7 +466,9 @@
 
     <syntax id = Thrown                                         base = LifeTime
         <content link = hash
-
+-->
+    <keyword id = intrinsic
+ <!--
     <keyword id = using
     <keyword id = namespace
     <keyword id = typedef
@@ -498,10 +505,10 @@
     <keyword id = continue
     <keyword id = return
     <keyword id = throw
-    <keyword id = intrinsic
     <keyword id = define
-
+-->
     <punctuation id = semicolon         value = ";"
+<!--
     <punctuation id = left_curly         value = "{"
     <punctuation id = right_curly        value = "}"
     <punctuation id = left_paren         value = "("
@@ -518,5 +525,5 @@
     <punctuation id = dollar            value = "$"
     <punctuation id = underscore        value = "_"
     <punctuation id = backtick          value = "`"
-
+-->
   </grammar>
