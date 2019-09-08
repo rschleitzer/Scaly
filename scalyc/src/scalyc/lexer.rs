@@ -316,32 +316,36 @@ impl Lexer {
 
     fn scan_numeric_literal(&mut self, _pr: &Region, _rp: *mut Page) -> Ref<Token> {
         let _r = Region::create(_pr);
-        let mut value: Ref<StringBuilder> = StringBuilder::from_character(_rp, self.character);
 
+        let mut c = self.character;
+        self.character = 0 as char;
         self.read_character();
         self.column = self.column + 1;
 
         if self.is_at_end() {
-            return Ref::new(_rp, Token::Literal(Literal::Numeric(value.to_string(_rp))));
+            return Ref::new(
+                _rp,
+                Token::Literal(Literal::Numeric(String::from_character(_rp, c))),
+            );
         }
-        if self.character == 'x' {
+
+        if c == '0' && self.character == 'x' {
             return self.scan_hex_literal(&_r, _rp);
         }
 
+        let mut value: Ref<StringBuilder> = StringBuilder::new(_rp);
+
         loop {
-            let c = self.character;
             if (c >= '0') && (c <= '9') {
-                value.append_character(self.character);
-                self.character = 0 as char
+                value.append_character(c);
             } else {
                 return Ref::new(_rp, Token::Literal(Literal::Numeric(value.to_string(_rp))));
             }
+
+            c = self.character;
+            self.character = 0 as char;
             self.read_character();
             self.column = self.column + 1;
-
-            if self.is_at_end() {
-                return Ref::new(_rp, Token::Literal(Literal::Numeric(value.to_string(_rp))));
-            }
         }
     }
 
