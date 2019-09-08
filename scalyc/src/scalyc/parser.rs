@@ -85,21 +85,21 @@ impl Parser {
         _ep: *mut Page,
     ) -> Result<Option<Ref<Vector<Ref<IntrinsicSyntax>>>>, Ref<ParserError>> {
         let _r = Region::create(_pr);
-        let mut ret: Option<Ref<Array<Ref<IntrinsicSyntax>>>> = Option::None;
+        let mut array: Option<Ref<Array<Ref<IntrinsicSyntax>>>> = Option::None;
         loop {
             let node = self.parse_intrinsic(&_r, _rp, _ep)?;
             if let Some(node) = node {
-                if let None = ret {
-                    ret = Some(Ref::new(_rp, Array::new()))
+                if let None = array {
+                    array = Some(Ref::new(_r.page, Array::new()))
                 };
-                ret.unwrap().add(node);
+                array.unwrap().add(node);
             } else {
                 break;
             }
         }
 
-        if let Some(ret) = ret {
-            Ok(Some(Ref::new(_rp, Vector::from_array(_rp, ret))))
+        if let Some(array) = array {
+            Ok(Some(Ref::new(_rp, Vector::from_array(_rp, array))))
         } else {
             Ok(None)
         }
@@ -158,21 +158,21 @@ impl Parser {
         _ep: *mut Page,
     ) -> Result<Option<Ref<Vector<Ref<StatementSyntax>>>>, Ref<ParserError>> {
         let _r = Region::create(_pr);
-        let mut ret: Option<Ref<Array<Ref<StatementSyntax>>>> = Option::None;
+        let mut array: Option<Ref<Array<Ref<StatementSyntax>>>> = Option::None;
         loop {
             let node = self.parse_statement(&_r, _rp, _ep)?;
             if let Some(node) = node {
-                if let None = ret {
-                    ret = Some(Ref::new(_rp, Array::new()))
+                if let None = array {
+                    array = Some(Ref::new(_r.page, Array::new()))
                 };
-                ret.unwrap().add(node);
+                array.unwrap().add(node);
             } else {
                 break;
             }
         }
 
-        if let Some(ret) = ret {
-            Ok(Some(Ref::new(_rp, Vector::from_array(_rp, ret))))
+        if let Some(array) = array {
+            Ok(Some(Ref::new(_rp, Vector::from_array(_rp, array))))
         } else {
             Ok(None)
         }
@@ -260,21 +260,21 @@ impl Parser {
         _ep: *mut Page,
     ) -> Result<Option<Ref<Vector<Ref<OperandSyntax>>>>, Ref<ParserError>> {
         let _r = Region::create(_pr);
-        let mut ret: Option<Ref<Array<Ref<OperandSyntax>>>> = Option::None;
+        let mut array: Option<Ref<Array<Ref<OperandSyntax>>>> = Option::None;
         loop {
             let node = self.parse_operand(&_r, _rp, _ep)?;
             if let Some(node) = node {
-                if let None = ret {
-                    ret = Some(Ref::new(_rp, Array::new()))
+                if let None = array {
+                    array = Some(Ref::new(_r.page, Array::new()))
                 };
-                ret.unwrap().add(node);
+                array.unwrap().add(node);
             } else {
                 break;
             }
         }
 
-        if let Some(ret) = ret {
-            Ok(Some(Ref::new(_rp, Vector::from_array(_rp, ret))))
+        if let Some(array) = array {
+            Ok(Some(Ref::new(_rp, Vector::from_array(_rp, array))))
         } else {
             Ok(None)
         }

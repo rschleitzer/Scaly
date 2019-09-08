@@ -47,21 +47,21 @@ impl Parser {
         _ep: *mut Page,
     ) -> Result<""Option<""Ref<""Vector<""Ref<"(id syntax)"Syntax>>>>, Ref<""ParserError>> {
         let _r = Region::create(_pr);
-        let mut ret: Option<""Ref<""Array<""Ref<"(id syntax)"Syntax>>>> = Option::None;
+        let mut array: Option<""Ref<""Array<""Ref<"(id syntax)"Syntax>>>> = Option::None;
         loop {
             let node = self.parse_"(downcase-string (id syntax))"(&""_r, _rp, _ep)?;
             if let Some(node) = node {
-                if let None = ret {
-                    ret = Some(Ref::new(_rp, Array::new()))
+                if let None = array {
+                    array = Some(Ref::new(_r.page, Array::new()))
                 };
-                ret.unwrap().add(node);
+                array.unwrap().add(node);
             } else {
                 break;
             }
         }
 
-        if let Some(ret) = ret {
-            Ok(Some(Ref::new(_rp, Vector::from_array(_rp, ret))))
+        if let Some(array) = array {
+            Ok(Some(Ref::new(_rp, Vector::from_array(_rp, array))))
         } else {
             Ok(None)
         }

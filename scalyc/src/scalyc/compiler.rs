@@ -20,7 +20,7 @@ impl Compiler {
 
     pub fn compile(&self, _pr: &Region, _rp: *mut Page, _ep: *mut Page) {
         let _r = Region::create(_pr);
-        let options = Options::parse_arguments(&_r, _rp, _ep, self.arguments);
+        let options = Options::parse_arguments(&_r, _r.page, _ep, self.arguments);
 
         for file in options.files.iter() {
             let _r_1 = Region::create(&_r);
