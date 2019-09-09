@@ -7,6 +7,7 @@ use scaly::Vector;
 use scalyc::errors::ParserError;
 use scalyc::options::Options;
 use scalyc::parser::{FileSyntax, Parser, ProgramSyntax};
+use scalyc::plan::{Module, PlanBuilder};
 
 pub struct Compiler {
     arguments: Ref<Vector<String>>,
@@ -22,12 +23,28 @@ impl Compiler {
     pub fn compile(&self, _pr: &Region, _rp: *mut Page, _ep: *mut Page) {
         let _r = Region::create(_pr);
         let options = Options::parse_arguments(&_r, _r.page, _ep, self.arguments);
-
-        let _program_syntax = self.parse_files(&_r, _r.page, _r.page, options.files);
+        match self.parse_files(&_r, _r.page, _r.page, options.files) {
+            Ok(program_syntax) => {
+                let _module_plan = self.build_plan(&_r, _r.page, _r.page, program_syntax);
+            }
+            Err(_) => (),
+        }
 
         if options.repl {
             self.run_repl(&_r);
         }
+    }
+
+    fn build_plan(
+        &self,
+        _pr: &Region,
+        _rp: *mut Page,
+        _ep: *mut Page,
+        program_syntax: Ref<ProgramSyntax>,
+    ) -> Ref<Module> {
+        let _r = Region::create(_pr);
+        let mut plan_builder = Ref::new(_r.page, PlanBuilder::new(_r.page));
+        plan_builder.build(_rp, program_syntax)
     }
 
     fn parse_files(
