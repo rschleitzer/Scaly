@@ -317,7 +317,7 @@ impl Lexer {
     fn scan_numeric_literal(&mut self, _pr: &Region, _rp: *mut Page) -> Ref<Token> {
         let _r = Region::create(_pr);
 
-        let mut c = self.character;
+        let c = self.character;
         self.character = 0 as char;
         self.read_character();
         self.column = self.column + 1;
@@ -352,24 +352,19 @@ impl Lexer {
     fn scan_hex_literal(&mut self, _pr: &Region, _rp: *mut Page) -> Ref<Token> {
         let _r = Region::create(_pr);
 
+        let mut value: Ref<StringBuilder> = StringBuilder::from_character(_rp, '0');
+        value.append_character('x');
+
         self.character = 0 as char;
         self.read_character();
 
         if self.is_at_end() {
-            return Ref::new(
-                _rp,
-                Token::Literal(Literal::Hex(String::from_character(_rp, '0'))),
-            );
+            value.append_character('0');
+            return Ref::new(_rp, Token::Literal(Literal::Hex(value.to_string(_rp))));
         }
 
-        let mut c = self.character;
-        self.character = 0 as char;
-        self.read_character();
-        self.column = self.column + 2;
-
-        let mut value: Ref<StringBuilder> = StringBuilder::new(_rp);
-
         loop {
+            let c = self.character;
             if ((c >= '0') && (c <= '9'))
                 || ((c >= 'a') && (c <= 'f'))
                 || ((c >= 'A') && (c <= 'F'))
@@ -379,7 +374,6 @@ impl Lexer {
                 return Ref::new(_rp, Token::Literal(Literal::Hex(value.to_string(_rp))));
             }
 
-            c = self.character;
             self.character = 0 as char;
             self.read_character();
             self.column = self.column + 1;
