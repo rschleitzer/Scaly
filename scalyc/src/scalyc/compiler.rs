@@ -5,9 +5,9 @@ use scaly::Page;
 use scaly::String;
 use scaly::Vector;
 use scalyc::errors::ParserError;
+use scalyc::modulebuilder::{Module, ModuleBuilder};
 use scalyc::options::Options;
 use scalyc::parser::{FileSyntax, Parser, ProgramSyntax};
-use scalyc::plan::{Module, ModuleBuilder};
 
 pub struct Compiler {
     arguments: Ref<Vector<String>>,
@@ -25,7 +25,7 @@ impl Compiler {
         let options = Options::parse_arguments(&_r, _r.page, _ep, self.arguments);
         match self.parse_files(&_r, _r.page, _r.page, options.files) {
             Ok(program_syntax) => {
-                let _module_plan = self.build_module(&_r, _r.page, _r.page, program_syntax);
+                let _module = self.build_module(&_r, _r.page, _r.page, program_syntax);
             }
             Err(_) => (),
         }
