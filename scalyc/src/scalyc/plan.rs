@@ -2,24 +2,24 @@ use scaly::containers::Ref;
 use scaly::Page;
 use scalyc::parser::*;
 
-pub struct PlanBuilder {
-    module_builder: Ref<ModuleBuilder>
+pub struct ModuleBuilder {
+    module: Ref<Module>
 }
 
-impl PlanBuilder {
-    pub fn new(_rp: *mut Page) -> PlanBuilder {
-        PlanBuilder {
-            module_builder: Ref::new(_rp, ModuleBuilder{})
+impl ModuleBuilder {
+    pub fn new(_rp: *mut Page) -> ModuleBuilder {
+        ModuleBuilder {
+            module: Ref::new(_rp, Module{})
         }
     }
 
     pub fn build(&mut self, _rp: *mut Page, mut program_syntax: Ref<ProgramSyntax>) -> Ref<Module> {
         program_syntax.accept(self);
-        self.module_builder.export(_rp)
+        self.module
     }
 }
 
-impl SyntaxVisitor for PlanBuilder {
+impl SyntaxVisitor for ModuleBuilder {
     fn open_program(&mut self, _program_syntax: Ref<ProgramSyntax>) -> bool {
         true
     }
@@ -55,14 +55,7 @@ impl SyntaxVisitor for PlanBuilder {
     fn visit_constant(&mut self, _constant_syntax: Ref<ConstantSyntax>) {}
 }
 
-pub struct ModuleBuilder {
+#[derive(Copy, Clone)]
+pub struct Module {
 
 }
-
-impl ModuleBuilder {
-    pub fn export(&self, _rp: *mut Page) -> Ref<Module> {
-        Ref::new(_rp, Module {})
-    }
-}
-
-pub struct Module {}
