@@ -4,11 +4,11 @@ pub trait SyntaxVisitor {"
     (apply-to-selected-children "syntax" (lambda (syntax) (if (abstract? syntax) "" ($
         (if (has-syntax-children? syntax)
             ($ "
-    fn open_"(downcase-string (id syntax))"(&""mut self, "(downcase-string (id syntax))"_syntax: Ref<"(id syntax)"Syntax>) -> bool;
-    fn close_"(downcase-string (id syntax))"(&""mut self, "(downcase-string (id syntax))"_syntax: Ref<"(id syntax)"Syntax>);
+    fn open_"(downcase-string (id syntax))"(&""mut self, _pr: &""Region, "(downcase-string (id syntax))"_syntax: Ref<"(id syntax)"Syntax>) -> bool;
+    fn close_"(downcase-string (id syntax))"(&""mut self, _pr: &""Region, "(downcase-string (id syntax))"_syntax: Ref<"(id syntax)"Syntax>);
 "            )
             ($ "
-    fn visit_"(downcase-string (id syntax))"(&""mut self, "(downcase-string (id syntax))"_syntax: Ref<"(id syntax)"Syntax>);
+    fn visit_"(downcase-string (id syntax))"(&""mut self, _pr: &""Region, "(downcase-string (id syntax))"_syntax: Ref<"(id syntax)"Syntax>);
 "            )
         )
     ))))
