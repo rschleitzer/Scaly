@@ -23,11 +23,13 @@ impl Compiler {
     pub fn compile(&self, _pr: &Region, _rp: *mut Page, _ep: *mut Page) {
         let _r = Region::create(_pr);
         let options = Options::parse_arguments(&_r, _r.page, _ep, self.arguments);
-        match self.parse_files(&_r, _r.page, _r.page, options.files) {
-            Ok(program_syntax) => {
-                self.build_module(&_r, _r.page, _r.page, program_syntax);
+        if let Some(output_name) = options.output_name {
+            match self.parse_files(&_r, _r.page, _r.page, options.files) {
+                Ok(program_syntax) => {
+                    self.build_module(&_r, _r.page, _r.page, program_syntax, output_name);
+                }
+                Err(_) => (),
             }
-            Err(_) => (),
         }
 
         if options.repl {
@@ -41,9 +43,10 @@ impl Compiler {
         _rp: *mut Page,
         _ep: *mut Page,
         program_syntax: Ref<ProgramSyntax>,
+        program_name: String,
     ) {
         let _r = Region::create(_pr);
-        let mut module_builder = Ref::new(_r.page, ModuleBuilder::new(_r.page));
+        let mut module_builder = Ref::new(_r.page, ModuleBuilder::new(_r.page, program_name));
         module_builder.build(&_r, _rp, program_syntax)
     }
 
