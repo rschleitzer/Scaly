@@ -83,11 +83,10 @@ impl SyntaxNode for "(id syntax-node)"Syntax {
                                                 (if (optional? content)
                                                     ($
 "
-        match self."(property content)" {
-            Some(mut x) => for node in x.iter_mut() {
+        if let Some(mut "(property content)") = self."(property content)" {
+            for node in "(property content)".iter_mut() {
                 node.accept(_pr, visitor)
-            },
-            None => ()
+            };
         };
 "                                                   )
                                                     ($
@@ -101,9 +100,8 @@ impl SyntaxNode for "(id syntax-node)"Syntax {
                                             (if (optional? content)
                                                 ($
 "
-        match self."(property content)" {
-            Some(mut x) => x.accept(_pr, visitor),
-            None => ()
+        if let Some(mut "(property content)") = self."(property content)" {
+            "(property content)".accept(_pr, visitor);
         };
 "                                               )
                                                 ($

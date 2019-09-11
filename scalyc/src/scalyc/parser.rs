@@ -425,18 +425,16 @@ impl SyntaxNode for FileSyntax {
                 return
             }
         }
-        match self.intrinsics {
-            Some(mut x) => for node in x.iter_mut() {
+        if let Some(mut intrinsics) = self.intrinsics {
+            for node in intrinsics.iter_mut() {
                 node.accept(_pr, visitor)
-            },
-            None => ()
+            };
         };
 
-        match self.statements {
-            Some(mut x) => for node in x.iter_mut() {
+        if let Some(mut statements) = self.statements {
+            for node in statements.iter_mut() {
                 node.accept(_pr, visitor)
-            },
-            None => ()
+            };
         };
         unsafe {
             (*visitor).close_file(_pr, Ref::from(self as *mut FileSyntax))
