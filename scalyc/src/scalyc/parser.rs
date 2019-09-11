@@ -358,28 +358,28 @@ impl Parser {
 }
 
 pub trait SyntaxVisitor {
-    fn open_program(&mut self, program_syntax: Ref<ProgramSyntax>) -> bool;
-    fn close_program(&mut self, program_syntax: Ref<ProgramSyntax>);
+    fn open_program(&mut self, _pr: &Region, program_syntax: Ref<ProgramSyntax>) -> bool;
+    fn close_program(&mut self, _pr: &Region, program_syntax: Ref<ProgramSyntax>);
 
-    fn open_file(&mut self, file_syntax: Ref<FileSyntax>) -> bool;
-    fn close_file(&mut self, file_syntax: Ref<FileSyntax>);
+    fn open_file(&mut self, _pr: &Region, file_syntax: Ref<FileSyntax>) -> bool;
+    fn close_file(&mut self, _pr: &Region, file_syntax: Ref<FileSyntax>);
 
-    fn visit_intrinsic(&mut self, intrinsic_syntax: Ref<IntrinsicSyntax>);
+    fn visit_intrinsic(&mut self, _pr: &Region, intrinsic_syntax: Ref<IntrinsicSyntax>);
 
-    fn open_calculation(&mut self, calculation_syntax: Ref<CalculationSyntax>) -> bool;
-    fn close_calculation(&mut self, calculation_syntax: Ref<CalculationSyntax>);
+    fn open_calculation(&mut self, _pr: &Region, calculation_syntax: Ref<CalculationSyntax>) -> bool;
+    fn close_calculation(&mut self, _pr: &Region, calculation_syntax: Ref<CalculationSyntax>);
 
-    fn open_operation(&mut self, operation_syntax: Ref<OperationSyntax>) -> bool;
-    fn close_operation(&mut self, operation_syntax: Ref<OperationSyntax>);
+    fn open_operation(&mut self, _pr: &Region, operation_syntax: Ref<OperationSyntax>) -> bool;
+    fn close_operation(&mut self, _pr: &Region, operation_syntax: Ref<OperationSyntax>);
 
-    fn open_operand(&mut self, operand_syntax: Ref<OperandSyntax>) -> bool;
-    fn close_operand(&mut self, operand_syntax: Ref<OperandSyntax>);
+    fn open_operand(&mut self, _pr: &Region, operand_syntax: Ref<OperandSyntax>) -> bool;
+    fn close_operand(&mut self, _pr: &Region, operand_syntax: Ref<OperandSyntax>);
 
-    fn visit_constant(&mut self, constant_syntax: Ref<ConstantSyntax>);
+    fn visit_constant(&mut self, _pr: &Region, constant_syntax: Ref<ConstantSyntax>);
 }
 
 pub trait SyntaxNode {
-    fn accept(&mut self, visitor: *mut SyntaxVisitor);
+    fn accept(&mut self, _pr: &Region, visitor: *mut SyntaxVisitor);
 }
 
 #[derive(Copy, Clone)]
@@ -396,17 +396,17 @@ pub struct ProgramSyntax {
 }
 
 impl SyntaxNode for ProgramSyntax {
-    fn accept(&mut self, visitor: *mut SyntaxVisitor) {
+    fn accept(&mut self, _pr: &Region, visitor: *mut SyntaxVisitor) {
         unsafe {
-            if !(*visitor).open_program(Ref::from(self as *mut ProgramSyntax)) {
+            if !(*visitor).open_program(_pr, Ref::from(self as *mut ProgramSyntax)) {
                 return
             }
         }
         for node in self.files.iter_mut() {
-            node.accept(visitor)
+            node.accept(_pr, visitor)
         };
         unsafe {
-            (*visitor).close_program(Ref::from(self as *mut ProgramSyntax))
+            (*visitor).close_program(_pr, Ref::from(self as *mut ProgramSyntax))
         }
     }
 }
@@ -419,27 +419,27 @@ pub struct FileSyntax {
 }
 
 impl SyntaxNode for FileSyntax {
-    fn accept(&mut self, visitor: *mut SyntaxVisitor) {
+    fn accept(&mut self, _pr: &Region, visitor: *mut SyntaxVisitor) {
         unsafe {
-            if !(*visitor).open_file(Ref::from(self as *mut FileSyntax)) {
+            if !(*visitor).open_file(_pr, Ref::from(self as *mut FileSyntax)) {
                 return
             }
         }
         match self.intrinsics {
             Some(mut x) => for node in x.iter_mut() {
-                node.accept(visitor)
+                node.accept(_pr, visitor)
             },
             None => ()
         };
 
         match self.statements {
             Some(mut x) => for node in x.iter_mut() {
-                node.accept(visitor)
+                node.accept(_pr, visitor)
             },
             None => ()
         };
         unsafe {
-            (*visitor).close_file(Ref::from(self as *mut FileSyntax))
+            (*visitor).close_file(_pr, Ref::from(self as *mut FileSyntax))
         }
     }
 }
@@ -453,9 +453,9 @@ pub struct IntrinsicSyntax {
 }
 
 impl SyntaxNode for IntrinsicSyntax {
-    fn accept(&mut self, visitor: *mut SyntaxVisitor) {
+    fn accept(&mut self, _pr: &Region, visitor: *mut SyntaxVisitor) {
         unsafe {
-            (*visitor).visit_intrinsic(Ref::from(self as *mut IntrinsicSyntax))
+            (*visitor).visit_intrinsic(_pr, Ref::from(self as *mut IntrinsicSyntax))
         }
     }
 }
@@ -466,9 +466,9 @@ pub enum StatementSyntax {
 }
 
 impl SyntaxNode for StatementSyntax {
-    fn accept(&mut self, visitor: *mut SyntaxVisitor) {
+    fn accept(&mut self, _pr: &Region, visitor: *mut SyntaxVisitor) {
         match self {
-            StatementSyntax::Calculation(syntax) => syntax.accept(visitor),
+            StatementSyntax::Calculation(syntax) => syntax.accept(_pr, visitor),
         }
     }
 }
@@ -482,15 +482,15 @@ pub struct CalculationSyntax {
 }
 
 impl SyntaxNode for CalculationSyntax {
-    fn accept(&mut self, visitor: *mut SyntaxVisitor) {
+    fn accept(&mut self, _pr: &Region, visitor: *mut SyntaxVisitor) {
         unsafe {
-            if !(*visitor).open_calculation(Ref::from(self as *mut CalculationSyntax)) {
+            if !(*visitor).open_calculation(_pr, Ref::from(self as *mut CalculationSyntax)) {
                 return
             }
         }
-        self.operation.accept(visitor);
+        self.operation.accept(_pr, visitor);
             unsafe {
-            (*visitor).close_calculation(Ref::from(self as *mut CalculationSyntax))
+            (*visitor).close_calculation(_pr, Ref::from(self as *mut CalculationSyntax))
         }
     }
 }
@@ -504,17 +504,17 @@ pub struct OperationSyntax {
 }
 
 impl SyntaxNode for OperationSyntax {
-    fn accept(&mut self, visitor: *mut SyntaxVisitor) {
+    fn accept(&mut self, _pr: &Region, visitor: *mut SyntaxVisitor) {
         unsafe {
-            if !(*visitor).open_operation(Ref::from(self as *mut OperationSyntax)) {
+            if !(*visitor).open_operation(_pr, Ref::from(self as *mut OperationSyntax)) {
                 return
             }
         }
         for node in self.op.iter_mut() {
-            node.accept(visitor)
+            node.accept(_pr, visitor)
         };
         unsafe {
-            (*visitor).close_operation(Ref::from(self as *mut OperationSyntax))
+            (*visitor).close_operation(_pr, Ref::from(self as *mut OperationSyntax))
         }
     }
 }
@@ -528,15 +528,15 @@ pub struct OperandSyntax {
 }
 
 impl SyntaxNode for OperandSyntax {
-    fn accept(&mut self, visitor: *mut SyntaxVisitor) {
+    fn accept(&mut self, _pr: &Region, visitor: *mut SyntaxVisitor) {
         unsafe {
-            if !(*visitor).open_operand(Ref::from(self as *mut OperandSyntax)) {
+            if !(*visitor).open_operand(_pr, Ref::from(self as *mut OperandSyntax)) {
                 return
             }
         }
-        self.primary.accept(visitor);
+        self.primary.accept(_pr, visitor);
             unsafe {
-            (*visitor).close_operand(Ref::from(self as *mut OperandSyntax))
+            (*visitor).close_operand(_pr, Ref::from(self as *mut OperandSyntax))
         }
     }
 }
@@ -547,9 +547,9 @@ pub enum ExpressionSyntax {
 }
 
 impl SyntaxNode for ExpressionSyntax {
-    fn accept(&mut self, visitor: *mut SyntaxVisitor) {
+    fn accept(&mut self, _pr: &Region, visitor: *mut SyntaxVisitor) {
         match self {
-            ExpressionSyntax::Constant(syntax) => syntax.accept(visitor),
+            ExpressionSyntax::Constant(syntax) => syntax.accept(_pr, visitor),
         }
     }
 }
@@ -563,9 +563,9 @@ pub struct ConstantSyntax {
 }
 
 impl SyntaxNode for ConstantSyntax {
-    fn accept(&mut self, visitor: *mut SyntaxVisitor) {
+    fn accept(&mut self, _pr: &Region, visitor: *mut SyntaxVisitor) {
         unsafe {
-            (*visitor).visit_constant(Ref::from(self as *mut ConstantSyntax))
+            (*visitor).visit_constant(_pr, Ref::from(self as *mut ConstantSyntax))
         }
     }
 }

@@ -44,7 +44,7 @@ impl Compiler {
     ) {
         let _r = Region::create(_pr);
         let mut module_builder = Ref::new(_r.page, ModuleBuilder::new(_r.page));
-        module_builder.build(_rp, program_syntax)
+        module_builder.build(&_r, _rp, program_syntax)
     }
 
     fn parse_files(
