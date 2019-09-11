@@ -5,7 +5,7 @@ use scaly::Page;
 use scaly::String;
 use scaly::Vector;
 use scalyc::errors::ParserError;
-use scalyc::modulebuilder::{Module, ModuleBuilder};
+use scalyc::modulebuilder::ModuleBuilder;
 use scalyc::options::Options;
 use scalyc::parser::{FileSyntax, Parser, ProgramSyntax};
 
@@ -25,7 +25,7 @@ impl Compiler {
         let options = Options::parse_arguments(&_r, _r.page, _ep, self.arguments);
         match self.parse_files(&_r, _r.page, _r.page, options.files) {
             Ok(program_syntax) => {
-                let _module = self.build_module(&_r, _r.page, _r.page, program_syntax);
+                self.build_module(&_r, _r.page, _r.page, program_syntax);
             }
             Err(_) => (),
         }
@@ -41,7 +41,7 @@ impl Compiler {
         _rp: *mut Page,
         _ep: *mut Page,
         program_syntax: Ref<ProgramSyntax>,
-    ) -> Ref<Module> {
+    ) {
         let _r = Region::create(_pr);
         let mut module_builder = Ref::new(_r.page, ModuleBuilder::new(_r.page));
         module_builder.build(_rp, program_syntax)

@@ -1,32 +1,37 @@
 use scaly::containers::Ref;
 use scaly::Page;
+//use scaly::String;
 use scalyc::parser::*;
 
 pub struct ModuleBuilder {
-    module: Ref<Module>
+    module: Option<Ref<Module>>,
 }
 
 impl ModuleBuilder {
     pub fn new(_rp: *mut Page) -> ModuleBuilder {
-        ModuleBuilder {
-            module: Ref::new(_rp, Module{})
-        }
+        ModuleBuilder { module: None }
     }
 
-    pub fn build(&mut self, _rp: *mut Page, mut program_syntax: Ref<ProgramSyntax>) -> Ref<Module> {
+    pub fn build(&mut self, _rp: *mut Page, mut program_syntax: Ref<ProgramSyntax>) {
         program_syntax.accept(self);
-        self.module
     }
 }
 
 impl SyntaxVisitor for ModuleBuilder {
     fn open_program(&mut self, _program_syntax: Ref<ProgramSyntax>) -> bool {
+        let _own_page = Page::own(Ref::from(self as *mut ModuleBuilder));
+        self.module = Some(Ref::new(_own_page, Module {}));
         true
     }
 
     fn close_program(&mut self, _program_syntax: Ref<ProgramSyntax>) {}
 
     fn open_file(&mut self, _file_syntax: Ref<FileSyntax>) -> bool {
+        if let Some(_module) = self.module {
+            // if _file_syntax.file_name.equals(&String::from_string_slice(_r_1.page, "-o")) {
+
+            // }
+        }
         true
     }
 
@@ -56,6 +61,4 @@ impl SyntaxVisitor for ModuleBuilder {
 }
 
 #[derive(Copy, Clone)]
-pub struct Module {
-
-}
+pub struct Module {}
