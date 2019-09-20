@@ -44,20 +44,15 @@ impl SyntaxVisitor for ModuleBuilder {
                 .file_name
                 .equals(&String::from_string_slice(_r.page, "main.scaly"))
             {
-                unsafe {
-                    let mut _current_function_page = match self.current_function {
-                        None => (*(Page::own(Ref::from(self as *mut ModuleBuilder))))
-                            .allocate_exclusive_page(),
-                        Some(current_function) => Page::own(current_function),
-                    };
-                    (*_current_function_page).clear();
-                    self.current_function = Some(Ref::new(
-                        _current_function_page,
-                        Function {
-                            name: String::from_string_slice(_current_function_page, "main"),
-                        },
-                    ));
-                }
+                self.current_function = Some(Ref::new(
+                    Page::own(Ref::from(self as *mut ModuleBuilder)),
+                    Function {
+                        name: String::from_string_slice(
+                            Page::own(Ref::from(self as *mut ModuleBuilder)),
+                            "main",
+                        ),
+                    },
+                ));
             }
         }
         true
