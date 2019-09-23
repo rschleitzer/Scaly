@@ -1,5 +1,6 @@
 pub mod array;
 pub mod hashset;
+pub mod hashmap;
 pub mod list;
 pub mod reference;
 pub mod string;
