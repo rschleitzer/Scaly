@@ -8,15 +8,21 @@ use memory::page::Page;
 use memory::region::Region;
 
 #[derive(Copy, Clone)]
-pub struct HashMap<K: Hash<K> + Copy> {
-    slots: Ref<Vector<Ref<List<Slot<K>>>>>,
+pub struct KeyValuePair<K: Hash<K> + Copy, V: Copy> {
+    key: K,
+    value: V
 }
 
-impl<K: Hash<K> + Copy> HashMap<K> {
-    pub fn from_vector(_pr: &Region, _rp: *mut Page, vector: Ref<Vector<K>>) -> Ref<HashMap<K>> {
+#[derive(Copy, Clone)]
+pub struct HashMap<K: Hash<K> + Copy, V: Copy> {
+    slots: Ref<Vector<Ref<List<Slot<KeyValuePair<K, V>>>>>>,
+}
+
+impl<K: Hash<K> + Copy, V: Copy> HashMap<K, V> {
+    pub fn from_vector(_pr: &Region, _rp: *mut Page, vector: Ref<Vector<KeyValuePair<K, V>>>) -> Ref<HashMap<K, V>> {
         let _r = Region::create(_pr);
         let hash_size = HashPrimeHelper::get_prime(vector.length);
-        let mut array: Ref<Array<Ref<List<Slot<K>>>>> = Ref::new(_r.page, Array::new());
+        let mut array: Ref<Array<Ref<List<Slot<KeyValuePair<K, V>>>>>> = Ref::new(_r.page, Array::new());
         for _ in 0..hash_size {
             array.add(Ref::new(_r.page, List::new()));
         }
@@ -26,31 +32,31 @@ impl<K: Hash<K> + Copy> HashMap<K> {
         hash_map
     }
 
-    fn initialize_from_vector(&mut self, vector: Ref<Vector<K>>) {
-        for value in vector.iter() {
-            self.add(value);
+    fn initialize_from_vector(&mut self, vector: Ref<Vector<KeyValuePair<K, V>>>) {
+        for key_value_pair in vector.iter() {
+            self.add(&key_value_pair.key, &key_value_pair.value);
         }
     }
 
-    fn add(&mut self, value: &K) {
-        let hash_code = value.hash();
+    fn add(&mut self, key: &K, value: &V) {
+        let hash_code = key.hash();
         let slot_number = hash_code % self.slots.length;
         let mut slot_list = self.slots[slot_number];
         for slot in slot_list.get_iterator() {
-            if value.equals(&slot.value) {
+            if key.equals(&slot.value.key) {
                 return;
             }
         }
 
         slot_list.add(Slot {
             hash_code: hash_code,
-            value: *value,
+            value: KeyValuePair { key: *key, value: *value},
         });
     }
 
     pub fn contains(&self, value: K) -> bool {
         for slot in self.slots[value.hash() % self.slots.length].get_iterator() {
-            if value.equals(&slot.value) {
+            if value.equals(&slot.value.key) {
                 return true;
             }
         }
