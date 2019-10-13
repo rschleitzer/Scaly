@@ -15,7 +15,7 @@ pub struct KeyValuePair<K: Hash<K> + Copy, V: Copy> {
 
 #[derive(Copy, Clone)]
 pub struct HashMap<K: Hash<K> + Copy, V: Copy> {
-    slots: Ref<Vector<Ref<List<Slot<KeyValuePair<K, V>>>>>>,
+    slots: Vector<Ref<List<Slot<KeyValuePair<K, V>>>>>,
 }
 
 impl<K: Hash<K> + Copy, V: Copy> HashMap<K, V> {
@@ -31,8 +31,7 @@ impl<K: Hash<K> + Copy, V: Copy> HashMap<K, V> {
         for _ in 0..hash_size {
             array.add(Ref::new(_r.page, List::new()));
         }
-        let slots = Ref::new(_rp, Vector::from_array(_rp, array));
-        let mut hash_map = Ref::new(_rp, HashMap { slots: slots });
+        let mut hash_map = Ref::new(_rp, HashMap { slots: Vector::from_array(_rp, array) });
         hash_map.initialize_from_vector(vector);
         hash_map
     }

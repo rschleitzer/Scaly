@@ -7,7 +7,7 @@ use memory::region::Region;
 
 #[derive(Copy, Clone)]
 pub struct HashSet<T: Hash<T> + Copy> {
-    slots: Ref<Vector<Ref<List<Slot<T>>>>>,
+    slots: Vector<Ref<List<Slot<T>>>>,
 }
 
 impl<T: Hash<T> + Copy> HashSet<T> {
@@ -18,8 +18,7 @@ impl<T: Hash<T> + Copy> HashSet<T> {
         for _ in 0..hash_size {
             array.add(Ref::new(_r.page, List::new()));
         }
-        let slots = Ref::new(_rp, Vector::from_array(_rp, array));
-        let mut hash_set = Ref::new(_rp, HashSet { slots: slots });
+        let mut hash_set = Ref::new(_rp, HashSet { slots: Vector::from_array(_rp, array) });
         hash_set.initialize_from_vector(vector);
         hash_set
     }
