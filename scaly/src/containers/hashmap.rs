@@ -1,6 +1,6 @@
+use containers::array::Array;
 use containers::hashset::Hash;
 use containers::hashset::HashPrimeHelper;
-use containers::array::Array;
 use containers::list::List;
 use containers::reference::Ref;
 use containers::vector::Vector;
@@ -10,7 +10,7 @@ use memory::region::Region;
 #[derive(Copy, Clone)]
 pub struct KeyValuePair<K: Hash<K> + Copy, V: Copy> {
     key: K,
-    value: V
+    value: V,
 }
 
 #[derive(Copy, Clone)]
@@ -19,10 +19,15 @@ pub struct HashMap<K: Hash<K> + Copy, V: Copy> {
 }
 
 impl<K: Hash<K> + Copy, V: Copy> HashMap<K, V> {
-    pub fn from_vector(_pr: &Region, _rp: *mut Page, vector: Ref<Vector<KeyValuePair<K, V>>>) -> Ref<HashMap<K, V>> {
+    pub fn from_vector(
+        _pr: &Region,
+        _rp: *mut Page,
+        vector: Ref<Vector<KeyValuePair<K, V>>>,
+    ) -> Ref<HashMap<K, V>> {
         let _r = Region::create(_pr);
         let hash_size = HashPrimeHelper::get_prime(vector.length);
-        let mut array: Ref<Array<Ref<List<Slot<KeyValuePair<K, V>>>>>> = Ref::new(_r.page, Array::new());
+        let mut array: Ref<Array<Ref<List<Slot<KeyValuePair<K, V>>>>>> =
+            Ref::new(_r.page, Array::new());
         for _ in 0..hash_size {
             array.add(Ref::new(_r.page, List::new()));
         }
@@ -50,7 +55,10 @@ impl<K: Hash<K> + Copy, V: Copy> HashMap<K, V> {
 
         slot_list.add(Slot {
             hash_code: hash_code,
-            value: KeyValuePair { key: *key, value: *value},
+            value: KeyValuePair {
+                key: *key,
+                value: *value,
+            },
         });
     }
 
@@ -90,9 +98,18 @@ fn test_hash_map() {
             Vector::from_raw_array(
                 _r.page,
                 &[
-                    String::from_string_slice(_r.page, "using"),
-                    String::from_string_slice(_r.page, "namespace"),
-                    String::from_string_slice(_r.page, "typedef"),
+                    KeyValuePair {
+                        key: String::from_string_slice(_r.page, "using"),
+                        value: 1,
+                    },
+                    KeyValuePair {
+                        key: String::from_string_slice(_r.page, "namespace"),
+                        value: 2,
+                    },
+                    KeyValuePair {
+                        key: String::from_string_slice(_r.page, "typedef"),
+                        value: 3,
+                    },
                 ],
             ),
         ),
