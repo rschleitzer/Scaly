@@ -6,7 +6,12 @@ fn main() {
         print!("scalyc>");
         io::stdout().flush().unwrap();
         let mut card = String::new();
-        io::stdin() .read_line(&mut card).expect("failed to read line");
+        io::stdin().read_line(&mut card).expect("failed to read line");
+        let ch = card.chars().next().unwrap();
+        if ch == '%' {
+            break;
+        }
+
         print!("{}", card);
     }
 }
