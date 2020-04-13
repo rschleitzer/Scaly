@@ -1,17 +1,9 @@
-use std::io;
-use std::io::Write;
+mod compiler;
+mod repl;
+
+use repl::Repl;
 
 fn main() {
-    loop {
-        print!("scalyc>");
-        io::stdout().flush().unwrap();
-        let mut card = String::new();
-        io::stdin().read_line(&mut card).expect("failed to read line");
-        let ch = card.chars().next().unwrap();
-        if ch == '%' {
-            break;
-        }
-
-        print!("{}", card);
-    }
+    let mut repl = Repl::new();
+    repl.run();
 }
