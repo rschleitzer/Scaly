@@ -25,6 +25,10 @@ scalysh/Properties/launchSettings.json
 .vs
 docs/build
 docs/source/_build
+rusty/scalyc/target
+rusty/scalyc/.vscode
+rusty/scaly/target
+rusty/scaly/.vscode
 scalyc/target
 scalyc/.vscode
 scaly/target
