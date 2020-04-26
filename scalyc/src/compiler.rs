@@ -5,15 +5,25 @@ use llvm::target::*;
 use std::mem;
 
 mod parser;
+use parser::CalculationSyntax;
 use parser::Parser;
 use parser::StatementSyntax;
+use parser::StatementSyntax::Calculation;
 
-pub struct Compiler {}
+mod model;
+use model::Model;
 
-impl Compiler {
+pub struct Compiler {
+    model: Model,
+}
+
+impl<'a> Compiler {
     pub fn new() -> Compiler {
-        Compiler {}
+        Compiler {
+            model: Model::new(),
+        }
     }
+
     pub fn evaluate(&mut self, deck: &str) -> String {
         let mut parser = Parser::new(deck);
         let statement_result = parser.parse_statement();
@@ -34,7 +44,7 @@ impl Compiler {
                             parser.get_current_column()
                         ));
                     }
-                    self.compile_statement(&statement)
+                    self.process_statement(&statement)
                 }
             },
             Err(error) => {
@@ -46,7 +56,18 @@ impl Compiler {
         }
     }
 
-    fn compile_statement(&mut self, _statement: &StatementSyntax) -> String {
+    fn process_statement(&mut self, statement: &StatementSyntax) -> String {
+        match statement {
+            Calculation(calculation) => return self.compute(calculation),
+        };
+    }
+
+    fn compute(&mut self, calculation: &CalculationSyntax) -> String {
+        let _main_module = self.model.get_main();
+        self.jit_and_execute(calculation)
+    }
+
+    fn jit_and_execute(&mut self, _calculation: &CalculationSyntax) -> String {
         unsafe {
             let context = LLVMContextCreate();
             let module = LLVMModuleCreateWithNameInContext(b"sum\0".as_ptr() as *const _, context);
