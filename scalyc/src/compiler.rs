@@ -19,14 +19,29 @@ impl Compiler {
         let statement_result = parser.parse_statement();
         match statement_result {
             Ok(statement_option) => match statement_option {
-                None => return String::from("This is no statement.\n"),
-                Some(statement) => return self.compile_statement(&statement),
+                None => {
+                    if parser.is_at_end() {
+                        return String::new();
+                    }
+
+                    return String::from("This is no statement.\n");
+                }
+                Some(statement) => {
+                    if !parser.is_at_end() {
+                        return String::from(format!(
+                            "Unexpected character at {}, {} after the statement.\n",
+                            parser.get_current_line(),
+                            parser.get_current_column()
+                        ));
+                    }
+                    self.compile_statement(&statement)
+                }
             },
             Err(error) => {
                 return String::from(format!(
                     "Parser error at {}, {}\n",
                     error.line, error.column
-                ))
+                ));
             }
         }
     }
