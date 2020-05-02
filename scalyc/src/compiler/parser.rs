@@ -1,4 +1,4 @@
-mod lexer;
+pub mod lexer;
 use lexer::Lexer;
 use lexer::Literal;
 use lexer::Position;

@@ -2,6 +2,9 @@ extern crate llvm_sys as llvm;
 use llvm::core::*;
 use llvm::execution_engine::*;
 use llvm::target::*;
+use modeler::Function;
+use modeler::Modeler;
+use modeler::Module;
 use std::mem;
 
 mod parser;
@@ -10,19 +13,16 @@ use parser::Parser;
 use parser::StatementSyntax;
 use parser::StatementSyntax::Calculation;
 
-mod model;
-use model::Model;
+mod modeler;
 
-pub struct Compiler {
-    model: Model,
-}
+pub struct Compiler {}
 
-impl<'a> Compiler {
+impl Compiler {
     pub fn new() -> Compiler {
-        Compiler {
-            model: Model::new(),
-        }
+        Compiler {}
     }
+
+    pub fn load_standard_library(&mut self) {}
 
     pub fn evaluate(&mut self, deck: &str) -> String {
         let mut parser = Parser::new(deck);
@@ -59,15 +59,24 @@ impl<'a> Compiler {
     fn process_statement(&mut self, statement: &StatementSyntax) -> String {
         match statement {
             Calculation(calculation) => return self.compute(calculation),
+            // _ => {
+            //    let main_module = self.model.get_main();
+            //    Modeler::add_statement(main_module, statement);
+            //    String::from("Statement added.\n")
+            //}
         };
     }
 
     fn compute(&mut self, calculation: &CalculationSyntax) -> String {
-        let _main_module = self.model.get_main();
-        self.jit_and_execute(calculation)
+        let expression = Modeler::build_expression(calculation);
+        let mut function = Function::new(String::from("_repl_function"));
+        function.expressions.push(expression);
+        let mut module = Module::new(String::from("_repl_module"));
+        module.add_function(function);
+        self.jit_and_execute()
     }
 
-    fn jit_and_execute(&mut self, _calculation: &CalculationSyntax) -> String {
+    fn jit_and_execute(&mut self) -> String {
         unsafe {
             let context = LLVMContextCreate();
             let module = LLVMModuleCreateWithNameInContext(b"sum\0".as_ptr() as *const _, context);

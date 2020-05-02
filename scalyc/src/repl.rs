@@ -9,9 +9,11 @@ pub struct Repl {
 
 impl Repl {
     pub fn new() -> Repl {
+        let mut compiler = Compiler::new();
+        compiler.load_standard_library();
         Repl {
             deck: String::new(),
-            compiler: Compiler::new(),
+            compiler: compiler,
         }
     }
 

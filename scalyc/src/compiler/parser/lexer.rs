@@ -158,6 +158,7 @@ impl<'a> Lexer<'a> {
 
     fn scan_string_literal(&mut self) -> Token {
         let mut value = String::new();
+        self.character = 0 as char;
 
         loop {
             self.read_character();
@@ -169,6 +170,7 @@ impl<'a> Lexer<'a> {
 
             match self.character {
                 '\"' => {
+                    self.character = 0 as char;
                     self.read_character();
                     self.column = self.column + 1;
                     return Token::Literal(Literal::String(value));
@@ -201,7 +203,10 @@ impl<'a> Lexer<'a> {
                         _ => return Token::Invalid,
                     }
                 }
-                _ => value.push(self.character),
+                _ => {
+                    value.push(self.character);
+                    self.character = 0 as char
+                }
             }
         }
     }
