@@ -4,16 +4,24 @@ use crate::compiler::parser::lexer::Literal::Integer;
 use crate::compiler::parser::CalculationSyntax;
 use crate::compiler::parser::ConstantSyntax;
 use crate::compiler::parser::ExpressionSyntax::Constant;
+use crate::compiler::parser::OperandSyntax;
 use std::collections::HashMap;
 
 pub struct Modeler {}
 
 impl Modeler {
-    pub fn build_expression(calculation: &CalculationSyntax) -> Expression {
-        let operation = &calculation.operation;
-        let primary = &operation.op[0].primary;
+    pub fn build_operation(calculation: &CalculationSyntax) -> Operation {
+        let mut operation = Operation::new();
+        for operand in &calculation.operation.op {
+            operation.operands.push(Modeler::build_operand(&operand))
+        }
+        operation
+    }
+
+    pub fn build_operand(operand: &OperandSyntax) -> Operand {
+        let primary = &operand.primary;
         match primary {
-            Constant(constant_type) => Expression::Constant(Modeler::build_constant(constant_type)),
+            Constant(constant_type) => Operand::Constant(Modeler::build_constant(&constant_type)),
         }
     }
 
@@ -47,19 +55,31 @@ impl Module {
 
 pub struct Function {
     pub name: String,
-    pub expressions: Vec<Expression>,
+    pub operations: Vec<Operation>,
 }
 
 impl Function {
     pub fn new(name: String) -> Function {
         Function {
             name: name,
-            expressions: Vec::new(),
+            operations: Vec::new(),
         }
     }
 }
 
-pub enum Expression {
+pub struct Operation {
+    pub operands: Vec<Operand>,
+}
+
+impl Operation {
+    pub fn new() -> Operation {
+        Operation {
+            operands: Vec::new(),
+        }
+    }
+}
+
+pub enum Operand {
     Constant(ConstantType),
 }
 

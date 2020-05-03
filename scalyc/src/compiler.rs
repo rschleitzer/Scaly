@@ -68,9 +68,9 @@ impl Compiler {
     }
 
     fn compute(&mut self, calculation: &CalculationSyntax) -> String {
-        let expression = Modeler::build_expression(calculation);
+        let operation = Modeler::build_operation(calculation);
         let mut function = Function::new(String::from("_repl_function"));
-        function.expressions.push(expression);
+        function.operations.push(operation);
         let mut module = Module::new(String::from("_repl_module"));
         module.add_function(function);
         self.jit_and_execute()
