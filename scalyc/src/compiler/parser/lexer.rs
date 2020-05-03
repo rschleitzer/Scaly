@@ -16,7 +16,8 @@ pub enum Token {
 pub enum Literal {
     String(String),
     Character(String),
-    Numeric(String),
+    Integer(String),
+    FloatingPoint(String),
     Hex(String),
 }
 
@@ -273,7 +274,7 @@ impl<'a> Lexer<'a> {
         if self.is_at_end() {
             let mut char_string = String::new();
             char_string.push(c);
-            return Token::Literal(Literal::Numeric(char_string));
+            return Token::Literal(Literal::Integer(char_string));
         }
 
         if c == '0' && self.character == 'x' {
@@ -290,17 +291,70 @@ impl<'a> Lexer<'a> {
                 self.character = 0 as char;
                 self.read_character();
                 self.column = self.column + 1;
+            } else if self.character == '.' {
+                return self.scan_fraction(value);
+            } else if (self.character == 'E') || (self.character == 'e') {
+                return self.scan_exponent(value);
             } else {
-                return Token::Literal(Literal::Numeric(value));
+                return Token::Literal(Literal::Integer(value));
+            }
+        }
+    }
+
+    fn scan_fraction(&mut self, mut value: String) -> Token {
+        value.push(self.character);
+        self.character = 0 as char;
+        self.read_character();
+
+        if self.is_at_end() {
+            return Token::Literal(Literal::FloatingPoint(value));
+        }
+
+        loop {
+            if (self.character >= '0') && (self.character <= '9') {
+                value.push(self.character);
+                self.character = 0 as char;
+                self.read_character();
+
+                if self.is_at_end() {
+                    return Token::Literal(Literal::FloatingPoint(value));
+                }
+                self.column = self.column + 1;
+            } else if (self.character == 'E') || (self.character == 'e') {
+                return self.scan_exponent(value);
+            } else {
+                return Token::Literal(Literal::FloatingPoint(value));
+            }
+        }
+    }
+
+    fn scan_exponent(&mut self, mut value: String) -> Token {
+        value.push(self.character);
+        self.character = 0 as char;
+        self.read_character();
+
+        if self.is_at_end() {
+            return Token::Literal(Literal::FloatingPoint(value));
+        }
+
+        loop {
+            if (self.character >= '0') && (self.character <= '9') {
+                value.push(self.character);
+                self.character = 0 as char;
+                self.read_character();
+
+                if self.is_at_end() {
+                    return Token::Literal(Literal::FloatingPoint(value));
+                }
+                self.column = self.column + 1;
+            } else {
+                return Token::Literal(Literal::FloatingPoint(value));
             }
         }
     }
 
     fn scan_hex_literal(&mut self) -> Token {
         let mut value = String::new();
-        value.push('0');
-        value.push('x');
-
         self.character = 0 as char;
         self.read_character();
 
@@ -549,10 +603,15 @@ impl<'a> Lexer<'a> {
                 self.empty();
                 Some(Literal::Character(ret))
             }
-            Token::Literal(Literal::Numeric(name)) => {
+            Token::Literal(Literal::Integer(name)) => {
                 let ret = String::from(name);
                 self.empty();
-                Some(Literal::Numeric(ret))
+                Some(Literal::Integer(ret))
+            }
+            Token::Literal(Literal::FloatingPoint(name)) => {
+                let ret = String::from(name);
+                self.empty();
+                Some(Literal::FloatingPoint(ret))
             }
             Token::Literal(Literal::Hex(name)) => {
                 let ret = String::from(name);

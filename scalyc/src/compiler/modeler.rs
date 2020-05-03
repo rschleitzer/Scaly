@@ -1,4 +1,6 @@
-use crate::compiler::parser::lexer::Literal::Numeric;
+use crate::compiler::parser::lexer::Literal::FloatingPoint;
+use crate::compiler::parser::lexer::Literal::Hex;
+use crate::compiler::parser::lexer::Literal::Integer;
 use crate::compiler::parser::CalculationSyntax;
 use crate::compiler::parser::ConstantSyntax;
 use crate::compiler::parser::ExpressionSyntax::Constant;
@@ -17,7 +19,9 @@ impl Modeler {
 
     pub fn build_constant(constant_type: &ConstantSyntax) -> ConstantType {
         match &constant_type.literal {
-            Numeric(number) => ConstantType::Number(number.parse().unwrap()),
+            FloatingPoint(number) => ConstantType::Double(number.parse().unwrap()),
+            Integer(number) => ConstantType::Long(number.parse().unwrap()),
+            Hex(number) => ConstantType::Long(u64::from_str_radix(number, 16).unwrap()),
             _ => panic!("Only numbers."),
         }
     }
@@ -60,5 +64,6 @@ pub enum Expression {
 }
 
 pub enum ConstantType {
-    Number(f64),
+    Double(f64),
+    Long(u64),
 }
