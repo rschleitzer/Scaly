@@ -1,6 +1,8 @@
+use crate::compiler::parser::lexer::Literal::Character;
 use crate::compiler::parser::lexer::Literal::FloatingPoint;
 use crate::compiler::parser::lexer::Literal::Hex;
 use crate::compiler::parser::lexer::Literal::Integer;
+use crate::compiler::parser::lexer::Literal::StringLiteral;
 use crate::compiler::parser::CalculationSyntax;
 use crate::compiler::parser::ConstantSyntax;
 use crate::compiler::parser::ExpressionSyntax::Constant;
@@ -30,7 +32,8 @@ impl Modeler {
             FloatingPoint(number) => ConstantType::Double(number.parse().unwrap()),
             Integer(number) => ConstantType::Long(number.parse().unwrap()),
             Hex(number) => ConstantType::Long(u64::from_str_radix(number, 16).unwrap()),
-            _ => panic!("Only numbers."),
+            StringLiteral(string) => ConstantType::StringConstant(string.to_string()),
+            Character(character) => ConstantType::Character(*character),
         }
     }
 }
@@ -86,4 +89,6 @@ pub enum Operand {
 pub enum ConstantType {
     Double(f64),
     Long(u64),
+    StringConstant(String),
+    Character(char),
 }

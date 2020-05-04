@@ -14,8 +14,8 @@ pub enum Token {
 }
 
 pub enum Literal {
-    String(String),
-    Character(String),
+    StringLiteral(String),
+    Character(char),
     Integer(String),
     FloatingPoint(String),
     Hex(String),
@@ -174,7 +174,7 @@ impl<'a> Lexer<'a> {
                     self.character = 0 as char;
                     self.read_character();
                     self.column = self.column + 1;
-                    return Token::Literal(Literal::String(value));
+                    return Token::Literal(Literal::StringLiteral(value));
                 }
 
                 '\\' => {
@@ -213,56 +213,53 @@ impl<'a> Lexer<'a> {
     }
 
     fn scan_character_literal(&mut self) -> Token {
-        let mut value = String::new();
+        let value: char;
+        self.character = 0 as char;
+        self.read_character();
+        self.column = self.column + 1;
 
-        loop {
-            self.read_character();
-            self.column = self.column + 1;
+        if self.is_at_end() {
+            return Token::Invalid;
+        }
 
-            if self.is_at_end() {
-                return Token::Invalid;
-            }
-
-            match self.character {
-                '\'' => {
-                    self.read_character();
-                    self.column = self.column + 1;
-                    return Token::Literal(Literal::Character(value));
-                }
-
-                '\\' => {
-                    self.read_character();
-                    self.column = self.column + 1;
-                    match self.character {
-                        '\"' | '\\' | '\'' => {
-                            value.push('\\');
-                            value.push(self.character);
-                        }
-                        'n' => {
-                            value.push('\\');
-                            value.push('n');
-                        }
-                        'r' => {
-                            value.push('\\');
-                            value.push('r');
-                        }
-                        't' => {
-                            value.push('\\');
-                            value.push('t');
-                        }
-                        '0' => {
-                            value.push('\\');
-                            value.push('0');
-                        }
-                        _ => return Token::Invalid,
+        match self.character {
+            '\'' => return Token::Invalid,
+            '\\' => {
+                self.character = 0 as char;
+                self.read_character();
+                self.column = self.column + 1;
+                match self.character {
+                    '\"' | '\\' | '\'' => {
+                        value = self.character;
                     }
+                    'n' => {
+                        value = '\n';
+                    }
+                    'r' => {
+                        value = '\r';
+                    }
+                    't' => {
+                        value = '\t';
+                    }
+                    '0' => {
+                        value = '\0';
+                    }
+                    _ => return Token::Invalid,
                 }
-                _ => {
-                    value.push(self.character);
-                    self.character = 0 as char
-                }
+            }
+            _ => {
+                value = self.character;
+                self.character = 0 as char
             }
         }
+        self.character = 0 as char;
+        self.read_character();
+        let token = match self.character {
+            '\'' => Token::Literal(Literal::Character(value)),
+            _ => Token::Invalid,
+        };
+        self.character = 0 as char;
+        token
     }
 
     fn scan_numeric_literal(&mut self) -> Token {
@@ -593,13 +590,13 @@ impl<'a> Lexer<'a> {
             _ => (),
         }
         match &self.token {
-            Token::Literal(Literal::String(name)) => {
+            Token::Literal(Literal::StringLiteral(name)) => {
                 let ret = String::from(name);
                 self.empty();
-                Some(Literal::String(ret))
+                Some(Literal::StringLiteral(ret))
             }
-            Token::Literal(Literal::Character(name)) => {
-                let ret = String::from(name);
+            Token::Literal(Literal::Character(character)) => {
+                let ret = *character;
                 self.empty();
                 Some(Literal::Character(ret))
             }
