@@ -366,7 +366,6 @@ impl<'a> Lexer<'a> {
                         continue;
                     }
                     '\n' => {
-                        self.line = self.line + 1;
                         self.read_character();
                         continue;
                     }
@@ -462,7 +461,6 @@ impl<'a> Lexer<'a> {
 
                     '\n' => {
                         self.read_character();
-                        self.line = self.line + 1;
                         continue;
                     }
 
