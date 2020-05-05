@@ -23,9 +23,8 @@ pub enum Literal {
 
 pub struct Lexer<'a> {
     pub token: Token,
-    character: char,
+    character: Option<char>,
     chars: Chars<'a>,
-    is_at_end: bool,
     previous_line: usize,
     previous_column: usize,
     pub line: usize,
@@ -34,29 +33,32 @@ pub struct Lexer<'a> {
 
 impl<'a> Lexer<'a> {
     pub fn new(deck: &'a str) -> Lexer {
-        Lexer {
+        let mut lexer = Lexer {
             chars: deck.chars(),
-            is_at_end: false,
             token: Token::Empty,
-            character: 0 as char,
+            character: None,
             previous_line: 1,
             previous_column: 0,
             line: 1,
             column: 0,
-        }
+        };
+        lexer.read_character();
+        lexer
     }
 
     fn read_character(&mut self) {
-        if self.character == 0 as char {
-            match self.chars.next() {
-                Some(read_result) => {
-                    self.character = read_result;
+        self.character = self.chars.next();
+        match self.character {
+            None => (),
+            Some(c) => match c {
+                '\r' => (),
+                '\n' => {
+                    self.column = 0;
+                    self.line = self.line + 1;
                 }
-                None => {
-                    self.is_at_end = true;
-                    self.character = 0 as char;
-                }
-            }
+                '\t' => self.column = self.column + 4,
+                _ => self.column = self.column + 1,
+            },
         }
     }
 
@@ -64,37 +66,45 @@ impl<'a> Lexer<'a> {
         self.skip_whitespace();
         self.previous_line = self.line;
         self.previous_column = self.column;
-        if self.is_at_end {
-            return;
-        }
+        match self.character {
+            None => return,
+            Some(c) => {
+                if ((c >= 'a') && (c <= 'z')) || ((c >= 'A') && (c <= 'Z')) {
+                    let mut name = String::new();
+                    name.push(c);
+                    self.token = self.scan_identifier(name);
+                    return;
+                }
 
-        let c = self.character;
+                if (c >= '1') && (c <= '9') {
+                    let mut value = String::new();
+                    value.push(c);
+                    self.token = self.scan_numeric_literal(value);
+                    return;
+                }
 
-        if ((c >= 'a') && (c <= 'z')) || ((c >= 'A') && (c <= 'Z')) {
-            self.token = self.scan_identifier();
-            return;
-        }
-
-        if (c >= '0') && (c <= '9') {
-            self.token = self.scan_numeric_literal();
-            return;
-        }
-
-        match c {
-            '+' | '-' | '*' | '/' | '=' | '%' | '&' | '|' | '^' | '~' | '<' | '>' => {
-                self.token = self.scan_operator()
+                match c {
+                    '0' => {
+                        let mut value = String::new();
+                        value.push(c);
+                        self.token = self.scan_numeric_or_hex_literal(value);
+                    }
+                    '+' | '-' | '*' | '/' | '=' | '%' | '&' | '|' | '^' | '~' | '<' | '>' => {
+                        let mut operation = String::new();
+                        operation.push(c);
+                        self.token = self.scan_operator(operation)
+                    }
+                    '\"' => self.token = { self.scan_string_literal() },
+                    '\'' => self.token = { self.scan_character_literal() },
+                    '{' | '}' | '(' | ')' | '[' | ']' | '.' | ',' | ':' | ';' | '?' | '!' | '@'
+                    | '#' | '$' | '_' | '`' => {
+                        let mut punctuation_string = String::new();
+                        punctuation_string.push(c);
+                        self.token = Token::Punctuation(punctuation_string);
+                    }
+                    _ => self.token = Token::Invalid,
+                }
             }
-            '\"' => self.token = self.scan_string_literal(),
-            '\'' => self.token = self.scan_character_literal(),
-            '{' | '}' | '(' | ')' | '[' | ']' | '.' | ',' | ':' | ';' | '?' | '!' | '@' | '#'
-            | '$' | '_' | '`' => {
-                let mut punctuation_string = String::new();
-                punctuation_string.push(c);
-                self.token = Token::Punctuation(punctuation_string);
-                self.character = 0 as char;
-                self.column = self.column + 1;
-            }
-            _ => self.token = Token::Invalid,
         }
     }
 
@@ -102,437 +112,365 @@ impl<'a> Lexer<'a> {
         self.token = Token::Empty;
     }
 
-    fn scan_identifier(&mut self) -> Token {
-        let mut name = String::new();
-
+    fn scan_identifier(&mut self, mut name: String) -> Token {
         loop {
-            self.read_character();
-            self.column = self.column + 1;
-
-            if self.is_at_end() {
-                if name.len() == 0 {
-                    return Token::Invalid;
-                } else {
-                    return Token::Identifier(name);
+            match self.character {
+                None => {
+                    if name.len() == 0 {
+                        return Token::Invalid;
+                    } else {
+                        return Token::Identifier(name);
+                    }
                 }
-            }
 
-            let c = self.character;
-            if ((c >= 'a') && (c <= 'z'))
-                || ((c >= 'A') && (c <= 'Z'))
-                || ((c >= '0') && (c <= '9'))
-                || (c == '_')
-            {
-                name.push(c);
-                self.character = 0 as char
-            } else {
-                return Token::Identifier(name);
+                Some(c) => match c {
+                    'a'..='z' | 'A'..='Z' | '0'..='9' | '_' => {
+                        name.push(c);
+                        self.read_character();
+                    }
+                    _ => return Token::Identifier(name),
+                },
             }
         }
     }
 
-    fn scan_operator(&mut self) -> Token {
-        let mut operation = String::new();
-
+    fn scan_operator(&mut self, mut operation: String) -> Token {
         loop {
-            self.read_character();
-            self.column = self.column + 1;
-
-            if self.is_at_end() {
-                if operation.len() == 0 {
-                    return Token::Invalid;
-                } else {
-                    return Token::Identifier(operation);
-                }
-            }
-
             match self.character {
-                '+' | '-' | '*' | '/' | '=' | '%' | '&' | '|' | '^' | '~' | '<' | '>' => {
-                    operation.push(self.character);
-                    self.character = 0 as char
+                None => {
+                    if operation.len() == 0 {
+                        return Token::Invalid;
+                    } else {
+                        return Token::Identifier(operation);
+                    }
                 }
+                Some(c) => match c {
+                    '+' | '-' | '*' | '/' | '=' | '%' | '&' | '|' | '^' | '~' | '<' | '>' => {
+                        operation.push(c);
+                    }
 
-                _ => return Token::Identifier(operation),
+                    _ => return Token::Identifier(operation),
+                },
             }
         }
     }
 
     fn scan_string_literal(&mut self) -> Token {
         let mut value = String::new();
-        self.character = 0 as char;
 
         loop {
             self.read_character();
-            self.column = self.column + 1;
-
-            if self.is_at_end() {
-                return Token::Invalid;
-            }
 
             match self.character {
-                '\"' => {
-                    self.character = 0 as char;
-                    self.read_character();
-                    self.column = self.column + 1;
-                    return Token::Literal(Literal::StringLiteral(value));
-                }
-
-                '\\' => {
-                    self.read_character();
-                    self.column = self.column + 1;
-                    match self.character {
-                        '\"' | '\\' | '\'' => {
-                            value.push('\\');
-                            value.push(self.character);
-                        }
-                        'n' => {
-                            value.push('\\');
-                            value.push('n');
-                        }
-                        'r' => {
-                            value.push('\\');
-                            value.push('r');
-                        }
-                        't' => {
-                            value.push('\\');
-                            value.push('t');
-                        }
-                        '0' => {
-                            value.push('\\');
-                            value.push('0');
-                        }
-                        _ => return Token::Invalid,
+                None => return Token::Invalid,
+                Some(c) => match c {
+                    '\"' => {
+                        self.read_character();
+                        return Token::Literal(Literal::StringLiteral(value));
                     }
-                }
-                _ => {
-                    value.push(self.character);
-                    self.character = 0 as char
-                }
+
+                    '\\' => {
+                        self.read_character();
+                        match self.character {
+                            None => return Token::Invalid,
+                            Some(c) => match c {
+                                '\"' | '\\' | '\'' => {
+                                    value.push('\\');
+                                    value.push(c);
+                                }
+                                'n' => {
+                                    value.push('\\');
+                                    value.push('n');
+                                }
+                                'r' => {
+                                    value.push('\\');
+                                    value.push('r');
+                                }
+                                't' => {
+                                    value.push('\\');
+                                    value.push('t');
+                                }
+                                '0' => {
+                                    value.push('\\');
+                                    value.push('0');
+                                }
+                                _ => return Token::Invalid,
+                            },
+                        }
+                    }
+
+                    _ => {
+                        value.push(c);
+                    }
+                },
             }
         }
     }
 
     fn scan_character_literal(&mut self) -> Token {
         let value: char;
-        self.character = 0 as char;
         self.read_character();
-        self.column = self.column + 1;
-
-        if self.is_at_end() {
-            return Token::Invalid;
-        }
 
         match self.character {
-            '\'' => return Token::Invalid,
-            '\\' => {
-                self.character = 0 as char;
-                self.read_character();
-                self.column = self.column + 1;
-                match self.character {
-                    '\"' | '\\' | '\'' => {
-                        value = self.character;
+            None => return Token::Invalid,
+            Some(c) => match c {
+                '\'' => return Token::Invalid,
+                '\\' => {
+                    self.read_character();
+                    match self.character {
+                        None => return Token::Invalid,
+                        Some(c) => match c {
+                            '\"' | '\\' | '\'' => value = c,
+                            'n' => value = '\n',
+                            'r' => value = '\r',
+                            't' => value = '\t',
+                            '0' => value = '\0',
+                            _ => return Token::Invalid,
+                        },
                     }
-                    'n' => {
-                        value = '\n';
-                    }
-                    'r' => {
-                        value = '\r';
-                    }
-                    't' => {
-                        value = '\t';
-                    }
-                    '0' => {
-                        value = '\0';
-                    }
-                    _ => return Token::Invalid,
                 }
-            }
-            _ => {
-                value = self.character;
-                self.character = 0 as char
-            }
+                _ => value = c,
+            },
         }
-        self.character = 0 as char;
         self.read_character();
-        let token = match self.character {
-            '\'' => Token::Literal(Literal::Character(value)),
-            _ => Token::Invalid,
-        };
-        self.character = 0 as char;
-        token
+        match self.character {
+            None => Token::Invalid,
+            Some(c) => match c {
+                '\'' => Token::Literal(Literal::Character(value)),
+                _ => Token::Invalid,
+            },
+        }
     }
 
-    fn scan_numeric_literal(&mut self) -> Token {
-        let c = self.character;
-        self.character = 0 as char;
+    fn scan_numeric_or_hex_literal(&mut self, mut value: String) -> Token {
         self.read_character();
-        self.column = self.column + 1;
-
-        if self.is_at_end() {
-            let mut char_string = String::new();
-            char_string.push(c);
-            return Token::Literal(Literal::Integer(char_string));
+        match self.character {
+            None => return Token::Literal(Literal::Integer(value)),
+            Some(c) => match c {
+                '0'..='9' => {
+                    value.push(c);
+                    return self.scan_numeric_literal(value);
+                }
+                '.' => {
+                    value.push(c);
+                    return self.scan_fraction(value);
+                }
+                'E' | 'e' => {
+                    value.push(c);
+                    return self.scan_exponent(value);
+                }
+                'x' => {
+                    return self.scan_hex_literal();
+                }
+                _ => return Token::Literal(Literal::Integer(value)),
+            },
         }
+    }
 
-        if c == '0' && self.character == 'x' {
-            return self.scan_hex_literal();
-        }
-
-        let mut value = String::new();
-
-        value.push(c);
-
+    fn scan_numeric_literal(&mut self, mut value: String) -> Token {
         loop {
-            if (self.character >= '0') && (self.character <= '9') {
-                value.push(self.character);
-                self.character = 0 as char;
-                self.read_character();
-                self.column = self.column + 1;
-            } else if self.character == '.' {
-                return self.scan_fraction(value);
-            } else if (self.character == 'E') || (self.character == 'e') {
-                return self.scan_exponent(value);
-            } else {
-                return Token::Literal(Literal::Integer(value));
+            self.read_character();
+            match self.character {
+                None => {
+                    return Token::Literal(Literal::Integer(value));
+                }
+                Some(c) => match c {
+                    '0'..='9' => {
+                        value.push(c);
+                    }
+                    '.' => {
+                        value.push(c);
+                        return self.scan_fraction(value);
+                    }
+                    'E' | 'e' => {
+                        value.push(c);
+                        return self.scan_exponent(value);
+                    }
+                    _ => return Token::Literal(Literal::Integer(value)),
+                },
             }
         }
     }
 
     fn scan_fraction(&mut self, mut value: String) -> Token {
-        value.push(self.character);
-        self.character = 0 as char;
-        self.read_character();
-
-        if self.is_at_end() {
-            return Token::Literal(Literal::FloatingPoint(value));
-        }
-
         loop {
-            if (self.character >= '0') && (self.character <= '9') {
-                value.push(self.character);
-                self.character = 0 as char;
-                self.read_character();
-
-                if self.is_at_end() {
+            self.read_character();
+            match self.character {
+                None => {
                     return Token::Literal(Literal::FloatingPoint(value));
                 }
-                self.column = self.column + 1;
-            } else if (self.character == 'E') || (self.character == 'e') {
-                return self.scan_exponent(value);
-            } else {
-                return Token::Literal(Literal::FloatingPoint(value));
+                Some(c) => match c {
+                    '0'..='9' => {
+                        value.push(c);
+                    }
+                    'E' | 'e' => {
+                        value.push(c);
+                        return self.scan_exponent(value);
+                    }
+                    _ => return Token::Literal(Literal::FloatingPoint(value)),
+                },
             }
         }
     }
 
     fn scan_exponent(&mut self, mut value: String) -> Token {
-        value.push(self.character);
-        self.character = 0 as char;
-        self.read_character();
-
-        if self.is_at_end() {
-            return Token::Literal(Literal::FloatingPoint(value));
-        }
-
         loop {
-            if (self.character >= '0') && (self.character <= '9') {
-                value.push(self.character);
-                self.character = 0 as char;
-                self.read_character();
-
-                if self.is_at_end() {
+            self.read_character();
+            match self.character {
+                None => {
                     return Token::Literal(Literal::FloatingPoint(value));
                 }
-                self.column = self.column + 1;
-            } else {
-                return Token::Literal(Literal::FloatingPoint(value));
+                Some(c) => match c {
+                    '0'..='9' => {
+                        value.push(c);
+                    }
+                    _ => return Token::Literal(Literal::FloatingPoint(value)),
+                },
             }
         }
     }
 
     fn scan_hex_literal(&mut self) -> Token {
         let mut value = String::new();
-        self.character = 0 as char;
-        self.read_character();
-
-        if self.is_at_end() {
-            value.push('0');
-            return Token::Literal(Literal::Hex(value));
-        }
-
         loop {
-            let c = self.character;
-            if ((c >= '0') && (c <= '9'))
-                || ((c >= 'a') && (c <= 'f'))
-                || ((c >= 'A') && (c <= 'F'))
-            {
-                value.push(c);
-            } else {
-                return Token::Literal(Literal::Hex(value));
-            }
-
-            self.character = 0 as char;
             self.read_character();
-            self.column = self.column + 1;
+            match self.character {
+                None => {
+                    return Token::Literal(Literal::FloatingPoint(value));
+                }
+                Some(c) => match c {
+                    '0'..='9' | 'a'..='f' | 'A'..='F' => {
+                        value.push(c);
+                    }
+                    _ => return Token::Literal(Literal::Hex(value)),
+                },
+            }
         }
     }
 
     fn skip_whitespace(&mut self) {
         loop {
-            self.read_character();
-            if self.is_at_end {
-                return;
-            }
-
             match self.character {
-                ' ' => {
-                    self.character = 0 as char;
-                    self.column = self.column + 1;
-                    continue;
-                }
-
-                '\t' => {
-                    self.character = 0 as char;
-                    self.column = self.column + 4;
-                    continue;
-                }
-
-                '\r' => {
-                    self.character = 0 as char;
-                    continue;
-                }
-
-                '\n' => {
-                    self.character = 0 as char;
-                    self.column = 1;
-                    self.line = self.line + 1;
-                    continue;
-                }
-
-                '/' => {
-                    self.character = 0 as char;
-                    self.read_character();
-                    self.column = self.column + 1;
-
-                    if self.is_at_end {
-                        return;
+                None => return,
+                Some(c) => match c {
+                    ' ' => {
+                        self.read_character();
+                        continue;
                     }
-
-                    if self.character == '/' {
-                        self.handle_single_line_comment();
-                    } else {
-                        if self.character == '*' {
-                            self.handle_multi_line_comment();
-                        } else {
-                            return;
+                    '\t' => {
+                        self.read_character();
+                        continue;
+                    }
+                    '\r' => {
+                        self.read_character();
+                        continue;
+                    }
+                    '\n' => {
+                        self.line = self.line + 1;
+                        self.read_character();
+                        continue;
+                    }
+                    '/' => {
+                        self.read_character();
+                        match self.character {
+                            None => return,
+                            Some(c) => match c {
+                                '/' => {
+                                    self.read_character();
+                                    self.handle_single_line_comment()
+                                }
+                                '*' => {
+                                    self.read_character();
+                                    self.handle_multi_line_comment()
+                                }
+                                _ => return,
+                            },
                         }
                     }
-                }
 
-                _ => return,
+                    _ => {
+                        return;
+                    }
+                },
             }
         }
     }
 
     fn handle_single_line_comment(&mut self) {
         loop {
-            self.read_character();
-            if self.is_at_end() {
-                return;
-            }
-
             match self.character {
-                '\t' => {
-                    self.character = 0 as char;
-                    self.column = self.column + 4;
-                    continue;
-                }
-
-                '\r' => {
-                    self.character = 0 as char;
-                    continue;
-                }
-
-                '\n' => {
-                    self.character = 0 as char;
-                    self.column = 1;
-                    self.line = self.line + 1;
-                    return;
-                }
-
-                _ => {
-                    self.character = 0 as char;
-                    self.column = self.column + 1;
-                    continue;
-                }
+                None => return,
+                Some(c) => match c {
+                    '\t' => {
+                        self.read_character();
+                        continue;
+                    }
+                    '\r' => {
+                        continue;
+                    }
+                    '\n' => {
+                        self.read_character();
+                        return;
+                    }
+                    _ => {
+                        self.read_character();
+                        continue;
+                    }
+                },
             }
         }
     }
 
     fn handle_multi_line_comment(&mut self) {
         loop {
-            self.read_character();
-            if self.is_at_end() {
-                return;
-            }
-
             match self.character {
-                '/' => {
-                    self.character = 0 as char;
-                    self.read_character();
-                    self.column = self.column + 1;
-
-                    if self.is_at_end() {
-                        return;
-                    } else {
-                        if self.character == '*' {
-                            self.handle_multi_line_comment();
-                        } else {
-                            return;
+                None => return,
+                Some(c) => match c {
+                    '/' => {
+                        self.read_character();
+                        match self.character {
+                            None => return,
+                            Some(c) => match c {
+                                '*' => self.handle_multi_line_comment(),
+                                _ => return,
+                            },
                         }
                     }
-                }
 
-                '*' => {
-                    self.character = 0 as char;
-                    self.read_character();
-                    self.column = self.column + 1;
-
-                    if self.is_at_end() {
-                        return;
-                    } else {
-                        if self.character == '/' {
-                            self.character = 0 as char;
-                            self.read_character();
-                            self.column = self.column + 1;
-                            return;
+                    '*' => {
+                        self.read_character();
+                        match self.character {
+                            None => return,
+                            Some(c) => match c {
+                                '/' => {
+                                    self.read_character();
+                                    return;
+                                }
+                                _ => (),
+                            },
                         }
                     }
-                }
 
-                '\t' => {
-                    self.character = 0 as char;
-                    self.column = self.column + 4;
-                    continue;
-                }
+                    '\t' => {
+                        self.read_character();
+                        continue;
+                    }
 
-                '\r' => {
-                    self.character = 0 as char;
-                    continue;
-                }
+                    '\r' => {
+                        continue;
+                    }
 
-                '\n' => {
-                    self.character = 0 as char;
-                    self.column = 1;
-                    self.line = self.line + 1;
-                    return;
-                }
+                    '\n' => {
+                        self.read_character();
+                        self.line = self.line + 1;
+                        continue;
+                    }
 
-                _ => {
-                    self.character = 0 as char;
-                    self.column = self.column + 1;
-                    continue;
-                }
+                    _ => {
+                        self.read_character();
+                        continue;
+                    }
+                },
             }
         }
     }
@@ -619,8 +557,11 @@ impl<'a> Lexer<'a> {
         }
     }
 
-    pub fn is_at_end(&self) -> bool {
-        self.is_at_end
+    pub fn is_at_end(&mut self) -> bool {
+        match self.character {
+            None => true,
+            Some(_) => false,
+        }
     }
 
     pub fn get_position(&self) -> Position {

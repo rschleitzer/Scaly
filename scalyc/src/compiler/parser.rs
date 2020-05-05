@@ -178,7 +178,7 @@ impl<'a> Parser<'a> {
         Ok(Some(ret))
     }
 
-    pub fn is_at_end(&self) -> bool {
+    pub fn is_at_end(&mut self) -> bool {
         self.lexer.is_at_end()
     }
 
@@ -188,6 +188,14 @@ impl<'a> Parser<'a> {
 
     pub fn get_current_column(&self) -> usize {
         self.lexer.get_position().column
+    }
+
+    pub fn get_previous_line(&self) -> usize {
+        self.lexer.get_previous_position().line
+    }
+
+    pub fn get_previous_column(&self) -> usize {
+        self.lexer.get_previous_position().column
     }
     fn _is_identifier(&self, id: String) -> bool {
         if self._keywords.contains(&id) {

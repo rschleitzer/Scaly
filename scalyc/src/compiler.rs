@@ -39,7 +39,9 @@ impl Compiler {
                 Some(statement) => {
                     if !parser.is_at_end() {
                         return String::from(format!(
-                            "Unexpected character at {}, {} after the statement.\n",
+                            "Unexpected characters between {}, {} and {}, {} after the statement.\n",
+                            parser.get_previous_line(),
+                            parser.get_previous_column(),
                             parser.get_current_line(),
                             parser.get_current_column()
                         ));

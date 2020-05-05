@@ -37,6 +37,7 @@ impl Repl {
                     self.deck = String::new();
                     break;
                 }
+                card = String::new();
                 io::stdin()
                     .read_line(&mut card)
                     .expect("failed to read line");
