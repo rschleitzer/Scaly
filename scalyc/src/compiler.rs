@@ -3,8 +3,10 @@ use llvm::core::*;
 use llvm::execution_engine::*;
 use llvm::target::*;
 use modeler::Function;
+use modeler::Model;
 use modeler::Modeler;
-use modeler::Module;
+use planner::Plan;
+use planner::Planner;
 use std::mem;
 
 mod parser;
@@ -13,16 +15,24 @@ use parser::Parser;
 use parser::StatementSyntax;
 use parser::StatementSyntax::Calculation;
 
+mod planner;
+
 mod modeler;
 
-pub struct Compiler {}
+pub struct Compiler {
+    standard_library: Option<Model>,
+}
 
 impl Compiler {
     pub fn new() -> Compiler {
-        Compiler {}
+        Compiler {
+            standard_library: None,
+        }
     }
 
-    pub fn load_standard_library(&mut self) {}
+    pub fn load_standard_library(&mut self) {
+        self.standard_library = Some(Model::new())
+    }
 
     pub fn evaluate(&mut self, deck: &str) -> String {
         let mut parser = Parser::new(deck);
@@ -73,8 +83,8 @@ impl Compiler {
         let operation = Modeler::build_operation(calculation);
         let mut function = Function::new(String::from("_repl_function"));
         function.operations.push(operation);
-        let mut module = Module::new(String::from("_repl_module"));
-        module.add_function(function);
+        let mut plan = Plan::new();
+        Planner::add_function(&mut plan, &function);
         self.jit_and_execute()
     }
 

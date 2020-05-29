@@ -38,20 +38,32 @@ impl Modeler {
     }
 }
 
+pub struct Model {
+    pub modules: Vec<Module>,
+}
+
+impl Model {
+    pub fn new() -> Model {
+        Model {
+            modules: Vec::new(),
+        }
+    }
+}
+
 pub struct Module {
     pub name: String,
-    functions: HashMap<String, Function>,
+    pub functions: HashMap<String, Function>,
 }
 
 impl Module {
-    pub fn new(name: String) -> Module {
+    pub fn _new(name: String) -> Module {
         Module {
             name: name,
             functions: HashMap::new(),
         }
     }
 
-    pub fn add_function(&mut self, function: Function) {
+    pub fn _add_function(&mut self, function: Function) {
         self.functions.insert(function.name.clone(), function);
     }
 }
