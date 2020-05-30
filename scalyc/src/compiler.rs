@@ -19,6 +19,9 @@ mod planner;
 
 mod modeler;
 
+mod generator;
+use generator::Generator;
+
 pub struct Compiler {
     standard_library: Option<Model>,
 }
@@ -85,6 +88,8 @@ impl Compiler {
         function.operations.push(operation);
         let mut plan = Plan::new();
         Planner::add_function(&mut plan, &function);
+        let generator = Generator::new();
+        generator.generate(String::from("_repl_module"));
         self.jit_and_execute()
     }
 

@@ -3,7 +3,7 @@ use crate::compiler::modeler::ConstantType::Long;
 pub struct Planner {}
 
 impl Planner {
-    pub fn add_function(_plan: &mut Plan, model_function: &crate::compiler::modeler::Function) {
+    pub fn add_function(plan: &mut Plan, model_function: &crate::compiler::modeler::Function) {
         let mut function = Function::new(model_function.name.clone());
         let mut block = Block::new();
         for operation in &model_function.operations {
@@ -31,7 +31,7 @@ impl Planner {
             };
         }
         function.blocks.push(block);
-        _plan.functions.push(function);
+        plan.functions.push(function);
     }
 }
 
