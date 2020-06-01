@@ -5,7 +5,7 @@ pub struct Planner {}
 impl Planner {
     pub fn add_function(plan: &mut Plan, model_function: &crate::compiler::modeler::Function) {
         let mut function = Function::new(model_function.name.clone());
-        let mut block = Block::new();
+        let mut block = Block::new(String::from("entry"));
         for operation in &model_function.operations {
             let mut value: Option<Value> = None;
             for operand in &operation.operands {
@@ -24,9 +24,7 @@ impl Planner {
             }
 
             match value {
-                Some(value) => block
-                    .instructions
-                    .push(Instruction::Ret(Ret { value: value })),
+                Some(value) => block.instructions.push(Instruction::Ret(value)),
                 None => panic!("Nothing to return."),
             };
         }
@@ -36,12 +34,14 @@ impl Planner {
 }
 
 pub struct Plan {
+    pub name: String,
     pub functions: Vec<Function>,
 }
 
 impl Plan {
-    pub fn new() -> Plan {
+    pub fn new(name: String) -> Plan {
         Plan {
+            name: name,
             functions: Vec::new(),
         }
     }
@@ -55,30 +55,28 @@ pub struct Function {
 impl Function {
     pub fn new(name: String) -> Function {
         Function {
-            blocks: Vec::new(),
             name: name,
+            blocks: Vec::new(),
         }
     }
 }
 
 pub struct Block {
+    pub name: String,
     pub instructions: Vec<Instruction>,
 }
 
 impl Block {
-    pub fn new() -> Block {
+    pub fn new(name: String) -> Block {
         Block {
+            name: name,
             instructions: Vec::new(),
         }
     }
 }
 
 pub enum Instruction {
-    Ret(Ret),
-}
-
-pub struct Ret {
-    value: Value,
+    Ret(Value),
 }
 
 pub enum Value {

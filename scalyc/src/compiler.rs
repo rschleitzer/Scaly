@@ -86,10 +86,10 @@ impl Compiler {
         let operation = Modeler::build_operation(calculation);
         let mut function = Function::new(String::from("_repl_function"));
         function.operations.push(operation);
-        let mut plan = Plan::new();
+        let mut plan = Plan::new(String::from("_repl_module"));
         Planner::add_function(&mut plan, &function);
         let generator = Generator::new();
-        generator.generate(String::from("_repl_module"));
+        generator.generate(plan);
         self.jit_and_execute()
     }
 
