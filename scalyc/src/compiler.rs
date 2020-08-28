@@ -108,7 +108,7 @@ impl Compiler {
             // Create a basic block in the function and set our builder to generate
             // code in it.
             let bb =
-                LLVMAppendBasicBlockInContext(context, function, b"entry\0".as_ptr() as *const _);
+                LLVMAppendBasicBlockInContext(context, function, b"\0".as_ptr() as *const _);
 
             LLVMPositionBuilderAtEnd(builder, bb);
 

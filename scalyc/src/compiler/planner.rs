@@ -13,8 +13,8 @@ impl Planner {
                     crate::compiler::modeler::Operand::Constant(constant_type) => {
                         value = match constant_type {
                             Long(value) => Some(Value::Constant(Constant {
-                                constant_type: ConstantType::Int64Constant,
-                                value: *value,
+                                _constant_type: ConstantType::Int64Constant,
+                                _value: *value,
                             })),
                             _ => panic!("This type is not supported yet."),
                         };
@@ -84,8 +84,8 @@ pub enum Value {
 }
 
 pub struct Constant {
-    constant_type: ConstantType,
-    value: u64,
+    _constant_type: ConstantType,
+    _value: u64,
 }
 
 pub enum ConstantType {

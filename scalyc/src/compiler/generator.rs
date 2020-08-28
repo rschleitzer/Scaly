@@ -55,7 +55,7 @@ impl Generator {
         }
     }
 
-    fn add_ret(&self, block: *mut LLVMBasicBlock, value: &Value) {}
+    fn add_ret(&self, _block: *mut LLVMBasicBlock, _value: &Value) {}
 }
 
 impl Drop for Generator {
