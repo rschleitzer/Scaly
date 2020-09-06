@@ -473,7 +473,7 @@ impl<'a> Lexer<'a> {
         }
     }
 
-    pub fn _parse_keyword(&mut self, fixed_string: String) -> bool {
+    pub fn parse_keyword(&mut self, fixed_string: String) -> bool {
         match &self.token {
             Token::Empty => self.advance(),
             _ => (),
@@ -488,7 +488,7 @@ impl<'a> Lexer<'a> {
         }
     }
 
-    pub fn _parse_identifier(&mut self) -> Option<String> {
+    pub fn parse_identifier(&mut self) -> Option<String> {
         match &self.token {
             Token::Empty => self.advance(),
             _ => (),

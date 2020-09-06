@@ -4,8 +4,24 @@ use lexer::Literal;
 use lexer::Position;
 use std::collections::HashSet;
 
+pub struct ProgramSyntax {
+    pub files: Vec<FileSyntax>,
+}
+
+pub struct FileSyntax {
+    pub file_name: String,
+    pub intrinsics: Option<Vec<IntrinsicSyntax>>,
+    pub statements: Option<Vec<StatementSyntax>>,
+}
+
+pub struct IntrinsicSyntax {
+    pub start: Position,
+    pub end: Position,
+    pub name: String,
+}
+
 pub enum StatementSyntax {
-    Calculation(CalculationSyntax),
+   Calculation(CalculationSyntax),
 }
 
 pub struct CalculationSyntax {
@@ -27,7 +43,7 @@ pub struct OperandSyntax {
 }
 
 pub enum ExpressionSyntax {
-    Constant(ConstantSyntax),
+   Constant(ConstantSyntax),
 }
 
 pub struct ConstantSyntax {
@@ -57,6 +73,114 @@ impl<'a> Parser<'a> {
         }
     }
 
+    pub fn parse_file(&mut self) -> Result<Option<FileSyntax>, ParserError> {
+
+        let intrinsics = self.parse_intrinsic_list()?;
+
+        let statements = self.parse_statement_list()?;
+        if let Some(_) = statements {
+            if !self.is_at_end() {
+                let error_pos = self.lexer.get_previous_position();
+                return Result::Err(
+                    ParserError {
+                        file_name: "".to_string(),
+                        line: error_pos.line,
+                        column: error_pos.column,
+                    },
+                )
+            }
+        }
+
+        let ret = FileSyntax {
+            file_name: "".to_string(), 
+            intrinsics: intrinsics, 
+            statements: statements,
+            };
+
+        Ok(Some(ret))
+    }
+
+    pub fn parse_intrinsic_list(&mut self) -> Result<Option<Vec<IntrinsicSyntax>>, ParserError> {
+        let mut array: Option<Vec<IntrinsicSyntax>> = Option::None;
+        loop {
+            let node = self.parse_intrinsic()?;
+            if let Some(node) = node {
+                if let None = array {
+                    array = Some(Vec::new())
+                };
+                match &mut array {
+                    Some(a) => a.push(node),
+                    None => (),
+                }
+            } else {
+                break;
+            }
+        }
+
+        Ok(array)
+    }
+
+    pub fn parse_intrinsic(&mut self) -> Result<Option<IntrinsicSyntax>, ParserError> {
+        let start: Position = self.lexer.get_previous_position();
+
+        let success_intrinsic_1 = self.lexer.parse_keyword("intrinsic".to_string());
+        if !success_intrinsic_1 {
+            return Ok(None);
+        }
+
+        let name = self.lexer.parse_identifier();
+        match &name {
+            Some(name) =>
+            if !self.is_identifier(name) {
+                return Result::Err(
+                    ParserError {
+                        file_name: "".to_string(),
+                        line: self.lexer.line,
+                        column: self.lexer.column,
+                    },
+                )
+           },
+           _ =>
+            return Result::Err(
+                ParserError {
+                    file_name: "".to_string(),
+                    line: self.lexer.line,
+                    column: self.lexer.column,
+                },
+            ),
+        }
+
+        let end: Position = self.lexer.get_position();
+
+        let ret = IntrinsicSyntax {
+            start: start,
+            end: end, 
+            name: name.unwrap(),
+            };
+
+        Ok(Some(ret))
+    }
+
+    pub fn parse_statement_list(&mut self) -> Result<Option<Vec<StatementSyntax>>, ParserError> {
+        let mut array: Option<Vec<StatementSyntax>> = Option::None;
+        loop {
+            let node = self.parse_statement()?;
+            if let Some(node) = node {
+                if let None = array {
+                    array = Some(Vec::new())
+                };
+                match &mut array {
+                    Some(a) => a.push(node),
+                    None => (),
+                }
+            } else {
+                break;
+            }
+        }
+
+        Ok(array)
+    }
+
     pub fn parse_statement(&mut self) -> Result<Option<StatementSyntax>, ParserError> {
         {
             let node = self.parse_calculation()?;
@@ -84,9 +208,9 @@ impl<'a> Parser<'a> {
 
         let ret = CalculationSyntax {
             start: start,
-            end: end,
+            end: end, 
             operation: operation.unwrap(),
-        };
+            };
 
         Ok(Some(ret))
     }
@@ -103,9 +227,9 @@ impl<'a> Parser<'a> {
 
         let ret = OperationSyntax {
             start: start,
-            end: end,
+            end: end, 
             op: op.unwrap(),
-        };
+            };
 
         Ok(Some(ret))
     }
@@ -142,9 +266,9 @@ impl<'a> Parser<'a> {
 
         let ret = OperandSyntax {
             start: start,
-            end: end,
+            end: end, 
             primary: primary.unwrap(),
-        };
+            };
 
         Ok(Some(ret))
     }
@@ -171,9 +295,9 @@ impl<'a> Parser<'a> {
 
         let ret = ConstantSyntax {
             start: start,
-            end: end,
+            end: end, 
             literal: literal.unwrap(),
-        };
+            };
 
         Ok(Some(ret))
     }
@@ -197,8 +321,8 @@ impl<'a> Parser<'a> {
     pub fn get_previous_column(&self) -> usize {
         self.lexer.get_previous_position().column
     }
-    fn _is_identifier(&self, id: String) -> bool {
-        if self._keywords.contains(&id) {
+    fn is_identifier(&self, id: &String) -> bool {
+        if self._keywords.contains(id) {
             false
         } else {
             true
