@@ -11,8 +11,8 @@ pub struct NameSyntax {
 }
 
 pub enum StatementSyntax {
-   Calculation(CalculationSyntax),
-   Let(LetSyntax),
+    Calculation(CalculationSyntax),
+    Let(LetSyntax),
 }
 
 pub struct LetSyntax {
@@ -48,7 +48,7 @@ pub struct OperandSyntax {
 }
 
 pub enum ExpressionSyntax {
-   Constant(ConstantSyntax),
+    Constant(ConstantSyntax),
 }
 
 pub struct ConstantSyntax {
@@ -64,7 +64,7 @@ pub struct TypeAnnotationSyntax {
 }
 
 pub enum TypeSpecSyntax {
-   Type(TypeSyntax),
+    Type(TypeSyntax),
 }
 
 pub struct TypeSyntax {
@@ -100,21 +100,21 @@ impl<'a> Parser<'a> {
 
         let name = self.lexer.parse_identifier();
         match &name {
-            Some(name) =>
-            if !self.is_identifier(name) {            return Ok(None)
-
-           },
-           _ =>            return Ok(None)
-,
+            Some(name) => {
+                if !self.is_identifier(name) {
+                    return Ok(None);
+                }
+            }
+            _ => return Ok(None),
         }
 
         let end: Position = self.lexer.get_position();
 
         let ret = NameSyntax {
             start: start,
-            end: end, 
+            end: end,
             name: name.unwrap(),
-            };
+        };
 
         Ok(Some(ret))
     }
@@ -132,7 +132,7 @@ impl<'a> Parser<'a> {
                 return Ok(Some(StatementSyntax::Let(node)));
             }
         }
-        return Ok(None)
+        return Ok(None);
     }
 
     pub fn parse_let(&mut self) -> Result<Option<LetSyntax>, ParserError> {
@@ -140,21 +140,25 @@ impl<'a> Parser<'a> {
 
         let success_let_1 = self.lexer.parse_keyword("let".to_string());
         if !success_let_1 {
-            return Ok(None)
+            return Ok(None);
         }
 
         let binding = self.parse_binding()?;
         if let None = binding {
-            return Err(ParserError { file_name: "".to_string(), line: self.lexer.line, column: self.lexer.column })
+            return Err(ParserError {
+                file_name: "".to_string(),
+                line: self.lexer.line,
+                column: self.lexer.column,
+            });
         }
 
         let end: Position = self.lexer.get_position();
 
         let ret = LetSyntax {
             start: start,
-            end: end, 
+            end: end,
             binding: binding.unwrap(),
-            };
+        };
 
         Ok(Some(ret))
     }
@@ -164,30 +168,34 @@ impl<'a> Parser<'a> {
 
         let name = self.lexer.parse_identifier();
         match &name {
-            Some(name) =>
-            if !self.is_identifier(name) {            return Ok(None)
-
-           },
-           _ =>            return Ok(None)
-,
+            Some(name) => {
+                if !self.is_identifier(name) {
+                    return Ok(None);
+                }
+            }
+            _ => return Ok(None),
         }
 
         let type_annotation = self.parse_typeannotation()?;
 
         let calculation = self.parse_calculation()?;
         if let None = calculation {
-            return Err(ParserError { file_name: "".to_string(), line: self.lexer.line, column: self.lexer.column })
+            return Err(ParserError {
+                file_name: "".to_string(),
+                line: self.lexer.line,
+                column: self.lexer.column,
+            });
         }
 
         let end: Position = self.lexer.get_position();
 
         let ret = BindingSyntax {
             start: start,
-            end: end, 
-            name: name.unwrap(), 
-            type_annotation: type_annotation, 
+            end: end,
+            name: name.unwrap(),
+            type_annotation: type_annotation,
             calculation: calculation.unwrap(),
-            };
+        };
 
         Ok(Some(ret))
     }
@@ -197,7 +205,7 @@ impl<'a> Parser<'a> {
 
         let operation = self.parse_operation()?;
         if let None = operation {
-            return Ok(None)
+            return Ok(None);
         }
 
         let success_semicolon_2 = self.lexer.parse_punctuation(";".to_string());
@@ -209,9 +217,9 @@ impl<'a> Parser<'a> {
 
         let ret = CalculationSyntax {
             start: start,
-            end: end, 
+            end: end,
             operation: operation.unwrap(),
-            };
+        };
 
         Ok(Some(ret))
     }
@@ -221,16 +229,16 @@ impl<'a> Parser<'a> {
 
         let op = self.parse_operand_list()?;
         if let None = op {
-            return Ok(None)
+            return Ok(None);
         }
 
         let end: Position = self.lexer.get_position();
 
         let ret = OperationSyntax {
             start: start,
-            end: end, 
+            end: end,
             op: op.unwrap(),
-            };
+        };
 
         Ok(Some(ret))
     }
@@ -260,16 +268,16 @@ impl<'a> Parser<'a> {
 
         let primary = self.parse_expression()?;
         if let None = primary {
-            return Ok(None)
+            return Ok(None);
         }
 
         let end: Position = self.lexer.get_position();
 
         let ret = OperandSyntax {
             start: start,
-            end: end, 
+            end: end,
             primary: primary.unwrap(),
-            };
+        };
 
         Ok(Some(ret))
     }
@@ -281,7 +289,7 @@ impl<'a> Parser<'a> {
                 return Ok(Some(ExpressionSyntax::Constant(node)));
             }
         }
-        return Ok(None)
+        return Ok(None);
     }
 
     pub fn parse_constant(&mut self) -> Result<Option<ConstantSyntax>, ParserError> {
@@ -289,16 +297,16 @@ impl<'a> Parser<'a> {
 
         let literal = self.lexer.parse_literal();
         if let None = literal {
-            return Ok(None)
+            return Ok(None);
         }
 
         let end: Position = self.lexer.get_position();
 
         let ret = ConstantSyntax {
             start: start,
-            end: end, 
+            end: end,
             literal: literal.unwrap(),
-            };
+        };
 
         Ok(Some(ret))
     }
@@ -308,21 +316,25 @@ impl<'a> Parser<'a> {
 
         let success_colon_1 = self.lexer.parse_punctuation(":".to_string());
         if !success_colon_1 {
-            return Ok(None)
+            return Ok(None);
         }
 
         let type_spec = self.parse_typespec()?;
         if let None = type_spec {
-            return Err(ParserError { file_name: "".to_string(), line: self.lexer.line, column: self.lexer.column })
+            return Err(ParserError {
+                file_name: "".to_string(),
+                line: self.lexer.line,
+                column: self.lexer.column,
+            });
         }
 
         let end: Position = self.lexer.get_position();
 
         let ret = TypeAnnotationSyntax {
             start: start,
-            end: end, 
+            end: end,
             type_spec: type_spec.unwrap(),
-            };
+        };
 
         Ok(Some(ret))
     }
@@ -334,7 +346,7 @@ impl<'a> Parser<'a> {
                 return Ok(Some(TypeSpecSyntax::Type(node)));
             }
         }
-        return Ok(None)
+        return Ok(None);
     }
 
     pub fn parse_type(&mut self) -> Result<Option<TypeSyntax>, ParserError> {
@@ -342,16 +354,16 @@ impl<'a> Parser<'a> {
 
         let name = self.parse_name()?;
         if let None = name {
-            return Ok(None)
+            return Ok(None);
         }
 
         let end: Position = self.lexer.get_position();
 
         let ret = TypeSyntax {
             start: start,
-            end: end, 
+            end: end,
             name: name.unwrap(),
-            };
+        };
 
         Ok(Some(ret))
     }
