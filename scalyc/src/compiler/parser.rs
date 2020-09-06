@@ -4,17 +4,7 @@ use lexer::Literal;
 use lexer::Position;
 use std::collections::HashSet;
 
-pub struct ProgramSyntax {
-    pub files: Vec<FileSyntax>,
-}
-
-pub struct FileSyntax {
-    pub file_name: String,
-    pub intrinsics: Option<Vec<IntrinsicSyntax>>,
-    pub statements: Option<Vec<StatementSyntax>>,
-}
-
-pub struct IntrinsicSyntax {
+pub struct NameSyntax {
     pub start: Position,
     pub end: Position,
     pub name: String,
@@ -22,6 +12,21 @@ pub struct IntrinsicSyntax {
 
 pub enum StatementSyntax {
    Calculation(CalculationSyntax),
+   Let(LetSyntax),
+}
+
+pub struct LetSyntax {
+    pub start: Position,
+    pub end: Position,
+    pub binding: BindingSyntax,
+}
+
+pub struct BindingSyntax {
+    pub start: Position,
+    pub end: Position,
+    pub name: String,
+    pub type_annotation: Option<TypeAnnotationSyntax>,
+    pub calculation: CalculationSyntax,
 }
 
 pub struct CalculationSyntax {
@@ -52,6 +57,22 @@ pub struct ConstantSyntax {
     pub literal: Literal,
 }
 
+pub struct TypeAnnotationSyntax {
+    pub start: Position,
+    pub end: Position,
+    pub type_spec: TypeSpecSyntax,
+}
+
+pub enum TypeSpecSyntax {
+   Type(TypeSyntax),
+}
+
+pub struct TypeSyntax {
+    pub start: Position,
+    pub end: Position,
+    pub name: NameSyntax,
+}
+
 pub struct ParserError {
     pub file_name: String,
     pub line: usize,
@@ -67,118 +88,35 @@ impl<'a> Parser<'a> {
     pub fn new(deck: &'a str) -> Parser {
         let mut keywords = HashSet::new();
         keywords.insert(String::from("intrinsic"));
+        keywords.insert(String::from("let"));
         Parser {
             lexer: Lexer::new(deck),
             _keywords: keywords,
         }
     }
 
-    pub fn parse_file(&mut self) -> Result<Option<FileSyntax>, ParserError> {
-
-        let intrinsics = self.parse_intrinsic_list()?;
-
-        let statements = self.parse_statement_list()?;
-        if let Some(_) = statements {
-            if !self.is_at_end() {
-                let error_pos = self.lexer.get_previous_position();
-                return Result::Err(
-                    ParserError {
-                        file_name: "".to_string(),
-                        line: error_pos.line,
-                        column: error_pos.column,
-                    },
-                )
-            }
-        }
-
-        let ret = FileSyntax {
-            file_name: "".to_string(), 
-            intrinsics: intrinsics, 
-            statements: statements,
-            };
-
-        Ok(Some(ret))
-    }
-
-    pub fn parse_intrinsic_list(&mut self) -> Result<Option<Vec<IntrinsicSyntax>>, ParserError> {
-        let mut array: Option<Vec<IntrinsicSyntax>> = Option::None;
-        loop {
-            let node = self.parse_intrinsic()?;
-            if let Some(node) = node {
-                if let None = array {
-                    array = Some(Vec::new())
-                };
-                match &mut array {
-                    Some(a) => a.push(node),
-                    None => (),
-                }
-            } else {
-                break;
-            }
-        }
-
-        Ok(array)
-    }
-
-    pub fn parse_intrinsic(&mut self) -> Result<Option<IntrinsicSyntax>, ParserError> {
+    pub fn parse_name(&mut self) -> Result<Option<NameSyntax>, ParserError> {
         let start: Position = self.lexer.get_previous_position();
-
-        let success_intrinsic_1 = self.lexer.parse_keyword("intrinsic".to_string());
-        if !success_intrinsic_1 {
-            return Ok(None);
-        }
 
         let name = self.lexer.parse_identifier();
         match &name {
             Some(name) =>
-            if !self.is_identifier(name) {
-            return Result::Err(
-                ParserError {
-                    file_name: "".to_string(),
-                    line: self.lexer.line,
-                    column: self.lexer.column,
-                },
-            )
+            if !self.is_identifier(name) {            return Ok(None)
+
            },
-           _ =>
-            return Result::Err(
-                ParserError {
-                    file_name: "".to_string(),
-                    line: self.lexer.line,
-                    column: self.lexer.column,
-                },
-            ),
+           _ =>            return Ok(None)
+,
         }
 
         let end: Position = self.lexer.get_position();
 
-        let ret = IntrinsicSyntax {
+        let ret = NameSyntax {
             start: start,
             end: end, 
             name: name.unwrap(),
             };
 
         Ok(Some(ret))
-    }
-
-    pub fn parse_statement_list(&mut self) -> Result<Option<Vec<StatementSyntax>>, ParserError> {
-        let mut array: Option<Vec<StatementSyntax>> = Option::None;
-        loop {
-            let node = self.parse_statement()?;
-            if let Some(node) = node {
-                if let None = array {
-                    array = Some(Vec::new())
-                };
-                match &mut array {
-                    Some(a) => a.push(node),
-                    None => (),
-                }
-            } else {
-                break;
-            }
-        }
-
-        Ok(array)
     }
 
     pub fn parse_statement(&mut self) -> Result<Option<StatementSyntax>, ParserError> {
@@ -188,7 +126,70 @@ impl<'a> Parser<'a> {
                 return Ok(Some(StatementSyntax::Calculation(node)));
             }
         }
-        return Ok(None);
+        {
+            let node = self.parse_let()?;
+            if let Some(node) = node {
+                return Ok(Some(StatementSyntax::Let(node)));
+            }
+        }
+        return Ok(None)
+    }
+
+    pub fn parse_let(&mut self) -> Result<Option<LetSyntax>, ParserError> {
+        let start: Position = self.lexer.get_previous_position();
+
+        let success_let_1 = self.lexer.parse_keyword("let".to_string());
+        if !success_let_1 {
+            return Ok(None)
+        }
+
+        let binding = self.parse_binding()?;
+        if let None = binding {
+            return Err(ParserError { file_name: "".to_string(), line: self.lexer.line, column: self.lexer.column })
+        }
+
+        let end: Position = self.lexer.get_position();
+
+        let ret = LetSyntax {
+            start: start,
+            end: end, 
+            binding: binding.unwrap(),
+            };
+
+        Ok(Some(ret))
+    }
+
+    pub fn parse_binding(&mut self) -> Result<Option<BindingSyntax>, ParserError> {
+        let start: Position = self.lexer.get_previous_position();
+
+        let name = self.lexer.parse_identifier();
+        match &name {
+            Some(name) =>
+            if !self.is_identifier(name) {            return Ok(None)
+
+           },
+           _ =>            return Ok(None)
+,
+        }
+
+        let type_annotation = self.parse_typeannotation()?;
+
+        let calculation = self.parse_calculation()?;
+        if let None = calculation {
+            return Err(ParserError { file_name: "".to_string(), line: self.lexer.line, column: self.lexer.column })
+        }
+
+        let end: Position = self.lexer.get_position();
+
+        let ret = BindingSyntax {
+            start: start,
+            end: end, 
+            name: name.unwrap(), 
+            type_annotation: type_annotation, 
+            calculation: calculation.unwrap(),
+            };
+
+        Ok(Some(ret))
     }
 
     pub fn parse_calculation(&mut self) -> Result<Option<CalculationSyntax>, ParserError> {
@@ -196,7 +197,7 @@ impl<'a> Parser<'a> {
 
         let operation = self.parse_operation()?;
         if let None = operation {
-            return Ok(None);
+            return Ok(None)
         }
 
         let success_semicolon_2 = self.lexer.parse_punctuation(";".to_string());
@@ -220,7 +221,7 @@ impl<'a> Parser<'a> {
 
         let op = self.parse_operand_list()?;
         if let None = op {
-            return Ok(None);
+            return Ok(None)
         }
 
         let end: Position = self.lexer.get_position();
@@ -259,7 +260,7 @@ impl<'a> Parser<'a> {
 
         let primary = self.parse_expression()?;
         if let None = primary {
-            return Ok(None);
+            return Ok(None)
         }
 
         let end: Position = self.lexer.get_position();
@@ -280,7 +281,7 @@ impl<'a> Parser<'a> {
                 return Ok(Some(ExpressionSyntax::Constant(node)));
             }
         }
-        return Ok(None);
+        return Ok(None)
     }
 
     pub fn parse_constant(&mut self) -> Result<Option<ConstantSyntax>, ParserError> {
@@ -288,7 +289,7 @@ impl<'a> Parser<'a> {
 
         let literal = self.lexer.parse_literal();
         if let None = literal {
-            return Ok(None);
+            return Ok(None)
         }
 
         let end: Position = self.lexer.get_position();
@@ -297,6 +298,59 @@ impl<'a> Parser<'a> {
             start: start,
             end: end, 
             literal: literal.unwrap(),
+            };
+
+        Ok(Some(ret))
+    }
+
+    pub fn parse_typeannotation(&mut self) -> Result<Option<TypeAnnotationSyntax>, ParserError> {
+        let start: Position = self.lexer.get_previous_position();
+
+        let success_colon_1 = self.lexer.parse_punctuation(":".to_string());
+        if !success_colon_1 {
+            return Ok(None)
+        }
+
+        let type_spec = self.parse_typespec()?;
+        if let None = type_spec {
+            return Err(ParserError { file_name: "".to_string(), line: self.lexer.line, column: self.lexer.column })
+        }
+
+        let end: Position = self.lexer.get_position();
+
+        let ret = TypeAnnotationSyntax {
+            start: start,
+            end: end, 
+            type_spec: type_spec.unwrap(),
+            };
+
+        Ok(Some(ret))
+    }
+
+    pub fn parse_typespec(&mut self) -> Result<Option<TypeSpecSyntax>, ParserError> {
+        {
+            let node = self.parse_type()?;
+            if let Some(node) = node {
+                return Ok(Some(TypeSpecSyntax::Type(node)));
+            }
+        }
+        return Ok(None)
+    }
+
+    pub fn parse_type(&mut self) -> Result<Option<TypeSyntax>, ParserError> {
+        let start: Position = self.lexer.get_previous_position();
+
+        let name = self.parse_name()?;
+        if let None = name {
+            return Ok(None)
+        }
+
+        let end: Position = self.lexer.get_position();
+
+        let ret = TypeSyntax {
+            start: start,
+            end: end, 
+            name: name.unwrap(),
             };
 
         Ok(Some(ret))

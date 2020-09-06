@@ -60,7 +60,7 @@ impl<'a> Parser<'a> {
         }
 "
                 )))
-"        return Ok(None);
+"        return Ok(None)
 "
             )
             ($ ; non-abstract syntax
@@ -77,10 +77,10 @@ impl<'a> Parser<'a> {
 "        if let None = "(property content)" {
 "                               (if (equal? 1 (child-number content))
                                     ($
-"            return Ok(None);
+"            return Ok(None)
 "                                   )
                                     ($
-"            return Err(ParserError { file_name: String::copy(_ep, self.file_name), line: self.lexer.line, column: self.lexer.column })
+"            return Err(ParserError { file_name: \"\".to_string(), line: self.lexer.line, column: self.lexer.column })
 "                                   )
                                 )
 "        }
@@ -122,7 +122,7 @@ impl<'a> Parser<'a> {
                                         ($
                                             (if (equal? 1 (child-number content))
                                                 ($
-"            return Ok(None);
+"            return Ok(None)
 "                                               )
                                                 ($
 "

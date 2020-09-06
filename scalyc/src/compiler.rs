@@ -74,11 +74,11 @@ impl Compiler {
     fn process_statement(&mut self, statement: &StatementSyntax) -> String {
         match statement {
             Calculation(calculation) => return self.compute(calculation),
-            // _ => {
+            _ => {
             //    let main_module = self.model.get_main();
             //    Modeler::add_statement(main_module, statement);
-            //    String::from("Statement added.\n")
-            //}
+               return String::from("Statement added.\n")
+            }
         };
     }
 

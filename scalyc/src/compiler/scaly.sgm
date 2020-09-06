@@ -2,22 +2,21 @@
 
   <grammar>
 
+<!--
     <syntax id = Program                                        program
         <content link = File                  multiple          property = files
 
     <syntax id = File                                           top
         <content link = Intrinsic             multiple optional property = intrinsics
-<!--
         <content link = Using                 multiple optional property = usings
         <content link = Define                multiple optional property = defines
         <content link = Declaration           multiple optional property = declarations
--->
         <content link = Statement             multiple optional property = statements
 
     <syntax id = Intrinsic                    multiple
         <content link = intrinsic
         <content identifier                                     property = name
-<!--
+
     <syntax id = Using                        multiple
         <content link = using
         <content link = Name                                    property = name
@@ -26,9 +25,10 @@
         <content link = define
         <content link = Name                                    property = name
         <content link = Type                                    property = type_spec
-
+-->
     <syntax id = Name                                           base = Expression
         <content identifier                                     property = name
+<!--
         <content link = Extension             multiple optional property = extensions
 
     <syntax id = Extension                    multiple
@@ -79,10 +79,10 @@
     <syntax id = ThreadLocalDeclaration                         base = Declaration
         <content link = ThreadLocal                             property = declaration
 -->
-    <syntax id = Statement                    multiple abstract
+    <syntax id = Statement                            abstract
         <content link = Calculation
-<!--
         <content link = Let
+<!--
         <content link = Var
         <content link = Mutable
         <content link = ThreadLocal
@@ -91,11 +91,11 @@
         <content link = Continue
         <content link = Return
         <content link = Throw
-
+-->
     <syntax id = Let                                            base = Statement
         <content link = let
         <content link = Binding                                 property = binding
-
+<!--
     <syntax id = Var                                            base = Statement
         <content link = var
         <content link = Binding                                 property = binding
@@ -107,12 +107,12 @@
     <syntax id = ThreadLocal                                    base = Statement
         <content link = threadlocal
         <content link = Binding                                 property = binding
-
+-->
     <syntax id = Binding
         <content identifier                                     property = name
         <content link = TypeAnnotation                 optional property = type_annotation
         <content link = Calculation                             property = calculation
-
+<!--
     <syntax id = Set                                            base = Statement
         <content link = set
         <content link = Operation                               property = l_value
@@ -409,17 +409,19 @@
         <content link = allocator
         <content link = Structure                      optional property = input
         <content link = Block                                   property = body
-
+-->
     <syntax id = TypeAnnotation
         <content link = colon
         <content link = TypeSpec                                property = type_spec
 
     <syntax id = TypeSpec                              abstract
         <content link = Type
+<!--
         <content link = Variant
-
-    <syntax id = Type                         multiple          base = TypeSpec
+-->
+    <syntax id = Type                                           base = TypeSpec
         <content link = Name                                    property = name
+<!--
         <content link = GenericArguments               optional property = generics
         <content link = Optional                       optional property = optional
         <content link = LifeTime                       optional property = life_time
@@ -471,7 +473,9 @@
     <keyword id = using
     <keyword id = namespace
     <keyword id = typedef
+-->
     <keyword id = let
+<!--
     <keyword id = mutable
     <keyword id = threadlocal
     <keyword id = var
@@ -516,7 +520,9 @@
     <punctuation id = right_bracket      value = "]"
     <punctuation id = dot               value = "."
     <punctuation id = comma             value = ","
+-->
     <punctuation id = colon             value = ":"
+<!--
     <punctuation id = question          value = "?"
     <punctuation id = exclamation       value = "!"
     <punctuation id = at                value = "@"
