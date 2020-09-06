@@ -132,8 +132,8 @@ impl<'a> Parser<'a> {
                     line: self.lexer.line,
                     column: self.lexer.column,
                 },
-            )
-"                                              )
+            )"
+                                                )
                                             )
                                         )
                                     )
@@ -146,13 +146,16 @@ impl<'a> Parser<'a> {
 "
                                     ))
                                     (("identifier") ($ 
-"        if let Some("(property content)") = "(property content)" {
-            if !self.is_identifier("(property content)") {
-"                   null-handler
-"           }
-        } else {"
+"        match &"(property content)" {
+            Some("(property content)") =>
+            if !self.is_identifier("(property content)") {"
                                         null-handler
-"        }
+"
+           },
+           _ =>"
+                                        null-handler
+            ",
+        }
 "                                   ))
                                     (else ($ 
 "        if let None = "(property content)" {
@@ -215,8 +218,8 @@ impl<'a> Parser<'a> {
     pub fn get_previous_column(&""self) -> usize {
         self.lexer.get_previous_position().column
     }
-    fn is_identifier(&""self, id: String) -> bool {
-        if self._keywords.contains(&""id) {
+    fn is_identifier(&""self, id: &""String) -> bool {
+        if self._keywords.contains(id) {
             false
         } else {
             true

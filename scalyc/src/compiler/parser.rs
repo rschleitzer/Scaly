@@ -132,13 +132,13 @@ impl<'a> Parser<'a> {
         match &name {
             Some(name) =>
             if !self.is_identifier(name) {
-                return Result::Err(
-                    ParserError {
-                        file_name: "".to_string(),
-                        line: self.lexer.line,
-                        column: self.lexer.column,
-                    },
-                )
+            return Result::Err(
+                ParserError {
+                    file_name: "".to_string(),
+                    line: self.lexer.line,
+                    column: self.lexer.column,
+                },
+            )
            },
            _ =>
             return Result::Err(
