@@ -6,7 +6,7 @@ pub "(if (abstract? syntax-node) "enum" "struct")" "(id syntax-node)"Syntax {"
         (if (abstract? syntax-node)
             (apply-to-children-of syntax-node (lambda (content) ($
 "
-   "(link content)"("(link content)"Syntax),"
+    "(link content)"("(link content)"Syntax),"
             )))
             ($
                 (if (top? syntax-node)

@@ -77,10 +77,14 @@ impl<'a> Parser<'a> {
 "        if let None = "(property content)" {
 "                               (if (equal? 1 (child-number content))
                                     ($
-"            return Ok(None)
+"            return Ok(None);
 "                                   )
                                     ($
-"            return Err(ParserError { file_name: \"\".to_string(), line: self.lexer.line, column: self.lexer.column })
+"            return Err(ParserError {
+                file_name: \"\".to_string(),
+                line: self.lexer.line,
+                column: self.lexer.column,
+            });
 "                                   )
                                 )
 "        }
@@ -122,7 +126,8 @@ impl<'a> Parser<'a> {
                                         ($
                                             (if (equal? 1 (child-number content))
                                                 ($
-"            return Ok(None)
+"
+                return Ok(None)
 "                                               )
                                                 ($
 "
@@ -148,7 +153,7 @@ impl<'a> Parser<'a> {
                                     (("identifier") ($ 
 "        match &"(property content)" {
             Some("(property content)") =>
-            if !self.is_identifier("(property content)") {"
+                if !self.is_identifier("(property content)") {"
                                         null-handler
 "
            },
@@ -182,7 +187,7 @@ impl<'a> Parser<'a> {
             end: end"
                 )
                 (apply-to-property-children-of syntax (lambda (content) ($
-                    ", 
+                    ",
             "(property content)": "(property content)
                     (if (optional? content)
                         ""
@@ -190,7 +195,7 @@ impl<'a> Parser<'a> {
                     )
                 )))
                 ",
-            };
+        };
 
         Ok(Some(ret))
 "

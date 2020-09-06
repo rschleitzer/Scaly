@@ -100,12 +100,14 @@ impl<'a> Parser<'a> {
 
         let name = self.lexer.parse_identifier();
         match &name {
-            Some(name) => {
+            Some(name) =>
                 if !self.is_identifier(name) {
-                    return Ok(None);
-                }
-            }
-            _ => return Ok(None),
+                return Ok(None)
+
+           },
+           _ =>
+                return Ok(None)
+,
         }
 
         let end: Position = self.lexer.get_position();
@@ -132,7 +134,7 @@ impl<'a> Parser<'a> {
                 return Ok(Some(StatementSyntax::Let(node)));
             }
         }
-        return Ok(None);
+        return Ok(None)
     }
 
     pub fn parse_let(&mut self) -> Result<Option<LetSyntax>, ParserError> {
@@ -140,7 +142,8 @@ impl<'a> Parser<'a> {
 
         let success_let_1 = self.lexer.parse_keyword("let".to_string());
         if !success_let_1 {
-            return Ok(None);
+
+                return Ok(None)
         }
 
         let binding = self.parse_binding()?;
@@ -168,12 +171,14 @@ impl<'a> Parser<'a> {
 
         let name = self.lexer.parse_identifier();
         match &name {
-            Some(name) => {
+            Some(name) =>
                 if !self.is_identifier(name) {
-                    return Ok(None);
-                }
-            }
-            _ => return Ok(None),
+                return Ok(None)
+
+           },
+           _ =>
+                return Ok(None)
+,
         }
 
         let type_annotation = self.parse_typeannotation()?;
@@ -289,7 +294,7 @@ impl<'a> Parser<'a> {
                 return Ok(Some(ExpressionSyntax::Constant(node)));
             }
         }
-        return Ok(None);
+        return Ok(None)
     }
 
     pub fn parse_constant(&mut self) -> Result<Option<ConstantSyntax>, ParserError> {
@@ -297,7 +302,8 @@ impl<'a> Parser<'a> {
 
         let literal = self.lexer.parse_literal();
         if let None = literal {
-            return Ok(None);
+
+                return Ok(None)
         }
 
         let end: Position = self.lexer.get_position();
@@ -316,7 +322,8 @@ impl<'a> Parser<'a> {
 
         let success_colon_1 = self.lexer.parse_punctuation(":".to_string());
         if !success_colon_1 {
-            return Ok(None);
+
+                return Ok(None)
         }
 
         let type_spec = self.parse_typespec()?;
@@ -346,7 +353,7 @@ impl<'a> Parser<'a> {
                 return Ok(Some(TypeSpecSyntax::Type(node)));
             }
         }
-        return Ok(None);
+        return Ok(None)
     }
 
     pub fn parse_type(&mut self) -> Result<Option<TypeSyntax>, ParserError> {
