@@ -70,9 +70,7 @@ impl<'a> Lexer<'a> {
             None => return,
             Some(c) => {
                 if ((c >= 'a') && (c <= 'z')) || ((c >= 'A') && (c <= 'Z')) {
-                    let mut name = String::new();
-                    name.push(c);
-                    self.token = self.scan_identifier(name);
+                    self.token = self.scan_identifier();
                     return;
                 }
 
@@ -112,7 +110,8 @@ impl<'a> Lexer<'a> {
         self.token = Token::Empty;
     }
 
-    fn scan_identifier(&mut self, mut name: String) -> Token {
+    fn scan_identifier(&mut self) -> Token {
+        let mut name = String::new();
         loop {
             match self.character {
                 None => {
