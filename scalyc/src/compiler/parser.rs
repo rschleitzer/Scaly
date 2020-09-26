@@ -4,6 +4,15 @@ use lexer::Literal;
 use lexer::Position;
 use std::collections::HashSet;
 
+pub struct ProgramSyntax {
+    pub files: Vec<FileSyntax>,
+}
+
+pub struct FileSyntax {
+    pub file_name: String,
+    pub statements: Option<Vec<StatementSyntax>>,
+}
+
 pub struct NameSyntax {
     pub start: Position,
     pub end: Position,
@@ -95,6 +104,30 @@ impl<'a> Parser<'a> {
         }
     }
 
+    pub fn parse_file(&mut self) -> Result<Option<FileSyntax>, ParserError> {
+
+        let statements = self.parse_statement_list()?;
+        if let Some(_) = statements {
+            if !self.is_at_end() {
+                let error_pos = self.lexer.get_previous_position();
+                return Result::Err(
+                    ParserError {
+                        file_name: "".to_string(),
+                        line: error_pos.line,
+                        column: error_pos.column,
+                    },
+                )
+            }
+        }
+
+        let ret = FileSyntax {
+            file_name: "".to_string(),
+            statements: statements,
+        };
+
+        Ok(Some(ret))
+    }
+
     pub fn parse_name(&mut self) -> Result<Option<NameSyntax>, ParserError> {
         let start: Position = self.lexer.get_previous_position();
 
@@ -119,6 +152,26 @@ impl<'a> Parser<'a> {
         };
 
         Ok(Some(ret))
+    }
+
+    pub fn parse_statement_list(&mut self) -> Result<Option<Vec<StatementSyntax>>, ParserError> {
+        let mut array: Option<Vec<StatementSyntax>> = Option::None;
+        loop {
+            let node = self.parse_statement()?;
+            if let Some(node) = node {
+                if let None = array {
+                    array = Some(Vec::new())
+                };
+                match &mut array {
+                    Some(a) => a.push(node),
+                    None => (),
+                }
+            } else {
+                break;
+            }
+        }
+
+        Ok(array)
     }
 
     pub fn parse_statement(&mut self) -> Result<Option<StatementSyntax>, ParserError> {

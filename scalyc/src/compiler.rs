@@ -1,3 +1,5 @@
+use std::fs;
+
 extern crate llvm_sys as llvm;
 use llvm::core::*;
 use llvm::execution_engine::*;
@@ -11,6 +13,7 @@ use std::mem;
 
 mod parser;
 use parser::CalculationSyntax;
+use parser::FileSyntax;
 use parser::Parser;
 use parser::StatementSyntax;
 use parser::StatementSyntax::Calculation;
@@ -23,7 +26,7 @@ mod generator;
 use generator::Generator;
 
 pub struct Compiler {
-    standard_library: Option<Model>,
+    standard_library: Option<FileSyntax>,
 }
 
 impl Compiler {
@@ -34,7 +37,18 @@ impl Compiler {
     }
 
     pub fn load_standard_library(&mut self) {
-        self.standard_library = Some(Model::new())
+        let contents_result = fs::read_to_string("stdlib.scaly");
+        match contents_result {
+            Ok(contents) => {
+                let mut parser = Parser::new(contents.as_ref());
+                let result = parser.parse_file();
+                match result {
+                    Ok(file_syntax) => self.standard_library = file_syntax,
+                    Err(_) => (),
+                }
+            }
+            Err(_) => (),
+        }
     }
 
     pub fn evaluate(&mut self, deck: &str) -> String {
@@ -75,9 +89,9 @@ impl Compiler {
         match statement {
             Calculation(calculation) => return self.compute(calculation),
             _ => {
-            //    let main_module = self.model.get_main();
-            //    Modeler::add_statement(main_module, statement);
-               return String::from("Statement added.\n")
+                //    let main_module = self.model.get_main();
+                //    Modeler::add_statement(main_module, statement);
+                return String::from("Statement added.\n");
             }
         };
     }
@@ -107,8 +121,7 @@ impl Compiler {
 
             // Create a basic block in the function and set our builder to generate
             // code in it.
-            let bb =
-                LLVMAppendBasicBlockInContext(context, function, b"\0".as_ptr() as *const _);
+            let bb = LLVMAppendBasicBlockInContext(context, function, b"\0".as_ptr() as *const _);
 
             LLVMPositionBuilderAtEnd(builder, bb);
 

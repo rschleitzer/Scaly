@@ -2,17 +2,18 @@
 
   <grammar>
 
-<!--
     <syntax id = Program                                        program
         <content link = File                  multiple          property = files
 
     <syntax id = File                                           top
+<!--
         <content link = Intrinsic             multiple optional property = intrinsics
         <content link = Using                 multiple optional property = usings
         <content link = Define                multiple optional property = defines
         <content link = Declaration           multiple optional property = declarations
+-->
         <content link = Statement             multiple optional property = statements
-
+<!--
     <syntax id = Intrinsic                    multiple
         <content link = intrinsic
         <content identifier                                     property = name
@@ -79,7 +80,7 @@
     <syntax id = ThreadLocalDeclaration                         base = Declaration
         <content link = ThreadLocal                             property = declaration
 -->
-    <syntax id = Statement                            abstract
+    <syntax id = Statement                   multiple abstract
         <content link = Calculation
         <content link = Let
 <!--
