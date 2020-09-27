@@ -6,351 +6,20 @@
         <content link = File                  multiple          property = files
 
     <syntax id = File                                           top
-<!--
-        <content link = Intrinsic             multiple optional property = intrinsics
-        <content link = Using                 multiple optional property = usings
-        <content link = Define                multiple optional property = defines
         <content link = Declaration           multiple optional property = declarations
--->
         <content link = Statement             multiple optional property = statements
-<!--
-    <syntax id = Intrinsic                    multiple
-        <content link = intrinsic
-        <content identifier                                     property = name
-
-    <syntax id = Using                        multiple
-        <content link = using
-        <content link = Name                                    property = name
-
-    <syntax id = Define                       multiple
-        <content link = define
-        <content link = Name                                    property = name
-        <content link = Type                                    property = type_spec
--->
-    <syntax id = Name                                           base = Expression
-        <content identifier                                     property = name
-<!--
-        <content link = Extension             multiple optional property = extensions
-
-    <syntax id = Extension                    multiple
-        <content link = dot
-        <content identifier                                     property = name
 
     <syntax id = Declaration                  multiple abstract
-        <content link = Namespace
-        <content link = Function
-        <content link = Class
-        <content link = LetDeclaration
-        <content link = VarDeclaration
-        <content link = MutableDeclaration
-        <content link = ThreadLocalDeclaration
+        <content link = Define
+        <content link = Combine
 
-    <syntax id = Namespace                                      base = Declaration
-        <content link = namespace
+    <syntax id = Define                                         base = Declaration
+        <content link = define
         <content link = Name                                    property = name
-        <content link = left_curly
-        <content link = Using                 multiple optional property = usings
-        <content link = Define                multiple optional property = defines
-        <content link = Declaration           multiple optional property = declarations
-        <content link = right_curly
-
-    <syntax id = Function                                       base = Declaration
-        <content link = function
-        <content link = Procedure                               property = procedure
-
-    <syntax id = Procedure
-        <content identifier                                     property = name
-        <content link = Routine                                 property = routine
-
-    <syntax id = Routine
         <content link = Structure                      optional property = input
-        <content link = TypeAnnotation                 optional property = output
-        <content link = Throws                         optional property = throws_clause
-        <content link = Block                                   property = body
 
-    <syntax id = LetDeclaration                                 base = Declaration
-        <content link = Let                                     property = declaration
-
-    <syntax id = VarDeclaration                                 base = Declaration
-        <content link = Var                                     property = declaration
-
-    <syntax id = MutableDeclaration                             base = Declaration
-        <content link = Mutable                                 property = declaration
-
-    <syntax id = ThreadLocalDeclaration                         base = Declaration
-        <content link = ThreadLocal                             property = declaration
--->
-    <syntax id = Statement                   multiple abstract
-        <content link = Calculation
-        <content link = Let
-<!--
-        <content link = Var
-        <content link = Mutable
-        <content link = ThreadLocal
-        <content link = Set
-        <content link = Break
-        <content link = Continue
-        <content link = Return
-        <content link = Throw
--->
-    <syntax id = Let                                            base = Statement
-        <content link = let
-        <content link = Binding                                 property = binding
-<!--
-    <syntax id = Var                                            base = Statement
-        <content link = var
-        <content link = Binding                                 property = binding
-
-    <syntax id = Mutable                                        base = Statement
-        <content link = mutable
-        <content link = Binding                                 property = binding
-
-    <syntax id = ThreadLocal                                    base = Statement
-        <content link = threadlocal
-        <content link = Binding                                 property = binding
--->
-    <syntax id = Binding
+    <syntax id = Name
         <content identifier                                     property = name
-        <content link = TypeAnnotation                 optional property = type_annotation
-        <content link = Calculation                             property = calculation
-<!--
-    <syntax id = Set                                            base = Statement
-        <content link = set
-        <content link = Operation                               property = l_value
-        <content link = colon
-        <content link = Calculation                             property = r_value
--->
-    <syntax id = Calculation                                    base = Statement
-        <content link = Operation                               property = operation
-        <content link = semicolon                      optional
-
-    <syntax id = Operation
-        <content link = Operand               multiple          property = op
-
-    <syntax id = Operand                      multiple          base = Statement
-        <content link = Expression                              property = primary
-<!--
-        <content link = Postfix               multiple optional property = postfixes
-
-    <syntax id = Postfix                      multiple abstract
-        <content link = MemberAccess
-        <content link = As
-        <content link = Is
-        <content link = Unwrap
-        <content link = Catch
-
-    <syntax id = MemberAccess                                   base = Postfix
-        <content link = dot
-        <content identifier                                     property = member
-
-    <syntax id = As                                             base = Postfix
-        <content link = as
-        <content link = TypeSpec                                property = type_spec
-
-    <syntax id = Is                                             base = Postfix
-        <content link = is
-        <content link = TypeSpec                                property = type_spec
-
-    <syntax id = Unwrap                                         base = Postfix
-        <content link = exclamation
-
-    <syntax id = Catch                                          base = Postfix
-        <content link = catch
-        <content link = CatchPattern                            property = type_spec
-        <content link = Block                                   property = handler
-
-    <syntax id = CatchPattern                          abstract
-        <content link = WildCardCatchPattern
-        <content link = TypeCatchPattern
-
-    <syntax id = WildCardCatchPattern                           base = CatchPattern
-        <content link = WildcardPattern                         property = pattern
-
-    <syntax id = TypeCatchPattern                               base = CatchPattern
-        <content link = TypeSpec                                property = type_spec
-        <content identifier                            optional property = error_name
--->
-    <syntax id = Expression                            abstract
-        <content link = Constant
-<!--
-        <content link = Block
-        <content link = Name
-        <content link = If
-        <content link = Switch
-        <content link = For
-        <content link = While
-        <content link = Do
-        <content link = This
-        <content link = New
-        <content link = Object
-        <content link = Array
-        <content link = SizeOf
-
-    <syntax id = Block                                          base = Expression
-        <content link = left_curly
-        <content link = Statement             multiple optional property = statements
-        <content link = right_curly
--->
-    <syntax id = Constant                                       base = Expression
-        <content literal                                        property = literal
-<!--
-    <syntax id = If                                             base = Expression
-        <content link = if
-        <content link = left_paren
-        <content link = Operation                               property = condition
-        <content link = right_paren
-        <content link = Block                                   property = consequent
-        <content link = Else                           optional property = else_clause
-
-    <syntax id = Else
-        <content link = else
-        <content link = Block                                   property = alternative
-
-    <syntax id = Switch                                         base = Expression
-        <content link = switch
-        <content link = left_paren
-        <content link = Operation                               property = condition
-        <content link = right_paren
-        <content link = left_curly
-        <content link = SwitchCase            multiple          property = cases
-        <content link = right_curly
-
-    <syntax id = SwitchCase                   multiple
-        <content link = CaseLabel                               property = label
-        <content link = Block                                   property = content
-
-    <syntax id = CaseLabel                             abstract
-        <content link = ItemCaseLabel
-        <content link = DefaultCaseLabel
-
-    <syntax id = ItemCaseLabel                                  base = CaseLabel
-        <content link = case
-        <content link = CaseItem              multiple          property = items
-
-    <syntax id = CaseItem                     multiple
-        <content link = CasePattern                             property = pattern
-        <content link = comma                          optional
-
-    <syntax id = CasePattern                           abstract
-        <content link = ConstantPattern
-        <content link = WildcardPattern
-        <content link = NamePattern
-
-    <syntax id = ConstantPattern                                base = CasePattern
-        <content link = Constant                                property = constant
-
-    <syntax id = WildcardPattern                                base = CasePattern
-        <content link = underscore
-
-    <syntax id = NamePattern                                    base = CasePattern
-        <content link = Name                                    property = name
-
-    <syntax id = DefaultCaseLabel                               base = CaseLabel
-        <content link = default
-
-    <syntax id = For                                            base = Expression
-        <content link = for
-        <content link = left_paren
-        <content identifier                                     property = index
-        <content link = TypeAnnotation                 optional property = type_annotation
-        <content link = in
-        <content link = Operation                               property = operation
-        <content link = right_paren
-        <content link = Loop                                    property = iteration
-
-    <syntax id = While                                          base = Expression
-        <content link = while
-        <content link = left_paren
-        <content link = Operation                               property = condition
-        <content link = right_paren
-        <content link = Loop                                    property = iteration
-
-    <syntax id = Do                                             base = Expression
-        <content link = do
-        <content link = Loop                                    property = iteration
-        <content link = while
-        <content link = left_paren
-        <content link = Operation                               property = condition
-        <content link = right_paren
-
-    <syntax id = Loop                                  abstract
-        <content link = SimpleLoop
-        <content link = NamedLoop
-
-    <syntax id = SimpleLoop                                     base = Loop
-        <content link = Block                                   property = code
-
-    <syntax id = NamedLoop                                      base = Loop
-        <content link = loop
-        <content identifier                                     property = name
-        <content link = Block                                   property = code
-
-    <syntax id = This                                           base = Expression
-        <content link = this
-
-    <syntax id = New                                            base = Expression
-        <content link = new
-        <content link = Type                                    property = type_spec
-
-    <syntax id = Object                                         base = Expression
-        <content link = left_paren
-        <content link = Operation                      optional property = first_op
-        <content link = Item                  multiple optional property = additional_ops
-        <content link = right_paren
-
-    <syntax id = Array                                          base = Expression
-        <content link = left_bracket
-        <content link = Operation                      optional property = first_op
-        <content link = Item                  multiple optional property = additional_ops
-        <content link = right_bracket
-
-    <syntax id = Item                         multiple
-        <content link = comma
-        <content link = Operation                               property = operation
-
-    <syntax id = SizeOf                                         base = Expression
-        <content link = sizeof
-        <content link = Type                                    property = type_spec
-
-    <syntax id = Break                                          base = Statement
-        <content link = break
-        <content identifier                            optional property = iteration
-        <content link = semicolon                      optional
-
-    <syntax id = Continue                                       base = Statement
-        <content link = continue
-        <content identifier                            optional property = iteration
-        <content link = semicolon                      optional
-
-    <syntax id = Return                                         base = Statement
-        <content link = return
-        <content link = Calculation                    optional property = result
-
-    <syntax id = Throw                                          base = Statement
-        <content link = throw
-        <content link = Calculation                             property = exception
-
-    <syntax id = Class                                          base = Declaration
-        <content link = class
-        <content link = Name                                    property = name
-        <content link = GenericParameters              optional property = generics
-        <content link = Extends                        optional property = base_class
-        <content link = Structure                      optional property = contents
-        <content link = ClassBody                      optional property = body
-
-    <syntax id = GenericParameters
-        <content link = left_bracket
-        <content identifier                                     property = name
-        <content link = GenericParameter      multiple optional property = additional_generics
-        <content link = right_bracket
-
-    <syntax id = GenericParameter             multiple
-        <content link = comma
-        <content identifier                                     property = name
-
-    <syntax id = Extends
-        <content link = extends
-        <content link = Name                                    property = name
 
     <syntax id = Structure
         <content link = left_paren
@@ -362,174 +31,65 @@
         <content link = TypeAnnotation                 optional property = type_annotation
         <content link = comma                          optional
 
-    <syntax id = ClassBody
-        <content link = left_curly
-        <content link = ClassMember           multiple optional property = members
-        <content link = right_curly
+    <syntax id = Combine
+        <content link = combine
+        <content link = TypeSpec                                property = operand
+        <content link = TypeSpec                                property = operator
+        <content link = TypeAnnotation                 optional property = type_annotation
+        <content link = Expression                     optional property = expression
 
-    <syntax id = ClassMember                  multiple abstract
-        <content link = LetMember
-        <content link = VarMember
-        <content link = MutableMember
-        <content link = SetInitialization
-        <content link = Method
-        <content link = StaticFunction
-        <content link = Operator
-        <content link = Initializer
-        <content link = Allocator
+    <syntax id = Statement                   multiple abstract
+        <content link = Calculation
+        <content link = Let
 
-    <syntax id = LetMember                                      base = ClassMember
-        <content link = Let                                     property = declaration
+    <syntax id = Let                                            base = Statement
+        <content link = let
+        <content link = Binding                                 property = binding
 
-    <syntax id = VarMember                                      base = ClassMember
-        <content link = Var                                     property = declaration
+    <syntax id = Binding
+        <content identifier                                     property = name
+        <content link = TypeAnnotation                 optional property = type_annotation
+        <content link = Calculation                             property = calculation
 
-    <syntax id = MutableMember                                  base = ClassMember
-        <content link = Mutable                                 property = declaration
+    <syntax id = Calculation                                    base = Statement
+        <content link = Operation                               property = operation
+        <content link = semicolon                      optional
 
-    <syntax id = SetInitialization                              base = ClassMember
-        <content link = Set                                     property = definition
+    <syntax id = Operation
+        <content link = Operand               multiple          property = op
 
-    <syntax id = Method                                         base = ClassMember
-        <content link = method
-        <content link = Procedure                               property = procedure
+    <syntax id = Operand                      multiple          base = Statement
+        <content link = Expression                              property = primary
 
-    <syntax id = StaticFunction                                 base = ClassMember
-        <content link = Function                                property = procedure
+    <syntax id = Expression                            abstract
+        <content link = Constant
+        <content link = Instruction
 
-    <syntax id = Operator                                       base = ClassMember
-        <content link = operator
-        <content link = Routine                                 property = routine
+    <syntax id = Constant                                       base = Expression
+        <content literal                                        property = literal
 
-    <syntax id = Initializer                                    base = ClassMember
-        <content link = initializer
-        <content link = Structure                      optional property = input
-        <content link = Block                                   property = body
+    <syntax id = Instruction                                    base = Expression
+        <content link = instruction
 
-    <syntax id = Allocator                                      base = ClassMember
-        <content link = allocator
-        <content link = Structure                      optional property = input
-        <content link = Block                                   property = body
--->
     <syntax id = TypeAnnotation
         <content link = colon
         <content link = TypeSpec                                property = type_spec
 
     <syntax id = TypeSpec                              abstract
-        <content link = Type
-<!--
-        <content link = Variant
--->
-    <syntax id = Type                                           base = TypeSpec
+        <content link = TypeName
+
+    <syntax id = TypeName                                       base = TypeSpec
         <content link = Name                                    property = name
-<!--
-        <content link = GenericArguments               optional property = generics
-        <content link = Optional                       optional property = optional
-        <content link = LifeTime                       optional property = life_time
 
-    <syntax id = Variant                                        base = TypeSpec
-        <content link = left_paren
-        <content link = Type                  multiple optional property = types
-        <content link = right_paren
-
-    <syntax id = Throws
-        <content link = throws
-        <content link = TypeSpec                                property = throws_type
-
-    <syntax id = GenericArguments
-        <content link = left_bracket
-        <content link = Type                                    property = generic
-        <content link = GenericArgument       multiple optional property = additional_generics
-        <content link = right_bracket
-
-    <syntax id = GenericArgument              multiple
-        <content link = comma
-        <content link = Type                                    property = type_spec
-
-    <syntax id = Optional
-        <content link = question
-
-    <syntax id = LifeTime                              abstract
-        <content link = Root
-        <content link = Local
-        <content link = Reference
-        <content link = Thrown
-
-    <syntax id = Root                                           base = LifeTime
-        <content link = dollar
-
-    <syntax id = Local                                          base = LifeTime
-        <content link = at
-        <content identifier                                     property = location
-
-    <syntax id = Reference                                      base = LifeTime
-        <content link = backtick
-        <content literal                               optional property = age
-
-    <syntax id = Thrown                                         base = LifeTime
-        <content link = hash
--->
-    <keyword id = intrinsic
- <!--
-    <keyword id = using
-    <keyword id = namespace
-    <keyword id = typedef
--->
-    <keyword id = let
-<!--
-    <keyword id = mutable
-    <keyword id = threadlocal
-    <keyword id = var
-    <keyword id = set
-    <keyword id = class
-    <keyword id = extends
-    <keyword id = initializer
-    <keyword id = allocator
-    <keyword id = method
-    <keyword id = function
-    <keyword id = operator
-    <keyword id = this
-    <keyword id = new
-    <keyword id = sizeof
-    <keyword id = catch
-    <keyword id = throws
-    <keyword id = as
-    <keyword id = is
-    <keyword id = if
-    <keyword id = else
-    <keyword id = switch
-    <keyword id = case
-    <keyword id = default
-    <keyword id = for
-    <keyword id = in
-    <keyword id = while
-    <keyword id = do
-    <keyword id = loop
-    <keyword id = break
-    <keyword id = continue
-    <keyword id = return
-    <keyword id = throw
     <keyword id = define
--->
+    <keyword id = combine
+    <keyword id = instruction
+    <keyword id = let
+
     <punctuation id = semicolon         value = ";"
-<!--
-    <punctuation id = left_curly         value = "{"
-    <punctuation id = right_curly        value = "}"
-    <punctuation id = left_paren         value = "("
-    <punctuation id = right_paren        value = ")"
-    <punctuation id = left_bracket       value = "["
-    <punctuation id = right_bracket      value = "]"
-    <punctuation id = dot               value = "."
+    <punctuation id = left_paren        value = "("
+    <punctuation id = right_paren       value = ")"
     <punctuation id = comma             value = ","
--->
     <punctuation id = colon             value = ":"
-<!--
-    <punctuation id = question          value = "?"
-    <punctuation id = exclamation       value = "!"
-    <punctuation id = at                value = "@"
-    <punctuation id = hash              value = "#"
-    <punctuation id = dollar            value = "$"
-    <punctuation id = underscore        value = "_"
-    <punctuation id = backtick          value = "`"
--->
+
   </grammar>

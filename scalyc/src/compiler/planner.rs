@@ -19,7 +19,8 @@ impl Planner {
                             _ => panic!("This type is not supported yet."),
                         };
                         break;
-                    }
+                    },
+                    crate::compiler::modeler::Operand::Instruction => (),
                 };
             }
 

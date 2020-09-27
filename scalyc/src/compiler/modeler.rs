@@ -6,6 +6,7 @@ use crate::compiler::parser::lexer::Literal::StringLiteral;
 use crate::compiler::parser::CalculationSyntax;
 use crate::compiler::parser::ConstantSyntax;
 use crate::compiler::parser::ExpressionSyntax::Constant;
+use crate::compiler::parser::ExpressionSyntax::Instruction;
 use crate::compiler::parser::OperandSyntax;
 use std::collections::HashMap;
 
@@ -24,6 +25,7 @@ impl Modeler {
         let primary = &operand.primary;
         match primary {
             Constant(constant_type) => Operand::Constant(Modeler::build_constant(&constant_type)),
+            Instruction(_) => Operand::Instruction,
         }
     }
 
@@ -96,6 +98,7 @@ impl Operation {
 
 pub enum Operand {
     Constant(ConstantType),
+    Instruction,
 }
 
 pub enum ConstantType {
