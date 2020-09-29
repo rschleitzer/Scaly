@@ -10,13 +10,15 @@
         <content link = Statement             multiple optional property = statements
 
     <syntax id = Declaration                  multiple abstract
-        <content link = Define
-        <content link = Combine
+        <content link = Definition
+        <content link = Function
 
-    <syntax id = Define                                         base = Declaration
-        <content link = define
+    <syntax id = Definition                                     base = Declaration
+        <content link = def
         <content link = Name                                    property = name
-        <content link = Structure                      optional property = input
+        <content link = Structure                      optional property = structure
+        <content link = Scope                          optional property = scope
+        <content link = semicolon                      optional
 
     <syntax id = Name
         <content identifier                                     property = name
@@ -26,13 +28,18 @@
         <content link = Component             multiple optional property = components
         <content link = right_paren
 
+    <syntax id = Scope
+        <content link = left_brace
+        <content link = Declaration           multiple optional property = components
+        <content link = right_brace
+
     <syntax id = Component                    multiple
         <content identifier                                     property = name
         <content link = TypeAnnotation                 optional property = type_annotation
         <content link = comma                          optional
 
-    <syntax id = Combine
-        <content link = combine
+    <syntax id = Function
+        <content link = fn
         <content link = TypeSpec                                property = operand
         <content link = TypeSpec                                property = operator
         <content link = TypeAnnotation                 optional property = type_annotation
@@ -81,14 +88,16 @@
     <syntax id = TypeName                                       base = TypeSpec
         <content link = Name                                    property = name
 
-    <keyword id = define
-    <keyword id = combine
+    <keyword id = def
+    <keyword id = fn
     <keyword id = instruction
     <keyword id = let
 
     <punctuation id = semicolon         value = ";"
     <punctuation id = left_paren        value = "("
     <punctuation id = right_paren       value = ")"
+    <punctuation id = left_brace        value = "{"
+    <punctuation id = right_brace       value = "}"
     <punctuation id = comma             value = ","
     <punctuation id = colon             value = ":"
 

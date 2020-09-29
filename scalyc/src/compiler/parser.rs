@@ -15,15 +15,16 @@ pub struct FileSyntax {
 }
 
 pub enum DeclarationSyntax {
-    Define(DefineSyntax),
-    Combine(CombineSyntax),
+    Definition(DefinitionSyntax),
+    Function(FunctionSyntax),
 }
 
-pub struct DefineSyntax {
+pub struct DefinitionSyntax {
     pub start: Position,
     pub end: Position,
     pub name: NameSyntax,
-    pub input: Option<StructureSyntax>,
+    pub structure: Option<StructureSyntax>,
+    pub scope: Option<ScopeSyntax>,
 }
 
 pub struct NameSyntax {
@@ -38,6 +39,12 @@ pub struct StructureSyntax {
     pub components: Option<Vec<ComponentSyntax>>,
 }
 
+pub struct ScopeSyntax {
+    pub start: Position,
+    pub end: Position,
+    pub components: Option<Vec<DeclarationSyntax>>,
+}
+
 pub struct ComponentSyntax {
     pub start: Position,
     pub end: Position,
@@ -45,7 +52,7 @@ pub struct ComponentSyntax {
     pub type_annotation: Option<TypeAnnotationSyntax>,
 }
 
-pub struct CombineSyntax {
+pub struct FunctionSyntax {
     pub start: Position,
     pub end: Position,
     pub operand: TypeSpecSyntax,
@@ -137,8 +144,8 @@ pub struct Parser<'a> {
 impl<'a> Parser<'a> {
     pub fn new(deck: &'a str) -> Parser {
         let mut keywords = HashSet::new();
-        keywords.insert(String::from("define"));
-        keywords.insert(String::from("combine"));
+        keywords.insert(String::from("def"));
+        keywords.insert(String::from("fn"));
         keywords.insert(String::from("instruction"));
         keywords.insert(String::from("let"));
         Parser {
@@ -196,25 +203,25 @@ impl<'a> Parser<'a> {
 
     pub fn parse_declaration(&mut self) -> Result<Option<DeclarationSyntax>, ParserError> {
         {
-            let node = self.parse_define()?;
+            let node = self.parse_definition()?;
             if let Some(node) = node {
-                return Ok(Some(DeclarationSyntax::Define(node)));
+                return Ok(Some(DeclarationSyntax::Definition(node)));
             }
         }
         {
-            let node = self.parse_combine()?;
+            let node = self.parse_function()?;
             if let Some(node) = node {
-                return Ok(Some(DeclarationSyntax::Combine(node)));
+                return Ok(Some(DeclarationSyntax::Function(node)));
             }
         }
         return Ok(None)
     }
 
-    pub fn parse_define(&mut self) -> Result<Option<DefineSyntax>, ParserError> {
+    pub fn parse_definition(&mut self) -> Result<Option<DefinitionSyntax>, ParserError> {
         let start: Position = self.lexer.get_previous_position();
 
-        let success_define_1 = self.lexer.parse_keyword("define".to_string());
-        if !success_define_1 {
+        let success_def_1 = self.lexer.parse_keyword("def".to_string());
+        if !success_def_1 {
 
                 return Ok(None)
         }
@@ -228,15 +235,23 @@ impl<'a> Parser<'a> {
             });
         }
 
-        let input = self.parse_structure()?;
+        let structure = self.parse_structure()?;
+
+        let scope = self.parse_scope()?;
+
+        let success_semicolon_5 = self.lexer.parse_punctuation(";".to_string());
+        if !success_semicolon_5 {
+            ()
+        }
 
         let end: Position = self.lexer.get_position();
 
-        let ret = DefineSyntax {
+        let ret = DefinitionSyntax {
             start: start,
             end: end,
             name: name.unwrap(),
-            input: input,
+            structure: structure,
+            scope: scope,
         };
 
         Ok(Some(ret))
@@ -301,6 +316,39 @@ impl<'a> Parser<'a> {
         Ok(Some(ret))
     }
 
+    pub fn parse_scope(&mut self) -> Result<Option<ScopeSyntax>, ParserError> {
+        let start: Position = self.lexer.get_previous_position();
+
+        let success_left_brace_1 = self.lexer.parse_punctuation("{".to_string());
+        if !success_left_brace_1 {
+
+                return Ok(None)
+        }
+
+        let components = self.parse_declaration_list()?;
+
+        let success_right_brace_3 = self.lexer.parse_punctuation("}".to_string());
+        if !success_right_brace_3 {
+
+            return Result::Err(
+                ParserError {
+                    file_name: "".to_string(),
+                    line: self.lexer.line,
+                    column: self.lexer.column,
+                },
+            )        }
+
+        let end: Position = self.lexer.get_position();
+
+        let ret = ScopeSyntax {
+            start: start,
+            end: end,
+            components: components,
+        };
+
+        Ok(Some(ret))
+    }
+
     pub fn parse_component_list(&mut self) -> Result<Option<Vec<ComponentSyntax>>, ParserError> {
         let mut array: Option<Vec<ComponentSyntax>> = Option::None;
         loop {
@@ -355,11 +403,11 @@ impl<'a> Parser<'a> {
         Ok(Some(ret))
     }
 
-    pub fn parse_combine(&mut self) -> Result<Option<CombineSyntax>, ParserError> {
+    pub fn parse_function(&mut self) -> Result<Option<FunctionSyntax>, ParserError> {
         let start: Position = self.lexer.get_previous_position();
 
-        let success_combine_1 = self.lexer.parse_keyword("combine".to_string());
-        if !success_combine_1 {
+        let success_fn_1 = self.lexer.parse_keyword("fn".to_string());
+        if !success_fn_1 {
 
                 return Ok(None)
         }
@@ -388,7 +436,7 @@ impl<'a> Parser<'a> {
 
         let end: Position = self.lexer.get_position();
 
-        let ret = CombineSyntax {
+        let ret = FunctionSyntax {
             start: start,
             end: end,
             operand: operand.unwrap(),
