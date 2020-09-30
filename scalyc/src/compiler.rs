@@ -4,29 +4,23 @@ extern crate llvm_sys as llvm;
 use llvm::core::*;
 use llvm::execution_engine::*;
 use llvm::target::*;
-use modeler::Function;
 use modeler::Model;
-use modeler::Modeler;
-use planner::Plan;
-use planner::Planner;
 use std::mem;
 
 mod parser;
 use parser::CalculationSyntax;
 use parser::FileSyntax;
 use parser::Parser;
-use parser::StatementSyntax;
-use parser::StatementSyntax::Calculation;
+use parser::ProgramSyntax;
 
 mod planner;
 
 mod modeler;
 
 mod generator;
-use generator::Generator;
 
 pub struct Compiler {
-    standard_library: Option<FileSyntax>,
+    standard_library: Option<String>,
 }
 
 impl Compiler {
@@ -40,12 +34,7 @@ impl Compiler {
         let contents_result = fs::read_to_string("stdlib.scaly");
         match contents_result {
             Ok(contents) => {
-                let mut parser = Parser::new(contents.as_ref());
-                let result = parser.parse_file();
-                match result {
-                    Ok(file_syntax) => self.standard_library = file_syntax,
-                    Err(_) => (),
-                }
+                self.standard_library = Some(contents);
             }
             Err(_) => (),
         }
@@ -53,17 +42,17 @@ impl Compiler {
 
     pub fn evaluate(&mut self, deck: &str) -> String {
         let mut parser = Parser::new(deck);
-        let statement_result = parser.parse_statement();
-        match statement_result {
-            Ok(statement_option) => match statement_option {
+        let file_result = parser.parse_file();
+        match file_result {
+            Ok(file_option) => match file_option {
                 None => {
                     if parser.is_at_end() {
                         return String::new();
                     }
 
-                    return String::from("This is no statement.\n");
+                    return String::from("This is no statement or declaration.\n");
                 }
-                Some(statement) => {
+                Some(file) => {
                     if !parser.is_at_end() {
                         return String::from(format!(
                             "Unexpected characters between {}, {} and {}, {} after the statement.\n",
@@ -73,7 +62,7 @@ impl Compiler {
                             parser.get_current_column()
                         ));
                     }
-                    self.process_statement(&statement)
+                    self.process_deck(file)
                 }
             },
             Err(error) => {
@@ -85,29 +74,37 @@ impl Compiler {
         }
     }
 
-    fn process_statement(&mut self, statement: &StatementSyntax) -> String {
-        match statement {
-            Calculation(calculation) => return self.compute(calculation),
-            _ => {
-                //    let main_module = self.model.get_main();
-                //    Modeler::add_statement(main_module, statement);
-                return String::from("Statement added.\n");
-            }
-        };
+    fn process_deck(&mut self, file: FileSyntax) -> String {
+        let mut program = ProgramSyntax { files: Vec::new() };
+
+        match &self.standard_library {
+            Some(standard_library) => {
+                let mut parser = Parser::new(standard_library.as_ref());
+                let result = parser.parse_file();
+                match result {
+                    Ok(file_syntax_option) => 
+                        match file_syntax_option {
+                            Some(file_syntax) => program.files.push(file_syntax),
+                            None => ()
+                        }
+                    Err(_) => (),
+                }
+            },
+            None => ()
+        }
+
+        program.files.push(file);
+
+        let _model = Model::new();
+
+        String::from("This is neither declaration nor statement.\n")
     }
 
-    fn compute(&mut self, calculation: &CalculationSyntax) -> String {
-        let operation = Modeler::build_operation(calculation);
-        let mut function = Function::new(String::from("_repl_function"));
-        function.operations.push(operation);
-        let mut plan = Plan::new(String::from("_repl_module"));
-        Planner::add_function(&mut plan, &function);
-        let generator = Generator::new();
-        generator.generate(plan);
-        self.jit_and_execute()
+    fn _compute(&mut self, _calculation: &CalculationSyntax) -> String {
+        self._jit_and_execute()
     }
 
-    fn jit_and_execute(&mut self) -> String {
+    fn _jit_and_execute(&mut self) -> String {
         unsafe {
             let context = LLVMContextCreate();
             let module = LLVMModuleCreateWithNameInContext(b"sum\0".as_ptr() as *const _, context);
