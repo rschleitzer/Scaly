@@ -40,8 +40,8 @@ impl Compiler {
         }
     }
 
-    pub fn evaluate(&mut self, deck: &str) -> Result<String, String> {
-        let mut parser = Parser::new(deck);
+    pub fn evaluate(&mut self, file: &str) -> Result<String, String> {
+        let mut parser = Parser::new(file);
         let file_result = parser.parse_file();
         match file_result {
             Ok(file_option) => match file_option {
@@ -62,10 +62,13 @@ impl Compiler {
                             parser.get_current_column()
                         )));
                     }
-                    self.process_deck(file)
+                    self.process_file(file)
                 }
             },
             Err(error) => {
+                if parser.is_at_end() {
+                    return Err(String::new());
+                }
                 return Err(String::from(format!(
                     "Parser error at {}, {}\n",
                     error.line, error.column
@@ -74,7 +77,7 @@ impl Compiler {
         }
     }
 
-    fn process_deck(&mut self, file: FileSyntax) -> Result<String, String> {
+    fn process_file(&mut self, file: FileSyntax) -> Result<String, String> {
         let mut program = ProgramSyntax { files: Vec::new() };
 
         match &self.standard_library {
@@ -93,8 +96,7 @@ impl Compiler {
                         parser.get_previous_column(),
                         parser.get_current_line(),
                         parser.get_current_column()
-                    )))
-,
+                    ))),
                 }
             },
             None => ()

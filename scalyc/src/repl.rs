@@ -46,8 +46,10 @@ impl Repl {
                             }
                         }
                         Err(error) => {
-                            print!("{}", error);
-                            break 'deck;
+                            if error.len() != 0 {
+                                print!("{}", error);
+                                break 'deck;
+                            }
                         }
                     }
                     card = String::new();
