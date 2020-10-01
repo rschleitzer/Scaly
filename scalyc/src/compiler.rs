@@ -40,41 +40,41 @@ impl Compiler {
         }
     }
 
-    pub fn evaluate(&mut self, deck: &str) -> String {
+    pub fn evaluate(&mut self, deck: &str) -> Result<String, String> {
         let mut parser = Parser::new(deck);
         let file_result = parser.parse_file();
         match file_result {
             Ok(file_option) => match file_option {
                 None => {
                     if parser.is_at_end() {
-                        return String::new();
+                        return Ok(String::new());
                     }
 
-                    return String::from("This is no statement or declaration.\n");
+                    return Err(String::from("This is no statement or declaration.\n"));
                 }
                 Some(file) => {
                     if !parser.is_at_end() {
-                        return String::from(format!(
+                        return Err(String::from(format!(
                             "Unexpected characters between {}, {} and {}, {} after the statement.\n",
                             parser.get_previous_line(),
                             parser.get_previous_column(),
                             parser.get_current_line(),
                             parser.get_current_column()
-                        ));
+                        )));
                     }
                     self.process_deck(file)
                 }
             },
             Err(error) => {
-                return String::from(format!(
+                return Err(String::from(format!(
                     "Parser error at {}, {}\n",
                     error.line, error.column
-                ));
+                )));
             }
         }
     }
 
-    fn process_deck(&mut self, file: FileSyntax) -> String {
+    fn process_deck(&mut self, file: FileSyntax) -> Result<String, String> {
         let mut program = ProgramSyntax { files: Vec::new() };
 
         match &self.standard_library {
@@ -87,7 +87,14 @@ impl Compiler {
                             Some(file_syntax) => program.files.push(file_syntax),
                             None => ()
                         }
-                    Err(_) => (),
+                    Err(_) => return Err(String::from(format!(
+                        "Failed to parsed standard library. Unexpected characters between {}, {} and {}, {} after the statement.\n",
+                        parser.get_previous_line(),
+                        parser.get_previous_column(),
+                        parser.get_current_line(),
+                        parser.get_current_column()
+                    )))
+,
                 }
             },
             None => ()
@@ -97,7 +104,7 @@ impl Compiler {
 
         let _model = Model::new();
 
-        String::from("This is neither declaration nor statement.\n")
+        Ok(String::from("Processed."))
     }
 
     fn _compute(&mut self, _calculation: &CalculationSyntax) -> String {

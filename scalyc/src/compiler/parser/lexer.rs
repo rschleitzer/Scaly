@@ -480,7 +480,9 @@ impl<'a> Lexer<'a> {
         match &self.token {
             Token::Identifier(name) => {
                 let right_keyword = *name == fixed_string;
-                self.empty();
+                if right_keyword {
+                    self.empty();
+                }
                 return right_keyword;
             }
             _ => return false,
