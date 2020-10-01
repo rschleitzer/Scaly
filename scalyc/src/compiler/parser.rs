@@ -100,6 +100,7 @@ pub struct OperandSyntax {
 
 pub enum ExpressionSyntax {
     Constant(ConstantSyntax),
+    Name(NameSyntax),
     Instruction(InstructionSyntax),
 }
 
@@ -138,7 +139,7 @@ pub struct ParserError {
 
 pub struct Parser<'a> {
     lexer: Lexer<'a>,
-    _keywords: HashSet<String>,
+    keywords: HashSet<String>,
 }
 
 impl<'a> Parser<'a> {
@@ -150,7 +151,7 @@ impl<'a> Parser<'a> {
         keywords.insert(String::from("let"));
         Parser {
             lexer: Lexer::new(deck),
-            _keywords: keywords,
+            keywords: keywords,
         }
     }
 
@@ -642,6 +643,12 @@ impl<'a> Parser<'a> {
             }
         }
         {
+            let node = self.parse_name()?;
+            if let Some(node) = node {
+                return Ok(Some(ExpressionSyntax::Name(node)));
+            }
+        }
+        {
             let node = self.parse_instruction()?;
             if let Some(node) = node {
                 return Ok(Some(ExpressionSyntax::Instruction(node)));
@@ -767,7 +774,7 @@ impl<'a> Parser<'a> {
         self.lexer.get_previous_position().column
     }
     fn is_identifier(&self, id: &String) -> bool {
-        if self._keywords.contains(id) {
+        if self.keywords.contains(id) {
             false
         } else {
             true

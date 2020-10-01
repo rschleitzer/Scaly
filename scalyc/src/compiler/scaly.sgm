@@ -70,6 +70,7 @@
 
     <syntax id = Expression                            abstract
         <content link = Constant
+        <content link = Name
         <content link = Instruction
 
     <syntax id = Constant                                       base = Expression
