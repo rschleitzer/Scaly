@@ -115,6 +115,7 @@ impl<'a> Parser<'a> {
                             (case (type content)
                                 (("keyword")     ($ "\""(link content)"\".to_string()"))
                                 (("punctuation") ($ "\""(value (element-with-id (link content)))"\".to_string()"))
+                                (("identifier") ($ "&""self.keywords"))
                                 (else "")
                             )");
 "
