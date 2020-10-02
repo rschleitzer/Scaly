@@ -1,3 +1,4 @@
+use crate::compiler::parser::ProgramSyntax;
 use std::collections::HashMap;
 
 pub struct Model {
@@ -10,6 +11,8 @@ impl Model {
             modules: Vec::new(),
         }
     }
+
+    pub fn build(&mut self, _program: ProgramSyntax) {}
 }
 
 pub struct Item {

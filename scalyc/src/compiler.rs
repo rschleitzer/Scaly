@@ -4,7 +4,7 @@ extern crate llvm_sys as llvm;
 use llvm::core::*;
 use llvm::execution_engine::*;
 use llvm::target::*;
-use modeler::Model;
+use model::Model;
 use std::mem;
 
 mod parser;
@@ -15,7 +15,7 @@ use parser::ProgramSyntax;
 
 mod planner;
 
-mod modeler;
+mod model;
 
 mod generator;
 
@@ -104,7 +104,8 @@ impl Compiler {
 
         program.files.push(file);
 
-        let _model = Model::new();
+        let mut model = Model::new();
+        model.build(program);
 
         Ok(String::from("Processed."))
     }
