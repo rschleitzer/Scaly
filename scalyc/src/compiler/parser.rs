@@ -261,7 +261,7 @@ impl<'a> Parser<'a> {
     pub fn parse_name(&mut self) -> Result<Option<NameSyntax>, ParserError> {
         let start: Position = self.lexer.get_previous_position();
 
-        let name = self.lexer.parse_identifier();
+        let name = self.lexer.parse_identifier(&self.keywords);
         match &name {
             Some(name) =>
                 if !self.is_identifier(name) {
@@ -373,7 +373,7 @@ impl<'a> Parser<'a> {
     pub fn parse_component(&mut self) -> Result<Option<ComponentSyntax>, ParserError> {
         let start: Position = self.lexer.get_previous_position();
 
-        let name = self.lexer.parse_identifier();
+        let name = self.lexer.parse_identifier(&self.keywords);
         match &name {
             Some(name) =>
                 if !self.is_identifier(name) {
@@ -517,7 +517,7 @@ impl<'a> Parser<'a> {
     pub fn parse_binding(&mut self) -> Result<Option<BindingSyntax>, ParserError> {
         let start: Position = self.lexer.get_previous_position();
 
-        let name = self.lexer.parse_identifier();
+        let name = self.lexer.parse_identifier(&self.keywords);
         match &name {
             Some(name) =>
                 if !self.is_identifier(name) {

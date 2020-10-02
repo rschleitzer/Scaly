@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use std::str::Chars;
 
 pub struct Position {
@@ -489,13 +490,16 @@ impl<'a> Lexer<'a> {
         }
     }
 
-    pub fn parse_identifier(&mut self) -> Option<String> {
+    pub fn parse_identifier(&mut self, keywords: &HashSet<String>) -> Option<String> {
         match &self.token {
             Token::Empty => self.advance(),
             _ => (),
         }
         match &self.token {
             Token::Identifier(name) => {
+                if keywords.contains(name) {
+                    return None;
+                }
                 let ret = String::from(name);
                 self.empty();
                 return Some(ret);
