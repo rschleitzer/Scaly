@@ -99,6 +99,7 @@ impl<'a> Lexer<'a> {
                     | '#' | '$' | '_' | '`' => {
                         let mut punctuation_string = String::new();
                         punctuation_string.push(c);
+                        self.read_character();
                         self.token = Token::Punctuation(punctuation_string);
                     }
                     _ => self.token = Token::Invalid,
