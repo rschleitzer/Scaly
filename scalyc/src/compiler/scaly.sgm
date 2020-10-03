@@ -19,6 +19,14 @@
         <content link = Definition                              property = definition
         <content link = semicolon                      optional
 
+    <syntax id = Name
+        <content identifier                                     property = name
+        <content link = Extension             multiple optional property = extensions
+
+    <syntax id = Extension                    multiple
+        <content link = dot
+        <content identifier                                     property = name
+
     <syntax id = Definition                            abstract
         <content link = Class
         <content link = Namespace
@@ -52,9 +60,6 @@
 
     <syntax id = Constant                                       base = Definition
         <content literal                                        property = literal
-
-    <syntax id = Name
-        <content identifier                                     property = name
 
     <syntax id = Structure
         <content link = left_paren
@@ -128,6 +133,7 @@
     <keyword id = let
 
     <punctuation id = semicolon         value = ";"
+    <punctuation id = dot               value = "."
     <punctuation id = left_paren        value = "("
     <punctuation id = right_paren       value = ")"
     <punctuation id = left_brace        value = "{"

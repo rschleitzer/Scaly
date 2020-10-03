@@ -26,6 +26,19 @@ pub struct DefineSyntax {
     pub definition: DefinitionSyntax,
 }
 
+pub struct NameSyntax {
+    pub start: Position,
+    pub end: Position,
+    pub name: String,
+    pub extensions: Option<Vec<ExtensionSyntax>>,
+}
+
+pub struct ExtensionSyntax {
+    pub start: Position,
+    pub end: Position,
+    pub name: String,
+}
+
 pub enum DefinitionSyntax {
     Class(ClassSyntax),
     Namespace(NamespaceSyntax),
@@ -81,12 +94,6 @@ pub struct ConstantSyntax {
     pub start: Position,
     pub end: Position,
     pub literal: Literal,
-}
-
-pub struct NameSyntax {
-    pub start: Position,
-    pub end: Position,
-    pub name: String,
 }
 
 pub struct StructureSyntax {
@@ -318,6 +325,97 @@ impl<'a> Parser<'a> {
         Ok(Some(ret))
     }
 
+    pub fn parse_name(&mut self) -> Result<Option<NameSyntax>, ParserError> {
+        let start: Position = self.lexer.get_previous_position();
+
+        let name = self.lexer.parse_identifier(&self.keywords);
+        match &name {
+            Some(name) =>
+                if !self.is_identifier(name) {
+                return Ok(None)
+
+           },
+           _ =>
+                return Ok(None)
+,
+        }
+
+        let extensions = self.parse_extension_list()?;
+
+        let end: Position = self.lexer.get_position();
+
+        let ret = NameSyntax {
+            start: start,
+            end: end,
+            name: name.unwrap(),
+            extensions: extensions,
+        };
+
+        Ok(Some(ret))
+    }
+
+    pub fn parse_extension_list(&mut self) -> Result<Option<Vec<ExtensionSyntax>>, ParserError> {
+        let mut array: Option<Vec<ExtensionSyntax>> = Option::None;
+        loop {
+            let node = self.parse_extension()?;
+            if let Some(node) = node {
+                if let None = array {
+                    array = Some(Vec::new())
+                };
+                match &mut array {
+                    Some(a) => a.push(node),
+                    None => (),
+                }
+            } else {
+                break;
+            }
+        }
+
+        Ok(array)
+    }
+
+    pub fn parse_extension(&mut self) -> Result<Option<ExtensionSyntax>, ParserError> {
+        let start: Position = self.lexer.get_previous_position();
+
+        let success_dot_1 = self.lexer.parse_punctuation(".".to_string());
+        if !success_dot_1 {
+
+                return Ok(None)
+        }
+
+        let name = self.lexer.parse_identifier(&self.keywords);
+        match &name {
+            Some(name) =>
+                if !self.is_identifier(name) {
+            return Result::Err(
+                ParserError {
+                    file_name: "".to_string(),
+                    line: self.lexer.line,
+                    column: self.lexer.column,
+                },
+            )
+           },
+           _ =>
+            return Result::Err(
+                ParserError {
+                    file_name: "".to_string(),
+                    line: self.lexer.line,
+                    column: self.lexer.column,
+                },
+            ),
+        }
+
+        let end: Position = self.lexer.get_position();
+
+        let ret = ExtensionSyntax {
+            start: start,
+            end: end,
+            name: name.unwrap(),
+        };
+
+        Ok(Some(ret))
+    }
+
     pub fn parse_definition(&mut self) -> Result<Option<DefinitionSyntax>, ParserError> {
         {
             let node = self.parse_class()?;
@@ -521,32 +619,6 @@ impl<'a> Parser<'a> {
             start: start,
             end: end,
             literal: literal.unwrap(),
-        };
-
-        Ok(Some(ret))
-    }
-
-    pub fn parse_name(&mut self) -> Result<Option<NameSyntax>, ParserError> {
-        let start: Position = self.lexer.get_previous_position();
-
-        let name = self.lexer.parse_identifier(&self.keywords);
-        match &name {
-            Some(name) =>
-                if !self.is_identifier(name) {
-                return Ok(None)
-
-           },
-           _ =>
-                return Ok(None)
-,
-        }
-
-        let end: Position = self.lexer.get_position();
-
-        let ret = NameSyntax {
-            start: start,
-            end: end,
-            name: name.unwrap(),
         };
 
         Ok(Some(ret))
