@@ -10,15 +10,34 @@
         <content link = Statement             multiple optional property = statements
 
     <syntax id = Declaration                  multiple abstract
-        <content link = Definition
+        <content link = Define
         <content link = Function
 
-    <syntax id = Definition                                     base = Declaration
+    <syntax id = Define                                         base = Declaration
         <content link = def
         <content link = Name                                    property = name
-        <content link = Structure                      optional property = structure
-        <content link = Scope                          optional property = scope
+        <content link = Definition                              property = definition
         <content link = semicolon                      optional
+
+    <syntax id = Definition                            abstract
+        <content link = Class
+        <content link = Namespace
+        <content link = Union
+
+    <syntax id = Class                                          base = Definition
+        <content link = Structure                               property = structure
+        <content link = Body                           optional property = body
+
+    <syntax id = Namespace                                      base = Definition
+        <content link = Body                                    property = body
+
+    <syntax id = Union                                          base = Definition
+        <content link = Variant               multiple          property = statements
+
+    <syntax id = Variant                      multiple
+        <content link = Name                                    property = name
+        <content link = Structure                      optional property = structure
+        <content link = Body                           optional property = body
 
     <syntax id = Name
         <content identifier                                     property = name
@@ -28,7 +47,7 @@
         <content link = Component             multiple optional property = components
         <content link = right_paren
 
-    <syntax id = Scope
+    <syntax id = Body
         <content link = left_brace
         <content link = Declaration           multiple optional property = components
         <content link = right_brace

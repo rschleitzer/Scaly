@@ -15,16 +15,48 @@ pub struct FileSyntax {
 }
 
 pub enum DeclarationSyntax {
-    Definition(DefinitionSyntax),
+    Define(DefineSyntax),
     Function(FunctionSyntax),
 }
 
-pub struct DefinitionSyntax {
+pub struct DefineSyntax {
+    pub start: Position,
+    pub end: Position,
+    pub name: NameSyntax,
+    pub definition: DefinitionSyntax,
+}
+
+pub enum DefinitionSyntax {
+    Class(ClassSyntax),
+    Namespace(NamespaceSyntax),
+    Union(UnionSyntax),
+}
+
+pub struct ClassSyntax {
+    pub start: Position,
+    pub end: Position,
+    pub structure: StructureSyntax,
+    pub body: Option<BodySyntax>,
+}
+
+pub struct NamespaceSyntax {
+    pub start: Position,
+    pub end: Position,
+    pub body: BodySyntax,
+}
+
+pub struct UnionSyntax {
+    pub start: Position,
+    pub end: Position,
+    pub statements: Vec<VariantSyntax>,
+}
+
+pub struct VariantSyntax {
     pub start: Position,
     pub end: Position,
     pub name: NameSyntax,
     pub structure: Option<StructureSyntax>,
-    pub scope: Option<ScopeSyntax>,
+    pub body: Option<BodySyntax>,
 }
 
 pub struct NameSyntax {
@@ -39,7 +71,7 @@ pub struct StructureSyntax {
     pub components: Option<Vec<ComponentSyntax>>,
 }
 
-pub struct ScopeSyntax {
+pub struct BodySyntax {
     pub start: Position,
     pub end: Position,
     pub components: Option<Vec<DeclarationSyntax>>,
@@ -204,9 +236,9 @@ impl<'a> Parser<'a> {
 
     pub fn parse_declaration(&mut self) -> Result<Option<DeclarationSyntax>, ParserError> {
         {
-            let node = self.parse_definition()?;
+            let node = self.parse_define()?;
             if let Some(node) = node {
-                return Ok(Some(DeclarationSyntax::Definition(node)));
+                return Ok(Some(DeclarationSyntax::Define(node)));
             }
         }
         {
@@ -218,7 +250,7 @@ impl<'a> Parser<'a> {
         return Ok(None)
     }
 
-    pub fn parse_definition(&mut self) -> Result<Option<DefinitionSyntax>, ParserError> {
+    pub fn parse_define(&mut self) -> Result<Option<DefineSyntax>, ParserError> {
         let start: Position = self.lexer.get_previous_position();
 
         let success_def_1 = self.lexer.parse_keyword("def".to_string());
@@ -236,23 +268,154 @@ impl<'a> Parser<'a> {
             });
         }
 
-        let structure = self.parse_structure()?;
+        let definition = self.parse_definition()?;
+        if let None = definition {
+            return Err(ParserError {
+                file_name: "".to_string(),
+                line: self.lexer.line,
+                column: self.lexer.column,
+            });
+        }
 
-        let scope = self.parse_scope()?;
-
-        let success_semicolon_5 = self.lexer.parse_punctuation(";".to_string());
-        if !success_semicolon_5 {
+        let success_semicolon_4 = self.lexer.parse_punctuation(";".to_string());
+        if !success_semicolon_4 {
             ()
         }
 
         let end: Position = self.lexer.get_position();
 
-        let ret = DefinitionSyntax {
+        let ret = DefineSyntax {
+            start: start,
+            end: end,
+            name: name.unwrap(),
+            definition: definition.unwrap(),
+        };
+
+        Ok(Some(ret))
+    }
+
+    pub fn parse_definition(&mut self) -> Result<Option<DefinitionSyntax>, ParserError> {
+        {
+            let node = self.parse_class()?;
+            if let Some(node) = node {
+                return Ok(Some(DefinitionSyntax::Class(node)));
+            }
+        }
+        {
+            let node = self.parse_namespace()?;
+            if let Some(node) = node {
+                return Ok(Some(DefinitionSyntax::Namespace(node)));
+            }
+        }
+        {
+            let node = self.parse_union()?;
+            if let Some(node) = node {
+                return Ok(Some(DefinitionSyntax::Union(node)));
+            }
+        }
+        return Ok(None)
+    }
+
+    pub fn parse_class(&mut self) -> Result<Option<ClassSyntax>, ParserError> {
+        let start: Position = self.lexer.get_previous_position();
+
+        let structure = self.parse_structure()?;
+        if let None = structure {
+            return Ok(None);
+        }
+
+        let body = self.parse_body()?;
+
+        let end: Position = self.lexer.get_position();
+
+        let ret = ClassSyntax {
+            start: start,
+            end: end,
+            structure: structure.unwrap(),
+            body: body,
+        };
+
+        Ok(Some(ret))
+    }
+
+    pub fn parse_namespace(&mut self) -> Result<Option<NamespaceSyntax>, ParserError> {
+        let start: Position = self.lexer.get_previous_position();
+
+        let body = self.parse_body()?;
+        if let None = body {
+            return Ok(None);
+        }
+
+        let end: Position = self.lexer.get_position();
+
+        let ret = NamespaceSyntax {
+            start: start,
+            end: end,
+            body: body.unwrap(),
+        };
+
+        Ok(Some(ret))
+    }
+
+    pub fn parse_union(&mut self) -> Result<Option<UnionSyntax>, ParserError> {
+        let start: Position = self.lexer.get_previous_position();
+
+        let statements = self.parse_variant_list()?;
+        if let None = statements {
+            return Ok(None);
+        }
+
+        let end: Position = self.lexer.get_position();
+
+        let ret = UnionSyntax {
+            start: start,
+            end: end,
+            statements: statements.unwrap(),
+        };
+
+        Ok(Some(ret))
+    }
+
+    pub fn parse_variant_list(&mut self) -> Result<Option<Vec<VariantSyntax>>, ParserError> {
+        let mut array: Option<Vec<VariantSyntax>> = Option::None;
+        loop {
+            let node = self.parse_variant()?;
+            if let Some(node) = node {
+                if let None = array {
+                    array = Some(Vec::new())
+                };
+                match &mut array {
+                    Some(a) => a.push(node),
+                    None => (),
+                }
+            } else {
+                break;
+            }
+        }
+
+        Ok(array)
+    }
+
+    pub fn parse_variant(&mut self) -> Result<Option<VariantSyntax>, ParserError> {
+        let start: Position = self.lexer.get_previous_position();
+
+        let name = self.parse_name()?;
+        if let None = name {
+            return Ok(None);
+        }
+
+        let structure = self.parse_structure()?;
+
+        let body = self.parse_body()?;
+
+        let end: Position = self.lexer.get_position();
+
+        let ret = VariantSyntax {
             start: start,
             end: end,
             name: name.unwrap(),
             structure: structure,
-            scope: scope,
+            body: body,
         };
 
         Ok(Some(ret))
@@ -317,7 +480,7 @@ impl<'a> Parser<'a> {
         Ok(Some(ret))
     }
 
-    pub fn parse_scope(&mut self) -> Result<Option<ScopeSyntax>, ParserError> {
+    pub fn parse_body(&mut self) -> Result<Option<BodySyntax>, ParserError> {
         let start: Position = self.lexer.get_previous_position();
 
         let success_left_brace_1 = self.lexer.parse_punctuation("{".to_string());
@@ -341,7 +504,7 @@ impl<'a> Parser<'a> {
 
         let end: Position = self.lexer.get_position();
 
-        let ret = ScopeSyntax {
+        let ret = BodySyntax {
             start: start,
             end: end,
             components: components,
