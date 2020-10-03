@@ -23,6 +23,7 @@
         <content link = Class
         <content link = Namespace
         <content link = Union
+        <content link = Constant
 
     <syntax id = Class                                          base = Definition
         <content link = Structure                               property = structure
@@ -32,12 +33,25 @@
         <content link = Body                                    property = body
 
     <syntax id = Union                                          base = Definition
-        <content link = Variant               multiple          property = statements
+        <content link = Tag                   multiple          property = tags
 
-    <syntax id = Variant                      multiple
+    <syntax id = Tag                          multiple
         <content link = Name                                    property = name
-        <content link = Structure                      optional property = structure
+        <content link = Item                           optional property = item
+
+    <syntax id = Item                                  abstract
+        <content link = Variant
+        <content link = Enum
+
+    <syntax id = Variant                                        base = Item
+        <content link = Structure                               property = structure
         <content link = Body                           optional property = body
+
+    <syntax id = Enum                                           base = Item
+        <content literal                                        property = literal
+
+    <syntax id = Constant                                       base = Definition
+        <content literal                                        property = literal
 
     <syntax id = Name
         <content identifier                                     property = name
@@ -88,11 +102,11 @@
         <content link = Expression                              property = primary
 
     <syntax id = Expression                            abstract
-        <content link = Constant
+        <content link = Literal
         <content link = Name
         <content link = Instruction
 
-    <syntax id = Constant                                       base = Expression
+    <syntax id = Literal                                        base = Expression
         <content literal                                        property = literal
 
     <syntax id = Instruction                                    base = Expression

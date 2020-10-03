@@ -30,6 +30,7 @@ pub enum DefinitionSyntax {
     Class(ClassSyntax),
     Namespace(NamespaceSyntax),
     Union(UnionSyntax),
+    Constant(ConstantSyntax),
 }
 
 pub struct ClassSyntax {
@@ -48,15 +49,38 @@ pub struct NamespaceSyntax {
 pub struct UnionSyntax {
     pub start: Position,
     pub end: Position,
-    pub statements: Vec<VariantSyntax>,
+    pub tags: Vec<TagSyntax>,
+}
+
+pub struct TagSyntax {
+    pub start: Position,
+    pub end: Position,
+    pub name: NameSyntax,
+    pub item: Option<ItemSyntax>,
+}
+
+pub enum ItemSyntax {
+    Variant(VariantSyntax),
+    Enum(EnumSyntax),
 }
 
 pub struct VariantSyntax {
     pub start: Position,
     pub end: Position,
-    pub name: NameSyntax,
-    pub structure: Option<StructureSyntax>,
+    pub structure: StructureSyntax,
     pub body: Option<BodySyntax>,
+}
+
+pub struct EnumSyntax {
+    pub start: Position,
+    pub end: Position,
+    pub literal: Literal,
+}
+
+pub struct ConstantSyntax {
+    pub start: Position,
+    pub end: Position,
+    pub literal: Literal,
 }
 
 pub struct NameSyntax {
@@ -131,12 +155,12 @@ pub struct OperandSyntax {
 }
 
 pub enum ExpressionSyntax {
-    Constant(ConstantSyntax),
+    Literal(LiteralSyntax),
     Name(NameSyntax),
     Instruction(InstructionSyntax),
 }
 
-pub struct ConstantSyntax {
+pub struct LiteralSyntax {
     pub start: Position,
     pub end: Position,
     pub literal: Literal,
@@ -313,6 +337,12 @@ impl<'a> Parser<'a> {
                 return Ok(Some(DefinitionSyntax::Union(node)));
             }
         }
+        {
+            let node = self.parse_constant()?;
+            if let Some(node) = node {
+                return Ok(Some(DefinitionSyntax::Constant(node)));
+            }
+        }
         return Ok(None)
     }
 
@@ -360,8 +390,8 @@ impl<'a> Parser<'a> {
     pub fn parse_union(&mut self) -> Result<Option<UnionSyntax>, ParserError> {
         let start: Position = self.lexer.get_previous_position();
 
-        let statements = self.parse_variant_list()?;
-        if let None = statements {
+        let tags = self.parse_tag_list()?;
+        if let None = tags {
             return Ok(None);
         }
 
@@ -370,16 +400,16 @@ impl<'a> Parser<'a> {
         let ret = UnionSyntax {
             start: start,
             end: end,
-            statements: statements.unwrap(),
+            tags: tags.unwrap(),
         };
 
         Ok(Some(ret))
     }
 
-    pub fn parse_variant_list(&mut self) -> Result<Option<Vec<VariantSyntax>>, ParserError> {
-        let mut array: Option<Vec<VariantSyntax>> = Option::None;
+    pub fn parse_tag_list(&mut self) -> Result<Option<Vec<TagSyntax>>, ParserError> {
+        let mut array: Option<Vec<TagSyntax>> = Option::None;
         loop {
-            let node = self.parse_variant()?;
+            let node = self.parse_tag()?;
             if let Some(node) = node {
                 if let None = array {
                     array = Some(Vec::new())
@@ -396,7 +426,7 @@ impl<'a> Parser<'a> {
         Ok(array)
     }
 
-    pub fn parse_variant(&mut self) -> Result<Option<VariantSyntax>, ParserError> {
+    pub fn parse_tag(&mut self) -> Result<Option<TagSyntax>, ParserError> {
         let start: Position = self.lexer.get_previous_position();
 
         let name = self.parse_name()?;
@@ -404,7 +434,43 @@ impl<'a> Parser<'a> {
             return Ok(None);
         }
 
+        let item = self.parse_item()?;
+
+        let end: Position = self.lexer.get_position();
+
+        let ret = TagSyntax {
+            start: start,
+            end: end,
+            name: name.unwrap(),
+            item: item,
+        };
+
+        Ok(Some(ret))
+    }
+
+    pub fn parse_item(&mut self) -> Result<Option<ItemSyntax>, ParserError> {
+        {
+            let node = self.parse_variant()?;
+            if let Some(node) = node {
+                return Ok(Some(ItemSyntax::Variant(node)));
+            }
+        }
+        {
+            let node = self.parse_enum()?;
+            if let Some(node) = node {
+                return Ok(Some(ItemSyntax::Enum(node)));
+            }
+        }
+        return Ok(None)
+    }
+
+    pub fn parse_variant(&mut self) -> Result<Option<VariantSyntax>, ParserError> {
+        let start: Position = self.lexer.get_previous_position();
+
         let structure = self.parse_structure()?;
+        if let None = structure {
+            return Ok(None);
+        }
 
         let body = self.parse_body()?;
 
@@ -413,9 +479,48 @@ impl<'a> Parser<'a> {
         let ret = VariantSyntax {
             start: start,
             end: end,
-            name: name.unwrap(),
-            structure: structure,
+            structure: structure.unwrap(),
             body: body,
+        };
+
+        Ok(Some(ret))
+    }
+
+    pub fn parse_enum(&mut self) -> Result<Option<EnumSyntax>, ParserError> {
+        let start: Position = self.lexer.get_previous_position();
+
+        let literal = self.lexer.parse_literal();
+        if let None = literal {
+
+                return Ok(None)
+        }
+
+        let end: Position = self.lexer.get_position();
+
+        let ret = EnumSyntax {
+            start: start,
+            end: end,
+            literal: literal.unwrap(),
+        };
+
+        Ok(Some(ret))
+    }
+
+    pub fn parse_constant(&mut self) -> Result<Option<ConstantSyntax>, ParserError> {
+        let start: Position = self.lexer.get_previous_position();
+
+        let literal = self.lexer.parse_literal();
+        if let None = literal {
+
+                return Ok(None)
+        }
+
+        let end: Position = self.lexer.get_position();
+
+        let ret = ConstantSyntax {
+            start: start,
+            end: end,
+            literal: literal.unwrap(),
         };
 
         Ok(Some(ret))
@@ -800,9 +905,9 @@ impl<'a> Parser<'a> {
 
     pub fn parse_expression(&mut self) -> Result<Option<ExpressionSyntax>, ParserError> {
         {
-            let node = self.parse_constant()?;
+            let node = self.parse_literal()?;
             if let Some(node) = node {
-                return Ok(Some(ExpressionSyntax::Constant(node)));
+                return Ok(Some(ExpressionSyntax::Literal(node)));
             }
         }
         {
@@ -820,7 +925,7 @@ impl<'a> Parser<'a> {
         return Ok(None)
     }
 
-    pub fn parse_constant(&mut self) -> Result<Option<ConstantSyntax>, ParserError> {
+    pub fn parse_literal(&mut self) -> Result<Option<LiteralSyntax>, ParserError> {
         let start: Position = self.lexer.get_previous_position();
 
         let literal = self.lexer.parse_literal();
@@ -831,7 +936,7 @@ impl<'a> Parser<'a> {
 
         let end: Position = self.lexer.get_position();
 
-        let ret = ConstantSyntax {
+        let ret = LiteralSyntax {
             start: start,
             end: end,
             literal: literal.unwrap(),
