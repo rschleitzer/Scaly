@@ -99,9 +99,19 @@
     <syntax id = Statement                   multiple abstract
         <content link = Calculation
         <content link = Let
+        <content link = Var
+        <content link = Mutable
 
     <syntax id = Let
         <content link = let
+        <content link = Binding                                 property = binding
+
+    <syntax id = Var
+        <content link = var
+        <content link = Binding                                 property = binding
+
+    <syntax id = Mutable
+        <content link = mutable
         <content link = Binding                                 property = binding
 
     <syntax id = Binding
@@ -151,6 +161,8 @@
     <keyword id = intrinsic
     <keyword id = extern
     <keyword id = let
+    <keyword id = var
+    <keyword id = mutable
     <keyword id = use
 
     <punctuation id = semicolon         value = ";"

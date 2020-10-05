@@ -141,9 +141,23 @@ pub struct UseSyntax {
 pub enum StatementSyntax {
     Calculation(CalculationSyntax),
     Let(LetSyntax),
+    Var(VarSyntax),
+    Mutable(MutableSyntax),
 }
 
 pub struct LetSyntax {
+    pub start: Position,
+    pub end: Position,
+    pub binding: BindingSyntax,
+}
+
+pub struct VarSyntax {
+    pub start: Position,
+    pub end: Position,
+    pub binding: BindingSyntax,
+}
+
+pub struct MutableSyntax {
     pub start: Position,
     pub end: Position,
     pub binding: BindingSyntax,
@@ -237,6 +251,8 @@ impl<'a> Parser<'a> {
         keywords.insert(String::from("intrinsic"));
         keywords.insert(String::from("extern"));
         keywords.insert(String::from("let"));
+        keywords.insert(String::from("var"));
+        keywords.insert(String::from("mutable"));
         keywords.insert(String::from("use"));
         Parser {
             lexer: Lexer::new(deck),
@@ -914,6 +930,18 @@ impl<'a> Parser<'a> {
                 return Ok(Some(StatementSyntax::Let(node)));
             }
         }
+        {
+            let node = self.parse_var()?;
+            if let Some(node) = node {
+                return Ok(Some(StatementSyntax::Var(node)));
+            }
+        }
+        {
+            let node = self.parse_mutable()?;
+            if let Some(node) = node {
+                return Ok(Some(StatementSyntax::Mutable(node)));
+            }
+        }
         return Ok(None)
     }
 
@@ -938,6 +966,64 @@ impl<'a> Parser<'a> {
         let end: Position = self.lexer.get_position();
 
         let ret = LetSyntax {
+            start: start,
+            end: end,
+            binding: binding.unwrap(),
+        };
+
+        Ok(Some(ret))
+    }
+
+    pub fn parse_var(&mut self) -> Result<Option<VarSyntax>, ParserError> {
+        let start: Position = self.lexer.get_previous_position();
+
+        let success_var_1 = self.lexer.parse_keyword("var".to_string());
+        if !success_var_1 {
+
+                return Ok(None)
+        }
+
+        let binding = self.parse_binding()?;
+        if let None = binding {
+            return Err(ParserError {
+                file_name: "".to_string(),
+                line: self.lexer.line,
+                column: self.lexer.column,
+            });
+        }
+
+        let end: Position = self.lexer.get_position();
+
+        let ret = VarSyntax {
+            start: start,
+            end: end,
+            binding: binding.unwrap(),
+        };
+
+        Ok(Some(ret))
+    }
+
+    pub fn parse_mutable(&mut self) -> Result<Option<MutableSyntax>, ParserError> {
+        let start: Position = self.lexer.get_previous_position();
+
+        let success_mutable_1 = self.lexer.parse_keyword("mutable".to_string());
+        if !success_mutable_1 {
+
+                return Ok(None)
+        }
+
+        let binding = self.parse_binding()?;
+        if let None = binding {
+            return Err(ParserError {
+                file_name: "".to_string(),
+                line: self.lexer.line,
+                column: self.lexer.column,
+            });
+        }
+
+        let end: Position = self.lexer.get_position();
+
+        let ret = MutableSyntax {
             start: start,
             end: end,
             binding: binding.unwrap(),
