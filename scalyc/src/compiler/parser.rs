@@ -122,7 +122,14 @@ pub struct FunctionSyntax {
     pub operand: TypeSpecSyntax,
     pub operator: Option<TypeSpecSyntax>,
     pub type_annotation: Option<TypeAnnotationSyntax>,
-    pub expression: Option<ExpressionSyntax>,
+    pub implementation: Option<ImplementationSyntax>,
+}
+
+pub enum ImplementationSyntax {
+    Expression(ExpressionSyntax),
+    Extern(ExternSyntax),
+    Instruction(InstructionSyntax),
+    Intrinsic(IntrinsicSyntax),
 }
 
 pub struct UseSyntax {
@@ -171,7 +178,6 @@ pub struct OperandSyntax {
 pub enum ExpressionSyntax {
     Literal(LiteralSyntax),
     Name(NameSyntax),
-    Instruction(InstructionSyntax),
 }
 
 pub struct LiteralSyntax {
@@ -180,7 +186,17 @@ pub struct LiteralSyntax {
     pub literal: Literal,
 }
 
+pub struct ExternSyntax {
+    pub start: Position,
+    pub end: Position,
+}
+
 pub struct InstructionSyntax {
+    pub start: Position,
+    pub end: Position,
+}
+
+pub struct IntrinsicSyntax {
     pub start: Position,
     pub end: Position,
 }
@@ -218,6 +234,8 @@ impl<'a> Parser<'a> {
         keywords.insert(String::from("def"));
         keywords.insert(String::from("fn"));
         keywords.insert(String::from("instruction"));
+        keywords.insert(String::from("intrinsic"));
+        keywords.insert(String::from("extern"));
         keywords.insert(String::from("let"));
         keywords.insert(String::from("use"));
         Parser {
@@ -780,7 +798,7 @@ impl<'a> Parser<'a> {
 
         let type_annotation = self.parse_typeannotation()?;
 
-        let expression = self.parse_expression()?;
+        let implementation = self.parse_implementation()?;
 
         let success_semicolon_6 = self.lexer.parse_punctuation(";".to_string());
         if !success_semicolon_6 {
@@ -795,10 +813,38 @@ impl<'a> Parser<'a> {
             operand: operand.unwrap(),
             operator: operator,
             type_annotation: type_annotation,
-            expression: expression,
+            implementation: implementation,
         };
 
         Ok(Some(ret))
+    }
+
+    pub fn parse_implementation(&mut self) -> Result<Option<ImplementationSyntax>, ParserError> {
+        {
+            let node = self.parse_expression()?;
+            if let Some(node) = node {
+                return Ok(Some(ImplementationSyntax::Expression(node)));
+            }
+        }
+        {
+            let node = self.parse_extern()?;
+            if let Some(node) = node {
+                return Ok(Some(ImplementationSyntax::Extern(node)));
+            }
+        }
+        {
+            let node = self.parse_instruction()?;
+            if let Some(node) = node {
+                return Ok(Some(ImplementationSyntax::Instruction(node)));
+            }
+        }
+        {
+            let node = self.parse_intrinsic()?;
+            if let Some(node) = node {
+                return Ok(Some(ImplementationSyntax::Intrinsic(node)));
+            }
+        }
+        return Ok(None)
     }
 
     pub fn parse_use(&mut self) -> Result<Option<UseSyntax>, ParserError> {
@@ -1034,12 +1080,6 @@ impl<'a> Parser<'a> {
                 return Ok(Some(ExpressionSyntax::Name(node)));
             }
         }
-        {
-            let node = self.parse_instruction()?;
-            if let Some(node) = node {
-                return Ok(Some(ExpressionSyntax::Instruction(node)));
-            }
-        }
         return Ok(None)
     }
 
@@ -1063,6 +1103,25 @@ impl<'a> Parser<'a> {
         Ok(Some(ret))
     }
 
+    pub fn parse_extern(&mut self) -> Result<Option<ExternSyntax>, ParserError> {
+        let start: Position = self.lexer.get_previous_position();
+
+        let success_extern_1 = self.lexer.parse_keyword("extern".to_string());
+        if !success_extern_1 {
+
+                return Ok(None)
+        }
+
+        let end: Position = self.lexer.get_position();
+
+        let ret = ExternSyntax {
+            start: start,
+            end: end,
+        };
+
+        Ok(Some(ret))
+    }
+
     pub fn parse_instruction(&mut self) -> Result<Option<InstructionSyntax>, ParserError> {
         let start: Position = self.lexer.get_previous_position();
 
@@ -1075,6 +1134,25 @@ impl<'a> Parser<'a> {
         let end: Position = self.lexer.get_position();
 
         let ret = InstructionSyntax {
+            start: start,
+            end: end,
+        };
+
+        Ok(Some(ret))
+    }
+
+    pub fn parse_intrinsic(&mut self) -> Result<Option<IntrinsicSyntax>, ParserError> {
+        let start: Position = self.lexer.get_previous_position();
+
+        let success_intrinsic_1 = self.lexer.parse_keyword("intrinsic".to_string());
+        if !success_intrinsic_1 {
+
+                return Ok(None)
+        }
+
+        let end: Position = self.lexer.get_position();
+
+        let ret = IntrinsicSyntax {
             start: start,
             end: end,
         };

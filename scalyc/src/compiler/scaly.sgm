@@ -82,9 +82,15 @@
         <content link = TypeSpec                                property = operand
         <content link = TypeSpec                       optional property = operator
         <content link = TypeAnnotation                 optional property = type_annotation
-        <content link = Expression                     optional property = expression
+        <content link = Implementation                 optional property = implementation
         <content link = semicolon                      optional
-    
+
+    <syntax id = Implementation                        abstract
+        <content link = Expression
+        <content link = Extern
+        <content link = Instruction
+        <content link = Intrinsic
+
     <syntax id = Use
         <content link = use
         <content link = Name                                    property = name
@@ -116,13 +122,18 @@
     <syntax id = Expression                            abstract
         <content link = Literal
         <content link = Name
-        <content link = Instruction
 
     <syntax id = Literal
         <content literal                                        property = literal
 
+    <syntax id = Extern
+        <content link = extern
+
     <syntax id = Instruction
         <content link = instruction
+
+    <syntax id = Intrinsic
+        <content link = intrinsic
 
     <syntax id = TypeAnnotation
         <content link = colon
@@ -137,6 +148,8 @@
     <keyword id = def
     <keyword id = fn
     <keyword id = instruction
+    <keyword id = intrinsic
+    <keyword id = extern
     <keyword id = let
     <keyword id = use
 
