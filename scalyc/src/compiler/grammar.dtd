@@ -4,7 +4,6 @@
   <!ATTLIST syntax
     id          ID                                                  #REQUIRED
     abstract    (abstract|concrete)                                 concrete
-    base        IDREF                                               #IMPLIED
     multiple    (multiple|single)                                   single
     top         (top|nontop)                                        nontop
     program     (program|nonprogram)                                nonprogram

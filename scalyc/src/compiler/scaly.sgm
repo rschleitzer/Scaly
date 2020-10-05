@@ -12,8 +12,9 @@
     <syntax id = Declaration                  multiple abstract
         <content link = Definition
         <content link = Function
+        <content link = Use
 
-    <syntax id = Definition                                     base = Declaration
+    <syntax id = Definition
         <content link = def
         <content link = Name                                    property = name
         <content link = Concept                                 property = concept
@@ -33,14 +34,14 @@
         <content link = Union
         <content link = Constant
 
-    <syntax id = Class                                          base = Definition
+    <syntax id = Class
         <content link = Structure                               property = structure
         <content link = Body                           optional property = body
 
-    <syntax id = Namespace                                      base = Definition
+    <syntax id = Namespace
         <content link = Body                                    property = body
 
-    <syntax id = Union                                          base = Definition
+    <syntax id = Union
         <content link = Tag                   multiple          property = tags
 
     <syntax id = Tag                          multiple
@@ -51,14 +52,14 @@
         <content link = Variant
         <content link = Enum
 
-    <syntax id = Variant                                        base = Item
+    <syntax id = Variant
         <content link = Structure                               property = structure
         <content link = Body                           optional property = body
 
-    <syntax id = Enum                                           base = Item
+    <syntax id = Enum
         <content literal                                        property = literal
 
-    <syntax id = Constant                                       base = Definition
+    <syntax id = Constant
         <content literal                                        property = literal
 
     <syntax id = Structure
@@ -79,15 +80,21 @@
     <syntax id = Function
         <content link = fn
         <content link = TypeSpec                                property = operand
-        <content link = TypeSpec                                property = operator
+        <content link = TypeSpec                       optional property = operator
         <content link = TypeAnnotation                 optional property = type_annotation
         <content link = Expression                     optional property = expression
+        <content link = semicolon                      optional
+    
+    <syntax id = Use
+        <content link = use
+        <content link = Name                                    property = name
+        <content link = semicolon                      optional
 
     <syntax id = Statement                   multiple abstract
         <content link = Calculation
         <content link = Let
 
-    <syntax id = Let                                            base = Statement
+    <syntax id = Let
         <content link = let
         <content link = Binding                                 property = binding
 
@@ -96,14 +103,14 @@
         <content link = TypeAnnotation                 optional property = type_annotation
         <content link = Calculation                             property = calculation
 
-    <syntax id = Calculation                                    base = Statement
+    <syntax id = Calculation
         <content link = Operation                               property = operation
         <content link = semicolon                      optional
 
     <syntax id = Operation
         <content link = Operand               multiple          property = op
 
-    <syntax id = Operand                      multiple          base = Statement
+    <syntax id = Operand                      multiple
         <content link = Expression                              property = primary
 
     <syntax id = Expression                            abstract
@@ -111,10 +118,10 @@
         <content link = Name
         <content link = Instruction
 
-    <syntax id = Literal                                        base = Expression
+    <syntax id = Literal
         <content literal                                        property = literal
 
-    <syntax id = Instruction                                    base = Expression
+    <syntax id = Instruction
         <content link = instruction
 
     <syntax id = TypeAnnotation
@@ -124,13 +131,14 @@
     <syntax id = TypeSpec                              abstract
         <content link = TypeName
 
-    <syntax id = TypeName                                       base = TypeSpec
+    <syntax id = TypeName
         <content link = Name                                    property = name
 
     <keyword id = def
     <keyword id = fn
     <keyword id = instruction
     <keyword id = let
+    <keyword id = use
 
     <punctuation id = semicolon         value = ";"
     <punctuation id = dot               value = "."

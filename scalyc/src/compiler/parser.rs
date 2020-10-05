@@ -15,15 +15,16 @@ pub struct FileSyntax {
 }
 
 pub enum DeclarationSyntax {
-    Define(DefineSyntax),
+    Definition(DefinitionSyntax),
     Function(FunctionSyntax),
+    Use(UseSyntax),
 }
 
-pub struct DefineSyntax {
+pub struct DefinitionSyntax {
     pub start: Position,
     pub end: Position,
     pub name: NameSyntax,
-    pub definition: DefinitionSyntax,
+    pub concept: ConceptSyntax,
 }
 
 pub struct NameSyntax {
@@ -39,7 +40,7 @@ pub struct ExtensionSyntax {
     pub name: String,
 }
 
-pub enum DefinitionSyntax {
+pub enum ConceptSyntax {
     Class(ClassSyntax),
     Namespace(NamespaceSyntax),
     Union(UnionSyntax),
@@ -119,9 +120,15 @@ pub struct FunctionSyntax {
     pub start: Position,
     pub end: Position,
     pub operand: TypeSpecSyntax,
-    pub operator: TypeSpecSyntax,
+    pub operator: Option<TypeSpecSyntax>,
     pub type_annotation: Option<TypeAnnotationSyntax>,
     pub expression: Option<ExpressionSyntax>,
+}
+
+pub struct UseSyntax {
+    pub start: Position,
+    pub end: Position,
+    pub name: NameSyntax,
 }
 
 pub enum StatementSyntax {
@@ -212,6 +219,7 @@ impl<'a> Parser<'a> {
         keywords.insert(String::from("fn"));
         keywords.insert(String::from("instruction"));
         keywords.insert(String::from("let"));
+        keywords.insert(String::from("use"));
         Parser {
             lexer: Lexer::new(deck),
             keywords: keywords,
@@ -267,9 +275,9 @@ impl<'a> Parser<'a> {
 
     pub fn parse_declaration(&mut self) -> Result<Option<DeclarationSyntax>, ParserError> {
         {
-            let node = self.parse_define()?;
+            let node = self.parse_definition()?;
             if let Some(node) = node {
-                return Ok(Some(DeclarationSyntax::Define(node)));
+                return Ok(Some(DeclarationSyntax::Definition(node)));
             }
         }
         {
@@ -278,10 +286,16 @@ impl<'a> Parser<'a> {
                 return Ok(Some(DeclarationSyntax::Function(node)));
             }
         }
+        {
+            let node = self.parse_use()?;
+            if let Some(node) = node {
+                return Ok(Some(DeclarationSyntax::Use(node)));
+            }
+        }
         return Ok(None)
     }
 
-    pub fn parse_define(&mut self) -> Result<Option<DefineSyntax>, ParserError> {
+    pub fn parse_definition(&mut self) -> Result<Option<DefinitionSyntax>, ParserError> {
         let start: Position = self.lexer.get_previous_position();
 
         let success_def_1 = self.lexer.parse_keyword("def".to_string());
@@ -299,8 +313,8 @@ impl<'a> Parser<'a> {
             });
         }
 
-        let definition = self.parse_definition()?;
-        if let None = definition {
+        let concept = self.parse_concept()?;
+        if let None = concept {
             return Err(ParserError {
                 file_name: "".to_string(),
                 line: self.lexer.line,
@@ -315,11 +329,11 @@ impl<'a> Parser<'a> {
 
         let end: Position = self.lexer.get_position();
 
-        let ret = DefineSyntax {
+        let ret = DefinitionSyntax {
             start: start,
             end: end,
             name: name.unwrap(),
-            definition: definition.unwrap(),
+            concept: concept.unwrap(),
         };
 
         Ok(Some(ret))
@@ -416,29 +430,29 @@ impl<'a> Parser<'a> {
         Ok(Some(ret))
     }
 
-    pub fn parse_definition(&mut self) -> Result<Option<DefinitionSyntax>, ParserError> {
+    pub fn parse_concept(&mut self) -> Result<Option<ConceptSyntax>, ParserError> {
         {
             let node = self.parse_class()?;
             if let Some(node) = node {
-                return Ok(Some(DefinitionSyntax::Class(node)));
+                return Ok(Some(ConceptSyntax::Class(node)));
             }
         }
         {
             let node = self.parse_namespace()?;
             if let Some(node) = node {
-                return Ok(Some(DefinitionSyntax::Namespace(node)));
+                return Ok(Some(ConceptSyntax::Namespace(node)));
             }
         }
         {
             let node = self.parse_union()?;
             if let Some(node) = node {
-                return Ok(Some(DefinitionSyntax::Union(node)));
+                return Ok(Some(ConceptSyntax::Union(node)));
             }
         }
         {
             let node = self.parse_constant()?;
             if let Some(node) = node {
-                return Ok(Some(DefinitionSyntax::Constant(node)));
+                return Ok(Some(ConceptSyntax::Constant(node)));
             }
         }
         return Ok(None)
@@ -763,17 +777,15 @@ impl<'a> Parser<'a> {
         }
 
         let operator = self.parse_typespec()?;
-        if let None = operator {
-            return Err(ParserError {
-                file_name: "".to_string(),
-                line: self.lexer.line,
-                column: self.lexer.column,
-            });
-        }
 
         let type_annotation = self.parse_typeannotation()?;
 
         let expression = self.parse_expression()?;
+
+        let success_semicolon_6 = self.lexer.parse_punctuation(";".to_string());
+        if !success_semicolon_6 {
+            ()
+        }
 
         let end: Position = self.lexer.get_position();
 
@@ -781,9 +793,43 @@ impl<'a> Parser<'a> {
             start: start,
             end: end,
             operand: operand.unwrap(),
-            operator: operator.unwrap(),
+            operator: operator,
             type_annotation: type_annotation,
             expression: expression,
+        };
+
+        Ok(Some(ret))
+    }
+
+    pub fn parse_use(&mut self) -> Result<Option<UseSyntax>, ParserError> {
+        let start: Position = self.lexer.get_previous_position();
+
+        let success_use_1 = self.lexer.parse_keyword("use".to_string());
+        if !success_use_1 {
+
+                return Ok(None)
+        }
+
+        let name = self.parse_name()?;
+        if let None = name {
+            return Err(ParserError {
+                file_name: "".to_string(),
+                line: self.lexer.line,
+                column: self.lexer.column,
+            });
+        }
+
+        let success_semicolon_3 = self.lexer.parse_punctuation(";".to_string());
+        if !success_semicolon_3 {
+            ()
+        }
+
+        let end: Position = self.lexer.get_position();
+
+        let ret = UseSyntax {
+            start: start,
+            end: end,
+            name: name.unwrap(),
         };
 
         Ok(Some(ret))
