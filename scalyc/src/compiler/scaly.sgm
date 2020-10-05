@@ -10,13 +10,13 @@
         <content link = Statement             multiple optional property = statements
 
     <syntax id = Declaration                  multiple abstract
-        <content link = Define
+        <content link = Definition
         <content link = Function
 
-    <syntax id = Define                                         base = Declaration
+    <syntax id = Definition                                     base = Declaration
         <content link = def
         <content link = Name                                    property = name
-        <content link = Definition                              property = definition
+        <content link = Concept                                 property = concept
         <content link = semicolon                      optional
 
     <syntax id = Name
@@ -27,7 +27,7 @@
         <content link = dot
         <content identifier                                     property = name
 
-    <syntax id = Definition                            abstract
+    <syntax id = Concept                              abstract
         <content link = Class
         <content link = Namespace
         <content link = Union
