@@ -101,6 +101,7 @@
         <content link = Let
         <content link = Var
         <content link = Mutable
+        <content link = Set
 
     <syntax id = Let
         <content link = let
@@ -118,6 +119,12 @@
         <content identifier                                     property = name
         <content link = TypeAnnotation                 optional property = type_annotation
         <content link = Calculation                             property = calculation
+
+    <syntax id = Set
+        <content link = set
+        <content link = Operation                               property = l_value
+        <content link = colon
+        <content link = Calculation                             property = r_value
 
     <syntax id = Calculation
         <content link = Operation                               property = operation
@@ -163,6 +170,7 @@
     <keyword id = let
     <keyword id = var
     <keyword id = mutable
+    <keyword id = set
     <keyword id = use
 
     <punctuation id = semicolon         value = ";"

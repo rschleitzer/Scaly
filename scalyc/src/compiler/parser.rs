@@ -143,6 +143,7 @@ pub enum StatementSyntax {
     Let(LetSyntax),
     Var(VarSyntax),
     Mutable(MutableSyntax),
+    Set(SetSyntax),
 }
 
 pub struct LetSyntax {
@@ -169,6 +170,13 @@ pub struct BindingSyntax {
     pub name: String,
     pub type_annotation: Option<TypeAnnotationSyntax>,
     pub calculation: CalculationSyntax,
+}
+
+pub struct SetSyntax {
+    pub start: Position,
+    pub end: Position,
+    pub l_value: OperationSyntax,
+    pub r_value: CalculationSyntax,
 }
 
 pub struct CalculationSyntax {
@@ -253,6 +261,7 @@ impl<'a> Parser<'a> {
         keywords.insert(String::from("let"));
         keywords.insert(String::from("var"));
         keywords.insert(String::from("mutable"));
+        keywords.insert(String::from("set"));
         keywords.insert(String::from("use"));
         Parser {
             lexer: Lexer::new(deck),
@@ -942,6 +951,12 @@ impl<'a> Parser<'a> {
                 return Ok(Some(StatementSyntax::Mutable(node)));
             }
         }
+        {
+            let node = self.parse_set()?;
+            if let Some(node) = node {
+                return Ok(Some(StatementSyntax::Set(node)));
+            }
+        }
         return Ok(None)
     }
 
@@ -1066,6 +1081,56 @@ impl<'a> Parser<'a> {
             name: name.unwrap(),
             type_annotation: type_annotation,
             calculation: calculation.unwrap(),
+        };
+
+        Ok(Some(ret))
+    }
+
+    pub fn parse_set(&mut self) -> Result<Option<SetSyntax>, ParserError> {
+        let start: Position = self.lexer.get_previous_position();
+
+        let success_set_1 = self.lexer.parse_keyword("set".to_string());
+        if !success_set_1 {
+
+                return Ok(None)
+        }
+
+        let l_value = self.parse_operation()?;
+        if let None = l_value {
+            return Err(ParserError {
+                file_name: "".to_string(),
+                line: self.lexer.line,
+                column: self.lexer.column,
+            });
+        }
+
+        let success_colon_3 = self.lexer.parse_punctuation(":".to_string());
+        if !success_colon_3 {
+
+            return Result::Err(
+                ParserError {
+                    file_name: "".to_string(),
+                    line: self.lexer.line,
+                    column: self.lexer.column,
+                },
+            )        }
+
+        let r_value = self.parse_calculation()?;
+        if let None = r_value {
+            return Err(ParserError {
+                file_name: "".to_string(),
+                line: self.lexer.line,
+                column: self.lexer.column,
+            });
+        }
+
+        let end: Position = self.lexer.get_position();
+
+        let ret = SetSyntax {
+            start: start,
+            end: end,
+            l_value: l_value.unwrap(),
+            r_value: r_value.unwrap(),
         };
 
         Ok(Some(ret))
