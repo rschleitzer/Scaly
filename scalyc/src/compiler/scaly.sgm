@@ -135,10 +135,41 @@
 
     <syntax id = Operand                      multiple
         <content link = Expression                              property = primary
+        <content link = Postfix               multiple optional property = postfixes
+
+    <syntax id = Postfix                      multiple abstract
+        <content link = MemberAccess
+        <content link = Catch
+
+    <syntax id = MemberAccess
+        <content link = dot
+        <content link = Name                                    property = member
+
+    <syntax id = Catch
+        <content link = catch
+        <content link = CatchPattern                            property = type_spec
+        <content link = Block                                   property = handler
+
+    <syntax id = CatchPattern                          abstract
+        <content link = WildCardCatchPattern
+        <content link = TypeCatchPattern
+
+    <syntax id = WildCardCatchPattern
+        <content link = underscore
+
+    <syntax id = TypeCatchPattern
+        <content link = TypeSpec                                property = type_spec
+        <content identifier                            optional property = error_name
 
     <syntax id = Expression                            abstract
         <content link = Literal
         <content link = Name
+        <content link = Block
+
+    <syntax id = Block
+        <content link = left_brace
+        <content link = Statement             multiple optional property = statements
+        <content link = right_brace
 
     <syntax id = Literal
         <content literal                                        property = literal
@@ -162,16 +193,17 @@
     <syntax id = TypeName
         <content link = Name                                    property = name
 
+    <keyword id = catch
     <keyword id = def
+    <keyword id = extern
     <keyword id = fn
     <keyword id = instruction
     <keyword id = intrinsic
-    <keyword id = extern
     <keyword id = let
-    <keyword id = var
     <keyword id = mutable
     <keyword id = set
     <keyword id = use
+    <keyword id = var
 
     <punctuation id = semicolon         value = ";"
     <punctuation id = dot               value = "."
@@ -181,5 +213,6 @@
     <punctuation id = right_brace       value = "}"
     <punctuation id = comma             value = ","
     <punctuation id = colon             value = ":"
+    <punctuation id = underscore        value = "_"
 
   </grammar>

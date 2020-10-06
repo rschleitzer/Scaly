@@ -195,11 +195,54 @@ pub struct OperandSyntax {
     pub start: Position,
     pub end: Position,
     pub primary: ExpressionSyntax,
+    pub postfixes: Option<Vec<PostfixSyntax>>,
+}
+
+pub enum PostfixSyntax {
+    MemberAccess(MemberAccessSyntax),
+    Catch(CatchSyntax),
+}
+
+pub struct MemberAccessSyntax {
+    pub start: Position,
+    pub end: Position,
+    pub member: NameSyntax,
+}
+
+pub struct CatchSyntax {
+    pub start: Position,
+    pub end: Position,
+    pub type_spec: CatchPatternSyntax,
+    pub handler: BlockSyntax,
+}
+
+pub enum CatchPatternSyntax {
+    WildCardCatchPattern(WildCardCatchPatternSyntax),
+    TypeCatchPattern(TypeCatchPatternSyntax),
+}
+
+pub struct WildCardCatchPatternSyntax {
+    pub start: Position,
+    pub end: Position,
+}
+
+pub struct TypeCatchPatternSyntax {
+    pub start: Position,
+    pub end: Position,
+    pub type_spec: TypeSpecSyntax,
+    pub error_name: Option<String>,
 }
 
 pub enum ExpressionSyntax {
     Literal(LiteralSyntax),
     Name(NameSyntax),
+    Block(BlockSyntax),
+}
+
+pub struct BlockSyntax {
+    pub start: Position,
+    pub end: Position,
+    pub statements: Option<Vec<StatementSyntax>>,
 }
 
 pub struct LiteralSyntax {
@@ -253,16 +296,17 @@ pub struct Parser<'a> {
 impl<'a> Parser<'a> {
     pub fn new(deck: &'a str) -> Parser {
         let mut keywords = HashSet::new();
+        keywords.insert(String::from("catch"));
         keywords.insert(String::from("def"));
+        keywords.insert(String::from("extern"));
         keywords.insert(String::from("fn"));
         keywords.insert(String::from("instruction"));
         keywords.insert(String::from("intrinsic"));
-        keywords.insert(String::from("extern"));
         keywords.insert(String::from("let"));
-        keywords.insert(String::from("var"));
         keywords.insert(String::from("mutable"));
         keywords.insert(String::from("set"));
         keywords.insert(String::from("use"));
+        keywords.insert(String::from("var"));
         Parser {
             lexer: Lexer::new(deck),
             keywords: keywords,
@@ -1207,12 +1251,184 @@ impl<'a> Parser<'a> {
             return Ok(None);
         }
 
+        let postfixes = self.parse_postfix_list()?;
+
         let end: Position = self.lexer.get_position();
 
         let ret = OperandSyntax {
             start: start,
             end: end,
             primary: primary.unwrap(),
+            postfixes: postfixes,
+        };
+
+        Ok(Some(ret))
+    }
+
+    pub fn parse_postfix_list(&mut self) -> Result<Option<Vec<PostfixSyntax>>, ParserError> {
+        let mut array: Option<Vec<PostfixSyntax>> = Option::None;
+        loop {
+            let node = self.parse_postfix()?;
+            if let Some(node) = node {
+                if let None = array {
+                    array = Some(Vec::new())
+                };
+                match &mut array {
+                    Some(a) => a.push(node),
+                    None => (),
+                }
+            } else {
+                break;
+            }
+        }
+
+        Ok(array)
+    }
+
+    pub fn parse_postfix(&mut self) -> Result<Option<PostfixSyntax>, ParserError> {
+        {
+            let node = self.parse_memberaccess()?;
+            if let Some(node) = node {
+                return Ok(Some(PostfixSyntax::MemberAccess(node)));
+            }
+        }
+        {
+            let node = self.parse_catch()?;
+            if let Some(node) = node {
+                return Ok(Some(PostfixSyntax::Catch(node)));
+            }
+        }
+        return Ok(None)
+    }
+
+    pub fn parse_memberaccess(&mut self) -> Result<Option<MemberAccessSyntax>, ParserError> {
+        let start: Position = self.lexer.get_previous_position();
+
+        let success_dot_1 = self.lexer.parse_punctuation(".".to_string());
+        if !success_dot_1 {
+
+                return Ok(None)
+        }
+
+        let member = self.parse_name()?;
+        if let None = member {
+            return Err(ParserError {
+                file_name: "".to_string(),
+                line: self.lexer.line,
+                column: self.lexer.column,
+            });
+        }
+
+        let end: Position = self.lexer.get_position();
+
+        let ret = MemberAccessSyntax {
+            start: start,
+            end: end,
+            member: member.unwrap(),
+        };
+
+        Ok(Some(ret))
+    }
+
+    pub fn parse_catch(&mut self) -> Result<Option<CatchSyntax>, ParserError> {
+        let start: Position = self.lexer.get_previous_position();
+
+        let success_catch_1 = self.lexer.parse_keyword("catch".to_string());
+        if !success_catch_1 {
+
+                return Ok(None)
+        }
+
+        let type_spec = self.parse_catchpattern()?;
+        if let None = type_spec {
+            return Err(ParserError {
+                file_name: "".to_string(),
+                line: self.lexer.line,
+                column: self.lexer.column,
+            });
+        }
+
+        let handler = self.parse_block()?;
+        if let None = handler {
+            return Err(ParserError {
+                file_name: "".to_string(),
+                line: self.lexer.line,
+                column: self.lexer.column,
+            });
+        }
+
+        let end: Position = self.lexer.get_position();
+
+        let ret = CatchSyntax {
+            start: start,
+            end: end,
+            type_spec: type_spec.unwrap(),
+            handler: handler.unwrap(),
+        };
+
+        Ok(Some(ret))
+    }
+
+    pub fn parse_catchpattern(&mut self) -> Result<Option<CatchPatternSyntax>, ParserError> {
+        {
+            let node = self.parse_wildcardcatchpattern()?;
+            if let Some(node) = node {
+                return Ok(Some(CatchPatternSyntax::WildCardCatchPattern(node)));
+            }
+        }
+        {
+            let node = self.parse_typecatchpattern()?;
+            if let Some(node) = node {
+                return Ok(Some(CatchPatternSyntax::TypeCatchPattern(node)));
+            }
+        }
+        return Ok(None)
+    }
+
+    pub fn parse_wildcardcatchpattern(&mut self) -> Result<Option<WildCardCatchPatternSyntax>, ParserError> {
+        let start: Position = self.lexer.get_previous_position();
+
+        let success_underscore_1 = self.lexer.parse_punctuation("_".to_string());
+        if !success_underscore_1 {
+
+                return Ok(None)
+        }
+
+        let end: Position = self.lexer.get_position();
+
+        let ret = WildCardCatchPatternSyntax {
+            start: start,
+            end: end,
+        };
+
+        Ok(Some(ret))
+    }
+
+    pub fn parse_typecatchpattern(&mut self) -> Result<Option<TypeCatchPatternSyntax>, ParserError> {
+        let start: Position = self.lexer.get_previous_position();
+
+        let type_spec = self.parse_typespec()?;
+        if let None = type_spec {
+            return Ok(None);
+        }
+
+        let error_name = self.lexer.parse_identifier(&self.keywords);
+        match &error_name {
+            Some(error_name) =>
+                if !self.is_identifier(error_name) {            ()
+
+           },
+           _ =>            ()
+,
+        }
+
+        let end: Position = self.lexer.get_position();
+
+        let ret = TypeCatchPatternSyntax {
+            start: start,
+            end: end,
+            type_spec: type_spec.unwrap(),
+            error_name: error_name,
         };
 
         Ok(Some(ret))
@@ -1231,7 +1447,46 @@ impl<'a> Parser<'a> {
                 return Ok(Some(ExpressionSyntax::Name(node)));
             }
         }
+        {
+            let node = self.parse_block()?;
+            if let Some(node) = node {
+                return Ok(Some(ExpressionSyntax::Block(node)));
+            }
+        }
         return Ok(None)
+    }
+
+    pub fn parse_block(&mut self) -> Result<Option<BlockSyntax>, ParserError> {
+        let start: Position = self.lexer.get_previous_position();
+
+        let success_left_brace_1 = self.lexer.parse_punctuation("{".to_string());
+        if !success_left_brace_1 {
+
+                return Ok(None)
+        }
+
+        let statements = self.parse_statement_list()?;
+
+        let success_right_brace_3 = self.lexer.parse_punctuation("}".to_string());
+        if !success_right_brace_3 {
+
+            return Result::Err(
+                ParserError {
+                    file_name: "".to_string(),
+                    line: self.lexer.line,
+                    column: self.lexer.column,
+                },
+            )        }
+
+        let end: Position = self.lexer.get_position();
+
+        let ret = BlockSyntax {
+            start: start,
+            end: end,
+            statements: statements,
+        };
+
+        Ok(Some(ret))
     }
 
     pub fn parse_literal(&mut self) -> Result<Option<LiteralSyntax>, ParserError> {
