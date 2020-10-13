@@ -175,8 +175,8 @@ pub struct BindingSyntax {
 pub struct SetSyntax {
     pub start: Position,
     pub end: Position,
-    pub l_value: OperationSyntax,
-    pub r_value: CalculationSyntax,
+    pub target: OperationSyntax,
+    pub source: CalculationSyntax,
 }
 
 pub struct CalculationSyntax {
@@ -1139,8 +1139,8 @@ impl<'a> Parser<'a> {
                 return Ok(None)
         }
 
-        let l_value = self.parse_operation()?;
-        if let None = l_value {
+        let target = self.parse_operation()?;
+        if let None = target {
             return Err(ParserError {
                 file_name: "".to_string(),
                 line: self.lexer.line,
@@ -1159,8 +1159,8 @@ impl<'a> Parser<'a> {
                 },
             )        }
 
-        let r_value = self.parse_calculation()?;
-        if let None = r_value {
+        let source = self.parse_calculation()?;
+        if let None = source {
             return Err(ParserError {
                 file_name: "".to_string(),
                 line: self.lexer.line,
@@ -1173,8 +1173,8 @@ impl<'a> Parser<'a> {
         let ret = SetSyntax {
             start: start,
             end: end,
-            l_value: l_value.unwrap(),
-            r_value: r_value.unwrap(),
+            target: target.unwrap(),
+            source: source.unwrap(),
         };
 
         Ok(Some(ret))

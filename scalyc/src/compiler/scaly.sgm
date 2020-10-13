@@ -69,7 +69,7 @@
 
     <syntax id = Body
         <content link = left_brace
-        <content link = Declaration           multiple optional property = components
+        <content link = Declaration           multiple optional property = declarations
         <content link = right_brace
 
     <syntax id = Component                    multiple
@@ -122,9 +122,9 @@
 
     <syntax id = Set
         <content link = set
-        <content link = Operation                               property = l_value
+        <content link = Operation                               property = target
         <content link = colon
-        <content link = Calculation                             property = r_value
+        <content link = Calculation                             property = source
 
     <syntax id = Calculation
         <content link = Operation                               property = operation
