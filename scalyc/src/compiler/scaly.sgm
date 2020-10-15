@@ -68,9 +68,9 @@
         <content link = right_paren
 
     <syntax id = Body
-        <content link = left_brace
+        <content link = left_curly
         <content link = Declaration           multiple optional property = declarations
-        <content link = right_brace
+        <content link = right_curly
 
     <syntax id = Component                    multiple
         <content identifier                                     property = name
@@ -106,10 +106,14 @@
         <content link = fn
         <content link = TypeSpec                                property = operand
         <content link = TypeSpec                       optional property = operator
-        <content link = TypeAnnotation                 optional property = type_annotation
+        <content link = Returns                        optional property = returns_annotation
         <content link = Throws                         optional property = throws_clause
         <content link = Implementation                          property = implementation
         <content link = semicolon                      optional
+
+    <syntax id = Returns
+        <content link = returns
+        <content link = TypeSpec                                property = throws_type
 
     <syntax id = Throws
         <content link = throws
@@ -141,6 +145,10 @@
         <content link = Var
         <content link = Mutable
         <content link = Set
+        <content link = Continue
+        <content link = Break
+        <content link = Return
+        <content link = Throw
 
     <syntax id = Let
         <content link = let
@@ -178,33 +186,63 @@
 
     <syntax id = Postfix                      multiple abstract
         <content link = MemberAccess
-        <content link = Catch
+        <content link = Catcher
 
     <syntax id = MemberAccess
         <content link = dot
         <content link = Name                                    property = member
 
-    <syntax id = Catch
+    <syntax id = Catcher
+        <content link = Catch                 multiple          property = catchers
+        <content link = Drop                           optional property = dropper
+
+    <syntax id = Catch                        multiple
         <content link = catch
-        <content link = Pattern                                 property = pattern
-        <content link = colon
+        <content link = Operation                               property = condition
+        <content link = give
         <content link = Operation                               property = handler
 
-    <syntax id = Pattern                              abstract
-        <content link = WildCardPattern
-        <content link = OperationPattern
+    <syntax id = Drop
+        <content link = drop
+        <content link = Operation                               property = handler
 
-    <syntax id = WildCardPattern
-        <content link = underscore
+    <syntax id = Continue
+        <content link = continue
+        <content link = Loop                           optional property = name
+        <content link = semicolon                      optional
 
-    <syntax id = OperationPattern
-        <content link = Operation                               property = object
+    <syntax id = Loop
+        <content link = loop
+        <content identifier                                     property = name
+
+    <syntax id = Break
+        <content link = break
+        <content link = Loop                           optional property = name
+        <content link = Calculation                             property = result
+
+    <syntax id = Return
+        <content link = return
+        <content link = Calculation                    optional property = result
+
+    <syntax id = Throw
+        <content link = throw
+        <content link = Calculation                    optional property = result
 
     <syntax id = Expression                            abstract
         <content link = Literal
         <content link = Name
         <content link = Object
+        <content link = Array
         <content link = Block
+        <content link = If
+        <content link = Match
+        <content link = For
+        <content link = While
+        <content link = Repeat
+        <content link = SizeOf
+
+    <syntax id = Literal
+        <content literal                                        property = literal
 
     <syntax id = Object
         <content link = left_paren
@@ -220,38 +258,121 @@
         <content link = colon
         <content link = Operation                               property = value
 
+    <syntax id = Array
+        <content link = left_bracket
+        <content link = Element               multiple          property = elements
+        <content link = right_bracket
+
+    <syntax id = Element                      multiple
+        <content link = Operation                               property = operation
+        <content link = comma                          optional
+
     <syntax id = Block
-        <content link = left_brace
+        <content link = left_curly
         <content link = Statement             multiple optional property = statements
-        <content link = right_brace
+        <content link = right_curly
 
-    <syntax id = Literal
-        <content literal                                        property = literal
+    <syntax id = If
+        <content link = if
+        <content link = Operation                               property = condition
+        <content link = then
+        <content link = Operation                               property = consequent
+        <content link = Else                           optional property = alternative
 
+    <syntax id = Else
+        <content link = else
+        <content link = Operation                               property = alternative
+
+    <syntax id = Match
+        <content link = match
+        <content link = Operation                               property = scrutinee        
+        <content link = Case                  multiple          property = cases
+        <content link = Default                        optional property = alternative
+
+    <syntax id = Case                         multiple
+        <content link = case
+        <content link = Operation                               property = condition
+        <content link = is
+        <content link = Operation                               property = consequent
+    
+    <syntax id = Default
+        <content link = default
+        <content link = Operation                      optional property = alternative
+
+    <syntax id = For
+        <content link = for
+        <content link = Operation                               property = condition
+        <content link = in
+        <content link = Operation                               property = expression
+        <content link = Label                          optional property = name
+        <content link = do
+        <content link = Operation                               property = action
+
+    <syntax id = Label
+        <content link = label
+        <content identifier                                     property = name
+
+    <syntax id = While
+        <content link = while
+        <content link = Operation                               property = condition
+        <content link = Label                          optional property = name
+        <content link = do
+        <content link = Operation                               property = action
+
+    <syntax id = Repeat
+        <content link = repeat
+        <content link = Label                          optional property = name
+        <content link = Operation                               property = action
+
+    <syntax id = SizeOf
+        <content link = sizeof
+        <content link = Type                                    property = type_spec
+
+    <keyword id = break
     <keyword id = catch
+    <keyword id = case
+    <keyword id = continue
     <keyword id = def
+    <keyword id = default
+    <keyword id = do
+    <keyword id = drop
+    <keyword id = else
     <keyword id = extern
     <keyword id = fn
+    <keyword id = for
+    <keyword id = give
+    <keyword id = if
+    <keyword id = in
+    <keyword id = is
     <keyword id = instruction
     <keyword id = intrinsic
+    <keyword id = label
     <keyword id = let
+    <keyword id = loop
+    <keyword id = match
     <keyword id = mutable
+    <keyword id = return
+    <keyword id = returns
+    <keyword id = repeat
     <keyword id = set
+    <keyword id = sizeof
+    <keyword id = then
+    <keyword id = throw
     <keyword id = use
     <keyword id = var
+    <keyword id = while
     <keyword id = throws
 
     <punctuation id = semicolon         value = ";"
     <punctuation id = dot               value = "."
-    <punctuation id = left_paren        value = "("
-    <punctuation id = right_paren       value = ")"
-    <punctuation id = left_brace        value = "{"
-    <punctuation id = right_brace       value = "}"
-    <punctuation id = left_bracket      value = "["
-    <punctuation id = right_bracket     value = "]"
     <punctuation id = comma             value = ","
     <punctuation id = colon             value = ":"
     <punctuation id = question          value = "?"
-    <punctuation id = underscore        value = "_"
+    <punctuation id = left_paren        value = "("
+    <punctuation id = right_paren       value = ")"
+    <punctuation id = left_curly        value = "{"
+    <punctuation id = right_curly       value = "}"
+    <punctuation id = left_bracket      value = "["
+    <punctuation id = right_bracket     value = "]"
 
   </grammar>

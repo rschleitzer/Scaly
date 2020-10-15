@@ -157,9 +157,15 @@ pub struct FunctionSyntax {
     pub end: Position,
     pub operand: TypeSpecSyntax,
     pub operator: Option<TypeSpecSyntax>,
-    pub type_annotation: Option<TypeAnnotationSyntax>,
+    pub returns_annotation: Option<ReturnsSyntax>,
     pub throws_clause: Option<ThrowsSyntax>,
     pub implementation: ImplementationSyntax,
+}
+
+pub struct ReturnsSyntax {
+    pub start: Position,
+    pub end: Position,
+    pub throws_type: TypeSpecSyntax,
 }
 
 pub struct ThrowsSyntax {
@@ -202,6 +208,10 @@ pub enum StatementSyntax {
     Var(VarSyntax),
     Mutable(MutableSyntax),
     Set(SetSyntax),
+    Continue(ContinueSyntax),
+    Break(BreakSyntax),
+    Return(ReturnSyntax),
+    Throw(ThrowSyntax),
 }
 
 pub struct LetSyntax {
@@ -258,7 +268,7 @@ pub struct OperandSyntax {
 
 pub enum PostfixSyntax {
     MemberAccess(MemberAccessSyntax),
-    Catch(CatchSyntax),
+    Catcher(CatcherSyntax),
 }
 
 pub struct MemberAccessSyntax {
@@ -267,34 +277,75 @@ pub struct MemberAccessSyntax {
     pub member: NameSyntax,
 }
 
+pub struct CatcherSyntax {
+    pub start: Position,
+    pub end: Position,
+    pub catchers: Vec<CatchSyntax>,
+    pub dropper: Option<DropSyntax>,
+}
+
 pub struct CatchSyntax {
     pub start: Position,
     pub end: Position,
-    pub pattern: PatternSyntax,
+    pub condition: OperationSyntax,
     pub handler: OperationSyntax,
 }
 
-pub enum PatternSyntax {
-    WildCardPattern(WildCardPatternSyntax),
-    OperationPattern(OperationPatternSyntax),
-}
-
-pub struct WildCardPatternSyntax {
+pub struct DropSyntax {
     pub start: Position,
     pub end: Position,
+    pub handler: OperationSyntax,
 }
 
-pub struct OperationPatternSyntax {
+pub struct ContinueSyntax {
     pub start: Position,
     pub end: Position,
-    pub object: OperationSyntax,
+    pub name: Option<LoopSyntax>,
+}
+
+pub struct LoopSyntax {
+    pub start: Position,
+    pub end: Position,
+    pub name: String,
+}
+
+pub struct BreakSyntax {
+    pub start: Position,
+    pub end: Position,
+    pub name: Option<LoopSyntax>,
+    pub result: CalculationSyntax,
+}
+
+pub struct ReturnSyntax {
+    pub start: Position,
+    pub end: Position,
+    pub result: Option<CalculationSyntax>,
+}
+
+pub struct ThrowSyntax {
+    pub start: Position,
+    pub end: Position,
+    pub result: Option<CalculationSyntax>,
 }
 
 pub enum ExpressionSyntax {
     Literal(LiteralSyntax),
     Name(NameSyntax),
     Object(ObjectSyntax),
+    Array(ArraySyntax),
     Block(BlockSyntax),
+    If(IfSyntax),
+    Match(MatchSyntax),
+    For(ForSyntax),
+    While(WhileSyntax),
+    Repeat(RepeatSyntax),
+    SizeOf(SizeOfSyntax),
+}
+
+pub struct LiteralSyntax {
+    pub start: Position,
+    pub end: Position,
+    pub literal: Literal,
 }
 
 pub struct ObjectSyntax {
@@ -316,16 +367,93 @@ pub struct ValueSyntax {
     pub value: OperationSyntax,
 }
 
+pub struct ArraySyntax {
+    pub start: Position,
+    pub end: Position,
+    pub elements: Vec<ElementSyntax>,
+}
+
+pub struct ElementSyntax {
+    pub start: Position,
+    pub end: Position,
+    pub operation: OperationSyntax,
+}
+
 pub struct BlockSyntax {
     pub start: Position,
     pub end: Position,
     pub statements: Option<Vec<StatementSyntax>>,
 }
 
-pub struct LiteralSyntax {
+pub struct IfSyntax {
     pub start: Position,
     pub end: Position,
-    pub literal: Literal,
+    pub condition: OperationSyntax,
+    pub consequent: OperationSyntax,
+    pub alternative: Option<ElseSyntax>,
+}
+
+pub struct ElseSyntax {
+    pub start: Position,
+    pub end: Position,
+    pub alternative: OperationSyntax,
+}
+
+pub struct MatchSyntax {
+    pub start: Position,
+    pub end: Position,
+    pub scrutinee: OperationSyntax,
+    pub cases: Vec<CaseSyntax>,
+    pub alternative: Option<DefaultSyntax>,
+}
+
+pub struct CaseSyntax {
+    pub start: Position,
+    pub end: Position,
+    pub condition: OperationSyntax,
+    pub consequent: OperationSyntax,
+}
+
+pub struct DefaultSyntax {
+    pub start: Position,
+    pub end: Position,
+    pub alternative: Option<OperationSyntax>,
+}
+
+pub struct ForSyntax {
+    pub start: Position,
+    pub end: Position,
+    pub condition: OperationSyntax,
+    pub expression: OperationSyntax,
+    pub name: Option<LabelSyntax>,
+    pub action: OperationSyntax,
+}
+
+pub struct LabelSyntax {
+    pub start: Position,
+    pub end: Position,
+    pub name: String,
+}
+
+pub struct WhileSyntax {
+    pub start: Position,
+    pub end: Position,
+    pub condition: OperationSyntax,
+    pub name: Option<LabelSyntax>,
+    pub action: OperationSyntax,
+}
+
+pub struct RepeatSyntax {
+    pub start: Position,
+    pub end: Position,
+    pub name: Option<LabelSyntax>,
+    pub action: OperationSyntax,
+}
+
+pub struct SizeOfSyntax {
+    pub start: Position,
+    pub end: Position,
+    pub type_spec: TypeSyntax,
 }
 
 pub struct ParserError {
@@ -342,17 +470,39 @@ pub struct Parser<'a> {
 impl<'a> Parser<'a> {
     pub fn new(deck: &'a str) -> Parser {
         let mut keywords = HashSet::new();
+        keywords.insert(String::from("break"));
         keywords.insert(String::from("catch"));
+        keywords.insert(String::from("case"));
+        keywords.insert(String::from("continue"));
         keywords.insert(String::from("def"));
+        keywords.insert(String::from("default"));
+        keywords.insert(String::from("do"));
+        keywords.insert(String::from("drop"));
+        keywords.insert(String::from("else"));
         keywords.insert(String::from("extern"));
         keywords.insert(String::from("fn"));
+        keywords.insert(String::from("for"));
+        keywords.insert(String::from("give"));
+        keywords.insert(String::from("if"));
+        keywords.insert(String::from("in"));
+        keywords.insert(String::from("is"));
         keywords.insert(String::from("instruction"));
         keywords.insert(String::from("intrinsic"));
+        keywords.insert(String::from("label"));
         keywords.insert(String::from("let"));
+        keywords.insert(String::from("loop"));
+        keywords.insert(String::from("match"));
         keywords.insert(String::from("mutable"));
+        keywords.insert(String::from("return"));
+        keywords.insert(String::from("returns"));
+        keywords.insert(String::from("repeat"));
         keywords.insert(String::from("set"));
+        keywords.insert(String::from("sizeof"));
+        keywords.insert(String::from("then"));
+        keywords.insert(String::from("throw"));
         keywords.insert(String::from("use"));
         keywords.insert(String::from("var"));
+        keywords.insert(String::from("while"));
         keywords.insert(String::from("throws"));
         Parser {
             lexer: Lexer::new(deck),
@@ -808,16 +958,16 @@ impl<'a> Parser<'a> {
     pub fn parse_body(&mut self) -> Result<Option<BodySyntax>, ParserError> {
         let start: Position = self.lexer.get_previous_position();
 
-        let success_left_brace_1 = self.lexer.parse_punctuation("{".to_string());
-        if !success_left_brace_1 {
+        let success_left_curly_1 = self.lexer.parse_punctuation("{".to_string());
+        if !success_left_curly_1 {
 
                 return Ok(None)
         }
 
         let declarations = self.parse_declaration_list()?;
 
-        let success_right_brace_3 = self.lexer.parse_punctuation("}".to_string());
-        if !success_right_brace_3 {
+        let success_right_curly_3 = self.lexer.parse_punctuation("}".to_string());
+        if !success_right_curly_3 {
 
             return Result::Err(
                 ParserError {
@@ -1078,7 +1228,7 @@ impl<'a> Parser<'a> {
 
         let operator = self.parse_typespec()?;
 
-        let type_annotation = self.parse_typeannotation()?;
+        let returns_annotation = self.parse_returns()?;
 
         let throws_clause = self.parse_throws()?;
 
@@ -1103,9 +1253,38 @@ impl<'a> Parser<'a> {
             end: end,
             operand: operand.unwrap(),
             operator: operator,
-            type_annotation: type_annotation,
+            returns_annotation: returns_annotation,
             throws_clause: throws_clause,
             implementation: implementation.unwrap(),
+        };
+
+        Ok(Some(ret))
+    }
+
+    pub fn parse_returns(&mut self) -> Result<Option<ReturnsSyntax>, ParserError> {
+        let start: Position = self.lexer.get_previous_position();
+
+        let success_returns_1 = self.lexer.parse_keyword("returns".to_string());
+        if !success_returns_1 {
+
+                return Ok(None)
+        }
+
+        let throws_type = self.parse_typespec()?;
+        if let None = throws_type {
+            return Err(ParserError {
+                file_name: "".to_string(),
+                line: self.lexer.line,
+                column: self.lexer.column,
+            });
+        }
+
+        let end: Position = self.lexer.get_position();
+
+        let ret = ReturnsSyntax {
+            start: start,
+            end: end,
+            throws_type: throws_type.unwrap(),
         };
 
         Ok(Some(ret))
@@ -1308,6 +1487,30 @@ impl<'a> Parser<'a> {
             let node = self.parse_set()?;
             if let Some(node) = node {
                 return Ok(Some(StatementSyntax::Set(node)));
+            }
+        }
+        {
+            let node = self.parse_continue()?;
+            if let Some(node) = node {
+                return Ok(Some(StatementSyntax::Continue(node)));
+            }
+        }
+        {
+            let node = self.parse_break()?;
+            if let Some(node) = node {
+                return Ok(Some(StatementSyntax::Break(node)));
+            }
+        }
+        {
+            let node = self.parse_return()?;
+            if let Some(node) = node {
+                return Ok(Some(StatementSyntax::Return(node)));
+            }
+        }
+        {
+            let node = self.parse_throw()?;
+            if let Some(node) = node {
+                return Ok(Some(StatementSyntax::Throw(node)));
             }
         }
         return Ok(None)
@@ -1602,9 +1805,9 @@ impl<'a> Parser<'a> {
             }
         }
         {
-            let node = self.parse_catch()?;
+            let node = self.parse_catcher()?;
             if let Some(node) = node {
-                return Ok(Some(PostfixSyntax::Catch(node)));
+                return Ok(Some(PostfixSyntax::Catcher(node)));
             }
         }
         return Ok(None)
@@ -1639,6 +1842,48 @@ impl<'a> Parser<'a> {
         Ok(Some(ret))
     }
 
+    pub fn parse_catcher(&mut self) -> Result<Option<CatcherSyntax>, ParserError> {
+        let start: Position = self.lexer.get_previous_position();
+
+        let catchers = self.parse_catch_list()?;
+        if let None = catchers {
+            return Ok(None);
+        }
+
+        let dropper = self.parse_drop()?;
+
+        let end: Position = self.lexer.get_position();
+
+        let ret = CatcherSyntax {
+            start: start,
+            end: end,
+            catchers: catchers.unwrap(),
+            dropper: dropper,
+        };
+
+        Ok(Some(ret))
+    }
+
+    pub fn parse_catch_list(&mut self) -> Result<Option<Vec<CatchSyntax>>, ParserError> {
+        let mut array: Option<Vec<CatchSyntax>> = Option::None;
+        loop {
+            let node = self.parse_catch()?;
+            if let Some(node) = node {
+                if let None = array {
+                    array = Some(Vec::new())
+                };
+                match &mut array {
+                    Some(a) => a.push(node),
+                    None => (),
+                }
+            } else {
+                break;
+            }
+        }
+
+        Ok(array)
+    }
+
     pub fn parse_catch(&mut self) -> Result<Option<CatchSyntax>, ParserError> {
         let start: Position = self.lexer.get_previous_position();
 
@@ -1648,8 +1893,8 @@ impl<'a> Parser<'a> {
                 return Ok(None)
         }
 
-        let pattern = self.parse_pattern()?;
-        if let None = pattern {
+        let condition = self.parse_operation()?;
+        if let None = condition {
             return Err(ParserError {
                 file_name: "".to_string(),
                 line: self.lexer.line,
@@ -1657,8 +1902,8 @@ impl<'a> Parser<'a> {
             });
         }
 
-        let success_colon_3 = self.lexer.parse_punctuation(":".to_string());
-        if !success_colon_3 {
+        let success_give_3 = self.lexer.parse_keyword("give".to_string());
+        if !success_give_3 {
 
             return Result::Err(
                 ParserError {
@@ -1682,62 +1927,182 @@ impl<'a> Parser<'a> {
         let ret = CatchSyntax {
             start: start,
             end: end,
-            pattern: pattern.unwrap(),
+            condition: condition.unwrap(),
             handler: handler.unwrap(),
         };
 
         Ok(Some(ret))
     }
 
-    pub fn parse_pattern(&mut self) -> Result<Option<PatternSyntax>, ParserError> {
-        {
-            let node = self.parse_wildcardpattern()?;
-            if let Some(node) = node {
-                return Ok(Some(PatternSyntax::WildCardPattern(node)));
-            }
-        }
-        {
-            let node = self.parse_operationpattern()?;
-            if let Some(node) = node {
-                return Ok(Some(PatternSyntax::OperationPattern(node)));
-            }
-        }
-        return Ok(None)
-    }
-
-    pub fn parse_wildcardpattern(&mut self) -> Result<Option<WildCardPatternSyntax>, ParserError> {
+    pub fn parse_drop(&mut self) -> Result<Option<DropSyntax>, ParserError> {
         let start: Position = self.lexer.get_previous_position();
 
-        let success_underscore_1 = self.lexer.parse_punctuation("_".to_string());
-        if !success_underscore_1 {
+        let success_drop_1 = self.lexer.parse_keyword("drop".to_string());
+        if !success_drop_1 {
 
                 return Ok(None)
         }
 
+        let handler = self.parse_operation()?;
+        if let None = handler {
+            return Err(ParserError {
+                file_name: "".to_string(),
+                line: self.lexer.line,
+                column: self.lexer.column,
+            });
+        }
+
         let end: Position = self.lexer.get_position();
 
-        let ret = WildCardPatternSyntax {
+        let ret = DropSyntax {
             start: start,
             end: end,
+            handler: handler.unwrap(),
         };
 
         Ok(Some(ret))
     }
 
-    pub fn parse_operationpattern(&mut self) -> Result<Option<OperationPatternSyntax>, ParserError> {
+    pub fn parse_continue(&mut self) -> Result<Option<ContinueSyntax>, ParserError> {
         let start: Position = self.lexer.get_previous_position();
 
-        let object = self.parse_operation()?;
-        if let None = object {
-            return Ok(None);
+        let success_continue_1 = self.lexer.parse_keyword("continue".to_string());
+        if !success_continue_1 {
+
+                return Ok(None)
+        }
+
+        let name = self.parse_loop()?;
+
+        let success_semicolon_3 = self.lexer.parse_punctuation(";".to_string());
+        if !success_semicolon_3 {
+            ()
         }
 
         let end: Position = self.lexer.get_position();
 
-        let ret = OperationPatternSyntax {
+        let ret = ContinueSyntax {
             start: start,
             end: end,
-            object: object.unwrap(),
+            name: name,
+        };
+
+        Ok(Some(ret))
+    }
+
+    pub fn parse_loop(&mut self) -> Result<Option<LoopSyntax>, ParserError> {
+        let start: Position = self.lexer.get_previous_position();
+
+        let success_loop_1 = self.lexer.parse_keyword("loop".to_string());
+        if !success_loop_1 {
+
+                return Ok(None)
+        }
+
+        let name = self.lexer.parse_identifier(&self.keywords);
+        match &name {
+            Some(name) =>
+                if !self.is_identifier(name) {
+            return Result::Err(
+                ParserError {
+                    file_name: "".to_string(),
+                    line: self.lexer.line,
+                    column: self.lexer.column,
+                },
+            )
+           },
+           _ =>
+            return Result::Err(
+                ParserError {
+                    file_name: "".to_string(),
+                    line: self.lexer.line,
+                    column: self.lexer.column,
+                },
+            ),
+        }
+
+        let end: Position = self.lexer.get_position();
+
+        let ret = LoopSyntax {
+            start: start,
+            end: end,
+            name: name.unwrap(),
+        };
+
+        Ok(Some(ret))
+    }
+
+    pub fn parse_break(&mut self) -> Result<Option<BreakSyntax>, ParserError> {
+        let start: Position = self.lexer.get_previous_position();
+
+        let success_break_1 = self.lexer.parse_keyword("break".to_string());
+        if !success_break_1 {
+
+                return Ok(None)
+        }
+
+        let name = self.parse_loop()?;
+
+        let result = self.parse_calculation()?;
+        if let None = result {
+            return Err(ParserError {
+                file_name: "".to_string(),
+                line: self.lexer.line,
+                column: self.lexer.column,
+            });
+        }
+
+        let end: Position = self.lexer.get_position();
+
+        let ret = BreakSyntax {
+            start: start,
+            end: end,
+            name: name,
+            result: result.unwrap(),
+        };
+
+        Ok(Some(ret))
+    }
+
+    pub fn parse_return(&mut self) -> Result<Option<ReturnSyntax>, ParserError> {
+        let start: Position = self.lexer.get_previous_position();
+
+        let success_return_1 = self.lexer.parse_keyword("return".to_string());
+        if !success_return_1 {
+
+                return Ok(None)
+        }
+
+        let result = self.parse_calculation()?;
+
+        let end: Position = self.lexer.get_position();
+
+        let ret = ReturnSyntax {
+            start: start,
+            end: end,
+            result: result,
+        };
+
+        Ok(Some(ret))
+    }
+
+    pub fn parse_throw(&mut self) -> Result<Option<ThrowSyntax>, ParserError> {
+        let start: Position = self.lexer.get_previous_position();
+
+        let success_throw_1 = self.lexer.parse_keyword("throw".to_string());
+        if !success_throw_1 {
+
+                return Ok(None)
+        }
+
+        let result = self.parse_calculation()?;
+
+        let end: Position = self.lexer.get_position();
+
+        let ret = ThrowSyntax {
+            start: start,
+            end: end,
+            result: result,
         };
 
         Ok(Some(ret))
@@ -1763,12 +2128,74 @@ impl<'a> Parser<'a> {
             }
         }
         {
+            let node = self.parse_array()?;
+            if let Some(node) = node {
+                return Ok(Some(ExpressionSyntax::Array(node)));
+            }
+        }
+        {
             let node = self.parse_block()?;
             if let Some(node) = node {
                 return Ok(Some(ExpressionSyntax::Block(node)));
             }
         }
+        {
+            let node = self.parse_if()?;
+            if let Some(node) = node {
+                return Ok(Some(ExpressionSyntax::If(node)));
+            }
+        }
+        {
+            let node = self.parse_match()?;
+            if let Some(node) = node {
+                return Ok(Some(ExpressionSyntax::Match(node)));
+            }
+        }
+        {
+            let node = self.parse_for()?;
+            if let Some(node) = node {
+                return Ok(Some(ExpressionSyntax::For(node)));
+            }
+        }
+        {
+            let node = self.parse_while()?;
+            if let Some(node) = node {
+                return Ok(Some(ExpressionSyntax::While(node)));
+            }
+        }
+        {
+            let node = self.parse_repeat()?;
+            if let Some(node) = node {
+                return Ok(Some(ExpressionSyntax::Repeat(node)));
+            }
+        }
+        {
+            let node = self.parse_sizeof()?;
+            if let Some(node) = node {
+                return Ok(Some(ExpressionSyntax::SizeOf(node)));
+            }
+        }
         return Ok(None)
+    }
+
+    pub fn parse_literal(&mut self) -> Result<Option<LiteralSyntax>, ParserError> {
+        let start: Position = self.lexer.get_previous_position();
+
+        let literal = self.lexer.parse_literal();
+        if let None = literal {
+
+                return Ok(None)
+        }
+
+        let end: Position = self.lexer.get_position();
+
+        let ret = LiteralSyntax {
+            start: start,
+            end: end,
+            literal: literal.unwrap(),
+        };
+
+        Ok(Some(ret))
     }
 
     pub fn parse_object(&mut self) -> Result<Option<ObjectSyntax>, ParserError> {
@@ -1880,19 +2307,103 @@ impl<'a> Parser<'a> {
         Ok(Some(ret))
     }
 
+    pub fn parse_array(&mut self) -> Result<Option<ArraySyntax>, ParserError> {
+        let start: Position = self.lexer.get_previous_position();
+
+        let success_left_bracket_1 = self.lexer.parse_punctuation("[".to_string());
+        if !success_left_bracket_1 {
+
+                return Ok(None)
+        }
+
+        let elements = self.parse_element_list()?;
+        if let None = elements {
+            return Err(ParserError {
+                file_name: "".to_string(),
+                line: self.lexer.line,
+                column: self.lexer.column,
+            });
+        }
+
+        let success_right_bracket_3 = self.lexer.parse_punctuation("]".to_string());
+        if !success_right_bracket_3 {
+
+            return Result::Err(
+                ParserError {
+                    file_name: "".to_string(),
+                    line: self.lexer.line,
+                    column: self.lexer.column,
+                },
+            )        }
+
+        let end: Position = self.lexer.get_position();
+
+        let ret = ArraySyntax {
+            start: start,
+            end: end,
+            elements: elements.unwrap(),
+        };
+
+        Ok(Some(ret))
+    }
+
+    pub fn parse_element_list(&mut self) -> Result<Option<Vec<ElementSyntax>>, ParserError> {
+        let mut array: Option<Vec<ElementSyntax>> = Option::None;
+        loop {
+            let node = self.parse_element()?;
+            if let Some(node) = node {
+                if let None = array {
+                    array = Some(Vec::new())
+                };
+                match &mut array {
+                    Some(a) => a.push(node),
+                    None => (),
+                }
+            } else {
+                break;
+            }
+        }
+
+        Ok(array)
+    }
+
+    pub fn parse_element(&mut self) -> Result<Option<ElementSyntax>, ParserError> {
+        let start: Position = self.lexer.get_previous_position();
+
+        let operation = self.parse_operation()?;
+        if let None = operation {
+            return Ok(None);
+        }
+
+        let success_comma_2 = self.lexer.parse_punctuation(",".to_string());
+        if !success_comma_2 {
+            ()
+        }
+
+        let end: Position = self.lexer.get_position();
+
+        let ret = ElementSyntax {
+            start: start,
+            end: end,
+            operation: operation.unwrap(),
+        };
+
+        Ok(Some(ret))
+    }
+
     pub fn parse_block(&mut self) -> Result<Option<BlockSyntax>, ParserError> {
         let start: Position = self.lexer.get_previous_position();
 
-        let success_left_brace_1 = self.lexer.parse_punctuation("{".to_string());
-        if !success_left_brace_1 {
+        let success_left_curly_1 = self.lexer.parse_punctuation("{".to_string());
+        if !success_left_curly_1 {
 
                 return Ok(None)
         }
 
         let statements = self.parse_statement_list()?;
 
-        let success_right_brace_3 = self.lexer.parse_punctuation("}".to_string());
-        if !success_right_brace_3 {
+        let success_right_curly_3 = self.lexer.parse_punctuation("}".to_string());
+        if !success_right_curly_3 {
 
             return Result::Err(
                 ParserError {
@@ -1913,21 +2424,447 @@ impl<'a> Parser<'a> {
         Ok(Some(ret))
     }
 
-    pub fn parse_literal(&mut self) -> Result<Option<LiteralSyntax>, ParserError> {
+    pub fn parse_if(&mut self) -> Result<Option<IfSyntax>, ParserError> {
         let start: Position = self.lexer.get_previous_position();
 
-        let literal = self.lexer.parse_literal();
-        if let None = literal {
+        let success_if_1 = self.lexer.parse_keyword("if".to_string());
+        if !success_if_1 {
 
                 return Ok(None)
         }
 
+        let condition = self.parse_operation()?;
+        if let None = condition {
+            return Err(ParserError {
+                file_name: "".to_string(),
+                line: self.lexer.line,
+                column: self.lexer.column,
+            });
+        }
+
+        let success_then_3 = self.lexer.parse_keyword("then".to_string());
+        if !success_then_3 {
+
+            return Result::Err(
+                ParserError {
+                    file_name: "".to_string(),
+                    line: self.lexer.line,
+                    column: self.lexer.column,
+                },
+            )        }
+
+        let consequent = self.parse_operation()?;
+        if let None = consequent {
+            return Err(ParserError {
+                file_name: "".to_string(),
+                line: self.lexer.line,
+                column: self.lexer.column,
+            });
+        }
+
+        let alternative = self.parse_else()?;
+
         let end: Position = self.lexer.get_position();
 
-        let ret = LiteralSyntax {
+        let ret = IfSyntax {
             start: start,
             end: end,
-            literal: literal.unwrap(),
+            condition: condition.unwrap(),
+            consequent: consequent.unwrap(),
+            alternative: alternative,
+        };
+
+        Ok(Some(ret))
+    }
+
+    pub fn parse_else(&mut self) -> Result<Option<ElseSyntax>, ParserError> {
+        let start: Position = self.lexer.get_previous_position();
+
+        let success_else_1 = self.lexer.parse_keyword("else".to_string());
+        if !success_else_1 {
+
+                return Ok(None)
+        }
+
+        let alternative = self.parse_operation()?;
+        if let None = alternative {
+            return Err(ParserError {
+                file_name: "".to_string(),
+                line: self.lexer.line,
+                column: self.lexer.column,
+            });
+        }
+
+        let end: Position = self.lexer.get_position();
+
+        let ret = ElseSyntax {
+            start: start,
+            end: end,
+            alternative: alternative.unwrap(),
+        };
+
+        Ok(Some(ret))
+    }
+
+    pub fn parse_match(&mut self) -> Result<Option<MatchSyntax>, ParserError> {
+        let start: Position = self.lexer.get_previous_position();
+
+        let success_match_1 = self.lexer.parse_keyword("match".to_string());
+        if !success_match_1 {
+
+                return Ok(None)
+        }
+
+        let scrutinee = self.parse_operation()?;
+        if let None = scrutinee {
+            return Err(ParserError {
+                file_name: "".to_string(),
+                line: self.lexer.line,
+                column: self.lexer.column,
+            });
+        }
+
+        let cases = self.parse_case_list()?;
+        if let None = cases {
+            return Err(ParserError {
+                file_name: "".to_string(),
+                line: self.lexer.line,
+                column: self.lexer.column,
+            });
+        }
+
+        let alternative = self.parse_default()?;
+
+        let end: Position = self.lexer.get_position();
+
+        let ret = MatchSyntax {
+            start: start,
+            end: end,
+            scrutinee: scrutinee.unwrap(),
+            cases: cases.unwrap(),
+            alternative: alternative,
+        };
+
+        Ok(Some(ret))
+    }
+
+    pub fn parse_case_list(&mut self) -> Result<Option<Vec<CaseSyntax>>, ParserError> {
+        let mut array: Option<Vec<CaseSyntax>> = Option::None;
+        loop {
+            let node = self.parse_case()?;
+            if let Some(node) = node {
+                if let None = array {
+                    array = Some(Vec::new())
+                };
+                match &mut array {
+                    Some(a) => a.push(node),
+                    None => (),
+                }
+            } else {
+                break;
+            }
+        }
+
+        Ok(array)
+    }
+
+    pub fn parse_case(&mut self) -> Result<Option<CaseSyntax>, ParserError> {
+        let start: Position = self.lexer.get_previous_position();
+
+        let success_case_1 = self.lexer.parse_keyword("case".to_string());
+        if !success_case_1 {
+
+                return Ok(None)
+        }
+
+        let condition = self.parse_operation()?;
+        if let None = condition {
+            return Err(ParserError {
+                file_name: "".to_string(),
+                line: self.lexer.line,
+                column: self.lexer.column,
+            });
+        }
+
+        let success_is_3 = self.lexer.parse_keyword("is".to_string());
+        if !success_is_3 {
+
+            return Result::Err(
+                ParserError {
+                    file_name: "".to_string(),
+                    line: self.lexer.line,
+                    column: self.lexer.column,
+                },
+            )        }
+
+        let consequent = self.parse_operation()?;
+        if let None = consequent {
+            return Err(ParserError {
+                file_name: "".to_string(),
+                line: self.lexer.line,
+                column: self.lexer.column,
+            });
+        }
+
+        let end: Position = self.lexer.get_position();
+
+        let ret = CaseSyntax {
+            start: start,
+            end: end,
+            condition: condition.unwrap(),
+            consequent: consequent.unwrap(),
+        };
+
+        Ok(Some(ret))
+    }
+
+    pub fn parse_default(&mut self) -> Result<Option<DefaultSyntax>, ParserError> {
+        let start: Position = self.lexer.get_previous_position();
+
+        let success_default_1 = self.lexer.parse_keyword("default".to_string());
+        if !success_default_1 {
+
+                return Ok(None)
+        }
+
+        let alternative = self.parse_operation()?;
+
+        let end: Position = self.lexer.get_position();
+
+        let ret = DefaultSyntax {
+            start: start,
+            end: end,
+            alternative: alternative,
+        };
+
+        Ok(Some(ret))
+    }
+
+    pub fn parse_for(&mut self) -> Result<Option<ForSyntax>, ParserError> {
+        let start: Position = self.lexer.get_previous_position();
+
+        let success_for_1 = self.lexer.parse_keyword("for".to_string());
+        if !success_for_1 {
+
+                return Ok(None)
+        }
+
+        let condition = self.parse_operation()?;
+        if let None = condition {
+            return Err(ParserError {
+                file_name: "".to_string(),
+                line: self.lexer.line,
+                column: self.lexer.column,
+            });
+        }
+
+        let success_in_3 = self.lexer.parse_keyword("in".to_string());
+        if !success_in_3 {
+
+            return Result::Err(
+                ParserError {
+                    file_name: "".to_string(),
+                    line: self.lexer.line,
+                    column: self.lexer.column,
+                },
+            )        }
+
+        let expression = self.parse_operation()?;
+        if let None = expression {
+            return Err(ParserError {
+                file_name: "".to_string(),
+                line: self.lexer.line,
+                column: self.lexer.column,
+            });
+        }
+
+        let name = self.parse_label()?;
+
+        let success_do_6 = self.lexer.parse_keyword("do".to_string());
+        if !success_do_6 {
+
+            return Result::Err(
+                ParserError {
+                    file_name: "".to_string(),
+                    line: self.lexer.line,
+                    column: self.lexer.column,
+                },
+            )        }
+
+        let action = self.parse_operation()?;
+        if let None = action {
+            return Err(ParserError {
+                file_name: "".to_string(),
+                line: self.lexer.line,
+                column: self.lexer.column,
+            });
+        }
+
+        let end: Position = self.lexer.get_position();
+
+        let ret = ForSyntax {
+            start: start,
+            end: end,
+            condition: condition.unwrap(),
+            expression: expression.unwrap(),
+            name: name,
+            action: action.unwrap(),
+        };
+
+        Ok(Some(ret))
+    }
+
+    pub fn parse_label(&mut self) -> Result<Option<LabelSyntax>, ParserError> {
+        let start: Position = self.lexer.get_previous_position();
+
+        let success_label_1 = self.lexer.parse_keyword("label".to_string());
+        if !success_label_1 {
+
+                return Ok(None)
+        }
+
+        let name = self.lexer.parse_identifier(&self.keywords);
+        match &name {
+            Some(name) =>
+                if !self.is_identifier(name) {
+            return Result::Err(
+                ParserError {
+                    file_name: "".to_string(),
+                    line: self.lexer.line,
+                    column: self.lexer.column,
+                },
+            )
+           },
+           _ =>
+            return Result::Err(
+                ParserError {
+                    file_name: "".to_string(),
+                    line: self.lexer.line,
+                    column: self.lexer.column,
+                },
+            ),
+        }
+
+        let end: Position = self.lexer.get_position();
+
+        let ret = LabelSyntax {
+            start: start,
+            end: end,
+            name: name.unwrap(),
+        };
+
+        Ok(Some(ret))
+    }
+
+    pub fn parse_while(&mut self) -> Result<Option<WhileSyntax>, ParserError> {
+        let start: Position = self.lexer.get_previous_position();
+
+        let success_while_1 = self.lexer.parse_keyword("while".to_string());
+        if !success_while_1 {
+
+                return Ok(None)
+        }
+
+        let condition = self.parse_operation()?;
+        if let None = condition {
+            return Err(ParserError {
+                file_name: "".to_string(),
+                line: self.lexer.line,
+                column: self.lexer.column,
+            });
+        }
+
+        let name = self.parse_label()?;
+
+        let success_do_4 = self.lexer.parse_keyword("do".to_string());
+        if !success_do_4 {
+
+            return Result::Err(
+                ParserError {
+                    file_name: "".to_string(),
+                    line: self.lexer.line,
+                    column: self.lexer.column,
+                },
+            )        }
+
+        let action = self.parse_operation()?;
+        if let None = action {
+            return Err(ParserError {
+                file_name: "".to_string(),
+                line: self.lexer.line,
+                column: self.lexer.column,
+            });
+        }
+
+        let end: Position = self.lexer.get_position();
+
+        let ret = WhileSyntax {
+            start: start,
+            end: end,
+            condition: condition.unwrap(),
+            name: name,
+            action: action.unwrap(),
+        };
+
+        Ok(Some(ret))
+    }
+
+    pub fn parse_repeat(&mut self) -> Result<Option<RepeatSyntax>, ParserError> {
+        let start: Position = self.lexer.get_previous_position();
+
+        let success_repeat_1 = self.lexer.parse_keyword("repeat".to_string());
+        if !success_repeat_1 {
+
+                return Ok(None)
+        }
+
+        let name = self.parse_label()?;
+
+        let action = self.parse_operation()?;
+        if let None = action {
+            return Err(ParserError {
+                file_name: "".to_string(),
+                line: self.lexer.line,
+                column: self.lexer.column,
+            });
+        }
+
+        let end: Position = self.lexer.get_position();
+
+        let ret = RepeatSyntax {
+            start: start,
+            end: end,
+            name: name,
+            action: action.unwrap(),
+        };
+
+        Ok(Some(ret))
+    }
+
+    pub fn parse_sizeof(&mut self) -> Result<Option<SizeOfSyntax>, ParserError> {
+        let start: Position = self.lexer.get_previous_position();
+
+        let success_sizeof_1 = self.lexer.parse_keyword("sizeof".to_string());
+        if !success_sizeof_1 {
+
+                return Ok(None)
+        }
+
+        let type_spec = self.parse_type()?;
+        if let None = type_spec {
+            return Err(ParserError {
+                file_name: "".to_string(),
+                line: self.lexer.line,
+                column: self.lexer.column,
+            });
+        }
+
+        let end: Position = self.lexer.get_position();
+
+        let ret = SizeOfSyntax {
+            start: start,
+            end: end,
+            type_spec: type_spec.unwrap(),
         };
 
         Ok(Some(ret))
