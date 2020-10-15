@@ -77,19 +77,58 @@
         <content link = TypeAnnotation                 optional property = type_annotation
         <content link = comma                          optional
 
+    <syntax id = TypeAnnotation
+        <content link = colon
+        <content link = TypeSpec                                property = type_spec
+
+    <syntax id = TypeSpec                              abstract
+        <content link = Structure
+        <content link = Type
+
+    <syntax id = Type
+        <content link = Name                                    property = name
+        <content link = GenericArguments               optional property = generics
+        <content link = Optional                       optional property = optional
+
+    <syntax id = GenericArguments
+        <content link = left_bracket
+        <content link = GenericArgument       multiple optional property = generics
+        <content link = right_bracket
+
+    <syntax id = GenericArgument              multiple
+        <content link = Type                                    property = type_spec
+        <content link = comma                          optional
+
+    <syntax id = Optional
+        <content link = question
+
     <syntax id = Function
         <content link = fn
         <content link = TypeSpec                                property = operand
         <content link = TypeSpec                       optional property = operator
         <content link = TypeAnnotation                 optional property = type_annotation
-        <content link = Implementation                 optional property = implementation
+        <content link = Throws                         optional property = throws_clause
+        <content link = Implementation                          property = implementation
         <content link = semicolon                      optional
+
+    <syntax id = Throws
+        <content link = throws
+        <content link = TypeSpec                                property = throws_type
 
     <syntax id = Implementation                        abstract
         <content link = Expression
         <content link = Extern
         <content link = Instruction
         <content link = Intrinsic
+
+    <syntax id = Extern
+        <content link = extern
+
+    <syntax id = Instruction
+        <content link = instruction
+
+    <syntax id = Intrinsic
+        <content link = intrinsic
 
     <syntax id = Use
         <content link = use
@@ -147,24 +186,39 @@
 
     <syntax id = Catch
         <content link = catch
-        <content link = CatchPattern                            property = type_spec
-        <content link = Block                                   property = handler
+        <content link = Pattern                                 property = pattern
+        <content link = colon
+        <content link = Operation                               property = handler
 
-    <syntax id = CatchPattern                          abstract
-        <content link = WildCardCatchPattern
-        <content link = TypeCatchPattern
+    <syntax id = Pattern                              abstract
+        <content link = WildCardPattern
+        <content link = OperationPattern
 
-    <syntax id = WildCardCatchPattern
+    <syntax id = WildCardPattern
         <content link = underscore
 
-    <syntax id = TypeCatchPattern
-        <content link = TypeSpec                                property = type_spec
-        <content identifier                            optional property = error_name
+    <syntax id = OperationPattern
+        <content link = Operation                               property = object
 
     <syntax id = Expression                            abstract
         <content link = Literal
         <content link = Name
+        <content link = Object
         <content link = Block
+
+    <syntax id = Object
+        <content link = left_paren
+        <content link = Field                 multiple optional property = fields
+        <content link = right_paren
+
+    <syntax id = Field                        multiple
+        <content link = Operation                               property = operation
+        <content link = Value                          optional property = value
+        <content link = comma                          optional
+
+    <syntax id = Value
+        <content link = colon
+        <content link = Operation                               property = value
 
     <syntax id = Block
         <content link = left_brace
@@ -173,25 +227,6 @@
 
     <syntax id = Literal
         <content literal                                        property = literal
-
-    <syntax id = Extern
-        <content link = extern
-
-    <syntax id = Instruction
-        <content link = instruction
-
-    <syntax id = Intrinsic
-        <content link = intrinsic
-
-    <syntax id = TypeAnnotation
-        <content link = colon
-        <content link = TypeSpec                                property = type_spec
-
-    <syntax id = TypeSpec                              abstract
-        <content link = TypeName
-
-    <syntax id = TypeName
-        <content link = Name                                    property = name
 
     <keyword id = catch
     <keyword id = def
@@ -204,6 +239,7 @@
     <keyword id = set
     <keyword id = use
     <keyword id = var
+    <keyword id = throws
 
     <punctuation id = semicolon         value = ";"
     <punctuation id = dot               value = "."
@@ -211,8 +247,11 @@
     <punctuation id = right_paren       value = ")"
     <punctuation id = left_brace        value = "{"
     <punctuation id = right_brace       value = "}"
+    <punctuation id = left_bracket      value = "["
+    <punctuation id = right_bracket     value = "]"
     <punctuation id = comma             value = ","
     <punctuation id = colon             value = ":"
+    <punctuation id = question          value = "?"
     <punctuation id = underscore        value = "_"
 
   </grammar>
