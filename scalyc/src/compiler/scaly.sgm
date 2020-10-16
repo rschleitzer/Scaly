@@ -13,6 +13,8 @@
         <content link = Definition
         <content link = Function
         <content link = Use
+        <content link = Implement
+        <content link = Trait
 
     <syntax id = Definition
         <content link = def
@@ -109,7 +111,7 @@
     <syntax id = Optional
         <content link = question
 
-    <syntax id = Function
+    <syntax id = Function                     multiple
         <content link = fn
         <content link = TypeSpec                                property = operand
         <content link = TypeSpec                       optional property = operator
@@ -146,7 +148,30 @@
         <content link = Name                                    property = name
         <content link = semicolon                      optional
 
-    <syntax id = Statement                   multiple abstract
+    <syntax id = Implement
+        <content link = implement
+        <content link = Name                                    property = name
+        <content link = left_curly
+        <content link = Function              multiple optional property = functions
+        <content link = right_curly
+
+    <syntax id = Trait
+        <content link = trait
+        <content link = Name                                    property = name
+        <content link = Extends                                 property = extension
+        <content link = left_curly
+        <content link = Function              multiple optional property = functions
+        <content link = right_curly
+
+    <syntax id = Extends
+        <content link = extends
+        <content link = Extend                multiple optional property = extensions
+
+    <syntax id = Extend                       multiple
+        <content link = TypeSpec                                property = spec
+        <content link = comma                          optional
+
+    <syntax id = Statement                    multiple abstract
         <content link = Calculation
         <content link = Let
         <content link = Var
@@ -349,10 +374,12 @@
     <keyword id = default
     <keyword id = drop
     <keyword id = else
+    <keyword id = extends
     <keyword id = extern
     <keyword id = fn
     <keyword id = for
     <keyword id = if
+    <keyword id = implement
     <keyword id = in
     <keyword id = instruction
     <keyword id = intrinsic
@@ -367,10 +394,11 @@
     <keyword id = set
     <keyword id = sizeof
     <keyword id = throw
+    <keyword id = throws
+    <keyword id = trait
     <keyword id = use
     <keyword id = var
     <keyword id = while
-    <keyword id = throws
 
     <punctuation id = semicolon         value = ";"
     <punctuation id = dot               value = "."

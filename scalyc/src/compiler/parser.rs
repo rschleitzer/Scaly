@@ -18,6 +18,8 @@ pub enum DeclarationSyntax {
     Definition(DefinitionSyntax),
     Function(FunctionSyntax),
     Use(UseSyntax),
+    Implement(ImplementSyntax),
+    Trait(TraitSyntax),
 }
 
 pub struct DefinitionSyntax {
@@ -209,6 +211,33 @@ pub struct UseSyntax {
     pub start: Position,
     pub end: Position,
     pub name: NameSyntax,
+}
+
+pub struct ImplementSyntax {
+    pub start: Position,
+    pub end: Position,
+    pub name: NameSyntax,
+    pub functions: Option<Vec<FunctionSyntax>>,
+}
+
+pub struct TraitSyntax {
+    pub start: Position,
+    pub end: Position,
+    pub name: NameSyntax,
+    pub extension: ExtendsSyntax,
+    pub functions: Option<Vec<FunctionSyntax>>,
+}
+
+pub struct ExtendsSyntax {
+    pub start: Position,
+    pub end: Position,
+    pub extensions: Option<Vec<ExtendSyntax>>,
+}
+
+pub struct ExtendSyntax {
+    pub start: Position,
+    pub end: Position,
+    pub spec: TypeSpecSyntax,
 }
 
 pub enum StatementSyntax {
@@ -495,10 +524,12 @@ impl<'a> Parser<'a> {
         keywords.insert(String::from("default"));
         keywords.insert(String::from("drop"));
         keywords.insert(String::from("else"));
+        keywords.insert(String::from("extends"));
         keywords.insert(String::from("extern"));
         keywords.insert(String::from("fn"));
         keywords.insert(String::from("for"));
         keywords.insert(String::from("if"));
+        keywords.insert(String::from("implement"));
         keywords.insert(String::from("in"));
         keywords.insert(String::from("instruction"));
         keywords.insert(String::from("intrinsic"));
@@ -513,10 +544,11 @@ impl<'a> Parser<'a> {
         keywords.insert(String::from("set"));
         keywords.insert(String::from("sizeof"));
         keywords.insert(String::from("throw"));
+        keywords.insert(String::from("throws"));
+        keywords.insert(String::from("trait"));
         keywords.insert(String::from("use"));
         keywords.insert(String::from("var"));
         keywords.insert(String::from("while"));
-        keywords.insert(String::from("throws"));
         Parser {
             lexer: Lexer::new(deck),
             keywords: keywords,
@@ -587,6 +619,18 @@ impl<'a> Parser<'a> {
             let node = self.parse_use()?;
             if let Some(node) = node {
                 return Ok(Some(DeclarationSyntax::Use(node)));
+            }
+        }
+        {
+            let node = self.parse_implement()?;
+            if let Some(node) = node {
+                return Ok(Some(DeclarationSyntax::Implement(node)));
+            }
+        }
+        {
+            let node = self.parse_trait()?;
+            if let Some(node) = node {
+                return Ok(Some(DeclarationSyntax::Trait(node)));
             }
         }
         return Ok(None)
@@ -1262,6 +1306,26 @@ impl<'a> Parser<'a> {
         Ok(Some(ret))
     }
 
+    pub fn parse_function_list(&mut self) -> Result<Option<Vec<FunctionSyntax>>, ParserError> {
+        let mut array: Option<Vec<FunctionSyntax>> = Option::None;
+        loop {
+            let node = self.parse_function()?;
+            if let Some(node) = node {
+                if let None = array {
+                    array = Some(Vec::new())
+                };
+                match &mut array {
+                    Some(a) => a.push(node),
+                    None => (),
+                }
+            } else {
+                break;
+            }
+        }
+
+        Ok(array)
+    }
+
     pub fn parse_function(&mut self) -> Result<Option<FunctionSyntax>, ParserError> {
         let start: Position = self.lexer.get_previous_position();
 
@@ -1487,6 +1551,190 @@ impl<'a> Parser<'a> {
             start: start,
             end: end,
             name: name.unwrap(),
+        };
+
+        Ok(Some(ret))
+    }
+
+    pub fn parse_implement(&mut self) -> Result<Option<ImplementSyntax>, ParserError> {
+        let start: Position = self.lexer.get_previous_position();
+
+        let success_implement_1 = self.lexer.parse_keyword("implement".to_string());
+        if !success_implement_1 {
+
+                return Ok(None)
+        }
+
+        let name = self.parse_name()?;
+        if let None = name {
+            return Err(ParserError {
+                file_name: "".to_string(),
+                line: self.lexer.line,
+                column: self.lexer.column,
+            });
+        }
+
+        let success_left_curly_3 = self.lexer.parse_punctuation("{".to_string());
+        if !success_left_curly_3 {
+
+            return Result::Err(
+                ParserError {
+                    file_name: "".to_string(),
+                    line: self.lexer.line,
+                    column: self.lexer.column,
+                },
+            )        }
+
+        let functions = self.parse_function_list()?;
+
+        let success_right_curly_5 = self.lexer.parse_punctuation("}".to_string());
+        if !success_right_curly_5 {
+
+            return Result::Err(
+                ParserError {
+                    file_name: "".to_string(),
+                    line: self.lexer.line,
+                    column: self.lexer.column,
+                },
+            )        }
+
+        let end: Position = self.lexer.get_position();
+
+        let ret = ImplementSyntax {
+            start: start,
+            end: end,
+            name: name.unwrap(),
+            functions: functions,
+        };
+
+        Ok(Some(ret))
+    }
+
+    pub fn parse_trait(&mut self) -> Result<Option<TraitSyntax>, ParserError> {
+        let start: Position = self.lexer.get_previous_position();
+
+        let success_trait_1 = self.lexer.parse_keyword("trait".to_string());
+        if !success_trait_1 {
+
+                return Ok(None)
+        }
+
+        let name = self.parse_name()?;
+        if let None = name {
+            return Err(ParserError {
+                file_name: "".to_string(),
+                line: self.lexer.line,
+                column: self.lexer.column,
+            });
+        }
+
+        let extension = self.parse_extends()?;
+        if let None = extension {
+            return Err(ParserError {
+                file_name: "".to_string(),
+                line: self.lexer.line,
+                column: self.lexer.column,
+            });
+        }
+
+        let success_left_curly_4 = self.lexer.parse_punctuation("{".to_string());
+        if !success_left_curly_4 {
+
+            return Result::Err(
+                ParserError {
+                    file_name: "".to_string(),
+                    line: self.lexer.line,
+                    column: self.lexer.column,
+                },
+            )        }
+
+        let functions = self.parse_function_list()?;
+
+        let success_right_curly_6 = self.lexer.parse_punctuation("}".to_string());
+        if !success_right_curly_6 {
+
+            return Result::Err(
+                ParserError {
+                    file_name: "".to_string(),
+                    line: self.lexer.line,
+                    column: self.lexer.column,
+                },
+            )        }
+
+        let end: Position = self.lexer.get_position();
+
+        let ret = TraitSyntax {
+            start: start,
+            end: end,
+            name: name.unwrap(),
+            extension: extension.unwrap(),
+            functions: functions,
+        };
+
+        Ok(Some(ret))
+    }
+
+    pub fn parse_extends(&mut self) -> Result<Option<ExtendsSyntax>, ParserError> {
+        let start: Position = self.lexer.get_previous_position();
+
+        let success_extends_1 = self.lexer.parse_keyword("extends".to_string());
+        if !success_extends_1 {
+
+                return Ok(None)
+        }
+
+        let extensions = self.parse_extend_list()?;
+
+        let end: Position = self.lexer.get_position();
+
+        let ret = ExtendsSyntax {
+            start: start,
+            end: end,
+            extensions: extensions,
+        };
+
+        Ok(Some(ret))
+    }
+
+    pub fn parse_extend_list(&mut self) -> Result<Option<Vec<ExtendSyntax>>, ParserError> {
+        let mut array: Option<Vec<ExtendSyntax>> = Option::None;
+        loop {
+            let node = self.parse_extend()?;
+            if let Some(node) = node {
+                if let None = array {
+                    array = Some(Vec::new())
+                };
+                match &mut array {
+                    Some(a) => a.push(node),
+                    None => (),
+                }
+            } else {
+                break;
+            }
+        }
+
+        Ok(array)
+    }
+
+    pub fn parse_extend(&mut self) -> Result<Option<ExtendSyntax>, ParserError> {
+        let start: Position = self.lexer.get_previous_position();
+
+        let spec = self.parse_typespec()?;
+        if let None = spec {
+            return Ok(None);
+        }
+
+        let success_comma_2 = self.lexer.parse_punctuation(",".to_string());
+        if !success_comma_2 {
+            ()
+        }
+
+        let end: Position = self.lexer.get_position();
+
+        let ret = ExtendSyntax {
+            start: start,
+            end: end,
+            spec: spec.unwrap(),
         };
 
         Ok(Some(ret))
