@@ -199,12 +199,12 @@
     <syntax id = Catch                        multiple
         <content link = catch
         <content link = Operation                               property = condition
-        <content link = give
-        <content link = Operation                               property = handler
+        <content link = colon
+        <content link = Block                                   property = handler
 
     <syntax id = Drop
         <content link = drop
-        <content link = Operation                               property = handler
+        <content link = Block                                   property = handler
 
     <syntax id = Continue
         <content link = continue
@@ -275,13 +275,13 @@
     <syntax id = If
         <content link = if
         <content link = Operation                               property = condition
-        <content link = then
-        <content link = Operation                               property = consequent
+        <content link = colon
+        <content link = Block                                   property = consequent
         <content link = Else                           optional property = alternative
 
     <syntax id = Else
         <content link = else
-        <content link = Operation                               property = alternative
+        <content link = Block                                   property = alternative
 
     <syntax id = Match
         <content link = match
@@ -292,21 +292,21 @@
     <syntax id = Case                         multiple
         <content link = case
         <content link = Operation                               property = condition
-        <content link = is
-        <content link = Operation                               property = consequent
+        <content link = colon
+        <content link = Block                                   property = consequent
     
     <syntax id = Default
         <content link = default
-        <content link = Operation                      optional property = alternative
+        <content link = Block                          optional property = alternative
 
     <syntax id = For
         <content link = for
         <content link = Operation                               property = condition
         <content link = in
         <content link = Operation                               property = expression
+        <content link = colon
         <content link = Label                          optional property = name
-        <content link = do
-        <content link = Operation                               property = action
+        <content link = Block                                   property = action
 
     <syntax id = Label
         <content link = label
@@ -315,14 +315,14 @@
     <syntax id = While
         <content link = while
         <content link = Operation                               property = condition
+        <content link = colon
         <content link = Label                          optional property = name
-        <content link = do
-        <content link = Operation                               property = action
+        <content link = Block                                   property = action
 
     <syntax id = Repeat
         <content link = repeat
         <content link = Label                          optional property = name
-        <content link = Operation                               property = action
+        <content link = Block                                   property = action
 
     <syntax id = SizeOf
         <content link = sizeof
@@ -334,16 +334,13 @@
     <keyword id = continue
     <keyword id = def
     <keyword id = default
-    <keyword id = do
     <keyword id = drop
     <keyword id = else
     <keyword id = extern
     <keyword id = fn
     <keyword id = for
-    <keyword id = give
     <keyword id = if
     <keyword id = in
-    <keyword id = is
     <keyword id = instruction
     <keyword id = intrinsic
     <keyword id = label
@@ -356,7 +353,6 @@
     <keyword id = repeat
     <keyword id = set
     <keyword id = sizeof
-    <keyword id = then
     <keyword id = throw
     <keyword id = use
     <keyword id = var

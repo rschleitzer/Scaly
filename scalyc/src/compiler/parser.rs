@@ -288,13 +288,13 @@ pub struct CatchSyntax {
     pub start: Position,
     pub end: Position,
     pub condition: OperationSyntax,
-    pub handler: OperationSyntax,
+    pub handler: BlockSyntax,
 }
 
 pub struct DropSyntax {
     pub start: Position,
     pub end: Position,
-    pub handler: OperationSyntax,
+    pub handler: BlockSyntax,
 }
 
 pub struct ContinueSyntax {
@@ -389,14 +389,14 @@ pub struct IfSyntax {
     pub start: Position,
     pub end: Position,
     pub condition: OperationSyntax,
-    pub consequent: OperationSyntax,
+    pub consequent: BlockSyntax,
     pub alternative: Option<ElseSyntax>,
 }
 
 pub struct ElseSyntax {
     pub start: Position,
     pub end: Position,
-    pub alternative: OperationSyntax,
+    pub alternative: BlockSyntax,
 }
 
 pub struct MatchSyntax {
@@ -411,13 +411,13 @@ pub struct CaseSyntax {
     pub start: Position,
     pub end: Position,
     pub condition: OperationSyntax,
-    pub consequent: OperationSyntax,
+    pub consequent: BlockSyntax,
 }
 
 pub struct DefaultSyntax {
     pub start: Position,
     pub end: Position,
-    pub alternative: Option<OperationSyntax>,
+    pub alternative: Option<BlockSyntax>,
 }
 
 pub struct ForSyntax {
@@ -426,7 +426,7 @@ pub struct ForSyntax {
     pub condition: OperationSyntax,
     pub expression: OperationSyntax,
     pub name: Option<LabelSyntax>,
-    pub action: OperationSyntax,
+    pub action: BlockSyntax,
 }
 
 pub struct LabelSyntax {
@@ -440,14 +440,14 @@ pub struct WhileSyntax {
     pub end: Position,
     pub condition: OperationSyntax,
     pub name: Option<LabelSyntax>,
-    pub action: OperationSyntax,
+    pub action: BlockSyntax,
 }
 
 pub struct RepeatSyntax {
     pub start: Position,
     pub end: Position,
     pub name: Option<LabelSyntax>,
-    pub action: OperationSyntax,
+    pub action: BlockSyntax,
 }
 
 pub struct SizeOfSyntax {
@@ -476,16 +476,13 @@ impl<'a> Parser<'a> {
         keywords.insert(String::from("continue"));
         keywords.insert(String::from("def"));
         keywords.insert(String::from("default"));
-        keywords.insert(String::from("do"));
         keywords.insert(String::from("drop"));
         keywords.insert(String::from("else"));
         keywords.insert(String::from("extern"));
         keywords.insert(String::from("fn"));
         keywords.insert(String::from("for"));
-        keywords.insert(String::from("give"));
         keywords.insert(String::from("if"));
         keywords.insert(String::from("in"));
-        keywords.insert(String::from("is"));
         keywords.insert(String::from("instruction"));
         keywords.insert(String::from("intrinsic"));
         keywords.insert(String::from("label"));
@@ -498,7 +495,6 @@ impl<'a> Parser<'a> {
         keywords.insert(String::from("repeat"));
         keywords.insert(String::from("set"));
         keywords.insert(String::from("sizeof"));
-        keywords.insert(String::from("then"));
         keywords.insert(String::from("throw"));
         keywords.insert(String::from("use"));
         keywords.insert(String::from("var"));
@@ -1902,8 +1898,8 @@ impl<'a> Parser<'a> {
             });
         }
 
-        let success_give_3 = self.lexer.parse_keyword("give".to_string());
-        if !success_give_3 {
+        let success_colon_3 = self.lexer.parse_punctuation(":".to_string());
+        if !success_colon_3 {
 
             return Result::Err(
                 ParserError {
@@ -1913,7 +1909,7 @@ impl<'a> Parser<'a> {
                 },
             )        }
 
-        let handler = self.parse_operation()?;
+        let handler = self.parse_block()?;
         if let None = handler {
             return Err(ParserError {
                 file_name: "".to_string(),
@@ -1943,7 +1939,7 @@ impl<'a> Parser<'a> {
                 return Ok(None)
         }
 
-        let handler = self.parse_operation()?;
+        let handler = self.parse_block()?;
         if let None = handler {
             return Err(ParserError {
                 file_name: "".to_string(),
@@ -2442,8 +2438,8 @@ impl<'a> Parser<'a> {
             });
         }
 
-        let success_then_3 = self.lexer.parse_keyword("then".to_string());
-        if !success_then_3 {
+        let success_colon_3 = self.lexer.parse_punctuation(":".to_string());
+        if !success_colon_3 {
 
             return Result::Err(
                 ParserError {
@@ -2453,7 +2449,7 @@ impl<'a> Parser<'a> {
                 },
             )        }
 
-        let consequent = self.parse_operation()?;
+        let consequent = self.parse_block()?;
         if let None = consequent {
             return Err(ParserError {
                 file_name: "".to_string(),
@@ -2486,7 +2482,7 @@ impl<'a> Parser<'a> {
                 return Ok(None)
         }
 
-        let alternative = self.parse_operation()?;
+        let alternative = self.parse_block()?;
         if let None = alternative {
             return Err(ParserError {
                 file_name: "".to_string(),
@@ -2586,8 +2582,8 @@ impl<'a> Parser<'a> {
             });
         }
 
-        let success_is_3 = self.lexer.parse_keyword("is".to_string());
-        if !success_is_3 {
+        let success_colon_3 = self.lexer.parse_punctuation(":".to_string());
+        if !success_colon_3 {
 
             return Result::Err(
                 ParserError {
@@ -2597,7 +2593,7 @@ impl<'a> Parser<'a> {
                 },
             )        }
 
-        let consequent = self.parse_operation()?;
+        let consequent = self.parse_block()?;
         if let None = consequent {
             return Err(ParserError {
                 file_name: "".to_string(),
@@ -2627,7 +2623,7 @@ impl<'a> Parser<'a> {
                 return Ok(None)
         }
 
-        let alternative = self.parse_operation()?;
+        let alternative = self.parse_block()?;
 
         let end: Position = self.lexer.get_position();
 
@@ -2678,10 +2674,8 @@ impl<'a> Parser<'a> {
             });
         }
 
-        let name = self.parse_label()?;
-
-        let success_do_6 = self.lexer.parse_keyword("do".to_string());
-        if !success_do_6 {
+        let success_colon_5 = self.lexer.parse_punctuation(":".to_string());
+        if !success_colon_5 {
 
             return Result::Err(
                 ParserError {
@@ -2691,7 +2685,9 @@ impl<'a> Parser<'a> {
                 },
             )        }
 
-        let action = self.parse_operation()?;
+        let name = self.parse_label()?;
+
+        let action = self.parse_block()?;
         if let None = action {
             return Err(ParserError {
                 file_name: "".to_string(),
@@ -2774,10 +2770,8 @@ impl<'a> Parser<'a> {
             });
         }
 
-        let name = self.parse_label()?;
-
-        let success_do_4 = self.lexer.parse_keyword("do".to_string());
-        if !success_do_4 {
+        let success_colon_3 = self.lexer.parse_punctuation(":".to_string());
+        if !success_colon_3 {
 
             return Result::Err(
                 ParserError {
@@ -2787,7 +2781,9 @@ impl<'a> Parser<'a> {
                 },
             )        }
 
-        let action = self.parse_operation()?;
+        let name = self.parse_label()?;
+
+        let action = self.parse_block()?;
         if let None = action {
             return Err(ParserError {
                 file_name: "".to_string(),
@@ -2820,7 +2816,7 @@ impl<'a> Parser<'a> {
 
         let name = self.parse_label()?;
 
-        let action = self.parse_operation()?;
+        let action = self.parse_block()?;
         if let None = action {
             return Err(ParserError {
                 file_name: "".to_string(),
