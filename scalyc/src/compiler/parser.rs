@@ -45,6 +45,7 @@ pub enum ConceptSyntax {
     Namespace(NamespaceSyntax),
     Union(UnionSyntax),
     Constant(ConstantSyntax),
+    Delegate(DelegateSyntax),
 }
 
 pub struct ClassSyntax {
@@ -95,6 +96,14 @@ pub struct ConstantSyntax {
     pub start: Position,
     pub end: Position,
     pub literal: Literal,
+}
+
+pub struct DelegateSyntax {
+    pub start: Position,
+    pub end: Position,
+    pub operator: TypeSpecSyntax,
+    pub result: Option<ReturnsSyntax>,
+    pub error: Option<ThrowsSyntax>,
 }
 
 pub struct StructureSyntax {
@@ -743,6 +752,12 @@ impl<'a> Parser<'a> {
                 return Ok(Some(ConceptSyntax::Constant(node)));
             }
         }
+        {
+            let node = self.parse_delegate()?;
+            if let Some(node) = node {
+                return Ok(Some(ConceptSyntax::Delegate(node)));
+            }
+        }
         return Ok(None)
     }
 
@@ -921,6 +936,41 @@ impl<'a> Parser<'a> {
             start: start,
             end: end,
             literal: literal.unwrap(),
+        };
+
+        Ok(Some(ret))
+    }
+
+    pub fn parse_delegate(&mut self) -> Result<Option<DelegateSyntax>, ParserError> {
+        let start: Position = self.lexer.get_previous_position();
+
+        let success_fn_1 = self.lexer.parse_keyword("fn".to_string());
+        if !success_fn_1 {
+
+                return Ok(None)
+        }
+
+        let operator = self.parse_typespec()?;
+        if let None = operator {
+            return Err(ParserError {
+                file_name: "".to_string(),
+                line: self.lexer.line,
+                column: self.lexer.column,
+            });
+        }
+
+        let result = self.parse_returns()?;
+
+        let error = self.parse_throws()?;
+
+        let end: Position = self.lexer.get_position();
+
+        let ret = DelegateSyntax {
+            start: start,
+            end: end,
+            operator: operator.unwrap(),
+            result: result,
+            error: error,
         };
 
         Ok(Some(ret))
