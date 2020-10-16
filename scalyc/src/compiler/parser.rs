@@ -113,13 +113,13 @@ pub struct ComponentSyntax {
     pub start: Position,
     pub end: Position,
     pub name: String,
-    pub type_annotation: Option<TypeAnnotationSyntax>,
+    pub annotation: Option<TypeAnnotationSyntax>,
 }
 
 pub struct TypeAnnotationSyntax {
     pub start: Position,
     pub end: Position,
-    pub type_spec: TypeSpecSyntax,
+    pub spec: TypeSpecSyntax,
 }
 
 pub enum TypeSpecSyntax {
@@ -144,7 +144,7 @@ pub struct GenericArgumentsSyntax {
 pub struct GenericArgumentSyntax {
     pub start: Position,
     pub end: Position,
-    pub type_spec: TypeSyntax,
+    pub spec: TypeSyntax,
 }
 
 pub struct OptionalSyntax {
@@ -157,21 +157,21 @@ pub struct FunctionSyntax {
     pub end: Position,
     pub operand: TypeSpecSyntax,
     pub operator: Option<TypeSpecSyntax>,
-    pub returns_annotation: Option<ReturnsSyntax>,
-    pub throws_clause: Option<ThrowsSyntax>,
+    pub result: Option<ReturnsSyntax>,
+    pub error: Option<ThrowsSyntax>,
     pub implementation: ImplementationSyntax,
 }
 
 pub struct ReturnsSyntax {
     pub start: Position,
     pub end: Position,
-    pub throws_type: TypeSpecSyntax,
+    pub spec: TypeSpecSyntax,
 }
 
 pub struct ThrowsSyntax {
     pub start: Position,
     pub end: Position,
-    pub throws_type: TypeSpecSyntax,
+    pub spec: TypeSpecSyntax,
 }
 
 pub enum ImplementationSyntax {
@@ -236,7 +236,7 @@ pub struct BindingSyntax {
     pub start: Position,
     pub end: Position,
     pub name: String,
-    pub type_annotation: Option<TypeAnnotationSyntax>,
+    pub annotation: Option<TypeAnnotationSyntax>,
     pub calculation: CalculationSyntax,
 }
 
@@ -453,7 +453,7 @@ pub struct RepeatSyntax {
 pub struct SizeOfSyntax {
     pub start: Position,
     pub end: Position,
-    pub type_spec: TypeSyntax,
+    pub spec: TypeSyntax,
 }
 
 pub struct ParserError {
@@ -1019,7 +1019,7 @@ impl<'a> Parser<'a> {
 ,
         }
 
-        let type_annotation = self.parse_typeannotation()?;
+        let annotation = self.parse_typeannotation()?;
 
         let success_comma_3 = self.lexer.parse_punctuation(",".to_string());
         if !success_comma_3 {
@@ -1032,7 +1032,7 @@ impl<'a> Parser<'a> {
             start: start,
             end: end,
             name: name.unwrap(),
-            type_annotation: type_annotation,
+            annotation: annotation,
         };
 
         Ok(Some(ret))
@@ -1047,8 +1047,8 @@ impl<'a> Parser<'a> {
                 return Ok(None)
         }
 
-        let type_spec = self.parse_typespec()?;
-        if let None = type_spec {
+        let spec = self.parse_typespec()?;
+        if let None = spec {
             return Err(ParserError {
                 file_name: "".to_string(),
                 line: self.lexer.line,
@@ -1061,7 +1061,7 @@ impl<'a> Parser<'a> {
         let ret = TypeAnnotationSyntax {
             start: start,
             end: end,
-            type_spec: type_spec.unwrap(),
+            spec: spec.unwrap(),
         };
 
         Ok(Some(ret))
@@ -1164,8 +1164,8 @@ impl<'a> Parser<'a> {
     pub fn parse_genericargument(&mut self) -> Result<Option<GenericArgumentSyntax>, ParserError> {
         let start: Position = self.lexer.get_previous_position();
 
-        let type_spec = self.parse_type()?;
-        if let None = type_spec {
+        let spec = self.parse_type()?;
+        if let None = spec {
             return Ok(None);
         }
 
@@ -1179,7 +1179,7 @@ impl<'a> Parser<'a> {
         let ret = GenericArgumentSyntax {
             start: start,
             end: end,
-            type_spec: type_spec.unwrap(),
+            spec: spec.unwrap(),
         };
 
         Ok(Some(ret))
@@ -1224,9 +1224,9 @@ impl<'a> Parser<'a> {
 
         let operator = self.parse_typespec()?;
 
-        let returns_annotation = self.parse_returns()?;
+        let result = self.parse_returns()?;
 
-        let throws_clause = self.parse_throws()?;
+        let error = self.parse_throws()?;
 
         let implementation = self.parse_implementation()?;
         if let None = implementation {
@@ -1249,8 +1249,8 @@ impl<'a> Parser<'a> {
             end: end,
             operand: operand.unwrap(),
             operator: operator,
-            returns_annotation: returns_annotation,
-            throws_clause: throws_clause,
+            result: result,
+            error: error,
             implementation: implementation.unwrap(),
         };
 
@@ -1266,8 +1266,8 @@ impl<'a> Parser<'a> {
                 return Ok(None)
         }
 
-        let throws_type = self.parse_typespec()?;
-        if let None = throws_type {
+        let spec = self.parse_typespec()?;
+        if let None = spec {
             return Err(ParserError {
                 file_name: "".to_string(),
                 line: self.lexer.line,
@@ -1280,7 +1280,7 @@ impl<'a> Parser<'a> {
         let ret = ReturnsSyntax {
             start: start,
             end: end,
-            throws_type: throws_type.unwrap(),
+            spec: spec.unwrap(),
         };
 
         Ok(Some(ret))
@@ -1295,8 +1295,8 @@ impl<'a> Parser<'a> {
                 return Ok(None)
         }
 
-        let throws_type = self.parse_typespec()?;
-        if let None = throws_type {
+        let spec = self.parse_typespec()?;
+        if let None = spec {
             return Err(ParserError {
                 file_name: "".to_string(),
                 line: self.lexer.line,
@@ -1309,7 +1309,7 @@ impl<'a> Parser<'a> {
         let ret = ThrowsSyntax {
             start: start,
             end: end,
-            throws_type: throws_type.unwrap(),
+            spec: spec.unwrap(),
         };
 
         Ok(Some(ret))
@@ -1614,7 +1614,7 @@ impl<'a> Parser<'a> {
 ,
         }
 
-        let type_annotation = self.parse_typeannotation()?;
+        let annotation = self.parse_typeannotation()?;
 
         let calculation = self.parse_calculation()?;
         if let None = calculation {
@@ -1631,7 +1631,7 @@ impl<'a> Parser<'a> {
             start: start,
             end: end,
             name: name.unwrap(),
-            type_annotation: type_annotation,
+            annotation: annotation,
             calculation: calculation.unwrap(),
         };
 
@@ -2846,8 +2846,8 @@ impl<'a> Parser<'a> {
                 return Ok(None)
         }
 
-        let type_spec = self.parse_type()?;
-        if let None = type_spec {
+        let spec = self.parse_type()?;
+        if let None = spec {
             return Err(ParserError {
                 file_name: "".to_string(),
                 line: self.lexer.line,
@@ -2860,7 +2860,7 @@ impl<'a> Parser<'a> {
         let ret = SizeOfSyntax {
             start: start,
             end: end,
-            type_spec: type_spec.unwrap(),
+            spec: spec.unwrap(),
         };
 
         Ok(Some(ret))

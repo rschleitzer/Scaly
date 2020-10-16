@@ -74,12 +74,12 @@
 
     <syntax id = Component                    multiple
         <content identifier                                     property = name
-        <content link = TypeAnnotation                 optional property = type_annotation
+        <content link = TypeAnnotation                 optional property = annotation
         <content link = comma                          optional
 
     <syntax id = TypeAnnotation
         <content link = colon
-        <content link = TypeSpec                                property = type_spec
+        <content link = TypeSpec                                property = spec
 
     <syntax id = TypeSpec                              abstract
         <content link = Structure
@@ -96,7 +96,7 @@
         <content link = right_bracket
 
     <syntax id = GenericArgument              multiple
-        <content link = Type                                    property = type_spec
+        <content link = Type                                    property = spec
         <content link = comma                          optional
 
     <syntax id = Optional
@@ -106,18 +106,18 @@
         <content link = fn
         <content link = TypeSpec                                property = operand
         <content link = TypeSpec                       optional property = operator
-        <content link = Returns                        optional property = returns_annotation
-        <content link = Throws                         optional property = throws_clause
+        <content link = Returns                        optional property = result
+        <content link = Throws                         optional property = error
         <content link = Implementation                          property = implementation
         <content link = semicolon                      optional
 
     <syntax id = Returns
         <content link = returns
-        <content link = TypeSpec                                property = throws_type
+        <content link = TypeSpec                                property = spec
 
     <syntax id = Throws
         <content link = throws
-        <content link = TypeSpec                                property = throws_type
+        <content link = TypeSpec                                property = spec
 
     <syntax id = Implementation                        abstract
         <content link = Expression
@@ -164,7 +164,7 @@
 
     <syntax id = Binding
         <content identifier                                     property = name
-        <content link = TypeAnnotation                 optional property = type_annotation
+        <content link = TypeAnnotation                 optional property = annotation
         <content link = Calculation                             property = calculation
 
     <syntax id = Set
@@ -326,7 +326,7 @@
 
     <syntax id = SizeOf
         <content link = sizeof
-        <content link = Type                                    property = type_spec
+        <content link = Type                                    property = spec
 
     <keyword id = break
     <keyword id = catch
