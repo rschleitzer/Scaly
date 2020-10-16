@@ -336,6 +336,7 @@ pub enum ExpressionSyntax {
     Block(BlockSyntax),
     If(IfSyntax),
     Match(MatchSyntax),
+    Lambda(LambdaSyntax),
     For(ForSyntax),
     While(WhileSyntax),
     Repeat(RepeatSyntax),
@@ -418,6 +419,13 @@ pub struct DefaultSyntax {
     pub start: Position,
     pub end: Position,
     pub alternative: Option<BlockSyntax>,
+}
+
+pub struct LambdaSyntax {
+    pub start: Position,
+    pub end: Position,
+    pub input: ObjectSyntax,
+    pub block: BlockSyntax,
 }
 
 pub struct ForSyntax {
@@ -2148,6 +2156,12 @@ impl<'a> Parser<'a> {
             }
         }
         {
+            let node = self.parse_lambda()?;
+            if let Some(node) = node {
+                return Ok(Some(ExpressionSyntax::Lambda(node)));
+            }
+        }
+        {
             let node = self.parse_for()?;
             if let Some(node) = node {
                 return Ok(Some(ExpressionSyntax::For(node)));
@@ -2631,6 +2645,45 @@ impl<'a> Parser<'a> {
             start: start,
             end: end,
             alternative: alternative,
+        };
+
+        Ok(Some(ret))
+    }
+
+    pub fn parse_lambda(&mut self) -> Result<Option<LambdaSyntax>, ParserError> {
+        let start: Position = self.lexer.get_previous_position();
+
+        let success_fn_1 = self.lexer.parse_keyword("fn".to_string());
+        if !success_fn_1 {
+
+                return Ok(None)
+        }
+
+        let input = self.parse_object()?;
+        if let None = input {
+            return Err(ParserError {
+                file_name: "".to_string(),
+                line: self.lexer.line,
+                column: self.lexer.column,
+            });
+        }
+
+        let block = self.parse_block()?;
+        if let None = block {
+            return Err(ParserError {
+                file_name: "".to_string(),
+                line: self.lexer.line,
+                column: self.lexer.column,
+            });
+        }
+
+        let end: Position = self.lexer.get_position();
+
+        let ret = LambdaSyntax {
+            start: start,
+            end: end,
+            input: input.unwrap(),
+            block: block.unwrap(),
         };
 
         Ok(Some(ret))

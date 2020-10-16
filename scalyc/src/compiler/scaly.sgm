@@ -236,6 +236,7 @@
         <content link = Block
         <content link = If
         <content link = Match
+        <content link = Lambda
         <content link = For
         <content link = While
         <content link = Repeat
@@ -298,6 +299,11 @@
     <syntax id = Default
         <content link = default
         <content link = Block                          optional property = alternative
+
+    <syntax id = Lambda
+        <content link = fn
+        <content link = Object                                  property = input
+        <content link = Block                                   property = block
 
     <syntax id = For
         <content link = for
