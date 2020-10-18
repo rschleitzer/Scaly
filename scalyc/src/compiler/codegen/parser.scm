@@ -108,7 +108,7 @@ impl<'a> Parser<'a> {
 "
         let "
                             (case (type content)
-                                (("keyword" "punctuation") ($ "success_"(if (property content) (property content) ($ (link content)"_"(number->string (child-number content))))))
+                                (("keyword" "punctuation" "colon" "semicolon") ($ "success_"(if (property content) (property content) ($ (case (type content) (("colon" "semicolon") (type content)) (else (link content)))"_"(number->string (child-number content))))))
                                 (else (property content))
                             )
             " = self.lexer.parse_"(type content)"("
@@ -145,8 +145,8 @@ impl<'a> Parser<'a> {
                                     )
                                 ))
                                 (case (type content)
-                                    (("keyword" "punctuation") ($ 
-"        if !success_"(if (property content) (property content) ($ (link content)"_"(number->string (child-number content))))" {
+                                    (("keyword" "punctuation" "colon" "semicolon") ($ 
+"        if !success_"(if (property content) (property content) ($ (case (type content) (("colon" "semicolon") (type content)) (else (link content)))"_"(number->string (child-number content))))" {
 "                                       null-handler
 "        }
 "
