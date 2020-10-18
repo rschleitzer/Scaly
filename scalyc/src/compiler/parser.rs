@@ -1146,7 +1146,7 @@ impl<'a> Parser<'a> {
     pub fn parse_typeannotation(&mut self) -> Result<Option<TypeAnnotationSyntax>, ParserError> {
         let start: Position = self.lexer.get_previous_position();
 
-        let success_colon_1 = self.lexer.parse_punctuation(":".to_string());
+        let success_colon_1 = self.lexer.parse_colon();
         if !success_colon_1 {
 
                 return Ok(None)
@@ -1955,7 +1955,7 @@ impl<'a> Parser<'a> {
             });
         }
 
-        let success_colon_3 = self.lexer.parse_punctuation(":".to_string());
+        let success_colon_3 = self.lexer.parse_colon();
         if !success_colon_3 {
 
             return Result::Err(
@@ -1995,7 +1995,7 @@ impl<'a> Parser<'a> {
             return Ok(None);
         }
 
-        let success_semicolon_2 = self.lexer.parse_punctuation(";".to_string());
+        let success_semicolon_2 = self.lexer.parse_semicolon();
         if !success_semicolon_2 {
             ()
         }
@@ -2197,7 +2197,7 @@ impl<'a> Parser<'a> {
             });
         }
 
-        let success_colon_3 = self.lexer.parse_punctuation(":".to_string());
+        let success_colon_3 = self.lexer.parse_colon();
         if !success_colon_3 {
 
             return Result::Err(
@@ -2269,7 +2269,7 @@ impl<'a> Parser<'a> {
 
         let name = self.parse_loop()?;
 
-        let success_semicolon_3 = self.lexer.parse_punctuation(";".to_string());
+        let success_semicolon_3 = self.lexer.parse_semicolon();
         if !success_semicolon_3 {
             ()
         }
@@ -2582,7 +2582,7 @@ impl<'a> Parser<'a> {
     pub fn parse_value(&mut self) -> Result<Option<ValueSyntax>, ParserError> {
         let start: Position = self.lexer.get_previous_position();
 
-        let success_colon_1 = self.lexer.parse_punctuation(":".to_string());
+        let success_colon_1 = self.lexer.parse_colon();
         if !success_colon_1 {
 
                 return Ok(None)
@@ -2743,7 +2743,7 @@ impl<'a> Parser<'a> {
             });
         }
 
-        let success_colon_3 = self.lexer.parse_punctuation(":".to_string());
+        let success_colon_3 = self.lexer.parse_colon();
         if !success_colon_3 {
 
             return Result::Err(
@@ -2887,7 +2887,7 @@ impl<'a> Parser<'a> {
             });
         }
 
-        let success_colon_3 = self.lexer.parse_punctuation(":".to_string());
+        let success_colon_3 = self.lexer.parse_colon();
         if !success_colon_3 {
 
             return Result::Err(
@@ -2959,7 +2959,7 @@ impl<'a> Parser<'a> {
             });
         }
 
-        let success_colon_3 = self.lexer.parse_punctuation(":".to_string());
+        let success_colon_3 = self.lexer.parse_colon();
         if !success_colon_3 {
 
             return Result::Err(
@@ -3029,7 +3029,7 @@ impl<'a> Parser<'a> {
             });
         }
 
-        let success_colon_5 = self.lexer.parse_punctuation(":".to_string());
+        let success_colon_5 = self.lexer.parse_colon();
         if !success_colon_5 {
 
             return Result::Err(
@@ -3125,7 +3125,7 @@ impl<'a> Parser<'a> {
             });
         }
 
-        let success_colon_3 = self.lexer.parse_punctuation(":".to_string());
+        let success_colon_3 = self.lexer.parse_colon();
         if !success_colon_3 {
 
             return Result::Err(

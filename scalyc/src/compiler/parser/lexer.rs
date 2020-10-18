@@ -12,6 +12,9 @@ pub enum Token {
     Identifier(String),
     Literal(Literal),
     Punctuation(String),
+    Linefeed,
+    Colon,
+    Semicolon,
 }
 
 pub enum Literal {
@@ -83,6 +86,18 @@ impl<'a> Lexer<'a> {
                 }
 
                 match c {
+                    '\n' => {
+                        self.read_character();
+                        self.token = Token::Linefeed;
+                    }
+                    ':' => {
+                        self.read_character();
+                        self.token = Token::Colon;
+                    }
+                    ';' => {
+                        self.read_character();
+                        self.token = Token::Semicolon;
+                    }
                     '0' => {
                         let mut value = String::new();
                         value.push(c);
@@ -95,8 +110,8 @@ impl<'a> Lexer<'a> {
                     }
                     '\"' => self.token = { self.scan_string_literal() },
                     '\'' => self.token = { self.scan_character_literal() },
-                    '{' | '}' | '(' | ')' | '[' | ']' | '.' | ',' | ':' | ';' | '?' | '!' | '@'
-                    | '#' | '$' | '_' | '`' => {
+                    '{' | '}' | '(' | ')' | '[' | ']' | '.' | ',' | '?' | '!' | '@' | '#'
+                    | '$' | '_' | '`' => {
                         let mut punctuation_string = String::new();
                         punctuation_string.push(c);
                         self.read_character();
@@ -366,10 +381,6 @@ impl<'a> Lexer<'a> {
                         self.read_character();
                         continue;
                     }
-                    '\n' => {
-                        self.read_character();
-                        continue;
-                    }
                     '/' => {
                         self.read_character();
                         match self.character {
@@ -558,6 +569,34 @@ impl<'a> Lexer<'a> {
                 Some(Literal::Hex(ret))
             }
             _ => None,
+        }
+    }
+
+    pub fn parse_colon(&mut self) -> bool {
+        match &self.token {
+            Token::Empty => self.advance(),
+            _ => (),
+        }
+        match &self.token {
+            Token::Colon | Token::Linefeed => {
+                self.empty();
+                true
+            }
+            _ => false,
+        }
+    }
+
+    pub fn parse_semicolon(&mut self) -> bool {
+        match &self.token {
+            Token::Empty => self.advance(),
+            _ => (),
+        }
+        match &self.token {
+            Token::Semicolon | Token::Linefeed => {
+                self.empty();
+                true
+            }
+            _ => false,
         }
     }
 
