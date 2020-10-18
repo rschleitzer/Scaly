@@ -1997,8 +1997,14 @@ impl<'a> Parser<'a> {
 
         let success_semicolon_2 = self.lexer.parse_semicolon();
         if !success_semicolon_2 {
-            ()
-        }
+
+            return Result::Err(
+                ParserError {
+                    file_name: "".to_string(),
+                    line: self.lexer.line,
+                    column: self.lexer.column,
+                },
+            )        }
 
         let end: Position = self.lexer.get_position();
 
@@ -2271,8 +2277,14 @@ impl<'a> Parser<'a> {
 
         let success_semicolon_3 = self.lexer.parse_semicolon();
         if !success_semicolon_3 {
-            ()
-        }
+
+            return Result::Err(
+                ParserError {
+                    file_name: "".to_string(),
+                    line: self.lexer.line,
+                    column: self.lexer.column,
+                },
+            )        }
 
         let end: Position = self.lexer.get_position();
 

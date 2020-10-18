@@ -204,7 +204,7 @@
 
     <syntax id = Calculation
         <content link = Operation                               property = operation
-        <content semicolon                             optional
+        <content semicolon
 
     <syntax id = Operation
         <content link = Operand               multiple          property = op
@@ -238,7 +238,7 @@
     <syntax id = Continue
         <content link = continue
         <content link = Loop                           optional property = name
-        <content semicolon                             optional
+        <content semicolon
 
     <syntax id = Loop
         <content link = loop
