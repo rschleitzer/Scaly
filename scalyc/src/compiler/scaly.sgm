@@ -20,7 +20,6 @@
         <content link = def
         <content link = Name                                    property = name
         <content link = Concept                                 property = concept
-        <content link = semicolon                      optional
 
     <syntax id = Name
         <content identifier                                     property = name
@@ -118,7 +117,6 @@
         <content link = Returns                        optional property = result
         <content link = Throws                         optional property = error
         <content link = Implementation                          property = implementation
-        <content link = semicolon                      optional
 
     <syntax id = Returns
         <content link = returns
@@ -146,7 +144,6 @@
     <syntax id = Use
         <content link = use
         <content link = Name                                    property = name
-        <content link = semicolon                      optional
 
     <syntax id = Implement
         <content link = implement
@@ -403,9 +400,9 @@
     <keyword id = while
 
     <punctuation id = semicolon         value = ";"
+    <punctuation id = colon             value = ":"
     <punctuation id = dot               value = "."
     <punctuation id = comma             value = ","
-    <punctuation id = colon             value = ":"
     <punctuation id = question          value = "?"
     <punctuation id = left_paren        value = "("
     <punctuation id = right_paren       value = ")"

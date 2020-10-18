@@ -664,11 +664,6 @@ impl<'a> Parser<'a> {
             });
         }
 
-        let success_semicolon_4 = self.lexer.parse_punctuation(";".to_string());
-        if !success_semicolon_4 {
-            ()
-        }
-
         let end: Position = self.lexer.get_position();
 
         let ret = DefinitionSyntax {
@@ -1367,11 +1362,6 @@ impl<'a> Parser<'a> {
             });
         }
 
-        let success_semicolon_7 = self.lexer.parse_punctuation(";".to_string());
-        if !success_semicolon_7 {
-            ()
-        }
-
         let end: Position = self.lexer.get_position();
 
         let ret = FunctionSyntax {
@@ -1546,11 +1536,6 @@ impl<'a> Parser<'a> {
                 line: self.lexer.line,
                 column: self.lexer.column,
             });
-        }
-
-        let success_semicolon_3 = self.lexer.parse_punctuation(";".to_string());
-        if !success_semicolon_3 {
-            ()
         }
 
         let end: Position = self.lexer.get_position();
