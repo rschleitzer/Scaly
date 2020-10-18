@@ -48,7 +48,7 @@
         <content link = Tag                   multiple          property = tags
 
     <syntax id = Tag                          multiple
-        <content link = Name                                    property = name
+        <content identifier                                     property = name
         <content link = Item                           optional property = item
 
     <syntax id = Item                                  abstract

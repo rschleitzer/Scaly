@@ -72,7 +72,7 @@ pub struct UnionSyntax {
 pub struct TagSyntax {
     pub start: Position,
     pub end: Position,
-    pub name: NameSyntax,
+    pub name: String,
     pub item: Option<ItemSyntax>,
 }
 
@@ -889,9 +889,16 @@ impl<'a> Parser<'a> {
     pub fn parse_tag(&mut self) -> Result<Option<TagSyntax>, ParserError> {
         let start: Position = self.lexer.get_previous_position();
 
-        let name = self.parse_name()?;
-        if let None = name {
-            return Ok(None);
+        let name = self.lexer.parse_identifier(&self.keywords);
+        match &name {
+            Some(name) =>
+                if !self.is_identifier(name) {
+                return Ok(None)
+
+           },
+           _ =>
+                return Ok(None)
+,
         }
 
         let item = self.parse_item()?;
