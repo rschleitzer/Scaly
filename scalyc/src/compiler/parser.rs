@@ -462,7 +462,7 @@ pub struct DefaultSyntax {
 pub struct LambdaSyntax {
     pub start: Position,
     pub end: Position,
-    pub input: ObjectSyntax,
+    pub input: OperationSyntax,
     pub block: OperationSyntax,
 }
 
@@ -534,6 +534,7 @@ impl<'a> Parser<'a> {
         keywords.insert(String::from("instruction"));
         keywords.insert(String::from("intrinsic"));
         keywords.insert(String::from("label"));
+        keywords.insert(String::from("lambda"));
         keywords.insert(String::from("let"));
         keywords.insert(String::from("loop"));
         keywords.insert(String::from("match"));
@@ -2951,13 +2952,13 @@ impl<'a> Parser<'a> {
     pub fn parse_lambda(&mut self) -> Result<Option<LambdaSyntax>, ParserError> {
         let start: Position = self.lexer.get_previous_position();
 
-        let success_fn_1 = self.lexer.parse_keyword("fn".to_string());
-        if !success_fn_1 {
+        let success_lambda_1 = self.lexer.parse_keyword("lambda".to_string());
+        if !success_lambda_1 {
 
                 return Ok(None)
         }
 
-        let input = self.parse_object()?;
+        let input = self.parse_operation()?;
         if let None = input {
             return Err(ParserError {
                 file_name: "".to_string(),
@@ -2965,6 +2966,17 @@ impl<'a> Parser<'a> {
                 column: self.lexer.column,
             });
         }
+
+        let success_colon_3 = self.lexer.parse_punctuation(":".to_string());
+        if !success_colon_3 {
+
+            return Result::Err(
+                ParserError {
+                    file_name: "".to_string(),
+                    line: self.lexer.line,
+                    column: self.lexer.column,
+                },
+            )        }
 
         let block = self.parse_operation()?;
         if let None = block {
