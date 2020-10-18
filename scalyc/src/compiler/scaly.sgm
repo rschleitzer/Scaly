@@ -232,11 +232,11 @@
         <content link = catch
         <content link = Operation                               property = condition
         <content link = colon
-        <content link = Block                                   property = handler
+        <content link = Operation                                   property = handler
 
     <syntax id = Drop
         <content link = drop
-        <content link = Block                                   property = handler
+        <content link = Operation                                   property = handler
 
     <syntax id = Continue
         <content link = continue
@@ -309,12 +309,12 @@
         <content link = if
         <content link = Operation                               property = condition
         <content link = colon
-        <content link = Block                                   property = consequent
+        <content link = Operation                                   property = consequent
         <content link = Else                           optional property = alternative
 
     <syntax id = Else
         <content link = else
-        <content link = Block                                   property = alternative
+        <content link = Operation                                   property = alternative
 
     <syntax id = Match
         <content link = match
@@ -326,16 +326,16 @@
         <content link = case
         <content link = Operation                               property = condition
         <content link = colon
-        <content link = Block                                   property = consequent
+        <content link = Operation                                   property = consequent
     
     <syntax id = Default
         <content link = default
-        <content link = Block                          optional property = alternative
+        <content link = Operation                          optional property = alternative
 
     <syntax id = Lambda
         <content link = fn
         <content link = Object                                  property = input
-        <content link = Block                                   property = block
+        <content link = Operation                                   property = block
 
     <syntax id = For
         <content link = for
@@ -344,7 +344,7 @@
         <content link = Operation                               property = expression
         <content link = colon
         <content link = Label                          optional property = name
-        <content link = Block                                   property = action
+        <content link = Operation                                   property = action
 
     <syntax id = Label
         <content link = label
@@ -355,12 +355,12 @@
         <content link = Operation                               property = condition
         <content link = colon
         <content link = Label                          optional property = name
-        <content link = Block                                   property = action
+        <content link = Operation                                   property = action
 
     <syntax id = Repeat
         <content link = repeat
         <content link = Label                          optional property = name
-        <content link = Block                                   property = action
+        <content link = Operation                                   property = action
 
     <syntax id = SizeOf
         <content link = sizeof

@@ -326,13 +326,13 @@ pub struct CatchSyntax {
     pub start: Position,
     pub end: Position,
     pub condition: OperationSyntax,
-    pub handler: BlockSyntax,
+    pub handler: OperationSyntax,
 }
 
 pub struct DropSyntax {
     pub start: Position,
     pub end: Position,
-    pub handler: BlockSyntax,
+    pub handler: OperationSyntax,
 }
 
 pub struct ContinueSyntax {
@@ -428,14 +428,14 @@ pub struct IfSyntax {
     pub start: Position,
     pub end: Position,
     pub condition: OperationSyntax,
-    pub consequent: BlockSyntax,
+    pub consequent: OperationSyntax,
     pub alternative: Option<ElseSyntax>,
 }
 
 pub struct ElseSyntax {
     pub start: Position,
     pub end: Position,
-    pub alternative: BlockSyntax,
+    pub alternative: OperationSyntax,
 }
 
 pub struct MatchSyntax {
@@ -450,20 +450,20 @@ pub struct CaseSyntax {
     pub start: Position,
     pub end: Position,
     pub condition: OperationSyntax,
-    pub consequent: BlockSyntax,
+    pub consequent: OperationSyntax,
 }
 
 pub struct DefaultSyntax {
     pub start: Position,
     pub end: Position,
-    pub alternative: Option<BlockSyntax>,
+    pub alternative: Option<OperationSyntax>,
 }
 
 pub struct LambdaSyntax {
     pub start: Position,
     pub end: Position,
     pub input: ObjectSyntax,
-    pub block: BlockSyntax,
+    pub block: OperationSyntax,
 }
 
 pub struct ForSyntax {
@@ -472,7 +472,7 @@ pub struct ForSyntax {
     pub condition: OperationSyntax,
     pub expression: OperationSyntax,
     pub name: Option<LabelSyntax>,
-    pub action: BlockSyntax,
+    pub action: OperationSyntax,
 }
 
 pub struct LabelSyntax {
@@ -486,14 +486,14 @@ pub struct WhileSyntax {
     pub end: Position,
     pub condition: OperationSyntax,
     pub name: Option<LabelSyntax>,
-    pub action: BlockSyntax,
+    pub action: OperationSyntax,
 }
 
 pub struct RepeatSyntax {
     pub start: Position,
     pub end: Position,
     pub name: Option<LabelSyntax>,
-    pub action: BlockSyntax,
+    pub action: OperationSyntax,
 }
 
 pub struct SizeOfSyntax {
@@ -2215,7 +2215,7 @@ impl<'a> Parser<'a> {
                 },
             )        }
 
-        let handler = self.parse_block()?;
+        let handler = self.parse_operation()?;
         if let None = handler {
             return Err(ParserError {
                 file_name: "".to_string(),
@@ -2245,7 +2245,7 @@ impl<'a> Parser<'a> {
                 return Ok(None)
         }
 
-        let handler = self.parse_block()?;
+        let handler = self.parse_operation()?;
         if let None = handler {
             return Err(ParserError {
                 file_name: "".to_string(),
@@ -2761,7 +2761,7 @@ impl<'a> Parser<'a> {
                 },
             )        }
 
-        let consequent = self.parse_block()?;
+        let consequent = self.parse_operation()?;
         if let None = consequent {
             return Err(ParserError {
                 file_name: "".to_string(),
@@ -2794,7 +2794,7 @@ impl<'a> Parser<'a> {
                 return Ok(None)
         }
 
-        let alternative = self.parse_block()?;
+        let alternative = self.parse_operation()?;
         if let None = alternative {
             return Err(ParserError {
                 file_name: "".to_string(),
@@ -2905,7 +2905,7 @@ impl<'a> Parser<'a> {
                 },
             )        }
 
-        let consequent = self.parse_block()?;
+        let consequent = self.parse_operation()?;
         if let None = consequent {
             return Err(ParserError {
                 file_name: "".to_string(),
@@ -2935,7 +2935,7 @@ impl<'a> Parser<'a> {
                 return Ok(None)
         }
 
-        let alternative = self.parse_block()?;
+        let alternative = self.parse_operation()?;
 
         let end: Position = self.lexer.get_position();
 
@@ -2966,7 +2966,7 @@ impl<'a> Parser<'a> {
             });
         }
 
-        let block = self.parse_block()?;
+        let block = self.parse_operation()?;
         if let None = block {
             return Err(ParserError {
                 file_name: "".to_string(),
@@ -3038,7 +3038,7 @@ impl<'a> Parser<'a> {
 
         let name = self.parse_label()?;
 
-        let action = self.parse_block()?;
+        let action = self.parse_operation()?;
         if let None = action {
             return Err(ParserError {
                 file_name: "".to_string(),
@@ -3134,7 +3134,7 @@ impl<'a> Parser<'a> {
 
         let name = self.parse_label()?;
 
-        let action = self.parse_block()?;
+        let action = self.parse_operation()?;
         if let None = action {
             return Err(ParserError {
                 file_name: "".to_string(),
@@ -3167,7 +3167,7 @@ impl<'a> Parser<'a> {
 
         let name = self.parse_label()?;
 
-        let action = self.parse_block()?;
+        let action = self.parse_operation()?;
         if let None = action {
             return Err(ParserError {
                 file_name: "".to_string(),
