@@ -27,6 +27,7 @@ pub struct DefinitionSyntax {
     pub start: Position,
     pub end: Position,
     pub name: NameSyntax,
+    pub attributes: Option<Vec<AttributeSyntax>>,
     pub concept: ConceptSyntax,
 }
 
@@ -41,6 +42,13 @@ pub struct ExtensionSyntax {
     pub start: Position,
     pub end: Position,
     pub name: String,
+}
+
+pub struct AttributeSyntax {
+    pub start: Position,
+    pub end: Position,
+    pub attribute: String,
+    pub value: ModelSyntax,
 }
 
 pub enum ConceptSyntax {
@@ -74,6 +82,7 @@ pub struct TagSyntax {
     pub start: Position,
     pub end: Position,
     pub name: String,
+    pub attributes: Option<Vec<AttributeSyntax>>,
     pub item: Option<ItemSyntax>,
 }
 
@@ -105,6 +114,7 @@ pub struct DelegateSyntax {
     pub start: Position,
     pub end: Position,
     pub operator: TypeSpecSyntax,
+    pub attributes: Option<Vec<AttributeSyntax>>,
     pub result: Option<ReturnsSyntax>,
     pub error: Option<ThrowsSyntax>,
 }
@@ -125,6 +135,7 @@ pub struct ComponentSyntax {
     pub start: Position,
     pub end: Position,
     pub name: String,
+    pub attributes: Option<Vec<AttributeSyntax>>,
     pub annotation: Option<TypeAnnotationSyntax>,
 }
 
@@ -169,8 +180,10 @@ pub struct FunctionSyntax {
     pub end: Position,
     pub operand: TypeSpecSyntax,
     pub operator: Option<TypeSpecSyntax>,
+    pub attributes: Option<Vec<AttributeSyntax>>,
     pub result: Option<ReturnsSyntax>,
     pub error: Option<ThrowsSyntax>,
+    pub exception: Option<Vec<AttributeSyntax>>,
     pub implementation: ImplementationSyntax,
 }
 
@@ -178,12 +191,14 @@ pub struct ReturnsSyntax {
     pub start: Position,
     pub end: Position,
     pub spec: TypeSpecSyntax,
+    pub attributes: Option<Vec<AttributeSyntax>>,
 }
 
 pub struct ThrowsSyntax {
     pub start: Position,
     pub end: Position,
     pub spec: TypeSpecSyntax,
+    pub attributes: Option<Vec<AttributeSyntax>>,
 }
 
 pub enum ImplementationSyntax {
@@ -218,6 +233,7 @@ pub struct ImplementSyntax {
     pub start: Position,
     pub end: Position,
     pub name: NameSyntax,
+    pub attributes: Option<Vec<AttributeSyntax>>,
     pub functions: Option<Vec<FunctionSyntax>>,
 }
 
@@ -226,6 +242,7 @@ pub struct TraitSyntax {
     pub end: Position,
     pub name: NameSyntax,
     pub extension: ExtendsSyntax,
+    pub attributes: Option<Vec<AttributeSyntax>>,
     pub functions: Option<Vec<FunctionSyntax>>,
 }
 
@@ -413,6 +430,7 @@ pub struct FieldSyntax {
     pub start: Position,
     pub end: Position,
     pub operation: OperationSyntax,
+    pub attributes: Option<Vec<AttributeSyntax>>,
     pub value: Option<ValueSyntax>,
 }
 
@@ -420,6 +438,7 @@ pub struct ValueSyntax {
     pub start: Position,
     pub end: Position,
     pub value: OperationSyntax,
+    pub attributes: Option<Vec<AttributeSyntax>>,
 }
 
 pub struct ArraySyntax {
@@ -432,6 +451,7 @@ pub struct ElementSyntax {
     pub start: Position,
     pub end: Position,
     pub operation: OperationSyntax,
+    pub attributes: Option<Vec<AttributeSyntax>>,
 }
 
 pub struct BlockSyntax {
@@ -678,6 +698,8 @@ impl<'a> Parser<'a> {
             });
         }
 
+        let attributes = self.parse_attribute_list()?;
+
         let concept = self.parse_concept()?;
         if let None = concept {
             return Err(ParserError {
@@ -693,6 +715,7 @@ impl<'a> Parser<'a> {
             start: start,
             end: end,
             name: name.unwrap(),
+            attributes: attributes,
             concept: concept.unwrap(),
         };
 
@@ -785,6 +808,56 @@ impl<'a> Parser<'a> {
             start: start,
             end: end,
             name: name.unwrap(),
+        };
+
+        Ok(Some(ret))
+    }
+
+    pub fn parse_attribute_list(&mut self) -> Result<Option<Vec<AttributeSyntax>>, ParserError> {
+        let mut array: Option<Vec<AttributeSyntax>> = Option::None;
+        loop {
+            let node = self.parse_attribute()?;
+            if let Some(node) = node {
+                if let None = array {
+                    array = Some(Vec::new())
+                };
+                match &mut array {
+                    Some(a) => a.push(node),
+                    None => (),
+                }
+            } else {
+                break;
+            }
+        }
+
+        Ok(array)
+    }
+
+    pub fn parse_attribute(&mut self) -> Result<Option<AttributeSyntax>, ParserError> {
+        let start: Position = self.lexer.get_previous_position();
+
+        let attribute = self.lexer.parse_attribute();
+        if let None = attribute {
+
+                return Ok(None)
+        }
+
+        let value = self.parse_model()?;
+        if let None = value {
+            return Err(ParserError {
+                file_name: "".to_string(),
+                line: self.lexer.line,
+                column: self.lexer.column,
+            });
+        }
+
+        let end: Position = self.lexer.get_position();
+
+        let ret = AttributeSyntax {
+            start: start,
+            end: end,
+            attribute: attribute.unwrap(),
+            value: value.unwrap(),
         };
 
         Ok(Some(ret))
@@ -919,6 +992,8 @@ impl<'a> Parser<'a> {
 ,
         }
 
+        let attributes = self.parse_attribute_list()?;
+
         let item = self.parse_item()?;
 
         let end: Position = self.lexer.get_position();
@@ -927,6 +1002,7 @@ impl<'a> Parser<'a> {
             start: start,
             end: end,
             name: name.unwrap(),
+            attributes: attributes,
             item: item,
         };
 
@@ -1029,6 +1105,8 @@ impl<'a> Parser<'a> {
             });
         }
 
+        let attributes = self.parse_attribute_list()?;
+
         let result = self.parse_returns()?;
 
         let error = self.parse_throws()?;
@@ -1039,6 +1117,7 @@ impl<'a> Parser<'a> {
             start: start,
             end: end,
             operator: operator.unwrap(),
+            attributes: attributes,
             result: result,
             error: error,
         };
@@ -1147,10 +1226,12 @@ impl<'a> Parser<'a> {
 ,
         }
 
+        let attributes = self.parse_attribute_list()?;
+
         let annotation = self.parse_typeannotation()?;
 
-        let success_comma_3 = self.lexer.parse_punctuation(",".to_string());
-        if !success_comma_3 {
+        let success_comma_4 = self.lexer.parse_punctuation(",".to_string());
+        if !success_comma_4 {
             ()
         }
 
@@ -1160,6 +1241,7 @@ impl<'a> Parser<'a> {
             start: start,
             end: end,
             name: name.unwrap(),
+            attributes: attributes,
             annotation: annotation,
         };
 
@@ -1372,9 +1454,13 @@ impl<'a> Parser<'a> {
 
         let operator = self.parse_typespec()?;
 
+        let attributes = self.parse_attribute_list()?;
+
         let result = self.parse_returns()?;
 
         let error = self.parse_throws()?;
+
+        let exception = self.parse_attribute_list()?;
 
         let implementation = self.parse_implementation()?;
         if let None = implementation {
@@ -1392,8 +1478,10 @@ impl<'a> Parser<'a> {
             end: end,
             operand: operand.unwrap(),
             operator: operator,
+            attributes: attributes,
             result: result,
             error: error,
+            exception: exception,
             implementation: implementation.unwrap(),
         };
 
@@ -1418,12 +1506,15 @@ impl<'a> Parser<'a> {
             });
         }
 
+        let attributes = self.parse_attribute_list()?;
+
         let end: Position = self.lexer.get_position();
 
         let ret = ReturnsSyntax {
             start: start,
             end: end,
             spec: spec.unwrap(),
+            attributes: attributes,
         };
 
         Ok(Some(ret))
@@ -1447,12 +1538,15 @@ impl<'a> Parser<'a> {
             });
         }
 
+        let attributes = self.parse_attribute_list()?;
+
         let end: Position = self.lexer.get_position();
 
         let ret = ThrowsSyntax {
             start: start,
             end: end,
             spec: spec.unwrap(),
+            attributes: attributes,
         };
 
         Ok(Some(ret))
@@ -1590,8 +1684,10 @@ impl<'a> Parser<'a> {
             });
         }
 
-        let success_left_curly_3 = self.lexer.parse_punctuation("{".to_string());
-        if !success_left_curly_3 {
+        let attributes = self.parse_attribute_list()?;
+
+        let success_left_curly_4 = self.lexer.parse_punctuation("{".to_string());
+        if !success_left_curly_4 {
 
             return Result::Err(
                 ParserError {
@@ -1603,8 +1699,8 @@ impl<'a> Parser<'a> {
 
         let functions = self.parse_function_list()?;
 
-        let success_right_curly_5 = self.lexer.parse_punctuation("}".to_string());
-        if !success_right_curly_5 {
+        let success_right_curly_6 = self.lexer.parse_punctuation("}".to_string());
+        if !success_right_curly_6 {
 
             return Result::Err(
                 ParserError {
@@ -1620,6 +1716,7 @@ impl<'a> Parser<'a> {
             start: start,
             end: end,
             name: name.unwrap(),
+            attributes: attributes,
             functions: functions,
         };
 
@@ -1653,8 +1750,10 @@ impl<'a> Parser<'a> {
             });
         }
 
-        let success_left_curly_4 = self.lexer.parse_punctuation("{".to_string());
-        if !success_left_curly_4 {
+        let attributes = self.parse_attribute_list()?;
+
+        let success_left_curly_5 = self.lexer.parse_punctuation("{".to_string());
+        if !success_left_curly_5 {
 
             return Result::Err(
                 ParserError {
@@ -1666,8 +1765,8 @@ impl<'a> Parser<'a> {
 
         let functions = self.parse_function_list()?;
 
-        let success_right_curly_6 = self.lexer.parse_punctuation("}".to_string());
-        if !success_right_curly_6 {
+        let success_right_curly_7 = self.lexer.parse_punctuation("}".to_string());
+        if !success_right_curly_7 {
 
             return Result::Err(
                 ParserError {
@@ -1684,6 +1783,7 @@ impl<'a> Parser<'a> {
             end: end,
             name: name.unwrap(),
             extension: extension.unwrap(),
+            attributes: attributes,
             functions: functions,
         };
 
@@ -2685,10 +2785,12 @@ impl<'a> Parser<'a> {
             return Ok(None);
         }
 
+        let attributes = self.parse_attribute_list()?;
+
         let value = self.parse_value()?;
 
-        let success_comma_3 = self.lexer.parse_punctuation(",".to_string());
-        if !success_comma_3 {
+        let success_comma_4 = self.lexer.parse_punctuation(",".to_string());
+        if !success_comma_4 {
             ()
         }
 
@@ -2698,6 +2800,7 @@ impl<'a> Parser<'a> {
             start: start,
             end: end,
             operation: operation.unwrap(),
+            attributes: attributes,
             value: value,
         };
 
@@ -2722,12 +2825,15 @@ impl<'a> Parser<'a> {
             });
         }
 
+        let attributes = self.parse_attribute_list()?;
+
         let end: Position = self.lexer.get_position();
 
         let ret = ValueSyntax {
             start: start,
             end: end,
             value: value.unwrap(),
+            attributes: attributes,
         };
 
         Ok(Some(ret))
@@ -2801,8 +2907,10 @@ impl<'a> Parser<'a> {
             return Ok(None);
         }
 
-        let success_comma_2 = self.lexer.parse_punctuation(",".to_string());
-        if !success_comma_2 {
+        let attributes = self.parse_attribute_list()?;
+
+        let success_comma_3 = self.lexer.parse_punctuation(",".to_string());
+        if !success_comma_3 {
             ()
         }
 
@@ -2812,6 +2920,7 @@ impl<'a> Parser<'a> {
             start: start,
             end: end,
             operation: operation.unwrap(),
+            attributes: attributes,
         };
 
         Ok(Some(ret))

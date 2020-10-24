@@ -27,7 +27,7 @@ pub "(if (abstract? syntax-node) "enum" "struct")" "(id syntax-node)"Syntax {"
     pub "(property content)": "
                 (case (type content)
                     (("syntax") ($ (if (optional? content)"Option<" "")(if (multiple? content) ($ "Vec<") "")(link content)"Syntax"(if (multiple? content)">" "")(if (optional? content)">" "")))
-                    (("identifier") ($ (if (optional? content)"Option<" "")"String"(if (optional? content)">" "")))
+                    (("identifier" "attribute") ($ (if (optional? content)"Option<" "")"String"(if (optional? content)">" "")))
                     (("literal") ($ (if (optional? content)"Option<" "")"Literal"(if (optional? content)">" "")))
                     (("keyword" "punctuation") "bool")
                 )

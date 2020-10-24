@@ -116,7 +116,7 @@ impl<'a> Parser<'a> {
                                 (("keyword")     ($ "\""(link content)"\".to_string()"))
                                 (("punctuation") ($ "\""(value (element-with-id (link content)))"\".to_string()"))
                                 (("identifier") ($ "&""self.keywords"))
-                                (else "")
+                                (("attribute" "literal" "colon" "semicolon") "")
                             )");
 "
                             (let

@@ -549,6 +549,21 @@ impl<'a> Lexer<'a> {
         }
     }
 
+    pub fn parse_attribute(&mut self) -> Option<String> {
+        match &self.token {
+            Token::Empty => self.advance(),
+            _ => (),
+        }
+        match &self.token {
+            Token::Identifier(name) => {
+                let ret = String::from(name);
+                self.empty();
+                return Some(ret);
+            }
+            _ => return None,
+        }
+    }
+
     pub fn parse_punctuation(&mut self, fixed_string: String) -> bool {
         match &self.token {
             Token::Empty => self.advance(),
