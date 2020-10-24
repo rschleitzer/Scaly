@@ -15,6 +15,7 @@
         <content link = Use
         <content link = Implement
         <content link = Trait
+        <content link = Macro
 
     <syntax id = Definition
         <content link = def
@@ -127,7 +128,7 @@
         <content link = TypeSpec                                property = spec
 
     <syntax id = Implementation                        abstract
-        <content link = Expression
+        <content link = Calculation
         <content link = Extern
         <content link = Instruction
         <content link = Intrinsic
@@ -167,6 +168,18 @@
     <syntax id = Extend                       multiple
         <content link = TypeSpec                                property = spec
         <content link = comma                          optional
+
+    <syntax id = Macro
+        <content link = macro
+        <content identifier                                     property = name
+        <content link = Model                                   property = model
+        <content link = Calculation                             property = rule
+
+    <syntax id = Model                                 abstract
+        <content link = Literal
+        <content link = Name
+        <content link = Object
+        <content link = Array
 
     <syntax id = Statement                    multiple abstract
         <content link = Calculation
@@ -385,6 +398,7 @@
     <keyword id = lambda
     <keyword id = let
     <keyword id = loop
+    <keyword id = macro
     <keyword id = match
     <keyword id = mutable
     <keyword id = return

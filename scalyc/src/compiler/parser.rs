@@ -20,6 +20,7 @@ pub enum DeclarationSyntax {
     Use(UseSyntax),
     Implement(ImplementSyntax),
     Trait(TraitSyntax),
+    Macro(MacroSyntax),
 }
 
 pub struct DefinitionSyntax {
@@ -186,7 +187,7 @@ pub struct ThrowsSyntax {
 }
 
 pub enum ImplementationSyntax {
-    Expression(ExpressionSyntax),
+    Calculation(CalculationSyntax),
     Extern(ExternSyntax),
     Instruction(InstructionSyntax),
     Intrinsic(IntrinsicSyntax),
@@ -238,6 +239,21 @@ pub struct ExtendSyntax {
     pub start: Position,
     pub end: Position,
     pub spec: TypeSpecSyntax,
+}
+
+pub struct MacroSyntax {
+    pub start: Position,
+    pub end: Position,
+    pub name: String,
+    pub model: ModelSyntax,
+    pub rule: CalculationSyntax,
+}
+
+pub enum ModelSyntax {
+    Literal(LiteralSyntax),
+    Name(NameSyntax),
+    Object(ObjectSyntax),
+    Array(ArraySyntax),
 }
 
 pub enum StatementSyntax {
@@ -537,6 +553,7 @@ impl<'a> Parser<'a> {
         keywords.insert(String::from("lambda"));
         keywords.insert(String::from("let"));
         keywords.insert(String::from("loop"));
+        keywords.insert(String::from("macro"));
         keywords.insert(String::from("match"));
         keywords.insert(String::from("mutable"));
         keywords.insert(String::from("return"));
@@ -632,6 +649,12 @@ impl<'a> Parser<'a> {
             let node = self.parse_trait()?;
             if let Some(node) = node {
                 return Ok(Some(DeclarationSyntax::Trait(node)));
+            }
+        }
+        {
+            let node = self.parse_macro()?;
+            if let Some(node) = node {
+                return Ok(Some(DeclarationSyntax::Macro(node)));
             }
         }
         return Ok(None)
@@ -1437,9 +1460,9 @@ impl<'a> Parser<'a> {
 
     pub fn parse_implementation(&mut self) -> Result<Option<ImplementationSyntax>, ParserError> {
         {
-            let node = self.parse_expression()?;
+            let node = self.parse_calculation()?;
             if let Some(node) = node {
-                return Ok(Some(ImplementationSyntax::Expression(node)));
+                return Ok(Some(ImplementationSyntax::Calculation(node)));
             }
         }
         {
@@ -1731,6 +1754,96 @@ impl<'a> Parser<'a> {
         };
 
         Ok(Some(ret))
+    }
+
+    pub fn parse_macro(&mut self) -> Result<Option<MacroSyntax>, ParserError> {
+        let start: Position = self.lexer.get_previous_position();
+
+        let success_macro_1 = self.lexer.parse_keyword("macro".to_string());
+        if !success_macro_1 {
+
+                return Ok(None)
+        }
+
+        let name = self.lexer.parse_identifier(&self.keywords);
+        match &name {
+            Some(name) =>
+                if !self.is_identifier(name) {
+            return Result::Err(
+                ParserError {
+                    file_name: "".to_string(),
+                    line: self.lexer.line,
+                    column: self.lexer.column,
+                },
+            )
+           },
+           _ =>
+            return Result::Err(
+                ParserError {
+                    file_name: "".to_string(),
+                    line: self.lexer.line,
+                    column: self.lexer.column,
+                },
+            ),
+        }
+
+        let model = self.parse_model()?;
+        if let None = model {
+            return Err(ParserError {
+                file_name: "".to_string(),
+                line: self.lexer.line,
+                column: self.lexer.column,
+            });
+        }
+
+        let rule = self.parse_calculation()?;
+        if let None = rule {
+            return Err(ParserError {
+                file_name: "".to_string(),
+                line: self.lexer.line,
+                column: self.lexer.column,
+            });
+        }
+
+        let end: Position = self.lexer.get_position();
+
+        let ret = MacroSyntax {
+            start: start,
+            end: end,
+            name: name.unwrap(),
+            model: model.unwrap(),
+            rule: rule.unwrap(),
+        };
+
+        Ok(Some(ret))
+    }
+
+    pub fn parse_model(&mut self) -> Result<Option<ModelSyntax>, ParserError> {
+        {
+            let node = self.parse_literal()?;
+            if let Some(node) = node {
+                return Ok(Some(ModelSyntax::Literal(node)));
+            }
+        }
+        {
+            let node = self.parse_name()?;
+            if let Some(node) = node {
+                return Ok(Some(ModelSyntax::Name(node)));
+            }
+        }
+        {
+            let node = self.parse_object()?;
+            if let Some(node) = node {
+                return Ok(Some(ModelSyntax::Object(node)));
+            }
+        }
+        {
+            let node = self.parse_array()?;
+            if let Some(node) = node {
+                return Ok(Some(ModelSyntax::Array(node)));
+            }
+        }
+        return Ok(None)
     }
 
     pub fn parse_statement_list(&mut self) -> Result<Option<Vec<StatementSyntax>>, ParserError> {
