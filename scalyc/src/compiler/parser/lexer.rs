@@ -20,6 +20,7 @@ pub enum Token {
 
 pub enum Literal {
     StringLiteral(String),
+    Fragment(String),
     Character(char),
     Integer(String),
     FloatingPoint(String),
@@ -116,8 +117,9 @@ impl<'a> Lexer<'a> {
                     }
                     '\"' => self.token = { self.scan_string_literal() },
                     '\'' => self.token = { self.scan_character_literal() },
+                    '`' => self.token = { self.scan_fragment_literal() },
                     '{' | '}' | '(' | ')' | '[' | ']' | '.' | ',' | '?' | '!' | '#'
-                    | '$' | '_' | '`' => {
+                    | '$' | '_' => {
                         let mut punctuation_string = String::new();
                         punctuation_string.push(c);
                         self.read_character();
@@ -284,6 +286,43 @@ impl<'a> Lexer<'a> {
                 '\'' => Token::Literal(Literal::Character(value)),
                 _ => Token::Invalid,
             },
+        }
+    }
+
+    fn scan_fragment_literal(&mut self) -> Token {
+        let mut value = String::new();
+
+        loop {
+            self.read_character();
+
+            match self.character {
+                None => return Token::Invalid,
+                Some(c) => match c {
+                    '`' => {
+                        self.read_character();
+                        return Token::Literal(Literal::Fragment(value));
+                    }
+
+                    '\\' => {
+                        self.read_character();
+                        match self.character {
+                            None => return Token::Invalid,
+                            Some(c) => match c {
+                                '`' => {
+                                    value.push(c);
+                                }
+                                _ => {
+                                    value.push('\\');
+                                    value.push(c);
+                                }                            },
+                        }
+                    }
+
+                    _ => {
+                        value.push(c);
+                    }
+                },
+            }
         }
     }
 
