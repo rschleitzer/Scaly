@@ -10,6 +10,7 @@ pub enum Token {
     Empty,
     Invalid,
     Identifier(String),
+    Attribute(String),
     Literal(Literal),
     Punctuation(String),
     Linefeed,
@@ -103,6 +104,11 @@ impl<'a> Lexer<'a> {
                         value.push(c);
                         self.token = self.scan_numeric_or_hex_literal(value);
                     }
+                    '@' => {
+                        self.read_character();
+                        self.token = self.scan_attribute();
+                        return;
+                        }
                     '+' | '-' | '*' | '/' | '=' | '%' | '&' | '|' | '^' | '~' | '<' | '>' => {
                         let mut operation = String::new();
                         operation.push(c);
@@ -110,7 +116,7 @@ impl<'a> Lexer<'a> {
                     }
                     '\"' => self.token = { self.scan_string_literal() },
                     '\'' => self.token = { self.scan_character_literal() },
-                    '{' | '}' | '(' | ')' | '[' | ']' | '.' | ',' | '?' | '!' | '@' | '#'
+                    '{' | '}' | '(' | ')' | '[' | ']' | '.' | ',' | '?' | '!' | '#'
                     | '$' | '_' | '`' => {
                         let mut punctuation_string = String::new();
                         punctuation_string.push(c);
@@ -145,6 +151,29 @@ impl<'a> Lexer<'a> {
                         self.read_character();
                     }
                     _ => return Token::Identifier(name),
+                },
+            }
+        }
+    }
+
+    fn scan_attribute(&mut self) -> Token {
+        let mut name = String::new();
+        loop {
+            match self.character {
+                None => {
+                    if name.len() == 0 {
+                        return Token::Invalid;
+                    } else {
+                        return Token::Attribute(name);
+                    }
+                }
+
+                Some(c) => match c {
+                    'a'..='z' | 'A'..='Z' | '0'..='9' | '_' => {
+                        name.push(c);
+                        self.read_character();
+                    }
+                    _ => return Token::Attribute(name),
                 },
             }
         }
