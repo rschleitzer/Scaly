@@ -10,6 +10,19 @@
         <content link = Statement             multiple optional property = statements
 
     <syntax id = Declaration                  multiple abstract
+        <content link = Public
+        <content link = Definition
+        <content link = Function
+        <content link = Use
+        <content link = Implement
+        <content link = Trait
+        <content link = Macro
+
+    <syntax id = Public
+        <content link = pub
+        <content link = Export                                  property = export
+
+    <syntax id = Export                                abstract
         <content link = Definition
         <content link = Function
         <content link = Use
@@ -418,6 +431,7 @@
     <keyword id = macro
     <keyword id = match
     <keyword id = mutable
+    <keyword id = pub
     <keyword id = return
     <keyword id = returns
     <keyword id = repeat

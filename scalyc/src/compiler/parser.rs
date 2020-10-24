@@ -15,6 +15,22 @@ pub struct FileSyntax {
 }
 
 pub enum DeclarationSyntax {
+    Public(PublicSyntax),
+    Definition(DefinitionSyntax),
+    Function(FunctionSyntax),
+    Use(UseSyntax),
+    Implement(ImplementSyntax),
+    Trait(TraitSyntax),
+    Macro(MacroSyntax),
+}
+
+pub struct PublicSyntax {
+    pub start: Position,
+    pub end: Position,
+    pub export: ExportSyntax,
+}
+
+pub enum ExportSyntax {
     Definition(DefinitionSyntax),
     Function(FunctionSyntax),
     Use(UseSyntax),
@@ -576,6 +592,7 @@ impl<'a> Parser<'a> {
         keywords.insert(String::from("macro"));
         keywords.insert(String::from("match"));
         keywords.insert(String::from("mutable"));
+        keywords.insert(String::from("pub"));
         keywords.insert(String::from("return"));
         keywords.insert(String::from("returns"));
         keywords.insert(String::from("repeat"));
@@ -642,6 +659,12 @@ impl<'a> Parser<'a> {
 
     pub fn parse_declaration(&mut self) -> Result<Option<DeclarationSyntax>, ParserError> {
         {
+            let node = self.parse_public()?;
+            if let Some(node) = node {
+                return Ok(Some(DeclarationSyntax::Public(node)));
+            }
+        }
+        {
             let node = self.parse_definition()?;
             if let Some(node) = node {
                 return Ok(Some(DeclarationSyntax::Definition(node)));
@@ -675,6 +698,75 @@ impl<'a> Parser<'a> {
             let node = self.parse_macro()?;
             if let Some(node) = node {
                 return Ok(Some(DeclarationSyntax::Macro(node)));
+            }
+        }
+        return Ok(None)
+    }
+
+    pub fn parse_public(&mut self) -> Result<Option<PublicSyntax>, ParserError> {
+        let start: Position = self.lexer.get_previous_position();
+
+        let success_pub_1 = self.lexer.parse_keyword("pub".to_string());
+        if !success_pub_1 {
+
+                return Ok(None)
+        }
+
+        let export = self.parse_export()?;
+        if let None = export {
+            return Err(ParserError {
+                file_name: "".to_string(),
+                line: self.lexer.line,
+                column: self.lexer.column,
+            });
+        }
+
+        let end: Position = self.lexer.get_position();
+
+        let ret = PublicSyntax {
+            start: start,
+            end: end,
+            export: export.unwrap(),
+        };
+
+        Ok(Some(ret))
+    }
+
+    pub fn parse_export(&mut self) -> Result<Option<ExportSyntax>, ParserError> {
+        {
+            let node = self.parse_definition()?;
+            if let Some(node) = node {
+                return Ok(Some(ExportSyntax::Definition(node)));
+            }
+        }
+        {
+            let node = self.parse_function()?;
+            if let Some(node) = node {
+                return Ok(Some(ExportSyntax::Function(node)));
+            }
+        }
+        {
+            let node = self.parse_use()?;
+            if let Some(node) = node {
+                return Ok(Some(ExportSyntax::Use(node)));
+            }
+        }
+        {
+            let node = self.parse_implement()?;
+            if let Some(node) = node {
+                return Ok(Some(ExportSyntax::Implement(node)));
+            }
+        }
+        {
+            let node = self.parse_trait()?;
+            if let Some(node) = node {
+                return Ok(Some(ExportSyntax::Trait(node)));
+            }
+        }
+        {
+            let node = self.parse_macro()?;
+            if let Some(node) = node {
+                return Ok(Some(ExportSyntax::Macro(node)));
             }
         }
         return Ok(None)
