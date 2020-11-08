@@ -31,7 +31,7 @@ impl Compiler {
     }
 
     pub fn load_standard_library(&mut self) {
-        let contents_result = fs::read_to_string("stdlib.scaly");
+        let contents_result = fs::read_to_string("scaly/scaly.scaly");
         match contents_result {
             Ok(contents) => {
                 self.standard_library = Some(contents);
