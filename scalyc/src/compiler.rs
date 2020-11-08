@@ -8,7 +8,7 @@ use model::Model;
 use std::mem;
 
 mod parser;
-use parser::CalculationSyntax;
+use parser::OperationSyntax;
 use parser::FileSyntax;
 use parser::Parser;
 use parser::ProgramSyntax;
@@ -110,7 +110,7 @@ impl Compiler {
         Ok(String::from("Processed."))
     }
 
-    fn _compute(&mut self, _calculation: &CalculationSyntax) -> String {
+    fn _compute(&mut self, _operation: &OperationSyntax) -> String {
         self._jit_and_execute()
     }
 

@@ -153,7 +153,7 @@
         <content link = Attribute             multiple optional property = attributes
 
     <syntax id = Implementation                        abstract
-        <content link = Calculation
+        <content link = Operation
         <content link = Extern
         <content link = Instruction
         <content link = Intrinsic
@@ -200,7 +200,7 @@
         <content link = macro
         <content identifier                                     property = name
         <content link = Model                                   property = model
-        <content link = Calculation                             property = rule
+        <content link = Operation                               property = rule
 
     <syntax id = Model                                 abstract
         <content link = Literal
@@ -209,7 +209,7 @@
         <content link = Array
 
     <syntax id = Statement                    multiple abstract
-        <content link = Calculation
+        <content link = Operation
         <content link = Let
         <content link = Var
         <content link = Mutable
@@ -234,20 +234,16 @@
     <syntax id = Binding
         <content identifier                                     property = name
         <content link = TypeAnnotation                 optional property = annotation
-        <content link = Calculation                             property = calculation
+        <content link = Operation                               property = calculation
 
     <syntax id = Set
         <content link = set
         <content link = Operation                               property = target
-        <content colon
-        <content link = Calculation                             property = source
-
-    <syntax id = Calculation
-        <content link = Operation                               property = operation
-        <content semicolon
+        <content link = Operation                               property = source
 
     <syntax id = Operation
         <content link = Operand               multiple          property = op
+        <content colon                                 optional
 
     <syntax id = Operand                      multiple
         <content link = Expression                              property = primary
@@ -268,7 +264,6 @@
     <syntax id = Catch                        multiple
         <content link = catch
         <content link = Operation                               property = condition
-        <content colon
         <content link = Operation                               property = handler
 
     <syntax id = Drop
@@ -278,7 +273,7 @@
     <syntax id = Continue
         <content link = continue
         <content link = Loop                           optional property = name
-        <content semicolon
+        <content colon                                 optional
 
     <syntax id = Loop
         <content link = loop
@@ -287,15 +282,15 @@
     <syntax id = Break
         <content link = break
         <content link = Loop                           optional property = name
-        <content link = Calculation                             property = result
+        <content link = Operation                               property = result
 
     <syntax id = Return
         <content link = return
-        <content link = Calculation                    optional property = result
+        <content link = Operation                      optional property = result
 
     <syntax id = Throw
         <content link = throw
-        <content link = Calculation                    optional property = result
+        <content link = Operation                      optional property = result
 
     <syntax id = Expression                            abstract
         <content link = Literal
@@ -348,7 +343,6 @@
     <syntax id = If
         <content link = if
         <content link = Operation                               property = condition
-        <content colon
         <content link = Operation                               property = consequent
         <content link = Else                           optional property = alternative
 
@@ -365,7 +359,6 @@
     <syntax id = Case                         multiple
         <content link = case
         <content link = Operation                               property = condition
-        <content colon
         <content link = Operation                               property = consequent
     
     <syntax id = Default
@@ -375,7 +368,6 @@
     <syntax id = Lambda
         <content link = lambda
         <content link = Operation                               property = input
-        <content colon
         <content link = Operation                               property = block
 
     <syntax id = For
@@ -383,7 +375,6 @@
         <content link = Operation                               property = condition
         <content link = in
         <content link = Operation                               property = expression
-        <content colon
         <content link = Label                          optional property = name
         <content link = Operation                               property = action
 
@@ -394,7 +385,6 @@
     <syntax id = While
         <content link = while
         <content link = Operation                               property = condition
-        <content colon
         <content link = Label                          optional property = name
         <content link = Operation                               property = action
 

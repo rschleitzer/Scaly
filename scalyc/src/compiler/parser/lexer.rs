@@ -669,20 +669,6 @@ impl<'a> Lexer<'a> {
         }
     }
 
-    pub fn parse_semicolon(&mut self) -> bool {
-        match &self.token {
-            Token::Empty => self.advance(),
-            _ => (),
-        }
-        match &self.token {
-            Token::Semicolon | Token::Linefeed => {
-                self.empty();
-                true
-            }
-            _ => false,
-        }
-    }
-
     pub fn is_at_end(&mut self) -> bool {
         match self.character {
             None => true,

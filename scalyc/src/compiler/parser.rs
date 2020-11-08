@@ -218,7 +218,7 @@ pub struct ThrowsSyntax {
 }
 
 pub enum ImplementationSyntax {
-    Calculation(CalculationSyntax),
+    Operation(OperationSyntax),
     Extern(ExternSyntax),
     Instruction(InstructionSyntax),
     Intrinsic(IntrinsicSyntax),
@@ -279,7 +279,7 @@ pub struct MacroSyntax {
     pub end: Position,
     pub name: String,
     pub model: ModelSyntax,
-    pub rule: CalculationSyntax,
+    pub rule: OperationSyntax,
 }
 
 pub enum ModelSyntax {
@@ -290,7 +290,7 @@ pub enum ModelSyntax {
 }
 
 pub enum StatementSyntax {
-    Calculation(CalculationSyntax),
+    Operation(OperationSyntax),
     Let(LetSyntax),
     Var(VarSyntax),
     Mutable(MutableSyntax),
@@ -324,20 +324,14 @@ pub struct BindingSyntax {
     pub end: Position,
     pub name: String,
     pub annotation: Option<TypeAnnotationSyntax>,
-    pub calculation: CalculationSyntax,
+    pub calculation: OperationSyntax,
 }
 
 pub struct SetSyntax {
     pub start: Position,
     pub end: Position,
     pub target: OperationSyntax,
-    pub source: CalculationSyntax,
-}
-
-pub struct CalculationSyntax {
-    pub start: Position,
-    pub end: Position,
-    pub operation: OperationSyntax,
+    pub source: OperationSyntax,
 }
 
 pub struct OperationSyntax {
@@ -400,19 +394,19 @@ pub struct BreakSyntax {
     pub start: Position,
     pub end: Position,
     pub name: Option<LoopSyntax>,
-    pub result: CalculationSyntax,
+    pub result: OperationSyntax,
 }
 
 pub struct ReturnSyntax {
     pub start: Position,
     pub end: Position,
-    pub result: Option<CalculationSyntax>,
+    pub result: Option<OperationSyntax>,
 }
 
 pub struct ThrowSyntax {
     pub start: Position,
     pub end: Position,
-    pub result: Option<CalculationSyntax>,
+    pub result: Option<OperationSyntax>,
 }
 
 pub enum ExpressionSyntax {
@@ -1646,9 +1640,9 @@ impl<'a> Parser<'a> {
 
     pub fn parse_implementation(&mut self) -> Result<Option<ImplementationSyntax>, ParserError> {
         {
-            let node = self.parse_calculation()?;
+            let node = self.parse_operation()?;
             if let Some(node) = node {
-                return Ok(Some(ImplementationSyntax::Calculation(node)));
+                return Ok(Some(ImplementationSyntax::Operation(node)));
             }
         }
         {
@@ -1988,7 +1982,7 @@ impl<'a> Parser<'a> {
             });
         }
 
-        let rule = self.parse_calculation()?;
+        let rule = self.parse_operation()?;
         if let None = rule {
             return Err(ParserError {
                 file_name: "".to_string(),
@@ -2060,9 +2054,9 @@ impl<'a> Parser<'a> {
 
     pub fn parse_statement(&mut self) -> Result<Option<StatementSyntax>, ParserError> {
         {
-            let node = self.parse_calculation()?;
+            let node = self.parse_operation()?;
             if let Some(node) = node {
-                return Ok(Some(StatementSyntax::Calculation(node)));
+                return Ok(Some(StatementSyntax::Operation(node)));
             }
         }
         {
@@ -2220,7 +2214,7 @@ impl<'a> Parser<'a> {
 
         let annotation = self.parse_typeannotation()?;
 
-        let calculation = self.parse_calculation()?;
+        let calculation = self.parse_operation()?;
         if let None = calculation {
             return Err(ParserError {
                 file_name: "".to_string(),
@@ -2260,18 +2254,7 @@ impl<'a> Parser<'a> {
             });
         }
 
-        let success_colon_3 = self.lexer.parse_colon();
-        if !success_colon_3 {
-
-            return Result::Err(
-                ParserError {
-                    file_name: "".to_string(),
-                    line: self.lexer.line,
-                    column: self.lexer.column,
-                },
-            )        }
-
-        let source = self.parse_calculation()?;
+        let source = self.parse_operation()?;
         if let None = source {
             return Err(ParserError {
                 file_name: "".to_string(),
@@ -2292,42 +2275,17 @@ impl<'a> Parser<'a> {
         Ok(Some(ret))
     }
 
-    pub fn parse_calculation(&mut self) -> Result<Option<CalculationSyntax>, ParserError> {
-        let start: Position = self.lexer.get_previous_position();
-
-        let operation = self.parse_operation()?;
-        if let None = operation {
-            return Ok(None);
-        }
-
-        let success_semicolon_2 = self.lexer.parse_semicolon();
-        if !success_semicolon_2 {
-
-            return Result::Err(
-                ParserError {
-                    file_name: "".to_string(),
-                    line: self.lexer.line,
-                    column: self.lexer.column,
-                },
-            )        }
-
-        let end: Position = self.lexer.get_position();
-
-        let ret = CalculationSyntax {
-            start: start,
-            end: end,
-            operation: operation.unwrap(),
-        };
-
-        Ok(Some(ret))
-    }
-
     pub fn parse_operation(&mut self) -> Result<Option<OperationSyntax>, ParserError> {
         let start: Position = self.lexer.get_previous_position();
 
         let op = self.parse_operand_list()?;
         if let None = op {
             return Ok(None);
+        }
+
+        let success_colon_2 = self.lexer.parse_colon();
+        if !success_colon_2 {
+            ()
         }
 
         let end: Position = self.lexer.get_position();
@@ -2508,17 +2466,6 @@ impl<'a> Parser<'a> {
             });
         }
 
-        let success_colon_3 = self.lexer.parse_colon();
-        if !success_colon_3 {
-
-            return Result::Err(
-                ParserError {
-                    file_name: "".to_string(),
-                    line: self.lexer.line,
-                    column: self.lexer.column,
-                },
-            )        }
-
         let handler = self.parse_operation()?;
         if let None = handler {
             return Err(ParserError {
@@ -2580,16 +2527,10 @@ impl<'a> Parser<'a> {
 
         let name = self.parse_loop()?;
 
-        let success_semicolon_3 = self.lexer.parse_semicolon();
-        if !success_semicolon_3 {
-
-            return Result::Err(
-                ParserError {
-                    file_name: "".to_string(),
-                    line: self.lexer.line,
-                    column: self.lexer.column,
-                },
-            )        }
+        let success_colon_3 = self.lexer.parse_colon();
+        if !success_colon_3 {
+            ()
+        }
 
         let end: Position = self.lexer.get_position();
 
@@ -2655,7 +2596,7 @@ impl<'a> Parser<'a> {
 
         let name = self.parse_loop()?;
 
-        let result = self.parse_calculation()?;
+        let result = self.parse_operation()?;
         if let None = result {
             return Err(ParserError {
                 file_name: "".to_string(),
@@ -2685,7 +2626,7 @@ impl<'a> Parser<'a> {
                 return Ok(None)
         }
 
-        let result = self.parse_calculation()?;
+        let result = self.parse_operation()?;
 
         let end: Position = self.lexer.get_position();
 
@@ -2707,7 +2648,7 @@ impl<'a> Parser<'a> {
                 return Ok(None)
         }
 
-        let result = self.parse_calculation()?;
+        let result = self.parse_operation()?;
 
         let end: Position = self.lexer.get_position();
 
@@ -3069,17 +3010,6 @@ impl<'a> Parser<'a> {
             });
         }
 
-        let success_colon_3 = self.lexer.parse_colon();
-        if !success_colon_3 {
-
-            return Result::Err(
-                ParserError {
-                    file_name: "".to_string(),
-                    line: self.lexer.line,
-                    column: self.lexer.column,
-                },
-            )        }
-
         let consequent = self.parse_operation()?;
         if let None = consequent {
             return Err(ParserError {
@@ -3213,17 +3143,6 @@ impl<'a> Parser<'a> {
             });
         }
 
-        let success_colon_3 = self.lexer.parse_colon();
-        if !success_colon_3 {
-
-            return Result::Err(
-                ParserError {
-                    file_name: "".to_string(),
-                    line: self.lexer.line,
-                    column: self.lexer.column,
-                },
-            )        }
-
         let consequent = self.parse_operation()?;
         if let None = consequent {
             return Err(ParserError {
@@ -3285,17 +3204,6 @@ impl<'a> Parser<'a> {
             });
         }
 
-        let success_colon_3 = self.lexer.parse_colon();
-        if !success_colon_3 {
-
-            return Result::Err(
-                ParserError {
-                    file_name: "".to_string(),
-                    line: self.lexer.line,
-                    column: self.lexer.column,
-                },
-            )        }
-
         let block = self.parse_operation()?;
         if let None = block {
             return Err(ParserError {
@@ -3354,17 +3262,6 @@ impl<'a> Parser<'a> {
                 column: self.lexer.column,
             });
         }
-
-        let success_colon_5 = self.lexer.parse_colon();
-        if !success_colon_5 {
-
-            return Result::Err(
-                ParserError {
-                    file_name: "".to_string(),
-                    line: self.lexer.line,
-                    column: self.lexer.column,
-                },
-            )        }
 
         let name = self.parse_label()?;
 
@@ -3450,17 +3347,6 @@ impl<'a> Parser<'a> {
                 column: self.lexer.column,
             });
         }
-
-        let success_colon_3 = self.lexer.parse_colon();
-        if !success_colon_3 {
-
-            return Result::Err(
-                ParserError {
-                    file_name: "".to_string(),
-                    line: self.lexer.line,
-                    column: self.lexer.column,
-                },
-            )        }
 
         let name = self.parse_label()?;
 
