@@ -40,6 +40,56 @@ impl Compiler {
         }
     }
 
+    pub fn compile(&mut self, file_name: &String) -> String
+    {
+        let file_contents_result = fs::read_to_string(file_name.as_str());
+        match file_contents_result {
+            Ok(file_contents) => {
+                let mut parser = Parser::new(file_contents.as_str());
+                let file_result = parser.parse_file();
+                match file_result {
+                    Ok(file_option) => match file_option {
+                        None => {        
+                            return String::from("Unable to parse file.\n");
+                        }
+                        Some(file) => {
+                            if !parser.is_at_end() {
+                                return String::from(format!(
+                                    "Unexpected characters between {}, {} and {}, {} after the file.\n",
+                                    parser.get_previous_line(),
+                                    parser.get_previous_column(),
+                                    parser.get_current_line(),
+                                    parser.get_current_column()
+                                ));
+                            }
+                            match self.process_file(file) {
+                                Ok(result) => result,
+                                Err(error) => error,
+                            }
+                        }
+                    },
+                    Err(error) => {
+                        if parser.is_at_end() {
+                            String::from(format!(
+                                "Parser error between {}, {} and {}, {}.\n",
+                                parser.get_previous_line(),
+                                parser.get_previous_column(),
+                                parser.get_current_line(),
+                                parser.get_current_column()
+                            ))
+                        }
+                        else {
+                            String::from(format!(
+                            "Parser error at {}, {}\n",
+                            error.line, error.column))
+                        }
+                    }
+                }
+            },
+            Err(_) => String::from("Unable to read file.")
+        }
+    }
+
     pub fn evaluate(&mut self, file: &str) -> Result<String, String> {
         let mut parser = Parser::new(file);
         let file_result = parser.parse_file();
@@ -77,7 +127,7 @@ impl Compiler {
         }
     }
 
-    fn process_file(&mut self, file: FileSyntax) -> Result<String, String> {
+    pub fn process_file(&mut self, file: FileSyntax) -> Result<String, String> {
         let mut program = ProgramSyntax { files: Vec::new() };
 
         match &self.standard_library {
