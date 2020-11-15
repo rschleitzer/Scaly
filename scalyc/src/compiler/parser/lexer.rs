@@ -13,7 +13,7 @@ pub enum Token {
     Attribute(String),
     Literal(Literal),
     Punctuation(String),
-    Linefeed,
+    LineFeed,
     Colon,
     Semicolon,
 }
@@ -21,7 +21,6 @@ pub enum Token {
 pub enum Literal {
     StringLiteral(String),
     Fragment(String),
-    Character(char),
     Integer(String),
     FloatingPoint(String),
     Hex(String),
@@ -89,8 +88,7 @@ impl<'a> Lexer<'a> {
 
                 match c {
                     '\n' => {
-                        self.read_character();
-                        self.token = Token::Linefeed;
+                        self.token = self.scan_line_feed();
                     }
                     ':' => {
                         self.read_character();
@@ -109,17 +107,16 @@ impl<'a> Lexer<'a> {
                         self.read_character();
                         self.token = self.scan_attribute();
                         return;
-                        }
+                    }
                     '+' | '-' | '*' | '/' | '=' | '%' | '&' | '|' | '^' | '~' | '<' | '>' => {
                         let mut operation = String::new();
                         operation.push(c);
                         self.token = self.scan_operator(operation)
                     }
                     '\"' => self.token = { self.scan_string_literal() },
-                    '\'' => self.token = { self.scan_character_literal() },
+                    '\'' => self.token = { self.scan_string_identifier() },
                     '`' => self.token = { self.scan_fragment_literal() },
-                    '{' | '}' | '(' | ')' | '[' | ']' | '.' | ',' | '?' | '!' | '#'
-                    | '$' | '_' => {
+                    '{' | '}' | '(' | ')' | '[' | ']' | '.' | ',' | '?' | '!' | '#' | '$' | '_' => {
                         let mut punctuation_string = String::new();
                         punctuation_string.push(c);
                         self.read_character();
@@ -133,6 +130,23 @@ impl<'a> Lexer<'a> {
 
     pub fn empty(&mut self) {
         self.token = Token::Empty;
+    }
+
+    fn scan_line_feed(&mut self) -> Token {
+        loop {
+            self.read_character();
+            self.skip_whitespace();
+            match self.character {
+                None => {
+                    return Token::LineFeed;
+                }
+
+                Some(c) => match c {
+                    '\n' => continue,
+                    _ => return Token::LineFeed,
+                },
+            }
+        }
     }
 
     fn scan_identifier(&mut self) -> Token {
@@ -254,38 +268,25 @@ impl<'a> Lexer<'a> {
         }
     }
 
-    fn scan_character_literal(&mut self) -> Token {
-        let value: char;
-        self.read_character();
+    fn scan_string_identifier(&mut self) -> Token {
+        let mut value = String::new();
 
-        match self.character {
-            None => return Token::Invalid,
-            Some(c) => match c {
-                '\'' => return Token::Invalid,
-                '\\' => {
-                    self.read_character();
-                    match self.character {
-                        None => return Token::Invalid,
-                        Some(c) => match c {
-                            '\"' | '\\' | '\'' => value = c,
-                            'n' => value = '\n',
-                            'r' => value = '\r',
-                            't' => value = '\t',
-                            '0' => value = '\0',
-                            _ => return Token::Invalid,
-                        },
+        loop {
+            self.read_character();
+
+            match self.character {
+                None => return Token::Invalid,
+                Some(c) => match c {
+                    '\'' => {
+                        self.read_character();
+                        return Token::Identifier(value);
                     }
-                }
-                _ => value = c,
-            },
-        }
-        self.read_character();
-        match self.character {
-            None => Token::Invalid,
-            Some(c) => match c {
-                '\'' => Token::Literal(Literal::Character(value)),
-                _ => Token::Invalid,
-            },
+
+                    _ => {
+                        value.push(c);
+                    }
+                },
+            }
         }
     }
 
@@ -314,7 +315,8 @@ impl<'a> Lexer<'a> {
                                 _ => {
                                     value.push('\\');
                                     value.push(c);
-                                }                            },
+                                }
+                            },
                         }
                     }
 
@@ -631,11 +633,6 @@ impl<'a> Lexer<'a> {
                 self.empty();
                 Some(Literal::StringLiteral(ret))
             }
-            Token::Literal(Literal::Character(character)) => {
-                let ret = *character;
-                self.empty();
-                Some(Literal::Character(ret))
-            }
             Token::Literal(Literal::Integer(name)) => {
                 let ret = String::from(name);
                 self.empty();
@@ -661,7 +658,7 @@ impl<'a> Lexer<'a> {
             _ => (),
         }
         match &self.token {
-            Token::Colon | Token::Linefeed => {
+            Token::Colon | Token::LineFeed => {
                 self.empty();
                 true
             }

@@ -209,6 +209,7 @@
         <content link = Array
 
     <syntax id = Statement                    multiple abstract
+        <content link = Empty
         <content link = Operation
         <content link = Let
         <content link = Var
@@ -218,6 +219,9 @@
         <content link = Break
         <content link = Return
         <content link = Throw
+
+    <syntax id = Empty
+        <content colon
 
     <syntax id = Let
         <content link = let

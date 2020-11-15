@@ -290,6 +290,7 @@ pub enum ModelSyntax {
 }
 
 pub enum StatementSyntax {
+    Empty(EmptySyntax),
     Operation(OperationSyntax),
     Let(LetSyntax),
     Var(VarSyntax),
@@ -299,6 +300,11 @@ pub enum StatementSyntax {
     Break(BreakSyntax),
     Return(ReturnSyntax),
     Throw(ThrowSyntax),
+}
+
+pub struct EmptySyntax {
+    pub start: Position,
+    pub end: Position,
 }
 
 pub struct LetSyntax {
@@ -2054,6 +2060,12 @@ impl<'a> Parser<'a> {
 
     pub fn parse_statement(&mut self) -> Result<Option<StatementSyntax>, ParserError> {
         {
+            let node = self.parse_empty()?;
+            if let Some(node) = node {
+                return Ok(Some(StatementSyntax::Empty(node)));
+            }
+        }
+        {
             let node = self.parse_operation()?;
             if let Some(node) = node {
                 return Ok(Some(StatementSyntax::Operation(node)));
@@ -2108,6 +2120,25 @@ impl<'a> Parser<'a> {
             }
         }
         return Ok(None)
+    }
+
+    pub fn parse_empty(&mut self) -> Result<Option<EmptySyntax>, ParserError> {
+        let start: Position = self.lexer.get_previous_position();
+
+        let success_colon_1 = self.lexer.parse_colon();
+        if !success_colon_1 {
+
+                return Ok(None)
+        }
+
+        let end: Position = self.lexer.get_position();
+
+        let ret = EmptySyntax {
+            start: start,
+            end: end,
+        };
+
+        Ok(Some(ret))
     }
 
     pub fn parse_let(&mut self) -> Result<Option<LetSyntax>, ParserError> {

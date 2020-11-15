@@ -1,0 +1,14 @@
+match arguments.'get iterator'().next()
+    case Some('file name')
+    {
+        mutable compiler Compiler.new()
+        compiler.'load standard library'()
+        'print line'(compiler.compile('file name'))
+    }
+
+    case None
+    {
+        mutable repl Repl.new()
+        repl.run()
+    }
+
