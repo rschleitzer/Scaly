@@ -68,7 +68,7 @@ impl<'a> Lexer<'a> {
     }
 
     pub fn advance(&mut self) {
-        self.skip_whitespace();
+        self.skip_whitespace(false);
         self.previous_line = self.line;
         self.previous_column = self.column;
         match self.character {
@@ -116,10 +116,17 @@ impl<'a> Lexer<'a> {
                     '\"' => self.token = { self.scan_string_literal() },
                     '\'' => self.token = { self.scan_string_identifier() },
                     '`' => self.token = { self.scan_fragment_literal() },
-                    '{' | '}' | '(' | ')' | '[' | ']' | '.' | ',' | '?' | '!' | '#' | '$' | '_' => {
+                    '}' | ')' | ']' | '.' | '?' => {
                         let mut punctuation_string = String::new();
                         punctuation_string.push(c);
                         self.read_character();
+                        self.token = Token::Punctuation(punctuation_string);
+                    }
+                    '{' | '(' | '[' | ',' => {
+                        let mut punctuation_string = String::new();
+                        punctuation_string.push(c);
+                        self.read_character();
+                        self.skip_whitespace(true);
                         self.token = Token::Punctuation(punctuation_string);
                     }
                     _ => self.token = Token::Invalid,
@@ -135,7 +142,7 @@ impl<'a> Lexer<'a> {
     fn scan_line_feed(&mut self) -> Token {
         loop {
             self.read_character();
-            self.skip_whitespace();
+            self.skip_whitespace(false);
             match self.character {
                 None => {
                     return Token::LineFeed;
@@ -434,22 +441,29 @@ impl<'a> Lexer<'a> {
         }
     }
 
-    fn skip_whitespace(&mut self) {
+    fn skip_whitespace(&mut self, line_feed: bool) {
         loop {
             match self.character {
                 None => return,
                 Some(c) => match c {
                     ' ' => {
                         self.read_character();
-                        continue;
+                        continue
                     }
                     '\t' => {
                         self.read_character();
-                        continue;
+                        continue
                     }
                     '\r' => {
                         self.read_character();
-                        continue;
+                        continue
+                    }
+                    '\n' => if line_feed {
+                        self.read_character();
+                        continue
+                    }
+                    else {
+                        return
                     }
                     '/' => {
                         self.read_character();
@@ -470,7 +484,7 @@ impl<'a> Lexer<'a> {
                     }
 
                     _ => {
-                        return;
+                        return
                     }
                 },
             }
