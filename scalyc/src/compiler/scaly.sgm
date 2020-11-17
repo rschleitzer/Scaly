@@ -252,6 +252,7 @@
     <syntax id = Postfix                      multiple abstract
         <content link = MemberAccess
         <content link = Catcher
+        <content link = Is
 
     <syntax id = MemberAccess
         <content link = dot
@@ -269,6 +270,10 @@
     <syntax id = Drop
         <content link = drop
         <content link = Operation                               property = handler
+
+    <syntax id = Is
+        <content link = is
+        <content link = Operand               multiple          property = condition
 
     <syntax id = Continue
         <content link = continue
@@ -411,6 +416,7 @@
     <keyword id = fn
     <keyword id = for
     <keyword id = if
+    <keyword id = is
     <keyword id = implement
     <keyword id = in
     <keyword id = instruction

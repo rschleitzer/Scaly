@@ -350,6 +350,7 @@ pub struct OperandSyntax {
 pub enum PostfixSyntax {
     MemberAccess(MemberAccessSyntax),
     Catcher(CatcherSyntax),
+    Is(IsSyntax),
 }
 
 pub struct MemberAccessSyntax {
@@ -376,6 +377,12 @@ pub struct DropSyntax {
     pub start: Position,
     pub end: Position,
     pub handler: OperationSyntax,
+}
+
+pub struct IsSyntax {
+    pub start: Position,
+    pub end: Position,
+    pub condition: Vec<OperandSyntax>,
 }
 
 pub struct ContinueSyntax {
@@ -575,6 +582,7 @@ impl<'a> Parser<'a> {
         keywords.insert(String::from("fn"));
         keywords.insert(String::from("for"));
         keywords.insert(String::from("if"));
+        keywords.insert(String::from("is"));
         keywords.insert(String::from("implement"));
         keywords.insert(String::from("in"));
         keywords.insert(String::from("instruction"));
@@ -2374,6 +2382,12 @@ impl<'a> Parser<'a> {
                 return Ok(Some(PostfixSyntax::Catcher(node)));
             }
         }
+        {
+            let node = self.parse_is()?;
+            if let Some(node) = node {
+                return Ok(Some(PostfixSyntax::Is(node)));
+            }
+        }
         return Ok(None)
     }
 
@@ -2511,6 +2525,35 @@ impl<'a> Parser<'a> {
             start: start,
             end: end,
             handler: handler.unwrap(),
+        };
+
+        Ok(Some(ret))
+    }
+
+    pub fn parse_is(&mut self) -> Result<Option<IsSyntax>, ParserError> {
+        let start: Position = self.lexer.get_previous_position();
+
+        let success_is_1 = self.lexer.parse_keyword("is".to_string());
+        if !success_is_1 {
+
+                return Ok(None)
+        }
+
+        let condition = self.parse_operand_list()?;
+        if let None = condition {
+            return Err(ParserError {
+                file_name: "".to_string(),
+                line: self.lexer.line,
+                column: self.lexer.column,
+            });
+        }
+
+        let end: Position = self.lexer.get_position();
+
+        let ret = IsSyntax {
+            start: start,
+            end: end,
+            condition: condition.unwrap(),
         };
 
         Ok(Some(ret))
