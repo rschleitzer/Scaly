@@ -348,6 +348,7 @@
 
     <syntax id = Else
         <content link = else
+        <content colon                                 optional
         <content link = Operation                               property = alternative
 
     <syntax id = Match

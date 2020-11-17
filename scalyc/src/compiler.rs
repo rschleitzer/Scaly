@@ -40,13 +40,13 @@ impl Compiler {
         }
     }
 
-    pub fn compile(&mut self, file_name: &String) -> String
+    pub fn compile(&mut self, file_name: String) -> String
     {
         let file_contents_result = fs::read_to_string(file_name.as_str());
         match file_contents_result {
             Ok(file_contents) => {
                 let mut parser = Parser::new(file_contents.as_str());
-                let file_result = parser.parse_file();
+                let file_result = parser.parse_file(file_name);
                 match file_result {
                     Ok(file_option) => match file_option {
                         None => {        
@@ -92,7 +92,7 @@ impl Compiler {
 
     pub fn evaluate(&mut self, file: &str) -> Result<String, String> {
         let mut parser = Parser::new(file);
-        let file_result = parser.parse_file();
+        let file_result = parser.parse_file(String::from("<console>"));
         match file_result {
             Ok(file_option) => match file_option {
                 None => {
@@ -133,7 +133,7 @@ impl Compiler {
         match &self.standard_library {
             Some(standard_library) => {
                 let mut parser = Parser::new(standard_library.as_ref());
-                let result = parser.parse_file();
+                let result = parser.parse_file(String::from("scaly/scaly.scaly"));
                 match result {
                     Ok(file_syntax_option) => 
                         match file_syntax_option {

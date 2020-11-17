@@ -604,7 +604,7 @@ impl<'a> Parser<'a> {
         }
     }
 
-    pub fn parse_file(&mut self) -> Result<Option<FileSyntax>, ParserError> {
+    pub fn parse_file(&mut self, file_name: String) -> Result<Option<FileSyntax>, ParserError> {
 
         let declarations = self.parse_declaration_list()?;
 
@@ -623,7 +623,7 @@ impl<'a> Parser<'a> {
         }
 
         let ret = FileSyntax {
-            file_name: "".to_string(),
+            file_name: file_name,
             declarations: declarations,
             statements: statements,
         };

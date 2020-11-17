@@ -10,7 +10,7 @@ fn main() {
     if args.len() > 1 {
         let mut compiler = Compiler::new();
         compiler.load_standard_library();
-        println!("{}", compiler.compile(&args[1]));
+        println!("{}", compiler.compile(args[1].clone()));
     } else {
         let mut repl = Repl::new();
         repl.run();
