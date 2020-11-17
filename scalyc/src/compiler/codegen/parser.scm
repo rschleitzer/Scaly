@@ -47,7 +47,7 @@ impl<'a> Parser<'a> {
     }
 "       )"")
 "
-    pub fn parse_"(downcase-string (id syntax))"(&""mut self) -> Result<""Option<"(id syntax)"Syntax>, ParserError> {
+    pub fn parse_"(downcase-string (id syntax))"(&""mut self"(if (top? syntax) ", file_name: String" "")") -> Result<""Option<"(id syntax)"Syntax>, ParserError> {
 "
         (if (abstract? syntax)
             ($
@@ -183,7 +183,7 @@ impl<'a> Parser<'a> {
         let ret = "(id syntax)"Syntax {
 "
                 (if (top? syntax) 
-"            file_name: \"\".to_string()"
+"            file_name: file_name"
 "            start: start,
             end: end"
                 )

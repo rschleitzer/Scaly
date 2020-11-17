@@ -3043,6 +3043,11 @@ impl<'a> Parser<'a> {
                 return Ok(None)
         }
 
+        let success_colon_2 = self.lexer.parse_colon();
+        if !success_colon_2 {
+            ()
+        }
+
         let alternative = self.parse_operation()?;
         if let None = alternative {
             return Err(ParserError {
