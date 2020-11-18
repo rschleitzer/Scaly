@@ -52,7 +52,7 @@ impl Compiler {
                         None => {        
                             return String::from("Unable to parse file.\n");
                         }
-                        Some(file) => {
+                        Some(file_syntax) => {
                             if !parser.is_at_end() {
                                 return String::from(format!(
                                     "Unexpected characters between {}, {} and {}, {} after the file.\n",
@@ -62,9 +62,21 @@ impl Compiler {
                                     parser.get_current_column()
                                 ));
                             }
-                            match self.compile_file(file) {
-                                Ok(result) => result,
-                                Err(error) => error,
+                            {
+                                if let Some(statements) = &file_syntax.statements
+                                {
+                                    match self.compile_program(file_syntax) {
+                                        Ok(result) => result,
+                                        Err(error) => error,
+                                    }
+                                }
+                                else
+                                {
+                                    match self.compile_library(file_syntax) {
+                                        Ok(result) => result,
+                                        Err(error) => error,
+                                    }
+                                }
                             }
                         }
                     },
@@ -90,17 +102,52 @@ impl Compiler {
         }
     }
 
-    pub fn compile_file(&mut self, file: FileSyntax) -> Result<String, String> {
+    pub fn compile_program(&mut self, file_syntax: FileSyntax) -> Result<String, String> {
+        let main_contents_result = fs::read_to_string("scaly/main.scaly");
+        match main_contents_result {
+            Ok(main_contents) => {
+                let mut parser = Parser::new(main_contents.as_ref());
+                let mut result = parser.parse_file(String::from("scaly/main.scaly"));
+                match result {
+                    Ok(main_file_syntax_option) => 
+                        match main_file_syntax_option {
+                            Some(main_file_syntax) => {
+
+                            },
+                            None => return Err(String::from(format!(
+                                "Empty main file stub.\n",
+                            )))
+                        }
+                        Err(_) => return Err(String::from(format!(
+                            "Failed to parse main file stub. Unexpected characters between {}, {} and {}, {} after the statement.\n",
+                            parser.get_previous_line(),
+                            parser.get_previous_column(),
+                            parser.get_current_line(),
+                            parser.get_current_column()
+                        ))),
+                }
+            }
+            Err(_) => (),
+        };
         let mut program = ProgramSyntax { files: Vec::new() };
         self.add_standard_library(&mut program);
-        program.files.push(file);
+        program.files.push(file_syntax);
         let mut model = Model::new();
         model.build(program);
         Ok(String::from("Processed."))
     }
 
-    pub fn evaluate_file(&mut self, file: &str) -> Result<String, String> {
-        let mut parser = Parser::new(file);
+    pub fn compile_library(&mut self, file_syntax: FileSyntax) -> Result<String, String> {
+        let mut program = ProgramSyntax { files: Vec::new() };
+        self.add_standard_library(&mut program);
+        program.files.push(file_syntax);
+        let mut model = Model::new();
+        model.build(program);
+        Ok(String::from("Processed."))
+    }
+
+    pub fn evaluate_deck(&mut self, deck: &str) -> Result<String, String> {
+        let mut parser = Parser::new(deck);
         let file_result = parser.parse_file(String::from("<console>"));
         match file_result {
             Ok(file_option) => match file_option {
@@ -155,7 +202,7 @@ impl Compiler {
                         None => ()
                     }
                 Err(_) => return Some(String::from(format!(
-                    "Failed to parsed standard library. Unexpected characters between {}, {} and {}, {} after the statement.\n",
+                    "Failed to parse standard library. Unexpected characters between {}, {} and {}, {} after the statement.\n",
                     parser.get_previous_line(),
                     parser.get_previous_column(),
                     parser.get_current_line(),

@@ -215,6 +215,7 @@ impl<'a> Lexer<'a> {
                 Some(c) => match c {
                     '+' | '-' | '*' | '/' | '=' | '%' | '&' | '|' | '^' | '~' | '<' | '>' => {
                         operation.push(c);
+                        self.read_character();
                     }
 
                     _ => return Token::Identifier(operation),
@@ -610,7 +611,7 @@ impl<'a> Lexer<'a> {
             _ => (),
         }
         match &self.token {
-            Token::Identifier(name) => {
+            Token::Attribute(name) => {
                 let ret = String::from(name);
                 self.empty();
                 return Some(ret);

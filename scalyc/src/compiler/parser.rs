@@ -1552,9 +1552,24 @@ impl<'a> Parser<'a> {
 
         let result = self.parse_returns()?;
 
+        let success_colon_6 = self.lexer.parse_colon();
+        if !success_colon_6 {
+            ()
+        }
+
         let error = self.parse_throws()?;
 
+        let success_colon_8 = self.lexer.parse_colon();
+        if !success_colon_8 {
+            ()
+        }
+
         let exception = self.parse_attribute_list()?;
+
+        let success_colon_10 = self.lexer.parse_colon();
+        if !success_colon_10 {
+            ()
+        }
 
         let implementation = self.parse_implementation()?;
         if let None = implementation {

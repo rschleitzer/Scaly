@@ -138,8 +138,11 @@
         <content link = TypeSpec                       optional property = operator
         <content link = Attribute             multiple optional property = attributes
         <content link = Returns                        optional property = result
+        <content colon                                 optional
         <content link = Throws                         optional property = error
+        <content colon                                 optional
         <content link = Attribute             multiple optional property = exception
+        <content colon                                 optional
         <content link = Implementation                          property = implementation
 
     <syntax id = Returns

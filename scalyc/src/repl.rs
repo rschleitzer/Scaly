@@ -33,7 +33,7 @@ impl Repl {
                 }
                 loop {
                     deck.push_str(card.as_str());
-                    let result = self.compiler.evaluate_file(&mut deck);
+                    let result = self.compiler.evaluate_deck(&mut deck);
                     match result {
                         Ok(output) => {
                             if output.len() > 0 {
