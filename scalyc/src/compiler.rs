@@ -62,7 +62,7 @@ impl Compiler {
                                     parser.get_current_column()
                                 ));
                             }
-                            match self.process_file(file) {
+                            match self.compile_file(file) {
                                 Ok(result) => result,
                                 Err(error) => error,
                             }
@@ -90,7 +90,16 @@ impl Compiler {
         }
     }
 
-    pub fn evaluate(&mut self, file: &str) -> Result<String, String> {
+    pub fn compile_file(&mut self, file: FileSyntax) -> Result<String, String> {
+        let mut program = ProgramSyntax { files: Vec::new() };
+        self.add_standard_library(&mut program);
+        program.files.push(file);
+        let mut model = Model::new();
+        model.build(program);
+        Ok(String::from("Processed."))
+    }
+
+    pub fn evaluate_file(&mut self, file: &str) -> Result<String, String> {
         let mut parser = Parser::new(file);
         let file_result = parser.parse_file(String::from("<console>"));
         match file_result {
@@ -112,7 +121,14 @@ impl Compiler {
                             parser.get_current_column()
                         )));
                     }
-                    self.process_file(file)
+                    {
+                        let mut program = ProgramSyntax { files: Vec::new() };
+                        self.add_standard_library(&mut program);
+                        program.files.push(file);
+                        let mut model = Model::new();
+                        model.build(program);
+                        Ok(String::from("Processed."))
+                    }
                 }
             },
             Err(error) => {
@@ -127,37 +143,27 @@ impl Compiler {
         }
     }
 
-    pub fn process_file(&mut self, file: FileSyntax) -> Result<String, String> {
-        let mut program = ProgramSyntax { files: Vec::new() };
-
-        match &self.standard_library {
-            Some(standard_library) => {
-                let mut parser = Parser::new(standard_library.as_ref());
-                let result = parser.parse_file(String::from("scaly/scaly.scaly"));
-                match result {
-                    Ok(file_syntax_option) => 
-                        match file_syntax_option {
-                            Some(file_syntax) => program.files.push(file_syntax),
-                            None => ()
-                        }
-                    Err(_) => return Err(String::from(format!(
-                        "Failed to parsed standard library. Unexpected characters between {}, {} and {}, {} after the statement.\n",
-                        parser.get_previous_line(),
-                        parser.get_previous_column(),
-                        parser.get_current_line(),
-                        parser.get_current_column()
-                    ))),
-                }
-            },
-            None => ()
+    fn add_standard_library(&mut self, program: &mut ProgramSyntax) -> Option<String>
+    {
+        if let Some(standard_library) = &self.standard_library {
+            let mut parser = Parser::new(standard_library.as_ref());
+            let result = parser.parse_file(String::from("scaly/scaly.scaly"));
+            match result {
+                Ok(file_syntax_option) => 
+                    match file_syntax_option {
+                        Some(file_syntax) => program.files.push(file_syntax),
+                        None => ()
+                    }
+                Err(_) => return Some(String::from(format!(
+                    "Failed to parsed standard library. Unexpected characters between {}, {} and {}, {} after the statement.\n",
+                    parser.get_previous_line(),
+                    parser.get_previous_column(),
+                    parser.get_current_line(),
+                    parser.get_current_column()
+                ))),
+            }
         }
-
-        program.files.push(file);
-
-        let mut model = Model::new();
-        model.build(program);
-
-        Ok(String::from("Processed."))
+        None
     }
 
     fn _compute(&mut self, _operation: &OperationSyntax) -> String {
