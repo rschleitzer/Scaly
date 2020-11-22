@@ -63,7 +63,7 @@ impl Compiler {
                                 ));
                             }
                             {
-                                if let Some(statements) = &file_syntax.statements
+                                if let Some(_) = &file_syntax.statements
                                 {
                                     match self.compile_program(file_syntax) {
                                         Ok(result) => result,
@@ -107,18 +107,23 @@ impl Compiler {
         match main_contents_result {
             Ok(main_contents) => {
                 let mut parser = Parser::new(main_contents.as_ref());
-                let mut result = parser.parse_file(String::from("scaly/main.scaly"));
+                let result = parser.parse_file(String::from("scaly/main.scaly"));
                 match result {
                     Ok(main_file_syntax_option) => 
                         match main_file_syntax_option {
                             Some(main_file_syntax) => {
+                                let mut program = ProgramSyntax { files: Vec::new() };
+                                self.add_standard_library(&mut program);
+                                let mut model = Model::new();
+                                model.build_program(&program, &main_file_syntax, &file_syntax);
+                                Ok(String::from("Processed."))
 
                             },
                             None => return Err(String::from(format!(
                                 "Empty main file stub.\n",
                             )))
                         }
-                        Err(_) => return Err(String::from(format!(
+                        Err(_) => Err(String::from(format!(
                             "Failed to parse main file stub. Unexpected characters between {}, {} and {}, {} after the statement.\n",
                             parser.get_previous_line(),
                             parser.get_previous_column(),
@@ -127,14 +132,8 @@ impl Compiler {
                         ))),
                 }
             }
-            Err(_) => (),
-        };
-        let mut program = ProgramSyntax { files: Vec::new() };
-        self.add_standard_library(&mut program);
-        program.files.push(file_syntax);
-        let mut model = Model::new();
-        model.build(program);
-        Ok(String::from("Processed."))
+            Err(_) => Err(String::from("Failed to read main file stub.")),
+        }
     }
 
     pub fn compile_library(&mut self, file_syntax: FileSyntax) -> Result<String, String> {
@@ -142,7 +141,7 @@ impl Compiler {
         self.add_standard_library(&mut program);
         program.files.push(file_syntax);
         let mut model = Model::new();
-        model.build(program);
+        model.build(&program);
         Ok(String::from("Processed."))
     }
 
@@ -173,7 +172,7 @@ impl Compiler {
                         self.add_standard_library(&mut program);
                         program.files.push(file);
                         let mut model = Model::new();
-                        model.build(program);
+                        model.build(&program);
                         Ok(String::from("Processed."))
                     }
                 }
