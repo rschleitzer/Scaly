@@ -13,19 +13,22 @@
         <content link = Public
         <content link = Definition
         <content link = Function
+        <content link = Procedure
+        <content link = Operator
         <content link = Use
         <content link = Implement
         <content link = Trait
         <content link = Macro
 
     <syntax id = Public
-        <content link = pub
+        <content link = public
         <content link = Export                                  property = export
 
     <syntax id = Export                                abstract
         <content link = Definition
         <content link = Function
-        <content link = Use
+        <content link = Procedure
+        <content link = Operator
         <content link = Implement
         <content link = Trait
         <content link = Macro
@@ -85,7 +88,7 @@
         <content literal                                        property = literal
 
     <syntax id = Delegate
-        <content link = fn
+        <content link = delegate
         <content link = TypeSpec                                property = operator
         <content link = Attribute             multiple optional property = attributes
         <content link = Returns                        optional property = result
@@ -132,9 +135,21 @@
     <syntax id = Optional
         <content link = question
 
-    <syntax id = Function                     multiple
-        <content link = fn
-        <content link = TypeSpec                                property = operand
+    <syntax id = Function
+        <content link = function
+        <content identifier                                     property = name
+        <content link = Routine                                 property = routine
+
+    <syntax id = Procedure
+        <content link = procedure
+        <content identifier                                     property = name
+        <content link = Routine                                 property = routine
+
+    <syntax id = Operator
+        <content link = operator
+        <content link = Routine                                 property = routine
+
+    <syntax id = Routine
         <content link = TypeSpec                       optional property = operator
         <content link = Attribute             multiple optional property = attributes
         <content link = Returns                        optional property = result
@@ -179,7 +194,7 @@
         <content link = Name                                    property = name
         <content link = Attribute             multiple optional property = attributes
         <content link = left_curly
-        <content link = Function              multiple optional property = functions
+        <content link = Method                multiple optional property = functions
         <content link = right_curly
 
     <syntax id = Trait
@@ -188,8 +203,13 @@
         <content link = Extends                                 property = extension
         <content link = Attribute             multiple optional property = attributes
         <content link = left_curly
-        <content link = Function              multiple optional property = functions
+        <content link = Method                multiple optional property = functions
         <content link = right_curly
+
+    <syntax id = Method                       multiple abstract
+        <content link = Function
+        <content link = Procedure
+        <content link = Operator
 
     <syntax id = Extends
         <content link = extends
@@ -412,12 +432,13 @@
     <keyword id = continue
     <keyword id = def
     <keyword id = default
+    <keyword id = delegate
     <keyword id = drop
     <keyword id = else
     <keyword id = extends
     <keyword id = extern
-    <keyword id = fn
     <keyword id = for
+    <keyword id = function
     <keyword id = if
     <keyword id = is
     <keyword id = implement
@@ -431,7 +452,9 @@
     <keyword id = macro
     <keyword id = match
     <keyword id = mutable
-    <keyword id = pub
+    <keyword id = operator
+    <keyword id = procedure
+    <keyword id = public
     <keyword id = return
     <keyword id = returns
     <keyword id = repeat

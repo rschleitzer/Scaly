@@ -18,6 +18,8 @@ pub enum DeclarationSyntax {
     Public(PublicSyntax),
     Definition(DefinitionSyntax),
     Function(FunctionSyntax),
+    Procedure(ProcedureSyntax),
+    Operator(OperatorSyntax),
     Use(UseSyntax),
     Implement(ImplementSyntax),
     Trait(TraitSyntax),
@@ -33,7 +35,8 @@ pub struct PublicSyntax {
 pub enum ExportSyntax {
     Definition(DefinitionSyntax),
     Function(FunctionSyntax),
-    Use(UseSyntax),
+    Procedure(ProcedureSyntax),
+    Operator(OperatorSyntax),
     Implement(ImplementSyntax),
     Trait(TraitSyntax),
     Macro(MacroSyntax),
@@ -194,7 +197,26 @@ pub struct OptionalSyntax {
 pub struct FunctionSyntax {
     pub start: Position,
     pub end: Position,
-    pub operand: TypeSpecSyntax,
+    pub name: String,
+    pub routine: RoutineSyntax,
+}
+
+pub struct ProcedureSyntax {
+    pub start: Position,
+    pub end: Position,
+    pub name: String,
+    pub routine: RoutineSyntax,
+}
+
+pub struct OperatorSyntax {
+    pub start: Position,
+    pub end: Position,
+    pub routine: RoutineSyntax,
+}
+
+pub struct RoutineSyntax {
+    pub start: Position,
+    pub end: Position,
     pub operator: Option<TypeSpecSyntax>,
     pub attributes: Option<Vec<AttributeSyntax>>,
     pub result: Option<ReturnsSyntax>,
@@ -250,7 +272,7 @@ pub struct ImplementSyntax {
     pub end: Position,
     pub name: NameSyntax,
     pub attributes: Option<Vec<AttributeSyntax>>,
-    pub functions: Option<Vec<FunctionSyntax>>,
+    pub functions: Option<Vec<MethodSyntax>>,
 }
 
 pub struct TraitSyntax {
@@ -259,7 +281,13 @@ pub struct TraitSyntax {
     pub name: NameSyntax,
     pub extension: ExtendsSyntax,
     pub attributes: Option<Vec<AttributeSyntax>>,
-    pub functions: Option<Vec<FunctionSyntax>>,
+    pub functions: Option<Vec<MethodSyntax>>,
+}
+
+pub enum MethodSyntax {
+    Function(FunctionSyntax),
+    Procedure(ProcedureSyntax),
+    Operator(OperatorSyntax),
 }
 
 pub struct ExtendsSyntax {
@@ -575,12 +603,13 @@ impl<'a> Parser<'a> {
         keywords.insert(String::from("continue"));
         keywords.insert(String::from("def"));
         keywords.insert(String::from("default"));
+        keywords.insert(String::from("delegate"));
         keywords.insert(String::from("drop"));
         keywords.insert(String::from("else"));
         keywords.insert(String::from("extends"));
         keywords.insert(String::from("extern"));
-        keywords.insert(String::from("fn"));
         keywords.insert(String::from("for"));
+        keywords.insert(String::from("function"));
         keywords.insert(String::from("if"));
         keywords.insert(String::from("is"));
         keywords.insert(String::from("implement"));
@@ -594,7 +623,9 @@ impl<'a> Parser<'a> {
         keywords.insert(String::from("macro"));
         keywords.insert(String::from("match"));
         keywords.insert(String::from("mutable"));
-        keywords.insert(String::from("pub"));
+        keywords.insert(String::from("operator"));
+        keywords.insert(String::from("procedure"));
+        keywords.insert(String::from("public"));
         keywords.insert(String::from("return"));
         keywords.insert(String::from("returns"));
         keywords.insert(String::from("repeat"));
@@ -679,6 +710,18 @@ impl<'a> Parser<'a> {
             }
         }
         {
+            let node = self.parse_procedure()?;
+            if let Some(node) = node {
+                return Ok(Some(DeclarationSyntax::Procedure(node)));
+            }
+        }
+        {
+            let node = self.parse_operator()?;
+            if let Some(node) = node {
+                return Ok(Some(DeclarationSyntax::Operator(node)));
+            }
+        }
+        {
             let node = self.parse_use()?;
             if let Some(node) = node {
                 return Ok(Some(DeclarationSyntax::Use(node)));
@@ -708,8 +751,8 @@ impl<'a> Parser<'a> {
     pub fn parse_public(&mut self) -> Result<Option<PublicSyntax>, ParserError> {
         let start: Position = self.lexer.get_previous_position();
 
-        let success_pub_1 = self.lexer.parse_keyword("pub".to_string());
-        if !success_pub_1 {
+        let success_public_1 = self.lexer.parse_keyword("public".to_string());
+        if !success_public_1 {
 
                 return Ok(None)
         }
@@ -748,9 +791,15 @@ impl<'a> Parser<'a> {
             }
         }
         {
-            let node = self.parse_use()?;
+            let node = self.parse_procedure()?;
             if let Some(node) = node {
-                return Ok(Some(ExportSyntax::Use(node)));
+                return Ok(Some(ExportSyntax::Procedure(node)));
+            }
+        }
+        {
+            let node = self.parse_operator()?;
+            if let Some(node) = node {
+                return Ok(Some(ExportSyntax::Operator(node)));
             }
         }
         {
@@ -1184,8 +1233,8 @@ impl<'a> Parser<'a> {
     pub fn parse_delegate(&mut self) -> Result<Option<DelegateSyntax>, ParserError> {
         let start: Position = self.lexer.get_previous_position();
 
-        let success_fn_1 = self.lexer.parse_keyword("fn".to_string());
-        if !success_fn_1 {
+        let success_delegate_1 = self.lexer.parse_keyword("delegate".to_string());
+        if !success_delegate_1 {
 
                 return Ok(None)
         }
@@ -1508,37 +1557,39 @@ impl<'a> Parser<'a> {
         Ok(Some(ret))
     }
 
-    pub fn parse_function_list(&mut self) -> Result<Option<Vec<FunctionSyntax>>, ParserError> {
-        let mut array: Option<Vec<FunctionSyntax>> = Option::None;
-        loop {
-            let node = self.parse_function()?;
-            if let Some(node) = node {
-                if let None = array {
-                    array = Some(Vec::new())
-                };
-                match &mut array {
-                    Some(a) => a.push(node),
-                    None => (),
-                }
-            } else {
-                break;
-            }
-        }
-
-        Ok(array)
-    }
-
     pub fn parse_function(&mut self) -> Result<Option<FunctionSyntax>, ParserError> {
         let start: Position = self.lexer.get_previous_position();
 
-        let success_fn_1 = self.lexer.parse_keyword("fn".to_string());
-        if !success_fn_1 {
+        let success_function_1 = self.lexer.parse_keyword("function".to_string());
+        if !success_function_1 {
 
                 return Ok(None)
         }
 
-        let operand = self.parse_typespec()?;
-        if let None = operand {
+        let name = self.lexer.parse_identifier(&self.keywords);
+        match &name {
+            Some(name) =>
+                if !self.is_identifier(name) {
+            return Result::Err(
+                ParserError {
+                    file_name: "".to_string(),
+                    line: self.lexer.line,
+                    column: self.lexer.column,
+                },
+            )
+           },
+           _ =>
+            return Result::Err(
+                ParserError {
+                    file_name: "".to_string(),
+                    line: self.lexer.line,
+                    column: self.lexer.column,
+                },
+            ),
+        }
+
+        let routine = self.parse_routine()?;
+        if let None = routine {
             return Err(ParserError {
                 file_name: "".to_string(),
                 line: self.lexer.line,
@@ -1546,28 +1597,124 @@ impl<'a> Parser<'a> {
             });
         }
 
+        let end: Position = self.lexer.get_position();
+
+        let ret = FunctionSyntax {
+            start: start,
+            end: end,
+            name: name.unwrap(),
+            routine: routine.unwrap(),
+        };
+
+        Ok(Some(ret))
+    }
+
+    pub fn parse_procedure(&mut self) -> Result<Option<ProcedureSyntax>, ParserError> {
+        let start: Position = self.lexer.get_previous_position();
+
+        let success_procedure_1 = self.lexer.parse_keyword("procedure".to_string());
+        if !success_procedure_1 {
+
+                return Ok(None)
+        }
+
+        let name = self.lexer.parse_identifier(&self.keywords);
+        match &name {
+            Some(name) =>
+                if !self.is_identifier(name) {
+            return Result::Err(
+                ParserError {
+                    file_name: "".to_string(),
+                    line: self.lexer.line,
+                    column: self.lexer.column,
+                },
+            )
+           },
+           _ =>
+            return Result::Err(
+                ParserError {
+                    file_name: "".to_string(),
+                    line: self.lexer.line,
+                    column: self.lexer.column,
+                },
+            ),
+        }
+
+        let routine = self.parse_routine()?;
+        if let None = routine {
+            return Err(ParserError {
+                file_name: "".to_string(),
+                line: self.lexer.line,
+                column: self.lexer.column,
+            });
+        }
+
+        let end: Position = self.lexer.get_position();
+
+        let ret = ProcedureSyntax {
+            start: start,
+            end: end,
+            name: name.unwrap(),
+            routine: routine.unwrap(),
+        };
+
+        Ok(Some(ret))
+    }
+
+    pub fn parse_operator(&mut self) -> Result<Option<OperatorSyntax>, ParserError> {
+        let start: Position = self.lexer.get_previous_position();
+
+        let success_operator_1 = self.lexer.parse_keyword("operator".to_string());
+        if !success_operator_1 {
+
+                return Ok(None)
+        }
+
+        let routine = self.parse_routine()?;
+        if let None = routine {
+            return Err(ParserError {
+                file_name: "".to_string(),
+                line: self.lexer.line,
+                column: self.lexer.column,
+            });
+        }
+
+        let end: Position = self.lexer.get_position();
+
+        let ret = OperatorSyntax {
+            start: start,
+            end: end,
+            routine: routine.unwrap(),
+        };
+
+        Ok(Some(ret))
+    }
+
+    pub fn parse_routine(&mut self) -> Result<Option<RoutineSyntax>, ParserError> {
+        let start: Position = self.lexer.get_previous_position();
+
         let operator = self.parse_typespec()?;
 
         let attributes = self.parse_attribute_list()?;
 
         let result = self.parse_returns()?;
 
-        let success_colon_6 = self.lexer.parse_colon();
-        if !success_colon_6 {
+        let success_colon_4 = self.lexer.parse_colon();
+        if !success_colon_4 {
             ()
         }
 
         let error = self.parse_throws()?;
 
-        let success_colon_8 = self.lexer.parse_colon();
-        if !success_colon_8 {
+        let success_colon_6 = self.lexer.parse_colon();
+        if !success_colon_6 {
             ()
         }
 
         let exception = self.parse_attribute_list()?;
 
-        let success_colon_10 = self.lexer.parse_colon();
-        if !success_colon_10 {
+        let success_colon_8 = self.lexer.parse_colon();
+        if !success_colon_8 {
             ()
         }
 
@@ -1582,10 +1729,9 @@ impl<'a> Parser<'a> {
 
         let end: Position = self.lexer.get_position();
 
-        let ret = FunctionSyntax {
+        let ret = RoutineSyntax {
             start: start,
             end: end,
-            operand: operand.unwrap(),
             operator: operator,
             attributes: attributes,
             result: result,
@@ -1806,7 +1952,7 @@ impl<'a> Parser<'a> {
                 },
             )        }
 
-        let functions = self.parse_function_list()?;
+        let functions = self.parse_method_list()?;
 
         let success_right_curly_6 = self.lexer.parse_punctuation("}".to_string());
         if !success_right_curly_6 {
@@ -1872,7 +2018,7 @@ impl<'a> Parser<'a> {
                 },
             )        }
 
-        let functions = self.parse_function_list()?;
+        let functions = self.parse_method_list()?;
 
         let success_right_curly_7 = self.lexer.parse_punctuation("}".to_string());
         if !success_right_curly_7 {
@@ -1897,6 +2043,48 @@ impl<'a> Parser<'a> {
         };
 
         Ok(Some(ret))
+    }
+
+    pub fn parse_method_list(&mut self) -> Result<Option<Vec<MethodSyntax>>, ParserError> {
+        let mut array: Option<Vec<MethodSyntax>> = Option::None;
+        loop {
+            let node = self.parse_method()?;
+            if let Some(node) = node {
+                if let None = array {
+                    array = Some(Vec::new())
+                };
+                match &mut array {
+                    Some(a) => a.push(node),
+                    None => (),
+                }
+            } else {
+                break;
+            }
+        }
+
+        Ok(array)
+    }
+
+    pub fn parse_method(&mut self) -> Result<Option<MethodSyntax>, ParserError> {
+        {
+            let node = self.parse_function()?;
+            if let Some(node) = node {
+                return Ok(Some(MethodSyntax::Function(node)));
+            }
+        }
+        {
+            let node = self.parse_procedure()?;
+            if let Some(node) = node {
+                return Ok(Some(MethodSyntax::Procedure(node)));
+            }
+        }
+        {
+            let node = self.parse_operator()?;
+            if let Some(node) = node {
+                return Ok(Some(MethodSyntax::Operator(node)));
+            }
+        }
+        return Ok(None)
     }
 
     pub fn parse_extends(&mut self) -> Result<Option<ExtendsSyntax>, ParserError> {

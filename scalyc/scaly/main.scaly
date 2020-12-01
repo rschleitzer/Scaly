@@ -1,4 +1,4 @@
-fn main(argc: int, argv: pointer[pointer[byte]]) returns int
+public function main(argc: int, argv: pointer[pointer[byte]]) returns int
 {
     let arguments (1 to argc) map { string from (argv [it - 1]) }
 }

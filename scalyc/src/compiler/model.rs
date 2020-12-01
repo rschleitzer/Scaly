@@ -1,3 +1,7 @@
+use crate::compiler::parser::DeclarationSyntax::*;
+use crate::compiler::parser::FunctionSyntax;
+use crate::compiler::parser::ProcedureSyntax;
+use crate::compiler::parser::OperatorSyntax;
 use crate::compiler::parser::ProgramSyntax;
 use crate::compiler::parser::DeclarationSyntax;
 use crate::compiler::parser::StatementSyntax;
@@ -5,13 +9,15 @@ use crate::compiler::parser::FileSyntax;
 use std::collections::HashMap;
 
 pub struct Model {
-    pub modules: Vec<Item>,
+    pub modules: HashMap<String, Module>,
+    pub functions: HashMap<String, Function>,
 }
 
 impl Model {
     pub fn new() -> Model {
         Model {
-            modules: Vec::new(),
+            modules: HashMap::new(),
+            functions: HashMap::new(),
         }
     }
 
@@ -32,7 +38,7 @@ impl Model {
                 self.process_statement(&statement);
             }
         }
-}
+    }
 
     pub fn build(&mut self, program: &ProgramSyntax) {
         for file in &program.files {
@@ -49,15 +55,60 @@ impl Model {
         }
     }
 
-    fn process_declaration(&mut self, _declaration: &DeclarationSyntax){}
+    fn process_declaration(&mut self, declaration: &DeclarationSyntax){
+        match declaration {
+            Public(_public) => {                
+            }
+            Definition(_definition) => {                
+            }
+            Function(function) => {
+                self.process_function(function)
+            }
+            Procedure(procedure) => {
+                self.process_procedure(procedure)
+            }
+            Operator(operator) => {
+                self.process_operator(operator)
+            }
+            Use(_use) => {
+            }
+            Implement(_implement) => {
+            }
+            Trait(_trait) => {
+            }
+            Macro(_macro) => {                
+            }
+        }
+    }
+
+    fn process_function(&mut self, _function_syntax: &FunctionSyntax)
+    {
+        let _function = Function {};
+
+    }
+
+    fn process_procedure(&mut self, _procedure_syntax: &ProcedureSyntax)
+    {
+    }
+
+    fn process_operator(&mut self, _operator_syntax: &OperatorSyntax)
+    {
+    }
 
     fn process_statement(&mut self, _statement: &StatementSyntax){}
 }
 
-pub struct Item {
+
+pub struct Module {
     pub name: String,
-    pub items: HashMap<String, Item>,
+    pub modules: HashMap<String, Module>,
 }
 
-impl Item {
+impl Module {
+}
+
+pub struct Function {
+}
+
+impl Module {
 }
