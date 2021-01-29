@@ -9,10 +9,16 @@ fn main() {
     let args: Vec<String> = env::args().collect();
     if args.len() > 1 {
         let mut compiler = Compiler::new();
-        compiler.load_standard_library();
-        println!("{}", compiler.compile(args[1].clone()));
+        match compiler.load_standard_library() {
+            Ok(()) => println!("{}", compiler.compile(args[1].clone())),
+            Err(error) => println!("{}", error),
+        }
+        ;
     } else {
-        let mut repl = Repl::new();
-        repl.run();
+        let repl_result = Repl::new();
+        match repl_result {
+            Ok(mut repl) => repl.run(),
+            Err(error) => println!("{}", error),
+        }
     }
 }

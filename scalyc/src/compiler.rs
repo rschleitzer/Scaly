@@ -4,7 +4,7 @@ extern crate llvm_sys as llvm;
 use llvm::core::*;
 use llvm::execution_engine::*;
 use llvm::target::*;
-use model::Model;
+use model::Module;
 use std::mem;
 
 mod parser;
@@ -30,13 +30,14 @@ impl Compiler {
         }
     }
 
-    pub fn load_standard_library(&mut self) {
+    pub fn load_standard_library(&mut self) -> Result<(), String> {
         let contents_result = fs::read_to_string("scaly/scaly.scaly");
         match contents_result {
             Ok(contents) => {
                 self.standard_library = Some(contents);
+                Ok(())
             }
-            Err(_) => (),
+            Err(_) => Err(String::from("Ubable to load standard library.")),
         }
     }
 
@@ -114,8 +115,8 @@ impl Compiler {
                             Some(main_file_syntax) => {
                                 let mut program = ProgramSyntax { files: Vec::new() };
                                 self.add_standard_library(&mut program);
-                                let mut model = Model::new();
-                                model.build_program(&program, &main_file_syntax, &file_syntax);
+                                let mut module = Module::new(&String::from(""));
+                                module.build_program(&program, &main_file_syntax, &file_syntax);
                                 Ok(String::from("Processed."))
 
                             },
@@ -140,7 +141,7 @@ impl Compiler {
         let mut program = ProgramSyntax { files: Vec::new() };
         self.add_standard_library(&mut program);
         program.files.push(file_syntax);
-        let mut model = Model::new();
+        let mut model = Module::new(&String::from(""));
         model.build(&program);
         Ok(String::from("Processed."))
     }
@@ -171,7 +172,7 @@ impl Compiler {
                         let mut program = ProgramSyntax { files: Vec::new() };
                         self.add_standard_library(&mut program);
                         program.files.push(file);
-                        let mut model = Model::new();
+                        let mut model = Module::new(&String::from(""));
                         model.build(&program);
                         Ok(String::from("Processed."))
                     }

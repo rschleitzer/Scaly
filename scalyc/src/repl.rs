@@ -8,12 +8,15 @@ pub struct Repl {
 }
 
 impl Repl {
-    pub fn new() -> Repl {
+    pub fn new() -> Result<Repl, String> {
         let mut compiler = Compiler::new();
-        compiler.load_standard_library();
-        Repl {
-            file: String::new(),
-            compiler: compiler,
+        match compiler.load_standard_library() {
+            Err(result) => Err(result),
+            Ok(()) =>
+                Ok(Repl {
+                    file: String::new(),
+                    compiler: compiler,
+                })
         }
     }
 

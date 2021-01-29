@@ -8,14 +8,16 @@ use crate::compiler::parser::StatementSyntax;
 use crate::compiler::parser::FileSyntax;
 use std::collections::HashMap;
 
-pub struct Model {
+pub struct Module {
+    pub name: String,
     pub modules: HashMap<String, Module>,
     pub functions: HashMap<String, Function>,
 }
 
-impl Model {
-    pub fn new() -> Model {
-        Model {
+impl Module {
+    pub fn new(name: &String) -> Module {
+        Module {
+            name: name.clone(),
             modules: HashMap::new(),
             functions: HashMap::new(),
         }
@@ -96,15 +98,6 @@ impl Model {
     }
 
     fn process_statement(&mut self, _statement: &StatementSyntax){}
-}
-
-
-pub struct Module {
-    pub name: String,
-    pub modules: HashMap<String, Module>,
-}
-
-impl Module {
 }
 
 pub struct Function {
