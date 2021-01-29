@@ -64,7 +64,6 @@ namespace scalyc
 
     class LambdaModel : CallableModel
     {
-        public BlockModel code;
     }
 
     class ClassModel : CallableModel
