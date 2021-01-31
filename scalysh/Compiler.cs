@@ -41,28 +41,21 @@ namespace scalyc
                 }
             }
 
-            var program = new ProgramSyntax(options.outputName, files.ToArray());
-            foreach (var item in files)
-                item.parent = program;
-
-            var modelVisitor = new ModelVisitor();
-            program.accept(modelVisitor);
-            var model = modelVisitor.programModel;
+            var program = new ProgramSyntax { files = files.ToArray() };
         }
 
-        static FileSyntax parseFile(string fileName, string text)
+        static FileSyntax parseFile(string file_name, string text)
         {
-            var parser = new Parser(fileName, text);
+            var parser = new Parser(text);
 
             try
             {
-                var file = parser.parseFile();
-                file.fileName = fileName;
+                var file = parser.parse_file(file_name);
                 return file;
             }
             catch (ParserException e)
             {
-                throw new CompilerException(fileName, e.line, e.column);
+                throw new CompilerException(file_name, e.line, e.column);
             }
         }
     }

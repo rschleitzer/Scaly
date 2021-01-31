@@ -2,7 +2,7 @@
   "profiles": {
     "scalysh": {
       "commandName": "Project",
-      "commandLineArgs": "-o scalyc Array.scaly Compiler.scaly ctypes.scaly Lexer.scaly main.scaly Options.scaly Page.scaly Parser.scaly scaly.scaly string.scaly",
+      "commandLineArgs": "-o scalyc scalyc.scaly",
       "workingDirectory": "C:\\repos\\Scaly\\scalysh"
     }
   }

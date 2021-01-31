@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -7,72 +7,130 @@ namespace scalyc
     class Lexer
     {
         public Token token;
-        public string text;
-        public int position;
-        public int end;
-        public int previousLine;
-        public int previousColumn;
-        public int line;
-        public int column;
+        char? character;
+        CharEnumerator chars;
+        public ulong previous_line;
+        public ulong previous_column;
+        public ulong line;
+        public ulong column;
 
-        public Lexer(string theText)
+        public Lexer(string deck)
         {
-            token = null;
-            text = theText;
-            end = text.Length;
-            position = 0;
-            previousLine = 1;
-            previousColumn = 0;
+            token = new EmptyToken();
+            chars = deck.GetEnumerator();
+            character = null;
+            previous_line = 1;
+            previous_column = 0;
             line = 1;
             column = 0;
-            advance();
+            read_character();
+        }
+
+        void read_character()
+        {
+            if (chars.MoveNext())
+                character = chars.Current;
+            else
+                character = null;
+
+            switch (character)
+            {
+                case '\r':
+                    break;
+
+                case '\n':
+                    column = 0;
+                    line += 1;
+                    break;
+
+                default:
+                    column++;
+                    break;
+            }
         }
 
         public void advance()
         {
-            skipWhitespace();
-            previousLine = line;
-            previousColumn = column;
+            skip_whitespace(false);
+            previous_line = line;
+            previous_column = column;
 
-            if (position == end)
-            {
-                token = new EofToken();
+            if (character == null)
                 return;
-            }
 
-            char c = text[position];
+            char c = (char)character;
 
             if (((c >= 'a') && (c <= 'z')) || ((c >= 'A') && (c <= 'Z')))
             {
-                token = scanIdentifier();
+                token = scan_identifier();
                 return;
             }
 
-            if ((c >= '0') && (c <= '9'))
+            if ((c >= '1') && (c <= '9'))
             {
-                token = scanNumericLiteral();
+                var value = new StringBuilder();
+                value.Append(c);
+                token = scan_numeric_literal(value);
                 return;
             }
 
             switch (c)
             {
+                case '\n':
+                    token = scan_line_feed();
+                    break;
+
+                case ':':
+                    read_character();
+                    token = new Colon();
+                    break;
+
+                case ';':
+                    read_character();
+                    token = new Semicolon();
+                    break;
+
+                case '0':
+                    {
+                        var value = new StringBuilder();
+                        value.Append(c);
+                        token = scan_numeric_or_hex_literal(value);
+                    }
+                    break;
+
+                case '@':
+                    read_character();
+                    token = scan_attribute();
+                    break;
+
                 case '+': case '-': case '*': case '/': case '=': case '%': case '&': case '|': case '^': case '~': case '<': case '>':
-                    token = scanOperator();
-                    break;
-
-                case '\"':
-                    token = scanStringLiteral();
-                    break;
-
-                case '\'':
-                    token = scanCharacterLiteral();
-                    break;
-
-                case '{': case '}': case '(': case ')': case '[': case ']': case '.': case ',': case ':': case ';': case '?': case '!': case '@': case '#': case '$': case '_': case '`':
                 {
-                    token = new Punctuation(new string(c, 1));
-                    position = position + 1;
-                    column = column + 1;
+                    var operation = new StringBuilder();
+                    operation.Append(c);
+                    token = scan_operator(operation);
+                    break;
+                }
+
+                case '\"': token = scan_string_literal(); break;
+                case '\'': token = scan_string_identifier(); break;
+                case '`':  token = scan_fragment_literal(); break;
+
+                case '}': case ')': case ']': case '.': case '?':
+                {
+                    var punctuation_string = new StringBuilder();
+                    punctuation_string.Append(c);
+                    read_character();
+                    token = new Punctuation(punctuation_string.ToString());
+                    break;
+                }
+
+                case '{': case '(': case '[': case ',':
+                {
+                    var punctuation_string = new StringBuilder();
+                    punctuation_string.Append(c);
+                    read_character();
+                    skip_whitespace(true);
+                    token = new Punctuation(punctuation_string.ToString());
                     break;
                 }
 
@@ -82,476 +140,650 @@ namespace scalyc
             }
         }
 
-        Identifier scanIdentifier()
-        {
-            string name = new string(text[position], 1);
-
-            do
-            {
-                position = position + 1;
-                column = column + 1;
-
-                if (position == end)
-                    return (new Identifier(name));
-
-                char c = text[position];
-                if (((c >= 'a') && (c <= 'z')) ||
-                    ((c >= 'A') && (c <= 'Z')) ||
-                    ((c >= '0') && (c <= '9')) ||
-                     (c == '_'))
-                    name = name + c;
-                else
-                    return (new Identifier(name));
-            }
-            while (true);
+        public void empty() {
+            token = new EmptyToken();
         }
 
-        Identifier scanOperator()
+        Token scan_line_feed()
         {
-            string operation = new string(text[position], 1);
-
-            do
+            while (true)
             {
-                position = position + 1;
-                column = column + 1;
+                read_character();
+                skip_whitespace(false);
+                if (character == null)
+                    return new InvalidToken();
 
-                if (position == end)
-                    return (new Identifier(operation));
+                if (character == '\n')
+                    continue;
 
-                switch (text[position])
+                return new LineFeed();
+            }
+        }
+
+        Token scan_identifier()
+        {
+            var name = new StringBuilder();
+            while (true)
+            {
+                if (character == null)
+                {
+                    if (name.Length == 0)
+                        return new InvalidToken();
+                    else
+                        return new Identifier(name.ToString());
+                }
+                else
+                {
+                    char c = (char)character;
+                    if (((c >= 'a') && (c <= 'z')) || ((c >= 'A') && (c <= 'Z')) || ((c >= '0') && (c <= '9')) || (c == '_'))
+                    {
+                        name.Append(c);
+                        read_character();
+                    }
+                    else
+                    {
+                        return new Identifier(name.ToString());
+                    }
+                }
+            }
+        }
+
+        Token scan_attribute()
+        {
+            var name = new StringBuilder();
+            while (true)
+            {
+                if (character == null)
+                {
+                    if (name.Length == 0)
+                        return new InvalidToken();
+                    else
+                        return new Attribute(name.ToString());
+                }
+
+                var c = (char)character;
+                if (((c >= 'a') && (c <= 'z')) || ((c >= 'A') && (c <= 'Z')) || ((c >= '0') && (c <= '9')) || (c == '_'))
+                {
+                    name.Append(c);
+                    read_character();
+                }
+                else
+                {
+                    return new Attribute(name.ToString());
+                }
+            }
+        }
+
+        Token scan_operator(StringBuilder operation)
+        {
+            while (true)
+            {
+                if (character == null)
+                {
+                    if (operation.Length == 0)
+                        return new InvalidToken();
+                    else
+                        return new Identifier(operation.ToString());
+                }
+
+                var c = (char)character;
+                switch (c)
                 {
                     case '+': case '-': case '*': case '/': case '=': case '%': case '&': case '|': case '^': case '~': case '<': case '>':
-                        operation = operation + text[position];
+                        operation.Append(c);
+                        read_character();
                         break;
 
                     default:
-                        return (new Identifier(operation));
+                        return new Identifier(operation.ToString());
                 }
             }
-            while (true);
         }
 
-        public Token scanStringLiteral()
+        Token scan_string_literal()
         {
-            var value = "";
+            var value = new StringBuilder();
 
-            do
+            while (true)
             {
-                position = position + 1;
-                column = column + 1;
+                read_character();
 
-                if (position == end)
-                    return (new InvalidToken());
+                if (character == null)
+                    return new InvalidToken();
 
-                switch (text[position])
+                var c = (char)character;
+                switch (c)
                 {
                     case '\"':
-                    {
-                        position = position + 1;
-                        column = column + 1;
-                        return (new StringLiteral(value));
-                    }
+                        read_character();
+                        return new StringLiteral(value.ToString());
+
                     case '\\':
-                    {
-                        position = position + 1;
-                        column = column + 1;
-                        switch (text[position])
+                        read_character();
+                        if (character == null)
+                            return new InvalidToken();
+
+                        var c2 = (char)character;
+                        switch (c2)
                         {
                             case '\"': case '\\': case '\'':
-                            {
-                                value = value + '\\';
-                                value = value + text[position];
+                                value.Append('\\');
+                                value.Append(c2);
                                 break;
-                            }
-                            case 'n': value = value + "\\n"; break;
-                            case 'r': value = value + "\\r"; break;
-                            case 't': value = value + "\\t"; break;
-                            case '0': value = value + "\\0"; break;
-                            default: return (new InvalidToken());
+                            case 'n':
+                                value.Append('\\');
+                                value.Append('n');
+                                break;
+                            case 'r':
+                                value.Append('\\');
+                                value.Append('r');
+                                break;
+                            case 't':
+                                value.Append('\\');
+                                value.Append('t');
+                                break;
+                            case '0':
+                                value.Append('\\');
+                                value.Append('0');
+                                break;
+                            default:
+                                return new InvalidToken();
                         }
                         break;
-                    }
+
                     default:
-                        value = value + text[position];
+                        value.Append(c);
                         break;
                 }
             }
-            while (true);
         }
 
-        Token scanCharacterLiteral()
+        Token scan_string_identifier()
         {
-            var value = "";
+            var value = new StringBuilder();
 
-            do
+            while (true)
             {
-                position = position + 1;
-                column = column + 1;
+                read_character();
 
-                if (position == end)
-                    return (new InvalidToken());
+                if (character == null)
+                    return new InvalidToken();
 
-                switch (text[position])
+                var c = (char)character;
+                switch (c)
                 {
                     case '\'':
-                    {
-                        position = position + 1;
-                        column = column + 1;
-                        return (new CharacterLiteral(value));
-                    }
-                    case '\\':
-                    {
-                        position = position + 1;
-                        column = column + 1;
-                        switch (text[position])
-                        {
-                            case '\"': case '\\': case '\'':
-                            {
-                                value = value + '\\';
-                                value = value + text[position];
-                                break;
-                            }
-                            case 'n': value = value + "\\n"; break;
-                            case 'r': value = value + "\\r"; break;
-                            case 't': value = value + "\\t"; break;
-                            case '0': value = value + "\\0"; break;
-                            default: return (new InvalidToken());
-                        }
-                        break;
-                    }
+                        read_character();
+                        return new Identifier(value.ToString());
                     default:
-                        value = value + text[position];
+                        value.Append(c);
                         break;
                 }
             }
-            while (true);
         }
 
-        NumericLiteral scanNumericLiteral()
+        Token scan_fragment_literal()
         {
-            var value = new string(text[position], 1);
+            var value = new StringBuilder();
 
-            position = position + 1;
-            column = column + 1;
-
-            if (position == end)
-                return (new NumericLiteral(value));
-            
-            var x = text[position];
-            if (x == 'x')
+            while (true)
             {
-                return scanHexLiteral();
+                read_character();
+
+                if (character == null)
+                    return new InvalidToken();
+
+                var c = (char)character;
+                switch (c)
+                {
+                    case '`':
+                        read_character();
+                        return new Fragment(value.ToString());
+
+                    case '\\':
+                        read_character();
+                        if (character == null)
+                            return new InvalidToken();
+
+                        var c2 = (char)character;
+                        switch (c2)
+                        {
+                            case '`':
+                                value.Append(c2);
+                                break;
+                            default:
+                                value.Append('\\');
+                                value.Append(c2);
+                                break;
+                        }
+                        break;
+
+                    default:
+                        value.Append(c);
+                        break;
+                }
             }
-            else
+        }
+
+        Token scan_numeric_or_hex_literal(StringBuilder value)
+        {
+            read_character();
+
+            if (character == null)
+                return new InvalidToken();
+
+            var c = (char)character;
+
+            if ((c >= '0') && (c <= '9'))
             {
-                position = position - 1;
-                column = column - 1;
+                value.Append(c);
+                return scan_numeric_literal(value);
             }
 
-            do
+            switch (c)
             {
-                position = position + 1;
-                column = column + 1;
+                case '.':
+                    value.Append(c);
+                    return scan_fraction(value);
 
-                if (position == end)
-                    return (new NumericLiteral(value));
+                case 'E':
+                case 'e':
+                    value.Append(c);
+                    return scan_exponent(value);
 
-                var c = text[position];
+                case 'x':
+                    return scan_hex_literal();
+
+                default:
+                    return new Integer(value.ToString());
+            }
+        }
+
+        Token scan_numeric_literal(StringBuilder value)
+        {
+            while (true)
+            {
+                read_character();
+
+                if (character == null)
+                    return new Integer(value.ToString());
+
+                var c = (char)character;
+
                 if ((c >= '0') && (c <= '9'))
-                    value = value + text[position];
-                else
-                    return (new NumericLiteral(value));
+                {
+                    value.Append(c);
+                    continue;
+                }
+
+                switch (c)
+                {
+                    case '.':
+                        value.Append(c);
+                        return scan_fraction(value);
+
+                    case 'E':
+                    case 'e':
+                        value.Append(c);
+                        return scan_exponent(value);
+
+                    default:
+                        return new Integer(value.ToString());
+                }
             }
-            while (true);
         }
 
-        HexLiteral scanHexLiteral()
+        Token scan_fraction(StringBuilder value)
         {
-            var value = new string(text[position], 1);
-
-            do
+            while (true)
             {
-                position = position + 1;
-                column = column + 1;
+                read_character();
 
-                if (position == end)
-                    return (new HexLiteral(value));
+                if (character == null)
+                    return new FloatingPoint(value.ToString());
 
-                var c = text[position];
-                if (((c >= '0') && (c <= '9')) || ((c >= 'a') && (c <= 'f')) || ((c >= 'A') && (c <= 'F')))
-                    value = value + text[position];
-                else
-                    return (new HexLiteral(value));
+                var c = (char)character;
+
+                if ((c >= '0') && (c <= '9'))
+                {
+                    value.Append(c);
+                    continue;
+                }
+
+                switch (c)
+                {
+                    case 'E':
+                    case 'e':
+                        value.Append(c);
+                        return scan_exponent(value);
+
+                    default:
+                        return new FloatingPoint(value.ToString());
+                }
             }
-            while (true);
         }
 
-        void skipWhitespace()
+        Token scan_exponent(StringBuilder value)
         {
-            do
+            while (true)
             {
-                if (position == end)
+                read_character();
+
+                if (character == null)
+                    return new FloatingPoint(value.ToString());
+
+                var c = (char)character;
+
+                if ((c >= '0') && (c <= '9'))
+                {
+                    value.Append(c);
+                    continue;
+                }
+
+                return new FloatingPoint(value.ToString());
+            }
+        }
+
+        Token scan_hex_literal()
+        {
+            var value = new StringBuilder();
+            while (true)
+            {
+                read_character();
+
+                if (character == null)
+                    return new Hex(value.ToString());
+
+                var c = (char)character;
+
+                if (((c >= '0') && (c <= '9')) || (c >= 'A') && (c <= 'F') || ((c >= 'a') && (c <= 'f')))
+                {
+                    value.Append(c);
+                    continue;
+                }
+
+                return new Hex(value.ToString());
+            }
+        }
+
+        void skip_whitespace(bool line_feed)
+        {
+            while (true)
+            {
+                if (character == null)
                     return;
 
-                switch (text[position])
+                var c = (char)character;
+
+                switch(c)
                 {
                     case ' ':
-                    {
-                        position = position + 1;
-                        column = column + 1;
+                        read_character();
                         continue;
-                    }
-
                     case '\t':
-                    {
-                        position = position + 1;
-                        column = column + 4;
+                        read_character();
                         continue;
-                    }
-
                     case '\r':
-                    {
-                        position = position + 1;
+                        read_character();
                         continue;
-                    }
-
-                    case '\n': {
-                        position = position + 1;
-                        column = 1;
-                        line = line + 1;
-                        continue;
-                    }
-
-                    case '/':
-                    {
-                        position = position + 1;
-                        column = column + 1;
-
-                        if (position == end)
-                            return;
-
-                        if (text[position] == '/')
-                        {
-                            handleSingleLineComment();
-                        }
-                        else
-                        {
-                            if (text[position] == '*')
-                                handleMultiLineComment();
-                            else
-                                return;
-                        }
-                            break;
-                    }
-                    default:
-                        return;
-                }
-            }
-            while (true);
-        }
-
-        void handleSingleLineComment()
-        {
-            do
-            {
-                if (position == end)
-                    return;
-
-                switch (text[position])
-                {
-                    case '\t':
-                    {
-                        position = position + 1;
-                        column = column + 4;
-                        continue;
-                    }
-
-                    case '\r':
-                    {
-                        position = position + 1;
-                        continue;
-                    }
-
                     case '\n':
-                    {
-                        position = position + 1;
-                        column = 1;
-                        line = line + 1;
-                        return;
-                    }
-
-                    default:
-                    {
-                        position = position + 1;
-                        column = column + 1;
-                        continue;
-                    }
-                }
-            }
-            while (true);
-        }
-
-        void handleMultiLineComment()
-        {
-            do
-            {
-                if (position == end)
-                    return;
-
-                switch (text[position])
-                {
-                    case '/':
-                    {
-                        position = position + 1;
-                        column = column + 1;
-
-                        if (position == end)
+                        if (line_feed)
                         {
-                            return;
+                            read_character();
+                            continue;
                         }
                         else
                         {
-                            if (text[position] == '*')
-                                handleMultiLineComment();
-                            else
+                            return;
+                        }
+
+                    case '/':
+                        read_character();
+                        if (character == null)
+                            return;
+
+                        var c2 = (char)character;
+                        switch (c2)
+                        {
+                            case '/':
+                                read_character();
+                                handle_single_line_comment();
+                                break;
+
+                            case '*':
+                                read_character();
+                                handle_multi_line_comment();
+                                break;
+
+                            default:
                                 return;
                         }
                         break;
-                    }
+                    default:
+                        return;
+                }
+            }
+        }
+
+
+        void handle_single_line_comment()
+        {
+            while (true)
+            {
+                if (character == null)
+                    return;
+
+                var c = (char)character;
+
+                switch (c)
+                {
+                    case '\t':
+                        read_character();
+                        continue;
+
+                    case '\r':
+                        continue;
+
+                    case '\n':
+                        read_character();
+                        return;
+
+                    default:
+                        read_character();
+                        continue;
+                }
+            }
+        }
+
+        void handle_multi_line_comment()
+        {
+            while (true)
+            {
+                if (character == null)
+                    return;
+                var c = (char)character;
+
+                switch (c)
+                {
+                    case '/':
+                        read_character();
+                        if (character == null)
+                            return;
+                        if (character == '*')
+                            handle_multi_line_comment();
+                        else
+                            return;
+                        break;
 
                     case '*':
-                    {
-                        position = position + 1;
-                        column = column + 1;
+                        read_character();
+                        if (character == null)
+                            return;
 
-                            if (position == end)
-                            {
-                                return;
-                            }
-                            else
-                            {
-                                if (text[position] == '/')
-                                {
-                                    position = position + 1;
-                                    column = column + 1;
-                                    return;
-                                }
-                            }
+                        if (c == '/')
+                        {
+                            read_character();
+                            return;
+                        }
                         break;
-                    }
 
                     case '\t':
-                    {
-                        position = position + 1;
-                        column = column + 4;
+                        read_character();
                         continue;
-                    }
 
                     case '\r':
-                    {
-                        position = position + 1;
                         continue;
-                    }
 
                     case '\n':
-                    {
-                        position = position + 1;
-                        column = 1;
-                        line = line + 1;
-                        return;
-                    }
-                    default:
-                    {
-                        position = position + 1;
-                        column = column + 1;
+                        read_character();
                         continue;
-                    }
+
+                    default:
+                        read_character();
+                        continue;
                 }
             }
-            while (true);
         }
 
-        public bool parseKeyword(string fixedString)
+        public bool parse_keyword(string fixed_string)
         {
-            if (!(token is Identifier))
-                return false;
+            if (token is EmptyToken)
+                advance();
 
-            Identifier identifier = token as Identifier;
+            switch (token)
+            {
+                case Identifier identifier:
+                    var right_keyword = (identifier.name == fixed_string);
+                    if (right_keyword)
+                        empty();
 
-            return (identifier.name == fixedString);
+                    return right_keyword;
+
+                default:
+                    return false;
+            }
         }
 
-        public string parseIdentifier()
+        public string parse_identifier(HashSet<string> keywords)
         {
-            if (!(token is Identifier))
-                return null;
+            if (token is EmptyToken)
+                advance();
 
-            Identifier identifier = token as Identifier;
+            switch (token)
+            {
+                case Identifier identifier:
+                    if (keywords.Contains(identifier.name))
+                        return null;
+                    empty();
+                    return identifier.name;
 
-            return identifier.name;
+                default:
+                    return null;
+            }
         }
 
-        public bool parsePunctuation(string fixedString)
+        public string parse_attribute()
         {
-            if (!(token is Punctuation))
-                return false;
+            if (token is EmptyToken)
+                advance();
 
-            Punctuation punctuation = token as Punctuation;
+            switch (token)
+            {
+                case Attribute attribute:
+                    empty();
+                    return attribute.name;
 
-            return punctuation.sign == fixedString;
+                default:
+                    return null;
+            }
         }
 
-        public Literal parseLiteral()
+        public bool parse_punctuation(string fixed_string)
         {
-            if (!(token is Literal))
-                return null;
+            if (token is EmptyToken)
+                advance();
 
-            if (token is StringLiteral)
-                return new StringLiteral((token as StringLiteral).value);
+            switch (token)
+            {
+                case Punctuation punctuation:
+                    var ret = (punctuation.sign == fixed_string);
+                    if (ret)
+                        empty();
 
-            if (token is CharacterLiteral)
-                return new CharacterLiteral((token as CharacterLiteral).value);
-
-            if (token is HexLiteral)
-                return new HexLiteral((token as HexLiteral).value);
-
-            if (token is NumericLiteral)
-                return new NumericLiteral((token as NumericLiteral).value);
-
-            return null;
+                    return ret;
+                default:
+                    return false;
+            }
         }
 
-        public bool isAtEnd()
+        public Literal parse_literal()
         {
-            return position == end;
+            if (token is EmptyToken)
+                advance();
+
+            switch (token)
+            {
+                case StringLiteral stringLiteral:
+                    empty();
+                    return stringLiteral;
+
+                case Integer integer:
+                    empty();
+                    return integer;
+
+                case FloatingPoint floatingPoint:
+                    empty();
+                    return floatingPoint;
+
+                case Hex hex:
+                    empty();
+                    return hex;
+
+                default:
+                    return null;
+            }
         }
 
-        public Position getPosition()
+        public bool parse_colon()
         {
-            return new Position(line, column);
+            if (token is EmptyToken)
+                advance();
+
+            switch (token)
+            {
+                case Colon: case LineFeed:
+                    empty();
+                    return true;
+
+                default:
+                    return false;
+            }
         }
 
-        public Position getPreviousPosition()
+        public bool is_at_end()
         {
-            return new Position(previousLine, previousColumn);
-        }
-    }
+            if (character == null)
+                return true;
 
-    public struct Position
-    {
-        public int line;
-        public int column;
-
-        public Position(int line, int column)
-        {
-            this.line = line;
-            this.column = column;
+            return false;
         }
 
-        public Position(Position position)
+        public Position get_position()
         {
-            this.line = position.line;
-            this.column = position.column;
+            return new Position
+            {
+                line = line,
+                column = column,
+            };
+        }
+
+        public Position get_previous_position()
+        {
+            return new Position
+            {
+                line = previous_line,
+                column = previous_column,
+            };
         }
     }
 
@@ -559,7 +791,7 @@ namespace scalyc
     {
     }
 
-    public class EofToken : Token
+    public class EmptyToken : Token
     {
     }
 
@@ -576,6 +808,24 @@ namespace scalyc
         }
     }
 
+    public class Attribute : Token
+    {
+        public string name;
+        public Attribute(string name)
+        {
+            this.name = name;
+        }
+    }
+
+    public class Punctuation : Token
+    {
+        public string sign;
+        public Punctuation(string theSign)
+        {
+            sign = theSign;
+        }
+    }
+
     public class Literal : Token
     {
     }
@@ -589,36 +839,57 @@ namespace scalyc
         }
     }
 
-    public class CharacterLiteral : Literal
+    public class Fragment : Literal
     {
         public string value;
-        public CharacterLiteral(string theString)
+        public Fragment(string theString)
         {
             value = theString;
         }
     }
 
-    public class NumericLiteral : Literal
+    public class Integer : Literal
     {
         public string value;
-        public NumericLiteral(string theValue)
+        public Integer(string theString)
         {
-            value = theValue;
+            value = theString;
         }
     }
 
-    public class HexLiteral : NumericLiteral
+    public class FloatingPoint : Literal
     {
-        public HexLiteral(string theValue)
-        : base(theValue) {}
+        public string value;
+        public FloatingPoint(string theString)
+        {
+            value = theString;
+        }
     }
 
-    public class Punctuation : Token
+    public class Hex : Literal
     {
-        public string sign;
-        public Punctuation(string theSign)
+        public string value;
+        public Hex(string theString)
         {
-            sign = theSign;
+            value = theString;
         }
+    }
+
+    public class LineFeed : Token
+    {
+    }
+
+    public class Colon : Token
+    {
+    }
+
+    public class Semicolon : Token
+    {
+    }
+
+    public class Position
+    {
+        public ulong line;
+        public ulong column;
     }
 }

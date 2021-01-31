@@ -31,7 +31,7 @@ namespace scalyc
 
     public class ParserException : CompilerException
     {
-        public ParserException(string file, int line, int column)
+        public ParserException(string file, ulong line, ulong column)
             :base(file, line, column)
         {
         }
@@ -41,7 +41,7 @@ namespace scalyc
     {
         public string message;
 
-        public ModelException(string message, string file, int line, int column)
+        public ModelException(string message, string file, ulong line, ulong column)
             :base(file, line, column)
         {
         }
@@ -50,10 +50,10 @@ namespace scalyc
     public class CompilerException : Exception
     {
         public string file;
-        public int line;
-        public int column;
+        public ulong line;
+        public ulong column;
 
-        public CompilerException(string file, int line, int column)
+        public CompilerException(string file, ulong line, ulong column)
         {
             this.file = file;
             this.line = line;

@@ -7,378 +7,143 @@ namespace scalyc
     class Parser
     {
         Lexer lexer;
-        string fileName;
+        string file_name = "";
         HashSet<string> keywords = new HashSet<string>(new string[] {
-            "using",
-            "namespace",
-            "typedef",
-            "let",
-            "mutable",
-            "threadlocal",
-            "var",
-            "set",
-            "class",
-            "extends",
-            "initializer",
-            "allocator",
-            "method",
-            "function",
-            "operator",
-            "this",
-            "new",
-            "sizeof",
-            "catch",
-            "throws",
-            "as",
-            "is",
-            "if",
-            "else",
-            "switch",
-            "case",
-            "default",
-            "for",
-            "in",
-            "while",
-            "do",
-            "loop",
             "break",
+            "catch",
+            "case",
             "continue",
-            "return",
-            "throw",
+            "def",
+            "default",
+            "delegate",
+            "drop",
+            "else",
+            "extends",
+            "extern",
+            "for",
+            "function",
+            "if",
+            "is",
+            "implement",
+            "in",
+            "instruction",
             "intrinsic",
-            "define",
-       });
+            "label",
+            "lambda",
+            "let",
+            "loop",
+            "macro",
+            "match",
+            "mutable",
+            "operator",
+            "procedure",
+            "public",
+            "return",
+            "returns",
+            "repeat",
+            "set",
+            "sizeof",
+            "throw",
+            "throws",
+            "trait",
+            "use",
+            "var",
+            "while",
+        });
 
-        public Parser(string theFileName, string text)
+        public Parser(string deck)
         {
-            lexer = new Lexer(text);
-            fileName = theFileName;
+            lexer = new Lexer(deck);
         }
 
-        public FileSyntax parseFile()
+        public FileSyntax parse_file(string file_name)
         {
-            Position start = lexer.getPreviousPosition();
-
-            IntrinsicSyntax[] intrinsics = parseIntrinsicList();
-
-            UsingSyntax[] usings = parseUsingList();
-
-            DefineSyntax[] defines = parseDefineList();
-
-            DeclarationSyntax[] declarations = parseDeclarationList();
-
-            StatementSyntax[] statements = parseStatementList();
+            this.file_name = file_name;
+            var declarations = parse_declaration_list();
+            var statements = parse_statement_list();
             if (statements != null)
             {
-                if (!isAtEnd())
+                if (!is_at_end())
                 {
-                    Position errorPos = lexer.getPreviousPosition();
-                    throw new ParserException(fileName, errorPos.line, errorPos.column);
+                    throw new ParserException(file_name, lexer.previous_line, lexer.previous_column);
                 }
             }
 
-            Position end = lexer.getPosition();
-
-            FileSyntax ret = new FileSyntax(start, end, intrinsics, usings, defines, declarations, statements);
-
-            if (intrinsics != null)
+            var ret = new FileSyntax
             {
-                foreach (IntrinsicSyntax item in intrinsics)
-                    item.parent = ret;
-            }
-            if (usings != null)
-            {
-                foreach (UsingSyntax item in usings)
-                    item.parent = ret;
-            }
-            if (defines != null)
-            {
-                foreach (DefineSyntax item in defines)
-                    item.parent = ret;
-            }
-            if (declarations != null)
-            {
-                foreach (DeclarationSyntax item in declarations)
-                    item.parent = ret;
-            }
-            if (statements != null)
-            {
-                foreach (StatementSyntax item in statements)
-                    item.parent = ret;
-            }
+                file_name = file_name,
+                declarations = declarations,
+                statements = statements,
+            };
 
             return ret;
         }
 
-        public IntrinsicSyntax[] parseIntrinsicList()
+        public object[] parse_declaration_list()
         {
-            List<IntrinsicSyntax> ret = null;
+            List<object> list = null;
             while (true)
             {
-                IntrinsicSyntax node = parseIntrinsic();
+                var node = parse_declaration();
                 if (node == null)
                     break;
 
-                if (ret == null)
-                    ret = new List<IntrinsicSyntax>();
+                if (list == null)
+                    list = new List<object>();
 
-                ret.Add(node);
+                list.Add(node);
             }
 
-            if (ret != null)
-                return ret.ToArray();
+            if (list != null)
+                return list.ToArray();
             else
                 return null;
         }
 
-        public IntrinsicSyntax parseIntrinsic()
-        {
-            Position start = lexer.getPreviousPosition();
-
-            bool successIntrinsic1 = lexer.parseKeyword("intrinsic");
-            if (successIntrinsic1)
-                lexer.advance();
-            else
-                return null;
-
-            string name = lexer.parseIdentifier();
-            if ((name != null) && isIdentifier(name))
-                lexer.advance();
-            else
-                throw new ParserException(fileName, lexer.line, lexer.column);
-
-            Position end = lexer.getPosition();
-
-            IntrinsicSyntax ret = new IntrinsicSyntax(start, end, name);
-
-
-            return ret;
-        }
-
-        public UsingSyntax[] parseUsingList()
-        {
-            List<UsingSyntax> ret = null;
-            while (true)
-            {
-                UsingSyntax node = parseUsing();
-                if (node == null)
-                    break;
-
-                if (ret == null)
-                    ret = new List<UsingSyntax>();
-
-                ret.Add(node);
-            }
-
-            if (ret != null)
-                return ret.ToArray();
-            else
-                return null;
-        }
-
-        public UsingSyntax parseUsing()
-        {
-            Position start = lexer.getPreviousPosition();
-
-            bool successUsing1 = lexer.parseKeyword("using");
-            if (successUsing1)
-                lexer.advance();
-            else
-                return null;
-
-            NameSyntax name = parseName();
-            if (name == null)
-                throw new ParserException(fileName, lexer.line, lexer.column);
-
-            Position end = lexer.getPosition();
-
-            UsingSyntax ret = new UsingSyntax(start, end, name);
-
-            name.parent = ret;
-
-            return ret;
-        }
-
-        public DefineSyntax[] parseDefineList()
-        {
-            List<DefineSyntax> ret = null;
-            while (true)
-            {
-                DefineSyntax node = parseDefine();
-                if (node == null)
-                    break;
-
-                if (ret == null)
-                    ret = new List<DefineSyntax>();
-
-                ret.Add(node);
-            }
-
-            if (ret != null)
-                return ret.ToArray();
-            else
-                return null;
-        }
-
-        public DefineSyntax parseDefine()
-        {
-            Position start = lexer.getPreviousPosition();
-
-            bool successDefine1 = lexer.parseKeyword("define");
-            if (successDefine1)
-                lexer.advance();
-            else
-                return null;
-
-            NameSyntax name = parseName();
-            if (name == null)
-                throw new ParserException(fileName, lexer.line, lexer.column);
-
-            TypeSyntax typeSpec = parseType();
-            if (typeSpec == null)
-                throw new ParserException(fileName, lexer.line, lexer.column);
-
-            Position end = lexer.getPosition();
-
-            DefineSyntax ret = new DefineSyntax(start, end, name, typeSpec);
-
-            name.parent = ret;
-            typeSpec.parent = ret;
-
-            return ret;
-        }
-
-        public NameSyntax parseName()
-        {
-            Position start = lexer.getPreviousPosition();
-
-            string name = lexer.parseIdentifier();
-            if ((name != null) && isIdentifier(name))
-                lexer.advance();
-            else
-                return null;
-
-            ExtensionSyntax[] extensions = parseExtensionList();
-
-            Position end = lexer.getPosition();
-
-            NameSyntax ret = new NameSyntax(start, end, name, extensions);
-
-            if (extensions != null)
-            {
-                foreach (ExtensionSyntax item in extensions)
-                    item.parent = ret;
-            }
-
-            return ret;
-        }
-
-        public ExtensionSyntax[] parseExtensionList()
-        {
-            List<ExtensionSyntax> ret = null;
-            while (true)
-            {
-                ExtensionSyntax node = parseExtension();
-                if (node == null)
-                    break;
-
-                if (ret == null)
-                    ret = new List<ExtensionSyntax>();
-
-                ret.Add(node);
-            }
-
-            if (ret != null)
-                return ret.ToArray();
-            else
-                return null;
-        }
-
-        public ExtensionSyntax parseExtension()
-        {
-            Position start = lexer.getPreviousPosition();
-
-            bool successDot1 = lexer.parsePunctuation(".");
-            if (successDot1)
-                lexer.advance();
-            else
-                return null;
-
-            string name = lexer.parseIdentifier();
-            if ((name != null) && isIdentifier(name))
-                lexer.advance();
-            else
-                throw new ParserException(fileName, lexer.line, lexer.column);
-
-            Position end = lexer.getPosition();
-
-            ExtensionSyntax ret = new ExtensionSyntax(start, end, name);
-
-
-            return ret;
-        }
-
-        public DeclarationSyntax[] parseDeclarationList()
-        {
-            List<DeclarationSyntax> ret = null;
-            while (true)
-            {
-                DeclarationSyntax node = parseDeclaration();
-                if (node == null)
-                    break;
-
-                if (ret == null)
-                    ret = new List<DeclarationSyntax>();
-
-                ret.Add(node);
-            }
-
-            if (ret != null)
-                return ret.ToArray();
-            else
-                return null;
-        }
-
-        public DeclarationSyntax parseDeclaration()
+        public object parse_declaration()
         {
             {
-                NamespaceSyntax node = parseNamespace();
+                var node = parse_public();
                 if (node != null)
                     return node;
             }
-
             {
-                FunctionSyntax node = parseFunction();
+                var node = parse_definition();
                 if (node != null)
                     return node;
             }
-
             {
-                ClassSyntax node = parseClass();
+                var node = parse_function();
                 if (node != null)
                     return node;
             }
-
             {
-                LetDeclarationSyntax node = parseLetDeclaration();
+                var node = parse_procedure();
                 if (node != null)
                     return node;
             }
-
             {
-                VarDeclarationSyntax node = parseVarDeclaration();
+                var node = parse_operator();
                 if (node != null)
                     return node;
             }
-
             {
-                MutableDeclarationSyntax node = parseMutableDeclaration();
+                var node = parse_use();
                 if (node != null)
                     return node;
             }
-
             {
-                ThreadLocalDeclarationSyntax node = parseThreadLocalDeclaration();
+                var node = parse_implement();
+                if (node != null)
+                    return node;
+            }
+            {
+                var node = parse_trait();
+                if (node != null)
+                    return node;
+            }
+            {
+                var node = parse_macro();
                 if (node != null)
                     return node;
             }
@@ -386,284 +151,384 @@ namespace scalyc
             return null;
         }
 
-        public NamespaceSyntax parseNamespace()
+        public PublicSyntax parse_public()
         {
-            Position start = lexer.getPreviousPosition();
+            var start = lexer.get_previous_position();
 
-            bool successNamespace1 = lexer.parseKeyword("namespace");
-            if (successNamespace1)
-                lexer.advance();
-            else
-                return null;
+            var success_public_1 = lexer.parse_keyword("public");
+            if (!success_public_1)
+                    return null;
+            var export = parse_export();
+            if (export == null)
+                throw new ParserException(file_name, lexer.line, lexer.column);
 
-            NameSyntax name = parseName();
+            var end = lexer.get_position();
+
+            var ret = new PublicSyntax
+            {
+                start = start,
+                end = end,
+                export = export,
+            };
+
+            return ret;
+        }
+
+        public object parse_export()
+        {
+            {
+                var node = parse_definition();
+                if (node != null)
+                    return node;
+            }
+            {
+                var node = parse_function();
+                if (node != null)
+                    return node;
+            }
+            {
+                var node = parse_procedure();
+                if (node != null)
+                    return node;
+            }
+            {
+                var node = parse_operator();
+                if (node != null)
+                    return node;
+            }
+            {
+                var node = parse_implement();
+                if (node != null)
+                    return node;
+            }
+            {
+                var node = parse_trait();
+                if (node != null)
+                    return node;
+            }
+            {
+                var node = parse_macro();
+                if (node != null)
+                    return node;
+            }
+
+            return null;
+        }
+
+        public DefinitionSyntax parse_definition()
+        {
+            var start = lexer.get_previous_position();
+
+            var success_def_1 = lexer.parse_keyword("def");
+            if (!success_def_1)
+                    return null;
+            var name = parse_name();
             if (name == null)
-                throw new ParserException(fileName, lexer.line, lexer.column);
+                throw new ParserException(file_name, lexer.line, lexer.column);
+            var attributes = parse_attribute_list();
+            var concept = parse_concept();
+            if (concept == null)
+                throw new ParserException(file_name, lexer.line, lexer.column);
 
-            bool successLeftCurly3 = lexer.parsePunctuation("{");
-            if (successLeftCurly3)
-                lexer.advance();
-            else
-                throw new ParserException(fileName, lexer.line, lexer.column);
+            var end = lexer.get_position();
 
-            UsingSyntax[] usings = parseUsingList();
-
-            DefineSyntax[] defines = parseDefineList();
-
-            DeclarationSyntax[] declarations = parseDeclarationList();
-
-            bool successRightCurly7 = lexer.parsePunctuation("}");
-            if (successRightCurly7)
-                lexer.advance();
-            else
-                throw new ParserException(fileName, lexer.line, lexer.column);
-
-            Position end = lexer.getPosition();
-
-            NamespaceSyntax ret = new NamespaceSyntax(start, end, name, usings, defines, declarations);
-
-            name.parent = ret;
-            if (usings != null)
+            var ret = new DefinitionSyntax
             {
-                foreach (UsingSyntax item in usings)
-                    item.parent = ret;
-            }
-            if (defines != null)
-            {
-                foreach (DefineSyntax item in defines)
-                    item.parent = ret;
-            }
-            if (declarations != null)
-            {
-                foreach (DeclarationSyntax item in declarations)
-                    item.parent = ret;
-            }
+                start = start,
+                end = end,
+                name = name,
+                attributes = attributes,
+                concept = concept,
+            };
 
             return ret;
         }
 
-        public FunctionSyntax parseFunction()
+        public NameSyntax parse_name()
         {
-            Position start = lexer.getPreviousPosition();
+            var start = lexer.get_previous_position();
 
-            bool successFunction1 = lexer.parseKeyword("function");
-            if (successFunction1)
-                lexer.advance();
+            var name = lexer.parse_identifier(keywords);
+            if (name != null)
+            {
+                if (!is_identifier(name))
+                {
+                    return null;
+                }
+            }
+            else
+            {
+                    return null;
+            }
+            var extensions = parse_extension_list();
+
+            var end = lexer.get_position();
+
+            var ret = new NameSyntax
+            {
+                start = start,
+                end = end,
+                name = name,
+                extensions = extensions,
+            };
+
+            return ret;
+        }
+
+        public ExtensionSyntax[] parse_extension_list()
+        {
+            List<ExtensionSyntax> list = null;
+            while (true)
+            {
+                var node = parse_extension();
+                if (node == null)
+                    break;
+
+                if (list == null)
+                    list = new List<ExtensionSyntax>();
+
+                list.Add(node);
+            }
+
+            if (list != null)
+                return list.ToArray();
             else
                 return null;
+        }
 
-            ProcedureSyntax procedure = parseProcedure();
-            if (procedure == null)
-                throw new ParserException(fileName, lexer.line, lexer.column);
+        public ExtensionSyntax parse_extension()
+        {
+            var start = lexer.get_previous_position();
 
-            Position end = lexer.getPosition();
+            var success_dot_1 = lexer.parse_punctuation(".");
+            if (!success_dot_1)
+                    return null;
 
-            FunctionSyntax ret = new FunctionSyntax(start, end, procedure);
+            var name = lexer.parse_identifier(keywords);
+            if (name != null)
+            {
+                if (!is_identifier(name))
+                {
+                    throw new ParserException(file_name, lexer.line, lexer.column);
+                }
+            }
+            else
+            {
+                    throw new ParserException(file_name, lexer.line, lexer.column);
+            }
 
-            procedure.parent = ret;
+            var end = lexer.get_position();
+
+            var ret = new ExtensionSyntax
+            {
+                start = start,
+                end = end,
+                name = name,
+            };
 
             return ret;
         }
 
-        public ProcedureSyntax parseProcedure()
+        public AttributeSyntax[] parse_attribute_list()
         {
-            Position start = lexer.getPreviousPosition();
+            List<AttributeSyntax> list = null;
+            while (true)
+            {
+                var node = parse_attribute();
+                if (node == null)
+                    break;
 
-            string name = lexer.parseIdentifier();
-            if ((name != null) && isIdentifier(name))
-                lexer.advance();
+                if (list == null)
+                    list = new List<AttributeSyntax>();
+
+                list.Add(node);
+            }
+
+            if (list != null)
+                return list.ToArray();
             else
                 return null;
+        }
 
-            RoutineSyntax routine = parseRoutine();
-            if (routine == null)
-                throw new ParserException(fileName, lexer.line, lexer.column);
+        public AttributeSyntax parse_attribute()
+        {
+            var start = lexer.get_previous_position();
 
-            Position end = lexer.getPosition();
+            var attribute = lexer.parse_attribute();
+            if (attribute == null)
+            {
+                    return null;
+            }
+            var value = parse_model();
+            if (value == null)
+                throw new ParserException(file_name, lexer.line, lexer.column);
 
-            ProcedureSyntax ret = new ProcedureSyntax(start, end, name, routine);
+            var end = lexer.get_position();
 
-            routine.parent = ret;
+            var ret = new AttributeSyntax
+            {
+                start = start,
+                end = end,
+                attribute = attribute,
+                value = value,
+            };
 
             return ret;
         }
 
-        public RoutineSyntax parseRoutine()
+        public object parse_concept()
         {
-            Position start = lexer.getPreviousPosition();
+            {
+                var node = parse_class();
+                if (node != null)
+                    return node;
+            }
+            {
+                var node = parse_namespace();
+                if (node != null)
+                    return node;
+            }
+            {
+                var node = parse_union();
+                if (node != null)
+                    return node;
+            }
+            {
+                var node = parse_constant();
+                if (node != null)
+                    return node;
+            }
+            {
+                var node = parse_delegate();
+                if (node != null)
+                    return node;
+            }
 
-            StructureSyntax input = parseStructure();
+            return null;
+        }
 
-            TypeAnnotationSyntax output = parseTypeAnnotation();
+        public ClassSyntax parse_class()
+        {
+            var start = lexer.get_previous_position();
+            var structure = parse_structure();
+            if (structure == null)
+                return null;
+            var body = parse_body();
 
-            ThrowsSyntax throwsClause = parseThrows();
+            var end = lexer.get_position();
 
-            BlockSyntax body = parseBlock();
+            var ret = new ClassSyntax
+            {
+                start = start,
+                end = end,
+                structure = structure,
+                body = body,
+            };
+
+            return ret;
+        }
+
+        public NamespaceSyntax parse_namespace()
+        {
+            var start = lexer.get_previous_position();
+            var body = parse_body();
             if (body == null)
-                throw new ParserException(fileName, lexer.line, lexer.column);
-
-            Position end = lexer.getPosition();
-
-            RoutineSyntax ret = new RoutineSyntax(start, end, input, output, throwsClause, body);
-
-            if (input != null)
-                input.parent = ret;
-            if (output != null)
-                output.parent = ret;
-            if (throwsClause != null)
-                throwsClause.parent = ret;
-            body.parent = ret;
-
-            return ret;
-        }
-
-        public LetDeclarationSyntax parseLetDeclaration()
-        {
-            Position start = lexer.getPreviousPosition();
-
-            LetSyntax declaration = parseLet();
-            if (declaration == null)
                 return null;
 
-            Position end = lexer.getPosition();
+            var end = lexer.get_position();
 
-            LetDeclarationSyntax ret = new LetDeclarationSyntax(start, end, declaration);
-
-            declaration.parent = ret;
+            var ret = new NamespaceSyntax
+            {
+                start = start,
+                end = end,
+                body = body,
+            };
 
             return ret;
         }
 
-        public VarDeclarationSyntax parseVarDeclaration()
+        public UnionSyntax parse_union()
         {
-            Position start = lexer.getPreviousPosition();
-
-            VarSyntax declaration = parseVar();
-            if (declaration == null)
+            var start = lexer.get_previous_position();
+            var tags = parse_tag_list();
+            if (tags == null)
                 return null;
 
-            Position end = lexer.getPosition();
+            var end = lexer.get_position();
 
-            VarDeclarationSyntax ret = new VarDeclarationSyntax(start, end, declaration);
-
-            declaration.parent = ret;
-
-            return ret;
-        }
-
-        public MutableDeclarationSyntax parseMutableDeclaration()
-        {
-            Position start = lexer.getPreviousPosition();
-
-            MutableSyntax declaration = parseMutable();
-            if (declaration == null)
-                return null;
-
-            Position end = lexer.getPosition();
-
-            MutableDeclarationSyntax ret = new MutableDeclarationSyntax(start, end, declaration);
-
-            declaration.parent = ret;
+            var ret = new UnionSyntax
+            {
+                start = start,
+                end = end,
+                tags = tags,
+            };
 
             return ret;
         }
 
-        public ThreadLocalDeclarationSyntax parseThreadLocalDeclaration()
+        public TagSyntax[] parse_tag_list()
         {
-            Position start = lexer.getPreviousPosition();
-
-            ThreadLocalSyntax declaration = parseThreadLocal();
-            if (declaration == null)
-                return null;
-
-            Position end = lexer.getPosition();
-
-            ThreadLocalDeclarationSyntax ret = new ThreadLocalDeclarationSyntax(start, end, declaration);
-
-            declaration.parent = ret;
-
-            return ret;
-        }
-
-        public StatementSyntax[] parseStatementList()
-        {
-            List<StatementSyntax> ret = null;
+            List<TagSyntax> list = null;
             while (true)
             {
-                StatementSyntax node = parseStatement();
+                var node = parse_tag();
                 if (node == null)
                     break;
 
-                if (ret == null)
-                    ret = new List<StatementSyntax>();
+                if (list == null)
+                    list = new List<TagSyntax>();
 
-                ret.Add(node);
+                list.Add(node);
             }
 
-            if (ret != null)
-                return ret.ToArray();
+            if (list != null)
+                return list.ToArray();
             else
                 return null;
         }
 
-        public StatementSyntax parseStatement()
+        public TagSyntax parse_tag()
+        {
+            var start = lexer.get_previous_position();
+
+            var name = lexer.parse_identifier(keywords);
+            if (name != null)
+            {
+                if (!is_identifier(name))
+                {
+                    return null;
+                }
+            }
+            else
+            {
+                    return null;
+            }
+            var attributes = parse_attribute_list();
+            var item = parse_item();
+
+            var end = lexer.get_position();
+
+            var ret = new TagSyntax
+            {
+                start = start,
+                end = end,
+                name = name,
+                attributes = attributes,
+                item = item,
+            };
+
+            return ret;
+        }
+
+        public object parse_item()
         {
             {
-                LetSyntax node = parseLet();
+                var node = parse_variant();
                 if (node != null)
                     return node;
             }
-
             {
-                VarSyntax node = parseVar();
-                if (node != null)
-                    return node;
-            }
-
-            {
-                MutableSyntax node = parseMutable();
-                if (node != null)
-                    return node;
-            }
-
-            {
-                ThreadLocalSyntax node = parseThreadLocal();
-                if (node != null)
-                    return node;
-            }
-
-            {
-                SetSyntax node = parseSet();
-                if (node != null)
-                    return node;
-            }
-
-            {
-                CalculationSyntax node = parseCalculation();
-                if (node != null)
-                    return node;
-            }
-
-            {
-                BreakSyntax node = parseBreak();
-                if (node != null)
-                    return node;
-            }
-
-            {
-                ContinueSyntax node = parseContinue();
-                if (node != null)
-                    return node;
-            }
-
-            {
-                ReturnSyntax node = parseReturn();
-                if (node != null)
-                    return node;
-            }
-
-            {
-                ThrowSyntax node = parseThrow();
+                var node = parse_enum();
                 if (node != null)
                     return node;
             }
@@ -671,295 +536,1189 @@ namespace scalyc
             return null;
         }
 
-        public LetSyntax parseLet()
+        public VariantSyntax parse_variant()
         {
-            Position start = lexer.getPreviousPosition();
-
-            bool successLet1 = lexer.parseKeyword("let");
-            if (successLet1)
-                lexer.advance();
-            else
+            var start = lexer.get_previous_position();
+            var structure = parse_structure();
+            if (structure == null)
                 return null;
+            var body = parse_body();
 
-            BindingSyntax binding = parseBinding();
-            if (binding == null)
-                throw new ParserException(fileName, lexer.line, lexer.column);
+            var end = lexer.get_position();
 
-            Position end = lexer.getPosition();
-
-            LetSyntax ret = new LetSyntax(start, end, binding);
-
-            binding.parent = ret;
+            var ret = new VariantSyntax
+            {
+                start = start,
+                end = end,
+                structure = structure,
+                body = body,
+            };
 
             return ret;
         }
 
-        public VarSyntax parseVar()
+        public EnumSyntax parse_enum()
         {
-            Position start = lexer.getPreviousPosition();
+            var start = lexer.get_previous_position();
 
-            bool successVar1 = lexer.parseKeyword("var");
-            if (successVar1)
-                lexer.advance();
-            else
-                return null;
+            var literal = lexer.parse_literal();
+            if (literal == null)
+            {
+                    return null;
+            }
 
-            BindingSyntax binding = parseBinding();
-            if (binding == null)
-                throw new ParserException(fileName, lexer.line, lexer.column);
+            var end = lexer.get_position();
 
-            Position end = lexer.getPosition();
-
-            VarSyntax ret = new VarSyntax(start, end, binding);
-
-            binding.parent = ret;
+            var ret = new EnumSyntax
+            {
+                start = start,
+                end = end,
+                literal = literal,
+            };
 
             return ret;
         }
 
-        public MutableSyntax parseMutable()
+        public ConstantSyntax parse_constant()
         {
-            Position start = lexer.getPreviousPosition();
+            var start = lexer.get_previous_position();
 
-            bool successMutable1 = lexer.parseKeyword("mutable");
-            if (successMutable1)
-                lexer.advance();
-            else
-                return null;
+            var literal = lexer.parse_literal();
+            if (literal == null)
+            {
+                    return null;
+            }
 
-            BindingSyntax binding = parseBinding();
-            if (binding == null)
-                throw new ParserException(fileName, lexer.line, lexer.column);
+            var end = lexer.get_position();
 
-            Position end = lexer.getPosition();
-
-            MutableSyntax ret = new MutableSyntax(start, end, binding);
-
-            binding.parent = ret;
+            var ret = new ConstantSyntax
+            {
+                start = start,
+                end = end,
+                literal = literal,
+            };
 
             return ret;
         }
 
-        public ThreadLocalSyntax parseThreadLocal()
+        public DelegateSyntax parse_delegate()
         {
-            Position start = lexer.getPreviousPosition();
+            var start = lexer.get_previous_position();
 
-            bool successThreadlocal1 = lexer.parseKeyword("threadlocal");
-            if (successThreadlocal1)
-                lexer.advance();
-            else
-                return null;
+            var success_delegate_1 = lexer.parse_keyword("delegate");
+            if (!success_delegate_1)
+                    return null;
+            var type = parse_typespec();
+            if (type == null)
+                throw new ParserException(file_name, lexer.line, lexer.column);
+            var attributes = parse_attribute_list();
+            var result = parse_returns();
+            var error = parse_throws();
 
-            BindingSyntax binding = parseBinding();
-            if (binding == null)
-                throw new ParserException(fileName, lexer.line, lexer.column);
+            var end = lexer.get_position();
 
-            Position end = lexer.getPosition();
-
-            ThreadLocalSyntax ret = new ThreadLocalSyntax(start, end, binding);
-
-            binding.parent = ret;
+            var ret = new DelegateSyntax
+            {
+                start = start,
+                end = end,
+                type = type,
+                attributes = attributes,
+                result = result,
+                error = error,
+            };
 
             return ret;
         }
 
-        public BindingSyntax parseBinding()
+        public StructureSyntax parse_structure()
         {
-            Position start = lexer.getPreviousPosition();
+            var start = lexer.get_previous_position();
 
-            string name = lexer.parseIdentifier();
-            if ((name != null) && isIdentifier(name))
-                lexer.advance();
+            var success_left_paren_1 = lexer.parse_punctuation("(");
+            if (!success_left_paren_1)
+                    return null;
+            var components = parse_component_list();
+
+            var success_right_paren_3 = lexer.parse_punctuation(")");
+            if (!success_right_paren_3)
+                    throw new ParserException(file_name, lexer.line, lexer.column);
+
+            var end = lexer.get_position();
+
+            var ret = new StructureSyntax
+            {
+                start = start,
+                end = end,
+                components = components,
+            };
+
+            return ret;
+        }
+
+        public BodySyntax parse_body()
+        {
+            var start = lexer.get_previous_position();
+
+            var success_left_curly_1 = lexer.parse_punctuation("{");
+            if (!success_left_curly_1)
+                    return null;
+            var declarations = parse_declaration_list();
+
+            var success_right_curly_3 = lexer.parse_punctuation("}");
+            if (!success_right_curly_3)
+                    throw new ParserException(file_name, lexer.line, lexer.column);
+
+            var end = lexer.get_position();
+
+            var ret = new BodySyntax
+            {
+                start = start,
+                end = end,
+                declarations = declarations,
+            };
+
+            return ret;
+        }
+
+        public ComponentSyntax[] parse_component_list()
+        {
+            List<ComponentSyntax> list = null;
+            while (true)
+            {
+                var node = parse_component();
+                if (node == null)
+                    break;
+
+                if (list == null)
+                    list = new List<ComponentSyntax>();
+
+                list.Add(node);
+            }
+
+            if (list != null)
+                return list.ToArray();
             else
                 return null;
+        }
 
-            TypeAnnotationSyntax typeAnnotation = parseTypeAnnotation();
+        public ComponentSyntax parse_component()
+        {
+            var start = lexer.get_previous_position();
 
-            CalculationSyntax calculation = parseCalculation();
+            var name = lexer.parse_identifier(keywords);
+            if (name != null)
+            {
+                if (!is_identifier(name))
+                {
+                    return null;
+                }
+            }
+            else
+            {
+                    return null;
+            }
+            var attributes = parse_attribute_list();
+            var annotation = parse_typeannotation();
+
+            lexer.parse_punctuation(",");
+
+            var end = lexer.get_position();
+
+            var ret = new ComponentSyntax
+            {
+                start = start,
+                end = end,
+                name = name,
+                attributes = attributes,
+                annotation = annotation,
+            };
+
+            return ret;
+        }
+
+        public TypeAnnotationSyntax parse_typeannotation()
+        {
+            var start = lexer.get_previous_position();
+
+            var success_colon_1 = lexer.parse_colon();
+            if (!success_colon_1)
+                    return null;
+            var spec = parse_typespec();
+            if (spec == null)
+                throw new ParserException(file_name, lexer.line, lexer.column);
+
+            var end = lexer.get_position();
+
+            var ret = new TypeAnnotationSyntax
+            {
+                start = start,
+                end = end,
+                spec = spec,
+            };
+
+            return ret;
+        }
+
+        public object parse_typespec()
+        {
+            {
+                var node = parse_structure();
+                if (node != null)
+                    return node;
+            }
+            {
+                var node = parse_type();
+                if (node != null)
+                    return node;
+            }
+
+            return null;
+        }
+
+        public TypeSyntax parse_type()
+        {
+            var start = lexer.get_previous_position();
+            var name = parse_name();
+            if (name == null)
+                return null;
+            var generics = parse_genericarguments();
+            var optional = parse_optional();
+
+            var end = lexer.get_position();
+
+            var ret = new TypeSyntax
+            {
+                start = start,
+                end = end,
+                name = name,
+                generics = generics,
+                optional = optional,
+            };
+
+            return ret;
+        }
+
+        public GenericArgumentsSyntax parse_genericarguments()
+        {
+            var start = lexer.get_previous_position();
+
+            var success_left_bracket_1 = lexer.parse_punctuation("[");
+            if (!success_left_bracket_1)
+                    return null;
+            var generics = parse_genericargument_list();
+
+            var success_right_bracket_3 = lexer.parse_punctuation("]");
+            if (!success_right_bracket_3)
+                    throw new ParserException(file_name, lexer.line, lexer.column);
+
+            var end = lexer.get_position();
+
+            var ret = new GenericArgumentsSyntax
+            {
+                start = start,
+                end = end,
+                generics = generics,
+            };
+
+            return ret;
+        }
+
+        public GenericArgumentSyntax[] parse_genericargument_list()
+        {
+            List<GenericArgumentSyntax> list = null;
+            while (true)
+            {
+                var node = parse_genericargument();
+                if (node == null)
+                    break;
+
+                if (list == null)
+                    list = new List<GenericArgumentSyntax>();
+
+                list.Add(node);
+            }
+
+            if (list != null)
+                return list.ToArray();
+            else
+                return null;
+        }
+
+        public GenericArgumentSyntax parse_genericargument()
+        {
+            var start = lexer.get_previous_position();
+            var spec = parse_type();
+            if (spec == null)
+                return null;
+
+            lexer.parse_punctuation(",");
+
+            var end = lexer.get_position();
+
+            var ret = new GenericArgumentSyntax
+            {
+                start = start,
+                end = end,
+                spec = spec,
+            };
+
+            return ret;
+        }
+
+        public OptionalSyntax parse_optional()
+        {
+            var start = lexer.get_previous_position();
+
+            var success_question_1 = lexer.parse_punctuation("?");
+            if (!success_question_1)
+                    return null;
+
+            var end = lexer.get_position();
+
+            var ret = new OptionalSyntax
+            {
+                start = start,
+                end = end,
+            };
+
+            return ret;
+        }
+
+        public FunctionSyntax parse_function()
+        {
+            var start = lexer.get_previous_position();
+
+            var success_function_1 = lexer.parse_keyword("function");
+            if (!success_function_1)
+                    return null;
+
+            var name = lexer.parse_identifier(keywords);
+            if (name != null)
+            {
+                if (!is_identifier(name))
+                {
+                    throw new ParserException(file_name, lexer.line, lexer.column);
+                }
+            }
+            else
+            {
+                    throw new ParserException(file_name, lexer.line, lexer.column);
+            }
+            var routine = parse_routine();
+            if (routine == null)
+                throw new ParserException(file_name, lexer.line, lexer.column);
+
+            var end = lexer.get_position();
+
+            var ret = new FunctionSyntax
+            {
+                start = start,
+                end = end,
+                name = name,
+                routine = routine,
+            };
+
+            return ret;
+        }
+
+        public ProcedureSyntax parse_procedure()
+        {
+            var start = lexer.get_previous_position();
+
+            var success_procedure_1 = lexer.parse_keyword("procedure");
+            if (!success_procedure_1)
+                    return null;
+
+            var name = lexer.parse_identifier(keywords);
+            if (name != null)
+            {
+                if (!is_identifier(name))
+                {
+                    throw new ParserException(file_name, lexer.line, lexer.column);
+                }
+            }
+            else
+            {
+                    throw new ParserException(file_name, lexer.line, lexer.column);
+            }
+            var routine = parse_routine();
+            if (routine == null)
+                throw new ParserException(file_name, lexer.line, lexer.column);
+
+            var end = lexer.get_position();
+
+            var ret = new ProcedureSyntax
+            {
+                start = start,
+                end = end,
+                name = name,
+                routine = routine,
+            };
+
+            return ret;
+        }
+
+        public OperatorSyntax parse_operator()
+        {
+            var start = lexer.get_previous_position();
+
+            var success_operator_1 = lexer.parse_keyword("operator");
+            if (!success_operator_1)
+                    return null;
+            var routine = parse_routine();
+            if (routine == null)
+                throw new ParserException(file_name, lexer.line, lexer.column);
+
+            var end = lexer.get_position();
+
+            var ret = new OperatorSyntax
+            {
+                start = start,
+                end = end,
+                routine = routine,
+            };
+
+            return ret;
+        }
+
+        public RoutineSyntax parse_routine()
+        {
+            var start = lexer.get_previous_position();
+            var type = parse_typespec();
+            var attributes = parse_attribute_list();
+            var result = parse_returns();
+
+            lexer.parse_colon();
+            var error = parse_throws();
+
+            lexer.parse_colon();
+            var exception = parse_attribute_list();
+
+            lexer.parse_colon();
+            var implementation = parse_implementation();
+            if (implementation == null)
+                throw new ParserException(file_name, lexer.line, lexer.column);
+
+            var end = lexer.get_position();
+
+            var ret = new RoutineSyntax
+            {
+                start = start,
+                end = end,
+                type = type,
+                attributes = attributes,
+                result = result,
+                error = error,
+                exception = exception,
+                implementation = implementation,
+            };
+
+            return ret;
+        }
+
+        public ReturnsSyntax parse_returns()
+        {
+            var start = lexer.get_previous_position();
+
+            var success_returns_1 = lexer.parse_keyword("returns");
+            if (!success_returns_1)
+                    return null;
+            var spec = parse_typespec();
+            if (spec == null)
+                throw new ParserException(file_name, lexer.line, lexer.column);
+            var attributes = parse_attribute_list();
+
+            var end = lexer.get_position();
+
+            var ret = new ReturnsSyntax
+            {
+                start = start,
+                end = end,
+                spec = spec,
+                attributes = attributes,
+            };
+
+            return ret;
+        }
+
+        public ThrowsSyntax parse_throws()
+        {
+            var start = lexer.get_previous_position();
+
+            var success_throws_1 = lexer.parse_keyword("throws");
+            if (!success_throws_1)
+                    return null;
+            var spec = parse_typespec();
+            if (spec == null)
+                throw new ParserException(file_name, lexer.line, lexer.column);
+            var attributes = parse_attribute_list();
+
+            var end = lexer.get_position();
+
+            var ret = new ThrowsSyntax
+            {
+                start = start,
+                end = end,
+                spec = spec,
+                attributes = attributes,
+            };
+
+            return ret;
+        }
+
+        public object parse_implementation()
+        {
+            {
+                var node = parse_operation();
+                if (node != null)
+                    return node;
+            }
+            {
+                var node = parse_extern();
+                if (node != null)
+                    return node;
+            }
+            {
+                var node = parse_instruction();
+                if (node != null)
+                    return node;
+            }
+            {
+                var node = parse_intrinsic();
+                if (node != null)
+                    return node;
+            }
+
+            return null;
+        }
+
+        public ExternSyntax parse_extern()
+        {
+            var start = lexer.get_previous_position();
+
+            var success_extern_1 = lexer.parse_keyword("extern");
+            if (!success_extern_1)
+                    return null;
+
+            var end = lexer.get_position();
+
+            var ret = new ExternSyntax
+            {
+                start = start,
+                end = end,
+            };
+
+            return ret;
+        }
+
+        public InstructionSyntax parse_instruction()
+        {
+            var start = lexer.get_previous_position();
+
+            var success_instruction_1 = lexer.parse_keyword("instruction");
+            if (!success_instruction_1)
+                    return null;
+
+            var end = lexer.get_position();
+
+            var ret = new InstructionSyntax
+            {
+                start = start,
+                end = end,
+            };
+
+            return ret;
+        }
+
+        public IntrinsicSyntax parse_intrinsic()
+        {
+            var start = lexer.get_previous_position();
+
+            var success_intrinsic_1 = lexer.parse_keyword("intrinsic");
+            if (!success_intrinsic_1)
+                    return null;
+
+            var end = lexer.get_position();
+
+            var ret = new IntrinsicSyntax
+            {
+                start = start,
+                end = end,
+            };
+
+            return ret;
+        }
+
+        public UseSyntax parse_use()
+        {
+            var start = lexer.get_previous_position();
+
+            var success_use_1 = lexer.parse_keyword("use");
+            if (!success_use_1)
+                    return null;
+            var name = parse_name();
+            if (name == null)
+                throw new ParserException(file_name, lexer.line, lexer.column);
+
+            var end = lexer.get_position();
+
+            var ret = new UseSyntax
+            {
+                start = start,
+                end = end,
+                name = name,
+            };
+
+            return ret;
+        }
+
+        public ImplementSyntax parse_implement()
+        {
+            var start = lexer.get_previous_position();
+
+            var success_implement_1 = lexer.parse_keyword("implement");
+            if (!success_implement_1)
+                    return null;
+            var name = parse_name();
+            if (name == null)
+                throw new ParserException(file_name, lexer.line, lexer.column);
+            var attributes = parse_attribute_list();
+
+            var success_left_curly_4 = lexer.parse_punctuation("{");
+            if (!success_left_curly_4)
+                    throw new ParserException(file_name, lexer.line, lexer.column);
+            var functions = parse_method_list();
+
+            var success_right_curly_6 = lexer.parse_punctuation("}");
+            if (!success_right_curly_6)
+                    throw new ParserException(file_name, lexer.line, lexer.column);
+
+            var end = lexer.get_position();
+
+            var ret = new ImplementSyntax
+            {
+                start = start,
+                end = end,
+                name = name,
+                attributes = attributes,
+                functions = functions,
+            };
+
+            return ret;
+        }
+
+        public TraitSyntax parse_trait()
+        {
+            var start = lexer.get_previous_position();
+
+            var success_trait_1 = lexer.parse_keyword("trait");
+            if (!success_trait_1)
+                    return null;
+            var name = parse_name();
+            if (name == null)
+                throw new ParserException(file_name, lexer.line, lexer.column);
+            var extension = parse_extends();
+            if (extension == null)
+                throw new ParserException(file_name, lexer.line, lexer.column);
+            var attributes = parse_attribute_list();
+
+            var success_left_curly_5 = lexer.parse_punctuation("{");
+            if (!success_left_curly_5)
+                    throw new ParserException(file_name, lexer.line, lexer.column);
+            var functions = parse_method_list();
+
+            var success_right_curly_7 = lexer.parse_punctuation("}");
+            if (!success_right_curly_7)
+                    throw new ParserException(file_name, lexer.line, lexer.column);
+
+            var end = lexer.get_position();
+
+            var ret = new TraitSyntax
+            {
+                start = start,
+                end = end,
+                name = name,
+                extension = extension,
+                attributes = attributes,
+                functions = functions,
+            };
+
+            return ret;
+        }
+
+        public object[] parse_method_list()
+        {
+            List<object> list = null;
+            while (true)
+            {
+                var node = parse_method();
+                if (node == null)
+                    break;
+
+                if (list == null)
+                    list = new List<object>();
+
+                list.Add(node);
+            }
+
+            if (list != null)
+                return list.ToArray();
+            else
+                return null;
+        }
+
+        public object parse_method()
+        {
+            {
+                var node = parse_function();
+                if (node != null)
+                    return node;
+            }
+            {
+                var node = parse_procedure();
+                if (node != null)
+                    return node;
+            }
+            {
+                var node = parse_operator();
+                if (node != null)
+                    return node;
+            }
+
+            return null;
+        }
+
+        public ExtendsSyntax parse_extends()
+        {
+            var start = lexer.get_previous_position();
+
+            var success_extends_1 = lexer.parse_keyword("extends");
+            if (!success_extends_1)
+                    return null;
+            var extensions = parse_extend_list();
+
+            var end = lexer.get_position();
+
+            var ret = new ExtendsSyntax
+            {
+                start = start,
+                end = end,
+                extensions = extensions,
+            };
+
+            return ret;
+        }
+
+        public ExtendSyntax[] parse_extend_list()
+        {
+            List<ExtendSyntax> list = null;
+            while (true)
+            {
+                var node = parse_extend();
+                if (node == null)
+                    break;
+
+                if (list == null)
+                    list = new List<ExtendSyntax>();
+
+                list.Add(node);
+            }
+
+            if (list != null)
+                return list.ToArray();
+            else
+                return null;
+        }
+
+        public ExtendSyntax parse_extend()
+        {
+            var start = lexer.get_previous_position();
+            var spec = parse_typespec();
+            if (spec == null)
+                return null;
+
+            lexer.parse_punctuation(",");
+
+            var end = lexer.get_position();
+
+            var ret = new ExtendSyntax
+            {
+                start = start,
+                end = end,
+                spec = spec,
+            };
+
+            return ret;
+        }
+
+        public MacroSyntax parse_macro()
+        {
+            var start = lexer.get_previous_position();
+
+            var success_macro_1 = lexer.parse_keyword("macro");
+            if (!success_macro_1)
+                    return null;
+
+            var name = lexer.parse_identifier(keywords);
+            if (name != null)
+            {
+                if (!is_identifier(name))
+                {
+                    throw new ParserException(file_name, lexer.line, lexer.column);
+                }
+            }
+            else
+            {
+                    throw new ParserException(file_name, lexer.line, lexer.column);
+            }
+            var model = parse_model();
+            if (model == null)
+                throw new ParserException(file_name, lexer.line, lexer.column);
+            var rule = parse_operation();
+            if (rule == null)
+                throw new ParserException(file_name, lexer.line, lexer.column);
+
+            var end = lexer.get_position();
+
+            var ret = new MacroSyntax
+            {
+                start = start,
+                end = end,
+                name = name,
+                model = model,
+                rule = rule,
+            };
+
+            return ret;
+        }
+
+        public object parse_model()
+        {
+            {
+                var node = parse_literal();
+                if (node != null)
+                    return node;
+            }
+            {
+                var node = parse_name();
+                if (node != null)
+                    return node;
+            }
+            {
+                var node = parse_object();
+                if (node != null)
+                    return node;
+            }
+            {
+                var node = parse_array();
+                if (node != null)
+                    return node;
+            }
+
+            return null;
+        }
+
+        public object[] parse_statement_list()
+        {
+            List<object> list = null;
+            while (true)
+            {
+                var node = parse_statement();
+                if (node == null)
+                    break;
+
+                if (list == null)
+                    list = new List<object>();
+
+                list.Add(node);
+            }
+
+            if (list != null)
+                return list.ToArray();
+            else
+                return null;
+        }
+
+        public object parse_statement()
+        {
+            {
+                var node = parse_operation();
+                if (node != null)
+                    return node;
+            }
+            {
+                var node = parse_let();
+                if (node != null)
+                    return node;
+            }
+            {
+                var node = parse_var();
+                if (node != null)
+                    return node;
+            }
+            {
+                var node = parse_mutable();
+                if (node != null)
+                    return node;
+            }
+            {
+                var node = parse_set();
+                if (node != null)
+                    return node;
+            }
+            {
+                var node = parse_continue();
+                if (node != null)
+                    return node;
+            }
+            {
+                var node = parse_break();
+                if (node != null)
+                    return node;
+            }
+            {
+                var node = parse_return();
+                if (node != null)
+                    return node;
+            }
+            {
+                var node = parse_throw();
+                if (node != null)
+                    return node;
+            }
+
+            return null;
+        }
+
+        public LetSyntax parse_let()
+        {
+            var start = lexer.get_previous_position();
+
+            var success_let_1 = lexer.parse_keyword("let");
+            if (!success_let_1)
+                    return null;
+            var binding = parse_binding();
+            if (binding == null)
+                throw new ParserException(file_name, lexer.line, lexer.column);
+
+            var end = lexer.get_position();
+
+            var ret = new LetSyntax
+            {
+                start = start,
+                end = end,
+                binding = binding,
+            };
+
+            return ret;
+        }
+
+        public VarSyntax parse_var()
+        {
+            var start = lexer.get_previous_position();
+
+            var success_var_1 = lexer.parse_keyword("var");
+            if (!success_var_1)
+                    return null;
+            var binding = parse_binding();
+            if (binding == null)
+                throw new ParserException(file_name, lexer.line, lexer.column);
+
+            var end = lexer.get_position();
+
+            var ret = new VarSyntax
+            {
+                start = start,
+                end = end,
+                binding = binding,
+            };
+
+            return ret;
+        }
+
+        public MutableSyntax parse_mutable()
+        {
+            var start = lexer.get_previous_position();
+
+            var success_mutable_1 = lexer.parse_keyword("mutable");
+            if (!success_mutable_1)
+                    return null;
+            var binding = parse_binding();
+            if (binding == null)
+                throw new ParserException(file_name, lexer.line, lexer.column);
+
+            var end = lexer.get_position();
+
+            var ret = new MutableSyntax
+            {
+                start = start,
+                end = end,
+                binding = binding,
+            };
+
+            return ret;
+        }
+
+        public BindingSyntax parse_binding()
+        {
+            var start = lexer.get_previous_position();
+
+            var name = lexer.parse_identifier(keywords);
+            if (name != null)
+            {
+                if (!is_identifier(name))
+                {
+                    return null;
+                }
+            }
+            else
+            {
+                    return null;
+            }
+            var annotation = parse_typeannotation();
+            var calculation = parse_operation();
             if (calculation == null)
-                throw new ParserException(fileName, lexer.line, lexer.column);
+                throw new ParserException(file_name, lexer.line, lexer.column);
 
-            Position end = lexer.getPosition();
+            var end = lexer.get_position();
 
-            BindingSyntax ret = new BindingSyntax(start, end, name, typeAnnotation, calculation);
-
-            if (typeAnnotation != null)
-                typeAnnotation.parent = ret;
-            calculation.parent = ret;
-
-            return ret;
-        }
-
-        public SetSyntax parseSet()
-        {
-            Position start = lexer.getPreviousPosition();
-
-            bool successSet1 = lexer.parseKeyword("set");
-            if (successSet1)
-                lexer.advance();
-            else
-                return null;
-
-            OperationSyntax lValue = parseOperation();
-            if (lValue == null)
-                throw new ParserException(fileName, lexer.line, lexer.column);
-
-            bool successColon3 = lexer.parsePunctuation(":");
-            if (successColon3)
-                lexer.advance();
-            else
-                throw new ParserException(fileName, lexer.line, lexer.column);
-
-            CalculationSyntax rValue = parseCalculation();
-            if (rValue == null)
-                throw new ParserException(fileName, lexer.line, lexer.column);
-
-            Position end = lexer.getPosition();
-
-            SetSyntax ret = new SetSyntax(start, end, lValue, rValue);
-
-            lValue.parent = ret;
-            rValue.parent = ret;
+            var ret = new BindingSyntax
+            {
+                start = start,
+                end = end,
+                name = name,
+                annotation = annotation,
+                calculation = calculation,
+            };
 
             return ret;
         }
 
-        public CalculationSyntax parseCalculation()
+        public SetSyntax parse_set()
         {
-            Position start = lexer.getPreviousPosition();
+            var start = lexer.get_previous_position();
 
-            OperationSyntax operation = parseOperation();
-            if (operation == null)
-                return null;
+            var success_set_1 = lexer.parse_keyword("set");
+            if (!success_set_1)
+                    return null;
+            var target = parse_operation();
+            if (target == null)
+                throw new ParserException(file_name, lexer.line, lexer.column);
+            var source = parse_operation();
+            if (source == null)
+                throw new ParserException(file_name, lexer.line, lexer.column);
 
-            bool successSemicolon2 = lexer.parsePunctuation(";");
-            if (successSemicolon2)
-                lexer.advance();
+            var end = lexer.get_position();
 
-            Position end = lexer.getPosition();
-
-            CalculationSyntax ret = new CalculationSyntax(start, end, operation);
-
-            operation.parent = ret;
+            var ret = new SetSyntax
+            {
+                start = start,
+                end = end,
+                target = target,
+                source = source,
+            };
 
             return ret;
         }
 
-        public OperationSyntax parseOperation()
+        public OperationSyntax parse_operation()
         {
-            Position start = lexer.getPreviousPosition();
-
-            OperandSyntax[] op = parseOperandList();
+            var start = lexer.get_previous_position();
+            var op = parse_operand_list();
             if (op == null)
                 return null;
 
-            Position end = lexer.getPosition();
+            lexer.parse_colon();
 
-            OperationSyntax ret = new OperationSyntax(start, end, op);
+            var end = lexer.get_position();
 
-            if (op != null)
+            var ret = new OperationSyntax
             {
-                foreach (OperandSyntax item in op)
-                    item.parent = ret;
-            }
+                start = start,
+                end = end,
+                op = op,
+            };
 
             return ret;
         }
 
-        public OperandSyntax[] parseOperandList()
+        public OperandSyntax[] parse_operand_list()
         {
-            List<OperandSyntax> ret = null;
+            List<OperandSyntax> list = null;
             while (true)
             {
-                OperandSyntax node = parseOperand();
+                var node = parse_operand();
                 if (node == null)
                     break;
 
-                if (ret == null)
-                    ret = new List<OperandSyntax>();
+                if (list == null)
+                    list = new List<OperandSyntax>();
 
-                ret.Add(node);
+                list.Add(node);
             }
 
-            if (ret != null)
-                return ret.ToArray();
+            if (list != null)
+                return list.ToArray();
             else
                 return null;
         }
 
-        public OperandSyntax parseOperand()
+        public OperandSyntax parse_operand()
         {
-            Position start = lexer.getPreviousPosition();
-
-            ExpressionSyntax primary = parseExpression();
+            var start = lexer.get_previous_position();
+            var primary = parse_expression();
             if (primary == null)
                 return null;
+            var postfixes = parse_postfix_list();
 
-            PostfixSyntax[] postfixes = parsePostfixList();
+            var end = lexer.get_position();
 
-            Position end = lexer.getPosition();
-
-            OperandSyntax ret = new OperandSyntax(start, end, primary, postfixes);
-
-            primary.parent = ret;
-            if (postfixes != null)
+            var ret = new OperandSyntax
             {
-                foreach (PostfixSyntax item in postfixes)
-                    item.parent = ret;
-            }
+                start = start,
+                end = end,
+                primary = primary,
+                postfixes = postfixes,
+            };
 
             return ret;
         }
 
-        public PostfixSyntax[] parsePostfixList()
+        public object[] parse_postfix_list()
         {
-            List<PostfixSyntax> ret = null;
+            List<object> list = null;
             while (true)
             {
-                PostfixSyntax node = parsePostfix();
+                var node = parse_postfix();
                 if (node == null)
                     break;
 
-                if (ret == null)
-                    ret = new List<PostfixSyntax>();
+                if (list == null)
+                    list = new List<object>();
 
-                ret.Add(node);
+                list.Add(node);
             }
 
-            if (ret != null)
-                return ret.ToArray();
+            if (list != null)
+                return list.ToArray();
             else
                 return null;
         }
 
-        public PostfixSyntax parsePostfix()
+        public object parse_postfix()
         {
             {
-                MemberAccessSyntax node = parseMemberAccess();
+                var node = parse_memberaccess();
                 if (node != null)
                     return node;
             }
-
             {
-                AsSyntax node = parseAs();
+                var node = parse_catcher();
                 if (node != null)
                     return node;
             }
-
             {
-                IsSyntax node = parseIs();
-                if (node != null)
-                    return node;
-            }
-
-            {
-                UnwrapSyntax node = parseUnwrap();
-                if (node != null)
-                    return node;
-            }
-
-            {
-                CatchSyntax node = parseCatch();
+                var node = parse_is();
                 if (node != null)
                     return node;
             }
@@ -967,132 +1726,326 @@ namespace scalyc
             return null;
         }
 
-        public MemberAccessSyntax parseMemberAccess()
+        public MemberAccessSyntax parse_memberaccess()
         {
-            Position start = lexer.getPreviousPosition();
+            var start = lexer.get_previous_position();
 
-            bool successDot1 = lexer.parsePunctuation(".");
-            if (successDot1)
-                lexer.advance();
-            else
-                return null;
+            var success_dot_1 = lexer.parse_punctuation(".");
+            if (!success_dot_1)
+                    return null;
+            var member = parse_name();
+            if (member == null)
+                throw new ParserException(file_name, lexer.line, lexer.column);
 
-            string member = lexer.parseIdentifier();
-            if ((member != null) && isIdentifier(member))
-                lexer.advance();
-            else
-                throw new ParserException(fileName, lexer.line, lexer.column);
+            var end = lexer.get_position();
 
-            Position end = lexer.getPosition();
-
-            MemberAccessSyntax ret = new MemberAccessSyntax(start, end, member);
-
+            var ret = new MemberAccessSyntax
+            {
+                start = start,
+                end = end,
+                member = member,
+            };
 
             return ret;
         }
 
-        public AsSyntax parseAs()
+        public CatcherSyntax parse_catcher()
         {
-            Position start = lexer.getPreviousPosition();
-
-            bool successAs1 = lexer.parseKeyword("as");
-            if (successAs1)
-                lexer.advance();
-            else
+            var start = lexer.get_previous_position();
+            var catchers = parse_catch_list();
+            if (catchers == null)
                 return null;
+            var dropper = parse_drop();
 
-            TypeSpecSyntax typeSpec = parseTypeSpec();
-            if (typeSpec == null)
-                throw new ParserException(fileName, lexer.line, lexer.column);
+            var end = lexer.get_position();
 
-            Position end = lexer.getPosition();
-
-            AsSyntax ret = new AsSyntax(start, end, typeSpec);
-
-            typeSpec.parent = ret;
+            var ret = new CatcherSyntax
+            {
+                start = start,
+                end = end,
+                catchers = catchers,
+                dropper = dropper,
+            };
 
             return ret;
         }
 
-        public IsSyntax parseIs()
+        public CatchSyntax[] parse_catch_list()
         {
-            Position start = lexer.getPreviousPosition();
+            List<CatchSyntax> list = null;
+            while (true)
+            {
+                var node = parse_catch();
+                if (node == null)
+                    break;
 
-            bool successIs1 = lexer.parseKeyword("is");
-            if (successIs1)
-                lexer.advance();
+                if (list == null)
+                    list = new List<CatchSyntax>();
+
+                list.Add(node);
+            }
+
+            if (list != null)
+                return list.ToArray();
             else
                 return null;
-
-            TypeSpecSyntax typeSpec = parseTypeSpec();
-            if (typeSpec == null)
-                throw new ParserException(fileName, lexer.line, lexer.column);
-
-            Position end = lexer.getPosition();
-
-            IsSyntax ret = new IsSyntax(start, end, typeSpec);
-
-            typeSpec.parent = ret;
-
-            return ret;
         }
 
-        public UnwrapSyntax parseUnwrap()
+        public CatchSyntax parse_catch()
         {
-            Position start = lexer.getPreviousPosition();
+            var start = lexer.get_previous_position();
 
-            bool successExclamation1 = lexer.parsePunctuation("!");
-            if (successExclamation1)
-                lexer.advance();
-            else
-                return null;
-
-            Position end = lexer.getPosition();
-
-            UnwrapSyntax ret = new UnwrapSyntax(start, end);
-
-
-            return ret;
-        }
-
-        public CatchSyntax parseCatch()
-        {
-            Position start = lexer.getPreviousPosition();
-
-            bool successCatch1 = lexer.parseKeyword("catch");
-            if (successCatch1)
-                lexer.advance();
-            else
-                return null;
-
-            CatchPatternSyntax typeSpec = parseCatchPattern();
-            if (typeSpec == null)
-                throw new ParserException(fileName, lexer.line, lexer.column);
-
-            BlockSyntax handler = parseBlock();
+            var success_catch_1 = lexer.parse_keyword("catch");
+            if (!success_catch_1)
+                    return null;
+            var condition = parse_operation();
+            if (condition == null)
+                throw new ParserException(file_name, lexer.line, lexer.column);
+            var handler = parse_operation();
             if (handler == null)
-                throw new ParserException(fileName, lexer.line, lexer.column);
+                throw new ParserException(file_name, lexer.line, lexer.column);
 
-            Position end = lexer.getPosition();
+            var end = lexer.get_position();
 
-            CatchSyntax ret = new CatchSyntax(start, end, typeSpec, handler);
-
-            typeSpec.parent = ret;
-            handler.parent = ret;
+            var ret = new CatchSyntax
+            {
+                start = start,
+                end = end,
+                condition = condition,
+                handler = handler,
+            };
 
             return ret;
         }
 
-        public CatchPatternSyntax parseCatchPattern()
+        public DropSyntax parse_drop()
+        {
+            var start = lexer.get_previous_position();
+
+            var success_drop_1 = lexer.parse_keyword("drop");
+            if (!success_drop_1)
+                    return null;
+            var handler = parse_operation();
+            if (handler == null)
+                throw new ParserException(file_name, lexer.line, lexer.column);
+
+            var end = lexer.get_position();
+
+            var ret = new DropSyntax
+            {
+                start = start,
+                end = end,
+                handler = handler,
+            };
+
+            return ret;
+        }
+
+        public IsSyntax parse_is()
+        {
+            var start = lexer.get_previous_position();
+
+            var success_is_1 = lexer.parse_keyword("is");
+            if (!success_is_1)
+                    return null;
+            var condition = parse_operand_list();
+            if (condition == null)
+                throw new ParserException(file_name, lexer.line, lexer.column);
+
+            var end = lexer.get_position();
+
+            var ret = new IsSyntax
+            {
+                start = start,
+                end = end,
+                condition = condition,
+            };
+
+            return ret;
+        }
+
+        public ContinueSyntax parse_continue()
+        {
+            var start = lexer.get_previous_position();
+
+            var success_continue_1 = lexer.parse_keyword("continue");
+            if (!success_continue_1)
+                    return null;
+            var name = parse_loop();
+
+            lexer.parse_colon();
+
+            var end = lexer.get_position();
+
+            var ret = new ContinueSyntax
+            {
+                start = start,
+                end = end,
+                name = name,
+            };
+
+            return ret;
+        }
+
+        public LoopSyntax parse_loop()
+        {
+            var start = lexer.get_previous_position();
+
+            var success_loop_1 = lexer.parse_keyword("loop");
+            if (!success_loop_1)
+                    return null;
+
+            var name = lexer.parse_identifier(keywords);
+            if (name != null)
+            {
+                if (!is_identifier(name))
+                {
+                    throw new ParserException(file_name, lexer.line, lexer.column);
+                }
+            }
+            else
+            {
+                    throw new ParserException(file_name, lexer.line, lexer.column);
+            }
+
+            var end = lexer.get_position();
+
+            var ret = new LoopSyntax
+            {
+                start = start,
+                end = end,
+                name = name,
+            };
+
+            return ret;
+        }
+
+        public BreakSyntax parse_break()
+        {
+            var start = lexer.get_previous_position();
+
+            var success_break_1 = lexer.parse_keyword("break");
+            if (!success_break_1)
+                    return null;
+            var name = parse_loop();
+            var result = parse_operation();
+            if (result == null)
+                throw new ParserException(file_name, lexer.line, lexer.column);
+
+            var end = lexer.get_position();
+
+            var ret = new BreakSyntax
+            {
+                start = start,
+                end = end,
+                name = name,
+                result = result,
+            };
+
+            return ret;
+        }
+
+        public ReturnSyntax parse_return()
+        {
+            var start = lexer.get_previous_position();
+
+            var success_return_1 = lexer.parse_keyword("return");
+            if (!success_return_1)
+                    return null;
+            var result = parse_operation();
+
+            var end = lexer.get_position();
+
+            var ret = new ReturnSyntax
+            {
+                start = start,
+                end = end,
+                result = result,
+            };
+
+            return ret;
+        }
+
+        public ThrowSyntax parse_throw()
+        {
+            var start = lexer.get_previous_position();
+
+            var success_throw_1 = lexer.parse_keyword("throw");
+            if (!success_throw_1)
+                    return null;
+            var result = parse_operation();
+
+            var end = lexer.get_position();
+
+            var ret = new ThrowSyntax
+            {
+                start = start,
+                end = end,
+                result = result,
+            };
+
+            return ret;
+        }
+
+        public object parse_expression()
         {
             {
-                WildCardCatchPatternSyntax node = parseWildCardCatchPattern();
+                var node = parse_literal();
                 if (node != null)
                     return node;
             }
-
             {
-                TypeCatchPatternSyntax node = parseTypeCatchPattern();
+                var node = parse_name();
+                if (node != null)
+                    return node;
+            }
+            {
+                var node = parse_object();
+                if (node != null)
+                    return node;
+            }
+            {
+                var node = parse_array();
+                if (node != null)
+                    return node;
+            }
+            {
+                var node = parse_block();
+                if (node != null)
+                    return node;
+            }
+            {
+                var node = parse_if();
+                if (node != null)
+                    return node;
+            }
+            {
+                var node = parse_match();
+                if (node != null)
+                    return node;
+            }
+            {
+                var node = parse_lambda();
+                if (node != null)
+                    return node;
+            }
+            {
+                var node = parse_for();
+                if (node != null)
+                    return node;
+            }
+            {
+                var node = parse_while();
+                if (node != null)
+                    return node;
+            }
+            {
+                var node = parse_repeat();
+                if (node != null)
+                    return node;
+            }
+            {
+                var node = parse_sizeof();
                 if (node != null)
                     return node;
             }
@@ -1100,4678 +2053,1135 @@ namespace scalyc
             return null;
         }
 
-        public WildCardCatchPatternSyntax parseWildCardCatchPattern()
+        public LiteralSyntax parse_literal()
         {
-            Position start = lexer.getPreviousPosition();
+            var start = lexer.get_previous_position();
 
-            WildcardPatternSyntax pattern = parseWildcardPattern();
-            if (pattern == null)
-                return null;
+            var literal = lexer.parse_literal();
+            if (literal == null)
+            {
+                    return null;
+            }
 
-            Position end = lexer.getPosition();
+            var end = lexer.get_position();
 
-            WildCardCatchPatternSyntax ret = new WildCardCatchPatternSyntax(start, end, pattern);
-
-            pattern.parent = ret;
+            var ret = new LiteralSyntax
+            {
+                start = start,
+                end = end,
+                literal = literal,
+            };
 
             return ret;
         }
 
-        public TypeCatchPatternSyntax parseTypeCatchPattern()
+        public ObjectSyntax parse_object()
         {
-            Position start = lexer.getPreviousPosition();
+            var start = lexer.get_previous_position();
 
-            TypeSpecSyntax typeSpec = parseTypeSpec();
-            if (typeSpec == null)
-                return null;
+            var success_left_paren_1 = lexer.parse_punctuation("(");
+            if (!success_left_paren_1)
+                    return null;
+            var fields = parse_field_list();
 
-            string errorName = lexer.parseIdentifier();
-            if ((errorName != null) && isIdentifier(errorName))
-                lexer.advance();
+            var success_right_paren_3 = lexer.parse_punctuation(")");
+            if (!success_right_paren_3)
+                    throw new ParserException(file_name, lexer.line, lexer.column);
 
-            Position end = lexer.getPosition();
+            var end = lexer.get_position();
 
-            TypeCatchPatternSyntax ret = new TypeCatchPatternSyntax(start, end, typeSpec, errorName);
-
-            typeSpec.parent = ret;
+            var ret = new ObjectSyntax
+            {
+                start = start,
+                end = end,
+                fields = fields,
+            };
 
             return ret;
         }
 
-        public ExpressionSyntax[] parseExpressionList()
+        public FieldSyntax[] parse_field_list()
         {
-            List<ExpressionSyntax> ret = null;
+            List<FieldSyntax> list = null;
             while (true)
             {
-                ExpressionSyntax node = parseExpression();
+                var node = parse_field();
                 if (node == null)
                     break;
 
-                if (ret == null)
-                    ret = new List<ExpressionSyntax>();
+                if (list == null)
+                    list = new List<FieldSyntax>();
 
-                ret.Add(node);
+                list.Add(node);
             }
 
-            if (ret != null)
-                return ret.ToArray();
+            if (list != null)
+                return list.ToArray();
             else
                 return null;
         }
 
-        public ExpressionSyntax parseExpression()
+        public FieldSyntax parse_field()
         {
-            {
-                BlockSyntax node = parseBlock();
-                if (node != null)
-                    return node;
-            }
-
-            {
-                NameSyntax node = parseName();
-                if (node != null)
-                    return node;
-            }
-
-            {
-                ConstantSyntax node = parseConstant();
-                if (node != null)
-                    return node;
-            }
-
-            {
-                IfSyntax node = parseIf();
-                if (node != null)
-                    return node;
-            }
-
-            {
-                SwitchSyntax node = parseSwitch();
-                if (node != null)
-                    return node;
-            }
-
-            {
-                ForSyntax node = parseFor();
-                if (node != null)
-                    return node;
-            }
-
-            {
-                WhileSyntax node = parseWhile();
-                if (node != null)
-                    return node;
-            }
-
-            {
-                DoSyntax node = parseDo();
-                if (node != null)
-                    return node;
-            }
-
-            {
-                ThisSyntax node = parseThis();
-                if (node != null)
-                    return node;
-            }
-
-            {
-                NewSyntax node = parseNew();
-                if (node != null)
-                    return node;
-            }
-
-            {
-                ObjectSyntax node = parseObject();
-                if (node != null)
-                    return node;
-            }
-
-            {
-                ArraySyntax node = parseArray();
-                if (node != null)
-                    return node;
-            }
-
-            {
-                SizeOfSyntax node = parseSizeOf();
-                if (node != null)
-                    return node;
-            }
-
-            return null;
-        }
-
-        public BlockSyntax parseBlock()
-        {
-            Position start = lexer.getPreviousPosition();
-
-            bool successLeftCurly1 = lexer.parsePunctuation("{");
-            if (successLeftCurly1)
-                lexer.advance();
-            else
+            var start = lexer.get_previous_position();
+            var operation = parse_operation();
+            if (operation == null)
                 return null;
+            var attributes = parse_attribute_list();
+            var value = parse_value();
 
-            StatementSyntax[] statements = parseStatementList();
+            lexer.parse_punctuation(",");
 
-            bool successRightCurly3 = lexer.parsePunctuation("}");
-            if (successRightCurly3)
-                lexer.advance();
-            else
-                throw new ParserException(fileName, lexer.line, lexer.column);
+            var end = lexer.get_position();
 
-            Position end = lexer.getPosition();
-
-            BlockSyntax ret = new BlockSyntax(start, end, statements);
-
-            if (statements != null)
+            var ret = new FieldSyntax
             {
-                foreach (StatementSyntax item in statements)
-                    item.parent = ret;
-            }
+                start = start,
+                end = end,
+                operation = operation,
+                attributes = attributes,
+                value = value,
+            };
 
             return ret;
         }
 
-        public ConstantSyntax parseConstant()
+        public ValueSyntax parse_value()
         {
-            Position start = lexer.getPreviousPosition();
+            var start = lexer.get_previous_position();
 
-            Literal literal = lexer.parseLiteral();
-            if (literal != null)
-                lexer.advance();
-            else
-                return null;
+            var success_colon_1 = lexer.parse_colon();
+            if (!success_colon_1)
+                    return null;
+            var value = parse_operation();
+            if (value == null)
+                throw new ParserException(file_name, lexer.line, lexer.column);
+            var attributes = parse_attribute_list();
 
-            Position end = lexer.getPosition();
+            var end = lexer.get_position();
 
-            ConstantSyntax ret = new ConstantSyntax(start, end, literal);
-
+            var ret = new ValueSyntax
+            {
+                start = start,
+                end = end,
+                value = value,
+                attributes = attributes,
+            };
 
             return ret;
         }
 
-        public IfSyntax parseIf()
+        public ArraySyntax parse_array()
         {
-            Position start = lexer.getPreviousPosition();
+            var start = lexer.get_previous_position();
 
-            bool successIf1 = lexer.parseKeyword("if");
-            if (successIf1)
-                lexer.advance();
+            var success_left_bracket_1 = lexer.parse_punctuation("[");
+            if (!success_left_bracket_1)
+                    return null;
+            var elements = parse_element_list();
+            if (elements == null)
+                throw new ParserException(file_name, lexer.line, lexer.column);
+
+            var success_right_bracket_3 = lexer.parse_punctuation("]");
+            if (!success_right_bracket_3)
+                    throw new ParserException(file_name, lexer.line, lexer.column);
+
+            var end = lexer.get_position();
+
+            var ret = new ArraySyntax
+            {
+                start = start,
+                end = end,
+                elements = elements,
+            };
+
+            return ret;
+        }
+
+        public ElementSyntax[] parse_element_list()
+        {
+            List<ElementSyntax> list = null;
+            while (true)
+            {
+                var node = parse_element();
+                if (node == null)
+                    break;
+
+                if (list == null)
+                    list = new List<ElementSyntax>();
+
+                list.Add(node);
+            }
+
+            if (list != null)
+                return list.ToArray();
             else
                 return null;
+        }
 
-            bool successLeftParen2 = lexer.parsePunctuation("(");
-            if (successLeftParen2)
-                lexer.advance();
-            else
-                throw new ParserException(fileName, lexer.line, lexer.column);
+        public ElementSyntax parse_element()
+        {
+            var start = lexer.get_previous_position();
+            var operation = parse_operation();
+            if (operation == null)
+                return null;
+            var attributes = parse_attribute_list();
 
-            OperationSyntax condition = parseOperation();
+            lexer.parse_punctuation(",");
+
+            var end = lexer.get_position();
+
+            var ret = new ElementSyntax
+            {
+                start = start,
+                end = end,
+                operation = operation,
+                attributes = attributes,
+            };
+
+            return ret;
+        }
+
+        public BlockSyntax parse_block()
+        {
+            var start = lexer.get_previous_position();
+
+            var success_left_curly_1 = lexer.parse_punctuation("{");
+            if (!success_left_curly_1)
+                    return null;
+            var statements = parse_statement_list();
+
+            var success_right_curly_3 = lexer.parse_punctuation("}");
+            if (!success_right_curly_3)
+                    throw new ParserException(file_name, lexer.line, lexer.column);
+
+            var end = lexer.get_position();
+
+            var ret = new BlockSyntax
+            {
+                start = start,
+                end = end,
+                statements = statements,
+            };
+
+            return ret;
+        }
+
+        public IfSyntax parse_if()
+        {
+            var start = lexer.get_previous_position();
+
+            var success_if_1 = lexer.parse_keyword("if");
+            if (!success_if_1)
+                    return null;
+            var condition = parse_operation();
             if (condition == null)
-                throw new ParserException(fileName, lexer.line, lexer.column);
-
-            bool successRightParen4 = lexer.parsePunctuation(")");
-            if (successRightParen4)
-                lexer.advance();
-            else
-                throw new ParserException(fileName, lexer.line, lexer.column);
-
-            BlockSyntax consequent = parseBlock();
+                throw new ParserException(file_name, lexer.line, lexer.column);
+            var consequent = parse_operation();
             if (consequent == null)
-                throw new ParserException(fileName, lexer.line, lexer.column);
+                throw new ParserException(file_name, lexer.line, lexer.column);
+            var alternative = parse_else();
 
-            ElseSyntax elseClause = parseElse();
+            var end = lexer.get_position();
 
-            Position end = lexer.getPosition();
-
-            IfSyntax ret = new IfSyntax(start, end, condition, consequent, elseClause);
-
-            condition.parent = ret;
-            consequent.parent = ret;
-            if (elseClause != null)
-                elseClause.parent = ret;
+            var ret = new IfSyntax
+            {
+                start = start,
+                end = end,
+                condition = condition,
+                consequent = consequent,
+                alternative = alternative,
+            };
 
             return ret;
         }
 
-        public ElseSyntax parseElse()
+        public ElseSyntax parse_else()
         {
-            Position start = lexer.getPreviousPosition();
+            var start = lexer.get_previous_position();
 
-            bool successElse1 = lexer.parseKeyword("else");
-            if (successElse1)
-                lexer.advance();
-            else
-                return null;
+            var success_else_1 = lexer.parse_keyword("else");
+            if (!success_else_1)
+                    return null;
 
-            BlockSyntax alternative = parseBlock();
+            lexer.parse_colon();
+            var alternative = parse_operation();
             if (alternative == null)
-                throw new ParserException(fileName, lexer.line, lexer.column);
+                throw new ParserException(file_name, lexer.line, lexer.column);
 
-            Position end = lexer.getPosition();
+            var end = lexer.get_position();
 
-            ElseSyntax ret = new ElseSyntax(start, end, alternative);
-
-            alternative.parent = ret;
+            var ret = new ElseSyntax
+            {
+                start = start,
+                end = end,
+                alternative = alternative,
+            };
 
             return ret;
         }
 
-        public SwitchSyntax parseSwitch()
+        public MatchSyntax parse_match()
         {
-            Position start = lexer.getPreviousPosition();
+            var start = lexer.get_previous_position();
 
-            bool successSwitch1 = lexer.parseKeyword("switch");
-            if (successSwitch1)
-                lexer.advance();
-            else
-                return null;
-
-            bool successLeftParen2 = lexer.parsePunctuation("(");
-            if (successLeftParen2)
-                lexer.advance();
-            else
-                throw new ParserException(fileName, lexer.line, lexer.column);
-
-            OperationSyntax condition = parseOperation();
-            if (condition == null)
-                throw new ParserException(fileName, lexer.line, lexer.column);
-
-            bool successRightParen4 = lexer.parsePunctuation(")");
-            if (successRightParen4)
-                lexer.advance();
-            else
-                throw new ParserException(fileName, lexer.line, lexer.column);
-
-            bool successLeftCurly5 = lexer.parsePunctuation("{");
-            if (successLeftCurly5)
-                lexer.advance();
-            else
-                throw new ParserException(fileName, lexer.line, lexer.column);
-
-            SwitchCaseSyntax[] cases = parseSwitchCaseList();
+            var success_match_1 = lexer.parse_keyword("match");
+            if (!success_match_1)
+                    return null;
+            var scrutinee = parse_operation();
+            if (scrutinee == null)
+                throw new ParserException(file_name, lexer.line, lexer.column);
+            var cases = parse_case_list();
             if (cases == null)
-                throw new ParserException(fileName, lexer.line, lexer.column);
+                throw new ParserException(file_name, lexer.line, lexer.column);
+            var alternative = parse_default();
 
-            bool successRightCurly7 = lexer.parsePunctuation("}");
-            if (successRightCurly7)
-                lexer.advance();
-            else
-                throw new ParserException(fileName, lexer.line, lexer.column);
+            var end = lexer.get_position();
 
-            Position end = lexer.getPosition();
-
-            SwitchSyntax ret = new SwitchSyntax(start, end, condition, cases);
-
-            condition.parent = ret;
-            if (cases != null)
+            var ret = new MatchSyntax
             {
-                foreach (SwitchCaseSyntax item in cases)
-                    item.parent = ret;
-            }
+                start = start,
+                end = end,
+                scrutinee = scrutinee,
+                cases = cases,
+                alternative = alternative,
+            };
 
             return ret;
         }
 
-        public SwitchCaseSyntax[] parseSwitchCaseList()
+        public CaseSyntax[] parse_case_list()
         {
-            List<SwitchCaseSyntax> ret = null;
+            List<CaseSyntax> list = null;
             while (true)
             {
-                SwitchCaseSyntax node = parseSwitchCase();
+                var node = parse_case();
                 if (node == null)
                     break;
 
-                if (ret == null)
-                    ret = new List<SwitchCaseSyntax>();
+                if (list == null)
+                    list = new List<CaseSyntax>();
 
-                ret.Add(node);
+                list.Add(node);
             }
 
-            if (ret != null)
-                return ret.ToArray();
+            if (list != null)
+                return list.ToArray();
             else
                 return null;
         }
 
-        public SwitchCaseSyntax parseSwitchCase()
+        public CaseSyntax parse_case()
         {
-            Position start = lexer.getPreviousPosition();
-
-            CaseLabelSyntax label = parseCaseLabel();
-            if (label == null)
-                return null;
-
-            BlockSyntax content = parseBlock();
-            if (content == null)
-                throw new ParserException(fileName, lexer.line, lexer.column);
-
-            Position end = lexer.getPosition();
-
-            SwitchCaseSyntax ret = new SwitchCaseSyntax(start, end, label, content);
-
-            label.parent = ret;
-            content.parent = ret;
-
-            return ret;
-        }
-
-        public CaseLabelSyntax parseCaseLabel()
-        {
-            {
-                ItemCaseLabelSyntax node = parseItemCaseLabel();
-                if (node != null)
-                    return node;
-            }
-
-            {
-                DefaultCaseLabelSyntax node = parseDefaultCaseLabel();
-                if (node != null)
-                    return node;
-            }
-
-            return null;
-        }
-
-        public ItemCaseLabelSyntax parseItemCaseLabel()
-        {
-            Position start = lexer.getPreviousPosition();
-
-            bool successCase1 = lexer.parseKeyword("case");
-            if (successCase1)
-                lexer.advance();
-            else
-                return null;
-
-            CaseItemSyntax[] items = parseCaseItemList();
-            if (items == null)
-                throw new ParserException(fileName, lexer.line, lexer.column);
-
-            Position end = lexer.getPosition();
-
-            ItemCaseLabelSyntax ret = new ItemCaseLabelSyntax(start, end, items);
-
-            if (items != null)
-            {
-                foreach (CaseItemSyntax item in items)
-                    item.parent = ret;
-            }
-
-            return ret;
-        }
-
-        public CaseItemSyntax[] parseCaseItemList()
-        {
-            List<CaseItemSyntax> ret = null;
-            while (true)
-            {
-                CaseItemSyntax node = parseCaseItem();
-                if (node == null)
-                    break;
-
-                if (ret == null)
-                    ret = new List<CaseItemSyntax>();
-
-                ret.Add(node);
-            }
-
-            if (ret != null)
-                return ret.ToArray();
-            else
-                return null;
-        }
-
-        public CaseItemSyntax parseCaseItem()
-        {
-            Position start = lexer.getPreviousPosition();
-
-            CasePatternSyntax pattern = parseCasePattern();
-            if (pattern == null)
-                return null;
-
-            bool successComma2 = lexer.parsePunctuation(",");
-            if (successComma2)
-                lexer.advance();
-
-            Position end = lexer.getPosition();
-
-            CaseItemSyntax ret = new CaseItemSyntax(start, end, pattern);
-
-            pattern.parent = ret;
-
-            return ret;
-        }
-
-        public CasePatternSyntax[] parseCasePatternList()
-        {
-            List<CasePatternSyntax> ret = null;
-            while (true)
-            {
-                CasePatternSyntax node = parseCasePattern();
-                if (node == null)
-                    break;
-
-                if (ret == null)
-                    ret = new List<CasePatternSyntax>();
-
-                ret.Add(node);
-            }
-
-            if (ret != null)
-                return ret.ToArray();
-            else
-                return null;
-        }
-
-        public CasePatternSyntax parseCasePattern()
-        {
-            {
-                ConstantPatternSyntax node = parseConstantPattern();
-                if (node != null)
-                    return node;
-            }
-
-            {
-                WildcardPatternSyntax node = parseWildcardPattern();
-                if (node != null)
-                    return node;
-            }
-
-            {
-                NamePatternSyntax node = parseNamePattern();
-                if (node != null)
-                    return node;
-            }
-
-            return null;
-        }
-
-        public ConstantPatternSyntax parseConstantPattern()
-        {
-            Position start = lexer.getPreviousPosition();
-
-            ConstantSyntax constant = parseConstant();
-            if (constant == null)
-                return null;
-
-            Position end = lexer.getPosition();
-
-            ConstantPatternSyntax ret = new ConstantPatternSyntax(start, end, constant);
-
-            constant.parent = ret;
-
-            return ret;
-        }
-
-        public WildcardPatternSyntax parseWildcardPattern()
-        {
-            Position start = lexer.getPreviousPosition();
-
-            bool successUnderscore1 = lexer.parsePunctuation("_");
-            if (successUnderscore1)
-                lexer.advance();
-            else
-                return null;
-
-            Position end = lexer.getPosition();
-
-            WildcardPatternSyntax ret = new WildcardPatternSyntax(start, end);
-
-
-            return ret;
-        }
-
-        public NamePatternSyntax parseNamePattern()
-        {
-            Position start = lexer.getPreviousPosition();
-
-            NameSyntax name = parseName();
-            if (name == null)
-                return null;
-
-            Position end = lexer.getPosition();
-
-            NamePatternSyntax ret = new NamePatternSyntax(start, end, name);
-
-            name.parent = ret;
-
-            return ret;
-        }
-
-        public DefaultCaseLabelSyntax parseDefaultCaseLabel()
-        {
-            Position start = lexer.getPreviousPosition();
-
-            bool successDefault1 = lexer.parseKeyword("default");
-            if (successDefault1)
-                lexer.advance();
-            else
-                return null;
-
-            Position end = lexer.getPosition();
-
-            DefaultCaseLabelSyntax ret = new DefaultCaseLabelSyntax(start, end);
-
-
-            return ret;
-        }
-
-        public ForSyntax parseFor()
-        {
-            Position start = lexer.getPreviousPosition();
-
-            bool successFor1 = lexer.parseKeyword("for");
-            if (successFor1)
-                lexer.advance();
-            else
-                return null;
-
-            bool successLeftParen2 = lexer.parsePunctuation("(");
-            if (successLeftParen2)
-                lexer.advance();
-            else
-                throw new ParserException(fileName, lexer.line, lexer.column);
-
-            string index = lexer.parseIdentifier();
-            if ((index != null) && isIdentifier(index))
-                lexer.advance();
-            else
-                throw new ParserException(fileName, lexer.line, lexer.column);
-
-            TypeAnnotationSyntax typeAnnotation = parseTypeAnnotation();
-
-            bool successIn5 = lexer.parseKeyword("in");
-            if (successIn5)
-                lexer.advance();
-            else
-                throw new ParserException(fileName, lexer.line, lexer.column);
-
-            OperationSyntax operation = parseOperation();
-            if (operation == null)
-                throw new ParserException(fileName, lexer.line, lexer.column);
-
-            bool successRightParen7 = lexer.parsePunctuation(")");
-            if (successRightParen7)
-                lexer.advance();
-            else
-                throw new ParserException(fileName, lexer.line, lexer.column);
-
-            LoopSyntax iteration = parseLoop();
-            if (iteration == null)
-                throw new ParserException(fileName, lexer.line, lexer.column);
-
-            Position end = lexer.getPosition();
-
-            ForSyntax ret = new ForSyntax(start, end, index, typeAnnotation, operation, iteration);
-
-            if (typeAnnotation != null)
-                typeAnnotation.parent = ret;
-            operation.parent = ret;
-            iteration.parent = ret;
-
-            return ret;
-        }
-
-        public WhileSyntax parseWhile()
-        {
-            Position start = lexer.getPreviousPosition();
-
-            bool successWhile1 = lexer.parseKeyword("while");
-            if (successWhile1)
-                lexer.advance();
-            else
-                return null;
-
-            bool successLeftParen2 = lexer.parsePunctuation("(");
-            if (successLeftParen2)
-                lexer.advance();
-            else
-                throw new ParserException(fileName, lexer.line, lexer.column);
-
-            OperationSyntax condition = parseOperation();
+            var start = lexer.get_previous_position();
+
+            var success_case_1 = lexer.parse_keyword("case");
+            if (!success_case_1)
+                    return null;
+            var condition = parse_operation();
             if (condition == null)
-                throw new ParserException(fileName, lexer.line, lexer.column);
+                throw new ParserException(file_name, lexer.line, lexer.column);
+            var consequent = parse_operation();
+            if (consequent == null)
+                throw new ParserException(file_name, lexer.line, lexer.column);
 
-            bool successRightParen4 = lexer.parsePunctuation(")");
-            if (successRightParen4)
-                lexer.advance();
-            else
-                throw new ParserException(fileName, lexer.line, lexer.column);
+            var end = lexer.get_position();
 
-            LoopSyntax iteration = parseLoop();
-            if (iteration == null)
-                throw new ParserException(fileName, lexer.line, lexer.column);
-
-            Position end = lexer.getPosition();
-
-            WhileSyntax ret = new WhileSyntax(start, end, condition, iteration);
-
-            condition.parent = ret;
-            iteration.parent = ret;
+            var ret = new CaseSyntax
+            {
+                start = start,
+                end = end,
+                condition = condition,
+                consequent = consequent,
+            };
 
             return ret;
         }
 
-        public DoSyntax parseDo()
+        public DefaultSyntax parse_default()
         {
-            Position start = lexer.getPreviousPosition();
+            var start = lexer.get_previous_position();
 
-            bool successDo1 = lexer.parseKeyword("do");
-            if (successDo1)
-                lexer.advance();
-            else
-                return null;
+            var success_default_1 = lexer.parse_keyword("default");
+            if (!success_default_1)
+                    return null;
+            var alternative = parse_operation();
 
-            LoopSyntax iteration = parseLoop();
-            if (iteration == null)
-                throw new ParserException(fileName, lexer.line, lexer.column);
+            var end = lexer.get_position();
 
-            bool successWhile3 = lexer.parseKeyword("while");
-            if (successWhile3)
-                lexer.advance();
-            else
-                throw new ParserException(fileName, lexer.line, lexer.column);
+            var ret = new DefaultSyntax
+            {
+                start = start,
+                end = end,
+                alternative = alternative,
+            };
 
-            bool successLeftParen4 = lexer.parsePunctuation("(");
-            if (successLeftParen4)
-                lexer.advance();
-            else
-                throw new ParserException(fileName, lexer.line, lexer.column);
+            return ret;
+        }
 
-            OperationSyntax condition = parseOperation();
+        public LambdaSyntax parse_lambda()
+        {
+            var start = lexer.get_previous_position();
+
+            var success_lambda_1 = lexer.parse_keyword("lambda");
+            if (!success_lambda_1)
+                    return null;
+            var input = parse_operation();
+            if (input == null)
+                throw new ParserException(file_name, lexer.line, lexer.column);
+            var block = parse_operation();
+            if (block == null)
+                throw new ParserException(file_name, lexer.line, lexer.column);
+
+            var end = lexer.get_position();
+
+            var ret = new LambdaSyntax
+            {
+                start = start,
+                end = end,
+                input = input,
+                block = block,
+            };
+
+            return ret;
+        }
+
+        public ForSyntax parse_for()
+        {
+            var start = lexer.get_previous_position();
+
+            var success_for_1 = lexer.parse_keyword("for");
+            if (!success_for_1)
+                    return null;
+            var condition = parse_operation();
             if (condition == null)
-                throw new ParserException(fileName, lexer.line, lexer.column);
+                throw new ParserException(file_name, lexer.line, lexer.column);
 
-            bool successRightParen6 = lexer.parsePunctuation(")");
-            if (successRightParen6)
-                lexer.advance();
-            else
-                throw new ParserException(fileName, lexer.line, lexer.column);
+            var success_in_3 = lexer.parse_keyword("in");
+            if (!success_in_3)
+                    throw new ParserException(file_name, lexer.line, lexer.column);
+            var expression = parse_operation();
+            if (expression == null)
+                throw new ParserException(file_name, lexer.line, lexer.column);
+            var name = parse_label();
+            var action = parse_operation();
+            if (action == null)
+                throw new ParserException(file_name, lexer.line, lexer.column);
 
-            Position end = lexer.getPosition();
+            var end = lexer.get_position();
 
-            DoSyntax ret = new DoSyntax(start, end, iteration, condition);
-
-            iteration.parent = ret;
-            condition.parent = ret;
+            var ret = new ForSyntax
+            {
+                start = start,
+                end = end,
+                condition = condition,
+                expression = expression,
+                name = name,
+                action = action,
+            };
 
             return ret;
         }
 
-        public LoopSyntax parseLoop()
+        public LabelSyntax parse_label()
         {
+            var start = lexer.get_previous_position();
+
+            var success_label_1 = lexer.parse_keyword("label");
+            if (!success_label_1)
+                    return null;
+
+            var name = lexer.parse_identifier(keywords);
+            if (name != null)
             {
-                SimpleLoopSyntax node = parseSimpleLoop();
-                if (node != null)
-                    return node;
+                if (!is_identifier(name))
+                {
+                    throw new ParserException(file_name, lexer.line, lexer.column);
+                }
+            }
+            else
+            {
+                    throw new ParserException(file_name, lexer.line, lexer.column);
             }
 
+            var end = lexer.get_position();
+
+            var ret = new LabelSyntax
             {
-                NamedLoopSyntax node = parseNamedLoop();
-                if (node != null)
-                    return node;
-            }
-
-            return null;
-        }
-
-        public SimpleLoopSyntax parseSimpleLoop()
-        {
-            Position start = lexer.getPreviousPosition();
-
-            BlockSyntax code = parseBlock();
-            if (code == null)
-                return null;
-
-            Position end = lexer.getPosition();
-
-            SimpleLoopSyntax ret = new SimpleLoopSyntax(start, end, code);
-
-            code.parent = ret;
+                start = start,
+                end = end,
+                name = name,
+            };
 
             return ret;
         }
 
-        public NamedLoopSyntax parseNamedLoop()
+        public WhileSyntax parse_while()
         {
-            Position start = lexer.getPreviousPosition();
+            var start = lexer.get_previous_position();
 
-            bool successLoop1 = lexer.parseKeyword("loop");
-            if (successLoop1)
-                lexer.advance();
-            else
-                return null;
+            var success_while_1 = lexer.parse_keyword("while");
+            if (!success_while_1)
+                    return null;
+            var condition = parse_operation();
+            if (condition == null)
+                throw new ParserException(file_name, lexer.line, lexer.column);
+            var name = parse_label();
+            var action = parse_operation();
+            if (action == null)
+                throw new ParserException(file_name, lexer.line, lexer.column);
 
-            string name = lexer.parseIdentifier();
-            if ((name != null) && isIdentifier(name))
-                lexer.advance();
-            else
-                throw new ParserException(fileName, lexer.line, lexer.column);
+            var end = lexer.get_position();
 
-            BlockSyntax code = parseBlock();
-            if (code == null)
-                throw new ParserException(fileName, lexer.line, lexer.column);
-
-            Position end = lexer.getPosition();
-
-            NamedLoopSyntax ret = new NamedLoopSyntax(start, end, name, code);
-
-            code.parent = ret;
-
-            return ret;
-        }
-
-        public ThisSyntax parseThis()
-        {
-            Position start = lexer.getPreviousPosition();
-
-            bool successThis1 = lexer.parseKeyword("this");
-            if (successThis1)
-                lexer.advance();
-            else
-                return null;
-
-            Position end = lexer.getPosition();
-
-            ThisSyntax ret = new ThisSyntax(start, end);
-
-
-            return ret;
-        }
-
-        public NewSyntax parseNew()
-        {
-            Position start = lexer.getPreviousPosition();
-
-            bool successNew1 = lexer.parseKeyword("new");
-            if (successNew1)
-                lexer.advance();
-            else
-                return null;
-
-            TypeSyntax typeSpec = parseType();
-            if (typeSpec == null)
-                throw new ParserException(fileName, lexer.line, lexer.column);
-
-            Position end = lexer.getPosition();
-
-            NewSyntax ret = new NewSyntax(start, end, typeSpec);
-
-            typeSpec.parent = ret;
-
-            return ret;
-        }
-
-        public ObjectSyntax parseObject()
-        {
-            Position start = lexer.getPreviousPosition();
-
-            bool successLeftParen1 = lexer.parsePunctuation("(");
-            if (successLeftParen1)
-                lexer.advance();
-            else
-                return null;
-
-            OperationSyntax firstOp = parseOperation();
-
-            ItemSyntax[] additionalOps = parseItemList();
-
-            bool successRightParen4 = lexer.parsePunctuation(")");
-            if (successRightParen4)
-                lexer.advance();
-            else
-                throw new ParserException(fileName, lexer.line, lexer.column);
-
-            Position end = lexer.getPosition();
-
-            ObjectSyntax ret = new ObjectSyntax(start, end, firstOp, additionalOps);
-
-            if (firstOp != null)
-                firstOp.parent = ret;
-            if (additionalOps != null)
+            var ret = new WhileSyntax
             {
-                foreach (ItemSyntax item in additionalOps)
-                    item.parent = ret;
-            }
+                start = start,
+                end = end,
+                condition = condition,
+                name = name,
+                action = action,
+            };
 
             return ret;
         }
 
-        public ArraySyntax parseArray()
+        public RepeatSyntax parse_repeat()
         {
-            Position start = lexer.getPreviousPosition();
+            var start = lexer.get_previous_position();
 
-            bool successLeftBracket1 = lexer.parsePunctuation("[");
-            if (successLeftBracket1)
-                lexer.advance();
-            else
-                return null;
+            var success_repeat_1 = lexer.parse_keyword("repeat");
+            if (!success_repeat_1)
+                    return null;
+            var name = parse_label();
+            var action = parse_operation();
+            if (action == null)
+                throw new ParserException(file_name, lexer.line, lexer.column);
 
-            OperationSyntax firstOp = parseOperation();
+            var end = lexer.get_position();
 
-            ItemSyntax[] additionalOps = parseItemList();
-
-            bool successRightBracket4 = lexer.parsePunctuation("]");
-            if (successRightBracket4)
-                lexer.advance();
-            else
-                throw new ParserException(fileName, lexer.line, lexer.column);
-
-            Position end = lexer.getPosition();
-
-            ArraySyntax ret = new ArraySyntax(start, end, firstOp, additionalOps);
-
-            if (firstOp != null)
-                firstOp.parent = ret;
-            if (additionalOps != null)
+            var ret = new RepeatSyntax
             {
-                foreach (ItemSyntax item in additionalOps)
-                    item.parent = ret;
-            }
+                start = start,
+                end = end,
+                name = name,
+                action = action,
+            };
 
             return ret;
         }
 
-        public ItemSyntax[] parseItemList()
+        public SizeOfSyntax parse_sizeof()
         {
-            List<ItemSyntax> ret = null;
-            while (true)
+            var start = lexer.get_previous_position();
+
+            var success_sizeof_1 = lexer.parse_keyword("sizeof");
+            if (!success_sizeof_1)
+                    return null;
+            var spec = parse_type();
+            if (spec == null)
+                throw new ParserException(file_name, lexer.line, lexer.column);
+
+            var end = lexer.get_position();
+
+            var ret = new SizeOfSyntax
             {
-                ItemSyntax node = parseItem();
-                if (node == null)
-                    break;
-
-                if (ret == null)
-                    ret = new List<ItemSyntax>();
-
-                ret.Add(node);
-            }
-
-            if (ret != null)
-                return ret.ToArray();
-            else
-                return null;
-        }
-
-        public ItemSyntax parseItem()
-        {
-            Position start = lexer.getPreviousPosition();
-
-            bool successComma1 = lexer.parsePunctuation(",");
-            if (successComma1)
-                lexer.advance();
-            else
-                return null;
-
-            OperationSyntax operation = parseOperation();
-            if (operation == null)
-                throw new ParserException(fileName, lexer.line, lexer.column);
-
-            Position end = lexer.getPosition();
-
-            ItemSyntax ret = new ItemSyntax(start, end, operation);
-
-            operation.parent = ret;
+                start = start,
+                end = end,
+                spec = spec,
+            };
 
             return ret;
         }
 
-        public SizeOfSyntax parseSizeOf()
+        public bool is_at_end()
         {
-            Position start = lexer.getPreviousPosition();
-
-            bool successSizeof1 = lexer.parseKeyword("sizeof");
-            if (successSizeof1)
-                lexer.advance();
-            else
-                return null;
-
-            TypeSyntax typeSpec = parseType();
-            if (typeSpec == null)
-                throw new ParserException(fileName, lexer.line, lexer.column);
-
-            Position end = lexer.getPosition();
-
-            SizeOfSyntax ret = new SizeOfSyntax(start, end, typeSpec);
-
-            typeSpec.parent = ret;
-
-            return ret;
+            return lexer.is_at_end();
         }
 
-        public BreakSyntax parseBreak()
+        public ulong get_current_line()
         {
-            Position start = lexer.getPreviousPosition();
-
-            bool successBreak1 = lexer.parseKeyword("break");
-            if (successBreak1)
-                lexer.advance();
-            else
-                return null;
-
-            string iteration = lexer.parseIdentifier();
-            if ((iteration != null) && isIdentifier(iteration))
-                lexer.advance();
-
-            bool successSemicolon3 = lexer.parsePunctuation(";");
-            if (successSemicolon3)
-                lexer.advance();
-
-            Position end = lexer.getPosition();
-
-            BreakSyntax ret = new BreakSyntax(start, end, iteration);
-
-
-            return ret;
+            return lexer.get_position().line;
         }
 
-        public ContinueSyntax parseContinue()
+        public ulong get_current_column()
         {
-            Position start = lexer.getPreviousPosition();
-
-            bool successContinue1 = lexer.parseKeyword("continue");
-            if (successContinue1)
-                lexer.advance();
-            else
-                return null;
-
-            string iteration = lexer.parseIdentifier();
-            if ((iteration != null) && isIdentifier(iteration))
-                lexer.advance();
-
-            bool successSemicolon3 = lexer.parsePunctuation(";");
-            if (successSemicolon3)
-                lexer.advance();
-
-            Position end = lexer.getPosition();
-
-            ContinueSyntax ret = new ContinueSyntax(start, end, iteration);
-
-
-            return ret;
+            return lexer.get_position().column;
         }
 
-        public ReturnSyntax parseReturn()
+        public ulong get_previous_line()
         {
-            Position start = lexer.getPreviousPosition();
-
-            bool successReturn1 = lexer.parseKeyword("return");
-            if (successReturn1)
-                lexer.advance();
-            else
-                return null;
-
-            CalculationSyntax result = parseCalculation();
-
-            Position end = lexer.getPosition();
-
-            ReturnSyntax ret = new ReturnSyntax(start, end, result);
-
-            if (result != null)
-                result.parent = ret;
-
-            return ret;
+            return lexer.get_previous_position().line;
         }
 
-        public ThrowSyntax parseThrow()
+        public ulong get_previous_column()
         {
-            Position start = lexer.getPreviousPosition();
-
-            bool successThrow1 = lexer.parseKeyword("throw");
-            if (successThrow1)
-                lexer.advance();
-            else
-                return null;
-
-            CalculationSyntax exception = parseCalculation();
-            if (exception == null)
-                throw new ParserException(fileName, lexer.line, lexer.column);
-
-            Position end = lexer.getPosition();
-
-            ThrowSyntax ret = new ThrowSyntax(start, end, exception);
-
-            exception.parent = ret;
-
-            return ret;
+            return lexer.get_previous_position().column;
         }
 
-        public ClassSyntax parseClass()
-        {
-            Position start = lexer.getPreviousPosition();
-
-            bool successClass1 = lexer.parseKeyword("class");
-            if (successClass1)
-                lexer.advance();
-            else
-                return null;
-
-            NameSyntax name = parseName();
-            if (name == null)
-                throw new ParserException(fileName, lexer.line, lexer.column);
-
-            GenericParametersSyntax generics = parseGenericParameters();
-
-            ExtendsSyntax baseClass = parseExtends();
-
-            StructureSyntax contents = parseStructure();
-
-            ClassBodySyntax body = parseClassBody();
-
-            Position end = lexer.getPosition();
-
-            ClassSyntax ret = new ClassSyntax(start, end, name, generics, baseClass, contents, body);
-
-            name.parent = ret;
-            if (generics != null)
-                generics.parent = ret;
-            if (baseClass != null)
-                baseClass.parent = ret;
-            if (contents != null)
-                contents.parent = ret;
-            if (body != null)
-                body.parent = ret;
-
-            return ret;
-        }
-
-        public GenericParametersSyntax parseGenericParameters()
-        {
-            Position start = lexer.getPreviousPosition();
-
-            bool successLeftBracket1 = lexer.parsePunctuation("[");
-            if (successLeftBracket1)
-                lexer.advance();
-            else
-                return null;
-
-            string name = lexer.parseIdentifier();
-            if ((name != null) && isIdentifier(name))
-                lexer.advance();
-            else
-                throw new ParserException(fileName, lexer.line, lexer.column);
-
-            GenericParameterSyntax[] additionalGenerics = parseGenericParameterList();
-
-            bool successRightBracket4 = lexer.parsePunctuation("]");
-            if (successRightBracket4)
-                lexer.advance();
-            else
-                throw new ParserException(fileName, lexer.line, lexer.column);
-
-            Position end = lexer.getPosition();
-
-            GenericParametersSyntax ret = new GenericParametersSyntax(start, end, name, additionalGenerics);
-
-            if (additionalGenerics != null)
-            {
-                foreach (GenericParameterSyntax item in additionalGenerics)
-                    item.parent = ret;
-            }
-
-            return ret;
-        }
-
-        public GenericParameterSyntax[] parseGenericParameterList()
-        {
-            List<GenericParameterSyntax> ret = null;
-            while (true)
-            {
-                GenericParameterSyntax node = parseGenericParameter();
-                if (node == null)
-                    break;
-
-                if (ret == null)
-                    ret = new List<GenericParameterSyntax>();
-
-                ret.Add(node);
-            }
-
-            if (ret != null)
-                return ret.ToArray();
-            else
-                return null;
-        }
-
-        public GenericParameterSyntax parseGenericParameter()
-        {
-            Position start = lexer.getPreviousPosition();
-
-            bool successComma1 = lexer.parsePunctuation(",");
-            if (successComma1)
-                lexer.advance();
-            else
-                return null;
-
-            string name = lexer.parseIdentifier();
-            if ((name != null) && isIdentifier(name))
-                lexer.advance();
-            else
-                throw new ParserException(fileName, lexer.line, lexer.column);
-
-            Position end = lexer.getPosition();
-
-            GenericParameterSyntax ret = new GenericParameterSyntax(start, end, name);
-
-
-            return ret;
-        }
-
-        public ExtendsSyntax parseExtends()
-        {
-            Position start = lexer.getPreviousPosition();
-
-            bool successExtends1 = lexer.parseKeyword("extends");
-            if (successExtends1)
-                lexer.advance();
-            else
-                return null;
-
-            NameSyntax name = parseName();
-            if (name == null)
-                throw new ParserException(fileName, lexer.line, lexer.column);
-
-            Position end = lexer.getPosition();
-
-            ExtendsSyntax ret = new ExtendsSyntax(start, end, name);
-
-            name.parent = ret;
-
-            return ret;
-        }
-
-        public StructureSyntax parseStructure()
-        {
-            Position start = lexer.getPreviousPosition();
-
-            bool successLeftParen1 = lexer.parsePunctuation("(");
-            if (successLeftParen1)
-                lexer.advance();
-            else
-                return null;
-
-            ComponentSyntax[] components = parseComponentList();
-
-            bool successRightParen3 = lexer.parsePunctuation(")");
-            if (successRightParen3)
-                lexer.advance();
-            else
-                throw new ParserException(fileName, lexer.line, lexer.column);
-
-            Position end = lexer.getPosition();
-
-            StructureSyntax ret = new StructureSyntax(start, end, components);
-
-            if (components != null)
-            {
-                foreach (ComponentSyntax item in components)
-                    item.parent = ret;
-            }
-
-            return ret;
-        }
-
-        public ComponentSyntax[] parseComponentList()
-        {
-            List<ComponentSyntax> ret = null;
-            while (true)
-            {
-                ComponentSyntax node = parseComponent();
-                if (node == null)
-                    break;
-
-                if (ret == null)
-                    ret = new List<ComponentSyntax>();
-
-                ret.Add(node);
-            }
-
-            if (ret != null)
-                return ret.ToArray();
-            else
-                return null;
-        }
-
-        public ComponentSyntax parseComponent()
-        {
-            Position start = lexer.getPreviousPosition();
-
-            string name = lexer.parseIdentifier();
-            if ((name != null) && isIdentifier(name))
-                lexer.advance();
-            else
-                return null;
-
-            TypeAnnotationSyntax typeAnnotation = parseTypeAnnotation();
-
-            bool successComma3 = lexer.parsePunctuation(",");
-            if (successComma3)
-                lexer.advance();
-
-            Position end = lexer.getPosition();
-
-            ComponentSyntax ret = new ComponentSyntax(start, end, name, typeAnnotation);
-
-            if (typeAnnotation != null)
-                typeAnnotation.parent = ret;
-
-            return ret;
-        }
-
-        public ClassBodySyntax parseClassBody()
-        {
-            Position start = lexer.getPreviousPosition();
-
-            bool successLeftCurly1 = lexer.parsePunctuation("{");
-            if (successLeftCurly1)
-                lexer.advance();
-            else
-                return null;
-
-            ClassMemberSyntax[] members = parseClassMemberList();
-
-            bool successRightCurly3 = lexer.parsePunctuation("}");
-            if (successRightCurly3)
-                lexer.advance();
-            else
-                throw new ParserException(fileName, lexer.line, lexer.column);
-
-            Position end = lexer.getPosition();
-
-            ClassBodySyntax ret = new ClassBodySyntax(start, end, members);
-
-            if (members != null)
-            {
-                foreach (ClassMemberSyntax item in members)
-                    item.parent = ret;
-            }
-
-            return ret;
-        }
-
-        public ClassMemberSyntax[] parseClassMemberList()
-        {
-            List<ClassMemberSyntax> ret = null;
-            while (true)
-            {
-                ClassMemberSyntax node = parseClassMember();
-                if (node == null)
-                    break;
-
-                if (ret == null)
-                    ret = new List<ClassMemberSyntax>();
-
-                ret.Add(node);
-            }
-
-            if (ret != null)
-                return ret.ToArray();
-            else
-                return null;
-        }
-
-        public ClassMemberSyntax parseClassMember()
-        {
-            {
-                LetMemberSyntax node = parseLetMember();
-                if (node != null)
-                    return node;
-            }
-
-            {
-                VarMemberSyntax node = parseVarMember();
-                if (node != null)
-                    return node;
-            }
-
-            {
-                MutableMemberSyntax node = parseMutableMember();
-                if (node != null)
-                    return node;
-            }
-
-            {
-                SetInitializationSyntax node = parseSetInitialization();
-                if (node != null)
-                    return node;
-            }
-
-            {
-                MethodSyntax node = parseMethod();
-                if (node != null)
-                    return node;
-            }
-
-            {
-                StaticFunctionSyntax node = parseStaticFunction();
-                if (node != null)
-                    return node;
-            }
-
-            {
-                OperatorSyntax node = parseOperator();
-                if (node != null)
-                    return node;
-            }
-
-            {
-                InitializerSyntax node = parseInitializer();
-                if (node != null)
-                    return node;
-            }
-
-            {
-                AllocatorSyntax node = parseAllocator();
-                if (node != null)
-                    return node;
-            }
-
-            return null;
-        }
-
-        public LetMemberSyntax parseLetMember()
-        {
-            Position start = lexer.getPreviousPosition();
-
-            LetSyntax declaration = parseLet();
-            if (declaration == null)
-                return null;
-
-            Position end = lexer.getPosition();
-
-            LetMemberSyntax ret = new LetMemberSyntax(start, end, declaration);
-
-            declaration.parent = ret;
-
-            return ret;
-        }
-
-        public VarMemberSyntax parseVarMember()
-        {
-            Position start = lexer.getPreviousPosition();
-
-            VarSyntax declaration = parseVar();
-            if (declaration == null)
-                return null;
-
-            Position end = lexer.getPosition();
-
-            VarMemberSyntax ret = new VarMemberSyntax(start, end, declaration);
-
-            declaration.parent = ret;
-
-            return ret;
-        }
-
-        public MutableMemberSyntax parseMutableMember()
-        {
-            Position start = lexer.getPreviousPosition();
-
-            MutableSyntax declaration = parseMutable();
-            if (declaration == null)
-                return null;
-
-            Position end = lexer.getPosition();
-
-            MutableMemberSyntax ret = new MutableMemberSyntax(start, end, declaration);
-
-            declaration.parent = ret;
-
-            return ret;
-        }
-
-        public SetInitializationSyntax parseSetInitialization()
-        {
-            Position start = lexer.getPreviousPosition();
-
-            SetSyntax definition = parseSet();
-            if (definition == null)
-                return null;
-
-            Position end = lexer.getPosition();
-
-            SetInitializationSyntax ret = new SetInitializationSyntax(start, end, definition);
-
-            definition.parent = ret;
-
-            return ret;
-        }
-
-        public MethodSyntax parseMethod()
-        {
-            Position start = lexer.getPreviousPosition();
-
-            bool successMethod1 = lexer.parseKeyword("method");
-            if (successMethod1)
-                lexer.advance();
-            else
-                return null;
-
-            ProcedureSyntax procedure = parseProcedure();
-            if (procedure == null)
-                throw new ParserException(fileName, lexer.line, lexer.column);
-
-            Position end = lexer.getPosition();
-
-            MethodSyntax ret = new MethodSyntax(start, end, procedure);
-
-            procedure.parent = ret;
-
-            return ret;
-        }
-
-        public StaticFunctionSyntax parseStaticFunction()
-        {
-            Position start = lexer.getPreviousPosition();
-
-            FunctionSyntax procedure = parseFunction();
-            if (procedure == null)
-                return null;
-
-            Position end = lexer.getPosition();
-
-            StaticFunctionSyntax ret = new StaticFunctionSyntax(start, end, procedure);
-
-            procedure.parent = ret;
-
-            return ret;
-        }
-
-        public OperatorSyntax parseOperator()
-        {
-            Position start = lexer.getPreviousPosition();
-
-            bool successOperator1 = lexer.parseKeyword("operator");
-            if (successOperator1)
-                lexer.advance();
-            else
-                return null;
-
-            RoutineSyntax routine = parseRoutine();
-            if (routine == null)
-                throw new ParserException(fileName, lexer.line, lexer.column);
-
-            Position end = lexer.getPosition();
-
-            OperatorSyntax ret = new OperatorSyntax(start, end, routine);
-
-            routine.parent = ret;
-
-            return ret;
-        }
-
-        public InitializerSyntax parseInitializer()
-        {
-            Position start = lexer.getPreviousPosition();
-
-            bool successInitializer1 = lexer.parseKeyword("initializer");
-            if (successInitializer1)
-                lexer.advance();
-            else
-                return null;
-
-            StructureSyntax input = parseStructure();
-
-            BlockSyntax body = parseBlock();
-            if (body == null)
-                throw new ParserException(fileName, lexer.line, lexer.column);
-
-            Position end = lexer.getPosition();
-
-            InitializerSyntax ret = new InitializerSyntax(start, end, input, body);
-
-            if (input != null)
-                input.parent = ret;
-            body.parent = ret;
-
-            return ret;
-        }
-
-        public AllocatorSyntax parseAllocator()
-        {
-            Position start = lexer.getPreviousPosition();
-
-            bool successAllocator1 = lexer.parseKeyword("allocator");
-            if (successAllocator1)
-                lexer.advance();
-            else
-                return null;
-
-            StructureSyntax input = parseStructure();
-
-            BlockSyntax body = parseBlock();
-            if (body == null)
-                throw new ParserException(fileName, lexer.line, lexer.column);
-
-            Position end = lexer.getPosition();
-
-            AllocatorSyntax ret = new AllocatorSyntax(start, end, input, body);
-
-            if (input != null)
-                input.parent = ret;
-            body.parent = ret;
-
-            return ret;
-        }
-
-        public TypeAnnotationSyntax parseTypeAnnotation()
-        {
-            Position start = lexer.getPreviousPosition();
-
-            bool successColon1 = lexer.parsePunctuation(":");
-            if (successColon1)
-                lexer.advance();
-            else
-                return null;
-
-            TypeSpecSyntax typeSpec = parseTypeSpec();
-            if (typeSpec == null)
-                throw new ParserException(fileName, lexer.line, lexer.column);
-
-            Position end = lexer.getPosition();
-
-            TypeAnnotationSyntax ret = new TypeAnnotationSyntax(start, end, typeSpec);
-
-            typeSpec.parent = ret;
-
-            return ret;
-        }
-
-        public TypeSpecSyntax[] parseTypeSpecList()
-        {
-            List<TypeSpecSyntax> ret = null;
-            while (true)
-            {
-                TypeSpecSyntax node = parseTypeSpec();
-                if (node == null)
-                    break;
-
-                if (ret == null)
-                    ret = new List<TypeSpecSyntax>();
-
-                ret.Add(node);
-            }
-
-            if (ret != null)
-                return ret.ToArray();
-            else
-                return null;
-        }
-
-        public TypeSpecSyntax parseTypeSpec()
-        {
-            {
-                TypeSyntax node = parseType();
-                if (node != null)
-                    return node;
-            }
-
-            {
-                VariantSyntax node = parseVariant();
-                if (node != null)
-                    return node;
-            }
-
-            return null;
-        }
-
-        public TypeSyntax[] parseTypeList()
-        {
-            List<TypeSyntax> ret = null;
-            while (true)
-            {
-                TypeSyntax node = parseType();
-                if (node == null)
-                    break;
-
-                if (ret == null)
-                    ret = new List<TypeSyntax>();
-
-                ret.Add(node);
-            }
-
-            if (ret != null)
-                return ret.ToArray();
-            else
-                return null;
-        }
-
-        public TypeSyntax parseType()
-        {
-            Position start = lexer.getPreviousPosition();
-
-            NameSyntax name = parseName();
-            if (name == null)
-                return null;
-
-            GenericArgumentsSyntax generics = parseGenericArguments();
-
-            OptionalSyntax optional = parseOptional();
-
-            LifeTimeSyntax lifeTime = parseLifeTime();
-
-            Position end = lexer.getPosition();
-
-            TypeSyntax ret = new TypeSyntax(start, end, name, generics, optional, lifeTime);
-
-            name.parent = ret;
-            if (generics != null)
-                generics.parent = ret;
-            if (optional != null)
-                optional.parent = ret;
-            if (lifeTime != null)
-                lifeTime.parent = ret;
-
-            return ret;
-        }
-
-        public VariantSyntax parseVariant()
-        {
-            Position start = lexer.getPreviousPosition();
-
-            bool successLeftParen1 = lexer.parsePunctuation("(");
-            if (successLeftParen1)
-                lexer.advance();
-            else
-                return null;
-
-            TypeSyntax[] types = parseTypeList();
-
-            bool successRightParen3 = lexer.parsePunctuation(")");
-            if (successRightParen3)
-                lexer.advance();
-            else
-                throw new ParserException(fileName, lexer.line, lexer.column);
-
-            Position end = lexer.getPosition();
-
-            VariantSyntax ret = new VariantSyntax(start, end, types);
-
-            if (types != null)
-            {
-                foreach (TypeSyntax item in types)
-                    item.parent = ret;
-            }
-
-            return ret;
-        }
-
-        public ThrowsSyntax parseThrows()
-        {
-            Position start = lexer.getPreviousPosition();
-
-            bool successThrows1 = lexer.parseKeyword("throws");
-            if (successThrows1)
-                lexer.advance();
-            else
-                return null;
-
-            TypeSpecSyntax throwsType = parseTypeSpec();
-            if (throwsType == null)
-                throw new ParserException(fileName, lexer.line, lexer.column);
-
-            Position end = lexer.getPosition();
-
-            ThrowsSyntax ret = new ThrowsSyntax(start, end, throwsType);
-
-            throwsType.parent = ret;
-
-            return ret;
-        }
-
-        public GenericArgumentsSyntax parseGenericArguments()
-        {
-            Position start = lexer.getPreviousPosition();
-
-            bool successLeftBracket1 = lexer.parsePunctuation("[");
-            if (successLeftBracket1)
-                lexer.advance();
-            else
-                return null;
-
-            TypeSyntax generic = parseType();
-            if (generic == null)
-                throw new ParserException(fileName, lexer.line, lexer.column);
-
-            GenericArgumentSyntax[] additionalGenerics = parseGenericArgumentList();
-
-            bool successRightBracket4 = lexer.parsePunctuation("]");
-            if (successRightBracket4)
-                lexer.advance();
-            else
-                throw new ParserException(fileName, lexer.line, lexer.column);
-
-            Position end = lexer.getPosition();
-
-            GenericArgumentsSyntax ret = new GenericArgumentsSyntax(start, end, generic, additionalGenerics);
-
-            generic.parent = ret;
-            if (additionalGenerics != null)
-            {
-                foreach (GenericArgumentSyntax item in additionalGenerics)
-                    item.parent = ret;
-            }
-
-            return ret;
-        }
-
-        public GenericArgumentSyntax[] parseGenericArgumentList()
-        {
-            List<GenericArgumentSyntax> ret = null;
-            while (true)
-            {
-                GenericArgumentSyntax node = parseGenericArgument();
-                if (node == null)
-                    break;
-
-                if (ret == null)
-                    ret = new List<GenericArgumentSyntax>();
-
-                ret.Add(node);
-            }
-
-            if (ret != null)
-                return ret.ToArray();
-            else
-                return null;
-        }
-
-        public GenericArgumentSyntax parseGenericArgument()
-        {
-            Position start = lexer.getPreviousPosition();
-
-            bool successComma1 = lexer.parsePunctuation(",");
-            if (successComma1)
-                lexer.advance();
-            else
-                return null;
-
-            TypeSyntax typeSpec = parseType();
-            if (typeSpec == null)
-                throw new ParserException(fileName, lexer.line, lexer.column);
-
-            Position end = lexer.getPosition();
-
-            GenericArgumentSyntax ret = new GenericArgumentSyntax(start, end, typeSpec);
-
-            typeSpec.parent = ret;
-
-            return ret;
-        }
-
-        public OptionalSyntax parseOptional()
-        {
-            Position start = lexer.getPreviousPosition();
-
-            bool successQuestion1 = lexer.parsePunctuation("?");
-            if (successQuestion1)
-                lexer.advance();
-            else
-                return null;
-
-            Position end = lexer.getPosition();
-
-            OptionalSyntax ret = new OptionalSyntax(start, end);
-
-
-            return ret;
-        }
-
-        public LifeTimeSyntax parseLifeTime()
-        {
-            {
-                RootSyntax node = parseRoot();
-                if (node != null)
-                    return node;
-            }
-
-            {
-                LocalSyntax node = parseLocal();
-                if (node != null)
-                    return node;
-            }
-
-            {
-                ReferenceSyntax node = parseReference();
-                if (node != null)
-                    return node;
-            }
-
-            {
-                ThrownSyntax node = parseThrown();
-                if (node != null)
-                    return node;
-            }
-
-            return null;
-        }
-
-        public RootSyntax parseRoot()
-        {
-            Position start = lexer.getPreviousPosition();
-
-            bool successDollar1 = lexer.parsePunctuation("$");
-            if (successDollar1)
-                lexer.advance();
-            else
-                return null;
-
-            Position end = lexer.getPosition();
-
-            RootSyntax ret = new RootSyntax(start, end);
-
-
-            return ret;
-        }
-
-        public LocalSyntax parseLocal()
-        {
-            Position start = lexer.getPreviousPosition();
-
-            bool successAt1 = lexer.parsePunctuation("@");
-            if (successAt1)
-                lexer.advance();
-            else
-                return null;
-
-            string location = lexer.parseIdentifier();
-            if ((location != null) && isIdentifier(location))
-                lexer.advance();
-            else
-                throw new ParserException(fileName, lexer.line, lexer.column);
-
-            Position end = lexer.getPosition();
-
-            LocalSyntax ret = new LocalSyntax(start, end, location);
-
-
-            return ret;
-        }
-
-        public ReferenceSyntax parseReference()
-        {
-            Position start = lexer.getPreviousPosition();
-
-            bool successBacktick1 = lexer.parsePunctuation("`");
-            if (successBacktick1)
-                lexer.advance();
-            else
-                return null;
-
-            Literal age = lexer.parseLiteral();
-            if (age != null)
-                lexer.advance();
-
-            Position end = lexer.getPosition();
-
-            ReferenceSyntax ret = new ReferenceSyntax(start, end, age);
-
-
-            return ret;
-        }
-
-        public ThrownSyntax parseThrown()
-        {
-            Position start = lexer.getPreviousPosition();
-
-            bool successHash1 = lexer.parsePunctuation("#");
-            if (successHash1)
-                lexer.advance();
-            else
-                return null;
-
-            Position end = lexer.getPosition();
-
-            ThrownSyntax ret = new ThrownSyntax(start, end);
-
-
-            return ret;
-        }
-
-        bool isAtEnd()
-        {
-            return lexer.isAtEnd();
-        }
-
-        bool isIdentifier(string id)
+        bool is_identifier(string id)
         {
             if (keywords.Contains(id))
                 return false;
-
             return true;
         }
     }
 
-    public class SyntaxVisitor
+    public class ProgramSyntax
     {
-        public virtual bool openProgram(ProgramSyntax programSyntax)
-        {
-            return true;
-        }
-
-        public virtual void closeProgram(ProgramSyntax programSyntax)
-        {
-        }
-
-        public virtual bool openFile(FileSyntax fileSyntax)
-        {
-            return true;
-        }
-
-        public virtual void closeFile(FileSyntax fileSyntax)
-        {
-        }
-
-        public virtual void visitIntrinsic(IntrinsicSyntax intrinsicSyntax)
-        {
-        }
-
-        public virtual bool openUsing(UsingSyntax usingSyntax)
-        {
-            return true;
-        }
-
-        public virtual void closeUsing(UsingSyntax usingSyntax)
-        {
-        }
-
-        public virtual bool openDefine(DefineSyntax defineSyntax)
-        {
-            return true;
-        }
-
-        public virtual void closeDefine(DefineSyntax defineSyntax)
-        {
-        }
-
-        public virtual bool openName(NameSyntax nameSyntax)
-        {
-            return true;
-        }
-
-        public virtual void closeName(NameSyntax nameSyntax)
-        {
-        }
-
-        public virtual void visitExtension(ExtensionSyntax extensionSyntax)
-        {
-        }
-
-        public virtual bool openNamespace(NamespaceSyntax namespaceSyntax)
-        {
-            return true;
-        }
-
-        public virtual void closeNamespace(NamespaceSyntax namespaceSyntax)
-        {
-        }
-
-        public virtual bool openFunction(FunctionSyntax functionSyntax)
-        {
-            return true;
-        }
-
-        public virtual void closeFunction(FunctionSyntax functionSyntax)
-        {
-        }
-
-        public virtual bool openProcedure(ProcedureSyntax procedureSyntax)
-        {
-            return true;
-        }
-
-        public virtual void closeProcedure(ProcedureSyntax procedureSyntax)
-        {
-        }
-
-        public virtual bool openRoutine(RoutineSyntax routineSyntax)
-        {
-            return true;
-        }
-
-        public virtual void closeRoutine(RoutineSyntax routineSyntax)
-        {
-        }
-
-        public virtual bool openLetDeclaration(LetDeclarationSyntax letDeclarationSyntax)
-        {
-            return true;
-        }
-
-        public virtual void closeLetDeclaration(LetDeclarationSyntax letDeclarationSyntax)
-        {
-        }
-
-        public virtual bool openVarDeclaration(VarDeclarationSyntax varDeclarationSyntax)
-        {
-            return true;
-        }
-
-        public virtual void closeVarDeclaration(VarDeclarationSyntax varDeclarationSyntax)
-        {
-        }
-
-        public virtual bool openMutableDeclaration(MutableDeclarationSyntax mutableDeclarationSyntax)
-        {
-            return true;
-        }
-
-        public virtual void closeMutableDeclaration(MutableDeclarationSyntax mutableDeclarationSyntax)
-        {
-        }
-
-        public virtual bool openThreadLocalDeclaration(ThreadLocalDeclarationSyntax threadLocalDeclarationSyntax)
-        {
-            return true;
-        }
-
-        public virtual void closeThreadLocalDeclaration(ThreadLocalDeclarationSyntax threadLocalDeclarationSyntax)
-        {
-        }
-
-        public virtual bool openLet(LetSyntax letSyntax)
-        {
-            return true;
-        }
-
-        public virtual void closeLet(LetSyntax letSyntax)
-        {
-        }
-
-        public virtual bool openVar(VarSyntax varSyntax)
-        {
-            return true;
-        }
-
-        public virtual void closeVar(VarSyntax varSyntax)
-        {
-        }
-
-        public virtual bool openMutable(MutableSyntax mutableSyntax)
-        {
-            return true;
-        }
-
-        public virtual void closeMutable(MutableSyntax mutableSyntax)
-        {
-        }
-
-        public virtual bool openThreadLocal(ThreadLocalSyntax threadLocalSyntax)
-        {
-            return true;
-        }
-
-        public virtual void closeThreadLocal(ThreadLocalSyntax threadLocalSyntax)
-        {
-        }
-
-        public virtual bool openBinding(BindingSyntax bindingSyntax)
-        {
-            return true;
-        }
-
-        public virtual void closeBinding(BindingSyntax bindingSyntax)
-        {
-        }
-
-        public virtual bool openSet(SetSyntax setSyntax)
-        {
-            return true;
-        }
-
-        public virtual void closeSet(SetSyntax setSyntax)
-        {
-        }
-
-        public virtual bool openCalculation(CalculationSyntax calculationSyntax)
-        {
-            return true;
-        }
-
-        public virtual void closeCalculation(CalculationSyntax calculationSyntax)
-        {
-        }
-
-        public virtual bool openOperation(OperationSyntax operationSyntax)
-        {
-            return true;
-        }
-
-        public virtual void closeOperation(OperationSyntax operationSyntax)
-        {
-        }
-
-        public virtual bool openOperand(OperandSyntax operandSyntax)
-        {
-            return true;
-        }
-
-        public virtual void closeOperand(OperandSyntax operandSyntax)
-        {
-        }
-
-        public virtual void visitMemberAccess(MemberAccessSyntax memberAccessSyntax)
-        {
-        }
-
-        public virtual bool openAs(AsSyntax asSyntax)
-        {
-            return true;
-        }
-
-        public virtual void closeAs(AsSyntax asSyntax)
-        {
-        }
-
-        public virtual bool openIs(IsSyntax isSyntax)
-        {
-            return true;
-        }
-
-        public virtual void closeIs(IsSyntax isSyntax)
-        {
-        }
-
-        public virtual void visitUnwrap(UnwrapSyntax unwrapSyntax)
-        {
-        }
-
-        public virtual bool openCatch(CatchSyntax catchSyntax)
-        {
-            return true;
-        }
-
-        public virtual void closeCatch(CatchSyntax catchSyntax)
-        {
-        }
-
-        public virtual bool openWildCardCatchPattern(WildCardCatchPatternSyntax wildCardCatchPatternSyntax)
-        {
-            return true;
-        }
-
-        public virtual void closeWildCardCatchPattern(WildCardCatchPatternSyntax wildCardCatchPatternSyntax)
-        {
-        }
-
-        public virtual bool openTypeCatchPattern(TypeCatchPatternSyntax typeCatchPatternSyntax)
-        {
-            return true;
-        }
-
-        public virtual void closeTypeCatchPattern(TypeCatchPatternSyntax typeCatchPatternSyntax)
-        {
-        }
-
-        public virtual bool openBlock(BlockSyntax blockSyntax)
-        {
-            return true;
-        }
-
-        public virtual void closeBlock(BlockSyntax blockSyntax)
-        {
-        }
-
-        public virtual void visitConstant(ConstantSyntax constantSyntax)
-        {
-        }
-
-        public virtual bool openIf(IfSyntax ifSyntax)
-        {
-            return true;
-        }
-
-        public virtual void closeIf(IfSyntax ifSyntax)
-        {
-        }
-
-        public virtual bool openElse(ElseSyntax elseSyntax)
-        {
-            return true;
-        }
-
-        public virtual void closeElse(ElseSyntax elseSyntax)
-        {
-        }
-
-        public virtual bool openSwitch(SwitchSyntax switchSyntax)
-        {
-            return true;
-        }
-
-        public virtual void closeSwitch(SwitchSyntax switchSyntax)
-        {
-        }
-
-        public virtual bool openSwitchCase(SwitchCaseSyntax switchCaseSyntax)
-        {
-            return true;
-        }
-
-        public virtual void closeSwitchCase(SwitchCaseSyntax switchCaseSyntax)
-        {
-        }
-
-        public virtual bool openItemCaseLabel(ItemCaseLabelSyntax itemCaseLabelSyntax)
-        {
-            return true;
-        }
-
-        public virtual void closeItemCaseLabel(ItemCaseLabelSyntax itemCaseLabelSyntax)
-        {
-        }
-
-        public virtual bool openCaseItem(CaseItemSyntax caseItemSyntax)
-        {
-            return true;
-        }
-
-        public virtual void closeCaseItem(CaseItemSyntax caseItemSyntax)
-        {
-        }
-
-        public virtual bool openConstantPattern(ConstantPatternSyntax constantPatternSyntax)
-        {
-            return true;
-        }
-
-        public virtual void closeConstantPattern(ConstantPatternSyntax constantPatternSyntax)
-        {
-        }
-
-        public virtual void visitWildcardPattern(WildcardPatternSyntax wildcardPatternSyntax)
-        {
-        }
-
-        public virtual bool openNamePattern(NamePatternSyntax namePatternSyntax)
-        {
-            return true;
-        }
-
-        public virtual void closeNamePattern(NamePatternSyntax namePatternSyntax)
-        {
-        }
-
-        public virtual void visitDefaultCaseLabel(DefaultCaseLabelSyntax defaultCaseLabelSyntax)
-        {
-        }
-
-        public virtual bool openFor(ForSyntax forSyntax)
-        {
-            return true;
-        }
-
-        public virtual void closeFor(ForSyntax forSyntax)
-        {
-        }
-
-        public virtual bool openWhile(WhileSyntax whileSyntax)
-        {
-            return true;
-        }
-
-        public virtual void closeWhile(WhileSyntax whileSyntax)
-        {
-        }
-
-        public virtual bool openDo(DoSyntax doSyntax)
-        {
-            return true;
-        }
-
-        public virtual void closeDo(DoSyntax doSyntax)
-        {
-        }
-
-        public virtual bool openSimpleLoop(SimpleLoopSyntax simpleLoopSyntax)
-        {
-            return true;
-        }
-
-        public virtual void closeSimpleLoop(SimpleLoopSyntax simpleLoopSyntax)
-        {
-        }
-
-        public virtual bool openNamedLoop(NamedLoopSyntax namedLoopSyntax)
-        {
-            return true;
-        }
-
-        public virtual void closeNamedLoop(NamedLoopSyntax namedLoopSyntax)
-        {
-        }
-
-        public virtual void visitThis(ThisSyntax thisSyntax)
-        {
-        }
-
-        public virtual bool openNew(NewSyntax newSyntax)
-        {
-            return true;
-        }
-
-        public virtual void closeNew(NewSyntax newSyntax)
-        {
-        }
-
-        public virtual bool openObject(ObjectSyntax objectSyntax)
-        {
-            return true;
-        }
-
-        public virtual void closeObject(ObjectSyntax objectSyntax)
-        {
-        }
-
-        public virtual bool openArray(ArraySyntax arraySyntax)
-        {
-            return true;
-        }
-
-        public virtual void closeArray(ArraySyntax arraySyntax)
-        {
-        }
-
-        public virtual bool openItem(ItemSyntax itemSyntax)
-        {
-            return true;
-        }
-
-        public virtual void closeItem(ItemSyntax itemSyntax)
-        {
-        }
-
-        public virtual bool openSizeOf(SizeOfSyntax sizeOfSyntax)
-        {
-            return true;
-        }
-
-        public virtual void closeSizeOf(SizeOfSyntax sizeOfSyntax)
-        {
-        }
-
-        public virtual void visitBreak(BreakSyntax breakSyntax)
-        {
-        }
-
-        public virtual void visitContinue(ContinueSyntax continueSyntax)
-        {
-        }
-
-        public virtual bool openReturn(ReturnSyntax returnSyntax)
-        {
-            return true;
-        }
-
-        public virtual void closeReturn(ReturnSyntax returnSyntax)
-        {
-        }
-
-        public virtual bool openThrow(ThrowSyntax throwSyntax)
-        {
-            return true;
-        }
-
-        public virtual void closeThrow(ThrowSyntax throwSyntax)
-        {
-        }
-
-        public virtual bool openClass(ClassSyntax classSyntax)
-        {
-            return true;
-        }
-
-        public virtual void closeClass(ClassSyntax classSyntax)
-        {
-        }
-
-        public virtual bool openGenericParameters(GenericParametersSyntax genericParametersSyntax)
-        {
-            return true;
-        }
-
-        public virtual void closeGenericParameters(GenericParametersSyntax genericParametersSyntax)
-        {
-        }
-
-        public virtual void visitGenericParameter(GenericParameterSyntax genericParameterSyntax)
-        {
-        }
-
-        public virtual bool openExtends(ExtendsSyntax extendsSyntax)
-        {
-            return true;
-        }
-
-        public virtual void closeExtends(ExtendsSyntax extendsSyntax)
-        {
-        }
-
-        public virtual bool openStructure(StructureSyntax structureSyntax)
-        {
-            return true;
-        }
-
-        public virtual void closeStructure(StructureSyntax structureSyntax)
-        {
-        }
-
-        public virtual bool openComponent(ComponentSyntax componentSyntax)
-        {
-            return true;
-        }
-
-        public virtual void closeComponent(ComponentSyntax componentSyntax)
-        {
-        }
-
-        public virtual bool openClassBody(ClassBodySyntax classBodySyntax)
-        {
-            return true;
-        }
-
-        public virtual void closeClassBody(ClassBodySyntax classBodySyntax)
-        {
-        }
-
-        public virtual bool openLetMember(LetMemberSyntax letMemberSyntax)
-        {
-            return true;
-        }
-
-        public virtual void closeLetMember(LetMemberSyntax letMemberSyntax)
-        {
-        }
-
-        public virtual bool openVarMember(VarMemberSyntax varMemberSyntax)
-        {
-            return true;
-        }
-
-        public virtual void closeVarMember(VarMemberSyntax varMemberSyntax)
-        {
-        }
-
-        public virtual bool openMutableMember(MutableMemberSyntax mutableMemberSyntax)
-        {
-            return true;
-        }
-
-        public virtual void closeMutableMember(MutableMemberSyntax mutableMemberSyntax)
-        {
-        }
-
-        public virtual bool openSetInitialization(SetInitializationSyntax setInitializationSyntax)
-        {
-            return true;
-        }
-
-        public virtual void closeSetInitialization(SetInitializationSyntax setInitializationSyntax)
-        {
-        }
-
-        public virtual bool openMethod(MethodSyntax methodSyntax)
-        {
-            return true;
-        }
-
-        public virtual void closeMethod(MethodSyntax methodSyntax)
-        {
-        }
-
-        public virtual bool openStaticFunction(StaticFunctionSyntax staticFunctionSyntax)
-        {
-            return true;
-        }
-
-        public virtual void closeStaticFunction(StaticFunctionSyntax staticFunctionSyntax)
-        {
-        }
-
-        public virtual bool openOperator(OperatorSyntax operatorSyntax)
-        {
-            return true;
-        }
-
-        public virtual void closeOperator(OperatorSyntax operatorSyntax)
-        {
-        }
-
-        public virtual bool openInitializer(InitializerSyntax initializerSyntax)
-        {
-            return true;
-        }
-
-        public virtual void closeInitializer(InitializerSyntax initializerSyntax)
-        {
-        }
-
-        public virtual bool openAllocator(AllocatorSyntax allocatorSyntax)
-        {
-            return true;
-        }
-
-        public virtual void closeAllocator(AllocatorSyntax allocatorSyntax)
-        {
-        }
-
-        public virtual bool openTypeAnnotation(TypeAnnotationSyntax typeAnnotationSyntax)
-        {
-            return true;
-        }
-
-        public virtual void closeTypeAnnotation(TypeAnnotationSyntax typeAnnotationSyntax)
-        {
-        }
-
-        public virtual bool openType(TypeSyntax typeSyntax)
-        {
-            return true;
-        }
-
-        public virtual void closeType(TypeSyntax typeSyntax)
-        {
-        }
-
-        public virtual bool openVariant(VariantSyntax variantSyntax)
-        {
-            return true;
-        }
-
-        public virtual void closeVariant(VariantSyntax variantSyntax)
-        {
-        }
-
-        public virtual bool openThrows(ThrowsSyntax throwsSyntax)
-        {
-            return true;
-        }
-
-        public virtual void closeThrows(ThrowsSyntax throwsSyntax)
-        {
-        }
-
-        public virtual bool openGenericArguments(GenericArgumentsSyntax genericArgumentsSyntax)
-        {
-            return true;
-        }
-
-        public virtual void closeGenericArguments(GenericArgumentsSyntax genericArgumentsSyntax)
-        {
-        }
-
-        public virtual bool openGenericArgument(GenericArgumentSyntax genericArgumentSyntax)
-        {
-            return true;
-        }
-
-        public virtual void closeGenericArgument(GenericArgumentSyntax genericArgumentSyntax)
-        {
-        }
-
-        public virtual void visitOptional(OptionalSyntax optionalSyntax)
-        {
-        }
-
-        public virtual void visitRoot(RootSyntax rootSyntax)
-        {
-        }
-
-        public virtual void visitLocal(LocalSyntax localSyntax)
-        {
-        }
-
-        public virtual void visitReference(ReferenceSyntax referenceSyntax)
-        {
-        }
-
-        public virtual void visitThrown(ThrownSyntax thrownSyntax)
-        {
-        }
+        public FileSyntax[] files;
     }
 
-    public abstract class SyntaxNode
+    public class FileSyntax
+    {
+        public string file_name;
+        public object[] declarations;
+        public object[] statements;
+    }
+
+    public class PublicSyntax
     {
         public Position start;
         public Position end;
-        public SyntaxNode parent;
-
-        public abstract void accept(SyntaxVisitor visitor);
+        public object export;
     }
 
-    public class ProgramSyntax : SyntaxNode
+    public class DefinitionSyntax
     {
-        public string name;
-        public FileSyntax[] files;
-        public ProgramSyntax(string name, FileSyntax[] files)
-        {
-            start = new Position(0, 0);
-            end = new Position(0, 0);
-            this.name = name;
-            this.files = files;
-            this.parent = null;
-        }
-
-        public override void accept(SyntaxVisitor visitor)
-        {
-            if (!visitor.openProgram(this))
-                return;
-
-            if (files != null)
-            {
-                foreach (FileSyntax node in files)
-                    node.accept(visitor);
-            }
-
-            visitor.closeProgram(this);
-        }
-    }
-
-    public class FileSyntax : SyntaxNode
-    {
-        public IntrinsicSyntax[] intrinsics;
-        public UsingSyntax[] usings;
-        public DefineSyntax[] defines;
-        public DeclarationSyntax[] declarations;
-        public StatementSyntax[] statements;
-        public string fileName;
-        public FileSyntax(Position start, Position end, IntrinsicSyntax[] intrinsics, UsingSyntax[] usings, DefineSyntax[] defines, DeclarationSyntax[] declarations, StatementSyntax[] statements)
-        {
-            this.start = start;
-            this.end = end;
-            this.intrinsics = intrinsics;
-            this.usings = usings;
-            this.defines = defines;
-            this.declarations = declarations;
-            this.statements = statements;
-        }
-
-        public override void accept(SyntaxVisitor visitor)
-        {
-            if (!visitor.openFile(this))
-                return;
-
-            if (intrinsics != null)
-            {
-                foreach (IntrinsicSyntax node in intrinsics)
-                    node.accept(visitor);
-            }
-
-            if (usings != null)
-            {
-                foreach (UsingSyntax node in usings)
-                    node.accept(visitor);
-            }
-
-            if (defines != null)
-            {
-                foreach (DefineSyntax node in defines)
-                    node.accept(visitor);
-            }
-
-            if (declarations != null)
-            {
-                foreach (DeclarationSyntax node in declarations)
-                    node.accept(visitor);
-            }
-
-            if (statements != null)
-            {
-                foreach (StatementSyntax node in statements)
-                    node.accept(visitor);
-            }
-
-            visitor.closeFile(this);
-        }
-    }
-
-    public class IntrinsicSyntax : SyntaxNode
-    {
-        public string name;
-        public IntrinsicSyntax(Position start, Position end, string name)
-        {
-            this.start = start;
-            this.end = end;
-            this.name = name;
-        }
-
-        public override void accept(SyntaxVisitor visitor)
-        {
-            visitor.visitIntrinsic(this);
-        }
-    }
-
-    public class UsingSyntax : SyntaxNode
-    {
+        public Position start;
+        public Position end;
         public NameSyntax name;
-        public UsingSyntax(Position start, Position end, NameSyntax name)
-        {
-            this.start = start;
-            this.end = end;
-            this.name = name;
-        }
-
-        public override void accept(SyntaxVisitor visitor)
-        {
-            if (!visitor.openUsing(this))
-                return;
-
-            name.accept(visitor);
-
-            visitor.closeUsing(this);
-        }
+        public AttributeSyntax[] attributes;
+        public object concept;
     }
 
-    public class DefineSyntax : SyntaxNode
+    public class NameSyntax
     {
-        public NameSyntax name;
-        public TypeSyntax typeSpec;
-        public DefineSyntax(Position start, Position end, NameSyntax name, TypeSyntax typeSpec)
-        {
-            this.start = start;
-            this.end = end;
-            this.name = name;
-            this.typeSpec = typeSpec;
-        }
-
-        public override void accept(SyntaxVisitor visitor)
-        {
-            if (!visitor.openDefine(this))
-                return;
-
-            name.accept(visitor);
-
-            typeSpec.accept(visitor);
-
-            visitor.closeDefine(this);
-        }
-    }
-
-    public class NameSyntax : ExpressionSyntax
-    {
+        public Position start;
+        public Position end;
         public string name;
         public ExtensionSyntax[] extensions;
-        public NameSyntax(Position start, Position end, string name, ExtensionSyntax[] extensions)
-        {
-            this.start = start;
-            this.end = end;
-            this.name = name;
-            this.extensions = extensions;
-        }
-
-        public override void accept(SyntaxVisitor visitor)
-        {
-            if (!visitor.openName(this))
-                return;
-
-            if (extensions != null)
-            {
-                foreach (ExtensionSyntax node in extensions)
-                    node.accept(visitor);
-            }
-
-            visitor.closeName(this);
-        }
     }
 
-    public class ExtensionSyntax : SyntaxNode
+    public class ExtensionSyntax
     {
+        public Position start;
+        public Position end;
         public string name;
-        public ExtensionSyntax(Position start, Position end, string name)
-        {
-            this.start = start;
-            this.end = end;
-            this.name = name;
-        }
-
-        public override void accept(SyntaxVisitor visitor)
-        {
-            visitor.visitExtension(this);
-        }
     }
 
-    public class DeclarationSyntax : SyntaxNode
+    public class AttributeSyntax
     {
-        public override void accept(SyntaxVisitor visitor)
-        {
-        }
+        public Position start;
+        public Position end;
+        public string attribute;
+        public object value;
     }
 
-    public class NamespaceSyntax : DeclarationSyntax
+    public class ClassSyntax
     {
-        public NameSyntax name;
-        public UsingSyntax[] usings;
-        public DefineSyntax[] defines;
-        public DeclarationSyntax[] declarations;
-        public NamespaceSyntax(Position start, Position end, NameSyntax name, UsingSyntax[] usings, DefineSyntax[] defines, DeclarationSyntax[] declarations)
-        {
-            this.start = start;
-            this.end = end;
-            this.name = name;
-            this.usings = usings;
-            this.defines = defines;
-            this.declarations = declarations;
-        }
-
-        public override void accept(SyntaxVisitor visitor)
-        {
-            if (!visitor.openNamespace(this))
-                return;
-
-            name.accept(visitor);
-
-            if (usings != null)
-            {
-                foreach (UsingSyntax node in usings)
-                    node.accept(visitor);
-            }
-
-            if (defines != null)
-            {
-                foreach (DefineSyntax node in defines)
-                    node.accept(visitor);
-            }
-
-            if (declarations != null)
-            {
-                foreach (DeclarationSyntax node in declarations)
-                    node.accept(visitor);
-            }
-
-            visitor.closeNamespace(this);
-        }
+        public Position start;
+        public Position end;
+        public StructureSyntax structure;
+        public BodySyntax body;
     }
 
-    public class FunctionSyntax : DeclarationSyntax
+    public class NamespaceSyntax
     {
-        public ProcedureSyntax procedure;
-        public FunctionSyntax(Position start, Position end, ProcedureSyntax procedure)
-        {
-            this.start = start;
-            this.end = end;
-            this.procedure = procedure;
-        }
-
-        public override void accept(SyntaxVisitor visitor)
-        {
-            if (!visitor.openFunction(this))
-                return;
-
-            procedure.accept(visitor);
-
-            visitor.closeFunction(this);
-        }
+        public Position start;
+        public Position end;
+        public BodySyntax body;
     }
 
-    public class ProcedureSyntax : SyntaxNode
+    public class UnionSyntax
     {
+        public Position start;
+        public Position end;
+        public TagSyntax[] tags;
+    }
+
+    public class TagSyntax
+    {
+        public Position start;
+        public Position end;
         public string name;
-        public RoutineSyntax routine;
-        public ProcedureSyntax(Position start, Position end, string name, RoutineSyntax routine)
-        {
-            this.start = start;
-            this.end = end;
-            this.name = name;
-            this.routine = routine;
-        }
-
-        public override void accept(SyntaxVisitor visitor)
-        {
-            if (!visitor.openProcedure(this))
-                return;
-
-            routine.accept(visitor);
-
-            visitor.closeProcedure(this);
-        }
+        public AttributeSyntax[] attributes;
+        public object item;
     }
 
-    public class RoutineSyntax : SyntaxNode
+    public class VariantSyntax
     {
-        public StructureSyntax input;
-        public TypeAnnotationSyntax output;
-        public ThrowsSyntax throwsClause;
-        public BlockSyntax body;
-        public RoutineSyntax(Position start, Position end, StructureSyntax input, TypeAnnotationSyntax output, ThrowsSyntax throwsClause, BlockSyntax body)
-        {
-            this.start = start;
-            this.end = end;
-            this.input = input;
-            this.output = output;
-            this.throwsClause = throwsClause;
-            this.body = body;
-        }
-
-        public override void accept(SyntaxVisitor visitor)
-        {
-            if (!visitor.openRoutine(this))
-                return;
-
-            if (input != null)
-                input.accept(visitor);
-
-            if (output != null)
-                output.accept(visitor);
-
-            if (throwsClause != null)
-                throwsClause.accept(visitor);
-
-            body.accept(visitor);
-
-            visitor.closeRoutine(this);
-        }
+        public Position start;
+        public Position end;
+        public StructureSyntax structure;
+        public BodySyntax body;
     }
 
-    public class LetDeclarationSyntax : DeclarationSyntax
+    public class EnumSyntax
     {
-        public LetSyntax declaration;
-        public LetDeclarationSyntax(Position start, Position end, LetSyntax declaration)
-        {
-            this.start = start;
-            this.end = end;
-            this.declaration = declaration;
-        }
-
-        public override void accept(SyntaxVisitor visitor)
-        {
-            if (!visitor.openLetDeclaration(this))
-                return;
-
-            declaration.accept(visitor);
-
-            visitor.closeLetDeclaration(this);
-        }
-    }
-
-    public class VarDeclarationSyntax : DeclarationSyntax
-    {
-        public VarSyntax declaration;
-        public VarDeclarationSyntax(Position start, Position end, VarSyntax declaration)
-        {
-            this.start = start;
-            this.end = end;
-            this.declaration = declaration;
-        }
-
-        public override void accept(SyntaxVisitor visitor)
-        {
-            if (!visitor.openVarDeclaration(this))
-                return;
-
-            declaration.accept(visitor);
-
-            visitor.closeVarDeclaration(this);
-        }
-    }
-
-    public class MutableDeclarationSyntax : DeclarationSyntax
-    {
-        public MutableSyntax declaration;
-        public MutableDeclarationSyntax(Position start, Position end, MutableSyntax declaration)
-        {
-            this.start = start;
-            this.end = end;
-            this.declaration = declaration;
-        }
-
-        public override void accept(SyntaxVisitor visitor)
-        {
-            if (!visitor.openMutableDeclaration(this))
-                return;
-
-            declaration.accept(visitor);
-
-            visitor.closeMutableDeclaration(this);
-        }
-    }
-
-    public class ThreadLocalDeclarationSyntax : DeclarationSyntax
-    {
-        public ThreadLocalSyntax declaration;
-        public ThreadLocalDeclarationSyntax(Position start, Position end, ThreadLocalSyntax declaration)
-        {
-            this.start = start;
-            this.end = end;
-            this.declaration = declaration;
-        }
-
-        public override void accept(SyntaxVisitor visitor)
-        {
-            if (!visitor.openThreadLocalDeclaration(this))
-                return;
-
-            declaration.accept(visitor);
-
-            visitor.closeThreadLocalDeclaration(this);
-        }
-    }
-
-    public class StatementSyntax : SyntaxNode
-    {
-        public override void accept(SyntaxVisitor visitor)
-        {
-        }
-    }
-
-    public class LetSyntax : StatementSyntax
-    {
-        public BindingSyntax binding;
-        public LetSyntax(Position start, Position end, BindingSyntax binding)
-        {
-            this.start = start;
-            this.end = end;
-            this.binding = binding;
-        }
-
-        public override void accept(SyntaxVisitor visitor)
-        {
-            if (!visitor.openLet(this))
-                return;
-
-            binding.accept(visitor);
-
-            visitor.closeLet(this);
-        }
-    }
-
-    public class VarSyntax : StatementSyntax
-    {
-        public BindingSyntax binding;
-        public VarSyntax(Position start, Position end, BindingSyntax binding)
-        {
-            this.start = start;
-            this.end = end;
-            this.binding = binding;
-        }
-
-        public override void accept(SyntaxVisitor visitor)
-        {
-            if (!visitor.openVar(this))
-                return;
-
-            binding.accept(visitor);
-
-            visitor.closeVar(this);
-        }
-    }
-
-    public class MutableSyntax : StatementSyntax
-    {
-        public BindingSyntax binding;
-        public MutableSyntax(Position start, Position end, BindingSyntax binding)
-        {
-            this.start = start;
-            this.end = end;
-            this.binding = binding;
-        }
-
-        public override void accept(SyntaxVisitor visitor)
-        {
-            if (!visitor.openMutable(this))
-                return;
-
-            binding.accept(visitor);
-
-            visitor.closeMutable(this);
-        }
-    }
-
-    public class ThreadLocalSyntax : StatementSyntax
-    {
-        public BindingSyntax binding;
-        public ThreadLocalSyntax(Position start, Position end, BindingSyntax binding)
-        {
-            this.start = start;
-            this.end = end;
-            this.binding = binding;
-        }
-
-        public override void accept(SyntaxVisitor visitor)
-        {
-            if (!visitor.openThreadLocal(this))
-                return;
-
-            binding.accept(visitor);
-
-            visitor.closeThreadLocal(this);
-        }
-    }
-
-    public class BindingSyntax : SyntaxNode
-    {
-        public string name;
-        public TypeAnnotationSyntax typeAnnotation;
-        public CalculationSyntax calculation;
-        public BindingSyntax(Position start, Position end, string name, TypeAnnotationSyntax typeAnnotation, CalculationSyntax calculation)
-        {
-            this.start = start;
-            this.end = end;
-            this.name = name;
-            this.typeAnnotation = typeAnnotation;
-            this.calculation = calculation;
-        }
-
-        public override void accept(SyntaxVisitor visitor)
-        {
-            if (!visitor.openBinding(this))
-                return;
-
-            if (typeAnnotation != null)
-                typeAnnotation.accept(visitor);
-
-            calculation.accept(visitor);
-
-            visitor.closeBinding(this);
-        }
-    }
-
-    public class SetSyntax : StatementSyntax
-    {
-        public OperationSyntax lValue;
-        public CalculationSyntax rValue;
-        public SetSyntax(Position start, Position end, OperationSyntax lValue, CalculationSyntax rValue)
-        {
-            this.start = start;
-            this.end = end;
-            this.lValue = lValue;
-            this.rValue = rValue;
-        }
-
-        public override void accept(SyntaxVisitor visitor)
-        {
-            if (!visitor.openSet(this))
-                return;
-
-            lValue.accept(visitor);
-
-            rValue.accept(visitor);
-
-            visitor.closeSet(this);
-        }
-    }
-
-    public class CalculationSyntax : StatementSyntax
-    {
-        public OperationSyntax operation;
-        public CalculationSyntax(Position start, Position end, OperationSyntax operation)
-        {
-            this.start = start;
-            this.end = end;
-            this.operation = operation;
-        }
-
-        public override void accept(SyntaxVisitor visitor)
-        {
-            if (!visitor.openCalculation(this))
-                return;
-
-            operation.accept(visitor);
-
-            visitor.closeCalculation(this);
-        }
-    }
-
-    public class OperationSyntax : SyntaxNode
-    {
-        public OperandSyntax[] op;
-        public OperationSyntax(Position start, Position end, OperandSyntax[] op)
-        {
-            this.start = start;
-            this.end = end;
-            this.op = op;
-        }
-
-        public override void accept(SyntaxVisitor visitor)
-        {
-            if (!visitor.openOperation(this))
-                return;
-
-            if (op != null)
-            {
-                foreach (OperandSyntax node in op)
-                    node.accept(visitor);
-            }
-
-            visitor.closeOperation(this);
-        }
-    }
-
-    public class OperandSyntax : StatementSyntax
-    {
-        public ExpressionSyntax primary;
-        public PostfixSyntax[] postfixes;
-        public OperandSyntax(Position start, Position end, ExpressionSyntax primary, PostfixSyntax[] postfixes)
-        {
-            this.start = start;
-            this.end = end;
-            this.primary = primary;
-            this.postfixes = postfixes;
-        }
-
-        public override void accept(SyntaxVisitor visitor)
-        {
-            if (!visitor.openOperand(this))
-                return;
-
-            primary.accept(visitor);
-
-            if (postfixes != null)
-            {
-                foreach (PostfixSyntax node in postfixes)
-                    node.accept(visitor);
-            }
-
-            visitor.closeOperand(this);
-        }
-    }
-
-    public class PostfixSyntax : SyntaxNode
-    {
-        public override void accept(SyntaxVisitor visitor)
-        {
-        }
-    }
-
-    public class MemberAccessSyntax : PostfixSyntax
-    {
-        public string member;
-        public MemberAccessSyntax(Position start, Position end, string member)
-        {
-            this.start = start;
-            this.end = end;
-            this.member = member;
-        }
-
-        public override void accept(SyntaxVisitor visitor)
-        {
-            visitor.visitMemberAccess(this);
-        }
-    }
-
-    public class AsSyntax : PostfixSyntax
-    {
-        public TypeSpecSyntax typeSpec;
-        public AsSyntax(Position start, Position end, TypeSpecSyntax typeSpec)
-        {
-            this.start = start;
-            this.end = end;
-            this.typeSpec = typeSpec;
-        }
-
-        public override void accept(SyntaxVisitor visitor)
-        {
-            if (!visitor.openAs(this))
-                return;
-
-            typeSpec.accept(visitor);
-
-            visitor.closeAs(this);
-        }
-    }
-
-    public class IsSyntax : PostfixSyntax
-    {
-        public TypeSpecSyntax typeSpec;
-        public IsSyntax(Position start, Position end, TypeSpecSyntax typeSpec)
-        {
-            this.start = start;
-            this.end = end;
-            this.typeSpec = typeSpec;
-        }
-
-        public override void accept(SyntaxVisitor visitor)
-        {
-            if (!visitor.openIs(this))
-                return;
-
-            typeSpec.accept(visitor);
-
-            visitor.closeIs(this);
-        }
-    }
-
-    public class UnwrapSyntax : PostfixSyntax
-    {
-        public UnwrapSyntax(Position start, Position end)
-        {
-            this.start = start;
-            this.end = end;
-        }
-
-        public override void accept(SyntaxVisitor visitor)
-        {
-            visitor.visitUnwrap(this);
-        }
-    }
-
-    public class CatchSyntax : PostfixSyntax
-    {
-        public CatchPatternSyntax typeSpec;
-        public BlockSyntax handler;
-        public CatchSyntax(Position start, Position end, CatchPatternSyntax typeSpec, BlockSyntax handler)
-        {
-            this.start = start;
-            this.end = end;
-            this.typeSpec = typeSpec;
-            this.handler = handler;
-        }
-
-        public override void accept(SyntaxVisitor visitor)
-        {
-            if (!visitor.openCatch(this))
-                return;
-
-            typeSpec.accept(visitor);
-
-            handler.accept(visitor);
-
-            visitor.closeCatch(this);
-        }
-    }
-
-    public class CatchPatternSyntax : SyntaxNode
-    {
-        public override void accept(SyntaxVisitor visitor)
-        {
-        }
-    }
-
-    public class WildCardCatchPatternSyntax : CatchPatternSyntax
-    {
-        public WildcardPatternSyntax pattern;
-        public WildCardCatchPatternSyntax(Position start, Position end, WildcardPatternSyntax pattern)
-        {
-            this.start = start;
-            this.end = end;
-            this.pattern = pattern;
-        }
-
-        public override void accept(SyntaxVisitor visitor)
-        {
-            if (!visitor.openWildCardCatchPattern(this))
-                return;
-
-            pattern.accept(visitor);
-
-            visitor.closeWildCardCatchPattern(this);
-        }
-    }
-
-    public class TypeCatchPatternSyntax : CatchPatternSyntax
-    {
-        public TypeSpecSyntax typeSpec;
-        public string errorName;
-        public TypeCatchPatternSyntax(Position start, Position end, TypeSpecSyntax typeSpec, string errorName)
-        {
-            this.start = start;
-            this.end = end;
-            this.typeSpec = typeSpec;
-            this.errorName = errorName;
-        }
-
-        public override void accept(SyntaxVisitor visitor)
-        {
-            if (!visitor.openTypeCatchPattern(this))
-                return;
-
-            typeSpec.accept(visitor);
-
-            visitor.closeTypeCatchPattern(this);
-        }
-    }
-
-    public class ExpressionSyntax : SyntaxNode
-    {
-        public override void accept(SyntaxVisitor visitor)
-        {
-        }
-    }
-
-    public class BlockSyntax : ExpressionSyntax
-    {
-        public StatementSyntax[] statements;
-        public BlockSyntax(Position start, Position end, StatementSyntax[] statements)
-        {
-            this.start = start;
-            this.end = end;
-            this.statements = statements;
-        }
-
-        public override void accept(SyntaxVisitor visitor)
-        {
-            if (!visitor.openBlock(this))
-                return;
-
-            if (statements != null)
-            {
-                foreach (StatementSyntax node in statements)
-                    node.accept(visitor);
-            }
-
-            visitor.closeBlock(this);
-        }
-    }
-
-    public class ConstantSyntax : ExpressionSyntax
-    {
+        public Position start;
+        public Position end;
         public Literal literal;
-        public ConstantSyntax(Position start, Position end, Literal literal)
-        {
-            this.start = start;
-            this.end = end;
-            this.literal = literal;
-        }
-
-        public override void accept(SyntaxVisitor visitor)
-        {
-            visitor.visitConstant(this);
-        }
     }
 
-    public class IfSyntax : ExpressionSyntax
+    public class ConstantSyntax
     {
-        public OperationSyntax condition;
-        public BlockSyntax consequent;
-        public ElseSyntax elseClause;
-        public IfSyntax(Position start, Position end, OperationSyntax condition, BlockSyntax consequent, ElseSyntax elseClause)
-        {
-            this.start = start;
-            this.end = end;
-            this.condition = condition;
-            this.consequent = consequent;
-            this.elseClause = elseClause;
-        }
-
-        public override void accept(SyntaxVisitor visitor)
-        {
-            if (!visitor.openIf(this))
-                return;
-
-            condition.accept(visitor);
-
-            consequent.accept(visitor);
-
-            if (elseClause != null)
-                elseClause.accept(visitor);
-
-            visitor.closeIf(this);
-        }
+        public Position start;
+        public Position end;
+        public Literal literal;
     }
 
-    public class ElseSyntax : SyntaxNode
+    public class DelegateSyntax
     {
-        public BlockSyntax alternative;
-        public ElseSyntax(Position start, Position end, BlockSyntax alternative)
-        {
-            this.start = start;
-            this.end = end;
-            this.alternative = alternative;
-        }
-
-        public override void accept(SyntaxVisitor visitor)
-        {
-            if (!visitor.openElse(this))
-                return;
-
-            alternative.accept(visitor);
-
-            visitor.closeElse(this);
-        }
+        public Position start;
+        public Position end;
+        public object type;
+        public AttributeSyntax[] attributes;
+        public ReturnsSyntax result;
+        public ThrowsSyntax error;
     }
 
-    public class SwitchSyntax : ExpressionSyntax
+    public class StructureSyntax
     {
-        public OperationSyntax condition;
-        public SwitchCaseSyntax[] cases;
-        public SwitchSyntax(Position start, Position end, OperationSyntax condition, SwitchCaseSyntax[] cases)
-        {
-            this.start = start;
-            this.end = end;
-            this.condition = condition;
-            this.cases = cases;
-        }
-
-        public override void accept(SyntaxVisitor visitor)
-        {
-            if (!visitor.openSwitch(this))
-                return;
-
-            condition.accept(visitor);
-
-            if (cases != null)
-            {
-                foreach (SwitchCaseSyntax node in cases)
-                    node.accept(visitor);
-            }
-
-            visitor.closeSwitch(this);
-        }
-    }
-
-    public class SwitchCaseSyntax : SyntaxNode
-    {
-        public CaseLabelSyntax label;
-        public BlockSyntax content;
-        public SwitchCaseSyntax(Position start, Position end, CaseLabelSyntax label, BlockSyntax content)
-        {
-            this.start = start;
-            this.end = end;
-            this.label = label;
-            this.content = content;
-        }
-
-        public override void accept(SyntaxVisitor visitor)
-        {
-            if (!visitor.openSwitchCase(this))
-                return;
-
-            label.accept(visitor);
-
-            content.accept(visitor);
-
-            visitor.closeSwitchCase(this);
-        }
-    }
-
-    public class CaseLabelSyntax : SyntaxNode
-    {
-        public override void accept(SyntaxVisitor visitor)
-        {
-        }
-    }
-
-    public class ItemCaseLabelSyntax : CaseLabelSyntax
-    {
-        public CaseItemSyntax[] items;
-        public ItemCaseLabelSyntax(Position start, Position end, CaseItemSyntax[] items)
-        {
-            this.start = start;
-            this.end = end;
-            this.items = items;
-        }
-
-        public override void accept(SyntaxVisitor visitor)
-        {
-            if (!visitor.openItemCaseLabel(this))
-                return;
-
-            if (items != null)
-            {
-                foreach (CaseItemSyntax node in items)
-                    node.accept(visitor);
-            }
-
-            visitor.closeItemCaseLabel(this);
-        }
-    }
-
-    public class CaseItemSyntax : SyntaxNode
-    {
-        public CasePatternSyntax pattern;
-        public CaseItemSyntax(Position start, Position end, CasePatternSyntax pattern)
-        {
-            this.start = start;
-            this.end = end;
-            this.pattern = pattern;
-        }
-
-        public override void accept(SyntaxVisitor visitor)
-        {
-            if (!visitor.openCaseItem(this))
-                return;
-
-            pattern.accept(visitor);
-
-            visitor.closeCaseItem(this);
-        }
-    }
-
-    public class CasePatternSyntax : SyntaxNode
-    {
-        public override void accept(SyntaxVisitor visitor)
-        {
-        }
-    }
-
-    public class ConstantPatternSyntax : CasePatternSyntax
-    {
-        public ConstantSyntax constant;
-        public ConstantPatternSyntax(Position start, Position end, ConstantSyntax constant)
-        {
-            this.start = start;
-            this.end = end;
-            this.constant = constant;
-        }
-
-        public override void accept(SyntaxVisitor visitor)
-        {
-            if (!visitor.openConstantPattern(this))
-                return;
-
-            constant.accept(visitor);
-
-            visitor.closeConstantPattern(this);
-        }
-    }
-
-    public class WildcardPatternSyntax : CasePatternSyntax
-    {
-        public WildcardPatternSyntax(Position start, Position end)
-        {
-            this.start = start;
-            this.end = end;
-        }
-
-        public override void accept(SyntaxVisitor visitor)
-        {
-            visitor.visitWildcardPattern(this);
-        }
-    }
-
-    public class NamePatternSyntax : CasePatternSyntax
-    {
-        public NameSyntax name;
-        public NamePatternSyntax(Position start, Position end, NameSyntax name)
-        {
-            this.start = start;
-            this.end = end;
-            this.name = name;
-        }
-
-        public override void accept(SyntaxVisitor visitor)
-        {
-            if (!visitor.openNamePattern(this))
-                return;
-
-            name.accept(visitor);
-
-            visitor.closeNamePattern(this);
-        }
-    }
-
-    public class DefaultCaseLabelSyntax : CaseLabelSyntax
-    {
-        public DefaultCaseLabelSyntax(Position start, Position end)
-        {
-            this.start = start;
-            this.end = end;
-        }
-
-        public override void accept(SyntaxVisitor visitor)
-        {
-            visitor.visitDefaultCaseLabel(this);
-        }
-    }
-
-    public class ForSyntax : ExpressionSyntax
-    {
-        public string index;
-        public TypeAnnotationSyntax typeAnnotation;
-        public OperationSyntax operation;
-        public LoopSyntax iteration;
-        public ForSyntax(Position start, Position end, string index, TypeAnnotationSyntax typeAnnotation, OperationSyntax operation, LoopSyntax iteration)
-        {
-            this.start = start;
-            this.end = end;
-            this.index = index;
-            this.typeAnnotation = typeAnnotation;
-            this.operation = operation;
-            this.iteration = iteration;
-        }
-
-        public override void accept(SyntaxVisitor visitor)
-        {
-            if (!visitor.openFor(this))
-                return;
-
-            if (typeAnnotation != null)
-                typeAnnotation.accept(visitor);
-
-            operation.accept(visitor);
-
-            iteration.accept(visitor);
-
-            visitor.closeFor(this);
-        }
-    }
-
-    public class WhileSyntax : ExpressionSyntax
-    {
-        public OperationSyntax condition;
-        public LoopSyntax iteration;
-        public WhileSyntax(Position start, Position end, OperationSyntax condition, LoopSyntax iteration)
-        {
-            this.start = start;
-            this.end = end;
-            this.condition = condition;
-            this.iteration = iteration;
-        }
-
-        public override void accept(SyntaxVisitor visitor)
-        {
-            if (!visitor.openWhile(this))
-                return;
-
-            condition.accept(visitor);
-
-            iteration.accept(visitor);
-
-            visitor.closeWhile(this);
-        }
-    }
-
-    public class DoSyntax : ExpressionSyntax
-    {
-        public LoopSyntax iteration;
-        public OperationSyntax condition;
-        public DoSyntax(Position start, Position end, LoopSyntax iteration, OperationSyntax condition)
-        {
-            this.start = start;
-            this.end = end;
-            this.iteration = iteration;
-            this.condition = condition;
-        }
-
-        public override void accept(SyntaxVisitor visitor)
-        {
-            if (!visitor.openDo(this))
-                return;
-
-            iteration.accept(visitor);
-
-            condition.accept(visitor);
-
-            visitor.closeDo(this);
-        }
-    }
-
-    public class LoopSyntax : SyntaxNode
-    {
-        public override void accept(SyntaxVisitor visitor)
-        {
-        }
-    }
-
-    public class SimpleLoopSyntax : LoopSyntax
-    {
-        public BlockSyntax code;
-        public SimpleLoopSyntax(Position start, Position end, BlockSyntax code)
-        {
-            this.start = start;
-            this.end = end;
-            this.code = code;
-        }
-
-        public override void accept(SyntaxVisitor visitor)
-        {
-            if (!visitor.openSimpleLoop(this))
-                return;
-
-            code.accept(visitor);
-
-            visitor.closeSimpleLoop(this);
-        }
-    }
-
-    public class NamedLoopSyntax : LoopSyntax
-    {
-        public string name;
-        public BlockSyntax code;
-        public NamedLoopSyntax(Position start, Position end, string name, BlockSyntax code)
-        {
-            this.start = start;
-            this.end = end;
-            this.name = name;
-            this.code = code;
-        }
-
-        public override void accept(SyntaxVisitor visitor)
-        {
-            if (!visitor.openNamedLoop(this))
-                return;
-
-            code.accept(visitor);
-
-            visitor.closeNamedLoop(this);
-        }
-    }
-
-    public class ThisSyntax : ExpressionSyntax
-    {
-        public ThisSyntax(Position start, Position end)
-        {
-            this.start = start;
-            this.end = end;
-        }
-
-        public override void accept(SyntaxVisitor visitor)
-        {
-            visitor.visitThis(this);
-        }
-    }
-
-    public class NewSyntax : ExpressionSyntax
-    {
-        public TypeSyntax typeSpec;
-        public NewSyntax(Position start, Position end, TypeSyntax typeSpec)
-        {
-            this.start = start;
-            this.end = end;
-            this.typeSpec = typeSpec;
-        }
-
-        public override void accept(SyntaxVisitor visitor)
-        {
-            if (!visitor.openNew(this))
-                return;
-
-            typeSpec.accept(visitor);
-
-            visitor.closeNew(this);
-        }
-    }
-
-    public class ObjectSyntax : ExpressionSyntax
-    {
-        public OperationSyntax firstOp;
-        public ItemSyntax[] additionalOps;
-        public ObjectSyntax(Position start, Position end, OperationSyntax firstOp, ItemSyntax[] additionalOps)
-        {
-            this.start = start;
-            this.end = end;
-            this.firstOp = firstOp;
-            this.additionalOps = additionalOps;
-        }
-
-        public override void accept(SyntaxVisitor visitor)
-        {
-            if (!visitor.openObject(this))
-                return;
-
-            if (firstOp != null)
-                firstOp.accept(visitor);
-
-            if (additionalOps != null)
-            {
-                foreach (ItemSyntax node in additionalOps)
-                    node.accept(visitor);
-            }
-
-            visitor.closeObject(this);
-        }
-    }
-
-    public class ArraySyntax : ExpressionSyntax
-    {
-        public OperationSyntax firstOp;
-        public ItemSyntax[] additionalOps;
-        public ArraySyntax(Position start, Position end, OperationSyntax firstOp, ItemSyntax[] additionalOps)
-        {
-            this.start = start;
-            this.end = end;
-            this.firstOp = firstOp;
-            this.additionalOps = additionalOps;
-        }
-
-        public override void accept(SyntaxVisitor visitor)
-        {
-            if (!visitor.openArray(this))
-                return;
-
-            if (firstOp != null)
-                firstOp.accept(visitor);
-
-            if (additionalOps != null)
-            {
-                foreach (ItemSyntax node in additionalOps)
-                    node.accept(visitor);
-            }
-
-            visitor.closeArray(this);
-        }
-    }
-
-    public class ItemSyntax : SyntaxNode
-    {
-        public OperationSyntax operation;
-        public ItemSyntax(Position start, Position end, OperationSyntax operation)
-        {
-            this.start = start;
-            this.end = end;
-            this.operation = operation;
-        }
-
-        public override void accept(SyntaxVisitor visitor)
-        {
-            if (!visitor.openItem(this))
-                return;
-
-            operation.accept(visitor);
-
-            visitor.closeItem(this);
-        }
-    }
-
-    public class SizeOfSyntax : ExpressionSyntax
-    {
-        public TypeSyntax typeSpec;
-        public SizeOfSyntax(Position start, Position end, TypeSyntax typeSpec)
-        {
-            this.start = start;
-            this.end = end;
-            this.typeSpec = typeSpec;
-        }
-
-        public override void accept(SyntaxVisitor visitor)
-        {
-            if (!visitor.openSizeOf(this))
-                return;
-
-            typeSpec.accept(visitor);
-
-            visitor.closeSizeOf(this);
-        }
-    }
-
-    public class BreakSyntax : StatementSyntax
-    {
-        public string iteration;
-        public BreakSyntax(Position start, Position end, string iteration)
-        {
-            this.start = start;
-            this.end = end;
-            this.iteration = iteration;
-        }
-
-        public override void accept(SyntaxVisitor visitor)
-        {
-            visitor.visitBreak(this);
-        }
-    }
-
-    public class ContinueSyntax : StatementSyntax
-    {
-        public string iteration;
-        public ContinueSyntax(Position start, Position end, string iteration)
-        {
-            this.start = start;
-            this.end = end;
-            this.iteration = iteration;
-        }
-
-        public override void accept(SyntaxVisitor visitor)
-        {
-            visitor.visitContinue(this);
-        }
-    }
-
-    public class ReturnSyntax : StatementSyntax
-    {
-        public CalculationSyntax result;
-        public ReturnSyntax(Position start, Position end, CalculationSyntax result)
-        {
-            this.start = start;
-            this.end = end;
-            this.result = result;
-        }
-
-        public override void accept(SyntaxVisitor visitor)
-        {
-            if (!visitor.openReturn(this))
-                return;
-
-            if (result != null)
-                result.accept(visitor);
-
-            visitor.closeReturn(this);
-        }
-    }
-
-    public class ThrowSyntax : StatementSyntax
-    {
-        public CalculationSyntax exception;
-        public ThrowSyntax(Position start, Position end, CalculationSyntax exception)
-        {
-            this.start = start;
-            this.end = end;
-            this.exception = exception;
-        }
-
-        public override void accept(SyntaxVisitor visitor)
-        {
-            if (!visitor.openThrow(this))
-                return;
-
-            exception.accept(visitor);
-
-            visitor.closeThrow(this);
-        }
-    }
-
-    public class ClassSyntax : DeclarationSyntax
-    {
-        public NameSyntax name;
-        public GenericParametersSyntax generics;
-        public ExtendsSyntax baseClass;
-        public StructureSyntax contents;
-        public ClassBodySyntax body;
-        public ClassSyntax(Position start, Position end, NameSyntax name, GenericParametersSyntax generics, ExtendsSyntax baseClass, StructureSyntax contents, ClassBodySyntax body)
-        {
-            this.start = start;
-            this.end = end;
-            this.name = name;
-            this.generics = generics;
-            this.baseClass = baseClass;
-            this.contents = contents;
-            this.body = body;
-        }
-
-        public override void accept(SyntaxVisitor visitor)
-        {
-            if (!visitor.openClass(this))
-                return;
-
-            name.accept(visitor);
-
-            if (generics != null)
-                generics.accept(visitor);
-
-            if (baseClass != null)
-                baseClass.accept(visitor);
-
-            if (contents != null)
-                contents.accept(visitor);
-
-            if (body != null)
-                body.accept(visitor);
-
-            visitor.closeClass(this);
-        }
-    }
-
-    public class GenericParametersSyntax : SyntaxNode
-    {
-        public string name;
-        public GenericParameterSyntax[] additionalGenerics;
-        public GenericParametersSyntax(Position start, Position end, string name, GenericParameterSyntax[] additionalGenerics)
-        {
-            this.start = start;
-            this.end = end;
-            this.name = name;
-            this.additionalGenerics = additionalGenerics;
-        }
-
-        public override void accept(SyntaxVisitor visitor)
-        {
-            if (!visitor.openGenericParameters(this))
-                return;
-
-            if (additionalGenerics != null)
-            {
-                foreach (GenericParameterSyntax node in additionalGenerics)
-                    node.accept(visitor);
-            }
-
-            visitor.closeGenericParameters(this);
-        }
-    }
-
-    public class GenericParameterSyntax : SyntaxNode
-    {
-        public string name;
-        public GenericParameterSyntax(Position start, Position end, string name)
-        {
-            this.start = start;
-            this.end = end;
-            this.name = name;
-        }
-
-        public override void accept(SyntaxVisitor visitor)
-        {
-            visitor.visitGenericParameter(this);
-        }
-    }
-
-    public class ExtendsSyntax : SyntaxNode
-    {
-        public NameSyntax name;
-        public ExtendsSyntax(Position start, Position end, NameSyntax name)
-        {
-            this.start = start;
-            this.end = end;
-            this.name = name;
-        }
-
-        public override void accept(SyntaxVisitor visitor)
-        {
-            if (!visitor.openExtends(this))
-                return;
-
-            name.accept(visitor);
-
-            visitor.closeExtends(this);
-        }
-    }
-
-    public class StructureSyntax : SyntaxNode
-    {
+        public Position start;
+        public Position end;
         public ComponentSyntax[] components;
-        public StructureSyntax(Position start, Position end, ComponentSyntax[] components)
-        {
-            this.start = start;
-            this.end = end;
-            this.components = components;
-        }
-
-        public override void accept(SyntaxVisitor visitor)
-        {
-            if (!visitor.openStructure(this))
-                return;
-
-            if (components != null)
-            {
-                foreach (ComponentSyntax node in components)
-                    node.accept(visitor);
-            }
-
-            visitor.closeStructure(this);
-        }
     }
 
-    public class ComponentSyntax : SyntaxNode
+    public class BodySyntax
     {
+        public Position start;
+        public Position end;
+        public object[] declarations;
+    }
+
+    public class ComponentSyntax
+    {
+        public Position start;
+        public Position end;
         public string name;
-        public TypeAnnotationSyntax typeAnnotation;
-        public ComponentSyntax(Position start, Position end, string name, TypeAnnotationSyntax typeAnnotation)
-        {
-            this.start = start;
-            this.end = end;
-            this.name = name;
-            this.typeAnnotation = typeAnnotation;
-        }
-
-        public override void accept(SyntaxVisitor visitor)
-        {
-            if (!visitor.openComponent(this))
-                return;
-
-            if (typeAnnotation != null)
-                typeAnnotation.accept(visitor);
-
-            visitor.closeComponent(this);
-        }
+        public AttributeSyntax[] attributes;
+        public TypeAnnotationSyntax annotation;
     }
 
-    public class ClassBodySyntax : SyntaxNode
+    public class TypeAnnotationSyntax
     {
-        public ClassMemberSyntax[] members;
-        public ClassBodySyntax(Position start, Position end, ClassMemberSyntax[] members)
-        {
-            this.start = start;
-            this.end = end;
-            this.members = members;
-        }
-
-        public override void accept(SyntaxVisitor visitor)
-        {
-            if (!visitor.openClassBody(this))
-                return;
-
-            if (members != null)
-            {
-                foreach (ClassMemberSyntax node in members)
-                    node.accept(visitor);
-            }
-
-            visitor.closeClassBody(this);
-        }
+        public Position start;
+        public Position end;
+        public object spec;
     }
 
-    public class ClassMemberSyntax : SyntaxNode
+    public class TypeSyntax
     {
-        public override void accept(SyntaxVisitor visitor)
-        {
-        }
-    }
-
-    public class LetMemberSyntax : ClassMemberSyntax
-    {
-        public LetSyntax declaration;
-        public LetMemberSyntax(Position start, Position end, LetSyntax declaration)
-        {
-            this.start = start;
-            this.end = end;
-            this.declaration = declaration;
-        }
-
-        public override void accept(SyntaxVisitor visitor)
-        {
-            if (!visitor.openLetMember(this))
-                return;
-
-            declaration.accept(visitor);
-
-            visitor.closeLetMember(this);
-        }
-    }
-
-    public class VarMemberSyntax : ClassMemberSyntax
-    {
-        public VarSyntax declaration;
-        public VarMemberSyntax(Position start, Position end, VarSyntax declaration)
-        {
-            this.start = start;
-            this.end = end;
-            this.declaration = declaration;
-        }
-
-        public override void accept(SyntaxVisitor visitor)
-        {
-            if (!visitor.openVarMember(this))
-                return;
-
-            declaration.accept(visitor);
-
-            visitor.closeVarMember(this);
-        }
-    }
-
-    public class MutableMemberSyntax : ClassMemberSyntax
-    {
-        public MutableSyntax declaration;
-        public MutableMemberSyntax(Position start, Position end, MutableSyntax declaration)
-        {
-            this.start = start;
-            this.end = end;
-            this.declaration = declaration;
-        }
-
-        public override void accept(SyntaxVisitor visitor)
-        {
-            if (!visitor.openMutableMember(this))
-                return;
-
-            declaration.accept(visitor);
-
-            visitor.closeMutableMember(this);
-        }
-    }
-
-    public class SetInitializationSyntax : ClassMemberSyntax
-    {
-        public SetSyntax definition;
-        public SetInitializationSyntax(Position start, Position end, SetSyntax definition)
-        {
-            this.start = start;
-            this.end = end;
-            this.definition = definition;
-        }
-
-        public override void accept(SyntaxVisitor visitor)
-        {
-            if (!visitor.openSetInitialization(this))
-                return;
-
-            definition.accept(visitor);
-
-            visitor.closeSetInitialization(this);
-        }
-    }
-
-    public class MethodSyntax : ClassMemberSyntax
-    {
-        public ProcedureSyntax procedure;
-        public MethodSyntax(Position start, Position end, ProcedureSyntax procedure)
-        {
-            this.start = start;
-            this.end = end;
-            this.procedure = procedure;
-        }
-
-        public override void accept(SyntaxVisitor visitor)
-        {
-            if (!visitor.openMethod(this))
-                return;
-
-            procedure.accept(visitor);
-
-            visitor.closeMethod(this);
-        }
-    }
-
-    public class StaticFunctionSyntax : ClassMemberSyntax
-    {
-        public FunctionSyntax procedure;
-        public StaticFunctionSyntax(Position start, Position end, FunctionSyntax procedure)
-        {
-            this.start = start;
-            this.end = end;
-            this.procedure = procedure;
-        }
-
-        public override void accept(SyntaxVisitor visitor)
-        {
-            if (!visitor.openStaticFunction(this))
-                return;
-
-            procedure.accept(visitor);
-
-            visitor.closeStaticFunction(this);
-        }
-    }
-
-    public class OperatorSyntax : ClassMemberSyntax
-    {
-        public RoutineSyntax routine;
-        public OperatorSyntax(Position start, Position end, RoutineSyntax routine)
-        {
-            this.start = start;
-            this.end = end;
-            this.routine = routine;
-        }
-
-        public override void accept(SyntaxVisitor visitor)
-        {
-            if (!visitor.openOperator(this))
-                return;
-
-            routine.accept(visitor);
-
-            visitor.closeOperator(this);
-        }
-    }
-
-    public class InitializerSyntax : ClassMemberSyntax
-    {
-        public StructureSyntax input;
-        public BlockSyntax body;
-        public InitializerSyntax(Position start, Position end, StructureSyntax input, BlockSyntax body)
-        {
-            this.start = start;
-            this.end = end;
-            this.input = input;
-            this.body = body;
-        }
-
-        public override void accept(SyntaxVisitor visitor)
-        {
-            if (!visitor.openInitializer(this))
-                return;
-
-            if (input != null)
-                input.accept(visitor);
-
-            body.accept(visitor);
-
-            visitor.closeInitializer(this);
-        }
-    }
-
-    public class AllocatorSyntax : ClassMemberSyntax
-    {
-        public StructureSyntax input;
-        public BlockSyntax body;
-        public AllocatorSyntax(Position start, Position end, StructureSyntax input, BlockSyntax body)
-        {
-            this.start = start;
-            this.end = end;
-            this.input = input;
-            this.body = body;
-        }
-
-        public override void accept(SyntaxVisitor visitor)
-        {
-            if (!visitor.openAllocator(this))
-                return;
-
-            if (input != null)
-                input.accept(visitor);
-
-            body.accept(visitor);
-
-            visitor.closeAllocator(this);
-        }
-    }
-
-    public class TypeAnnotationSyntax : SyntaxNode
-    {
-        public TypeSpecSyntax typeSpec;
-        public TypeAnnotationSyntax(Position start, Position end, TypeSpecSyntax typeSpec)
-        {
-            this.start = start;
-            this.end = end;
-            this.typeSpec = typeSpec;
-        }
-
-        public override void accept(SyntaxVisitor visitor)
-        {
-            if (!visitor.openTypeAnnotation(this))
-                return;
-
-            typeSpec.accept(visitor);
-
-            visitor.closeTypeAnnotation(this);
-        }
-    }
-
-    public class TypeSpecSyntax : SyntaxNode
-    {
-        public override void accept(SyntaxVisitor visitor)
-        {
-        }
-    }
-
-    public class TypeSyntax : TypeSpecSyntax
-    {
+        public Position start;
+        public Position end;
         public NameSyntax name;
         public GenericArgumentsSyntax generics;
         public OptionalSyntax optional;
-        public LifeTimeSyntax lifeTime;
-        public TypeSyntax(Position start, Position end, NameSyntax name, GenericArgumentsSyntax generics, OptionalSyntax optional, LifeTimeSyntax lifeTime)
-        {
-            this.start = start;
-            this.end = end;
-            this.name = name;
-            this.generics = generics;
-            this.optional = optional;
-            this.lifeTime = lifeTime;
-        }
-
-        public override void accept(SyntaxVisitor visitor)
-        {
-            if (!visitor.openType(this))
-                return;
-
-            name.accept(visitor);
-
-            if (generics != null)
-                generics.accept(visitor);
-
-            if (optional != null)
-                optional.accept(visitor);
-
-            if (lifeTime != null)
-                lifeTime.accept(visitor);
-
-            visitor.closeType(this);
-        }
     }
 
-    public class VariantSyntax : TypeSpecSyntax
+    public class GenericArgumentsSyntax
     {
-        public TypeSyntax[] types;
-        public VariantSyntax(Position start, Position end, TypeSyntax[] types)
-        {
-            this.start = start;
-            this.end = end;
-            this.types = types;
-        }
-
-        public override void accept(SyntaxVisitor visitor)
-        {
-            if (!visitor.openVariant(this))
-                return;
-
-            if (types != null)
-            {
-                foreach (TypeSyntax node in types)
-                    node.accept(visitor);
-            }
-
-            visitor.closeVariant(this);
-        }
+        public Position start;
+        public Position end;
+        public GenericArgumentSyntax[] generics;
     }
 
-    public class ThrowsSyntax : SyntaxNode
+    public class GenericArgumentSyntax
     {
-        public TypeSpecSyntax throwsType;
-        public ThrowsSyntax(Position start, Position end, TypeSpecSyntax throwsType)
-        {
-            this.start = start;
-            this.end = end;
-            this.throwsType = throwsType;
-        }
-
-        public override void accept(SyntaxVisitor visitor)
-        {
-            if (!visitor.openThrows(this))
-                return;
-
-            throwsType.accept(visitor);
-
-            visitor.closeThrows(this);
-        }
+        public Position start;
+        public Position end;
+        public TypeSyntax spec;
     }
 
-    public class GenericArgumentsSyntax : SyntaxNode
+    public class OptionalSyntax
     {
-        public TypeSyntax generic;
-        public GenericArgumentSyntax[] additionalGenerics;
-        public GenericArgumentsSyntax(Position start, Position end, TypeSyntax generic, GenericArgumentSyntax[] additionalGenerics)
-        {
-            this.start = start;
-            this.end = end;
-            this.generic = generic;
-            this.additionalGenerics = additionalGenerics;
-        }
-
-        public override void accept(SyntaxVisitor visitor)
-        {
-            if (!visitor.openGenericArguments(this))
-                return;
-
-            generic.accept(visitor);
-
-            if (additionalGenerics != null)
-            {
-                foreach (GenericArgumentSyntax node in additionalGenerics)
-                    node.accept(visitor);
-            }
-
-            visitor.closeGenericArguments(this);
-        }
+        public Position start;
+        public Position end;
     }
 
-    public class GenericArgumentSyntax : SyntaxNode
+    public class FunctionSyntax
     {
-        public TypeSyntax typeSpec;
-        public GenericArgumentSyntax(Position start, Position end, TypeSyntax typeSpec)
-        {
-            this.start = start;
-            this.end = end;
-            this.typeSpec = typeSpec;
-        }
-
-        public override void accept(SyntaxVisitor visitor)
-        {
-            if (!visitor.openGenericArgument(this))
-                return;
-
-            typeSpec.accept(visitor);
-
-            visitor.closeGenericArgument(this);
-        }
+        public Position start;
+        public Position end;
+        public string name;
+        public RoutineSyntax routine;
     }
 
-    public class OptionalSyntax : SyntaxNode
+    public class ProcedureSyntax
     {
-        public OptionalSyntax(Position start, Position end)
-        {
-            this.start = start;
-            this.end = end;
-        }
-
-        public override void accept(SyntaxVisitor visitor)
-        {
-            visitor.visitOptional(this);
-        }
+        public Position start;
+        public Position end;
+        public string name;
+        public RoutineSyntax routine;
     }
 
-    public class LifeTimeSyntax : SyntaxNode
+    public class OperatorSyntax
     {
-        public override void accept(SyntaxVisitor visitor)
-        {
-        }
+        public Position start;
+        public Position end;
+        public RoutineSyntax routine;
     }
 
-    public class RootSyntax : LifeTimeSyntax
+    public class RoutineSyntax
     {
-        public RootSyntax(Position start, Position end)
-        {
-            this.start = start;
-            this.end = end;
-        }
-
-        public override void accept(SyntaxVisitor visitor)
-        {
-            visitor.visitRoot(this);
-        }
+        public Position start;
+        public Position end;
+        public object type;
+        public AttributeSyntax[] attributes;
+        public ReturnsSyntax result;
+        public ThrowsSyntax error;
+        public AttributeSyntax[] exception;
+        public object implementation;
     }
 
-    public class LocalSyntax : LifeTimeSyntax
+    public class ReturnsSyntax
     {
-        public string location;
-        public LocalSyntax(Position start, Position end, string location)
-        {
-            this.start = start;
-            this.end = end;
-            this.location = location;
-        }
-
-        public override void accept(SyntaxVisitor visitor)
-        {
-            visitor.visitLocal(this);
-        }
+        public Position start;
+        public Position end;
+        public object spec;
+        public AttributeSyntax[] attributes;
     }
 
-    public class ReferenceSyntax : LifeTimeSyntax
+    public class ThrowsSyntax
     {
-        public Literal age;
-        public ReferenceSyntax(Position start, Position end, Literal age)
-        {
-            this.start = start;
-            this.end = end;
-            this.age = age;
-        }
-
-        public override void accept(SyntaxVisitor visitor)
-        {
-            visitor.visitReference(this);
-        }
+        public Position start;
+        public Position end;
+        public object spec;
+        public AttributeSyntax[] attributes;
     }
 
-    public class ThrownSyntax : LifeTimeSyntax
+    public class ExternSyntax
     {
-        public ThrownSyntax(Position start, Position end)
-        {
-            this.start = start;
-            this.end = end;
-        }
+        public Position start;
+        public Position end;
+    }
 
-        public override void accept(SyntaxVisitor visitor)
-        {
-            visitor.visitThrown(this);
-        }
+    public class InstructionSyntax
+    {
+        public Position start;
+        public Position end;
+    }
+
+    public class IntrinsicSyntax
+    {
+        public Position start;
+        public Position end;
+    }
+
+    public class UseSyntax
+    {
+        public Position start;
+        public Position end;
+        public NameSyntax name;
+    }
+
+    public class ImplementSyntax
+    {
+        public Position start;
+        public Position end;
+        public NameSyntax name;
+        public AttributeSyntax[] attributes;
+        public object[] functions;
+    }
+
+    public class TraitSyntax
+    {
+        public Position start;
+        public Position end;
+        public NameSyntax name;
+        public ExtendsSyntax extension;
+        public AttributeSyntax[] attributes;
+        public object[] functions;
+    }
+
+    public class ExtendsSyntax
+    {
+        public Position start;
+        public Position end;
+        public ExtendSyntax[] extensions;
+    }
+
+    public class ExtendSyntax
+    {
+        public Position start;
+        public Position end;
+        public object spec;
+    }
+
+    public class MacroSyntax
+    {
+        public Position start;
+        public Position end;
+        public string name;
+        public object model;
+        public OperationSyntax rule;
+    }
+
+    public class LetSyntax
+    {
+        public Position start;
+        public Position end;
+        public BindingSyntax binding;
+    }
+
+    public class VarSyntax
+    {
+        public Position start;
+        public Position end;
+        public BindingSyntax binding;
+    }
+
+    public class MutableSyntax
+    {
+        public Position start;
+        public Position end;
+        public BindingSyntax binding;
+    }
+
+    public class BindingSyntax
+    {
+        public Position start;
+        public Position end;
+        public string name;
+        public TypeAnnotationSyntax annotation;
+        public OperationSyntax calculation;
+    }
+
+    public class SetSyntax
+    {
+        public Position start;
+        public Position end;
+        public OperationSyntax target;
+        public OperationSyntax source;
+    }
+
+    public class OperationSyntax
+    {
+        public Position start;
+        public Position end;
+        public OperandSyntax[] op;
+    }
+
+    public class OperandSyntax
+    {
+        public Position start;
+        public Position end;
+        public object primary;
+        public object[] postfixes;
+    }
+
+    public class MemberAccessSyntax
+    {
+        public Position start;
+        public Position end;
+        public NameSyntax member;
+    }
+
+    public class CatcherSyntax
+    {
+        public Position start;
+        public Position end;
+        public CatchSyntax[] catchers;
+        public DropSyntax dropper;
+    }
+
+    public class CatchSyntax
+    {
+        public Position start;
+        public Position end;
+        public OperationSyntax condition;
+        public OperationSyntax handler;
+    }
+
+    public class DropSyntax
+    {
+        public Position start;
+        public Position end;
+        public OperationSyntax handler;
+    }
+
+    public class IsSyntax
+    {
+        public Position start;
+        public Position end;
+        public OperandSyntax[] condition;
+    }
+
+    public class ContinueSyntax
+    {
+        public Position start;
+        public Position end;
+        public LoopSyntax name;
+    }
+
+    public class LoopSyntax
+    {
+        public Position start;
+        public Position end;
+        public string name;
+    }
+
+    public class BreakSyntax
+    {
+        public Position start;
+        public Position end;
+        public LoopSyntax name;
+        public OperationSyntax result;
+    }
+
+    public class ReturnSyntax
+    {
+        public Position start;
+        public Position end;
+        public OperationSyntax result;
+    }
+
+    public class ThrowSyntax
+    {
+        public Position start;
+        public Position end;
+        public OperationSyntax result;
+    }
+
+    public class LiteralSyntax
+    {
+        public Position start;
+        public Position end;
+        public Literal literal;
+    }
+
+    public class ObjectSyntax
+    {
+        public Position start;
+        public Position end;
+        public FieldSyntax[] fields;
+    }
+
+    public class FieldSyntax
+    {
+        public Position start;
+        public Position end;
+        public OperationSyntax operation;
+        public AttributeSyntax[] attributes;
+        public ValueSyntax value;
+    }
+
+    public class ValueSyntax
+    {
+        public Position start;
+        public Position end;
+        public OperationSyntax value;
+        public AttributeSyntax[] attributes;
+    }
+
+    public class ArraySyntax
+    {
+        public Position start;
+        public Position end;
+        public ElementSyntax[] elements;
+    }
+
+    public class ElementSyntax
+    {
+        public Position start;
+        public Position end;
+        public OperationSyntax operation;
+        public AttributeSyntax[] attributes;
+    }
+
+    public class BlockSyntax
+    {
+        public Position start;
+        public Position end;
+        public object[] statements;
+    }
+
+    public class IfSyntax
+    {
+        public Position start;
+        public Position end;
+        public OperationSyntax condition;
+        public OperationSyntax consequent;
+        public ElseSyntax alternative;
+    }
+
+    public class ElseSyntax
+    {
+        public Position start;
+        public Position end;
+        public OperationSyntax alternative;
+    }
+
+    public class MatchSyntax
+    {
+        public Position start;
+        public Position end;
+        public OperationSyntax scrutinee;
+        public CaseSyntax[] cases;
+        public DefaultSyntax alternative;
+    }
+
+    public class CaseSyntax
+    {
+        public Position start;
+        public Position end;
+        public OperationSyntax condition;
+        public OperationSyntax consequent;
+    }
+
+    public class DefaultSyntax
+    {
+        public Position start;
+        public Position end;
+        public OperationSyntax alternative;
+    }
+
+    public class LambdaSyntax
+    {
+        public Position start;
+        public Position end;
+        public OperationSyntax input;
+        public OperationSyntax block;
+    }
+
+    public class ForSyntax
+    {
+        public Position start;
+        public Position end;
+        public OperationSyntax condition;
+        public OperationSyntax expression;
+        public LabelSyntax name;
+        public OperationSyntax action;
+    }
+
+    public class LabelSyntax
+    {
+        public Position start;
+        public Position end;
+        public string name;
+    }
+
+    public class WhileSyntax
+    {
+        public Position start;
+        public Position end;
+        public OperationSyntax condition;
+        public LabelSyntax name;
+        public OperationSyntax action;
+    }
+
+    public class RepeatSyntax
+    {
+        public Position start;
+        public Position end;
+        public LabelSyntax name;
+        public OperationSyntax action;
+    }
+
+    public class SizeOfSyntax
+    {
+        public Position start;
+        public Position end;
+        public TypeSyntax spec;
     }
 }
