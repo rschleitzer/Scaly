@@ -13,16 +13,7 @@
             "args": [
                 "-o",
                 "scalyc",
-                "Array.scaly",
-                "Compiler.scaly",
-                "ctypes.scaly",
-                "Lexer.scaly",
-                "main.scaly",
-                "Options.scaly",
-                "Page.scaly",
-                "Parser.scaly",
-                "scaly.scaly",
-                "string.scaly"
+                "scalyc.scaly",
             ],
             "cwd": "${workspaceFolder}",
             "console": "internalConsole",
