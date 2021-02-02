@@ -739,6 +739,10 @@ namespace scalyc
                     empty();
                     return hex;
 
+                case Fragment fragment:
+                    empty();
+                    return fragment;
+
                 default:
                     return null;
             }
