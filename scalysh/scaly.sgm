@@ -32,6 +32,7 @@
         <content link = Implement
         <content link = Trait
         <content link = Macro
+        <content link = Module
 
     <syntax id = Definition
         <content link = define
@@ -224,6 +225,11 @@
         <content identifier                                     property = name
         <content link = Model                                   property = model
         <content link = Operation                               property = rule
+
+    <syntax id = Module
+        <content link = module
+        <content identifier                                     property = name
+        <content colon                                 optional
 
     <syntax id = Model                                 abstract
         <content link = Literal
@@ -451,6 +457,7 @@
     <keyword id = loop
     <keyword id = macro
     <keyword id = match
+    <keyword id = module
     <keyword id = mutable
     <keyword id = operator
     <keyword id = procedure

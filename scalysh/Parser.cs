@@ -34,6 +34,7 @@ namespace scalyc
             "loop",
             "macro",
             "match",
+            "module",
             "mutable",
             "operator",
             "procedure",
@@ -208,6 +209,11 @@ namespace scalyc
             }
             {
                 var node = parse_macro();
+                if (node != null)
+                    return node;
+            }
+            {
+                var node = parse_module();
                 if (node != null)
                     return node;
             }
@@ -1387,6 +1393,41 @@ namespace scalyc
                 name = name,
                 model = model,
                 rule = rule,
+            };
+
+            return ret;
+        }
+
+        public ModuleSyntax parse_module()
+        {
+            var start = lexer.get_previous_position();
+
+            var success_module_1 = lexer.parse_keyword("module");
+            if (!success_module_1)
+                    return null;
+
+            var name = lexer.parse_identifier(keywords);
+            if (name != null)
+            {
+                if (!is_identifier(name))
+                {
+                    throw new ParserException(file_name, lexer.line, lexer.column);
+                }
+            }
+            else
+            {
+                    throw new ParserException(file_name, lexer.line, lexer.column);
+            }
+
+            lexer.parse_colon();
+
+            var end = lexer.get_position();
+
+            var ret = new ModuleSyntax
+            {
+                start = start,
+                end = end,
+                name = name,
             };
 
             return ret;
@@ -2915,6 +2956,13 @@ namespace scalyc
         public string name;
         public object model;
         public OperationSyntax rule;
+    }
+
+    public class ModuleSyntax
+    {
+        public Position start;
+        public Position end;
+        public string name;
     }
 
     public class LetSyntax
