@@ -231,6 +231,8 @@ namespace scalyc
             var name = parse_name();
             if (name == null)
                 throw new ParserException(file_name, lexer.line, lexer.column);
+
+            lexer.parse_colon();
             var attributes = parse_attribute_list();
             var concept = parse_concept();
             if (concept == null)
@@ -419,6 +421,8 @@ namespace scalyc
             var structure = parse_structure();
             if (structure == null)
                 return null;
+
+            lexer.parse_colon();
             var body = parse_body();
 
             var end = lexer.get_position();
@@ -595,6 +599,8 @@ namespace scalyc
                     return null;
             }
 
+            lexer.parse_colon();
+
             var end = lexer.get_position();
 
             var ret = new ConstantSyntax
@@ -723,10 +729,12 @@ namespace scalyc
             {
                     return null;
             }
-            var attributes = parse_attribute_list();
             var annotation = parse_typeannotation();
+            var attributes = parse_attribute_list();
 
             lexer.parse_punctuation(",");
+
+            lexer.parse_colon();
 
             var end = lexer.get_position();
 
@@ -735,8 +743,8 @@ namespace scalyc
                 start = start,
                 end = end,
                 name = name,
-                attributes = attributes,
                 annotation = annotation,
+                attributes = attributes,
             };
 
             return ret;
@@ -910,6 +918,7 @@ namespace scalyc
             {
                     throw new ParserException(file_name, lexer.line, lexer.column);
             }
+            var generics = parse_genericarguments();
             var routine = parse_routine();
             if (routine == null)
                 throw new ParserException(file_name, lexer.line, lexer.column);
@@ -921,6 +930,7 @@ namespace scalyc
                 start = start,
                 end = end,
                 name = name,
+                generics = generics,
                 routine = routine,
             };
 
@@ -947,6 +957,7 @@ namespace scalyc
             {
                     throw new ParserException(file_name, lexer.line, lexer.column);
             }
+            var generics = parse_genericarguments();
             var routine = parse_routine();
             if (routine == null)
                 throw new ParserException(file_name, lexer.line, lexer.column);
@@ -958,6 +969,7 @@ namespace scalyc
                 start = start,
                 end = end,
                 name = name,
+                generics = generics,
                 routine = routine,
             };
 
@@ -1165,6 +1177,8 @@ namespace scalyc
             var name = parse_name();
             if (name == null)
                 throw new ParserException(file_name, lexer.line, lexer.column);
+
+            lexer.parse_colon();
 
             var end = lexer.get_position();
 
@@ -1405,19 +1419,9 @@ namespace scalyc
             var success_module_1 = lexer.parse_keyword("module");
             if (!success_module_1)
                     return null;
-
-            var name = lexer.parse_identifier(keywords);
-            if (name != null)
-            {
-                if (!is_identifier(name))
-                {
-                    throw new ParserException(file_name, lexer.line, lexer.column);
-                }
-            }
-            else
-            {
-                    throw new ParserException(file_name, lexer.line, lexer.column);
-            }
+            var name = parse_name();
+            if (name == null)
+                throw new ParserException(file_name, lexer.line, lexer.column);
 
             lexer.parse_colon();
 
@@ -2800,8 +2804,8 @@ namespace scalyc
         public Position start;
         public Position end;
         public string name;
-        public AttributeSyntax[] attributes;
         public TypeAnnotationSyntax annotation;
+        public AttributeSyntax[] attributes;
     }
 
     public class TypeAnnotationSyntax
@@ -2845,6 +2849,7 @@ namespace scalyc
         public Position start;
         public Position end;
         public string name;
+        public GenericArgumentsSyntax generics;
         public RoutineSyntax routine;
     }
 
@@ -2853,6 +2858,7 @@ namespace scalyc
         public Position start;
         public Position end;
         public string name;
+        public GenericArgumentsSyntax generics;
         public RoutineSyntax routine;
     }
 
@@ -2962,7 +2968,7 @@ namespace scalyc
     {
         public Position start;
         public Position end;
-        public string name;
+        public NameSyntax name;
     }
 
     public class LetSyntax

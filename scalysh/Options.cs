@@ -6,19 +6,16 @@ namespace scalyc
 
         public string[] files;
         public string outputName;
-        public string directory;
 
-        Options(string[] input, string output, string dir)
+        Options(string[] input, string output)
         {
             files = input;
             outputName = output;
-            directory = dir;
         }
 
         public static Options ParseArguments(string[] args) {
             var length = args.Length;
             string output = null;
-            string dir = null;
             var input = new List<string>();
             var i = 0;
             while (i < length) {
@@ -36,14 +33,6 @@ namespace scalyc
                             output = args[i];
                         break;
                     }
-                    case 'd': {
-                        i++;
-                        if (i == length)
-                            throw new InvalidOptionException(args[i - 1]);
-                        else
-                            dir = args[i];
-                        break;
-                    }
                     default:
                         throw new UnknownOptionException(args[i]);
                 }
@@ -54,7 +43,7 @@ namespace scalyc
             if (input.Count == 0)
                 throw new NoFilesToCompileException();
 
-            return(new Options(input.ToArray(), output, dir));
+            return(new Options(input.ToArray(), output));
         }
     }
 

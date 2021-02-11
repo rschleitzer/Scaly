@@ -1,3 +1,3 @@
-public module containers
-public module io
-public module memory
+public module Containers.Strings
+public module IO.Console
+public module Memory.Page

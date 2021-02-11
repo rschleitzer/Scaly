@@ -1,0 +1,68 @@
+use Memory.Bucket
+use Memory.Allocation.malloc
+use Memory.Allocation.free
+use Memory.Allocation.'alignment of'
+use Memory.Allocation.'size of'
+use Memory.Allocation.write
+
+public define Page
+(
+    'current page': pointer[Page],
+    'next object offset': integer,
+    'exclusive pages': integer,
+)
+{
+    define size 0x1000
+
+    public procedure reset(this)
+    {
+        set this.'get extension page location'()* : null
+        set this.'next object offset': 'size of'[Page]()
+        set this.'exclusive pages': 0
+        set this.'current page': this
+    }
+
+    public procedure clear(this)
+    {
+        this.'deallocate extensions'()
+        this.reset()
+    }
+
+    public function 'is oversized'(this) returns bool
+    {
+        this.'current page' = null
+    }
+
+    function 'get extension page location'(this) returns pointer[pointer[Page]]
+        // Advance one page size so we are past the end of our page, then go back on pointer size
+        this to 'size type' + size to pointer[pointer[Page]] - 1
+
+    function 'get next location'(this) returns 'size type'
+        this to 'size type' + self.'next object offset' to usize
+
+    procedure 'set next location'(this, location: 'size type')
+    {
+        set this.'next object offset': this to 'size type' - self_location to i32
+    }
+
+    function 'get next exclusive page location'(this) returns pointer[pointer[Page]]
+        this.'get extension page location'() - this.'exclusive pages' - 1
+
+    public procedure allocate[T](this, object: T) returns pointer[T]
+    {
+        let memory this.'allocate_raw'('size of'[T](), 'align of'[T]()) to pointer[T]
+
+        // Write into uninitialized memory.
+        write(memory, object)
+
+        memory
+    }
+
+    public function 'get capacity'[T](this) returns 'size type'
+    {
+        let location this.'get next location'()
+        let align 'align of'[T]()
+        let aligned_location (location + align - 1) & (~(align - 1))
+        this.'get next exclusive page location'() to 'size type' - aligned_location
+    }
+}
