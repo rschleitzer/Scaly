@@ -34,7 +34,7 @@
         <content link = Macro
 
     <syntax id = Definition
-        <content link = def
+        <content link = define
         <content link = Name                                    property = name
         <content link = Attribute             multiple optional property = attributes
         <content link = Concept                                 property = concept
@@ -430,7 +430,7 @@
     <keyword id = catch
     <keyword id = case
     <keyword id = continue
-    <keyword id = def
+    <keyword id = define
     <keyword id = default
     <keyword id = delegate
     <keyword id = drop

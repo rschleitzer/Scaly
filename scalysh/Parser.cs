@@ -13,7 +13,7 @@ namespace scalyc
             "catch",
             "case",
             "continue",
-            "def",
+            "define",
             "default",
             "delegate",
             "drop",
@@ -219,8 +219,8 @@ namespace scalyc
         {
             var start = lexer.get_previous_position();
 
-            var success_def_1 = lexer.parse_keyword("def");
-            if (!success_def_1)
+            var success_define_1 = lexer.parse_keyword("define");
+            if (!success_define_1)
                     return null;
             var name = parse_name();
             if (name == null)
