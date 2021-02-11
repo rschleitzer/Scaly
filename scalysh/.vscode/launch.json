@@ -13,7 +13,7 @@
             "args": [
                 "-o",
                 "scalyc",
-                "scalyc.scaly",
+                "../scaly.scaly",
             ],
             "cwd": "${workspaceFolder}",
             "console": "internalConsole",
