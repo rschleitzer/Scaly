@@ -47,6 +47,7 @@ namespace scalyc
             "throw",
             "throws",
             "trait",
+            "union",
             "use",
             "var",
             "while",
@@ -460,9 +461,28 @@ namespace scalyc
         public UnionSyntax parse_union()
         {
             var start = lexer.get_previous_position();
+
+            var success_union_1 = lexer.parse_keyword("union");
+            if (!success_union_1)
+                    return null;
+
+            lexer.parse_colon();
+
+            var success_left_paren_3 = lexer.parse_punctuation("(");
+            if (!success_left_paren_3)
+                    throw new ParserException(file_name, lexer.line, lexer.column);
             var tags = parse_tag_list();
             if (tags == null)
-                return null;
+                throw new ParserException(file_name, lexer.line, lexer.column);
+
+            var success_right_paren_5 = lexer.parse_punctuation(")");
+            if (!success_right_paren_5)
+                    throw new ParserException(file_name, lexer.line, lexer.column);
+
+            lexer.parse_colon();
+            var body = parse_body();
+            if (body == null)
+                throw new ParserException(file_name, lexer.line, lexer.column);
 
             var end = lexer.get_position();
 
@@ -471,6 +491,7 @@ namespace scalyc
                 start = start,
                 end = end,
                 tags = tags,
+                body = body,
             };
 
             return ret;
@@ -549,10 +570,16 @@ namespace scalyc
         public VariantSyntax parse_variant()
         {
             var start = lexer.get_previous_position();
+
+            lexer.parse_colon();
             var structure = parse_structure();
             if (structure == null)
-                return null;
+                throw new ParserException(file_name, lexer.line, lexer.column);
+
+            lexer.parse_colon();
             var body = parse_body();
+
+            lexer.parse_colon();
 
             var end = lexer.get_position();
 
@@ -592,12 +619,9 @@ namespace scalyc
         public ConstantSyntax parse_constant()
         {
             var start = lexer.get_previous_position();
-
-            var literal = lexer.parse_literal();
-            if (literal == null)
-            {
-                    return null;
-            }
+            var operation = parse_operation();
+            if (operation == null)
+                return null;
 
             lexer.parse_colon();
 
@@ -607,7 +631,7 @@ namespace scalyc
             {
                 start = start,
                 end = end,
-                literal = literal,
+                operation = operation,
             };
 
             return ret;
@@ -2742,6 +2766,7 @@ namespace scalyc
         public Position start;
         public Position end;
         public TagSyntax[] tags;
+        public BodySyntax body;
     }
 
     public class TagSyntax
@@ -2772,7 +2797,7 @@ namespace scalyc
     {
         public Position start;
         public Position end;
-        public Literal literal;
+        public OperationSyntax operation;
     }
 
     public class DelegateSyntax

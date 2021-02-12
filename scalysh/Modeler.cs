@@ -146,12 +146,19 @@ namespace scalyc
                 case ClassSyntax classSyntax:
                     HandleClass(module, classSyntax, isPublic);
                     break;
+                case UnionSyntax unionSyntax:
+                    HandleUnion(module, unionSyntax, isPublic);
+                    break;
                 default:
                     throw new NotImplementedException($"{definitionSyntax.concept.GetType()} not implemented.");
             }
         }
 
         static void HandleClass(Module module, ClassSyntax classSyntax, bool isPublic)
+        {
+        }
+
+        static void HandleUnion(Module module, UnionSyntax unionSyntax, bool isPublic)
         {
         }
 

@@ -69,7 +69,13 @@
         <content link = Body                                    property = body
 
     <syntax id = Union
+        <content link = union
+        <content colon                                 optional
+        <content link = left_paren
         <content link = Tag                   multiple          property = tags
+        <content link = right_paren
+        <content colon                                 optional
+        <content link = Body                                    property = body
 
     <syntax id = Tag                          multiple
         <content identifier                                     property = name
@@ -81,14 +87,17 @@
         <content link = Enum
 
     <syntax id = Variant
+        <content colon                                 optional
         <content link = Structure                               property = structure
+        <content colon                                 optional
         <content link = Body                           optional property = body
+        <content colon                                 optional
 
     <syntax id = Enum
         <content literal                                        property = literal
 
     <syntax id = Constant
-        <content literal                                        property = literal
+        <content link = Operation                               property = operation
         <content colon                                 optional
 
     <syntax id = Delegate
@@ -478,6 +487,7 @@
     <keyword id = throw
     <keyword id = throws
     <keyword id = trait
+    <keyword id = union
     <keyword id = use
     <keyword id = var
     <keyword id = while
