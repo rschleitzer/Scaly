@@ -249,11 +249,6 @@
         <content link = Let
         <content link = Var
         <content link = Mutable
-        <content link = Set
-        <content link = Continue
-        <content link = Break
-        <content link = Return
-        <content link = Throw
 
     <syntax id = Let
         <content link = let
@@ -323,7 +318,8 @@
     <syntax id = Break
         <content link = break
         <content link = Loop                           optional property = name
-        <content link = Operation                               property = result
+        <content link = Operation                      optional property = result
+        <content colon                                 optional
 
     <syntax id = Return
         <content link = return
@@ -346,6 +342,11 @@
         <content link = While
         <content link = Repeat
         <content link = SizeOf
+        <content link = Continue
+        <content link = Break
+        <content link = Return
+        <content link = Throw
+        <content link = Set
 
     <syntax id = Literal
         <content literal                                        property = literal

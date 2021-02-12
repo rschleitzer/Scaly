@@ -1506,31 +1506,6 @@ namespace scalyc
                 if (node != null)
                     return node;
             }
-            {
-                var node = parse_set();
-                if (node != null)
-                    return node;
-            }
-            {
-                var node = parse_continue();
-                if (node != null)
-                    return node;
-            }
-            {
-                var node = parse_break();
-                if (node != null)
-                    return node;
-            }
-            {
-                var node = parse_return();
-                if (node != null)
-                    return node;
-            }
-            {
-                var node = parse_throw();
-                if (node != null)
-                    return node;
-            }
 
             return null;
         }
@@ -1974,8 +1949,8 @@ namespace scalyc
                     return null;
             var name = parse_loop();
             var result = parse_operation();
-            if (result == null)
-                throw new ParserException(file_name, lexer.line, lexer.column);
+
+            lexer.parse_colon();
 
             var end = lexer.get_position();
 
@@ -2091,6 +2066,31 @@ namespace scalyc
             }
             {
                 var node = parse_sizeof();
+                if (node != null)
+                    return node;
+            }
+            {
+                var node = parse_continue();
+                if (node != null)
+                    return node;
+            }
+            {
+                var node = parse_break();
+                if (node != null)
+                    return node;
+            }
+            {
+                var node = parse_return();
+                if (node != null)
+                    return node;
+            }
+            {
+                var node = parse_throw();
+                if (node != null)
+                    return node;
+            }
+            {
+                var node = parse_set();
                 if (node != null)
                     return node;
             }
