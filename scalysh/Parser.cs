@@ -38,7 +38,7 @@ namespace scalyc
             "mutable",
             "operator",
             "procedure",
-            "public",
+            "private",
             "return",
             "returns",
             "repeat",
@@ -105,7 +105,7 @@ namespace scalyc
         public object parse_declaration()
         {
             {
-                var node = parse_public();
+                var node = parse_private();
                 if (node != null)
                     return node;
             }
@@ -153,12 +153,12 @@ namespace scalyc
             return null;
         }
 
-        public PublicSyntax parse_public()
+        public PrivateSyntax parse_private()
         {
             var start = lexer.get_previous_position();
 
-            var success_public_1 = lexer.parse_keyword("public");
-            if (!success_public_1)
+            var success_private_1 = lexer.parse_keyword("private");
+            if (!success_private_1)
                     return null;
             var export = parse_export();
             if (export == null)
@@ -166,7 +166,7 @@ namespace scalyc
 
             var end = lexer.get_position();
 
-            var ret = new PublicSyntax
+            var ret = new PrivateSyntax
             {
                 start = start,
                 end = end,
@@ -673,7 +673,7 @@ namespace scalyc
             var success_left_paren_1 = lexer.parse_punctuation("(");
             if (!success_left_paren_1)
                     return null;
-            var components = parse_component_list();
+            var members = parse_member_list();
 
             var success_right_paren_3 = lexer.parse_punctuation(")");
             if (!success_right_paren_3)
@@ -685,7 +685,7 @@ namespace scalyc
             {
                 start = start,
                 end = end,
-                components = components,
+                members = members,
             };
 
             return ret;
@@ -716,17 +716,17 @@ namespace scalyc
             return ret;
         }
 
-        public ComponentSyntax[] parse_component_list()
+        public object[] parse_member_list()
         {
-            List<ComponentSyntax> list = null;
+            List<object> list = null;
             while (true)
             {
-                var node = parse_component();
+                var node = parse_member();
                 if (node == null)
                     break;
 
                 if (list == null)
-                    list = new List<ComponentSyntax>();
+                    list = new List<object>();
 
                 list.Add(node);
             }
@@ -737,7 +737,46 @@ namespace scalyc
                 return null;
         }
 
-        public ComponentSyntax parse_component()
+        public object parse_member()
+        {
+            {
+                var node = parse_field();
+                if (node != null)
+                    return node;
+            }
+            {
+                var node = parse_property();
+                if (node != null)
+                    return node;
+            }
+
+            return null;
+        }
+
+        public FieldSyntax parse_field()
+        {
+            var start = lexer.get_previous_position();
+
+            var success_private_1 = lexer.parse_keyword("private");
+            if (!success_private_1)
+                    return null;
+            var export = parse_property();
+            if (export == null)
+                throw new ParserException(file_name, lexer.line, lexer.column);
+
+            var end = lexer.get_position();
+
+            var ret = new FieldSyntax
+            {
+                start = start,
+                end = end,
+                export = export,
+            };
+
+            return ret;
+        }
+
+        public PropertySyntax parse_property()
         {
             var start = lexer.get_previous_position();
 
@@ -762,7 +801,7 @@ namespace scalyc
 
             var end = lexer.get_position();
 
-            var ret = new ComponentSyntax
+            var ret = new PropertySyntax
             {
                 start = start,
                 end = end,
@@ -2151,7 +2190,7 @@ namespace scalyc
             var success_left_paren_1 = lexer.parse_punctuation("(");
             if (!success_left_paren_1)
                     return null;
-            var fields = parse_field_list();
+            var components = parse_component_list();
 
             var success_right_paren_3 = lexer.parse_punctuation(")");
             if (!success_right_paren_3)
@@ -2163,23 +2202,23 @@ namespace scalyc
             {
                 start = start,
                 end = end,
-                fields = fields,
+                components = components,
             };
 
             return ret;
         }
 
-        public FieldSyntax[] parse_field_list()
+        public ComponentSyntax[] parse_component_list()
         {
-            List<FieldSyntax> list = null;
+            List<ComponentSyntax> list = null;
             while (true)
             {
-                var node = parse_field();
+                var node = parse_component();
                 if (node == null)
                     break;
 
                 if (list == null)
-                    list = new List<FieldSyntax>();
+                    list = new List<ComponentSyntax>();
 
                 list.Add(node);
             }
@@ -2190,7 +2229,7 @@ namespace scalyc
                 return null;
         }
 
-        public FieldSyntax parse_field()
+        public ComponentSyntax parse_component()
         {
             var start = lexer.get_previous_position();
             var operation = parse_operation();
@@ -2203,7 +2242,7 @@ namespace scalyc
 
             var end = lexer.get_position();
 
-            var ret = new FieldSyntax
+            var ret = new ComponentSyntax
             {
                 start = start,
                 end = end,
@@ -2707,7 +2746,7 @@ namespace scalyc
         public object[] statements;
     }
 
-    public class PublicSyntax
+    public class PrivateSyntax
     {
         public Position start;
         public Position end;
@@ -2814,7 +2853,7 @@ namespace scalyc
     {
         public Position start;
         public Position end;
-        public ComponentSyntax[] components;
+        public object[] members;
     }
 
     public class BodySyntax
@@ -2824,7 +2863,14 @@ namespace scalyc
         public object[] declarations;
     }
 
-    public class ComponentSyntax
+    public class FieldSyntax
+    {
+        public Position start;
+        public Position end;
+        public PropertySyntax export;
+    }
+
+    public class PropertySyntax
     {
         public Position start;
         public Position end;
@@ -3133,10 +3179,10 @@ namespace scalyc
     {
         public Position start;
         public Position end;
-        public FieldSyntax[] fields;
+        public ComponentSyntax[] components;
     }
 
-    public class FieldSyntax
+    public class ComponentSyntax
     {
         public Position start;
         public Position end;

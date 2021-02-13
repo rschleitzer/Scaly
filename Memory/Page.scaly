@@ -7,14 +7,14 @@ use Memory.Allocation.write
 
 public define Page
 (
-    'current page': pointer[Page],
-    'next object offset': integer,
-    'exclusive pages': integer,
+    private 'current page': pointer[Page],
+    private 'next object offset': integer,
+    private 'exclusive pages': integer,
 )
 {
-    public define 'page size' 0x1000
+    define 'page size' 0x1000
 
-    public procedure reset(this)
+    procedure reset(this)
     {
         set 'get extension page location'()* : null
         set 'next object offset': 'size of'[Page]()
@@ -22,32 +22,32 @@ public define Page
         set 'current page': this
     }
 
-    public procedure clear(this)
+    procedure clear(this)
     {
         'deallocate extensions'()
         reset()
     }
 
-    public function 'is oversized'(this) returns bool
+    function 'is oversized'(this) returns bool
         'current page' = null
 
-    function 'get extension page location'(this) returns pointer[pointer[Page]]
+    private function 'get extension page location'(this) returns pointer[pointer[Page]]
         ; Advance one page size so we are past the end of our page, then go back on pointer size
         this & 'cast to'['size type']() + 'page size' 'cast to'[pointer[pointer[Page]]]() - 1
 
-    function 'get next location'(this) returns 'size type'
+    private function 'get next location'(this) returns 'size type'
         this to 'size type' + 'next object offset' to 'size type'
 
-    procedure 'set next location'(this, location: 'size type')
+    private procedure 'set next location'(this, location: 'size type')
     {
         let 'location of this' = this & 'cast to'['size type']()
         set 'next object offset': location - 'location of this' to i32
     }
 
-    function 'get next exclusive page location'(this) returns pointer[pointer[Page]]
+    private function 'get next exclusive page location'(this) returns pointer[pointer[Page]]
         'get extension page location'() - 'exclusive pages' - 1
 
-    public procedure allocate[T](this, object: T) returns pointer[T]
+    procedure allocate[T](this, object: T) returns pointer[T]
     {
         let memory 'allocate raw'('size of'[T](), 'alignment of'[T]()) 'cast to'[pointer[T]]()
 
@@ -57,7 +57,7 @@ public define Page
         memory
     }
 
-    public function 'get capacity'[T](this) returns 'size type'
+    function 'get capacity'[T](this) returns 'size type'
     {
         let location 'get next location'()
         let alignment 'alignment of'[T]()
@@ -65,7 +65,7 @@ public define Page
         'get next exclusive page location'() to 'size type' - 'aligned location'
     }
 
-    public procedure 'allocate raw'(this, 'allocated size': 'size type', alignment: 'size type') returns pointer[byte]
+    procedure 'allocate raw'(this, 'allocated size': 'size type', alignment: 'size type') returns pointer[byte]
     {
         if this <> 'current page'
         {
@@ -122,7 +122,7 @@ public define Page
         'allocate extension page'()*.'allocate raw'('allocated size', alignment)
     }
 
-    procedure 'allocate extension page'(this) returns pointer[Page]
+    private procedure 'allocate extension page'(this) returns pointer[Page]
     {
         let page 'allocate page'()
         ; 'print line'("Allocated extension page: " (page to 'size type' 'to string'("X")))
@@ -131,7 +131,7 @@ public define Page
         page
     }
 
-    procedure 'allocate page'(this) returns pointer[Page]
+    private procedure 'allocate page'(this) returns pointer[Page]
     {
         let bucket Bucket.get(this as 'size type')
         ; 'print line'("Bucket: ", bucket to 'size type' 'to string'("X"))
@@ -139,7 +139,7 @@ public define Page
         page
     }
 
-    public procedure 'allocate exclusive page'(this) returns pointer[Page]
+    procedure 'allocate exclusive page'(this) returns pointer[Page]
     {
         if this as pointer[Page] <> 'current page'
             ; We're already known to be full, so we delegate to the current page
@@ -156,7 +156,7 @@ public define Page
         page
     }
 
-    public procedure extend(this, top: 'size type', size: 'size type') returns boolean
+    procedure extend(this, top: 'size type', size: 'size type') returns boolean
     {
         if top <> 'get next location'()
             return false
@@ -170,7 +170,7 @@ public define Page
         true
     }
 
-    public procedure 'deallocate extensions'(this)
+    procedure 'deallocate extensions'(this)
     {
         var page this &
         while page <> null
@@ -192,7 +192,7 @@ public define Page
         }
     }
 
-    public function forget(this)
+    function forget(this)
     {
         ;'print line'("Page: dealloc " this & 'cast to'['size type']() 'to string'("X"))
         if 'current page' = null
@@ -207,7 +207,7 @@ public define Page
         }
     }
 
-    public procedure 'reclaim array'(this, address: pointer[Page]) returns boolean
+    procedure 'reclaim array'(this, address: pointer[Page]) returns boolean
     {
         var page this &
         while page <> null
@@ -222,13 +222,13 @@ public define Page
         false
     }
 
-    public function get(address: 'size type') returns pointer[Page]
+    function get(address: 'size type') returns pointer[Page]
         address & ~('page size' - 1) 'cast to'[pointer[Page]]()
 
-    public function own(object: T) returns pointer[Page]
+    function own(object: T) returns pointer[Page]
         get(object & 'cast to'['size type']())
 
-    procedure 'deallocate exclusive page'(this, page: pointer[Page]) returns boolean
+    private procedure 'deallocate exclusive page'(this, page: pointer[Page]) returns boolean
     {
         ; Find the extension Page pointer
         var 'extension pointer' = 'get extension page location'() - 1

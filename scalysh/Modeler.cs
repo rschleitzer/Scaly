@@ -36,8 +36,8 @@ namespace scalyc
                 {
                     switch (declaration)
                     {
-                        case PublicSyntax publicSyntax:
-                            HandlePublic(module, origin, publicSyntax);
+                        case PrivateSyntax privateSyntax:
+                            HandlePrivate(module, origin, privateSyntax);
                             break;
                         case ModuleSyntax moduleSyntax:
                             HandleModule(module, moduleSyntax, origin, false);
@@ -77,9 +77,9 @@ namespace scalyc
             module.Uses.Add(lastPart, pathBuilder.ToArray());
         }
 
-        static void HandlePublic(Module module, string origin, PublicSyntax publicSyntax)
+        static void HandlePrivate(Module module, string origin, PrivateSyntax privateSyntax)
         {
-            switch (publicSyntax.export)
+            switch (privateSyntax.export)
             {
                 case ModuleSyntax moduleSyntax:
                     HandleModule(module, moduleSyntax, origin, true);
@@ -88,7 +88,7 @@ namespace scalyc
                     HandleDefinition(module, definitionSyntax, true);
                     break;
                 default:
-                    throw new NotImplementedException($"{publicSyntax.export.GetType()} not implemented.");
+                    throw new NotImplementedException($"{privateSyntax.export.GetType()} not implemented.");
             }
         }
 

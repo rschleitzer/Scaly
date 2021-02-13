@@ -10,7 +10,7 @@
         <content link = Statement             multiple optional property = statements
 
     <syntax id = Declaration                  multiple abstract
-        <content link = Public
+        <content link = Private
         <content link = Definition
         <content link = Function
         <content link = Procedure
@@ -20,8 +20,8 @@
         <content link = Trait
         <content link = Macro
 
-    <syntax id = Public
-        <content link = public
+    <syntax id = Private
+        <content link = private
         <content link = Export                                  property = export
 
     <syntax id = Export                                abstract
@@ -109,7 +109,7 @@
 
     <syntax id = Structure
         <content link = left_paren
-        <content link = Component             multiple optional property = components
+        <content link = Member                multiple optional property = members
         <content link = right_paren
 
     <syntax id = Body
@@ -117,7 +117,15 @@
         <content link = Declaration           multiple optional property = declarations
         <content link = right_curly
 
-    <syntax id = Component                    multiple
+    <syntax id = Member                       multiple abstract
+        <content link = Field
+        <content link = Property
+
+    <syntax id = Field
+        <content link = private
+        <content link = Property                                property = export
+
+    <syntax id = Property
         <content identifier                                     property = name
         <content link = TypeAnnotation                 optional property = annotation
         <content link = Attribute             multiple optional property = attributes
@@ -362,10 +370,10 @@
 
     <syntax id = Object
         <content link = left_paren
-        <content link = Field                 multiple optional property = fields
+        <content link = Component             multiple optional property = components
         <content link = right_paren
 
-    <syntax id = Field                        multiple
+    <syntax id = Component                    multiple
         <content link = Operation                               property = operation
         <content link = Attribute             multiple optional property = attributes
         <content link = Value                          optional property = value
@@ -478,7 +486,7 @@
     <keyword id = mutable
     <keyword id = operator
     <keyword id = procedure
-    <keyword id = public
+    <keyword id = private
     <keyword id = return
     <keyword id = returns
     <keyword id = repeat
