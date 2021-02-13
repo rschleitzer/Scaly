@@ -13,6 +13,70 @@ public define Bucket union
         private 'next bucket': pointer[StackBucket],
     )
     {
+        procedure 'allocate page'(this) returns pointer[Page]
+            heap*.allocate_page()
+
+        procedure 'new page'(page: pointer[Page]) returns pointer[Page]
+        {
+            let 'page address' page.'cast to'['size type']()
+            let 'stack bucket page address' 'page address' & (~('page size' * 'bucket pages' - 1))
+            let 'overflowed page address' 'stack bucket page address' + 'page size' * 'bucket pages'
+            let 'our page address' = 'page address' + 'page size'
+            if 'overflowed page address' = 'our page address'
+            {
+                let bucket 'stack bucket page address' + 'size of'[Page]().'cast to'[pointer [Bucket]]()
+                let 'stack bucket' bucket*.'cast to'[Stack]
+                'stack bucket'*.'get page from next bucket'()
+            }
+            else
+            {
+                let 'our page' 'our page address'.'cast to'[pointer[Page]]()
+                our_page*.reset()
+                our_page
+            }
+        }
+
+        private procedure 'get page from next bucket'(this) returns pointer[Page]
+        {
+            ; println!("get_page_from_next_bucket")
+            if 'next bucket' = null
+                set 'next bucket': create(heap)
+
+            ; println!("self.next_bucket: {:X}", self.next_bucket as usize)
+            Page.get('next bucket'.cast to'[size type]())
+        }
+
+        function create(heap: pointer[Heap]) returns pointer[StackBucket]
+        {
+            ; println!("BEFORE Bucket::allocate_bucket")
+            let page allocate_bucket()
+            let bucket page*.allocate(Bucket.Stack(null, heap))
+            ; println!("Bucket object:{:X}", bucket as usize)
+            let 'stack bucket' bucket*.'cast to'[Stack]
+            let 'stack bucket pointer' 'stack bucket'.'cast to'[pointer[StackBucket]]
+            ; println!("Stack bucket object:{:X}", stack_bucket_pointer as usize)
+            'stack bucket pointer'
+        }
+
+        function 'allocate bucket'() returns pointer[Page]
+        {
+            var page: pointer[Page] null
+            allocate(page &.'cast to'[pointer[byte]](), 'page size' * 'bucket pages', 'page size' * 'bucket pages')
+            page*.reset()
+            page
+        }
+
+        procedure deallocate(this) {
+            var bucket this &
+            while bucket*.'next bucket' <> null
+            {
+                let 'next bucket' bucket*.'next bucket'
+                let page Page.get(bucket.'cast to'[size type]())
+                free(page.'cast to'[pointer[byte]]())
+                ; println!("StackBucket: dealloc {:X}", page as usize)
+                set bucket: 'next bucket'
+            }
+        }
     }
     Heap
     (
@@ -28,7 +92,7 @@ public define Bucket union
         ; println!("address: {:X}", address);
         let 'address masked' address & ~('page size' * 'bucket pages' - 1)
         ; println!("address_masked: {:X}", address_masked);
-        'address masked' + 'size of'[Page]() 'cast to'[pointer[Bucket]]()
+        'address masked' + 'size of'[Page]().'cast to'[pointer[Bucket]]()
     }
 
     procedure 'allocate page'(this) returns pointer[Page]
