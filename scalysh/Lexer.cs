@@ -609,7 +609,7 @@ namespace scalyc
                         if (character == '*')
                             handle_multi_line_comment();
                         else
-                            return;
+                            continue;
                         break;
 
                     case '*':
@@ -625,15 +625,7 @@ namespace scalyc
                         }
                         break;
 
-                    case '\t':
-                        read_character();
-                        continue;
-
                     case '\r':
-                        continue;
-
-                    case '\n':
-                        read_character();
                         continue;
 
                     default:
