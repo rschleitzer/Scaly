@@ -218,6 +218,7 @@ namespace scalyc
         {
             while (true)
             {
+                read_character();
                 if (character == null)
                 {
                     if (operation.Length == 0)
@@ -231,7 +232,6 @@ namespace scalyc
                 {
                     case '+': case '-': case '*': case '/': case '=': case '%': case '&': case '|': case '^': case '~': case '<': case '>':
                         operation.Append(c);
-                        read_character();
                         break;
 
                     default:
@@ -537,7 +537,7 @@ namespace scalyc
                             return;
                         }
 
-                    case '/':
+                    case ';':
                         read_character();
                         if (character == null)
                             return;
@@ -545,18 +545,15 @@ namespace scalyc
                         var c2 = (char)character;
                         switch (c2)
                         {
-                            case '/':
-                                read_character();
-                                handle_single_line_comment();
-                                break;
-
                             case '*':
                                 read_character();
                                 handle_multi_line_comment();
                                 break;
 
                             default:
-                                return;
+                                read_character();
+                                handle_single_line_comment();
+                                break;
                         }
                         break;
                     default:
@@ -605,7 +602,7 @@ namespace scalyc
 
                 switch (c)
                 {
-                    case '/':
+                    case ';':
                         read_character();
                         if (character == null)
                             return;
@@ -620,7 +617,8 @@ namespace scalyc
                         if (character == null)
                             return;
 
-                        if (c == '/')
+                        c = (char)character;
+                        if (c == ';')
                         {
                             read_character();
                             return;

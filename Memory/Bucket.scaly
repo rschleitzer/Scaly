@@ -23,9 +23,9 @@ public define Bucket union
 
     public function get(address: 'size type') returns pointer[Bucket]
     {
-        // println!("address: {:X}", address);
+        ; println!("address: {:X}", address);
         let 'address masked' address & ~('page size' * 'bucket pages' - 1)
-        // println!("address_masked: {:X}", address_masked);
+        ; println!("address_masked: {:X}", address_masked);
         'address masked' + 'size of'[Page]() 'cast to'[pointer[Bucket]]()
     }
 }

@@ -32,7 +32,7 @@ public define Page
         'current page' = null
 
     function 'get extension page location'(this) returns pointer[pointer[Page]]
-        // Advance one page size so we are past the end of our page, then go back on pointer size
+        ; Advance one page size so we are past the end of our page, then go back on pointer size
         this & 'cast to'['size type']() + 'page size' 'cast to'[pointer[pointer[Page]]]() - 1
 
     function 'get next location'(this) returns 'size type'
@@ -51,7 +51,7 @@ public define Page
     {
         let memory 'allocate raw'('size of'[T](), 'alignment of'[T]()) 'cast to'[pointer[T]]()
 
-        // Write into uninitialized memory.
+        ; Write into uninitialized memory.
         write(memory, object)
 
         memory
@@ -69,10 +69,10 @@ public define Page
     {
         if this <> 'current page'
         {
-            // We're already known to be full, so we delegate to the current page
+            ; We're already known to be full, so we delegate to the current page
             let 'new object' 'current page'*.'allocate raw'('allocated size', alignment)
 
-            // Possibly our current page was also full so we propagate back the new current page
+            ; Possibly our current page was also full so we propagate back the new current page
             let 'allocating page' get('new object' as 'size type')
             if 'allocating page' <> 'current page' and (not ('allocating page'*.'is oversized'()))
             {
@@ -82,7 +82,7 @@ public define Page
             return 'new object'
         }
 
-        // Try to allocate from ourselves
+        ; Try to allocate from ourselves
         let location 'get next location'()
         let 'aligned location' (location + alignment - 1) & ~(alignment - 1)
         let 'next location' 'aligned location' + 'allocated size'
@@ -92,40 +92,40 @@ public define Page
             return location 'cast to'[pointer[byte]]()
         }
 
-        // So the space did not fit.
+        ; So the space did not fit.
 
-        // Calculate gross size to decide whether we're oversized
+        ; Calculate gross size to decide whether we're oversized
         if 'size of'[Page]() + 'allocated size' + 'size of'[pointer[pointer[Page]]]() > 'page size'
         {
             if 'get next location'() >= ('get next exclusive page location'() to size type)
-                // Allocate an extension page and try again with it
+                ; Allocate an extension page and try again with it
                 return 'allocate extension page'()*.'allocate raw'('allocated size', alignment)
 
             let 'gross size' 'allocated size' + 'size of'[Page]()
-            // We allocate oversized objects directly.
+            ; We allocate oversized objects directly.
             var page: pointer[Page] null
             allocate(page & 'cast to'[pointer[byte]](), 'page size', 'gross size')
 
-            // Oversized pages have no current page
+            ; Oversized pages have no current page
             set page*.'current page': null
 
-            // Set the size since we will need it when deallocating
-            set page*.'next object offset': 'gross size' modulo 0x100000000 to integer
-            set page*.'exclusive pages': 'gross size' div 0x100000000 to integer
+            ; Set the size since we will need it when deallocating
+            set page*.'next object offset': 'gross size' % 0x100000000 to integer
+            set page*.'exclusive pages': 'gross size' / 0x100000000 to integer
 
             set 'get next exclusive page location'()*: page
             set 'exclusive pages': 'exclusive pages' + 1
             return page + 1 'cast to'[pointer[byte]]()
         }
 
-        // So we're not oversized. Create extension page and let it allocate.
+        ; So we're not oversized. Create extension page and let it allocate.
         'allocate extension page'()*.'allocate raw'('allocated size', alignment)
     }
 
     procedure 'allocate extension page'(this) returns pointer[Page]
     {
         let page 'allocate page'()
-        // 'print line'("Allocated extension page: " (page to 'size type' 'to string'("X")))
+        ; 'print line'("Allocated extension page: " (page to 'size type' 'to string'("X")))
         set 'get extension page location'()*: page
         set 'current page': page
         page
@@ -134,7 +134,7 @@ public define Page
     procedure 'allocate page'(this) returns pointer[Page]
     {
         let bucket Bucket.get(this as 'size type')
-        // 'print line'("Bucket: ", bucket to 'size type' 'to string'("X"))
+        ; 'print line'("Bucket: ", bucket to 'size type' 'to string'("X"))
         let page bucket*.'allocate page'()
         page
     }
@@ -142,12 +142,12 @@ public define Page
     public procedure 'allocate exclusive page'(this) returns pointer[Page]
     {
         if this as pointer[Page] <> 'current page'
-            // We're already known to be full, so we delegate to the current page
+            ; We're already known to be full, so we delegate to the current page
             return 'current page'*.'allocate exclusive page'()
 
-        // Check first whether we need an ordinary extension
+        ; Check first whether we need an ordinary extension
         if 'get next location'() to 'size type' >= 'get next exclusive page location'() to 'size type'
-            // Allocate an extension page with default size
+            ; Allocate an extension page with default size
             return 'allocate extension page'()*.'allocate exclusive page'()
 
         let page 'allocate page'()
@@ -194,7 +194,7 @@ public define Page
 
     public function forget(this)
     {
-        //'print line'("Page: dealloc " this & 'cast to'['size type']() 'to string'("X"))
+        ;'print line'("Page: dealloc " this & 'cast to'['size type']() 'to string'("X"))
         if 'current page' = null
         {
             free(this & 'cast to'[pointer[byte]]())
@@ -202,7 +202,7 @@ public define Page
         else
         {
             let bucket = Bucket.get(this & 'cast to'['size type']())
-            //'print line'("Bucket: ", bucket 'cast to'['size type']() 'to string'("X")));
+            ;'print line'("Bucket: ", bucket 'cast to'['size type']() 'to string'("X")));
             bucket*.'deallocate page'(this)
         }
     }
@@ -218,7 +218,7 @@ public define Page
             set page: page*.'get extension page location'()*
         }
 
-        // If we arrive here, we have a memory leak.
+        ; If we arrive here, we have a memory leak.
         false
     }
 
@@ -230,7 +230,7 @@ public define Page
 
     procedure 'deallocate exclusive page'(this, page: pointer[Page]) returns boolean
     {
-        // Find the extension Page pointer
+        ; Find the extension Page pointer
         var 'extension pointer' = 'get extension page location'() - 1
         let 'next extension page location' = 'get next exclusive page location'()
         while 'extension pointer' > 'next extension page location'
@@ -241,11 +241,11 @@ public define Page
             set 'extension pointer': 'extension pointer' - 1
         }
 
-        // Report if we could not find it
+        ; Report if we could not find it
         if 'extension pointer' = 'next extension page location'
             return false
 
-        // Shift the remaining array one position up
+        ; Shift the remaining array one position up
         while 'extension pointer' > 'next extension page location'
         {
             let 'pointer to pointer to page' 'extension pointer'
@@ -253,7 +253,7 @@ public define Page
             set 'extension pointer': 'extension pointer'.offset - 1
         }
 
-        // Make room for one more extension
+        ; Make room for one more extension
         set 'exclusive pages': 'exclusive pages' - 1
         page*.forget()
 
