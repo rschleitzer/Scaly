@@ -5,7 +5,7 @@ use Memory.Allocation.'alignment of'
 use Memory.Allocation.'size of'
 use Memory.Allocation.write
 
-public define Page
+define Page
 (
     private 'current page': pointer[Page],
     private 'next object offset': integer,
@@ -203,7 +203,7 @@ public define Page
         {
             let bucket = Bucket.get(this &.'cast to'['size type']())
             ;'print line'("Bucket: ", bucket.'cast to'['size type']() 'to string'("X")));
-            bucket*.'deallocate page'(this)
+            bucket*.'deallocate page'(this &)
         }
     }
 

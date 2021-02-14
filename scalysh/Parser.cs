@@ -149,6 +149,11 @@ namespace scalyc
                 if (node != null)
                     return node;
             }
+            {
+                var node = parse_module();
+                if (node != null)
+                    return node;
+            }
 
             return null;
         }

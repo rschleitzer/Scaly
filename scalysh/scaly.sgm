@@ -19,6 +19,7 @@
         <content link = Implement
         <content link = Trait
         <content link = Macro
+        <content link = Module
 
     <syntax id = Private
         <content link = private

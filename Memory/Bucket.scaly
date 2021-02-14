@@ -5,7 +5,7 @@ use Memory.HeapBucket
 use Memory.Page
 use Memory.Page.'page size'
 
-public define Bucket union
+define Bucket union
 (
     Stack
     (
@@ -43,7 +43,7 @@ public define Bucket union
                 set 'next bucket': create(heap)
 
             ; println!("self.next_bucket: {:X}", self.next_bucket as usize)
-            Page.get('next bucket'.cast to'[size type]())
+            Page.get('next bucket'.'cast to'['size type']())
         }
 
         function create(heap: pointer[Heap]) returns pointer[StackBucket]
@@ -80,8 +80,63 @@ public define Bucket union
     }
     Heap
     (
+        pool: pointer[Pool],
+        map: 'size type',
     )
     {
+        procedure 'allocate page'(this) returns pointer[Page]
+        {
+            ; println!("HeapBucket self:{:X}", self as *const HeapBucket as usize)
+            ; println!("HeapBucket map:{:X}", self.map)
+            if map = 0
+            {
+                ; println!("self.pool: {:X}", self.pool as usize)
+                pool*.'mark as full'(Page.get(this &.'cast to'['size type']()))
+                return pool*.'allocate page'()
+            }
+
+            let position Bucket.'find least position'(map)
+            ; println!("HeapBucket position: {}", position)
+            let bit 1 << ('bucket pages' - position)
+            ; println!("Bit for allocation: {:X}", bit)
+            set map: map & ~bit
+
+            let 'bucket base' this&.'cast to'['size type']()
+            let 'page location''bucket base' + (position - 1) * 'page size'
+            let page Page.get('page location').'cast to'[pointer[Page]]()
+            ; println!("HeapBucket allocated page:{:X}", page as usize)
+
+            page*.reset()
+
+            if position = 1
+                page*.'allocate raw'('size of'[Bucket](), 'align of'[Bucket]())
+
+            if page = Page.get(pool.'cast to'['size type']())
+                page*.'allocate raw'('size of'[Pool](), 'align of'[Pool]())
+
+            page
+        }
+
+        procedure 'deallocate page'(this, page: pointer[Page])
+        {
+            let 'base page' Page.get(this &.'cast to'['size type']()).'cast to'['size type']()
+            ; println!("HeapBucket about to de-allocate a page:{:X}", base_page)
+            let distance page.'cast to'['size type']() - 'base page'
+            let index distance / 'page size'
+            ; if index > (BUCKET_PAGES - 1)
+            ;    panic!("Position invalid for page {:X}", base_page)
+            let position index + 1
+            ; println!("Index to de-allocate: {}", position)
+            let bit 1 << ('bucket pages' - position)
+            ; println!("Bit for deallocation: {:X}", bit)
+            ;if map & bit <> 0
+            ;    panic!("Page {:X} was not allocated!", base_page)
+            ; println!("self.map before deallocation: {:X}", self.map)
+            set map: map | bit
+            ; println!("self.map after deallocation: {:X}", self.map)
+            if map = 'size type'.'maximum value'
+                pool*.'mark as free'('base page')
+        }
     }
 )
 {
@@ -105,15 +160,7 @@ public define Bucket union
     }
 
     procedure 'deallocate page'(this, page: pointer[Page])
-    {
-        match this
-            case Heap(h)
-                h.deallocate_page(page)
-            ;Stack(_) => panic!(
-            ;    "Tried to deallocate the page {:X} from a StackBucket.",
-            ;    page as *const Page as usize
-            ;),
-    }
+        this.'cast to'[Heap].'deallocate page'(page)
 
     function 'find least position'(n: 'size type') returns 'size type'
     {
@@ -154,7 +201,7 @@ public define Bucket union
         'bucket pages' - log
     }
 
-    // from http://graphics.stanford.edu/~seander/bithacks.html#IntegerLogDeBruijn
+    ; from http://graphics.stanford.edu/~seander/bithacks.html#IntegerLogDeBruijn
     private function 'find least position 32'(n: 'size type') returns 'size type'
     {
         define numbers
@@ -169,7 +216,7 @@ public define Bucket union
         let n n | n >> 8
         let n n | n >> 16
 
-        let log = NUMBERS[(n * 0x07C4ACDD) >> 27]
+        let log numbers[(n * 0x07C4ACDD) >> 27]
         'bucket pages' - log
     }
 }
