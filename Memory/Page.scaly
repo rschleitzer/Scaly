@@ -1,5 +1,5 @@
 use Memory.Bucket
-use Memory.Allocation.malloc
+use Memory.Allocation.allocate
 use Memory.Allocation.free
 use Memory.Allocation.'alignment of'
 use Memory.Allocation.'size of'
@@ -104,7 +104,7 @@ define Page
             let 'gross size' 'allocated size' + 'size of'[Page]()
             ; We allocate oversized objects directly.
             var page: pointer[Page] null
-            allocate(page &.'cast to'[pointer[byte]](), 'page size', 'gross size')
+            allocate(page &.'cast to'[pointer[pointer[void]]](), 'page size', 'gross size')
 
             ; Oversized pages have no current page
             set page*.'current page': null

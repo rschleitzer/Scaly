@@ -2,3 +2,4 @@ module Containers.Strings
 module IO.Console
 module Memory.Page
 module Memory.Bucket
+module Memory.Pool
