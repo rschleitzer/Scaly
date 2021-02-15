@@ -173,15 +173,12 @@ define Bucket union
             ;    "Scaly currently does not support {}bit architecture.",
             ;    BUCKET_PAGES
             ;),
-        }
     }
-
 
     ; from http://stackoverflow.com/questions/11376288/fast-computing-of-log2-for-64-bit-integers
     private function 'find least position 64'(n: 'size type') returns 'size type'
     {
-        define numbers 
-        [
+        let numbers [
             0, 58, 1, 59, 47, 53, 2, 60, 39, 48, 27, 54, 33, 42, 3, 61, 51, 37, 40, 49, 18, 28, 20,
             55, 30, 34, 11, 43, 14, 22, 4, 62, 57, 46, 52, 38, 26, 32, 41, 50, 36, 17, 19, 29, 10,
             13, 21, 56, 45, 25, 31, 35, 16, 9, 12, 44, 24, 15, 8, 23, 7, 6, 5, 63,
@@ -204,8 +201,7 @@ define Bucket union
     ; from http://graphics.stanford.edu/~seander/bithacks.html#IntegerLogDeBruijn
     private function 'find least position 32'(n: 'size type') returns 'size type'
     {
-        define numbers
-        [
+        let numbers [
             0, 9, 1, 10, 13, 21, 2, 29, 11, 14, 16, 18, 22, 25, 3, 30, 8, 12, 20, 28, 15, 17, 24,
             7, 19, 27, 23, 6, 26, 5, 4, 31,
         ]
@@ -220,3 +216,194 @@ define Bucket union
         'bucket pages' - log
     }
 }
+
+;*
+// #[test]
+// fn test_heapbucket() {
+//     use memory::bucket::Bucket;
+//     use memory::heap::Heap;
+//     unsafe {
+//         let mut heap = Heap::create();
+//         let pool = Pool::create(&mut heap);
+//         println!("pool: {:X}", pool as usize);
+//         let bucket = Bucket::get(pool as usize);
+//         let _page00 = (*bucket).allocate_page();
+//         let _page01 = (*bucket).allocate_page();
+//         let page02 = (*bucket).allocate_page();
+//         let page03 = (*bucket).allocate_page();
+//         let page04 = (*bucket).allocate_page();
+//         let page05 = (*bucket).allocate_page();
+//         let _page06 = (*bucket).allocate_page();
+//         let _page07 = (*bucket).allocate_page();
+//         let _page08 = (*bucket).allocate_page();
+//         let _page09 = (*bucket).allocate_page();
+//         let _page10 = (*bucket).allocate_page();
+//         let _page11 = (*bucket).allocate_page();
+//         let _page12 = (*bucket).allocate_page();
+//         let _page13 = (*bucket).allocate_page();
+//         let _page14 = (*bucket).allocate_page();
+//         let _page15 = (*bucket).allocate_page();
+//         let page16 = (*bucket).allocate_page();
+//         let _page17 = (*bucket).allocate_page();
+//         let page18 = (*bucket).allocate_page();
+//         let _page19 = (*bucket).allocate_page();
+//         let _page20 = (*bucket).allocate_page();
+//         let _page21 = (*bucket).allocate_page();
+//         let _page22 = (*bucket).allocate_page();
+//         let _page23 = (*bucket).allocate_page();
+//         let _page24 = (*bucket).allocate_page();
+//         let _page25 = (*bucket).allocate_page();
+//         let _page26 = (*bucket).allocate_page();
+//         let _page27 = (*bucket).allocate_page();
+//         let _page28 = (*bucket).allocate_page();
+//         let _page29 = (*bucket).allocate_page();
+//         let _page30 = (*bucket).allocate_page();
+//         let _page31 = (*bucket).allocate_page();
+//         let _page32 = (*bucket).allocate_page();
+//         let _page33 = (*bucket).allocate_page();
+//         let _page34 = (*bucket).allocate_page();
+//         let _page35 = (*bucket).allocate_page();
+//         let _page36 = (*bucket).allocate_page();
+//         let _page37 = (*bucket).allocate_page();
+//         let _page38 = (*bucket).allocate_page();
+//         let _page39 = (*bucket).allocate_page();
+//         let _page40 = (*bucket).allocate_page();
+//         let _page41 = (*bucket).allocate_page();
+//         let _page42 = (*bucket).allocate_page();
+//         let _page43 = (*bucket).allocate_page();
+//         let _page44 = (*bucket).allocate_page();
+//         let _page45 = (*bucket).allocate_page();
+//         let _page46 = (*bucket).allocate_page();
+//         let _page47 = (*bucket).allocate_page();
+//         let _page48 = (*bucket).allocate_page();
+//         let _page49 = (*bucket).allocate_page();
+//         let _page50 = (*bucket).allocate_page();
+//         let _page51 = (*bucket).allocate_page();
+//         let _page52 = (*bucket).allocate_page();
+//         let _page53 = (*bucket).allocate_page();
+//         let _page54 = (*bucket).allocate_page();
+//         let _page55 = (*bucket).allocate_page();
+//         let _page56 = (*bucket).allocate_page();
+//         let _page57 = (*bucket).allocate_page();
+//         let _page58 = (*bucket).allocate_page();
+//         let _page59 = (*bucket).allocate_page();
+//         let _page60 = (*bucket).allocate_page();
+//         let _page61 = (*bucket).allocate_page();
+//         let page62 = (*bucket).allocate_page();
+//         let page63 = (*bucket).allocate_page();
+//         assert_eq!(
+//             match *bucket {
+//                 Bucket::Stack(ref _s) => 0,
+//                 Bucket::Heap(ref h) => h.map,
+//             },
+//             0
+//         );
+//         (*bucket).deallocate_page(&*page62);
+//         let page62a = (*bucket).allocate_page();
+//         assert_eq!(page62, page62a);
+//         assert_eq!(
+//             match *bucket {
+//                 Bucket::Stack(ref _s) => 0,
+//                 Bucket::Heap(ref h) => h.map,
+//             },
+//             0
+//         );
+//         (*bucket).deallocate_page(&*page02);
+//         (*bucket).deallocate_page(&*page03);
+//         (*bucket).deallocate_page(&*page04);
+//         (*bucket).deallocate_page(&*page05);
+//         let page02a = (*bucket).allocate_page();
+//         let page03a = (*bucket).allocate_page();
+//         let page04a = (*bucket).allocate_page();
+//         let page05a = (*bucket).allocate_page();
+//         assert_eq!(page02, page02a);
+//         assert_eq!(page03, page03a);
+//         assert_eq!(page04, page04a);
+//         assert_eq!(page05, page05a);
+//         assert_eq!(
+//             match *bucket {
+//                 Bucket::Stack(ref _s) => 0,
+//                 Bucket::Heap(ref h) => h.map,
+//             },
+//             0
+//         );
+//         (*bucket).deallocate_page(&*page16);
+//         (*bucket).deallocate_page(&*page18);
+//         let page16a = (*bucket).allocate_page();
+//         let page18a = (*bucket).allocate_page();
+//         assert_eq!(page16, page16a);
+//         assert_eq!(page18, page18a);
+//         assert_eq!(
+//             match *bucket {
+//                 Bucket::Stack(ref _s) => 0,
+//                 Bucket::Heap(ref h) => h.map,
+//             },
+//             0
+//         );
+//         (*bucket).deallocate_page(&*page63);
+//         let page63a = (*bucket).allocate_page();
+//         assert_eq!(page63, page63a);
+//         assert_eq!(
+//             match *bucket {
+//                 Bucket::Stack(ref _s) => 0,
+//                 Bucket::Heap(ref h) => h.map,
+//             },
+//             0
+//         );
+//     }
+// }
+
+// #[test]
+// fn test_heap() {
+//     use memory::region::Region;
+//     use memory::stackbucket::StackBucket;
+//     let mut heap = Heap::create();
+//     unsafe {
+//         let root_stack_bucket = StackBucket::create(&mut heap);
+//         {
+//             let root_page = Page::get(root_stack_bucket as usize);
+//             let mut r = Region::create_from_page(&*root_page);
+
+//             let mut u_start = 0usize;
+//             let mut pu_previous: *mut usize = null_mut();
+//             let mut _pu: *mut usize = null_mut();
+//             let pointers = 133157244;
+//             for i in 1..pointers + 1 {
+//                 _pu = r.new(0usize);
+//                 if i == 1 {
+//                     u_start = _pu as usize;
+//                 } else {
+//                     *pu_previous = _pu as usize;
+//                 }
+//                 pu_previous = _pu;
+//             }
+
+//             // Check the pointer chain
+//             let mut counter = 0;
+//             let mut pu_check = u_start as *mut usize;
+//             while pu_check != null_mut() {
+//                 counter += 1;
+//                 //println!("Address: {:X}", pu_check as usize);
+//                 pu_check = (*pu_check) as *mut usize;
+//             }
+//             if counter != pointers {
+//                 panic!("Check failed at {}.", pointers);
+//             }
+
+//             // Walk the page chain
+//             let extension_location = r.page.get_extension_page_location();
+//             // println!("Root extension page: {:X}", *extension_location as usize);
+//             let mut page = *extension_location;
+//             let mut page_counter = 0;
+//             while !page.is_null() {
+//                 let extension_page = *(*page).get_extension_page_location();
+//                 // println!("Extension page: {:X}", extension_page as usize);
+//                 page = extension_page;
+//                 page_counter += 1;
+//             }
+//             println!("Pages counted: {}", page_counter);
+//         }
+//     }
+//     heap.empty();
+// }
+*;

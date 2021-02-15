@@ -234,8 +234,8 @@ namespace scalyc
             var success_define_1 = lexer.parse_keyword("define");
             if (!success_define_1)
                     return null;
-            var name = parse_name();
-            if (name == null)
+            var type = parse_type();
+            if (type == null)
                 throw new ParserException(file_name, lexer.line, lexer.column);
 
             lexer.parse_colon();
@@ -250,7 +250,7 @@ namespace scalyc
             {
                 start = start,
                 end = end,
-                name = name,
+                type = type,
                 attributes = attributes,
                 concept = concept,
             };
@@ -1322,6 +1322,8 @@ namespace scalyc
             var success_right_curly_7 = lexer.parse_punctuation("}");
             if (!success_right_curly_7)
                     throw new ParserException(file_name, lexer.line, lexer.column);
+
+            lexer.parse_colon();
 
             var end = lexer.get_position();
 
@@ -2766,7 +2768,7 @@ namespace scalyc
     {
         public Position start;
         public Position end;
-        public NameSyntax name;
+        public TypeSyntax type;
         public AttributeSyntax[] attributes;
         public object concept;
     }

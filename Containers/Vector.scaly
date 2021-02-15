@@ -1,0 +1,68 @@
+use Containers.Array
+use Memory.Page
+use Memory.Allocation.'alignment of'
+use Memory.Allocation.'size of'
+use Memory.Allocation.'return page'
+use libc.*
+
+define Vector[T]
+(
+    private data: pointer[T],
+    private length: 'size type'
+)
+{
+    private function new(length: 'size type') returns Vector[T]
+    {
+        Vector
+        (
+            data: 'return page'*.'allocate raw'(length * 'size of'[T](), 'alignment of'[T]()).'cast to'[pointer[T]](),
+            length: length
+        )
+    }
+
+    function 'from raw array'(array: pointer[T], length: 'size type') returns Vector[T]
+    {
+        let vector Vector.new(length)
+        memcpy(vector.data.'cast to'[pointer[void]](), array.'cast to'[pointer[void]](), length * 'size of'[T]())
+        vector
+    }
+
+    function 'from array'(array: Array[T]) returns Vector[T]
+    {
+        let vector Vector.new(array.'get length'())
+        memcpy(vector.data.'cast to'[pointer[void]](), array.'get buffer'.'cast to'[pointer[void]](), array.'get length'() * 'size of'[T]())
+        vector
+    }
+
+    ; todo: bounds check
+    operator (index: integer) returns T
+        data + index *
+}
+
+;*
+#[test]
+fn test_vector() {
+    use containers::{Ref, String};
+    use io::Console;
+    use memory::{Heap, Page, Region, StackBucket};
+    let mut heap = Heap::create();
+    let root_stack_bucket = StackBucket::create(&mut heap);
+    let root_page = Page::get(root_stack_bucket as usize);
+    let r = Region::create_from_page(root_page);
+    let _r_1 = Region::create(&r);
+    let vector = Ref::new(
+        _r_1.page,
+        Vector::from_raw_array(
+            _r_1.page,
+            &[
+                String::from_string_slice(_r_1.page, "using"),
+                String::from_string_slice(_r_1.page, "namespace"),
+                String::from_string_slice(_r_1.page, "typedef"),
+            ],
+        ),
+    );
+    Console::write(&_r_1, vector[0]);
+    Console::write(&_r_1, vector[1]);
+    Console::write(&_r_1, vector[2]);
+}
+*;

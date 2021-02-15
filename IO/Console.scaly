@@ -1,0 +1,74 @@
+use libc.*
+use Containers.String
+use IO.*
+use Memory.*
+
+define Console
+{
+    function write(s: String)
+    {
+        let 'C string' s.'to C string'()
+        write('standard ouptput', 'C string'.'get pointer'(), s.'get length'())
+    }
+
+    function 'open standard output'() returns Stream
+        ConsoleStream()
+}
+
+define ConsoleStream
+{
+    implement Dispose
+    {
+        procedure dispose(this) ()
+    }
+
+    implement Stream
+    {
+        procedure 'read byte'(this) returns integer throws IOError
+        {
+            var 'the byte': byte 0
+            let 'bytes read' read('standard input', 'the byte'&.'cast to' pointer[void], 1)
+            if 'bytes read' = -1
+                throw IOError(errno_location()*)
+
+            if 'bytes read' = 0
+                return -1
+
+            'the byte'.'cast to'[integer]()
+        }
+
+        procedure 'write byte'(this, 'the byte': byte) throws IOError
+        {
+            let 'bytes written' write('standard ouptut', 'the byte'&.'cast to' pointer[void], 1)
+
+            if 'bytes written' = 1
+                return
+
+            throw IOError(errno_location()*)
+        }
+    }
+}
+
+;*
+#[test]
+fn test_console() {
+    use memory::Heap;
+    use memory::StackBucket;
+    let mut heap = Heap::create();
+    let root_stack_bucket = StackBucket::create(&mut heap);
+    let r1 = Region::create_from_page(Page::get(root_stack_bucket as usize));
+    {
+        let root_page = Page::get(root_stack_bucket as usize);
+        Console::write(&r1, String::from_string_slice(root_page, "Scaly>"));
+        // let stdout = Console::open_standard_output(root_page);
+        // unsafe {
+        //     let byte1 = (*stdout).read_byte();
+        //     let byte2 = (*stdout).read_byte();
+        //     let byte3 = (*stdout).read_byte();
+        //     (*stdout).write_byte(byte1);
+        //     (*stdout).write_byte(byte2);
+        //     (*stdout).write_byte(byte3);
+        // }
+    }
+}
+*;

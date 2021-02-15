@@ -1,5 +1,10 @@
-module Containers.Strings
+module Containers.Vector
+module Containers.Array
+module Containers.String
+module Containers.StringBuilder
+
 module IO.Console
+
 module Memory.Page
 module Memory.Bucket
 module Memory.Pool

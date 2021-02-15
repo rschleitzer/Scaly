@@ -1,0 +1,59 @@
+use Containers.Vector
+use Memory.Page
+use Memory.Allocation.'alignment of'
+use Memory.Allocation.'size of'
+use Memory.Allocation.'return page'
+use libc.*
+
+define Array[T]
+(
+    private vector: Vector[T],
+    private length: usize,
+)
+{
+    function new() returns Array[T]
+        Array (vector: Vector(data: null, length: 0), length: 0)
+
+    function 'get buffer'(this) returns pointer[T]
+        vector.data
+
+    function 'get length'(this) returns 'size type'
+        length
+
+    function 'get capacity'(this) returns 'size type'
+        vector.length
+
+    procedure add(this, item: T)
+    {
+        if length = vector.length
+            reallocate()
+
+        let location = vector.data.offset(length as isize)
+        write(location, item);
+
+        set length: length + 1
+    }
+
+    private procedure reallocate(this)
+    {
+        let 'own page' Page.own(this)
+        let size 'size of'[T]()
+        if vector.length = 0
+        {
+            let 'exclusive page' = 'own page'*.'allocate exclusive page'()
+            let capacity 'exclusive page'*.'get capacity'[T]()
+            set vector.length: capacity / size
+            set vector.data: 'exclusive page'*.'allocate raw'(vector.length * size, 'alignment of'[T]()).'cast to'[pointer [T]]()
+        }
+        else
+        {
+            let 'old length' vector.length
+            set vector.length: vector.length * 2
+            let 'old data' vector.data;
+            set vector.data: 'own page'*.'allocate raw'(vector.length * size, 'alignment of'[T]()).'cast to'[pointer [T]]()
+            memcpy(vector.data.'cast to'[pointer[void]](), 'old data'.'cast to'[pointer[void]](), 'old length' * size)
+            let 'old exclusive page' Page.get('old data'.'cast to'['size type']())
+            'old exclusive page'*.forget()
+        }
+    }
+}

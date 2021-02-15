@@ -37,7 +37,7 @@
 
     <syntax id = Definition
         <content link = define
-        <content link = Name                                    property = name
+        <content link = Type                                    property = type
         <content colon                                 optional
         <content link = Attribute             multiple optional property = attributes
         <content link = Concept                                 property = concept
@@ -233,6 +233,7 @@
         <content link = left_curly
         <content link = Method                multiple optional property = functions
         <content link = right_curly
+        <content colon                                 optional
 
     <syntax id = Method                       multiple abstract
         <content link = Function

@@ -260,3 +260,93 @@ define Page
         true
     }
 }
+
+;*
+// #[test]
+// fn test_page() {
+//     use memory::heap::Heap;
+//     use memory::stackbucket::StackBucket;
+//     use memory::Region;
+//     unsafe {
+//         // Allocate a page
+//         let mut heap = Heap::create();
+//         let root_stack_bucket = StackBucket::create(&mut heap);
+//         let r = Region::create_from_page(&*Page::get(root_stack_bucket as usize));
+
+//         assert_eq!(r.page.next_object_offset, size_of::<Page>() as i32);
+//         assert_eq!(r.page.exclusive_pages, 0);
+//         assert_eq!(r.page.is_oversized(), false);
+//         assert_eq!(r.page as *mut Page, r.page.current_page);
+
+//         {
+//             let extension_page_location = r.page.get_extension_page_location();
+//             assert_eq!(
+//                 extension_page_location as usize,
+//                 r.page as *const Page as usize + PAGE_SIZE - size_of::<*mut *mut Page>()
+//             );
+//         }
+
+//         {
+//             let mut location = r.page.get_next_location();
+//             assert_eq!(
+//                 location as usize,
+//                 r.page as *const Page as usize + size_of::<Page>()
+//             );
+
+//             let _answer = r.page.allocate(42);
+//             location += 4;
+//             assert_eq!(r.page.get_next_location(), location);
+
+//             let another = r.page.allocate_raw(1, 2);
+//             location += 1;
+//             assert_eq!(r.page.get_next_location(), location);
+//             *another = 43;
+
+//             let eau = r.page.allocate_raw(4, 4) as *mut i32;
+//             location += 7;
+//             assert_eq!(r.page.get_next_location(), location);
+//             *eau = 4711;
+//             assert_eq!(Page::get(eau as usize), r.page as *mut Page);
+
+//             // Allocate an oversized page which should cause allocating an exclusive page
+//             let array = r.page.allocate_raw(PAGE_SIZE, 8) as *mut usize;
+//             for i in 0..PAGE_SIZE / size_of::<usize>() - 1 {
+//                 *(array.offset(i as isize)) = i;
+//             }
+//             assert_eq!(r.page.get_next_location(), location);
+//             assert_eq!(r.page as *mut Page, r.page.current_page);
+
+//             // Overflow the page
+//             for _ in 0..PAGE_SIZE {
+//                 r.page.allocate_raw(1, 1);
+//             }
+
+//             //     assert_ne!(r.page as *mut Page, r.page.current_page);
+//             //     assert_eq!(*(r.page.get_extension_page_location()), r.page.current_page);
+//             //     assert_eq!((*r.page.current_page).exclusive_pages, 0);
+//             //     assert_eq!((*r.page.current_page).current_page, r.page.current_page);
+
+//             //     assert_eq!(r.page.exclusive_pages, 1);
+//             //     assert_eq!(*answer, 42);
+//             //     assert_eq!(*another, 43);
+//             //     assert_eq!(*eau, 4711);
+
+//             //     let exclusive_page = r.page.get_next_exclusive_page_location().offset(1);
+//             //     assert_eq!((**exclusive_page).current_page, null_mut());
+//             //     assert_eq!((**exclusive_page).exclusive_pages, 0);
+//             //     assert_eq!(
+//             //         (**exclusive_page).next_object_offset as usize,
+//             //         size_of::<Page>() + PAGE_SIZE
+//             //     );
+//             //     assert_eq!(Page::get(array as usize), *exclusive_page);
+
+//             //     let success = r.page.reclaim_array(Page::get(array as usize));
+//             //     assert_eq!(success, true);
+//             //     assert_eq!(r.page.exclusive_pages, 0);
+
+//             //     r.page.clear();
+//             //     r.page.forget();
+//         }
+//     }
+// }
+*;

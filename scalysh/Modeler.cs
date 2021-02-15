@@ -6,7 +6,21 @@ using System.Text;
 
 namespace scalyc
 {
-    public class Modeler
+    public class Model
+    {
+        public Module[] Modules;
+
+    }
+
+    public class Module
+    {
+        public bool IsPublic;
+        public string Name;
+        public Dictionary<string, Module> Submodules;
+        public Dictionary<string, string[]> Uses;
+        public List<string[]> Usings;
+    }    public class Modeler
+
     {
         public static Model Build(string[] files)
         {
@@ -70,11 +84,20 @@ namespace scalyc
                 }
             }
 
-            if (module.Uses == null)
-                module.Uses = new Dictionary<string, string[]>();
-            if (module.Uses.ContainsKey(lastPart))
-                throw new Exception($"{lastPart} cannot be re-used. Module {module.Name} {useSyntax.start.line}, {useSyntax.start.column} - {useSyntax.end.line}, {useSyntax.end.column}.");
-            module.Uses.Add(lastPart, pathBuilder.ToArray());
+            if (lastPart == "*")
+            {
+                if (module.Usings == null)
+                    module.Usings = new List<string[]>();
+                module.Usings.Add(pathBuilder.ToArray());
+            }
+            else
+            {
+                if (module.Uses == null)
+                    module.Uses = new Dictionary<string, string[]>();
+                if (module.Uses.ContainsKey(lastPart))
+                    throw new Exception($"{lastPart} cannot be re-used. Module {module.Name} {useSyntax.start.line}, {useSyntax.start.column} - {useSyntax.end.line}, {useSyntax.end.column}.");
+                module.Uses.Add(lastPart, pathBuilder.ToArray());
+            }
         }
 
         static void HandlePrivate(Module module, string origin, PrivateSyntax privateSyntax)
@@ -149,9 +172,16 @@ namespace scalyc
                 case UnionSyntax unionSyntax:
                     HandleUnion(module, unionSyntax, isPublic);
                     break;
+                case NamespaceSyntax namespaceSyntax:
+                    HandleNamespace(module, namespaceSyntax, isPublic);
+                    break;
                 default:
                     throw new NotImplementedException($"{definitionSyntax.concept.GetType()} not implemented.");
             }
+        }
+
+        static void HandleNamespace(Module module, NamespaceSyntax classSyntax, bool isPublic)
+        {
         }
 
         static void HandleClass(Module module, ClassSyntax classSyntax, bool isPublic)
@@ -185,17 +215,4 @@ namespace scalyc
         }
     }
 
-    public class Model
-    {
-        public Module[] Modules;
-
-    }
-
-    public class Module
-    {
-        public bool IsPublic;
-        public string Name;
-        public Dictionary<string, Module> Submodules;
-        public Dictionary<string, string[]> Uses;
-    }
 }
