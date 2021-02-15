@@ -219,9 +219,11 @@
         <content link = implement
         <content link = Name                                    property = name
         <content link = Attribute             multiple optional property = attributes
+        <content colon                                 optional
         <content link = left_curly
         <content link = Method                multiple optional property = functions
         <content link = right_curly
+        <content colon                                 optional
 
     <syntax id = Trait
         <content link = trait

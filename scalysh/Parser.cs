@@ -1272,14 +1272,18 @@ namespace scalyc
                 throw new ParserException(file_name, lexer.line, lexer.column);
             var attributes = parse_attribute_list();
 
-            var success_left_curly_4 = lexer.parse_punctuation("{");
-            if (!success_left_curly_4)
+            lexer.parse_colon();
+
+            var success_left_curly_5 = lexer.parse_punctuation("{");
+            if (!success_left_curly_5)
                     throw new ParserException(file_name, lexer.line, lexer.column);
             var functions = parse_method_list();
 
-            var success_right_curly_6 = lexer.parse_punctuation("}");
-            if (!success_right_curly_6)
+            var success_right_curly_7 = lexer.parse_punctuation("}");
+            if (!success_right_curly_7)
                     throw new ParserException(file_name, lexer.line, lexer.column);
+
+            lexer.parse_colon();
 
             var end = lexer.get_position();
 
