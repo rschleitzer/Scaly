@@ -841,6 +841,27 @@ namespace scalyc
             return ret;
         }
 
+        public object[] parse_typespec_list()
+        {
+            List<object> list = null;
+            while (true)
+            {
+                var node = parse_typespec();
+                if (node == null)
+                    break;
+
+                if (list == null)
+                    list = new List<object>();
+
+                list.Add(node);
+            }
+
+            if (list != null)
+                return list.ToArray();
+            else
+                return null;
+        }
+
         public object parse_typespec()
         {
             {
@@ -850,6 +871,11 @@ namespace scalyc
             }
             {
                 var node = parse_type();
+                if (node != null)
+                    return node;
+            }
+            {
+                var node = parse_array();
                 if (node != null)
                     return node;
             }
@@ -875,6 +901,31 @@ namespace scalyc
                 name = name,
                 generics = generics,
                 optional = optional,
+            };
+
+            return ret;
+        }
+
+        public ArraySyntax parse_array()
+        {
+            var start = lexer.get_previous_position();
+
+            var success_left_bracket_1 = lexer.parse_punctuation("[");
+            if (!success_left_bracket_1)
+                    return null;
+            var members = parse_typespec_list();
+
+            var success_right_bracket_3 = lexer.parse_punctuation("]");
+            if (!success_right_bracket_3)
+                    throw new ParserException(file_name, lexer.line, lexer.column);
+
+            var end = lexer.get_position();
+
+            var ret = new ArraySyntax
+            {
+                start = start,
+                end = end,
+                members = members,
             };
 
             return ret;
@@ -1529,7 +1580,7 @@ namespace scalyc
                     return node;
             }
             {
-                var node = parse_array();
+                var node = parse_vector();
                 if (node != null)
                     return node;
             }
@@ -2099,7 +2150,7 @@ namespace scalyc
                     return node;
             }
             {
-                var node = parse_array();
+                var node = parse_vector();
                 if (node != null)
                     return node;
             }
@@ -2290,7 +2341,7 @@ namespace scalyc
             return ret;
         }
 
-        public ArraySyntax parse_array()
+        public VectorSyntax parse_vector()
         {
             var start = lexer.get_previous_position();
 
@@ -2307,7 +2358,7 @@ namespace scalyc
 
             var end = lexer.get_position();
 
-            var ret = new ArraySyntax
+            var ret = new VectorSyntax
             {
                 start = start,
                 end = end,
@@ -2906,6 +2957,13 @@ namespace scalyc
         public OptionalSyntax optional;
     }
 
+    public class ArraySyntax
+    {
+        public Position start;
+        public Position end;
+        public object[] members;
+    }
+
     public class GenericArgumentsSyntax
     {
         public Position start;
@@ -3210,7 +3268,7 @@ namespace scalyc
         public AttributeSyntax[] attributes;
     }
 
-    public class ArraySyntax
+    public class VectorSyntax
     {
         public Position start;
         public Position end;

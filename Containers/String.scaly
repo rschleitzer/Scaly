@@ -1,0 +1,170 @@
+use Containers.HashSet.hash
+use Containers.Hashset.Equal
+use Containers.Hashset.Hash
+use Memory.Page;
+use Memory.Allocation.'return page'
+use libc.*
+
+define String
+(
+    pub data: pointer[void]
+)
+{
+    function create(data: pointer[byte], length: 'size type') returns String
+    {
+        var 'length array':[byte] [0, 0, 0, 0, 0, 0, 0, 0, 0]
+        var rest length
+        var counter: 'size type' 0
+        while rest >= 0x80
+        {
+            set 'length array'[counter]: rest.'cast to'[byte]() | 0x80
+            set rest: rest >> 7
+            set counter: counter + 1
+        }
+
+        set 'length array'[counter]: rest.'cast to'[byte]()
+        let 'overall length' counter + 1 + length
+        let pointer = 'return page'*.'allocate raw'('overall length', 1)
+        memcpy(pointer, 'length array'.'cast to'[pointer[void]], pointer, counter + 1);
+        memcpy(pointer + counter + 1, data, length)
+        String ( data: pointer )
+    }
+
+    ;function new(string: &str) returns String
+    ;{
+    ;    let length = string.len();
+    ;    String::create(_rp, string.as_ptr(), length)
+    ;}
+
+    function copy(other: String) returns String
+    {
+        var 'length array':[byte] [0, 0, 0, 0, 0, 0, 0, 0, 0]
+        var rest other.'get length'()
+        var counter: 'size type' 0
+        while rest >= 0x80
+        {
+            set 'length array'[counter]: rest.'cast to'[byte]() | 0x80
+            set rest: rest >> 7
+            set counter: counter + 1
+        }
+
+        set 'length array'[counter]: rest.'cast to'[byte]()
+        let 'overall length' counter + 1 + length
+        let pointer = 'return page'*.'allocate raw'('overall length', 1)
+        memcpy(pointer, 'length array'.'cast to'[pointer[void]](), pointer, counter + 1);
+        memcpy(pointer + counter + 1, data, length)
+        String ( data: pointer )
+    }
+
+    function 'from C string'('C string': pointer['C char']) returns String
+        create('C string'.'cast to'[pointer[byte]], strlen('C string'))
+
+    function 'from character'(character: 'C char') returns String
+        create(character&.'cast to'[pointer[byte]], 1)
+
+    function 'to C string'(this) returns pointer['C char']
+    {
+        let length 'get length'()
+        let dest = 'return page'*.'allocate raw'(length + 1, 1)
+        memcpy(dest.'cast to'[pointer[void]](), (data + index + 1).'cast to'[pointer[void]](), length)
+        set dest + index + 1 + length *: 0
+
+        dest as *const c_char
+    }
+
+    ;pub fn from_string_slice(_rp: *mut Page, s: &str) -> String {
+    ;    String::create(_rp, s.as_ptr() as *const u8, s.len())
+    ;}
+
+    function 'append character'(this, c: 'C char') returns String
+    {
+        let s create(data, length + 1)
+        let 'char pointer' = s.data.'cast to'[pointer['C char']]() + length - 1
+        set 'char pointer'*: c
+        s
+    }
+
+    function 'get length'(this) returns 'size type'
+    {
+        var result: usize 0
+        var 'bit count' 0
+        var index: 'size type' 0
+        while true
+        {
+            if 'bit count' = 63
+                panic("Bad string length.")
+
+            let 'the byte': byte = data + index *
+            set result: result | (('the byte' & 0x7F).'cast to'['size type']) << 'bit count'
+            if 'the byte' & 0x80 = 0
+                break
+
+            set 'bit count': 'bit count' + 7
+            set index: index + 1
+        }
+        result
+    }
+
+    implement Equal
+    {
+        function equals(this, other: String) returns boolean
+        {
+            let mut length: usize = 0;
+            var 'bit count' 0
+            var index: 'size type' 0
+            while true
+            {
+                if 'bit count' = 63
+                    panic("Bad string length.")
+
+                let 'the byte': byte = data + index *
+                set length: length | (('the byte' & 0x7F).'cast to'['size type']) << 'bit count'
+                if 'the byte' & 0x80 = 0
+                    break
+
+                set 'bit count': 'bit count' + 7
+                set index: index + 1
+            }
+
+            if length <> other.'get length'()
+                return false;
+
+            let 'own start' data.'cast to'[pointer[void]]() + index + 1
+            let 'other start' other.data.'cast to'[pointer[void]]() + index + 1
+            memcmp('own start', 'other start', length) = 0
+        }
+    }
+
+    implement Hash
+    {
+        function hash(this) returns 'size type'
+            hash(data, self.'get_length'())
+    }
+}
+
+;*
+#[test]
+fn test_string() {
+    use memory::Heap;
+    use memory::Page;
+    use memory::StackBucket;
+    let mut heap = Heap::create();
+    let root_stack_bucket = StackBucket::create(&mut heap);
+    {
+        let root_page = Page::get(root_stack_bucket as usize);
+        let string = String::new(root_page, "Hello world!");
+        let length = string.get_length();
+        assert_eq!(length, 12);
+        let long_string = String::new(root_page, "1234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890");
+        assert_eq!(long_string.get_length(), 130);
+        let c_string = long_string.to_c_string(root_page);
+        let _string_c = String::from_c_string(root_page, c_string);
+
+        let semi = String::new(root_page, ";");
+        let dot = String::new(root_page, ".");
+        assert_eq!(semi.equals(&dot), false);
+        let semi2 = String::new(root_page, ";");
+        assert_eq!(semi.equals(&semi2), true);
+    }
+}
+*;

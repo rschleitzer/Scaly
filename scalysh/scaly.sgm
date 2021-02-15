@@ -137,14 +137,20 @@
         <content colon
         <content link = TypeSpec                                property = spec
 
-    <syntax id = TypeSpec                              abstract
+    <syntax id = TypeSpec                     multiple abstract
         <content link = Structure
         <content link = Type
+        <content link = Array
 
     <syntax id = Type
         <content link = Name                                    property = name
         <content link = GenericArguments               optional property = generics
         <content link = Optional                       optional property = optional
+
+    <syntax id = Array
+        <content link = left_bracket
+        <content link = TypeSpec              multiple optional property = members
+        <content link = right_bracket
 
     <syntax id = GenericArguments
         <content link = left_bracket
@@ -263,7 +269,7 @@
         <content link = Literal
         <content link = Name
         <content link = Object
-        <content link = Array
+        <content link = Vector
 
     <syntax id = Statement                    multiple abstract
         <content link = Operation
@@ -354,7 +360,7 @@
         <content link = Literal
         <content link = Name
         <content link = Object
-        <content link = Array
+        <content link = Vector
         <content link = Block
         <content link = If
         <content link = Match
@@ -388,7 +394,7 @@
         <content link = Operation                               property = value
         <content link = Attribute             multiple optional property = attributes
 
-    <syntax id = Array
+    <syntax id = Vector
         <content link = left_bracket
         <content link = Element               multiple          property = elements
         <content link = right_bracket

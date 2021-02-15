@@ -1,0 +1,27 @@
+use Containers.*
+use Memory.Page
+
+define StringBuilder
+(
+    buffer: Array[byte]
+)
+{
+    function new() returns StringBuilder
+        StringBuilder(buffer: Array::new())
+
+    function 'from character'(character: char) returns StringBuilder
+    {
+        var 'string builder' new()
+        'string builder'.'append character'(character)
+        'string builder'
+    }
+
+    procedure 'append character'(this, character: char)
+        buffer.add(character.'cast to'[byte]())
+
+    function 'get length'(this) returns 'size type'
+        buffer.'get length'()
+
+    function 'to string'(this) returns String
+        String.create(buffer.'get buffer', buffer.'get length'())
+}
