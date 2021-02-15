@@ -61,7 +61,7 @@ define Bucket union
         function 'allocate bucket'() returns pointer[Page]
         {
             var page: pointer[Page] null
-            allocate(page &.'cast to'[pointer[byte]](), 'page size' * 'bucket pages', 'page size' * 'bucket pages')
+            allocate(page &.'cast to'[pointer[pointer[void]]](), 'page size' * 'bucket pages', 'page size' * 'bucket pages')
             page*.reset()
             page
         }
@@ -72,7 +72,7 @@ define Bucket union
             {
                 let 'next bucket' bucket*.'next bucket'
                 let page Page.get(bucket.'cast to'[size type]())
-                free(page.'cast to'[pointer[byte]]())
+                free(page.'cast to'[pointer[void]]())
                 ; println!("StackBucket: dealloc {:X}", page as usize)
                 set bucket: 'next bucket'
             }

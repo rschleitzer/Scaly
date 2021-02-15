@@ -197,7 +197,7 @@ define Page
         ;'print line'("Page: dealloc " this &.'cast to'['size type']() 'to string'("X"))
         if 'current page' = null
         {
-            free(this &.'cast to'[pointer[byte]]())
+            free(this &.'cast to'[pointer[void]]())
         }
         else
         {

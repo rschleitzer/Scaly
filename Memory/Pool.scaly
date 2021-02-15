@@ -41,71 +41,60 @@ define Pool
         }
         pool
     }
-;*
-    pub fn allocate_page(&mut self) -> *mut Page {
-        // println!("Pool map before allocation: {:X}.", self.map);
-        if self.map == 0 {
-            unsafe {
-                (*self.heap).mark_as_full(self);
-                return (*self.heap).allocate_page();
-            };
+
+    procedure 'allocate page'(this) returns pointer[Page]
+    {
+        ; println!("Pool map before allocation: {:X}.", self.map)
+        if map = 0
+        {
+            heap*.mark_as_full(this)
+            return heap*.allocate_page()
         }
-        let pool_page_address = Page::get(self as *const Pool as usize) as usize;
-        // println!("Pool page address: {:X}.", pool_page_address);
-        let bucket_page_address = {
-            let position = Bucket::find_least_position(self.map);
-            // println!("Pool least position: {}.", position);
-            pool_page_address + PAGE_SIZE * BUCKET_PAGES * (position - 1)
-        };
-        // println!("Bucket page address: {:X}.", bucket_page_address);
-        let bucket = (bucket_page_address + size_of::<Page>()) as *mut Bucket;
-        // println!("Bucket address: {:X}.", bucket as usize);
-        unsafe { (*bucket).allocate_page() }
+
+        let 'pool page address' = Page.get(this&.'cast to'['size type']).'cast to'['size type']()
+        ; println!("Pool page address: {:X}.", pool_page_address);
+
+        let position Bucket.'find least position'(map)
+        ; println!("Pool least position: {}.", position)
+        let 'bucket page address' 'pool page address' + 'page size' * 'bucket pages' * (position - 1)
+
+        ; println!("Bucket page address: {:X}.", bucket_page_address)
+        let bucket 'bucket page address' + 'size of'[Page]().'cast to'[pointer[Bucket]]
+        ; println!("Bucket address: {:X}.", bucket as usize);
+        bucket*.'allocate page'()
     }
 
-    fn get_allocation_bit(&self, page: usize) -> usize {
-        let first_bucket_address = Page::get(self as *const Pool as usize) as usize;
-        let distance = page - first_bucket_address;
-        let position = distance / PAGE_SIZE / BUCKET_PAGES;
-        1 << (BUCKET_PAGES - 1 - position)
+    private function 'get allocation bit'(this, page: 'size type') returns 'size type'
+    {
+        let 'first bucket address' Page.get(this&.'cast to'['size type']()).'cast to'['size type']()
+        let distance  page - 'first bucket address'
+        let position = distance / 'page size' / 'bucket pages'
+        1 << ('bucket pages' - 1 - position)
     }
 
-    pub fn mark_as_full(&mut self, page: usize) {
-        let bit = self.get_allocation_bit(page);
-        // println!("Pool bit to be marked as full: {:X}", bit);
-        self.map = self.map & !bit;
+    procedure 'mark as full'(this, page: 'size type')
+    {
+        let bit 'get allocation bit'(page)
+        ; println!("Pool bit to be marked as full: {:X}", bit)
+        set map: = map & ~bit
     }
 
-    pub fn mark_as_free(&mut self, page: usize) {
-        let bit = self.get_allocation_bit(page);
-        // println!("Pool bit to be marked as free: {:X}", bit);
-        let old_map = self.map;
-        self.map = self.map | bit;
-        if old_map == 0 {
-            unsafe {
-                (*self.heap).mark_as_free(self);
-            }
-        }
+    procedure 'mark as free'(this, page: 'size type')
+    {
+        let bit 'get allocation bit'(page)
+        ; println!("Pool bit to be marked as free: {:X}", bit)
+        let 'old map' = map
+        set map: map | bit
+        if 'old map' = 0
+            heap*.'mark as free'(this)
     }
 
-    pub fn deallocate(&mut self) {
-        if self.map != MAX {
-            panic!("Pool is not empty!")
-        }
-        unsafe {
-            // println!(
-            //     "Pool: dealloc {:X}",
-            //     Page::get(self as *const Pool as usize) as usize
-            // );
-            dealloc(
-                Page::get(self as *const Pool as usize) as *mut u8,
-                Layout::from_size_align(
-                    PAGE_SIZE * BUCKET_PAGES * BUCKET_PAGES,
-                    PAGE_SIZE * BUCKET_PAGES,
-                )
-                .unwrap(),
-            );
-        }
+    procedure deallocate(this)
+    {
+        if map <> 'size type'.'maximum value'
+            panic("Pool is not empty!")
+
+        ; println!("Pool: dealloc {:X}", Page::get(self as *const Pool as usize) as usize)
+        free(Page.get(this&.'cast to'['size type']()).'cast to'[pointer[void]]())
     }
-*;
 }
