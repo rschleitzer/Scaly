@@ -1,0 +1,59 @@
+define Hash
+{
+    ; FNV-1a hash
+    function hash(data: pointer[byte], length: 'size type') returns 'size type'
+    {
+        var hash: 'size type' 0xcbf29ce484222325
+        for i in from 0 to (length - 1)
+        {
+            set hash: hash ^ (data + i *)
+            set hash: hash.'wrapping multiply' 0x100000001b3
+        }
+        hash
+    }
+}
+
+define HashPrimeHelper
+{
+    function 'get prime'(size: 'size type') returns 'size type'
+    {
+        ; https://planetmath.org/goodhashtableprimes
+        let 'hash primes': 'size type'[] [
+            3, 5, 11, 23, 53, 97, 193, 389, 769, 1543, 3079, 6151, 12289, 24593, 49157, 98317, 196613,
+            393241, 786433, 1572869, 3145739, 6291469, 12582917, 25165843, 50331653, 100663319, 201326611,
+            402653189, 805306457, 1610612741,
+        ]
+
+        for i in 'hash primes'
+            if i >= size
+                return i
+
+        var i size | 1
+        while i < 'size type'.'maximum value'
+        {
+            if 'is prime'(i)
+                return i
+
+            set i: i + 2
+        }
+        size
+    }
+
+    private function 'is prime'(candidate: 'size type') returns boolean
+    {
+        if candidate & 1 <> 0
+        {
+            let limit candidate.'cast to'[double]().sqrt().'cast to'['size type']()
+            var divisor: 'size type' 3
+            while divisor <= limit
+            {
+                set divisor: divisor + 2
+                if candidate % divisor = 0
+                    return false
+            }
+            return true
+        }
+
+        candidate = 2
+    }
+}

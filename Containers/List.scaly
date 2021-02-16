@@ -1,0 +1,70 @@
+use Memory.Page
+
+define List[T]
+(
+    head: pointer[Node[T]]
+)
+{
+    function new()
+        List(head: null)
+
+    procedure add(this, element: T)
+        set head: Page.own(this)*.allocate(Node (element: element, next: head))
+
+    function 'get iterator'(this) returns ListIterator[T]
+        ListIterator.new(head)
+}
+
+private define Node[T]
+(
+    element: T,
+    next: pointer[Node[T]]
+)
+
+private define ListIterator[T]
+(
+    current: pointer[Node[T]]
+)
+{
+    function new(head: pointer[Node[T]]) returns ListIterator[T]
+        ListIterator(current: head)
+
+    implement Iterator[T]
+    {
+        procedure next(this) returns T?
+        {
+            if current <> null
+            {
+                let 'current node' current
+                set current: current*.next
+                current*.element
+            }
+            else
+            {
+                null
+            }
+        }
+    }
+}
+
+;*
+#[test]
+fn test_list() {
+    use containers::Ref;
+    use memory::{Heap, Page, Region, StackBucket};
+    let mut heap = Heap::create();
+    let root_stack_bucket = StackBucket::create(&mut heap);
+    let root_page = Page::get(root_stack_bucket as usize);
+    let r = Region::create_from_page(root_page);
+    let _r_1 = Region::create(&r);
+    let mut list = Ref::new(_r_1.page, List::new());
+
+    list.add(1);
+    list.add(2);
+    list.add(3);
+
+    for i in list.get_iterator() {
+        println!("Item: {}", i)
+    }
+}
+*;

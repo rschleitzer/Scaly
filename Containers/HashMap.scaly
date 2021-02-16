@@ -1,0 +1,115 @@
+use Containers.Array
+use Containers.Hash.*
+use Containers.List
+use Containers.Vector
+use Memory.Page
+use Memory.Region
+
+define KeyValuePair[K, V]
+(
+    key: K,
+    value: V
+)
+
+define HashMap[K, V]
+(
+    slots: Vector[List[Slot[KeyValuePair[K, V]]]],
+)
+{
+    private define Slot[K]
+    (
+        value: K,
+        'hash code': 'size type'
+    )
+
+    function 'from vector'(vector: Vector[KeyValuePair[K, V]]) returns HashMap[K, V]
+    {
+        let 'hash size' HashPrimeHelper.'get prime'(vector.length)
+        var array: Array[List[Slot[KeyValuePair[K, V]]]] Array.new()
+        for i in from 0 to 'hash size'
+            array.add(List.new())
+        var 'hash map' = HashMap(slots: Vector.'from array'(array))
+        'hash map'.'initialize from vector'(vector)
+        'hash map'
+    }
+
+    private procedure 'initialize from vector'(this, vector: Vector[KeyValuePair[K, V]])
+        for 'key value pair' in vector
+            self.add('key value pair'.key, 'key value pair'.value)
+
+    private function add(this, key: K, value: V)
+    {
+        let 'hash code' key.hash()
+        let 'slot number' 'hash code' % slots.length
+        var 'slot list' slots['slot number']
+        for slot in 'slot list'
+            if key.equals(slot.value.key)
+                return
+
+        'slot list'.add(Slot('hash code': 'hash code', value: KeyValuePair(key: key, value: value)))
+    }
+
+    function contains(this, value: K) returns boolean
+    {
+        for slot in self.slots[value.hash() % self.slots.length]
+            if value.equals(slot.value.key)
+                return true
+
+        false
+    }
+}
+;*
+#[test]
+fn test_hash_map() {
+    use containers::String;
+    use memory::Heap;
+    use memory::Page;
+    use memory::Region;
+    use memory::StackBucket;
+    let mut heap = Heap::create();
+    let root_stack_bucket = StackBucket::create(&mut heap);
+    let root_page = Page::get(root_stack_bucket as usize);
+    let _r = Region::create_from_page(root_page);
+    let keywords = HashMap::from_vector(
+        &_r,
+        _r.page,
+        Ref::new(
+            _r.page,
+            Vector::from_raw_array(
+                _r.page,
+                &[
+                    KeyValuePair {
+                        key: String::from_string_slice(_r.page, "using"),
+                        value: 1,
+                    },
+                    KeyValuePair {
+                        key: String::from_string_slice(_r.page, "namespace"),
+                        value: 2,
+                    },
+                    KeyValuePair {
+                        key: String::from_string_slice(_r.page, "typedef"),
+                        value: 3,
+                    },
+                ],
+            ),
+        ),
+    );
+
+    assert_eq!(
+        (*keywords).contains(String::from_string_slice(_r.page, "using")),
+        true
+    );
+    assert_eq!(
+        (*keywords).contains(String::from_string_slice(_r.page, "namespace")),
+        true
+    );
+    assert_eq!(
+        (*keywords).contains(String::from_string_slice(_r.page, "typedef")),
+        true
+    );
+    assert_eq!(
+        (*keywords).contains(String::from_string_slice(_r.page, "nix")),
+        false
+    );
+}
+*;

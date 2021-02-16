@@ -24,6 +24,7 @@ namespace scalyc
             line = 1;
             column = 0;
             read_character();
+            skip_whitespace(true);
         }
 
         void read_character()

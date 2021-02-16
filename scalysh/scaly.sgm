@@ -117,6 +117,7 @@
         <content link = left_curly
         <content link = Declaration           multiple optional property = declarations
         <content link = right_curly
+        <content colon                                 optional
 
     <syntax id = Member                       multiple abstract
         <content link = Field
@@ -223,7 +224,7 @@
 
     <syntax id = Implement
         <content link = implement
-        <content link = Name                                    property = name
+        <content link = Type                                    property = type
         <content link = Attribute             multiple optional property = attributes
         <content colon                                 optional
         <content link = left_curly

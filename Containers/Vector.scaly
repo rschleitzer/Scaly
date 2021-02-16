@@ -8,7 +8,7 @@ use libc.*
 define Vector[T]
 (
     private data: pointer[T],
-    private length: 'size type'
+    length: 'size type'
 )
 {
     private function new(length: 'size type') returns Vector[T]

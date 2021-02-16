@@ -1,0 +1,100 @@
+use Containers.Array
+use Containers.List
+use Containers.Vector
+use Memory.Page
+use Memory.Region
+use Hash.hash
+
+define HashSet[T]
+(
+    slots: Vector[List[Slot[T]]]
+)
+{
+    private define Slot[T]
+    (
+        value: T,
+        'hash code': 'size type'
+    )
+
+    function 'from vector'(vector: Vector[T]) returns HashSet[T]
+    {
+        let 'hash size' HashPrimeHelper.'get prime'(vector.length)
+        var array: Array[List[Slot[T]]] Array.new()
+        for i in from 0 to 'hash size'
+            array.add(List.new())
+        var 'hash set' HashSet(slots: Vector.'from array'(array))
+        'hash set'.'initialize from vector'(vector)
+        'hash set'
+    }
+
+    private procedure 'initialize from vector'(this, vector: Vector[T])
+        for value in vector
+            self.add(value)
+
+    private procedure add(this, value: T)
+    {
+        let 'hash code' value.hash()
+        let 'slot number' 'hash code' % slots.length
+        var 'slot list' slots['slot number']
+        for slot in 'slot list'
+            if value.equals(slot.value)
+                return
+
+        'slot list'.add(Slot('hash code': 'hash code', value: value))
+    }
+
+    function contains(this, value: T) returns boolean
+    {
+        for slot in self.slots[value.hash() % self.slots.length]
+            if value.equals(&slot.value)
+                return true
+        false
+    }
+}
+
+;*
+#[test]
+fn test_hash_set() {
+    use containers::String;
+    use memory::Heap;
+    use memory::Page;
+    use memory::Region;
+    use memory::StackBucket;
+    let mut heap = Heap::create();
+    let root_stack_bucket = StackBucket::create(&mut heap);
+    let root_page = Page::get(root_stack_bucket as usize);
+    let _r = Region::create_from_page(root_page);
+    let keywords = HashSet::from_vector(
+        &_r,
+        _r.page,
+        Ref::new(
+            _r.page,
+            Vector::from_raw_array(
+                _r.page,
+                &[
+                    String::from_string_slice(_r.page, "using"),
+                    String::from_string_slice(_r.page, "namespace"),
+                    String::from_string_slice(_r.page, "typedef"),
+                ],
+            ),
+        ),
+    );
+
+    assert_eq!(
+        (*keywords).contains(String::from_string_slice(_r.page, "using")),
+        true
+    );
+    assert_eq!(
+        (*keywords).contains(String::from_string_slice(_r.page, "namespace")),
+        true
+    );
+    assert_eq!(
+        (*keywords).contains(String::from_string_slice(_r.page, "typedef")),
+        true
+    );
+    assert_eq!(
+        (*keywords).contains(String::from_string_slice(_r.page, "nix")),
+        false
+    );
+}
+*;

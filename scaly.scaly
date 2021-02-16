@@ -2,6 +2,10 @@ module Containers.Vector
 module Containers.Array
 module Containers.String
 module Containers.StringBuilder
+module Containers.List
+module Containers.Hash
+module Containers.HashSet
+module Containers.HashMap
 
 module IO.Console
 

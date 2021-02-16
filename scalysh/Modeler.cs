@@ -206,7 +206,10 @@ namespace scalyc
 
             try
             {
-                return parser.parse_file(file_name);
+                var fileSyntax = parser.parse_file(file_name);
+                if (!parser.is_at_end())
+                    throw new CompilerException(file_name, parser.get_current_line(), parser.get_current_column());
+                return fileSyntax;
             }
             catch (ParserException e)
             {

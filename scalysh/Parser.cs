@@ -709,6 +709,8 @@ namespace scalyc
             if (!success_right_curly_3)
                     throw new ParserException(file_name, lexer.line, lexer.column);
 
+            lexer.parse_colon();
+
             var end = lexer.get_position();
 
             var ret = new BodySyntax
@@ -1318,8 +1320,8 @@ namespace scalyc
             var success_implement_1 = lexer.parse_keyword("implement");
             if (!success_implement_1)
                     return null;
-            var name = parse_name();
-            if (name == null)
+            var type = parse_type();
+            if (type == null)
                 throw new ParserException(file_name, lexer.line, lexer.column);
             var attributes = parse_attribute_list();
 
@@ -1342,7 +1344,7 @@ namespace scalyc
             {
                 start = start,
                 end = end,
-                name = name,
+                type = type,
                 attributes = attributes,
                 functions = functions,
             };
@@ -3066,7 +3068,7 @@ namespace scalyc
     {
         public Position start;
         public Position end;
-        public NameSyntax name;
+        public TypeSyntax type;
         public AttributeSyntax[] attributes;
         public object[] functions;
     }
