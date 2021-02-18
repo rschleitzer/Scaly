@@ -9,11 +9,11 @@
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "build",
-            "program": "${workspaceFolder}/bin/Debug/net5.0/scalysh.dll",
+            "program": "${workspaceFolder}/scalyc/bin/Debug/net5.0/scalyc.dll",
             "args": [
                 "-o",
                 "scalyc",
-                "../scaly.scaly",
+                "../../scaly.scaly",
             ],
             "cwd": "${workspaceFolder}",
             "console": "internalConsole",
