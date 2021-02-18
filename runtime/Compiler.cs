@@ -6,7 +6,7 @@ namespace Scaly.Compiler
     {
         public static void compileFiles(Options options)
         {
-            var module = Modeler.Build(options.files);
+            var module = Modeler.BuildFiles(options.files);
         }
     }
 }

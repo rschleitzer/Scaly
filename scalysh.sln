@@ -3,9 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.31005.135
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "scalyc", "scalyc\scalyc.csproj", "{80E1169B-9BC9-47B1-9B79-1EA89C214335}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "scalyc", "scalyc/scalyc.csproj", "{80E1169B-9BC9-47B1-9B79-1EA89C214335}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Scaly.Compiler", "Scaly.Compiler\Scaly.Compiler.csproj", "{90BC1AC0-9F7B-4C26-ACF4-F300B3C74C83}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Scaly.Compiler", "runtime/Scaly.Compiler.csproj", "{90BC1AC0-9F7B-4C26-ACF4-F300B3C74C83}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

@@ -6,7 +6,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="../Scaly.Compiler/Scaly.Compiler.csproj" />
+    <ProjectReference Include="../runtime/Scaly.Compiler.csproj" />
   </ItemGroup>
 
 </Project>

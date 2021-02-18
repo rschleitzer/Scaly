@@ -19,10 +19,11 @@ namespace Scaly.Compiler
         public Dictionary<string, Module> Submodules;
         public Dictionary<string, string[]> Uses;
         public List<string[]> Usings;
-    }    public class Modeler
+    }
 
+    public class Modeler
     {
-        public static Model Build(string[] files)
+        public static Model BuildFiles(string[] files)
         {
             var modules = new List<Module>();
             foreach (string file in files)
@@ -33,7 +34,15 @@ namespace Scaly.Compiler
             return new Model { Modules = modules.ToArray() };
         }
 
-        private static Module BuildModule(string file, bool isPublic)
+        public static Model BuildProgram(string program)
+        {
+            var fileSyntax = parseFile("", program);
+            var module = BuildModule(fileSyntax, true);
+            var runtime = BuildModule("scaly.scaly", true);
+            return new Model { Modules = new Module[] { module, runtime } };
+        }
+
+        static Module BuildModule(string file, bool isPublic)
         {
             var source = System.IO.File.ReadAllText(file);
             var fileSyntax = parseFile(file, source);

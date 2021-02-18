@@ -22,7 +22,7 @@ scalyc/.vs
 scalyc/scalyc.csproj.user
 scalyc/scalyc.userprefs
 scalyc/Properties/launchSettings.json
-Scaly.Compiler/obj
+runtime/obj
 .vs
 docs/build
 docs/source/_build
