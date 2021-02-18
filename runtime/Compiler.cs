@@ -8,5 +8,10 @@ namespace Scaly.Compiler
         {
             var module = Modeler.BuildFiles(options.files);
         }
+
+        public static void compileProgram(string program)
+        {
+            var module = Modeler.BuildProgram(program);
+        }
     }
 }
