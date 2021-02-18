@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace scalyc
+namespace Scaly.Compiler
 {
     class Lexer
     {
@@ -580,6 +580,7 @@ namespace scalyc
                         continue;
 
                     case '\r':
+                        read_character();
                         continue;
 
                     case '\n':
@@ -625,9 +626,6 @@ namespace scalyc
                             return;
                         }
                         break;
-
-                    case '\r':
-                        continue;
 
                     default:
                         read_character();

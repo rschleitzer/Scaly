@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace scalyc
+namespace Scaly.Compiler
 {
     class Parser
     {

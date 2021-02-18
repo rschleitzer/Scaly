@@ -1,4 +1,6 @@
-﻿namespace scalyc
+﻿using Scaly.Compiler;
+
+namespace scalyc
 {
     class scalyc
     {

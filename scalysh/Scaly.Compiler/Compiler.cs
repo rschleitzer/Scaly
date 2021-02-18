@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace scalyc
+namespace Scaly.Compiler
 {
     public class Compiler
     {

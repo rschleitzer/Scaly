@@ -1,6 +1,6 @@
 using System;
 
-namespace scalyc
+namespace Scaly.Compiler
 {
     public class InvalidOptionException : Exception
     {
