@@ -1,9 +1,0 @@
-{
-  "profiles": {
-    "scalysh": {
-      "commandName": "Project",
-      "commandLineArgs": "-o scalyc scalyc.scaly",
-      "workingDirectory": "C:\\repos\\Scaly\\scalysh"
-    }
-  }
-}
