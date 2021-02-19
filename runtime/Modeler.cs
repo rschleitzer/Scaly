@@ -54,6 +54,65 @@ namespace Scaly.Compiler
 
     public class Implementation
     {
+        public List<object> Statements;
+    }
+
+    public enum BindingType
+    {
+        Let,
+        Var,
+        Mutable
+    }
+
+    public class Binding
+    {
+        public BindingType BindingType;
+        public string Identifier;
+        public Operation Operation;
+    }
+
+    public class Assignment
+    {
+        public Operation LeftHandSide;
+        public Operation RightHandSide;
+    }
+
+    public class Operation
+    {
+        public List<Operand> Operands;
+    }
+
+    public class Operand
+    {
+        public object Expression;
+        public List<object> Postfixes;
+    }
+
+    public class MemberAccess
+    {
+        public string Name;
+    }
+
+    public class Catcher
+    {
+        public List<Catch> Catches;
+        public Drop Drop;
+    }
+
+    public class Catch
+    {
+        public Operation Condition;
+        public Operation Handler;
+    }
+
+    public class Drop
+    {
+        public Operation Handler;
+    }
+
+    public class Is
+    {
+        public List<Operand> Condition;
     }
 
     public class Modeler
@@ -93,20 +152,24 @@ namespace Scaly.Compiler
                     HandleDeclaration(source, origin, declaration);
 
             if (fileSyntax.statements != null)
+            {
+                if (source.Implementation == null)
+                    source.Implementation = new Implementation();
                 foreach (var statement in fileSyntax.statements)
-                    HandleStatement(source, origin, statement);
+                    HandleStatement(source.Implementation, origin, statement);
+            }
 
             return source;
         }
 
-        static void HandleStatement(Source source, string origin, object statement)
+        static void HandleStatement(Implementation implementation, string origin, object statement)
         {
             switch (statement)
             {
                 case OperationSyntax operationSyntax:
-                    if (source.Implementation == null)
-                        source.Implementation = new Implementation();
-                    HandleOperation(source.Implementation, operationSyntax);
+                    if (implementation.Statements == null)
+                        implementation.Statements = new List<object>();
+                    HandleOperation(implementation.Statements, operationSyntax);
                     break;
 
                 default:
@@ -114,10 +177,19 @@ namespace Scaly.Compiler
             }
         }
 
-        static void HandleOperation(Implementation implementation, OperationSyntax operationSyntax)
+        static void HandleOperation(List<object> statements, OperationSyntax operationSyntax)
         {
+            var operation = new Operation();
             foreach (var operand in operationSyntax.operands)
-            { }
+            {
+                operation.Operands.Add(BuildOperand(operand));
+            }
+            statements.Add(operation);
+        }
+
+        private static Operand BuildOperand(OperandSyntax operand)
+        {
+            throw new NotImplementedException();
         }
 
         static void HandleDeclaration(Source source, string origin, object declaration)
