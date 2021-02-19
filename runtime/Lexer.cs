@@ -44,6 +44,9 @@ namespace Scaly.Compiler
                     line += 1;
                     break;
 
+                case null:
+                    break;
+
                 default:
                     column++;
                     break;
@@ -371,7 +374,7 @@ namespace Scaly.Compiler
             read_character();
 
             if (character == null)
-                return new InvalidToken();
+                return new Integer(value.ToString());
 
             var c = (char)character;
 
