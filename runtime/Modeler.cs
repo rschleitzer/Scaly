@@ -13,7 +13,7 @@ namespace Scaly.Compiler
         public Dictionary<string, Definition> Definitions;
         public Dictionary<string, List<Function>> Functions;
         public List<Routine> Operators;
-        public Dictionary<string, Implementation> Implementations;
+        public Dictionary<string, Implement> Implements;
         public List<Source> Sources;
     }
 
@@ -27,7 +27,7 @@ namespace Scaly.Compiler
     {
     }
 
-    public class Implementation
+    public class Implement
     {
         public string Name;
         public Dictionary<string, List<Function>> Functions;
@@ -47,8 +47,13 @@ namespace Scaly.Compiler
         public Dictionary<string, Definition> Definitions;
         public Dictionary<string, List<Function>> Functions;
         public List<Routine> Operators;
-        public Dictionary<string, Implementation> Implementations;
+        public Dictionary<string, Implement> Implements;
         public List<Source> Sources;
+        public Implementation Implementation;
+    }
+
+    public class Implementation
+    {
     }
 
     public class Modeler
@@ -84,14 +89,35 @@ namespace Scaly.Compiler
             var source = new Source { FileName = Path.GetFileName(fileSyntax.file_name) };
             var origin = Path.GetDirectoryName(fileSyntax.file_name);
             if (fileSyntax.declarations != null)
-            {
                 foreach (var declaration in fileSyntax.declarations)
-                {
                     HandleDeclaration(source, origin, declaration);
-                }
-            }
+
+            if (fileSyntax.statements != null)
+                foreach (var statement in fileSyntax.statements)
+                    HandleStatement(source, origin, statement);
 
             return source;
+        }
+
+        static void HandleStatement(Source source, string origin, object statement)
+        {
+            switch (statement)
+            {
+                case OperationSyntax operationSyntax:
+                    if (source.Implementation == null)
+                        source.Implementation = new Implementation();
+                    HandleOperation(source.Implementation, operationSyntax);
+                    break;
+
+                default:
+                    throw new NotImplementedException($"{statement.GetType()} not implemented.");
+            }
+        }
+
+        static void HandleOperation(Implementation implementation, OperationSyntax operationSyntax)
+        {
+            foreach (var operand in operationSyntax.operands)
+            { }
         }
 
         static void HandleDeclaration(Source source, string origin, object declaration)
@@ -130,9 +156,9 @@ namespace Scaly.Compiler
                     HandleUse(source, useSyntax);
                     break;
                 case ImplementSyntax implementSyntax:
-                    if (source.Implementations == null)
-                        source.Implementations = new Dictionary<string, Implementation>();
-                    HandleImplement(implementSyntax, source.Implementations);
+                    if (source.Implements == null)
+                        source.Implements = new Dictionary<string, Implement>();
+                    HandleImplement(implementSyntax, source.Implements);
                     break;
                 default:
                     throw new NotImplementedException($"{declaration.GetType()} not implemented.");
@@ -265,17 +291,17 @@ namespace Scaly.Compiler
             operators.Add(routine);
         }
 
-        static void HandleImplement(ImplementSyntax implementSyntax, Dictionary<string, Implementation> implementations)
+        static void HandleImplement(ImplementSyntax implementSyntax, Dictionary<string, Implement> implementations)
         {
             if (implementations.ContainsKey(implementSyntax.type.name.name))
                 throw new CompilerException($"An implementation with name {implementSyntax.type.name.name} already defined.", implementSyntax.start.line, implementSyntax.start.column);
 
-            var implementation = new Implementation { Name = implementSyntax.type.name.name };
+            var implementation = new Implement { Name = implementSyntax.type.name.name };
             implementations.Add(implementation.Name, implementation);
 
-            if (implementSyntax.functions != null)
+            if (implementSyntax.methods != null)
             {
-                foreach (var method in implementSyntax.functions)
+                foreach (var method in implementSyntax.methods)
                 {
                     switch (method)
                     {
@@ -364,9 +390,9 @@ namespace Scaly.Compiler
                     HandleOperator(operatorSyntax, definition.Operators);
                     break;
                 case ImplementSyntax implementSyntax:
-                    if (definition.Implementations == null)
-                        definition.Implementations = new Dictionary<string, Implementation>();
-                    HandleImplement(implementSyntax, definition.Implementations);
+                    if (definition.Implements == null)
+                        definition.Implements = new Dictionary<string, Implement>();
+                    HandleImplement(implementSyntax, definition.Implements);
                     break;
                 default:
                     throw new NotImplementedException($"{declaration.GetType()} not implemented.");

@@ -1330,7 +1330,7 @@ namespace Scaly.Compiler
             var success_left_curly_5 = lexer.parse_punctuation("{");
             if (!success_left_curly_5)
                     throw new ParserException(file_name, lexer.line, lexer.column);
-            var functions = parse_method_list();
+            var methods = parse_method_list();
 
             var success_right_curly_7 = lexer.parse_punctuation("}");
             if (!success_right_curly_7)
@@ -1346,7 +1346,7 @@ namespace Scaly.Compiler
                 end = end,
                 type = type,
                 attributes = attributes,
-                functions = functions,
+                methods = methods,
             };
 
             return ret;
@@ -1771,8 +1771,8 @@ namespace Scaly.Compiler
         public OperationSyntax parse_operation()
         {
             var start = lexer.get_previous_position();
-            var op = parse_operand_list();
-            if (op == null)
+            var operands = parse_operand_list();
+            if (operands == null)
                 return null;
 
             lexer.parse_colon();
@@ -1783,7 +1783,7 @@ namespace Scaly.Compiler
             {
                 start = start,
                 end = end,
-                op = op,
+                operands = operands,
             };
 
             return ret;
@@ -3070,7 +3070,7 @@ namespace Scaly.Compiler
         public Position end;
         public TypeSyntax type;
         public AttributeSyntax[] attributes;
-        public object[] functions;
+        public object[] methods;
     }
 
     public class TraitSyntax
@@ -3155,7 +3155,7 @@ namespace Scaly.Compiler
     {
         public Position start;
         public Position end;
-        public OperandSyntax[] op;
+        public OperandSyntax[] operands;
     }
 
     public class OperandSyntax

@@ -5,7 +5,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace scalyc
+namespace Scaly.Compiler
 {
 "           (parser)
             (syntax)

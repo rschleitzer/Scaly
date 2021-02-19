@@ -228,7 +228,7 @@
         <content link = Attribute             multiple optional property = attributes
         <content colon                                 optional
         <content link = left_curly
-        <content link = Method                multiple optional property = functions
+        <content link = Method                multiple optional property = methods
         <content link = right_curly
         <content colon                                 optional
 
@@ -301,7 +301,7 @@
         <content link = Operation                               property = source
 
     <syntax id = Operation
-        <content link = Operand               multiple          property = op
+        <content link = Operand               multiple          property = operands
         <content colon                                 optional
 
     <syntax id = Operand                      multiple
