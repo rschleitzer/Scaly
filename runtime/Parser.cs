@@ -1813,8 +1813,8 @@ namespace Scaly.Compiler
         public OperandSyntax parse_operand()
         {
             var start = lexer.get_previous_position();
-            var primary = parse_expression();
-            if (primary == null)
+            var expression = parse_expression();
+            if (expression == null)
                 return null;
             var postfixes = parse_postfix_list();
 
@@ -1824,7 +1824,7 @@ namespace Scaly.Compiler
             {
                 start = start,
                 end = end,
-                primary = primary,
+                expression = expression,
                 postfixes = postfixes,
             };
 
@@ -3162,7 +3162,7 @@ namespace Scaly.Compiler
     {
         public Position start;
         public Position end;
-        public object primary;
+        public object expression;
         public object[] postfixes;
     }
 

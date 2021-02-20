@@ -79,7 +79,7 @@ namespace Scaly.Compiler
 
     public class Operation
     {
-        public List<Operand> Operands;
+        public List<Operand> Operands = new List<Operand>();
     }
 
     public class Operand
@@ -113,6 +113,17 @@ namespace Scaly.Compiler
     public class Is
     {
         public List<Operand> Condition;
+    }
+
+    public enum IntegerType
+    {
+        Integer32,
+    }
+
+    public class IntegerConstant
+    {
+        public IntegerType Type;
+        public int Value;
     }
 
     public class Modeler
@@ -173,13 +184,13 @@ namespace Scaly.Compiler
                     break;
 
                 default:
-                    throw new NotImplementedException($"{statement.GetType()} not implemented.");
+                    throw new NotImplementedException($"{statement.GetType()} is not implemented.");
             }
         }
 
         static void HandleOperation(List<object> statements, OperationSyntax operationSyntax)
         {
-            var operation = new Operation();
+            var operation = new Operation { Operands = new List<Operand>() };
             foreach (var operand in operationSyntax.operands)
             {
                 operation.Operands.Add(BuildOperand(operand));
@@ -187,9 +198,49 @@ namespace Scaly.Compiler
             statements.Add(operation);
         }
 
-        private static Operand BuildOperand(OperandSyntax operand)
+        static Operand BuildOperand(OperandSyntax operandSyntax)
         {
-            throw new NotImplementedException();
+            var expression = BuildExpression(operandSyntax.expression);
+            List<object> postfixes = null;
+            if (operandSyntax.postfixes != null)
+            {
+                foreach (var postfix in operandSyntax.postfixes)
+                {
+                    postfixes.Add(BuildPostfix(postfix));
+                }
+            }
+            return new Operand { Expression = expression, Postfixes = postfixes };
+        }
+
+        static object BuildExpression(object expression)
+        {
+            switch (expression)
+            {
+                case LiteralSyntax literalSyntax:
+                    return BuildConstant(literalSyntax);
+                default:
+                    throw new NotImplementedException($"{expression.GetType()} is not implemented.");
+            }
+        }
+
+        static object BuildConstant(LiteralSyntax literalSyntax)
+        {
+            switch (literalSyntax.literal)
+            {
+                case Integer integer:
+                    return new IntegerConstant { Type = IntegerType.Integer32, Value = int.Parse(integer.value) };
+                default:
+                    throw new NotImplementedException($"{literalSyntax.literal.GetType()} is not implemented.");
+            }
+        }
+
+        static object BuildPostfix(object postfix)
+        {
+            switch (postfix)
+            {
+                default:
+                    throw new NotImplementedException($"{postfix.GetType()} is not implemented.");
+            }
         }
 
         static void HandleDeclaration(Source source, string origin, object declaration)
@@ -233,7 +284,7 @@ namespace Scaly.Compiler
                     HandleImplement(implementSyntax, source.Implements);
                     break;
                 default:
-                    throw new NotImplementedException($"{declaration.GetType()} not implemented.");
+                    throw new NotImplementedException($"{declaration.GetType()} is not implemented.");
             }
         }
 
@@ -335,7 +386,7 @@ namespace Scaly.Compiler
                     HandleModule(moduleSyntax, source.Definitions, source, origin, false);
                     break;
                 default:
-                    throw new NotImplementedException($"{privateSyntax.export.GetType()} not implemented.");
+                    throw new NotImplementedException($"{privateSyntax.export.GetType()} is not implemented.");
             }
         }
 
@@ -393,7 +444,7 @@ namespace Scaly.Compiler
                             HandleOperator(operatorSyntax, implementation.Operators);
                             break;
                         default:
-                            throw new NotImplementedException($"{method.GetType()} not implemented.");
+                            throw new NotImplementedException($"{method.GetType()} is not implemented.");
                     }
                 }
             }
@@ -467,7 +518,7 @@ namespace Scaly.Compiler
                     HandleImplement(implementSyntax, definition.Implements);
                     break;
                 default:
-                    throw new NotImplementedException($"{declaration.GetType()} not implemented.");
+                    throw new NotImplementedException($"{declaration.GetType()} is not implemented.");
             }
         }
 
@@ -494,7 +545,7 @@ namespace Scaly.Compiler
                     HandleModule(moduleSyntax, definition.Definitions, source, origin, false);
                     break;
                 default:
-                    throw new NotImplementedException($"{privateSyntax.export.GetType()} not implemented.");
+                    throw new NotImplementedException($"{privateSyntax.export.GetType()} is not implemented.");
             }
         }
 

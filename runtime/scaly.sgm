@@ -305,7 +305,7 @@
         <content colon                                 optional
 
     <syntax id = Operand                      multiple
-        <content link = Expression                              property = primary
+        <content link = Expression                              property = expression
         <content link = Postfix               multiple optional property = postfixes
 
     <syntax id = Postfix                      multiple abstract
