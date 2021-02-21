@@ -9,7 +9,7 @@ namespace tests
         [TestMethod]
         public void TestShortest()
         {
-            Compiler.compileProgram("0");
+            Assert.AreEqual(Compiler.compileAndRunProgram("0", new string[] { }), 0);
         }
     }
 }

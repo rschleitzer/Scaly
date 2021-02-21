@@ -9,9 +9,12 @@ namespace Scaly.Compiler
             var definition = Modeler.BuildFiles(options.files);
         }
 
-        public static void compileProgram(string program)
+        public static int compileAndRunProgram(string program, string[] arguments)
         {
-            var module = Modeler.BuildProgram(program);
+            var definition = Modeler.BuildProgram(program);
+            var main = Generator.JitProgram(definition);
+            int ret = main(arguments.Length, arguments);
+            return ret;
         }
     }
 }
