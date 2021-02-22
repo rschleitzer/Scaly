@@ -19,7 +19,6 @@ namespace Scaly.Compiler
             VerifyAndInitialize(module);
             var engine = module.CreateMCJITCompiler();
             var jitMain = engine.GetPointerToGlobal<Main>(function);
-            //module.WriteBitcodeToFile("test.bc");
             return jitMain;
         }
 
@@ -33,7 +32,14 @@ namespace Scaly.Compiler
             builder.BuildRet(argc);
 
             VerifyAndInitialize(module);
-            module.WriteBitcodeToFile($"{outputName}.bc");
+            LLVM.InitializeAllTargetInfos();
+            var triple = LLVMTargetRef.DefaultTriple;
+            LLVMTargetRef target = LLVMTargetRef.GetTargetFromTriple(triple);
+            LLVMTargetMachineRef targetMachine = target.CreateTargetMachine(triple, "", "",
+                LLVMCodeGenOptLevel.LLVMCodeGenLevelDefault, LLVMRelocMode.LLVMRelocDefault,
+                LLVMCodeModel.LLVMCodeModelDefault);
+            var message = "";
+            targetMachine.TryEmitToFile(module, $"{outputName}.o", LLVMCodeGenFileType.LLVMObjectFile, out message);
         }
 
         static void VerifyAndInitialize(LLVMModuleRef module)
