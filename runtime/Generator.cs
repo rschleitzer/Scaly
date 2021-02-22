@@ -15,7 +15,7 @@ namespace Scaly.Compiler
             var pChar = LLVMTypeRef.CreatePointer(@char, 0);
             var ppChar = LLVMTypeRef.CreatePointer(pChar, 0);
             var mainType = LLVMTypeRef.CreateFunction(@int, new LLVMTypeRef[] { @int, ppChar });
-            var function = module.AddFunction("JitMain", mainType);
+            var function = module.AddFunction("main", mainType);
             var block = function.AppendBasicBlock(string.Empty);
             var builder = module.Context.CreateBuilder();
             builder.PositionAtEnd(block);
