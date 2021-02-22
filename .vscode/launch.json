@@ -9,13 +9,13 @@
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "build",
-            "program": "${workspaceFolder}/scalyc/bin/Debug/net5.0/scalyc.dll",
+            "program": "${workspaceFolder}/scalyc/bin/Debug/net5.0/linux-x64/scalyc.dll",
             "args": [
                 "-o",
-                "scalyc",
-                "runtime/scaly.scaly",
+                "shortest",
+                "shortest.scaly",
             ],
-            "cwd": "${workspaceFolder}",
+            "cwd": "${workspaceFolder}/runtime",
             "console": "internalConsole",
             "stopAtEntry": false,
             "internalConsoleOptions": "openOnSessionStart"
