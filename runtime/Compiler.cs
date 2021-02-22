@@ -7,6 +7,7 @@ namespace Scaly.Compiler
         public static void compileFiles(Options options)
         {
             var definition = Modeler.BuildFiles(options.files);
+            Generator.GenerateProgram(definition, options.outputName);
         }
 
         public static int compileAndRunProgram(string program, string[] arguments)

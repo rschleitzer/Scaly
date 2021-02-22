@@ -10,24 +10,57 @@ namespace Scaly.Compiler
         internal static Main JitProgram(Definition definition)
         {
             LLVMModuleRef module = LLVMModuleRef.CreateWithName("JIT module");
+            var function = MakeMainFunction(module);
+            LLVMBuilderRef builder = CreateBuilder(module, function);
+
+            var argc = function.Params[0];
+            builder.BuildRet(argc);
+
+            VerifyAndInitialize(module);
+            var engine = module.CreateMCJITCompiler();
+            var jitMain = engine.GetPointerToGlobal<Main>(function);
+            //module.WriteBitcodeToFile("test.bc");
+            return jitMain;
+        }
+
+        internal static void GenerateProgram(Definition definition, string outputName)
+        {
+            LLVMModuleRef module = LLVMModuleRef.CreateWithName(string.Empty);
+            var function = MakeMainFunction(module);
+            LLVMBuilderRef builder = CreateBuilder(module, function);
+
+            var argc = function.Params[0];
+            builder.BuildRet(argc);
+
+            VerifyAndInitialize(module);
+            module.WriteBitcodeToFile($"{outputName}.bc");
+        }
+
+        static void VerifyAndInitialize(LLVMModuleRef module)
+        {
+            module.Verify(LLVMVerifierFailureAction.LLVMPrintMessageAction);
+            LLVM.InitializeNativeTarget();
+            LLVM.InitializeNativeAsmParser();
+            LLVM.InitializeNativeAsmPrinter();
+        }
+
+        static LLVMBuilderRef CreateBuilder(LLVMModuleRef module, LLVMValueRef function)
+        {
+            var builder = module.Context.CreateBuilder();
+            var block = function.AppendBasicBlock(string.Empty);
+            builder.PositionAtEnd(block);
+            return builder;
+        }
+
+        static LLVMValueRef MakeMainFunction(LLVMModuleRef module)
+        {
             var @int = LLVMTypeRef.Int32;
             var @char = LLVMTypeRef.Int8;
             var pChar = LLVMTypeRef.CreatePointer(@char, 0);
             var ppChar = LLVMTypeRef.CreatePointer(pChar, 0);
             var mainType = LLVMTypeRef.CreateFunction(@int, new LLVMTypeRef[] { @int, ppChar });
             var function = module.AddFunction("main", mainType);
-            var block = function.AppendBasicBlock(string.Empty);
-            var builder = module.Context.CreateBuilder();
-            builder.PositionAtEnd(block);
-            var argc = function.Params[0];
-            builder.BuildRet(argc);
-            module.Verify(LLVMVerifierFailureAction.LLVMPrintMessageAction);
-            LLVM.InitializeNativeTarget();
-            var engine = module.CreateMCJITCompiler();
-            LLVM.InitializeNativeAsmParser();
-            LLVM.InitializeNativeAsmPrinter();
-            var jitMain = engine.GetPointerToGlobal<Main>(function);
-            return jitMain;
+            return function;
         }
     }
 }

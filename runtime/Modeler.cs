@@ -130,7 +130,10 @@ namespace Scaly.Compiler
     {
         public static Definition BuildFiles(string[] files)
         {
-            return new Definition { Sources = files.ToList().ConvertAll(it => BuildSource(it)) };
+            var sources = files.ToList().ConvertAll(it => BuildSource(it));
+            var runtime = BuildSource("scaly.scaly");
+            sources.Add(runtime);
+            return new Definition { Sources = sources };
         }
 
         public static Definition BuildProgram(string program)
