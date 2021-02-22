@@ -11,5 +11,11 @@ namespace tests
         {
             Assert.AreEqual(Compiler.compileAndRunProgram("0", new string[] { }), 0);
         }
+
+        [TestMethod]
+        public void TestReturnArgc()
+        {
+            Assert.AreEqual(Compiler.compileAndRunProgram("3", new string[] { "foo", "bar", "baz" }), 3);
+        }
     }
 }
