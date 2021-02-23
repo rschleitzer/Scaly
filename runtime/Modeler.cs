@@ -61,20 +61,10 @@ namespace Scaly.Compiler
         public List<Routine> Operators;
         public Dictionary<string, Implement> Implements;
         public List<Source> Sources;
-        public Implementation Implementation;
-    }
-
-    public class Implementation
-    {
-        public List<Expression> Statements;
+        public List<Expression> Expressions;
     }
 
     public abstract class Expression { }
-
-    public class BlockExpression : Expression
-    {
-        public List<Expression> Expressions;
-    }
 
     public enum BindingType
     {
@@ -180,23 +170,21 @@ namespace Scaly.Compiler
 
             if (fileSyntax.statements != null)
             {
-                if (source.Implementation == null)
-                    source.Implementation = new Implementation();
+                if (source.Expressions == null)
+                    source.Expressions = new List<Expression>();
                 foreach (var statement in fileSyntax.statements)
-                    HandleStatement(source.Implementation, origin, statement);
+                    HandleStatement(source.Expressions, origin, statement);
             }
 
             return source;
         }
 
-        static void HandleStatement(Implementation implementation, string origin, object statement)
+        static void HandleStatement(List<Expression> expressions, string origin, object statement)
         {
             switch (statement)
             {
                 case OperationSyntax operationSyntax:
-                    if (implementation.Statements == null)
-                        implementation.Statements = new List<Expression>();
-                    HandleOperation(implementation.Statements, operationSyntax);
+                    HandleOperation(expressions, operationSyntax);
                     break;
 
                 default:
