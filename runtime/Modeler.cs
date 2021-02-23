@@ -9,7 +9,7 @@ namespace Scaly.Compiler
     public class Definition
     {
         public bool IsPublic;
-        public TypeModel Type;
+        public TypeSpec Type;
         public Dictionary<string, Definition> Definitions;
         public Dictionary<string, List<Function>> Functions;
         public List<Routine> Operators;
@@ -25,18 +25,30 @@ namespace Scaly.Compiler
 
     public class Routine
     {
+        public List<Property> Input;
+        public List<Property> Result;
+        public TypeSpec Error;
+        public Operation Operation;
     }
+
+    public class Property
+    {
+        public string Name;
+        public TypeSpec TypeSpec;
+    }
+
+    public class TypeSpec
+    {
+        public string Name;
+        public List<TypeSpec> Arguments;
+    }
+
 
     public class Implement
     {
         public string Name;
         public Dictionary<string, List<Function>> Functions;
         public List<Routine> Operators;
-    }
-
-    public class TypeModel
-    {
-        public string Name;
     }
 
     public class Source
@@ -54,7 +66,14 @@ namespace Scaly.Compiler
 
     public class Implementation
     {
-        public List<object> Statements;
+        public List<Expression> Statements;
+    }
+
+    public abstract class Expression { }
+
+    public class BlockExpression : Expression
+    {
+        public List<Expression> Expressions;
     }
 
     public enum BindingType
@@ -64,20 +83,14 @@ namespace Scaly.Compiler
         Mutable
     }
 
-    public class Binding
+    public class Binding : Expression
     {
         public BindingType BindingType;
         public string Identifier;
         public Operation Operation;
     }
 
-    public class Assignment
-    {
-        public Operation LeftHandSide;
-        public Operation RightHandSide;
-    }
-
-    public class Operation
+    public class Operation : Expression
     {
         public List<Operand> Operands = new List<Operand>();
     }
@@ -120,7 +133,7 @@ namespace Scaly.Compiler
         Integer32,
     }
 
-    public class IntegerConstant
+    public class IntegerConstant : Expression
     {
         public IntegerType Type;
         public int Value;
@@ -182,7 +195,7 @@ namespace Scaly.Compiler
             {
                 case OperationSyntax operationSyntax:
                     if (implementation.Statements == null)
-                        implementation.Statements = new List<object>();
+                        implementation.Statements = new List<Expression>();
                     HandleOperation(implementation.Statements, operationSyntax);
                     break;
 
@@ -191,14 +204,9 @@ namespace Scaly.Compiler
             }
         }
 
-        static void HandleOperation(List<object> statements, OperationSyntax operationSyntax)
+        static void HandleOperation(List<Expression> statements, OperationSyntax operationSyntax)
         {
-            var operation = new Operation { Operands = new List<Operand>() };
-            foreach (var operand in operationSyntax.operands)
-            {
-                operation.Operands.Add(BuildOperand(operand));
-            }
-            statements.Add(operation);
+            statements.Add(BuildOperation(operationSyntax));
         }
 
         static Operand BuildOperand(OperandSyntax operandSyntax)
@@ -215,18 +223,33 @@ namespace Scaly.Compiler
             return new Operand { Expression = expression, Postfixes = postfixes };
         }
 
-        static object BuildExpression(object expression)
+        static Expression BuildExpression(object expression)
         {
             switch (expression)
             {
                 case LiteralSyntax literalSyntax:
                     return BuildConstant(literalSyntax);
+                case BlockSyntax blockSyntax:
+                    return BuildBlock(blockSyntax);
                 default:
                     throw new NotImplementedException($"{expression.GetType()} is not implemented.");
             }
         }
 
-        static object BuildConstant(LiteralSyntax literalSyntax)
+        static Expression BuildBlock(BlockSyntax blockSyntax)
+        {
+            if (blockSyntax.statements != null)
+            {
+                foreach (var statement in blockSyntax.statements)
+                {
+
+                }
+            }
+
+            return null;
+        }
+
+        static Expression BuildConstant(LiteralSyntax literalSyntax)
         {
             switch (literalSyntax.literal)
             {
@@ -301,7 +324,7 @@ namespace Scaly.Compiler
                     definitions = new Dictionary<string, Definition>();
                 if (!definitions.ContainsKey(moduleSyntax.name.name))
                 {
-                    var definition = new Definition { IsPublic = isPublic, Type = new TypeModel { Name = moduleSyntax.name.name }, Definitions = new Dictionary<string, Definition>(), Sources = null };
+                    var definition = new Definition { IsPublic = isPublic, Type = new TypeSpec { Name = moduleSyntax.name.name }, Definitions = new Dictionary<string, Definition>(), Sources = null };
                     definitions.Add(definition.Type.Name, definition);
                 }
 
@@ -408,7 +431,93 @@ namespace Scaly.Compiler
             if (!functions.ContainsKey(name))
                 functions.Add(name, new List<Function>());
             var function = new Function { Name = name };
+            function.Routine = BuildRoutine(routine);
+
             functions[name].Add(function);
+        }
+
+        static Routine BuildRoutine(RoutineSyntax routineSyntax)
+        {
+            var routine = new Routine {};
+            if (routineSyntax.parameters != null)
+                routine.Input = BuildParameters(routineSyntax.parameters);
+
+            if (routineSyntax.returns != null)
+                routine.Result = BuildParameters(routineSyntax.returns.parameters);
+
+            if (routineSyntax.throws != null)
+                routine.Error = BuildType(routineSyntax.throws.type);
+
+            switch (routineSyntax.implementation)
+            {
+                case OperationSyntax operationSyntax:
+                    routine.Operation = BuildOperation(operationSyntax);
+                    break;
+                case ExternSyntax _:
+                    break;
+                default:
+                    throw new NotImplementedException($"{routineSyntax.implementation.GetType()} is not implemented.");
+            }
+
+            return routine;
+        }
+
+        static Operation BuildOperation(OperationSyntax operationSyntax)
+        {
+            var operation = new Operation { Operands = new List<Operand>() };
+            foreach (var operand in operationSyntax.operands)
+            {
+                operation.Operands.Add(BuildOperand(operand));
+            }
+            return operation;
+        }
+
+        static List<Property> BuildParameters(object parameters)
+        {
+            switch (parameters)
+            {
+                case ParametersSyntax parametersSyntax:
+                    if (parametersSyntax.properties != null)
+                        return parametersSyntax.properties.ToList().ConvertAll(it => BuildProperty(it));
+                    else
+                        return null;
+                case PropertySyntax propertySyntax:
+                    return new List<Property> { BuildProperty(propertySyntax) };
+                case TypeSyntax typeSyntax:
+                    return new List<Property> { new Property { TypeSpec = BuildTypeSpec(typeSyntax) } };
+                default:
+                    throw new NotImplementedException($"{parameters.GetType()} is not implemented.");
+            }
+        }
+
+        static Property BuildProperty(PropertySyntax propertySyntax)
+        {
+            var property = new Property { Name = propertySyntax.name };
+            
+            if (propertySyntax.annotation != null)
+                property.TypeSpec = BuildTypeSpec(propertySyntax.annotation.spec);
+
+            return property;
+        }
+
+        static TypeSpec BuildTypeSpec(object spec)
+        {
+            switch (spec)
+            {
+                case TypeSyntax typeSyntax:
+                    return BuildType(typeSyntax);
+                default:
+                    throw new NotImplementedException($"{spec.GetType()} is not implemented.");
+            }
+        }
+
+        static TypeSpec BuildType(TypeSyntax typeSyntax)
+        {
+            var typeSpec = new TypeSpec { Name = typeSyntax.name.name };
+            if (typeSyntax.generics != null)
+                typeSpec.Arguments = typeSyntax.generics.generics.ToList().ConvertAll(it => BuildType(it.spec));
+
+            return typeSpec;
         }
 
         static void HandleOperator(OperatorSyntax operatorSyntax, List<Routine> operators)
@@ -456,7 +565,7 @@ namespace Scaly.Compiler
         static void HandleDefinition(DefinitionSyntax definitionSyntax, Dictionary<string, Definition> definitions, Source source, string origin, bool isPublic)
         {
 
-            TypeModel typeModel = BuildType(definitionSyntax.type);
+            TypeSpec typeModel = BuildType(definitionSyntax.type);
             BodySyntax bodySyntax = null;
             switch (definitionSyntax.concept)
             {
@@ -550,11 +659,6 @@ namespace Scaly.Compiler
                 default:
                     throw new NotImplementedException($"{privateSyntax.export.GetType()} is not implemented.");
             }
-        }
-
-        static TypeModel BuildType(TypeSyntax type)
-        {
-            return new TypeModel { Name = ExpandName(type.name) };
         }
 
         static string ExpandName(NameSyntax name)

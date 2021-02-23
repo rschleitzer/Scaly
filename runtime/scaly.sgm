@@ -103,7 +103,7 @@
 
     <syntax id = Delegate
         <content link = delegate
-        <content link = TypeSpec                                property = type
+        <content link = ParameterSet                   optional property = parameters
         <content link = Attribute             multiple optional property = attributes
         <content link = Returns                        optional property = result
         <content link = Throws                         optional property = error
@@ -127,7 +127,7 @@
         <content link = private
         <content link = Property                                property = export
 
-    <syntax id = Property
+    <syntax id = Property                     multiple
         <content identifier                                     property = name
         <content link = TypeAnnotation                 optional property = annotation
         <content link = Attribute             multiple optional property = attributes
@@ -141,7 +141,6 @@
     <syntax id = TypeSpec                     multiple abstract
         <content link = Structure
         <content link = Type
-        <content link = Array
 
     <syntax id = Type
         <content link = Name                                    property = name
@@ -182,24 +181,31 @@
         <content link = Routine                                 property = routine
 
     <syntax id = Routine
-        <content link = TypeSpec                       optional property = type
+        <content link = ParameterSet                   optional property = parameters
         <content link = Attribute             multiple optional property = attributes
-        <content link = Returns                        optional property = result
+        <content link = Returns                        optional property = returns
         <content colon                                 optional
-        <content link = Throws                         optional property = error
-        <content colon                                 optional
-        <content link = Attribute             multiple optional property = exception
+        <content link = Throws                         optional property = throws
         <content colon                                 optional
         <content link = Implementation                          property = implementation
 
+    <syntax id = ParameterSet                          abstract
+        <content link = Parameters
+        <content link = Type
+
+    <syntax id = Parameters
+        <content link = left_paren
+        <content link = Property              multiple optional property = properties
+        <content link = right_paren
+
     <syntax id = Returns
         <content link = returns
-        <content link = TypeSpec                                property = spec
+        <content link = ParameterSet                            property = parameters
         <content link = Attribute             multiple optional property = attributes
 
     <syntax id = Throws
         <content link = throws
-        <content link = TypeSpec                                property = spec
+        <content link = Type                                    property = type
         <content link = Attribute             multiple optional property = attributes
 
     <syntax id = Implementation                        abstract
@@ -292,8 +298,17 @@
 
     <syntax id = Binding
         <content identifier                                     property = name
-        <content link = TypeAnnotation                 optional property = annotation
+        <content link = BindingAnnotation              optional property = annotation
         <content link = Operation                               property = calculation
+
+    <syntax id = BindingAnnotation
+        <content colon
+        <content link = BindingSpec                                property = spec
+
+    <syntax id = BindingSpec                  multiple abstract
+        <content link = Structure
+        <content link = Type
+        <content link = Array
 
     <syntax id = Set
         <content link = set

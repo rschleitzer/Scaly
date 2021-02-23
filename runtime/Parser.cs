@@ -649,9 +649,7 @@ namespace Scaly.Compiler
             var success_delegate_1 = lexer.parse_keyword("delegate");
             if (!success_delegate_1)
                     return null;
-            var type = parse_typespec();
-            if (type == null)
-                throw new ParserException(file_name, lexer.line, lexer.column);
+            var parameters = parse_parameterset();
             var attributes = parse_attribute_list();
             var result = parse_returns();
             var error = parse_throws();
@@ -662,7 +660,7 @@ namespace Scaly.Compiler
             {
                 start = start,
                 end = end,
-                type = type,
+                parameters = parameters,
                 attributes = attributes,
                 result = result,
                 error = error,
@@ -783,6 +781,27 @@ namespace Scaly.Compiler
             return ret;
         }
 
+        public PropertySyntax[] parse_property_list()
+        {
+            List<PropertySyntax> list = null;
+            while (true)
+            {
+                var node = parse_property();
+                if (node == null)
+                    break;
+
+                if (list == null)
+                    list = new List<PropertySyntax>();
+
+                list.Add(node);
+            }
+
+            if (list != null)
+                return list.ToArray();
+            else
+                return null;
+        }
+
         public PropertySyntax parse_property()
         {
             var start = lexer.get_previous_position();
@@ -873,11 +892,6 @@ namespace Scaly.Compiler
             }
             {
                 var node = parse_type();
-                if (node != null)
-                    return node;
-            }
-            {
-                var node = parse_array();
                 if (node != null)
                     return node;
             }
@@ -1123,15 +1137,12 @@ namespace Scaly.Compiler
         public RoutineSyntax parse_routine()
         {
             var start = lexer.get_previous_position();
-            var type = parse_typespec();
+            var parameters = parse_parameterset();
             var attributes = parse_attribute_list();
-            var result = parse_returns();
+            var returns = parse_returns();
 
             lexer.parse_colon();
-            var error = parse_throws();
-
-            lexer.parse_colon();
-            var exception = parse_attribute_list();
+            var throws = parse_throws();
 
             lexer.parse_colon();
             var implementation = parse_implementation();
@@ -1144,12 +1155,52 @@ namespace Scaly.Compiler
             {
                 start = start,
                 end = end,
-                type = type,
+                parameters = parameters,
                 attributes = attributes,
-                result = result,
-                error = error,
-                exception = exception,
+                returns = returns,
+                throws = throws,
                 implementation = implementation,
+            };
+
+            return ret;
+        }
+
+        public object parse_parameterset()
+        {
+            {
+                var node = parse_parameters();
+                if (node != null)
+                    return node;
+            }
+            {
+                var node = parse_type();
+                if (node != null)
+                    return node;
+            }
+
+            return null;
+        }
+
+        public ParametersSyntax parse_parameters()
+        {
+            var start = lexer.get_previous_position();
+
+            var success_left_paren_1 = lexer.parse_punctuation("(");
+            if (!success_left_paren_1)
+                    return null;
+            var properties = parse_property_list();
+
+            var success_right_paren_3 = lexer.parse_punctuation(")");
+            if (!success_right_paren_3)
+                    throw new ParserException(file_name, lexer.line, lexer.column);
+
+            var end = lexer.get_position();
+
+            var ret = new ParametersSyntax
+            {
+                start = start,
+                end = end,
+                properties = properties,
             };
 
             return ret;
@@ -1162,8 +1213,8 @@ namespace Scaly.Compiler
             var success_returns_1 = lexer.parse_keyword("returns");
             if (!success_returns_1)
                     return null;
-            var spec = parse_typespec();
-            if (spec == null)
+            var parameters = parse_parameterset();
+            if (parameters == null)
                 throw new ParserException(file_name, lexer.line, lexer.column);
             var attributes = parse_attribute_list();
 
@@ -1173,7 +1224,7 @@ namespace Scaly.Compiler
             {
                 start = start,
                 end = end,
-                spec = spec,
+                parameters = parameters,
                 attributes = attributes,
             };
 
@@ -1187,8 +1238,8 @@ namespace Scaly.Compiler
             var success_throws_1 = lexer.parse_keyword("throws");
             if (!success_throws_1)
                     return null;
-            var spec = parse_typespec();
-            if (spec == null)
+            var type = parse_type();
+            if (type == null)
                 throw new ParserException(file_name, lexer.line, lexer.column);
             var attributes = parse_attribute_list();
 
@@ -1198,7 +1249,7 @@ namespace Scaly.Compiler
             {
                 start = start,
                 end = end,
-                spec = spec,
+                type = type,
                 attributes = attributes,
             };
 
@@ -1722,7 +1773,7 @@ namespace Scaly.Compiler
             {
                     return null;
             }
-            var annotation = parse_typeannotation();
+            var annotation = parse_bindingannotation();
             var calculation = parse_operation();
             if (calculation == null)
                 throw new ParserException(file_name, lexer.line, lexer.column);
@@ -1739,6 +1790,71 @@ namespace Scaly.Compiler
             };
 
             return ret;
+        }
+
+        public BindingAnnotationSyntax parse_bindingannotation()
+        {
+            var start = lexer.get_previous_position();
+
+            var success_colon_1 = lexer.parse_colon();
+            if (!success_colon_1)
+                    return null;
+            var spec = parse_bindingspec();
+            if (spec == null)
+                throw new ParserException(file_name, lexer.line, lexer.column);
+
+            var end = lexer.get_position();
+
+            var ret = new BindingAnnotationSyntax
+            {
+                start = start,
+                end = end,
+                spec = spec,
+            };
+
+            return ret;
+        }
+
+        public object[] parse_bindingspec_list()
+        {
+            List<object> list = null;
+            while (true)
+            {
+                var node = parse_bindingspec();
+                if (node == null)
+                    break;
+
+                if (list == null)
+                    list = new List<object>();
+
+                list.Add(node);
+            }
+
+            if (list != null)
+                return list.ToArray();
+            else
+                return null;
+        }
+
+        public object parse_bindingspec()
+        {
+            {
+                var node = parse_structure();
+                if (node != null)
+                    return node;
+            }
+            {
+                var node = parse_type();
+                if (node != null)
+                    return node;
+            }
+            {
+                var node = parse_array();
+                if (node != null)
+                    return node;
+            }
+
+            return null;
         }
 
         public SetSyntax parse_set()
@@ -2907,7 +3023,7 @@ namespace Scaly.Compiler
     {
         public Position start;
         public Position end;
-        public object type;
+        public object parameters;
         public AttributeSyntax[] attributes;
         public ReturnsSyntax result;
         public ThrowsSyntax error;
@@ -3015,19 +3131,25 @@ namespace Scaly.Compiler
     {
         public Position start;
         public Position end;
-        public object type;
+        public object parameters;
         public AttributeSyntax[] attributes;
-        public ReturnsSyntax result;
-        public ThrowsSyntax error;
-        public AttributeSyntax[] exception;
+        public ReturnsSyntax returns;
+        public ThrowsSyntax throws;
         public object implementation;
+    }
+
+    public class ParametersSyntax
+    {
+        public Position start;
+        public Position end;
+        public PropertySyntax[] properties;
     }
 
     public class ReturnsSyntax
     {
         public Position start;
         public Position end;
-        public object spec;
+        public object parameters;
         public AttributeSyntax[] attributes;
     }
 
@@ -3035,7 +3157,7 @@ namespace Scaly.Compiler
     {
         public Position start;
         public Position end;
-        public object spec;
+        public TypeSyntax type;
         public AttributeSyntax[] attributes;
     }
 
@@ -3139,8 +3261,15 @@ namespace Scaly.Compiler
         public Position start;
         public Position end;
         public string name;
-        public TypeAnnotationSyntax annotation;
+        public BindingAnnotationSyntax annotation;
         public OperationSyntax calculation;
+    }
+
+    public class BindingAnnotationSyntax
+    {
+        public Position start;
+        public Position end;
+        public object spec;
     }
 
     public class SetSyntax
