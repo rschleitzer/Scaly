@@ -2412,8 +2412,8 @@ namespace Scaly.Compiler
         public ComponentSyntax parse_component()
         {
             var start = lexer.get_previous_position();
-            var operation = parse_operation();
-            if (operation == null)
+            var operands = parse_operand_list();
+            if (operands == null)
                 return null;
             var attributes = parse_attribute_list();
             var value = parse_value();
@@ -2426,7 +2426,7 @@ namespace Scaly.Compiler
             {
                 start = start,
                 end = end,
-                operation = operation,
+                operands = operands,
                 attributes = attributes,
                 value = value,
             };
@@ -3386,7 +3386,7 @@ namespace Scaly.Compiler
     {
         public Position start;
         public Position end;
-        public OperationSyntax operation;
+        public OperandSyntax[] operands;
         public AttributeSyntax[] attributes;
         public ValueSyntax value;
     }

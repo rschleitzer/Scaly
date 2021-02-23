@@ -400,7 +400,7 @@
         <content link = right_paren
 
     <syntax id = Component                    multiple
-        <content link = Operation                               property = operation
+        <content link = Operand               multiple          property = operands
         <content link = Attribute             multiple optional property = attributes
         <content link = Value                          optional property = value
         <content link = comma                          optional
