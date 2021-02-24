@@ -28,7 +28,7 @@ namespace Scaly.Compiler
         public List<Property> Input;
         public List<Property> Result;
         public TypeSpec Error;
-        public Operation Operation;
+        public List<Operation> Operations;
     }
 
     public class Property
@@ -61,10 +61,26 @@ namespace Scaly.Compiler
         public List<Routine> Operators;
         public Dictionary<string, Implement> Implements;
         public List<Source> Sources;
-        public List<Expression> Expressions;
+        public List<Operation> Operations;
     }
 
     public abstract class Expression { }
+
+    public class Name : Expression
+    {
+        public List<string> Path;
+    }
+
+    public class Object : Expression
+    {
+        public List<Component> Components;
+    }
+
+    public class Component
+    {
+        public string Name;
+        public List<Operand> Value;
+    }
 
     public enum BindingType
     {
@@ -77,7 +93,7 @@ namespace Scaly.Compiler
     {
         public BindingType BindingType;
         public string Identifier;
-        public Operation Operation;
+        public List<Operation> Operations;
     }
 
     public class Operation : Expression
@@ -87,9 +103,11 @@ namespace Scaly.Compiler
 
     public class Operand
     {
-        public object Expression;
-        public List<object> Postfixes;
+        public Expression Expression;
+        public List<Postfix> Postfixes;
     }
+
+    public abstract class Postfix { }
 
     public class MemberAccess
     {
@@ -170,21 +188,21 @@ namespace Scaly.Compiler
 
             if (fileSyntax.statements != null)
             {
-                if (source.Expressions == null)
-                    source.Expressions = new List<Expression>();
+                if (source.Operations == null)
+                    source.Operations = new List<Operation>();
                 foreach (var statement in fileSyntax.statements)
-                    HandleStatement(source.Expressions, origin, statement);
+                    HandleStatement(source.Operations, origin, statement);
             }
 
             return source;
         }
 
-        static void HandleStatement(List<Expression> expressions, string origin, object statement)
+        static void HandleStatement(List<Operation> operations, string origin, object statement)
         {
             switch (statement)
             {
                 case OperationSyntax operationSyntax:
-                    HandleOperation(expressions, operationSyntax);
+                    HandleOperation(operations, operationSyntax);
                     break;
 
                 default:
@@ -192,15 +210,15 @@ namespace Scaly.Compiler
             }
         }
 
-        static void HandleOperation(List<Expression> statements, OperationSyntax operationSyntax)
+        static void HandleOperation(List<Operation> operations, OperationSyntax operationSyntax)
         {
-            statements.Add(BuildOperation(operationSyntax));
+            operations.Add(BuildOperation(operationSyntax));
         }
 
         static Operand BuildOperand(OperandSyntax operandSyntax)
         {
             var expression = BuildExpression(operandSyntax.expression);
-            List<object> postfixes = null;
+            List<Postfix> postfixes = null;
             if (operandSyntax.postfixes != null)
             {
                 foreach (var postfix in operandSyntax.postfixes)
@@ -215,13 +233,27 @@ namespace Scaly.Compiler
         {
             switch (expression)
             {
+                case NameSyntax nameSyntax:
+                    return BuildName(nameSyntax);
                 case LiteralSyntax literalSyntax:
                     return BuildConstant(literalSyntax);
                 case BlockSyntax blockSyntax:
                     return BuildBlock(blockSyntax);
+                case ObjectSyntax objectSyntax:
+                    return BuildObject(objectSyntax);
                 default:
                     throw new NotImplementedException($"{expression.GetType()} is not implemented.");
             }
+        }
+
+        static Expression BuildName(NameSyntax nameSyntax)
+        {
+            var components = new List<string>();
+            components.Add(nameSyntax.name);
+            if (nameSyntax.extensions != null)
+                components.AddRange(nameSyntax.extensions.ToList().ConvertAll(it => it.name));
+
+            return new Name { Path = components };
         }
 
         static Expression BuildBlock(BlockSyntax blockSyntax)
@@ -237,6 +269,28 @@ namespace Scaly.Compiler
             return null;
         }
 
+        static Expression BuildObject(ObjectSyntax objectSyntax)
+        {
+            var @object = new Object { };
+            if (objectSyntax.components != null)
+                @object.Components = objectSyntax.components.ToList().ConvertAll(it => BuildComponent(it));
+            return @object;
+        }
+
+        static Component BuildComponent(ComponentSyntax componentSyntax)
+        {
+            var component = new Component();
+            if (componentSyntax.value != null)
+            {
+                if (componentSyntax.operands.Length != 1)
+                    throw new CompilerException("", componentSyntax.start.line, componentSyntax.start.column);
+            }
+            else
+            {
+            }
+            return component;
+        }
+
         static Expression BuildConstant(LiteralSyntax literalSyntax)
         {
             switch (literalSyntax.literal)
@@ -248,7 +302,7 @@ namespace Scaly.Compiler
             }
         }
 
-        static object BuildPostfix(object postfix)
+        static Postfix BuildPostfix(object postfix)
         {
             switch (postfix)
             {
@@ -439,7 +493,7 @@ namespace Scaly.Compiler
             switch (routineSyntax.implementation)
             {
                 case OperationSyntax operationSyntax:
-                    routine.Operation = BuildOperation(operationSyntax);
+                    routine.Operations = new List<Operation> { BuildOperation(operationSyntax) };
                     break;
                 case ExternSyntax _:
                     break;
