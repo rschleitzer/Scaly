@@ -1,4 +1,4 @@
-module Containers.Vector
+;*module Containers.Vector
 module Containers.Array
 module Containers.String
 module Containers.StringBuilder
@@ -13,3 +13,4 @@ module Memory.Page
 module Memory.Bucket
 module Memory.Pool
 module Memory.Region
+*;
