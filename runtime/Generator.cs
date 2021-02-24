@@ -85,13 +85,15 @@ namespace Scaly.Compiler
 
         static void BuildFunction(LLVMModuleRef module, LLVMValueRef llvmFunction, List<Operation> operations)
         {
-            LLVMBuilderRef builder = CreateBuilder(module, llvmFunction);
-            LLVMValueRef valueRef = null;
-            foreach (var operation in operations)
+            using (LLVMBuilderRef builder = CreateBuilder(module, llvmFunction))
             {
-                valueRef = BuildOperation(builder, operation);
+                LLVMValueRef valueRef = null;
+                foreach (var operation in operations)
+                {
+                    valueRef = BuildOperation(builder, operation);
+                }
+                builder.BuildRet(valueRef);
             }
-            builder.BuildRet(valueRef);
         }
 
         static LLVMValueRef BuildOperation(LLVMBuilderRef builder, Operation operation)
