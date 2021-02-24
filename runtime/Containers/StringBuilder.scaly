@@ -7,7 +7,7 @@ define StringBuilder
 )
 {
     function new() returns StringBuilder
-        StringBuilder(buffer: Array::new())
+        StringBuilder(buffer: Array.new())
 
     function 'from character'(character: char) returns StringBuilder
     {
