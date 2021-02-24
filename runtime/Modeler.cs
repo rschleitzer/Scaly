@@ -152,18 +152,58 @@ namespace Scaly.Compiler
         public static Definition BuildFiles(string[] files)
         {
             var sources = files.ToList().ConvertAll(it => BuildSource(it));
-            var runtime = BuildSource("scaly.scaly");
-            sources.Add(runtime);
+            sources.Add(BuildRuntime());
             return new Definition { Sources = sources };
         }
 
-        public static Definition BuildProgram(string program)
+        public static Source BuildRuntime()
+        {
+            var runtime = BuildSource("scaly.scaly");
+            return runtime;
+        }
+
+        public static Source BuildProgram(string program)
         {
             var fileSyntax = parseFile("", program);
             var source = BuildSource(fileSyntax);
+            var operations = source.Operations;
+            source = new Source
+            {
+                FileName = source.FileName,
+                Uses = source.Uses,
+                Usings = source.Usings,
+                Definitions = source.Definitions,
+                Functions = source.Functions,
+                Operators = source.Operators,
+                Implements = null,
+                Sources = source.Sources,
+                Operations = null,
+            };
 
-            var runtime = BuildSource("scaly.scaly");
-            return new Definition { Sources = new List<Source> { source, runtime } };
+            if (source.Functions == null)
+                source.Functions = new Dictionary<string, List<Function>>();
+            source.Functions.Add("main", new List<Function> { MakeMainFunction(operations) });
+            return source;
+        }
+
+        static Function MakeMainFunction(List<Operation> operations)
+        {
+            var main = new Function
+            {
+                Name = "main",
+                Routine = new Routine
+                {
+                    Input = new List<Property>()
+                    {
+                        new Property { Name = "argument count", TypeSpec = new TypeSpec { Name = "Integer" } },
+                        new Property { Name = "argument values", TypeSpec = new TypeSpec { Name = "Pointer", Arguments = new List<TypeSpec> { new TypeSpec { Name = "Pointer", Arguments = new List<TypeSpec> { new TypeSpec { Name = "Byte" } } } } } },
+                    },
+                    Result = new List<Property>() { new Property { TypeSpec = new TypeSpec { Name = "Integer" } } },
+                    Operations = operations
+                }
+            };
+
+            return main;
         }
 
         static Source BuildSource(string file)
