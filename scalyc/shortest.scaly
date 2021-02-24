@@ -1,1 +1,1 @@
-function main('argument count': Integer, 'argument values': Pointer[Pointer[Byte]]) returns Integer 42
+function main('argument count': Integer, 'argument values': Pointer[Pointer[Byte]]) returns Integer 'argument count'

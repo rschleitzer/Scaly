@@ -15,7 +15,7 @@ namespace tests
         [TestMethod]
         public void TestReturnArgc()
         {
-            Assert.AreEqual(Compiler.compileAndRunProgram("3", new string[] { "foo", "bar", "baz" }), 3);
+            Assert.AreEqual(Compiler.compileAndRunProgram("argument count", new string[] { "foo", "bar", "baz" }), 3);
         }
     }
 }

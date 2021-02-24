@@ -104,11 +104,19 @@ namespace Scaly.Compiler
                     case IntegerConstant integerConstant:
                         valueRef = LLVMValueRef.CreateConstInt(LLVMTypeRef.Int32, (ulong)integerConstant.Value);
                         break;
+                    case Name name:
+                        valueRef = BuildName(builder, name);
+                        break;
                     default:
                         throw new NotImplementedException($"Expression {operand.Expression.GetType()} not implemented.");
                 }
             }
             return valueRef;
+        }
+
+        static LLVMValueRef BuildName(LLVMBuilderRef builder, Name name)
+        {
+            throw new NotImplementedException();
         }
 
         static LLVMTypeRef GenerateSingleType(List<Property> result)
