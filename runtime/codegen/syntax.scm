@@ -3,12 +3,10 @@
     (apply-to-selected-children "syntax" (lambda (syntax-node) (if (abstract? syntax-node) "" ($
 "
     public class "(id syntax-node)"Syntax
-    {"  
-        (if (top? syntax-node)
-            ($
-"
-        public string file_name;"
-            )
+    {
+        public string file;"  
+
+        (if (top? syntax-node) ""
             (if (program? syntax-node) "" ($
 "
         public Position start;

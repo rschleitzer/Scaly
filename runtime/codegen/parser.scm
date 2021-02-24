@@ -156,9 +156,10 @@
 "
             var ret = new "(id syntax)"Syntax
             {
-"                (if (top? syntax) 
-"                file_name = file_name"
-"                start = start,
+                file = file_name"
+                (if (top? syntax) ""
+                                    ",
+                start = start,
                 end = end"
                 )
                 (apply-to-property-children-of syntax (lambda (content) ($

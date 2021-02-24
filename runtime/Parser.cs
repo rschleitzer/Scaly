@@ -73,7 +73,7 @@ namespace Scaly.Compiler
 
             var ret = new FileSyntax
             {
-                file_name = file_name,
+                file = file_name,
                 declarations = declarations,
                 statements = statements,
             };
@@ -173,6 +173,7 @@ namespace Scaly.Compiler
 
             var ret = new PrivateSyntax
             {
+                file = file_name,
                 start = start,
                 end = end,
                 export = export,
@@ -248,6 +249,7 @@ namespace Scaly.Compiler
 
             var ret = new DefinitionSyntax
             {
+                file = file_name,
                 start = start,
                 end = end,
                 type = type,
@@ -280,6 +282,7 @@ namespace Scaly.Compiler
 
             var ret = new NameSyntax
             {
+                file = file_name,
                 start = start,
                 end = end,
                 name = name,
@@ -335,6 +338,7 @@ namespace Scaly.Compiler
 
             var ret = new ExtensionSyntax
             {
+                file = file_name,
                 start = start,
                 end = end,
                 name = name,
@@ -381,6 +385,7 @@ namespace Scaly.Compiler
 
             var ret = new AttributeSyntax
             {
+                file = file_name,
                 start = start,
                 end = end,
                 attribute = attribute,
@@ -435,6 +440,7 @@ namespace Scaly.Compiler
 
             var ret = new ClassSyntax
             {
+                file = file_name,
                 start = start,
                 end = end,
                 structure = structure,
@@ -455,6 +461,7 @@ namespace Scaly.Compiler
 
             var ret = new NamespaceSyntax
             {
+                file = file_name,
                 start = start,
                 end = end,
                 body = body,
@@ -493,6 +500,7 @@ namespace Scaly.Compiler
 
             var ret = new UnionSyntax
             {
+                file = file_name,
                 start = start,
                 end = end,
                 tags = tags,
@@ -546,6 +554,7 @@ namespace Scaly.Compiler
 
             var ret = new TagSyntax
             {
+                file = file_name,
                 start = start,
                 end = end,
                 name = name,
@@ -590,6 +599,7 @@ namespace Scaly.Compiler
 
             var ret = new VariantSyntax
             {
+                file = file_name,
                 start = start,
                 end = end,
                 structure = structure,
@@ -613,6 +623,7 @@ namespace Scaly.Compiler
 
             var ret = new EnumSyntax
             {
+                file = file_name,
                 start = start,
                 end = end,
                 literal = literal,
@@ -634,6 +645,7 @@ namespace Scaly.Compiler
 
             var ret = new ConstantSyntax
             {
+                file = file_name,
                 start = start,
                 end = end,
                 operation = operation,
@@ -658,6 +670,7 @@ namespace Scaly.Compiler
 
             var ret = new DelegateSyntax
             {
+                file = file_name,
                 start = start,
                 end = end,
                 parameters = parameters,
@@ -686,6 +699,7 @@ namespace Scaly.Compiler
 
             var ret = new StructureSyntax
             {
+                file = file_name,
                 start = start,
                 end = end,
                 members = members,
@@ -713,6 +727,7 @@ namespace Scaly.Compiler
 
             var ret = new BodySyntax
             {
+                file = file_name,
                 start = start,
                 end = end,
                 declarations = declarations,
@@ -773,6 +788,7 @@ namespace Scaly.Compiler
 
             var ret = new FieldSyntax
             {
+                file = file_name,
                 start = start,
                 end = end,
                 export = export,
@@ -829,6 +845,7 @@ namespace Scaly.Compiler
 
             var ret = new PropertySyntax
             {
+                file = file_name,
                 start = start,
                 end = end,
                 name = name,
@@ -854,6 +871,7 @@ namespace Scaly.Compiler
 
             var ret = new TypeAnnotationSyntax
             {
+                file = file_name,
                 start = start,
                 end = end,
                 spec = spec,
@@ -912,6 +930,7 @@ namespace Scaly.Compiler
 
             var ret = new TypeSyntax
             {
+                file = file_name,
                 start = start,
                 end = end,
                 name = name,
@@ -939,6 +958,7 @@ namespace Scaly.Compiler
 
             var ret = new ArraySyntax
             {
+                file = file_name,
                 start = start,
                 end = end,
                 members = members,
@@ -964,6 +984,7 @@ namespace Scaly.Compiler
 
             var ret = new GenericArgumentsSyntax
             {
+                file = file_name,
                 start = start,
                 end = end,
                 generics = generics,
@@ -1006,6 +1027,7 @@ namespace Scaly.Compiler
 
             var ret = new GenericArgumentSyntax
             {
+                file = file_name,
                 start = start,
                 end = end,
                 spec = spec,
@@ -1026,6 +1048,7 @@ namespace Scaly.Compiler
 
             var ret = new OptionalSyntax
             {
+                file = file_name,
                 start = start,
                 end = end,
             };
@@ -1062,6 +1085,7 @@ namespace Scaly.Compiler
 
             var ret = new FunctionSyntax
             {
+                file = file_name,
                 start = start,
                 end = end,
                 name = name,
@@ -1101,6 +1125,7 @@ namespace Scaly.Compiler
 
             var ret = new ProcedureSyntax
             {
+                file = file_name,
                 start = start,
                 end = end,
                 name = name,
@@ -1126,6 +1151,7 @@ namespace Scaly.Compiler
 
             var ret = new OperatorSyntax
             {
+                file = file_name,
                 start = start,
                 end = end,
                 routine = routine,
@@ -1153,6 +1179,7 @@ namespace Scaly.Compiler
 
             var ret = new RoutineSyntax
             {
+                file = file_name,
                 start = start,
                 end = end,
                 parameters = parameters,
@@ -1198,6 +1225,7 @@ namespace Scaly.Compiler
 
             var ret = new ParametersSyntax
             {
+                file = file_name,
                 start = start,
                 end = end,
                 properties = properties,
@@ -1222,6 +1250,7 @@ namespace Scaly.Compiler
 
             var ret = new ReturnsSyntax
             {
+                file = file_name,
                 start = start,
                 end = end,
                 parameters = parameters,
@@ -1247,6 +1276,7 @@ namespace Scaly.Compiler
 
             var ret = new ThrowsSyntax
             {
+                file = file_name,
                 start = start,
                 end = end,
                 type = type,
@@ -1294,6 +1324,7 @@ namespace Scaly.Compiler
 
             var ret = new ExternSyntax
             {
+                file = file_name,
                 start = start,
                 end = end,
             };
@@ -1313,6 +1344,7 @@ namespace Scaly.Compiler
 
             var ret = new InstructionSyntax
             {
+                file = file_name,
                 start = start,
                 end = end,
             };
@@ -1332,6 +1364,7 @@ namespace Scaly.Compiler
 
             var ret = new IntrinsicSyntax
             {
+                file = file_name,
                 start = start,
                 end = end,
             };
@@ -1356,6 +1389,7 @@ namespace Scaly.Compiler
 
             var ret = new UseSyntax
             {
+                file = file_name,
                 start = start,
                 end = end,
                 name = name,
@@ -1393,6 +1427,7 @@ namespace Scaly.Compiler
 
             var ret = new ImplementSyntax
             {
+                file = file_name,
                 start = start,
                 end = end,
                 type = type,
@@ -1433,6 +1468,7 @@ namespace Scaly.Compiler
 
             var ret = new TraitSyntax
             {
+                file = file_name,
                 start = start,
                 end = end,
                 name = name,
@@ -1499,6 +1535,7 @@ namespace Scaly.Compiler
 
             var ret = new ExtendsSyntax
             {
+                file = file_name,
                 start = start,
                 end = end,
                 extensions = extensions,
@@ -1541,6 +1578,7 @@ namespace Scaly.Compiler
 
             var ret = new ExtendSyntax
             {
+                file = file_name,
                 start = start,
                 end = end,
                 spec = spec,
@@ -1580,6 +1618,7 @@ namespace Scaly.Compiler
 
             var ret = new MacroSyntax
             {
+                file = file_name,
                 start = start,
                 end = end,
                 name = name,
@@ -1607,6 +1646,7 @@ namespace Scaly.Compiler
 
             var ret = new ModuleSyntax
             {
+                file = file_name,
                 start = start,
                 end = end,
                 name = name,
@@ -1703,6 +1743,7 @@ namespace Scaly.Compiler
 
             var ret = new LetSyntax
             {
+                file = file_name,
                 start = start,
                 end = end,
                 binding = binding,
@@ -1726,6 +1767,7 @@ namespace Scaly.Compiler
 
             var ret = new VarSyntax
             {
+                file = file_name,
                 start = start,
                 end = end,
                 binding = binding,
@@ -1749,6 +1791,7 @@ namespace Scaly.Compiler
 
             var ret = new MutableSyntax
             {
+                file = file_name,
                 start = start,
                 end = end,
                 binding = binding,
@@ -1782,6 +1825,7 @@ namespace Scaly.Compiler
 
             var ret = new BindingSyntax
             {
+                file = file_name,
                 start = start,
                 end = end,
                 name = name,
@@ -1807,6 +1851,7 @@ namespace Scaly.Compiler
 
             var ret = new BindingAnnotationSyntax
             {
+                file = file_name,
                 start = start,
                 end = end,
                 spec = spec,
@@ -1875,6 +1920,7 @@ namespace Scaly.Compiler
 
             var ret = new SetSyntax
             {
+                file = file_name,
                 start = start,
                 end = end,
                 target = target,
@@ -1897,6 +1943,7 @@ namespace Scaly.Compiler
 
             var ret = new OperationSyntax
             {
+                file = file_name,
                 start = start,
                 end = end,
                 operands = operands,
@@ -1938,6 +1985,7 @@ namespace Scaly.Compiler
 
             var ret = new OperandSyntax
             {
+                file = file_name,
                 start = start,
                 end = end,
                 expression = expression,
@@ -2004,6 +2052,7 @@ namespace Scaly.Compiler
 
             var ret = new MemberAccessSyntax
             {
+                file = file_name,
                 start = start,
                 end = end,
                 member = member,
@@ -2024,6 +2073,7 @@ namespace Scaly.Compiler
 
             var ret = new CatcherSyntax
             {
+                file = file_name,
                 start = start,
                 end = end,
                 catchers = catchers,
@@ -2072,6 +2122,7 @@ namespace Scaly.Compiler
 
             var ret = new CatchSyntax
             {
+                file = file_name,
                 start = start,
                 end = end,
                 condition = condition,
@@ -2096,6 +2147,7 @@ namespace Scaly.Compiler
 
             var ret = new DropSyntax
             {
+                file = file_name,
                 start = start,
                 end = end,
                 handler = handler,
@@ -2119,6 +2171,7 @@ namespace Scaly.Compiler
 
             var ret = new IsSyntax
             {
+                file = file_name,
                 start = start,
                 end = end,
                 condition = condition,
@@ -2142,6 +2195,7 @@ namespace Scaly.Compiler
 
             var ret = new ContinueSyntax
             {
+                file = file_name,
                 start = start,
                 end = end,
                 name = name,
@@ -2175,6 +2229,7 @@ namespace Scaly.Compiler
 
             var ret = new LoopSyntax
             {
+                file = file_name,
                 start = start,
                 end = end,
                 name = name,
@@ -2199,6 +2254,7 @@ namespace Scaly.Compiler
 
             var ret = new BreakSyntax
             {
+                file = file_name,
                 start = start,
                 end = end,
                 name = name,
@@ -2221,6 +2277,7 @@ namespace Scaly.Compiler
 
             var ret = new ReturnSyntax
             {
+                file = file_name,
                 start = start,
                 end = end,
                 result = result,
@@ -2242,6 +2299,7 @@ namespace Scaly.Compiler
 
             var ret = new ThrowSyntax
             {
+                file = file_name,
                 start = start,
                 end = end,
                 result = result,
@@ -2355,6 +2413,7 @@ namespace Scaly.Compiler
 
             var ret = new LiteralSyntax
             {
+                file = file_name,
                 start = start,
                 end = end,
                 literal = literal,
@@ -2380,6 +2439,7 @@ namespace Scaly.Compiler
 
             var ret = new ObjectSyntax
             {
+                file = file_name,
                 start = start,
                 end = end,
                 components = components,
@@ -2424,6 +2484,7 @@ namespace Scaly.Compiler
 
             var ret = new ComponentSyntax
             {
+                file = file_name,
                 start = start,
                 end = end,
                 operands = operands,
@@ -2450,6 +2511,7 @@ namespace Scaly.Compiler
 
             var ret = new ValueSyntax
             {
+                file = file_name,
                 start = start,
                 end = end,
                 value = value,
@@ -2478,6 +2540,7 @@ namespace Scaly.Compiler
 
             var ret = new VectorSyntax
             {
+                file = file_name,
                 start = start,
                 end = end,
                 elements = elements,
@@ -2521,6 +2584,7 @@ namespace Scaly.Compiler
 
             var ret = new ElementSyntax
             {
+                file = file_name,
                 start = start,
                 end = end,
                 operation = operation,
@@ -2547,6 +2611,7 @@ namespace Scaly.Compiler
 
             var ret = new BlockSyntax
             {
+                file = file_name,
                 start = start,
                 end = end,
                 statements = statements,
@@ -2574,6 +2639,7 @@ namespace Scaly.Compiler
 
             var ret = new IfSyntax
             {
+                file = file_name,
                 start = start,
                 end = end,
                 condition = condition,
@@ -2601,6 +2667,7 @@ namespace Scaly.Compiler
 
             var ret = new ElseSyntax
             {
+                file = file_name,
                 start = start,
                 end = end,
                 alternative = alternative,
@@ -2628,6 +2695,7 @@ namespace Scaly.Compiler
 
             var ret = new MatchSyntax
             {
+                file = file_name,
                 start = start,
                 end = end,
                 scrutinee = scrutinee,
@@ -2677,6 +2745,7 @@ namespace Scaly.Compiler
 
             var ret = new CaseSyntax
             {
+                file = file_name,
                 start = start,
                 end = end,
                 condition = condition,
@@ -2699,6 +2768,7 @@ namespace Scaly.Compiler
 
             var ret = new DefaultSyntax
             {
+                file = file_name,
                 start = start,
                 end = end,
                 alternative = alternative,
@@ -2725,6 +2795,7 @@ namespace Scaly.Compiler
 
             var ret = new LambdaSyntax
             {
+                file = file_name,
                 start = start,
                 end = end,
                 input = input,
@@ -2760,6 +2831,7 @@ namespace Scaly.Compiler
 
             var ret = new ForSyntax
             {
+                file = file_name,
                 start = start,
                 end = end,
                 condition = condition,
@@ -2796,6 +2868,7 @@ namespace Scaly.Compiler
 
             var ret = new LabelSyntax
             {
+                file = file_name,
                 start = start,
                 end = end,
                 name = name,
@@ -2823,6 +2896,7 @@ namespace Scaly.Compiler
 
             var ret = new WhileSyntax
             {
+                file = file_name,
                 start = start,
                 end = end,
                 condition = condition,
@@ -2849,6 +2923,7 @@ namespace Scaly.Compiler
 
             var ret = new RepeatSyntax
             {
+                file = file_name,
                 start = start,
                 end = end,
                 name = name,
@@ -2873,6 +2948,7 @@ namespace Scaly.Compiler
 
             var ret = new SizeOfSyntax
             {
+                file = file_name,
                 start = start,
                 end = end,
                 spec = spec,
@@ -2916,18 +2992,20 @@ namespace Scaly.Compiler
 
     public class ProgramSyntax
     {
+        public string file;
         public FileSyntax[] files;
     }
 
     public class FileSyntax
     {
-        public string file_name;
+        public string file;
         public object[] declarations;
         public object[] statements;
     }
 
     public class PrivateSyntax
     {
+        public string file;
         public Position start;
         public Position end;
         public object export;
@@ -2935,6 +3013,7 @@ namespace Scaly.Compiler
 
     public class DefinitionSyntax
     {
+        public string file;
         public Position start;
         public Position end;
         public TypeSyntax type;
@@ -2944,6 +3023,7 @@ namespace Scaly.Compiler
 
     public class NameSyntax
     {
+        public string file;
         public Position start;
         public Position end;
         public string name;
@@ -2952,6 +3032,7 @@ namespace Scaly.Compiler
 
     public class ExtensionSyntax
     {
+        public string file;
         public Position start;
         public Position end;
         public string name;
@@ -2959,6 +3040,7 @@ namespace Scaly.Compiler
 
     public class AttributeSyntax
     {
+        public string file;
         public Position start;
         public Position end;
         public string attribute;
@@ -2967,6 +3049,7 @@ namespace Scaly.Compiler
 
     public class ClassSyntax
     {
+        public string file;
         public Position start;
         public Position end;
         public StructureSyntax structure;
@@ -2975,6 +3058,7 @@ namespace Scaly.Compiler
 
     public class NamespaceSyntax
     {
+        public string file;
         public Position start;
         public Position end;
         public BodySyntax body;
@@ -2982,6 +3066,7 @@ namespace Scaly.Compiler
 
     public class UnionSyntax
     {
+        public string file;
         public Position start;
         public Position end;
         public TagSyntax[] tags;
@@ -2990,6 +3075,7 @@ namespace Scaly.Compiler
 
     public class TagSyntax
     {
+        public string file;
         public Position start;
         public Position end;
         public string name;
@@ -2999,6 +3085,7 @@ namespace Scaly.Compiler
 
     public class VariantSyntax
     {
+        public string file;
         public Position start;
         public Position end;
         public StructureSyntax structure;
@@ -3007,6 +3094,7 @@ namespace Scaly.Compiler
 
     public class EnumSyntax
     {
+        public string file;
         public Position start;
         public Position end;
         public Literal literal;
@@ -3014,6 +3102,7 @@ namespace Scaly.Compiler
 
     public class ConstantSyntax
     {
+        public string file;
         public Position start;
         public Position end;
         public OperationSyntax operation;
@@ -3021,6 +3110,7 @@ namespace Scaly.Compiler
 
     public class DelegateSyntax
     {
+        public string file;
         public Position start;
         public Position end;
         public object parameters;
@@ -3031,6 +3121,7 @@ namespace Scaly.Compiler
 
     public class StructureSyntax
     {
+        public string file;
         public Position start;
         public Position end;
         public object[] members;
@@ -3038,6 +3129,7 @@ namespace Scaly.Compiler
 
     public class BodySyntax
     {
+        public string file;
         public Position start;
         public Position end;
         public object[] declarations;
@@ -3045,6 +3137,7 @@ namespace Scaly.Compiler
 
     public class FieldSyntax
     {
+        public string file;
         public Position start;
         public Position end;
         public PropertySyntax export;
@@ -3052,6 +3145,7 @@ namespace Scaly.Compiler
 
     public class PropertySyntax
     {
+        public string file;
         public Position start;
         public Position end;
         public string name;
@@ -3061,6 +3155,7 @@ namespace Scaly.Compiler
 
     public class TypeAnnotationSyntax
     {
+        public string file;
         public Position start;
         public Position end;
         public object spec;
@@ -3068,6 +3163,7 @@ namespace Scaly.Compiler
 
     public class TypeSyntax
     {
+        public string file;
         public Position start;
         public Position end;
         public NameSyntax name;
@@ -3077,6 +3173,7 @@ namespace Scaly.Compiler
 
     public class ArraySyntax
     {
+        public string file;
         public Position start;
         public Position end;
         public object[] members;
@@ -3084,6 +3181,7 @@ namespace Scaly.Compiler
 
     public class GenericArgumentsSyntax
     {
+        public string file;
         public Position start;
         public Position end;
         public GenericArgumentSyntax[] generics;
@@ -3091,6 +3189,7 @@ namespace Scaly.Compiler
 
     public class GenericArgumentSyntax
     {
+        public string file;
         public Position start;
         public Position end;
         public TypeSyntax spec;
@@ -3098,12 +3197,14 @@ namespace Scaly.Compiler
 
     public class OptionalSyntax
     {
+        public string file;
         public Position start;
         public Position end;
     }
 
     public class FunctionSyntax
     {
+        public string file;
         public Position start;
         public Position end;
         public string name;
@@ -3113,6 +3214,7 @@ namespace Scaly.Compiler
 
     public class ProcedureSyntax
     {
+        public string file;
         public Position start;
         public Position end;
         public string name;
@@ -3122,6 +3224,7 @@ namespace Scaly.Compiler
 
     public class OperatorSyntax
     {
+        public string file;
         public Position start;
         public Position end;
         public RoutineSyntax routine;
@@ -3129,6 +3232,7 @@ namespace Scaly.Compiler
 
     public class RoutineSyntax
     {
+        public string file;
         public Position start;
         public Position end;
         public object parameters;
@@ -3140,6 +3244,7 @@ namespace Scaly.Compiler
 
     public class ParametersSyntax
     {
+        public string file;
         public Position start;
         public Position end;
         public PropertySyntax[] properties;
@@ -3147,6 +3252,7 @@ namespace Scaly.Compiler
 
     public class ReturnsSyntax
     {
+        public string file;
         public Position start;
         public Position end;
         public object parameters;
@@ -3155,6 +3261,7 @@ namespace Scaly.Compiler
 
     public class ThrowsSyntax
     {
+        public string file;
         public Position start;
         public Position end;
         public TypeSyntax type;
@@ -3163,24 +3270,28 @@ namespace Scaly.Compiler
 
     public class ExternSyntax
     {
+        public string file;
         public Position start;
         public Position end;
     }
 
     public class InstructionSyntax
     {
+        public string file;
         public Position start;
         public Position end;
     }
 
     public class IntrinsicSyntax
     {
+        public string file;
         public Position start;
         public Position end;
     }
 
     public class UseSyntax
     {
+        public string file;
         public Position start;
         public Position end;
         public NameSyntax name;
@@ -3188,6 +3299,7 @@ namespace Scaly.Compiler
 
     public class ImplementSyntax
     {
+        public string file;
         public Position start;
         public Position end;
         public TypeSyntax type;
@@ -3197,6 +3309,7 @@ namespace Scaly.Compiler
 
     public class TraitSyntax
     {
+        public string file;
         public Position start;
         public Position end;
         public NameSyntax name;
@@ -3207,6 +3320,7 @@ namespace Scaly.Compiler
 
     public class ExtendsSyntax
     {
+        public string file;
         public Position start;
         public Position end;
         public ExtendSyntax[] extensions;
@@ -3214,6 +3328,7 @@ namespace Scaly.Compiler
 
     public class ExtendSyntax
     {
+        public string file;
         public Position start;
         public Position end;
         public object spec;
@@ -3221,6 +3336,7 @@ namespace Scaly.Compiler
 
     public class MacroSyntax
     {
+        public string file;
         public Position start;
         public Position end;
         public string name;
@@ -3230,6 +3346,7 @@ namespace Scaly.Compiler
 
     public class ModuleSyntax
     {
+        public string file;
         public Position start;
         public Position end;
         public NameSyntax name;
@@ -3237,6 +3354,7 @@ namespace Scaly.Compiler
 
     public class LetSyntax
     {
+        public string file;
         public Position start;
         public Position end;
         public BindingSyntax binding;
@@ -3244,6 +3362,7 @@ namespace Scaly.Compiler
 
     public class VarSyntax
     {
+        public string file;
         public Position start;
         public Position end;
         public BindingSyntax binding;
@@ -3251,6 +3370,7 @@ namespace Scaly.Compiler
 
     public class MutableSyntax
     {
+        public string file;
         public Position start;
         public Position end;
         public BindingSyntax binding;
@@ -3258,6 +3378,7 @@ namespace Scaly.Compiler
 
     public class BindingSyntax
     {
+        public string file;
         public Position start;
         public Position end;
         public string name;
@@ -3267,6 +3388,7 @@ namespace Scaly.Compiler
 
     public class BindingAnnotationSyntax
     {
+        public string file;
         public Position start;
         public Position end;
         public object spec;
@@ -3274,6 +3396,7 @@ namespace Scaly.Compiler
 
     public class SetSyntax
     {
+        public string file;
         public Position start;
         public Position end;
         public OperationSyntax target;
@@ -3282,6 +3405,7 @@ namespace Scaly.Compiler
 
     public class OperationSyntax
     {
+        public string file;
         public Position start;
         public Position end;
         public OperandSyntax[] operands;
@@ -3289,6 +3413,7 @@ namespace Scaly.Compiler
 
     public class OperandSyntax
     {
+        public string file;
         public Position start;
         public Position end;
         public object expression;
@@ -3297,6 +3422,7 @@ namespace Scaly.Compiler
 
     public class MemberAccessSyntax
     {
+        public string file;
         public Position start;
         public Position end;
         public NameSyntax member;
@@ -3304,6 +3430,7 @@ namespace Scaly.Compiler
 
     public class CatcherSyntax
     {
+        public string file;
         public Position start;
         public Position end;
         public CatchSyntax[] catchers;
@@ -3312,6 +3439,7 @@ namespace Scaly.Compiler
 
     public class CatchSyntax
     {
+        public string file;
         public Position start;
         public Position end;
         public OperationSyntax condition;
@@ -3320,6 +3448,7 @@ namespace Scaly.Compiler
 
     public class DropSyntax
     {
+        public string file;
         public Position start;
         public Position end;
         public OperationSyntax handler;
@@ -3327,6 +3456,7 @@ namespace Scaly.Compiler
 
     public class IsSyntax
     {
+        public string file;
         public Position start;
         public Position end;
         public OperandSyntax[] condition;
@@ -3334,6 +3464,7 @@ namespace Scaly.Compiler
 
     public class ContinueSyntax
     {
+        public string file;
         public Position start;
         public Position end;
         public LoopSyntax name;
@@ -3341,6 +3472,7 @@ namespace Scaly.Compiler
 
     public class LoopSyntax
     {
+        public string file;
         public Position start;
         public Position end;
         public string name;
@@ -3348,6 +3480,7 @@ namespace Scaly.Compiler
 
     public class BreakSyntax
     {
+        public string file;
         public Position start;
         public Position end;
         public LoopSyntax name;
@@ -3356,6 +3489,7 @@ namespace Scaly.Compiler
 
     public class ReturnSyntax
     {
+        public string file;
         public Position start;
         public Position end;
         public OperationSyntax result;
@@ -3363,6 +3497,7 @@ namespace Scaly.Compiler
 
     public class ThrowSyntax
     {
+        public string file;
         public Position start;
         public Position end;
         public OperationSyntax result;
@@ -3370,6 +3505,7 @@ namespace Scaly.Compiler
 
     public class LiteralSyntax
     {
+        public string file;
         public Position start;
         public Position end;
         public Literal literal;
@@ -3377,6 +3513,7 @@ namespace Scaly.Compiler
 
     public class ObjectSyntax
     {
+        public string file;
         public Position start;
         public Position end;
         public ComponentSyntax[] components;
@@ -3384,6 +3521,7 @@ namespace Scaly.Compiler
 
     public class ComponentSyntax
     {
+        public string file;
         public Position start;
         public Position end;
         public OperandSyntax[] operands;
@@ -3393,6 +3531,7 @@ namespace Scaly.Compiler
 
     public class ValueSyntax
     {
+        public string file;
         public Position start;
         public Position end;
         public OperationSyntax value;
@@ -3401,6 +3540,7 @@ namespace Scaly.Compiler
 
     public class VectorSyntax
     {
+        public string file;
         public Position start;
         public Position end;
         public ElementSyntax[] elements;
@@ -3408,6 +3548,7 @@ namespace Scaly.Compiler
 
     public class ElementSyntax
     {
+        public string file;
         public Position start;
         public Position end;
         public OperationSyntax operation;
@@ -3416,6 +3557,7 @@ namespace Scaly.Compiler
 
     public class BlockSyntax
     {
+        public string file;
         public Position start;
         public Position end;
         public object[] statements;
@@ -3423,6 +3565,7 @@ namespace Scaly.Compiler
 
     public class IfSyntax
     {
+        public string file;
         public Position start;
         public Position end;
         public OperationSyntax condition;
@@ -3432,6 +3575,7 @@ namespace Scaly.Compiler
 
     public class ElseSyntax
     {
+        public string file;
         public Position start;
         public Position end;
         public OperationSyntax alternative;
@@ -3439,6 +3583,7 @@ namespace Scaly.Compiler
 
     public class MatchSyntax
     {
+        public string file;
         public Position start;
         public Position end;
         public OperationSyntax scrutinee;
@@ -3448,6 +3593,7 @@ namespace Scaly.Compiler
 
     public class CaseSyntax
     {
+        public string file;
         public Position start;
         public Position end;
         public OperationSyntax condition;
@@ -3456,6 +3602,7 @@ namespace Scaly.Compiler
 
     public class DefaultSyntax
     {
+        public string file;
         public Position start;
         public Position end;
         public OperationSyntax alternative;
@@ -3463,6 +3610,7 @@ namespace Scaly.Compiler
 
     public class LambdaSyntax
     {
+        public string file;
         public Position start;
         public Position end;
         public OperationSyntax input;
@@ -3471,6 +3619,7 @@ namespace Scaly.Compiler
 
     public class ForSyntax
     {
+        public string file;
         public Position start;
         public Position end;
         public OperationSyntax condition;
@@ -3481,6 +3630,7 @@ namespace Scaly.Compiler
 
     public class LabelSyntax
     {
+        public string file;
         public Position start;
         public Position end;
         public string name;
@@ -3488,6 +3638,7 @@ namespace Scaly.Compiler
 
     public class WhileSyntax
     {
+        public string file;
         public Position start;
         public Position end;
         public OperationSyntax condition;
@@ -3497,6 +3648,7 @@ namespace Scaly.Compiler
 
     public class RepeatSyntax
     {
+        public string file;
         public Position start;
         public Position end;
         public LabelSyntax name;
@@ -3505,6 +3657,7 @@ namespace Scaly.Compiler
 
     public class SizeOfSyntax
     {
+        public string file;
         public Position start;
         public Position end;
         public TypeSyntax spec;

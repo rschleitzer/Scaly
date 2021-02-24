@@ -180,8 +180,8 @@ namespace Scaly.Compiler
 
         static Source BuildSource(FileSyntax fileSyntax)
         {
-            var source = new Source { FileName = Path.GetFileName(fileSyntax.file_name) };
-            var origin = Path.GetDirectoryName(fileSyntax.file_name);
+            var source = new Source { FileName = Path.GetFileName(fileSyntax.file) };
+            var origin = Path.GetDirectoryName(fileSyntax.file);
             if (fileSyntax.declarations != null)
                 foreach (var declaration in fileSyntax.declarations)
                     HandleDeclaration(source, origin, declaration);
@@ -283,7 +283,7 @@ namespace Scaly.Compiler
             if (componentSyntax.value != null)
             {
                 if (componentSyntax.operands.Length != 1)
-                    throw new CompilerException("", componentSyntax.start.line, componentSyntax.start.column);
+                    throw new CompilerException(componentSyntax.file, componentSyntax.start.line, componentSyntax.start.column);
             }
             else
             {
