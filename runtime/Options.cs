@@ -38,10 +38,8 @@ namespace Scaly.Compiler
                 }
                 i++;
             }
-            if (output == null)
+            if (input.Count > 0 && output == null)
                 throw new NoOutputOptionException();
-            if (input.Count == 0)
-                throw new NoFilesToCompileException();
 
             return(new Options(input.ToArray(), output));
         }

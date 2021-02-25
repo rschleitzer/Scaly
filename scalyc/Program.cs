@@ -30,7 +30,10 @@ namespace scalyc
 
             try
             {
-                Compiler.compileFiles(options);
+                if (options.files.Length > 0)
+                    Compiler.compileFiles(options);
+                else
+                    Compiler.Repl();
             }
             catch (CompilerException e)
             {
