@@ -4,6 +4,51 @@ using System.Collections.Generic;
 
 namespace Scaly.Compiler
 {
+    internal class TypeStore
+    {
+        public Dictionary<string, LLVMTypeRef> DataTypes = new Dictionary<string, LLVMTypeRef>();
+        public Dictionary<string, LLVMTypeRef> FunctionTypes = new Dictionary<string, LLVMTypeRef>();
+    }
+
+    internal class ValueStore
+    {
+        public Dictionary<string, LLVMValueRef> Values = new Dictionary<string, LLVMValueRef>();
+    }
+
+    internal class GlobalContext
+    {
+        public LLVMModuleRef Module;
+        public LLVMBuilderRef Builder;
+        public TypeStore TypeStore;
+        public ValueStore ValueStore;
+    }
+
+    internal class LocalContext
+    {
+        public GlobalContext GlobalContext;
+        public LocalContext ParentContext;
+        public Dictionary<string, LLVMValueRef> Data = new Dictionary<string, LLVMValueRef>();
+
+        public LLVMValueRef Resolve(string name)
+        {
+            if (Data.ContainsKey(name))
+                return Data[name];
+
+            if (ParentContext != null)
+            {
+                var valueRef = ParentContext.Resolve(name);
+                if (valueRef != null)
+                    return valueRef;
+            }
+
+            if (GlobalContext.ValueStore.Values.ContainsKey(name))
+                return GlobalContext.ValueStore.Values[name];
+
+            return null;
+        }
+    }
+
+
     internal class Generator
     {
         public delegate int Main(int argc, string[] argv);
@@ -37,20 +82,12 @@ namespace Scaly.Compiler
 
         static void Generate(LLVMModuleRef module, Definition definition)
         {
-            foreach (var source in definition.Sources)
+            using (var builder = module.Context.CreateBuilder())
             {
-                GenerateSource(module, source);
-            }
-
-            if (definition.Functions != null)
-            {
-                foreach (var functions in definition.Functions)
-                {
-                    foreach (var function in functions.Value)
-                    {
-                        GenerateFunction(module, function);
-                    }
-                }
+                var context = new GlobalContext { Module = module, Builder = builder, TypeStore = new TypeStore(), ValueStore = new ValueStore() };
+                BuildTypes(context.TypeStore, definition);
+                BuildValues(context, definition);
+                BuildFunctions(context, definition);
             }
             //var function = MakeMainFunction(module);
             //LLVMBuilderRef builder = CreateBuilder(module, function);
@@ -60,43 +97,131 @@ namespace Scaly.Compiler
             //builder.BuildRet(argc);
         }
 
-        static void GenerateSource(LLVMModuleRef module, Source source)
+        //static LLVMValueRef MakeMainFunction(LLVMModuleRef module)
+        //{
+        //    var @int = LLVMTypeRef.Int32;
+        //    var @char = LLVMTypeRef.Int8;
+        //    var pChar = LLVMTypeRef.CreatePointer(@char, 0);
+        //    var ppChar = LLVMTypeRef.CreatePointer(pChar, 0);
+        //    var mainType = LLVMTypeRef.CreateFunction(@int, new LLVMTypeRef[] { @int, ppChar });
+        //    var function = module.AddFunction("main", mainType);
+        //    return function;
+        //}
+
+        static void BuildTypes(TypeStore typeStore, Definition definition)
         {
-            if (source.Functions != null)
+            foreach (var source in definition.Sources)
             {
-                foreach (var functions in source.Functions)
+                BuildSourceTypes(typeStore, source);
+            }
+
+            if (definition.Functions != null)
+            {
+                foreach (var function in definition.Functions)
                 {
-                    foreach (var function in functions.Value)
-                    {
-                        GenerateFunction(module, function);
-                    }
+                    BuildFunctionType(typeStore, function);
                 }
             }
         }
 
-        static void GenerateFunction(LLVMModuleRef module, Function function)
+        static void BuildSourceTypes(TypeStore typeStore, Source source)
+        {
+            if (source.Functions != null)
+            {
+                foreach (var function in source.Functions)
+                {
+                    BuildFunctionType(typeStore, function);
+                }
+            }
+        }
+
+        static void BuildFunctionType(TypeStore typeStore, Function function)
         {
             var returnType = GenerateSingleType(function.Routine.Result);
             var parameterTypes = GenerateTypes(function.Routine.Input);
             var functionType = LLVMTypeRef.CreateFunction(returnType, parameterTypes);
-            var llvmFunction = module.AddFunction(function.Name, functionType);
-            BuildFunction(module, llvmFunction, function.Routine.Operations);
+            typeStore.FunctionTypes.Add(function.Name, functionType);
         }
 
-        static void BuildFunction(LLVMModuleRef module, LLVMValueRef llvmFunction, List<Operation> operations)
+        static void BuildValues(GlobalContext context, Definition definition)
         {
-            using (LLVMBuilderRef builder = CreateBuilder(module, llvmFunction))
+            foreach (var source in definition.Sources)
             {
-                LLVMValueRef valueRef = null;
-                foreach (var operation in operations)
+                BuildSourceValues(context, source);
+            }
+
+            if (definition.Functions != null)
+            {
+                foreach (var function in definition.Functions)
                 {
-                    valueRef = BuildOperation(builder, operation);
+                    BuildFunctionValue(context, function);
                 }
-                builder.BuildRet(valueRef);
             }
         }
 
-        static LLVMValueRef BuildOperation(LLVMBuilderRef builder, Operation operation)
+        static void BuildSourceValues(GlobalContext context, Source source)
+        {
+            if (source.Functions != null)
+            {
+                foreach (var function in source.Functions)
+                {
+                    BuildFunctionValue(context, function);
+                }
+            }
+        }
+
+        static void BuildFunctionValue(GlobalContext context, Function function)
+        {
+            var functionType = context.TypeStore.FunctionTypes[function.Name];
+            context.ValueStore.Values.Add(function.Name, context.Module.AddFunction(function.Name, functionType));
+        }
+
+        static void BuildFunctions(GlobalContext context, Definition definition)
+        {
+            foreach (var source in definition.Sources)
+            {
+                BuildSourceFunctions(context, source);
+            }
+
+            if (definition.Functions != null)
+            {
+                foreach (var function in definition.Functions)
+                {
+                    BuildFunction(context, function);
+                }
+            }
+        }
+
+        static void BuildSourceFunctions(GlobalContext context, Source source)
+        {
+            if (source.Functions != null)
+            {
+                foreach (var function in source.Functions)
+                {
+                    BuildFunction(context, function);
+                }
+            }
+        }
+
+        static void BuildFunction(GlobalContext context, Function function)
+        {
+            var llvmFunction = context.ValueStore.Values[function.Name];
+            var block = llvmFunction.AppendBasicBlock(string.Empty);
+            context.Builder.PositionAtEnd(block);
+            var localContext = new LocalContext { GlobalContext = context, ParentContext = null };
+            uint paramCount = 0;
+            foreach (var parameter in function.Routine.Input)
+            {
+                localContext.Data.Add(parameter.Name, llvmFunction.GetParam(paramCount));
+                paramCount++;
+            }
+            LLVMValueRef valueRef = null;
+            foreach (var operation in function.Routine.Operations)
+                valueRef = BuildOperation(localContext, operation);
+            context.Builder.BuildRet(valueRef);
+        }
+
+        static LLVMValueRef BuildOperation(LocalContext context, Operation operation)
         {
             LLVMValueRef valueRef = null;
             foreach (var operand in operation.Operands)
@@ -107,7 +232,7 @@ namespace Scaly.Compiler
                         valueRef = LLVMValueRef.CreateConstInt(LLVMTypeRef.Int32, (ulong)integerConstant.Value);
                         break;
                     case Name name:
-                        valueRef = BuildName(builder, name);
+                        valueRef = BuildName(context, name);
                         break;
                     default:
                         throw new NotImplementedException($"Expression {operand.Expression.GetType()} not implemented.");
@@ -116,9 +241,13 @@ namespace Scaly.Compiler
             return valueRef;
         }
 
-        static LLVMValueRef BuildName(LLVMBuilderRef builder, Name name)
+        static LLVMValueRef BuildName(LocalContext context, Name name)
         {
-            throw new NotImplementedException();
+            var valueRef = context.Resolve(name.Path[0]);
+            if (valueRef != null)
+                return valueRef;
+
+            throw new CompilerException($"The name {name.Path[0]} could not been found.", name.Syntax.file, name.Syntax.start.line, name.Syntax.start.column, name.Syntax.end.line, name.Syntax.end.column);
         }
 
         static LLVMTypeRef GenerateSingleType(List<Property> result)
@@ -166,25 +295,6 @@ namespace Scaly.Compiler
             LLVM.InitializeNativeTarget();
             LLVM.InitializeNativeAsmParser();
             LLVM.InitializeNativeAsmPrinter();
-        }
-
-        static LLVMBuilderRef CreateBuilder(LLVMModuleRef module, LLVMValueRef function)
-        {
-            var builder = module.Context.CreateBuilder();
-            var block = function.AppendBasicBlock(string.Empty);
-            builder.PositionAtEnd(block);
-            return builder;
-        }
-
-        static LLVMValueRef MakeMainFunction(LLVMModuleRef module)
-        {
-            var @int = LLVMTypeRef.Int32;
-            var @char = LLVMTypeRef.Int8;
-            var pChar = LLVMTypeRef.CreatePointer(@char, 0);
-            var ppChar = LLVMTypeRef.CreatePointer(pChar, 0);
-            var mainType = LLVMTypeRef.CreateFunction(@int, new LLVMTypeRef[] { @int, ppChar });
-            var function = module.AddFunction("main", mainType);
-            return function;
         }
     }
 }

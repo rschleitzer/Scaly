@@ -34,7 +34,7 @@ namespace scalyc
             }
             catch (CompilerException e)
             {
-                var message = $"Compiler error in file {e.file} at line {e.line}, column {e.column}.";
+                var message = $"Compiler error in file {e.file} at {e.lineStart},{e.columnStart}-{e.lineStart},{e.columnStart}.";
                 try { System.Console.WriteLine(message); } catch { return -4; }
             }
             return 0;

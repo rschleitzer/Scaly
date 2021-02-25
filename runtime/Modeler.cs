@@ -11,7 +11,7 @@ namespace Scaly.Compiler
         public bool IsPublic;
         public TypeSpec Type;
         public Dictionary<string, Definition> Definitions;
-        public Dictionary<string, List<Function>> Functions;
+        public List<Function> Functions;
         public List<Routine> Operators;
         public Dictionary<string, Implement> Implements;
         public List<Source> Sources;
@@ -47,7 +47,7 @@ namespace Scaly.Compiler
     public class Implement
     {
         public string Name;
-        public Dictionary<string, List<Function>> Functions;
+        public List<Function> Functions;
         public List<Routine> Operators;
     }
 
@@ -57,7 +57,7 @@ namespace Scaly.Compiler
         public Dictionary<string, string[]> Uses;
         public List<string[]> Usings;
         public Dictionary<string, Definition> Definitions;
-        public Dictionary<string, List<Function>> Functions;
+        public List<Function> Functions;
         public List<Routine> Operators;
         public Dictionary<string, Implement> Implements;
         public List<Source> Sources;
@@ -68,6 +68,7 @@ namespace Scaly.Compiler
 
     public class Name : Expression
     {
+        public NameSyntax Syntax;
         public List<string> Path;
     }
 
@@ -181,8 +182,8 @@ namespace Scaly.Compiler
             };
 
             if (source.Functions == null)
-                source.Functions = new Dictionary<string, List<Function>>();
-            source.Functions.Add("main", new List<Function> { MakeMainFunction(operations) });
+                source.Functions = new List<Function>();
+            source.Functions.Add(MakeMainFunction(operations));
             return source;
         }
 
@@ -293,7 +294,7 @@ namespace Scaly.Compiler
             if (nameSyntax.extensions != null)
                 components.AddRange(nameSyntax.extensions.ToList().ConvertAll(it => it.name));
 
-            return new Name { Path = components };
+            return new Name { Path = components, Syntax = nameSyntax };
         }
 
         static Expression BuildBlock(BlockSyntax blockSyntax)
@@ -323,7 +324,7 @@ namespace Scaly.Compiler
             if (componentSyntax.value != null)
             {
                 if (componentSyntax.operands.Length != 1)
-                    throw new CompilerException(componentSyntax.file, componentSyntax.start.line, componentSyntax.start.column);
+                    throw new CompilerException("Only one component supported currently.", componentSyntax.file, componentSyntax.start.line, componentSyntax.start.column, componentSyntax.end.line, componentSyntax.end.column);
             }
             else
             {
@@ -365,12 +366,12 @@ namespace Scaly.Compiler
                     break;
                 case FunctionSyntax functionSyntax:
                     if (source.Functions == null)
-                        source.Functions = new Dictionary<string, List<Function>>();
+                        source.Functions = new List<Function>();
                     HandleFunction(functionSyntax, source.Functions, false);
                     break;
                 case ProcedureSyntax procedureSyntax:
                     if (source.Functions == null)
-                        source.Functions = new Dictionary<string, List<Function>>();
+                        source.Functions = new List<Function>();
                     HandleProcedure(procedureSyntax, source.Functions, false);
                     break;
                 case OperatorSyntax operatorSyntax:
@@ -416,7 +417,7 @@ namespace Scaly.Compiler
                         BuildModuleRecursive(moduleSyntax, Path.Combine(origin, definition.Type.Name), extensionEnumerator.Current.name, extensionEnumerator, definition, isPublic);
                         break;
                     default:
-                        throw new CompilerException($"A concept with name {moduleSyntax.name.name} already defined.", moduleSyntax.start.line, moduleSyntax.start.column);
+                        throw new CompilerException($"A concept with name {moduleSyntax.name.name} already defined.", moduleSyntax.file, moduleSyntax.start.line, moduleSyntax.start.column, moduleSyntax.end.line, moduleSyntax.end.column);
                 }
             }
             else
@@ -482,12 +483,12 @@ namespace Scaly.Compiler
                     break;
                 case FunctionSyntax functionSyntax:
                     if (source.Functions == null)
-                        source.Functions = new Dictionary<string, List<Function>>();
+                        source.Functions = new List<Function>();
                     HandleFunction(functionSyntax, source.Functions, false);
                     break;
                 case ProcedureSyntax procedureSyntax:
                     if (source.Functions == null)
-                        source.Functions = new Dictionary<string, List<Function>>();
+                        source.Functions = new List<Function>();
                     HandleProcedure(procedureSyntax, source.Functions, false);
                     break;
                 case ModuleSyntax moduleSyntax:
@@ -498,24 +499,21 @@ namespace Scaly.Compiler
             }
         }
 
-        static void HandleFunction(FunctionSyntax functionSyntax, Dictionary<string, List<Function>> functions, bool isPublic)
+        static void HandleFunction(FunctionSyntax functionSyntax, List<Function> functions, bool isPublic)
         {
             BuildFunction(functionSyntax.name, functionSyntax.generics, functionSyntax.routine, functions, isPublic, false);
         }
 
-        static void HandleProcedure(ProcedureSyntax procedureSyntax, Dictionary<string, List<Function>> functions, bool isPublic)
+        static void HandleProcedure(ProcedureSyntax procedureSyntax, List<Function> functions, bool isPublic)
         {
             BuildFunction(procedureSyntax.name, procedureSyntax.generics, procedureSyntax.routine, functions, isPublic, true);
         }
 
-        static void BuildFunction(string name, GenericArgumentsSyntax generics, RoutineSyntax routine, Dictionary<string, List<Function>> functions, bool isPublic, bool isModifying)
+        static void BuildFunction(string name, GenericArgumentsSyntax generics, RoutineSyntax routine, List<Function> functions, bool isPublic, bool isModifying)
         {
-            if (!functions.ContainsKey(name))
-                functions.Add(name, new List<Function>());
             var function = new Function { Name = name };
             function.Routine = BuildRoutine(routine);
-
-            functions[name].Add(function);
+            functions.Add(function);
         }
 
         static Routine BuildRoutine(RoutineSyntax routineSyntax)
@@ -611,7 +609,7 @@ namespace Scaly.Compiler
         static void HandleImplement(ImplementSyntax implementSyntax, Dictionary<string, Implement> implementations)
         {
             if (implementations.ContainsKey(implementSyntax.type.name.name))
-                throw new CompilerException($"An implementation with name {implementSyntax.type.name.name} already defined.", implementSyntax.start.line, implementSyntax.start.column);
+                throw new CompilerException($"An implementation with name {implementSyntax.type.name.name} already defined.", implementSyntax.file, implementSyntax.start.line, implementSyntax.start.column, implementSyntax.end.line, implementSyntax.end.column);
 
             var implementation = new Implement { Name = implementSyntax.type.name.name };
             implementations.Add(implementation.Name, implementation);
@@ -624,12 +622,12 @@ namespace Scaly.Compiler
                     {
                         case FunctionSyntax functionSyntax:
                             if (implementation.Functions == null)
-                                implementation.Functions = new Dictionary<string, List<Function>>();
+                                implementation.Functions = new List<Function>();
                             HandleFunction(functionSyntax, implementation.Functions, false);
                             break;
                         case ProcedureSyntax procedureSyntax:
                             if (implementation.Functions == null)
-                                implementation.Functions = new Dictionary<string, List<Function>>();
+                                implementation.Functions = new List<Function>();
                             HandleProcedure(procedureSyntax, implementation.Functions, false);
                             break;
                         case OperatorSyntax operatorSyntax:
@@ -665,7 +663,7 @@ namespace Scaly.Compiler
             }
 
             if (definitions.ContainsKey(typeModel.Name))
-                throw new CompilerException($"Module {typeModel.Name} already defined.", definitionSyntax.start.line, definitionSyntax.start.column);
+                throw new CompilerException($"Module {typeModel.Name} already defined.", definitionSyntax.file, definitionSyntax.start.line, definitionSyntax.start.column, definitionSyntax.end.line, definitionSyntax.end.column);
 
             var definition = new Definition { };
             definitions.Add(typeModel.Name, definition);
@@ -693,12 +691,12 @@ namespace Scaly.Compiler
                     break;
                 case FunctionSyntax functionSyntax:
                     if (definition.Functions == null)
-                        definition.Functions = new Dictionary<string, List<Function>>();
+                        definition.Functions = new List<Function>();
                     HandleFunction(functionSyntax, definition.Functions, false);
                     break;
                 case ProcedureSyntax procedureSyntax:
                     if (definition.Functions == null)
-                        definition.Functions = new Dictionary<string, List<Function>>();
+                        definition.Functions = new List<Function>();
                     HandleProcedure(procedureSyntax, definition.Functions, false);
                     break;
                 case OperatorSyntax operatorSyntax:
@@ -727,12 +725,12 @@ namespace Scaly.Compiler
                     break;
                 case FunctionSyntax functionSyntax:
                     if (definition.Functions == null)
-                        definition.Functions = new Dictionary<string, List<Function>>();
+                        definition.Functions = new List<Function>();
                     HandleFunction(functionSyntax, definition.Functions, false);
                     break;
                 case ProcedureSyntax procedureSyntax:
                     if (definition.Functions == null)
-                        definition.Functions = new Dictionary<string, List<Function>>();
+                        definition.Functions = new List<Function>();
                     HandleProcedure(procedureSyntax, definition.Functions, false);
                     break;
                 case ModuleSyntax moduleSyntax:
@@ -755,18 +753,10 @@ namespace Scaly.Compiler
         {
             var parser = new Parser(text);
 
-            try
-            {
-                var fileSyntax = parser.parse_file(file_name);
-                if (!parser.is_at_end())
-                    throw new CompilerException(file_name, parser.get_current_line(), parser.get_current_column());
-                return fileSyntax;
-            }
-            catch (ParserException e)
-            {
-                throw new CompilerException(file_name, e.line, e.column);
-            }
+            var fileSyntax = parser.parse_file(file_name);
+            if (!parser.is_at_end())
+                throw new CompilerException("Unexpected content at end of file.", file_name, parser.get_current_line(), parser.get_current_column(), parser.get_current_line(), parser.get_current_column());
+            return fileSyntax;
         }
     }
-
 }

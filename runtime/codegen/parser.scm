@@ -74,7 +74,7 @@
 "                return null;
 "                                   )
                                     ($
-"                throw new ParserException(file_name, lexer.line, lexer.column);
+"                throw new ParserException(\"Unable to parse "(downcase-string (link content))(if (multiple? content) " list" "")".\", file_name, start.line, start.column, lexer.previous_line, lexer.previous_column);
 "                                   )
                                 )
                            ))
@@ -83,7 +83,7 @@
             {
                 if (!is_at_end())
                 {
-                    throw new ParserException(file_name, lexer.previous_line, lexer.previous_column);
+                    throw new ParserException(\"Unable to parse "(downcase-string (link content))(if (multiple? content) " list" "")".\", file_name, lexer.previous_line, lexer.previous_column, lexer.line, lexer.column);
                 }
             }
 "                           )"")
@@ -112,7 +112,7 @@
 "                    return null;
 "                                               )
                                                 ($
-"                    throw new ParserException(file_name, lexer.line, lexer.column);
+"                    throw new ParserException(\"Unable to parse.\", file_name, start.line, start.column, lexer.previous_line, lexer.previous_column);
 "
                                                 )
                                             )
