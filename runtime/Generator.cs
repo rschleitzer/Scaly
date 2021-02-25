@@ -85,7 +85,7 @@ namespace Scaly.Compiler
             using (var builder = module.Context.CreateBuilder())
             {
                 var context = new GlobalContext { Module = module, Builder = builder, TypeStore = new TypeStore(), ValueStore = new ValueStore() };
-                BuildTypes(context.TypeStore, definition);
+                BuildTypes(context, definition);
                 BuildValues(context, definition);
                 BuildFunctions(context, definition);
             }
@@ -108,39 +108,45 @@ namespace Scaly.Compiler
         //    return function;
         //}
 
-        static void BuildTypes(TypeStore typeStore, Definition definition)
+        static void BuildTypes(GlobalContext context, Definition definition)
         {
+            context.TypeStore.DataTypes.Add("Double", LLVMTypeRef.Double);
+            context.TypeStore.DataTypes.Add("Long", LLVMTypeRef.Int64);
+            context.TypeStore.DataTypes.Add("Integer", LLVMTypeRef.Int32);
+            context.TypeStore.DataTypes.Add("Byte", LLVMTypeRef.Int8);
+            context.TypeStore.DataTypes.Add("Boolean", LLVMTypeRef.Int8);
+
             foreach (var source in definition.Sources)
             {
-                BuildSourceTypes(typeStore, source);
+                BuildSourceTypes(context, source);
             }
 
             if (definition.Functions != null)
             {
                 foreach (var function in definition.Functions)
                 {
-                    BuildFunctionType(typeStore, function);
+                    BuildFunctionType(context, function);
                 }
             }
         }
 
-        static void BuildSourceTypes(TypeStore typeStore, Source source)
+        static void BuildSourceTypes(GlobalContext context, Source source)
         {
             if (source.Functions != null)
             {
                 foreach (var function in source.Functions)
                 {
-                    BuildFunctionType(typeStore, function);
+                    BuildFunctionType(context, function);
                 }
             }
         }
 
-        static void BuildFunctionType(TypeStore typeStore, Function function)
+        static void BuildFunctionType(GlobalContext context, Function function)
         {
-            var returnType = GenerateSingleType(function.Routine.Result);
-            var parameterTypes = GenerateTypes(function.Routine.Input);
+            var returnType = GetSingleType(context, function.Routine.Result);
+            var parameterTypes = GetTypes(context, function.Routine.Input);
             var functionType = LLVMTypeRef.CreateFunction(returnType, parameterTypes);
-            typeStore.FunctionTypes.Add(function.Name, functionType);
+            context.TypeStore.FunctionTypes.Add(function.Name, functionType);
         }
 
         static void BuildValues(GlobalContext context, Definition definition)
@@ -250,42 +256,38 @@ namespace Scaly.Compiler
             throw new CompilerException($"The name {name.Path[0]} could not been found.", name.Syntax.file, name.Syntax.start.line, name.Syntax.start.column, name.Syntax.end.line, name.Syntax.end.column);
         }
 
-        static LLVMTypeRef GenerateSingleType(List<Property> result)
+        static LLVMTypeRef GetSingleType(GlobalContext context, List<Property> result)
         {
             if (result == null)
                 return LLVMTypeRef.Void;
 
-            return GenerateType(result[0].TypeSpec);
+            return GetType(context, result[0].TypeSpec);
         }
 
-        static LLVMTypeRef GenerateType(TypeSpec typeSpec)
+        static LLVMTypeRef GetType(GlobalContext context, TypeSpec typeSpec)
         {
-            switch (typeSpec.Name)
-            {
-                case "Integer":
-                    return LLVMTypeRef.Int32;
-                case "Byte":
-                    return LLVMTypeRef.Int8;
-                case "Pointer":
-                    return GeneratePointerType(typeSpec);
-                default:
-                    throw new NotImplementedException($"Unknown type {typeSpec.Name}");
-            }
+            if (typeSpec.Name == "Pointer")
+                    return GetPointerType(context, typeSpec);
+
+            if (context.TypeStore.DataTypes.ContainsKey(typeSpec.Name))
+                return context.TypeStore.DataTypes[typeSpec.Name];
+
+            throw new CompilerException($"The type {typeSpec.Name} could not been found.", typeSpec.Syntax.file, typeSpec.Syntax.start.line, typeSpec.Syntax.start.column, typeSpec.Syntax.end.line, typeSpec.Syntax.end.column);
         }
 
-        static LLVMTypeRef GeneratePointerType(TypeSpec typeSpec)
+        static LLVMTypeRef GetPointerType(GlobalContext context, TypeSpec typeSpec)
         {
             var firstGenericArgument = typeSpec.Arguments[0];
-            var pointerTarget = (firstGenericArgument.Name == "Pointer")? GeneratePointerType(firstGenericArgument): GenerateType(firstGenericArgument);
+            var pointerTarget = (firstGenericArgument.Name == "Pointer")? GetPointerType(context, firstGenericArgument): GetType(context, firstGenericArgument);
             return LLVMTypeRef.CreatePointer(pointerTarget, 0);
         }
 
-        static LLVMTypeRef[] GenerateTypes(List<Property> result)
+        static LLVMTypeRef[] GetTypes(GlobalContext context, List<Property> result)
         {
             if (result == null)
                 return new LLVMTypeRef[] { };
 
-            return result.ConvertAll(it => GenerateType(it.TypeSpec)).ToArray();
+            return result.ConvertAll(it => GetType(context, it.TypeSpec)).ToArray();
 
         }
 

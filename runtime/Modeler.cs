@@ -39,6 +39,7 @@ namespace Scaly.Compiler
 
     public class TypeSpec
     {
+        public TypeSyntax Syntax;
         public string Name;
         public List<TypeSpec> Arguments;
     }
@@ -593,7 +594,7 @@ namespace Scaly.Compiler
 
         static TypeSpec BuildType(TypeSyntax typeSyntax)
         {
-            var typeSpec = new TypeSpec { Name = typeSyntax.name.name };
+            var typeSpec = new TypeSpec { Name = typeSyntax.name.name, Syntax = typeSyntax };
             if (typeSyntax.generics != null)
                 typeSpec.Arguments = typeSyntax.generics.generics.ToList().ConvertAll(it => BuildType(it.spec));
 
