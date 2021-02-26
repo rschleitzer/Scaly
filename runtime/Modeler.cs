@@ -12,7 +12,7 @@ namespace Scaly.Compiler
         public TypeSpec Type;
         public Dictionary<string, Definition> Definitions;
         public List<Function> Functions;
-        public List<Routine> Operators;
+        public List<Operator> Operators;
         public Dictionary<string, Implement> Implements;
         public List<Source> Sources;
     }
@@ -23,12 +23,20 @@ namespace Scaly.Compiler
         public Routine Routine;
     }
 
+    public class Operator
+    {
+        public OperatorSyntax Syntax;
+        public string Name;
+        public Routine Routine;
+    }
+
     public class Routine
     {
         public List<Property> Input;
         public List<Property> Result;
         public TypeSpec Error;
         public List<Operation> Operations;
+        public bool Extern;
     }
 
     public class Property
@@ -49,7 +57,7 @@ namespace Scaly.Compiler
     {
         public string Name;
         public List<Function> Functions;
-        public List<Routine> Operators;
+        public List<Operator> Operators;
     }
 
     public class Source
@@ -59,7 +67,7 @@ namespace Scaly.Compiler
         public List<string[]> Usings;
         public Dictionary<string, Definition> Definitions;
         public List<Function> Functions;
-        public List<Routine> Operators;
+        public List<Operator> Operators;
         public Dictionary<string, Implement> Implements;
         public List<Source> Sources;
         public List<Operation> Operations;
@@ -75,11 +83,13 @@ namespace Scaly.Compiler
 
     public class Object : Expression
     {
+        public ObjectSyntax Syntax;
         public List<Component> Components;
     }
 
     public class Component
     {
+        public ComponentSyntax Syntax;
         public string Name;
         public List<Operand> Value;
     }
@@ -221,7 +231,7 @@ namespace Scaly.Compiler
             return BuildSource(text, file);
         }
 
-        private static Source BuildSource(string text, string file)
+        static Source BuildSource(string text, string file)
         {
             var fileSyntax = parseFile(file, text);
             return BuildSource(fileSyntax);
@@ -322,7 +332,7 @@ namespace Scaly.Compiler
 
         static Expression BuildObject(ObjectSyntax objectSyntax)
         {
-            var @object = new Object { };
+            var @object = new Object { Syntax = objectSyntax };
             if (objectSyntax.components != null)
                 @object.Components = objectSyntax.components.ToList().ConvertAll(it => BuildComponent(it));
             return @object;
@@ -330,7 +340,7 @@ namespace Scaly.Compiler
 
         static Component BuildComponent(ComponentSyntax componentSyntax)
         {
-            var component = new Component();
+            var component = new Component { Syntax = componentSyntax };
             if (componentSyntax.value != null)
             {
                 if (componentSyntax.operands.Length != 1)
@@ -338,6 +348,8 @@ namespace Scaly.Compiler
             }
             else
             {
+                if (componentSyntax.operands != null)
+                    component.Value = componentSyntax.operands.ToList().ConvertAll(it => BuildOperand(it));
             }
             return component;
         }
@@ -386,7 +398,7 @@ namespace Scaly.Compiler
                     break;
                 case OperatorSyntax operatorSyntax:
                     if (source.Operators == null)
-                        source.Operators = new List<Routine>();
+                        source.Operators = new List<Operator>();
                     HandleOperator(operatorSyntax, source.Operators);
                     break;
                 case ModuleSyntax moduleSyntax:
@@ -409,31 +421,36 @@ namespace Scaly.Compiler
 
         static void HandleModule(ModuleSyntax moduleSyntax, Dictionary<string, Definition> definitions, Source source, string origin, bool isPublic)
         {
-            var extensionEnumerator = moduleSyntax.name.extensions.ToList().GetEnumerator();
-            var extensionAvailable = extensionEnumerator.MoveNext();
-            if (extensionAvailable)
+            if (moduleSyntax.name.extensions != null)
             {
-                if (definitions == null)
-                    definitions = new Dictionary<string, Definition>();
-                if (!definitions.ContainsKey(moduleSyntax.name.name))
+                var extensionEnumerator = moduleSyntax.name.extensions.ToList().GetEnumerator();
+                var extensionAvailable = extensionEnumerator.MoveNext();
+                if (extensionAvailable)
                 {
-                    var definition = new Definition { IsPublic = isPublic, Type = new TypeSpec { Name = moduleSyntax.name.name }, Definitions = new Dictionary<string, Definition>(), Sources = null };
-                    definitions.Add(definition.Type.Name, definition);
-                }
+                    if (definitions == null)
+                        definitions = new Dictionary<string, Definition>();
+                    if (!definitions.ContainsKey(moduleSyntax.name.name))
+                    {
+                        var definition = new Definition { IsPublic = isPublic, Type = new TypeSpec { Name = moduleSyntax.name.name }, Definitions = new Dictionary<string, Definition>(), Sources = null };
+                        definitions.Add(definition.Type.Name, definition);
+                    }
 
-                switch (definitions[moduleSyntax.name.name])
-                {
-                    case Definition definition:
-                        BuildModuleRecursive(moduleSyntax, Path.Combine(origin, definition.Type.Name), extensionEnumerator.Current.name, extensionEnumerator, definition, isPublic);
-                        break;
-                    default:
-                        throw new CompilerException($"A concept with name {moduleSyntax.name.name} already defined.", moduleSyntax.file, moduleSyntax.start.line, moduleSyntax.start.column, moduleSyntax.end.line, moduleSyntax.end.column);
+                    switch (definitions[moduleSyntax.name.name])
+                    {
+                        case Definition definition:
+                            BuildModuleRecursive(moduleSyntax, Path.Combine(origin, definition.Type.Name), extensionEnumerator.Current.name, extensionEnumerator, definition, isPublic);
+                            break;
+                        default:
+                            throw new CompilerException($"A concept with name {moduleSyntax.name.name} already defined.", moduleSyntax.file, moduleSyntax.start.line, moduleSyntax.start.column, moduleSyntax.end.line, moduleSyntax.end.column);
+                    }
                 }
             }
             else
             {
                 var moduleFile = Path.Combine(Path.Combine(origin, moduleSyntax.name.name) + ".scaly");
                 var moduleSource = BuildSource(moduleFile);
+                if (source.Sources == null)
+                    source.Sources = new List<Source>();
                 source.Sources.Add(moduleSource);
             }
         }
@@ -544,6 +561,7 @@ namespace Scaly.Compiler
                     routine.Operations = new List<Operation> { BuildOperation(operationSyntax) };
                     break;
                 case ExternSyntax _:
+                    routine.Extern = true;
                     break;
                 case SetSyntax _:
                     break;
@@ -612,10 +630,44 @@ namespace Scaly.Compiler
             return typeSpec;
         }
 
-        static void HandleOperator(OperatorSyntax operatorSyntax, List<Routine> operators)
+        static void HandleOperator(OperatorSyntax operatorSyntax, List<Operator> operators)
         {
-            var routine = new Routine();
-            operators.Add(routine);
+            var @operator = new Operator { Syntax = operatorSyntax };
+            switch (operatorSyntax.target)
+            {
+                case RoutineSyntax routineSyntax:
+                    @operator.Routine = BuildRoutine(routineSyntax);
+                    break;
+                case SymbolSyntax symbolSyntax:
+                    @operator.Name = symbolSyntax.name;
+                    @operator.Routine = BuildSymbol(symbolSyntax);
+                    break;
+
+            }
+
+            operators.Add(@operator);
+        }
+
+        static Routine BuildSymbol(SymbolSyntax symbolSyntax)
+        {
+            var routine = new Routine { };
+
+            if (symbolSyntax.returns != null)
+                routine.Result = BuildParameters(symbolSyntax.returns.parameters);
+
+            if (symbolSyntax.throws != null)
+                routine.Error = BuildType(symbolSyntax.throws.type);
+
+            switch (symbolSyntax.implementation)
+            {
+                case OperationSyntax operationSyntax:
+                    routine.Operations = new List<Operation> { BuildOperation(operationSyntax) };
+                    break;
+                default:
+                    throw new NotImplementedException($"{symbolSyntax.implementation.GetType()} is not implemented.");
+            }
+
+            return routine;
         }
 
         static void HandleImplement(ImplementSyntax implementSyntax, Dictionary<string, Implement> implementations)
@@ -644,7 +696,7 @@ namespace Scaly.Compiler
                             break;
                         case OperatorSyntax operatorSyntax:
                             if (implementation.Operators == null)
-                                implementation.Operators = new List<Routine>();
+                                implementation.Operators = new List<Operator>();
                             HandleOperator(operatorSyntax, implementation.Operators);
                             break;
                         default:
@@ -713,7 +765,7 @@ namespace Scaly.Compiler
                     break;
                 case OperatorSyntax operatorSyntax:
                     if (definition.Operators == null)
-                        definition.Operators = new List<Routine>();
+                        definition.Operators = new List<Operator>();
                     HandleOperator(operatorSyntax, definition.Operators);
                     break;
                 case ImplementSyntax implementSyntax:

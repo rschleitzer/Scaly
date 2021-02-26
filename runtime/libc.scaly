@@ -1,0 +1,1 @@
+function strlen Pointer[Byte] returns Size extern

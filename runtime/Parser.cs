@@ -1143,9 +1143,9 @@ namespace Scaly.Compiler
             var success_operator_1 = lexer.parse_keyword("operator");
             if (!success_operator_1)
                     return null;
-            var routine = parse_routine();
-            if (routine == null)
-                throw new ParserException("Unable to parse routine.", file_name, start.line, start.column, lexer.previous_line, lexer.previous_column);
+            var target = parse_target();
+            if (target == null)
+                throw new ParserException("Unable to parse target.", file_name, start.line, start.column, lexer.previous_line, lexer.previous_column);
 
             var end = lexer.get_position();
 
@@ -1154,10 +1154,26 @@ namespace Scaly.Compiler
                 file = file_name,
                 start = start,
                 end = end,
-                routine = routine,
+                target = target,
             };
 
             return ret;
+        }
+
+        public object parse_target()
+        {
+            {
+                var node = parse_symbol();
+                if (node != null)
+                    return node;
+            }
+            {
+                var node = parse_routine();
+                if (node != null)
+                    return node;
+            }
+
+            return null;
         }
 
         public RoutineSyntax parse_routine()
@@ -1183,6 +1199,50 @@ namespace Scaly.Compiler
                 start = start,
                 end = end,
                 parameters = parameters,
+                attributes = attributes,
+                returns = returns,
+                throws = throws,
+                implementation = implementation,
+            };
+
+            return ret;
+        }
+
+        public SymbolSyntax parse_symbol()
+        {
+            var start = lexer.get_previous_position();
+
+            var name = lexer.parse_identifier(keywords);
+            if (name != null)
+            {
+                if (!is_identifier(name))
+                {
+                    return null;
+                }
+            }
+            else
+            {
+                    return null;
+            }
+            var attributes = parse_attribute_list();
+            var returns = parse_returns();
+
+            lexer.parse_colon();
+            var throws = parse_throws();
+
+            lexer.parse_colon();
+            var implementation = parse_implementation();
+            if (implementation == null)
+                throw new ParserException("Unable to parse implementation.", file_name, start.line, start.column, lexer.previous_line, lexer.previous_column);
+
+            var end = lexer.get_position();
+
+            var ret = new SymbolSyntax
+            {
+                file = file_name,
+                start = start,
+                end = end,
+                name = name,
                 attributes = attributes,
                 returns = returns,
                 throws = throws,
@@ -3227,7 +3287,7 @@ namespace Scaly.Compiler
         public string file;
         public Position start;
         public Position end;
-        public RoutineSyntax routine;
+        public object target;
     }
 
     public class RoutineSyntax
@@ -3236,6 +3296,18 @@ namespace Scaly.Compiler
         public Position start;
         public Position end;
         public object parameters;
+        public AttributeSyntax[] attributes;
+        public ReturnsSyntax returns;
+        public ThrowsSyntax throws;
+        public object implementation;
+    }
+
+    public class SymbolSyntax
+    {
+        public string file;
+        public Position start;
+        public Position end;
+        public string name;
         public AttributeSyntax[] attributes;
         public ReturnsSyntax returns;
         public ThrowsSyntax throws;

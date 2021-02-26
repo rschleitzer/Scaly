@@ -1,0 +1,4 @@
+define LLVM
+{
+    function 'trunc i64 to i32' instruction
+}

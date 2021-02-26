@@ -112,33 +112,28 @@ namespace Scaly.Compiler
         {
             context.TypeStore.DataTypes.Add("Double", LLVMTypeRef.Double);
             context.TypeStore.DataTypes.Add("Long", LLVMTypeRef.Int64);
+            context.TypeStore.DataTypes.Add("Size", LLVMTypeRef.Int64);
             context.TypeStore.DataTypes.Add("Integer", LLVMTypeRef.Int32);
             context.TypeStore.DataTypes.Add("Byte", LLVMTypeRef.Int8);
             context.TypeStore.DataTypes.Add("Boolean", LLVMTypeRef.Int8);
 
             foreach (var source in definition.Sources)
-            {
                 BuildSourceTypes(context, source);
-            }
 
             if (definition.Functions != null)
-            {
                 foreach (var function in definition.Functions)
-                {
                     BuildFunctionType(context, function);
-                }
-            }
         }
 
         static void BuildSourceTypes(GlobalContext context, Source source)
         {
             if (source.Functions != null)
-            {
                 foreach (var function in source.Functions)
-                {
                     BuildFunctionType(context, function);
-                }
-            }
+
+            if (source.Sources != null)
+                foreach (var childSource in source.Sources)
+                    BuildSourceTypes(context, childSource);
         }
 
         static void BuildFunctionType(GlobalContext context, Function function)
@@ -151,35 +146,48 @@ namespace Scaly.Compiler
 
         static void BuildValues(GlobalContext context, Definition definition)
         {
-            foreach (var source in definition.Sources)
-            {
-                BuildSourceValues(context, source);
-            }
+            if (definition.Sources != null)
+                foreach (var source in definition.Sources)
+                    BuildSourceValues(context, source);
 
             if (definition.Functions != null)
-            {
                 foreach (var function in definition.Functions)
-                {
                     BuildFunctionValue(context, function);
-                }
-            }
+
+            if (definition.Operators != null)
+                foreach (var @operator in definition.Operators)
+                    BuildOperatorValue(context, @operator);
         }
 
         static void BuildSourceValues(GlobalContext context, Source source)
         {
             if (source.Functions != null)
-            {
                 foreach (var function in source.Functions)
-                {
                     BuildFunctionValue(context, function);
-                }
-            }
+
+            if (source.Operators != null)
+                foreach (var @operator in source.Operators)
+                    BuildOperatorValue(context, @operator);
+
+            if (source.Sources != null)
+                foreach (var childSource in source.Sources)
+                    BuildSourceValues(context, childSource);
+
+            if (source.Definitions != null)
+                foreach (var definition in source.Definitions.Values)
+                    BuildValues(context, definition);
         }
 
         static void BuildFunctionValue(GlobalContext context, Function function)
         {
             var functionType = context.TypeStore.FunctionTypes[function.Name];
             context.ValueStore.Values.Add(function.Name, context.Module.AddFunction(function.Name, functionType));
+        }
+
+        static void BuildOperatorValue(GlobalContext context, Operator @operator)
+        {
+            var functionType = context.TypeStore.FunctionTypes[@operator.Name];
+            context.ValueStore.Values.Add(@operator.Name, context.Module.AddFunction(@operator.Name, functionType));
         }
 
         static void BuildFunctions(GlobalContext context, Definition definition)
@@ -232,22 +240,48 @@ namespace Scaly.Compiler
             LLVMValueRef valueRef = null;
             foreach (var operand in operation.Operands)
             {
-                switch (operand.Expression)
-                {
-                    case IntegerConstant integerConstant:
-                        valueRef = LLVMValueRef.CreateConstInt(LLVMTypeRef.Int32, (ulong)integerConstant.Value);
-                        break;
-                    case Name name:
-                        valueRef = BuildName(context, name);
-                        break;
-                    case Scope scope:
-                        valueRef = BuildScope(context, scope);
-                        break;
-                    default:
-                        throw new NotImplementedException($"Expression {operand.Expression.GetType()} not implemented.");
-                }
+                valueRef = BuildOperand(context, valueRef, operand);
             }
             return valueRef;
+        }
+
+        static LLVMValueRef BuildOperand(LocalContext context, LLVMValueRef valueRef, Operand operand)
+        {
+            switch (operand.Expression)
+            {
+                case IntegerConstant integerConstant:
+                    valueRef = LLVMValueRef.CreateConstInt(LLVMTypeRef.Int32, (ulong)integerConstant.Value);
+                    break;
+                case Name name:
+                    valueRef = BuildName(context, name);
+                    break;
+                case Scope scope:
+                    valueRef = BuildScope(context, scope);
+                    break;
+                case Object @object:
+                    if (valueRef == null)
+                        throw new CompilerException("Objects are currently only supported as parameter lists for function calls.", @object.Syntax.file, @object.Syntax.start.line, @object.Syntax.start.column, @object.Syntax.end.line, @object.Syntax.end.column);
+                    valueRef = BuildFunctionCall(context, valueRef, @object);
+                    break;
+                default:
+                    throw new NotImplementedException($"Expression {operand.Expression.GetType()} not implemented.");
+            }
+            return valueRef;
+        }
+
+        static LLVMValueRef BuildFunctionCall(LocalContext context, LLVMValueRef function, Object @object)
+        {
+            var arguments = new List<LLVMValueRef>();
+            foreach (var component in @object.Components)
+            {
+                LLVMValueRef valueRef = null;
+                foreach (var operand in component.Value)
+                {
+                    valueRef = BuildOperand(context, valueRef, operand);
+                }
+                arguments.Add(valueRef);
+            }
+            return context.GlobalContext.Builder.BuildCall(function, arguments.ToArray());
         }
 
         static LLVMValueRef BuildName(LocalContext context, Name name)
@@ -256,7 +290,7 @@ namespace Scaly.Compiler
             if (valueRef != null)
                 return valueRef;
 
-            throw new CompilerException($"The name {name.Path[0]} could not been found.", name.Syntax.file, name.Syntax.start.line, name.Syntax.start.column, name.Syntax.end.line, name.Syntax.end.column);
+            throw new CompilerException($"The name '{name.Path[0]}' could not been found.", name.Syntax.file, name.Syntax.start.line, name.Syntax.start.column, name.Syntax.end.line, name.Syntax.end.column);
         }
 
         static LLVMValueRef BuildScope(LocalContext context, Scope scope)

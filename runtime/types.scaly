@@ -1,0 +1,5 @@
+define Size
+{
+    operator 'as Integer' returns Integer
+        LLVM.'trunc i64 to i32'(this)
+}
