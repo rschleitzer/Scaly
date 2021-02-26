@@ -101,6 +101,7 @@ namespace Scaly.Compiler
     {
         public BindingType BindingType;
         public string Identifier;
+        public Operation Operation;
         public List<Operation> Operations;
     }
 
@@ -239,13 +240,13 @@ namespace Scaly.Compiler
                 if (source.Operations == null)
                     source.Operations = new List<Operation>();
                 foreach (var statement in fileSyntax.statements)
-                    HandleStatement(source.Operations, origin, statement);
+                    HandleStatement(source.Operations, statement);
             }
 
             return source;
         }
 
-        static void HandleStatement(List<Operation> operations, string origin, object statement)
+        static void HandleStatement(List<Operation> operations, object statement)
         {
             switch (statement)
             {
@@ -309,13 +310,14 @@ namespace Scaly.Compiler
             var scope = new Scope();
             if (blockSyntax.statements != null)
             {
+                scope.Operations = new List<Operation>();
                 foreach (var statement in blockSyntax.statements)
                 {
-
+                    HandleStatement(scope.Operations, statement);
                 }
             }
 
-            return null;
+            return scope;
         }
 
         static Expression BuildObject(ObjectSyntax objectSyntax)
@@ -542,6 +544,8 @@ namespace Scaly.Compiler
                     routine.Operations = new List<Operation> { BuildOperation(operationSyntax) };
                     break;
                 case ExternSyntax _:
+                    break;
+                case SetSyntax _:
                     break;
                 default:
                     throw new NotImplementedException($"{routineSyntax.implementation.GetType()} is not implemented.");

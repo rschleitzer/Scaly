@@ -1289,7 +1289,7 @@ namespace Scaly.Compiler
         public object parse_implementation()
         {
             {
-                var node = parse_operation();
+                var node = parse_statement();
                 if (node != null)
                     return node;
             }
@@ -1724,6 +1724,11 @@ namespace Scaly.Compiler
                 if (node != null)
                     return node;
             }
+            {
+                var node = parse_set();
+                if (node != null)
+                    return node;
+            }
 
             return null;
         }
@@ -1817,8 +1822,8 @@ namespace Scaly.Compiler
                     return null;
             }
             var annotation = parse_bindingannotation();
-            var calculation = parse_operation();
-            if (calculation == null)
+            var operation = parse_operation();
+            if (operation == null)
                 throw new ParserException("Unable to parse operation.", file_name, start.line, start.column, lexer.previous_line, lexer.previous_column);
 
             var end = lexer.get_position();
@@ -1830,7 +1835,7 @@ namespace Scaly.Compiler
                 end = end,
                 name = name,
                 annotation = annotation,
-                calculation = calculation,
+                operation = operation,
             };
 
             return ret;
@@ -2387,11 +2392,6 @@ namespace Scaly.Compiler
             }
             {
                 var node = parse_throw();
-                if (node != null)
-                    return node;
-            }
-            {
-                var node = parse_set();
                 if (node != null)
                     return node;
             }
@@ -3383,7 +3383,7 @@ namespace Scaly.Compiler
         public Position end;
         public string name;
         public BindingAnnotationSyntax annotation;
-        public OperationSyntax calculation;
+        public OperationSyntax operation;
     }
 
     public class BindingAnnotationSyntax

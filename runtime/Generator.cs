@@ -240,6 +240,9 @@ namespace Scaly.Compiler
                     case Name name:
                         valueRef = BuildName(context, name);
                         break;
+                    case Scope scope:
+                        valueRef = BuildScope(context, scope);
+                        break;
                     default:
                         throw new NotImplementedException($"Expression {operand.Expression.GetType()} not implemented.");
                 }
@@ -254,6 +257,29 @@ namespace Scaly.Compiler
                 return valueRef;
 
             throw new CompilerException($"The name {name.Path[0]} could not been found.", name.Syntax.file, name.Syntax.start.line, name.Syntax.start.column, name.Syntax.end.line, name.Syntax.end.column);
+        }
+
+        static LLVMValueRef BuildScope(LocalContext context, Scope scope)
+        {
+            LLVMValueRef valueRef = null;
+            foreach (var operation in scope.Operations)
+                valueRef = BuildOperation(context, operation);
+
+            if (scope.Binding != null)
+                valueRef = BuildBinding(context, scope.Binding);
+
+            return valueRef;
+        }
+
+        static LLVMValueRef BuildBinding(LocalContext context, Binding binding)
+        {
+            var newContext = new LocalContext { GlobalContext = context.GlobalContext, ParentContext = context, Data = new Dictionary<string, LLVMValueRef>() };
+            newContext.Data.Add(binding.Identifier, BuildOperation(context, binding.Operation));
+            LLVMValueRef valueRef = null;
+            foreach (var operation in binding.Operations)
+                valueRef = BuildOperation(newContext, operation);
+
+            return valueRef;
         }
 
         static LLVMTypeRef GetSingleType(GlobalContext context, List<Property> result)

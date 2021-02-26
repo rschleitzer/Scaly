@@ -209,7 +209,7 @@
         <content link = Attribute             multiple optional property = attributes
 
     <syntax id = Implementation                        abstract
-        <content link = Operation
+        <content link = Statement
         <content link = Extern
         <content link = Instruction
         <content link = Intrinsic
@@ -283,6 +283,7 @@
         <content link = Let
         <content link = Var
         <content link = Mutable
+        <content link = Set
 
     <syntax id = Let
         <content link = let
@@ -299,7 +300,7 @@
     <syntax id = Binding
         <content identifier                                     property = name
         <content link = BindingAnnotation              optional property = annotation
-        <content link = Operation                               property = calculation
+        <content link = Operation                               property = operation
 
     <syntax id = BindingAnnotation
         <content colon
@@ -389,7 +390,6 @@
         <content link = Break
         <content link = Return
         <content link = Throw
-        <content link = Set
 
     <syntax id = Literal
         <content literal                                        property = literal
