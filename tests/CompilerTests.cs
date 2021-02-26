@@ -10,11 +10,6 @@ namespace tests
         public void TestShortest()
         {
             Assert.AreEqual(Compiler.compileAndRunProgram("0", new string[] { }), 0);
-        }
-
-        [TestMethod]
-        public void TestReturnArgc()
-        {
             Assert.AreEqual(Compiler.compileAndRunProgram("'argument count'", new string[] { "foo", "bar", "baz" }), 3);
         }
     }

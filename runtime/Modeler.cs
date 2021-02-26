@@ -91,6 +91,12 @@ namespace Scaly.Compiler
         Mutable
     }
 
+    public class Scope : Expression
+    {
+        public List<Operation> Operations;
+        public Binding Binding;
+    }
+
     public class Binding : Expression
     {
         public BindingType BindingType;
@@ -300,6 +306,7 @@ namespace Scaly.Compiler
 
         static Expression BuildBlock(BlockSyntax blockSyntax)
         {
+            var scope = new Scope();
             if (blockSyntax.statements != null)
             {
                 foreach (var statement in blockSyntax.statements)
