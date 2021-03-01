@@ -1,5 +1,11 @@
 define Size
 {
     operator 'as Integer' returns Integer
-        LLVM.'trunc i64 to i32'(this)
+        LLVM.trunc[i64, i32](this)
+}
+
+define Pointer[T]
+{
+    operator * returns T
+        LLVM.load[T](this)
 }

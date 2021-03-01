@@ -97,24 +97,7 @@ namespace Scaly.Compiler
                 BuildGlobalValues(context, definition);
                 BuildFunctions(context, definition);
             }
-            //var function = MakeMainFunction(module);
-            //LLVMBuilderRef builder = CreateBuilder(module, function);
-
-            ////var argc = function.Params[0];
-            //var argc = LLVMValueRef.CreateConstInt(LLVMTypeRef.CreateInt(32), 0);
-            //builder.BuildRet(argc);
         }
-
-        //static LLVMValueRef MakeMainFunction(LLVMModuleRef module)
-        //{
-        //    var @int = LLVMTypeRef.Int32;
-        //    var @char = LLVMTypeRef.Int8;
-        //    var pChar = LLVMTypeRef.CreatePointer(@char, 0);
-        //    var ppChar = LLVMTypeRef.CreatePointer(pChar, 0);
-        //    var mainType = LLVMTypeRef.CreateFunction(@int, new LLVMTypeRef[] { @int, ppChar });
-        //    var function = module.AddFunction("main", mainType);
-        //    return function;
-        //}
 
         static void BuildGlobalTypes(GlobalContext context, Definition definition)
         {
