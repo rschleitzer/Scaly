@@ -95,6 +95,12 @@ namespace Scaly.Compiler
         public List<Operand> Value;
     }
 
+    public class Vector : Expression
+    {
+        public VectorSyntax Syntax;
+        public List<List<Operand>> Components;
+    }
+
     public enum BindingType
     {
         Let,
@@ -288,6 +294,8 @@ namespace Scaly.Compiler
                     return BuildBlock(blockSyntax);
                 case ObjectSyntax objectSyntax:
                     return BuildObject(objectSyntax);
+                case VectorSyntax vectorSyntax:
+                    return BuildVector(vectorSyntax);
                 default:
                     throw new NotImplementedException($"{expression.GetType()} is not implemented.");
             }
@@ -324,6 +332,22 @@ namespace Scaly.Compiler
             if (objectSyntax.components != null)
                 @object.Components = objectSyntax.components.ToList().ConvertAll(it => BuildComponent(it));
             return @object;
+        }
+
+        static Expression BuildVector(VectorSyntax vectorSyntax)
+        {
+            var vector = new Vector { Syntax = vectorSyntax };
+            if (vectorSyntax.elements != null)
+                vector.Components = vectorSyntax.elements.ToList().ConvertAll(it => BuildElement(it));
+            return vector;
+        }
+
+        static List<Operand> BuildElement(ElementSyntax elementSyntax)
+        {
+            if (elementSyntax.operation != null)
+                return elementSyntax.operation.operands.ToList().ConvertAll(it => BuildOperand(it));
+
+            return null;
         }
 
         static Component BuildComponent(ComponentSyntax componentSyntax)
