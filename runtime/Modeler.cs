@@ -19,6 +19,7 @@ namespace Scaly.Compiler
 
     public class Function
     {
+        public RoutineSyntax Syntax;
         public string Name;
         public Routine Routine;
     }
@@ -207,21 +208,8 @@ namespace Scaly.Compiler
 
         static Function MakeMainFunction(List<Operation> operations)
         {
-            var main = new Function
-            {
-                Name = "main",
-                Routine = new Routine
-                {
-                    Input = new List<Property>()
-                    {
-                        new Property { Name = "argument count", TypeSpec = new TypeSpec { Name = "Integer" } },
-                        new Property { Name = "argument values", TypeSpec = new TypeSpec { Name = "Pointer", Arguments = new List<TypeSpec> { new TypeSpec { Name = "Pointer", Arguments = new List<TypeSpec> { new TypeSpec { Name = "Byte" } } } } } },
-                    },
-                    Result = new List<Property>() { new Property { TypeSpec = new TypeSpec { Name = "Integer" } } },
-                    Operations = operations
-                }
-            };
-
+            var main = BuildSource("main.scaly").Functions[0];
+            main.Routine.Operations = operations;
             return main;
         }
 
@@ -538,7 +526,7 @@ namespace Scaly.Compiler
 
         static void BuildFunction(string name, GenericArgumentsSyntax generics, RoutineSyntax routine, List<Function> functions, bool isPublic, bool isModifying)
         {
-            var function = new Function { Name = name };
+            var function = new Function { Name = name, Syntax = routine };
             function.Routine = BuildRoutine(routine);
             functions.Add(function);
         }

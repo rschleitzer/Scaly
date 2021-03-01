@@ -37,22 +37,22 @@ namespace Scaly.Compiler
             return null;
         }
 
-        internal LLVMTypeRef ResolveType(TypeSpec typeSpec)
+        internal LLVMTypeRef ResolveType(string name, string file, Position start, Position end)
         {
-            if (Types.ContainsKey(typeSpec.Name))
-                return Types[typeSpec.Name];
+            if (Types.ContainsKey(name))
+                return Types[name];
 
             if (ParentContext != null)
             {
-                return ParentContext.ResolveType(typeSpec);
+                return ParentContext.ResolveType(name, file, start, end);
             }
             else
             {
-                if (GlobalContext.Types.ContainsKey(typeSpec.Name))
-                    return GlobalContext.Types[typeSpec.Name];
+                if (GlobalContext.Types.ContainsKey(name))
+                    return GlobalContext.Types[name];
             }
 
-            throw new CompilerException($"The type {typeSpec.Name} could not been found.", typeSpec.Syntax.file, typeSpec.Syntax.start.line, typeSpec.Syntax.start.column, typeSpec.Syntax.end.line, typeSpec.Syntax.end.column);
+            throw new CompilerException($"The type {name} could not been found.", file, start.line, start.column, end.line, end.column);
         }
     }
 
@@ -94,7 +94,7 @@ namespace Scaly.Compiler
             {
                 var context = new GlobalContext { Module = module, Builder = builder };
                 BuildGlobalTypes(context, definition);
-                BuildValues(context, definition);
+                BuildGlobalValues(context, definition);
                 BuildFunctions(context, definition);
             }
             //var function = MakeMainFunction(module);
@@ -139,6 +139,10 @@ namespace Scaly.Compiler
                 foreach (var function in source.Functions)
                     BuildFunctionType(context, function);
 
+            if (source.Operators != null)
+                foreach (var @operator in source.Operators)
+                    BuildOperatorType(context, @operator);
+
             if (source.Sources != null)
                 foreach (var childSource in source.Sources)
                     BuildSourceTypes(context, childSource);
@@ -153,6 +157,10 @@ namespace Scaly.Compiler
             if (definition.Functions != null)
                 foreach (var function in definition.Functions)
                     BuildFunctionType(context, function);
+
+            if (definition.Operators != null)
+                foreach (var @operator in definition.Operators)
+                    BuildOperatorType(context, @operator);
         }
 
         static void BuildFunctionType(LocalContext context, Function function)
@@ -163,7 +171,23 @@ namespace Scaly.Compiler
             context.GlobalContext.Types.Add(function.Name, functionType);
         }
 
-        static void BuildValues(GlobalContext context, Definition definition)
+        static void BuildOperatorType(LocalContext context, Operator @operator)
+        {
+            var returnType = GetSingleType(context, @operator.Routine.Result);
+            var parameterTypes = new List<LLVMTypeRef>();
+            if (@operator.Routine.Input != null)
+                parameterTypes.AddRange(GetTypes(context, @operator.Routine.Input));
+            var functionType = LLVMTypeRef.CreateFunction(returnType, parameterTypes.ToArray());
+            context.GlobalContext.Types.Add(@operator.Name, functionType);
+        }
+
+        static void BuildGlobalValues(GlobalContext context, Definition definition)
+        {
+            var localContext = new LocalContext { GlobalContext = context, ParentContext = null };
+            BuildValues(localContext, definition);
+        }
+
+        static void BuildValues(LocalContext context, Definition definition)
         {
             if (definition.Sources != null)
                 foreach (var source in definition.Sources)
@@ -178,7 +202,7 @@ namespace Scaly.Compiler
                     BuildOperatorValue(context, @operator);
         }
 
-        static void BuildSourceValues(GlobalContext context, Source source)
+        static void BuildSourceValues(LocalContext context, Source source)
         {
             if (source.Functions != null)
                 foreach (var function in source.Functions)
@@ -197,16 +221,16 @@ namespace Scaly.Compiler
                     BuildValues(context, definition);
         }
 
-        static void BuildFunctionValue(GlobalContext context, Function function)
+        static void BuildFunctionValue(LocalContext context, Function function)
         {
-            var functionType = context.Types[function.Name];
-            context.Values.Add(function.Name, context.Module.AddFunction(function.Name, functionType));
+            var functionType = context.ResolveType(function.Name, function.Syntax.file, function.Syntax.start, function.Syntax.end);
+            context.GlobalContext.Values.Add(function.Name, context.GlobalContext.Module.AddFunction(function.Name, functionType));
         }
 
-        static void BuildOperatorValue(GlobalContext context, Operator @operator)
+        static void BuildOperatorValue(LocalContext context, Operator @operator)
         {
-            var functionType = context.Types[@operator.Name];
-            context.Values.Add(@operator.Name, context.Module.AddFunction(@operator.Name, functionType));
+            var functionType = context.ResolveType(@operator.Name, @operator.Syntax.file, @operator.Syntax.start, @operator.Syntax.end);
+            context.GlobalContext.Values.Add(@operator.Name, context.GlobalContext.Module.AddFunction(@operator.Name, functionType));
         }
 
         static void BuildFunctions(GlobalContext context, Definition definition)
@@ -348,7 +372,7 @@ namespace Scaly.Compiler
             if (typeSpec.Name == "Pointer")
                 return GetPointerType(context, typeSpec);
 
-            return context.ResolveType(typeSpec);
+            return context.ResolveType(typeSpec.Name, typeSpec.Syntax.file, typeSpec.Syntax.start, typeSpec.Syntax.end);
         }
 
         static LLVMTypeRef GetPointerType(LocalContext context, TypeSpec typeSpec)

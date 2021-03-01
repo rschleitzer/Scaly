@@ -12,6 +12,9 @@
     <None Update="llvm.scaly">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Update="main.scaly">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="types.scaly">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

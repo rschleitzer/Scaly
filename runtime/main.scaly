@@ -1,0 +1,1 @@
+function main('argument count': Integer, 'argument values': Pointer[Pointer[Byte]]) returns Integer extern
