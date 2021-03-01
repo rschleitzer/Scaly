@@ -4,35 +4,25 @@ using System.Collections.Generic;
 
 namespace Scaly.Compiler
 {
-    internal class TypeStore
-    {
-        public Dictionary<string, LLVMTypeRef> DataTypes = new Dictionary<string, LLVMTypeRef>();
-        public Dictionary<string, LLVMTypeRef> FunctionTypes = new Dictionary<string, LLVMTypeRef>();
-    }
-
-    internal class ValueStore
-    {
-        public Dictionary<string, LLVMValueRef> Values = new Dictionary<string, LLVMValueRef>();
-    }
-
     internal class GlobalContext
     {
         public LLVMModuleRef Module;
         public LLVMBuilderRef Builder;
-        public TypeStore TypeStore;
-        public ValueStore ValueStore;
+        public Dictionary<string, LLVMTypeRef> Types = new Dictionary<string, LLVMTypeRef>();
+        public Dictionary<string, LLVMValueRef> Values = new Dictionary<string, LLVMValueRef>();
     }
 
     internal class LocalContext
     {
         public GlobalContext GlobalContext;
         public LocalContext ParentContext;
-        public Dictionary<string, LLVMValueRef> Data = new Dictionary<string, LLVMValueRef>();
+        public Dictionary<string, LLVMTypeRef> Types = new Dictionary<string, LLVMTypeRef>();
+        public Dictionary<string, LLVMValueRef> Values = new Dictionary<string, LLVMValueRef>();
 
         public LLVMValueRef Resolve(string name)
         {
-            if (Data.ContainsKey(name))
-                return Data[name];
+            if (Values.ContainsKey(name))
+                return Values[name];
 
             if (ParentContext != null)
             {
@@ -41,10 +31,28 @@ namespace Scaly.Compiler
                     return valueRef;
             }
 
-            if (GlobalContext.ValueStore.Values.ContainsKey(name))
-                return GlobalContext.ValueStore.Values[name];
+            if (GlobalContext.Values.ContainsKey(name))
+                return GlobalContext.Values[name];
 
             return null;
+        }
+
+        internal LLVMTypeRef ResolveType(TypeSpec typeSpec)
+        {
+            if (Types.ContainsKey(typeSpec.Name))
+                return Types[typeSpec.Name];
+
+            if (ParentContext != null)
+            {
+                return ParentContext.ResolveType(typeSpec);
+            }
+            else
+            {
+                if (GlobalContext.Types.ContainsKey(typeSpec.Name))
+                    return GlobalContext.Types[typeSpec.Name];
+            }
+
+            throw new CompilerException($"The type {typeSpec.Name} could not been found.", typeSpec.Syntax.file, typeSpec.Syntax.start.line, typeSpec.Syntax.start.column, typeSpec.Syntax.end.line, typeSpec.Syntax.end.column);
         }
     }
 
@@ -84,8 +92,8 @@ namespace Scaly.Compiler
         {
             using (var builder = module.Context.CreateBuilder())
             {
-                var context = new GlobalContext { Module = module, Builder = builder, TypeStore = new TypeStore(), ValueStore = new ValueStore() };
-                BuildTypes(context, definition);
+                var context = new GlobalContext { Module = module, Builder = builder };
+                BuildGlobalTypes(context, definition);
                 BuildValues(context, definition);
                 BuildFunctions(context, definition);
             }
@@ -108,25 +116,25 @@ namespace Scaly.Compiler
         //    return function;
         //}
 
-        static void BuildTypes(GlobalContext context, Definition definition)
+        static void BuildGlobalTypes(GlobalContext context, Definition definition)
         {
-            context.TypeStore.DataTypes.Add("Double", LLVMTypeRef.Double);
-            context.TypeStore.DataTypes.Add("Long", LLVMTypeRef.Int64);
-            context.TypeStore.DataTypes.Add("Size", LLVMTypeRef.Int64);
-            context.TypeStore.DataTypes.Add("Integer", LLVMTypeRef.Int32);
-            context.TypeStore.DataTypes.Add("Byte", LLVMTypeRef.Int8);
-            context.TypeStore.DataTypes.Add("Boolean", LLVMTypeRef.Int8);
+            context.Types.Add("Double", LLVMTypeRef.Double);
+            context.Types.Add("Long", LLVMTypeRef.Int64);
+            context.Types.Add("Size", LLVMTypeRef.Int64);
+            context.Types.Add("Integer", LLVMTypeRef.Int32);
+            context.Types.Add("Byte", LLVMTypeRef.Int8);
+            context.Types.Add("Boolean", LLVMTypeRef.Int8);
 
-            foreach (var source in definition.Sources)
-                BuildSourceTypes(context, source);
-
-            if (definition.Functions != null)
-                foreach (var function in definition.Functions)
-                    BuildFunctionType(context, function);
+            var localContext = new LocalContext { GlobalContext = context, ParentContext = null };
+            BuildDefinitionTypes(localContext, definition);
         }
 
-        static void BuildSourceTypes(GlobalContext context, Source source)
+        static void BuildSourceTypes(LocalContext context, Source source)
         {
+            if (source.Definitions != null)
+                foreach (var definition in source.Definitions.Values)
+                    BuildDefinitionTypes(context, definition);
+
             if (source.Functions != null)
                 foreach (var function in source.Functions)
                     BuildFunctionType(context, function);
@@ -136,12 +144,23 @@ namespace Scaly.Compiler
                     BuildSourceTypes(context, childSource);
         }
 
-        static void BuildFunctionType(GlobalContext context, Function function)
+        static void BuildDefinitionTypes(LocalContext context, Definition definition)
+        {
+            if (definition.Sources != null)
+                foreach (var source in definition.Sources)
+                    BuildSourceTypes(context, source);
+
+            if (definition.Functions != null)
+                foreach (var function in definition.Functions)
+                    BuildFunctionType(context, function);
+        }
+
+        static void BuildFunctionType(LocalContext context, Function function)
         {
             var returnType = GetSingleType(context, function.Routine.Result);
             var parameterTypes = GetTypes(context, function.Routine.Input);
             var functionType = LLVMTypeRef.CreateFunction(returnType, parameterTypes);
-            context.TypeStore.FunctionTypes.Add(function.Name, functionType);
+            context.GlobalContext.Types.Add(function.Name, functionType);
         }
 
         static void BuildValues(GlobalContext context, Definition definition)
@@ -180,14 +199,14 @@ namespace Scaly.Compiler
 
         static void BuildFunctionValue(GlobalContext context, Function function)
         {
-            var functionType = context.TypeStore.FunctionTypes[function.Name];
-            context.ValueStore.Values.Add(function.Name, context.Module.AddFunction(function.Name, functionType));
+            var functionType = context.Types[function.Name];
+            context.Values.Add(function.Name, context.Module.AddFunction(function.Name, functionType));
         }
 
         static void BuildOperatorValue(GlobalContext context, Operator @operator)
         {
-            var functionType = context.TypeStore.FunctionTypes[@operator.Name];
-            context.ValueStore.Values.Add(@operator.Name, context.Module.AddFunction(@operator.Name, functionType));
+            var functionType = context.Types[@operator.Name];
+            context.Values.Add(@operator.Name, context.Module.AddFunction(@operator.Name, functionType));
         }
 
         static void BuildFunctions(GlobalContext context, Definition definition)
@@ -219,14 +238,14 @@ namespace Scaly.Compiler
 
         static void BuildFunction(GlobalContext context, Function function)
         {
-            var llvmFunction = context.ValueStore.Values[function.Name];
+            var llvmFunction = context.Values[function.Name];
             var block = llvmFunction.AppendBasicBlock(string.Empty);
             context.Builder.PositionAtEnd(block);
             var localContext = new LocalContext { GlobalContext = context, ParentContext = null };
             uint paramCount = 0;
             foreach (var parameter in function.Routine.Input)
             {
-                localContext.Data.Add(parameter.Name, llvmFunction.GetParam(paramCount));
+                localContext.Values.Add(parameter.Name, llvmFunction.GetParam(paramCount));
                 paramCount++;
             }
             LLVMValueRef valueRef = null;
@@ -307,8 +326,8 @@ namespace Scaly.Compiler
 
         static LLVMValueRef BuildBinding(LocalContext context, Binding binding)
         {
-            var newContext = new LocalContext { GlobalContext = context.GlobalContext, ParentContext = context, Data = new Dictionary<string, LLVMValueRef>() };
-            newContext.Data.Add(binding.Identifier, BuildOperation(context, binding.Operation));
+            var newContext = new LocalContext { GlobalContext = context.GlobalContext, ParentContext = context };
+            newContext.Values.Add(binding.Identifier, BuildOperation(context, binding.Operation));
             LLVMValueRef valueRef = null;
             foreach (var operation in binding.Operations)
                 valueRef = BuildOperation(newContext, operation);
@@ -316,7 +335,7 @@ namespace Scaly.Compiler
             return valueRef;
         }
 
-        static LLVMTypeRef GetSingleType(GlobalContext context, List<Property> result)
+        static LLVMTypeRef GetSingleType(LocalContext context, List<Property> result)
         {
             if (result == null)
                 return LLVMTypeRef.Void;
@@ -324,25 +343,22 @@ namespace Scaly.Compiler
             return GetType(context, result[0].TypeSpec);
         }
 
-        static LLVMTypeRef GetType(GlobalContext context, TypeSpec typeSpec)
+        static LLVMTypeRef GetType(LocalContext context, TypeSpec typeSpec)
         {
             if (typeSpec.Name == "Pointer")
-                    return GetPointerType(context, typeSpec);
+                return GetPointerType(context, typeSpec);
 
-            if (context.TypeStore.DataTypes.ContainsKey(typeSpec.Name))
-                return context.TypeStore.DataTypes[typeSpec.Name];
-
-            throw new CompilerException($"The type {typeSpec.Name} could not been found.", typeSpec.Syntax.file, typeSpec.Syntax.start.line, typeSpec.Syntax.start.column, typeSpec.Syntax.end.line, typeSpec.Syntax.end.column);
+            return context.ResolveType(typeSpec);
         }
 
-        static LLVMTypeRef GetPointerType(GlobalContext context, TypeSpec typeSpec)
+        static LLVMTypeRef GetPointerType(LocalContext context, TypeSpec typeSpec)
         {
             var firstGenericArgument = typeSpec.Arguments[0];
-            var pointerTarget = (firstGenericArgument.Name == "Pointer")? GetPointerType(context, firstGenericArgument): GetType(context, firstGenericArgument);
+            var pointerTarget = (firstGenericArgument.Name == "Pointer") ? GetPointerType(context, firstGenericArgument): GetType(context, firstGenericArgument);
             return LLVMTypeRef.CreatePointer(pointerTarget, 0);
         }
 
-        static LLVMTypeRef[] GetTypes(GlobalContext context, List<Property> result)
+        static LLVMTypeRef[] GetTypes(LocalContext context, List<Property> result)
         {
             if (result == null)
                 return new LLVMTypeRef[] { };
