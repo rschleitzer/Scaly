@@ -19,14 +19,14 @@ namespace Scaly.Compiler
 
     public class Function
     {
-        public RoutineSyntax Syntax;
+        public Span Span;
         public string Name;
         public Routine Routine;
     }
 
     public class Operator
     {
-        public OperatorSyntax Syntax;
+        public Span Span;
         public string Name;
         public Routine Routine;
     }
@@ -48,11 +48,10 @@ namespace Scaly.Compiler
 
     public class TypeSpec
     {
-        public TypeSyntax Syntax;
+        public Span Span;
         public string Name;
         public List<TypeSpec> Arguments;
     }
-
 
     public class Implement
     {
@@ -78,26 +77,26 @@ namespace Scaly.Compiler
 
     public class Name : Expression
     {
-        public NameSyntax Syntax;
+        public Span Span;
         public List<string> Path;
     }
 
     public class Object : Expression
     {
-        public ObjectSyntax Syntax;
+        public Span Span;
         public List<Component> Components;
     }
 
     public class Component
     {
-        public ComponentSyntax Syntax;
+        public Span Span;
         public string Name;
         public List<Operand> Value;
     }
 
     public class Vector : Expression
     {
-        public VectorSyntax Syntax;
+        public Span Span;
         public List<List<Operand>> Components;
     }
 
@@ -233,8 +232,8 @@ namespace Scaly.Compiler
 
         static Source BuildSource(FileSyntax fileSyntax)
         {
-            var source = new Source { FileName = Path.GetFileName(fileSyntax.file) };
-            var origin = Path.GetDirectoryName(fileSyntax.file);
+            var source = new Source { FileName = Path.GetFileName(fileSyntax.span.file) };
+            var origin = Path.GetDirectoryName(fileSyntax.span.file);
             if (fileSyntax.declarations != null)
                 foreach (var declaration in fileSyntax.declarations)
                     HandleDeclaration(source, origin, declaration);
@@ -308,7 +307,7 @@ namespace Scaly.Compiler
             if (nameSyntax.extensions != null)
                 components.AddRange(nameSyntax.extensions.ToList().ConvertAll(it => it.name));
 
-            return new Name { Path = components, Syntax = nameSyntax };
+            return new Name { Path = components, Span = nameSyntax.span };
         }
 
         static Expression BuildBlock(BlockSyntax blockSyntax)
@@ -328,7 +327,7 @@ namespace Scaly.Compiler
 
         static Expression BuildObject(ObjectSyntax objectSyntax)
         {
-            var @object = new Object { Syntax = objectSyntax };
+            var @object = new Object { Span = objectSyntax.span };
             if (objectSyntax.components != null)
                 @object.Components = objectSyntax.components.ToList().ConvertAll(it => BuildComponent(it));
             return @object;
@@ -336,7 +335,7 @@ namespace Scaly.Compiler
 
         static Expression BuildVector(VectorSyntax vectorSyntax)
         {
-            var vector = new Vector { Syntax = vectorSyntax };
+            var vector = new Vector { Span =  vectorSyntax.span };
             if (vectorSyntax.elements != null)
                 vector.Components = vectorSyntax.elements.ToList().ConvertAll(it => BuildElement(it));
             return vector;
@@ -352,11 +351,11 @@ namespace Scaly.Compiler
 
         static Component BuildComponent(ComponentSyntax componentSyntax)
         {
-            var component = new Component { Syntax = componentSyntax };
+            var component = new Component { Span = componentSyntax.span };
             if (componentSyntax.value != null)
             {
                 if (componentSyntax.operands.Length != 1)
-                    throw new CompilerException("Only one component supported currently.", componentSyntax.file, componentSyntax.start.line, componentSyntax.start.column, componentSyntax.end.line, componentSyntax.end.column);
+                    throw new CompilerException("Only one component supported currently.", componentSyntax.span);
             }
             else
             {
@@ -453,7 +452,7 @@ namespace Scaly.Compiler
                             BuildModuleRecursive(moduleSyntax, Path.Combine(origin, definition.Type.Name), extensionEnumerator.Current.name, extensionEnumerator, definition, isPublic);
                             break;
                         default:
-                            throw new CompilerException($"A concept with name {moduleSyntax.name.name} already defined.", moduleSyntax.file, moduleSyntax.start.line, moduleSyntax.start.column, moduleSyntax.end.line, moduleSyntax.end.column);
+                            throw new CompilerException($"A concept with name {moduleSyntax.name.name} already defined.", moduleSyntax.span);
                     }
                 }
             }
@@ -508,7 +507,7 @@ namespace Scaly.Compiler
                 if (source.Uses == null)
                     source.Uses = new Dictionary<string, string[]>();
                 if (source.Uses.ContainsKey(lastPart))
-                    throw new Exception($"{lastPart} cannot be re-used. Module {source.FileName} at {useSyntax.start.line}, {useSyntax.start.column} - {useSyntax.end.line}, {useSyntax.end.column}.");
+                    throw new CompilerException($"{lastPart} cannot be re-used.", useSyntax.span);
                 source.Uses.Add(lastPart, pathBuilder.ToArray());
             }
         }
@@ -550,7 +549,7 @@ namespace Scaly.Compiler
 
         static void BuildFunction(string name, GenericArgumentsSyntax generics, RoutineSyntax routine, List<Function> functions, bool isPublic, bool isModifying)
         {
-            var function = new Function { Name = name, Syntax = routine };
+            var function = new Function { Name = name, Span = routine.span };
             function.Routine = BuildRoutine(routine);
             functions.Add(function);
         }
@@ -635,7 +634,7 @@ namespace Scaly.Compiler
 
         static TypeSpec BuildType(TypeSyntax typeSyntax)
         {
-            var typeSpec = new TypeSpec { Name = typeSyntax.name.name, Syntax = typeSyntax };
+            var typeSpec = new TypeSpec { Name = typeSyntax.name.name, Span = typeSyntax.span };
             if (typeSyntax.generics != null)
                 typeSpec.Arguments = typeSyntax.generics.generics.ToList().ConvertAll(it => BuildType(it.spec));
 
@@ -644,7 +643,7 @@ namespace Scaly.Compiler
 
         static void HandleOperator(OperatorSyntax operatorSyntax, List<Operator> operators)
         {
-            var @operator = new Operator { Syntax = operatorSyntax };
+            var @operator = new Operator { Span = operatorSyntax.span };
             switch (operatorSyntax.target)
             {
                 case RoutineSyntax routineSyntax:
@@ -685,7 +684,7 @@ namespace Scaly.Compiler
         static void HandleImplement(ImplementSyntax implementSyntax, Dictionary<string, Implement> implementations)
         {
             if (implementations.ContainsKey(implementSyntax.type.name.name))
-                throw new CompilerException($"An implementation with name {implementSyntax.type.name.name} already defined.", implementSyntax.file, implementSyntax.start.line, implementSyntax.start.column, implementSyntax.end.line, implementSyntax.end.column);
+                throw new CompilerException($"An implementation with name {implementSyntax.type.name.name} already defined.", implementSyntax.span);
 
             var implementation = new Implement { Name = implementSyntax.type.name.name };
             implementations.Add(implementation.Name, implementation);
@@ -739,7 +738,7 @@ namespace Scaly.Compiler
             }
 
             if (definitions.ContainsKey(typeModel.Name))
-                throw new CompilerException($"Module {typeModel.Name} already defined.", definitionSyntax.file, definitionSyntax.start.line, definitionSyntax.start.column, definitionSyntax.end.line, definitionSyntax.end.column);
+                throw new CompilerException($"Module {typeModel.Name} already defined.", definitionSyntax.span);
 
             var definition = new Definition { };
             definitions.Add(typeModel.Name, definition);
@@ -831,7 +830,15 @@ namespace Scaly.Compiler
 
             var fileSyntax = parser.parse_file(file_name);
             if (!parser.is_at_end())
-                throw new CompilerException("Unexpected content at end of file.", file_name, parser.get_current_line(), parser.get_current_column(), parser.get_current_line(), parser.get_current_column());
+                throw new CompilerException
+                ("Unexpected content at end of file.",
+                    new Span
+                    {
+                        file = file_name,
+                        start = new Position { line = parser.get_current_line(), column = parser.get_current_column() },
+                        end = new Position { line = parser.get_current_line(), column = parser.get_current_column() }
+                    }
+                );
             return fileSyntax;
         }
     }

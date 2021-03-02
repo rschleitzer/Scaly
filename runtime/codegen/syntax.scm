@@ -4,15 +4,7 @@
 "
     public class "(id syntax-node)"Syntax
     {
-        public string file;"  
-
-        (if (top? syntax-node) ""
-            (if (program? syntax-node) "" ($
-"
-        public Position start;
-        public Position end;"
-            ))
-        )
+        public Span span;"  
 
         (apply-to-children-of syntax-node (lambda (content) ($
         (if (property content) ($

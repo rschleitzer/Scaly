@@ -31,8 +31,8 @@ namespace Scaly.Compiler
 
     public class ParserException : CompilerException
     {
-        public ParserException(string message, string file, ulong lineStart, ulong columnStart, ulong lineEnd, ulong columnEnd)
-            :base(message, file, lineStart, columnStart, lineEnd, columnEnd)
+        public ParserException(string message, Span span)
+            :base(message, span)
         {
         }
     }
@@ -41,28 +41,20 @@ namespace Scaly.Compiler
     {
         public string message;
 
-        public ModelException(string message, string file, ulong lineStart, ulong columnStart, ulong lineEnd, ulong columnEnd)
-            :base(message, file, lineStart, columnStart, lineEnd, columnEnd)
+        public ModelException(string message, Span span)
+            :base(message, span)
         {
         }
     }
 
     public class CompilerException : Exception
     {
-        public string file;
-        public ulong lineStart;
-        public ulong columnStart;
-        public ulong lineEnd;
-        public ulong columnEnd;
+        public Span Span;
 
-        public CompilerException(string message, string file, ulong lineStart, ulong columnStart, ulong lineEnd, ulong columnEnd)
+        public CompilerException(string message, Span span)
             : base(message)
         {
-            this.file = file;
-            this.lineStart = lineStart;
-            this.columnStart = columnStart;
-            this.lineEnd = lineEnd;
-            this.columnEnd = columnEnd;
+            Span = span;
         }
     }
 }

@@ -74,7 +74,7 @@
 "                return null;
 "                                   )
                                     ($
-"                throw new ParserException(\"Unable to parse "(downcase-string (link content))(if (multiple? content) " list" "")".\", file_name, start.line, start.column, lexer.previous_line, lexer.previous_column);
+"                throw new ParserException(\"Unable to parse "(downcase-string (link content))(if (multiple? content) " list" "")".\", new Span { file = file_name, start = new Position { line = lexer.previous_line, column = lexer.previous_column }, end = new Position { line = lexer.line, column = lexer.column } } );
 "                                   )
                                 )
                            ))
@@ -83,7 +83,7 @@
             {
                 if (!is_at_end())
                 {
-                    throw new ParserException(\"Unable to parse "(downcase-string (link content))(if (multiple? content) " list" "")".\", file_name, lexer.previous_line, lexer.previous_column, lexer.line, lexer.column);
+                    throw new ParserException(\"Unable to parse "(downcase-string (link content))(if (multiple? content) " list" "")".\", new Span { file = file_name, start = new Position { line = lexer.previous_line, column = lexer.previous_column }, end = new Position { line = lexer.line, column = lexer.column } } );
                 }
             }
 "                           )"")
@@ -112,7 +112,7 @@
 "                    return null;
 "                                               )
                                                 ($
-"                    throw new ParserException(\"Unable to parse.\", file_name, start.line, start.column, lexer.previous_line, lexer.previous_column);
+"                    throw new ParserException(\"Unable to parse.\", new Span { file = file_name, start = start, end = new Position { line = lexer.previous_line, column = lexer.previous_column } } );
 "
                                                 )
                                             )
@@ -156,12 +156,15 @@
 "
             var ret = new "(id syntax)"Syntax
             {
-                file = file_name"
+                span = new Span
+                {
+                    file = file_name"
                 (if (top? syntax) ""
                                     ",
-                start = start,
-                end = end"
+                    start = start,
+                    end = end"
                 )
+"           }"
                 (apply-to-property-children-of syntax (lambda (content) ($
                     ",
                 "(property content)" = "(property content)

@@ -38,14 +38,14 @@ namespace Scaly.Compiler
             return null;
         }
 
-        internal LLVMTypeRef ResolveType(string name, string file, Position start, Position end)
+        internal LLVMTypeRef ResolveType(string name, Span span)
         {
             if (Types.ContainsKey(name))
                 return Types[name];
 
             if (ParentContext != null)
             {
-                return ParentContext.ResolveType(name, file, start, end);
+                return ParentContext.ResolveType(name, span);
             }
             else
             {
@@ -53,7 +53,7 @@ namespace Scaly.Compiler
                     return GlobalContext.Types[name];
             }
 
-            throw new CompilerException($"The type {name} could not been found.", file, start.line, start.column, end.line, end.column);
+            throw new CompilerException($"The type {name} could not been found.", span);
         }
     }
 
@@ -210,13 +210,13 @@ namespace Scaly.Compiler
 
         static void BuildFunctionValue(LocalContext context, Function function)
         {
-            var functionType = context.ResolveType(function.Name, function.Syntax.file, function.Syntax.start, function.Syntax.end);
+            var functionType = context.ResolveType(function.Name, function.Span);
             context.GlobalContext.Values.Add(function.Name, context.GlobalContext.Module.AddFunction(function.Name, functionType));
         }
 
         static void BuildOperatorValue(LocalContext context, Operator @operator)
         {
-            var functionType = context.ResolveType(@operator.Name, @operator.Syntax.file, @operator.Syntax.start, @operator.Syntax.end);
+            var functionType = context.ResolveType(@operator.Name, @operator.Span);
             context.GlobalContext.Values.Add(@operator.Name, context.GlobalContext.Module.AddFunction(@operator.Name, functionType));
         }
 
@@ -290,7 +290,7 @@ namespace Scaly.Compiler
                     break;
                 case Object @object:
                     if (valueRef == null)
-                        throw new CompilerException("Objects are currently only supported as parameter lists for function calls.", @object.Syntax.file, @object.Syntax.start.line, @object.Syntax.start.column, @object.Syntax.end.line, @object.Syntax.end.column);
+                        throw new CompilerException("Objects are currently only supported as parameter lists for function calls.", @object.Span);
                     valueRef = BuildFunctionCall(context, valueRef, @object);
                     break;
                 default:
@@ -320,7 +320,7 @@ namespace Scaly.Compiler
             if (valueRef != null)
                 return valueRef;
 
-            throw new CompilerException($"The name '{name.Path[0]}' could not been found.", name.Syntax.file, name.Syntax.start.line, name.Syntax.start.column, name.Syntax.end.line, name.Syntax.end.column);
+            throw new CompilerException($"The name '{name.Path[0]}' could not been found.", name.Span);
         }
 
         static LLVMValueRef BuildScope(LocalContext context, Scope scope)
@@ -359,7 +359,7 @@ namespace Scaly.Compiler
             if (typeSpec.Name == "Pointer")
                 return GetPointerType(context, typeSpec);
 
-            return context.ResolveType(typeSpec.Name, typeSpec.Syntax.file, typeSpec.Syntax.start, typeSpec.Syntax.end);
+            return context.ResolveType(typeSpec.Name, typeSpec.Span);
         }
 
         static LLVMTypeRef GetPointerType(LocalContext context, TypeSpec typeSpec)

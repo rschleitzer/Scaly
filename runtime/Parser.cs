@@ -67,13 +67,15 @@ namespace Scaly.Compiler
             {
                 if (!is_at_end())
                 {
-                    throw new ParserException("Unable to parse statement list.", file_name, lexer.previous_line, lexer.previous_column, lexer.line, lexer.column);
+                    throw new ParserException("Unable to parse statement list.", new Span { file = file_name, start = new Position { line = lexer.previous_line, column = lexer.previous_column }, end = new Position { line = lexer.line, column = lexer.column } } );
                 }
             }
 
             var ret = new FileSyntax
             {
-                file = file_name,
+                span = new Span
+                {
+                    file = file_name           },
                 declarations = declarations,
                 statements = statements,
             };
@@ -167,15 +169,17 @@ namespace Scaly.Compiler
                     return null;
             var export = parse_export();
             if (export == null)
-                throw new ParserException("Unable to parse export.", file_name, start.line, start.column, lexer.previous_line, lexer.previous_column);
+                throw new ParserException("Unable to parse export.", new Span { file = file_name, start = new Position { line = lexer.previous_line, column = lexer.previous_column }, end = new Position { line = lexer.line, column = lexer.column } } );
 
             var end = lexer.get_position();
 
             var ret = new PrivateSyntax
             {
-                file = file_name,
-                start = start,
-                end = end,
+                span = new Span
+                {
+                    file = file_name,
+                    start = start,
+                    end = end           },
                 export = export,
             };
 
@@ -237,21 +241,23 @@ namespace Scaly.Compiler
                     return null;
             var type = parse_type();
             if (type == null)
-                throw new ParserException("Unable to parse type.", file_name, start.line, start.column, lexer.previous_line, lexer.previous_column);
+                throw new ParserException("Unable to parse type.", new Span { file = file_name, start = new Position { line = lexer.previous_line, column = lexer.previous_column }, end = new Position { line = lexer.line, column = lexer.column } } );
 
             lexer.parse_colon();
             var attributes = parse_attribute_list();
             var concept = parse_concept();
             if (concept == null)
-                throw new ParserException("Unable to parse concept.", file_name, start.line, start.column, lexer.previous_line, lexer.previous_column);
+                throw new ParserException("Unable to parse concept.", new Span { file = file_name, start = new Position { line = lexer.previous_line, column = lexer.previous_column }, end = new Position { line = lexer.line, column = lexer.column } } );
 
             var end = lexer.get_position();
 
             var ret = new DefinitionSyntax
             {
-                file = file_name,
-                start = start,
-                end = end,
+                span = new Span
+                {
+                    file = file_name,
+                    start = start,
+                    end = end           },
                 type = type,
                 attributes = attributes,
                 concept = concept,
@@ -282,9 +288,11 @@ namespace Scaly.Compiler
 
             var ret = new NameSyntax
             {
-                file = file_name,
-                start = start,
-                end = end,
+                span = new Span
+                {
+                    file = file_name,
+                    start = start,
+                    end = end           },
                 name = name,
                 extensions = extensions,
             };
@@ -326,21 +334,23 @@ namespace Scaly.Compiler
             {
                 if (!is_identifier(name))
                 {
-                    throw new ParserException("Unable to parse.", file_name, start.line, start.column, lexer.previous_line, lexer.previous_column);
+                    throw new ParserException("Unable to parse.", new Span { file = file_name, start = start, end = new Position { line = lexer.previous_line, column = lexer.previous_column } } );
                 }
             }
             else
             {
-                    throw new ParserException("Unable to parse.", file_name, start.line, start.column, lexer.previous_line, lexer.previous_column);
+                    throw new ParserException("Unable to parse.", new Span { file = file_name, start = start, end = new Position { line = lexer.previous_line, column = lexer.previous_column } } );
             }
 
             var end = lexer.get_position();
 
             var ret = new ExtensionSyntax
             {
-                file = file_name,
-                start = start,
-                end = end,
+                span = new Span
+                {
+                    file = file_name,
+                    start = start,
+                    end = end           },
                 name = name,
             };
 
@@ -379,15 +389,17 @@ namespace Scaly.Compiler
             }
             var value = parse_model();
             if (value == null)
-                throw new ParserException("Unable to parse model.", file_name, start.line, start.column, lexer.previous_line, lexer.previous_column);
+                throw new ParserException("Unable to parse model.", new Span { file = file_name, start = new Position { line = lexer.previous_line, column = lexer.previous_column }, end = new Position { line = lexer.line, column = lexer.column } } );
 
             var end = lexer.get_position();
 
             var ret = new AttributeSyntax
             {
-                file = file_name,
-                start = start,
-                end = end,
+                span = new Span
+                {
+                    file = file_name,
+                    start = start,
+                    end = end           },
                 attribute = attribute,
                 value = value,
             };
@@ -440,9 +452,11 @@ namespace Scaly.Compiler
 
             var ret = new ClassSyntax
             {
-                file = file_name,
-                start = start,
-                end = end,
+                span = new Span
+                {
+                    file = file_name,
+                    start = start,
+                    end = end           },
                 structure = structure,
                 body = body,
             };
@@ -461,9 +475,11 @@ namespace Scaly.Compiler
 
             var ret = new NamespaceSyntax
             {
-                file = file_name,
-                start = start,
-                end = end,
+                span = new Span
+                {
+                    file = file_name,
+                    start = start,
+                    end = end           },
                 body = body,
             };
 
@@ -482,27 +498,29 @@ namespace Scaly.Compiler
 
             var success_left_paren_3 = lexer.parse_punctuation("(");
             if (!success_left_paren_3)
-                    throw new ParserException("Unable to parse.", file_name, start.line, start.column, lexer.previous_line, lexer.previous_column);
+                    throw new ParserException("Unable to parse.", new Span { file = file_name, start = start, end = new Position { line = lexer.previous_line, column = lexer.previous_column } } );
             var tags = parse_tag_list();
             if (tags == null)
-                throw new ParserException("Unable to parse tag list.", file_name, start.line, start.column, lexer.previous_line, lexer.previous_column);
+                throw new ParserException("Unable to parse tag list.", new Span { file = file_name, start = new Position { line = lexer.previous_line, column = lexer.previous_column }, end = new Position { line = lexer.line, column = lexer.column } } );
 
             var success_right_paren_5 = lexer.parse_punctuation(")");
             if (!success_right_paren_5)
-                    throw new ParserException("Unable to parse.", file_name, start.line, start.column, lexer.previous_line, lexer.previous_column);
+                    throw new ParserException("Unable to parse.", new Span { file = file_name, start = start, end = new Position { line = lexer.previous_line, column = lexer.previous_column } } );
 
             lexer.parse_colon();
             var body = parse_body();
             if (body == null)
-                throw new ParserException("Unable to parse body.", file_name, start.line, start.column, lexer.previous_line, lexer.previous_column);
+                throw new ParserException("Unable to parse body.", new Span { file = file_name, start = new Position { line = lexer.previous_line, column = lexer.previous_column }, end = new Position { line = lexer.line, column = lexer.column } } );
 
             var end = lexer.get_position();
 
             var ret = new UnionSyntax
             {
-                file = file_name,
-                start = start,
-                end = end,
+                span = new Span
+                {
+                    file = file_name,
+                    start = start,
+                    end = end           },
                 tags = tags,
                 body = body,
             };
@@ -554,9 +572,11 @@ namespace Scaly.Compiler
 
             var ret = new TagSyntax
             {
-                file = file_name,
-                start = start,
-                end = end,
+                span = new Span
+                {
+                    file = file_name,
+                    start = start,
+                    end = end           },
                 name = name,
                 attributes = attributes,
                 item = item,
@@ -588,7 +608,7 @@ namespace Scaly.Compiler
             lexer.parse_colon();
             var structure = parse_structure();
             if (structure == null)
-                throw new ParserException("Unable to parse structure.", file_name, start.line, start.column, lexer.previous_line, lexer.previous_column);
+                throw new ParserException("Unable to parse structure.", new Span { file = file_name, start = new Position { line = lexer.previous_line, column = lexer.previous_column }, end = new Position { line = lexer.line, column = lexer.column } } );
 
             lexer.parse_colon();
             var body = parse_body();
@@ -599,9 +619,11 @@ namespace Scaly.Compiler
 
             var ret = new VariantSyntax
             {
-                file = file_name,
-                start = start,
-                end = end,
+                span = new Span
+                {
+                    file = file_name,
+                    start = start,
+                    end = end           },
                 structure = structure,
                 body = body,
             };
@@ -623,9 +645,11 @@ namespace Scaly.Compiler
 
             var ret = new EnumSyntax
             {
-                file = file_name,
-                start = start,
-                end = end,
+                span = new Span
+                {
+                    file = file_name,
+                    start = start,
+                    end = end           },
                 literal = literal,
             };
 
@@ -645,9 +669,11 @@ namespace Scaly.Compiler
 
             var ret = new ConstantSyntax
             {
-                file = file_name,
-                start = start,
-                end = end,
+                span = new Span
+                {
+                    file = file_name,
+                    start = start,
+                    end = end           },
                 operation = operation,
             };
 
@@ -670,9 +696,11 @@ namespace Scaly.Compiler
 
             var ret = new DelegateSyntax
             {
-                file = file_name,
-                start = start,
-                end = end,
+                span = new Span
+                {
+                    file = file_name,
+                    start = start,
+                    end = end           },
                 parameters = parameters,
                 attributes = attributes,
                 result = result,
@@ -693,15 +721,17 @@ namespace Scaly.Compiler
 
             var success_right_paren_3 = lexer.parse_punctuation(")");
             if (!success_right_paren_3)
-                    throw new ParserException("Unable to parse.", file_name, start.line, start.column, lexer.previous_line, lexer.previous_column);
+                    throw new ParserException("Unable to parse.", new Span { file = file_name, start = start, end = new Position { line = lexer.previous_line, column = lexer.previous_column } } );
 
             var end = lexer.get_position();
 
             var ret = new StructureSyntax
             {
-                file = file_name,
-                start = start,
-                end = end,
+                span = new Span
+                {
+                    file = file_name,
+                    start = start,
+                    end = end           },
                 members = members,
             };
 
@@ -719,7 +749,7 @@ namespace Scaly.Compiler
 
             var success_right_curly_3 = lexer.parse_punctuation("}");
             if (!success_right_curly_3)
-                    throw new ParserException("Unable to parse.", file_name, start.line, start.column, lexer.previous_line, lexer.previous_column);
+                    throw new ParserException("Unable to parse.", new Span { file = file_name, start = start, end = new Position { line = lexer.previous_line, column = lexer.previous_column } } );
 
             lexer.parse_colon();
 
@@ -727,9 +757,11 @@ namespace Scaly.Compiler
 
             var ret = new BodySyntax
             {
-                file = file_name,
-                start = start,
-                end = end,
+                span = new Span
+                {
+                    file = file_name,
+                    start = start,
+                    end = end           },
                 declarations = declarations,
             };
 
@@ -782,15 +814,17 @@ namespace Scaly.Compiler
                     return null;
             var export = parse_property();
             if (export == null)
-                throw new ParserException("Unable to parse property.", file_name, start.line, start.column, lexer.previous_line, lexer.previous_column);
+                throw new ParserException("Unable to parse property.", new Span { file = file_name, start = new Position { line = lexer.previous_line, column = lexer.previous_column }, end = new Position { line = lexer.line, column = lexer.column } } );
 
             var end = lexer.get_position();
 
             var ret = new FieldSyntax
             {
-                file = file_name,
-                start = start,
-                end = end,
+                span = new Span
+                {
+                    file = file_name,
+                    start = start,
+                    end = end           },
                 export = export,
             };
 
@@ -845,9 +879,11 @@ namespace Scaly.Compiler
 
             var ret = new PropertySyntax
             {
-                file = file_name,
-                start = start,
-                end = end,
+                span = new Span
+                {
+                    file = file_name,
+                    start = start,
+                    end = end           },
                 name = name,
                 annotation = annotation,
                 attributes = attributes,
@@ -865,15 +901,17 @@ namespace Scaly.Compiler
                     return null;
             var spec = parse_typespec();
             if (spec == null)
-                throw new ParserException("Unable to parse typespec.", file_name, start.line, start.column, lexer.previous_line, lexer.previous_column);
+                throw new ParserException("Unable to parse typespec.", new Span { file = file_name, start = new Position { line = lexer.previous_line, column = lexer.previous_column }, end = new Position { line = lexer.line, column = lexer.column } } );
 
             var end = lexer.get_position();
 
             var ret = new TypeAnnotationSyntax
             {
-                file = file_name,
-                start = start,
-                end = end,
+                span = new Span
+                {
+                    file = file_name,
+                    start = start,
+                    end = end           },
                 spec = spec,
             };
 
@@ -930,9 +968,11 @@ namespace Scaly.Compiler
 
             var ret = new TypeSyntax
             {
-                file = file_name,
-                start = start,
-                end = end,
+                span = new Span
+                {
+                    file = file_name,
+                    start = start,
+                    end = end           },
                 name = name,
                 generics = generics,
                 optional = optional,
@@ -952,15 +992,17 @@ namespace Scaly.Compiler
 
             var success_right_bracket_3 = lexer.parse_punctuation("]");
             if (!success_right_bracket_3)
-                    throw new ParserException("Unable to parse.", file_name, start.line, start.column, lexer.previous_line, lexer.previous_column);
+                    throw new ParserException("Unable to parse.", new Span { file = file_name, start = start, end = new Position { line = lexer.previous_line, column = lexer.previous_column } } );
 
             var end = lexer.get_position();
 
             var ret = new ArraySyntax
             {
-                file = file_name,
-                start = start,
-                end = end,
+                span = new Span
+                {
+                    file = file_name,
+                    start = start,
+                    end = end           },
                 members = members,
             };
 
@@ -978,15 +1020,17 @@ namespace Scaly.Compiler
 
             var success_right_bracket_3 = lexer.parse_punctuation("]");
             if (!success_right_bracket_3)
-                    throw new ParserException("Unable to parse.", file_name, start.line, start.column, lexer.previous_line, lexer.previous_column);
+                    throw new ParserException("Unable to parse.", new Span { file = file_name, start = start, end = new Position { line = lexer.previous_line, column = lexer.previous_column } } );
 
             var end = lexer.get_position();
 
             var ret = new GenericArgumentsSyntax
             {
-                file = file_name,
-                start = start,
-                end = end,
+                span = new Span
+                {
+                    file = file_name,
+                    start = start,
+                    end = end           },
                 generics = generics,
             };
 
@@ -1027,9 +1071,11 @@ namespace Scaly.Compiler
 
             var ret = new GenericArgumentSyntax
             {
-                file = file_name,
-                start = start,
-                end = end,
+                span = new Span
+                {
+                    file = file_name,
+                    start = start,
+                    end = end           },
                 spec = spec,
             };
 
@@ -1048,9 +1094,11 @@ namespace Scaly.Compiler
 
             var ret = new OptionalSyntax
             {
-                file = file_name,
-                start = start,
-                end = end,
+                span = new Span
+                {
+                    file = file_name,
+                    start = start,
+                    end = end           },
             };
 
             return ret;
@@ -1069,25 +1117,27 @@ namespace Scaly.Compiler
             {
                 if (!is_identifier(name))
                 {
-                    throw new ParserException("Unable to parse.", file_name, start.line, start.column, lexer.previous_line, lexer.previous_column);
+                    throw new ParserException("Unable to parse.", new Span { file = file_name, start = start, end = new Position { line = lexer.previous_line, column = lexer.previous_column } } );
                 }
             }
             else
             {
-                    throw new ParserException("Unable to parse.", file_name, start.line, start.column, lexer.previous_line, lexer.previous_column);
+                    throw new ParserException("Unable to parse.", new Span { file = file_name, start = start, end = new Position { line = lexer.previous_line, column = lexer.previous_column } } );
             }
             var generics = parse_genericarguments();
             var routine = parse_routine();
             if (routine == null)
-                throw new ParserException("Unable to parse routine.", file_name, start.line, start.column, lexer.previous_line, lexer.previous_column);
+                throw new ParserException("Unable to parse routine.", new Span { file = file_name, start = new Position { line = lexer.previous_line, column = lexer.previous_column }, end = new Position { line = lexer.line, column = lexer.column } } );
 
             var end = lexer.get_position();
 
             var ret = new FunctionSyntax
             {
-                file = file_name,
-                start = start,
-                end = end,
+                span = new Span
+                {
+                    file = file_name,
+                    start = start,
+                    end = end           },
                 name = name,
                 generics = generics,
                 routine = routine,
@@ -1109,25 +1159,27 @@ namespace Scaly.Compiler
             {
                 if (!is_identifier(name))
                 {
-                    throw new ParserException("Unable to parse.", file_name, start.line, start.column, lexer.previous_line, lexer.previous_column);
+                    throw new ParserException("Unable to parse.", new Span { file = file_name, start = start, end = new Position { line = lexer.previous_line, column = lexer.previous_column } } );
                 }
             }
             else
             {
-                    throw new ParserException("Unable to parse.", file_name, start.line, start.column, lexer.previous_line, lexer.previous_column);
+                    throw new ParserException("Unable to parse.", new Span { file = file_name, start = start, end = new Position { line = lexer.previous_line, column = lexer.previous_column } } );
             }
             var generics = parse_genericarguments();
             var routine = parse_routine();
             if (routine == null)
-                throw new ParserException("Unable to parse routine.", file_name, start.line, start.column, lexer.previous_line, lexer.previous_column);
+                throw new ParserException("Unable to parse routine.", new Span { file = file_name, start = new Position { line = lexer.previous_line, column = lexer.previous_column }, end = new Position { line = lexer.line, column = lexer.column } } );
 
             var end = lexer.get_position();
 
             var ret = new ProcedureSyntax
             {
-                file = file_name,
-                start = start,
-                end = end,
+                span = new Span
+                {
+                    file = file_name,
+                    start = start,
+                    end = end           },
                 name = name,
                 generics = generics,
                 routine = routine,
@@ -1145,15 +1197,17 @@ namespace Scaly.Compiler
                     return null;
             var target = parse_target();
             if (target == null)
-                throw new ParserException("Unable to parse target.", file_name, start.line, start.column, lexer.previous_line, lexer.previous_column);
+                throw new ParserException("Unable to parse target.", new Span { file = file_name, start = new Position { line = lexer.previous_line, column = lexer.previous_column }, end = new Position { line = lexer.line, column = lexer.column } } );
 
             var end = lexer.get_position();
 
             var ret = new OperatorSyntax
             {
-                file = file_name,
-                start = start,
-                end = end,
+                span = new Span
+                {
+                    file = file_name,
+                    start = start,
+                    end = end           },
                 target = target,
             };
 
@@ -1189,15 +1243,17 @@ namespace Scaly.Compiler
             lexer.parse_colon();
             var implementation = parse_implementation();
             if (implementation == null)
-                throw new ParserException("Unable to parse implementation.", file_name, start.line, start.column, lexer.previous_line, lexer.previous_column);
+                throw new ParserException("Unable to parse implementation.", new Span { file = file_name, start = new Position { line = lexer.previous_line, column = lexer.previous_column }, end = new Position { line = lexer.line, column = lexer.column } } );
 
             var end = lexer.get_position();
 
             var ret = new RoutineSyntax
             {
-                file = file_name,
-                start = start,
-                end = end,
+                span = new Span
+                {
+                    file = file_name,
+                    start = start,
+                    end = end           },
                 parameters = parameters,
                 attributes = attributes,
                 returns = returns,
@@ -1233,15 +1289,17 @@ namespace Scaly.Compiler
             lexer.parse_colon();
             var implementation = parse_implementation();
             if (implementation == null)
-                throw new ParserException("Unable to parse implementation.", file_name, start.line, start.column, lexer.previous_line, lexer.previous_column);
+                throw new ParserException("Unable to parse implementation.", new Span { file = file_name, start = new Position { line = lexer.previous_line, column = lexer.previous_column }, end = new Position { line = lexer.line, column = lexer.column } } );
 
             var end = lexer.get_position();
 
             var ret = new SymbolSyntax
             {
-                file = file_name,
-                start = start,
-                end = end,
+                span = new Span
+                {
+                    file = file_name,
+                    start = start,
+                    end = end           },
                 name = name,
                 attributes = attributes,
                 returns = returns,
@@ -1279,15 +1337,17 @@ namespace Scaly.Compiler
 
             var success_right_paren_3 = lexer.parse_punctuation(")");
             if (!success_right_paren_3)
-                    throw new ParserException("Unable to parse.", file_name, start.line, start.column, lexer.previous_line, lexer.previous_column);
+                    throw new ParserException("Unable to parse.", new Span { file = file_name, start = start, end = new Position { line = lexer.previous_line, column = lexer.previous_column } } );
 
             var end = lexer.get_position();
 
             var ret = new ParametersSyntax
             {
-                file = file_name,
-                start = start,
-                end = end,
+                span = new Span
+                {
+                    file = file_name,
+                    start = start,
+                    end = end           },
                 properties = properties,
             };
 
@@ -1303,16 +1363,18 @@ namespace Scaly.Compiler
                     return null;
             var parameters = parse_parameterset();
             if (parameters == null)
-                throw new ParserException("Unable to parse parameterset.", file_name, start.line, start.column, lexer.previous_line, lexer.previous_column);
+                throw new ParserException("Unable to parse parameterset.", new Span { file = file_name, start = new Position { line = lexer.previous_line, column = lexer.previous_column }, end = new Position { line = lexer.line, column = lexer.column } } );
             var attributes = parse_attribute_list();
 
             var end = lexer.get_position();
 
             var ret = new ReturnsSyntax
             {
-                file = file_name,
-                start = start,
-                end = end,
+                span = new Span
+                {
+                    file = file_name,
+                    start = start,
+                    end = end           },
                 parameters = parameters,
                 attributes = attributes,
             };
@@ -1329,16 +1391,18 @@ namespace Scaly.Compiler
                     return null;
             var type = parse_type();
             if (type == null)
-                throw new ParserException("Unable to parse type.", file_name, start.line, start.column, lexer.previous_line, lexer.previous_column);
+                throw new ParserException("Unable to parse type.", new Span { file = file_name, start = new Position { line = lexer.previous_line, column = lexer.previous_column }, end = new Position { line = lexer.line, column = lexer.column } } );
             var attributes = parse_attribute_list();
 
             var end = lexer.get_position();
 
             var ret = new ThrowsSyntax
             {
-                file = file_name,
-                start = start,
-                end = end,
+                span = new Span
+                {
+                    file = file_name,
+                    start = start,
+                    end = end           },
                 type = type,
                 attributes = attributes,
             };
@@ -1384,9 +1448,11 @@ namespace Scaly.Compiler
 
             var ret = new ExternSyntax
             {
-                file = file_name,
-                start = start,
-                end = end,
+                span = new Span
+                {
+                    file = file_name,
+                    start = start,
+                    end = end           },
             };
 
             return ret;
@@ -1404,9 +1470,11 @@ namespace Scaly.Compiler
 
             var ret = new InstructionSyntax
             {
-                file = file_name,
-                start = start,
-                end = end,
+                span = new Span
+                {
+                    file = file_name,
+                    start = start,
+                    end = end           },
             };
 
             return ret;
@@ -1424,9 +1492,11 @@ namespace Scaly.Compiler
 
             var ret = new IntrinsicSyntax
             {
-                file = file_name,
-                start = start,
-                end = end,
+                span = new Span
+                {
+                    file = file_name,
+                    start = start,
+                    end = end           },
             };
 
             return ret;
@@ -1441,7 +1511,7 @@ namespace Scaly.Compiler
                     return null;
             var name = parse_name();
             if (name == null)
-                throw new ParserException("Unable to parse name.", file_name, start.line, start.column, lexer.previous_line, lexer.previous_column);
+                throw new ParserException("Unable to parse name.", new Span { file = file_name, start = new Position { line = lexer.previous_line, column = lexer.previous_column }, end = new Position { line = lexer.line, column = lexer.column } } );
 
             lexer.parse_colon();
 
@@ -1449,9 +1519,11 @@ namespace Scaly.Compiler
 
             var ret = new UseSyntax
             {
-                file = file_name,
-                start = start,
-                end = end,
+                span = new Span
+                {
+                    file = file_name,
+                    start = start,
+                    end = end           },
                 name = name,
             };
 
@@ -1467,19 +1539,19 @@ namespace Scaly.Compiler
                     return null;
             var type = parse_type();
             if (type == null)
-                throw new ParserException("Unable to parse type.", file_name, start.line, start.column, lexer.previous_line, lexer.previous_column);
+                throw new ParserException("Unable to parse type.", new Span { file = file_name, start = new Position { line = lexer.previous_line, column = lexer.previous_column }, end = new Position { line = lexer.line, column = lexer.column } } );
             var attributes = parse_attribute_list();
 
             lexer.parse_colon();
 
             var success_left_curly_5 = lexer.parse_punctuation("{");
             if (!success_left_curly_5)
-                    throw new ParserException("Unable to parse.", file_name, start.line, start.column, lexer.previous_line, lexer.previous_column);
+                    throw new ParserException("Unable to parse.", new Span { file = file_name, start = start, end = new Position { line = lexer.previous_line, column = lexer.previous_column } } );
             var methods = parse_method_list();
 
             var success_right_curly_7 = lexer.parse_punctuation("}");
             if (!success_right_curly_7)
-                    throw new ParserException("Unable to parse.", file_name, start.line, start.column, lexer.previous_line, lexer.previous_column);
+                    throw new ParserException("Unable to parse.", new Span { file = file_name, start = start, end = new Position { line = lexer.previous_line, column = lexer.previous_column } } );
 
             lexer.parse_colon();
 
@@ -1487,9 +1559,11 @@ namespace Scaly.Compiler
 
             var ret = new ImplementSyntax
             {
-                file = file_name,
-                start = start,
-                end = end,
+                span = new Span
+                {
+                    file = file_name,
+                    start = start,
+                    end = end           },
                 type = type,
                 attributes = attributes,
                 methods = methods,
@@ -1507,20 +1581,20 @@ namespace Scaly.Compiler
                     return null;
             var name = parse_name();
             if (name == null)
-                throw new ParserException("Unable to parse name.", file_name, start.line, start.column, lexer.previous_line, lexer.previous_column);
+                throw new ParserException("Unable to parse name.", new Span { file = file_name, start = new Position { line = lexer.previous_line, column = lexer.previous_column }, end = new Position { line = lexer.line, column = lexer.column } } );
             var extension = parse_extends();
             if (extension == null)
-                throw new ParserException("Unable to parse extends.", file_name, start.line, start.column, lexer.previous_line, lexer.previous_column);
+                throw new ParserException("Unable to parse extends.", new Span { file = file_name, start = new Position { line = lexer.previous_line, column = lexer.previous_column }, end = new Position { line = lexer.line, column = lexer.column } } );
             var attributes = parse_attribute_list();
 
             var success_left_curly_5 = lexer.parse_punctuation("{");
             if (!success_left_curly_5)
-                    throw new ParserException("Unable to parse.", file_name, start.line, start.column, lexer.previous_line, lexer.previous_column);
+                    throw new ParserException("Unable to parse.", new Span { file = file_name, start = start, end = new Position { line = lexer.previous_line, column = lexer.previous_column } } );
             var functions = parse_method_list();
 
             var success_right_curly_7 = lexer.parse_punctuation("}");
             if (!success_right_curly_7)
-                    throw new ParserException("Unable to parse.", file_name, start.line, start.column, lexer.previous_line, lexer.previous_column);
+                    throw new ParserException("Unable to parse.", new Span { file = file_name, start = start, end = new Position { line = lexer.previous_line, column = lexer.previous_column } } );
 
             lexer.parse_colon();
 
@@ -1528,9 +1602,11 @@ namespace Scaly.Compiler
 
             var ret = new TraitSyntax
             {
-                file = file_name,
-                start = start,
-                end = end,
+                span = new Span
+                {
+                    file = file_name,
+                    start = start,
+                    end = end           },
                 name = name,
                 extension = extension,
                 attributes = attributes,
@@ -1595,9 +1671,11 @@ namespace Scaly.Compiler
 
             var ret = new ExtendsSyntax
             {
-                file = file_name,
-                start = start,
-                end = end,
+                span = new Span
+                {
+                    file = file_name,
+                    start = start,
+                    end = end           },
                 extensions = extensions,
             };
 
@@ -1638,9 +1716,11 @@ namespace Scaly.Compiler
 
             var ret = new ExtendSyntax
             {
-                file = file_name,
-                start = start,
-                end = end,
+                span = new Span
+                {
+                    file = file_name,
+                    start = start,
+                    end = end           },
                 spec = spec,
             };
 
@@ -1660,27 +1740,29 @@ namespace Scaly.Compiler
             {
                 if (!is_identifier(name))
                 {
-                    throw new ParserException("Unable to parse.", file_name, start.line, start.column, lexer.previous_line, lexer.previous_column);
+                    throw new ParserException("Unable to parse.", new Span { file = file_name, start = start, end = new Position { line = lexer.previous_line, column = lexer.previous_column } } );
                 }
             }
             else
             {
-                    throw new ParserException("Unable to parse.", file_name, start.line, start.column, lexer.previous_line, lexer.previous_column);
+                    throw new ParserException("Unable to parse.", new Span { file = file_name, start = start, end = new Position { line = lexer.previous_line, column = lexer.previous_column } } );
             }
             var model = parse_model();
             if (model == null)
-                throw new ParserException("Unable to parse model.", file_name, start.line, start.column, lexer.previous_line, lexer.previous_column);
+                throw new ParserException("Unable to parse model.", new Span { file = file_name, start = new Position { line = lexer.previous_line, column = lexer.previous_column }, end = new Position { line = lexer.line, column = lexer.column } } );
             var rule = parse_operation();
             if (rule == null)
-                throw new ParserException("Unable to parse operation.", file_name, start.line, start.column, lexer.previous_line, lexer.previous_column);
+                throw new ParserException("Unable to parse operation.", new Span { file = file_name, start = new Position { line = lexer.previous_line, column = lexer.previous_column }, end = new Position { line = lexer.line, column = lexer.column } } );
 
             var end = lexer.get_position();
 
             var ret = new MacroSyntax
             {
-                file = file_name,
-                start = start,
-                end = end,
+                span = new Span
+                {
+                    file = file_name,
+                    start = start,
+                    end = end           },
                 name = name,
                 model = model,
                 rule = rule,
@@ -1698,7 +1780,7 @@ namespace Scaly.Compiler
                     return null;
             var name = parse_name();
             if (name == null)
-                throw new ParserException("Unable to parse name.", file_name, start.line, start.column, lexer.previous_line, lexer.previous_column);
+                throw new ParserException("Unable to parse name.", new Span { file = file_name, start = new Position { line = lexer.previous_line, column = lexer.previous_column }, end = new Position { line = lexer.line, column = lexer.column } } );
 
             lexer.parse_colon();
 
@@ -1706,9 +1788,11 @@ namespace Scaly.Compiler
 
             var ret = new ModuleSyntax
             {
-                file = file_name,
-                start = start,
-                end = end,
+                span = new Span
+                {
+                    file = file_name,
+                    start = start,
+                    end = end           },
                 name = name,
             };
 
@@ -1802,15 +1886,17 @@ namespace Scaly.Compiler
                     return null;
             var binding = parse_binding();
             if (binding == null)
-                throw new ParserException("Unable to parse binding.", file_name, start.line, start.column, lexer.previous_line, lexer.previous_column);
+                throw new ParserException("Unable to parse binding.", new Span { file = file_name, start = new Position { line = lexer.previous_line, column = lexer.previous_column }, end = new Position { line = lexer.line, column = lexer.column } } );
 
             var end = lexer.get_position();
 
             var ret = new LetSyntax
             {
-                file = file_name,
-                start = start,
-                end = end,
+                span = new Span
+                {
+                    file = file_name,
+                    start = start,
+                    end = end           },
                 binding = binding,
             };
 
@@ -1826,15 +1912,17 @@ namespace Scaly.Compiler
                     return null;
             var binding = parse_binding();
             if (binding == null)
-                throw new ParserException("Unable to parse binding.", file_name, start.line, start.column, lexer.previous_line, lexer.previous_column);
+                throw new ParserException("Unable to parse binding.", new Span { file = file_name, start = new Position { line = lexer.previous_line, column = lexer.previous_column }, end = new Position { line = lexer.line, column = lexer.column } } );
 
             var end = lexer.get_position();
 
             var ret = new VarSyntax
             {
-                file = file_name,
-                start = start,
-                end = end,
+                span = new Span
+                {
+                    file = file_name,
+                    start = start,
+                    end = end           },
                 binding = binding,
             };
 
@@ -1850,15 +1938,17 @@ namespace Scaly.Compiler
                     return null;
             var binding = parse_binding();
             if (binding == null)
-                throw new ParserException("Unable to parse binding.", file_name, start.line, start.column, lexer.previous_line, lexer.previous_column);
+                throw new ParserException("Unable to parse binding.", new Span { file = file_name, start = new Position { line = lexer.previous_line, column = lexer.previous_column }, end = new Position { line = lexer.line, column = lexer.column } } );
 
             var end = lexer.get_position();
 
             var ret = new MutableSyntax
             {
-                file = file_name,
-                start = start,
-                end = end,
+                span = new Span
+                {
+                    file = file_name,
+                    start = start,
+                    end = end           },
                 binding = binding,
             };
 
@@ -1884,15 +1974,17 @@ namespace Scaly.Compiler
             var annotation = parse_bindingannotation();
             var operation = parse_operation();
             if (operation == null)
-                throw new ParserException("Unable to parse operation.", file_name, start.line, start.column, lexer.previous_line, lexer.previous_column);
+                throw new ParserException("Unable to parse operation.", new Span { file = file_name, start = new Position { line = lexer.previous_line, column = lexer.previous_column }, end = new Position { line = lexer.line, column = lexer.column } } );
 
             var end = lexer.get_position();
 
             var ret = new BindingSyntax
             {
-                file = file_name,
-                start = start,
-                end = end,
+                span = new Span
+                {
+                    file = file_name,
+                    start = start,
+                    end = end           },
                 name = name,
                 annotation = annotation,
                 operation = operation,
@@ -1910,15 +2002,17 @@ namespace Scaly.Compiler
                     return null;
             var spec = parse_bindingspec();
             if (spec == null)
-                throw new ParserException("Unable to parse bindingspec.", file_name, start.line, start.column, lexer.previous_line, lexer.previous_column);
+                throw new ParserException("Unable to parse bindingspec.", new Span { file = file_name, start = new Position { line = lexer.previous_line, column = lexer.previous_column }, end = new Position { line = lexer.line, column = lexer.column } } );
 
             var end = lexer.get_position();
 
             var ret = new BindingAnnotationSyntax
             {
-                file = file_name,
-                start = start,
-                end = end,
+                span = new Span
+                {
+                    file = file_name,
+                    start = start,
+                    end = end           },
                 spec = spec,
             };
 
@@ -1976,18 +2070,20 @@ namespace Scaly.Compiler
                     return null;
             var target = parse_operation();
             if (target == null)
-                throw new ParserException("Unable to parse operation.", file_name, start.line, start.column, lexer.previous_line, lexer.previous_column);
+                throw new ParserException("Unable to parse operation.", new Span { file = file_name, start = new Position { line = lexer.previous_line, column = lexer.previous_column }, end = new Position { line = lexer.line, column = lexer.column } } );
             var source = parse_operation();
             if (source == null)
-                throw new ParserException("Unable to parse operation.", file_name, start.line, start.column, lexer.previous_line, lexer.previous_column);
+                throw new ParserException("Unable to parse operation.", new Span { file = file_name, start = new Position { line = lexer.previous_line, column = lexer.previous_column }, end = new Position { line = lexer.line, column = lexer.column } } );
 
             var end = lexer.get_position();
 
             var ret = new SetSyntax
             {
-                file = file_name,
-                start = start,
-                end = end,
+                span = new Span
+                {
+                    file = file_name,
+                    start = start,
+                    end = end           },
                 target = target,
                 source = source,
             };
@@ -2008,9 +2104,11 @@ namespace Scaly.Compiler
 
             var ret = new OperationSyntax
             {
-                file = file_name,
-                start = start,
-                end = end,
+                span = new Span
+                {
+                    file = file_name,
+                    start = start,
+                    end = end           },
                 operands = operands,
             };
 
@@ -2050,9 +2148,11 @@ namespace Scaly.Compiler
 
             var ret = new OperandSyntax
             {
-                file = file_name,
-                start = start,
-                end = end,
+                span = new Span
+                {
+                    file = file_name,
+                    start = start,
+                    end = end           },
                 expression = expression,
                 postfixes = postfixes,
             };
@@ -2111,15 +2211,17 @@ namespace Scaly.Compiler
                     return null;
             var member = parse_name();
             if (member == null)
-                throw new ParserException("Unable to parse name.", file_name, start.line, start.column, lexer.previous_line, lexer.previous_column);
+                throw new ParserException("Unable to parse name.", new Span { file = file_name, start = new Position { line = lexer.previous_line, column = lexer.previous_column }, end = new Position { line = lexer.line, column = lexer.column } } );
 
             var end = lexer.get_position();
 
             var ret = new MemberAccessSyntax
             {
-                file = file_name,
-                start = start,
-                end = end,
+                span = new Span
+                {
+                    file = file_name,
+                    start = start,
+                    end = end           },
                 member = member,
             };
 
@@ -2138,9 +2240,11 @@ namespace Scaly.Compiler
 
             var ret = new CatcherSyntax
             {
-                file = file_name,
-                start = start,
-                end = end,
+                span = new Span
+                {
+                    file = file_name,
+                    start = start,
+                    end = end           },
                 catchers = catchers,
                 dropper = dropper,
             };
@@ -2178,18 +2282,20 @@ namespace Scaly.Compiler
                     return null;
             var condition = parse_operation();
             if (condition == null)
-                throw new ParserException("Unable to parse operation.", file_name, start.line, start.column, lexer.previous_line, lexer.previous_column);
+                throw new ParserException("Unable to parse operation.", new Span { file = file_name, start = new Position { line = lexer.previous_line, column = lexer.previous_column }, end = new Position { line = lexer.line, column = lexer.column } } );
             var handler = parse_operation();
             if (handler == null)
-                throw new ParserException("Unable to parse operation.", file_name, start.line, start.column, lexer.previous_line, lexer.previous_column);
+                throw new ParserException("Unable to parse operation.", new Span { file = file_name, start = new Position { line = lexer.previous_line, column = lexer.previous_column }, end = new Position { line = lexer.line, column = lexer.column } } );
 
             var end = lexer.get_position();
 
             var ret = new CatchSyntax
             {
-                file = file_name,
-                start = start,
-                end = end,
+                span = new Span
+                {
+                    file = file_name,
+                    start = start,
+                    end = end           },
                 condition = condition,
                 handler = handler,
             };
@@ -2206,15 +2312,17 @@ namespace Scaly.Compiler
                     return null;
             var handler = parse_operation();
             if (handler == null)
-                throw new ParserException("Unable to parse operation.", file_name, start.line, start.column, lexer.previous_line, lexer.previous_column);
+                throw new ParserException("Unable to parse operation.", new Span { file = file_name, start = new Position { line = lexer.previous_line, column = lexer.previous_column }, end = new Position { line = lexer.line, column = lexer.column } } );
 
             var end = lexer.get_position();
 
             var ret = new DropSyntax
             {
-                file = file_name,
-                start = start,
-                end = end,
+                span = new Span
+                {
+                    file = file_name,
+                    start = start,
+                    end = end           },
                 handler = handler,
             };
 
@@ -2230,15 +2338,17 @@ namespace Scaly.Compiler
                     return null;
             var condition = parse_operand_list();
             if (condition == null)
-                throw new ParserException("Unable to parse operand list.", file_name, start.line, start.column, lexer.previous_line, lexer.previous_column);
+                throw new ParserException("Unable to parse operand list.", new Span { file = file_name, start = new Position { line = lexer.previous_line, column = lexer.previous_column }, end = new Position { line = lexer.line, column = lexer.column } } );
 
             var end = lexer.get_position();
 
             var ret = new IsSyntax
             {
-                file = file_name,
-                start = start,
-                end = end,
+                span = new Span
+                {
+                    file = file_name,
+                    start = start,
+                    end = end           },
                 condition = condition,
             };
 
@@ -2260,9 +2370,11 @@ namespace Scaly.Compiler
 
             var ret = new ContinueSyntax
             {
-                file = file_name,
-                start = start,
-                end = end,
+                span = new Span
+                {
+                    file = file_name,
+                    start = start,
+                    end = end           },
                 name = name,
             };
 
@@ -2282,21 +2394,23 @@ namespace Scaly.Compiler
             {
                 if (!is_identifier(name))
                 {
-                    throw new ParserException("Unable to parse.", file_name, start.line, start.column, lexer.previous_line, lexer.previous_column);
+                    throw new ParserException("Unable to parse.", new Span { file = file_name, start = start, end = new Position { line = lexer.previous_line, column = lexer.previous_column } } );
                 }
             }
             else
             {
-                    throw new ParserException("Unable to parse.", file_name, start.line, start.column, lexer.previous_line, lexer.previous_column);
+                    throw new ParserException("Unable to parse.", new Span { file = file_name, start = start, end = new Position { line = lexer.previous_line, column = lexer.previous_column } } );
             }
 
             var end = lexer.get_position();
 
             var ret = new LoopSyntax
             {
-                file = file_name,
-                start = start,
-                end = end,
+                span = new Span
+                {
+                    file = file_name,
+                    start = start,
+                    end = end           },
                 name = name,
             };
 
@@ -2319,9 +2433,11 @@ namespace Scaly.Compiler
 
             var ret = new BreakSyntax
             {
-                file = file_name,
-                start = start,
-                end = end,
+                span = new Span
+                {
+                    file = file_name,
+                    start = start,
+                    end = end           },
                 name = name,
                 result = result,
             };
@@ -2342,9 +2458,11 @@ namespace Scaly.Compiler
 
             var ret = new ReturnSyntax
             {
-                file = file_name,
-                start = start,
-                end = end,
+                span = new Span
+                {
+                    file = file_name,
+                    start = start,
+                    end = end           },
                 result = result,
             };
 
@@ -2364,9 +2482,11 @@ namespace Scaly.Compiler
 
             var ret = new ThrowSyntax
             {
-                file = file_name,
-                start = start,
-                end = end,
+                span = new Span
+                {
+                    file = file_name,
+                    start = start,
+                    end = end           },
                 result = result,
             };
 
@@ -2473,9 +2593,11 @@ namespace Scaly.Compiler
 
             var ret = new LiteralSyntax
             {
-                file = file_name,
-                start = start,
-                end = end,
+                span = new Span
+                {
+                    file = file_name,
+                    start = start,
+                    end = end           },
                 literal = literal,
             };
 
@@ -2493,15 +2615,17 @@ namespace Scaly.Compiler
 
             var success_right_paren_3 = lexer.parse_punctuation(")");
             if (!success_right_paren_3)
-                    throw new ParserException("Unable to parse.", file_name, start.line, start.column, lexer.previous_line, lexer.previous_column);
+                    throw new ParserException("Unable to parse.", new Span { file = file_name, start = start, end = new Position { line = lexer.previous_line, column = lexer.previous_column } } );
 
             var end = lexer.get_position();
 
             var ret = new ObjectSyntax
             {
-                file = file_name,
-                start = start,
-                end = end,
+                span = new Span
+                {
+                    file = file_name,
+                    start = start,
+                    end = end           },
                 components = components,
             };
 
@@ -2544,9 +2668,11 @@ namespace Scaly.Compiler
 
             var ret = new ComponentSyntax
             {
-                file = file_name,
-                start = start,
-                end = end,
+                span = new Span
+                {
+                    file = file_name,
+                    start = start,
+                    end = end           },
                 operands = operands,
                 attributes = attributes,
                 value = value,
@@ -2564,16 +2690,18 @@ namespace Scaly.Compiler
                     return null;
             var value = parse_operation();
             if (value == null)
-                throw new ParserException("Unable to parse operation.", file_name, start.line, start.column, lexer.previous_line, lexer.previous_column);
+                throw new ParserException("Unable to parse operation.", new Span { file = file_name, start = new Position { line = lexer.previous_line, column = lexer.previous_column }, end = new Position { line = lexer.line, column = lexer.column } } );
             var attributes = parse_attribute_list();
 
             var end = lexer.get_position();
 
             var ret = new ValueSyntax
             {
-                file = file_name,
-                start = start,
-                end = end,
+                span = new Span
+                {
+                    file = file_name,
+                    start = start,
+                    end = end           },
                 value = value,
                 attributes = attributes,
             };
@@ -2590,19 +2718,21 @@ namespace Scaly.Compiler
                     return null;
             var elements = parse_element_list();
             if (elements == null)
-                throw new ParserException("Unable to parse element list.", file_name, start.line, start.column, lexer.previous_line, lexer.previous_column);
+                throw new ParserException("Unable to parse element list.", new Span { file = file_name, start = new Position { line = lexer.previous_line, column = lexer.previous_column }, end = new Position { line = lexer.line, column = lexer.column } } );
 
             var success_right_bracket_3 = lexer.parse_punctuation("]");
             if (!success_right_bracket_3)
-                    throw new ParserException("Unable to parse.", file_name, start.line, start.column, lexer.previous_line, lexer.previous_column);
+                    throw new ParserException("Unable to parse.", new Span { file = file_name, start = start, end = new Position { line = lexer.previous_line, column = lexer.previous_column } } );
 
             var end = lexer.get_position();
 
             var ret = new VectorSyntax
             {
-                file = file_name,
-                start = start,
-                end = end,
+                span = new Span
+                {
+                    file = file_name,
+                    start = start,
+                    end = end           },
                 elements = elements,
             };
 
@@ -2644,9 +2774,11 @@ namespace Scaly.Compiler
 
             var ret = new ElementSyntax
             {
-                file = file_name,
-                start = start,
-                end = end,
+                span = new Span
+                {
+                    file = file_name,
+                    start = start,
+                    end = end           },
                 operation = operation,
                 attributes = attributes,
             };
@@ -2665,15 +2797,17 @@ namespace Scaly.Compiler
 
             var success_right_curly_3 = lexer.parse_punctuation("}");
             if (!success_right_curly_3)
-                    throw new ParserException("Unable to parse.", file_name, start.line, start.column, lexer.previous_line, lexer.previous_column);
+                    throw new ParserException("Unable to parse.", new Span { file = file_name, start = start, end = new Position { line = lexer.previous_line, column = lexer.previous_column } } );
 
             var end = lexer.get_position();
 
             var ret = new BlockSyntax
             {
-                file = file_name,
-                start = start,
-                end = end,
+                span = new Span
+                {
+                    file = file_name,
+                    start = start,
+                    end = end           },
                 statements = statements,
             };
 
@@ -2689,19 +2823,21 @@ namespace Scaly.Compiler
                     return null;
             var condition = parse_operation();
             if (condition == null)
-                throw new ParserException("Unable to parse operation.", file_name, start.line, start.column, lexer.previous_line, lexer.previous_column);
+                throw new ParserException("Unable to parse operation.", new Span { file = file_name, start = new Position { line = lexer.previous_line, column = lexer.previous_column }, end = new Position { line = lexer.line, column = lexer.column } } );
             var consequent = parse_operation();
             if (consequent == null)
-                throw new ParserException("Unable to parse operation.", file_name, start.line, start.column, lexer.previous_line, lexer.previous_column);
+                throw new ParserException("Unable to parse operation.", new Span { file = file_name, start = new Position { line = lexer.previous_line, column = lexer.previous_column }, end = new Position { line = lexer.line, column = lexer.column } } );
             var alternative = parse_else();
 
             var end = lexer.get_position();
 
             var ret = new IfSyntax
             {
-                file = file_name,
-                start = start,
-                end = end,
+                span = new Span
+                {
+                    file = file_name,
+                    start = start,
+                    end = end           },
                 condition = condition,
                 consequent = consequent,
                 alternative = alternative,
@@ -2721,15 +2857,17 @@ namespace Scaly.Compiler
             lexer.parse_colon();
             var alternative = parse_operation();
             if (alternative == null)
-                throw new ParserException("Unable to parse operation.", file_name, start.line, start.column, lexer.previous_line, lexer.previous_column);
+                throw new ParserException("Unable to parse operation.", new Span { file = file_name, start = new Position { line = lexer.previous_line, column = lexer.previous_column }, end = new Position { line = lexer.line, column = lexer.column } } );
 
             var end = lexer.get_position();
 
             var ret = new ElseSyntax
             {
-                file = file_name,
-                start = start,
-                end = end,
+                span = new Span
+                {
+                    file = file_name,
+                    start = start,
+                    end = end           },
                 alternative = alternative,
             };
 
@@ -2745,19 +2883,21 @@ namespace Scaly.Compiler
                     return null;
             var scrutinee = parse_operation();
             if (scrutinee == null)
-                throw new ParserException("Unable to parse operation.", file_name, start.line, start.column, lexer.previous_line, lexer.previous_column);
+                throw new ParserException("Unable to parse operation.", new Span { file = file_name, start = new Position { line = lexer.previous_line, column = lexer.previous_column }, end = new Position { line = lexer.line, column = lexer.column } } );
             var cases = parse_case_list();
             if (cases == null)
-                throw new ParserException("Unable to parse case list.", file_name, start.line, start.column, lexer.previous_line, lexer.previous_column);
+                throw new ParserException("Unable to parse case list.", new Span { file = file_name, start = new Position { line = lexer.previous_line, column = lexer.previous_column }, end = new Position { line = lexer.line, column = lexer.column } } );
             var alternative = parse_default();
 
             var end = lexer.get_position();
 
             var ret = new MatchSyntax
             {
-                file = file_name,
-                start = start,
-                end = end,
+                span = new Span
+                {
+                    file = file_name,
+                    start = start,
+                    end = end           },
                 scrutinee = scrutinee,
                 cases = cases,
                 alternative = alternative,
@@ -2796,18 +2936,20 @@ namespace Scaly.Compiler
                     return null;
             var condition = parse_operation();
             if (condition == null)
-                throw new ParserException("Unable to parse operation.", file_name, start.line, start.column, lexer.previous_line, lexer.previous_column);
+                throw new ParserException("Unable to parse operation.", new Span { file = file_name, start = new Position { line = lexer.previous_line, column = lexer.previous_column }, end = new Position { line = lexer.line, column = lexer.column } } );
             var consequent = parse_operation();
             if (consequent == null)
-                throw new ParserException("Unable to parse operation.", file_name, start.line, start.column, lexer.previous_line, lexer.previous_column);
+                throw new ParserException("Unable to parse operation.", new Span { file = file_name, start = new Position { line = lexer.previous_line, column = lexer.previous_column }, end = new Position { line = lexer.line, column = lexer.column } } );
 
             var end = lexer.get_position();
 
             var ret = new CaseSyntax
             {
-                file = file_name,
-                start = start,
-                end = end,
+                span = new Span
+                {
+                    file = file_name,
+                    start = start,
+                    end = end           },
                 condition = condition,
                 consequent = consequent,
             };
@@ -2828,9 +2970,11 @@ namespace Scaly.Compiler
 
             var ret = new DefaultSyntax
             {
-                file = file_name,
-                start = start,
-                end = end,
+                span = new Span
+                {
+                    file = file_name,
+                    start = start,
+                    end = end           },
                 alternative = alternative,
             };
 
@@ -2846,18 +2990,20 @@ namespace Scaly.Compiler
                     return null;
             var input = parse_operation();
             if (input == null)
-                throw new ParserException("Unable to parse operation.", file_name, start.line, start.column, lexer.previous_line, lexer.previous_column);
+                throw new ParserException("Unable to parse operation.", new Span { file = file_name, start = new Position { line = lexer.previous_line, column = lexer.previous_column }, end = new Position { line = lexer.line, column = lexer.column } } );
             var block = parse_operation();
             if (block == null)
-                throw new ParserException("Unable to parse operation.", file_name, start.line, start.column, lexer.previous_line, lexer.previous_column);
+                throw new ParserException("Unable to parse operation.", new Span { file = file_name, start = new Position { line = lexer.previous_line, column = lexer.previous_column }, end = new Position { line = lexer.line, column = lexer.column } } );
 
             var end = lexer.get_position();
 
             var ret = new LambdaSyntax
             {
-                file = file_name,
-                start = start,
-                end = end,
+                span = new Span
+                {
+                    file = file_name,
+                    start = start,
+                    end = end           },
                 input = input,
                 block = block,
             };
@@ -2874,26 +3020,28 @@ namespace Scaly.Compiler
                     return null;
             var condition = parse_operation();
             if (condition == null)
-                throw new ParserException("Unable to parse operation.", file_name, start.line, start.column, lexer.previous_line, lexer.previous_column);
+                throw new ParserException("Unable to parse operation.", new Span { file = file_name, start = new Position { line = lexer.previous_line, column = lexer.previous_column }, end = new Position { line = lexer.line, column = lexer.column } } );
 
             var success_in_3 = lexer.parse_keyword("in");
             if (!success_in_3)
-                    throw new ParserException("Unable to parse.", file_name, start.line, start.column, lexer.previous_line, lexer.previous_column);
+                    throw new ParserException("Unable to parse.", new Span { file = file_name, start = start, end = new Position { line = lexer.previous_line, column = lexer.previous_column } } );
             var expression = parse_operation();
             if (expression == null)
-                throw new ParserException("Unable to parse operation.", file_name, start.line, start.column, lexer.previous_line, lexer.previous_column);
+                throw new ParserException("Unable to parse operation.", new Span { file = file_name, start = new Position { line = lexer.previous_line, column = lexer.previous_column }, end = new Position { line = lexer.line, column = lexer.column } } );
             var name = parse_label();
             var action = parse_operation();
             if (action == null)
-                throw new ParserException("Unable to parse operation.", file_name, start.line, start.column, lexer.previous_line, lexer.previous_column);
+                throw new ParserException("Unable to parse operation.", new Span { file = file_name, start = new Position { line = lexer.previous_line, column = lexer.previous_column }, end = new Position { line = lexer.line, column = lexer.column } } );
 
             var end = lexer.get_position();
 
             var ret = new ForSyntax
             {
-                file = file_name,
-                start = start,
-                end = end,
+                span = new Span
+                {
+                    file = file_name,
+                    start = start,
+                    end = end           },
                 condition = condition,
                 expression = expression,
                 name = name,
@@ -2916,21 +3064,23 @@ namespace Scaly.Compiler
             {
                 if (!is_identifier(name))
                 {
-                    throw new ParserException("Unable to parse.", file_name, start.line, start.column, lexer.previous_line, lexer.previous_column);
+                    throw new ParserException("Unable to parse.", new Span { file = file_name, start = start, end = new Position { line = lexer.previous_line, column = lexer.previous_column } } );
                 }
             }
             else
             {
-                    throw new ParserException("Unable to parse.", file_name, start.line, start.column, lexer.previous_line, lexer.previous_column);
+                    throw new ParserException("Unable to parse.", new Span { file = file_name, start = start, end = new Position { line = lexer.previous_line, column = lexer.previous_column } } );
             }
 
             var end = lexer.get_position();
 
             var ret = new LabelSyntax
             {
-                file = file_name,
-                start = start,
-                end = end,
+                span = new Span
+                {
+                    file = file_name,
+                    start = start,
+                    end = end           },
                 name = name,
             };
 
@@ -2946,19 +3096,21 @@ namespace Scaly.Compiler
                     return null;
             var condition = parse_operation();
             if (condition == null)
-                throw new ParserException("Unable to parse operation.", file_name, start.line, start.column, lexer.previous_line, lexer.previous_column);
+                throw new ParserException("Unable to parse operation.", new Span { file = file_name, start = new Position { line = lexer.previous_line, column = lexer.previous_column }, end = new Position { line = lexer.line, column = lexer.column } } );
             var name = parse_label();
             var action = parse_operation();
             if (action == null)
-                throw new ParserException("Unable to parse operation.", file_name, start.line, start.column, lexer.previous_line, lexer.previous_column);
+                throw new ParserException("Unable to parse operation.", new Span { file = file_name, start = new Position { line = lexer.previous_line, column = lexer.previous_column }, end = new Position { line = lexer.line, column = lexer.column } } );
 
             var end = lexer.get_position();
 
             var ret = new WhileSyntax
             {
-                file = file_name,
-                start = start,
-                end = end,
+                span = new Span
+                {
+                    file = file_name,
+                    start = start,
+                    end = end           },
                 condition = condition,
                 name = name,
                 action = action,
@@ -2977,15 +3129,17 @@ namespace Scaly.Compiler
             var name = parse_label();
             var action = parse_operation();
             if (action == null)
-                throw new ParserException("Unable to parse operation.", file_name, start.line, start.column, lexer.previous_line, lexer.previous_column);
+                throw new ParserException("Unable to parse operation.", new Span { file = file_name, start = new Position { line = lexer.previous_line, column = lexer.previous_column }, end = new Position { line = lexer.line, column = lexer.column } } );
 
             var end = lexer.get_position();
 
             var ret = new RepeatSyntax
             {
-                file = file_name,
-                start = start,
-                end = end,
+                span = new Span
+                {
+                    file = file_name,
+                    start = start,
+                    end = end           },
                 name = name,
                 action = action,
             };
@@ -3002,15 +3156,17 @@ namespace Scaly.Compiler
                     return null;
             var spec = parse_type();
             if (spec == null)
-                throw new ParserException("Unable to parse type.", file_name, start.line, start.column, lexer.previous_line, lexer.previous_column);
+                throw new ParserException("Unable to parse type.", new Span { file = file_name, start = new Position { line = lexer.previous_line, column = lexer.previous_column }, end = new Position { line = lexer.line, column = lexer.column } } );
 
             var end = lexer.get_position();
 
             var ret = new SizeOfSyntax
             {
-                file = file_name,
-                start = start,
-                end = end,
+                span = new Span
+                {
+                    file = file_name,
+                    start = start,
+                    end = end           },
                 spec = spec,
             };
 
@@ -3052,30 +3208,26 @@ namespace Scaly.Compiler
 
     public class ProgramSyntax
     {
-        public string file;
+        public Span span;
         public FileSyntax[] files;
     }
 
     public class FileSyntax
     {
-        public string file;
+        public Span span;
         public object[] declarations;
         public object[] statements;
     }
 
     public class PrivateSyntax
     {
-        public string file;
-        public Position start;
-        public Position end;
+        public Span span;
         public object export;
     }
 
     public class DefinitionSyntax
     {
-        public string file;
-        public Position start;
-        public Position end;
+        public Span span;
         public TypeSyntax type;
         public AttributeSyntax[] attributes;
         public object concept;
@@ -3083,61 +3235,47 @@ namespace Scaly.Compiler
 
     public class NameSyntax
     {
-        public string file;
-        public Position start;
-        public Position end;
+        public Span span;
         public string name;
         public ExtensionSyntax[] extensions;
     }
 
     public class ExtensionSyntax
     {
-        public string file;
-        public Position start;
-        public Position end;
+        public Span span;
         public string name;
     }
 
     public class AttributeSyntax
     {
-        public string file;
-        public Position start;
-        public Position end;
+        public Span span;
         public string attribute;
         public object value;
     }
 
     public class ClassSyntax
     {
-        public string file;
-        public Position start;
-        public Position end;
+        public Span span;
         public StructureSyntax structure;
         public BodySyntax body;
     }
 
     public class NamespaceSyntax
     {
-        public string file;
-        public Position start;
-        public Position end;
+        public Span span;
         public BodySyntax body;
     }
 
     public class UnionSyntax
     {
-        public string file;
-        public Position start;
-        public Position end;
+        public Span span;
         public TagSyntax[] tags;
         public BodySyntax body;
     }
 
     public class TagSyntax
     {
-        public string file;
-        public Position start;
-        public Position end;
+        public Span span;
         public string name;
         public AttributeSyntax[] attributes;
         public object item;
@@ -3145,34 +3283,26 @@ namespace Scaly.Compiler
 
     public class VariantSyntax
     {
-        public string file;
-        public Position start;
-        public Position end;
+        public Span span;
         public StructureSyntax structure;
         public BodySyntax body;
     }
 
     public class EnumSyntax
     {
-        public string file;
-        public Position start;
-        public Position end;
+        public Span span;
         public Literal literal;
     }
 
     public class ConstantSyntax
     {
-        public string file;
-        public Position start;
-        public Position end;
+        public Span span;
         public OperationSyntax operation;
     }
 
     public class DelegateSyntax
     {
-        public string file;
-        public Position start;
-        public Position end;
+        public Span span;
         public object parameters;
         public AttributeSyntax[] attributes;
         public ReturnsSyntax result;
@@ -3181,33 +3311,25 @@ namespace Scaly.Compiler
 
     public class StructureSyntax
     {
-        public string file;
-        public Position start;
-        public Position end;
+        public Span span;
         public object[] members;
     }
 
     public class BodySyntax
     {
-        public string file;
-        public Position start;
-        public Position end;
+        public Span span;
         public object[] declarations;
     }
 
     public class FieldSyntax
     {
-        public string file;
-        public Position start;
-        public Position end;
+        public Span span;
         public PropertySyntax export;
     }
 
     public class PropertySyntax
     {
-        public string file;
-        public Position start;
-        public Position end;
+        public Span span;
         public string name;
         public TypeAnnotationSyntax annotation;
         public AttributeSyntax[] attributes;
@@ -3215,17 +3337,13 @@ namespace Scaly.Compiler
 
     public class TypeAnnotationSyntax
     {
-        public string file;
-        public Position start;
-        public Position end;
+        public Span span;
         public object spec;
     }
 
     public class TypeSyntax
     {
-        public string file;
-        public Position start;
-        public Position end;
+        public Span span;
         public NameSyntax name;
         public GenericArgumentsSyntax generics;
         public OptionalSyntax optional;
@@ -3233,40 +3351,30 @@ namespace Scaly.Compiler
 
     public class ArraySyntax
     {
-        public string file;
-        public Position start;
-        public Position end;
+        public Span span;
         public object[] members;
     }
 
     public class GenericArgumentsSyntax
     {
-        public string file;
-        public Position start;
-        public Position end;
+        public Span span;
         public GenericArgumentSyntax[] generics;
     }
 
     public class GenericArgumentSyntax
     {
-        public string file;
-        public Position start;
-        public Position end;
+        public Span span;
         public TypeSyntax spec;
     }
 
     public class OptionalSyntax
     {
-        public string file;
-        public Position start;
-        public Position end;
+        public Span span;
     }
 
     public class FunctionSyntax
     {
-        public string file;
-        public Position start;
-        public Position end;
+        public Span span;
         public string name;
         public GenericArgumentsSyntax generics;
         public RoutineSyntax routine;
@@ -3274,9 +3382,7 @@ namespace Scaly.Compiler
 
     public class ProcedureSyntax
     {
-        public string file;
-        public Position start;
-        public Position end;
+        public Span span;
         public string name;
         public GenericArgumentsSyntax generics;
         public RoutineSyntax routine;
@@ -3284,17 +3390,13 @@ namespace Scaly.Compiler
 
     public class OperatorSyntax
     {
-        public string file;
-        public Position start;
-        public Position end;
+        public Span span;
         public object target;
     }
 
     public class RoutineSyntax
     {
-        public string file;
-        public Position start;
-        public Position end;
+        public Span span;
         public object parameters;
         public AttributeSyntax[] attributes;
         public ReturnsSyntax returns;
@@ -3304,9 +3406,7 @@ namespace Scaly.Compiler
 
     public class SymbolSyntax
     {
-        public string file;
-        public Position start;
-        public Position end;
+        public Span span;
         public string name;
         public AttributeSyntax[] attributes;
         public ReturnsSyntax returns;
@@ -3316,64 +3416,48 @@ namespace Scaly.Compiler
 
     public class ParametersSyntax
     {
-        public string file;
-        public Position start;
-        public Position end;
+        public Span span;
         public PropertySyntax[] properties;
     }
 
     public class ReturnsSyntax
     {
-        public string file;
-        public Position start;
-        public Position end;
+        public Span span;
         public object parameters;
         public AttributeSyntax[] attributes;
     }
 
     public class ThrowsSyntax
     {
-        public string file;
-        public Position start;
-        public Position end;
+        public Span span;
         public TypeSyntax type;
         public AttributeSyntax[] attributes;
     }
 
     public class ExternSyntax
     {
-        public string file;
-        public Position start;
-        public Position end;
+        public Span span;
     }
 
     public class InstructionSyntax
     {
-        public string file;
-        public Position start;
-        public Position end;
+        public Span span;
     }
 
     public class IntrinsicSyntax
     {
-        public string file;
-        public Position start;
-        public Position end;
+        public Span span;
     }
 
     public class UseSyntax
     {
-        public string file;
-        public Position start;
-        public Position end;
+        public Span span;
         public NameSyntax name;
     }
 
     public class ImplementSyntax
     {
-        public string file;
-        public Position start;
-        public Position end;
+        public Span span;
         public TypeSyntax type;
         public AttributeSyntax[] attributes;
         public object[] methods;
@@ -3381,9 +3465,7 @@ namespace Scaly.Compiler
 
     public class TraitSyntax
     {
-        public string file;
-        public Position start;
-        public Position end;
+        public Span span;
         public NameSyntax name;
         public ExtendsSyntax extension;
         public AttributeSyntax[] attributes;
@@ -3392,25 +3474,19 @@ namespace Scaly.Compiler
 
     public class ExtendsSyntax
     {
-        public string file;
-        public Position start;
-        public Position end;
+        public Span span;
         public ExtendSyntax[] extensions;
     }
 
     public class ExtendSyntax
     {
-        public string file;
-        public Position start;
-        public Position end;
+        public Span span;
         public object spec;
     }
 
     public class MacroSyntax
     {
-        public string file;
-        public Position start;
-        public Position end;
+        public Span span;
         public string name;
         public object model;
         public OperationSyntax rule;
@@ -3418,41 +3494,31 @@ namespace Scaly.Compiler
 
     public class ModuleSyntax
     {
-        public string file;
-        public Position start;
-        public Position end;
+        public Span span;
         public NameSyntax name;
     }
 
     public class LetSyntax
     {
-        public string file;
-        public Position start;
-        public Position end;
+        public Span span;
         public BindingSyntax binding;
     }
 
     public class VarSyntax
     {
-        public string file;
-        public Position start;
-        public Position end;
+        public Span span;
         public BindingSyntax binding;
     }
 
     public class MutableSyntax
     {
-        public string file;
-        public Position start;
-        public Position end;
+        public Span span;
         public BindingSyntax binding;
     }
 
     public class BindingSyntax
     {
-        public string file;
-        public Position start;
-        public Position end;
+        public Span span;
         public string name;
         public BindingAnnotationSyntax annotation;
         public OperationSyntax operation;
@@ -3460,142 +3526,108 @@ namespace Scaly.Compiler
 
     public class BindingAnnotationSyntax
     {
-        public string file;
-        public Position start;
-        public Position end;
+        public Span span;
         public object spec;
     }
 
     public class SetSyntax
     {
-        public string file;
-        public Position start;
-        public Position end;
+        public Span span;
         public OperationSyntax target;
         public OperationSyntax source;
     }
 
     public class OperationSyntax
     {
-        public string file;
-        public Position start;
-        public Position end;
+        public Span span;
         public OperandSyntax[] operands;
     }
 
     public class OperandSyntax
     {
-        public string file;
-        public Position start;
-        public Position end;
+        public Span span;
         public object expression;
         public object[] postfixes;
     }
 
     public class MemberAccessSyntax
     {
-        public string file;
-        public Position start;
-        public Position end;
+        public Span span;
         public NameSyntax member;
     }
 
     public class CatcherSyntax
     {
-        public string file;
-        public Position start;
-        public Position end;
+        public Span span;
         public CatchSyntax[] catchers;
         public DropSyntax dropper;
     }
 
     public class CatchSyntax
     {
-        public string file;
-        public Position start;
-        public Position end;
+        public Span span;
         public OperationSyntax condition;
         public OperationSyntax handler;
     }
 
     public class DropSyntax
     {
-        public string file;
-        public Position start;
-        public Position end;
+        public Span span;
         public OperationSyntax handler;
     }
 
     public class IsSyntax
     {
-        public string file;
-        public Position start;
-        public Position end;
+        public Span span;
         public OperandSyntax[] condition;
     }
 
     public class ContinueSyntax
     {
-        public string file;
-        public Position start;
-        public Position end;
+        public Span span;
         public LoopSyntax name;
     }
 
     public class LoopSyntax
     {
-        public string file;
-        public Position start;
-        public Position end;
+        public Span span;
         public string name;
     }
 
     public class BreakSyntax
     {
-        public string file;
-        public Position start;
-        public Position end;
+        public Span span;
         public LoopSyntax name;
         public OperationSyntax result;
     }
 
     public class ReturnSyntax
     {
-        public string file;
-        public Position start;
-        public Position end;
+        public Span span;
         public OperationSyntax result;
     }
 
     public class ThrowSyntax
     {
-        public string file;
-        public Position start;
-        public Position end;
+        public Span span;
         public OperationSyntax result;
     }
 
     public class LiteralSyntax
     {
-        public string file;
-        public Position start;
-        public Position end;
+        public Span span;
         public Literal literal;
     }
 
     public class ObjectSyntax
     {
-        public string file;
-        public Position start;
-        public Position end;
+        public Span span;
         public ComponentSyntax[] components;
     }
 
     public class ComponentSyntax
     {
-        public string file;
-        public Position start;
-        public Position end;
+        public Span span;
         public OperandSyntax[] operands;
         public AttributeSyntax[] attributes;
         public ValueSyntax value;
@@ -3603,43 +3635,33 @@ namespace Scaly.Compiler
 
     public class ValueSyntax
     {
-        public string file;
-        public Position start;
-        public Position end;
+        public Span span;
         public OperationSyntax value;
         public AttributeSyntax[] attributes;
     }
 
     public class VectorSyntax
     {
-        public string file;
-        public Position start;
-        public Position end;
+        public Span span;
         public ElementSyntax[] elements;
     }
 
     public class ElementSyntax
     {
-        public string file;
-        public Position start;
-        public Position end;
+        public Span span;
         public OperationSyntax operation;
         public AttributeSyntax[] attributes;
     }
 
     public class BlockSyntax
     {
-        public string file;
-        public Position start;
-        public Position end;
+        public Span span;
         public object[] statements;
     }
 
     public class IfSyntax
     {
-        public string file;
-        public Position start;
-        public Position end;
+        public Span span;
         public OperationSyntax condition;
         public OperationSyntax consequent;
         public ElseSyntax alternative;
@@ -3647,17 +3669,13 @@ namespace Scaly.Compiler
 
     public class ElseSyntax
     {
-        public string file;
-        public Position start;
-        public Position end;
+        public Span span;
         public OperationSyntax alternative;
     }
 
     public class MatchSyntax
     {
-        public string file;
-        public Position start;
-        public Position end;
+        public Span span;
         public OperationSyntax scrutinee;
         public CaseSyntax[] cases;
         public DefaultSyntax alternative;
@@ -3665,35 +3683,27 @@ namespace Scaly.Compiler
 
     public class CaseSyntax
     {
-        public string file;
-        public Position start;
-        public Position end;
+        public Span span;
         public OperationSyntax condition;
         public OperationSyntax consequent;
     }
 
     public class DefaultSyntax
     {
-        public string file;
-        public Position start;
-        public Position end;
+        public Span span;
         public OperationSyntax alternative;
     }
 
     public class LambdaSyntax
     {
-        public string file;
-        public Position start;
-        public Position end;
+        public Span span;
         public OperationSyntax input;
         public OperationSyntax block;
     }
 
     public class ForSyntax
     {
-        public string file;
-        public Position start;
-        public Position end;
+        public Span span;
         public OperationSyntax condition;
         public OperationSyntax expression;
         public LabelSyntax name;
@@ -3702,17 +3712,13 @@ namespace Scaly.Compiler
 
     public class LabelSyntax
     {
-        public string file;
-        public Position start;
-        public Position end;
+        public Span span;
         public string name;
     }
 
     public class WhileSyntax
     {
-        public string file;
-        public Position start;
-        public Position end;
+        public Span span;
         public OperationSyntax condition;
         public LabelSyntax name;
         public OperationSyntax action;
@@ -3720,18 +3726,14 @@ namespace Scaly.Compiler
 
     public class RepeatSyntax
     {
-        public string file;
-        public Position start;
-        public Position end;
+        public Span span;
         public LabelSyntax name;
         public OperationSyntax action;
     }
 
     public class SizeOfSyntax
     {
-        public string file;
-        public Position start;
-        public Position end;
+        public Span span;
         public TypeSyntax spec;
     }
 }
