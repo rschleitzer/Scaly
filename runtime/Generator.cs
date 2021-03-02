@@ -209,8 +209,13 @@ namespace Scaly.Compiler
                     BuildSourceValues(context, childSource);
 
             if (source.Definitions != null)
+            {
                 foreach (var definition in source.Definitions.Values)
-                    BuildValues(context, definition);
+                {
+                    if (definition.Type.Arguments == null)
+                        BuildValues(context, definition);
+                }
+            }
         }
 
         static void BuildFunctionValue(LocalContext context, Function function)
