@@ -10,11 +10,24 @@ namespace Scaly.Compiler
     {
         public bool IsPublic;
         public TypeSpec Type;
+        public Structure Structure;
         public Dictionary<string, Definition> Definitions;
         public List<Function> Functions;
         public List<Operator> Operators;
         public Dictionary<string, Implement> Implements;
         public List<Source> Sources;
+    }
+
+    public class TypeSpec
+    {
+        public Span Span;
+        public string Name;
+        public List<TypeSpec> Arguments;
+    }
+
+    public class Structure
+    {
+        public Span Span;
     }
 
     public class Function
@@ -31,26 +44,27 @@ namespace Scaly.Compiler
         public Routine Routine;
     }
 
+    public enum Implementation
+    {
+        Intern,
+        Extern,
+        Instruction,
+        Intrinsic
+    }
+
     public class Routine
     {
         public List<Property> Input;
         public List<Property> Result;
         public TypeSpec Error;
         public List<Operation> Operations;
-        public bool Extern;
+        public Implementation Implementation;
     }
 
     public class Property
     {
         public string Name;
         public TypeSpec TypeSpec;
-    }
-
-    public class TypeSpec
-    {
-        public Span Span;
-        public string Name;
-        public List<TypeSpec> Arguments;
     }
 
     public class Implement
@@ -446,7 +460,7 @@ namespace Scaly.Compiler
                         {
                             IsPublic = isPublic,
                             Type = new TypeSpec { Name = moduleSyntax.name.name },
-                            Definitions = new Dictionary<string, Definition>(), Sources = null
+                            Sources = null
                         };
                         definitions.Add(definition.Type.Name, definition);
                     }
@@ -577,7 +591,13 @@ namespace Scaly.Compiler
                     routine.Operations = new List<Operation> { BuildOperation(operationSyntax) };
                     break;
                 case ExternSyntax _:
-                    routine.Extern = true;
+                    routine.Implementation = Implementation.Extern ;
+                    break;
+                case InstructionSyntax _:
+                    routine.Implementation = Implementation.Instruction;
+                    break;
+                case IntrinsicSyntax _:
+                    routine.Implementation = Implementation.Intrinsic;
                     break;
                 case SetSyntax _:
                     break;
@@ -725,10 +745,13 @@ namespace Scaly.Compiler
         static void HandleDefinition(DefinitionSyntax definitionSyntax, Dictionary<string, Definition> definitions, Source source, string origin, bool isPublic)
         {
             BodySyntax bodySyntax = null;
+            Structure structure = null;
             switch (definitionSyntax.concept)
             {
                 case ClassSyntax classSyntax:
                     bodySyntax = classSyntax.body;
+                    if (classSyntax.structure.members != null)
+                        structure = HandleStructure(classSyntax.structure);
                     break;
 
                 case NamespaceSyntax namespaceSyntax:
@@ -743,7 +766,7 @@ namespace Scaly.Compiler
             TypeSpec typeModel = BuildType(definitionSyntax.type);
             if (definitions.ContainsKey(typeModel.Name))
                 throw new CompilerException($"Module {typeModel.Name} already defined.", definitionSyntax.span);
-            var definition = new Definition { Type = typeModel };
+            var definition = new Definition { Type = typeModel, Structure = structure };
             definitions.Add(typeModel.Name, definition);
 
             if ((bodySyntax != null) && (bodySyntax.declarations != null))
@@ -753,6 +776,12 @@ namespace Scaly.Compiler
                     HandleDeclaration(definition, source, origin, declaration);
                 }
             }
+        }
+
+        static Structure HandleStructure(StructureSyntax structureSyntax)
+        {
+            var structure = new Structure { Span = structureSyntax.span };
+            return structure;
         }
 
         static void HandleDeclaration(Definition definition, Source source, string origin, object declaration)

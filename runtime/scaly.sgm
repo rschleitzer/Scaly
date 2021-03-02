@@ -60,6 +60,7 @@
         <content link = Union
         <content link = Constant
         <content link = Delegate
+        <content link = Intrinsic
 
     <syntax id = Class
         <content link = Structure                               property = structure
@@ -232,9 +233,11 @@
 
     <syntax id = Instruction
         <content link = instruction
+        <content colon                                 optional
 
     <syntax id = Intrinsic
         <content link = intrinsic
+        <content colon                                 optional
 
     <syntax id = Use
         <content link = use

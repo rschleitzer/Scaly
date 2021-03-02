@@ -1,10 +1,18 @@
-define Size
+use LLVM.*
+
+define Double(this: double) {}
+define Long(this: i64) {}
+define Integer(this: i32) {}
+define Byte(this: i8) {}
+define Boolean(this: i1) {}
+
+define Size(this: i64)
 {
     operator 'as Integer' returns Integer
         LLVM.trunc[i64, i32](this)
 }
 
-define Pointer[T]
+define Pointer[T](this: i64)
 {
     operator * returns T
         LLVM.load[T](this)

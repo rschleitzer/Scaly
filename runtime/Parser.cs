@@ -75,7 +75,7 @@ namespace Scaly.Compiler
             {
                 span = new Span
                 {
-                    file = file_name           },
+                    file = file_name                },
                 declarations = declarations,
                 statements = statements,
             };
@@ -179,7 +179,8 @@ namespace Scaly.Compiler
                 {
                     file = file_name,
                     start = start,
-                    end = end           },
+                    end = end
+                },
                 export = export,
             };
 
@@ -257,7 +258,8 @@ namespace Scaly.Compiler
                 {
                     file = file_name,
                     start = start,
-                    end = end           },
+                    end = end
+                },
                 type = type,
                 attributes = attributes,
                 concept = concept,
@@ -292,7 +294,8 @@ namespace Scaly.Compiler
                 {
                     file = file_name,
                     start = start,
-                    end = end           },
+                    end = end
+                },
                 name = name,
                 extensions = extensions,
             };
@@ -350,7 +353,8 @@ namespace Scaly.Compiler
                 {
                     file = file_name,
                     start = start,
-                    end = end           },
+                    end = end
+                },
                 name = name,
             };
 
@@ -399,7 +403,8 @@ namespace Scaly.Compiler
                 {
                     file = file_name,
                     start = start,
-                    end = end           },
+                    end = end
+                },
                 attribute = attribute,
                 value = value,
             };
@@ -434,6 +439,11 @@ namespace Scaly.Compiler
                 if (node != null)
                     return node;
             }
+            {
+                var node = parse_intrinsic();
+                if (node != null)
+                    return node;
+            }
 
             return null;
         }
@@ -456,7 +466,8 @@ namespace Scaly.Compiler
                 {
                     file = file_name,
                     start = start,
-                    end = end           },
+                    end = end
+                },
                 structure = structure,
                 body = body,
             };
@@ -479,7 +490,8 @@ namespace Scaly.Compiler
                 {
                     file = file_name,
                     start = start,
-                    end = end           },
+                    end = end
+                },
                 body = body,
             };
 
@@ -520,7 +532,8 @@ namespace Scaly.Compiler
                 {
                     file = file_name,
                     start = start,
-                    end = end           },
+                    end = end
+                },
                 tags = tags,
                 body = body,
             };
@@ -576,7 +589,8 @@ namespace Scaly.Compiler
                 {
                     file = file_name,
                     start = start,
-                    end = end           },
+                    end = end
+                },
                 name = name,
                 attributes = attributes,
                 item = item,
@@ -623,7 +637,8 @@ namespace Scaly.Compiler
                 {
                     file = file_name,
                     start = start,
-                    end = end           },
+                    end = end
+                },
                 structure = structure,
                 body = body,
             };
@@ -649,7 +664,8 @@ namespace Scaly.Compiler
                 {
                     file = file_name,
                     start = start,
-                    end = end           },
+                    end = end
+                },
                 literal = literal,
             };
 
@@ -673,7 +689,8 @@ namespace Scaly.Compiler
                 {
                     file = file_name,
                     start = start,
-                    end = end           },
+                    end = end
+                },
                 operation = operation,
             };
 
@@ -700,7 +717,8 @@ namespace Scaly.Compiler
                 {
                     file = file_name,
                     start = start,
-                    end = end           },
+                    end = end
+                },
                 parameters = parameters,
                 attributes = attributes,
                 result = result,
@@ -731,7 +749,8 @@ namespace Scaly.Compiler
                 {
                     file = file_name,
                     start = start,
-                    end = end           },
+                    end = end
+                },
                 members = members,
             };
 
@@ -761,7 +780,8 @@ namespace Scaly.Compiler
                 {
                     file = file_name,
                     start = start,
-                    end = end           },
+                    end = end
+                },
                 declarations = declarations,
             };
 
@@ -824,7 +844,8 @@ namespace Scaly.Compiler
                 {
                     file = file_name,
                     start = start,
-                    end = end           },
+                    end = end
+                },
                 export = export,
             };
 
@@ -883,7 +904,8 @@ namespace Scaly.Compiler
                 {
                     file = file_name,
                     start = start,
-                    end = end           },
+                    end = end
+                },
                 name = name,
                 annotation = annotation,
                 attributes = attributes,
@@ -911,7 +933,8 @@ namespace Scaly.Compiler
                 {
                     file = file_name,
                     start = start,
-                    end = end           },
+                    end = end
+                },
                 spec = spec,
             };
 
@@ -972,7 +995,8 @@ namespace Scaly.Compiler
                 {
                     file = file_name,
                     start = start,
-                    end = end           },
+                    end = end
+                },
                 name = name,
                 generics = generics,
                 optional = optional,
@@ -1002,7 +1026,8 @@ namespace Scaly.Compiler
                 {
                     file = file_name,
                     start = start,
-                    end = end           },
+                    end = end
+                },
                 members = members,
             };
 
@@ -1030,7 +1055,8 @@ namespace Scaly.Compiler
                 {
                     file = file_name,
                     start = start,
-                    end = end           },
+                    end = end
+                },
                 generics = generics,
             };
 
@@ -1075,7 +1101,8 @@ namespace Scaly.Compiler
                 {
                     file = file_name,
                     start = start,
-                    end = end           },
+                    end = end
+                },
                 spec = spec,
             };
 
@@ -1098,7 +1125,8 @@ namespace Scaly.Compiler
                 {
                     file = file_name,
                     start = start,
-                    end = end           },
+                    end = end
+                },
             };
 
             return ret;
@@ -1137,7 +1165,8 @@ namespace Scaly.Compiler
                 {
                     file = file_name,
                     start = start,
-                    end = end           },
+                    end = end
+                },
                 name = name,
                 generics = generics,
                 routine = routine,
@@ -1179,7 +1208,8 @@ namespace Scaly.Compiler
                 {
                     file = file_name,
                     start = start,
-                    end = end           },
+                    end = end
+                },
                 name = name,
                 generics = generics,
                 routine = routine,
@@ -1207,7 +1237,8 @@ namespace Scaly.Compiler
                 {
                     file = file_name,
                     start = start,
-                    end = end           },
+                    end = end
+                },
                 target = target,
             };
 
@@ -1253,7 +1284,8 @@ namespace Scaly.Compiler
                 {
                     file = file_name,
                     start = start,
-                    end = end           },
+                    end = end
+                },
                 parameters = parameters,
                 attributes = attributes,
                 returns = returns,
@@ -1299,7 +1331,8 @@ namespace Scaly.Compiler
                 {
                     file = file_name,
                     start = start,
-                    end = end           },
+                    end = end
+                },
                 name = name,
                 attributes = attributes,
                 returns = returns,
@@ -1347,7 +1380,8 @@ namespace Scaly.Compiler
                 {
                     file = file_name,
                     start = start,
-                    end = end           },
+                    end = end
+                },
                 properties = properties,
             };
 
@@ -1374,7 +1408,8 @@ namespace Scaly.Compiler
                 {
                     file = file_name,
                     start = start,
-                    end = end           },
+                    end = end
+                },
                 parameters = parameters,
                 attributes = attributes,
             };
@@ -1402,7 +1437,8 @@ namespace Scaly.Compiler
                 {
                     file = file_name,
                     start = start,
-                    end = end           },
+                    end = end
+                },
                 type = type,
                 attributes = attributes,
             };
@@ -1452,7 +1488,8 @@ namespace Scaly.Compiler
                 {
                     file = file_name,
                     start = start,
-                    end = end           },
+                    end = end
+                },
             };
 
             return ret;
@@ -1466,6 +1503,8 @@ namespace Scaly.Compiler
             if (!success_instruction_1)
                     return null;
 
+            lexer.parse_colon();
+
             var end = lexer.get_position();
 
             var ret = new InstructionSyntax
@@ -1474,7 +1513,8 @@ namespace Scaly.Compiler
                 {
                     file = file_name,
                     start = start,
-                    end = end           },
+                    end = end
+                },
             };
 
             return ret;
@@ -1488,6 +1528,8 @@ namespace Scaly.Compiler
             if (!success_intrinsic_1)
                     return null;
 
+            lexer.parse_colon();
+
             var end = lexer.get_position();
 
             var ret = new IntrinsicSyntax
@@ -1496,7 +1538,8 @@ namespace Scaly.Compiler
                 {
                     file = file_name,
                     start = start,
-                    end = end           },
+                    end = end
+                },
             };
 
             return ret;
@@ -1523,7 +1566,8 @@ namespace Scaly.Compiler
                 {
                     file = file_name,
                     start = start,
-                    end = end           },
+                    end = end
+                },
                 name = name,
             };
 
@@ -1563,7 +1607,8 @@ namespace Scaly.Compiler
                 {
                     file = file_name,
                     start = start,
-                    end = end           },
+                    end = end
+                },
                 type = type,
                 attributes = attributes,
                 methods = methods,
@@ -1606,7 +1651,8 @@ namespace Scaly.Compiler
                 {
                     file = file_name,
                     start = start,
-                    end = end           },
+                    end = end
+                },
                 name = name,
                 extension = extension,
                 attributes = attributes,
@@ -1675,7 +1721,8 @@ namespace Scaly.Compiler
                 {
                     file = file_name,
                     start = start,
-                    end = end           },
+                    end = end
+                },
                 extensions = extensions,
             };
 
@@ -1720,7 +1767,8 @@ namespace Scaly.Compiler
                 {
                     file = file_name,
                     start = start,
-                    end = end           },
+                    end = end
+                },
                 spec = spec,
             };
 
@@ -1762,7 +1810,8 @@ namespace Scaly.Compiler
                 {
                     file = file_name,
                     start = start,
-                    end = end           },
+                    end = end
+                },
                 name = name,
                 model = model,
                 rule = rule,
@@ -1792,7 +1841,8 @@ namespace Scaly.Compiler
                 {
                     file = file_name,
                     start = start,
-                    end = end           },
+                    end = end
+                },
                 name = name,
             };
 
@@ -1896,7 +1946,8 @@ namespace Scaly.Compiler
                 {
                     file = file_name,
                     start = start,
-                    end = end           },
+                    end = end
+                },
                 binding = binding,
             };
 
@@ -1922,7 +1973,8 @@ namespace Scaly.Compiler
                 {
                     file = file_name,
                     start = start,
-                    end = end           },
+                    end = end
+                },
                 binding = binding,
             };
 
@@ -1948,7 +2000,8 @@ namespace Scaly.Compiler
                 {
                     file = file_name,
                     start = start,
-                    end = end           },
+                    end = end
+                },
                 binding = binding,
             };
 
@@ -1984,7 +2037,8 @@ namespace Scaly.Compiler
                 {
                     file = file_name,
                     start = start,
-                    end = end           },
+                    end = end
+                },
                 name = name,
                 annotation = annotation,
                 operation = operation,
@@ -2012,7 +2066,8 @@ namespace Scaly.Compiler
                 {
                     file = file_name,
                     start = start,
-                    end = end           },
+                    end = end
+                },
                 spec = spec,
             };
 
@@ -2083,7 +2138,8 @@ namespace Scaly.Compiler
                 {
                     file = file_name,
                     start = start,
-                    end = end           },
+                    end = end
+                },
                 target = target,
                 source = source,
             };
@@ -2108,7 +2164,8 @@ namespace Scaly.Compiler
                 {
                     file = file_name,
                     start = start,
-                    end = end           },
+                    end = end
+                },
                 operands = operands,
             };
 
@@ -2152,7 +2209,8 @@ namespace Scaly.Compiler
                 {
                     file = file_name,
                     start = start,
-                    end = end           },
+                    end = end
+                },
                 expression = expression,
                 postfixes = postfixes,
             };
@@ -2221,7 +2279,8 @@ namespace Scaly.Compiler
                 {
                     file = file_name,
                     start = start,
-                    end = end           },
+                    end = end
+                },
                 member = member,
             };
 
@@ -2244,7 +2303,8 @@ namespace Scaly.Compiler
                 {
                     file = file_name,
                     start = start,
-                    end = end           },
+                    end = end
+                },
                 catchers = catchers,
                 dropper = dropper,
             };
@@ -2295,7 +2355,8 @@ namespace Scaly.Compiler
                 {
                     file = file_name,
                     start = start,
-                    end = end           },
+                    end = end
+                },
                 condition = condition,
                 handler = handler,
             };
@@ -2322,7 +2383,8 @@ namespace Scaly.Compiler
                 {
                     file = file_name,
                     start = start,
-                    end = end           },
+                    end = end
+                },
                 handler = handler,
             };
 
@@ -2348,7 +2410,8 @@ namespace Scaly.Compiler
                 {
                     file = file_name,
                     start = start,
-                    end = end           },
+                    end = end
+                },
                 condition = condition,
             };
 
@@ -2374,7 +2437,8 @@ namespace Scaly.Compiler
                 {
                     file = file_name,
                     start = start,
-                    end = end           },
+                    end = end
+                },
                 name = name,
             };
 
@@ -2410,7 +2474,8 @@ namespace Scaly.Compiler
                 {
                     file = file_name,
                     start = start,
-                    end = end           },
+                    end = end
+                },
                 name = name,
             };
 
@@ -2437,7 +2502,8 @@ namespace Scaly.Compiler
                 {
                     file = file_name,
                     start = start,
-                    end = end           },
+                    end = end
+                },
                 name = name,
                 result = result,
             };
@@ -2462,7 +2528,8 @@ namespace Scaly.Compiler
                 {
                     file = file_name,
                     start = start,
-                    end = end           },
+                    end = end
+                },
                 result = result,
             };
 
@@ -2486,7 +2553,8 @@ namespace Scaly.Compiler
                 {
                     file = file_name,
                     start = start,
-                    end = end           },
+                    end = end
+                },
                 result = result,
             };
 
@@ -2597,7 +2665,8 @@ namespace Scaly.Compiler
                 {
                     file = file_name,
                     start = start,
-                    end = end           },
+                    end = end
+                },
                 literal = literal,
             };
 
@@ -2625,7 +2694,8 @@ namespace Scaly.Compiler
                 {
                     file = file_name,
                     start = start,
-                    end = end           },
+                    end = end
+                },
                 components = components,
             };
 
@@ -2672,7 +2742,8 @@ namespace Scaly.Compiler
                 {
                     file = file_name,
                     start = start,
-                    end = end           },
+                    end = end
+                },
                 operands = operands,
                 attributes = attributes,
                 value = value,
@@ -2701,7 +2772,8 @@ namespace Scaly.Compiler
                 {
                     file = file_name,
                     start = start,
-                    end = end           },
+                    end = end
+                },
                 value = value,
                 attributes = attributes,
             };
@@ -2732,7 +2804,8 @@ namespace Scaly.Compiler
                 {
                     file = file_name,
                     start = start,
-                    end = end           },
+                    end = end
+                },
                 elements = elements,
             };
 
@@ -2778,7 +2851,8 @@ namespace Scaly.Compiler
                 {
                     file = file_name,
                     start = start,
-                    end = end           },
+                    end = end
+                },
                 operation = operation,
                 attributes = attributes,
             };
@@ -2807,7 +2881,8 @@ namespace Scaly.Compiler
                 {
                     file = file_name,
                     start = start,
-                    end = end           },
+                    end = end
+                },
                 statements = statements,
             };
 
@@ -2837,7 +2912,8 @@ namespace Scaly.Compiler
                 {
                     file = file_name,
                     start = start,
-                    end = end           },
+                    end = end
+                },
                 condition = condition,
                 consequent = consequent,
                 alternative = alternative,
@@ -2867,7 +2943,8 @@ namespace Scaly.Compiler
                 {
                     file = file_name,
                     start = start,
-                    end = end           },
+                    end = end
+                },
                 alternative = alternative,
             };
 
@@ -2897,7 +2974,8 @@ namespace Scaly.Compiler
                 {
                     file = file_name,
                     start = start,
-                    end = end           },
+                    end = end
+                },
                 scrutinee = scrutinee,
                 cases = cases,
                 alternative = alternative,
@@ -2949,7 +3027,8 @@ namespace Scaly.Compiler
                 {
                     file = file_name,
                     start = start,
-                    end = end           },
+                    end = end
+                },
                 condition = condition,
                 consequent = consequent,
             };
@@ -2974,7 +3053,8 @@ namespace Scaly.Compiler
                 {
                     file = file_name,
                     start = start,
-                    end = end           },
+                    end = end
+                },
                 alternative = alternative,
             };
 
@@ -3003,7 +3083,8 @@ namespace Scaly.Compiler
                 {
                     file = file_name,
                     start = start,
-                    end = end           },
+                    end = end
+                },
                 input = input,
                 block = block,
             };
@@ -3041,7 +3122,8 @@ namespace Scaly.Compiler
                 {
                     file = file_name,
                     start = start,
-                    end = end           },
+                    end = end
+                },
                 condition = condition,
                 expression = expression,
                 name = name,
@@ -3080,7 +3162,8 @@ namespace Scaly.Compiler
                 {
                     file = file_name,
                     start = start,
-                    end = end           },
+                    end = end
+                },
                 name = name,
             };
 
@@ -3110,7 +3193,8 @@ namespace Scaly.Compiler
                 {
                     file = file_name,
                     start = start,
-                    end = end           },
+                    end = end
+                },
                 condition = condition,
                 name = name,
                 action = action,
@@ -3139,7 +3223,8 @@ namespace Scaly.Compiler
                 {
                     file = file_name,
                     start = start,
-                    end = end           },
+                    end = end
+                },
                 name = name,
                 action = action,
             };
@@ -3166,7 +3251,8 @@ namespace Scaly.Compiler
                 {
                     file = file_name,
                     start = start,
-                    end = end           },
+                    end = end
+                },
                 spec = spec,
             };
 

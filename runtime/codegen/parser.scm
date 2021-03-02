@@ -162,9 +162,10 @@
                 (if (top? syntax) ""
                                     ",
                     start = start,
-                    end = end"
+                    end = end
+"
                 )
-"           }"
+"                }"
                 (apply-to-property-children-of syntax (lambda (content) ($
                     ",
                 "(property content)" = "(property content)

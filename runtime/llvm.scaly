@@ -1,4 +1,11 @@
 define LLVM
 {
-    function 'trunc i64 to i32' instruction
+    define i1 intrinsic
+    define i8 intrinsic
+    define i32 intrinsic
+    define i64 intrinsic
+    define double intrinsic
+
+    function trunc[From, To] instruction
+    function load[T] instruction
 }
