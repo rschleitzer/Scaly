@@ -442,7 +442,12 @@ namespace Scaly.Compiler
                         definitions = new Dictionary<string, Definition>();
                     if (!definitions.ContainsKey(moduleSyntax.name.name))
                     {
-                        var definition = new Definition { IsPublic = isPublic, Type = new TypeSpec { Name = moduleSyntax.name.name }, Definitions = new Dictionary<string, Definition>(), Sources = null };
+                        var definition = new Definition
+                        {
+                            IsPublic = isPublic,
+                            Type = new TypeSpec { Name = moduleSyntax.name.name },
+                            Definitions = new Dictionary<string, Definition>(), Sources = null
+                        };
                         definitions.Add(definition.Type.Name, definition);
                     }
 
@@ -719,8 +724,6 @@ namespace Scaly.Compiler
 
         static void HandleDefinition(DefinitionSyntax definitionSyntax, Dictionary<string, Definition> definitions, Source source, string origin, bool isPublic)
         {
-
-            TypeSpec typeModel = BuildType(definitionSyntax.type);
             BodySyntax bodySyntax = null;
             switch (definitionSyntax.concept)
             {
@@ -737,10 +740,10 @@ namespace Scaly.Compiler
                     break;
             }
 
+            TypeSpec typeModel = BuildType(definitionSyntax.type);
             if (definitions.ContainsKey(typeModel.Name))
                 throw new CompilerException($"Module {typeModel.Name} already defined.", definitionSyntax.span);
-
-            var definition = new Definition { };
+            var definition = new Definition { Type = typeModel };
             definitions.Add(typeModel.Name, definition);
 
             if ((bodySyntax != null) && (bodySyntax.declarations != null))

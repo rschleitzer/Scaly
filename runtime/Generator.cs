@@ -134,8 +134,13 @@ namespace Scaly.Compiler
         static void BuildSourceTypes(LocalContext context, Source source)
         {
             if (source.Definitions != null)
+            {
                 foreach (var definition in source.Definitions.Values)
-                    BuildDefinitionTypes(context, definition);
+                {
+                    if (definition.Type.Arguments == null)
+                        BuildDefinitionTypes(context, definition);
+                }
+            }
 
             if (source.Functions != null)
                 foreach (var function in source.Functions)
