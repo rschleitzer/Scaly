@@ -10,6 +10,7 @@ namespace Scaly.Compiler
         public LLVMBuilderRef Builder;
         public Dictionary<string, LLVMTypeRef> Types = new Dictionary<string, LLVMTypeRef>();
         public Dictionary<string, LLVMValueRef> Values = new Dictionary<string, LLVMValueRef>();
+        public bool finalPass;
     }
 
     internal class LocalContext
@@ -94,6 +95,7 @@ namespace Scaly.Compiler
             {
                 var context = new GlobalContext { Module = module, Builder = builder };
                 BuildGlobalTypes(context, definition);
+                context.finalPass = true;
                 BuildGlobalValues(context, definition);
                 BuildFunctions(context, definition);
             }
@@ -101,15 +103,32 @@ namespace Scaly.Compiler
 
         static void BuildGlobalTypes(GlobalContext context, Definition definition)
         {
-            context.Types.Add("Double", LLVMTypeRef.Double);
-            context.Types.Add("Long", LLVMTypeRef.Int64);
-            context.Types.Add("Size", LLVMTypeRef.Int64);
-            context.Types.Add("Integer", LLVMTypeRef.Int32);
-            context.Types.Add("Byte", LLVMTypeRef.Int8);
-            context.Types.Add("Boolean", LLVMTypeRef.Int8);
-
+            if (!context.finalPass)
+            {
+                context.Types.Add("Double", LLVMTypeRef.Double);
+                context.Types.Add("Long", LLVMTypeRef.Int64);
+                context.Types.Add("Size", LLVMTypeRef.Int64);
+                context.Types.Add("Integer", LLVMTypeRef.Int32);
+                context.Types.Add("Byte", LLVMTypeRef.Int8);
+                context.Types.Add("Boolean", LLVMTypeRef.Int8);
+            }
             var localContext = new LocalContext { GlobalContext = context, ParentContext = null };
             BuildDefinitionTypes(localContext, definition);
+        }
+
+        static void BuildDefinitionTypes(LocalContext context, Definition definition)
+        {
+            if (definition.Sources != null)
+                foreach (var source in definition.Sources)
+                    BuildSourceTypes(context, source);
+
+            if (definition.Functions != null)
+                foreach (var function in definition.Functions)
+                    BuildFunctionType(context, function);
+
+            if (definition.Operators != null)
+                foreach (var @operator in definition.Operators)
+                    BuildOperatorType(context, @operator);
         }
 
         static void BuildSourceTypes(LocalContext context, Source source)
@@ -129,21 +148,6 @@ namespace Scaly.Compiler
             if (source.Sources != null)
                 foreach (var childSource in source.Sources)
                     BuildSourceTypes(context, childSource);
-        }
-
-        static void BuildDefinitionTypes(LocalContext context, Definition definition)
-        {
-            if (definition.Sources != null)
-                foreach (var source in definition.Sources)
-                    BuildSourceTypes(context, source);
-
-            if (definition.Functions != null)
-                foreach (var function in definition.Functions)
-                    BuildFunctionType(context, function);
-
-            if (definition.Operators != null)
-                foreach (var @operator in definition.Operators)
-                    BuildOperatorType(context, @operator);
         }
 
         static void BuildFunctionType(LocalContext context, Function function)
